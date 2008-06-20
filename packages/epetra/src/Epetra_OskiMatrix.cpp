@@ -35,110 +35,116 @@
 
 //=============================================================================
 
-Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_OskiMatrix& Source) : Epetra_CrsMatrix(Source), Copy_Created_(true), Epetra_View_(Source.Epetra_View_) {
-  A_tunable_ = oski_CopyMat(Source.A_tunable_);
+Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_OskiMatrix& Source) 
+  : Epetra_CrsMatrix(Source), 
+  Copy_Created_(true), 
+  Epetra_View_(Source.Epetra_View_) {
+    A_tunable_ = oski_CopyMat(Source.A_tunable_);
 }
 
-//need to read in autotune or not.  Input mode.  Any overridden params.
-Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_CrsMatrix& Source, const Teuchos::ParameterList& List) : Epetra_CrsMatrix(Source), Epetra_View_(&Source) {
- 
-  bool AutoTune = false;
-  bool DeepCopy = false;
-  char Matrix[20] = "general\0";
-  bool IsDiagNotStored = false;
-  bool IsArrayZeroBased = false;
-  int MyIndexBase = 1;
-  bool AreIndicesSorted = false;
-  bool AreIndicesRepeated = false;
-  oski_inmatprop_t MatrixType = MAT_GENERAL;
-  oski_inmatprop_t Diagonal = MAT_DIAG_EXPLICIT;
-  oski_inmatprop_t ArrayBasis = INDEX_ONE_BASED;
-  oski_inmatprop_t SortedIndices = INDEX_UNSORTED;
-  oski_inmatprop_t RepeatedIndices = INDEX_REPEATED;
-  int* RowPtr;
-  int* IndPtr;
-  double* ValPtr;
-  if(List.isParameter("autotune")) 
-    AutoTune = Teuchos::getParameter<bool>(List, "autotune");
-  if(List.isParameter("deepcopy")) 
-    DeepCopy = Teuchos::getParameter<bool>(List, "deepcopy");
-  
-  if(AutoTune){  //Use parameters from the Epetra matrix to set as many fields as possible
-    if(LowerTriangular())
-      MatrixType = MAT_TRI_LOWER;
-    if(UpperTriangular())
-      MatrixType = MAT_TRI_UPPER;
-    if(Sorted())
-      SortedIndices = INDEX_SORTED;
-    MyIndexBase = IndexBase();
-    if(MyIndexBase == 0)
+Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_CrsMatrix& Source, 
+				     const Teuchos::ParameterList& List) 
+  : Epetra_CrsMatrix(Source), 
+  Epetra_View_(&Source) {
+    bool AutoTune = false;
+    bool DeepCopy = false;
+    char Matrix[20] = "general\0";
+    bool IsDiagNotStored = false;
+    bool IsArrayZeroBased = false;
+    int MyIndexBase = 1;
+    bool AreIndicesSorted = false;
+    bool AreIndicesRepeated = false;
+    oski_inmatprop_t MatrixType = MAT_GENERAL;
+    oski_inmatprop_t Diagonal = MAT_DIAG_EXPLICIT;
+    oski_inmatprop_t ArrayBasis = INDEX_ONE_BASED;
+    oski_inmatprop_t SortedIndices = INDEX_UNSORTED;
+    oski_inmatprop_t RepeatedIndices = INDEX_REPEATED;
+    int* RowPtr = NULL;
+    int* IndPtr = NULL;
+    double* ValPtr = NULL;
+    if(List.isParameter("autotune")) 
+      AutoTune = Teuchos::getParameter<bool>(List, "autotune");
+    if(List.isParameter("deepcopy")) 
+      DeepCopy = Teuchos::getParameter<bool>(List, "deepcopy");
+    if(AutoTune){  //Use parameters from the Epetra matrix to set as many fields as possible
+      if(LowerTriangular())
+        MatrixType = MAT_TRI_LOWER;
+      if(UpperTriangular())
+        MatrixType = MAT_TRI_UPPER;
+      if(Sorted())
+        SortedIndices = INDEX_SORTED;
+      MyIndexBase = IndexBase();
+      if(MyIndexBase == 0)
+        ArrayBasis = INDEX_ZERO_BASED;
+      else if(MyIndexBase == 1)
+        ArrayBasis = INDEX_ONE_BASED;
+      else if(!List.isParameter("zerobased")) {
+        std::cerr << "An OskiMatrix must be either zero or one based.\n";
+        return;
+      }
+      if(NoRedundancies())
+        RepeatedIndices = INDEX_UNIQUE;
+    }
+    if(List.isParameter("matrixtype")) {
+      strcpy(Matrix, Teuchos::getParameter<char*>(List, "matrixtype"));
+      if(!strcmp(Matrix, "general"))
+        MatrixType = MAT_GENERAL;
+      else if(!strcmp(Matrix, "uppertri"))
+        MatrixType = MAT_TRI_UPPER;
+      else if(!strcmp(Matrix, "lowertri"))
+        MatrixType = MAT_TRI_LOWER;
+      else if(!strcmp(Matrix, "uppersymm"))
+        MatrixType = MAT_SYMM_UPPER;
+      else if(!strcmp(Matrix, "lowersymm"))
+        MatrixType = MAT_SYMM_LOWER;
+      else if(!strcmp(Matrix, "fullsymm"))
+        MatrixType = MAT_SYMM_FULL;
+      else if(!strcmp(Matrix, "upperherm"))
+        MatrixType = MAT_HERM_UPPER;
+      else if(!strcmp(Matrix, "lowerherm"))
+        MatrixType = MAT_HERM_LOWER;
+      else if(!strcmp(Matrix, "fullherm"))
+        MatrixType = MAT_HERM_FULL;
+    }
+    if(List.isParameter("diagstored")) 
+      IsDiagNotStored = Teuchos::getParameter<bool>(List, "diagstored");
+    if(List.isParameter("zerobased")) 
+      IsArrayZeroBased = Teuchos::getParameter<bool>(List, "zerobased");
+    if(List.isParameter("sorted")) 
+      AreIndicesSorted = Teuchos::getParameter<bool>(List, "sorted");
+    if(List.isParameter("unique")) 
+      DeepCopy = Teuchos::getParameter<bool>(List, "unique");
+    if(IsDiagNotStored)
+      Diagonal = MAT_UNIT_DIAG_IMPLICIT;
+    if(IsArrayZeroBased)
       ArrayBasis = INDEX_ZERO_BASED;
-    else if(MyIndexBase == 1)
-      ArrayBasis = INDEX_ONE_BASED;
-    else if(!List.isParameter("zerobased")) {
-      std::cerr << "An OskiMatrix must be either zero or one based.\n";
+    if(AreIndicesSorted)
+      SortedIndices = INDEX_SORTED;
+    if(AreIndicesRepeated)
+      RepeatedIndices = INDEX_UNIQUE;
+    if(ExtractCrsDataPointers(RowPtr, IndPtr, ValPtr)) {
+      std::cerr << "Cannot wrap matrix as an Oski Matrix because at least one of FillComplete and Optimize Storage has not been called\n";
       return;
     }
-    if(NoRedundancies())
-      RepeatedIndices = INDEX_UNIQUE;
-  }
-  if(List.isParameter("matrixtype")) {
-    strcpy(Matrix, Teuchos::getParameter<char*>(List, "matrixtype"));
-    if(!strcmp(Matrix, "general"))
-      MatrixType = MAT_GENERAL;
-    else if(!strcmp(Matrix, "uppertri"))
-      MatrixType = MAT_TRI_UPPER;
-    else if(!strcmp(Matrix, "lowertri"))
-      MatrixType = MAT_TRI_LOWER;
-    else if(!strcmp(Matrix, "uppersymm"))
-      MatrixType = MAT_SYMM_UPPER;
-    else if(!strcmp(Matrix, "lowersymm"))
-      MatrixType = MAT_SYMM_LOWER;
-    else if(!strcmp(Matrix, "fullsymm"))
-      MatrixType = MAT_SYMM_FULL;
-    else if(!strcmp(Matrix, "upperherm"))
-      MatrixType = MAT_HERM_UPPER;
-    else if(!strcmp(Matrix, "lowerherm"))
-      MatrixType = MAT_HERM_LOWER;
-    else if(!strcmp(Matrix, "fullherm"))
-      MatrixType = MAT_HERM_FULL;
-  }
-  if(List.isParameter("diagstored")) 
-    IsDiagNotStored = Teuchos::getParameter<bool>(List, "diagstored");
-  if(List.isParameter("zerobased")) 
-    IsArrayZeroBased = Teuchos::getParameter<bool>(List, "zerobased");
-  if(List.isParameter("sorted")) 
-    AreIndicesSorted = Teuchos::getParameter<bool>(List, "sorted");
-  if(List.isParameter("unique")) 
-    DeepCopy = Teuchos::getParameter<bool>(List, "unique");
-  if(IsDiagNotStored)
-    Diagonal = MAT_UNIT_DIAG_IMPLICIT;
-  if(IsArrayZeroBased)
-    ArrayBasis = INDEX_ZERO_BASED;
-  if(AreIndicesSorted)
-    SortedIndices = INDEX_SORTED;
-  if(AreIndicesRepeated)
-    RepeatedIndices = INDEX_UNIQUE;
-  if(ExtractCrsDataPointers(RowPtr, IndPtr, ValPtr)) {
-    std::cerr << "Cannot wrap matrix as an Oski Matrix because at least one of FillComplete and Optimize Storage has not been called\n";
-    return;
-  }
-  if(DeepCopy) {  
-    Copy_Created_ = true; 
-    A_tunable_ = oski_CreateMatCSR(RowPtr, IndPtr, ValPtr, Source.NumMyRows(), Source.NumMyCols(), COPY_INPUTMAT, 5, MatrixType, Diagonal, ArrayBasis, SortedIndices, RepeatedIndices);
-  }
-  else {
-    Copy_Created_ = false;
-    A_tunable_ = oski_CreateMatCSR(RowPtr, IndPtr, ValPtr, Source.NumMyRows(), Source.NumMyCols(), SHARE_INPUTMAT, 5, MatrixType, Diagonal, ArrayBasis, SortedIndices, RepeatedIndices);
-  }
+    if(DeepCopy) {  
+      Copy_Created_ = true; 
+      A_tunable_ = oski_CreateMatCSR(RowPtr, IndPtr, ValPtr, Source.NumMyRows(), Source.NumMyCols(), COPY_INPUTMAT, 5, MatrixType, Diagonal, ArrayBasis, SortedIndices, RepeatedIndices);
+    }
+    else {
+      Copy_Created_ = false;
+      A_tunable_ = oski_CreateMatCSR(RowPtr, IndPtr, ValPtr, Source.NumMyRows(), Source.NumMyCols(), SHARE_INPUTMAT, 5, MatrixType, Diagonal, ArrayBasis, SortedIndices, RepeatedIndices);
+    }
 }
 
-Epetra_OskiMatrix::~Epetra_OskiMatrix (){
+Epetra_OskiMatrix::~Epetra_OskiMatrix() {
   if(oski_DestroyMat(A_tunable_))
     std::cerr << "Destroy Matrix failed.\n";
 }
 
-int Epetra_OskiMatrix::ReplaceMyValues(int MyRow, int NumEntries, double* Values, int* Indices) {
+int Epetra_OskiMatrix::ReplaceMyValues(int MyRow, 
+				       int NumEntries, 
+				       double* Values, 
+				       int* Indices) {
   int ReturnVal = 0;
   if (Copy_Created_) {
     for(int i = 0; i < NumEntries; i++) {
@@ -156,7 +162,10 @@ int Epetra_OskiMatrix::ReplaceMyValues(int MyRow, int NumEntries, double* Values
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::SumIntoMyValues(int MyRow, int NumEntries, double* Values, int* Indices) {
+int Epetra_OskiMatrix::SumIntoMyValues(int MyRow, 
+				       int NumEntries, 
+				       double* Values, 
+				       int* Indices) {
   int ReturnVal = 0;
   if (Copy_Created_) {
     for(int i = 0; i < NumEntries; i++) {
@@ -196,9 +205,13 @@ int Epetra_OskiMatrix::ReplaceDiagonalValues(const Epetra_OskiVector& Diagonal) 
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vector& y, double Alpha, double Beta) const {
-  Epetra_OskiVector* xCast;
-  Epetra_OskiVector* yCast;
+int Epetra_OskiMatrix::Multiply(bool TransA, 
+				const Epetra_Vector& x, 
+				Epetra_Vector& y, 
+				double Alpha, 
+				double Beta) const {
+  Epetra_OskiVector* xCast = NULL;
+  Epetra_OskiVector* yCast = NULL;
   bool xCreate = false;
   bool yCreate = false;
   int ReturnVal;
@@ -225,9 +238,13 @@ int Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vect
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, double Alpha, double Beta) const {
-  Epetra_OskiMultiVector* XCast;
-  Epetra_OskiMultiVector* YCast;
+int Epetra_OskiMatrix::Multiply(bool TransA, 
+				const Epetra_MultiVector& X, 
+				Epetra_MultiVector& Y, 
+				double Alpha, 
+				double Beta) const {
+  Epetra_OskiMultiVector* XCast = NULL;
+  Epetra_OskiMultiVector* YCast = NULL;
   bool XCreate = false;
   bool YCreate = false;
   int ReturnVal;
@@ -255,7 +272,7 @@ int Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra
 }
 
 int Epetra_OskiMatrix::Solve(bool TransA, Epetra_Vector& x, double Alpha) const {
-  Epetra_OskiVector* xCast;
+  Epetra_OskiVector* xCast =NULL;
   bool xCreate = false;
   int ReturnVal;
   xCast = dynamic_cast<Epetra_OskiVector*>(&x);
@@ -275,7 +292,7 @@ int Epetra_OskiMatrix::Solve(bool TransA, Epetra_Vector& x, double Alpha) const 
 }
 
 int Epetra_OskiMatrix::Solve(bool TransA, Epetra_MultiVector& X, double Alpha) const {
-  Epetra_OskiMultiVector* XCast;
+  Epetra_OskiMultiVector* XCast = NULL;
   bool XCreate = false;
   int ReturnVal;
   XCast = dynamic_cast<Epetra_OskiMultiVector*>(&X);
@@ -294,10 +311,15 @@ int Epetra_OskiMatrix::Solve(bool TransA, Epetra_MultiVector& X, double Alpha) c
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_Vector& x, Epetra_Vector& y, Epetra_Vector& t, double Alpha, double Beta) const {
-  Epetra_OskiVector* xCast;
-  Epetra_OskiVector* yCast;
-  Epetra_OskiVector* tCast;
+int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, 
+					   const Epetra_Vector& x, 
+					   Epetra_Vector& y, 
+					   Epetra_Vector& t, 
+					   double Alpha, 
+					   double Beta) const {
+  Epetra_OskiVector* xCast = NULL;
+  Epetra_OskiVector* yCast = NULL;
+  Epetra_OskiVector* tCast = NULL;
   bool xCreate = false;
   bool yCreate = false;
   bool tCreate = false;
@@ -337,10 +359,15 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_Vector& x, Epe
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, Epetra_MultiVector& T, double Alpha, double Beta) const {
-  Epetra_OskiMultiVector* XCast;
-  Epetra_OskiMultiVector* YCast;
-  Epetra_OskiMultiVector* TCast;
+int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, 
+					   const Epetra_MultiVector& X, 
+					   Epetra_MultiVector& Y, 
+					   Epetra_MultiVector& T, 
+					   double Alpha, 
+				           double Beta) const {
+  Epetra_OskiMultiVector* XCast = NULL;
+  Epetra_OskiMultiVector* YCast = NULL;
+  Epetra_OskiMultiVector* TCast = NULL;
   bool XCreate = false;
   bool YCreate = false;
   bool TCreate = false;
@@ -380,11 +407,19 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_MultiVector& X
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::MultiplyAndMatTransMultiply (bool TransA, const Epetra_Vector& x, Epetra_Vector& y, const Epetra_Vector& w, Epetra_Vector& z, double Alpha, double Beta, double Omega, double Zeta) const {
-  Epetra_OskiVector* xCast;
-  Epetra_OskiVector* yCast;
-  Epetra_OskiVector* wCast;
-  Epetra_OskiVector* zCast;
+int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA, 
+						   const Epetra_Vector& x, 
+						   Epetra_Vector& y, 
+						   const Epetra_Vector& w, 
+						   Epetra_Vector& z, 
+						   double Alpha, 
+						   double Beta, 
+						   double Omega, 
+						   double Zeta) const {
+  Epetra_OskiVector* xCast = NULL;
+  Epetra_OskiVector* yCast = NULL;
+  Epetra_OskiVector* wCast = NULL;
+  Epetra_OskiVector* zCast = NULL;
   bool xCreate = false;
   bool yCreate = false;
   bool wCreate = false;
@@ -427,11 +462,19 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply (bool TransA, const Epetra_Ve
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::MultiplyAndMatTransMultiply (bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, const Epetra_MultiVector& W, Epetra_MultiVector& Z, double Alpha, double Beta, double Omega, double Zeta) const {
-  Epetra_OskiMultiVector* XCast;
-  Epetra_OskiMultiVector* YCast;
-  Epetra_OskiMultiVector* WCast;
-  Epetra_OskiMultiVector* ZCast;
+int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA, 
+						   const Epetra_MultiVector& X, 
+						   Epetra_MultiVector& Y, 
+						   const Epetra_MultiVector& W, 
+						   Epetra_MultiVector& Z, 
+						   double Alpha, 
+						   double Beta, 
+						   double Omega, 
+						   double Zeta) const {
+  Epetra_OskiMultiVector* XCast = NULL;
+  Epetra_OskiMultiVector* YCast = NULL;
+  Epetra_OskiMultiVector* WCast = NULL;
+  Epetra_OskiMultiVector* ZCast = NULL;
   bool XCreate = false;
   bool YCreate = false;
   bool WCreate = false;
@@ -474,10 +517,16 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply (bool TransA, const Epetra_Mu
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::MatPowMultiply (bool TransA, const Epetra_Vector& x, Epetra_Vector& y, int Power, Epetra_MultiVector& T, double Alpha, double Beta) const {
-  Epetra_OskiVector* xCast;
-  Epetra_OskiVector* yCast;
-  Epetra_OskiMultiVector* TCast;
+int Epetra_OskiMatrix::MatPowMultiply(bool TransA, 
+				      const Epetra_Vector& x, 
+				      Epetra_Vector& y, 
+				      int Power,
+ 				      Epetra_MultiVector& T, 
+				      double Alpha, 
+				      double Beta) const {
+  Epetra_OskiVector* xCast = NULL;
+  Epetra_OskiVector* yCast = NULL;
+  Epetra_OskiMultiVector* TCast = NULL;
   bool xCreate = false;
   bool yCreate = false;
   bool TCreate = false;
@@ -515,10 +564,16 @@ int Epetra_OskiMatrix::MatPowMultiply (bool TransA, const Epetra_Vector& x, Epet
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::MatPowMultiply (bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, int Power, Epetra_MultiVector& T, double Alpha, double Beta) const {
-  Epetra_OskiMultiVector* XCast;
-  Epetra_OskiMultiVector* YCast;
-  Epetra_OskiMultiVector* TCast;
+int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
+				      const Epetra_MultiVector& X,
+				      Epetra_MultiVector& Y, 
+				      int Power, 
+				      Epetra_MultiVector& T, 
+				      double Alpha, 
+				      double Beta) const {
+  Epetra_OskiMultiVector* XCast = NULL;
+  Epetra_OskiMultiVector* YCast = NULL;
+  Epetra_OskiMultiVector* TCast = NULL;
   bool XCreate = false;
   bool YCreate = false;
   bool TCreate = false;
@@ -556,8 +611,8 @@ int Epetra_OskiMatrix::MatPowMultiply (bool TransA, const Epetra_MultiVector& X,
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List){
-  int* ArgArray;
+int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
+  int* ArgArray = NULL;
   int Blocks;
   int Diags;
   char Number[10];
@@ -648,10 +703,16 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List){
         std::cerr << "The number of blocks is not set.\n";
 }
 
-int Epetra_OskiMatrix::SetHintMultiply(bool TransA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, int NumCalls, const Teuchos::ParameterList& List) {
+int Epetra_OskiMatrix::SetHintMultiply(bool TransA, 
+				       double Alpha, 
+				       const Epetra_OskiMultiVector& InVec, 
+				       double Beta, 
+				       const Epetra_OskiMultiVector& OutVec, 
+				       int NumCalls, 
+				       const Teuchos::ParameterList& List) {
   int ReturnVal;
-  oski_vecview_t InView;
-  oski_vecview_t OutView;
+  oski_vecview_t InView = NULL;
+  oski_vecview_t OutView = NULL;
   InView = InVec.Oski_View();
   OutView = OutVec.Oski_View();
   if(List.isParameter("tune"))
@@ -681,9 +742,13 @@ int Epetra_OskiMatrix::SetHintMultiply(bool TransA, double Alpha, const Epetra_O
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::SetHintSolve (bool TransA, double Alpha, const Epetra_OskiMultiVector Vector, int NumCalls, const Teuchos::ParameterList& List) {
+int Epetra_OskiMatrix::SetHintSolve(bool TransA,
+				    double Alpha, 
+				    const Epetra_OskiMultiVector& Vector, 
+				    int NumCalls, 
+				    const Teuchos::ParameterList& List) {
   int ReturnVal;
-  oski_vecview_t VecView;
+  oski_vecview_t VecView = NULL;
   VecView = Vector.Oski_View();
   if(List.isParameter("tune"))
     if(Teuchos::getParameter<bool>(List, "tune"))
@@ -706,10 +771,17 @@ int Epetra_OskiMatrix::SetHintSolve (bool TransA, double Alpha, const Epetra_Osk
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::SetHintMatTransMatMultiply (bool ATA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, const Epetra_OskiMultiVector Intermediate, int NumCalls, const Teuchos::ParameterList& List) {
+int Epetra_OskiMatrix::SetHintMatTransMatMultiply (bool ATA, 
+						   double Alpha, 
+						   const Epetra_OskiMultiVector& InVec, 
+						   double Beta, 
+						   const Epetra_OskiMultiVector& OutVec, 
+						   const Epetra_OskiMultiVector& Intermediate, 
+						   int NumCalls, 
+						   const Teuchos::ParameterList& List) {
   int ReturnVal;
-  oski_vecview_t InView;
-  oski_vecview_t OutView;
+  oski_vecview_t InView = NULL;
+  oski_vecview_t OutView = NULL;
   oski_vecview_t IntermediateView = NULL;
   InView = InVec.Oski_View();
   OutView = OutVec.Oski_View();
@@ -751,12 +823,22 @@ int Epetra_OskiMatrix::SetHintMatTransMatMultiply (bool ATA, double Alpha, const
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply (bool TransA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, double Omega, const Epetra_OskiMultiVector InVec2, double Zeta, const Epetra_OskiMultiVector OutVec2, int NumCalls, const Teuchos::ParameterList& List) {
+int Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply(bool TransA, 
+							  double Alpha, 
+							  const Epetra_OskiMultiVector& InVec, 
+							  double Beta, 
+							  const Epetra_OskiMultiVector& OutVec, 
+							  double Omega, 
+							  const Epetra_OskiMultiVector& InVec2, 
+							  double Zeta, 
+							  const Epetra_OskiMultiVector& OutVec2, 
+							  int NumCalls, 
+							  const Teuchos::ParameterList& List) {
   int ReturnVal;
-  oski_vecview_t InView;
-  oski_vecview_t OutView;
-  oski_vecview_t InView2;
-  oski_vecview_t OutView2;
+  oski_vecview_t InView = NULL;
+  oski_vecview_t OutView = NULL;
+  oski_vecview_t InView2 = NULL;
+  oski_vecview_t OutView2 = NULL;
   InView = InVec.Oski_View();
   OutView = OutVec.Oski_View();
   InView2 = InVec2.Oski_View();
@@ -800,10 +882,18 @@ int Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply (bool TransA, double A
   return ReturnVal;
 }
 
-int Epetra_OskiMatrix::SetHintPowMultiply(bool TransA, double Alpha, const Epetra_OskiMultiVector InVec, double Beta, const Epetra_OskiMultiVector OutVec, const Epetra_OskiMultiVector Intermediate, int Power, int NumCalls, const Teuchos::ParameterList& List) {
+int Epetra_OskiMatrix::SetHintPowMultiply(bool TransA, 
+					  double Alpha, 
+					  const Epetra_OskiMultiVector& InVec, 
+					  double Beta, 
+					  const Epetra_OskiMultiVector& OutVec, 
+					  const Epetra_OskiMultiVector& Intermediate, 
+					  int Power, 
+					  int NumCalls, 
+					  const Teuchos::ParameterList& List) {
   int ReturnVal;
-  oski_vecview_t InView;
-  oski_vecview_t OutView;
+  oski_vecview_t InView = NULL;
+  oski_vecview_t OutView = NULL;
   oski_vecview_t IntermediateView = NULL;
   InView = InVec.Oski_View();
   OutView = OutVec.Oski_View();
@@ -863,7 +953,7 @@ const Epetra_OskiMatrix& Epetra_OskiMatrix::ViewTransformedMat() const {
 }
 
 const Epetra_OskiPermutation& Epetra_OskiMatrix::ViewRowPermutation() const {
-  Epetra_OskiPermutation* RowPerm;
+  Epetra_OskiPermutation* RowPerm = NULL;
   RowPerm = new Epetra_OskiPermutation[1];
   (*RowPerm).ReplacePermutation(const_cast <oski_perm_t> (oski_ViewPermutedMatRowPerm(A_tunable_)));
   return *RowPerm;
@@ -877,7 +967,7 @@ const Epetra_OskiPermutation& Epetra_OskiMatrix::ViewColumnPermutation() const {
 }
 
 char* Epetra_OskiMatrix::GetMatrixTransforms() const {
-  char* ReturnVal;
+  char* ReturnVal = NULL;
   ReturnVal = oski_GetMatTransforms(A_tunable_);
   if(ReturnVal == NULL)
     std::cerr << "Error in GetMatrixTransforms\n";

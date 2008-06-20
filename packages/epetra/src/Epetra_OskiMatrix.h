@@ -63,7 +63,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	//! @name Constructors/Destructor
 	//@{
         //! Copy constructor.
-        Epetra_OskiMatrix (const Epetra_OskiMatrix& Source); //not in use for now
+        Epetra_OskiMatrix(const Epetra_OskiMatrix& Source); //not in use for now
  
 	//! Constructor creates an Epetra_OskiMatrix from an Epetra_CrsMatrix.
 	/*! \param Source (In) An Epetra_CrsMatrix that is to be wrapped as an Epetra_OskiMatrix.
@@ -74,10 +74,10 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 		   indices are zero or one based.
             \return Pointer to an Epetra_OskiMatrix.
 	*/
-	Epetra_OskiMatrix (const Epetra_CrsMatrix& Source, const Teuchos::ParameterList& List);
+	Epetra_OskiMatrix(const Epetra_CrsMatrix& Source, const Teuchos::ParameterList& List);
 	
 	//! Destructor	
-	virtual ~Epetra_OskiMatrix ();
+	virtual ~Epetra_OskiMatrix();
 	//@}
 
 	//! @name Extract/Replace Values
@@ -150,7 +150,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
     	    \pre Filled()==true
     	    \post Diagonal values have been replaced with the values of Diagonal.
 	*/
-	int ReplaceDiagonalValues (const Epetra_OskiVector& Diagonal);
+	int ReplaceDiagonalValues(const Epetra_OskiVector& Diagonal);
 	//@}	
 
 	//! @name Computational methods
@@ -167,11 +167,11 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-  	int Multiply (bool TransA,
-	    	      const Epetra_Vector& x, 
-		      Epetra_Vector& y,
-		      double Alpha = 1.0,
-		      double Beta = 0.0) const;
+  	int Multiply(bool TransA,
+	    	     const Epetra_Vector& x, 
+		     Epetra_Vector& y,
+		     double Alpha = 1.0,
+		     double Beta = 0.0) const;
 	
 	//! Performs a matrix multi-vector multiply of Y = Alpha*this^TransA*X + Beta*Y
 	/*! The multi-vectors X and Y can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
@@ -185,11 +185,11 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \pre Filled()==true
 	    \post Unchanged
 	*/
-  	int Multiply (bool TransA,
-   	    	      const Epetra_MultiVector& X, 
-	    	      Epetra_MultiVector& Y,
-		      double Alpha = 1.0,
-	    	      double Beta = 0.0) const;
+  	int Multiply(bool TransA,
+   	    	     const Epetra_MultiVector& X, 
+	    	     Epetra_MultiVector& Y,
+		     double Alpha = 1.0,
+	    	     double Beta = 0.0) const;
 
 	//! Performs a triangular solve of x = Alpha*(this^TransA)^-1*x where this is a triangular matrix.
 	/*! The vector x can be either be an Epetra_Vector or Epetra_OskiVector.
@@ -201,7 +201,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-        int Solve (bool TransA, Epetra_Vector& x, double Alpha = 1.0) const;
+        int Solve(bool TransA, Epetra_Vector& x, double Alpha = 1.0) const;
         
 	//! Performs a triangular solve of X = Alpha*(this^TransA)^-1*X where this is a triangular matrix.
 	/*! The multi-vector X can be either be an Epetra_MultiVector or Epetra_OskiMultiVector.
@@ -213,7 +213,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int Solve (bool TransA, Epetra_MultiVector& X, double Alpha = 1.0) const;
+	int Solve(bool TransA, Epetra_MultiVector& X, double Alpha = 1.0) const;
 
 	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
 	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.
@@ -233,12 +233,12 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MatTransMatMultiply (bool ATA, 
-				 const Epetra_Vector& x,
-				 Epetra_Vector& y,
-				 Epetra_Vector& t = NULL,
-				 double Alpha = 1.0,
-				 double Beta = 1.0) const;
+	int MatTransMatMultiply(bool ATA, 
+			 	const Epetra_Vector& x,
+				Epetra_Vector& y,
+				Epetra_Vector& t = NULL,
+				double Alpha = 1.0,
+				double Beta = 1.0) const;
 
 	//! Performs two matrix multi-vector multiplies of Y = Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X + Beta*Y.
 	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
@@ -258,12 +258,12 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MatTransMatMultiply (bool ATA, 
-				 const Epetra_MultiVector& X,
-				 Epetra_MultiVector& Y,
-				 Epetra_MultiVector& T = NULL,
-				 double Alpha = 1.0,
-				 double Beta = 1.0) const;
+	int MatTransMatMultiply(bool ATA, 
+				const Epetra_MultiVector& X,
+				Epetra_MultiVector& Y,
+				Epetra_MultiVector& T = NULL,
+				double Alpha = 1.0,
+				double Beta = 1.0) const;
 	
 	//! Performs the two matrix vector multiplies of y = Alpha*this*x + Beta*y and z = Omega*this^TransA*w + Zeta*z.
 	/*! The vectors x, y, w and z can be either Epetra_Vectors or Epetra_OskiVectors.
@@ -282,15 +282,15 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MultiplyAndMatTransMultiply (bool TransA,
-					 const Epetra_Vector& x,
-					 Epetra_Vector& y,
-					 const Epetra_Vector& w,
-					 Epetra_Vector& z,
-					 double Alpha = 1.0,
-					 double Beta = 0.0,
-					 double Omega = 1.0,
-					 double Zeta = 0.0) const;
+	int MultiplyAndMatTransMultiply(bool TransA,
+				 	const Epetra_Vector& x,
+					Epetra_Vector& y,
+					const Epetra_Vector& w,
+					Epetra_Vector& z,
+					double Alpha = 1.0,
+					double Beta = 0.0,
+					double Omega = 1.0,
+					double Zeta = 0.0) const;
 
 	//! Performs the two matrix multi-vector multiplies of Y = Alpha*this*X + Beta*Y and Z = Omega*this^TransA*W + Zeta*Z.
 	/*! The multi-vectors X, Y, W and Z can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
@@ -309,15 +309,15 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MultiplyAndMatTransMultiply (bool TransA,
-					 const Epetra_MultiVector& X,
-					 Epetra_MultiVector& Y,
-					 const Epetra_MultiVector& W,
-					 Epetra_MultiVector& Z,
-					 double Alpha = 1.0,
-					 double Beta = 0.0,
-					 double Omega = 1.0,
-					 double Zeta = 0.0) const;
+	int MultiplyAndMatTransMultiply(bool TransA,
+					const Epetra_MultiVector& X,
+					Epetra_MultiVector& Y,
+					const Epetra_MultiVector& W,
+					Epetra_MultiVector& Z,
+					double Alpha = 1.0,
+					double Beta = 0.0,
+					double Omega = 1.0,
+					double Zeta = 0.0) const;
 
 	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y
 	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
@@ -337,13 +337,13 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MatPowMultiply (bool TransA,
-			    const Epetra_Vector& x,
-			    Epetra_Vector& y,
- 			    int Power = 2,
-			    Epetra_MultiVector& T = NULL,
-			    double Alpha = 1.0,
-			    double Beta = 0.0) const;
+	int MatPowMultiply(bool TransA,
+			   const Epetra_Vector& x,
+			   Epetra_Vector& y,
+ 			   int Power = 2,
+			   Epetra_MultiVector& T = NULL,
+			   double Alpha = 1.0,
+			   double Beta = 0.0) const;
 
 	//! Performs a matrix multi-vector multiply of Y = Alpha*(this^TransA)^Power*X + Beta*Y
 	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.  
@@ -362,13 +362,13 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
             \pre Filled()==true
             \post Unchanged
 	*/
-	int MatPowMultiply (bool TransA,
-			    const Epetra_MultiVector& X,
-			    Epetra_MultiVector& Y,
- 			    int Power = 2,
-			    Epetra_MultiVector& T = NULL,
-			    double Alpha = 1.0,
-			    double Beta = 0.0) const;	
+	int MatPowMultiply(bool TransA,
+			   const Epetra_MultiVector& X,
+			   Epetra_MultiVector& Y,
+ 			   int Power = 2,
+			   Epetra_MultiVector& T = NULL,
+			   double Alpha = 1.0,
+			   double Beta = 0.0) const;	
 	//@}
 
 	//! @name Tuning
@@ -426,13 +426,13 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    ALWAYS_TUNE,
 	    ALWAYS_TUNE_AGGRESSIVELY
 	*/
-	int SetHintMultiply (bool TransA,
-			           double Alpha,
-			   	   const Epetra_OskiMultiVector InVec,
-			   	   double Beta,
-			   	   const Epetra_OskiMultiVector OutVec,
-			   	   int NumCalls,
-			   	   const Teuchos::ParameterList& List);
+	int SetHintMultiply(bool TransA,
+			    double Alpha,
+			    const Epetra_OskiMultiVector& InVec,
+			    double Beta,
+			    const Epetra_OskiMultiVector& OutVec,
+			    int NumCalls,
+			    const Teuchos::ParameterList& List);
 	
 	//! Workload hints for computing a triangular solve used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
 	/*! \param Trans (In) If Trans = true then the transpose of the matrix will be used in
@@ -453,11 +453,11 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    ALWAYS_TUNE,
 	    ALWAYS_TUNE_AGGRESSIVELY
 	*/
-	int SetHintSolve (bool TransA,
-		          double Alpha,
-		          const Epetra_OskiMultiVector Vector,
-		   	  int NumCalls,
-		   	  const Teuchos::ParameterList& List);
+	int SetHintSolve(bool TransA,
+		         double Alpha,
+		         const Epetra_OskiMultiVector& Vector,
+		   	 int NumCalls,
+		   	 const Teuchos::ParameterList& List);
 	
 	//! Workload hints for computing a two matrix-vector multiplies that are composed used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
 	/*! \param ATA (In) If ATA = true then this^T*this*x will be computed otherwise this*this^T*x will be.
@@ -489,14 +489,14 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    ALWAYS_TUNE,
 	    ALWAYS_TUNE_AGGRESSIVELY
 	*/
- 	int SetHintMatTransMatMultiply (bool ATA,
-			          	double Alpha,
-			   	   	const Epetra_OskiMultiVector InVec,
-			   	  	double Beta,
-					const Epetra_OskiMultiVector OutVec,
-					const Epetra_OskiMultiVector Intermediate,
-			   	  	int NumCalls,
-			   	  	const Teuchos::ParameterList& List);
+ 	int SetHintMatTransMatMultiply(bool ATA,
+			               double Alpha,
+			   	       const Epetra_OskiMultiVector& InVec,
+			   	       double Beta,
+				       const Epetra_OskiMultiVector& OutVec,
+				       const Epetra_OskiMultiVector& Intermediate,
+			   	       int NumCalls,
+			   	       const Teuchos::ParameterList& List);
 
 	//! Workload hints for computing two matrix-vector multiplies used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
 	/*! \param Trans (In) If Trans = true then the transpose of the matrix will be used in
@@ -532,17 +532,17 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    ALWAYS_TUNE,
 	    ALWAYS_TUNE_AGGRESSIVELY
 	*/
-	int SetHintMultiplyAndMatTransMultiply (bool TransA,
-			          		double Alpha,
-			   	  		const Epetra_OskiMultiVector InVec,
-			   	  		double Beta,
-			   	  		const Epetra_OskiMultiVector OutVec,
-			          		double Omega,
-			   	  		const Epetra_OskiMultiVector InVec2,
-			   	  		double Zeta,
-			   	  		const Epetra_OskiMultiVector OutVec2,
-			   	  		int NumCalls,
-			   	  		const Teuchos::ParameterList& List);
+	int SetHintMultiplyAndMatTransMultiply(bool TransA,
+			          	       double Alpha,
+			   	  	       const Epetra_OskiMultiVector& InVec,
+			   	  	       double Beta,
+			   	  	       const Epetra_OskiMultiVector& OutVec,
+			          	       double Omega,
+			   	  	       const Epetra_OskiMultiVector& InVec2,
+			   	  	       double Zeta,
+			   	  	       const Epetra_OskiMultiVector& OutVec2,
+			   	  	       int NumCalls,
+			   	  	       const Teuchos::ParameterList& List);
 
 	//! Workload hints for computing a matrix-vector multiply performed Power times used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
 	/*! \param Trans (In) If Trans = true then the transpose of the matrix will be used in
@@ -577,10 +577,10 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	*/
 	int SetHintPowMultiply(bool TransA,
 			       double Alpha,
-			       const Epetra_OskiMultiVector InVec,
+			       const Epetra_OskiMultiVector& InVec,
 			       double Beta,
-			       const Epetra_OskiMultiVector OutVec,
-			       const Epetra_OskiMultiVector Intermediate,
+			       const Epetra_OskiMultiVector& OutVec,
+			       const Epetra_OskiMultiVector& Intermediate,
 			       int Power,
 			       int NumCalls,
 			       const Teuchos::ParameterList& List);
