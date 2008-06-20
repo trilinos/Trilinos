@@ -95,6 +95,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(new_package, [Build new_package, a working packag
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(nox, [Build nox, a nonlinear solver package], NOX)
 
+TAC_ARG_ENABLE_FEATURE(phalanx, [Build phalanx, a nonlinear expression assembly kernel], PHALANX, no)
+
 TAC_ARG_ENABLE_FEATURE(pliris, [Build pliris, a dense direct solver package], PLIRIS, no)
 
 TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos, a Python wrapper package], PYTRILINOS, no)
@@ -154,6 +156,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_phalanx" != "Xno" ||
 	test "X$ac_cv_use_rbgen" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
@@ -494,7 +497,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_STOKHOS, test "X$BUILD_STOKHOS" != "Xno")
 
-if test "X$ac_cv_use_sacado" != "Xno"; then
+if test "X$ac_cv_use_sacado" != "Xno" ||
+   test "X$ac_cv_use_phalanx" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/sacado])
   BUILD_SACADO=yes
   if test "X$ac_cv_use_sacado_explicit" != "Xyes"; then
@@ -517,6 +521,17 @@ else
   BUILD_NOX=no
 fi
 AM_CONDITIONAL(BUILD_NOX, test "X$BUILD_NOX" != "Xno")
+
+if test "X$ac_cv_use_phalanx" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/phalanx])
+  BUILD_PHALANX=yes
+  if test "X$ac_cv_use_phalanx_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-phalanx"
+  fi
+else
+  BUILD_PHALANX=no
+fi
+AM_CONDITIONAL(BUILD_PHALANX, test "X$BUILD_PHALANX" != "Xno")
 
 if test "X$ac_cv_use_isorropia" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/isorropia])

@@ -696,6 +696,8 @@ BUILD_SACADO_TRUE
 BUILD_SACADO_FALSE
 BUILD_NOX_TRUE
 BUILD_NOX_FALSE
+BUILD_PHALANX_TRUE
+BUILD_PHALANX_FALSE
 BUILD_ISORROPIA_TRUE
 BUILD_ISORROPIA_FALSE
 BUILD_NEW_PACKAGE_TRUE
@@ -759,6 +761,7 @@ packages/ml
 packages/stokhos
 packages/sacado
 packages/nox
+packages/phalanx
 packages/isorropia
 packages/new_package
 packages/Sundance
@@ -1413,6 +1416,8 @@ Optional Features:
   --enable-nox            Build nox, a nonlinear solver package (default is
                           yes unless the --disable-default-packages option is
                           used)
+  --enable-phalanx        Build phalanx, a nonlinear expression assembly
+                          kernel (default is no)
   --enable-pliris         Build pliris, a dense direct solver package (default
                           is no)
   --enable-pytrilinos     Build PyTrilinos, a Python wrapper package (default
@@ -3217,6 +3222,34 @@ fi
 
 
 
+# Check whether --enable-phalanx was given.
+if test "${enable_phalanx+set}" = set; then
+  enableval=$enable_phalanx; ac_cv_use_phalanx=$enableval
+ac_cv_use_phalanx_explicit=$enableval
+else
+  ac_cv_use_phalanx=no
+ac_cv_use_phalanx_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use phalanx" >&5
+echo $ECHO_N "checking whether to use phalanx... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_phalanx" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PHALANX
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 # Check whether --enable-pliris was given.
 if test "${enable_pliris+set}" = set; then
   enableval=$enable_pliris; ac_cv_use_pliris=$enableval
@@ -3799,6 +3832,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_phalanx" != "Xno" ||
 	test "X$ac_cv_use_rbgen" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
@@ -4339,7 +4373,8 @@ else
 fi
 
 
-if test "X$ac_cv_use_sacado" != "Xno"; then
+if test "X$ac_cv_use_sacado" != "Xno" ||
+   test "X$ac_cv_use_phalanx" != "Xno"; then
   subdirs="$subdirs packages/sacado"
 
   BUILD_SACADO=yes
@@ -4376,6 +4411,25 @@ fi
 else
   BUILD_NOX_TRUE='#'
   BUILD_NOX_FALSE=
+fi
+
+
+if test "X$ac_cv_use_phalanx" != "Xno"; then
+  subdirs="$subdirs packages/phalanx"
+
+  BUILD_PHALANX=yes
+  if test "X$ac_cv_use_phalanx_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-phalanx"
+  fi
+else
+  BUILD_PHALANX=no
+fi
+ if test "X$BUILD_PHALANX" != "Xno"; then
+  BUILD_PHALANX_TRUE=
+  BUILD_PHALANX_FALSE='#'
+else
+  BUILD_PHALANX_TRUE='#'
+  BUILD_PHALANX_FALSE=
 fi
 
 
@@ -4972,6 +5026,13 @@ if test -z "${BUILD_NOX_TRUE}" && test -z "${BUILD_NOX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_NOX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PHALANX_TRUE}" && test -z "${BUILD_PHALANX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PHALANX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PHALANX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -5761,6 +5822,8 @@ BUILD_SACADO_TRUE!$BUILD_SACADO_TRUE$ac_delim
 BUILD_SACADO_FALSE!$BUILD_SACADO_FALSE$ac_delim
 BUILD_NOX_TRUE!$BUILD_NOX_TRUE$ac_delim
 BUILD_NOX_FALSE!$BUILD_NOX_FALSE$ac_delim
+BUILD_PHALANX_TRUE!$BUILD_PHALANX_TRUE$ac_delim
+BUILD_PHALANX_FALSE!$BUILD_PHALANX_FALSE$ac_delim
 BUILD_ISORROPIA_TRUE!$BUILD_ISORROPIA_TRUE$ac_delim
 BUILD_ISORROPIA_FALSE!$BUILD_ISORROPIA_FALSE$ac_delim
 BUILD_NEW_PACKAGE_TRUE!$BUILD_NEW_PACKAGE_TRUE$ac_delim
@@ -5795,7 +5858,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 52; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
