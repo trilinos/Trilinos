@@ -1,6 +1,4 @@
-#!/bin/sh
-# Used on gabriel.sandia.gov with gcc 3.4.6 (mpi, optimized)
-rm config.cache
+rm config.cache ; \
 ../configure \
 --cache-file=config.cache \
 --with-install="/usr/bin/install -p" \
