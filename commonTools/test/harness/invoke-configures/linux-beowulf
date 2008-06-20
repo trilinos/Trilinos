@@ -11,6 +11,7 @@ FFLAGS=-O3 \
 --enable-amesos-superlu \
 --enable-anasazi \
 --enable-aristos \
+--disable-aristos-examples \
 --enable-aztecoo \
 --enable-belos \
 --enable-claps \
