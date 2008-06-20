@@ -52,12 +52,14 @@ int main(int argc, char** argv)
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
   if (numProcs < 2){
-    std::cerr << "This test requires at least 2 processes" << std::endl;
-    exit(1);
+    if (localProc == 0)
+      std::cerr << "This test requires at least 2 processes" << std::endl;
+    exit(0);
   }
 #else
-  std::cerr << "This test requires Zoltan" << std::endl;
-  exit(1);
+  if (localProc == 0)
+    std::cerr << "This test requires Zoltan" << std::endl;
+  exit(0);
 #endif
 
   // if (getenv("DEBUGME")){
