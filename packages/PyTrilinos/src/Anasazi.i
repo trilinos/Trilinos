@@ -234,7 +234,7 @@ package:
 %teuchos_rcp_typemaps(Epetra_MultiVector)
 %teuchos_rcp_typemaps(Epetra_Operator)
 %teuchos_rcp_typemaps(Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >)
-%teuchos_rcp_typemaps(Anasazi::SortManager< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp_typemaps(Anasazi::SortManager< double >)
 %teuchos_rcp_typemaps(Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >)
 %teuchos_rcp_typemaps(Anasazi::OrthoManager< double, Epetra_MultiVector >)
 %teuchos_rcp_typemaps(Anasazi::MatOrthoManager< double, Epetra_MultiVector >)
@@ -467,9 +467,9 @@ Anasazi::MultiVecTraits< double,
 			 Epetra_MultiVector >::CloneView(const Epetra_MultiVector &,
 							 const std::vector< int > &);
 %template (SortManagerEpetra)
-  Anasazi::SortManager< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::SortManager< double >;
 %template (BasicSortEpetra)
-  Anasazi::BasicSort< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::BasicSort< double >;
 %template (MultiVecTraitsEpetra)
   Anasazi::MultiVecTraits< double, Epetra_MultiVector >;
 %template (OperatorTraitsEpetra)
