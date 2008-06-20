@@ -1,0 +1,18 @@
+#
+# Phalanx Test Definitions File
+#
+
+(FRAMEWORK,INSTALL,CHECKIN,ALL) {
+    DIRS = Allocator;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+# NOX Epetra examples
+(FRAMEWORK,INSTALL,CHECKIN,ALL) {
+    DIRS = ../examples/EnergyFlux;
+    EXIT-STATUS = STRING-COMPARISON(Run has completed successfully!);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

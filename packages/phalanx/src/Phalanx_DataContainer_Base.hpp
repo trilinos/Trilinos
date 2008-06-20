@@ -1,0 +1,38 @@
+#ifndef PHX_DATA_CONTAINER_BASE_HPP
+#define PHX_DATA_CONTAINER_BASE_HPP
+
+#include <typeinfo>
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_FieldEvaluator_Manager.hpp"
+
+namespace PHX {
+
+  template<typename Traits>
+  class DataContainerBase {
+
+  public:
+
+    DataContainerBase();
+
+    virtual ~DataContainerBase();
+
+    virtual void allocateField(const PHX::FieldTag& v,
+			       std::size_t max_num_cells,
+			       typename Traits::Allocator& a) = 0;
+    
+    virtual const std::type_info& getAlgebraicTypeInfo() const = 0; 
+
+    virtual void print(std::ostream& os) const = 0;
+    
+  };
+
+  template<typename Traits>
+  std::ostream& 
+  operator<<(std::ostream& os, 
+	     const PHX::DataContainerBase<Traits>& dc);
+
+}
+
+#include "Phalanx_DataContainer_Base_Def.hpp"
+
+#endif 

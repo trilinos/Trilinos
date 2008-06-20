@@ -1,0 +1,5 @@
+#/usr/bin/tcsh
+foreach f (*.hpp *.cpp)
+  echo $f
+  perl ../../../maintenance/string-replace.pl 'include "PHX_' 'include "Phalanx_' $f
+end
