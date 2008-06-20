@@ -34,7 +34,14 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #ifdef HAVE_EPETRA
 
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
+
 #include <Epetra_Map.h>
+#include <Epetra_Vector.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 
@@ -123,6 +130,54 @@ int fill_graph(Epetra_CrsGraph& graph,
   err = graph.FillComplete();
   return(err);
 }
+
+// Return true if multiplication is successful, false otherwise
+
+bool test_matrix_vector_multiply(Epetra_CrsMatrix &A)
+{
+#ifdef HAVE_MPI
+  const Epetra_MpiComm &comm = dynamic_cast<const Epetra_MpiComm &>(A.Comm());
+#else
+  const Epetra_SerialComm &comm = dynamic_cast<const Epetra_SerialComm &>(A.Comm());
+#endif
+  
+  // Want to perform Ax = y, so create x and y.
+
+  Epetra_Map xmap(A.NumGlobalCols(), 0, comm);
+
+  Epetra_Map ymap(A.RowMap());
+
+  int myLen = xmap.NumMyElements();
+  double *val = NULL;
+  if (myLen > 0){
+    val = new double [myLen];
+    for (int i=0; i < myLen; i+=2){
+      val[i] = 1.0;
+    }
+    for (int i=1; i < myLen; i+=2){
+      val[i] = -1.0;
+    }
+  }
+  Epetra_Vector x(Copy, xmap, val);
+
+  if (val){
+    delete [] val;
+  }
+
+  Epetra_Vector y(ymap, true);
+
+  // See if Ax=y completes without error
+
+  int fail = A.Multiply(false, x, y);
+
+  if (!fail){
+    // Try again with A transpose
+    fail = A.Multiply(true, y, x);
+  }
+
+  return (!fail);
+}
+
 }//namespace ispatest
 
 #endif //HAVE_EPETRA

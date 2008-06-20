@@ -59,6 +59,12 @@ int fill_matrix(Epetra_CrsMatrix& matrix,
 int fill_graph(Epetra_CrsGraph& graph,
                 int numNonzerosPerRow,
                 bool verbose);
+
+/** Verify that a matrix is a valid Epetra_CrsMatrix by attempting
+  to multiply with it.  Return true if successful, false otherwise.
+*/
+bool test_matrix_vector_multiply(Epetra_CrsMatrix &A);
+
 }//namespace ispatest
 
 #endif //HAVE_EPTERA
