@@ -150,7 +150,7 @@ public:
     return Zoltan_Order( ZZ_Ptr,
                          &num_gid_entries, &num_lid_entries,
                          num_objs, global_ids, local_ids,
-                         rank, iperm, NULL );
+                         rank, iperm);
   }
   int Color (int &num_gid_entries,
              int &num_lid_entries,
