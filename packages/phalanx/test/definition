@@ -3,15 +3,14 @@
 #
 
 (FRAMEWORK,INSTALL,CHECKIN,ALL) {
-    DIRS = Allocator;
+    DIRS = Allocators;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
 
-# NOX Epetra examples
 (FRAMEWORK,INSTALL,CHECKIN,ALL) {
-    DIRS = ../examples/EnergyFlux;
+    DIRS = ../example/EnergyFlux;
     EXIT-STATUS = STRING-COMPARISON(Run has completed successfully!);
     ARGS = -v;
     COMM = SERIAL, MPI;
