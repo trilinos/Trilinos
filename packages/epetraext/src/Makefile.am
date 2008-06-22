@@ -56,7 +56,7 @@ EXTRA_TRANSFORM_H = \
      $(srcdir)/transform/EpetraExt_Transform.h \
      $(srcdir)/transform/EpetraExt_Transform_Composite.h \
      $(srcdir)/transform/EpetraExt_Permutation.h \
-     $(srcdir)/transform/EpetraExt_Permutation.cpp \
+     $(srcdir)/transform/EpetraExt_Permutation_impl.h \
      $(srcdir)/transform/EpetraExt_LPTrans_From_GraphTrans.h \
      $(srcdir)/transform/EpetraExt_LPTrans_From_MatrixTrans.h \
      $(srcdir)/transform/EpetraExt_View_CrsGraph.h \

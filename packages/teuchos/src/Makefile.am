@@ -172,6 +172,7 @@ CORE = \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \

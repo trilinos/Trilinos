@@ -1,4 +1,5 @@
 #include "EpetraExt_MultiPointModelEvaluator.h"
+#include "Epetra_Map.h"
 
 EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,

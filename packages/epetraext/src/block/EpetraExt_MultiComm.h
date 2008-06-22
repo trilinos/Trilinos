@@ -82,51 +82,51 @@ class MultiComm: public Epetra_Comm {
 
   //! Need implementations of pure virtual Epetra_Comm methods.
   //  This avoids diamond inheritance for MultiMpiComm
-  virtual Epetra_Comm * Clone() const  { myComm->Clone(); };
+  virtual Epetra_Comm * Clone() const  { return myComm->Clone(); };
   virtual void Barrier() const { myComm->Barrier(); };
   virtual int Broadcast(double * MyVals, int Count, int Root) const
-          { myComm->Broadcast( MyVals, Count, Root); };
+          { return myComm->Broadcast( MyVals, Count, Root); };
   virtual int Broadcast(int * MyVals, int Count, int Root) const
-          { myComm->Broadcast( MyVals, Count, Root); };
+          { return myComm->Broadcast( MyVals, Count, Root); };
   virtual int Broadcast(long * MyVals, int Count, int Root) const
-          { myComm->Broadcast( MyVals, Count, Root); };
+          { return myComm->Broadcast( MyVals, Count, Root); };
   virtual int Broadcast(char * MyVals, int Count, int Root) const
-          { myComm->Broadcast( MyVals, Count, Root); };
+          { return myComm->Broadcast( MyVals, Count, Root); };
   virtual int GatherAll(double * MyVals, double * AllVals, int Count) const
-          { myComm->GatherAll( MyVals,  AllVals, Count); };
+          { return myComm->GatherAll( MyVals,  AllVals, Count); };
   virtual int GatherAll(int * MyVals, int * AllVals, int Count) const
-          { myComm->GatherAll( MyVals, AllVals, Count); };
+          { return myComm->GatherAll( MyVals, AllVals, Count); };
   virtual int GatherAll(long * MyVals, long * AllVals, int Count) const
-          { myComm->GatherAll( MyVals,  AllVals, Count); };
+          { return myComm->GatherAll( MyVals,  AllVals, Count); };
   virtual int SumAll(double * PartialSums, double * GlobalSums, int Count) const
-          { myComm->SumAll( PartialSums,  GlobalSums, Count); };
+          { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
   virtual int SumAll(int * PartialSums, int * GlobalSums, int Count) const
-          { myComm->SumAll( PartialSums,  GlobalSums, Count); };
+          { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
   virtual int SumAll(long * PartialSums, long * GlobalSums, int Count) const
-          { myComm->SumAll( PartialSums,  GlobalSums, Count); };
+          { return myComm->SumAll( PartialSums,  GlobalSums, Count); };
   virtual int MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const
-          { myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
+          { return myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
   virtual int MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const
-          { myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
+          { return myComm->MaxAll( PartialMaxs,  GlobalMaxs, Count); };
   virtual int MaxAll(long * PartialMaxs, long * GlobalMaxs, int Count) const
-          { myComm->MaxAll( PartialMaxs, GlobalMaxs, Count); };
+          { return myComm->MaxAll( PartialMaxs, GlobalMaxs, Count); };
   virtual int MinAll(double * PartialMins, double * GlobalMins, int Count) const
-          { myComm->MinAll( PartialMins, GlobalMins, Count); };
+          { return myComm->MinAll( PartialMins, GlobalMins, Count); };
   virtual int MinAll(int * PartialMins, int * GlobalMins, int Count) const
-          { myComm->MinAll( PartialMins, GlobalMins, Count); };
+          { return myComm->MinAll( PartialMins, GlobalMins, Count); };
   virtual int MinAll(long * PartialMins, long * GlobalMins, int Count)const
-          { myComm->MinAll( PartialMins, GlobalMins, Count); };
+          { return myComm->MinAll( PartialMins, GlobalMins, Count); };
   virtual int ScanSum(double * MyVals, double * ScanSums, int Count)const
-          { myComm->ScanSum( MyVals,  ScanSums, Count); };
+          { return myComm->ScanSum( MyVals,  ScanSums, Count); };
   virtual int ScanSum(int * MyVals, int * ScanSums, int Count) const
-          { myComm->ScanSum(MyVals, ScanSums, Count); };
+          { return myComm->ScanSum(MyVals, ScanSums, Count); };
   virtual int ScanSum(long * MyVals, long * ScanSums, int Count) const
-          { myComm->ScanSum(MyVals, ScanSums, Count); };
-  virtual int MyPID() const { myComm->MyPID(); };
-  virtual int NumProc() const { myComm->NumProc(); };
-  virtual Epetra_Distributor * CreateDistributor() const { myComm->CreateDistributor(); };
+          { return myComm->ScanSum(MyVals, ScanSums, Count); };
+  virtual int MyPID() const { return myComm->MyPID(); };
+  virtual int NumProc() const { return myComm->NumProc(); };
+  virtual Epetra_Distributor * CreateDistributor() const { return myComm->CreateDistributor(); };
   virtual Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const 
-          { myComm->CreateDirectory(Map); };
+          { return myComm->CreateDirectory(Map); };
   virtual void PrintInfo(ostream & os) const { myComm->PrintInfo( os); };
 	
  protected:

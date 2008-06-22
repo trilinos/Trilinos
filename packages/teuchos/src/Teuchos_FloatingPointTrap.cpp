@@ -1,3 +1,4 @@
+#if 0 // Disabled!
 // @HEADER
 // ***********************************************************************
 // 
@@ -413,3 +414,5 @@ static void ieee0(bool enableTrap)
 }
 
 #endif // IEEE0_done
+
+#endif // 0 // Disabled!

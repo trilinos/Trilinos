@@ -119,6 +119,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp $(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp $(srcdir)/Teuchos_MPISession.cpp \
@@ -170,6 +171,7 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) Teuchos_CTimeMonitor.$(OBJEXT) \
 	Teuchos_CommandLineProcessor.$(OBJEXT) \
 	Teuchos_CompObject.$(OBJEXT) Teuchos_Describable.$(OBJEXT) \
 	Teuchos_ErrorPolling.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
+	Teuchos_FloatingPointTrap.$(OBJEXT) \
 	Teuchos_GlobalMPISession.$(OBJEXT) \
 	Teuchos_LabeledObject.$(OBJEXT) Teuchos_MPIComm.$(OBJEXT) \
 	Teuchos_MPISession.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
@@ -621,6 +623,7 @@ CORE = \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
@@ -929,6 +932,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ExpatHandlerAdapter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_FileInputSource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_FileInputStream.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_FloatingPointTrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Flops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_GlobalMPISession.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_HashUtils.Po@am__quote@
@@ -1090,6 +1094,20 @@ Teuchos_Flops.obj: $(srcdir)/Teuchos_Flops.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_Flops.cpp' object='Teuchos_Flops.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Flops.obj `if test -f '$(srcdir)/Teuchos_Flops.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Flops.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Flops.cpp'; fi`
+
+Teuchos_FloatingPointTrap.o: $(srcdir)/Teuchos_FloatingPointTrap.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_FloatingPointTrap.o -MD -MP -MF $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo -c -o Teuchos_FloatingPointTrap.o `test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_FloatingPointTrap.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo $(DEPDIR)/Teuchos_FloatingPointTrap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_FloatingPointTrap.cpp' object='Teuchos_FloatingPointTrap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_FloatingPointTrap.o `test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_FloatingPointTrap.cpp
+
+Teuchos_FloatingPointTrap.obj: $(srcdir)/Teuchos_FloatingPointTrap.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_FloatingPointTrap.obj -MD -MP -MF $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo -c -o Teuchos_FloatingPointTrap.obj `if test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_FloatingPointTrap.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_FloatingPointTrap.Tpo $(DEPDIR)/Teuchos_FloatingPointTrap.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_FloatingPointTrap.cpp' object='Teuchos_FloatingPointTrap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_FloatingPointTrap.obj `if test -f '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_FloatingPointTrap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_FloatingPointTrap.cpp'; fi`
 
 Teuchos_GlobalMPISession.o: $(srcdir)/Teuchos_GlobalMPISession.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_GlobalMPISession.o -MD -MP -MF $(DEPDIR)/Teuchos_GlobalMPISession.Tpo -c -o Teuchos_GlobalMPISession.o `test -f '$(srcdir)/Teuchos_GlobalMPISession.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_GlobalMPISession.cpp
