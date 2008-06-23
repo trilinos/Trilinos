@@ -698,18 +698,14 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      const Epetra_MultiVector& X,
 				      Epetra_MultiVector& Y, 
-				      Epetra_MultiVector& T, 
 				      int Power, 
 				      double Alpha, 
 				      double Beta) const {
   Epetra_OskiMultiVector* XCast = NULL;
   Epetra_OskiMultiVector* YCast = NULL;
-  Epetra_OskiMultiVector* TCast = NULL;
   bool XCreate = false;
   bool YCreate = false;
-  bool TCreate = false;
   int ReturnVal;
-  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
   XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
   YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
   if (XCast == NULL) {
@@ -720,22 +716,16 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
     YCast = new Epetra_OskiMultiVector(Y);
     YCreate = true;
   }
-  if (TCast == NULL) {
-    TCast = new Epetra_OskiMultiVector(T);
-    TCreate = true;
-  }
   if(TransA)
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), NULL);
   else
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), NULL);
   if(ReturnVal)
     std::cerr << "OskiVector matpow multiply error\n";
   if(XCreate)
     delete XCast;
   if(YCreate)
     delete YCast;
-  if(TCreate)
-    delete TCast;
   return ReturnVal;
 }
 
@@ -748,37 +738,38 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
   char Row[20];
   char Col[20];
   char Diag[20];
+  int ReturnVal = 0;
   if(List.isParameter("randompattern"))
     if(Teuchos::getParameter<bool>(List, "randompattern"))
-      if(oski_SetHint(A_tunable_, HINT_RANDOM_PATTERN))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_RANDOM_PATTERN))
         std::cerr << "Error setting hint random pattern.\n";
   if(List.isParameter("correlatedpattern"))
     if(Teuchos::getParameter<bool>(List, "correlatedpattern"))
-      if(oski_SetHint(A_tunable_, HINT_CORREL_PATTERN))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_CORREL_PATTERN))
         std::cerr << "Error setting hint correlated pattern.\n";
   if(List.isParameter("symmetricpattern"))
     if(Teuchos::getParameter<bool>(List, "symmetricpattern"))
-      if(oski_SetHint(A_tunable_, HINT_SYMM_PATTERN))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_SYMM_PATTERN))
         std::cerr << "Error setting hint symmetric pattern.\n";
   if(List.isParameter("nonsymmetricpattern"))
     if(Teuchos::getParameter<bool>(List, "nonsymmetricpattern"))
-      if(oski_SetHint(A_tunable_, HINT_NONSYMM_PATTERN))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_NONSYMM_PATTERN))
         std::cerr << "Error setting hint nonsymmetric pattern.\n";
   if(List.isParameter("alignedblocks"))
     if(Teuchos::getParameter<bool>(List, "alignedblocks"))
-      if(oski_SetHint(A_tunable_, HINT_ALIGNED_BLOCKS))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_ALIGNED_BLOCKS))
         std::cerr << "Error setting hint aligned blocks.\n";
   if(List.isParameter("unalignedblocks"))
     if(Teuchos::getParameter<bool>(List, "unalignedblocks"))
-      if(oski_SetHint(A_tunable_, HINT_UNALIGNED_BLOCKS))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_UNALIGNED_BLOCKS))
         std::cerr << "Error setting hint unaligned blocks.\n";
   if(List.isParameter("nodiags"))
     if(Teuchos::getParameter<bool>(List, "nodiags"))
-      if(oski_SetHint(A_tunable_, HINT_NO_DIAGS))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_NO_DIAGS))
         std::cerr << "Error setting hint no diags.\n";
   if(List.isParameter("noblocks"))
     if(Teuchos::getParameter<bool>(List, "noblocks"))
-      if(oski_SetHint(A_tunable_, HINT_NO_BLOCKS))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_NO_BLOCKS))
         std::cerr << "Error setting hint no blocks.\n";
   if(List.isParameter("singleblocksize"))
     if(Teuchos::getParameter<bool>(List, "singleblocksize")) {
@@ -787,7 +778,7 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
         ArgArray[0] = Teuchos::getParameter<int>(List, "row");
       if(List.isParameter("col"))
         ArgArray[1] = Teuchos::getParameter<int>(List, "col");
-      if(oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray))
+      if(ReturnVal = oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray))
         std::cerr << "Error setting hint no blocks.\n";
     }
   if(List.isParameter("multipleblocksize"))
@@ -807,7 +798,7 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
           if(List.isParameter(Col))
             ArgArray[i*2 + 2] = Teuchos::getParameter<int>(List, Col);
         }
-        if(oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
+        if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
           std::cerr << "Error setting hint no blocks.\n";
       }
       else
@@ -825,11 +816,12 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
           if(List.isParameter(Diag))
             ArgArray[i + 1] = Teuchos::getParameter<int>(List, Diag);
         }
-        if(oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
+        if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
           std::cerr << "Error setting hint no blocks.\n";
       }
       else
         std::cerr << "The number of blocks is not set.\n";
+  return ReturnVal;
 }
 
 int Epetra_OskiMatrix::SetHintMultiply(bool TransA, 
@@ -1078,7 +1070,7 @@ const Epetra_OskiMatrix& Epetra_OskiMatrix::ViewTransformedMat() const {
   //might need a more efficient way to do this
   Epetra_OskiMatrix Transformed(*this); //should be some lightweight copy
   Transformed.A_tunable_ = const_cast <oski_matrix_t> (oski_ViewPermutedMat(A_tunable_));
-  return Transformed;
+  return *Transformed;
 }
 
 const Epetra_OskiPermutation& Epetra_OskiMatrix::ViewRowPermutation() const {
