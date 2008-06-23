@@ -633,6 +633,8 @@ partial-clean:
 	find . -name "*.dat" -exec rm {} \; 
 	find . -name "*.m" -exec rm {} \; 
 	find . -name "*.grid" -exec rm {} \; 
+	find . -name "*.txt" -exec rm {} \; 
+	find . -name "*.evaluateCriteria" -exec rm {} \; 
 
 # 2007/07/18: rabartl: Above, a simple script makeall has to be used since a
 # for loop with shell variables is employed.  I tried to put the for look
