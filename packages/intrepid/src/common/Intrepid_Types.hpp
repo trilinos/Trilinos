@@ -119,7 +119,7 @@ namespace Intrepid {
   static const double INTREPID_TOL       = 10.0* INTREPID_THRESHOLD;
   
   // Used as tolerance in testing FIAT elements
-  static const double INTREPID_FIAT_TOL  = 10.0 * INTREPID_TOL;
+  static const double INTREPID_FIAT_TOL  = 100.0 * INTREPID_TOL;
 
   /** \enum  Intrepid::EStatus
       \brief Indicates the status of an object.
