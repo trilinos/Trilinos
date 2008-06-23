@@ -224,9 +224,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \param x (In) The vector the matrix is multiplied by.
 	    \param y (In/Out) The vector where the calculation result is stored.
 	    \param t (Out) The vector where the result of the this*x is stored if 
-		   TransA = true and this^T*x is stored otherwise.  The result is 
-		   stored if t is a real vector.  If it is NULL then this
-		   partial result is not stored.
+		   TransA = true and this^T*x is stored otherwise.
 	    \param Alpha (In) A scalar constant used to scale x.
 	    \param Beta  (In) A scalar constant used to scale y.
 	    \return Integer error code, set to 0 if successful.
@@ -236,7 +234,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	int MatTransMatMultiply(bool ATA, 
 			 	const Epetra_Vector& x,
 				Epetra_Vector& y,
-				Epetra_Vector& t = NULL,
+				Epetra_Vector& t,
 				double Alpha = 1.0,
 				double Beta = 1.0) const;
 
@@ -249,9 +247,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \param X (In) The vector the matrix is multiplied by.
 	    \param Y (In/Out) The vector where the calculation result is stored.
 	    \param T (Out) The multi-vector where the result of the this*X is stored if 
-		   TransA = true and this^T*X is stored otherwise.  The result is 
-		   stored if T is a real multi-vector.  If it is NULL then this
-		   partial result is not stored.
+		   TransA = true and this^T*X is stored otherwise.
 	    \param Alpha (In) A scalar constant used to scale X.
 	    \param Beta  (In) A scalar constant used to scale Y.
 	    \return Integer error code, set to 0 if successful.
@@ -261,7 +257,47 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	int MatTransMatMultiply(bool ATA, 
 				const Epetra_MultiVector& X,
 				Epetra_MultiVector& Y,
-				Epetra_MultiVector& T = NULL,
+				Epetra_MultiVector& T,
+				double Alpha = 1.0,
+				double Beta = 1.0) const;
+	
+	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
+	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.
+	    This composed routine is most commonly used in linear least squares and
+	    bidiagonalization methods.
+	    \param ATA (In) If TransA = TRUE then compute this^T*this*x otherwise compute 
+		   this*this^T*x.
+	    \param x (In) The vector the matrix is multiplied by.
+	    \param y (In/Out) The vector where the calculation result is stored.
+	    \param Alpha (In) A scalar constant used to scale x.
+	    \param Beta  (In) A scalar constant used to scale y.
+	    \return Integer error code, set to 0 if successful.
+            \pre Filled()==true
+            \post Unchanged
+	*/
+	int MatTransMatMultiply(bool ATA, 
+			 	const Epetra_Vector& x,
+				Epetra_Vector& y,
+				double Alpha = 1.0,
+				double Beta = 1.0) const;
+
+	//! Performs two matrix multi-vector multiplies of Y = Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X + Beta*Y.
+	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
+	    This composed routine is most commonly used in linear least squares and
+	    bidiagonalization methods.
+	    \param ATA (In) If TransA = TRUE then compute this^T*this*X otherwise compute 
+		   this*this^T*X.
+	    \param X (In) The vector the matrix is multiplied by.
+	    \param Y (In/Out) The vector where the calculation result is stored.
+	    \param Alpha (In) A scalar constant used to scale X.
+	    \param Beta  (In) A scalar constant used to scale Y.
+	    \return Integer error code, set to 0 if successful.
+            \pre Filled()==true
+            \post Unchanged
+	*/
+	int MatTransMatMultiply(bool ATA, 
+				const Epetra_MultiVector& X,
+				Epetra_MultiVector& Y,
 				double Alpha = 1.0,
 				double Beta = 1.0) const;
 	
@@ -327,10 +363,55 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	           computing the product.
 	    \param x (In) The vector the matrix is multiplied by.
 	    \param y (In/Out) The vector where the calculation result is stored.
-	    \param Power (In) The power to raise the matrix to in the calculation.
 	    \param T (Out) The multi-vector where the result of each subsequent multiplication 
-		   this*x ... this^(Power-1)*x is stored.  If it is NULL then these
-		   partial results are not stored.
+		   this*x ... this^(Power-1)*x is stored. 
+	    \param Power (In) The power to raise the matrix to in the calculation.
+	    \param Alpha (In) A scalar constant used to scale x.
+	    \param Beta  (In) A scalar constant used to scale y.
+	    \return Integer error code, set to 0 if successful.
+            \pre Filled()==true
+            \post Unchanged
+	*/
+	int MatPowMultiply(bool TransA,
+			   const Epetra_Vector& x,
+			   Epetra_Vector& y,
+			   Epetra_MultiVector& T,
+ 			   int Power = 2,
+			   double Alpha = 1.0,
+			   double Beta = 0.0) const;
+
+	//! Performs a matrix multi-vector multiply of Y = Alpha*(this^TransA)^Power*X + Beta*Y
+	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.  
+	    This composed routine is used in power and S-step methods.
+	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
+	           computing the product.
+	    \param X (In) The multi-vector the matrix is multiplied by.
+	    \param Y (In/Out) The multi-vector where the calculation result is stored.
+	    \param T (Out) The multi-vector where the result of each subsequent multiplication 
+		   this*X ... this^(Power-1)*X is stored.
+	    \param Power (In) The power to raise the matrix to in the calculation.
+	    \param Alpha (In) A scalar constant used to scale X.
+	    \param Beta  (In) A scalar constant used to scale Y.
+	    \return Integer error code, set to 0 if successful.
+            \pre Filled()==true
+            \post Unchanged
+	*/
+	int MatPowMultiply(bool TransA,
+			   const Epetra_MultiVector& X,
+			   Epetra_MultiVector& Y,
+			   Epetra_MultiVector& T,
+ 			   int Power = 2,
+			   double Alpha = 1.0,
+			   double Beta = 0.0) const;
+	
+	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y
+	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
+	    This composed routine is used in power and S-step methods.
+	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
+	           computing the product.
+	    \param x (In) The vector the matrix is multiplied by.
+	    \param y (In/Out) The vector where the calculation result is stored.
+	    \param Power (In) The power to raise the matrix to in the calculation.
 	    \param Alpha (In) A scalar constant used to scale x.
 	    \param Beta  (In) A scalar constant used to scale y.
 	    \return Integer error code, set to 0 if successful.
@@ -341,7 +422,6 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			   const Epetra_Vector& x,
 			   Epetra_Vector& y,
  			   int Power = 2,
-			   Epetra_MultiVector& T = NULL,
 			   double Alpha = 1.0,
 			   double Beta = 0.0) const;
 
@@ -353,9 +433,6 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \param X (In) The multi-vector the matrix is multiplied by.
 	    \param Y (In/Out) The multi-vector where the calculation result is stored.
 	    \param Power (In) The power to raise the matrix to in the calculation.
-	    \param T (Out) The multi-vector where the result of each subsequent multiplication 
-		   this*X ... this^(Power-1)*X is stored.  If it is NULL then these
-		   partial results are not stored.
 	    \param Alpha (In) A scalar constant used to scale X.
 	    \param Beta  (In) A scalar constant used to scale Y.
 	    \return Integer error code, set to 0 if successful.
@@ -366,7 +443,6 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			   const Epetra_MultiVector& X,
 			   Epetra_MultiVector& Y,
  			   int Power = 2,
-			   Epetra_MultiVector& T = NULL,
 			   double Alpha = 1.0,
 			   double Beta = 0.0) const;	
 	//@}

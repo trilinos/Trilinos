@@ -324,8 +324,7 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
   bool yCreate = false;
   bool tCreate = false;
   int ReturnVal;
-  if((&t) != NULL)
-    tCast = dynamic_cast<Epetra_OskiVector*>(&t);
+  tCast = dynamic_cast<Epetra_OskiVector*>(&t);
   xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
   yCast = dynamic_cast<Epetra_OskiVector*>(&y);
   if (xCast == NULL) {
@@ -336,26 +335,22 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
     yCast = new Epetra_OskiVector(y);
     yCreate = true;
   }
-  if (tCast == NULL && (&t) != NULL) {
+  if (tCast == NULL) {
     tCast = new Epetra_OskiVector(t);
     tCreate = true;
   }
-  if((&t) == NULL)
-    if(ATA)
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), INVALID_VEC);
-    else
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), INVALID_VEC);
+  if(ATA)
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
   else
-    if(ATA)
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
-    else
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
   if(ReturnVal)
     std::cerr << "OskiVector MatTransMatMultiply error\n";
   if(xCreate)
     delete xCast;
   if(yCreate)
     delete yCast;
+  if(tCreate)
+    delete tCast;
   return ReturnVal;
 }
 
@@ -372,8 +367,7 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
   bool YCreate = false;
   bool TCreate = false;
   int ReturnVal;
-  if((&T) != NULL)
-    TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
+  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
   XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
   YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
   if (XCast == NULL) {
@@ -388,16 +382,78 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
     TCast = new Epetra_OskiMultiVector(T);
     TCreate = true;
   }
-  if((&T) == NULL)
-    if(ATA)
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), INVALID_VEC);
-    else
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), INVALID_VEC);
+  if(ATA)
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
   else
-    if(ATA)
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
-    else
-      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiMultiVector MatTransMatMultiply error\n";
+  if(TCreate)
+    delete TCast;
+  if(XCreate)
+    delete XCast;
+  if(YCreate)
+    delete YCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, 
+					   const Epetra_Vector& x, 
+					   Epetra_Vector& y, 
+					   double Alpha, 
+					   double Beta) const {
+  Epetra_OskiVector* xCast = NULL;
+  Epetra_OskiVector* yCast = NULL;
+  bool xCreate = false;
+  bool yCreate = false;
+  int ReturnVal;
+  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
+  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
+  if (xCast == NULL) {
+    xCast = new Epetra_OskiVector(x);
+    xCreate = true;
+  }
+  if (yCast == NULL) {
+    yCast = new Epetra_OskiVector(y);
+    yCreate = true;
+  }
+  if(ATA)
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), INVALID_VEC);
+  else
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), INVALID_VEC);
+  if(ReturnVal)
+    std::cerr << "OskiVector MatTransMatMultiply error\n";
+  if(xCreate)
+    delete xCast;
+  if(yCreate)
+    delete yCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, 
+					   const Epetra_MultiVector& X, 
+					   Epetra_MultiVector& Y, 
+					   double Alpha, 
+				           double Beta) const {
+  Epetra_OskiMultiVector* XCast = NULL;
+  Epetra_OskiMultiVector* YCast = NULL;
+  bool XCreate = false;
+  bool YCreate = false;
+  int ReturnVal;
+  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
+  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
+  if (XCast == NULL) {
+    XCast = new Epetra_OskiMultiVector(X);
+    XCreate = true;
+  }
+  if (YCast == NULL) {
+    YCast = new Epetra_OskiMultiVector(Y);
+    YCreate = true;
+  }
+  if(ATA)
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), INVALID_VEC);
+  else
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), INVALID_VEC);
   if(ReturnVal)
     std::cerr << "OskiMultiVector MatTransMatMultiply error\n";
   if(XCreate)
@@ -520,8 +576,8 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
 int Epetra_OskiMatrix::MatPowMultiply(bool TransA, 
 				      const Epetra_Vector& x, 
 				      Epetra_Vector& y, 
-				      int Power,
  				      Epetra_MultiVector& T, 
+				      int Power,
 				      double Alpha, 
 				      double Beta) const {
   Epetra_OskiVector* xCast = NULL;
@@ -531,10 +587,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
   bool yCreate = false;
   bool TCreate = false;
   int ReturnVal;
-  if((&T) != NULL)
-    TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
-  else
-    TCast = NULL;
+  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
   xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
   yCast = dynamic_cast<Epetra_OskiVector*>(&y);
   if (xCast == NULL) {
@@ -545,7 +598,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
     yCast = new Epetra_OskiVector(y);
     yCreate = true;
   }
-  if (TCast == NULL && (&T) != NULL) {
+  if (TCast == NULL) {
     TCast = new Epetra_OskiMultiVector(T);
     TCreate = true;
   }
@@ -554,7 +607,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
   else
     ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*TCast).Oski_View());
   if(ReturnVal)
-    std::cerr << "OskiVector multiply error\n";
+    std::cerr << "OskiVector matpow multiply error\n";
   if(xCreate)
     delete xCast;
   if(yCreate)
@@ -567,8 +620,8 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      const Epetra_MultiVector& X,
 				      Epetra_MultiVector& Y, 
-				      int Power, 
 				      Epetra_MultiVector& T, 
+				      int Power, 
 				      double Alpha, 
 				      double Beta) const {
   Epetra_OskiMultiVector* XCast = NULL;
@@ -578,10 +631,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
   bool YCreate = false;
   bool TCreate = false;
   int ReturnVal;
-  if((&T) != NULL)
-    TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
-  else
-    TCast = NULL;
+  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
   XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
   YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
   if (XCast == NULL) {
@@ -592,7 +642,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
     YCast = new Epetra_OskiMultiVector(Y);
     YCreate = true;
   }
-  if (TCast == NULL && (&T) != NULL) {
+  if (TCast == NULL) {
     TCast = new Epetra_OskiMultiVector(T);
     TCreate = true;
   }
@@ -601,7 +651,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
   else
     ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
   if(ReturnVal)
-    std::cerr << "OskiVector multiply error\n";
+    std::cerr << "OskiVector matpow multiply error\n";
   if(XCreate)
     delete XCast;
   if(YCreate)
@@ -611,10 +661,89 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
   return ReturnVal;
 }
 
+int Epetra_OskiMatrix::MatPowMultiply(bool TransA, 
+				      const Epetra_Vector& x, 
+				      Epetra_Vector& y, 
+				      int Power,
+				      double Alpha, 
+				      double Beta) const {
+  Epetra_OskiVector* xCast = NULL;
+  Epetra_OskiVector* yCast = NULL;
+  bool xCreate = false;
+  bool yCreate = false;
+  int ReturnVal;
+  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
+  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
+  if (xCast == NULL) {
+    xCast = new Epetra_OskiVector(x);
+    xCreate = true;
+  }
+  if (yCast == NULL) {
+    yCast = new Epetra_OskiVector(y);
+    yCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), NULL);
+  else
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), NULL);
+  if(ReturnVal)
+    std::cerr << "OskiVector matpow multiply error\n";
+  if(xCreate)
+    delete xCast;
+  if(yCreate)
+    delete yCast;
+  return ReturnVal;
+}
+
+int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
+				      const Epetra_MultiVector& X,
+				      Epetra_MultiVector& Y, 
+				      Epetra_MultiVector& T, 
+				      int Power, 
+				      double Alpha, 
+				      double Beta) const {
+  Epetra_OskiMultiVector* XCast = NULL;
+  Epetra_OskiMultiVector* YCast = NULL;
+  Epetra_OskiMultiVector* TCast = NULL;
+  bool XCreate = false;
+  bool YCreate = false;
+  bool TCreate = false;
+  int ReturnVal;
+  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
+  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
+  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
+  if (XCast == NULL) {
+    XCast = new Epetra_OskiMultiVector(X);
+    XCreate = true;
+  }
+  if (YCast == NULL) {
+    YCast = new Epetra_OskiMultiVector(Y);
+    YCreate = true;
+  }
+  if (TCast == NULL) {
+    TCast = new Epetra_OskiMultiVector(T);
+    TCreate = true;
+  }
+  if(TransA)
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+  else
+    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
+  if(ReturnVal)
+    std::cerr << "OskiVector matpow multiply error\n";
+  if(XCreate)
+    delete XCast;
+  if(YCreate)
+    delete YCast;
+  if(TCreate)
+    delete TCast;
+  return ReturnVal;
+}
+
+
 int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
   int* ArgArray = NULL;
-  int Blocks;
   int Diags;
+  int Blocks;
   char Number[10];
   char Row[20];
   char Col[20];
@@ -687,9 +816,9 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
     if(Teuchos::getParameter<bool>(List, "diags"))
       if(List.isParameter("numdiags")) {
         Diags = Teuchos::getParameter<int>(List, "numdiags");
-        ArgArray = new int[Blocks+1];
-	ArgArray[0] = Blocks;
-        for(int i = 0; i < Blocks; i++) {
+        ArgArray = new int[Diags+1];
+	ArgArray[0] = Diags;
+        for(int i = 0; i < Diags; i++) {
 	  sprintf(Number, "%d", i + 1);
 	  strcpy(Diag, "diag");
 	  strcat(Diag, Number);
@@ -949,7 +1078,7 @@ const Epetra_OskiMatrix& Epetra_OskiMatrix::ViewTransformedMat() const {
   //might need a more efficient way to do this
   Epetra_OskiMatrix Transformed(*this); //should be some lightweight copy
   Transformed.A_tunable_ = const_cast <oski_matrix_t> (oski_ViewPermutedMat(A_tunable_));
-  //return Transformed;
+  return Transformed;
 }
 
 const Epetra_OskiPermutation& Epetra_OskiMatrix::ViewRowPermutation() const {
