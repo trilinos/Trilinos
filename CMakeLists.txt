@@ -41,6 +41,7 @@ ENDIF(CMAKE_SIZEOF_VOID_P GREATER 4)
 # Most of these should be fine for all but ridiculously out-of-date C++ compilers, but you never know.
 SET(HAVE_ALGORITHM TRUE)
 SET(HAVE_CASSERT TRUE)
+SET(HAVE_CCTYPE TRUE)
 SET(HAVE_CERRNO TRUE)
 SET(HAVE_CLIMITS TRUE)
 SET(HAVE_CMATH TRUE)

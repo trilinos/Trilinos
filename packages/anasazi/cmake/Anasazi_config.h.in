@@ -65,6 +65,12 @@
 /* define if bool is a built-in type */
 #cmakedefine HAVE_BOOL
 
+/* Define to 1 if you have the <cctype> header file. */
+#cmakedefine HAVE_CCTYPE
+
+/* Define to 1 if you have the <cctype.h> header file. */
+#cmakedefine HAVE_CCTYPE_H
+
 /* Define to 1 if you have the <cmath> header file. */
 #cmakedefine HAVE_CMATH
 
