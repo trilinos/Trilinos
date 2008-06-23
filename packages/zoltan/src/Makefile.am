@@ -179,15 +179,12 @@ PARAMS = \
 	$(srcdir)/params/set_param.c
 
 PARMETIS_H = \
-	$(srcdir)/parmetis/parmetis_jostle_const.h \
-	$(srcdir)/parmetis/parmetis_jostle.h \
 	$(srcdir)/parmetis/third_library_const.h \
 	$(srcdir)/parmetis/third_library.h \
 	$(srcdir)/parmetis/third_library_tools.h
 
 PARMETIS = \
 	$(srcdir)/parmetis/build_graph.c \
-	$(srcdir)/parmetis/parmetis_jostle.c \
 	$(srcdir)/parmetis/postprocessing.c \
 	$(srcdir)/parmetis/preprocessing.c \
 	$(srcdir)/parmetis/scatter_graph.c \

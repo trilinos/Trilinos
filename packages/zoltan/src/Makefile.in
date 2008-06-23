@@ -116,7 +116,6 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/params/free_params.c $(srcdir)/params/key_params.c \
 	$(srcdir)/params/print_params.c $(srcdir)/params/set_param.c \
 	$(srcdir)/parmetis/build_graph.c \
-	$(srcdir)/parmetis/parmetis_jostle.c \
 	$(srcdir)/parmetis/postprocessing.c \
 	$(srcdir)/parmetis/preprocessing.c \
 	$(srcdir)/parmetis/scatter_graph.c \
@@ -211,10 +210,9 @@ am__objects_12 = assign_param_vals.$(OBJEXT) bind_param.$(OBJEXT) \
 	check_param.$(OBJEXT) free_params.$(OBJEXT) \
 	key_params.$(OBJEXT) print_params.$(OBJEXT) \
 	set_param.$(OBJEXT)
-am__objects_13 = build_graph.$(OBJEXT) parmetis_jostle.$(OBJEXT) \
-	postprocessing.$(OBJEXT) preprocessing.$(OBJEXT) \
-	scatter_graph.$(OBJEXT) third_library.$(OBJEXT) \
-	verify_graph.$(OBJEXT)
+am__objects_13 = build_graph.$(OBJEXT) postprocessing.$(OBJEXT) \
+	preprocessing.$(OBJEXT) scatter_graph.$(OBJEXT) \
+	third_library.$(OBJEXT) verify_graph.$(OBJEXT)
 am__objects_14 = parmetis_interface.$(OBJEXT)
 @BUILD_PARMETIS_TRUE@am__objects_15 = $(am__objects_14)
 am__objects_16 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
@@ -310,8 +308,6 @@ am__include_HEADERS_DIST = $(srcdir)/all/all_allo_const.h \
 	$(srcdir)/par/par_median_const.h \
 	$(srcdir)/par/par_tflops_special_const.h \
 	$(srcdir)/params/key_params.h $(srcdir)/params/params_const.h \
-	$(srcdir)/parmetis/parmetis_jostle_const.h \
-	$(srcdir)/parmetis/parmetis_jostle.h \
 	$(srcdir)/parmetis/third_library_const.h \
 	$(srcdir)/parmetis/third_library.h \
 	$(srcdir)/parmetis/third_library_tools.h \
@@ -615,15 +611,12 @@ PARAMS = \
 	$(srcdir)/params/set_param.c
 
 PARMETIS_H = \
-	$(srcdir)/parmetis/parmetis_jostle_const.h \
-	$(srcdir)/parmetis/parmetis_jostle.h \
 	$(srcdir)/parmetis/third_library_const.h \
 	$(srcdir)/parmetis/third_library.h \
 	$(srcdir)/parmetis/third_library_tools.h
 
 PARMETIS = \
 	$(srcdir)/parmetis/build_graph.c \
-	$(srcdir)/parmetis/parmetis_jostle.c \
 	$(srcdir)/parmetis/postprocessing.c \
 	$(srcdir)/parmetis/preprocessing.c \
 	$(srcdir)/parmetis/scatter_graph.c \
@@ -1064,7 +1057,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par_sync.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par_tflops_special.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parmetis_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parmetis_jostle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/perm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_Vcycle.Po@am__quote@
@@ -1994,20 +1986,6 @@ build_graph.obj: $(srcdir)/parmetis/build_graph.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/build_graph.c' object='build_graph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_graph.obj `if test -f '$(srcdir)/parmetis/build_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/build_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/build_graph.c'; fi`
-
-parmetis_jostle.o: $(srcdir)/parmetis/parmetis_jostle.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_jostle.o -MD -MP -MF $(DEPDIR)/parmetis_jostle.Tpo -c -o parmetis_jostle.o `test -f '$(srcdir)/parmetis/parmetis_jostle.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_jostle.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_jostle.Tpo $(DEPDIR)/parmetis_jostle.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_jostle.c' object='parmetis_jostle.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_jostle.o `test -f '$(srcdir)/parmetis/parmetis_jostle.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_jostle.c
-
-parmetis_jostle.obj: $(srcdir)/parmetis/parmetis_jostle.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_jostle.obj -MD -MP -MF $(DEPDIR)/parmetis_jostle.Tpo -c -o parmetis_jostle.obj `if test -f '$(srcdir)/parmetis/parmetis_jostle.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_jostle.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_jostle.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_jostle.Tpo $(DEPDIR)/parmetis_jostle.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_jostle.c' object='parmetis_jostle.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_jostle.obj `if test -f '$(srcdir)/parmetis/parmetis_jostle.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_jostle.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_jostle.c'; fi`
 
 postprocessing.o: $(srcdir)/parmetis/postprocessing.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT postprocessing.o -MD -MP -MF $(DEPDIR)/postprocessing.Tpo -c -o postprocessing.o `test -f '$(srcdir)/parmetis/postprocessing.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/postprocessing.c
