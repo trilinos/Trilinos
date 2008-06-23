@@ -74,7 +74,7 @@ namespace Anasazi {
     SortManager(Teuchos::ParameterList &pl) {};
 
     //! Destructor
-    ~SortManager() {};
+    virtual ~SortManager() {};
 
     /*! \brief Sort real eigenvalues, optionally returning the permutation vector.
 
