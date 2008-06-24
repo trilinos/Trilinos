@@ -38,6 +38,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_EpetraCostDescriber.hpp>
 
 #include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Comm.h>
@@ -55,6 +56,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <ctype.h>
 
 namespace Isorropia {
 
@@ -544,6 +546,93 @@ Partitioner::elemsInPartition(int partition, int* elementList, int len) const
   for(unsigned i=0; i<length; ++i) {
     elementList[i] = myNewElements_[i];
   }
+}
+
+void Partitioner::stringToUpper(std::string &s, int &changed)
+{
+  std::string::iterator siter;
+  changed = 0;
+
+  for (siter = s.begin(); siter != s.end() ; siter++)
+  {
+    if (islower(*siter)){
+      *siter = toupper(*siter);
+      changed++;
+    }
+  }
+}
+
+void Partitioner::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
+{
+  changed = 0;
+
+  // get a list of all parameter names in the list
+
+  std::vector<std::string> paramNames ;
+  Teuchos::ParameterList::ConstIterator pIter;
+
+  pIter = plist.begin();
+
+  while (1){
+    //////////////////////////////////////////////////////////////////////
+    // Compiler considered this while statement an error
+    // while ( pIter = plist.begin() ; pIter != plist.end() ; pIter++ ){
+    // }
+    //////////////////////////////////////////////////////////////////////
+    if (pIter == plist.end()) break;
+    const std::string & nm = plist.name(pIter);
+    paramNames.push_back(nm);
+    pIter++;
+  }
+
+  // Change parameter names and values to upper case
+  
+  for (int i=0; i < paramNames.size(); i++){
+
+    std::string origName(paramNames[i]);
+    int paramNameChanged;
+    stringToUpper(paramNames[i], paramNameChanged);
+
+    if (plist.isSublist(origName)){
+      Teuchos::ParameterList &sublist = plist.sublist(origName);
+
+      int sublistChanged;
+      paramsToUpper(sublist, sublistChanged);
+
+      if (paramNameChanged){
+
+        // this didn't work, so I need to remove the old sublist
+        // and create a new one
+        //
+        //sublist.setName(paramNames[i]);
+
+        Teuchos::ParameterList newlist(sublist);
+        plist.remove(origName);
+        plist.set(paramNames[i], newlist);
+      }
+    }
+    else if (plist.isParameter(origName)){
+
+      if (!plist.isType<std::string>(paramNames[i])){
+        // all isorropia and zoltan parameters should be strings,
+        // ignore anything else
+        continue;
+      }
+
+      std::string &paramVal = plist.get<std::string>(origName);
+
+      int paramValChanged;
+      stringToUpper(paramVal, paramValChanged);
+
+      if (paramNameChanged || paramValChanged){
+        if (paramNameChanged){
+          plist.remove(origName);
+        }
+        plist.set(paramNames[i], paramVal);
+        changed++;
+      }
+    }
+  } // next parameter or sublist
 }
 
 } // namespace EPETRA

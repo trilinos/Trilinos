@@ -240,6 +240,9 @@ public:
 
 private:
 
+  void paramsToUpper(Teuchos::ParameterList &, int &changed);
+  void stringToUpper(std::string &s, int &changed);
+
   Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
   Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
   Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix_;
