@@ -45,7 +45,7 @@ postRegistrationSetup(std::size_t max_num_cells,
   if ( !(this->vp_manager_.sortingCalled()) )
     this->vp_manager_.sortAndOrderEvaluators();
 
-  // Allocate field data arrays
+  // Determine total amount of memory for all variables
   const std::vector<PHX::FieldTag>& var_list = 
     this->vp_manager_.getFieldTags();
 
@@ -55,12 +55,28 @@ postRegistrationSetup(std::size_t max_num_cells,
     typename DCTM::iterator it = data_container_template_manager_.begin();
     for (; it != data_container_template_manager_.end(); ++it) {
       
-      if (var->dataLayout()->getAlgebraicTypeInfo() == it->getAlgebraicTypeInfo())
-	it->allocateField(*var, max_num_cells, allocator_);
-    
+      if (var->dataLayout()->getAlgebraicTypeInfo() == it->getAlgebraicTypeInfo()) {
+	std::size_t size_of_data_type = it->getSizeOfDataType();
+	int total_size = max_num_cells * size_of_data_type * var->dataLayout()->size();
+	allocator_.addRequiredBytes(total_size);
+      }
     }
   }
 
+  // Allocate field data arrays
+  //std::vector<PHX::FieldTag>::const_iterator  var = var_list.begin();
+  for (var = var_list.begin(); var != var_list.end(); ++var) {
+
+    typename DCTM::iterator it = data_container_template_manager_.begin();
+    for (; it != data_container_template_manager_.end(); ++it) {
+      
+      if (var->dataLayout()->getAlgebraicTypeInfo() == it->getAlgebraicTypeInfo()) {
+	it->allocateField(*var, max_num_cells, allocator_);
+      }
+    }
+  }
+
+  // Allow field evaluators to grab pointers to relevant field data
   this->vp_manager_.postRegistrationSetup(fm);
 }
 

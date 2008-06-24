@@ -3,7 +3,12 @@
 #
 
 (FRAMEWORK,INSTALL,CHECKIN,ALL) {
-    DIRS = Allocators;
+    DIRS = Allocators,
+	   DataContainer,
+	   DataLayout,
+           FieldTag,
+           Field,
+	   Utilities;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
     COMM = SERIAL, MPI;

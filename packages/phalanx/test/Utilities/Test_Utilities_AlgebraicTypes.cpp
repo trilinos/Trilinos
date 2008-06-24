@@ -4,7 +4,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+
+#include "AlgebraicTypes.hpp"
 
 int main(int argc, char *argv[]) 
 {
@@ -17,36 +20,27 @@ int main(int argc, char *argv[])
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
 
-    // *********************************************************************
-    // Start of Allocator Testing
-    // *********************************************************************
     {
-      DefaultAllocator ma;
-      ArrayRCP<double> vec = 
-	ma.allocate<double>(4);
-      cout << "Testing Default Allocator" << endl;
-      cout << "vec size = " << vec.size() << ", should be 4." << endl;
-      TEST_FOR_EXCEPTION(vec.size() != 4, std::runtime_error, 
-			 "Allocator is broken!");
-    }
-
-    {
-      ContiguousAllocator ca;
-      const int size = 100;
-      const int num_bytes = size * sizeof(double);
-      ca.addRequiredBytes(num_bytes);
-      ca.addRequiredBytes(num_bytes);
-      
-      const int total_bytes = ca.getTotalBytes();
-      TEST_FOR_EXCEPTION(total_bytes != 2 * num_bytes, std::logic_error,
-			 "addRequiredBytes() is failing!");
-      
-      ca.reset();
-      
-      
+      cout << "Vector Testing: a, b are vectors, c is scalar" << endl;
+      MyVector<double> a;
+      a.init(3.0);
+      cout << "Printing a:\n" << a << endl;
+      MyVector<double> b(2.0);
+      cout << "Printing b:\n" << b << endl;
+      double c = 4.0;
+      cout << "Printing c: " << c << endl;
+      cout << "Printing -a:\n" << -a << endl;
+      cout << "Printing +a:\n" << +a << endl;
+      cout << "Printing a+b:\n" << a+b << endl;
+      cout << "Printing a-b:\n" << a-b << endl;
+      cout << "Printing a*b:\n" << a*b << endl;
+      cout << "Printing a/b:\n" << a/b << endl;
+      cout << "Printing c*a:\n" << c*a << endl;;
+      cout << "Printing a*c:\n" << a*c << endl;
     }
 
     // *********************************************************************
+    // Finished all testing
     // *********************************************************************
     std::cout << "\nTest passed!\n" << std::endl; 
     // *********************************************************************

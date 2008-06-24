@@ -22,6 +22,8 @@ namespace PHX {
     
     virtual const std::type_info& getAlgebraicTypeInfo() const = 0; 
 
+    virtual std::size_t getSizeOfDataType() const = 0;
+
     virtual void print(std::ostream& os) const = 0;
     
   };

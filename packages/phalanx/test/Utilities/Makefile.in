@@ -42,6 +42,8 @@
 # ************************************************************************
 #@HEADER
 
+
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -61,10 +63,11 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BUILD_EXAMPLES_TRUE@noinst_PROGRAMS = example$(EXEEXT) \
-@BUILD_EXAMPLES_TRUE@	example_algebraic_types$(EXEEXT)
-subdir = example/EnergyFlux
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+@BUILD_TESTS_TRUE@noinst_PROGRAMS =  \
+@BUILD_TESTS_TRUE@	test_utilitites_algebraic_types$(EXEEXT)
+subdir = test/Utilities
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
@@ -84,17 +87,30 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
+AR = ar
+ARFLAGS = cru
+libphalanx_utilities_a_DEPENDENCIES =
+am__objects_1 = CellData.$(OBJEXT)
+am_libphalanx_utilities_a_OBJECTS = $(am__objects_1)
+libphalanx_utilities_a_OBJECTS = $(am_libphalanx_utilities_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
-am_example_OBJECTS = Example.$(OBJEXT) CellData.$(OBJEXT)
-example_OBJECTS = $(am_example_OBJECTS)
+am_test_utilitites_algebraic_types_OBJECTS =  \
+	Test_Utilities_AlgebraicTypes.$(OBJEXT)
+test_utilitites_algebraic_types_OBJECTS =  \
+	$(am_test_utilitites_algebraic_types_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
-am_example_algebraic_types_OBJECTS = Example_AlgebraicTypes.$(OBJEXT) \
-	CellData.$(OBJEXT)
-example_algebraic_types_OBJECTS =  \
-	$(am_example_algebraic_types_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -107,8 +123,12 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(example_SOURCES) $(example_algebraic_types_SOURCES)
-DIST_SOURCES = $(example_SOURCES) $(example_algebraic_types_SOURCES)
+SOURCES = $(libphalanx_utilities_a_SOURCES) \
+	$(test_utilitites_algebraic_types_SOURCES)
+DIST_SOURCES = $(libphalanx_utilities_a_SOURCES) \
+	$(test_utilitites_algebraic_types_SOURCES)
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -227,55 +247,36 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(PHALANX_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(PHALANX_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
-AM_CPPFLAGS = -I$(srcdir)/evaluators $(EXAMPLE_INCLUDES)
-example_SOURCES = \
-	$(srcdir)/Example.cpp \
-	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp \
-	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/CellData.hpp \
-	$(srcdir)/CellData.cpp \
-	$(srcdir)/evaluators/Evaluator_Constant.hpp \
-	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_Density.hpp \
-	$(srcdir)/evaluators/Evaluator_Density_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(PHALANX_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(PHALANX_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
+AM_CPPFLAGS = -I$(srcdir)/evaluators $(TEST_INCLUDES)
 
-example_DEPENDENCIES = \
+####################
+####################
+UTILITIES_HPP = \
+              CellData.hpp
+
+UTILITIES_CPP = \
+              CellData.cpp
+
+@BUILD_TESTS_TRUE@lib_LIBRARIES = libphalanx_utilities.a
+@BUILD_TESTS_TRUE@include_HEADERS = $(UTILITIES_H)
+@USE_ALTERNATE_AR_FALSE@libphalanx_utilities_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_TRUE@libphalanx_utilities_a_AR = $(ALTERNATE_AR)
+libphalanx_utilities_a_SOURCES = $(UTILITIES_CPP)
+libphalanx_utilities_a_LIBADD = $(XTRALDADD)
+MAINTAINERCLEANFILES = Makefile.in 
+test_utilitites_algebraic_types_SOURCES = \
+	$(srcdir)/Test_Utilities_AlgebraicTypes.cpp \
+	$(srcdir)/AlgebraicTypes.hpp \
+	$(srcdir)/Traits.hpp
+
+test_utilitites_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
-example_LDADD = $(EXAMPLE_LIBS)
-example_algebraic_types_SOURCES = \
-	$(srcdir)/Example_AlgebraicTypes.cpp \
-	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp \
-	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/CellData.hpp \
-	$(srcdir)/CellData.cpp \
-	$(srcdir)/evaluators/Evaluator_Constant.hpp \
-	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_Density.hpp \
-	$(srcdir)/evaluators/Evaluator_Density_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
-
-example_algebraic_types_DEPENDENCIES = \
-	$(top_builddir)/src/libphalanx.a
-
-example_algebraic_types_LDADD = $(EXAMPLE_LIBS)
+test_utilitites_algebraic_types_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -289,9 +290,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/EnergyFlux/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Utilities/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/EnergyFlux/Makefile
+	  $(AUTOMAKE) --foreign  test/Utilities/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -309,15 +310,45 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f=$(am__strip_dir) \
+	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p=$(am__strip_dir) \
+	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
+	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libphalanx_utilities.a: $(libphalanx_utilities_a_OBJECTS) $(libphalanx_utilities_a_DEPENDENCIES) 
+	-rm -f libphalanx_utilities.a
+	$(libphalanx_utilities_a_AR) libphalanx_utilities.a $(libphalanx_utilities_a_OBJECTS) $(libphalanx_utilities_a_LIBADD)
+	$(RANLIB) libphalanx_utilities.a
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
-	@rm -f example$(EXEEXT)
-	$(CXXLINK) $(example_OBJECTS) $(example_LDADD) $(LIBS)
-example_algebraic_types$(EXEEXT): $(example_algebraic_types_OBJECTS) $(example_algebraic_types_DEPENDENCIES) 
-	@rm -f example_algebraic_types$(EXEEXT)
-	$(CXXLINK) $(example_algebraic_types_OBJECTS) $(example_algebraic_types_LDADD) $(LIBS)
+test_utilitites_algebraic_types$(EXEEXT): $(test_utilitites_algebraic_types_OBJECTS) $(test_utilitites_algebraic_types_DEPENDENCIES) 
+	@rm -f test_utilitites_algebraic_types$(EXEEXT)
+	$(CXXLINK) $(test_utilitites_algebraic_types_OBJECTS) $(test_utilitites_algebraic_types_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -326,8 +357,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellData.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_AlgebraicTypes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Test_Utilities_AlgebraicTypes.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -343,47 +373,36 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Example.o: $(srcdir)/Example.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example.o -MD -MP -MF $(DEPDIR)/Example.Tpo -c -o Example.o `test -f '$(srcdir)/Example.cpp' || echo '$(srcdir)/'`$(srcdir)/Example.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example.Tpo $(DEPDIR)/Example.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.cpp' object='Example.o' libtool=no @AMDEPBACKSLASH@
+Test_Utilities_AlgebraicTypes.o: $(srcdir)/Test_Utilities_AlgebraicTypes.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Test_Utilities_AlgebraicTypes.o -MD -MP -MF $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo -c -o Test_Utilities_AlgebraicTypes.o `test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Test_Utilities_AlgebraicTypes.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo $(DEPDIR)/Test_Utilities_AlgebraicTypes.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' object='Test_Utilities_AlgebraicTypes.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.o `test -f '$(srcdir)/Example.cpp' || echo '$(srcdir)/'`$(srcdir)/Example.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Test_Utilities_AlgebraicTypes.o `test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Test_Utilities_AlgebraicTypes.cpp
 
-Example.obj: $(srcdir)/Example.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example.obj -MD -MP -MF $(DEPDIR)/Example.Tpo -c -o Example.obj `if test -f '$(srcdir)/Example.cpp'; then $(CYGPATH_W) '$(srcdir)/Example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example.Tpo $(DEPDIR)/Example.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.cpp' object='Example.obj' libtool=no @AMDEPBACKSLASH@
+Test_Utilities_AlgebraicTypes.obj: $(srcdir)/Test_Utilities_AlgebraicTypes.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Test_Utilities_AlgebraicTypes.obj -MD -MP -MF $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo -c -o Test_Utilities_AlgebraicTypes.obj `if test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo $(DEPDIR)/Test_Utilities_AlgebraicTypes.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' object='Test_Utilities_AlgebraicTypes.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.obj `if test -f '$(srcdir)/Example.cpp'; then $(CYGPATH_W) '$(srcdir)/Example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Test_Utilities_AlgebraicTypes.obj `if test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; fi`
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
+	  $(includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
+	done
 
-CellData.o: $(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CellData.o -MD -MP -MF $(DEPDIR)/CellData.Tpo -c -o CellData.o `test -f '$(srcdir)/CellData.cpp' || echo '$(srcdir)/'`$(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/CellData.Tpo $(DEPDIR)/CellData.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CellData.cpp' object='CellData.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CellData.o `test -f '$(srcdir)/CellData.cpp' || echo '$(srcdir)/'`$(srcdir)/CellData.cpp
-
-CellData.obj: $(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CellData.obj -MD -MP -MF $(DEPDIR)/CellData.Tpo -c -o CellData.obj `if test -f '$(srcdir)/CellData.cpp'; then $(CYGPATH_W) '$(srcdir)/CellData.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CellData.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/CellData.Tpo $(DEPDIR)/CellData.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CellData.cpp' object='CellData.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CellData.obj `if test -f '$(srcdir)/CellData.cpp'; then $(CYGPATH_W) '$(srcdir)/CellData.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CellData.cpp'; fi`
-
-Example_AlgebraicTypes.o: $(srcdir)/Example_AlgebraicTypes.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_AlgebraicTypes.o -MD -MP -MF $(DEPDIR)/Example_AlgebraicTypes.Tpo -c -o Example_AlgebraicTypes.o `test -f '$(srcdir)/Example_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_AlgebraicTypes.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_AlgebraicTypes.Tpo $(DEPDIR)/Example_AlgebraicTypes.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_AlgebraicTypes.cpp' object='Example_AlgebraicTypes.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_AlgebraicTypes.o `test -f '$(srcdir)/Example_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_AlgebraicTypes.cpp
-
-Example_AlgebraicTypes.obj: $(srcdir)/Example_AlgebraicTypes.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_AlgebraicTypes.obj -MD -MP -MF $(DEPDIR)/Example_AlgebraicTypes.Tpo -c -o Example_AlgebraicTypes.obj `if test -f '$(srcdir)/Example_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_AlgebraicTypes.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_AlgebraicTypes.Tpo $(DEPDIR)/Example_AlgebraicTypes.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_AlgebraicTypes.cpp' object='Example_AlgebraicTypes.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_AlgebraicTypes.obj `if test -f '$(srcdir)/Example_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_AlgebraicTypes.cpp'; fi`
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -461,8 +480,11 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) all-local
+all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS) all-local
 installdirs:
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -487,9 +509,11 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES clean-noinstPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -507,11 +531,11 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-am
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES
 
 install-html: install-html-am
 
@@ -542,22 +566,23 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
+	clean-generic clean-libLIBRARIES clean-noinstPROGRAMS ctags \
+	distclean distclean-compile distclean-generic distclean-tags \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-includeHEADERS install-info \
+	install-info-am install-libLIBRARIES install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am
+	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
 
 
 include $(top_builddir)/Makefile.export.phalanx

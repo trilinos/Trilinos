@@ -4,7 +4,11 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+
+// From test/Utilities directory
+#include "Traits.hpp"
 
 int main(int argc, char *argv[]) 
 {
@@ -18,34 +22,17 @@ int main(int argc, char *argv[])
     TimeMonitor tm(*total_time);
 
     // *********************************************************************
-    // Start of Allocator Testing
+    // Start of Data Container Testing
     // *********************************************************************
     {
-      DefaultAllocator ma;
-      ArrayRCP<double> vec = 
-	ma.allocate<double>(4);
-      cout << "Testing Default Allocator" << endl;
-      cout << "vec size = " << vec.size() << ", should be 4." << endl;
-      TEST_FOR_EXCEPTION(vec.size() != 4, std::runtime_error, 
-			 "Allocator is broken!");
+      cout << "\nStarting Data Container Testing\n";
+      DataContainer< double, MyTraits > dc_scalar;
+      DataContainer< MyVector<double>, MyTraits > dc_vector;
+      DataContainer< MyTensor<double>, MyTraits > dc_tensor;
+      
+      cout << dc_vector << endl;
     }
-
-    {
-      ContiguousAllocator ca;
-      const int size = 100;
-      const int num_bytes = size * sizeof(double);
-      ca.addRequiredBytes(num_bytes);
-      ca.addRequiredBytes(num_bytes);
-      
-      const int total_bytes = ca.getTotalBytes();
-      TEST_FOR_EXCEPTION(total_bytes != 2 * num_bytes, std::logic_error,
-			 "addRequiredBytes() is failing!");
-      
-      ca.reset();
-      
-      
-    }
-
+    
     // *********************************************************************
     // *********************************************************************
     std::cout << "\nTest passed!\n" << std::endl; 

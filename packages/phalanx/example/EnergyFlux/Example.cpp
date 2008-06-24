@@ -23,100 +23,6 @@ int main(int argc, char *argv[])
     TimeMonitor tm(*total_time);
 
     // *********************************************************************
-    // Vector testing
-    // *********************************************************************
-
-    cout << "Vector Testing: a, b are vectors, c is scalar" << endl;
-    MyVector<double> a;
-    a.init(3.0);
-    cout << "Printing a:\n" << a << endl;
-    MyVector<double> b(2.0);
-    cout << "Printing b:\n" << b << endl;
-    double c = 4.0;
-    cout << "Printing c: " << c << endl;
-    cout << "Printing -a:\n" << -a << endl;
-    cout << "Printing +a:\n" << +a << endl;
-    cout << "Printing a+b:\n" << a+b << endl;
-    cout << "Printing a-b:\n" << a-b << endl;
-    cout << "Printing a*b:\n" << a*b << endl;
-    cout << "Printing a/b:\n" << a/b << endl;
-    cout << "Printing c*a:\n" << c*a << endl;;
-    cout << "Printing a*c:\n" << a*c << endl;
-
-    // FieldTag and DataLayout Testing
-
-    RCP<DataLayout> node4 = 
-      rcp(new Generic<MyTraits::MY_SCALAR>("Q1_Nodes", 4));
-    RCP<DataLayout> quad4 = 
-      rcp(new Generic<MyTraits::MY_SCALAR>("Q1_QuadPoints", 4));
-    RCP<DataLayout> gradQuad4 = 
-      rcp(new Generic<MyTraits::MY_VECTOR>("Q1_QuadPoints", 4));
-    
-    FieldTag nodal_density("density", node4);
-    FieldTag qp_density("density", quad4);
-    FieldTag grad_qp_density("density", gradQuad4);
-    
-    cout << "Printing field tags" << endl;
-    cout << nodal_density << endl;
-    cout << qp_density << endl;
-    cout << grad_qp_density << endl;
-    cout << endl;
-
-    cout << "Are nodal and qp fields equal (should be false)? = " 
-	 << (nodal_density == qp_density) << endl;
-    TEST_FOR_EXCEPTION(nodal_density == qp_density, std::logic_error,
-		       "DataLayout comparison failed!");
-    
-    FieldTag nodal_density_copy("density", node4);
-    cout << "Are nodal and nodal copy fields equal (should be true)? = " 
-	 << (nodal_density == nodal_density_copy) << endl;
-    TEST_FOR_EXCEPTION(!(nodal_density == nodal_density_copy), 
-		       std::logic_error,
-		       "Copy comparison failed!");
-    
-    cout << "Are scalar and vector fields "
-	 << "equal (should be false)? = " 
-	 << (qp_density == grad_qp_density) << endl;
-    TEST_FOR_EXCEPTION(qp_density == grad_qp_density, 
-		       std::logic_error,
-		       "Entity comparison failed!");
-
-    cout << endl;
-    
-    // *********************************************************************
-    // Start of Data Container Testing
-    // *********************************************************************
-    {
-      cout << "\nStarting Data Container Testing\n";
-      DataContainer< double, MyTraits > dc_scalar;
-      DataContainer< MyVector<double>, MyTraits > dc_vector;
-      DataContainer< MyTensor<double>, MyTraits > dc_tensor;
-      
-      cout << dc_vector << endl;
-    }
-    
-    // *********************************************************************
-    // Start of Allocator Testing
-    // *********************************************************************
-    {
-      DefaultAllocator ma;
-      ArrayRCP<double> vec = 
-	ma.allocate<double>(4);
-      cout << "Testing Default Allocator" << endl;
-      cout << "vec size = " << vec.size() << ", should be 4." << endl;
-      TEST_FOR_EXCEPTION(vec.size() != 4, std::runtime_error, 
-			 "Allocator is broken!");
-    }
-
-    // *********************************************************************
-    // Field Evaluator Template Builder testing
-    // *********************************************************************
-    {
-      RCP<ParameterList> p = rcp(new ParameterList);
-      //PHX::FieldEvaluator_TemplateBuilder<MyTraits,  > builder(p); 
-    }
-    
-    // *********************************************************************
     // Start of FieldManager testing
     // *********************************************************************
     {
@@ -295,7 +201,7 @@ int main(int argc, char *argv[])
       cout << density << endl;
 
       ArrayRCP<double> data = arcp<double>(10);
-      density.setData(data);
+      density.setFieldData(data);
 
       cout << "Finished Testing Handles.\n";
     }

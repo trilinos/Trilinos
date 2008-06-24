@@ -51,6 +51,15 @@ getAlgebraicTypeInfo() const
 
 // ************************************************************************
 template <typename DataT, typename Traits>
+std::size_t PHX::DataContainer<DataT, Traits>::
+getSizeOfDataType() const
+{
+  std::size_t size = sizeof(DataT);
+  return size;
+}
+
+// ************************************************************************
+template <typename DataT, typename Traits>
 void PHX::DataContainer<DataT, Traits>::
 print(std::ostream& os) const
 {

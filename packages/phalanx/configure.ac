@@ -402,7 +402,12 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/EnergyFlux/Makefile
 		test/Makefile
+		test/Utilities/Makefile
 		test/Allocators/Makefile
+		test/DataContainer/Makefile
+		test/DataLayout/Makefile
+		test/FieldTag/Makefile
+		test/Field/Makefile
 		])
 
 AC_OUTPUT()

@@ -31,6 +31,8 @@ namespace PHX {
 
     const std::type_info& getAlgebraicTypeInfo() const;
 
+    std::size_t getSizeOfDataType() const;
+
     void print(std::ostream& os) const;
     
   private:

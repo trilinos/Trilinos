@@ -93,7 +93,7 @@ void PHX::Field<DataT>::setFieldTag(const PHX::FieldTag& v)
 
 //**********************************************************************
 template<typename DataT>
-void PHX::Field<DataT>::setData(const Teuchos::ArrayRCP<DataT>& d)
+void PHX::Field<DataT>::setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 { 
 #ifdef PHX_DEBUG
   data_set = true;
@@ -105,14 +105,17 @@ void PHX::Field<DataT>::setData(const Teuchos::ArrayRCP<DataT>& d)
 template<typename DataT>
 void PHX::Field<DataT>::print(std::ostream& os) const
 {
-  os << "Field: " << tag;
+  os << "Printing Field: \n" << tag << std::endl;
+  typedef typename Teuchos::ArrayRCP<DataT>::Ordinal size_type;
+  for (size_type i = 0; i < field_data.size(); ++i)
+    os << "value[" << i << "] = " << field_data[i] << std::endl;
 }
 
 //**********************************************************************
 template<typename DataT>
-std::ostream& PHX::operator<<(std::ostream& os, const PHX::Field<DataT>& v)
+std::ostream& PHX::operator<<(std::ostream& os, const PHX::Field<DataT>& f)
 {
-  v.print(os);
+  f.print(os);
   return os;
 }
 

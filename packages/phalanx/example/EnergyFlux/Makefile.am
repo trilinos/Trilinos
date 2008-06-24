@@ -45,7 +45,7 @@ AM_CPPFLAGS = -I$(srcdir)/evaluators $(EXAMPLE_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_EXAMPLES
-noinst_PROGRAMS = example
+noinst_PROGRAMS = example example_algebraic_types
 endif
 
 example_SOURCES = \
@@ -70,3 +70,26 @@ example_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 example_LDADD = $(EXAMPLE_LIBS)
+
+example_algebraic_types_SOURCES = \
+	$(srcdir)/Example_AlgebraicTypes.cpp \
+	$(srcdir)/AlgebraicTypes.hpp \
+	$(srcdir)/Traits.hpp \
+	$(srcdir)/FactoryTraits.hpp \
+	$(srcdir)/CellData.hpp \
+	$(srcdir)/CellData.cpp \
+	$(srcdir)/evaluators/Evaluator_Constant.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Density.hpp \
+	$(srcdir)/evaluators/Evaluator_Density_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier.hpp \
+	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_NonlinearSource.hpp \
+	$(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
+
+example_algebraic_types_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+example_algebraic_types_LDADD = $(EXAMPLE_LIBS)

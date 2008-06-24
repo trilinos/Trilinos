@@ -31,7 +31,7 @@ namespace PHX {
 
     void setFieldTag(const PHX::FieldTag& v);
     
-    void setData(const Teuchos::ArrayRCP<DataT>& d);
+    void setFieldData(const Teuchos::ArrayRCP<DataT>& d);
     
     void print(std::ostream& os) const;
 
