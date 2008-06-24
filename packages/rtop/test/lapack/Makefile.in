@@ -37,9 +37,7 @@ bin_PROGRAMS = testLapackWrappers$(EXEEXT)
 subdir = test/lapack
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
-	$(top_srcdir)/config/az_python.m4 \
-	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -50,7 +48,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
-	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -96,10 +93,7 @@ DEPDIR = @DEPDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-EGREP = @EGREP@
 EXEEXT = .exe
-GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
-GREP = @GREP@
 HAVE_PERL = @HAVE_PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -129,22 +123,12 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL_EXE = @PERL_EXE@
-PYTHON = @PYTHON@
-PYTHON_CSPEC = @PYTHON_CSPEC@
-PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
-PYTHON_LSPEC = @PYTHON_LSPEC@
-PYTHON_PREFIX = @PYTHON_PREFIX@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-SWIG = @SWIG@
-SWIG_LIB = @SWIG_LIB@
-SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
-SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
-WITH_SWIG = @WITH_SWIG@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
