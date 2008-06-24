@@ -1068,8 +1068,10 @@ int Epetra_OskiMatrix::IsMatrixTransformed() const {
 
 const Epetra_OskiMatrix& Epetra_OskiMatrix::ViewTransformedMat() const {
   //might need a more efficient way to do this
-  Epetra_OskiMatrix Transformed(*this); //should be some lightweight copy
-  Transformed.A_tunable_ = const_cast <oski_matrix_t> (oski_ViewPermutedMat(A_tunable_));
+  Epetra_OskiMatrix* Transformed = NULL;
+  Epetra_OskiMatrix Temp(*this); //should be some lightweight copy
+  Transformed = &Temp;
+  Transformed->A_tunable_ = const_cast <oski_matrix_t> (oski_ViewPermutedMat(A_tunable_));
   return *Transformed;
 }
 
