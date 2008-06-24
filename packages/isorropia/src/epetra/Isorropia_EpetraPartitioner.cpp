@@ -154,7 +154,7 @@ void Partitioner::setParameters(const Teuchos::ParameterList& paramlist)
 
 void Partitioner::compute_partitioning(bool force_repartitioning)
 {
-  int err = 0;
+  int err = 0, numChanged = 0;
   std::string str1("Isorropia::Partitioner::compute_partitioning ");
   std::string str2;
 
@@ -173,6 +173,12 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
   int localProc = comm.MyPID();
   int nprocs = comm.NumProc();
 
+  // Convert all parameter names and values to upper case.  Then Isorropia
+  // does not need to check for both cases everytime it needs to know the
+  // value of a parameter.
+
+  paramsToUpper(paramlist_, numChanged);
+
   //if Isorropia was configured with Zoltan support, then we will use
   //Zoltan unless the user specified "PARTITIONING_METHOD" = "SIMPLE_LINEAR".
 
@@ -182,7 +188,7 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
   std::string partitioning_method =
     paramlist_.get(partitioning_method_str, "UNSPECIFIED");
 
-  std::string zoltan("Zoltan");
+  std::string zoltan("ZOLTAN");
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
   if (partitioning_method != "SIMPLE_LINEAR") {
@@ -268,8 +274,13 @@ void Partitioner::compute_partitioning(bool force_repartitioning)
     int fixLparts = -1;
     int numrows = input_map_->NumGlobalElements();
 
-    comm.MaxAll(&myGparts, &maxGparts, 1);
-    comm.MaxAll(&myLparts, &maxLparts, 1);
+    int myParts[] = {myGparts, myLparts};
+    int maxParts[2];
+
+    comm.MaxAll(myParts, maxParts, 2);
+
+    maxGparts = maxParts[0];
+    maxLparts = maxParts[1];
 
     // Fix problem if the number of rows is less than the number
     // of processes.  We need to set NUM_GLOBAL_PARTITIONS to
