@@ -42,8 +42,6 @@
 # ************************************************************************
 #@HEADER
 
-
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -64,10 +62,10 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @BUILD_TESTS_TRUE@noinst_PROGRAMS =  \
-@BUILD_TESTS_TRUE@	test_utilitites_algebraic_types$(EXEEXT)
-subdir = test/Utilities
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+@BUILD_TESTS_TRUE@	performance_bracket_operator$(EXEEXT) \
+@BUILD_TESTS_TRUE@	performance_allocators$(EXEEXT)
+subdir = test/Performance
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
@@ -87,30 +85,17 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
-libLIBRARIES_INSTALL = $(INSTALL_DATA)
-LIBRARIES = $(lib_LIBRARIES)
-AR = ar
-ARFLAGS = cru
-libphalanx_utilities_a_DEPENDENCIES =
-am__objects_1 = CellData.$(OBJEXT)
-am_libphalanx_utilities_a_OBJECTS = $(am__objects_1)
-libphalanx_utilities_a_OBJECTS = $(am_libphalanx_utilities_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
-am_test_utilitites_algebraic_types_OBJECTS =  \
-	Test_Utilities_AlgebraicTypes.$(OBJEXT)
-test_utilitites_algebraic_types_OBJECTS =  \
-	$(am_test_utilitites_algebraic_types_OBJECTS)
+am_performance_allocators_OBJECTS = Performance_Allocators.$(OBJEXT)
+performance_allocators_OBJECTS = $(am_performance_allocators_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
+@USING_GNUMAKE_TRUE@	$(PHALANX_TEST_LIBS))
+am_performance_bracket_operator_OBJECTS =  \
+	Performance_BracketOperator.$(OBJEXT)
+performance_bracket_operator_OBJECTS =  \
+	$(am_performance_bracket_operator_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -119,16 +104,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libphalanx_utilities_a_SOURCES) \
-	$(test_utilitites_algebraic_types_SOURCES)
-DIST_SOURCES = $(libphalanx_utilities_a_SOURCES) \
-	$(test_utilitites_algebraic_types_SOURCES)
-includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS)
+SOURCES = $(performance_allocators_SOURCES) \
+	$(performance_bracket_operator_SOURCES)
+DIST_SOURCES = $(performance_allocators_SOURCES) \
+	$(performance_bracket_operator_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -247,50 +226,26 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@USING_GNUMAKE_FALSE@TEST_LIBS = $(PHALANX_LIBS)
-@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
-@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(PHALANX_INCLUDES)
-@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
-AM_CPPFLAGS = -I$(srcdir)/evaluators $(TEST_INCLUDES)
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(PHALANX_TEST_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_TEST_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(PHALANX_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_TEST_INCLUDES))
+AM_CPPFLAGS = -I$(srcdir)/../Utilities -I$(srcdir)/../Utilities/evaluators  $(TEST_INCLUDES)
+performance_bracket_operator_SOURCES = \
+	$(srcdir)/Performance_BracketOperator.cpp 
 
-####################
-####################
-UTILITIES_HPP = \
-              $(srcdir)/CellData.hpp \
-              $(srcdir)/AlgebraicTypes.hpp \
-              $(srcdir)/Traits.hpp \
-              $(srcdir)/Traits_ContiguousAllocator.hpp \
-              $(srcdir)/FactoryTraits.hpp \
-              $(srcdir)/evaluators/Evaluator_Constant.hpp \
-              $(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
-              $(srcdir)/evaluators/Evaluator_Density.hpp \
-              $(srcdir)/evaluators/Evaluator_Density_Def.hpp \
-              $(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier.hpp \
-              $(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp \
-              $(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
-              $(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
-              $(srcdir)/evaluators/Evaluator_NonlinearSource.hpp \
-              $(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
-
-UTILITIES_CPP = \
-              $(srcdir)/CellData.cpp
-
-@BUILD_TESTS_TRUE@lib_LIBRARIES = libphalanx_utilities.a
-@BUILD_TESTS_TRUE@include_HEADERS = $(UTILITIES_H)
-@USE_ALTERNATE_AR_FALSE@libphalanx_utilities_a_AR = $(AR) cru
-@USE_ALTERNATE_AR_TRUE@libphalanx_utilities_a_AR = $(ALTERNATE_AR)
-libphalanx_utilities_a_SOURCES = $(UTILITIES_CPP)
-libphalanx_utilities_a_LIBADD = $(XTRALDADD)
-MAINTAINERCLEANFILES = Makefile.in 
-test_utilitites_algebraic_types_SOURCES = \
-	$(srcdir)/Test_Utilities_AlgebraicTypes.cpp \
-	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp
-
-test_utilitites_algebraic_types_DEPENDENCIES = \
+performance_bracket_operator_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
-test_utilitites_algebraic_types_LDADD = $(TEST_LIBS)
+performance_bracket_operator_LDADD = $(TEST_LIBS)
+performance_allocators_SOURCES = \
+	$(srcdir)/Performance_Allocators.cpp 
+
+performance_allocators_DEPENDENCIES = \
+	$(top_builddir)/test/Utilities/libphalanx_utilities.a \
+	$(top_builddir)/src/libphalanx.a
+
+performance_allocators_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -304,9 +259,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Utilities/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Performance/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/Utilities/Makefile
+	  $(AUTOMAKE) --foreign  test/Performance/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -324,45 +279,15 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libLIBRARIES: $(lib_LIBRARIES)
-	@$(NORMAL_INSTALL)
-	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f=$(am__strip_dir) \
-	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
-	  else :; fi; \
-	done
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    p=$(am__strip_dir) \
-	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
-	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
-	  else :; fi; \
-	done
-
-uninstall-libLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  p=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
-	done
-
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libphalanx_utilities.a: $(libphalanx_utilities_a_OBJECTS) $(libphalanx_utilities_a_DEPENDENCIES) 
-	-rm -f libphalanx_utilities.a
-	$(libphalanx_utilities_a_AR) libphalanx_utilities.a $(libphalanx_utilities_a_OBJECTS) $(libphalanx_utilities_a_LIBADD)
-	$(RANLIB) libphalanx_utilities.a
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-test_utilitites_algebraic_types$(EXEEXT): $(test_utilitites_algebraic_types_OBJECTS) $(test_utilitites_algebraic_types_DEPENDENCIES) 
-	@rm -f test_utilitites_algebraic_types$(EXEEXT)
-	$(CXXLINK) $(test_utilitites_algebraic_types_OBJECTS) $(test_utilitites_algebraic_types_LDADD) $(LIBS)
+performance_allocators$(EXEEXT): $(performance_allocators_OBJECTS) $(performance_allocators_DEPENDENCIES) 
+	@rm -f performance_allocators$(EXEEXT)
+	$(CXXLINK) $(performance_allocators_OBJECTS) $(performance_allocators_LDADD) $(LIBS)
+performance_bracket_operator$(EXEEXT): $(performance_bracket_operator_OBJECTS) $(performance_bracket_operator_DEPENDENCIES) 
+	@rm -f performance_bracket_operator$(EXEEXT)
+	$(CXXLINK) $(performance_bracket_operator_OBJECTS) $(performance_bracket_operator_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -370,8 +295,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellData.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Test_Utilities_AlgebraicTypes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Performance_Allocators.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Performance_BracketOperator.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -387,50 +312,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-CellData.o: $(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CellData.o -MD -MP -MF $(DEPDIR)/CellData.Tpo -c -o CellData.o `test -f '$(srcdir)/CellData.cpp' || echo '$(srcdir)/'`$(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/CellData.Tpo $(DEPDIR)/CellData.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CellData.cpp' object='CellData.o' libtool=no @AMDEPBACKSLASH@
+Performance_Allocators.o: $(srcdir)/Performance_Allocators.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Performance_Allocators.o -MD -MP -MF $(DEPDIR)/Performance_Allocators.Tpo -c -o Performance_Allocators.o `test -f '$(srcdir)/Performance_Allocators.cpp' || echo '$(srcdir)/'`$(srcdir)/Performance_Allocators.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Performance_Allocators.Tpo $(DEPDIR)/Performance_Allocators.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Performance_Allocators.cpp' object='Performance_Allocators.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CellData.o `test -f '$(srcdir)/CellData.cpp' || echo '$(srcdir)/'`$(srcdir)/CellData.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Performance_Allocators.o `test -f '$(srcdir)/Performance_Allocators.cpp' || echo '$(srcdir)/'`$(srcdir)/Performance_Allocators.cpp
 
-CellData.obj: $(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CellData.obj -MD -MP -MF $(DEPDIR)/CellData.Tpo -c -o CellData.obj `if test -f '$(srcdir)/CellData.cpp'; then $(CYGPATH_W) '$(srcdir)/CellData.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CellData.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/CellData.Tpo $(DEPDIR)/CellData.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CellData.cpp' object='CellData.obj' libtool=no @AMDEPBACKSLASH@
+Performance_Allocators.obj: $(srcdir)/Performance_Allocators.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Performance_Allocators.obj -MD -MP -MF $(DEPDIR)/Performance_Allocators.Tpo -c -o Performance_Allocators.obj `if test -f '$(srcdir)/Performance_Allocators.cpp'; then $(CYGPATH_W) '$(srcdir)/Performance_Allocators.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Performance_Allocators.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Performance_Allocators.Tpo $(DEPDIR)/Performance_Allocators.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Performance_Allocators.cpp' object='Performance_Allocators.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CellData.obj `if test -f '$(srcdir)/CellData.cpp'; then $(CYGPATH_W) '$(srcdir)/CellData.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CellData.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Performance_Allocators.obj `if test -f '$(srcdir)/Performance_Allocators.cpp'; then $(CYGPATH_W) '$(srcdir)/Performance_Allocators.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Performance_Allocators.cpp'; fi`
 
-Test_Utilities_AlgebraicTypes.o: $(srcdir)/Test_Utilities_AlgebraicTypes.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Test_Utilities_AlgebraicTypes.o -MD -MP -MF $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo -c -o Test_Utilities_AlgebraicTypes.o `test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Test_Utilities_AlgebraicTypes.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo $(DEPDIR)/Test_Utilities_AlgebraicTypes.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' object='Test_Utilities_AlgebraicTypes.o' libtool=no @AMDEPBACKSLASH@
+Performance_BracketOperator.o: $(srcdir)/Performance_BracketOperator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Performance_BracketOperator.o -MD -MP -MF $(DEPDIR)/Performance_BracketOperator.Tpo -c -o Performance_BracketOperator.o `test -f '$(srcdir)/Performance_BracketOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Performance_BracketOperator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Performance_BracketOperator.Tpo $(DEPDIR)/Performance_BracketOperator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Performance_BracketOperator.cpp' object='Performance_BracketOperator.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Test_Utilities_AlgebraicTypes.o `test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Test_Utilities_AlgebraicTypes.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Performance_BracketOperator.o `test -f '$(srcdir)/Performance_BracketOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Performance_BracketOperator.cpp
 
-Test_Utilities_AlgebraicTypes.obj: $(srcdir)/Test_Utilities_AlgebraicTypes.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Test_Utilities_AlgebraicTypes.obj -MD -MP -MF $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo -c -o Test_Utilities_AlgebraicTypes.obj `if test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo $(DEPDIR)/Test_Utilities_AlgebraicTypes.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' object='Test_Utilities_AlgebraicTypes.obj' libtool=no @AMDEPBACKSLASH@
+Performance_BracketOperator.obj: $(srcdir)/Performance_BracketOperator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Performance_BracketOperator.obj -MD -MP -MF $(DEPDIR)/Performance_BracketOperator.Tpo -c -o Performance_BracketOperator.obj `if test -f '$(srcdir)/Performance_BracketOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Performance_BracketOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Performance_BracketOperator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Performance_BracketOperator.Tpo $(DEPDIR)/Performance_BracketOperator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Performance_BracketOperator.cpp' object='Performance_BracketOperator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Test_Utilities_AlgebraicTypes.obj `if test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Test_Utilities_AlgebraicTypes.cpp'; fi`
-install-includeHEADERS: $(include_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
-	  $(includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
-	done
-
-uninstall-includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
-	done
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Performance_BracketOperator.obj `if test -f '$(srcdir)/Performance_BracketOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Performance_BracketOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Performance_BracketOperator.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -508,11 +416,8 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS) all-local
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -537,11 +442,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -559,11 +462,11 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am:
 
 install-dvi: install-dvi-am
 
-install-exec-am: install-libLIBRARIES
+install-exec-am:
 
 install-html: install-html-am
 
@@ -594,23 +497,22 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
+uninstall-am:
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libLIBRARIES clean-noinstPROGRAMS ctags \
-	distclean distclean-compile distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-includeHEADERS install-info \
-	install-info-am install-libLIBRARIES install-man install-pdf \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
+	uninstall-am
 
 
 include $(top_builddir)/Makefile.export.phalanx

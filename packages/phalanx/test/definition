@@ -20,3 +20,10 @@
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
+
+(INSTALL,PERFORMANCE,ALL) {
+    DIRS = Performance;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

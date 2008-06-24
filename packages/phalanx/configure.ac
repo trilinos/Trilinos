@@ -408,6 +408,7 @@ AC_CONFIG_FILES([
 		test/DataLayout/Makefile
 		test/FieldTag/Makefile
 		test/Field/Makefile
+		test/Performance/Makefile
 		])
 
 AC_OUTPUT()

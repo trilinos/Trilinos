@@ -48,10 +48,25 @@ EXEEXT = .exe
 ## Utilities Library
 ####################
 UTILITIES_HPP = \
-              CellData.hpp
+              $(srcdir)/CellData.hpp \
+              $(srcdir)/AlgebraicTypes.hpp \
+              $(srcdir)/Traits.hpp \
+              $(srcdir)/Traits_ContiguousAllocator.hpp \
+              $(srcdir)/FactoryTraits.hpp \
+              $(srcdir)/evaluators/Evaluator_Constant.hpp \
+              $(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
+              $(srcdir)/evaluators/Evaluator_Density.hpp \
+              $(srcdir)/evaluators/Evaluator_Density_Def.hpp \
+              $(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier.hpp \
+              $(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp \
+              $(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
+              $(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
+              $(srcdir)/evaluators/Evaluator_NonlinearSource.hpp \
+              $(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
+
 
 UTILITIES_CPP = \
-              CellData.cpp
+              $(srcdir)/CellData.cpp
 
 
 if BUILD_TESTS

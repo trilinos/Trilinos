@@ -23,3 +23,6 @@ _PHALANX_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -lphalanx \
 
 @USING_GNUMAKE_FALSE@PHALANX_INCLUDES = $(_PHALANX_INCLUDES)
 @USING_GNUMAKE_FALSE@PHALANX_LIBS     = $(_PHALANX_LIBS)
+
+PHALANX_TEST_INCLUDES = -I@abs_top_srcdir@/test/Utilities $(PHALANX_INCLUDES)
+PHALANX_TEST_LIBS = -L@abs_top_builddir@/test/Utilities -lphalanx_utilities $(PHALANX_LIBS)

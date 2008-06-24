@@ -220,7 +220,7 @@ top_srcdir = @top_srcdir@
 #np# For packages whose tests are located in this directory, rather than
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# test1/ rather than this file.
-SUBDIRS = Utilities Allocators DataContainer DataLayout FieldTag Field
+SUBDIRS = Utilities Allocators DataContainer DataLayout FieldTag Field Performance
 EXTRA_DIST = definition
 all: all-recursive
 

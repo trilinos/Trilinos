@@ -107,8 +107,8 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.phalanx \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--my-abs-incl-dirs=@abs_top_srcdir@/test/Utilities:@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/test/Utilities:@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../sacado:@abs_top_builddir@/../teuchos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
 		PHALANX > $(exec_prefix)/include/Makefile.export.phalanx.macros

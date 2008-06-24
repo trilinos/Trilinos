@@ -18,6 +18,16 @@ namespace PHX {
 			 Teuchos::RCP<Teuchos::ParameterList> >& data);
     
   };
+
+
+  /*! \brief Nonmember helper function for registering field evaluators for all scalar types that are built with template managers.
+
+  \relates PHX::FieldEvaluatorFactory
+
+  */
+  template<typename Traits>
+  void registerFieldEvaluators(const Teuchos::RCP< std::vector< Teuchos::RCP<PHX::FieldEvaluator_TemplateManager<Traits> > > >& t, PHX::FieldManager<Traits>& fm);
+
 } 
 
 #include "Phalanx_FieldEvaluator_Factory_Def.hpp"

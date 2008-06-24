@@ -52,5 +52,29 @@ buildFieldEvaluators(const std::map<std::string, Teuchos::RCP<Teuchos::Parameter
 
 }
 //**********************************************************************
+template<typename Traits>
+void PHX::registerFieldEvaluators(const Teuchos::RCP< std::vector< Teuchos::RCP<PHX::FieldEvaluator_TemplateManager<Traits> > > >& providers, PHX::FieldManager<Traits>& fm)
+{
+  using namespace std;
+  using namespace Teuchos;
+  // Loop over each provider template manager
+  typename vector< RCP<FieldEvaluator_TemplateManager<Traits> > >::iterator 
+    tm = providers->begin();
+  for (; tm != providers->end(); ++tm) {
+    
+    // Loop over Scalar Types
+    typename PHX::FieldManager<Traits>::iterator vmit = fm.begin();
+    typename FieldEvaluator_TemplateManager<Traits>::iterator vpit = 
+      (*tm)->begin();
+    for (; vpit != (*tm)->end(); ++vpit) {
+      RCP<PHX::FieldEvaluator<Traits> > vp =
+	rcp_dynamic_cast<PHX::FieldEvaluator<Traits> >(vpit.rcp());
+      fm.registerEvaluatorForScalarType(vmit, vp);
+      ++vmit;
+    } 
+  }
+
+}
+//**********************************************************************
 
 #endif

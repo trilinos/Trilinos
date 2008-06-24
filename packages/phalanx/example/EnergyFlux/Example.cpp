@@ -115,25 +115,8 @@ int main(int argc, char *argv[])
       FieldTag source("Nonlinear Source", scalar_qp);
       vm.requireFieldForAllTypes(source);
       
-      // Register all FieldEvaluators
-      
-      // Loop over each provider template manager
-      vector< RCP<FieldEvaluator_TemplateManager<MyTraits> > >::iterator 
-	tm = providers->begin();
-      for (; tm != providers->end(); ++tm) {
-	
-	// Loop over Scalar Types
-	PHX::FieldManager<MyTraits>::iterator vmit = vm.begin();
-	FieldEvaluator_TemplateManager<MyTraits>::iterator vpit = 
-	  (*tm)->begin();
-	for (; vpit != (*tm)->end(); ++vpit) {
-	  RCP<PHX::FieldEvaluator<MyTraits> > vp =
-	    rcp_dynamic_cast<PHX::FieldEvaluator<MyTraits> >(vpit.rcp());
-	  vm.registerEvaluatorForScalarType(vmit, vp);
-	  ++vmit;
-	}
-	
-      }
+      // Register all FieldEvaluators 
+      registerFieldEvaluators(providers, vm);
 
       const std::size_t num_cells = 10;
       const std::size_t num_eval_loops = 1;
