@@ -49,5 +49,11 @@ const Epetra_Vector* Epetra_OskiVector::Epetra_View() const {
   return Epetra_View_;
 }
 
+Epetra_OskiVector& Epetra_OskiVector::operator = (const Epetra_OskiVector& Source) {
+  Epetra_View_ = Source.Epetra_View_;
+  return(*this);
+}
+
+
 #endif
 #endif

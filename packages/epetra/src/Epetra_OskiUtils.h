@@ -35,7 +35,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_OSKIUTILS_H
 
 extern "C" {
-#include "oski.h"
+#include "oski/oski.h"
 }
 
 //! Epetra_OskiUtils:  The Epetra OSKI Class to handle all operations that do not involve the use of a matrix, vector, error or permutation object.

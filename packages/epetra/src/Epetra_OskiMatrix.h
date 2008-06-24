@@ -40,7 +40,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_OskiPermutation.h"
 #include "Teuchos_ParameterList.hpp"
 extern "C" {
-  #include "oski.h"
+  #include "oski/oski.h"
 }
 
 class Epetra_OskiVector;
@@ -137,7 +137,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
     	    \pre Filled()==true
     	    \post Unchanged.
   	*/
-	int ExtractDiagonalCopy(Epetra_OskiVector& Diagonal) const;
+	int ExtractDiagonalCopy(Epetra_Vector& Diagonal) const;
 	
 	//! Replaces diagonal values of the matrix with those in the user-provided vector.
   	/*! This routine is meant to allow replacement of {\bf existing} diagonal values.
@@ -155,6 +155,20 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 
 	//! @name Computational methods
 	//@{
+	//! Performs a matrix vector multiply of y = this^TransA*x
+	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.
+	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
+	           computing the product.
+	    \param x (In) The vector the matrix is multiplied by.
+	    \param y (Out) The vector where the calculation result is stored.
+	    \return Integer error code, set to 0 if successful.
+            \pre Filled()==true
+            \post Unchanged
+	*/
+  	int Multiply(bool TransA,
+	    	     const Epetra_Vector& x, 
+		     Epetra_Vector& y) const;
+	
 	//! Performs a matrix vector multiply of y = Alpha*this^TransA*x + Beta*y
 	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
@@ -170,9 +184,23 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
   	int Multiply(bool TransA,
 	    	     const Epetra_Vector& x, 
 		     Epetra_Vector& y,
-		     double Alpha = 1.0,
+		     double Alpha,
 		     double Beta = 0.0) const;
 	
+	//! Performs a matrix multi-vector multiply of Y = this^TransA*X
+	/*! The multi-vectors X and Y can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
+	    \param TransA (In) If Trans = TRUE then use the transpose of the matrix in
+	           computing the product.
+	    \param X (In) The multi-vector the matrix is multiplied by.
+	    \param Y (Out) The multi-vector where the calculation result is stored.
+	    \return Integer error code, set to 0 if successful.
+	    \pre Filled()==true
+	    \post Unchanged
+	*/
+  	int Multiply(bool TransA,
+   	    	     const Epetra_MultiVector& X, 
+	    	     Epetra_MultiVector& Y) const;
+
 	//! Performs a matrix multi-vector multiply of Y = Alpha*this^TransA*X + Beta*Y
 	/*! The multi-vectors X and Y can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
 	    \param TransA (In) If Trans = TRUE then use the transpose of the matrix in
@@ -188,32 +216,63 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
   	int Multiply(bool TransA,
    	    	     const Epetra_MultiVector& X, 
 	    	     Epetra_MultiVector& Y,
-		     double Alpha = 1.0,
+		     double Alpha,
 	    	     double Beta = 0.0) const;
 
-	//! Performs a triangular solve of x = Alpha*(this^TransA)^-1*x where this is a triangular matrix.
+	//! Performs a triangular solve of y = (this^TransA)^-1*x where this is a triangular matrix.
+	/*! The vector x can be either be an Epetra_Vector or Epetra_OskiVector.  The OskiMatrix must already be triangular and the UnitDiagonal setting associated with it will be used.
+	    \param Upper (In) This parameter is ignored only here to match the Epetra_CrsMatrix::Solve syntax.
+	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
+	           solving the equations.
+	    \param UnitDiagonal (In) This parameter is ignored only here to match the Epetra_CrsMatrix::Solve syntax.
+	    \param x (In) The vector solved against.
+	    \param y (Out) The solution vector.
+	    \return Integer error code, set to 0 if successful.
+            \pre Filled()==true
+            \post Unchanged
+	*/
+        int Solve(bool Upper, bool TransA, bool UnitDiagonal, const Epetra_Vector& x, Epetra_Vector &y) const;
+        
+	//! Performs a triangular solve of y = Alpha*(this^TransA)^-1*x where this is a triangular matrix.
 	/*! The vector x can be either be an Epetra_Vector or Epetra_OskiVector.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
 	           solving the equations.
-	    \param x (In/Out) Both the solution vector and the vector solved against.
+	    \param x (In) The vector solved against.
+	    \param y (Out) The solution vector.
 	    \param Alpha (In) A scalar constant used to scale x.
 	    \return Integer error code, set to 0 if successful.
             \pre Filled()==true
             \post Unchanged
 	*/
-        int Solve(bool TransA, Epetra_Vector& x, double Alpha = 1.0) const;
+        int Solve(bool TransA, const Epetra_Vector& x, Epetra_Vector& y, double Alpha = 1.0) const;
         
-	//! Performs a triangular solve of X = Alpha*(this^TransA)^-1*X where this is a triangular matrix.
-	/*! The multi-vector X can be either be an Epetra_MultiVector or Epetra_OskiMultiVector.
+	//! Performs a triangular solve of Y = (this^TransA)^-1*X where this is a triangular matrix.
+	/*! The vector X can be either be an Epetra_MultiVector or Epetra_OskiMultiVector.  The OskiMatrix must already be triangular and the UnitDiagonal setting associated with it will be used.
+	    \param Upper (In) This parameter is ignored only here to match the Epetra_CrsMatrix::Solve syntax.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
 	           solving the equations.
-	    \param X (In/Out) Both the solution multi-vector and the multi-vector solved against.
+	    \param UnitDiagonal (In) This parameter is ignored only here to match the Epetra_CrsMatrix::Solve syntax.
+	    \param X (In) The multi-vector solved against.
+	    \param Y (Out) The solution multi-vector.
+	    \return Integer error code, set to 0 if successful.
+            \pre Filled()==true
+            \post Unchanged
+	*/
+        int Solve(bool Upper, bool TransA, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+        
+	//! Performs a triangular solve of Y = Alpha*(this^TransA)^-1*X where this is a triangular matrix.
+	/*! The vector X can be either be an Epetra_MultiVector or Epetra_OskiMultiVector.
+	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
+	           solving the equations.
+	    \param X (In) The multi-vector solved against.
+	    \param Y (Out) The solution multi-vector.
 	    \param Alpha (In) A scalar constant used to scale X.
 	    \return Integer error code, set to 0 if successful.
             \pre Filled()==true
             \post Unchanged
 	*/
-	int Solve(bool TransA, Epetra_MultiVector& X, double Alpha = 1.0) const;
+        int Solve(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, double Alpha = 1.0) const;
+        
 
 	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
 	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.

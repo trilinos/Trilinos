@@ -36,7 +36,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #include "Epetra_MultiVector.h"
 extern "C" {
-#include "oski.h"
+#include "oski/oski.h"
 }
 
 //class Epetra_MultiVector;
@@ -84,6 +84,12 @@ class Epetra_OskiMultiVector: public Epetra_MultiVector{
    const Epetra_MultiVector* Epetra_View() const;
    //@}
   
+   //! @name Operators
+   //@{
+   //! Sets this equal to Source.
+   Epetra_OskiMultiVector& operator = (const Epetra_OskiMultiVector& Source);
+   //@}
+
  protected:
 
  private:

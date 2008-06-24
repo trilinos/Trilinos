@@ -86,5 +86,12 @@ const Epetra_MultiVector* Epetra_OskiMultiVector::Epetra_View() const {
   return Epetra_View_;
 }
 
+Epetra_OskiMultiVector& Epetra_OskiMultiVector::operator = (const Epetra_OskiMultiVector& Source) {
+  Epetra_View_ = Source.Epetra_View_;
+  Oski_View_ = Source.Oski_View_;
+  Copy_Created_ = Source.Copy_Created_;
+  return(*this);
+}
+
 #endif
 #endif

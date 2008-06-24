@@ -37,7 +37,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_OskiMultiVector.h"
 #include "Epetra_Vector.h"
 extern "C" {
-#include "oski.h"
+#include "oski/oski.h"
 }
 
 class Epetra_Vector;
@@ -76,6 +76,12 @@ class Epetra_OskiVector: public Epetra_OskiMultiVector {
    //@{
    //! Returns a view to the Epetra Object
    const Epetra_Vector* Epetra_View() const;
+   //@}
+
+   //! @name Operators
+   //@{
+   //! Sets this equal to Source.
+   Epetra_OskiVector& operator = (const Epetra_OskiVector& Source);
    //@}
 
  protected:

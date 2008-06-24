@@ -35,7 +35,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_OSKIERROR_H
 
 extern "C" {
-#include <oski.h>
+#include <oski/oski.h>
 }
 
 //! Epetra_OskiError:  The Epetra OSKI Class to provide access to get and set error handling routines in OSKI.
