@@ -174,38 +174,8 @@ int main(int argc, char *argv[])
       //vm.setFieldData(temp);
       //for (int i=0; i < temp.size(); ++i)
       //cout << "temperature_node[" << i << "] = " << temp[i] << endl;
-      
-
-
-
-      cout << "\nTesting Debug naming scheme.\n";
-      // Default
-      cout << getTypeString<int, MyTraits>() << endl;
-      // Scalar Types
-      cout << getTypeString<double, MyTraits>() << endl;
-      cout << getTypeString<MyTraits::FadType, MyTraits>() << endl;
-      // Data Types
-      cout << getTypeString<double, MyTraits>() << endl;
-      cout << getTypeString<MyTraits::FadType, MyTraits>() << endl;
-      cout << getTypeString<MyVector<double>, MyTraits>() << endl;
-      cout << getTypeString<MyVector<MyTraits::FadType>, MyTraits>() << endl;
-      cout << getTypeString<MyTensor<double>, MyTraits>() << endl;
-      cout << getTypeString<MyTensor<MyTraits::FadType>, MyTraits>() << endl;
     }
     
-    {
-      cout << "\nTesting Fields.\n";
-      RCP<DataLayout> t = rcp(new Generic<MyTraits::MY_SCALAR>("Q1_QP", 4));
-      FieldTag v("Test", t);
-      Field<double> density(v);
-      cout << density << endl;
-
-      ArrayRCP<double> data = arcp<double>(10);
-      density.setFieldData(data);
-
-      cout << "Finished Testing Handles.\n";
-    }
-
     // *********************************************************************
     // Finished all testing
     // *********************************************************************

@@ -10,7 +10,6 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_Field.hpp"
 #include "Phalanx_ScalarContainer_TemplateManager.hpp"
-#include "Phalanx_Allocator_Default.hpp"
 
 namespace PHX {
 

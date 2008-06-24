@@ -62,7 +62,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @BUILD_EXAMPLES_TRUE@noinst_PROGRAMS = example$(EXEEXT) \
-@BUILD_EXAMPLES_TRUE@	example_algebraic_types$(EXEEXT)
+@BUILD_EXAMPLES_TRUE@	example_algebraic_types$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@	example_debug_names$(EXEEXT)
 subdir = example/EnergyFlux
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -95,6 +96,8 @@ am_example_algebraic_types_OBJECTS = Example_AlgebraicTypes.$(OBJEXT) \
 	CellData.$(OBJEXT)
 example_algebraic_types_OBJECTS =  \
 	$(am_example_algebraic_types_OBJECTS)
+am_example_debug_names_OBJECTS = Example_DebugNames.$(OBJEXT)
+example_debug_names_OBJECTS = $(am_example_debug_names_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -107,8 +110,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(example_SOURCES) $(example_algebraic_types_SOURCES)
-DIST_SOURCES = $(example_SOURCES) $(example_algebraic_types_SOURCES)
+SOURCES = $(example_SOURCES) $(example_algebraic_types_SOURCES) \
+	$(example_debug_names_SOURCES)
+DIST_SOURCES = $(example_SOURCES) $(example_algebraic_types_SOURCES) \
+	$(example_debug_names_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -276,6 +281,15 @@ example_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 example_algebraic_types_LDADD = $(EXAMPLE_LIBS)
+example_debug_names_SOURCES = \
+	$(srcdir)/Example_DebugNames.cpp \
+	$(srcdir)/AlgebraicTypes.hpp \
+	$(srcdir)/Traits.hpp
+
+example_debug_names_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+example_debug_names_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -318,6 +332,9 @@ example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES)
 example_algebraic_types$(EXEEXT): $(example_algebraic_types_OBJECTS) $(example_algebraic_types_DEPENDENCIES) 
 	@rm -f example_algebraic_types$(EXEEXT)
 	$(CXXLINK) $(example_algebraic_types_OBJECTS) $(example_algebraic_types_LDADD) $(LIBS)
+example_debug_names$(EXEEXT): $(example_debug_names_OBJECTS) $(example_debug_names_DEPENDENCIES) 
+	@rm -f example_debug_names$(EXEEXT)
+	$(CXXLINK) $(example_debug_names_OBJECTS) $(example_debug_names_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -328,6 +345,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_AlgebraicTypes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_DebugNames.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -384,6 +402,20 @@ Example_AlgebraicTypes.obj: $(srcdir)/Example_AlgebraicTypes.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_AlgebraicTypes.cpp' object='Example_AlgebraicTypes.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_AlgebraicTypes.obj `if test -f '$(srcdir)/Example_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_AlgebraicTypes.cpp'; fi`
+
+Example_DebugNames.o: $(srcdir)/Example_DebugNames.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_DebugNames.o -MD -MP -MF $(DEPDIR)/Example_DebugNames.Tpo -c -o Example_DebugNames.o `test -f '$(srcdir)/Example_DebugNames.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_DebugNames.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_DebugNames.Tpo $(DEPDIR)/Example_DebugNames.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_DebugNames.cpp' object='Example_DebugNames.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_DebugNames.o `test -f '$(srcdir)/Example_DebugNames.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_DebugNames.cpp
+
+Example_DebugNames.obj: $(srcdir)/Example_DebugNames.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_DebugNames.obj -MD -MP -MF $(DEPDIR)/Example_DebugNames.Tpo -c -o Example_DebugNames.obj `if test -f '$(srcdir)/Example_DebugNames.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_DebugNames.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_DebugNames.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_DebugNames.Tpo $(DEPDIR)/Example_DebugNames.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_DebugNames.cpp' object='Example_DebugNames.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_DebugNames.obj `if test -f '$(srcdir)/Example_DebugNames.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_DebugNames.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_DebugNames.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

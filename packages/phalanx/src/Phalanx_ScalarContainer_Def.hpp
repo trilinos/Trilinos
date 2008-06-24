@@ -46,6 +46,8 @@ postRegistrationSetup(std::size_t max_num_cells,
     this->vp_manager_.sortAndOrderEvaluators();
 
   // Determine total amount of memory for all variables
+  allocator_.reset();
+  
   const std::vector<PHX::FieldTag>& var_list = 
     this->vp_manager_.getFieldTags();
 
@@ -62,6 +64,8 @@ postRegistrationSetup(std::size_t max_num_cells,
       }
     }
   }
+
+  allocator_.setup();
 
   // Allocate field data arrays
   //std::vector<PHX::FieldTag>::const_iterator  var = var_list.begin();

@@ -41,7 +41,7 @@ all-local:
 PHALANX_HPP = \
 	$(srcdir)/Phalanx.hpp \
 	$(srcdir)/Phalanx_Allocator_Contiguous.hpp \
-	$(srcdir)/Phalanx_Allocator_Default.hpp \
+	$(srcdir)/Phalanx_Allocator_New.hpp \
 	$(srcdir)/Phalanx_ConfigDefs.hpp \
 	$(srcdir)/Phalanx_DataContainer_Base_Def.hpp \
 	$(srcdir)/Phalanx_DataContainer_Base.hpp \

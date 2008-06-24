@@ -14,7 +14,7 @@
 #include "Phalanx_ConfigDefs.hpp" // for std::vector
 #include "AlgebraicTypes.hpp"
 #include "CellData.hpp"
-#include "Phalanx_Allocator_Default.hpp"
+#include "Phalanx_Allocator_New.hpp"
 
 namespace PHX {
 
@@ -112,7 +112,7 @@ namespace PHX {
     // ******************************************************************
     // *** Allocator Type
     // ******************************************************************
-    typedef PHX::DefaultAllocator Allocator;
+    typedef PHX::NewAllocator Allocator;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method

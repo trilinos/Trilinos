@@ -45,7 +45,7 @@ AM_CPPFLAGS = -I$(srcdir)/evaluators $(EXAMPLE_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_EXAMPLES
-noinst_PROGRAMS = example example_algebraic_types
+noinst_PROGRAMS = example example_algebraic_types example_debug_names
 endif
 
 example_SOURCES = \
@@ -93,3 +93,13 @@ example_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 example_algebraic_types_LDADD = $(EXAMPLE_LIBS)
+
+example_debug_names_SOURCES = \
+	$(srcdir)/Example_DebugNames.cpp \
+	$(srcdir)/AlgebraicTypes.hpp \
+	$(srcdir)/Traits.hpp
+
+example_debug_names_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+example_debug_names_LDADD = $(EXAMPLE_LIBS)
