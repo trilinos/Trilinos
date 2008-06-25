@@ -343,7 +343,7 @@ public:
     
     _nx = ScalarTraits<int>::squareroot(n);
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPD() was not a square number." << endl;
+      std::cout << "Argument 1 to OPD() was not a square number." << std::endl;
       _n = 100;
       _nx = 10;
     }
@@ -928,7 +928,7 @@ public:
     
     _nx = ScalarTraits<int>::squareroot(n);
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPO() was not a square number." << endl;
+      std::cout << "Argument 1 to OPO() was not a square number." << std::endl;
       _n = 100;
       _nx = 10;
     }
@@ -1150,7 +1150,7 @@ public:
     
     _nx = ScalarTraits<int>::squareroot(n);
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPR() was not a square number." << endl;
+      std::cout << "Argument 1 to OPR() was not a square number." << std::endl;
       _n = 100;
       _nx = 10;
     }
@@ -1253,7 +1253,7 @@ public:
     
     _nx = ScalarTraits<int>::squareroot(n);
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPS() was not a square number." << endl;
+      std::cout << "Argument 1 to OPS() was not a square number." << std::endl;
       _n = 100;
       _nx = 10;
     }
@@ -1355,7 +1355,7 @@ public:
     
     _nx = ScalarTraits<int>::squareroot(n);
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPT() was not a square number." << endl;
+      std::cout << "Argument 1 to OPT() was not a square number." << std::endl;
       _n = 100;
       _nx = 10;
     }
@@ -1458,7 +1458,7 @@ public:
     
     _nx = ScalarTraits<int>::squareroot(n);
     if (_nx*_nx != n) {
-      cout << "Argument 1 to OPU() was not a square number." << endl;
+      std::cout << "Argument 1 to OPU() was not a square number." << std::endl;
       _n = 100;
       _nx = 10;
     }

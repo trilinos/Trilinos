@@ -40,11 +40,8 @@
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
+#ifdef HAVE_MPI
 #include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
 #endif
 
 // templated multivector 
@@ -58,15 +55,10 @@ int main(int argc, char *argv[])
 {
   int info = 0;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
 #endif
-
-  int MyPID = Comm.MyPID();
 
   bool testFailed;
   bool verbose = 0;
@@ -89,31 +81,6 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-#ifdef HAVE_COMPLEX
-  typedef std::complex<float> ST;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<float> ST;
-#else
-  typedef double ST;
-  // no complex. quit with failure.
-  if (verbose && MyPID == 0) {
-    cout << "Not compiled with complex support." << endl;
-    cout << "End Result: TEST FAILED" << endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-#endif
-  typedef ScalarTraits<ST>                   SCT;
-  typedef SCT::magnitudeType                  MT;
-  typedef Anasazi::MultiVec<ST>               MV;
-  typedef Anasazi::Operator<ST>               OP;
-  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
-
-
   // Create default output manager 
   RCP<Anasazi::OutputManager<ST> > MyOM 
     = rcp( new Anasazi::BasicOutputManager<ST>() );
@@ -123,6 +90,32 @@ int main(int argc, char *argv[])
   }
 
   MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
+
+#ifdef HAVE_COMPLEX
+  typedef std::complex<float> ST;
+#elif HAVE_COMPLEX_H
+  typedef ::complex<float> ST;
+#else
+  typedef double ST;
+  // no complex. quit with failure.
+  MyOM->stream(Anasazi::Warning)
+    << "Not compiled with complex support." << endl
+    << "End Result: TEST FAILED" << endl;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
+  }
+#endif
+
+  typedef ScalarTraits<ST>                   SCT;
+  typedef SCT::magnitudeType                  MT;
+  typedef Anasazi::MultiVec<ST>               MV;
+  typedef Anasazi::Operator<ST>               OP;
+  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
+  ST ONE  = SCT::one();
+
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
@@ -241,7 +234,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warning)
       << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl
       << "End Result: TEST FAILED" << endl;	
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -332,7 +325,7 @@ int main(int argc, char *argv[])
   }
 
   // Exit
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

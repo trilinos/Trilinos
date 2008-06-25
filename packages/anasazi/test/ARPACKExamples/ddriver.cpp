@@ -39,11 +39,8 @@
 
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
+#ifdef HAVE_MPI
 #include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
 #endif
 
 // templated multivector 
@@ -55,12 +52,9 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
 #endif
 
   typedef double ST;
@@ -107,7 +101,7 @@ int main(int argc, char *argv[])
   MyOM->setVerbosity(verbosity);
 
   // print greeting
-  MyOM->stream(Anasazi::Warnings) << Anasazi::Anasazi_Version() << endl << endl;
+  MyOM->stream(Anasazi::Warnings) << Anasazi::Anasazi_Version() << std::endl << std::endl;
 
   // Eigensolver parameters
   int dim = nx*nx;
@@ -124,8 +118,8 @@ int main(int argc, char *argv[])
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {
     MyOM->stream(Anasazi::Warnings)
-      << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << endl
-      << "End Result: TEST FAILED" << endl;	
+      << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << std::endl
+      << "End Result: TEST FAILED" << std::endl;	
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -175,9 +169,9 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   if (MyProblem->setProblem() != true) {
     MyOM->stream(Anasazi::Warnings)
-      << "Anasazi::BasicEigenproblem::setProblem() had an error." << endl
-      << "End Result: TEST FAILED" << endl;	
-#ifdef EPETRA_MPI
+      << "Anasazi::BasicEigenproblem::setProblem() had an error." << std::endl
+      << "End Result: TEST FAILED" << std::endl;	
+#ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -240,22 +234,22 @@ int main(int argc, char *argv[])
   {
     stringstream os;
     //      28,5,22
-    os << "Back transformed eigenvalues     Relative Residual Norm" << endl
-       << "-------------------------------------------------------" << endl;
+    os << "Back transformed eigenvalues     Relative Residual Norm" << std::endl
+       << "-------------------------------------------------------" << std::endl;
     for (int i=0; i<nev; i++) {
       os.setf(ios::scientific, ios::floatfield);  
       os.precision(10);
       os << std::setw(28) << std::right << (*evals)[i] 
          << "     "
          << std::setw(22) << std::right << normV[i] 
-         << endl;
+         << std::endl;
     }
     MyOM->print(Anasazi::Warnings,os.str());
   }
   */
 
   // Exit
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

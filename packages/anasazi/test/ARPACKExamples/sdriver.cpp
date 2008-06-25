@@ -40,11 +40,8 @@
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
+#ifdef HAVE_MPI
 #include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
 #endif
 
 // templated multivector 
@@ -58,15 +55,10 @@ int main(int argc, char *argv[])
 {
   int info = 0;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI 
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
 #endif
-
-  int MyPID = Comm.MyPID();
 
   bool testFailed;
   bool verbose = 0;
@@ -221,7 +213,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warning)
       << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl
       << "End Result: TEST FAILED" << endl;	
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -311,7 +303,7 @@ int main(int argc, char *argv[])
   }
 
   // Exit
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

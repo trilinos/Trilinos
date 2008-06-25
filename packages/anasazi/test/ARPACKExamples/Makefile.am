@@ -62,19 +62,15 @@ ARPACKEx_ddriver_SOURCES = $(srcdir)/ddriver.cpp ARPACK_Operators.hpp
 #np# exe depends on.  (This primary is not absolutely essential.)
 ARPACKEx_ddriver_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 #ARPACKEx_sdriver_DEPENDENCIES = \
 #	$(top_builddir)/src/libanasazi.a \
-#	$(top_builddir)/../epetra/src/libepetra.a \
 #	$(top_builddir)/../teuchos/src/libteuchos.a
 #ARPACKEx_cdriver_DEPENDENCIES = \
 #	$(top_builddir)/src/libanasazi.a \
-#	$(top_builddir)/../epetra/src/libepetra.a \
 #	$(top_builddir)/../teuchos/src/libteuchos.a
 #ARPACKEx_zdriver_DEPENDENCIES = \
 #	$(top_builddir)/src/libanasazi.a \
-#	$(top_builddir)/../epetra/src/libepetra.a \
 #	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
