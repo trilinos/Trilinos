@@ -2408,7 +2408,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 #endif
 
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
   if(Epetra_CrsMatrixTraceDumpMultiply) {
