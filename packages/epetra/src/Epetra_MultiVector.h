@@ -830,7 +830,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
     \return Integer error code, set to 0 if successful.
   */
-  int SetSeed(unsigned int Seed){return(Util_.SetSeed(Seed));};
+  int SetSeed(unsigned int Seed_in){return(Util_.SetSeed(Seed_in));};
 
   //! Get seed from Random function.
   /*!

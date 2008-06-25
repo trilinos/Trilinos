@@ -135,7 +135,7 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double* A, int LDA, int NumRows, int NumCols,
+  Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double* A_in, int LDA_in, int NumRows, int NumCols,
                            bool set_object_label=true);
   
   //! Epetra_SerialDenseMatrix copy constructor.
@@ -411,7 +411,7 @@ This function performs a variety of matrix-matrix multiply operations.
  
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
-    virtual int SetUseTranspose(bool UseTranspose) { UseTranspose_ = UseTranspose; return (0); }
+    virtual int SetUseTranspose(bool UseTranspose_in) { UseTranspose_ = UseTranspose_in; return (0); }
  
     //! Returns the result of a Epetra_SerialDenseOperator applied to a Epetra_SerialDenseMatrix X in Y.
     /*!

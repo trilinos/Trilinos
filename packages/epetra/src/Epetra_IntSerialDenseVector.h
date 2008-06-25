@@ -94,7 +94,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 		is equivalent to using the default constructor, and then calling the Size function on it.
     Values should be defined by using the [] or () operators.
    */
-  Epetra_IntSerialDenseVector(int Length);
+  Epetra_IntSerialDenseVector(int Length_in);
 
   //! Set object values from one-dimensional array.
   /*!
@@ -107,7 +107,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_IntSerialDenseVector(Epetra_DataAccess CV, int* Values, int Length);
+  Epetra_IntSerialDenseVector(Epetra_DataAccess CV_in, int* Values_in, int Length_in);
   
   //! Epetra_IntSerialDenseVector copy constructor.
   
@@ -124,7 +124,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
     \return Integer error code, set to 0 if successful.
   */
-  int Size(int Length) {return(Epetra_IntSerialDenseMatrix::Shape(Length, 1));};
+  int Size(int Length_in) {return(Epetra_IntSerialDenseMatrix::Shape(Length_in, 1));};
   
   //! Resize a Epetra_IntSerialDenseVector object.
   /*!
@@ -138,7 +138,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
     \return Integer error code, set to 0 if successful.
   */
-  int Resize(int Length) {return(Epetra_IntSerialDenseMatrix::Reshape(Length, 1));};
+  int Resize(int Length_in) {return(Epetra_IntSerialDenseMatrix::Reshape(Length_in, 1));};
 
   //! Epetra_IntSerialDenseVector destructor.  
   virtual ~Epetra_IntSerialDenseVector ();

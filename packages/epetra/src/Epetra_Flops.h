@@ -54,7 +54,7 @@ class Epetra_Flops {
   //! Epetra_Flops Copy Constructor.
   /*! Makes an exact copy of an existing Epetra_Flops instance.
   */
-  Epetra_Flops(const Epetra_Flops& Flops);
+  Epetra_Flops(const Epetra_Flops& Flops_in);
 
   //! Returns the number of floating point operations with \e this object and resets the count.
   double Flops() const {double tmp = Flops_; Flops_ = 0.0; return(tmp);};

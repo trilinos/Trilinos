@@ -115,16 +115,16 @@ void Epetra_RowMatrixTransposer::DeleteData (){
 //=========================================================================
 int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
 						 Epetra_CrsMatrix *& TransposeMatrix, 
-						 Epetra_Map * TransposeRowMap) {
+						 Epetra_Map * TransposeRowMap_in) {
 
   int i, j;
 
   if (TransposeCreated_) DeleteData(); // Get rid of existing data first
 
-  if (TransposeRowMap==0)
+  if (TransposeRowMap_in==0)
     TransposeRowMap_ = (Epetra_Map *) &(OrigMatrix_->OperatorDomainMap()); // Should be replaced with refcount =
   else
-    TransposeRowMap_ = TransposeRowMap; 
+    TransposeRowMap_ = TransposeRowMap_in; 
 
   // This routine will work for any RowMatrix object, but will attempt cast the matrix to a CrsMatrix if
   // possible (because we can then use a View of the matrix and graph, which is much cheaper).

@@ -100,7 +100,7 @@ class Epetra_Util {
 
     \return Integer error code, set to 0 if successful.
   */
-  int SetSeed(unsigned int Seed);
+  int SetSeed(unsigned int Seed_in);
 
 	//@}
   

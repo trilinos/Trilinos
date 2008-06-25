@@ -363,10 +363,10 @@ class Epetra_BlockMap: public Epetra_Object {
   int FindLocalElementID(int PointID, int & ElementID, int & ElementOffset)  const;
 
   //! Returns true if the GID passed in belongs to the calling processor in this map, otherwise returns false.
-  bool  MyGID(int GID) const {return(LID(GID)!=-1);};
+  bool  MyGID(int GID_in) const {return(LID(GID_in)!=-1);};
    
   //! Returns true if the LID passed in belongs to the calling processor in this map, otherwise returns false.
-  bool  MyLID(int LID) const {return(GID(LID)!=BlockMapData_->IndexBase_-1);};
+  bool  MyLID(int LID_in) const {return(GID(LID_in)!=BlockMapData_->IndexBase_-1);};
   
   //!Returns the minimum global ID across the entire map.
   int  MinAllGID() const {return(BlockMapData_->MinAllGID_);};

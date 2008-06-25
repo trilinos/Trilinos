@@ -62,7 +62,7 @@ class Epetra_CompObject {
   //! @name Set/Get counter method
   //@{ 
   //! Set the internal Epetra_Flops() pointer.
-  void SetFlopCounter(const Epetra_Flops & FlopCounter) {FlopCounter_= (Epetra_Flops *) &FlopCounter; return;}
+  void SetFlopCounter(const Epetra_Flops & FlopCounter_in) {FlopCounter_= (Epetra_Flops *) &FlopCounter_in; return;}
   //! Set the internal Epetra_Flops() pointer to the flop counter of another Epetra_CompObject.
   void SetFlopCounter(const Epetra_CompObject & CompObject) {FlopCounter_= (Epetra_Flops *) (CompObject.GetFlopCounter()); return;}
   //! Set the internal Epetra_Flops() pointer to 0 (no flops counted).
@@ -83,16 +83,16 @@ class Epetra_CompObject {
   //! @name Update flop count methods
   //@{ 
   //! Increment Flop count for \e this object
-  void UpdateFlops(int Flops) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops); return;}
+  void UpdateFlops(int Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
 
   //! Increment Flop count for \e this object
-  void UpdateFlops(long int Flops) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops); return;}
+  void UpdateFlops(long int Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
 
   //! Increment Flop count for \e this object
-  void UpdateFlops(double Flops) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops); return;}
+  void UpdateFlops(double Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
 
   //! Increment Flop count for \e this object
-  void UpdateFlops(float Flops) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops); return;}
+  void UpdateFlops(float Flops_in) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops_in); return;}
   //@}
 
   Epetra_CompObject& operator=(const Epetra_CompObject& src)

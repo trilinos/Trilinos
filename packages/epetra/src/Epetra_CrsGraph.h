@@ -724,46 +724,46 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //@{ 
 
 	//! Returns the local row index for given global row index, returns -1 if no local row for this global row.
-	int LRID(int GRID) const {return(RowMap().LID(GRID));}
+	int LRID(int GRID_in) const {return(RowMap().LID(GRID_in));}
 	
 	//! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-	int GRID(int LRID) const {return(RowMap().GID(LRID));}
+	int GRID(int LRID_in) const {return(RowMap().GID(LRID_in));}
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int LCID(int GCID) const
+	int LCID(int GCID_in) const
 	  {
-	    return( CrsGraphData_->HaveColMap_ ? ColMap().LID(GCID) : -1 );
+	    return( CrsGraphData_->HaveColMap_ ? ColMap().LID(GCID_in) : -1 );
 	  }
 	
 	//! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int GCID(int LCID) const
+	int GCID(int LCID_in) const
 	  {
-	    return( CrsGraphData_->HaveColMap_ ? ColMap().GID(LCID) : -1 );
+	    return( CrsGraphData_->HaveColMap_ ? ColMap().GID(LCID_in) : -1 );
 	  }
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyGRID(int GRID) const {return(LRID(GRID) != -1);}
+	bool MyGRID(int GRID_in) const {return(LRID(GRID_in) != -1);}
 	
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyLRID(int LRID) const {return(GRID(LRID) != IndexBase() - 1);}
+	bool MyLRID(int LRID_in) const {return(GRID(LRID_in) != IndexBase() - 1);}
 	
 	//! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	bool MyGCID(int GCID) const {return(LCID(GCID) != -1);}
+	bool MyGCID(int GCID_in) const {return(LCID(GCID_in) != -1);}
 	
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	bool MyLCID(int LCID) const {return(GCID(LCID) != IndexBase() - 1);}
+	bool MyLCID(int LCID_in) const {return(GCID(LCID_in) != IndexBase() - 1);}
   //@}
   
   //! @name Inlined Operator Methods

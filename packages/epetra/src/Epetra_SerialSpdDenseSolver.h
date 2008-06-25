@@ -153,7 +153,7 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
   using Epetra_SerialDenseSolver::SetMatrix;
 
   //! Sets the pointers for coefficient matrix; special version for symmetric matrices
-  int SetMatrix(Epetra_SerialSymDenseMatrix & A);
+  int SetMatrix(Epetra_SerialSymDenseMatrix & A_in);
   //@}
   
   //! @name Factor/Solve/Invert Methods

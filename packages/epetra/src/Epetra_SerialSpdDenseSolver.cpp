@@ -47,13 +47,13 @@ Epetra_SerialSpdDenseSolver::~Epetra_SerialSpdDenseSolver()
   }
 }
 //=============================================================================
-int Epetra_SerialSpdDenseSolver::SetMatrix(Epetra_SerialSymDenseMatrix & A) {
+int Epetra_SerialSpdDenseSolver::SetMatrix(Epetra_SerialSymDenseMatrix & A_in) {
   
-  SymMatrix_=&A;
-  SymFactor_=&A;
+  SymMatrix_=&A_in;
+  SymFactor_=&A_in;
   SCOND_ = -1.0;
   // Also call SerialDensematrix set method
-  return(Epetra_SerialDenseSolver::SetMatrix( (Epetra_SerialDenseMatrix &) A));
+  return(Epetra_SerialDenseSolver::SetMatrix( (Epetra_SerialDenseMatrix &) A_in));
 }
 //=============================================================================
 int Epetra_SerialSpdDenseSolver::Factor(void) {

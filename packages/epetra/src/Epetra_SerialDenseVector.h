@@ -142,7 +142,7 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
     \return Integer error code, set to 0 if successful.
   */
-  int Size(int Length) {return(Epetra_SerialDenseMatrix::Shape(Length, 1));};
+  int Size(int Length_in) {return(Epetra_SerialDenseMatrix::Shape(Length_in, 1));};
   
   //! Resize a Epetra_SerialDenseVector object.
   /*!
@@ -156,7 +156,7 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
     \return Integer error code, set to 0 if successful.
   */
-  int Resize(int Length) {return(Epetra_SerialDenseMatrix::Reshape(Length, 1));};
+  int Resize(int Length_in) {return(Epetra_SerialDenseMatrix::Reshape(Length_in, 1));};
 
   //@}
 

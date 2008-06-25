@@ -44,8 +44,8 @@ Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(int Length)
 }
 
 //=============================================================================
-Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess CV, int* Values, int Length)
-  : Epetra_IntSerialDenseMatrix(CV, Values, Length, Length, 1)
+Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess CV_in, int* Values_in, int Length_in)
+  : Epetra_IntSerialDenseMatrix(CV_in, Values_in, Length_in, Length_in, 1)
 {
 	SetLabel("Epetra::IntSerialDenseVector");
 }

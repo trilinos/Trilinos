@@ -917,40 +917,40 @@ or if the number of entries in this row exceed the Length parameter.
   //! @name Local/Global ID methods
   //@{ 
 	//! Returns the local row index for given global row index, returns -1 if no local row for this global row.
-	int LRID( int GRID) const {return(Graph_.LRID(GRID));}
+	int LRID( int GRID_in) const {return(Graph_.LRID(GRID_in));}
 	
 	//! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-	int GRID( int LRID) const {return(Graph_.GRID(LRID));}
+	int GRID( int LRID_in) const {return(Graph_.GRID(LRID_in));}
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int LCID( int GCID) const {return(Graph_.LCID(GCID));}
+	int LCID( int GCID_in) const {return(Graph_.LCID(GCID_in));}
 	
 	//! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int GCID( int LCID) const {return(Graph_.GCID(LCID));}
+	int GCID( int LCID_in) const {return(Graph_.GCID(LCID_in));}
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyGRID(int GRID) const {return(Graph_.MyGRID(GRID));}
+	bool MyGRID(int GRID_in) const {return(Graph_.MyGRID(GRID_in));}
 	
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyLRID(int LRID) const {return(Graph_.MyLRID(LRID));}
+	bool MyLRID(int LRID_in) const {return(Graph_.MyLRID(LRID_in));}
 	
 	//! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	bool MyGCID(int GCID) const {return(Graph_.MyGCID(GCID));}
+	bool MyGCID(int GCID_in) const {return(Graph_.MyGCID(GCID_in));}
    
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	bool MyLCID(int LCID) const {return(Graph_.MyLCID(LCID));}
+	bool MyLCID(int LCID_in) const {return(Graph_.MyLCID(LCID_in));}
 
 	//! Returns true of GID is owned by the calling processor, otherwise it returns false.
 	bool MyGlobalRow(int GID) const {return(Graph_.MyGlobalRow(GID));}
@@ -979,7 +979,7 @@ or if the number of entries in this row exceed the Length parameter.
 		
     \return Always returns 0.
   */
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);}
+  int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);}
 
   //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
   /*! 
@@ -1090,14 +1090,14 @@ or if the number of entries in this row exceed the Length parameter.
 
     \warning This method is intended for expert only, its use may require user code modifications in future versions of Epetra.
   */ 
-	int ExtractCrsDataPointers(int *& IndexOffset, int *& Indices, double *& Values) const {
+	int ExtractCrsDataPointers(int *& IndexOffset, int *& Indices, double *& Values_in) const {
 	  if (StorageOptimized()) { 
 	    IndexOffset = Graph().IndexOffset();
 	    Indices = Graph().All_Indices();
-	    Values  = All_Values(); 
+	    Values_in  = All_Values(); 
 	    return (0);
 	  } 
-	  else { IndexOffset = 0; Indices = 0; Values  = 0; return (-1);} }
+	  else { IndexOffset = 0; Indices = 0; Values_in  = 0; return (-1);} }
 	
   //@}
 	
