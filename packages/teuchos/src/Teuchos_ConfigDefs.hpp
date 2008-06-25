@@ -136,8 +136,11 @@ typedef std::ostringstream TeuchosOStringStream;
 #undef TEUCHOS_CHK_REF
 #endif
 
-/* The integral type that is used for the largest std::vector space */
-typedef int Teuchos_Index; /* ToDo: Determine this in configure for the machine */
+/* The integral type that is used for the largest ordinal values on this machine */
+typedef int Teuchos_Ordinal; /* ToDo: Determine this in configure for the machine */
+
+/* Deprecated (use Teuchos_Ordinal) */
+typedef Teuchos_Ordinal Teuchos_Index;
 
 /* Make error report silent by defining TEUCHOS_NO_ERROR_REPORTS */
 

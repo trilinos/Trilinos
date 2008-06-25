@@ -26,33 +26,35 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
+include $(top_builddir)/Makefile.export.teuchos
 
-if HAVE_TEUCHOS_EXTENDED
-CONTAINERS_SUBDIR = Containers
-XML_SUBDIR = XML XMLParser
-FANCY_OUTPUTTING_SUBDIR = FancyOutputting
-endif
-STANDARD_SUBDIRS = \
-  BLAS \
-  Comm \
-  DenseMatrix \
-  Handle \
-  LAPACK \
-  MemoryManagement \
-  ParameterList \
-  Polling \
-  ScalarTraits \
-  Time \
-  UnitTest \
-  Workspace \
-  dyn_cast \
-  exit \
-  scripts
+bin_PROGRAMS = UnitTest_UnitTests UnitTest_BadUnitTest teuchosUnitTests
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR) $(FANCY_OUTPUTTING_SUBDIR)
+UnitTest_UnitTests_SOURCES = \
+  $(srcdir)/Int_UnitTests.cpp \
+  $(srcdir)/TemplateFunc_UnitTests.cpp \
+  $(srcdir)/vector_UnitTests.cpp \
+  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
+UnitTest_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+UnitTest_UnitTests_LDADD = $(TEUCHOS_LIBS)
 
-EXTRA_DIST = definition
+UnitTest_BadUnitTest_SOURCES = \
+  $(srcdir)/Int_UnitTests.cpp \
+  $(srcdir)/TemplateFunc_UnitTests.cpp \
+  $(srcdir)/Failing_UnitTest.cpp \
+  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
+UnitTest_BadUnitTest_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+UnitTest_BadUnitTest_LDADD = $(TEUCHOS_LIBS)
 
+teuchosUnitTests_SOURCES = \
+  $(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp \
+  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
+teuchosUnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+teuchosUnitTests_LDADD = $(TEUCHOS_LIBS)
+
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
+
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =

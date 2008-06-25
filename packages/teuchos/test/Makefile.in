@@ -110,8 +110,8 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = BLAS Comm DenseMatrix Handle LAPACK MemoryManagement \
-	ParameterList Polling ScalarTraits Time Workspace dyn_cast \
-	exit scripts Containers XML XMLParser FancyOutputting
+	ParameterList Polling ScalarTraits Time UnitTest Workspace \
+	dyn_cast exit scripts Containers XML XMLParser FancyOutputting
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -251,6 +251,7 @@ STANDARD_SUBDIRS = \
   Polling \
   ScalarTraits \
   Time \
+  UnitTest \
   Workspace \
   dyn_cast \
   exit \

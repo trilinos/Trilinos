@@ -4,7 +4,7 @@
 
 # Below I suppress the startup banner since
 # this was getting in the way of the generation
-# if the output string for the commparison
+# of the output string for the commparison
 (FRAMEWORK,INSTALL) {
     TESTS = MemoryManagement/Array_test.exe,
             MemoryManagement/ArrayRCP_test.exe,
@@ -99,4 +99,100 @@
     ARGS = --teuchos-suppress-startup-banner;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1-10),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=ALL,
+      --show-test-details=TEST_NAMES,
+      --show-test-details=FINAL_RESULTS;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --group-name="*";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 18, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --group-name="someFunc*";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 4, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --group-name="*double";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --group-name="*ouble";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 6, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --group-name="*Complex*";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --group-name="Int";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --test-name="Assignment";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 1, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=TEST_NAMES --test-name="*si*";
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, failed = 0);
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=FINAL_RESULTS;
+    EXIT-STATUS = STRING-COMPARISON(Int_BadAssignment_UnitTest);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test fails main()
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON(End Result: TEST FAILED);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test name gets printed
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=FINAL_RESULTS;
+    EXIT-STATUS = STRING-COMPARISON([FAILED]);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test is marked as FAILED
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=TEST_NAMES;
+    EXIT-STATUS = STRING-COMPARISON([FAILED]);
+    COMM = MPI(1),SERIAL;
 }

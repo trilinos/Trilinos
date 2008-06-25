@@ -717,6 +717,7 @@ AC_CONFIG_FILES([
 		test/Polling/Makefile
 		test/ScalarTraits/Makefile
 		test/Time/Makefile
+		test/UnitTest/Makefile
 		test/Workspace/Makefile
 		test/XML/Makefile
 		test/XMLParser/Makefile

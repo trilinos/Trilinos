@@ -125,10 +125,10 @@ CORE_H = \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
-	$(srcdir)/Teuchos_SerialDenseVector.hpp \
-	$(srcdir)/Teuchos_SerialSymDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseSolver.hpp \
+	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_SerialSpdDenseSolver.hpp \
+	$(srcdir)/Teuchos_SerialSymDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerializationTraits.hpp \
 	$(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
 	$(srcdir)/Teuchos_Serializer.hpp \
@@ -147,6 +147,10 @@ CORE_H = \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
 	$(srcdir)/Teuchos_Tuple.hpp \
 	$(srcdir)/Teuchos_TypeNameTraits.hpp \
+	$(srcdir)/Teuchos_UnitTestBase.hpp \
+	$(srcdir)/Teuchos_UnitTestHarness.hpp \
+	$(srcdir)/Teuchos_UnitTestHelpers.hpp \
+	$(srcdir)/Teuchos_UnitTestRepository.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.hpp \
@@ -171,8 +175,8 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp \
-	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
+	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
@@ -197,6 +201,8 @@ CORE = \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_TypeNameTraits.cpp \
+	$(srcdir)/Teuchos_UnitTestBase.cpp \
+	$(srcdir)/Teuchos_UnitTestRepository.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
