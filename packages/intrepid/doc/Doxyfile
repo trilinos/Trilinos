@@ -526,7 +526,7 @@ EXCLUDE_SYMLINKS       = NO
 # against the file with absolute path, so to exclude all test directories 
 # for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       = *TET_C7* *TET_C8* *TET_C9* *TET_C10*
+EXCLUDE_PATTERNS       = *TET_*7* *TET_*8* *TET_*9* *TET_*10* *TET_*6*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names 
 # (namespaces, classes, functions, etc.) that should be excluded from the output. 
