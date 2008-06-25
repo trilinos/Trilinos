@@ -2,6 +2,8 @@
 #ifndef THYRA_TPETRA_TYPES_HPP
 #define THYRA_TPETRA_TYPES_HPP
 
+#ifndef THYRA_TPETRA_CANNOT_COME_OUT_TO_PLAY_RIGHT_NOW
+
 #include "Thyra_OperatorVectorTypes.hpp"
 
 namespace Tpetra {
@@ -57,5 +59,7 @@ template<class Ordinal, class Scalar> class TpetraLinearOpBase;
 template<class Ordinal, class Scalar> class TpetraLinearOp;
 
 } // namespace Thyra
+
+#endif 
 
 #endif // THYRA_TPETRA_TYPES_HPP

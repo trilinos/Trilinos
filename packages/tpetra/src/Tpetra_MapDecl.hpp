@@ -77,13 +77,13 @@ namespace Tpetra {
 
     //@{ \name Map Attribute Methods
 
-    //! Returns the number of entries in this VectorSpace.
+    //! Returns the number of entries in this Map.
     OrdinalType getNumGlobalEntries() const;
 
     //! Returns the number of entries belonging to the calling image.
     OrdinalType getNumMyEntries() const;
 
-    //! Returns the index base for this VectorSpace.
+    //! Returns the index base for this Map.
     OrdinalType getIndexBase() const;
 
     //! Returns minimum local index
@@ -140,7 +140,7 @@ namespace Tpetra {
 
     //@{ Implements Teuchos::Object 
 
-    //! Prints the VectorSpace object to the output stream.
+    //! Prints the Map object to the output stream.
     /*! An << operator is inherited from Teuchos::Object, which uses the print method.*/
     void print(ostream& os) const;
 
@@ -149,9 +149,9 @@ namespace Tpetra {
 
   private:
 
-    Teuchos::RCP< VectorSpaceData<OrdinalType> > MapData_;
+    Teuchos::RCP< Map<OrdinalType> > MapData_;
 
-  }; // VectorSpace class
+  }; // Map class
 
 } // Tpetra namespace
 

@@ -1,4 +1,9 @@
 * kill Tpetra::Comm and replace with Teuchos::Comm, same with MpiComm and SerialComm
+   * in progress
+   * replacing Tpetra::Comm with Teuchos::Comm
+   * this must be done before removing ScalarType template arg from Platform
+   * removing refs to Tpetra::Comm
+   * then replace calls to Tpetra::Comm<PacketType> with Teuchos::Comm helpers
 * remove ScalarType template from Tpetra::Platform 
 * switch ElementSpace,VectorSpace with Map
 * write multivector, move vector to subclass
@@ -6,3 +11,11 @@
 * explicit instantiation
 
 * think about Platform and Node
+
+
+* Didasko
+  all examples have been disabled
+* Thyra
+  examples have been disabled.
+  the following interfaces have been disabled:
+  - 

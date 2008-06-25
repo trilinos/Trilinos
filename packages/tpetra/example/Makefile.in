@@ -103,7 +103,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = EpetraTpetraProfile TpetraOPs verySimple
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -219,7 +219,7 @@ top_srcdir = @top_srcdir@
 
 #if BUILD_TPETRA_EXAMPLES
 @BUILD_PROFILE_EXAMPLE_TRUE@EPETRA_TPETRA_PROFILE = EpetraTpetraProfile TpetraOPs
-STANDARD_SUBDIRS = $(EPETRA_TPETRA_PROFILE) verySimple
+STANDARD_SUBDIRS = #$(EPETRA_TPETRA_PROFILE) verySimple
 #endif
 SUBDIRS = $(STANDARD_SUBDIRS)
 all: all-recursive

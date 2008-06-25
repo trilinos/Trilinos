@@ -67,10 +67,14 @@ namespace Tpetra {
         // directory from the minMyGID value from each image.
         if(ElementSpace.isContiguous()) {
           OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
-          allMinGIDs_.resize(ElementSpace.comm().getNumImages() + one);
+          // make room for the min on each proc, plus one element at the end for the max cap
+          allMinGIDs_.resize(ElementSpace.comm().getSize() + one);
+          // get my min
           OrdinalType minMyGID = ElementSpace.getMinMyGID();
-          ElementSpace.comm().gatherAll(&minMyGID, &allMinGIDs_.front(), one);
-          allMinGIDs_.back() = ElementSpace.getMaxAllGID() + one; // Set max cap
+          // gather all of the mins into the first getSize() elements of allMinDIGs_
+          Teuchos::gatherAll(ElementSpace.comm(),one,minMyGID,&allMinGIDs_.front(),ElementSpace.comm().getSize());
+          // put the max cap at the end
+          allMinGIDs_.back() = ElementSpace.getMaxAllGID() + one; // TODO: is this right?
         }
         // Otherwise we have to generate the directory using MPI calls.
         else {
@@ -133,7 +137,7 @@ namespace Tpetra {
     
   private:
     ElementSpace<OrdinalType> const ElementSpace_;
-    Teuchos::RCP< Comm<OrdinalType, OrdinalType> > Comm_;
+    Teuchos::RCP< Teuchos::Comm<OrdinalType> > Comm_;
     std::vector<OrdinalType> allMinGIDs_;
     std::vector<OrdinalType> imageIDs_;
     std::vector<OrdinalType> LIDs_;
@@ -161,8 +165,8 @@ namespace Tpetra {
         localEntries.assign(globalEntries.size(), negOne);
 
       bool ierr = false;
-      OrdinalType const myImageID = es().comm().getMyImageID();
-      OrdinalType const numImages = es().comm().getNumImages();
+      OrdinalType const myImageID = es().comm().getRank();
+      OrdinalType const numImages = es().comm().getSize();
       OrdinalType const numEntries = globalEntries.size();
       OrdinalType const nOverP = es().getNumGlobalElements() / numImages;
 
@@ -314,7 +318,7 @@ namespace Tpetra {
       
 
       // Get list of images owning the directory entries for the ElementSpace GIDs
-      OrdinalType myImageID = es().comm().getMyImageID();
+      OrdinalType myImageID = es().comm().getRank();
       OrdinalType numMyElements = es().getNumMyElements();
       std::vector<OrdinalType> sendImageIDs(numMyElements);
       std::vector<OrdinalType> myGlobalElements = es().getMyGlobalElements();

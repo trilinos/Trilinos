@@ -56,7 +56,7 @@ namespace Tpetra {
             const map<OrdinalType, OrdinalType>& glMap,
             bool contiguous,
             Teuchos::RCP< Platform<OrdinalType, OrdinalType> > platform,
-            Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm);
+            Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm);
 
 		//! Destructor.
 		~MapData();
@@ -65,7 +65,7 @@ namespace Tpetra {
 		const OrdinalType indexBase_;
 		const OrdinalType numMyEntries_;
 		const OrdinalType numGlobalEntries_;
-		Teuchos::RCP< const Comm<OrdinalType> > Comm_;
+		Teuchos::RCP< const Teuchos::Comm<OrdinalType> > Comm_;
     const OrdinalType numMyEntries_;
     const OrdinalType minLID_;
     const OrdinalType maxLID_;

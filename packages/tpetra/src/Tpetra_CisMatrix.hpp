@@ -454,15 +454,15 @@ namespace Tpetra {
     //! Returns the current number of nonzero entries in specified global index on this image.
     OrdinalType getNumEntries(OrdinalType index) const {
       std::map<OrdinalType, ScalarType>& innermap = data().indicesAndValues_[index];
-      return(innermap.size());
+      return innermap.size();
     }
   
     //! Returns the maximum number of nonzero entries across all rows/columns on all images.
     OrdinalType getGlobalMaxNumEntries() const {
       OrdinalType localMax = getMyMaxNumEntries();
       OrdinalType globalMax = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      ordinalComm().maxAll(&localMax, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
-      return(globalMax);
+      Teuchos::reduceAll(ordinalComm(),Teuchos::REDUCE_MAX,localMax,&globalMax);
+      return globalMax;
     }
   
     //! Returns the maximum number of nonzero entries across all rows/columns on this image.
@@ -544,8 +544,8 @@ namespace Tpetra {
   
     // Print method, used by the overloaded << operator
     void print(ostream& os) const {
-      int const myImageID = comm().getMyImageID();
-      int const numImages = comm().getNumImages();
+      int const myImageID = comm().getRank();
+      int const numImages = comm().getSize();
       for(int i = 0; i < numImages; i++) {
         if(i == myImageID) {
           os << Teuchos::Object::label() << " [Image " << i << "]" << endl;
@@ -674,14 +674,14 @@ namespace Tpetra {
     CisMatrixData<OrdinalType, ScalarType> const& data() const {return(*CisMatrixData_);}
 
     // convenience functions for comm instances
-    Comm<OrdinalType, ScalarType> const& comm() const {return(*data().comm_);}
-    Comm<OrdinalType, OrdinalType> const& ordinalComm() const {return(*data().ordinalComm_);}
+    Teuchos::Comm<OrdinalType> const& comm() const {return(*data().comm_);}
+    Teuchos::Comm<OrdinalType> const& ordinalComm() const {return(*data().ordinalComm_);}
 
     // convenience function for doing Comm::sumAll on one OT variable
     OrdinalType globalSum(OrdinalType localNum) const {
       OrdinalType globalNum = Teuchos::OrdinalTraits<OrdinalType>::zero();
-      ordinalComm().sumAll(&localNum, &globalNum, Teuchos::OrdinalTraits<OrdinalType>::one());
-      return(globalNum);
+      Teuchos::reduceAll(ordinalComm(),Teuchos::REDUCE_SUM,local,&globalNum);
+      return globalNum;
     }
 
     // internal functions for doing norms
@@ -707,7 +707,7 @@ namespace Tpetra {
       }
       // now do Comm call to get global maxSum
       ScalarType globalMax = Teuchos::ScalarTraits<ScalarType>::zero();
-      comm().maxAll(&maxSum, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
+      Teuchos::reduceAll(comm(),Teuchos::REDUCE_MAX,maxSum,&globalMax);
     
       // update flops counter: nnz
       updateFlops(getNumGlobalNonzeros());
@@ -733,7 +733,7 @@ namespace Tpetra {
 
       // now do Comm call to get global max
       ScalarType globalMax = Teuchos::ScalarTraits<ScalarType>::zero();
-      comm().maxAll(&localMax, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
+      Teuchos::reduceAll(comm(),Teuchos::REDUCE_MAX,localMax,&globalMax);
     
       // update flops counter: nnz
       updateFlops(getNumGlobalNonzeros());

@@ -31,7 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_RCP.hpp>
-#include "Tpetra_Comm.hpp"
+#include <Teuchos_Comm.hpp>
 
 // TODO: Platform should not be templated on ScalarType 
 // It doesn't need to, since we switch to Teuchos::Comm, which is not.
@@ -77,8 +77,8 @@ namespace Tpetra {
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-    virtual Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const = 0;
-    virtual Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
+    virtual Teuchos::RCP< Teuchos::Comm<OrdinalType> > createScalarComm() const = 0;
+    virtual Teuchos::RCP< Teuchos::Comm<OrdinalType> > createOrdinalComm() const = 0;
 
 		//@}
 	

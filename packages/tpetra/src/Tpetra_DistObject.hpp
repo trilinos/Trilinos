@@ -36,7 +36,7 @@
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "Tpetra_Comm.hpp"
+#include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
 
@@ -78,7 +78,7 @@ namespace Tpetra {
 
     //! constructor
     DistObject(const ElementSpace<OrdinalType>& elementspace, 
-           Teuchos::RCP< Comm<OrdinalType, ScalarType> > comm)
+           Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm)
       : Teuchos::Object("Tpetra::DistObject")
       , ElementSpace_(elementspace)
       , Comm_(comm)
@@ -89,7 +89,7 @@ namespace Tpetra {
 
     //! constructor, taking label
     DistObject(const ElementSpace<OrdinalType>& elementspace, 
-           Teuchos::RCP< Comm<OrdinalType, ScalarType> > comm,
+           Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm,
            const std::string & label)
       : Teuchos::Object(label.c_str())
       , ElementSpace_(elementspace)
@@ -389,7 +389,7 @@ namespace Tpetra {
   private:
     
     ElementSpace<OrdinalType> const ElementSpace_;
-    Teuchos::RCP< Comm<OrdinalType, ScalarType> > Comm_;
+    Teuchos::RCP< Teuchos::Comm<OrdinalType> > Comm_;
     std::vector<ScalarType> imports_;
     std::vector<ScalarType> exports_;
     std::vector<OrdinalType> sizes_;

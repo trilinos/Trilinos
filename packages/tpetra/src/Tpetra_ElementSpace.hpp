@@ -32,6 +32,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Object.hpp>
+#include <Teuchos_Comm.hpp>
 #include "Tpetra_ConfigDefs.hpp" // for STL map and vector
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Directory.hpp"
@@ -40,7 +41,6 @@
 namespace Tpetra {
 
   // forward declarations
-  template<typename OrdinalType, typename ScalarType> class Comm;
   template<typename OrdinalType> class ElementSpaceData;
   
   //! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.
@@ -83,9 +83,9 @@ namespace Tpetra {
                   + ".  Should be >= " + toString(zero) + ".", -1);
       
       // platform & comm setup
-      Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = platform.createOrdinalComm();
-      OrdinalType numImages = comm->getNumImages();
-      OrdinalType myImageID = comm->getMyImageID();
+      Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm = platform.createOrdinalComm();
+      OrdinalType numImages = comm->getSize();
+      OrdinalType myImageID = comm->getRank();
       
       // compute numMyElements
       OrdinalType numMyElements = numGlobalElements / numImages;
@@ -137,14 +137,14 @@ namespace Tpetra {
                   + ".  Should be >= " + toString(zero) + ".", -2);
       
       // platform & comm setup
-      Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = platform.createOrdinalComm();
+      Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm = platform.createOrdinalComm();
       
       // check for invalid numGlobalElements
       //   Sum up all local element counts to get global count, and then
       //   check to see if user's value for numGlobalElements is either -1 
       //   (in which case we use our computed value) or matches ours.
       OrdinalType global_sum;
-      comm->sumAll(&numMyElements, &global_sum, one);
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,numMyElements,&global_sum);
       if(numGlobalElements == negOne)
         numGlobalElements = global_sum;
       else if(numGlobalElements != global_sum) 
@@ -160,7 +160,7 @@ namespace Tpetra {
       OrdinalType minAllGID = indexBase;
       OrdinalType maxAllGID = minAllGID + numGlobalElements - one;
       OrdinalType start_index;
-      comm->scanSum(&numMyElements, &start_index, one);
+      Teuchos::scan(*comm,Teuchos::REDUCE_SUM,numMyElements,&start_index);
       start_index -= numMyElements;
       OrdinalType minMyGID = start_index + indexBase;
       OrdinalType maxMyGID = minMyGID + numMyElements - one;
@@ -197,14 +197,14 @@ namespace Tpetra {
                   + ".  Should be >= " + toString(zero) + ".", -2);
       
       // platform & comm setup
-      Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = platform.createOrdinalComm();
+      Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm = platform.createOrdinalComm();
       
       // check for invalid numGlobalElements
       //   Sum up all local element counts to get global count, and then
       //   check to see if user's value for numGlobalElements is either -1 
       //   (in which case we use our computed value) or matches ours.
       OrdinalType global_sum;
-      comm->sumAll(&numMyElements, &global_sum, one);
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,numMyElements,&global_sum);
       if(numGlobalElements == negOne)
         numGlobalElements = global_sum;
       else if(numGlobalElements != global_sum)
@@ -229,8 +229,9 @@ namespace Tpetra {
       // set min/maxAllGIDs
       OrdinalType minAllGID;
       OrdinalType maxAllGID;
-      comm->minAll(&minMyGID, &minAllGID, one);
-      comm->maxAll(&maxMyGID, &maxAllGID, one);
+      Teuchos::reduce
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,minMyGid,&minAllGID);
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,maxMyGid,&maxAllGID);
       if (minAllGID < indexBase)
         throw reportError("Minimum global element index = " + toString(minAllGID) + 
                   " is less than index base = " + toString(indexBase) +".", -4);
@@ -399,7 +400,7 @@ namespace Tpetra {
       
       // Now get min of mySameSpace across all images
       int globalSameSpace = 0;
-      comm().minAll(&mySameSpace, &globalSameSpace, 1);
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,mySameSpace,&globalSameSpace);
       
       // if globalSameSpace is 1, that means none of the images set it to 0,
       // so the ElementSpaces are identical on all images. If this is the case, then we should return true.
@@ -454,8 +455,8 @@ namespace Tpetra {
       OrdinalType const nME = getNumMyElements();
       
       getMyGlobalElements(); // throw away output, we call this to make sure list is generated
-      int myImageID = comm().getMyImageID();
-      int numImages = comm().getNumImages();
+      int myImageID = comm().getRank();
+      int numImages = comm().getSize();
       
       for(int imageCtr = 0; imageCtr < numImages; imageCtr++) {
         if(myImageID == imageCtr) {
@@ -501,7 +502,7 @@ namespace Tpetra {
     };
       
     //! Access functions for the Tpetra::Comm and Tpetra::Platform communicators.
-    Comm<OrdinalType, OrdinalType> const& comm() const {return(*data().Comm_);};
+    Teuchos::Comm<OrdinalType> const& comm() const {return(*data().Comm_);};
     Platform<OrdinalType, OrdinalType> const& platform() const {return(*(data().Platform_));};
     
     //! Assignment operator

@@ -29,6 +29,8 @@
 #ifndef TPETRA_COMM_HPP
 #define TPETRA_COMM_HPP
 
+#ifndef TPETRA_COMM_IS_DISABLED
+
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Distributor.hpp"
 
@@ -208,62 +210,6 @@ namespace Tpetra {
 
 		//@}
 
-		//@{ \name Execute Distributor Plan Methods
-
-		//! doPostsAndWaits
-		/*! Execute a plan specified by the distributor object passed in. 
-		  \param distributor In
-			     Contains the specifications of the plan we're executing.
-		  \param exports In
-		         On entry, contains the values we're exporting.
-		  \param packetSize In
-		         On entry, the number of PacketType variables that make up an element.
-		  \param imports Out
-		         On exit, contains the values exported to us. (imports will be resized
-				 if necessary, and any existing values will be overwritten.)
-		*/
-		virtual void doPostsAndWaits(Distributor<OrdinalType> const& distributor,
-									 std::vector<PacketType>& exports,
-									 OrdinalType packetSize,
-									 std::vector<PacketType>& imports) = 0;
-
-		//! doPosts
-		virtual void doPosts(Distributor<OrdinalType> const& distributor,
-							 std::vector<PacketType>& exports,
-							 OrdinalType packetSize,
-							 std::vector<PacketType>& imports) = 0;
-
-		//! doWaits
-		virtual void doWaits(Distributor<OrdinalType> const& distributor) = 0;
-
-		//! doReversePostsAndWaits
-		/*! Execute a reverse plan specified by the distributor object passed in. 
-		  \param distributor In
-			     Contains the specifications of the plan we're reverse-executing.
-		  \param exports In
-		         On entry, contains the values we're exporting.
-		  \param packetSize In
-		         On entry, the number of PacketType variables that make up an element.
-		  \param imports Out
-		         On exit, contains the values exported to us. (imports will be resized
-				 if necessary, and any existing values will be overwritten.)
-		*/
-		virtual void doReversePostsAndWaits(Distributor<OrdinalType> const& distributor,
-											std::vector<PacketType>& exports,
-											OrdinalType packetSize,
-											std::vector<PacketType>& imports) = 0;
-
-		//! doReversePosts
-		virtual void doReversePosts(Distributor<OrdinalType> const& distributor,
-									std::vector<PacketType>& exports,
-									OrdinalType packetSize,
-									std::vector<PacketType>& imports) = 0;
-		
-		//! doReverseWaits
-		virtual void doReverseWaits(Distributor<OrdinalType> const& distributor) = 0;
-		
-		//@}
-
 		//@{ \name Image Info Methods
 
 		//! getMyImageID - returns my rank on this machine
@@ -288,5 +234,7 @@ namespace Tpetra {
 	}; // class Comm
 
 } // namespace Tpetra
+
+#endif // disabled
 
 #endif // TPETRA_COMM_HPP

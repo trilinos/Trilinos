@@ -2,6 +2,8 @@
 #ifndef THYRA_TPETRA_THYRA_WRAPPERS_HPP
 #define THYRA_TPETRA_THYRA_WRAPPERS_HPP
 
+#ifndef THYRA_TPETRA_CANNOT_COME_OUT_TO_PLAY_RIGHT_NOW
+
 #include "Thyra_TpetraTypes.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
@@ -561,5 +563,7 @@ Thyra::get_Tpetra_Operator( const Thyra::LinearOpBase<Scalar> &op )
 {
   return Teuchos::dyn_cast<const TpetraLinearOp<Ordinal,Scalar> >(op).getTpetraOp();
 }
+
+#endif
 
 #endif // THYRA_TPETRA_THYRA_WRAPPERS_HPP

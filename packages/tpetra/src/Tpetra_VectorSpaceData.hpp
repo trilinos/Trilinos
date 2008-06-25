@@ -62,7 +62,7 @@ namespace Tpetra {
 		OrdinalType const numMyEntries_;
 		OrdinalType const numGlobalEntries_;
 		Teuchos::RCP< Platform<OrdinalType, ScalarType> const > Platform_;
-		Teuchos::RCP< Comm<OrdinalType, ScalarType> const > Comm_; // Comm is <ST, OT> because ST represents PT
+		Teuchos::RCP< Teuchos::Comm<OrdinalType> const > Comm_;
 		Teuchos::RCP< ElementSpace<OrdinalType> const > ElementSpace_;
 
 	private:

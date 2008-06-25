@@ -46,7 +46,7 @@ namespace Tpetra {
             const map<OrdinalType, OrdinalType>& glMap,
             bool contiguous,
             Teuchos::RCP< Platform<OrdinalType, OrdinalType> > platform,
-            Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm)
+            Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm)
       : Teuchos::Object("Tpetra::MapData")
       , Platform_(platform)
       , Comm_(comm)

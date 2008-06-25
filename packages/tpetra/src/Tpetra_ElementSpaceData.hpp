@@ -32,8 +32,8 @@
 #include "Tpetra_ConfigDefs.hpp" // for vector and map
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
 #include "Tpetra_Platform.hpp"
-#include "Tpetra_Comm.hpp"
 #include "Tpetra_Directory.hpp"
 #include <Teuchos_Object.hpp>
 
@@ -54,7 +54,7 @@ namespace Tpetra {
              const map<OrdinalType, OrdinalType>& glMap,
              bool const contiguous,
              Teuchos::RCP< Platform<OrdinalType, OrdinalType> > platform,
-             Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm)
+             Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm)
       : Teuchos::Object("Tpetra::ElementSpaceData")
       , Platform_(platform)
       , Comm_(comm)
@@ -80,7 +80,7 @@ namespace Tpetra {
     
   protected:
     Teuchos::RCP< Platform<OrdinalType, OrdinalType> const > Platform_;
-    Teuchos::RCP< Comm<OrdinalType, OrdinalType> const > Comm_;
+    Teuchos::RCP< Teuchos::Comm<OrdinalType> const > Comm_;
     OrdinalType const numGlobalElements_;
     OrdinalType const numMyElements_;
     OrdinalType const indexBase_;
@@ -101,12 +101,13 @@ namespace Tpetra {
   private:
     bool checkGlobalness() {
       bool global = false;
-      if(Comm_->getNumImages() > 1) {
+      if(Comm_->getSize() > 1) {
         int localRep = 0;
         int allLocalRep;
-        if(numGlobalElements_ == numMyElements_)
+        if(numGlobalElements_ == numMyElements_) {
           localRep = 1;
-        Comm_->minAll(&localRep, &allLocalRep, 1);
+          }
+        Teuchos::reduceAll(*Comm_,Teuchos::REDUCE_MIN,localRep,&allLocalRep);
         if(allLocalRep != 1)
           global = true;
       }

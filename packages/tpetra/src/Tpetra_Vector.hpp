@@ -143,7 +143,7 @@ namespace Tpetra {
 
     // use Comm call to sum all local dot products
     ScalarType globalDP;
-    vectorSpace().comm().sumAll(&localDP, &globalDP, ordinalOne);
+    Teuchos::reduceAll(vectorSpace().comm(),Teuchos::REDUCE_SUM,localDP,&globalDP);
 
     // update flops counter: 2n-1
     updateFlops(length + length - ordinalOne);
@@ -270,7 +270,7 @@ namespace Tpetra {
 
     // call comm's sumAll method to compute global 1-norm
     ScalarType globalNorm;
-    vectorSpace().comm().sumAll(&localNorm, &globalNorm, ordinalOne);
+    Teuchos::reduceAll(vectorSpace().comm(),Teuchos::REDUCE_SUM,localNorm,&globalNorm);
 
     // update flops counter: n-1
     updateFlops(length - ordinalOne);
@@ -297,7 +297,7 @@ namespace Tpetra {
 
     // calculate global sum
     ScalarType globalSum;
-    vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
+    Teuchos::reduceAll(vectorSpace().comm(),Teuchos::REDUCE_SUM,localSum,&globalSum);
 
     // update flops counter: 2n
     updateFlops(length + length);
@@ -332,7 +332,7 @@ namespace Tpetra {
 
     // get global sum
     ScalarType globalSum;
-    vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
+    Teuchos::reduceAll(vectorSpace().comm(),Teuchos::REDUCE_SUM,localSum,&globalSum);
 
     // divide by global length, and then take square root of that
     globalSum /= static_cast<ScalarType>(getNumGlobalEntries());
@@ -367,8 +367,8 @@ namespace Tpetra {
     localMin = *(max_element(scalarArray().begin(), scalarArray().end(), less_mag<OrdinalType,ScalarType>())); // use STL max_element, takes constant time
 
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-    vectorSpace().comm().sumAll(&localMin, &globalMin, ordinalOne);
-    return(globalMin);
+    Teuchos::reduceAll(vectorSpace().comm(),Teuchos::REDUCE_SUM,localMin,&globalMin);
+    return globalMin;
   }
 
 
@@ -378,8 +378,8 @@ namespace Tpetra {
     localMax = *(max_element(scalarArray().begin(), scalarArray().end(), greater_mag<OrdinalType,ScalarType>())); // use STL max_element, takes constant time
 
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-    vectorSpace().comm().maxAll(&localMax, &globalMax, ordinalOne);
-    return(globalMax);
+    Teuchos::reduceAll(vectorSpace().comm(),Teuchos::REDUCE_MAX,localMax,&globalMax);
+    return globalMax;
   }
 
 
@@ -391,7 +391,7 @@ namespace Tpetra {
 
     ScalarType globalTotal;
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-    vectorSpace().comm().sumAll(&localTotal, &globalTotal, ordinalOne);
+    Teuchos::reduceAll(vectorSpace().comm(),Teuchos::REDUCE_SUM,localTotal,&globalTotal);
 
     // update flops counter: n
     updateFlops(getNumGlobalEntries());
@@ -502,8 +502,8 @@ namespace Tpetra {
 
   template<typename OrdinalType, typename ScalarType>
   void Vector<OrdinalType,ScalarType>::print(ostream& os) const {
-    OrdinalType const myImageID = vectorSpace().comm().getMyImageID();
-    OrdinalType const numImages = vectorSpace().comm().getNumImages();
+    OrdinalType const myImageID = vectorSpace().comm().getRank();
+    OrdinalType const numImages = vectorSpace().comm().getSize();
     OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 
     for (OrdinalType imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {

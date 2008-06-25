@@ -35,7 +35,7 @@
 #include <Teuchos_Object.hpp>
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Platform.hpp"
-#include "Tpetra_Comm.hpp"
+#include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
 
@@ -143,7 +143,7 @@ namespace Tpetra {
       // then check to make sure distribution is the same
       ScalarType sameNumLocal = Teuchos::ScalarTraits<ScalarType>::one(); // we already know the length matches on this image
       ScalarType sameNumGlobal = Teuchos::ScalarTraits<ScalarType>::zero();
-      comm().minAll(&sameNumLocal, &sameNumGlobal, Teuchos::OrdinalTraits<OrdinalType>::one());
+      Teuchos::reduceAll(comm(),Teuchos::REDUCE_MIN,sumNumLocal,&sumNumGlobal);
       return(sameNumGlobal == Teuchos::ScalarTraits<ScalarType>::one());
     };
   
@@ -161,8 +161,8 @@ namespace Tpetra {
     //! Prints the VectorSpace object to the output stream.
     /*! An << operator is inherited from Teuchos::Object, which uses the print method.*/
     void print(ostream& os) const {
-      OrdinalType myImageID = comm().getMyImageID();
-      OrdinalType numImages = comm().getNumImages();
+      OrdinalType myImageID = comm().getRank();
+      OrdinalType numImages = comm().getSize();
       OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     
       for (int imageCtr = ordinalZero; imageCtr < numImages; imageCtr++) {
@@ -187,7 +187,7 @@ namespace Tpetra {
   
     //! Access functions for the Tpetra::Platform and Tpetra::Comm communicators.
     Platform<OrdinalType, ScalarType> const& platform() const {return(*VectorSpaceData_->Platform_);};
-    Comm<OrdinalType, ScalarType> const& comm() const {return(*VectorSpaceData_->Comm_);}; 
+    Teuchos::Comm<OrdinalType> const& comm() const {return(*VectorSpaceData_->Comm_);}; 
 
     //! Access function for the ElementSpace used by this VectorSpace
     ElementSpace<OrdinalType> const& elementSpace() const {return(*VectorSpaceData_->ElementSpace_);};

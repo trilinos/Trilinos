@@ -299,7 +299,7 @@ private:
   Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >           sp_range_;
   Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >           sp_domain_;
 
-};	// end class TpetraLinearOp
+}; // end class TpetraLinearOp
 
 } // namespace Thyra
 
@@ -673,6 +673,6 @@ TpetraLinearOp<Ordinal,Scalar>::allocateRange(
     );
 }
 
-}	// end namespace Thyra
+} // end namespace Thyra
 
-#endif	// THYRA_TPETRA_LINEAR_OP_HPP
+#endif  // THYRA_TPETRA_LINEAR_OP_HPP

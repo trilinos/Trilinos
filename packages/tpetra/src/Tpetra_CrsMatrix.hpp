@@ -29,13 +29,15 @@
 #ifndef TPETRA_CRSMATRIX_HPP
 #define TPETRA_CRSMATRIX_HPP
 
+#ifndef TPETRA_CRSMATRIX_IS_BROKEN
+
 #include <Teuchos_Object.hpp>
 
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #ifdef TPETRA_MPI
 #include "Tpetra_MpiPlatform.hpp"
-#include "Tpetra_MpiComm.hpp"
+#include "Teuchos_MPIComm.hpp"
 #else
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_SerialComm.hpp"
@@ -74,7 +76,7 @@ namespace Tpetra
       //@{ \name Constructor/Destructor Methods
 
       //! Constructor specifying the primary distribution only.
-      CrsMatrix(const Comm<OrdinalType, ScalarType>& Comm, 
+      CrsMatrix(const Teuchos::Comm<OrdinalType>& Comm, 
                 VectorSpace<OrdinalType, ScalarType>& VectorRowSpace) :
         Comm_(Comm),
         VectorRowSpace_(VectorRowSpace),
@@ -114,7 +116,7 @@ namespace Tpetra
       }
 
       //! Returns the communicator.
-      inline const Comm<OrdinalType, ScalarType>& getComm() const
+      inline const Teuchos::Comm<OrdinalType>& getComm() const
       {
         return(Comm_);
       }
@@ -277,7 +279,7 @@ namespace Tpetra
         // Part 0: send off-image elements //
         // =============================== //
 
-        if (getComm().getNumImages() > 1) globalAssemble();
+        if (getComm().getSize() > 1) globalAssemble();
 
         // =============================== //
         // Part I: remove repeated indices //
@@ -381,7 +383,7 @@ namespace Tpetra
         }
 
         // workaround, should be fixed in Comm
-#ifdef HAVE_MPI
+#ifdef HAVE_MPI_THIS_IS_BROKEN // FINISH
         MPI_Comm MpiCommunicator = (dynamic_cast<const MpiComm<OrdinalType, ScalarType>&>(getComm())).getMpiComm();
         MPI_Allreduce((void*)&NumMyNonzeros_, (void*)&NumGlobalNonzeros_, MpiTraits<OrdinalType>::count(1),
                       MpiTraits<OrdinalType>::datatype(), MPI_SUM, MpiCommunicator);
@@ -524,7 +526,7 @@ namespace Tpetra
       //! Prints the matrix on the specified stream.
       virtual void print(ostream& os) const 
       {
-        int MyImageID = RowSpace_.comm().getMyImageID();
+        int MyImageID = RowSpace_.comm().getRank();
 
         if (MyImageID == 0)
         {
@@ -545,7 +547,7 @@ namespace Tpetra
 
         if (isFillCompleted())
         {
-          for (int pid = 0 ; pid < RowSpace_.comm().getNumImages() ; ++pid)
+          for (int pid = 0 ; pid < RowSpace_.comm().getSize() ; ++pid)
           {
             if (pid == MyImageID)
             {
@@ -656,7 +658,7 @@ namespace Tpetra
       //! Performs importing of off-processor elements and adds them to the locally owned elements.
       void globalAssemble()
       {
-#ifdef HAVE_MPI
+#ifdef HAVE_MPI_THIS_IS_BROKEN // FINISH
         MPI_Comm MpiCommunicator;
         try
         {
@@ -680,7 +682,7 @@ namespace Tpetra
 
         // Ok, so we need to do the hard work.
         
-        int NumImages = getComm().getNumImages();
+        int NumImages = getComm().getSize();
 
         map<OrdinalType, OrdinalType> containter_map;
 
@@ -712,7 +714,7 @@ namespace Tpetra
           image_map[container_vector[i]] = image_vector[i];
         }
 
-        vector<int> local_neighbors(RowSpace_.comm().getNumImages());
+        vector<int> local_neighbors(RowSpace_.comm().getSize());
         for (int i = 0 ; i < local_neighbors.size() ; ++i) local_neighbors[i] = 0;
 
         for (int i = 0 ; i < image_vector.size() ; ++i)
@@ -736,7 +738,7 @@ namespace Tpetra
 
         for (int j = 0 ; j < NumImages ; ++j)
         {
-          int what = global_neighbors[j * NumImages + RowSpace_.comm().getMyImageID()];
+          int what = global_neighbors[j * NumImages + RowSpace_.comm().getRank()];
           if (what > 0)
           {
             recvImages.push_back(j);
@@ -768,7 +770,7 @@ namespace Tpetra
           }
         }
 
-        int MyImageID = RowSpace_.comm().getMyImageID();
+        int MyImageID = RowSpace_.comm().getRank();
 
         vector<MPI_Request> send_requests(NumImages * 3);
         vector<MPI_Status>  send_status(NumImages * 3);
@@ -779,7 +781,7 @@ namespace Tpetra
 
         for (int j = 0 ; j < NumImages ; ++j)
         {
-          int what = global_neighbors[j + NumImages * RowSpace_.comm().getMyImageID()];
+          int what = global_neighbors[j + NumImages * RowSpace_.comm().getRank()];
           if (what > 0)
           {
             sendImages.push_back(j);
@@ -801,7 +803,7 @@ namespace Tpetra
         OrdinalType recv_count = 0;
         for (int j = 0 ; j < NumImages ; ++j)
         {
-          int what = global_neighbors[j * NumImages + RowSpace_.comm().getMyImageID()];
+          int what = global_neighbors[j * NumImages + RowSpace_.comm().getRank()];
           if (what > 0)
           {
             recv_images[recv_count] = j;
@@ -841,7 +843,7 @@ namespace Tpetra
         send_count = 0;
         for (int j = 0 ; j < NumImages ; ++j)
         {
-          int what = global_neighbors[j + NumImages * RowSpace_.comm().getMyImageID()];
+          int what = global_neighbors[j + NumImages * RowSpace_.comm().getRank()];
           if (what > 0)
           {
             // want to send to image `j', first Rows, then Cols, then Vals
@@ -862,7 +864,7 @@ namespace Tpetra
         recv_count = 0;
         for (int j = 0 ; j < NumImages ; ++j)
         {
-          int what = global_neighbors[j * NumImages + RowSpace_.comm().getMyImageID()];
+          int what = global_neighbors[j * NumImages + RowSpace_.comm().getRank()];
           if (what > 0)
           {
             int osize = MpiTraits<OrdinalType>::count(xxx[j]);
@@ -931,4 +933,7 @@ namespace Tpetra
   }; // class CrsMatrix
 
 } // namespace Tpetra
+
+#endif // broken
+
 #endif

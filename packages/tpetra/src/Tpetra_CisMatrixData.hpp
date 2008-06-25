@@ -29,6 +29,8 @@
 #ifndef TPETRA_CISMATRIXDATA_HPP
 #define TPETRA_CISMATRIXDATA_HPP
 
+#include <Teuchos_Comm.hpp>
+
 namespace Tpetra {
 
   /*! class CisMatrixData */
@@ -138,8 +140,8 @@ namespace Tpetra {
 
     // Platform & Comm
     Teuchos::RCP<Platform<OrdinalType, ScalarType> const> platform_;
-    Teuchos::RCP<Comm<OrdinalType, ScalarType> const> comm_;
-    Teuchos::RCP<Comm<OrdinalType, OrdinalType> const> ordinalComm_;
+    Teuchos::RCP<Teuchos::Comm<OrdinalType> const> comm_;
+    Teuchos::RCP<Teuchos::Comm<OrdinalType> const> ordinalComm_;
 
   private:
     //! Copy constructor (declared but not defined, do not use)

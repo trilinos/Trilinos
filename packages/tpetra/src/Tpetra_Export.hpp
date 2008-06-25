@@ -235,7 +235,7 @@ namespace Tpetra {
 			// Use comm plan with ExportGIDs to find out who is sending to us and
 			// get proper ordering of GIDs for remote entries 
 			// (that we will convert to LIDs when done).
-			Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = data().platform_->createOrdinalComm();
+			Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm = data().platform_->createOrdinalComm();
 			comm->doPostsAndWaits(data().distributor_, data().exportGIDs_, one, data().remoteGIDs_);
 			// -- remoteGIDs_ is now defined --
 			

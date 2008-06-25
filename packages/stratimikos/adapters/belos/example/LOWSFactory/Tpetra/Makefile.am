@@ -23,9 +23,12 @@ if ENABLE_STRATIMIKOS_TRIUTILS
 BELOS_THYRA_SOLVER_DRIVER_HB = belos_tpetra_thyra_lowsf_hb 
 endif
 
-noinst_PROGRAMS = belos_tpetra_thyra_lowsf_lap \
-                  belos_tpetra_thyra_lowsf_prec_lap \
-                  $(BELOS_THYRA_SOLVER_DRIVER_HB) 
+# noinst_PROGRAMS = belos_tpetra_thyra_lowsf_lap \
+#                   belos_tpetra_thyra_lowsf_prec_lap \
+#                   $(BELOS_THYRA_SOLVER_DRIVER_HB) 
+noinst_PROGRAMS = 
+                 
+                
 
 belos_tpetra_thyra_lowsf_lap_SOURCES = $(srcdir)/belos_tpetra_thyra_lowsf_lap.cpp 
 belos_tpetra_thyra_lowsf_lap_DEPENDENCIES= $(common_dependencies)

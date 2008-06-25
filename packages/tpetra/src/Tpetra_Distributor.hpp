@@ -33,13 +33,10 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Util.hpp"
 #include <Teuchos_Object.hpp>
+#include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
 	
-	// forward declaration of Comm (needed to break circular dependency)
-	template <typename OrdinalType, typename ScalarType>
-	class Comm;
-
 	//! Tpetra::Distributor:  The Tpetra Gather/Scatter Setup Class.
 	/*! The Distributor class is an interface that encapsulates the general
         information and services needed for other Tpetra classes to perform gather/scatter
@@ -53,7 +50,7 @@ namespace Tpetra {
 		//@{ \name Constructor/Destructor
     
 		//! Comm Constuctor (default ctr)
-		Distributor(Teuchos::RCP< Comm<OrdinalType, OrdinalType> > const& comm) 
+		Distributor(Teuchos::RCP< Teuchos::Comm<OrdinalType> > const& comm) 
 			: Teuchos::Object("Tpetra::Distributor")
 			, Comm_(comm)
 			, numExports_(Teuchos::OrdinalTraits<OrdinalType>::zero())
@@ -110,8 +107,8 @@ namespace Tpetra {
 
 			numExports_ = numExportIDs;
       
-			OrdinalType myImageID = comm().getMyImageID();
-			OrdinalType numImages = comm().getNumImages();
+			OrdinalType myImageID = comm().getRank();
+			OrdinalType numImages = comm().getSize();
       
 			// Check to see if items are grouped by images without gaps
 			// If so, indices_to -> 0
@@ -343,7 +340,7 @@ namespace Tpetra {
 
 				// compute new maxReceiveLength
 				OrdinalType maxReceiveLength = zero;
-				int const myImageID = comm().getMyImageID();
+				int const myImageID = comm().getRank();
 				for(OrdinalType i = zero; i < numReceives_; i++)
 					if(imagesFrom_[i] != myImageID)
 						if(lengthsFrom_[i] > maxReceiveLength)
@@ -373,13 +370,74 @@ namespace Tpetra {
 
 		//@}
 
+		//@{ \name Execute Distributor Plan Methods
+
+		//! doPostsAndWaits
+		/*! Execute a plan specified by the distributor object.
+		  \param comm In
+			     Contains the communicator used to execute the plan we're executing.
+		  \param exports In
+		         On entry, contains the values we're exporting.
+		  \param packetSize In
+		         On entry, the number of ScalarType variables that make up an element.
+		  \param imports Out
+		         On exit, contains the values exported to us. (imports will be resized
+				 if necessary, and any existing values will be overwritten.)
+		*/
+    template <typename ScalarType>
+		void doPostsAndWaits(Comm<OrdinalType> const& comm,
+									 std::vector<ScalarType>& exports,
+									 OrdinalType packetSize,
+									 std::vector<ScalarType>& imports);
+
+		//! doPosts
+    template <typename ScalarType>
+		void doPosts(Comm<OrdinalType> const& comm,
+							 std::vector<ScalarType>& exports,
+							 OrdinalType packetSize,
+							 std::vector<ScalarType>& imports);
+
+		//! doWaits
+		void doWaits(Comm<OrdinalType> const& comm);
+
+		//! doReversePostsAndWaits
+		/*! Execute a reverse plan specified by the distributor object.
+		  \param comm In
+			     Contains the communicator used to execute the plan we're reverse-executing.
+		  \param exports In
+		         On entry, contains the values we're exporting.
+		  \param packetSize In
+		         On entry, the number of ScalarType variables that make up an element.
+		  \param imports Out
+		         On exit, contains the values exported to us. (imports will be resized
+				 if necessary, and any existing values will be overwritten.)
+		*/
+    template <typename ScalarType>
+		void doReversePostsAndWaits(Comm<OrdinalType> const& comm,
+											std::vector<ScalarType>& exports,
+											OrdinalType packetSize,
+											std::vector<ScalarType>& imports);
+
+		//! doReversePosts
+    template <typename ScalarType>
+		void doReversePosts(Comm<OrdinalType> const& comm,
+									std::vector<ScalarType>& exports,
+									OrdinalType packetSize,
+									std::vector<ScalarType>& imports);
+		
+		//! doReverseWaits
+		void doReverseWaits(Comm<OrdinalType> const& comm);
+		
+		//@}
+
+
 
 		//@{ \name I/O Methods
 
 		//! print method inherited from Teuchos::Object
 		void print(ostream& os) const {
-			int const myImageID = comm().getMyImageID();
-			int const numImages = comm().getNumImages();
+			int const myImageID = comm().getRank();
+			int const numImages = comm().getSize();
 			for(int i = 0; i < numImages; i++) {
 				comm().barrier();
 				if(i == myImageID) {
@@ -410,11 +468,11 @@ namespace Tpetra {
 	private:
 
 		// convenience functions for returning inner data class, both const and nonconst versions.
-		Comm<OrdinalType, OrdinalType>& comm() {return(*Comm_);};
-		Comm<OrdinalType, OrdinalType> const& comm() const {return(*Comm_);};
+		Teuchos::Comm<OrdinalType>& comm() {return(*Comm_);};
+		Teuchos::Comm<OrdinalType> const& comm() const {return(*Comm_);};
 
 		// private data members
-		Teuchos::RCP< Comm<OrdinalType, OrdinalType> > Comm_;
+		Teuchos::RCP< Teuchos::Comm<OrdinalType> > Comm_;
 
 		OrdinalType numExports_;
 		OrdinalType selfMessage_;
@@ -526,7 +584,5 @@ namespace Tpetra {
 	}; // class Distributor
   
 } // namespace Tpetra
-
-#include "Tpetra_Comm.hpp"
 
 #endif // TPETRA_DISTRIBUTOR_HPP
