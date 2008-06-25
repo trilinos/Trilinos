@@ -398,6 +398,7 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile
 		Makefile.export.phalanx
+		doc/Makefile
 		src/Makefile
 		example/Makefile
 		example/EnergyFlux/Makefile

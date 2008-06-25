@@ -105,7 +105,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test example
+DIST_SUBDIRS = src doc test example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -265,7 +265,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #tarball. 
 @SUB_TEST_TRUE@TEST_SUBDIR = test
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = src doc $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_TEST_CATEGORY = INSTALL
