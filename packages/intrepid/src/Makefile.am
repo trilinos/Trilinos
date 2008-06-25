@@ -156,7 +156,9 @@ INTREPID_LOCAL_H =  \
   $(srcdir)/local/basis/Intrepid_F2_TET_I8_FEM_FIAT.hpp \
   $(srcdir)/local/basis/Intrepid_F2_TET_I8_FEM_FIATDef.hpp \
   $(srcdir)/local/basis/Intrepid_F2_TET_I9_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I9_FEM_FIATDef.hpp
+  $(srcdir)/local/basis/Intrepid_F2_TET_I9_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F2_TET_I10_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F2_TET_I10_FEM_FIATDef.hpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp
@@ -201,6 +203,7 @@ include_HEADERS = \
 # All Intrepid headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
 nodist_execinclude_HEADERS = Intrepid_config.h
+
 
 
 
