@@ -435,7 +435,13 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
        *prev = dbptr->next;
        bytes_used -= dbptr->size;
        free((char *) dbptr);
+
+      if (DEBUG_MEMORY > 2){
+        GET_RANK(&proc);
+        fprintf(stderr, "Proc %d: free, address (0x%lx) "
+  	"File=%s, line=%d.\n", proc, (long) *ptr, filename, lineno);
        }
+     }
    }
  
   free(*ptr);
