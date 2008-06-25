@@ -60,11 +60,13 @@ field (read from an exodus file).  Before we had the variable manager,
 everywhere in Charon that used velocity, there were repeated loops that
 looked like:
 
+\verbatim
 if (velocity is DOF)
   // get values from dof structure
 else if (velocity is auxiliary data)
   // go get from aux data structure
 else if (...)
+\endverbatim
 
 There were hard coded loops in multiple places that had to be updated
 every time we added a new way to specify velocity.   Now, when velocity
@@ -123,26 +125,54 @@ element assembly for nonlinear equation sets.
 
 /*! \page developer_notes Developer Notes
 
-\section dnotes_notz Pat Notz Description
+\section dnotes_notz Description
 
-The {NAME} package is a library to help decompose a complex problem into a set of simpler problems with managed dependencies. Two benefits of decomposing a problem using {NAME} are (1) increased flexibility because each simpler piece becomes an extension point that can be swapped out with different implementations and (2) easier to craft code because each piece is simpler, more focused and easier to test in isolation.  The counter-benefits to these are (1) a potential performance loss due to fragmentation of the over-all algorithm (e.g., several small loops instead of one large loop) and (2) a potential loss of visibility of the original, composite problem (since the code is scattered into multiple places).  Managing these trade-offs can result in application code that both performs well and supports rapid development and extensibility.
+This is a description Pat Notz called his elevator speech on Phalanx:
+
+\verbatim
+The {NAME} package is a library to help decompose a complex problem
+into a set of simpler problems with managed dependencies. Two benefits
+of decomposing a problem using {NAME} are (1) increased flexibility
+because each simpler piece becomes an extension point that can be
+swapped out with different implementations and (2) easier to craft
+code because each piece is simpler, more focused and easier to test in
+isolation.  The counter-benefits to these are (1) a potential
+performance loss due to fragmentation of the over-all algorithm (e.g.,
+several small loops instead of one large loop) and (2) a potential
+loss of visibility of the original, composite problem (since the code
+is scattered into multiple places).  Managing these trade-offs can
+result in application code that both performs well and supports rapid
+development and extensibility.  
+\endverbatim
 
 \section dnotes_contiguous_allocator Contiguous Allocator
 
-Simple concept for chunk-layout of heterogeneous members with proper data alignment.
-A 'malloc'ed chunk of memory is always suitable to hold any data type, or array of data types (do a 'man malloc').
+Simple concept for chunk-layout of heterogeneous members with proper
+data alignment.
 
+A 'malloc'ed chunk of memory is always suitable to hold any data type,
+or array of data types (do a 'man malloc').
+
+\verbatim
         unsigned char * chunk = malloc( chunk_size );
+\endverbatim
 
-If a 'double' is to occupy a portion of the chunk then is must be aligned such that:
+If a 'double' is to occupy a portion of the chunk then is must be
+aligned such that:
 
+\verbatim
         double * d = (double *)( chunk + offset_d );
+\endverbatim
 
 where:
 
+\verbatim
         0 == offset_d % sizeof(double);
+\endverbatim
 
-The key point is for the offset of each member within the chunk to have the correct alignment, and of course not overlap any other member.
+The key point is for the offset of each member within the chunk to
+have the correct alignment, and of course not overlap any other
+member.
 
 */
 #endif
