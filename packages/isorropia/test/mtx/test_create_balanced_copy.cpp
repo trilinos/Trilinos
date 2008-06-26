@@ -205,6 +205,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   const Epetra_SerialComm &Comm = dynamic_cast<const Epetra_SerialComm &>(matrix->Comm());
 #endif
 
+  double myShare = 1.0 / numProcs;
+
   if (localProc == 0){
     test_type(partitioningType, vertexWeightType, edgeWeightType, objectType);
   }
@@ -381,11 +383,11 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   if (partitioningType == GRAPH_PARTITIONING){
     rc = ispatest::compute_graph_metrics(matrix->Graph(), costs, 
-             balance1, numCuts1, cutWgt1, cutn1, cutl1);
+             myShare, balance1, numCuts1, cutWgt1, cutn1, cutl1);
   }
   else{
     rc = ispatest::compute_hypergraph_metrics(matrix->Graph(), costs,
-             balance1, cutn1, cutl1);
+             myShare, balance1, cutn1, cutl1);
   }
 
   if (rc){ 
@@ -466,13 +468,13 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
         double bal1, bal2, cn1, cn2, cl1, cl2;
 
         rc = ispatest::compute_hypergraph_metrics(*matrix, costs,
-             bal1, cn1, cl1);
+             myShare, bal1, cn1, cl1);
 
         Teuchos::RefCountPtr<Epetra_CrsMatrix> comparePtr = 
           Isorropia::Epetra::create_balanced_copy(*matrix, *vptr);
 
         rc = ispatest::compute_hypergraph_metrics(*matrix, costs,
-             bal2, cn2, cl2);
+             myShare, bal2, cn2, cl2);
 
         if (cl2 > cl1){
           ERROREXIT((localProc==0),
@@ -645,37 +647,37 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   if (partitioningType == GRAPH_PARTITIONING){
     if (objectType == EPETRA_LINEARPROBLEM){
       rc = ispatest::compute_graph_metrics(*(problemPtr->GetMatrix()), costs, 
-             balance2, numCuts2, cutWgt2, cutn2, cutl2);
+             myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
     }
     else if (objectType == EPETRA_ROWMATRIX){
       rc = ispatest::compute_graph_metrics(*rowMatrixPtr, costs, 
-             balance2, numCuts2, cutWgt2, cutn2, cutl2);
+             myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
     }
     else if (objectType == EPETRA_CRSMATRIX){
       rc = ispatest::compute_graph_metrics(matrixPtr->Graph(), costs, 
-             balance2, numCuts2, cutWgt2, cutn2, cutl2);
+             myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
     }
     else {
       rc = ispatest::compute_graph_metrics(*graphPtr, costs, 
-             balance2, numCuts2, cutWgt2, cutn2, cutl2);
+             myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
     }
   }
   else{
     if (objectType == EPETRA_LINEARPROBLEM){
       rc = ispatest::compute_hypergraph_metrics(*(problemPtr->GetMatrix()), costs,
-             balance2, cutn2, cutl2);
+             myShare, balance2, cutn2, cutl2);
     }
     else if (objectType == EPETRA_ROWMATRIX){
       rc = ispatest::compute_hypergraph_metrics(*rowMatrixPtr, costs,
-             balance2, cutn2, cutl2);
+             myShare, balance2, cutn2, cutl2);
     }
     else if (objectType == EPETRA_CRSMATRIX){
       rc = ispatest::compute_hypergraph_metrics(matrixPtr->Graph(), costs,
-             balance2, cutn2, cutl2);
+             myShare, balance2, cutn2, cutl2);
     }
     else{
       rc = ispatest::compute_hypergraph_metrics(*graphPtr, costs,
-             balance2, cutn2, cutl2);
+             myShare, balance2, cutn2, cutl2);
     }
   }
 
