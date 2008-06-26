@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+#include "EpetraExt_ConfigDefs.h"
+#ifdef HAVE_EXPERIMENTAL
+#ifdef HAVE_GRAPH_REORDERINGS
+
 #include <EpetraExt_SymmRCM_CrsGraph.h>
 
 #include <EpetraExt_Transpose_CrsGraph.h>
@@ -398,4 +402,5 @@ ReverseVector( std::vector<int> & ordered )
 }
 
 } //namespace EpetraExt
-
+#endif //HAVE_GRAPH_REORDERINGS
+#endif //HAVE_EXPERIMENTAL

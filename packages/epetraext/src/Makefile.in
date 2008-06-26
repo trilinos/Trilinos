@@ -104,7 +104,7 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" \
-	"$(DESTDIR)$(execincludedir)"
+	"$(DESTDIR)$(execincludedir)" "$(DESTDIR)$(includedir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
@@ -185,7 +185,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/block/EpetraExt_MultiSerialComm.cpp \
 	$(srcdir)/block/EpetraExt_MultiMpiComm.cpp \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp \
-	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp
+	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp \
+	$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
 am__objects_1 = EpetraExt_ProductOperator.$(OBJEXT) \
 	EpetraExt_MMHelpers.$(OBJEXT) EpetraExt_MatrixMatrix.$(OBJEXT)
 am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
@@ -207,9 +208,10 @@ am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
 	EpetraExt_BlockAdjacencyGraph.$(OBJEXT)
 am__objects_3 = EpetraExt_SymmRCM_CrsGraph.$(OBJEXT) \
 	EpetraExt_AMD_CrsGraph.$(OBJEXT)
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_TRANSFORM_TRUE@am__objects_4 = $(am__objects_2)
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_TRANSFORM_TRUE@am__objects_4 = $(am__objects_2) \
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_TRANSFORM_TRUE@	$(am__objects_3)
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_GRAPH_REORDERINGS_TRUE@@BUILD_TRANSFORM_TRUE@am__objects_4 = $(am__objects_2)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_GRAPH_REORDERINGS_TRUE@@BUILD_TRANSFORM_TRUE@am__objects_4 = $(am__objects_2) \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_GRAPH_REORDERINGS_TRUE@@BUILD_TRANSFORM_TRUE@	$(am__objects_3)
+@BUILD_GRAPH_REORDERINGS_FALSE@@BUILD_TRANSFORM_TRUE@am__objects_4 = $(am__objects_2)
 am__objects_5 = EpetraExt_BTF_CrsGraph.$(OBJEXT) \
 	EpetraExt_BTF_CrsMatrix.$(OBJEXT) \
 	EpetraExt_BTF_LinearProblem.$(OBJEXT) \
@@ -266,10 +268,11 @@ am__objects_18 = EpetraExt_MultiMpiComm.$(OBJEXT)
 am__objects_21 = EpetraExt_ModelEvaluator.$(OBJEXT) \
 	EpetraExt_ModelEvaluatorScalingTools.$(OBJEXT)
 @BUILD_MODEL_EVALUATOR_TRUE@am__objects_22 = $(am__objects_21)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@am__objects_23 = EpetraExt_PETScAIJMatrix.$(OBJEXT)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_9) $(am__objects_12) \
 	$(am__objects_14) $(am__objects_16) $(am__objects_20) \
-	$(am__objects_22)
+	$(am__objects_22) $(am__objects_23)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -361,10 +364,13 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/block/EpetraExt_MultiMpiComm.h \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.h \
-	$(srcdir)/model_evaluator/EpetraExt_PolynomialVectorTraits.h
+	$(srcdir)/model_evaluator/EpetraExt_PolynomialVectorTraits.h \
+	$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
+nodist_includeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS) \
+	$(nodist_include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -553,19 +559,13 @@ EXTRA_TRANSFORM_EXPERIMENTAL = \
      $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp \
      $(srcdir)/transform/EpetraExt_AMD_CrsGraph.cpp
 
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_TRANSFORM_TRUE@TRANSFORM_H = \
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_TRANSFORM_TRUE@     $(EXTRA_TRANSFORM_H)
-
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM_H = \
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_TRANSFORM_TRUE@     $(EXTRA_TRANSFORM_H) $(EXTRA_TRANSFORM_EXPERIMENTAL_H)
-
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_GRAPH_REORDERINGS_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM_H = $(EXTRA_TRANSFORM_H)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_GRAPH_REORDERINGS_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM_H = $(EXTRA_TRANSFORM_H) $(EXTRA_TRANSFORM_EXPERIMENTAL_H)
+@BUILD_GRAPH_REORDERINGS_FALSE@@BUILD_TRANSFORM_TRUE@TRANSFORM_H = $(EXTRA_TRANSFORM_H)
 @BUILD_TRANSFORM_FALSE@TRANSFORM_H = 
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_TRANSFORM_TRUE@TRANSFORM = \
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_TRANSFORM_TRUE@     $(EXTRA_TRANSFORM)
-
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM = \
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_TRANSFORM_TRUE@     $(EXTRA_TRANSFORM) $(EXTRA_TRANSFORM_EXPERIMENTAL)
-
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_GRAPH_REORDERINGS_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM = $(EXTRA_TRANSFORM)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_GRAPH_REORDERINGS_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM = $(EXTRA_TRANSFORM) $(EXTRA_TRANSFORM_EXPERIMENTAL)
+@BUILD_GRAPH_REORDERINGS_FALSE@@BUILD_TRANSFORM_TRUE@TRANSFORM = $(EXTRA_TRANSFORM)
 @BUILD_TRANSFORM_FALSE@TRANSFORM = 
 EXTRA_BTF_H = \
      $(srcdir)/btf/EpetraExt_BTF_CrsGraph.h \
@@ -798,6 +798,15 @@ EXTRA_BLOCK_MPI = \
 @BUILD_BLOCK_TRUE@BLOCK = \
 @BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK) $(BLOCK_MPI)
 
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_PETSC_TRUE@PETSC_H = 
+
+### Only build PETSc interfaces if both the PETSc and experimental
+### configure flags are set
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
+@BUILD_PETSC_FALSE@PETSC_H = 
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_PETSC_TRUE@PETSC = 
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@PETSC = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+@BUILD_PETSC_FALSE@PETSC = 
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
@@ -811,7 +820,8 @@ libepetraext_a_SOURCES = \
      $(COLORING) \
      $(MATLAB) \
      $(BLOCK) \
-     $(MODEL_EVALUATOR)
+     $(MODEL_EVALUATOR) \
+     $(PETSC)
 
 
 #If these are not listed, the files will not be included in
@@ -839,7 +849,8 @@ EPETRAEXT_H = \
      $(COLORING_H) \
      $(MATLAB_H) \
      $(BLOCK_H) \
-     $(MODEL_EVALUATOR_H)
+     $(MODEL_EVALUATOR_H) \
+     $(PETSC_H)
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(EPETRAEXT_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
@@ -871,6 +882,8 @@ lib_LIBRARIES = $(EPETRAEXT_LIB)
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 include_HEADERS = $(EPETRAEXT_H) 
+nodist_include_HEADERS = $(PETSC_H)
+#nodist_libnox_a_SOURCES =
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -1015,6 +1028,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MultiVectorOut.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_OperatorOut.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Overlap_CrsGraph.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PETScAIJMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Permutation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_ProductOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutBlockMap.Po@am__quote@
@@ -2003,6 +2017,20 @@ EpetraExt_ModelEvaluatorScalingTools.obj: $(srcdir)/model_evaluator/EpetraExt_Mo
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ModelEvaluatorScalingTools.obj `if test -f '$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp'; fi`
 
+EpetraExt_PETScAIJMatrix.o: $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_PETScAIJMatrix.o -MD -MP -MF $(DEPDIR)/EpetraExt_PETScAIJMatrix.Tpo -c -o EpetraExt_PETScAIJMatrix.o `test -f '$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_PETScAIJMatrix.Tpo $(DEPDIR)/EpetraExt_PETScAIJMatrix.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp' object='EpetraExt_PETScAIJMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PETScAIJMatrix.o `test -f '$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+
+EpetraExt_PETScAIJMatrix.obj: $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_PETScAIJMatrix.obj -MD -MP -MF $(DEPDIR)/EpetraExt_PETScAIJMatrix.Tpo -c -o EpetraExt_PETScAIJMatrix.obj `if test -f '$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_PETScAIJMatrix.Tpo $(DEPDIR)/EpetraExt_PETScAIJMatrix.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp' object='EpetraExt_PETScAIJMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PETScAIJMatrix.obj `if test -f '$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp'; fi`
+
 .f.o:
 	$(F77COMPILE) -c -o $@ $<
 
@@ -2114,6 +2142,23 @@ uninstall-nodist_execincludeHEADERS:
 	  echo " rm -f '$(DESTDIR)$(execincludedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(execincludedir)/$$f"; \
 	done
+install-nodist_includeHEADERS: $(nodist_include_HEADERS)
+	@$(NORMAL_INSTALL)
+	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
+	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(nodist_includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
+	  $(nodist_includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
+	done
+
+uninstall-nodist_includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -2193,7 +2238,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) EpetraExt_config.h all-local
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -2242,7 +2287,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am: install-includeHEADERS install-nodist_includeHEADERS
 
 install-dvi: install-dvi-am
 
@@ -2279,7 +2324,8 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS
+	uninstall-nodist_execincludeHEADERS \
+	uninstall-nodist_includeHEADERS
 
 .MAKE: install-am install-strip
 
@@ -2291,13 +2337,15 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-includeHEADERS install-info \
 	install-info-am install-libLIBRARIES install-man \
-	install-nodist_execincludeHEADERS install-pdf install-pdf-am \
+	install-nodist_execincludeHEADERS \
+	install-nodist_includeHEADERS install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS
+	uninstall-nodist_execincludeHEADERS \
+	uninstall-nodist_includeHEADERS
 
 
 all-local:

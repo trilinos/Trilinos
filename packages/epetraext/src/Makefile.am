@@ -103,31 +103,24 @@ EXTRA_TRANSFORM_EXPERIMENTAL = \
 
 if BUILD_TRANSFORM
 
+if BUILD_GRAPH_REORDERINGS
 if BUILD_EXPERIMENTAL
-
-TRANSFORM_H = \
-     $(EXTRA_TRANSFORM_H) $(EXTRA_TRANSFORM_EXPERIMENTAL_H)
-
-TRANSFORM = \
-     $(EXTRA_TRANSFORM) $(EXTRA_TRANSFORM_EXPERIMENTAL)
+TRANSFORM_H = $(EXTRA_TRANSFORM_H) $(EXTRA_TRANSFORM_EXPERIMENTAL_H)
+TRANSFORM   = $(EXTRA_TRANSFORM) $(EXTRA_TRANSFORM_EXPERIMENTAL)
+else
+TRANSFORM_H = $(EXTRA_TRANSFORM_H)
+TRANSFORM   = $(EXTRA_TRANSFORM)
+endif #if BUILD_EXPERIMENTAL
 
 else
-
-TRANSFORM_H = \
-     $(EXTRA_TRANSFORM_H)
-
-TRANSFORM = \
-     $(EXTRA_TRANSFORM)
-
-endif
+TRANSFORM_H = $(EXTRA_TRANSFORM_H)
+TRANSFORM   = $(EXTRA_TRANSFORM)
+endif #if BUILD_GRAPH_REORDERINGS
 
 else
-
 TRANSFORM_H =
-
 TRANSFORM =
-
-endif
+endif #if BUILD_TRANSFORM
 
 EXTRA_BTF_H = \
      $(srcdir)/btf/EpetraExt_BTF_CrsGraph.h \
@@ -434,6 +427,24 @@ BLOCK =
 
 endif
 
+### Only build PETSc interfaces if both the PETSc and experimental
+### configure flags are set
+if BUILD_PETSC
+if BUILD_EXPERIMENTAL
+PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
+PETSC   = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+else
+PETSC_H =
+PETSC   =
+endif
+
+else
+
+PETSC_H =
+PETSC =
+
+endif
+
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
 # ------------------------------------------------------------------------
@@ -447,7 +458,8 @@ libepetraext_a_SOURCES = \
      $(COLORING) \
      $(MATLAB) \
      $(BLOCK) \
-     $(MODEL_EVALUATOR)
+     $(MODEL_EVALUATOR) \
+     $(PETSC)
 
 #If these are not listed, the files will not be included in
 #the distribution tarball.
@@ -473,7 +485,8 @@ EPETRAEXT_H = \
      $(COLORING_H) \
      $(MATLAB_H) \
      $(BLOCK_H) \
-     $(MODEL_EVALUATOR_H)
+     $(MODEL_EVALUATOR_H) \
+     $(PETSC_H)
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS = \
@@ -543,6 +556,8 @@ lib_LIBRARIES = $(EPETRAEXT_LIB)
 # ------------------------------------------------------------------------
 
 include_HEADERS = $(EPETRAEXT_H) 
+nodist_include_HEADERS = $(PETSC_H)
+#nodist_libnox_a_SOURCES =
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)

@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+#include "EpetraExt_ConfigDefs.h"
+#ifdef HAVE_EXPERIMENTAL
+#ifdef HAVE_GRAPH_REORDERINGS
+
 #include <EpetraExt_AMD_CrsGraph.h>
 
 #include <Epetra_Import.h>
@@ -167,3 +171,6 @@ operator()( OriginalTypeRef orig )
 }
 
 } //namespace EpetraExt
+
+#endif //HAVE_GRAPH_REORDERINGS
+#endif //HAVE_EXPERIMENTAL

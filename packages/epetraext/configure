@@ -754,6 +754,10 @@ BUILD_BLOCK_TRUE
 BUILD_BLOCK_FALSE
 BUILD_MODEL_EVALUATOR_TRUE
 BUILD_MODEL_EVALUATOR_FALSE
+BUILD_PETSC_TRUE
+BUILD_PETSC_FALSE
+BUILD_GRAPH_REORDERINGS_TRUE
+BUILD_GRAPH_REORDERINGS_FALSE
 HAVE_EPETRAEXT_HDF5_TRUE
 HAVE_EPETRAEXT_HDF5_FALSE
 BUILD_EPETRAEXT_TRIUTILS_TRUE
@@ -1407,6 +1411,14 @@ Optional Features:
   --enable-epetraext-modelevaluator
                           Enable EpetraExt Model Evaluator subpkg (default is
                           yes)
+  --enable-epetraext-petsc
+                          Enable EpetraExt interface support for PETSc. This
+                          also requires --enable-epetraext-experimental.
+                          (default is no)
+  --enable-epetraext-graphreorderings
+                          Enable experimental RCM and AMD graph reorderings.
+                          This also requires --enable-epetraext-experimental.
+                          (default is no)
   --enable-epetraext-hdf5 Enable EpetraExt interface support for HDF5. This
                           interface requires an already installed HDF5
                           library; the include, the library path and the
@@ -8899,6 +8911,74 @@ fi
 
 
 
+# Check whether --enable-epetraext-petsc was given.
+if test "${enable_epetraext_petsc+set}" = set; then
+  enableval=$enable_epetraext_petsc; ac_cv_use_epetraext_petsc=$enableval
+else
+  ac_cv_use_epetraext_petsc=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use epetraext-petsc" >&5
+echo $ECHO_N "checking whether to use epetraext-petsc... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetraext_petsc" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PETSC
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetraext_petsc" != "Xno"; then
+  BUILD_PETSC_TRUE=
+  BUILD_PETSC_FALSE='#'
+else
+  BUILD_PETSC_TRUE='#'
+  BUILD_PETSC_FALSE=
+fi
+
+
+
+# Check whether --enable-epetraext-graphreorderings was given.
+if test "${enable_epetraext_graphreorderings+set}" = set; then
+  enableval=$enable_epetraext_graphreorderings; ac_cv_use_epetraext_graphreorderings=$enableval
+else
+  ac_cv_use_epetraext_graphreorderings=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use epetraext-graphreorderings" >&5
+echo $ECHO_N "checking whether to use epetraext-graphreorderings... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetraext_graphreorderings" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GRAPH_REORDERINGS
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetraext_graphreorderings" != "Xno"; then
+  BUILD_GRAPH_REORDERINGS_TRUE=
+  BUILD_GRAPH_REORDERINGS_FALSE='#'
+else
+  BUILD_GRAPH_REORDERINGS_TRUE='#'
+  BUILD_GRAPH_REORDERINGS_FALSE=
+fi
+
+
+
 # Check whether --enable-epetraext-hdf5 was given.
 if test "${enable_epetraext_hdf5+set}" = set; then
   enableval=$enable_epetraext_hdf5; ac_cv_use_epetraext_hdf5=$enableval
@@ -11526,6 +11606,20 @@ echo "$as_me: error: conditional \"BUILD_MODEL_EVALUATOR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_PETSC_TRUE}" && test -z "${BUILD_PETSC_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PETSC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PETSC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_GRAPH_REORDERINGS_TRUE}" && test -z "${BUILD_GRAPH_REORDERINGS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_GRAPH_REORDERINGS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_GRAPH_REORDERINGS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_EPETRAEXT_HDF5_TRUE}" && test -z "${HAVE_EPETRAEXT_HDF5_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_EPETRAEXT_HDF5\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -12322,6 +12416,10 @@ BUILD_BLOCK_TRUE!$BUILD_BLOCK_TRUE$ac_delim
 BUILD_BLOCK_FALSE!$BUILD_BLOCK_FALSE$ac_delim
 BUILD_MODEL_EVALUATOR_TRUE!$BUILD_MODEL_EVALUATOR_TRUE$ac_delim
 BUILD_MODEL_EVALUATOR_FALSE!$BUILD_MODEL_EVALUATOR_FALSE$ac_delim
+BUILD_PETSC_TRUE!$BUILD_PETSC_TRUE$ac_delim
+BUILD_PETSC_FALSE!$BUILD_PETSC_FALSE$ac_delim
+BUILD_GRAPH_REORDERINGS_TRUE!$BUILD_GRAPH_REORDERINGS_TRUE$ac_delim
+BUILD_GRAPH_REORDERINGS_FALSE!$BUILD_GRAPH_REORDERINGS_FALSE$ac_delim
 HAVE_EPETRAEXT_HDF5_TRUE!$HAVE_EPETRAEXT_HDF5_TRUE$ac_delim
 HAVE_EPETRAEXT_HDF5_FALSE!$HAVE_EPETRAEXT_HDF5_FALSE$ac_delim
 BUILD_EPETRAEXT_TRIUTILS_TRUE!$BUILD_EPETRAEXT_TRIUTILS_TRUE$ac_delim
@@ -12344,7 +12442,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 62; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 66; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

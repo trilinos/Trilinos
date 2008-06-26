@@ -77,6 +77,9 @@
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
+/* Define if want to build epetraext-graphreorderings */
+#undef HAVE_GRAPH_REORDERINGS
+
 /* Define if want to build epetraext-coloring */
 #undef HAVE_INOUT
 
@@ -139,6 +142,9 @@
 
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
+
+/* Define if want to build epetraext-petsc */
+#undef HAVE_PETSC
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
