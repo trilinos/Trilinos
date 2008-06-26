@@ -1378,6 +1378,10 @@ Optional Packages:
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
   --with-parmetis         Enable Parmetis support. (default is no)
+  --with-parmetis-libdir  Specify where the Parmetis library is located. Ex.
+                          /path/to/library
+  --with-parmetis-incdir  Specify where the Parmetis header files are located.
+                          Ex. /path/to/headers
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -5556,6 +5560,32 @@ else
   BUILD_PARMETIS_FALSE=
 fi
 
+
+
+# Check whether --with-parmetis-libdir was given.
+if test "${with_parmetis_libdir+set}" = set; then
+  withval=$with_parmetis_libdir; tac_with_parmetis_libdir=$withval
+else
+  tac_with_parmetis_libdir=no
+fi
+
+
+if test "X$tac_with_parmetis_libdir" != "Xno"; then
+  LIBS="-L${tac_with_$1_$2} -lparmetis ${LIBS}"
+fi
+
+
+# Check whether --with-parmetis-incdir was given.
+if test "${with_parmetis_incdir+set}" = set; then
+  withval=$with_parmetis_incdir; tac_with_parmetis_incdir=$withval
+else
+  tac_with_parmetis_incdir=no
+fi
+
+
+if test "X$tac_with_parmetis_incdir" != "Xno"; then
+  CPPFLAGS="-I${tac_with_$1_$2}  ${CPPFLAGS}"
+fi
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
