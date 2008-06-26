@@ -176,7 +176,7 @@ struct ScalarTraits<char>
   static inline char one()   { return 1; }
   static inline char conjugate(char x) { return x; }
   static inline char real(char x) { return x; }
-  static inline char imag(char x) { return 0; }
+  static inline char imag(char) { return 0; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -205,7 +205,7 @@ struct ScalarTraits<int>
   static inline int one()   { return 1; }
   static inline int conjugate(int x) { return x; }
   static inline int real(int x) { return x; }
-  static inline int imag(int x) { return 0; }
+  static inline int imag(int) { return 0; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -314,7 +314,7 @@ struct ScalarTraits<float>
   static inline float one()   { return(1.0); }    
   static inline float conjugate(float x)   { return(x); }    
   static inline float real(float x) { return x; }
-  static inline float imag(float x) { return 0; }
+  static inline float imag(float) { return 0; }
   static inline float nan() {
 #ifdef __sun
     return 0.0/std::sin(0.0);
@@ -446,7 +446,7 @@ struct ScalarTraits<double>
   static inline double one()   { return 1.0; }
   static inline double conjugate(double x)   { return(x); }    
   static inline double real(double x) { return(x); }
-  static inline double imag(double x) { return(0); }
+  static inline double imag(double) { return(0); }
   static inline double nan() {
 #ifdef __sun
     return 0.0/std::sin(0.0);

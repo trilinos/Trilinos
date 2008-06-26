@@ -158,7 +158,7 @@ public:
    * \param  blockSize
    *           [in] Gives the block size for interpreting <tt>recvCount</tt>
    * \param  myGlobalReducts
-   *           [out] Array (length <tt>blockSize*recvBytes[rank]</tt>) of the global reductions gathered
+   *           [out] Array (length <tt>blockSize*recvCounts[rank]</tt>) of the global reductions gathered
    *           in this process.
    *
    * <b>Preconditions:</b><ul>
