@@ -142,11 +142,11 @@ TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, no)
 AM_CONDITIONAL(BUILD_PARMETIS, [test "X$ac_cv_use_parmetis" != "Xno"])
 TAC_ARG_WITH_3PL_SUB(parmetis, libdir, [Specify where the Parmetis library is located.  Ex. /path/to/library])
 if test "X$tac_with_parmetis_libdir" != "Xno"; then
-  LIBS="-L${tac_with_$1_$2} -lparmetis ${LIBS}"
+  LIBS="-L${tac_with_parmetis_libdir} -lparmetis ${LIBS}"
 fi
 TAC_ARG_WITH_3PL_SUB(parmetis, incdir, [Specify where the Parmetis header files are located.  Ex. /path/to/headers])
 if test "X$tac_with_parmetis_incdir" != "Xno"; then
-  CPPFLAGS="-I${tac_with_$1_$2}  ${CPPFLAGS}"
+  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 fi
 
 # ------------------------------------------------------------------------
