@@ -813,6 +813,7 @@ int Zoltan_HG_ignore_some_edges (
  * and zero-sized edges (zero vertices) from input data.
  */
 char *yo = "Zoltan_HG_ignore_some_edges";
+char msg[160];
 int ierr = ZOLTAN_OK;
 int i, j;
 int ewgtdim = zz->Edge_Weight_Dim;
@@ -861,6 +862,18 @@ int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
         nremove_size += esizes[i];
       }
     }
+  }
+
+  if ((*nedges - nremove) < zz->Num_Proc){
+     /* error message - threshold is too low - almost all edges were removed */
+    if (zz->Proc == 0){
+      sprintf(msg, 
+        "\nPHG_EDGE_SIZE_THRESHOLD is %f, resulting in almost all edges\nbeing removed.  Choose a higher value for this Zoltan parameter.", 
+        esize_threshold);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+      ZOLTAN_TRACE_EXIT(zz, yo);
+    }
+    return ZOLTAN_FATAL;
   }
 
   if (nremove) {
