@@ -58,17 +58,32 @@ namespace ispatest {
 
 #ifdef HAVE_EPETRA
 
-static double compute_balance(const Epetra_Comm &comm, int myRows, int nwgts, float *wgts);
+static double compute_balance(const Epetra_Comm &comm, double myGoalWeight, 
+                              int myRows, int nwgts, float *wgts);
 static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
                         int numRows, int numCols, const Epetra_Comm &comm);
 static int make_my_A(const Epetra_RowMatrix &matrix, int *myA, const Epetra_Comm &comm);
 
+static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, 
+            const Epetra_BlockMap &colmap,
+            int numGlobalColumns,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
+            double &balance, double &cutn, double &cutl);
+
+static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
+            const Epetra_BlockMap &colmap,
+            std::vector<std::vector<int> > &rows,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
+            double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
 /******************************************************************
   Compute graph metrics
 ******************************************************************/
 
 int compute_graph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
 
@@ -97,13 +112,14 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
     delete [] nborLID;
   }
  
-  return compute_graph_metrics(rmap, cmap, myRows, costs,
+  return compute_graph_metrics(rmap, cmap, myRows, costs, myGoalWeight,
                                balance, numCuts, cutWgt, cutn, cutl);
 
 }
 
 int compute_graph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
   const Epetra_BlockMap & rmap = graph.RowMap();
@@ -128,15 +144,16 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
     delete [] nborLID;
   }
  
-  return compute_graph_metrics(rmap, cmap, myRows, costs,
+  return compute_graph_metrics(rmap, cmap, myRows, costs, myGoalWeight,
                                balance, numCuts, cutWgt, cutn, cutl);
 
 }
 
-int compute_graph_metrics(const Epetra_BlockMap &rowmap,
-                          const Epetra_BlockMap &colmap,
-                          std::vector<std::vector<int> > &rows,
-                          Isorropia::Epetra::CostDescriber &costs,
+static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
+            const Epetra_BlockMap &colmap,
+            std::vector<std::vector<int> > &rows,
+            Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
   const Epetra_Comm &comm  = rowmap.Comm();
@@ -152,7 +169,7 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
 
   if ((numVWgts > 0) && (numVWgts != myRows)){
     std::cerr << numVWgts << " row weights for " << myRows << "rows" << std::endl;
-    return -1;
+    return 1;
   }
 
   if (numVWgts > 0){
@@ -164,7 +181,11 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
     delete [] vgid;
   }
 
-  balance = compute_balance(comm, myRows, numVWgts, vwgt);
+  balance = compute_balance(comm, myGoalWeight, myRows, numVWgts, vwgt);
+
+  if (balance < 0){
+    return 1;
+  }
 
   if (vwgt) delete [] vwgt;
 
@@ -177,102 +198,109 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
   double localCutn = 0.0;
   double localCutl = 0.0;
 
-  int maxEdges = colmap.NumMyElements();
+  // Get the processes owning my vertices' neighbors (matrix is square)
 
-  if (maxEdges > 0){
-    std::map<int, float> weightMap;
+  int numCols = colmap.NumMyElements();
+  const int *colGIDs = colmap.MyGlobalElements();
+  int *nborProc_GID = NULL;
+  int *nborRow_LID = NULL;
 
-    // Get the processes owning my vertices neighbors
+  if (numCols > 0){
+    nborProc_GID = new int [numCols];
+    nborRow_LID = new int [numCols];
+  }
 
-    int numCols = colmap.NumMyElements();
-    const int *colGIDs = colmap.MyGlobalElements();
-    int *nborProc_GID = new int [numCols];
-    int *nborRow_LID = new int [numCols];
+  // Global operation, all process must call, even if they have no columns
 
-    rc = colmap.RemoteIDList(numCols, colGIDs, nborProc_GID, nborRow_LID);
+  rc = colmap.RemoteIDList(numCols, colGIDs, nborProc_GID, nborRow_LID);
 
-    if (rc != 0){
-      std::cout << "Error obtaining remote process ID list";
-      std::cout << std::endl;
+  if (rc != 0){
+    std::cerr << "Error obtaining remote process ID list";
+    std::cerr << std::endl;
+    if (numCols > 0){
       delete [] nborProc_GID;
       delete [] nborRow_LID;
-      return -1;
     }
+    return -1;
+  }
 
-    std::map<int, int> colProc;
-    std::map<int, int>::iterator procIter;
+  std::map<int, int> colProc;
+  std::map<int, int>::iterator procIter;
 
-    for (int j=0; j<numCols; j++){
+  for (int j=0; j<numCols; j++){
 
-      // map from column GID to process owning row with that GID 
-      //   (matrix is square)
+    // map from column GID to process owning row with that GID 
+    //   (matrix is square)
 
-      colProc[colGIDs[j]] = nborProc_GID[j];
-    }
+    colProc[colGIDs[j]] = nborProc_GID[j];
+  }
+
+  if (numCols > 0){
     delete [] nborProc_GID;
     delete [] nborRow_LID;
+  }
 
-    for (int i=0; i < rowmap.NumMyElements(); i++){
-      int vtxGID = rowmap.GID(i);
+  for (int i=0; i < rowmap.NumMyElements(); i++){
+    int vtxGID = rowmap.GID(i);
+    std::map<int, float> weightMap;
 
-      if (haveEdgeWeights){
-        costs.getGraphEdgeWeights(vtxGID, weightMap);
-      }
+    if (haveEdgeWeights){
+      costs.getGraphEdgeWeights(vtxGID, weightMap);
+    }
 
-      int numEdges = rows[i].size();
+    int numEdges = rows[i].size();
 
-      if (numEdges > 0){
+    if (numEdges > 0){
 
-        // get processes that own my neighbors
-  
-        std::set<int> nbors;
-        float heWeight = 0.0;
+      // get processes that own my neighbors
 
-        for (int j=0; j < numEdges; j++){
+      std::set<int> nbors;
+      float heWeight = 0.0;
 
-          int nborGID = colGIDs[rows[i][j]];
+      for (int j=0; j < numEdges; j++){
 
-          if (nborGID == vtxGID) continue;  // skip self edges
+        int nborGID = colGIDs[rows[i][j]];
 
-          procIter = colProc.find(nborGID);
-          if (procIter == colProc.end()){
-            std::cout << "process owning column is missing";
-            std::cout << std::endl;
+        if (nborGID == vtxGID) continue;  // skip self edges
+
+        procIter = colProc.find(nborGID);
+        if (procIter == colProc.end()){
+          std::cerr << "process owning column is missing";
+          std::cerr << std::endl;
+          return -1;
+        }
+        int procNum = procIter->second;
+
+        float wgt = 1.0;
+        if (haveEdgeWeights){
+          std::map<int, float>::iterator curr = weightMap.find(nborGID);
+          if (curr == weightMap.end()){
+            std::cerr << "Graph edge weights do not match matrix";
+            std::cerr << std::endl;
             return -1;
           }
-          int procNum = procIter->second;
-
-          float wgt = 1.0;
-          if (haveEdgeWeights){
-            std::map<int, float>::iterator curr = weightMap.find(nborGID);
-            if (curr == weightMap.end()){
-              std::cout << "Graph edge weights do not match matrix";
-              std::cout << std::endl;
-              return -1;
-            }
-            wgt = curr->second;
-          }
-    
-          if (procNum != myProc){
-            localNumCuts++;            // number of graph edges that are cut 
-            nbors.insert(procNum);     // count number of neighboring processes
-            localCutWgt += wgt;        // sum of weights of cut edges
-          }
-          heWeight += wgt;             // implied hyperedge weight
+          wgt = curr->second;
         }
-        int numNbors = nbors.size();
-
-        if (numNbors > 0){
-          // sum of the implied hyperedge weights of cut hyperedges
-          localCutn += heWeight;   
-
-          // sum of (number of partitions - 1) weighted by the 
-          // implied hyperedge weight
-          localCutl += (numNbors * heWeight);
+  
+        if (procNum != myProc){
+          localNumCuts++;            // number of graph edges that are cut 
+          nbors.insert(procNum);     // count number of neighboring processes
+          localCutWgt += wgt;        // sum of weights of cut edges
         }
+        heWeight += wgt;             // implied hyperedge weight, sum all edges
       }
-    } // next vertex in my partition
-  }
+      int numNbors = nbors.size();
+
+      if (numNbors > 0){
+        // implied hyperedge is vertex and neighbors, if cut, add in its he weight
+        localCutn += heWeight;   
+
+        // sum of (number of partitions - 1) weighted by the 
+        // implied hyperedge weight
+        localCutl += (numNbors * heWeight);
+      }
+    }
+  } // next vertex in my partition
 
   double lval[4], gval[4];
 
@@ -297,6 +325,7 @@ int compute_graph_metrics(const Epetra_BlockMap &rowmap,
 
 int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, double &cutn, double &cutl)  // output
 {
   const Epetra_BlockMap &rmap = 
@@ -307,20 +336,26 @@ int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
 
   return compute_hypergraph_metrics(rmap, cmap,
                                      matrix.NumGlobalCols(),
-                                     costs, balance, cutn, cutl);
+                                     costs,
+                                     myGoalWeight,
+                                     balance, cutn, cutl);
 
 }
 int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, double &cutn, double &cutl)  // output
 {
   return compute_hypergraph_metrics(graph.RowMap(), graph.ColMap(),
-                                     graph.NumGlobalCols(),
-                                     costs, balance, cutn, cutl);
+                                     graph.NumGlobalCols(), costs,
+                                     myGoalWeight,
+                                     balance, cutn, cutl);
 }
-int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_BlockMap &colmap,
+static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, 
+            const Epetra_BlockMap &colmap,
             int numGlobalColumns,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, double &cutn, double &cutl)  // output
 {
   const Epetra_Comm &comm  = rowmap.Comm();
@@ -339,8 +374,8 @@ int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Block
   int numVWgts = costs.getNumVertices();
 
   if ((numVWgts > 0) && (numVWgts != myRows)){
-    std::cout << "length of row (vertex) weights array is not equal to number of rows";
-    std::cout << std::endl;
+    std::cerr << "length of row (vertex) weights array is not equal to number of rows";
+    std::cerr << std::endl;
     return -1;
   }
 
@@ -353,7 +388,10 @@ int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Block
     delete [] vgid;
   }
 
-  balance = compute_balance(comm, myRows, numVWgts, vwgt);
+  balance = compute_balance(comm, myGoalWeight, myRows, numVWgts, vwgt);
+  if (balance < 0){
+    return 1;
+  }
 
   if (vwgt) delete [] vwgt;
 
@@ -411,6 +449,9 @@ int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Block
   
   /* Divide columns among processes, then each process computes its
    * assigned columns' cutl and cutn.
+   *  TODO - numGlobalColumns can be less than nprocs
+
+   * Fix this when a process is assigned no columns. TODO
    */
   int ncols = numGlobalColumns / nProcs;
   int leftover = numGlobalColumns - (nProcs * ncols);
@@ -502,17 +543,17 @@ int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, const Epetra_Block
 
   return 0;
 }
-static double compute_balance(const Epetra_Comm &comm, int myRows, int nwgts, float *wgts)
+static double compute_balance(const Epetra_Comm &comm, double myGoalWeight, 
+                              int myRows, int nwgts, float *wgts)
 {
   int nProcs = comm.NumProc();
   int myProc = comm.MyPID();
   double weightTotal, balance;
 
-  /* Proportion of weight desired in each partition.  For now we
-     have no interface to specify unequal partitions.
-   */
-  double partSize = 1.0 / nProcs;
-  std::vector<double> partSizes(nProcs, partSize);
+  if ((myGoalWeight < 0) || (myGoalWeight > 1.0)){
+    std::cerr << "compute_balance: Goal weight should be in the range [0, 1]" << std::endl;
+    return -1.0;
+  }
 
   /* Sum of my row weights.  
    */
@@ -529,21 +570,28 @@ static double compute_balance(const Epetra_Comm &comm, int myRows, int nwgts, fl
 
   comm.SumAll(&weightLocal, &weightTotal, 1);
 
-  /* My degree of imbalance
+  /* My degree of imbalance. 
+   * If myGoalWeight is zero, I'm in perfect balance since I got what I wanted.
    */
-  double goalWeight = partSizes[myProc] * weightTotal;
+  double goalWeight = myGoalWeight * weightTotal;
   double imbalance = 1.0;
-  if (weightLocal >= goalWeight)
-    imbalance += (weightLocal - goalWeight) / goalWeight;
-  else
-    imbalance += (goalWeight - weightLocal) / goalWeight;
+
+  if (myGoalWeight > 0.0){
+    if (weightLocal >= goalWeight)
+      imbalance += (weightLocal - goalWeight) / goalWeight;
+    else
+      imbalance += (goalWeight - weightLocal) / goalWeight;
+  }
 
   comm.MaxAll(&imbalance, &balance, 1);
 
   return balance;
 }
-// Print out the matrix showing the partitioning, for debugging purposes.  
-// This only works for small example matrices and 10 or fewer processes.
+
+// Print out the graph or linear system showing the partitioning, for debugging or 
+// educational purposes.  
+// The display only makes sense for 10 or fewer processes, and fairly small
+// graphs or linear systems.
 
 void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Comm &comm)
 {
@@ -551,8 +599,8 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
 
   if (comm.NumProc() > 10){
     if (me == 0){
-      std::cout << txt << std::endl;
-      std::cout << "Printed matrix format only works for 10 or fewer processes" << std::endl;
+      std::cerr << txt << std::endl;
+      std::cerr << "Printed matrix format only works for 10 or fewer processes" << std::endl;
     }
     return;
   }
@@ -564,6 +612,14 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
   int numRows = graph.NumGlobalRows();
   int numCols = graph.NumGlobalCols();
   int base = rowmap.IndexBase();
+
+  if ((numRows > 200) || (numCols > 500)){
+    if (me == 0){
+      std::cerr << txt << std::endl;
+      std::cerr << "show_matrix: problem is too large to display" << std::endl;
+    }
+    return;
+  }
 
   int *myA = new int [numRows * numCols];
   memset(myA, 0, sizeof(int) * numRows * numCols);
@@ -580,8 +636,8 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
     if (numEntries > 0){
       int rc = graph.ExtractMyRowView(myRowLID, numEntries, myIndices);
       if (rc){
-        std::cout << txt << std::endl;
-        std::cout << "extract graph error" << std::endl;
+        std::cerr << txt << std::endl;
+        std::cerr << "extract graph error" << std::endl;
         return;
       }
 
@@ -601,8 +657,9 @@ void show_matrix(const char *txt, const Epetra_CrsGraph &graph, const Epetra_Com
 
 void show_matrix(const char *txt, const Epetra_RowMatrix &matrix, const Epetra_Comm &comm)
 {
+  int me = comm.MyPID();
   if (comm.NumProc() > 10){
-    if (comm.MyPID() == 0){
+    if (me == 0){
       std::cout << txt << std::endl;
       std::cout << "Printed matrix format only works for 10 or fewer processes" << std::endl;
     }
@@ -611,6 +668,14 @@ void show_matrix(const char *txt, const Epetra_RowMatrix &matrix, const Epetra_C
 
   int numRows = matrix.NumGlobalRows();
   int numCols = matrix.NumGlobalCols();
+
+  if ((numRows > 200) || (numCols > 500)){
+    if (me == 0){
+      std::cerr << txt << std::endl;
+      std::cerr << "show_matrix: problem is too large to display" << std::endl;
+    }
+    return;
+  }
 
   int *myA = new int [numRows * numCols];
 
@@ -638,6 +703,14 @@ void show_matrix(const char *txt, const Epetra_LinearProblem &problem, const Epe
 
   int numRows = matrix->NumGlobalRows();
   int numCols = matrix->NumGlobalCols();
+
+  if ((numRows > 200) || (numCols > 500)){
+    if (me == 0){
+      std::cerr << txt << std::endl;
+      std::cerr << "show_matrix: problem is too large to display" << std::endl;
+    }
+    return;
+  }
 
   int *myA = new int [numRows * numCols];
 

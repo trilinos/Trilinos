@@ -87,6 +87,7 @@ namespace ispatest {
  */
 int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, double &cutn, double &cutl);
 
 /** Compute Zoltan-style hypergraph metrics given a partitioned
@@ -94,39 +95,42 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
  */
 int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, double &cutn, double &cutl);
 
-/** Compute Zoltan-style hypergraph metrics given a partitioned
-    RowMatrix and a CostDescriber (weight) object.
- */
-int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap, 
-            const Epetra_BlockMap &colmap,
-            int numGlobalColumns,
-            Isorropia::Epetra::CostDescriber &costs,
-            double &balance, double &cutn, double &cutl);
+/** Compute graph metrics given an Epetra_RowMatrix.
+    A CostDescriber object may provide vertex (row) and/or edge (non-zeroes)
+    weights, or it may be an initialized object with no weights.  If no vertex
+    weights are provided, each vertex is assumed to be weight 1.  If no
+    edge weights are provided, each edge is assumed to be weight 1.
 
-/** Compute graph metrics given an Epetra_RowMatrix
+    The goal weight for a process is the proportion of the total vertex (row)
+    weights that were to be assigned to this process under repartitioning.  If
+    all processes are to get an equal proportion of the weight, set this 
+    value to (1.0 / #processes).  This value is needed in order to compute
+    how close the repartitioning is to being perfectly balanced.
   */
 int compute_graph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
 
-/** Compute graph metrics given an Epetra_CrsGraph
+/** Compute graph metrics given an Epetra_CrsGraph.
+    A CostDescriber object may provide vertex (row) and/or edge (non-zeroes)
+    weights, or it may be an initialized object with no weights.  If no vertex
+    weights are provided, each vertex is assumed to be weight 1.  If no
+    edge weights are provided, each edge is assumed to be weight 1.
+
+    The goal weight for a process is the proportion of the total vertex (row)
+    weights that were to be assigned to this process under repartitioning.  If
+    all processes are to get an equal proportion of the weight, set this 
+    value to (1.0 / #processes).  This value is needed in order to compute
+    how close the repartitioning is to being perfectly balanced.
   */
 int compute_graph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
+            double &myGoalWeight,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
-
-/** Compute graph metrics given a row map, a column map, and a vector with one
-    element for each row.  The element is a vector containing the column local ID 
-    for each non zero in that row.
-  */
-int compute_graph_metrics(const Epetra_BlockMap &rowmap,
-                          const Epetra_BlockMap &colmap,
-                          std::vector<std::vector<int> > &rows,
-                          Isorropia::Epetra::CostDescriber &costs,
-            double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl);
-
 
 /** Print out a distributed RowMatrix.  This only works for small test
     matrices of 1s and 0s, and 10 or fewer processes.
