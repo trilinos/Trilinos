@@ -19,14 +19,14 @@ if test -s /home/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-u
 cd /home/jmwille/contInt/Trilinos/commonTools/test/harness
 
 echo "Starting continuous integration build now."
-perl runharness --trilinos-dir=/home/jmwille/contInt/Trilinos --build-name=exetazo-mpi --short-circuit >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
+perl runharness --trilinos-dir=/home/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont --short-circuit >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
 more /home/jmwille/cronOutput/harness-contInt-mpi.txt |grep FAILED > /home/jmwille/cronOutput/failedContBuildCheck.txt
 if test -s /home/jmwille/cronOutput/failedContBuildCheck.txt ; then
 echo "Pausing for failure."
-mail  -s "completed integration test results - FAILURE" trilinos-continuous-integration@software.sandia.gov < /home/jmwille/cronOutput/harness-contInt-mpi.txt
+mail  -s "FAILURE in integration tests" trilinos-continuous-integration@software.sandia.gov < /home/jmwille/cronOutput/harness-contInt-mpi.txt
 sleep 1800
 else
-mail  -s "completed integration test results - PASSED" jmwille@sandia.gov < /home/jmwille/cronOutput/harness-contInt-mpi.txt
+mail  -s "integration tests PASSED" jmwille@sandia.gov < /home/jmwille/cronOutput/harness-contInt-mpi.txt
 fi # Failure check
 rm -f /home/jmwille/cronOutput/failedContBuildCheck.txt
 

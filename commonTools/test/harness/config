@@ -181,6 +181,26 @@ RUN (exetazo-mpi) {
 
 ###############################################################################
 #
+# exetazo continuous integration mpi
+#
+###############################################################################
+
+RUN (exetazo-mpi-cont) {
+
+    BUILD-LABEL         = integration;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-exetazo-mpi-cont;
+    MAKE-COMMAND        = make -j4;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 8;
+    MPI-GO              = /usr/alt/bin/mpiexec -np ;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
 # redstorm X compile nightly mpi
 #
 ###############################################################################
