@@ -173,6 +173,7 @@ End:
     /* Return NULL zhg */
     Zoltan_PHG_Free_Hypergraph_Data(zhg);
     ZOLTAN_FREE(&zhg);
+    *zoltan_hg = NULL;
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -1092,6 +1093,10 @@ int nRepartEdge = 0, nRepartVtx = 0;
                myPins.edgeGID, elids, myPins.esizes, myPins.edgeGSize,
                myPins.ewgt, myPins.pinGID, myPins.pinProc);
 
+    if (ierr != ZOLTAN_OK){
+      FATAL_ERROR("");
+    }
+
     if (myPins.nHedges < nEdge){  /* some of my edges were removed */
       myPins.numPins = 0;
       for (i=0; i < myPins.nHedges; i++){
@@ -1211,7 +1216,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
              "Error returned from Zoltan_HG_Graph_Callbacks.");
       goto End;
     }
-
+    
     myPins.edgeGSize = (int *)ZOLTAN_MALLOC(sizeof(int) * myPins.nHedges);
     myPins.edgeGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * myPins.nHedges);
 
