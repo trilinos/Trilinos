@@ -758,6 +758,11 @@ int num_pins, num_hedges, prefix_sum_hedges;
                 nedges, *egids, *elids, *esizes, NULL,
                 *ewgts, *pins, *pin_procs);
 
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_HG_ignore_some_edges");
+    goto End;
+  }
+
 End:
 
 #ifdef DEBUG_GRAPH_TO_HG
@@ -822,6 +827,7 @@ int num_lid_entries = zz->Num_LID;
 int nkeep;                /* Number of edges below gesize_threshold. */
 int nremove;              /* Number of edges to be removed; i.e., number of
                              edges above gesize_threshold. */
+int global_nremove;       /* global number of edges to be removed */
 int nremove_size;         /* Number of local pins in removed edges on proc */
 ZOLTAN_ID_PTR remove_egids = NULL;  /* Edge GIDs for removed edges */
 ZOLTAN_ID_PTR remove_elids = NULL;  /* Edge LIDs for removed edges */
@@ -840,6 +846,7 @@ int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
   else
     gesize_threshold = esize_threshold; /* absolute */
   nremove = 0;
+  global_nremove = 0;
   nremove_size = 0;
 
   /*
@@ -864,8 +871,9 @@ int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
     }
   }
 
-  if ((*nedges - nremove) < zz->Num_Proc){
-     /* error message - threshold is too low - almost all edges were removed */
+  MPI_Allreduce(&nremove, &global_nremove, 1, MPI_INT, MPI_SUM, zz->Communicator);
+
+  if ((gnVtx - global_nremove) < zz->Num_Proc){
     if (zz->Proc == 0){
       sprintf(msg, 
         "\nPHG_EDGE_SIZE_THRESHOLD is %f, resulting in almost all edges\nbeing removed.  Choose a higher value for this Zoltan parameter.", 
