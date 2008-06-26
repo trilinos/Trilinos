@@ -22,7 +22,9 @@
 }
 
 (INSTALL,PERFORMANCE,ALL) {
-    DIRS = Performance;
+    DIRS = Performance/Allocators,
+           Performance/AlgebraicTypes,
+           Performance/BracketOperator;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
     COMM = SERIAL, MPI;

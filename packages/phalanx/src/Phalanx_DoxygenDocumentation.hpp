@@ -174,5 +174,20 @@ The key point is for the offset of each member within the chunk to
 have the correct alignment, and of course not overlap any other
 member.
 
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! 
+
+  \todo Add a configure check for BOOST.
+
+  \todo Add a configure check for TVMET.
+
+  \todo Add documentation for tvmet.
+
 */
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+
 #endif

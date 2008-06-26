@@ -410,6 +410,9 @@ AC_CONFIG_FILES([
 		test/FieldTag/Makefile
 		test/Field/Makefile
 		test/Performance/Makefile
+		test/Performance/AlgebraicTypes/Makefile
+		test/Performance/Allocators/Makefile
+		test/Performance/BracketOperator/Makefile
 		])
 
 AC_OUTPUT()

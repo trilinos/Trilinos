@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
     RCP< FieldManager<MyTraits> > fmn = buildFieldManager<MyTraits>();
     RCP< FieldManager<MyCTraits> > fmc = buildFieldManager<MyCTraits>();
     
-    const std::size_t num_eval_loops = 5000;
-    const std::size_t num_cells = 1000;
+    const std::size_t num_eval_loops = 50;
+    const std::size_t num_cells = 100;
     std::vector<CellData> cells(num_cells);
 
     RCP<Time> time_fmn_prs = 

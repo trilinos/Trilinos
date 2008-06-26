@@ -9049,7 +9049,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile test/Performance/AlgebraicTypes/Makefile test/Performance/Allocators/Makefile test/Performance/BracketOperator/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9729,6 +9729,9 @@ do
     "test/FieldTag/Makefile") CONFIG_FILES="$CONFIG_FILES test/FieldTag/Makefile" ;;
     "test/Field/Makefile") CONFIG_FILES="$CONFIG_FILES test/Field/Makefile" ;;
     "test/Performance/Makefile") CONFIG_FILES="$CONFIG_FILES test/Performance/Makefile" ;;
+    "test/Performance/AlgebraicTypes/Makefile") CONFIG_FILES="$CONFIG_FILES test/Performance/AlgebraicTypes/Makefile" ;;
+    "test/Performance/Allocators/Makefile") CONFIG_FILES="$CONFIG_FILES test/Performance/Allocators/Makefile" ;;
+    "test/Performance/BracketOperator/Makefile") CONFIG_FILES="$CONFIG_FILES test/Performance/BracketOperator/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

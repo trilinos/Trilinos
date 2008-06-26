@@ -26,6 +26,33 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.phalanx
+
+# The following line helps the test harness recover from build errors.
+
 all-local:
 
-SUBDIRS = AlgebraicTypes Allocators BracketOperator
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(PHALANX_TEST_LIBS)
+TEST_INCLUDES = $(PHALANX_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = -I$(srcdir)/../../Utilities -I$(srcdir)/../../Utilities/evaluators  $(TEST_INCLUDES)
+
+EXEEXT = .exe
+
+if BUILD_TESTS
+noinst_PROGRAMS = performance_allocators
+endif
+
+performance_allocators_SOURCES = \
+	$(srcdir)/Performance_Allocators.cpp 
+
+performance_allocators_DEPENDENCIES = \
+	$(top_builddir)/test/Utilities/libphalanx_utilities.a \
+	$(top_builddir)/src/libphalanx.a
+
+performance_allocators_LDADD = $(TEST_LIBS)
