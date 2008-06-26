@@ -36,10 +36,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
 LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
 test_simple_SOURCES = $(srcdir)/test_simple.cpp
-test_num_partitions_SOURCES = $(srcdir)/test_num_partitions.cpp
 test_create_balanced_copy_SOURCES = $(srcdir)/test_create_balanced_copy.cpp
 
-noinst_PROGRAMS = test_simple test_create_balanced_copy test_num_partitions
+noinst_PROGRAMS = test_simple test_create_balanced_copy 
 
 EXTRA_DIST = simple.mtx simple_rectangular.mtx small.mtx
 
