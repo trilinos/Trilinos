@@ -4,7 +4,6 @@
 
 (FRAMEWORK, INSTALL) {
     DIRS = Platform,
-           Comm,
            Distributor,
            Directory,
            DistObject,

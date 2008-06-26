@@ -35,7 +35,7 @@
 
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
-#ifdef TPETRA_MPI
+#ifdef HAVE_MPI
 #include "Tpetra_MpiPlatform.hpp"
 #include "Teuchos_MPIComm.hpp"
 #else

@@ -31,69 +31,91 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Object.hpp>
+#include <Teuchos_DefaultSerialComm.hpp>
 #include "Tpetra_Platform.hpp"
-#include "Tpetra_SerialComm.hpp"
 
 namespace Tpetra {
 
-	// forward definition
-	template<typename OrdinalType> class ElementSpace;
-
 	//! Tpetra::SerialPlatform: Serial Implementation of the Platform class.
-
-	template<typename OrdinalType, typename ScalarType>
-	class SerialPlatform : public Teuchos::Object, public virtual Platform<OrdinalType, ScalarType> {
+	template<typename OrdinalType>
+	class SerialPlatform : public Teuchos::Object, public virtual Platform<OrdinalType> {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
 
 		//! Constructor
-		SerialPlatform() : Teuchos::Object("Tpetra::SerialPlatform") {};
+		SerialPlatform();
 
 		//! Copy constructor
-		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) 
-			: Teuchos::Object(platform.label()) 
-		{};
+		SerialPlatform(SerialPlatform<OrdinalType> const& platform);
 
 		//! Destructor
-		~SerialPlatform() {};
+		~SerialPlatform();
 
 		//! Clone constructor
-		Teuchos::RCP< Platform<OrdinalType, ScalarType> > clone() const {
-			Teuchos::RCP< Platform<OrdinalType, ScalarType> > platform;
-			platform = Teuchos::rcp(new SerialPlatform<OrdinalType, ScalarType>(*this));
-			return(platform);
-		};
+		Teuchos::RCP< Platform<OrdinalType> > clone() const;
 
 		//@}
 
 		//@{ \name Class Creation and Accessor Methods
 
-		//! Comm Instances
-		Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const {
-			Teuchos::RCP< SerialComm<OrdinalType, ScalarType> > comm;
-			comm = Teuchos::rcp(new SerialComm<OrdinalType, ScalarType>());
-			return(comm);
-		};
-		Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
-			Teuchos::RCP< SerialComm<OrdinalType, OrdinalType> > comm;
-			comm = Teuchos::rcp(new SerialComm<OrdinalType, OrdinalType>());
-			return(comm);
-		};
+		//! Comm Instance
+		Teuchos::RCP< Teuchos::Comm<OrdinalType> > createComm() const;
 
 		//@}
 
 		//@{ \name I/O Methods
 
 		//! print - implements Teuchos::Object virtual print method.
-		void print(ostream& os) const {};
+		void print(ostream& os) const;
 
 		//! printInfo - implements Tpetra::Platform virtual printInfo method.
-		void printInfo(ostream& os) const {os << *this;};
+		void printInfo(ostream& os) const;
 
 		//@}
 
 	}; // SerialPlatform class
+
+  template <typename OrdinalType>
+  SerialPlatform<OrdinalType>::SerialPlatform() 
+    : Teuchos::Object("Tpetra::SerialPlatform") 
+  {}
+
+  template <typename OrdinalType>
+  SerialPlatform<OrdinalType>::SerialPlatform(SerialPlatform<OrdinalType> const& platform) 
+    : Teuchos::Object(platform.label()) 
+  {}
+
+  template <typename OrdinalType>
+  SerialPlatform<OrdinalType>::~SerialPlatform() 
+  {}
+
+  template <typename OrdinalType>
+  Teuchos::RCP< Platform<OrdinalType> > 
+  SerialPlatform<OrdinalType>::clone() const 
+  {
+    Teuchos::RCP< Platform<OrdinalType> > platform;
+    platform = Teuchos::rcp(new SerialPlatform<OrdinalType>(*this));
+    return platform;
+  }
+
+  template <typename OrdinalType>
+  Teuchos::RCP< Teuchos::Comm<OrdinalType> > 
+  SerialPlatform<OrdinalType>::createComm() const 
+  {
+    return Teuchos::rcp(new Teuchos::SerialComm<OrdinalType>() );
+  }
+
+  template <typename OrdinalType>
+  void SerialPlatform<OrdinalType>::print(ostream& os) const 
+  {}
+
+  template <typename OrdinalType>
+  void SerialPlatform<OrdinalType>::printInfo(ostream& os) const 
+  {
+    os << *this;
+  }
+
 
 } // namespace Tpetra
 

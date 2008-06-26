@@ -333,7 +333,6 @@ AC_CONFIG_FILES([
 		example/TpetraOPs/Makefile
 		test/Makefile
 		test/Platform/Makefile
-		test/Comm/Makefile
 		test/Distributor/Makefile
 		test/ElementSpace/Makefile
 		test/Directory/Makefile

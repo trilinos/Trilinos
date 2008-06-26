@@ -31,7 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 //#include "Tpetra_OmniPlatform.hpp"
-#ifdef TPETRA_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 #ifdef TPETRA_THREADED_MPI
@@ -52,7 +52,7 @@ namespace Tpetra {
 			, threadedMpiEnabled_(false)
 		{}
 
-#ifdef TPETRA_MPI
+#ifdef HAVE_MPI
 		// MPI constructor
 		OmniPlatformData(MPI_Comm comm)
 			: Teuchos::Object("Tpetra::OmniPlatformData")
@@ -76,7 +76,7 @@ namespace Tpetra {
 		bool mpiEnabled_;
 		bool threadedMpiEnabled_;
 		
-#ifdef TPETRA_MPI
+#ifdef HAVE_MPI
 		MPI_Comm MpiComm_;
 #endif
 

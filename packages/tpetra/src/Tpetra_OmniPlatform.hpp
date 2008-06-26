@@ -34,7 +34,7 @@
 #include <Teuchos_Object.hpp>
 #include "Tpetra_OmniPlatformData.hpp"
 #include "Tpetra_SerialComm.hpp"
-#ifdef TPETRA_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
 #include "Tpetra_MpiComm.hpp"
 #endif
@@ -81,7 +81,7 @@ namespace Tpetra {
 			OmniPlatformData_ = Teuchos::rcp(new OmniPlatformData());
 		}
 
-#ifdef TPETRA_MPI
+#ifdef HAVE_MPI
 		//! Constructor (MPI)
 		OmniPlatform(MPI_Comm Comm)
 			: Teuchos::Object("Tpetra::OmniPlatform(MPI)")
@@ -207,7 +207,7 @@ namespace Tpetra {
 
 		template <typename OrdinalType, typename ScalarType>
 		void createMpiComm(Teuchos::RCP< Comm<OrdinalType, ScalarType> >& comm) const {
-#ifdef TPETRA_MPI
+#ifdef HAVE_MPI
 			comm = Teuchos::rcp(new MpiComm<OrdinalType, ScalarType>(data().MpiComm_));
 #else
 			throw reportError("MPI is not enabled.", -1);

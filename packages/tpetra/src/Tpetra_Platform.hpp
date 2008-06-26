@@ -33,64 +33,51 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
-// TODO: Platform should not be templated on ScalarType 
-// It doesn't need to, since we switch to Teuchos::Comm, which is not.
-// First, switch to Teuchos::Comm
-
 namespace Tpetra {
 
-	template<typename OrdinalType> class ElementSpace;
-	// Directory, and Distributor are not forward declared because they are used as return types. 
+  //! Tpetra::Platform: The Tpetra Platform Abstract Base Class
+  /*! Platform is an abstract base class. 
+      Platform is used to generate Comm instances. It also manages platform-specific information, 
+      such as how inter-image communication is implemented.
+      An implementation of Platform (e.g., SerialPlatform) will create corresponding classes,
+      (e.g., SerialComm). These will then be cast to their base class, and passed back to 
+      other Tpetra modules. As a result, other Tpetra modules don't need to know anything about 
+      the platform they're running on, or any implementation-specific details.
+  */
 
-	//! Tpetra::Platform: The Tpetra Platform Abstract Base Class
-	/*! Platform is an abstract base class. It should never be called directly.
-	    Rather, an implementation of Platform, such as SerialPlatform, should be used instead.
-		Platform is used to generate Comm instances. It also manages platform-specific information, 
-		such as how inter-image communication is implemented.
-		An implementation of Platform, such as SerialPlatform, will create corresponding classes,
-		such as SerialComm. These will then be cast to their base class, and passed back to 
-		other Tpetra modules. As a result, other Tpetra modules don't need to know anything about 
-		the platform they're running on, or any implementation-specific details.
+  template<typename OrdinalType>
+  class Platform {
+  public:
+  
+    //@{ \name Constructor/Destructor Methods
 
-		NOTE: Methods that return a new object (such as clone, createComm, etc.) return them 
-		encapsulated in a Teuchos RCP object. This is done whenever the new object is
-		allocated on the heap.
-	*/
+    //! Destructor
+    virtual ~Platform() {};
 
-	template<typename OrdinalType, typename ScalarType>
-	class Platform {
-	public:
-	
-		//@{ \name Constructor/Destructor Methods
+    //! Clone method
+    /*! Returns a copy of this Platform instance. It is allocated on the heap and
+        encapsulated in a Teuchos RCP.
+    */
+    virtual Teuchos::RCP< Platform<OrdinalType> > clone() const = 0;
 
-		//! Destructor
-		virtual ~Platform() {};
+    //@}
+  
+    //@{ \name Class Creation and Accessor Methods
 
-		//! Clone method
-		/*! Returns a copy of this Platform instance. It is allocated on the heap and
-		    encapsulated in a Teuchos RCP.
-		*/
-		virtual Teuchos::RCP< Platform<OrdinalType, ScalarType> > clone() const = 0;
+    //! Create a Comm instance for global communication between nodes.
+    virtual Teuchos::RCP< Teuchos::Comm<OrdinalType> > createComm() const = 0;
 
-		//@}
-	
-		//@{ \name Class Creation and Accessor Methods
+    //@}
+  
+    //@{ \name I/O Methods
 
-		//! Comm Instances
-    virtual Teuchos::RCP< Teuchos::Comm<OrdinalType> > createScalarComm() const = 0;
-    virtual Teuchos::RCP< Teuchos::Comm<OrdinalType> > createOrdinalComm() const = 0;
+    //! printInfo
+    virtual void printInfo(ostream& os) const = 0;
 
-		//@}
-	
-		//@{ \name I/O Methods
-
-		//! printInfo
-		virtual void printInfo(ostream& os) const = 0;
-
-		//@}
-	
-	}; // Platform class
-	
+    //@}
+  
+  }; // Platform class
+  
 } // namespace Tpetra
 
 #endif // TPETRA_PLATFORM_HPP

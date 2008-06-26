@@ -67,12 +67,6 @@
 
 #include <Tpetra_config.h>
 
-#ifdef HAVE_MPI
-#ifndef TPETRA_MPI
-#define TPETRA_MPI
-#endif // ifndef TPETRA_MPI
-#endif // ifdef HAVE_MPI
-
 #ifdef HAVE_CSTDLIB
 #include <cstdlib>
 #else
