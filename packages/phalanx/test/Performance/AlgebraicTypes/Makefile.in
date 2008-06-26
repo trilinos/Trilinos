@@ -62,7 +62,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @BUILD_TESTS_TRUE@noinst_PROGRAMS =  \
-@BUILD_TESTS_TRUE@	performance_algebraic_types$(EXEEXT)
+@BUILD_TESTS_TRUE@	performance_algebraic_types$(EXEEXT) \
+@BUILD_TESTS_TRUE@	performance_algebraic_types_multi$(EXEEXT)
 subdir = test/Performance/AlgebraicTypes
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,6 +94,10 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
+am_performance_algebraic_types_multi_OBJECTS =  \
+	Performance_AlgebraicTypes_Multi.$(OBJEXT)
+performance_algebraic_types_multi_OBJECTS =  \
+	$(am_performance_algebraic_types_multi_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -105,8 +110,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(performance_algebraic_types_SOURCES)
-DIST_SOURCES = $(performance_algebraic_types_SOURCES)
+SOURCES = $(performance_algebraic_types_SOURCES) \
+	$(performance_algebraic_types_multi_SOURCES)
+DIST_SOURCES = $(performance_algebraic_types_SOURCES) \
+	$(performance_algebraic_types_multi_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -238,6 +245,14 @@ performance_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 performance_algebraic_types_LDADD = $(TEST_LIBS)
+performance_algebraic_types_multi_SOURCES = \
+	$(srcdir)/Performance_AlgebraicTypes_Multi.cpp \
+	$(srcdir)/Special_AlgebraicTypes.hpp
+
+performance_algebraic_types_multi_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+performance_algebraic_types_multi_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -277,6 +292,9 @@ clean-noinstPROGRAMS:
 performance_algebraic_types$(EXEEXT): $(performance_algebraic_types_OBJECTS) $(performance_algebraic_types_DEPENDENCIES) 
 	@rm -f performance_algebraic_types$(EXEEXT)
 	$(CXXLINK) $(performance_algebraic_types_OBJECTS) $(performance_algebraic_types_LDADD) $(LIBS)
+performance_algebraic_types_multi$(EXEEXT): $(performance_algebraic_types_multi_OBJECTS) $(performance_algebraic_types_multi_DEPENDENCIES) 
+	@rm -f performance_algebraic_types_multi$(EXEEXT)
+	$(CXXLINK) $(performance_algebraic_types_multi_OBJECTS) $(performance_algebraic_types_multi_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -285,6 +303,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Performance_AlgebraicTypes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Performance_AlgebraicTypes_Multi.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -313,6 +332,20 @@ Performance_AlgebraicTypes.obj: $(srcdir)/Performance_AlgebraicTypes.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Performance_AlgebraicTypes.cpp' object='Performance_AlgebraicTypes.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Performance_AlgebraicTypes.obj `if test -f '$(srcdir)/Performance_AlgebraicTypes.cpp'; then $(CYGPATH_W) '$(srcdir)/Performance_AlgebraicTypes.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Performance_AlgebraicTypes.cpp'; fi`
+
+Performance_AlgebraicTypes_Multi.o: $(srcdir)/Performance_AlgebraicTypes_Multi.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Performance_AlgebraicTypes_Multi.o -MD -MP -MF $(DEPDIR)/Performance_AlgebraicTypes_Multi.Tpo -c -o Performance_AlgebraicTypes_Multi.o `test -f '$(srcdir)/Performance_AlgebraicTypes_Multi.cpp' || echo '$(srcdir)/'`$(srcdir)/Performance_AlgebraicTypes_Multi.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Performance_AlgebraicTypes_Multi.Tpo $(DEPDIR)/Performance_AlgebraicTypes_Multi.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Performance_AlgebraicTypes_Multi.cpp' object='Performance_AlgebraicTypes_Multi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Performance_AlgebraicTypes_Multi.o `test -f '$(srcdir)/Performance_AlgebraicTypes_Multi.cpp' || echo '$(srcdir)/'`$(srcdir)/Performance_AlgebraicTypes_Multi.cpp
+
+Performance_AlgebraicTypes_Multi.obj: $(srcdir)/Performance_AlgebraicTypes_Multi.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Performance_AlgebraicTypes_Multi.obj -MD -MP -MF $(DEPDIR)/Performance_AlgebraicTypes_Multi.Tpo -c -o Performance_AlgebraicTypes_Multi.obj `if test -f '$(srcdir)/Performance_AlgebraicTypes_Multi.cpp'; then $(CYGPATH_W) '$(srcdir)/Performance_AlgebraicTypes_Multi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Performance_AlgebraicTypes_Multi.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Performance_AlgebraicTypes_Multi.Tpo $(DEPDIR)/Performance_AlgebraicTypes_Multi.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Performance_AlgebraicTypes_Multi.cpp' object='Performance_AlgebraicTypes_Multi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Performance_AlgebraicTypes_Multi.obj `if test -f '$(srcdir)/Performance_AlgebraicTypes_Multi.cpp'; then $(CYGPATH_W) '$(srcdir)/Performance_AlgebraicTypes_Multi.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Performance_AlgebraicTypes_Multi.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

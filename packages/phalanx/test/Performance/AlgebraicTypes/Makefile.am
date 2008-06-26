@@ -49,7 +49,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_TESTS
-noinst_PROGRAMS = performance_algebraic_types
+noinst_PROGRAMS = performance_algebraic_types performance_algebraic_types_multi
 endif
 
 performance_algebraic_types_SOURCES = \
@@ -60,3 +60,12 @@ performance_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 performance_algebraic_types_LDADD = $(TEST_LIBS)
+
+performance_algebraic_types_multi_SOURCES = \
+	$(srcdir)/Performance_AlgebraicTypes_Multi.cpp \
+	$(srcdir)/Special_AlgebraicTypes.hpp
+
+performance_algebraic_types_multi_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+performance_algebraic_types_multi_LDADD = $(TEST_LIBS)

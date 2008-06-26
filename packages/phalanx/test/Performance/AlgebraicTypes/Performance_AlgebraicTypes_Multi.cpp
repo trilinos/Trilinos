@@ -17,9 +17,9 @@ int main(int argc, char* argv[])
   using namespace std;
   using namespace Teuchos;
 
-  const int num_samples = 1;
-  const int num_loops = 50000000;
-  const int size = 10;
+  const int num_samples = 3;
+  const int num_loops = 5000;
+  const int size = 100000;
   const int num_vectors = 3;
 
   TEST_FOR_EXCEPTION(num_loops * size != 500000000, std::logic_error,
@@ -72,10 +72,8 @@ int main(int argc, char* argv[])
   }
 
   RCP<Time> vector_time = TimeMonitor::getNewTimer("Vector Time");
-  RCP<Time> update_time = TimeMonitor::getNewTimer("Update Time");
   RCP<Time> tvmet_time = TimeMonitor::getNewTimer("TVMET Time");
   RCP<Time> raw_time = TimeMonitor::getNewTimer("Raw Time");
-  RCP<Time> raw2_time = TimeMonitor::getNewTimer("Raw2 Time");
 
   for (int sample = 0; sample < num_samples; ++sample) {
     
@@ -84,23 +82,15 @@ int main(int argc, char* argv[])
       TimeMonitor t(*vector_time);
       for (int i=0; i < num_loops; ++i)
 	for (int j=0; j < c.size(); ++j)
-	  c[j] = a[j] * b[j];
+	  c[j] = -4.0 * a[j] + b[j] * b[j];
     } 
-    
-    cout << "Update" << endl;
-    {
-      TimeMonitor t(*update_time);
-      for (int i=0; i < num_loops; ++i)
-	for (int j=0; j < c.size(); ++j)
-	  c[j].update_multiply(a[j], b[j]);
-    }
     
     cout << "TVMET" << endl;
     {
       TimeMonitor t(*tvmet_time);
       for (int i=0; i < num_loops; ++i)
 	for (int j=0; j < d.size(); ++j)
-	  f[j] = d[j] * e[j];
+	  f[j] = -4.0 * d[j] + e[j] *e[j];
     }
     
     cout << "Raw" << endl;
@@ -110,18 +100,8 @@ int main(int argc, char* argv[])
 	for (int j=0; j < size; ++j) {
 	  int offset = j * 3;
 	  for (int k=0; k < 3; ++k)
-	    raw_c[offset + k] = raw_a[offset + k] * raw_b[offset + k];
-	}
-      }
-    }
-    
-    cout << "Raw2" << endl;
-    {
-      TimeMonitor t(*raw2_time);
-      const int raw_size = 3 * size;  // 3 vector components
-      for (int i=0; i < num_loops; ++i) {
-	for (int j=0; j < raw_size; ++j) {
-	  raw_c[j] = raw_a[j] * raw_b[j];
+	    raw_c[offset + k] =
+	      -4.0 * raw_a[offset + k] + raw_b[offset + k] * raw_b[offset + k];
 	}
       }
     }
@@ -131,17 +111,12 @@ int main(int argc, char* argv[])
   TimeMonitor::summarize();
   
   double f_vector = vector_time->totalElapsedTime() / raw_time->totalElapsedTime();
-  double f_update = update_time->totalElapsedTime() / raw_time->totalElapsedTime();
   double f_tvmet = tvmet_time->totalElapsedTime() / raw_time->totalElapsedTime();
   double f_raw = raw_time->totalElapsedTime() / raw_time->totalElapsedTime();
 
-  double f_raw2 = raw2_time->totalElapsedTime() / raw_time->totalElapsedTime();
-
   std::cout << "vector = " << f_vector << std::endl;
-  std::cout << "update = " << f_update << std::endl;
   std::cout << "tvmet  = " << f_tvmet << std::endl;
   std::cout << "raw    = " << f_raw << std::endl;
-  std::cout << "raw2   = " << f_raw2 << std::endl;
 
   delete [] vector_array;
   delete [] tvmet_array;
