@@ -129,13 +129,14 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
 #endif
 
   double bal1, bal2, cutl1, cutl2, cutn1, cutn2;
+  double myShare = 1.0 / numProcs;
 
   Epetra_CrsMatrix* input_matrix =
     create_epetra_test_matrix_1(numProcs, localProc, verbose);
 
   Isorropia::Epetra::CostDescriber costs;   // default costs
 
-  ispatest::compute_hypergraph_metrics(*input_matrix, costs, bal1, cutn1, cutl1);
+  ispatest::compute_hypergraph_metrics(*input_matrix, costs, myShare, bal1, cutn1, cutl1);
 
   //We'll use Zoltan for the rebalancing:
 
@@ -157,7 +158,7 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
     std::cout << "caught exception: " << exc.what() << std::endl;
     return(false);
   }
-  ispatest::compute_hypergraph_metrics(*balanced_matrix, costs, bal2, cutn2, cutl2);
+  ispatest::compute_hypergraph_metrics(*balanced_matrix, costs, myShare, bal2, cutn2, cutl2);
 
   if (verbose) {
     std::cout << "before balancing hypergraph" << std::endl;
@@ -183,13 +184,14 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   return(test_passed);
 #endif
   double bal1, bal2, cutl1, cutl2, cutn1, cutn2;
+  double myShare = 1.0 / numProcs;
 
   Isorropia::Epetra::CostDescriber costs;   // default costs
 
   Epetra_CrsMatrix* input_matrix =
     create_epetra_test_matrix_1(numProcs, localProc, verbose);
 
-  ispatest::compute_hypergraph_metrics(*input_matrix, costs, bal1, cutn1, cutl1);
+  ispatest::compute_hypergraph_metrics(*input_matrix, costs, myShare, bal1, cutn1, cutl1);
 
   Epetra_Vector* x = new Epetra_Vector(input_matrix->RowMap());
   Epetra_Vector* b = new Epetra_Vector(input_matrix->RowMap());
@@ -215,7 +217,7 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix =
     rd.redistribute(*(problem.GetMatrix()));
 
-  ispatest::compute_hypergraph_metrics(*bal_matrix, costs, bal2, cutn2, cutl2);
+  ispatest::compute_hypergraph_metrics(*bal_matrix, costs, myShare, bal2, cutn2, cutl2);
 
   Teuchos::RefCountPtr<Epetra_MultiVector> bal_x =
     rd.redistribute(*(problem.GetLHS()));
@@ -256,6 +258,7 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
 #endif
   Isorropia::Epetra::CostDescriber costs;   // default costs
   double bal1, bal2, cutl1, cutl2, cutn1, cutn2;
+  double myShare = 1.0 / numProcs;
 
   Epetra_CrsGraph* input_graph =
     create_epetra_test_graph_1(numProcs, localProc, verbose);
@@ -288,8 +291,8 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
     return(false);
   }
 
-  ispatest::compute_hypergraph_metrics(*input_graph, costs, bal1, cutn1, cutl1);
-  ispatest::compute_hypergraph_metrics(*balanced_graph, costs, bal2, cutn2, cutl2);
+  ispatest::compute_hypergraph_metrics(*input_graph, costs, myShare, bal1, cutn1, cutl1);
+  ispatest::compute_hypergraph_metrics(*balanced_graph, costs, myShare, bal2, cutn2, cutl2);
 
   if (verbose) {
     std::cout << "before balancing hypergraph" << std::endl;
