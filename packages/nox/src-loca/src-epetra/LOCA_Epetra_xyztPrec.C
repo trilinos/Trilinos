@@ -40,6 +40,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MatrixMatrix.h"
+#include "Epetra_Map.h"
 
 //#define FILE_DEBUG 1
 
