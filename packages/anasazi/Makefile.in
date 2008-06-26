@@ -116,7 +116,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src util example test thyra
+DIST_SUBDIRS = src example test epetra thyra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -255,7 +255,7 @@ EXTRA_DIST = bootstrap \
        config/replace-install-prefix.pl config/string-replace.pl \
        config/token-replace.pl doc/build_docs doc/Doxyfile doc/index.doc \
        doc/groups.doc \
-       util/ModeLaplace/CMakeLists.txt util/CMakeLists.txt \
+       epetra/util/ModeLaplace/CMakeLists.txt epetra/util/CMakeLists.txt \
        CMakeLists.txt cmake/AnasaziConfig.cmake.in \
        cmake/Anasazi_config.h.in test/CMakeLists.txt \
        src/CMakeLists.txt example/CMakeLists.txt
@@ -281,10 +281,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #defined, so that the tests and examples are included in the distribution
 #tarball.
 @SUB_TEST_TRUE@TEST_SUBDIR = test
-@SUB_TEST_TRUE@UTIL_SUBDIR = util
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 @BUILD_ANASAZI_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
+@BUILD_ANASAZI_EPETRA_TRUE@EPETRA_SUBDIR = epetra
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@ANASAZI_CHECK_COMM = serial
@@ -721,7 +721,7 @@ all-local:
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Now building anasazi tests."
 @BUILD_TESTS_TRUE@	@echo ""
-@BUILD_TESTS_TRUE@	cd $(top_builddir)/util && $(MAKE) && cd ../test && $(MAKE) && cd ../thyra/test && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../test && $(MAKE) && cd ../../test && $(MAKE) && cd ../thyra/test && $(MAKE)
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Finished building anasazi tests."
 @BUILD_TESTS_TRUE@	@echo ""
@@ -732,13 +732,13 @@ all-local:
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	@echo "Now building anasazi examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) && cd ../thyra/example && $(MAKE)
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../example && $(MAKE) && cd ../../example && $(MAKE) && cd ../thyra/example && $(MAKE)
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	@echo "Finished building anasazi examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_EXAMPLES_TRUE@install-examples:
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) install && cd ../thyra/example && $(MAKE) install
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../example && $(MAKE) install && cd ../../example && $(MAKE) install && cd ../thyra/example && $(MAKE) install
 @BUILD_EXAMPLES_FALSE@examples:
 @BUILD_EXAMPLES_FALSE@	@echo "anasazi examples were disabled at configure time"
 
@@ -746,10 +746,10 @@ all-local:
 @BUILD_EXAMPLES_FALSE@	@echo "anasazi examples were disabled at configure time"
 
 clean-tests:
-	cd $(top_builddir)/util && $(MAKE) clean && cd ../test && $(MAKE) clean && cd ../thyra/test && $(MAKE) clean
+	cd $(top_builddir)/epetra/util && $(MAKE) clean && cd ../test && $(MAKE) clean && cd ../../test && $(MAKE) clean && cd ../thyra/test && $(MAKE) clean
 
 clean-examples:
-	cd $(top_builddir)/util && $(MAKE) clean && cd ../example && $(MAKE) clean && cd ../thyra/example && $(MAKE) clean
+	cd $(top_builddir)/epetra/util && $(MAKE) clean && cd ../example && $(MAKE) clean && cd ../../example && $(MAKE) clean && cd ../thyra/example && $(MAKE) clean
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests

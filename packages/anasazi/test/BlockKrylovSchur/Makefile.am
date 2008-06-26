@@ -40,7 +40,6 @@ EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 endif
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/util/ModeLaplace \
 	$(EXPORT_INC_PATH)
 
 EXEEXT = .exe
@@ -53,7 +52,7 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test BlockKrylovSchur_nh_test $(BKS_COMPLEX_TEST) $(BKS_COMPLEX_LAP_TEST)
+noinst_PROGRAMS = $(BKS_COMPLEX_TEST) $(BKS_COMPLEX_LAP_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
@@ -61,9 +60,6 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-BlockKrylovSchur_test_SOURCES = $(srcdir)/cxx_main.cpp
-BlockKrylovSchur_nh_test_SOURCES = $(srcdir)/cxx_main_nh.cpp
-BlockKrylovSchur_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
 BlockKrylovSchur_complex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
 BlockKrylovSchur_complex_lap_test_SOURCES = $(srcdir)/cxx_main_complex_lap.cpp
 
@@ -71,60 +67,23 @@ Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-BlockKrylovSchur_test_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-BlockKrylovSchur_nh_test_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-BlockKrylovSchur_solvertest_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
 BlockKrylovSchur_complex_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 BlockKrylovSchur_complex_lap_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-BlockKrylovSchur_test_CXXFLAGS = -I$(top_srcdir)/src
-
-BlockKrylovSchur_nh_test_CXXFLAGS = -I$(top_srcdir)/src
-
-BlockKrylovSchur_solvertest_CXXFLAGS = -I$(top_srcdir)/src
-
 BlockKrylovSchur_complex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 BlockKrylovSchur_complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-BlockKrylovSchur_test_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS)
-
-BlockKrylovSchur_nh_test_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS)
-
-BlockKrylovSchur_solvertest_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS)
-
 BlockKrylovSchur_complex_test_LDADD = \
 	$(EXPORT_LIBS)
 
@@ -133,5 +92,3 @@ BlockKrylovSchur_complex_lap_test_LDADD = \
 
 # Dummy for new export makefiles
 LIBS = 
-
-

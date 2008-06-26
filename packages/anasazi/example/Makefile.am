@@ -30,5 +30,5 @@
 
 all-local:
 
-SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester
-
+SUBDIRS = 
+#BlockDavidson BlockKrylovSchur LOBPCG MVOPTester

@@ -33,7 +33,6 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicSort.hpp"
-#include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziBasicOutputManager.hpp"
@@ -61,7 +60,7 @@ int main(int argc, char *argv[])
   gerr = true;
 
 #ifdef HAVE_MPI
-  // Initialize MPI and setup an Epetra communicator
+  // Initialize MPI
   MPI_Init(&argc,&argv);
 #endif
 

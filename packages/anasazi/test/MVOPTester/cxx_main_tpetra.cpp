@@ -126,31 +126,31 @@ public:
   //@}
   //@{ \name Creation methods
 
-  /*! \brief Creates a new empty EpetraMultiVec containing \c numvecs columns.
+  /*! \brief Creates a new empty TpetraMultiVec containing \c numvecs columns.
 
-    \returns Pointer to an EpetraMultiVec
+    \returns Pointer to an TpetraMultiVec
   */
   MultiVec<ScalarType> * Clone (const int numvecs) const
   {
     return(new TpetraMultiVec(vectorSpace(), numvecs));
   }
 
-  /*! \brief Creates a new EpetraMultiVec and copies contents of \c *this into
+  /*! \brief Creates a new TpetraMultiVec and copies contents of \c *this into
       the new vector (deep copy).
 
-    \returns Pointer to an EpetraMultiVec
+    \returns Pointer to an TpetraMultiVec
   */	
   MultiVec<ScalarType> * CloneCopy () const
   {
     return(new TpetraMultiVec(*this));
   }
 
-  /*! \brief Creates a new EpetraMultiVec and copies the selected contents of \c *this 
+  /*! \brief Creates a new TpetraMultiVec and copies the selected contents of \c *this 
       into the new vector (deep copy).  
       
     The copied vectors from \c *this are indicated by the \c index.size() indices in \c index.
 
-    \returns Pointer to an EpetraMultiVec
+    \returns Pointer to an TpetraMultiVec
   */
   MultiVec<ScalarType> * CloneCopy ( const std::vector<int>& index ) const
   {
@@ -161,12 +161,12 @@ public:
     return(new TpetraMultiVec(vectorSpace(), list));
   }
     
-  /*! \brief Creates a new EpetraMultiVec that shares the selected contents of \c *this.
+  /*! \brief Creates a new TpetraMultiVec that shares the selected contents of \c *this.
       
     The index of the \c numvecs vectors shallow copied from \c *this are indicated by the
     indices given in \c index.
     
-    \returns Pointer to an EpetraMultiVec
+    \returns Pointer to an TpetraMultiVec
   */
   MultiVec<ScalarType> * CloneView ( const std::vector<int>& index )
   {
@@ -357,7 +357,7 @@ public:
 
   //@}
   //@{ \name Print method.
-  /*! \brief Print \c *this EpetraMultiVec.
+  /*! \brief Print \c *this TpetraMultiVec.
    */
   void MvPrint( ostream& os ) const 
   {

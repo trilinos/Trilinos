@@ -52,7 +52,6 @@ SortManager_test_SOURCES = $(srcdir)/cxx_main.cpp
 #np# exe depends on.  (This primary is not absolutely essential.)
 SortManager_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 

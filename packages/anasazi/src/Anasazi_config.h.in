@@ -19,6 +19,9 @@
 #undef HAVE_ANASAZI_BELOS
 
 /* Define if want to build with anasazi enabled */
+#undef HAVE_ANASAZI_EPETRA
+
+/* Define if want to build with anasazi enabled */
 #undef HAVE_ANASAZI_EPETRAEXT
 
 /* Define if want to build anasazi-examples */

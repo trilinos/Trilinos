@@ -335,6 +335,8 @@ AM_CONDITIONAL(BUILD_ANASAZI_EXPERIMENTAL, [test "X$ac_cv_use_anasazi_experiment
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, triutils, ANASAZI_TRIUTILS, BUILD_TRIUTILS, yes, [Build examples which use Triutils.], [Build examples which use Triutils. Can be overridden with --disable-anasazi-triutils.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, epetra, ANASAZI_EPETRA, BUILD_ANASAZI_EPETRA, yes, [Build examples which use Epetra.], [Build examples which use Epetra. Can be overridden with --disable-anasazi-epetra.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, epetraext, ANASAZI_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build examples which use EpetraExt.], [Build examples which use EpetraExt. Can be overridden with --disable-anasazi-epetraext.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, belos, ANASAZI_BELOS, BUILD_BELOS, yes, [Build examples which use Belos. Can be overridden with --disable-anasazi-belos.], [Build examples which use Belos.])
@@ -451,20 +453,12 @@ AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export.anasazi
 		src/Makefile
-		util/Makefile
-		util/ModeLaplace/Makefile
-		example/Makefile
-		example/BlockDavidson/Makefile
-		example/BlockKrylovSchur/Makefile
-		example/LOBPCG/Makefile
-		example/MVOPTester/Makefile
 		test/Makefile
-		test/ModalSolverUtils/Makefile
 		test/ARPACKExamples/Makefile
-		test/BlockDavidson/Makefile
-		test/BlockKrylovSchur/Makefile
 		test/MVOPTester/Makefile
 		test/LOBPCG/Makefile
+		test/BlockDavidson/Makefile
+		test/BlockKrylovSchur/Makefile
 		test/OrthoManager/Makefile
 		test/StatusTest/Makefile
 		test/SortManager/Makefile
@@ -472,6 +466,23 @@ AC_CONFIG_FILES([
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
 		test/scripts/daily/mpi/Makefile
+		example/Makefile
+		epetra/Makefile
+		epetra/src/Makefile
+		epetra/util/Makefile
+		epetra/util/ModeLaplace/Makefile
+		epetra/example/Makefile
+		epetra/example/BlockDavidson/Makefile
+		epetra/example/BlockKrylovSchur/Makefile
+		epetra/example/LOBPCG/Makefile
+		epetra/example/MVOPTester/Makefile
+		epetra/test/Makefile
+		epetra/test/MVOPTester/Makefile
+		epetra/test/ModalSolverUtils/Makefile
+		epetra/test/BlockDavidson/Makefile
+		epetra/test/BlockKrylovSchur/Makefile
+		epetra/test/LOBPCG/Makefile
+		epetra/test/OrthoManager/Makefile
 		thyra/Makefile
 		thyra/src/Makefile
 		thyra/example/Makefile

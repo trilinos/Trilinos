@@ -108,8 +108,7 @@ AR = ar
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libanasazi_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = AnasaziEpetraAdapter.$(OBJEXT) \
-	AnasaziVersion.$(OBJEXT)
+am__objects_1 = AnasaziVersion.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_libanasazi_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -274,7 +273,6 @@ CORE_H = \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
 	$(srcdir)/AnasaziEigensolverDecl.hpp \
-	$(srcdir)/AnasaziEpetraAdapter.hpp \
 	$(srcdir)/AnasaziLOBPCG.hpp \
 	$(srcdir)/AnasaziLOBPCGSolMgr.hpp \
 	$(srcdir)/AnasaziGenOrthoManager.hpp \
@@ -302,7 +300,6 @@ CORE_H = \
 	$(srcdir)/AnasaziTypes.hpp
 
 CORE = \
-	$(srcdir)/AnasaziEpetraAdapter.cpp \
 	$(srcdir)/AnasaziVersion.cpp
 
 UTIL_H = \
@@ -534,7 +531,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziEpetraAdapter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziVersion.Po@am__quote@
 
 .cpp.o:
@@ -550,20 +546,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-AnasaziEpetraAdapter.o: $(srcdir)/AnasaziEpetraAdapter.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziEpetraAdapter.o -MD -MP -MF $(DEPDIR)/AnasaziEpetraAdapter.Tpo -c -o AnasaziEpetraAdapter.o `test -f '$(srcdir)/AnasaziEpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziEpetraAdapter.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziEpetraAdapter.Tpo $(DEPDIR)/AnasaziEpetraAdapter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziEpetraAdapter.cpp' object='AnasaziEpetraAdapter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziEpetraAdapter.o `test -f '$(srcdir)/AnasaziEpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziEpetraAdapter.cpp
-
-AnasaziEpetraAdapter.obj: $(srcdir)/AnasaziEpetraAdapter.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziEpetraAdapter.obj -MD -MP -MF $(DEPDIR)/AnasaziEpetraAdapter.Tpo -c -o AnasaziEpetraAdapter.obj `if test -f '$(srcdir)/AnasaziEpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/AnasaziEpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziEpetraAdapter.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziEpetraAdapter.Tpo $(DEPDIR)/AnasaziEpetraAdapter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziEpetraAdapter.cpp' object='AnasaziEpetraAdapter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziEpetraAdapter.obj `if test -f '$(srcdir)/AnasaziEpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/AnasaziEpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziEpetraAdapter.cpp'; fi`
 
 AnasaziVersion.o: $(srcdir)/AnasaziVersion.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziVersion.o -MD -MP -MF $(DEPDIR)/AnasaziVersion.Tpo -c -o AnasaziVersion.o `test -f '$(srcdir)/AnasaziVersion.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziVersion.cpp

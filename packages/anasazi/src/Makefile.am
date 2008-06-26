@@ -62,7 +62,6 @@ CORE_H = \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
 	$(srcdir)/AnasaziEigensolverDecl.hpp \
-	$(srcdir)/AnasaziEpetraAdapter.hpp \
 	$(srcdir)/AnasaziLOBPCG.hpp \
 	$(srcdir)/AnasaziLOBPCGSolMgr.hpp \
 	$(srcdir)/AnasaziGenOrthoManager.hpp \
@@ -90,7 +89,6 @@ CORE_H = \
 	$(srcdir)/AnasaziTypes.hpp
 
 CORE = \
-	$(srcdir)/AnasaziEpetraAdapter.cpp \
 	$(srcdir)/AnasaziVersion.cpp
 
 UTIL_H = \

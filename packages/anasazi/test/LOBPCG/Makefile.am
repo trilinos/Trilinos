@@ -39,18 +39,20 @@ EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
 EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/util/ModeLaplace $(EXPORT_INC_PATH)
+AM_CPPFLAGS = \
+	$(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
 if BUILD_TEUCHOS_COMPLEX
+LOBPCG_COMPLEX_LAP_TEST = LOBPCG_complex_lap_test
 if BUILD_TRIUTILS
-LOBPCG_COMPLEX_TEST = LOBPCGComplex_test Dummy
+LOBPCG_COMPLEX_TEST = LOBPCG_complex_test Dummy
 endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = LOBPCG_test LOBPCG_simple LOBPCG_solvertest LOBPCG_auxtest $(LOBPCG_COMPLEX_TEST)
+noinst_PROGRAMS = $(LOBPCG_COMPLEX_TEST) $(LOBPCG_COMPLEX_LAP_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
@@ -58,82 +60,35 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-LOBPCG_test_SOURCES = $(srcdir)/cxx_main.cpp
-
-LOBPCG_simple_SOURCES = $(srcdir)/cxx_simple.cpp
-
-LOBPCG_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
-
-LOBPCG_auxtest_SOURCES = $(srcdir)/cxx_main_auxtest.cpp
-
-LOBPCGComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
+LOBPCG_complex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
+LOBPCG_complex_lap_test_SOURCES = $(srcdir)/cxx_main_complex_lap.cpp
 
 Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-LOBPCG_test_DEPENDENCIES = \
+LOBPCG_complex_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-LOBPCG_simple = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-LOBPCG_solvertest_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-LOBPCG_auxtest_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-LOBPCGComplex_test_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+LOBPCG_complex_lap_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-LOBPCG_test_CXXFLAGS = -I$(top_srcdir)/src
+LOBPCG_complex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
-LOBPCG_simple_CXXFLAGS = -I$(top_srcdir)/src
-
-LOBPCG_solvertest_CXXFLAGS = -I$(top_srcdir)/src
-
-LOBPCG_auxtest_CXXFLAGS = -I$(top_srcdir)/src
-
-LOBPCGComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+LOBPCG_complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-LOBPCG_test_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS) 
+LOBPCG_complex_test_LDADD = \
+	$(EXPORT_LIBS)
 
-LOBPCG_simple_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS) 
-
-LOBPCG_solvertest_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS) 
-
-LOBPCG_auxtest_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS) 
-
-LOBPCGComplex_test_LDADD = \
-	$(EXPORT_LIBS) 
+LOBPCG_complex_lap_test_LDADD = \
+	$(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 

@@ -236,7 +236,7 @@ MVOPTesterEx_DEPENDENCIES = \
 MVOPTesterEx_CXXFLAGS = \
 			-I$(top_srcdir)/thyra/src \
 			-I$(top_srcdir)/src \
-			-I$(top_srcdir)/util/ModeLaplace
+			-I$(top_srcdir)/epetra/util/ModeLaplace
 
 
 #np# List libraries that np is dependent on.

@@ -3,23 +3,23 @@
 #
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = ModalSolverUtils/ModalSolverUtils_test.exe,
-            MVOPTester/MVOPTester_test.exe
+    TESTS = ../epetra/test/ModalSolverUtils/ModalSolverUtils_test.exe,
+            ../epetra/test/MVOPTester/MVOPTester_test.exe
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = LOBPCG/LOBPCG_test.exe,
-            LOBPCG/LOBPCG_solvertest.exe,
-            LOBPCG/LOBPCG_auxtest.exe,
-            LOBPCG/LOBPCG_simple.exe,
-            BlockDavidson/BlockDavidson_solvertest.exe,
-            BlockDavidson/BlockDavidson_auxtest.exe,
-            BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
-            SortManager/SortManager_test.exe,
-            StatusTest/StatusTest_test.exe;
+    TESTS = ../epetra/test/LOBPCG/LOBPCG_test.exe,
+            ../epetra/test/LOBPCG/LOBPCG_solvertest.exe,
+            ../epetra/test/LOBPCG/LOBPCG_auxtest.exe,
+            ../epetra/test/LOBPCG/LOBPCG_simple.exe,
+            ../epetra/test/BlockDavidson/BlockDavidson_solvertest.exe,
+            ../epetra/test/BlockDavidson/BlockDavidson_auxtest.exe,
+            ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
+            ../epetra/test/SortManager/SortManager_test.exe,
+            ../epetra/test/StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
@@ -27,24 +27,18 @@
 
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = OrthoManager/OrthoManager_gentest.exe;
+    TESTS = ../epetra/test/OrthoManager/OrthoManager_gentest.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose;
+    ARGS = --verbose,
+           --verbose --noMass;
     COMM = SERIAL, MPI;
 }
 
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = OrthoManager/OrthoManager_gentest.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --noMass;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = OrthoManager/OrthoManager_test.exe,
-            OrthoManager/OrthoManager_mattest.exe,
-            OrthoManager/OrthoManagerFloat_test.exe;
+    TESTS = ../epetra/test/OrthoManager/OrthoManager_test.exe,
+            ../epetra/test/OrthoManager/OrthoManager_mattest.exe,
+            ../epetra/test/OrthoManager/OrthoManagerFloat_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --useMass --ortho=SVQB, --verbose --noMass --ortho=SVQB, 
            --verbose --useMass --ortho=Basic, --verbose --noMass --ortho=Basic,
@@ -55,7 +49,7 @@
 # added --debug to one test below to help pinpoint a problem on beowulf
 # removed 12 proc run; this was causing the problem
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = BlockDavidson/BlockDavidson_test.exe;
+    TESTS = ../epetra/src/BlockDavidson/BlockDavidson_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --exsitu --locking,
            --verbose --exsitu --nolocking;
@@ -63,7 +57,7 @@
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = BlockDavidson/BlockDavidson_test.exe;
+    TESTS = ../epetra/test/BlockDavidson/BlockDavidson_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --insitu --locking, 
            --verbose --insitu --nolocking,
@@ -75,8 +69,8 @@
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = BlockKrylovSchur/BlockKrylovSchur_test.exe,
-            BlockKrylovSchur/BlockKrylovSchur_nh_test.exe;
+    TESTS = ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_test.exe,
+            ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_nh_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --insitu, --verbose --exsitu;
     COMM = SERIAL, MPI;
@@ -127,7 +121,9 @@
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_lap_test.exe;
+    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_lap_test.exe,
+            BlockDavidson/BlockDavidson_complex_lap_test.exe,
+            LOBPCG/LOBPCG_complex_lap_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL;
@@ -150,38 +146,38 @@
 }
 
 (COVERAGE) {
-    TESTS = LOBPCG/LOBPCG_test.exe,
-            LOBPCG/LOBPCG_solvertest.exe,
-            LOBPCG/LOBPCG_auxtest.exe,
-            LOBPCG/LOBPCG_simple.exe,
-            BlockDavidson/BlockDavidson_test.exe,
-            BlockDavidson/BlockDavidson_solvertest.exe,
-            BlockDavidson/BlockDavidson_auxtest.exe,
-            BlockKrylovSchur/BlockKrylovSchur_test.exe,
-            BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
-            OrthoManager/OrthoManager_test.exe,
-            OrthoManager/OrthoManager_mattest.exe,
-            OrthoManager/OrthoManager_gentest.exe,
-            OrthoManager/OrthoManagerFloat_test.exe,
-            SortManager/SortManager_test.exe,
-            StatusTest/StatusTest_test.exe;
+    TESTS = ../epetra/test/LOBPCG/LOBPCG_test.exe,
+            ../epetra/test/LOBPCG/LOBPCG_solvertest.exe,
+            ../epetra/test/LOBPCG/LOBPCG_auxtest.exe,
+            ../epetra/test/LOBPCG/LOBPCG_simple.exe,
+            ../epetra/test/BlockDavidson/BlockDavidson_test.exe,
+            ../epetra/test/BlockDavidson/BlockDavidson_solvertest.exe,
+            ../epetra/test/BlockDavidson/BlockDavidson_auxtest.exe,
+            ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_test.exe,
+            ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
+            ../epetra/test/OrthoManager/OrthoManager_test.exe,
+            ../epetra/test/OrthoManager/OrthoManager_mattest.exe,
+            ../epetra/test/OrthoManager/OrthoManager_gentest.exe,
+            ../epetra/test/OrthoManager/OrthoManagerFloat_test.exe,
+            ../epetra/test/SortManager/SortManager_test.exe,
+            ../epetra/test/StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --debug;
     COMM = SERIAL, MPI;
 }
 
 (COVERAGE) {
-    TESTS = LOBPCG/LOBPCG_test.exe,
-            LOBPCG/LOBPCG_simple.exe,
-            BlockDavidson/BlockDavidson_test.exe,
-            BlockKrylovSchur/BlockKrylovSchur_test.exe;
+    TESTS = ../epetra/test/LOBPCG/LOBPCG_test.exe,
+            ../epetra/test/LOBPCG/LOBPCG_simple.exe,
+            ../epetra/test/BlockDavidson/BlockDavidson_test.exe,
+            ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --debug --shortrun;
     COMM = SERIAL, MPI;
 }
 
 (COVERAGE) {
-    TESTS = LOBPCG/LOBPCG_test.exe;
+    TESTS = ../epetra/test/LOBPCG/LOBPCG_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --debug --testrecovery --nofullortho, --debug --testrecovery --fullortho;
     COMM = SERIAL, MPI;

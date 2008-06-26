@@ -59,7 +59,7 @@ EXTRA_DIST = bootstrap \
        config/replace-install-prefix.pl config/string-replace.pl \
        config/token-replace.pl doc/build_docs doc/Doxyfile doc/index.doc \
        doc/groups.doc \
-       util/ModeLaplace/CMakeLists.txt util/CMakeLists.txt \
+       epetra/util/ModeLaplace/CMakeLists.txt epetra/util/CMakeLists.txt \
        CMakeLists.txt cmake/AnasaziConfig.cmake.in \
        cmake/Anasazi_config.h.in test/CMakeLists.txt \
        src/CMakeLists.txt example/CMakeLists.txt
@@ -101,7 +101,6 @@ all-local:
 
 if SUB_TEST
 TEST_SUBDIR=test
-UTIL_SUBDIR=util
 endif
 
 if SUB_EXAMPLE
@@ -113,7 +112,7 @@ tests:
 	@echo ""
 	@echo "Now building anasazi tests."
 	@echo ""
-	cd $(top_builddir)/util && $(MAKE) && cd ../test && $(MAKE) && cd ../thyra/test && $(MAKE)
+	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../test && $(MAKE) && cd ../../test && $(MAKE) && cd ../thyra/test && $(MAKE)
 	@echo ""
 	@echo "Finished building anasazi tests."
 	@echo ""
@@ -127,13 +126,13 @@ examples:
 	@echo ""
 	@echo "Now building anasazi examples."
 	@echo ""
-	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) && cd ../thyra/example && $(MAKE)
+	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../example && $(MAKE) && cd ../../example && $(MAKE) && cd ../thyra/example && $(MAKE)
 	@echo ""
 	@echo "Finished building anasazi examples."
 	@echo ""
 
 install-examples:
-	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) install && cd ../thyra/example && $(MAKE) install
+	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../example && $(MAKE) install && cd ../../example && $(MAKE) install && cd ../thyra/example && $(MAKE) install
 else
 examples:
 	@echo "anasazi examples were disabled at configure time"
@@ -143,10 +142,10 @@ install-examples:
 endif
 
 clean-tests:
-	cd $(top_builddir)/util && $(MAKE) clean && cd ../test && $(MAKE) clean && cd ../thyra/test && $(MAKE) clean
+	cd $(top_builddir)/epetra/util && $(MAKE) clean && cd ../test && $(MAKE) clean && cd ../../test && $(MAKE) clean && cd ../thyra/test && $(MAKE) clean
 
 clean-examples:
-	cd $(top_builddir)/util && $(MAKE) clean && cd ../example && $(MAKE) clean && cd ../thyra/example && $(MAKE) clean
+	cd $(top_builddir)/epetra/util && $(MAKE) clean && cd ../example && $(MAKE) clean && cd ../../example && $(MAKE) clean && cd ../thyra/example && $(MAKE) clean
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests
@@ -161,7 +160,11 @@ if BUILD_ANASAZI_THYRA
 THYRA_SUBDIR = thyra
 endif
 
-SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
+if BUILD_ANASAZI_EPETRA
+EPETRA_SUBDIR = epetra
+endif
+
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

@@ -747,6 +747,8 @@ BUILD_ANASAZI_EXPERIMENTAL_TRUE
 BUILD_ANASAZI_EXPERIMENTAL_FALSE
 BUILD_TRIUTILS_TRUE
 BUILD_TRIUTILS_FALSE
+BUILD_ANASAZI_EPETRA_TRUE
+BUILD_ANASAZI_EPETRA_FALSE
 BUILD_EPETRAEXT_TRUE
 BUILD_EPETRAEXT_FALSE
 BUILD_BELOS_TRUE
@@ -1397,6 +1399,9 @@ Optional Features:
                           with --disable-anasazi-triutils.
   --enable-anasazi-triutils
                           Build examples which use Triutils.
+  --enable-epetra         Build examples which use Epetra. Can be overridden
+                          with --disable-anasazi-epetra.
+  --enable-anasazi-epetra Build examples which use Epetra.
   --enable-epetraext      Build examples which use EpetraExt. Can be
                           overridden with --disable-anasazi-epetraext.
   --enable-anasazi-epetraext
@@ -8565,6 +8570,57 @@ fi
 
 
 
+# Check whether --enable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_anasazi_using_epetra_default=$ac_cv_implicit_use_epetra
+else
+  ac_cv_anasazi_using_epetra_default=no
+fi
+
+# Check whether --enable-anasazi-epetra was given.
+if test "${enable_anasazi_epetra+set}" = set; then
+  enableval=$enable_anasazi_epetra; ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_anasazi_using_epetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in anasazi" >&5
+echo $ECHO_N "checking whether to build optional epetra dependent code in anasazi... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ANASAZI_EPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetra" = "Xyes"; then
+  BUILD_ANASAZI_EPETRA_TRUE=
+  BUILD_ANASAZI_EPETRA_FALSE='#'
+else
+  BUILD_ANASAZI_EPETRA_TRUE='#'
+  BUILD_ANASAZI_EPETRA_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-epetraext was given.
 if test "${enable_epetraext+set}" = set; then
   enableval=$enable_epetraext; ac_cv_implicit_use_epetraext=$enableval
@@ -9287,7 +9343,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile example/LOBPCG/Makefile example/MVOPTester/Makefile test/Makefile test/ModalSolverUtils/Makefile test/ARPACKExamples/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/OrthoManager/Makefile test/StatusTest/Makefile test/SortManager/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile test/Makefile test/ARPACKExamples/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/OrthoManager/Makefile test/StatusTest/Makefile test/SortManager/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile example/Makefile epetra/Makefile epetra/src/Makefile epetra/util/Makefile epetra/util/ModeLaplace/Makefile epetra/example/Makefile epetra/example/BlockDavidson/Makefile epetra/example/BlockKrylovSchur/Makefile epetra/example/LOBPCG/Makefile epetra/example/MVOPTester/Makefile epetra/test/Makefile epetra/test/MVOPTester/Makefile epetra/test/ModalSolverUtils/Makefile epetra/test/BlockDavidson/Makefile epetra/test/BlockKrylovSchur/Makefile epetra/test/LOBPCG/Makefile epetra/test/OrthoManager/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9502,6 +9558,13 @@ if test -z "${BUILD_TRIUTILS_TRUE}" && test -z "${BUILD_TRIUTILS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_ANASAZI_EPETRA_TRUE}" && test -z "${BUILD_ANASAZI_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_ANASAZI_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_ANASAZI_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10033,20 +10096,12 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "Makefile.export.anasazi") CONFIG_FILES="$CONFIG_FILES Makefile.export.anasazi" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "util/Makefile") CONFIG_FILES="$CONFIG_FILES util/Makefile" ;;
-    "util/ModeLaplace/Makefile") CONFIG_FILES="$CONFIG_FILES util/ModeLaplace/Makefile" ;;
-    "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-    "example/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockDavidson/Makefile" ;;
-    "example/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockKrylovSchur/Makefile" ;;
-    "example/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES example/LOBPCG/Makefile" ;;
-    "example/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES example/MVOPTester/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
-    "test/ModalSolverUtils/Makefile") CONFIG_FILES="$CONFIG_FILES test/ModalSolverUtils/Makefile" ;;
     "test/ARPACKExamples/Makefile") CONFIG_FILES="$CONFIG_FILES test/ARPACKExamples/Makefile" ;;
-    "test/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockDavidson/Makefile" ;;
-    "test/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockKrylovSchur/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
     "test/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES test/LOBPCG/Makefile" ;;
+    "test/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockDavidson/Makefile" ;;
+    "test/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockKrylovSchur/Makefile" ;;
     "test/OrthoManager/Makefile") CONFIG_FILES="$CONFIG_FILES test/OrthoManager/Makefile" ;;
     "test/StatusTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/StatusTest/Makefile" ;;
     "test/SortManager/Makefile") CONFIG_FILES="$CONFIG_FILES test/SortManager/Makefile" ;;
@@ -10054,6 +10109,23 @@ do
     "test/scripts/daily/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
     "test/scripts/daily/serial/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
     "test/scripts/daily/mpi/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
+    "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+    "epetra/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/Makefile" ;;
+    "epetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/src/Makefile" ;;
+    "epetra/util/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/util/Makefile" ;;
+    "epetra/util/ModeLaplace/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/util/ModeLaplace/Makefile" ;;
+    "epetra/example/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/Makefile" ;;
+    "epetra/example/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/BlockDavidson/Makefile" ;;
+    "epetra/example/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/BlockKrylovSchur/Makefile" ;;
+    "epetra/example/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/LOBPCG/Makefile" ;;
+    "epetra/example/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/MVOPTester/Makefile" ;;
+    "epetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/Makefile" ;;
+    "epetra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/MVOPTester/Makefile" ;;
+    "epetra/test/ModalSolverUtils/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/ModalSolverUtils/Makefile" ;;
+    "epetra/test/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/BlockDavidson/Makefile" ;;
+    "epetra/test/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/BlockKrylovSchur/Makefile" ;;
+    "epetra/test/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/LOBPCG/Makefile" ;;
+    "epetra/test/OrthoManager/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/OrthoManager/Makefile" ;;
     "thyra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
     "thyra/src/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
     "thyra/example/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
@@ -10298,6 +10370,8 @@ BUILD_ANASAZI_EXPERIMENTAL_TRUE!$BUILD_ANASAZI_EXPERIMENTAL_TRUE$ac_delim
 BUILD_ANASAZI_EXPERIMENTAL_FALSE!$BUILD_ANASAZI_EXPERIMENTAL_FALSE$ac_delim
 BUILD_TRIUTILS_TRUE!$BUILD_TRIUTILS_TRUE$ac_delim
 BUILD_TRIUTILS_FALSE!$BUILD_TRIUTILS_FALSE$ac_delim
+BUILD_ANASAZI_EPETRA_TRUE!$BUILD_ANASAZI_EPETRA_TRUE$ac_delim
+BUILD_ANASAZI_EPETRA_FALSE!$BUILD_ANASAZI_EPETRA_FALSE$ac_delim
 BUILD_EPETRAEXT_TRUE!$BUILD_EPETRAEXT_TRUE$ac_delim
 BUILD_EPETRAEXT_FALSE!$BUILD_EPETRAEXT_FALSE$ac_delim
 BUILD_BELOS_TRUE!$BUILD_BELOS_TRUE$ac_delim
@@ -10320,7 +10394,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

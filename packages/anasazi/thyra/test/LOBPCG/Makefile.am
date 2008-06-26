@@ -36,7 +36,7 @@ EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
 EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/util/ModeLaplace $(EXPORT_INC_PATH)
+AM_CPPFLAGS = -I$(top_srcdir)/epetra/util/ModeLaplace $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
@@ -52,7 +52,7 @@ LOBPCGThyra_test_SOURCES = $(srcdir)/cxx_main.cpp
 #np# exe depends on.  (This primary is not absolutely essential.)
 LOBPCGThyra_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -65,7 +65,7 @@ LOBPCGThyra_test_CXXFLAGS = \
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 LOBPCGThyra_test_LDADD = \
-	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
     $(EXPORT_LIBS) 
 
 # Dummy for new export makefiles
