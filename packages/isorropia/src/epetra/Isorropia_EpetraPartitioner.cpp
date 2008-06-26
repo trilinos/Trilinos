@@ -601,13 +601,13 @@ void Partitioner::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
   for (int i=0; i < paramNames.size(); i++){
 
     std::string origName(paramNames[i]);
-    int paramNameChanged;
+    int paramNameChanged = 0;
     stringToUpper(paramNames[i], paramNameChanged);
 
     if (plist.isSublist(origName)){
       Teuchos::ParameterList &sublist = plist.sublist(origName);
 
-      int sublistChanged;
+      int sublistChanged=0;
       paramsToUpper(sublist, sublistChanged);
 
       if (paramNameChanged){
@@ -624,15 +624,9 @@ void Partitioner::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
     }
     else if (plist.isParameter(origName)){
 
-      if (!plist.isType<std::string>(paramNames[i])){
-        // all isorropia and zoltan parameters should be strings,
-        // ignore anything else
-        continue;
-      }
+      std::string paramVal(plist.get<std::string>(origName));
 
-      std::string &paramVal = plist.get<std::string>(origName);
-
-      int paramValChanged;
+      int paramValChanged=0;
       stringToUpper(paramVal, paramValChanged);
 
       if (paramNameChanged || paramValChanged){
