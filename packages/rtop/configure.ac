@@ -296,6 +296,7 @@ AC_CONFIG_FILES([
     test/Makefile
     test/base/Makefile
     test/lapack/Makefile
+    test/ops_lib/Makefile
     test/spmd/Makefile
     ])
 

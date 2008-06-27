@@ -136,8 +136,12 @@ void EpetraModelEvaluator::initialize(
   //
   W_factory_ = W_factory;
   //
-  x_space_ = create_VectorSpace( x_map_ = epetraModel_->get_x_map() );
-  f_space_ = create_VectorSpace( f_map_ = epetraModel_->get_f_map() );
+  x_map_ = epetraModel_->get_x_map();
+  f_map_ = epetraModel_->get_f_map();
+  if (!is_null(x_map_)) {
+    x_space_ = create_VectorSpace(x_map_);
+    f_space_ = create_VectorSpace(f_map_);
+  }
   //
   EpetraExt::ModelEvaluator::InArgs inArgs = epetraModel_->createInArgs();
   p_map_.resize(inArgs.Np()); p_space_.resize(inArgs.Np());
@@ -1295,14 +1299,14 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   InArgsSetup<double> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(epetraInArgs.Np());
-  inArgs.setSupports(IN_ARG_x_dot,epetraInArgs.supports(EME::IN_ARG_x_dot));
-  inArgs.setSupports(IN_ARG_x,epetraInArgs.supports(EME::IN_ARG_x));
+  inArgs.setSupports(IN_ARG_x_dot, epetraInArgs.supports(EME::IN_ARG_x_dot));
+  inArgs.setSupports(IN_ARG_x, epetraInArgs.supports(EME::IN_ARG_x));
   inArgs.setSupports(IN_ARG_x_dot_poly,
     epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
-  inArgs.setSupports(IN_ARG_x_poly,epetraInArgs.supports(EME::IN_ARG_x_poly));
-  inArgs.setSupports(IN_ARG_t,epetraInArgs.supports(EME::IN_ARG_t));
-  inArgs.setSupports(IN_ARG_alpha,epetraInArgs.supports(EME::IN_ARG_alpha));
-  inArgs.setSupports(IN_ARG_beta,epetraInArgs.supports(EME::IN_ARG_beta));
+  inArgs.setSupports(IN_ARG_x_poly, epetraInArgs.supports(EME::IN_ARG_x_poly));
+  inArgs.setSupports(IN_ARG_t, epetraInArgs.supports(EME::IN_ARG_t));
+  inArgs.setSupports(IN_ARG_alpha, epetraInArgs.supports(EME::IN_ARG_alpha));
+  inArgs.setSupports(IN_ARG_beta, epetraInArgs.supports(EME::IN_ARG_beta));
   prototypeInArgs_ = inArgs;
 
   //
@@ -1311,44 +1315,48 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
 
   OutArgsSetup<double> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(Np,Ng);
+  outArgs.set_Np_Ng(Np, Ng);
   // f
-  outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
-  // W
-  outArgs.setSupports(
-    OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W)&&!is_null(W_factory_));
-  outArgs.setSupports(OUT_ARG_W_op,epetraOutArgs.supports(EME::OUT_ARG_W));
-  outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
-  // DfDp
-  for(int l=0; l<Np; ++l) {
-    outArgs.setSupports(OUT_ARG_DfDp,l,
-      convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp,l)));
-    if(!outArgs.supports(OUT_ARG_DfDp,l).none())
-      outArgs.set_DfDp_properties(l,
-        convert(epetraOutArgs.get_DfDp_properties(l)));
+  outArgs.setSupports(OUT_ARG_f, epetraOutArgs.supports(EME::OUT_ARG_f));
+  if (outArgs.supports(OUT_ARG_f)) {
+    // W
+    outArgs.setSupports(
+      OUT_ARG_W, epetraOutArgs.supports(EME::OUT_ARG_W)&&!is_null(W_factory_));
+    outArgs.setSupports(OUT_ARG_W_op,  epetraOutArgs.supports(EME::OUT_ARG_W));
+    outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
+    // DfDp
+    for(int l=0; l<Np; ++l) {
+      outArgs.setSupports(OUT_ARG_DfDp, l,
+        convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp, l)));
+      if(!outArgs.supports(OUT_ARG_DfDp, l).none())
+        outArgs.set_DfDp_properties(l,
+          convert(epetraOutArgs.get_DfDp_properties(l)));
+    }
   }
   // DgDx_dot and DgDx
   for(int j=0; j<Ng; ++j) {
-    outArgs.setSupports(OUT_ARG_DgDx_dot,j,
-      convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx_dot,j)));
-    if(!outArgs.supports(OUT_ARG_DgDx_dot,j).none())
+    if (inArgs.supports(IN_ARG_x_dot))
+      outArgs.setSupports(OUT_ARG_DgDx_dot, j,
+        convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx_dot, j)));
+    if(!outArgs.supports(OUT_ARG_DgDx_dot, j).none())
       outArgs.set_DgDx_dot_properties(j,
         convert(epetraOutArgs.get_DgDx_dot_properties(j)));
-    outArgs.setSupports(OUT_ARG_DgDx,j,
-      convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx,j)));
-    if(!outArgs.supports(OUT_ARG_DgDx,j).none())
+    if (inArgs.supports(IN_ARG_x))
+      outArgs.setSupports(OUT_ARG_DgDx, j,
+        convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx, j)));
+    if(!outArgs.supports(OUT_ARG_DgDx, j).none())
       outArgs.set_DgDx_properties(j,
         convert(epetraOutArgs.get_DgDx_properties(j)));
   }
   // DgDp
   for(int j=0; j<Ng; ++j) for(int l=0; l<Np; ++l) {
     const EME::DerivativeSupport epetra_DgDp_j_l_support =
-      epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
-    outArgs.setSupports(OUT_ARG_DgDp,j,l,
+      epetraOutArgs.supports(EME::OUT_ARG_DgDp, j, l);
+    outArgs.setSupports(OUT_ARG_DgDp, j, l,
       convert(epetra_DgDp_j_l_support));
-    if(!outArgs.supports(OUT_ARG_DgDp,j,l).none())
-      outArgs.set_DgDp_properties(j,l,
-        convert(epetraOutArgs.get_DgDp_properties(j,l)));
+    if(!outArgs.supports(OUT_ARG_DgDp, j, l).none())
+      outArgs.set_DgDp_properties(j, l,
+        convert(epetraOutArgs.get_DgDp_properties(j, l)));
   }
   outArgs.setSupports(OUT_ARG_f_poly,
     epetraOutArgs.supports(EME::OUT_ARG_f_poly));

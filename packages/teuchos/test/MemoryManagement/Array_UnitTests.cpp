@@ -41,10 +41,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, defaultConstruct, T )
   TEST_EQUALITY_CONST( getConst(a2).getRawPtr(), 0 );
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, defaultConstruct, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, defaultConstruct, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, defaultConstruct, double )
-
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, sizedConstruct, T )
 {
@@ -62,10 +58,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, sizedConstruct, T )
   TEST_COMPARE( as<int>(a.capacity()), >=, n );
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, sizedConstruct, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, sizedConstruct, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, sizedConstruct, double )
-
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, operatorBracket, T )
 {
@@ -80,10 +72,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, operatorBracket, T )
   if (local_success) out << "passed\n";
   else success = false;
 }
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, operatorBracket, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, operatorBracket, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, operatorBracket, double )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constAt, T )
@@ -100,9 +88,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constAt, T )
   else success = false;
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, double )
+
+//
+// Instantiations
+//
+
+
+#define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, defaultConstruct, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, sizedConstruct, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, operatorBracket, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, T )
+
+
+UNIT_TEST_GROUP(int)
+UNIT_TEST_GROUP(float)
+UNIT_TEST_GROUP(double)
 
 
 } // namespace

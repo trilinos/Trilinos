@@ -39,10 +39,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, defaultConstruct, T )
   TEST_EQUALITY_CONST( as<int>(a2.empty()), true );
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, defaultConstruct, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, defaultConstruct, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, defaultConstruct, double )
-
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, sizedConstruct, T )
 {
@@ -56,10 +52,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, sizedConstruct, T )
   TEST_COMPARE( a.max_size(), >=, as<size_type>(n) );
   TEST_COMPARE( as<int>(a.capacity()), >=, n );
 }
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, sizedConstruct, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, sizedConstruct, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, sizedConstruct, double )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, operatorBracket, T )
@@ -76,10 +68,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, operatorBracket, T )
   else success = false;
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, operatorBracket, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, operatorBracket, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, operatorBracket, double )
-
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, constAt, T )
 {
@@ -95,9 +83,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, constAt, T )
   else success = false;
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, constAt, int )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, constAt, float )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, constAt, double )
+
+//
+// Instantiations
+//
+
+
+#define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, defaultConstruct, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, sizedConstruct, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, operatorBracket, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( vector, constAt, T )
+
+
+UNIT_TEST_GROUP(int)
+UNIT_TEST_GROUP(float)
+UNIT_TEST_GROUP(double)
 
 
 } // namespace

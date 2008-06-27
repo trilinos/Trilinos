@@ -208,7 +208,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
         const std::string unitTestName = getUnitTestName(utd.groupName, utd.testName);
 
         std::ostringstream testHeaderOSS;
-        testHeaderOSS <<unitTestName<<" ("<<testCounter<<") ... ";
+        testHeaderOSS <<testCounter<<". "<<unitTestName<<" ... ";
         const std::string testHeader = testHeaderOSS.str();
 
         if (showAll)
@@ -245,6 +245,9 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
               out << oss->str();
 
             out << "[FAILED]\n";
+
+            if (!is_null(oss))
+              out << "\n";
 
             success = false;
 
