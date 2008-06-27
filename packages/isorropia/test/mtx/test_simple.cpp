@@ -106,6 +106,8 @@
 #endif
 #endif
 
+//#define SHORT_TEST 1
+
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #define GRAPH_PARTITIONING            1
@@ -435,8 +437,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       sublist.set("NUM_GLOBAL_PARTITIONS", s);
     }
 
-    //sublist.set("DEBUG_LEVEL", "0");
-    //sublist.set("DEBUG_MEMORY", "1");
+    //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
+    //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
+    //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
   
     if (partitioningType == GRAPH_PARTITIONING){
       sublist.set("LB_METHOD", "GRAPH");
@@ -495,7 +498,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       partitioner = Isorropia::Epetra::create_partitioner(rm, costs, params);
     }
   }
-
   // Create a Redistributor based on the partitioning
 
   Isorropia::Epetra::Redistributor rd(partitioner);
@@ -696,6 +698,14 @@ int main(int argc, char** argv) {
 
   Teuchos::RCP<Epetra_CrsMatrix> testm = Teuchos::rcp(matrixPtr);
 
+#ifdef SHORT_TEST
+    fail = run_test(testm, verbose, false, 
+               NO_ZOLTAN, SUPPLY_EQUAL_WEIGHTS, SUPPLY_EQUAL_WEIGHTS,
+               EPETRA_CRSMATRIX);
+
+    goto Report;
+#else
+
   if (square){
 #ifdef HAVE_ISORROPIA_ZOLTAN
     fail = run_test(testm,
@@ -756,7 +766,7 @@ int main(int argc, char** argv) {
                EPETRA_CRSMATRIX);
   
     if (fail){
-      //goto Report;
+      goto Report;
     }
   
     fail = run_test(testm,
@@ -768,7 +778,7 @@ int main(int argc, char** argv) {
                EPETRA_CRSGRAPH);
   
     if (fail){
-      //goto Report;
+      goto Report;
     }
 
     fail = run_test(testm,
@@ -780,7 +790,7 @@ int main(int argc, char** argv) {
                EPETRA_CRSGRAPH);
   
     if (fail){
-      //goto Report;
+      goto Report;
     }
   } // end if square
 
@@ -845,7 +855,7 @@ int main(int argc, char** argv) {
              EPETRA_CRSGRAPH);
 
   if (fail){
-    //goto Report;
+    goto Report;
   }
 
   fail = run_test(testm,
@@ -857,7 +867,7 @@ int main(int argc, char** argv) {
              EPETRA_CRSGRAPH);
 
   if (fail){
-    //goto Report;
+    goto Report;
   }
 
   fail = run_test(testm,
@@ -869,8 +879,9 @@ int main(int argc, char** argv) {
              EPETRA_CRSGRAPH);
 
   if (fail){
-    //goto Report;
+    goto Report;
   }
+#endif // SHORT_TEST
 
 #else
   fail = 0;
