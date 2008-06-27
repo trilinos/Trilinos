@@ -30,6 +30,10 @@ You can choose a different matrix market file with the option
 You can get verbose output, including display of the matrix before and
 after partitioning, with the option "--v".
 
+Issue: In the mtx directory, do not run tests with small.mtx (a 4x4
+matrix) with more than 4 processes.  There is a problem in Zoltan
+that needs to be resolved.
+
 --
 
 Directory "rebalance_1d_default" contains the test rebalance_1d_default.cpp
