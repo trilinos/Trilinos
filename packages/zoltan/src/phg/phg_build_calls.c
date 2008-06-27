@@ -871,6 +871,17 @@ int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
     }
   }
 
+/* KDDKDD I think there are problems with this test.
+   KDDKDD (1) it doesn't work for Zoltan_LB_Eval, which "removes" all edges
+   KDDKDD     by forcing esize_threshold=0.
+   KDDKDD (2) it doesn't work when gnVtx < zz->Num_Proc, even if no edges are
+   KDDKDD     removed.
+   KDDKDD (3) I don't understand why it subtracts the global number of removed
+   KDDKDD     *edges* from the global number of *vertices*.
+   KDDKDD
+   KDDKDD For now, I'll comment out this test; we can add it back if we decide
+   KDDKDD it is needed and if we can correct the problems.
+
   MPI_Allreduce(&nremove, &global_nremove, 1, MPI_INT, MPI_SUM, zz->Communicator);
 
   if ((gnVtx - global_nremove) < zz->Num_Proc){
@@ -883,6 +894,7 @@ int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
     }
     return ZOLTAN_FATAL;
   }
+*/
 
   if (nremove) {
     if (return_removed) {
