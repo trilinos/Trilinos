@@ -2,16 +2,28 @@
 # FRAMEWORK group
 #
 
+# (FRAMEWORK, INSTALL) {
+#     DIRS = Platform,
+#            Distributor,
+#            Directory,
+#            DistObject,
+#            ElementSpace,
+#            ImportExport,
+#            VectorSpace,
+#            Vector,
+#            CisMatrix;
+#     ARGS = -v;
+#     COMM = SERIAL, MPI;
+# }
+
 (FRAMEWORK, INSTALL) {
-    DIRS = Platform,
-           Distributor,
-           Directory,
-           DistObject,
-           ElementSpace,
-           ImportExport,
-           VectorSpace,
-           Vector,
-           CisMatrix;
-    ARGS = -v;
+    DIRS = Platform;
+    ARGS = --verbose;
     COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, INSTALL) {
+    DIRS = Distributor;
+    ARGS = --verbose;
+    COMM = SERIAL; #, MPI;
 }

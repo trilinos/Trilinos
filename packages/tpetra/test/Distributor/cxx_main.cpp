@@ -27,12 +27,16 @@
 // @HEADER
 
 #include "../tpetra_test_util.hpp"
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Distributor.hpp"
 #ifdef HAVE_MPI
 # include "Tpetra_MpiPlatform.hpp"
 #else
 # include "Tpetra_SerialPlatform.hpp"
 #endif // HAVE_MPI
+
+using namespace Teuchos;
 
 template<typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
@@ -50,21 +54,16 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // HAVE_MPI
 
-  // initialize verbose & debug flags
-  bool verbose = false;
+  bool verbose = false; 
   bool debug = false;
-  if(argc > 1) {
-    if(argv[1][0] == '-' && argv[1][1] == 'v')
-      verbose = true;
-    if(argv[1][0] == '-' && argv[1][1] == 'd') {
-      debug = true;
-      verbose = true;
-    }
-  }
-
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet"  ,&verbose,"Print messages and results.");
+  cmdp.setOption("debug"  ,"nodebug",&debug  ,"Print debugging info.");
+  cmdp.parse(argc,argv);
   // change verbose to only be true on Image 0
   // if debug is enabled, it will still output on all nodes
-  verbose = (verbose && (myImageID == 0));
+  verbose = ((verbose || debug) && (myImageID == 0));
+
 
   // start the testing
   if(verbose) outputStartMessage("Distributor");
@@ -82,11 +81,16 @@ int main(int argc, char* argv[]) {
   return(ierr);
 }
 
+
 //======================================================================
 template<typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
-  std::string className = "Distributor<" + OrdinalTraits<OrdinalType>::name() + "," + ScalarTraits<ScalarType>::name() + ">";
+  std::string className = "Distributor<" + OrdinalTraits<OrdinalType>::name() + "> with " + ScalarTraits<ScalarType>::name();
   if(verbose) outputHeading("Stating unit tests for " + className);
+
+  (void)debug;
+  (void)myImageID;
+  (void)numImages;
 
   int ierr = 0;
   int returnierr = 0;
@@ -95,12 +99,12 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   // code coverage section - just call functions, no testing
   // ======================================================================
 #ifdef HAVE_MPI
-  Tpetra::MpiPlatform<OrdinalType>    platform(MPI_COMM_WORLD);
+  Tpetra::MpiPlatform<OrdinalType>    platform(rcp(new OpaqueWrapper<MPI_Comm>(MPI_COMM_WORLD)) );
 #else
   Tpetra::SerialPlatform<OrdinalType> platform;
   ierr = returnierr + ierr; // dummy usage of ierr so gcc doesn't complain about unused variable (this is only needed in serial mode)
 #endif // HAVE_MPI
-  RCP< Teuchos::Comm<OrdinalType> > comm = platform.createComm();
+  RCP< Comm<OrdinalType> > comm = platform.createComm();
 
   // platform constructor
   if(verbose) cout << "Calling constructor..." << endl;
@@ -212,7 +216,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
     outputData(myImageID, numImages, "objectSize: " + Tpetra::toString(objectSize));
   }
   // FINISH
-  comm->doPostsAndWaits(distributorS, exports, objectSize, imports);
+  distributorS.doPostsAndWaits(exports, objectSize, imports);
   if(debug) {
     outputData(myImageID, numImages, "imports: " + Tpetra::toString(imports));
     if(verbose) cout << "doPostsAndWaits test: ";

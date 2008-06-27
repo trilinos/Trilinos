@@ -108,7 +108,7 @@ namespace Tpetra {
 
   template <typename OrdinalType>
   void SerialPlatform<OrdinalType>::print(ostream& os) const 
-  {}
+  { (void)os; }
 
   template <typename OrdinalType>
   void SerialPlatform<OrdinalType>::printInfo(ostream& os) const 

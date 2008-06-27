@@ -550,7 +550,7 @@ namespace Tpetra {
     // same functionality as std::copy, but takes array offsets instead of iterators
     // source = STL vector to copy from. dest = STL vector to copy into.
     void memcopy(std::vector<PacketType>& source, OrdinalType sourceStartPos, OrdinalType const length,
-           std::vector<PacketType>& dest, OrdinalType destStartPos) {
+                 std::vector<PacketType>& dest, OrdinalType destStartPos) {
       OrdinalType sPos = sourceStartPos;
       OrdinalType dPos = destStartPos;
       for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < length; i++) {
