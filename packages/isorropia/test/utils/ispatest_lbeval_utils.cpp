@@ -840,7 +840,7 @@ static void printMatrix(const char *txt, int *myA, int *myX, int *myB,
       }
       std::cout << " " << i%10 ;
 
-      if (x){
+      if (x && (i < numCols)){
         std::cout << "   " << x[i]-1;
       }
       if ((i == 0) && b){
