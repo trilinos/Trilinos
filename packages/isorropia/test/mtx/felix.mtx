@@ -2,17 +2,15 @@
 %
 % A 28 x 72 matrix derived from ascii art.  If the
 % matrix is printed out after a test, it is easy
-% to detect errors if the image is incorrect.
+% to detect errors that cause the image to be incorrect.
 %
 % This matrix has empty hyperedges, and also dense edges.   
 %
 % #rows #cols #nonzeros
-% #vertices #hyperedges #pins
-
-28 72 366
 %
 % row, column, row weight
 %
+28 72 366
 1 25 1.0
 2 25 1.0
 2 26 1.0
