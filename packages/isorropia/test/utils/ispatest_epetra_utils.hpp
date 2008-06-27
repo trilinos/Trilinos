@@ -37,6 +37,8 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifdef HAVE_EPETRA
 
 class Epetra_CrsGraph;
+class Epetra_RowMatrix;
+class Epetra_LinearProblem;
 class Epetra_CrsMatrix;
 
 namespace ispatest {
@@ -64,6 +66,26 @@ int fill_graph(Epetra_CrsGraph& graph,
   to multiply with it.  Return true if successful, false otherwise.
 */
 bool test_matrix_vector_multiply(Epetra_CrsMatrix &A);
+
+/** Verify that a matrix is a valid Epetra_RowMatrix by attempting
+  to multiply with it.  Return true if successful, false otherwise.
+*/
+bool test_row_matrix_vector_multiply(Epetra_RowMatrix &R);
+
+/** Verify that a matrix is a valid Epetra_CrsGraph by attempting
+  to multiply with it.  Return true if successful, false otherwise.
+*/
+bool test_matrix_vector_multiply(Epetra_CrsGraph &G);
+
+/** Verify that the Epetra_RowMatrix in a Epetra_LinearProblem is
+    valid by attempting to multiply with it.
+
+  This test does not use the vectors in the linear problem, it uses
+  a made up vector.
+
+  Return true if successful, false otherwise.
+*/
+bool test_matrix_vector_multiply(Epetra_LinearProblem &LP);
 
 }//namespace ispatest
 
