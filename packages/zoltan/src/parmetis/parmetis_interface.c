@@ -664,20 +664,21 @@ int Zoltan_ParMetis_Order(
   ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, &vsp);
 
   /* Allocate space for separator sizes */
-  ord.sep_sizes = (indextype *) ZOLTAN_MALLOC(2*gr.num_obj*sizeof(indextype));
+  /* TRICK: +1 to reuse this array as the start table for elimination tree */
+  ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype));
   if (!ord.sep_sizes){
     /* Not enough memory */
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
-  /* Allocate space for separator sizes */
+  /* Allocate space for direct perm */
   ord.rank = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
   if (!ord.rank){
     /* Not enough memory */
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
-  /* Allocate space for separator sizes */
+  /* Allocate space for inverse perm */
   ord.iperm = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
   if (!ord.iperm){
     /* Not enough memory */
@@ -722,6 +723,45 @@ int Zoltan_ParMetis_Order(
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
   ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, &vsp, &ord, NULL);
+
+  if (gr.graph_type==GLOBAL_GRAPH){ /* Update Elimination tree */
+    int numbloc;
+    int start;
+    zz->Order.ancestor = (indextype *) ZOLTAN_MALLOC(2*zz->Num_Proc*sizeof(indextype));
+    zz->Order.leaves = (indextype *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(indextype));
+    zz->Order.start = ord.sep_sizes;
+
+    if ((!zz->Order.ancestor) || (!zz->Order.leaves)){
+      /* Not enough memory */
+      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    }
+
+    for (numbloc = 0, start=0 ; numbloc < 2*zz->Num_Proc+1 ; ++numbloc) { /* convert size tab in start tab */
+      int tmp;
+      tmp = start;
+      start += ord.sep_sizes[numbloc]; /* Save save for next bloc */
+      zz->Order.start[numbloc] = tmp;
+    }
+
+    for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc ; ++numbloc) { /* define ancestors */
+      zz->Order.ancestor[2*numbloc] = zz->Num_Proc+numbloc;
+      zz->Order.ancestor[2*numbloc+1] = zz->Num_Proc+numbloc;
+    }
+    zz->Order.ancestor[2*zz->Num_Proc] = -1;
+
+    for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc ; ++numbloc) { /* define leaves */
+      zz->Order.leaves[numbloc] = numbloc;
+    }
+    zz->Order.leaves[zz->Num_Proc] = -1;
+    zz->Order.num_blocks = 2*zz->Num_Proc;
+  }
+  else { /* No tree */
+    zz->Order.num_blocks = 0;
+    zz->Order.start = NULL;
+    zz->Order.ancestor = NULL;
+    zz->Order.leaves = NULL;
+  }
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
