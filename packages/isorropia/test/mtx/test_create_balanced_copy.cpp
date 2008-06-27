@@ -109,7 +109,7 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#define SHORT_TEST
+//#define SHORT_TEST
 
 #define GRAPH_PARTITIONING            1
 #define HYPERGRAPH_PARTITIONING       2

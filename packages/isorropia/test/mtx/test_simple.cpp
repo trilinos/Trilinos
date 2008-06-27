@@ -654,7 +654,7 @@ int main(int argc, char** argv) {
 
   // --f=fileName provides a different matrix market file for input
   // --v will print out the partitioning (small files only)
-  // --all will continue to run all tests even if there is a failure
+  // --run-all will continue to run all tests even if there is a failure
 
   std::string *inputFile = new std::string("simple.mtx");
   bool runAll = false;
