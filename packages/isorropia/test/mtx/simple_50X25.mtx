@@ -5,7 +5,7 @@
 %
 % #rows #cols #nonzeros
 % #vertices #hyperedges #pins
-50  25  1.0
+50  25  210
 1  1  1.0
 50  1  1.0
 2  1  1.0

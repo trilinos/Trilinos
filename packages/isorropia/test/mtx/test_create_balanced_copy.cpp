@@ -109,7 +109,7 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 
-//#define SHORT_TEST
+#define SHORT_TEST
 
 #define GRAPH_PARTITIONING            1
 #define HYPERGRAPH_PARTITIONING       2
@@ -123,6 +123,8 @@
 #define EPETRA_CRSMATRIX              2  
 #define EPETRA_ROWMATRIX              3  
 #define EPETRA_LINEARPROBLEM          4  
+
+#define FAILED() { failures++; if (!runAll) goto Report; fail = 0;}
 
 #define ERROREXIT(v, s) \
   if (v){               \
@@ -762,8 +764,11 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     ERROREXIT((localProc==0), "Error in computing partitioning metrics")
   }
   
+  std::string why;
+
   if (partitioningType == GRAPH_PARTITIONING){
     fail = (cutWgt2 > cutWgt1);
+    why = "New weighted edge cuts are worse";
   
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
@@ -779,7 +784,14 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     }
   }
   else{
-    fail = (cutl2 > cutl1);
+    if (partitioningType == NO_ZOLTAN){
+      fail = (balance2 > balance1);
+      why = "New balance is worse";
+    }
+    else{
+      fail = (cutl2 > cutl1);
+      why = "New cutl is worse";
+    }
   
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
@@ -789,6 +801,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       std::cout << " cutn " << cutn2 ;
       std::cout << " cutl " << cutl2 << std::endl;
     }
+  }
+
+  if (fail){
+    if (localProc == 0) std::cout << "ERROR: "+why << std::endl;
   }
 
   // Try multiplying the rebalanced matrix and its transpose by a vector,
@@ -858,9 +874,12 @@ int main(int argc, char** argv) {
   // --v will print out the partitioning (small files only)
 
   std::string *inputFile = new std::string("simple.mtx");
+  bool runAll = false;
 
   clp.setOption( "f", inputFile, 
                 "Name of input matrix market file");
+  clp.setOption( "run-all", "abort", &runAll,
+                "Don't abort if one test fails, run all of them.");
   clp.setOption( "v", "q", &verbose, 
                 "Display matrix before and after partitioning.");
 
@@ -903,6 +922,7 @@ int main(int argc, char** argv) {
   //   Do tests where the vertex or edge weights vary widely
 
   Teuchos::RCP<Epetra_CrsMatrix> testm = Teuchos::rcp(matrixPtr);
+  int failures = 0;
 
 #ifdef SHORT_TEST
   fail = run_test(testm,
@@ -913,9 +933,8 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  if (fail){
-    goto Report;
-  }
+  failures = (fail ? 1 : 0);
+  goto Report;
 
 #else
 
@@ -929,9 +948,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,  // supply equal edge weights
                EPETRA_LINEARPROBLEM); // use linear problem interface of isorropia
   
-    if (fail){
-      goto Report;
-    }
+    if (fail) FAILED();
 
     fail = run_test(testm,
                verbose,            // draw graph before and after partitioning?
@@ -941,9 +958,7 @@ int main(int argc, char** argv) {
                NO_APPLICATION_SUPPLIED_WEIGHTS,  // go for default weights
                EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
 
-    if (fail){
-      goto Report;
-    }
+    if (fail) FAILED();
 
     fail = run_test(testm,
                verbose,
@@ -953,9 +968,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_CRSMATRIX);
   
-    if (fail){
-      goto Report;
-    }
+    if (fail) FAILED();
   
     fail = run_test(testm,
                verbose,
@@ -965,9 +978,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_LINEARPROBLEM);
   
-    if (fail){
-      goto Report;
-    }
+    if (fail) FAILED();
 
     fail = run_test(testm,
                verbose,
@@ -977,9 +988,7 @@ int main(int argc, char** argv) {
                NO_APPLICATION_SUPPLIED_WEIGHTS,
                EPETRA_ROWMATRIX);
 
-    if (fail){
-      goto Report;
-    }
+    if (fail) FAILED();
 #else
   fail = 0;
   if (localProc == 0){
@@ -995,9 +1004,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_CRSMATRIX);
   
-    if (fail){
-      goto Report;
-    }
+    if (fail) FAILED();
   
     fail = run_test(testm,
                verbose,
@@ -1007,9 +1014,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_LINEARPROBLEM);
   
-    if (fail){
-      goto Report;
-    }
+    if (fail) FAILED();
   }
 
   fail = run_test(testm,
@@ -1020,9 +1025,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,
              EPETRA_CRSMATRIX);
 
-  if (fail){
-    goto Report;
-  }
+  if (fail) FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -1032,9 +1035,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  if (fail){
-    goto Report;
-  }
+  if (fail) FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -1044,9 +1045,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_CRSMATRIX);
 
-  if (fail){
-    goto Report;
-  }
+  if (fail) FAILED();
 
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
@@ -1059,9 +1058,7 @@ int main(int argc, char** argv) {
              SUPPLY_UNEQUAL_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  if (fail){
-    goto Report;
-  }
+  if (fail) FAILED();
 
   fail = run_test(testm,
              verbose, 
@@ -1071,9 +1068,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,
              EPETRA_ROWMATRIX);
 
-  if (fail){
-    goto Report;
-  }
+  if (fail) FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -1083,9 +1078,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_LINEARPROBLEM);
 
-  if (fail){
-    goto Report;
-  }
+  if (fail) FAILED();
 
 #endif
 
@@ -1105,10 +1098,19 @@ Report:
 #endif
 
   if (localProc == 0){
-    if (fail)
-      std::cout << "FAIL" << std::endl;
+    if (failures){
+      if (failures > 1)
+        std::cout << std::endl << failures << " FAILURES" << std::endl;
+      else
+        std::cout << std::endl << "1 FAILURE" << std::endl;
+
+      if (!runAll){
+        std::cout <<
+       "(Use option --run-all if you do not want this test to abort on failure)" << std::endl;
+      }
+    }
     else
-      std::cout << "PASS" << std::endl;
+      std::cout << std::endl << "PASS" << std::endl;
   }
 
   return fail;
