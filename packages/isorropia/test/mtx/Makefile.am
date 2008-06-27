@@ -40,7 +40,7 @@ test_create_balanced_copy_SOURCES = $(srcdir)/test_create_balanced_copy.cpp
 
 noinst_PROGRAMS = test_simple test_create_balanced_copy 
 
-EXTRA_DIST = simple.mtx simple_rectangular.mtx small.mtx
+EXTRA_DIST = simple.mtx simple_25X50.mtx simple_50X25.mtx small.mtx felix.mtx
 
 all-local:
 	@if test -e *.mtx; then : ; else cp $(srcdir)/*.mtx .; fi

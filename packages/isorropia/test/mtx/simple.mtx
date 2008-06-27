@@ -1,6 +1,6 @@
 %%MatrixMarket matrix coordinate real general
 %
-% Simple 5x5 grid.
+% Simple 25x25 grid.
 %
 % #rows #cols #nonzeros
 % #vertices #hyperedges #pins

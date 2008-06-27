@@ -1,6 +1,7 @@
 %%MatrixMarket matrix coordinate real general
 %
-% Simple 5x5 grid.
+% Rectangular 25 x 50 grid.  It is the square
+% matrix simple.mtx reflected across its right boundary.
 %
 % #rows #cols #nonzeros
 % #vertices #hyperedges #pins
