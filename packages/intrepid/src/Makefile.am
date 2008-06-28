@@ -158,7 +158,27 @@ INTREPID_LOCAL_H =  \
   $(srcdir)/local/basis/Intrepid_F2_TET_I9_FEM_FIAT.hpp \
   $(srcdir)/local/basis/Intrepid_F2_TET_I9_FEM_FIATDef.hpp \
   $(srcdir)/local/basis/Intrepid_F2_TET_I10_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I10_FEM_FIATDef.hpp
+  $(srcdir)/local/basis/Intrepid_F2_TET_I10_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I1_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I1_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I2_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I2_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I3_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I3_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I4_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I4_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I5_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I5_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I6_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I6_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I7_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I7_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I8_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I8_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I9_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I9_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I10_FEM_FIAT.hpp \
+  $(srcdir)/local/basis/Intrepid_F1_TRI_I10_FEM_FIATDef.hpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp
@@ -203,6 +223,7 @@ include_HEADERS = \
 # All Intrepid headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
 nodist_execinclude_HEADERS = Intrepid_config.h
+
 
 
 
