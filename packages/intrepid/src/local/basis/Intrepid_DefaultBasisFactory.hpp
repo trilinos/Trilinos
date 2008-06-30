@@ -105,6 +105,8 @@
 #include "Intrepid_F1_TET_I4_FEM_FIAT.hpp"
 #include "Intrepid_F1_TET_I5_FEM_FIAT.hpp"
 #include "Intrepid_F1_TET_I6_FEM_FIAT.hpp"
+#include "Intrepid_F1_TET_I7_FEM_FIAT.hpp"
+#include "Intrepid_F1_TET_I8_FEM_FIAT.hpp"
 ///// end FIAT-generated element includes
 #endif
 
@@ -196,6 +198,8 @@ class DefaultBasisFactory {
     basisMap_[ 104104020] = Teuchos::rcp( new Basis_F1_TET_I4_FEM_FIAT<Scalar>() );
     basisMap_[ 104105020] = Teuchos::rcp( new Basis_F1_TET_I5_FEM_FIAT<Scalar>() );
     basisMap_[ 104106020] = Teuchos::rcp( new Basis_F1_TET_I6_FEM_FIAT<Scalar>() );
+    basisMap_[ 104107020] = Teuchos::rcp( new Basis_F1_TET_I7_FEM_FIAT<Scalar>() );
+    basisMap_[ 104108020] = Teuchos::rcp( new Basis_F1_TET_I8_FEM_FIAT<Scalar>() );
     // end FIAT-generated bases
 
   };
@@ -230,6 +234,7 @@ class DefaultBasisFactory {
 #include "Intrepid_DefaultBasisFactoryDef.hpp"
 
 #endif
+
 
 
 
