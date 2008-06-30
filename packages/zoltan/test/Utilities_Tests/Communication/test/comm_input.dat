@@ -1,0 +1,18 @@
+% Input test file for communication driver.
+% Parameters are:
+%   1. Total number of comm objects across all processors.
+%   2. The size of objects if all the same.
+%   3. Are objects of varying sizes?
+%   4. Are objects grouped by receiving processors?
+%   5. Random number seed.
+%   6. Frequency of skipped values (-1) in assignment vector.
+%   7. Output level
+%
+40 2 0 0 1234567  0 0
+40 2 1 0 2234567  0 0
+40 2 0 1 3234567  0 0
+40 2 1 1 4234567  0 0
+40 2 0 0 5234567 .2 0
+40 2 1 0 6234567 .2 0
+40 2 0 1 7234567 .2 0
+40 2 1 1 8234567 .2 0
