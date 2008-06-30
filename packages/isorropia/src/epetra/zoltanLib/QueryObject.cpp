@@ -39,8 +39,10 @@
 
 #include <map>
 
-#define DEBUG_QUERIES 0
-#define DEBUG_PROC 1
+// if non-zero, print out query function responses
+//#define DEBUG_QUERIES 1
+// process to print out responses, or -1 for all
+//#define DEBUG_PROC -1 
 
 namespace Isorropia{
 
@@ -312,9 +314,8 @@ int QueryObject::My_Number_Objects(int * ierr )
   *ierr = ZOLTAN_OK;
 
 #if DEBUG_QUERIES
-  if (myProc_ == DEBUG_PROC){
-    std::cout << "in My_Number_Objects" << std::endl;
-    std::cout << "  return: " << rowMap_->NumMyElements() << std::endl;
+  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
+    std::cout << myProc_ << ": in My_Number_Objects, return " << rowMap_->NumMyElements() << std::endl;
   }
 #endif
 
@@ -330,6 +331,11 @@ void QueryObject::My_Object_List  (int num_gid_entries, int num_lid_entries,
   int rows = rowMap_->NumMyElements();
 
   if (rows < 1){
+#if DEBUG_QUERIES
+    if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
+      std::cout << myProc_ << ": in My_Object_List, return due to no objects" << std::endl;
+    }
+#endif
     return;
   }
 
@@ -362,15 +368,22 @@ void QueryObject::My_Object_List  (int num_gid_entries, int num_lid_entries,
     }
   }
 #if DEBUG_QUERIES
-  if (myProc_ == DEBUG_PROC){
-    std::cout << "in My_Object_List, num obj and weight_dim " << num_gid_entries << " " << weight_dim << std::endl;
-    std::cout << "  return GID, weight: " << std::endl;
+  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
+    std::ostringstream msg;
+
+    msg << myProc_ << ": in My_Object_List, num_obj " << rows << ", weight_dim " << weight_dim;
+    msg << std::endl;  
+
     for (int i=0; i<rows; i++){
-      if (weight_dim)
-        std::cout << global_ids[i] << " " << object_weights[i] << std::endl;
-      else
-        std::cout << global_ids[i] << std::endl;
+      if (weight_dim){
+        msg << "   obj gid " << global_ids[i] << ", weight " << object_weights[i] << std::endl;
+      }
+      else{
+        msg << "   obj gid " << global_ids[i] << std::endl;
+      }
     }
+    std::string s = msg.str();
+    std::cout << s;
   }
 #endif
   return;
@@ -424,8 +437,15 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
     }
   }
 #if DEBUG_QUERIES
-  if (myProc_ == DEBUG_PROC){
-    std::cout << "in My_Number_Edges_Multi" << std::endl;
+  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
+    std::ostringstream msg;
+
+    msg << myProc_ << ": in My_Number_Edges_Multi, num_objs " << num_obj << std::endl;
+    for (int i=0; i<num_obj; i++){
+      msg << "   obj gid " << global_ids[i] << ", num edges " << num_edges[i] << std::endl;
+    }
+    std::string s = msg.str();
+    std::cout << s;
   }
 #endif
   return;
@@ -442,7 +462,14 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
 
   *ierr = ZOLTAN_OK;
 
-  if (num_obj < 1) return;
+  if (num_obj < 1) {
+#if DEBUG_QUERIES
+    if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
+      std::cout << myProc_ << ": in My_Edge_List_Multi, return due to no objects" << std::endl;
+    }
+#endif
+    return;
+  }
 
   int *nborProc = neighbor_procs;
   float *wgt = edge_weights;
@@ -539,12 +566,29 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
     }
   }
 #if DEBUG_QUERIES
-  if (myProc_ == DEBUG_PROC){
-    std::cout << "in My_Edge_List_Multi" << std::endl;
+  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
+    std::ostringstream msg;
+
+    int k = 0;
+    msg << myProc_ << ": in My_Edge_List_Multi, num_objs " << num_obj << std::endl;
+    for (int i=0; i<num_obj; i++){
+      msg << "   obj gid " << global_ids[i] << ", num edges " << num_edges[i] << std::endl;
+      for (int j=0; j<num_edges[i]; j++,k++){ 
+        msg << "      n'bor gid " << neighbor_global_ids[k] << ", n'bor proc " << neighbor_procs[k];
+        for (int w=0; w < weight_dim ; w++) {
+          msg << " edge weight " << edge_weights[k*weight_dim + w];
+        }
+        msg << std::endl;
+      }
+    }
+    std::string s = msg.str();
+    std::cout << s;
   }
 #endif
   if (gids) delete [] gids;
   if (tmp) delete [] tmp;
+
+  return;
 }
 
 // member hypergraph query functions
