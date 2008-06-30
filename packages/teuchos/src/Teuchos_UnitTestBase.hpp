@@ -51,6 +51,12 @@ public:
 
   /** \brief . */
   bool runUnitTest( FancyOStream &out ) const;
+
+  /** \brief . */
+  virtual std::string unitTestFile() const = 0;
+
+  /** \brief . */
+  virtual long int unitTestFileLineNumber() const = 0;
   
 protected:
 

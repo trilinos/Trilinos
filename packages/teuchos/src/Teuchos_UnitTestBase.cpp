@@ -30,6 +30,7 @@
 #include "Teuchos_UnitTestBase.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 
 namespace Teuchos {
@@ -44,7 +45,10 @@ UnitTestBase::UnitTestBase(const std::string groupName, std::string testName)
 bool UnitTestBase::runUnitTest( FancyOStream &out ) const
 {
   bool success = true;
-  runUnitTestImpl(out, success);
+  try {
+    runUnitTestImpl(out, success);
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, out, success)
   return success;
 }
 

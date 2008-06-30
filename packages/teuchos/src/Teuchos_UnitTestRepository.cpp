@@ -148,12 +148,14 @@ public:
   unitTests_t unitTests;
   CommandLineProcessor clp;
   EShowTestDetails showTestDetails;
+  bool showSrcLocation;
   std::string groupName;
   std::string testName;
 
   InstanceData()
     :clp(false),
-     showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES)
+     showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
+     showSrcLocation(false)
     {}
 
 };
@@ -236,15 +238,18 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
           if (!result) {
 
-            if (showTestNames)
-              out <<"\n";
-            else
+            if (!showTestNames)
               out <<testHeader<<"\n";
+            else if (!showAll)
+              out <<"\n";
 
             if (!is_null(oss))
               out << oss->str();
 
-            out << "[FAILED]\n";
+            out
+              << "[FAILED]\n"
+              << "Location: "<<utd.unitTest->unitTestFile()<<":"
+              <<utd.unitTest->unitTestFileLineNumber()<<"\n";
 
             if (!is_null(oss))
               out << "\n";
@@ -259,6 +264,11 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
             if (showTestNames)
               out << "[Passed]\n";
 
+            if (showAll && data.showSrcLocation)
+              out
+                << "Location: "<<utd.unitTest->unitTestFile()<<":"
+                <<utd.unitTest->unitTestFileLineNumber()<<"\n";
+            
           }
 
         }
@@ -275,6 +285,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
   out
     << "\nSummary: total = " << testCounter
     << ", run = " << numTestsRun
+    << ", passed = " << (numTestsRun-numTestsFailed)
     << ", failed = " << numTestsFailed << "\n";
 
   return success;
@@ -340,7 +351,13 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
   clp->setOption(
     "show-test-details", &getData().showTestDetails,
     numShowTestDetails, showTestDetailsValues, showTestDetailsNames,
-    "Level of details to show in the tests"
+    "Level of detail to show in the tests"
+    );
+
+  clp->setOption(
+    "show-src-location", "no-show-src-location", &getData().showSrcLocation,
+    "If true, then the location of the unit test source code is shown."
+    "  Only meaningfull if --show-test-details=ALL."
     );
 
   clp->setOption(

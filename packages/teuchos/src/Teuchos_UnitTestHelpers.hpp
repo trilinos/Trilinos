@@ -47,7 +47,9 @@
     TEST_GROUP##_##TEST_NAME##_UnitTest() \
       : Teuchos::UnitTestBase( #TEST_GROUP, #TEST_NAME ) \
     {} \
-    void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
   }; \
   \
   TEST_GROUP##_##TEST_NAME##_UnitTest \
@@ -67,6 +69,8 @@
       : Teuchos::UnitTestBase( std::string(#TEST_GROUP)+"_"+typeName, #TEST_NAME ) \
     {} \
     void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
   }; \
   \
   template<class TYPE> \

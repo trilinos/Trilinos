@@ -12,4 +12,13 @@ TEUCHOS_UNIT_TEST( Int,  BadAssignment )
 }
 
 
+TEUCHOS_UNIT_TEST( VectorInt, OutOfRangeAt )
+{
+  const size_t n = 1;
+  std::vector<int> v(n);
+  const int i = v.at(n); // Should throw std::out_of_range!
+  TEST_EQUALITY_CONST( i, 10 ); // Will never be executed!
+}
+
+
 } // namespace

@@ -113,63 +113,72 @@
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 18, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 18, passed = 18, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="someFunc*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 4, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 4, passed = 4, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*double";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, passed = 5, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*ouble";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 6, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 6, passed = 6, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*Complex*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, passed = 2, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="Int";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, passed = 2, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --test-name="Assignment";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 1, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 1, passed = 1, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --test-name="*si*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, passed = 5, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
+# Make sure bad unit test name is shown
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_BadUnitTest.exe;
     ARGS = --show-test-details=FINAL_RESULTS;
     EXIT-STATUS = STRING-COMPARISON(Int_BadAssignment_UnitTest);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad unit test name is shown
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=FINAL_RESULTS;
+    EXIT-STATUS = STRING-COMPARISON(VectorInt_OutOfRangeAt_UnitTest);
     COMM = MPI(1),SERIAL;
 }
 
@@ -181,10 +190,18 @@
     COMM = MPI(1),SERIAL;
 }
 
-# Make sure bad test name gets printed
+# Make sure bad test shows the right summary
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_BadUnitTest.exe;
-    ARGS = --show-test-details=FINAL_RESULTS;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 8, run = 8, passed = 6, failed = 2);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test is marked as FAILED
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=FINAL_RESULTS --group-name=Int --test-name=BadAssignment;
     EXIT-STATUS = STRING-COMPARISON([FAILED]);
     COMM = MPI(1),SERIAL;
 }
@@ -192,7 +209,7 @@
 # Make sure bad test is marked as FAILED
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_BadUnitTest.exe;
-    ARGS = --show-test-details=TEST_NAMES;
+    ARGS = --show-test-details=TEST_NAMES --group-name=Int --test-name=BadAssignment;
     EXIT-STATUS = STRING-COMPARISON([FAILED]);
     COMM = MPI(1),SERIAL;
 }
