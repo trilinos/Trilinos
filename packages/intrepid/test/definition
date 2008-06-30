@@ -67,7 +67,9 @@
            Basis/F1_TET_I5_FEM_FIAT,
            Basis/F1_TET_I6_FEM_FIAT,
            Basis/F1_TET_I7_FEM_FIAT,
-           Basis/F1_TET_I8_FEM_FIAT;
+           Basis/F1_TET_I8_FEM_FIAT,
+           Basis/F1_TET_I9_FEM_FIAT,
+           Basis/F1_TET_I10_FEM_FIAT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
@@ -139,12 +141,15 @@
            Basis/F1_TET_I5_FEM_FIAT,
            Basis/F1_TET_I6_FEM_FIAT,
            Basis/F1_TET_I7_FEM_FIAT,
-           Basis/F1_TET_I8_FEM_FIAT;
+           Basis/F1_TET_I8_FEM_FIAT,
+           Basis/F1_TET_I9_FEM_FIAT,
+           Basis/F1_TET_I10_FEM_FIAT;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = CUSTOM-MPI;
 }
+
 
 
 
