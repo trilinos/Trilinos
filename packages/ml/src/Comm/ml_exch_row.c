@@ -88,7 +88,6 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   int         *ibuff, total_num_recv, total_send, total_recv;
   double      *vals_new, *dtemp, *dbuff, *dummy1;
   int         i, j, k, ii, jj, *newmap, *orig_map, nonNULL_rcv_list, *dummy2;
-  //  static int  type = ML_MPI_MSG_NUM;
   struct      ML_CSR_MSRdata *temp;
   int         allocated_space, row_length;
   ML_Comm     *comm;
@@ -110,7 +109,6 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
 	Pmatrix->getrow->pre_comm->total_rcv_length;
     }
   }
-
 
 
   /* compute the total number of rows to send and receive */
