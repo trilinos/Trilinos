@@ -265,6 +265,7 @@ typedef struct _GID_lookup{
 
 static void free_zoltan_objects(zoltan_objects *zo);
 static void free_zoltan_pins(zoltan_pins *zp);
+/*static void print_zoltan_pins(zoltan_pins *z, int me, int ewgt_dim);*/
 static void free_zoltan_ews(zoltan_ews *zew);
 static void free_zoltan_temp_edges(zoltan_temp_edges *zte);
 static void free_zoltan_temp_vertices(zoltan_temp_vertices *ztv);
@@ -472,9 +473,15 @@ int nRepartEdge = 0, nRepartVtx = 0;
   myObjs.size = zhg->nObj;
   myObjs.vtxGID = zhg->GIDs;
 
-  myObjs.vtx_gno = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
-  myObjs.numHedges = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
-  myObjs.numAllHedges = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
+  if (myObjs.size){
+    myObjs.vtx_gno = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
+    myObjs.numHedges = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
+    myObjs.numAllHedges = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
+
+    if (!myObjs.vtx_gno || !myObjs.numHedges || !myObjs.numAllHedges){
+      MEMORY_ERROR;
+    }
+  }
 
   /*
    * Create a search structure to lookup my vertex information
@@ -1235,13 +1242,14 @@ int nRepartEdge = 0, nRepartVtx = 0;
   /* Get pin vertex global number from vertex owner, and number of
    * hyperedges containing each vertex. 
    */
-
   myPins.pinGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * myPins.numPins);
 
   if (myPins.numPins && !myPins.pinGNO) MEMORY_ERROR;
 
-  memset(myObjs.numHedges, 0, sizeof(int) * myObjs.size);
-  memset(myObjs.numAllHedges, 0, sizeof(int) * myObjs.size);
+  if (myObjs.size > 0){
+    memset(myObjs.numHedges, 0, sizeof(int) * myObjs.size);
+    memset(myObjs.numAllHedges, 0, sizeof(int) * myObjs.size);
+  }
 
   pin_requests = NULL;
   pin_info = NULL;
@@ -1376,6 +1384,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
       gtotal[i] = tmp - gtotal[i];
     }
     myHshEdges.GnEdge = gtotal[zz->Num_Proc] = tmp;
+
 
     /* Assign gnos sequential from gcnt[bin]. */
     for (i=0; i< nEdge; i++) {
@@ -1571,6 +1580,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
    * for it, myProc_y and myProc_x == -1. */
   nEdge = (myProc_y >= 0 ? dist_y[myProc_y+1] - dist_y[myProc_y] : 0);
   nVtx  = (myProc_x >= 0 ? dist_x[myProc_x+1] - dist_x[myProc_x] : 0);
+
+/*printf("%d) %d edges %d vertices\n",zz->Proc, nEdge, nVtx);*/
 
   if (method_repart){
     /* For REPART, we add one vertex per partition and one edge 
@@ -1922,10 +1933,13 @@ int nRepartEdge = 0, nRepartVtx = 0;
        * to all processors within row.
        */
   
-      if (phg->comm->row_comm != MPI_COMM_NULL){
+      if (phg->comm->row_comm != MPI_COMM_NULL && nwgt > 0){
+        /* error here if numprocs < numrows */
+
         rc = MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
                       phg->comm->row_comm);
         CHECK_FOR_MPI_ERROR(rc)
+
       }
     }
     else { /* dim > 0 but zz->Edge_Weight_Dim == 0 */
@@ -1941,7 +1955,6 @@ int nRepartEdge = 0, nRepartVtx = 0;
     phg->EdgeWeightDim = 0;
   }
 
-  
   if (method_repart){
     ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg,
                                       myObjs.vtx_gno, hgp, *input_parts);
@@ -2092,6 +2105,50 @@ static void free_zoltan_temp_vertices(zoltan_temp_vertices *ztv)
   ZOLTAN_FREE(&(ztv->vtxGID));
   ZOLTAN_FREE(&(ztv->vtxOwner));
 }
+
+/*****************************************************************************/
+#if 0
+#include <unistd.h>
+static void print_zoltan_pins(zoltan_pins *z, int me, int ewgt_dim)
+{
+int i, j, k;
+
+  sleep(me);
+  printf("%d) %d hyperedges\n\n",me, z->nHedges);
+
+  if (z->nHedges == 0) return;
+
+  k = 0;
+  for (i=0; i<z->nHedges; i++){
+    if (z->edgeHash){
+      printf("  GID %d, hashed to %d, num pins locally %d, GNO %d, num pins globally %d\n", 
+               z->edgeGID[i], z->edgeHash[i], z->esizes[i], z->edgeGNO[i], z->edgeGSize[i]);
+    }
+    else{
+      printf("  GID %d, num pins locally %d, GNO %d, num pins globally %d\n", 
+               z->edgeGID[i], z->esizes[i], z->edgeGNO[i], z->edgeGSize[i]);
+    }
+    if (ewgt_dim > 0){
+      for (j=0; j<ewgt_dim; j++){
+        if (!j) printf("      edge weight ");
+        printf(" %f ", z->ewgt[i*ewgt_dim + j]);
+      }
+      printf("\n");
+    }
+    for (j=0; j<z->esizes[i]; j++,k++){
+      if (z->vtxHash){
+        printf("      GID %d, hashed to proc %d, GNO %d, proc %d\n", 
+          z->pinGID[k],z->vtxHash[k],z->pinGNO[k], z->pinProc[k]);
+      }
+      else{
+        printf("      GID %d, GNO %d, proc %d\n", z->pinGID[k],z->pinGNO[k], z->pinProc[k]);
+      }
+    }
+  }
+  printf("\n");
+  
+}
+#endif
 /*****************************************************************************/
 static int map_GIDs_to_processes(ZZ *zz, ZOLTAN_ID_PTR eid, int size, 
                              int lenGID, int **hashedProc, int nprocs)
