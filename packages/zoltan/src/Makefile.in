@@ -153,11 +153,8 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/Utilities/Communication/comm_resize.c \
 	$(srcdir)/Utilities/Communication/comm_sort_ints.c \
 	$(srcdir)/Utilities/Communication/comm_destroy.c \
-	$(srcdir)/Utilities/Communication/comm_main.c \
 	$(srcdir)/Utilities/Communication/comm_invert_plan.c \
-	$(srcdir)/Utilities/Timer/timer_main_2.cpp \
 	$(srcdir)/Utilities/Timer/zoltan_timer.c \
-	$(srcdir)/Utilities/Timer/timer_main.c \
 	$(srcdir)/Utilities/Timer/timer.c \
 	$(srcdir)/Utilities/DDirectory/DD_Find.c \
 	$(srcdir)/Utilities/DDirectory/DD_Destroy.c \
@@ -169,10 +166,8 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/Utilities/DDirectory/DD_Hash2.c \
 	$(srcdir)/Utilities/DDirectory/DD_Print.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn2.c \
-	$(srcdir)/Utilities/DDirectory/DD_Main.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Hash_Fn.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn1.c \
-	$(srcdir)/Utilities/Memory/mem_main.c \
 	$(srcdir)/Utilities/Memory/mem.c \
 	$(srcdir)/Utilities/shared/zoltan_align.c \
 	$(srcdir)/Utilities/shared/zoltan_id.c $(srcdir)/zz/zz_coord.c \
@@ -239,16 +234,14 @@ am__objects_21 = comm_exchange_sizes.$(OBJEXT) \
 	comm_do_reverse.$(OBJEXT) comm_info.$(OBJEXT) \
 	comm_create.$(OBJEXT) comm_resize.$(OBJEXT) \
 	comm_sort_ints.$(OBJEXT) comm_destroy.$(OBJEXT) \
-	comm_main.$(OBJEXT) comm_invert_plan.$(OBJEXT) \
-	timer_main_2.$(OBJEXT) zoltan_timer.$(OBJEXT) \
-	timer_main.$(OBJEXT) timer.$(OBJEXT) DD_Find.$(OBJEXT) \
-	DD_Destroy.$(OBJEXT) DD_Set_Neighbor_Hash_Fn3.$(OBJEXT) \
-	DD_Remove.$(OBJEXT) DD_Create.$(OBJEXT) DD_Update.$(OBJEXT) \
-	DD_Stats.$(OBJEXT) DD_Hash2.$(OBJEXT) DD_Print.$(OBJEXT) \
-	DD_Set_Neighbor_Hash_Fn2.$(OBJEXT) DD_Main.$(OBJEXT) \
-	DD_Set_Hash_Fn.$(OBJEXT) DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) \
-	mem_main.$(OBJEXT) mem.$(OBJEXT) zoltan_align.$(OBJEXT) \
-	zoltan_id.$(OBJEXT)
+	comm_invert_plan.$(OBJEXT) zoltan_timer.$(OBJEXT) \
+	timer.$(OBJEXT) DD_Find.$(OBJEXT) DD_Destroy.$(OBJEXT) \
+	DD_Set_Neighbor_Hash_Fn3.$(OBJEXT) DD_Remove.$(OBJEXT) \
+	DD_Create.$(OBJEXT) DD_Update.$(OBJEXT) DD_Stats.$(OBJEXT) \
+	DD_Hash2.$(OBJEXT) DD_Print.$(OBJEXT) \
+	DD_Set_Neighbor_Hash_Fn2.$(OBJEXT) DD_Set_Hash_Fn.$(OBJEXT) \
+	DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) mem.$(OBJEXT) \
+	zoltan_align.$(OBJEXT) zoltan_id.$(OBJEXT)
 am__objects_22 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
 	zz_hash.$(OBJEXT) zz_heap.$(OBJEXT) zz_init.$(OBJEXT) \
 	zz_obj_list.$(OBJEXT) zz_rand.$(OBJEXT) zz_set_fn.$(OBJEXT) \
@@ -268,11 +261,6 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
 SOURCES = $(libzoltan_a_SOURCES) $(EXTRA_libzoltan_a_SOURCES)
 DIST_SOURCES = $(am__libzoltan_a_SOURCES_DIST) \
 	$(EXTRA_libzoltan_a_SOURCES)
@@ -322,7 +310,6 @@ am__include_HEADERS_DIST = $(srcdir)/all/all_allo_const.h \
 	$(srcdir)/rcb/shared.h $(srcdir)/reftree/reftree_const.h \
 	$(srcdir)/reftree/reftree.h $(srcdir)/timer/timer_const.h \
 	$(srcdir)/Utilities/Communication/zoltan_comm.h \
-	$(srcdir)/Utilities/Communication/Epetra_ZoltanMpiDistributor.h \
 	$(srcdir)/Utilities/Communication/zoltan_comm_cpp.h \
 	$(srcdir)/Utilities/Timer/zoltan_timer_cpp.h \
 	$(srcdir)/Utilities/Timer/zoltan_timer.h \
@@ -714,7 +701,6 @@ TIMER = \
 
 UTILITIES_H = \
 	$(srcdir)/Utilities/Communication/zoltan_comm.h \
-	$(srcdir)/Utilities/Communication/Epetra_ZoltanMpiDistributor.h \
 	$(srcdir)/Utilities/Communication/zoltan_comm_cpp.h \
 	$(srcdir)/Utilities/Timer/zoltan_timer_cpp.h \
 	$(srcdir)/Utilities/Timer/zoltan_timer.h \
@@ -735,11 +721,8 @@ UTILITIES = \
 	$(srcdir)/Utilities/Communication/comm_resize.c \
 	$(srcdir)/Utilities/Communication/comm_sort_ints.c \
 	$(srcdir)/Utilities/Communication/comm_destroy.c \
-	$(srcdir)/Utilities/Communication/comm_main.c \
 	$(srcdir)/Utilities/Communication/comm_invert_plan.c \
-	$(srcdir)/Utilities/Timer/timer_main_2.cpp \
 	$(srcdir)/Utilities/Timer/zoltan_timer.c \
-	$(srcdir)/Utilities/Timer/timer_main.c \
 	$(srcdir)/Utilities/Timer/timer.c \
 	$(srcdir)/Utilities/DDirectory/DD_Find.c \
 	$(srcdir)/Utilities/DDirectory/DD_Destroy.c \
@@ -751,10 +734,8 @@ UTILITIES = \
 	$(srcdir)/Utilities/DDirectory/DD_Hash2.c \
 	$(srcdir)/Utilities/DDirectory/DD_Print.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn2.c \
-	$(srcdir)/Utilities/DDirectory/DD_Main.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Hash_Fn.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn1.c \
-	$(srcdir)/Utilities/Memory/mem_main.c \
 	$(srcdir)/Utilities/Memory/mem.c \
 	$(srcdir)/Utilities/shared/zoltan_align.c \
 	$(srcdir)/Utilities/shared/zoltan_id.c
@@ -899,7 +880,7 @@ MAINTAINERCLEANFILES = Makefile.in
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .c .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -973,7 +954,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Destroy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Find.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Hash2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Print.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Remove.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_Set_Hash_Fn.Po@am__quote@
@@ -1000,7 +980,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_invert_map.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_invert_plan.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_resize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_sort_ints.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/costs.Po@am__quote@
@@ -1037,7 +1016,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lb_set_part_sizes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrix_partition.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mem_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migoct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migreg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migtags.Po@am__quote@
@@ -1101,8 +1079,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shared.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/third_library.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer_main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer_main_2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer_params.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/verify_graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zoltan_align.Po@am__quote@
@@ -2744,20 +2720,6 @@ comm_destroy.obj: $(srcdir)/Utilities/Communication/comm_destroy.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o comm_destroy.obj `if test -f '$(srcdir)/Utilities/Communication/comm_destroy.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Communication/comm_destroy.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Communication/comm_destroy.c'; fi`
 
-comm_main.o: $(srcdir)/Utilities/Communication/comm_main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT comm_main.o -MD -MP -MF $(DEPDIR)/comm_main.Tpo -c -o comm_main.o `test -f '$(srcdir)/Utilities/Communication/comm_main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Communication/comm_main.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/comm_main.Tpo $(DEPDIR)/comm_main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Communication/comm_main.c' object='comm_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o comm_main.o `test -f '$(srcdir)/Utilities/Communication/comm_main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Communication/comm_main.c
-
-comm_main.obj: $(srcdir)/Utilities/Communication/comm_main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT comm_main.obj -MD -MP -MF $(DEPDIR)/comm_main.Tpo -c -o comm_main.obj `if test -f '$(srcdir)/Utilities/Communication/comm_main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Communication/comm_main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Communication/comm_main.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/comm_main.Tpo $(DEPDIR)/comm_main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Communication/comm_main.c' object='comm_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o comm_main.obj `if test -f '$(srcdir)/Utilities/Communication/comm_main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Communication/comm_main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Communication/comm_main.c'; fi`
-
 comm_invert_plan.o: $(srcdir)/Utilities/Communication/comm_invert_plan.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT comm_invert_plan.o -MD -MP -MF $(DEPDIR)/comm_invert_plan.Tpo -c -o comm_invert_plan.o `test -f '$(srcdir)/Utilities/Communication/comm_invert_plan.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Communication/comm_invert_plan.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/comm_invert_plan.Tpo $(DEPDIR)/comm_invert_plan.Po
@@ -2785,20 +2747,6 @@ zoltan_timer.obj: $(srcdir)/Utilities/Timer/zoltan_timer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Timer/zoltan_timer.c' object='zoltan_timer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zoltan_timer.obj `if test -f '$(srcdir)/Utilities/Timer/zoltan_timer.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Timer/zoltan_timer.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Timer/zoltan_timer.c'; fi`
-
-timer_main.o: $(srcdir)/Utilities/Timer/timer_main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT timer_main.o -MD -MP -MF $(DEPDIR)/timer_main.Tpo -c -o timer_main.o `test -f '$(srcdir)/Utilities/Timer/timer_main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Timer/timer_main.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/timer_main.Tpo $(DEPDIR)/timer_main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Timer/timer_main.c' object='timer_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o timer_main.o `test -f '$(srcdir)/Utilities/Timer/timer_main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Timer/timer_main.c
-
-timer_main.obj: $(srcdir)/Utilities/Timer/timer_main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT timer_main.obj -MD -MP -MF $(DEPDIR)/timer_main.Tpo -c -o timer_main.obj `if test -f '$(srcdir)/Utilities/Timer/timer_main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Timer/timer_main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Timer/timer_main.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/timer_main.Tpo $(DEPDIR)/timer_main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Timer/timer_main.c' object='timer_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o timer_main.obj `if test -f '$(srcdir)/Utilities/Timer/timer_main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Timer/timer_main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Timer/timer_main.c'; fi`
 
 timer.o: $(srcdir)/Utilities/Timer/timer.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT timer.o -MD -MP -MF $(DEPDIR)/timer.Tpo -c -o timer.o `test -f '$(srcdir)/Utilities/Timer/timer.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Timer/timer.c
@@ -2954,20 +2902,6 @@ DD_Set_Neighbor_Hash_Fn2.obj: $(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Has
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o DD_Set_Neighbor_Hash_Fn2.obj `if test -f '$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn2.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn2.c'; fi`
 
-DD_Main.o: $(srcdir)/Utilities/DDirectory/DD_Main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT DD_Main.o -MD -MP -MF $(DEPDIR)/DD_Main.Tpo -c -o DD_Main.o `test -f '$(srcdir)/Utilities/DDirectory/DD_Main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/DDirectory/DD_Main.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/DD_Main.Tpo $(DEPDIR)/DD_Main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/DDirectory/DD_Main.c' object='DD_Main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o DD_Main.o `test -f '$(srcdir)/Utilities/DDirectory/DD_Main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/DDirectory/DD_Main.c
-
-DD_Main.obj: $(srcdir)/Utilities/DDirectory/DD_Main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT DD_Main.obj -MD -MP -MF $(DEPDIR)/DD_Main.Tpo -c -o DD_Main.obj `if test -f '$(srcdir)/Utilities/DDirectory/DD_Main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/DDirectory/DD_Main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/DDirectory/DD_Main.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/DD_Main.Tpo $(DEPDIR)/DD_Main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/DDirectory/DD_Main.c' object='DD_Main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o DD_Main.obj `if test -f '$(srcdir)/Utilities/DDirectory/DD_Main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/DDirectory/DD_Main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/DDirectory/DD_Main.c'; fi`
-
 DD_Set_Hash_Fn.o: $(srcdir)/Utilities/DDirectory/DD_Set_Hash_Fn.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT DD_Set_Hash_Fn.o -MD -MP -MF $(DEPDIR)/DD_Set_Hash_Fn.Tpo -c -o DD_Set_Hash_Fn.o `test -f '$(srcdir)/Utilities/DDirectory/DD_Set_Hash_Fn.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/DDirectory/DD_Set_Hash_Fn.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/DD_Set_Hash_Fn.Tpo $(DEPDIR)/DD_Set_Hash_Fn.Po
@@ -2995,20 +2929,6 @@ DD_Set_Neighbor_Hash_Fn1.obj: $(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Has
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn1.c' object='DD_Set_Neighbor_Hash_Fn1.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o DD_Set_Neighbor_Hash_Fn1.obj `if test -f '$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn1.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn1.c'; fi`
-
-mem_main.o: $(srcdir)/Utilities/Memory/mem_main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mem_main.o -MD -MP -MF $(DEPDIR)/mem_main.Tpo -c -o mem_main.o `test -f '$(srcdir)/Utilities/Memory/mem_main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Memory/mem_main.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/mem_main.Tpo $(DEPDIR)/mem_main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Memory/mem_main.c' object='mem_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mem_main.o `test -f '$(srcdir)/Utilities/Memory/mem_main.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Memory/mem_main.c
-
-mem_main.obj: $(srcdir)/Utilities/Memory/mem_main.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mem_main.obj -MD -MP -MF $(DEPDIR)/mem_main.Tpo -c -o mem_main.obj `if test -f '$(srcdir)/Utilities/Memory/mem_main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Memory/mem_main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Memory/mem_main.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/mem_main.Tpo $(DEPDIR)/mem_main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utilities/Memory/mem_main.c' object='mem_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mem_main.obj `if test -f '$(srcdir)/Utilities/Memory/mem_main.c'; then $(CYGPATH_W) '$(srcdir)/Utilities/Memory/mem_main.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Memory/mem_main.c'; fi`
 
 mem.o: $(srcdir)/Utilities/Memory/mem.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mem.o -MD -MP -MF $(DEPDIR)/mem.Tpo -c -o mem.o `test -f '$(srcdir)/Utilities/Memory/mem.c' || echo '$(srcdir)/'`$(srcdir)/Utilities/Memory/mem.c
@@ -3219,34 +3139,6 @@ scotch_interface.obj: $(srcdir)/parmetis/scotch_interface.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scotch_interface.c' object='scotch_interface.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.obj `if test -f '$(srcdir)/parmetis/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scotch_interface.c'; fi`
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-timer_main_2.o: $(srcdir)/Utilities/Timer/timer_main_2.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT timer_main_2.o -MD -MP -MF $(DEPDIR)/timer_main_2.Tpo -c -o timer_main_2.o `test -f '$(srcdir)/Utilities/Timer/timer_main_2.cpp' || echo '$(srcdir)/'`$(srcdir)/Utilities/Timer/timer_main_2.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/timer_main_2.Tpo $(DEPDIR)/timer_main_2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utilities/Timer/timer_main_2.cpp' object='timer_main_2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o timer_main_2.o `test -f '$(srcdir)/Utilities/Timer/timer_main_2.cpp' || echo '$(srcdir)/'`$(srcdir)/Utilities/Timer/timer_main_2.cpp
-
-timer_main_2.obj: $(srcdir)/Utilities/Timer/timer_main_2.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT timer_main_2.obj -MD -MP -MF $(DEPDIR)/timer_main_2.Tpo -c -o timer_main_2.obj `if test -f '$(srcdir)/Utilities/Timer/timer_main_2.cpp'; then $(CYGPATH_W) '$(srcdir)/Utilities/Timer/timer_main_2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Timer/timer_main_2.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/timer_main_2.Tpo $(DEPDIR)/timer_main_2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utilities/Timer/timer_main_2.cpp' object='timer_main_2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o timer_main_2.obj `if test -f '$(srcdir)/Utilities/Timer/timer_main_2.cpp'; then $(CYGPATH_W) '$(srcdir)/Utilities/Timer/timer_main_2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utilities/Timer/timer_main_2.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

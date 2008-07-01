@@ -291,7 +291,6 @@ TIMER = \
 
 UTILITIES_H = \
 	$(srcdir)/Utilities/Communication/zoltan_comm.h \
-	$(srcdir)/Utilities/Communication/Epetra_ZoltanMpiDistributor.h \
 	$(srcdir)/Utilities/Communication/zoltan_comm_cpp.h \
 	$(srcdir)/Utilities/Timer/zoltan_timer_cpp.h \
 	$(srcdir)/Utilities/Timer/zoltan_timer.h \
@@ -312,11 +311,8 @@ UTILITIES = \
 	$(srcdir)/Utilities/Communication/comm_resize.c \
 	$(srcdir)/Utilities/Communication/comm_sort_ints.c \
 	$(srcdir)/Utilities/Communication/comm_destroy.c \
-	$(srcdir)/Utilities/Communication/comm_main.c \
 	$(srcdir)/Utilities/Communication/comm_invert_plan.c \
-	$(srcdir)/Utilities/Timer/timer_main_2.cpp \
 	$(srcdir)/Utilities/Timer/zoltan_timer.c \
-	$(srcdir)/Utilities/Timer/timer_main.c \
 	$(srcdir)/Utilities/Timer/timer.c \
 	$(srcdir)/Utilities/DDirectory/DD_Find.c \
 	$(srcdir)/Utilities/DDirectory/DD_Destroy.c \
@@ -328,10 +324,8 @@ UTILITIES = \
 	$(srcdir)/Utilities/DDirectory/DD_Hash2.c \
 	$(srcdir)/Utilities/DDirectory/DD_Print.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn2.c \
-	$(srcdir)/Utilities/DDirectory/DD_Main.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Hash_Fn.c \
 	$(srcdir)/Utilities/DDirectory/DD_Set_Neighbor_Hash_Fn1.c \
-	$(srcdir)/Utilities/Memory/mem_main.c \
 	$(srcdir)/Utilities/Memory/mem.c \
 	$(srcdir)/Utilities/shared/zoltan_align.c \
 	$(srcdir)/Utilities/shared/zoltan_id.c
