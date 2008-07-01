@@ -818,7 +818,6 @@ int Zoltan_HG_ignore_some_edges (
  * and zero-sized edges (zero vertices) from input data.
  */
 char *yo = "Zoltan_HG_ignore_some_edges";
-char msg[160];
 int ierr = ZOLTAN_OK;
 int i, j;
 int ewgtdim = zz->Edge_Weight_Dim;
