@@ -124,6 +124,8 @@ dnl AC_PROG_CC and AC_PROG_F77)
 dnl 
 dnl --------------------------------------------------------------------
 
+if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
+
 if test -n "${MPI_CXX}"; then
   if test -f ${MPI_CXX}; then
     MPI_CXX_EXISTS=yes
@@ -143,6 +145,8 @@ if test -n "${MPI_CXX}"; then
     AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
   fi
 fi
+
+fi dnl ac_cv_use_zoltan_cppdriver
 
 if test -n "${MPI_CC}"; then
   if test -f ${MPI_CC}; then

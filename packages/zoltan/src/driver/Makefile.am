@@ -22,9 +22,11 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 #ZOLTAN_C_TEST_DRIVER = zdrive 
-#ZOLTAN_CPP_TEST_DRIVER = zCPPdrive 
+if HAVE_ZOLTAN_CPPDRIVER
+  ZOLTAN_CPP_TEST_DRIVER = zCPPdrive 
+endif
 
-noinst_PROGRAMS = zdrive zCPPdrive
+noinst_PROGRAMS = zdrive $(ZOLTAN_CPP_TEST_DRIVER)
 
 COMMON_DRIVER_SRC = \
 	$(srcdir)/dr_err.c $(srcdir)/dr_input.c $(srcdir)/dr_par_util.c \

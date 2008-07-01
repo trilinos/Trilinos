@@ -80,6 +80,9 @@ AC_PREREQ(2.61)
 
 ac_cv_use_fortran90=yes
 
+TAC_ARG_ENABLE_FEATURE_SUB(zoltan, cppdriver, [Enable Zoltan's C++ driver], ZOLTAN_CPPDRIVER, yes)
+AM_CONDITIONAL(HAVE_ZOLTAN_CPPDRIVER, [test "X$ac_cv_use_zoltan_cppdriver" != "Xno"])
+
 #This can be removed after we retire the old build system
 AC_DEFINE([TRILINOS_CONFIG_H],,[Define when using the autotools to build Zoltan])
 
@@ -102,14 +105,18 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CC(cc gcc)
 #Conditional only?
+#if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 AC_PROG_CXX(CC g++ c++ cxx)
+#fi
 AC_PROG_FC(gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # Check if --with-flags present, prepend any specs to FLAGS
 
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
+#if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+#fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fcflags, FFLAGS)
 TAC_ARG_WITH_LIBS

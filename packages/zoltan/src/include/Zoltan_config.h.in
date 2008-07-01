@@ -18,6 +18,9 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
+/* Define if want to build zoltan-cppdriver */
+#undef HAVE_ZOLTAN_CPPDRIVER
+
 /* Define if want to build zoltan-examples */
 #undef HAVE_ZOLTAN_EXAMPLES
 

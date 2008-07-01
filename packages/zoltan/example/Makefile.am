@@ -11,5 +11,9 @@
 
 all-local:
 
-SUBDIRS = lib C CPP 
+if HAVE_ZOLTAN_CPPDRIVER
+  CPP_EXAMPLES = CPP
+endif
+
+SUBDIRS = lib C $(CPP_EXAMPLES)
 

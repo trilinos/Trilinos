@@ -653,6 +653,8 @@ am__leading_dot
 AMTAR
 am__tar
 am__untar
+HAVE_ZOLTAN_CPPDRIVER_TRUE
+HAVE_ZOLTAN_CPPDRIVER_FALSE
 MPI_TEMP_CXX
 MPI_CXX
 HAVE_MPI_TRUE
@@ -1312,6 +1314,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-maintainer-mode  enable make rules and dependencies not useful
 			  (and sometimes confusing) to the casual installer
+  --enable-zoltan-cppdriver
+                          Enable Zoltan's C++ driver (default is yes)
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
@@ -2594,6 +2598,40 @@ echo "${ECHO_T}$am_cv_prog_tar_ustar" >&6; }
 
 ac_cv_use_fortran90=yes
 
+
+# Check whether --enable-zoltan-cppdriver was given.
+if test "${enable_zoltan_cppdriver+set}" = set; then
+  enableval=$enable_zoltan_cppdriver; ac_cv_use_zoltan_cppdriver=$enableval
+else
+  ac_cv_use_zoltan_cppdriver=yes
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use zoltan-cppdriver" >&5
+echo $ECHO_N "checking whether to use zoltan-cppdriver... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_zoltan_cppdriver" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ZOLTAN_CPPDRIVER
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_zoltan_cppdriver" != "Xno"; then
+  HAVE_ZOLTAN_CPPDRIVER_TRUE=
+  HAVE_ZOLTAN_CPPDRIVER_FALSE='#'
+else
+  HAVE_ZOLTAN_CPPDRIVER_TRUE='#'
+  HAVE_ZOLTAN_CPPDRIVER_FALSE=
+fi
+
+
 #This can be removed after we retire the old build system
 
 cat >>confdefs.h <<\_ACEOF
@@ -2814,6 +2852,8 @@ fi
 
 
 
+if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
+
 if test -n "${MPI_CXX}"; then
   if test -f ${MPI_CXX}; then
     MPI_CXX_EXISTS=yes
@@ -2873,6 +2913,7 @@ echo "$as_me: error: MPI C++ compiler (${MPI_CXX}) not found." >&2;}
   fi
 fi
 
+fi
 if test -n "${MPI_CC}"; then
   if test -f ${MPI_CC}; then
     MPI_CC_EXISTS=yes
@@ -3961,6 +4002,7 @@ fi
 
 
 #Conditional only?
+#if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4433,6 +4475,7 @@ else
 fi
 
 
+#fi
 ac_ext=${ac_fc_srcext-f}
 ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
@@ -4809,6 +4852,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+#if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 
 { echo "$as_me:$LINENO: checking whether additional CXXFLAGS flags should be added" >&5
 echo $ECHO_N "checking whether additional CXXFLAGS flags should be added... $ECHO_C" >&6; }
@@ -4827,6 +4871,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+#fi
 
 { echo "$as_me:$LINENO: checking whether additional CFLAGS flags should be added" >&5
 echo $ECHO_N "checking whether additional CFLAGS flags should be added... $ECHO_C" >&6; }
@@ -6273,6 +6318,13 @@ echo "$as_me: error: conditional \"MAINTAINER_MODE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_ZOLTAN_CPPDRIVER_TRUE}" && test -z "${HAVE_ZOLTAN_CPPDRIVER_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_ZOLTAN_CPPDRIVER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_ZOLTAN_CPPDRIVER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_MPI_TRUE}" && test -z "${HAVE_MPI_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_MPI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -6992,6 +7044,8 @@ am__leading_dot!$am__leading_dot$ac_delim
 AMTAR!$AMTAR$ac_delim
 am__tar!$am__tar$ac_delim
 am__untar!$am__untar$ac_delim
+HAVE_ZOLTAN_CPPDRIVER_TRUE!$HAVE_ZOLTAN_CPPDRIVER_TRUE$ac_delim
+HAVE_ZOLTAN_CPPDRIVER_FALSE!$HAVE_ZOLTAN_CPPDRIVER_FALSE$ac_delim
 MPI_TEMP_CXX!$MPI_TEMP_CXX$ac_delim
 MPI_CXX!$MPI_CXX$ac_delim
 HAVE_MPI_TRUE!$HAVE_MPI_TRUE$ac_delim
@@ -7013,8 +7067,6 @@ am__quote!$am__quote$ac_delim
 AMDEP_TRUE!$AMDEP_TRUE$ac_delim
 AMDEP_FALSE!$AMDEP_FALSE$ac_delim
 AMDEPBACKSLASH!$AMDEPBACKSLASH$ac_delim
-CCDEPMODE!$CCDEPMODE$ac_delim
-am__fastdepCC_TRUE!$am__fastdepCC_TRUE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7056,6 +7108,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+CCDEPMODE!$CCDEPMODE$ac_delim
+am__fastdepCC_TRUE!$am__fastdepCC_TRUE$ac_delim
 am__fastdepCC_FALSE!$am__fastdepCC_FALSE$ac_delim
 CXX!$CXX$ac_delim
 CXXFLAGS!$CXXFLAGS$ac_delim
@@ -7097,7 +7151,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 39; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 41; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
