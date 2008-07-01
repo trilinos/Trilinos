@@ -66,7 +66,10 @@ struct ML_CommInfoOP_Struct {
    double          time;
    int             NumActiveProc;
    int             proc_active;
-   ML_Comm         *comm;
+   int             message_tag;  
+  /* Don't increment this explicitly - use ML_CommInfoOp_IncrementMessageTag instead */
+  ML_Comm         *comm;
+
 };
 
 /* -------------------------------------------------------------------- 
@@ -94,6 +97,8 @@ extern int  ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone);
 extern ML_CommInfoOP *ML_CommInfoOP_Create(void);
 extern void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info);
 
+extern void ML_CommInfoOp_IncrementMessageTag(ML_CommInfoOP *c_info);
+  
 extern int  ML_CommInfoOP_Get_Nneighbors(ML_CommInfoOP *c_info);
 extern int *ML_CommInfoOP_Get_neighbors( ML_CommInfoOP *c_info);
 extern int *ML_CommInfoOP_Get_sendlist(  ML_CommInfoOP *c_info, int neighbor);

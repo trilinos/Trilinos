@@ -18,6 +18,8 @@
 /* by using a communication routine supplied by the user.               */
 /* -------------------------------------------------------------------- */
 
+#define ML_MPI_MSG_NUM 2391
+
 int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info, 
 	int (*user_comm)(double *,void *), void *user_data, ML_Comm *ml_comm, 
 	int N_cols, int Nghost) 
@@ -272,6 +274,7 @@ ML_CommInfoOP *ML_CommInfoOP_Create()
    comm_info->time = 0.0;
    comm_info->NumActiveProc = 0;
    comm_info->proc_active = 0;
+   comm_info->message_tag=ML_MPI_MSG_NUM;
    comm_info->comm = NULL;
    return (comm_info);
 }
@@ -302,6 +305,14 @@ void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info)
       c_info = NULL;
       *comm_info = NULL;
    }
+}
+
+/* ******************************************************************** */
+void ML_CommInfoOp_IncrementMessageTag(ML_CommInfoOP *c_info){
+  if(c_info){
+    c_info->message_tag++;
+    if (c_info->message_tag > ML_MPI_MSG_NUM + 100) c_info->message_tag = ML_MPI_MSG_NUM;
+  }
 }
 
 /* ******************************************************************** */

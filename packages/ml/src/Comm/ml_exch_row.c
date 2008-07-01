@@ -74,7 +74,6 @@
 
 *******************************************************************************/
 
-#define ML_MPI_MSG_NUM 2391
 
 #define ML_FUNCTION_NAME "ML_exchange_rows"
 void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended, 
@@ -89,7 +88,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   int         *ibuff, total_num_recv, total_send, total_recv;
   double      *vals_new, *dtemp, *dbuff, *dummy1;
   int         i, j, k, ii, jj, *newmap, *orig_map, nonNULL_rcv_list, *dummy2;
-  static int  type = ML_MPI_MSG_NUM;
+  //  static int  type = ML_MPI_MSG_NUM;
   struct      ML_CSR_MSRdata *temp;
   int         allocated_space, row_length;
   ML_Comm     *comm;
@@ -307,11 +306,11 @@ example (with nonutilized ghost variables still works
 
   }
 
-  type++;
-  if (type > ML_MPI_MSG_NUM + 100) type = ML_MPI_MSG_NUM;
+  ML_CommInfoOp_IncrementMessageTag(comm_info);
+
   ML_splitup_big_msg(Nneighbors,(char *) ibuff,(char *) cols_new, 
                      sizeof(int), start_send_proc, actual_send_length, 
-                     actual_recv_length, neighbor, type, 
+                     actual_recv_length, neighbor, comm_info->message_tag, 
                      &total_num_recv, comm);
   ML_free(ibuff);
   dbuff    = (double *) ML_allocate( allocated_space*sizeof(double));
@@ -339,11 +338,11 @@ example (with nonutilized ghost variables still works
     exit(1);
   }
 
-  type++;
-  if (type > ML_MPI_MSG_NUM + 100) type = ML_MPI_MSG_NUM;
+
+  ML_CommInfoOp_IncrementMessageTag(comm_info);
   ML_splitup_big_msg(Nneighbors,(char *) dbuff,(char *) vals_new, 
                      sizeof(double), start_send_proc, actual_send_length, 
-                     actual_recv_length, neighbor, type, 
+                     actual_recv_length, neighbor, comm_info->message_tag, 
                      &total_num_recv, comm);
 
   ML_free(neighbor);
