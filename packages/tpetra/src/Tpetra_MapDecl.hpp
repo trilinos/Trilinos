@@ -31,8 +31,7 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Object.hpp>
-
-// TODO: Map needs to take a Platform
+#include "Tpetra_Platform.hpp"
 
 namespace Tpetra {
 
@@ -52,19 +51,24 @@ namespace Tpetra {
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    // TODO: is it possible that the default Map should vary according to Platform? 
-    // If so, then how do we give platform input into this process?
-    Map (OrdinalType numGlobalEntries, OrdinalType indexBase);
+    Map (OrdinalType numGlobalEntries, OrdinalType indexBase, const Platform &platform);
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
-     *  The entries are distributed among the nodes that the subsets of global entries
+     *  The entries are distributed among the nodes so that the subsets of global entries
      *  are non-overlapping and contiguous 
+     *  
+     *  If numGlobalEntries == -1, it will be computed via a global communication.
+     *  Otherwise, it must be equal to the sum of the local entries across all 
+     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
+     *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, OrdinalType indexBase);
+    Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, OrdinalType indexBase, 
+         OrdinalType myOffset, const Platform &platform);
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
     Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, 
-         std::vector< OrdinalType > const &entryList, OrdinalType indexBase);
+         const std::vector< OrdinalType > &entryList, OrdinalType indexBase, 
+         const Platform &platform);
 
     //! Map copy constructor.
     Map (const Map<OrdinalType> &Map);
@@ -134,7 +138,7 @@ namespace Tpetra {
     //@{ Misc. 
 
     //! Assignment operator
-    Map<OrdinalType>& operator = (Map<OrdinalType> const& Source);
+    Map<OrdinalType>& operator = (const Map<OrdinalType> & Source);
 
     //@}
 
@@ -150,6 +154,13 @@ namespace Tpetra {
   private:
 
     Teuchos::RCP< Map<OrdinalType> > MapData_;
+
+    // setup the directory
+    void directorySetup();
+
+    // convenience functions for returning inner data class, both const and nonconst versions.
+    ElementSpaceData<OrdinalType> & data() {return(*MapData_);};
+    const ElementSpaceData<OrdinalType> & data() const {return(*MapData_);};
 
   }; // Map class
 

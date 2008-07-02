@@ -108,7 +108,7 @@ namespace Tpetra {
   Teuchos::RCP< Teuchos::Comm<OrdinalType> > 
   MpiPlatform<OrdinalType>::createComm() const 
   {
-    return Teuchos::createMpiComm<int>(MpiComm_);
+    return Teuchos::createMpiComm<OrdinalType>(MpiComm_);
   }
 
   template <typename OrdinalType>

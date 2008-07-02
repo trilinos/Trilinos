@@ -618,12 +618,12 @@ namespace Tpetra {
     OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
     std::vector<OrdinalType> msg_count(numImages, zero);
-    std::vector<int> counts(numImages, 1); // int vector for MPI sumAllAndScatter call
+    std::vector<OrdinalType> counts(numImages, 1); // int vector for MPI sumAllAndScatter call
 
     for(OrdinalType i = zero; i < (numSends_ + selfMessage_); i++)
       msg_count[imagesTo_[i]] = one;
     
-    Teuchos::reduceAllAndScatter(getComm(),Teuchos::REDUCE_SUM,numImages,&msg_count[0],&counts[0],&numReceives_);
+    Teuchos::reduceAllAndScatter<OrdinalType>(*Comm_,Teuchos::REDUCE_SUM,numImages,&msg_count[0],&counts[0],&numReceives_);
     lengthsFrom_.assign(numReceives_, zero);
     imagesFrom_.assign(numReceives_, zero);
 

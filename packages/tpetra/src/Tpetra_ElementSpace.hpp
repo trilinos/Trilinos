@@ -176,7 +176,7 @@ namespace Tpetra {
       // initialize directory
       directorySetup();
     }
-    
+
     //! Tpetra::ElementSpace constructor with user-defined non-contiguous (arbitrary) distribution.
     ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, 
            std::vector<OrdinalType> const& elementList, OrdinalType indexBase, 

@@ -29,7 +29,7 @@
 #include "../tpetra_test_util.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include "Tpetra_Distributor.hpp"
+#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #ifdef HAVE_MPI
 # include "Tpetra_MpiPlatform.hpp"
 #else
@@ -102,7 +102,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   Tpetra::MpiPlatform<OrdinalType>    platform(rcp(new OpaqueWrapper<MPI_Comm>(MPI_COMM_WORLD)) );
 #else
   Tpetra::SerialPlatform<OrdinalType> platform;
-  ierr = returnierr + ierr; // dummy usage of ierr so gcc doesn't complain about unused variable (this is only needed in serial mode)
+  (void)ierr;
 #endif // HAVE_MPI
   RCP< Comm<OrdinalType> > comm = platform.createComm();
 

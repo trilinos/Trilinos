@@ -1,10 +1,5 @@
-* kill Tpetra::Comm and replace with Teuchos::Comm, same with MpiComm and SerialComm
-   * in progress
-   * replacing Tpetra::Comm with Teuchos::Comm
-   * this must be done before removing ScalarType template arg from Platform
-   * removing refs to Tpetra::Comm
-   * then replace calls to Tpetra::Comm<PacketType> with Teuchos::Comm helpers
-* remove ScalarType template from Tpetra::Platform 
+* inherit off Teuchos::Describable, not Teuchos::Object
+* finish ElementSpace
 * switch ElementSpace,VectorSpace with Map
 * write multivector, move vector to subclass
 * write CrsMatrix, kill CisMatrix
@@ -19,3 +14,7 @@
   examples have been disabled.
   the following interfaces have been disabled:
   - 
+
+DONE   
+* kill Tpetra::Comm and replace with Teuchos::Comm, same with MpiComm and SerialComm
+* remove ScalarType template from Tpetra::Platform 
