@@ -26,9 +26,6 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef RYTHMOS_TIME_RANGE_UNITTEST_C
-#define RYTHMOS_TIME_RANGE_UNITTEST_C
-
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_TimeRange.hpp"
@@ -120,5 +117,4 @@ TEUCHOS_UNIT_TEST( Rythmos_TimeRange, oo ) {
 } // namespace Rythmos
 
 
-#endif // RYTHMOS_TIME_RANGE_UNITTEST_C
 

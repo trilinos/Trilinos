@@ -29,8 +29,10 @@
 #ifndef Rythmos_UNITTEST_HELPERS_H
 #define Rythmos_UNITTEST_HELPERS_H
 
-#include "Thyra_VectorSpaceBase.hpp"
 #include "Teuchos_DefaultComm.hpp"
+
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 
 namespace Rythmos {
@@ -52,6 +54,16 @@ Teuchos::RCP<Thyra::VectorBase<Scalar> > createDefaultVector(int length, Scalar 
   Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(vs);
   Thyra::V_S(&*vec,value);
   return(vec);
+}
+
+// This function returns a product vector initialized with a value.
+template<class Scalar>
+Teuchos::RCP<Thyra::ProductVectorBase<Scalar> > createDefaultProductVector(int blocks, int length, Scalar value) {
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs = createDefaultVectorSpace<Scalar>(length);
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > pvs = productVectorSpace(vs,blocks);
+  Teuchos::RCP<Thyra::ProductVectorBase<Scalar> > pvec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(Thyra::createMember(pvs));
+  Thyra::V_S(&*pvec,value);
+  return(pvec);
 }
 
 } // namespace Rythmos

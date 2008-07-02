@@ -26,9 +26,6 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_DATA_STORE_UNITTEST_C
-#define Rythmos_DATA_STORE_UNITTEST_C
-
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_DataStore.hpp"
@@ -226,5 +223,4 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, vectorToDataStoreListNoAccuracy ) {
 
 } // namespace Rythmos
 
-#endif // Rythmos_DATA_STORE_UNITTEST_C
 

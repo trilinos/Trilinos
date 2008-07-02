@@ -26,9 +26,6 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_INTERPOLATION_BUFFER_UNITTEST_C
-#define Rythmos_INTERPOLATION_BUFFER_UNITTEST_C
-
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_InterpolationBuffer.hpp"
@@ -46,5 +43,4 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, newBuffer ) {
 
 }
 
-#endif // Rythmos_INTERPOLATION_BUFFER_UNITTEST_C
 

@@ -33,6 +33,7 @@
 #include "Rythmos_Types.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_as.hpp"
@@ -458,7 +459,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
       *out << "\n*** newtonIter = " << iter << endl;
     if (showNewtonDetails)
       *out << "\nEvaluating the model f and W ...\n";
-    eval_f_W( *model_, *x_curr, &*f, &*J_ );
+    Thyra::eval_f_W( *model_, *x_curr, &*f, &*J_ );
     if (showNewtonDetails)
       *out << "\nSolving the system J*dx = -f ...\n";
     Thyra::V_S(&*dx,ST::zero()); // Initial guess is needed!

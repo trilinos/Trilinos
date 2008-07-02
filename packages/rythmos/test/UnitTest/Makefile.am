@@ -43,7 +43,8 @@ Rythmos_UnitTest_SOURCES =\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
-  $(srcdir)/Rythmos_TimeRange_UnitTest.cpp 
+  $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
+  $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp	
 Rythmos_UnitTest_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
 Rythmos_UnitTest_LDADD = $(RYTHMOS_LIBS) 
 

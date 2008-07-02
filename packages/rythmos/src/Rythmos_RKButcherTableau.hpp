@@ -98,7 +98,6 @@ void assembleIRKState(
   TEUCHOS_ASSERT_EQUALITY( A.numRows(), numStages );
   TEUCHOS_ASSERT_EQUALITY( A.numCols(), numStages );
   TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
-  TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
 
   V_V( x, x_base );
   for ( int j = 0; j < numStages; ++j ) {
@@ -123,7 +122,6 @@ void assembleIRKSolution(
 
   const int numStages = b.length();
   TEUCHOS_ASSERT_EQUALITY( b.length(), numStages );
-  TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
   TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
 
   V_V( x, x_base );
