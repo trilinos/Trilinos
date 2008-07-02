@@ -30,7 +30,7 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = Comm_test
+bin_PROGRAMS = Comm_test ReduceAllAndScatter_test
 
 Comm_test_SOURCES = \
 	$(srcdir)/Comm_test.cpp
@@ -38,6 +38,13 @@ Comm_test_SOURCES = \
 Comm_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
 Comm_test_LDADD = $(TEUCHOS_LIBS)
+
+ReduceAllAndScatter_test_SOURCES = \
+	$(srcdir)/ReduceAllAndScatter_test.cpp
+
+ReduceAllAndScatter_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+
+ReduceAllAndScatter_test_LDADD = $(TEUCHOS_LIBS)
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 

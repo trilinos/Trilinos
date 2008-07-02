@@ -61,7 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = Comm_test$(EXEEXT)
+bin_PROGRAMS = Comm_test$(EXEEXT) ReduceAllAndScatter_test$(EXEEXT)
 subdir = test/Comm
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -101,6 +101,10 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_Comm_test_OBJECTS = Comm_test.$(OBJEXT)
 Comm_test_OBJECTS = $(am_Comm_test_OBJECTS)
+am_ReduceAllAndScatter_test_OBJECTS =  \
+	ReduceAllAndScatter_test.$(OBJEXT)
+ReduceAllAndScatter_test_OBJECTS =  \
+	$(am_ReduceAllAndScatter_test_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -109,8 +113,9 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(Comm_test_SOURCES)
-DIST_SOURCES = $(Comm_test_SOURCES)
+SOURCES = $(Comm_test_SOURCES) $(ReduceAllAndScatter_test_SOURCES)
+DIST_SOURCES = $(Comm_test_SOURCES) \
+	$(ReduceAllAndScatter_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -245,6 +250,11 @@ Comm_test_SOURCES = \
 
 Comm_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Comm_test_LDADD = $(TEUCHOS_LIBS)
+ReduceAllAndScatter_test_SOURCES = \
+	$(srcdir)/ReduceAllAndScatter_test.cpp
+
+ReduceAllAndScatter_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+ReduceAllAndScatter_test_LDADD = $(TEUCHOS_LIBS)
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 all: all-am
 
@@ -305,6 +315,9 @@ clean-binPROGRAMS:
 Comm_test$(EXEEXT): $(Comm_test_OBJECTS) $(Comm_test_DEPENDENCIES) 
 	@rm -f Comm_test$(EXEEXT)
 	$(CXXLINK) $(Comm_test_OBJECTS) $(Comm_test_LDADD) $(LIBS)
+ReduceAllAndScatter_test$(EXEEXT): $(ReduceAllAndScatter_test_OBJECTS) $(ReduceAllAndScatter_test_DEPENDENCIES) 
+	@rm -f ReduceAllAndScatter_test$(EXEEXT)
+	$(CXXLINK) $(ReduceAllAndScatter_test_OBJECTS) $(ReduceAllAndScatter_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -313,6 +326,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Comm_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReduceAllAndScatter_test.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -341,6 +355,20 @@ Comm_test.obj: $(srcdir)/Comm_test.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Comm_test.cpp' object='Comm_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Comm_test.obj `if test -f '$(srcdir)/Comm_test.cpp'; then $(CYGPATH_W) '$(srcdir)/Comm_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Comm_test.cpp'; fi`
+
+ReduceAllAndScatter_test.o: $(srcdir)/ReduceAllAndScatter_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ReduceAllAndScatter_test.o -MD -MP -MF $(DEPDIR)/ReduceAllAndScatter_test.Tpo -c -o ReduceAllAndScatter_test.o `test -f '$(srcdir)/ReduceAllAndScatter_test.cpp' || echo '$(srcdir)/'`$(srcdir)/ReduceAllAndScatter_test.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ReduceAllAndScatter_test.Tpo $(DEPDIR)/ReduceAllAndScatter_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ReduceAllAndScatter_test.cpp' object='ReduceAllAndScatter_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReduceAllAndScatter_test.o `test -f '$(srcdir)/ReduceAllAndScatter_test.cpp' || echo '$(srcdir)/'`$(srcdir)/ReduceAllAndScatter_test.cpp
+
+ReduceAllAndScatter_test.obj: $(srcdir)/ReduceAllAndScatter_test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ReduceAllAndScatter_test.obj -MD -MP -MF $(DEPDIR)/ReduceAllAndScatter_test.Tpo -c -o ReduceAllAndScatter_test.obj `if test -f '$(srcdir)/ReduceAllAndScatter_test.cpp'; then $(CYGPATH_W) '$(srcdir)/ReduceAllAndScatter_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ReduceAllAndScatter_test.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ReduceAllAndScatter_test.Tpo $(DEPDIR)/ReduceAllAndScatter_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ReduceAllAndScatter_test.cpp' object='ReduceAllAndScatter_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReduceAllAndScatter_test.obj `if test -f '$(srcdir)/ReduceAllAndScatter_test.cpp'; then $(CYGPATH_W) '$(srcdir)/ReduceAllAndScatter_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ReduceAllAndScatter_test.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
