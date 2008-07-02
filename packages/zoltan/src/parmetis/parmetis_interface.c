@@ -665,7 +665,8 @@ int Zoltan_ParMetis_Order(
 
   /* Allocate space for separator sizes */
   /* TRICK: +1 to reuse this array as the start table for elimination tree */
-  ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype));
+/*   ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype)); */
+  ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*gr.num_obj+1)*sizeof(indextype));
   if (!ord.sep_sizes){
     /* Not enough memory */
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
@@ -722,8 +723,6 @@ int Zoltan_ParMetis_Order(
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
-  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, &vsp, &ord, NULL);
-
   if (gr.graph_type==GLOBAL_GRAPH){ /* Update Elimination tree */
     int numbloc;
     int start;
@@ -748,7 +747,7 @@ int Zoltan_ParMetis_Order(
       zz->Order.ancestor[2*numbloc] = zz->Num_Proc+numbloc;
       zz->Order.ancestor[2*numbloc+1] = zz->Num_Proc+numbloc;
     }
-    zz->Order.ancestor[2*zz->Num_Proc] = -1;
+    zz->Order.ancestor[2*zz->Num_Proc-1] = -1;
 
     for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc ; ++numbloc) { /* define leaves */
       zz->Order.leaves[numbloc] = numbloc;
@@ -762,6 +761,8 @@ int Zoltan_ParMetis_Order(
     zz->Order.ancestor = NULL;
     zz->Order.leaves = NULL;
   }
+
+  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, &vsp, &ord, NULL);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
