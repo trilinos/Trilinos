@@ -44,7 +44,7 @@ extern "C" {
 
 #define ZOLTAN_TRACE(proc,where,yo,str) \
   printf("ZOLTAN (Processor %d) %s %s  %s\n", (proc), (where), (yo), \
-         ((str) != NULL ? (str) : " "));
+         ((str) != NULL ? (char *)(str) : " "));
 
 #define ZOLTAN_TRACE_IN(proc,yo,str) \
   ZOLTAN_TRACE((proc),"Entering",(yo),(str));
@@ -54,7 +54,7 @@ extern "C" {
 
 #define ZOLTAN_PRINT_INFO(proc,yo,str) \
   printf("ZOLTAN (Processor %d) %s: %s\n", (proc), (yo), \
-         ((str) != NULL ? (str) : " "));
+         ((str) != NULL ? (char *)(str) : " "));
 
 
 #ifdef __cplusplus
