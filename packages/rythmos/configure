@@ -8742,7 +8742,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile test/CppUnitLite/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9549,7 +9549,6 @@ do
     "example/epetra/Makefile") CONFIG_FILES="$CONFIG_FILES example/epetra/Makefile" ;;
     "example/timeDiscretizedBackwardEuler/Makefile") CONFIG_FILES="$CONFIG_FILES example/timeDiscretizedBackwardEuler/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "test/CppUnitLite/Makefile") CONFIG_FILES="$CONFIG_FILES test/CppUnitLite/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;

@@ -246,14 +246,12 @@ top_srcdir = @top_srcdir@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 CORE_H = \
-  $(srcdir)/Rythmos_UnitTestHelpers.hpp\
   $(srcdir)/Rythmos_AdjointModelEvaluator.hpp\
   $(srcdir)/Rythmos_BackwardEulerStepper.hpp\
   $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
   $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
   $(srcdir)/Rythmos_ConfigDefs.h\
   $(srcdir)/Rythmos_DataStore.hpp\
-  $(srcdir)/Rythmos_DataStore_UnitTest.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
@@ -277,7 +275,6 @@ CORE_H = \
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
   $(srcdir)/Rythmos_IntegratorBase.hpp\
   $(srcdir)/Rythmos_InterpolationBuffer.hpp\
-  $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.hpp\
   $(srcdir)/Rythmos_InterpolationBufferAppenderBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
@@ -301,14 +298,13 @@ CORE_H = \
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
-  $(srcdir)/Rythmos_TimeRange_UnitTest.hpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
   $(srcdir)/Rythmos_Types.hpp\
   $(srcdir)/Rythmos_extractStateAndSens.hpp\
   $(srcdir)/Rythmos_Version.h
 
 CORE = \
-  $(srcdir)/Rythmos_Version.cpp
+  $(srcdir)/Rythmos_Version.cpp 
 
 UTIL_H = 
 UTIL = 

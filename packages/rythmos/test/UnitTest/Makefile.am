@@ -28,41 +28,26 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = Rythmos_UnitTest
+include $(top_builddir)/Makefile.export.rythmos
+
+bin_PROGRAMS = Rythmos_UnitTest
 
 #
 # Actual programs
 #
 
-Rythmos_UnitTest_SOURCES = $(srcdir)/Rythmos_UnitTest.cpp 
+Rythmos_UnitTest_INCLUDES =\
+  $(srcdir)/Rythmos_UnitTestHelpers.hpp
+Rythmos_UnitTest_SOURCES =\
+	$(srcdir)/Rythmos_UnitTest.cpp\
+	$(srcdir)/Rythmos_UnitTestHelpers.cpp\
+  $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
+  $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
+  $(srcdir)/Rythmos_TimeRange_UnitTest.cpp 
+Rythmos_UnitTest_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
+Rythmos_UnitTest_LDADD = $(RYTHMOS_LIBS) 
 
-Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies) 
-
-Rythmos_UnitTest_LDADD = $(common_ldadd) 
-
-#
-# Common stuff
-#
-
-common_dependencies = \
-  $(top_builddir)/src/librythmos.a 
-
-include $(top_builddir)/Makefile.export.rythmos 
-
-_EXPORT_INCLUDES = $(RYTHMOS_TEST_INCLUDES) -I$(top_srcdir)/test/CppUnitLite
-_EXPORT_LIBS = $(RYTHMOS_TEST_LIBS) -L$(top_builddir)/test/CppUnitLite -lcppunitlite
-
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
-else
-EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
-EXPORT_LIBS = $(_EXPORT_LIBS)
-endif
-
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
-
-common_ldadd = $(EXPORT_LIBS)
+AM_CPPFLAGS = $(RYTHMOS_INCLUDES) 
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =

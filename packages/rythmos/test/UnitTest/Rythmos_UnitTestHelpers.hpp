@@ -37,33 +37,21 @@ namespace Rythmos {
   
 // This function is needed to get a default vector space to work with.
 template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> > createDefaultVectorSpace(int length) {
-  const RCP<const Teuchos::Comm<Thyra::Index> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > createDefaultVectorSpace(int length) {
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
-  RCP<const Thyra::DefaultSpmdVectorSpace<Scalar> > vs = 
+  Teuchos::RCP<const Thyra::DefaultSpmdVectorSpace<Scalar> > vs = 
     Teuchos::rcp(new const Thyra::DefaultSpmdVectorSpace<Scalar>(comm,length,-1) );
   return(vs); 
 }
 
 // This function returns a vector initialized with a value.
 template<class Scalar>
-RCP<Thyra::VectorBase<Scalar> > createDefaultVector(int length, Scalar value) {
-  RCP<const Thyra::VectorSpaceBase<Scalar> > vs = createDefaultVectorSpace<Scalar>(length);
-  RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(vs);
+Teuchos::RCP<Thyra::VectorBase<Scalar> > createDefaultVector(int length, Scalar value) {
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs = createDefaultVectorSpace<Scalar>(length);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(vs);
   Thyra::V_S(&*vec,value);
   return(vec);
-}
-
-// Acceptance test for creating default Thyra Vectors
-TEST( UnitTestHelpers, createDefaultVectorSpace ) {
-  int N = 5;
-  double value = 2.0;
-  RCP<Thyra::VectorBase<double> > vec = createDefaultVector<double>(N,value);
-  CHECK( vec != Teuchos::null );
-  CHECK( vec->space()->dim() == N );
-  for (int i=0 ; i<N ; ++i) {
-    CHECK( get_ele(*vec,i) == value );
-  }
 }
 
 } // namespace Rythmos

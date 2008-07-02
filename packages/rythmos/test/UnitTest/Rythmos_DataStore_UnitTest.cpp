@@ -26,77 +26,76 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_DATA_STORE_UNITTEST_H
-#define Rythmos_DATA_STORE_UNITTEST_H
+#ifndef Rythmos_DATA_STORE_UNITTEST_C
+#define Rythmos_DATA_STORE_UNITTEST_C
 
-#include "../test/CppUnitLite/TestHarness.h"
+#include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
 
 namespace Rythmos {
 
-
-TEST( DataStore, newDataStore ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, newDataStore ) {
   DataStore<double> ds;
-  CHECK( -1 == ds.time );
-  CHECK( Teuchos::is_null(ds.x) );
-  CHECK( Teuchos::is_null(ds.xdot) );
-  CHECK( -1 == ds.accuracy );
+  TEST_EQUALITY_CONST( ds.time, -1 );
+  TEST_EQUALITY_CONST( Teuchos::is_null(ds.x), true );
+  TEST_EQUALITY_CONST( Teuchos::is_null(ds.xdot), true );
+  TEST_EQUALITY_CONST( ds.accuracy, -1 );
 }
 
-TEST( DataStore, newDataStore2 ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, newDataStore2 ) {
   double time = 1.0234;
   double accuracy = 0.0012;
   RCP<Thyra::VectorBase<double> > x = createDefaultVector<double>(5,1.0);
   RCP<Thyra::VectorBase<double> > xdot = createDefaultVector<double>(5,2.0);
   DataStore<double> ds(time,x,xdot,accuracy);
-  CHECK( time == ds.time );
-  CHECK( accuracy == ds.accuracy );
-  CHECK( x == ds.x ); // check that pointers are equal
-  CHECK( xdot == ds.xdot );
+  TEST_EQUALITY( time, ds.time );
+  TEST_EQUALITY( accuracy, ds.accuracy );
+  TEST_EQUALITY( x, ds.x ); // check that pointers are equal
+  TEST_EQUALITY( xdot, ds.xdot );
 }
 
-TEST( DataStore, clone ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
   double time = 0.025;
   double accuracy = .0000025;
   DataStore<double> ds(time,Teuchos::null,Teuchos::null,accuracy);
   DataStore<double> ds2(ds);
-  CHECK( ds2.time == time );
-  CHECK( ds2.accuracy == accuracy );
+  TEST_EQUALITY( ds2.time, time );
+  TEST_EQUALITY( ds2.accuracy, accuracy );
   // What does the clone do with the RCPs for x and xdot?
 }
 
-TEST( DataStore, lessthan ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, lessthan ) {
   double timeA = 1.0;
   double timeB = 2.0;
   double accuracy = 0.0;
   DataStore<double> dsA(timeA,Teuchos::null,Teuchos::null,accuracy);
   DataStore<double> dsB(timeB,Teuchos::null,Teuchos::null,accuracy);
-  CHECK( dsA < dsB );
-  CHECK( dsA <= dsB );
-  CHECK( dsB > dsA );
-  CHECK( dsB >= dsA );
-  CHECK( dsA < 5.0 );
-  CHECK( dsA <= 5.0 );
-  CHECK( dsA > 0.5 );
-  CHECK( dsA >= 0.5 );
+  TEST_COMPARE( dsA, < , dsB );
+  TEST_COMPARE( dsA, <=, dsB );
+  TEST_COMPARE( dsB, > , dsA );
+  TEST_COMPARE( dsB, >=, dsA );
+  TEST_COMPARE( dsA, < , 5.0 );
+  TEST_COMPARE( dsA, <=, 5.0 );
+  TEST_COMPARE( dsA, > , 0.5 );
+  TEST_COMPARE( dsA, >=, 0.5 );
 }
 
-TEST( DataStore, lessthanequal ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, lessthanequal ) {
   double timeA = 1.0;
   double timeB = 1.0;
   double accuracy = 0.0;
   DataStore<double> dsA(timeA,Teuchos::null,Teuchos::null,accuracy);
   DataStore<double> dsB(timeB,Teuchos::null,Teuchos::null,accuracy);
-  CHECK( dsA <= dsB );
-  CHECK( dsA == dsB );
-  CHECK( dsB >= dsA );
-  CHECK( dsB == dsA );
-  CHECK( dsA == 1.0 );
+  TEST_COMPARE( dsA, <=, dsB );
+  TEST_COMPARE( dsA, ==, dsB );
+  TEST_COMPARE( dsB, >=, dsA );
+  TEST_COMPARE( dsB, ==, dsA );
+  TEST_COMPARE( dsA, ==, 1.0 );
 }
 
-TEST( DataStore, dataStoreVectorToVector ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, dataStoreVectorToVector ) {
   DataStore<double>::DataStoreVector_t ds_v;
   Array<double> time_vec_gs;
   Array<double> accuracy_vec_gs;
@@ -124,17 +123,15 @@ TEST( DataStore, dataStoreVectorToVector ) {
   dataStoreVectorToVector(ds_v,&time_vec,&x_vec,&xdot_vec,&accuracy_vec);
 
   using Teuchos::as;
-  CHECK( as<int>(time_vec.size()) == N );
-  CHECK( as<int>(x_vec.size()) == N );
-  CHECK( as<int>(xdot_vec.size()) == N );
-  CHECK( as<int>(accuracy_vec.size()) == N );
-  for (int i=0 ; i<N ; ++i) {
-    CHECK( time_vec[i] == time_vec_gs[i] );
-    CHECK( accuracy_vec[i] == accuracy_vec_gs[i] );
-  }
+  TEST_EQUALITY( as<int>(time_vec.size()), N );
+  TEST_EQUALITY( as<int>(x_vec.size()), N );
+  TEST_EQUALITY( as<int>(xdot_vec.size()), N );
+  TEST_EQUALITY( as<int>(accuracy_vec.size()), N );
+  TEST_COMPARE_ARRAYS( time_vec, time_vec_gs );
+  TEST_COMPARE_ARRAYS( accuracy_vec, accuracy_vec_gs );
 }
 
-TEST( DataStore, vectorToDataStoreVector ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, vectorToDataStoreVector ) {
   Array<double> time_vec;
   Array<RCP<const Thyra::VectorBase<double> > > x_vec;
   Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
@@ -157,14 +154,14 @@ TEST( DataStore, vectorToDataStoreVector ) {
   vectorToDataStoreVector(time_vec,x_vec,xdot_vec,accuracy_vec,&ds_v);
 
   using Teuchos::as;
-  CHECK( as<int>(ds_v.size()) == N );
+  TEST_EQUALITY( as<int>(ds_v.size()), N );
   for (int i=0 ; i<N ; ++i) {
-    CHECK( ds_v[i].time == time_vec[i] );
-    CHECK( ds_v[i].accuracy == accuracy_vec[i] );
+    TEST_EQUALITY( ds_v[i].time, time_vec[i] );
+    TEST_EQUALITY( ds_v[i].accuracy, accuracy_vec[i] );
   }
 }
 
-TEST( DataStore, vectorToDataStoreList ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, vectorToDataStoreList ) {
   Array<double> time_vec;
   Array<RCP<const Thyra::VectorBase<double> > > x_vec;
   Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
@@ -187,17 +184,17 @@ TEST( DataStore, vectorToDataStoreList ) {
   vectorToDataStoreList(time_vec,x_vec,xdot_vec,accuracy_vec,&ds_l);
 
   using Teuchos::as;
-  CHECK( as<int>(ds_l.size()) == N );
+  TEST_EQUALITY( as<int>(ds_l.size()), N );
   DataStore<double>::DataStoreList_t::iterator it;
   int i=0;
   for (it = ds_l.begin() ; it != ds_l.end() ; it++) {
-    CHECK( it->time == time_vec[i] );
-    CHECK( it->accuracy == accuracy_vec[i] );
+    TEST_EQUALITY( it->time, time_vec[i] );
+    TEST_EQUALITY( it->accuracy, accuracy_vec[i] );
     ++i;
   }
 }
 
-TEST( DataStore, vectorToDataStoreListNoAccuracy ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, vectorToDataStoreListNoAccuracy ) {
   Array<double> time_vec;
   Array<RCP<const Thyra::VectorBase<double> > > x_vec;
   Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
@@ -218,16 +215,16 @@ TEST( DataStore, vectorToDataStoreListNoAccuracy ) {
   vectorToDataStoreList(time_vec,x_vec,xdot_vec,&ds_l);
 
   using Teuchos::as;
-  CHECK( as<int>(ds_l.size()) == N );
+  TEST_EQUALITY( as<int>(ds_l.size()), N );
   DataStore<double>::DataStoreList_t::iterator it;
   int i=0;
   for (it = ds_l.begin() ; it != ds_l.end() ; it++) {
-    CHECK( it->time == time_vec[i] );
+    TEST_EQUALITY( it->time, time_vec[i] );
     ++i;
   }
 }
 
 } // namespace Rythmos
 
-#endif // Rythmos_DATA_STORE_UNITTEST_H
+#endif // Rythmos_DATA_STORE_UNITTEST_C
 

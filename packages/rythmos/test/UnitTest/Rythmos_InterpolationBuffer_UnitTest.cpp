@@ -26,25 +26,25 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_INTERPOLATION_BUFFER_UNITTEST_H
-#define Rythmos_INTERPOLATION_BUFFER_UNITTEST_H
+#ifndef Rythmos_INTERPOLATION_BUFFER_UNITTEST_C
+#define Rythmos_INTERPOLATION_BUFFER_UNITTEST_C
 
-#include "../test/CppUnitLite/TestHarness.h"
+#include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_InterpolationBuffer.hpp"
 
 namespace Rythmos {
 
-TEST( InterpolationBuffer, newBuffer ) {
+TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, newBuffer ) {
   InterpolationBuffer<double> ib;
-  CHECK( ib.getStorage() == 2 );
-  CHECK( !(ib.getTimeRange().isValid()) ); 
-  CHECK( ib.getOrder() == 1 ); // linear interpolator by default
-  CHECK( ib.getParameterList() == Teuchos::null );
+  TEST_EQUALITY_CONST( ib.getStorage(), 2 );
+  TEST_EQUALITY_CONST( ib.getTimeRange().isValid(), false ); 
+  TEST_EQUALITY_CONST( ib.getOrder(), 1 ); // linear interpolator by default
+  TEST_EQUALITY( ib.getParameterList(), Teuchos::null );
 }
 
 
 }
 
-#endif // Rythmos_INTERPOLATION_BUFFER_UNITTEST_H
+#endif // Rythmos_INTERPOLATION_BUFFER_UNITTEST_C
 

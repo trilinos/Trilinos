@@ -223,7 +223,6 @@ top_srcdir = @top_srcdir@
 #np# test1/ rather than this file.
 SUBDIRS = ExplicitTaylorPolynomialStepper\
           complicatedExample\
-          CppUnitLite\
           UnitTest \
           simpleAdjoint
 

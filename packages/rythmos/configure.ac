@@ -484,7 +484,6 @@ AC_CONFIG_FILES([
 		example/epetra/Makefile
 		example/timeDiscretizedBackwardEuler/Makefile
 		src/Makefile
-		test/CppUnitLite/Makefile
 		test/ExplicitTaylorPolynomialStepper/Makefile
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
 		test/Makefile

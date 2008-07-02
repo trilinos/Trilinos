@@ -39,7 +39,6 @@ all-local:
 
 SUBDIRS = ExplicitTaylorPolynomialStepper\
           complicatedExample\
-          CppUnitLite\
           UnitTest \
           simpleAdjoint
 
