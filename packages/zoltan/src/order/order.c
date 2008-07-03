@@ -101,6 +101,10 @@ int Zoltan_Order(
   zz->Num_GID = *num_gid_entries = gcomm[0];
   zz->Num_LID = *num_lid_entries = gcomm[1];
 
+  zz->Order.start = NULL;
+  zz->Order.ancestor = NULL;
+  zz->Order.leaves = NULL;
+
   /*
    *  Return if this processor is not in the Zoltan structure's
    *  communicator.

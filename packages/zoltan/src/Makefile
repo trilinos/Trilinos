@@ -212,7 +212,7 @@ LB_CSRC		= lb_balance.c lb_eval.c lb_free.c lb_copy.c lb_init.c \
                   lb_set_part_sizes.c lb_remap.c
 LB_INC		= lb_const.h lb_init_const.h
 
-ORDER_CSRC	= order.c order_struct.c perm.c
+ORDER_CSRC	= order.c order_struct.c order_tools.c perm.c
 ORDER_INC	= order_const.h 
 
 SIMPLE_CSRC	= block.c random.c

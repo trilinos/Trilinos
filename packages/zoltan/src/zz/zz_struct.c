@@ -188,6 +188,8 @@ void Zoltan_Destroy(ZZ **zz)
  *
  */
 
+  fprintf(stderr, "Boubou is back1");
+
   if (*zz != NULL) {
 
     Zoltan_Free_Zoltan_Struct_Members(*zz);
@@ -209,6 +211,7 @@ static void Zoltan_Free_Zoltan_Struct_Members(ZZ *zz)
   Zoltan_Timer_Destroy(&(zz->ZTime));
   Zoltan_Free_Structures(zz);  /* Algorithm-specific structures */
   Zoltan_LB_Free_Struct(&(zz->LB));
+  Zoltan_Order_Free_Struct(&(zz->Order));
 }
 
 /****************************************************************************/
@@ -370,6 +373,8 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Hier_Num_Levels_Data = NULL;
   zz->Get_Hier_Partition_Data = NULL;
   zz->Get_Hier_Method_Data = NULL;
+
+  zz->Order.needfree = 0;
 }
 
 #ifdef __cplusplus

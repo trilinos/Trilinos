@@ -234,14 +234,15 @@ int Zoltan_Scotch_Order(
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch block");
   }
 
-  zz->Order.ancestor = (indextype *) ZOLTAN_MALLOC(2*zz->Num_Proc*sizeof(indextype));
-  zz->Order.start = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype));
-  zz->Order.leaves = (indextype *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(indextype));
+  if (Zoltan_Order_Init_Tree (&zz->Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
+    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+  }
 
   tree = (indextype *) ZOLTAN_MALLOC((zz->Order.num_blocks+1)*sizeof(indextype));
   size = (indextype *) ZOLTAN_MALLOC((zz->Order.num_blocks+1)*sizeof(indextype));
 
-  if ((!zz->Order.ancestor) || (!zz->Order.start)){
+  if ((tree == NULL) || (size == NULL)){
     /* Not enough memory */
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");

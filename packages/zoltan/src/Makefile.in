@@ -108,8 +108,9 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/oct/octupdate.c $(srcdir)/oct/oct_util.c \
 	$(srcdir)/oct/output.c $(srcdir)/oct/rootlist.c \
 	$(srcdir)/order/order.c $(srcdir)/order/order_struct.c \
-	$(srcdir)/order/perm.c $(srcdir)/par/par_average.c \
-	$(srcdir)/par/par_bisect.c $(srcdir)/par/par_median.c \
+	$(srcdir)/order/order_tools.c $(srcdir)/order/perm.c \
+	$(srcdir)/par/par_average.c $(srcdir)/par/par_bisect.c \
+	$(srcdir)/par/par_median.c \
 	$(srcdir)/par/par_median_randomized.c \
 	$(srcdir)/par/par_stats.c $(srcdir)/par/par_sync.c \
 	$(srcdir)/par/par_tflops_special.c \
@@ -198,7 +199,8 @@ am__objects_8 = costs.$(OBJEXT) dfs.$(OBJEXT) migoct.$(OBJEXT) \
 	octupdate.$(OBJEXT) oct_util.$(OBJEXT) output.$(OBJEXT) \
 	rootlist.$(OBJEXT)
 @BUILD_OCTREEPARTITIONING_TRUE@am__objects_9 = $(am__objects_8)
-am__objects_10 = order.$(OBJEXT) order_struct.$(OBJEXT) perm.$(OBJEXT)
+am__objects_10 = order.$(OBJEXT) order_struct.$(OBJEXT) \
+	order_tools.$(OBJEXT) perm.$(OBJEXT)
 am__objects_11 = par_average.$(OBJEXT) par_bisect.$(OBJEXT) \
 	par_median.$(OBJEXT) par_median_randomized.$(OBJEXT) \
 	par_stats.$(OBJEXT) par_sync.$(OBJEXT) \
@@ -568,6 +570,7 @@ ORDER_H = \
 ORDER = \
 	$(srcdir)/order/order.c \
 	$(srcdir)/order/order_struct.c \
+	$(srcdir)/order/order_tools.c \
 	$(srcdir)/order/perm.c
 
 PAR_H = \
@@ -1028,6 +1031,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/octupdate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order_struct.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order_tools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par_average.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par_bisect.Po@am__quote@
@@ -1740,6 +1744,20 @@ order_struct.obj: $(srcdir)/order/order_struct.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/order/order_struct.c' object='order_struct.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o order_struct.obj `if test -f '$(srcdir)/order/order_struct.c'; then $(CYGPATH_W) '$(srcdir)/order/order_struct.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/order/order_struct.c'; fi`
+
+order_tools.o: $(srcdir)/order/order_tools.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT order_tools.o -MD -MP -MF $(DEPDIR)/order_tools.Tpo -c -o order_tools.o `test -f '$(srcdir)/order/order_tools.c' || echo '$(srcdir)/'`$(srcdir)/order/order_tools.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/order_tools.Tpo $(DEPDIR)/order_tools.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/order/order_tools.c' object='order_tools.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o order_tools.o `test -f '$(srcdir)/order/order_tools.c' || echo '$(srcdir)/'`$(srcdir)/order/order_tools.c
+
+order_tools.obj: $(srcdir)/order/order_tools.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT order_tools.obj -MD -MP -MF $(DEPDIR)/order_tools.Tpo -c -o order_tools.obj `if test -f '$(srcdir)/order/order_tools.c'; then $(CYGPATH_W) '$(srcdir)/order/order_tools.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/order/order_tools.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/order_tools.Tpo $(DEPDIR)/order_tools.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/order/order_tools.c' object='order_tools.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o order_tools.obj `if test -f '$(srcdir)/order/order_tools.c'; then $(CYGPATH_W) '$(srcdir)/order/order_tools.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/order/order_tools.c'; fi`
 
 perm.o: $(srcdir)/order/perm.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT perm.o -MD -MP -MF $(DEPDIR)/perm.Tpo -c -o perm.o `test -f '$(srcdir)/order/perm.c' || echo '$(srcdir)/'`$(srcdir)/order/perm.c

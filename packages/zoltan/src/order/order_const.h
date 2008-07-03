@@ -33,11 +33,12 @@ extern "C" {
  */
 
 struct Zoltan_Order_Struct {
-/*   ZZ *zz;                       /\* ptr to Zoltan struct *\/ */
+  int needfree;
   int num_objects;              /* # of objects (local) */
   ZOLTAN_ID_PTR gids;           /* ptr to list of global ids */
   ZOLTAN_ID_PTR lids;           /* ptr to list of local ids */
   int *rank;        		/* rank[i] is the rank of gids[i] */
+  ZOLTAN_ID_PTR gidrank;
   int *iperm;
   char method[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
 
@@ -95,6 +96,11 @@ extern int Zoltan_Order_Set_Param(char *, char *);
 /* Utility routines for permutations */
 extern int Zoltan_Get_Distribution(  struct Zoltan_Struct *zz, int **);
 extern int Zoltan_Inverse_Perm(  struct Zoltan_Struct *zz, int *, int *, int *, char *, int);
+
+/* Utility routines for memory management */
+extern int  Zoltan_Order_Init_Tree (struct Zoltan_Order_Struct *order, int blocknbr, int leavesnbr);
+extern void Zoltan_Order_Free_Struct(struct Zoltan_Order_Struct *order);
+
 
 /*****************************************************************************/
 /* Misc. constants */

@@ -147,6 +147,7 @@ ORDER_H = \
 ORDER = \
 	$(srcdir)/order/order.c \
 	$(srcdir)/order/order_struct.c \
+	$(srcdir)/order/order_tools.c \
 	$(srcdir)/order/perm.c
 
 PAR_H = \

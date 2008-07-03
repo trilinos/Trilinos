@@ -664,13 +664,14 @@ int Zoltan_ParMetis_Order(
   ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, &vsp);
 
   /* Allocate space for separator sizes */
-  /* TRICK: +1 to reuse this array as the start table for elimination tree */
-  ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype));
-  if (!ord.sep_sizes){
+
+  if (Zoltan_Order_Init_Tree (&zz->Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
     /* Not enough memory */
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
+  ord.sep_sizes = zz->Order.start; /* Trick : use the same table */
+
   /* Allocate space for direct perm */
   ord.rank = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
   if (!ord.rank){
@@ -678,13 +679,17 @@ int Zoltan_ParMetis_Order(
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
+  if (gr.graph_type!=GLOBAL_GRAPH){
   /* Allocate space for inverse perm */
-  ord.iperm = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
-  if (!ord.iperm){
-    /* Not enough memory */
-    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-    ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    ord.iperm = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
+    if (!ord.iperm){
+      /* Not enough memory */
+      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    }
   }
+  else
+    ord.iperm = NULL;
 
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
@@ -725,9 +730,6 @@ int Zoltan_ParMetis_Order(
   if (gr.graph_type==GLOBAL_GRAPH){ /* Update Elimination tree */
     int numbloc;
     int start;
-    zz->Order.ancestor = (indextype *) ZOLTAN_MALLOC(2*zz->Num_Proc*sizeof(indextype));
-    zz->Order.leaves = (indextype *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(indextype));
-    zz->Order.start = ord.sep_sizes;
 
     if ((!zz->Order.ancestor) || (!zz->Order.leaves)){
       /* Not enough memory */
@@ -775,7 +777,7 @@ int Zoltan_ParMetis_Order(
   memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
   if ((ord.iperm != NULL) && (iperm != NULL))
     memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
-  ZOLTAN_FREE(&ord.iperm);
+  if (ord.iperm != NULL)  ZOLTAN_FREE(&ord.iperm);
   ZOLTAN_FREE(&ord.rank);
   Zoltan_Third_Exit(&gr, NULL, NULL, &vsp, NULL, NULL);
 

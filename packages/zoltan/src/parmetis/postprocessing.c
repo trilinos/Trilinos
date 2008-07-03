@@ -194,7 +194,6 @@ Zoltan_Postprocess_Order (ZZ *zz,
     fprintf(fp, "\n");
     fclose(fp);
   }
-  ZOLTAN_FREE(&ord->sep_sizes);
 
   return (ierr);
 }
