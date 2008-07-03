@@ -178,6 +178,7 @@ int Zoltan_Order(
   }
 #endif /* ZOLTAN_SCOTCH */
   else {
+    fprintf(stderr, "%s\n", opt.method);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown ordering method");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);

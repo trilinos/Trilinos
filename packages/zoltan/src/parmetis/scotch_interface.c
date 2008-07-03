@@ -36,6 +36,14 @@ static PARAM_VARS Scotch_params[] = {
 
 static int Zotlan_Scotch_Bind_Param(ZZ * zz, char *alg, char **strat);
 
+static int
+Zoltan_Scotch_Construct_Offset(ZOS *order,
+			       indextype *children,
+			       int root,
+			       indextype* size,
+			       indextype* tree,
+			       int offset, int *leafnum);
+
 
 /***************************************************************************
  *  The Scotch ordering routine piggy-backs on the Scotch
@@ -68,6 +76,14 @@ int Zoltan_Scotch_Order(
   SCOTCH_Dordering    ordedat;
   int edgelocnbr = 0;
 
+  /* The following are used to convert elimination tree in Zoltan format */
+  indextype          *tree;
+  indextype          *size;
+  indextype          *children;
+  indextype           leafnum;
+  int numbloc;
+  indextype           start;
+  int root = -1;
 
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
   int timer_p = 0;
@@ -205,10 +221,82 @@ int Zoltan_Scotch_Order(
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
 
+  /* Compute permutation */
   if (SCOTCH_dgraphOrderPerm (&grafdat, &ordedat, ord.rank) != 0) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch rank array");
   }
+
+  /* Construct elimination tree */
+  zz->Order.num_blocks = SCOTCH_dgraphOrderCblkDist (&grafdat, &ordedat);
+  if (zz->Order.num_blocks <= 0) {
+    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch block");
+  }
+
+  zz->Order.ancestor = (indextype *) ZOLTAN_MALLOC(2*zz->Num_Proc*sizeof(indextype));
+  zz->Order.start = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype));
+  zz->Order.leaves = (indextype *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(indextype));
+
+  tree = (indextype *) ZOLTAN_MALLOC((zz->Order.num_blocks+1)*sizeof(indextype));
+  size = (indextype *) ZOLTAN_MALLOC((zz->Order.num_blocks+1)*sizeof(indextype));
+
+  if ((!zz->Order.ancestor) || (!zz->Order.start)){
+    /* Not enough memory */
+    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+  }
+
+  if (SCOTCH_dgraphOrderTreeDist (&grafdat, &ordedat, tree, size) != 0) {
+    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch rank array");
+  }
+
+  children = (indextype *) ZOLTAN_MALLOC(3*zz->Order.num_blocks*sizeof(indextype));
+  for (numbloc = 0 ; numbloc < 3*zz->Order.num_blocks ; ++numbloc) {
+    children[numbloc] = -2;
+  }
+
+  /* Now convert scotch separator tree in Zoltan elimination tree */
+  root = -1;
+  for (numbloc = 0 ; numbloc < zz->Order.num_blocks ; ++numbloc) { /* construct a top-bottom tree */
+    indextype tmp;
+    int index=0;
+
+    tmp = tree[numbloc];
+    if (tmp == -1) {
+      root = numbloc;
+      continue;
+    }
+    while ((index<3) && (children[3*tmp+index] > 0))
+      index ++;
+
+    if (index >= 3) {
+      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch tree array");
+    }
+
+    children[3*tmp+index] = numbloc;
+  }
+
+  leafnum = 0;
+  zz->Order.num_blocks = Zoltan_Scotch_Construct_Offset(&zz->Order, children, root, size, tree, 0, &leafnum);
+  zz->Order.leaves[leafnum] =0;
+
+  for (numbloc = 0, start=0 ; numbloc < zz->Order.num_blocks ; ++numbloc) {
+    int tmp;
+    tmp = zz->Order.start[numbloc];
+    zz->Order.start[numbloc]  = start;
+    start += tmp;
+    if (zz->Order.ancestor[numbloc] >= 0)
+      zz->Order.ancestor[numbloc] = size[zz->Order.ancestor[numbloc]];
+  }
+  zz->Order.start[zz->Order.num_blocks]  = start;
+
+  /* Free temporary tables */
+  ZOLTAN_FREE(&tree);
+  ZOLTAN_FREE(&size);
+  ZOLTAN_FREE(&children);
 
   ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, &vsp, &ord, NULL);
 
@@ -234,6 +322,36 @@ int Zoltan_Scotch_Order(
 
   return (ZOLTAN_OK);
 }
+
+
+static int
+Zoltan_Scotch_Construct_Offset(ZOS *order, indextype *children, int root,
+			       indextype* size, indextype* tree, int offset, int *leafnum)
+{
+  int i = 0;
+  int childrensize = 0;
+
+
+  for (i=0 ; i < 2 ; i++) {
+    if (children[3*root+i] < 0)
+      break;
+
+    childrensize += size[children[3*root+i]];
+    offset = Zoltan_Scotch_Construct_Offset(order, children, children[3*root+i], size, tree, offset, leafnum);
+  }
+
+
+  order->start[offset] = size[root] - childrensize;
+  order->ancestor[offset] = tree[root];
+  size[root] = offset; /* size[root] not used now, can be use to convert indices */
+  if (childrensize == 0)  { /* Leaf */
+    order->leaves[*leafnum] = offset;
+    (*leafnum++);
+  }
+  ++offset;
+  return (offset);
+}
+
 
 
 /************************

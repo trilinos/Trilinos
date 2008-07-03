@@ -665,8 +665,7 @@ int Zoltan_ParMetis_Order(
 
   /* Allocate space for separator sizes */
   /* TRICK: +1 to reuse this array as the start table for elimination tree */
-/*   ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype)); */
-  ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*gr.num_obj+1)*sizeof(indextype));
+  ord.sep_sizes = (indextype *) ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(indextype));
   if (!ord.sep_sizes){
     /* Not enough memory */
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
