@@ -125,6 +125,8 @@ TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho, an optimization package], MOOCHO, 
 
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra, a templated linear algebra package], TPETRA, no)
 
+TAC_ARG_ENABLE_FEATURE(trikota, [Build TriKota, a package providing Trilinos/Dakota interoperability], TRIKOTA, no)
+
 TAC_ARG_ENABLE_FEATURE(trilinoscouplings, [Build trilinoscouplings, a package of interfaces between Trilinos packages], TRILINOSCOUPLINGS, no)
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils, a utility package], TRIUTILS, no)
@@ -620,6 +622,17 @@ else
   BUILD_TPETRA=no
 fi
 AM_CONDITIONAL(BUILD_TPETRA, test "X$BUILD_TPETRA" != "Xno")
+
+if test "X$ac_cv_use_trikota" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/TriKota])
+  BUILD_TRIKOTA=yes
+  if test "X$ac_cv_use_trikota_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-trikota"
+  fi
+else
+  BUILD_TRIKOTA=no
+fi
+AM_CONDITIONAL(BUILD_TRIKOTA, test "X$BUILD_TRIKOTA" != "Xno")
 
 if test "X$ac_cv_use_trilinoscouplings" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/trilinoscouplings])

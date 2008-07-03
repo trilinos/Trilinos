@@ -33,16 +33,20 @@ FLIBS="-lg2c" \
 --enable-new_package \
 --enable-galeri \
 --enable-isorropia \
---enable-rbgen \
 --enable-moertel \
 --enable-anasazi \
---enable-intrepid \
 --enable-ctrilinos \
 --enable-didasko \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/trilinos/dev/serial/dbg
 
-# 2008/05/20: Sundance is not building currently
-# --enable-sundance
+# 2008/07/03: RBGen is trying to link in the middle of building libraries
+#--enable-rbgen \
+
+# 2008/07/03: Sundance does not support the 'examples' target
+# --enable-sundance \
+
+# 2008/07/03: Intrepid hangs when building tests?
+#--enable-intrepid \
 
 # These are the compiler options that I should be using!
 # CXXFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions -Wshadow -Woverloaded-virtual" \

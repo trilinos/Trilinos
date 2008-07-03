@@ -33,7 +33,6 @@
 
 
 #include "RTOpPack_Types.hpp"
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_PrimitiveTypeTraits.hpp"
 #include "Teuchos_Describable.hpp"
 
@@ -213,8 +212,8 @@ public:
    * The default implementation does not do anything (i.e. by default
    * there is no reduction operation performed).
    */
-  virtual void reduce_reduct_objs(
-    const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
+  virtual void reduce_reduct_objs_new(
+    const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
     ) const;
 
   /** \brief Reinitialize an already created reduction object.
@@ -268,7 +267,7 @@ public:
    * The default implementation uses the value created in the
    * constructor <tt>RTOpT()</tt>.
    */
-  virtual const char* op_name() const;
+  virtual const std::string op_name_new() const;
 
   // 2007/11/14: rabartl: ToDo: Above: change to return std::string.  Don't
   // bother deprecating the old function since you can't really do it very
@@ -281,7 +280,7 @@ public:
    * override should be needed by subclasses (unless a slightly more
    * efficient implementation is desired).
    */
-  virtual RTOpT<Scalar>& operator=(const RTOpT<Scalar>& op);
+  virtual RTOpT<Scalar>& copyStateFrom(const RTOpT<Scalar>& op);
 
   /** \brief Return the number of entries of each type of basic data type in
    * the externalized state for the operator object.
@@ -437,6 +436,34 @@ public:
    * (i.e. <tt>global_offset</tt> and/or <tt>sub_dim</tt> not the same) then
    * IncompatibleVecs is thrown.
    */
+  virtual void apply_op_new(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const
+    {
+      this->apply_op(sub_vecs.size(), sub_vecs.getRawPtr(),
+        targ_sub_vecs.size(), targ_sub_vecs.getRawPtr(),
+        reduct_obj.get() );
+    }
+
+  //@}
+
+  /** \name Deprecated */
+  //@{
+  
+  /** \brief Deprecated */
+  virtual const char* op_name() const;
+
+  /** \brief Deprecated */
+  virtual RTOpT<Scalar>& operator=(const RTOpT<Scalar>& op);
+
+  /** \brief Deprecated */
+  virtual void reduce_reduct_objs(
+    const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
+    ) const;
+
+  /** \brief Deprecated */
   virtual void apply_op(
     const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[],
     const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[],
@@ -451,17 +478,23 @@ protected:
    * type. */
   RTOpT( const std::string &op_name_base );
 
+  /** \brief Just set the opeator name. */
+  void setOpNameBase( const std::string &op_name_base );
+
 private:
 
   std::string op_name_;
 
 }; // end class RTOpT
 
+
 // 2007/11/14: rabartl: ToDo: Break off an RTOpDefaultBase interface and put
 // all default implementation functions in there.
 
+
 // 2007/11/14: rabartl: ToDo: Change functions to accept ArrayView objects and
 // depricate raw pointer functions.
+
 
 } // end namespace RTOpPack
 

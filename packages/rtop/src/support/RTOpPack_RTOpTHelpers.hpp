@@ -128,11 +128,10 @@ public:
       return dyn_cast<const ReductTargetScalar<ReductScalar> >(reduct_obj).get();
     }
   /** \brief . */
-  void setRawVal( const ReductScalar &rawVal, ReductTarget *reduct_obj ) const
+  void setRawVal( const ReductScalar &rawVal,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const
     {
-#ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION( reduct_obj==NULL, std::invalid_argument, "Error!" );
-#endif
       using Teuchos::dyn_cast;
       dyn_cast<ReductTargetScalar<ReductScalar> >(*reduct_obj).set(rawVal);
     }
@@ -270,6 +269,14 @@ public:
         *out << "reduct_op = " << Teuchos::describe(*reduct_obj,Teuchos::VERB_EXTREME);
       }
 #endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+    }
+  //@}
+  /** \name Deprecated. */
+  //@{
+  /** \brief Deprecated. */
+  void setRawVal( const ReductScalar &rawVal, ReductTarget *reduct_obj ) const
+    {
+      setRawVal(rawVal, Teuchos::ptr(reduct_obj));
     }
   //@}
 protected:
@@ -731,7 +738,9 @@ public:
     }
 };
 
+
 } // namespace RTOpPack
+
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==1, num_targ_vecs==0.
  *
@@ -754,6 +763,7 @@ public:
   TEST_FOR_EXCEPT(globalOffset<0); \
   const_iter_t v0_val = (SUB_VECS)[0].values().begin(); \
   const ptrdiff_t v0_s = (SUB_VECS)[0].stride()
+
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==2, num_targ_vecs==0.
  *
@@ -786,6 +796,7 @@ public:
   const_iter_t v1_val = (SUB_VECS)[1].values().begin(); \
   const ptrdiff_t v1_s = (SUB_VECS)[1].stride()
 
+
 /** \brief Use within an apply_op(...) function implementation where num_vecs==0, num_targ_vecs==1.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
@@ -807,6 +818,7 @@ public:
   TEST_FOR_EXCEPT(globalOffset<0); \
   iter_t z0_val = (TARG_SUB_VECS)[0].values().begin(); \
   const ptrdiff_t z0_s = (TARG_SUB_VECS)[0].stride()
+
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==1, num_targ_vecs==1.
  */
@@ -837,6 +849,7 @@ public:
   const ptrdiff_t v0_s = (SUB_VECS)[0].stride(); \
   iter_t z0_val = (TARG_SUB_VECS)[0].values().begin(); \
   const ptrdiff_t z0_s = (TARG_SUB_VECS)[0].stride()
+
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==2, num_targ_vecs==1.
  *
@@ -911,6 +924,336 @@ public:
   const_iter_t v2_val = (SUB_VECS)[2].values().begin(); \
   const ptrdiff_t v2_s = (SUB_VECS)[2].stride();
 
+
+
+
+
+
+
+namespace RTOpPack {
+
+
+/** \brief Null reduction object reduction operator. */
+template<class Scalar>
+class SumScalarReductObjReduction {
+public:
+  /** \brief . */
+  inline void operator()(const Scalar& in_reduct, Scalar& inout_reduct) const
+    {
+      inout_reduct += in_reduct;
+    }
+};
+
+
+/** \brief . */
+template<class Scalar, class ReductScalar, class ReductObjReduction>
+class ROpScalarReductionWithOpBase
+  : public ROpScalarReductionBase<Scalar, ReductScalar>
+{
+public:
+
+  /** \brief . */
+  ROpScalarReductionWithOpBase(
+    ReductObjReduction reductObjReduction = ReductObjReduction()
+    )
+    : RTOpT<Scalar>(""),
+      reductObjReduction_(reductObjReduction)
+    {}
+
+  /** \brief . */
+  ReductScalar operator()(const ReductTarget& reduct_obj ) const
+    { return this->getRawVal(reduct_obj); }
+
+  /** @name Overridden from RTOpT */
+  //@{
+
+  /** \brief . */
+  virtual void reduce_reduct_objs_new(
+    const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
+    ) const
+    {
+      const ReductScalar scalar_in_reduct_obj = this->getRawVal(in_reduct_obj);
+      ReductScalar scalar_inout_reduct_obj = this->getRawVal(*inout_reduct_obj);
+      reductObjReduction_(scalar_in_reduct_obj, scalar_inout_reduct_obj);
+      this->setRawVal( scalar_inout_reduct_obj, inout_reduct_obj );
+    }
+
+  /** \brief Deprecated. */
+  virtual void reduce_reduct_objs(
+    const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
+    ) const
+    {
+      reduce_reduct_objs_new( in_reduct_obj, Teuchos::ptr(inout_reduct_obj) );
+    }
+
+  /** \brief Deprecated. */
+  virtual void apply_op(
+    const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[],
+    const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[],
+    ReductTarget *reduct_obj
+    ) const
+    {
+      apply_op_new(
+        Teuchos::arrayView(sub_vecs, num_vecs),
+        Teuchos::arrayView(targ_sub_vecs, num_targ_vecs),
+        Teuchos::ptr(reduct_obj)
+        );
+    }
+
+  //@}
+
+private:
+
+  ReductObjReduction reductObjReduction_;
+
+};
+
+
+//
+// ROp 1 scalar reduction
+//
+
+
+/** \brief Base class for scalar reduction RTOps with one input vector. */
+template<class Scalar, class ReductScalar, class EleWiseReduction,
+  class ReductObjReduction>
+class ROp_1_ScalarReduction
+  : public ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction>
+{
+public:
+
+  /** \brief . */
+  typedef ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction> base_t;
+
+  /** \brief . */
+  ROp_1_ScalarReduction(
+    EleWiseReduction eleWiseReduction = EleWiseReduction(),
+    ReductObjReduction reductObjReduction = ReductObjReduction()
+    )
+    : RTOpT<Scalar>(""),
+      base_t(reductObjReduction),
+      eleWiseReduction_(eleWiseReduction)
+    {}
+
+  /** @name Overridden from RTOpT */
+  //@{
+
+  /** \brief . */
+  void apply_op_new(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj_in
+    ) const
+    {
+      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
+      using Teuchos::dyn_cast;
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+
+      ReductTargetScalar<ReductScalar> &reduct_obj =
+        dyn_cast<ReductTargetScalar<ReductScalar> >(*reduct_obj_in); 
+      ReductScalar reduct = reduct_obj.get();
+      
+      const RTOpPack::index_type subDim = sub_vecs[0].subDim();
+
+      const_iter_t v0_val = sub_vecs[0].values().begin();
+      const ptrdiff_t v0_s = sub_vecs[0].stride();
+
+      if ( v0_s == 1 ) {
+        for( Teuchos_Index i = 0; i < subDim; ++i )
+          eleWiseReduction_( *v0_val++, reduct);
+      }
+      else {
+        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s )
+          eleWiseReduction_( *v0_val, reduct);
+      }
+
+      reduct_obj.set(reduct);
+
+    }
+
+  //@}
+
+private:
+
+  EleWiseReduction eleWiseReduction_;
+
+};
+
+
+/** \brief. */
+#define RTOP_ROP_1_REDUCT_SCALAR_MAG( ROP_CLASS_NAME ) \
+  template<class Scalar> \
+  class ROP_CLASS_NAME ## EleWiseReduction \
+  { \
+  public: \
+    inline void operator()( \
+      const Scalar &v0, \
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType &reduct \
+      ) const; \
+  }; \
+  \
+  \
+  template<class ScalarMag> \
+  class ROP_CLASS_NAME ## ReductObjReduction \
+  { \
+  public: \
+    inline void operator()(const ScalarMag& in_reduct, \
+      ScalarMag& inout_reduct) const; \
+  }; \
+  \
+  \
+  template<class Scalar> \
+  class ROP_CLASS_NAME  \
+    : public ROp_1_ScalarReduction<Scalar, \
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType, \
+        ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
+        ROP_CLASS_NAME ## ReductObjReduction<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > \
+  { \
+  public: \
+    typedef ROp_1_ScalarReduction<Scalar, \
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType, \
+        ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
+        ROP_CLASS_NAME ## ReductObjReduction<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > base_t; \
+    ROP_CLASS_NAME() \
+      : RTOpT<Scalar>( #ROP_CLASS_NAME ) \
+      {} \
+  }; \
+  \
+  \
+  template<class Scalar> \
+  void ROP_CLASS_NAME ## EleWiseReduction<Scalar>::operator()( \
+    const Scalar &v0, \
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType &reduct \
+    ) const
+
+
+/** \brief . */
+#define RTOP_ROP_1_REDUCT_SCALAR_MAG_REDUCT_OBJ_REDUCTION( ROP_CLASS_NAME ) \
+  template<class ScalarMag> \
+  void ROP_CLASS_NAME ## ReductObjReduction<ScalarMag>::operator()( \
+    const ScalarMag& in_reduct, ScalarMag& inout_reduct) const
+
+
+// 2008/07/03: rabart: Above: I have broken from the Thyra guideline of
+// passing in-out arguments as const Ptr<Type>& and used raw non-const
+// reference Type& instead to allow the user function to be more readable.
+
+
+//
+// ROp 2 scalar reduction
+//
+
+
+/** \brief Base class for scalar reduction RTOps with two input vectors. */
+template<class Scalar, class ReductScalar, class EleWiseReduction,
+  class ReductObjReduction>
+class ROp_2_ScalarReduction
+  : public ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction>
+{
+public:
+
+  /** \brief . */
+  typedef ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction> base_t;
+
+  /** \brief . */
+  ROp_2_ScalarReduction(
+    EleWiseReduction eleWiseReduction = EleWiseReduction(),
+    ReductObjReduction reductObjReduction = ReductObjReduction()
+    )
+    : RTOpT<Scalar>(""),
+      base_t(reductObjReduction),
+      eleWiseReduction_(eleWiseReduction)
+    {}
+
+  /** @name Overridden from RTOpT */
+  //@{
+
+  /** \brief . */
+  void apply_op_new(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj_in
+    ) const
+    {
+      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
+      using Teuchos::dyn_cast;
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+
+      ReductTargetScalar<Scalar> &reduct_obj =
+        dyn_cast<ReductTargetScalar<Scalar> >(*reduct_obj_in); 
+      Scalar reduct = reduct_obj.get();
+
+      const RTOpPack::index_type subDim = sub_vecs[0].subDim();
+
+      const_iter_t v0_val = sub_vecs[0].values().begin();
+      const ptrdiff_t v0_s = sub_vecs[0].stride();
+      const_iter_t v1_val = sub_vecs[1].values().begin();
+      const ptrdiff_t v1_s = sub_vecs[1].stride();
+
+      if( v0_s == 1 && v1_s == 1 ) {
+        for( Teuchos_Index i = 0; i < subDim; ++i )
+          eleWiseReduction_( *v0_val++, *v1_val++, reduct);
+      }
+      else {
+        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s, v1_val += v1_s )
+          eleWiseReduction_( *v0_val, *v1_val, reduct);
+      }
+
+      reduct_obj.set(reduct);
+
+    }
+
+  //@}
+
+private:
+
+  EleWiseReduction eleWiseReduction_;
+
+};
+
+
+#define RTOP_ROP_2_REDUCT_SCALAR_SUM( ROP_CLASS_NAME ) \
+  template<class Scalar> \
+  class ROP_CLASS_NAME ## EleWiseReduction \
+  { \
+  public: \
+    inline void operator()(const Scalar &v0, const Scalar &v1, Scalar &reduct) const; \
+  }; \
+  \
+  \
+  template<class Scalar> \
+  class ROP_CLASS_NAME  \
+    : public ROp_2_ScalarReduction<Scalar, Scalar, ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
+        RTOpPack::SumScalarReductObjReduction<Scalar> > \
+  { \
+  public: \
+    typedef ROp_2_ScalarReduction<Scalar, Scalar, ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
+      RTOpPack::SumScalarReductObjReduction<Scalar> > base_t; \
+    ROP_CLASS_NAME() \
+      : RTOpT<Scalar>( #ROP_CLASS_NAME ) \
+      {} \
+  }; \
+  \
+  template<class Scalar> \
+  void ROP_CLASS_NAME ## EleWiseReduction<Scalar>::operator()( \
+    const Scalar &v0, const Scalar &v1, Scalar &reduct) const
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+} // namespace RTOpPack
 
 
 #endif // RTOPPACK_RTOP_NEW_T_HELPERS_HPP

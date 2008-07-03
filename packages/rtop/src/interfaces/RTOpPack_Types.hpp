@@ -34,7 +34,9 @@
 
 #include "RTOp_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
 
 
@@ -57,6 +59,8 @@ using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
 /** \brief . */
 using Teuchos::Array;
+/** \brief . */
+using Teuchos::ScalarTraits;
 
 /** \brief Depreciated. */
 typedef Teuchos_Index index_type;
@@ -212,8 +216,8 @@ public:
  * <tt>const</tt> in this context is that the view of the data can not change.
  *
  * <b>WARNING!</b> the default copy constructor and assignment operators are
- * allowed which results in only pointer copy, not deep copy!  You have been
- * warned!
+ * allowed which results in only pointer copy, not deep copy.  This means this
+ * class has shallow copy semantics. You have been warned!
  *
  * NOTE: It is perfectly safe to derive this class from ConstSubVectorView
  * even through it does not have a virtual destructor.  That is because this

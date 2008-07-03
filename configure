@@ -712,6 +712,8 @@ BUILD_RYTHMOS_TRUE
 BUILD_RYTHMOS_FALSE
 BUILD_TPETRA_TRUE
 BUILD_TPETRA_FALSE
+BUILD_TRIKOTA_TRUE
+BUILD_TRIKOTA_FALSE
 BUILD_TRILINOSCOUPLINGS_TRUE
 BUILD_TRILINOSCOUPLINGS_FALSE
 BUILD_DIDASKO_TRUE
@@ -769,6 +771,7 @@ packages/moertel
 packages/PyTrilinos
 packages/rythmos
 packages/tpetra
+packages/TriKota
 packages/trilinoscouplings
 packages/didasko
 packages/WebTrilinos
@@ -1443,6 +1446,8 @@ Optional Features:
                           no)
   --enable-tpetra         Build tpetra, a templated linear algebra package
                           (default is no)
+  --enable-trikota        Build TriKota, a package providing Trilinos/Dakota
+                          interoperability (default is no)
   --enable-trilinoscouplings
                           Build trilinoscouplings, a package of interfaces
                           between Trilinos packages (default is no)
@@ -3642,6 +3647,34 @@ fi
 
 
 
+# Check whether --enable-trikota was given.
+if test "${enable_trikota+set}" = set; then
+  enableval=$enable_trikota; ac_cv_use_trikota=$enableval
+ac_cv_use_trikota_explicit=$enableval
+else
+  ac_cv_use_trikota=no
+ac_cv_use_trikota_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use trikota" >&5
+echo $ECHO_N "checking whether to use trikota... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_trikota" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TRIKOTA
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 # Check whether --enable-trilinoscouplings was given.
 if test "${enable_trilinoscouplings+set}" = set; then
   enableval=$enable_trilinoscouplings; ac_cv_use_trilinoscouplings=$enableval
@@ -4577,6 +4610,25 @@ else
 fi
 
 
+if test "X$ac_cv_use_trikota" != "Xno"; then
+  subdirs="$subdirs packages/TriKota"
+
+  BUILD_TRIKOTA=yes
+  if test "X$ac_cv_use_trikota_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-trikota"
+  fi
+else
+  BUILD_TRIKOTA=no
+fi
+ if test "X$BUILD_TRIKOTA" != "Xno"; then
+  BUILD_TRIKOTA_TRUE=
+  BUILD_TRIKOTA_FALSE='#'
+else
+  BUILD_TRIKOTA_TRUE='#'
+  BUILD_TRIKOTA_FALSE=
+fi
+
+
 if test "X$ac_cv_use_trilinoscouplings" != "Xno"; then
   subdirs="$subdirs packages/trilinoscouplings"
 
@@ -5081,6 +5133,13 @@ if test -z "${BUILD_TPETRA_TRUE}" && test -z "${BUILD_TPETRA_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TRIKOTA_TRUE}" && test -z "${BUILD_TRIKOTA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRIKOTA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TRIKOTA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -5837,6 +5896,8 @@ BUILD_RYTHMOS_TRUE!$BUILD_RYTHMOS_TRUE$ac_delim
 BUILD_RYTHMOS_FALSE!$BUILD_RYTHMOS_FALSE$ac_delim
 BUILD_TPETRA_TRUE!$BUILD_TPETRA_TRUE$ac_delim
 BUILD_TPETRA_FALSE!$BUILD_TPETRA_FALSE$ac_delim
+BUILD_TRIKOTA_TRUE!$BUILD_TRIKOTA_TRUE$ac_delim
+BUILD_TRIKOTA_FALSE!$BUILD_TRIKOTA_FALSE$ac_delim
 BUILD_TRILINOSCOUPLINGS_TRUE!$BUILD_TRILINOSCOUPLINGS_TRUE$ac_delim
 BUILD_TRILINOSCOUPLINGS_FALSE!$BUILD_TRILINOSCOUPLINGS_FALSE$ac_delim
 BUILD_DIDASKO_TRUE!$BUILD_DIDASKO_TRUE$ac_delim
@@ -5857,7 +5918,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

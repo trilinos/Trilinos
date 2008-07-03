@@ -182,7 +182,7 @@ bool compareArrays(
 #define TEUCHOS_TEST_FLOATING_EQUALITY( v1, v2, tol, out, success ) \
   { \
     const bool l_result = Teuchos::testRelErr( \
-      #v1, v1, #v2, v2, "tol", tol, "tol", tol, &out ); \
+      #v1, v1, #v2, v2, "tol", tol, "tol", tol, Teuchos::outArg(out) ); \
     if (!l_result) (success) = false; \
   }
 

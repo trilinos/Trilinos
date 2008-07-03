@@ -8,6 +8,8 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_as.hpp"
+
 
 //
 // Unit test for Teuchos::Comm
@@ -15,9 +17,9 @@
 
 template<typename Ordinal>
 bool checkSumResult(
-  const Teuchos::Comm<Ordinal>                          &comm
-  ,const Teuchos::RCP<Teuchos::FancyOStream>    &out 
-  ,const bool                                           result
+  const Teuchos::Comm<Ordinal> &comm,
+  const Teuchos::RCP<Teuchos::FancyOStream> &out,
+  const bool result
   )
 {
   *out << "\nChecking that the above test passed in all processes ...";
@@ -34,8 +36,8 @@ bool checkSumResult(
 
 template<typename Ordinal, typename Packet>
 bool testComm(
-  const Teuchos::Comm<Ordinal>                          &comm
-  ,const Teuchos::RCP<Teuchos::FancyOStream>    &out 
+  const Teuchos::Comm<Ordinal> &comm,
+  const Teuchos::RCP<Teuchos::FancyOStream> &out 
   )
 {
   using Teuchos::RCP;
@@ -44,6 +46,7 @@ bool testComm(
   using Teuchos::VerboseObjectBase;
   using Teuchos::OSTab;
   using Teuchos::dyn_cast;
+  using Teuchos::as;
 
   typedef Teuchos::ScalarTraits<Packet> ST;
   typedef Teuchos::OrdinalTraits<Ordinal> OT;
@@ -315,19 +318,17 @@ bool testComm(
 /*
   *out << "\nReducing/summing sendBuff[] and scattering into recvBuff[] ...\n";
 
-  std::fill_n(&recvBuff[0],1,Packet(0));
+  std::fill_n(&recvBuff[0], 1, as<Packet>(0));
 
-  Teuchos::Array<Ordinal>
-    recvCounts(numProcs);
+  Teuchos::Array<Ordinal> recvCounts(numProcs);
   
-  const Ordinal
-    numItemsPerProcess = count/numProcs;
+  const Ordinal numItemsPerProcess = count/numProcs;
 
-  std::fill(recvCounts.begin(),recvCounts.end(),numItemsPerProcess);
+  std::fill(recvCounts.begin(), recvCounts.end(), numItemsPerProcess);
 
   reduceAllAndScatter(
-    comm,Teuchos::REDUCE_SUM
-    ,count,&sendBuff[0],&recvCounts[0],&recvBuff[0]
+    comm, Teuchos::REDUCE_SUM,
+    count, &sendBuff[0], &recvCounts[0], &recvBuff[0]
     );
 
   *out << "\nChecking that recvBuff[i] == sum(k+1,k=0...numProcs-1) * (offset+i) ...";

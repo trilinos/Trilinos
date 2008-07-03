@@ -315,21 +315,21 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
     // conditionals but I don't want to bother.
   }
   else {
-    std::copy(recvCounts,recvCounts+size_,&_recvCounts[0]);
+    std::copy(recvCounts, recvCounts+size_, &_recvCounts[0]);
     int_recvCounts = &_recvCounts[0];
   }
   MPI_Datatype _chars_type;
-  MPI_Type_contiguous(blockSize,MPI_CHAR,&_chars_type);
+  MPI_Type_contiguous(blockSize, MPI_CHAR, &_chars_type);
   RCP<const OpaqueWrapper<MPI_Datatype> >
-    chars_type = opaqueWrapper(_chars_type,MPI_Type_free);
+    chars_type = opaqueWrapper(_chars_type, MPI_Type_free);
   // Perform the operation
-  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
+  MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp, false)));
   MPI_Reduce_scatter(
-    const_cast<char*>(sendBuffer), myGlobalReducts
-    ,const_cast<int*>(int_recvCounts)
-    ,*chars_type
-    ,op.mpi_op()
-    ,*rawMpiComm_
+    const_cast<char*>(sendBuffer), myGlobalReducts,
+    const_cast<int*>(int_recvCounts),
+    *chars_type,
+    op.mpi_op(),
+    *rawMpiComm_
     );
 }
   
