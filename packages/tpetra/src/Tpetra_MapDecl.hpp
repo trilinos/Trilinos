@@ -96,14 +96,20 @@ namespace Tpetra {
     //! Returns maximum local index
     OrdinalType getMaxLocalIndex() const;
 
-    //! Returns minimum global index
+    //! Returns minimum global index owned by this image
     OrdinalType getMinGlobalIndex() const;
 
-    //! Returns maximum global index
+    //! Returns maximum global index owned by this image
     OrdinalType getMaxGlobalIndex() const;
 
     //! Return the local index for a given global index
     OrdinalType getLocalIndex(OrdinalType globalIndex) const;
+
+    //! Return the minimum global index over all images
+    OrdinalType getMinAllGlobalIndex() const;
+
+    //! Return the maximum global index over all images
+    OrdinalType getMaxAllGlobalIndex() const;
 
     //! Return the global index for a given local index
     OrdinalType getGlobalIndex(OrdinalType localIndex) const;
@@ -157,10 +163,6 @@ namespace Tpetra {
 
     // setup the directory
     void directorySetup();
-
-    // convenience functions for returning inner data class, both const and nonconst versions.
-    ElementSpaceData<OrdinalType> & data() {return(*MapData_);};
-    const ElementSpaceData<OrdinalType> & data() const {return(*MapData_);};
 
   }; // Map class
 

@@ -62,13 +62,13 @@ namespace Tpetra {
 		~MapData();
 
   private:
+    // some of the following are globally coherent: that is, they have been guaranteed to 
+    // match across all images, and may be assumed to do so
 		const OrdinalType indexBase_;
 		const OrdinalType numMyEntries_;
 		const OrdinalType numGlobalEntries_;
 		Teuchos::RCP< const Teuchos::Comm<OrdinalType> > Comm_;
     const OrdinalType numMyEntries_;
-    const OrdinalType minLID_;
-    const OrdinalType maxLID_;
     const OrdinalType minMyGID_;
     const OrdinalType maxMyGID_;
     const OrdinalType minAllGID_;
@@ -76,7 +76,8 @@ namespace Tpetra {
     const bool contiguous_;
     const bool global_;
     bool haveDirectory_;
-    // TODO: why is lgMap_ const but glMap_ non-const?
+    // FINISH: why is lgMap_ const but glMap_ non-const?
+    // FINISH: it seems that lgMap_ requires only direct access, a std::vector should suffice
     map<OrdinalType, OrdinalType> lgMap_;
     const map<OrdinalType, OrdinalType> glMap_;
     std::vector<OrdinalType> myGlobalEntries_;
@@ -86,7 +87,6 @@ namespace Tpetra {
 		MapData(MapData<OrdinalType> const& source);
 		//! Assignment operator (declared but not defined, do not use)
 		MapData<OrdinalType>& operator = (MapData<OrdinalType> const& source);
-
   };
 
 } // namespace Tpetra
