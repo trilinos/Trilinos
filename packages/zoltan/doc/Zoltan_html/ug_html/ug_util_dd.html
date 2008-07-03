@@ -656,24 +656,33 @@ GID.  Inexperienced users do not need this routine.
 Experienced users may elect to create their own hash function based on
 their knowledge of their GID naming scheme.  The user's hash
 function must have calling arguments compatible with <b><a href="../dev_html/dev_services_hash.html">Zoltan_Hash</a></b>.
+The final argument, <i>nprocs</i>, is the number of processors in
+the communicator passed to <a href="#DD_Create"><b>Zoltan_DD_Create</b></a>.
 Consider that a user has defined a hash function, myhash, as<br>
 <p>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
- unsigned int myhash(<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> gid, int length, unsigned int naverage)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ extern int total_num_gid; <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ unsigned int myhash(<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> gid, int length, unsigned int nproc)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Assuming a processor is more likely to query GIDs that are numerically
+close to the GIDs it owns, */ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* this hash function tries to store the gid's directory information
+       near the gid's owning processor's neighborhood. */ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* GID length is one ; total_num_gid is a global variable with the total number of GIDs in the application. */<br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-return *gid / naverage ;  /* GID length assumed to be 1 ; naverage = total_GIDS/nproc */<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+return ((*gid * nproc) / total_num_gid);  <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 }<br>
 <p>
 Then the call to register this hash function is:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-Zoltan_DD_Set_Hash (myhash) ;<br>
+Zoltan_DD_Set_Hash(dd, myhash);<br>
 <p>
-NOTE:  This hash function might group the gid's directory information
-       near the gid's owning processor's neighborhood, for an
-       appropriate naming scheme.
 <p>
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
