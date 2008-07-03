@@ -1,5 +1,7 @@
 #!/bin/bash
 
+TRILINOS_BUILD=$1; shift
+
 # Set up the environment for the sake of cron
 cd /home/rabartl
 source .bash_profile
@@ -9,23 +11,31 @@ source .bash_profile
 
 TRILINOS_BASE_DIR=/mnt/disk2/rabartl/Trilinos.nightly-tests/Trilinos
 
-echo
-echo "Running build for Trilinos serial debug"
-echo
-date
-echo
+if [ "$TRILINOS_BUILD" == "serial" ]; then
 
-cd  $TRILINOS_BASE_DIR/commonTools/test/harness
-perl runharness --trilinos-dir=$TRILINOS_BASE_DIR --build-name=gabriel-nighly-serial-debug
+  echo
+  echo "Running build for Trilinos serial debug"
+  echo
+  date
+  echo
+  
+  cd  $TRILINOS_BASE_DIR/commonTools/test/harness
+  perl runharness --trilinos-dir=$TRILINOS_BASE_DIR --build-name=gabriel-nighly-serial-debug
+  
+fi
 
-echo
-echo "Running build for Trilinos mpi optimized"
-echo
-date
-echo
+if [ "$TRILINOS_BUILD" == "mpi" ]; then
 
-cd  $TRILINOS_BASE_DIR/commonTools/test/harness
-perl runharness --trilinos-dir=$TRILINOS_BASE_DIR --build-name=gabriel-nighly-mpi
+  echo
+  echo "Running build for Trilinos mpi optimized"
+  echo
+  date
+  echo
+  
+  cd  $TRILINOS_BASE_DIR/commonTools/test/harness
+  perl runharness --trilinos-dir=$TRILINOS_BASE_DIR --build-name=gabriel-nighly-mpi
+  
+fi
 
 echo
 date
