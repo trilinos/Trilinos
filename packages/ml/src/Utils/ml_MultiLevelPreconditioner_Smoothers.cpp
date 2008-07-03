@@ -80,7 +80,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   string PreOrPostSmoother = List_.get("smoother: pre or post","both");
 
   string Smoother = List_.get("smoother: type","Chebyshev");
-
+  
 #ifdef HAVE_ML_AZTECOO
   RCP<std::vector<int> > aztecOptions = List_.get("smoother: Aztec options",SmootherOptions_);
   RCP<std::vector<double> > aztecParams = List_.get("smoother: Aztec params",SmootherParams_);
@@ -298,6 +298,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
                           << Mynum_smoother_steps << ",omega=" << Myomega << ","
                           << MyPreOrPostSmoother << ")" << endl;
+
+      bool gs_type = List_.get("smoother: Gauss-Seidel efficient symmetric",false);
+      
 #ifdef HAVE_ML_IFPACK
       if (ml_->Amat[currentLevel].type == ML_TYPE_CRS_MATRIX) {
         if (verbose_)
@@ -308,22 +311,44 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         MyIfpackList.set("relaxation: type", "Gauss-Seidel");
         MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
         MyIfpackList.set("relaxation: damping factor", Myomega);
-        ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
-                               IfpackOverlap, currentLevel, pre_or_post,
-                               //MyIfpackList,*Comm_);
-                               (void*)&MyIfpackList,(void*)Comm_);
+
+        if(gs_type){
+          if(pre_or_post==ML_PRESMOOTHER || pre_or_post==ML_BOTH) {
+            ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+                                   IfpackOverlap, currentLevel, ML_PRESMOOTHER,
+                                   (void*)&MyIfpackList,(void*)Comm_);
+          }
+          if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
+            BackwardSmoothingList_= MyIfpackList;
+            BackwardSmoothingList_.set("relaxation: backward mode",true);        
+            ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+                                 IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
+                                   (void*)&BackwardSmoothingList_,(void*)Comm_);
+          }          
+        }
+        else{          
+          ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+                                 IfpackOverlap, currentLevel, pre_or_post,
+                                 //MyIfpackList,*Comm_);
+                                 (void*)&MyIfpackList,(void*)Comm_);
+        }
       }
       else
 #endif
-      ML_Gen_Smoother_GaussSeidel(ml_, currentLevel, pre_or_post,
-				  Mynum_smoother_steps, Myomega);
+
+        if(gs_type)
+          ML_Gen_Smoother_EffSymGaussSeidel(ml_, currentLevel, pre_or_post,
+                                            Mynum_smoother_steps, Myomega);
+
+        else
+          ML_Gen_Smoother_GaussSeidel(ml_, currentLevel, pre_or_post,
+                                      Mynum_smoother_steps, Myomega);
 
     } else if( Smoother == "ML Gauss-Seidel" ) {
 
       // ======================= //
       // ML's point Gauss-Seidel //
       // ======================= //
-
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
                          << MyPreOrPostSmoother << ")" << endl;
@@ -336,7 +361,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ====================== //
       // symmetric Gauss-Seidel //
       // ====================== //
-
       if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
 			  << Mynum_smoother_steps << ",omega=" << Myomega << ","
 			  << MyPreOrPostSmoother << ")" << endl;

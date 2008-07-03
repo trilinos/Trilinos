@@ -62,6 +62,11 @@ struct ML_SmootherFunc_Struct
    envelope         message-passing information that is used in
                     ML_exchange_bdry
 *******************************************************************************/
+typedef enum {ML_GS_standard=0,ML_GS_symmetric,ML_GS_efficient_symmetric} ML_GS_SWEEP_TYPE;
+/* 0 - Standard G-S or Block G-S
+   1 - Symmetric G-S or Block G-S
+   2 - Efficient Symmetric G-S or Block G-S
+   (i.e. pre=forward, post=backward) */
 
 struct ML_Smoother_Struct 
 {
@@ -74,15 +79,13 @@ struct ML_Smoother_Struct
    ML_SmootherFunc         *smoother;
    void                    (*data_destroy)(void *);
    double                  build_time, apply_time;
-  int                     times_applied;
+   int                     times_applied;
    char                    *label;
    int                     pre_or_post;
    ML_Comm_Envelope        *envelope;
    int                     output_level;
-   int                     symmetric_sweep;
-	                     /* When block GS is used, 1 indicates symmetric */
-                             /* block Gauss-Seidel and 0 indicates standard  */
-                             /* block Gauss-Seidel.                          */
+   ML_GS_SWEEP_TYPE        gs_sweep_type;
+
 };
 
 struct ML_Sm_BGS_Data_Struct 

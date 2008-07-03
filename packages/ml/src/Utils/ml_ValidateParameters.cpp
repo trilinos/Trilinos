@@ -109,7 +109,7 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   setIntParameter("smoother: MLS polynomial order",2,"Unlisted option",PL,intParam);  
   setIntParameter("coarse: polynomial order",2,"Unlisted option",PL,intParam);
   setIntParameter("coarse: MLS polynomial order",2,"Unlisted option",PL,intParam);
-
+  
   /*
      Coarse grid options.
 
@@ -140,6 +140,10 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   //setDoubleParameter("smoother: MLS alpha",2.0,"Damping radius for Chebshev",PL,dblParam);
   setIntParameter("smoother: max processes",-1,"Maximum number of procs for coarse solve (Superludist/MUMPS)",PL,intParam);  
 
+
+  /* EXPERIMENTAL - Half-GS Smoothing */
+  PL->set("smoother: Gauss-Seidel efficient symmetric",false); 
+  
   /* Coarse IFPACK Solvers - experimental */
   //PL->set("smoother: ifpack list",dummy);
   //PL->set("smoother: ifpack type",std::string(""));
@@ -310,6 +314,17 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("repartition: estimated iterations",0,"Estimated number of iterations",PL,intParam);
   setStringToIntegralParameter<int>("repartition: Zoltan type","RCB","Type of repartitioner to use",tuple<string>("RCB","hypergraph","fast hypergraph"),PL);
 
+  /* EXPERIMENTAL - Half-GS Smoothing */
+  PL->set("smoother: Gauss-Seidel efficient symmetric",false); 
+  
+  /* Coarse IFPACK Solvers - experimental */
+  PL->set("coarse: ifpack list",dummy);
+  PL->set("coarse: ifpack type",std::string(""));
+  setIntParameter("coarse: ifpack overlap",0,"Unlisted option",PL,intParam);
+  setDoubleParameter("coarse: ifpack level-of-fill",0.0,"Unlisted option",PL,dblParam);
+  setDoubleParameter("coarse: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
+  setDoubleParameter("coarse: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
+
   return PL;
 }
 
@@ -372,6 +387,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: lump m1",false);
   PL->set("refmaxwell: disable addon",false); 
   PL->set("refmaxwell: normalize prolongator",false);
+  PL->set("refmaxwell: parallelize blocks",false);
   return PL;
 }
 

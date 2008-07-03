@@ -1000,15 +1000,43 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
    else { start_level = nl; end_level = nl;}
 
    for (i = start_level; i <= end_level; i++) {
-     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].symmetric_sweep=1;
-     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].symmetric_sweep=1;
+     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].gs_sweep_type=ML_GS_symmetric;
+     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].gs_sweep_type=ML_GS_symmetric;
      if (pre_or_post == ML_BOTH) {
-	ml->pre_smoother[i].symmetric_sweep=1;
-	ml->post_smoother[i].symmetric_sweep=1;
+	ml->pre_smoother[i].gs_sweep_type=ML_GS_symmetric;
+	ml->post_smoother[i].gs_sweep_type=ML_GS_symmetric;
      }
    }
    return 0;
 }
+
+/* ------------------------------------------------------------------------- */
+/* generate the efficient symmetric Gauss Seidel smoother                    */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_EffSymGaussSeidel( ML *ml , int nl, int pre_or_post,
+                                   int ntimes, double omega)
+{
+   int start_level, end_level, i;
+
+   ML_Gen_Smoother_GaussSeidel(ml,nl,pre_or_post,ntimes,omega);
+   if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+
+   for (i = start_level; i <= end_level; i++) {
+     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
+     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
+     if (pre_or_post == ML_BOTH) {
+       ml->pre_smoother[i].pre_or_post=ML_TAG_PRESM;
+       ml->pre_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
+       ml->post_smoother[i].pre_or_post=ML_TAG_POSTSM;       
+       ml->post_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
+     }
+   }
+   return 0;
+}
+
+
 
 /* ------------------------------------------------------------------------- */
 /* generate the sequential symmetric Gauss Seidel smoother                   */
@@ -1210,11 +1238,11 @@ int ML_Gen_Smoother_SymBlockGaussSeidel(ML *ml , int nl, int pre_or_post,
    else { start_level = nl; end_level = nl;}
 
    for (i = start_level; i <= end_level; i++) {
-     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].symmetric_sweep=1;
-     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].symmetric_sweep=1;
+     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].gs_sweep_type=ML_GS_symmetric;
+     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].gs_sweep_type=ML_GS_symmetric;
      if (pre_or_post == ML_BOTH) {
-	ml->pre_smoother[i].symmetric_sweep=1;
-	ml->post_smoother[i].symmetric_sweep=1;
+	ml->pre_smoother[i].gs_sweep_type=ML_GS_symmetric;
+	ml->post_smoother[i].gs_sweep_type=ML_GS_symmetric;
      }
    }
    return 0;

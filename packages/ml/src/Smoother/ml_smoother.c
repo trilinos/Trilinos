@@ -219,7 +219,7 @@ int ML_Smoother_Init(ML_Smoother *ml_sm, ML_1Level *mylevel)
    ml_sm->label      = NULL;
    ml_sm->pre_or_post = 0;
    ml_sm->envelope = NULL;
-   ml_sm->symmetric_sweep = 0;
+   ml_sm->gs_sweep_type = ML_GS_standard;
    return 0;
 } 
 
@@ -320,7 +320,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    ml_sm->pre_or_post = 0;
    ml_sm->init_guess = ML_NONZERO;
    ml_sm->tol = 0;
-   ml_sm->symmetric_sweep = 0;
+   ml_sm->gs_sweep_type = ML_GS_standard;
    if ((ml_sm->data_destroy != NULL) && (ml_sm->smoother->data != NULL)) {
       ml_sm->data_destroy( ml_sm->smoother->data );
       ml_sm->smoother->data = NULL;
@@ -617,6 +617,7 @@ int ML_Smoother_GaussSeidel(ML_Smoother *sm, int inlen, double x[], int outlen,
    ML_Smoother  *smooth_ptr;
    smooth_ptr = (ML_Smoother *) sm;
 
+
    /* ----------------------------------------------------------------- */
    /* set up                                                            */
    /* ----------------------------------------------------------------- */
@@ -728,8 +729,7 @@ int ML_Smoother_SGS(ML_Smoother *sm,int inlen,double x[],int outlen, double rhs[
 
    /* ----------------------------------------------------------------- */
    /* fetch data                                                        */
-   /* ----------------------------------------------------------------- */
-
+   /* ----------------------------------------------------------------- */   
    smooth_ptr = (ML_Smoother *) sm;
    omega = smooth_ptr->omega;
    Amat = smooth_ptr->my_level->Amat;
@@ -1613,7 +1613,7 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
   Amat       = smooth_ptr->my_level->Amat;
   comm       = smooth_ptr->my_level->comm;
   Nrows      = Amat->getrow->Nrows;
-
+  
   if (Amat->getrow->func_ptr == NULL) {
     pr_error("Error(ML_Smoother_NewGS): Need getrow() for smoother\n");
     ML_avoid_unused_param((void *) &outlen);
@@ -1709,83 +1709,93 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
     if (getrow_comm != NULL)
       ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
-    xptr = x2;
-    if (Amat_CrsBindx != NULL) {
-      valptr = Amat_CrsVal; colptr = Amat_CrsBindx;
-      for (i = 0; i < Nrows ; i++) {
-	diagvalue = omega/thediagonal[i];
-	dtemp = rhs[i];
-	for (j = Amat_CrsRowptr[i]; j < Amat_CrsRowptr[i+1]; j++) 
-	  dtemp -= (*valptr++)*x2[*colptr++];
-	*xptr += (dtemp)*diagvalue;
-	xptr++;
-      } 
-    }
-    else if (Amat_MsrBindx != NULL) {
-      colptr = &(Amat_MsrBindx[Amat_MsrBindx[0]]);
-      valptr = &(Amat_MsrVal[Amat_MsrBindx[0]]);
-      for (i = 0; i < Nrows ; i++) {
-	diagvalue = omega/thediagonal[i];
-	length = Amat_MsrBindx[i+1] -  Amat_MsrBindx[i];
-	dtemp  = rhs[i] - Amat_MsrVal[i]*x2[i];
-	for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++];
-	*xptr += dtemp*diagvalue;
-	xptr++;
+    /* forward mode */
+    if(smooth_ptr->gs_sweep_type == ML_GS_standard ||
+       smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+       (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_PRESM)){
+
+      xptr = x2;
+      if (Amat_CrsBindx != NULL) {
+        valptr = Amat_CrsVal; colptr = Amat_CrsBindx;
+        for (i = 0; i < Nrows ; i++) {
+          diagvalue = omega/thediagonal[i];
+          dtemp = rhs[i];
+          for (j = Amat_CrsRowptr[i]; j < Amat_CrsRowptr[i+1]; j++) 
+            dtemp -= (*valptr++)*x2[*colptr++];
+          *xptr += (dtemp)*diagvalue;
+          xptr++;
+        } 
       }
-    }
-    else {
-      for (i = 0; i < Nrows ; i++) {
-	diagvalue = omega/thediagonal[i];
-	dtemp = rhs[i];
-	ML_get_matrix_row(Amat, 1, &i, &allocated_space , &cols, &vals,
-			  &length, 0);
-	valptr = vals; colptr = cols;
-	for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++]; 
-	*xptr += dtemp*diagvalue;
-	xptr++;
+      else if (Amat_MsrBindx != NULL) {
+        colptr = &(Amat_MsrBindx[Amat_MsrBindx[0]]);
+        valptr = &(Amat_MsrVal[Amat_MsrBindx[0]]);
+        for (i = 0; i < Nrows ; i++) {
+          diagvalue = omega/thediagonal[i];
+          length = Amat_MsrBindx[i+1] -  Amat_MsrBindx[i];
+          dtemp  = rhs[i] - Amat_MsrVal[i]*x2[i];
+          for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++];
+          *xptr += dtemp*diagvalue;
+          xptr++;
+        }
       }
-    }
-    /* symmetrize it  */
-    if (smooth_ptr->symmetric_sweep == 1)
-      {
-	xptr = &(x2[Nrows-1]);
-	if (Amat_CrsBindx != NULL) {
-	  valptr--; colptr--;  /* set pointer to last element of */
-	  /* arrays after forward sweep.    */
-	  for (i = Nrows- 1; i >= 0; i--) {
-	    diagvalue = omega/thediagonal[i];
-	    dtemp = rhs[i];
-	    for (j = Amat_CrsRowptr[i]; j < Amat_CrsRowptr[i+1]; j++) 
-	      dtemp -= (*valptr--)*x2[*colptr--];
-	    *xptr += (dtemp*diagvalue);
-	    xptr--;
-	  }
-	} else if (Amat_MsrBindx != NULL) {
-	  colptr = &(Amat_MsrBindx[Amat_MsrBindx[Nrows]]);  colptr--;
-	  valptr = &(Amat_MsrVal[Amat_MsrBindx[Nrows]]);   valptr--;
-	  for (i = Nrows- 1; i >= 0; i--) {
-	    diagvalue = thediagonal[i];
-	    length = Amat_MsrBindx[i+1] -  Amat_MsrBindx[i];
-	    dtemp = rhs[i] - Amat_MsrVal[i]*x2[i];
-	    for (j = 0; j < length; j++) dtemp -= (*valptr--)*x2[*colptr--];
-	    *xptr += omega*dtemp/diagvalue;
-	    xptr--;
-	  }
-	} else {
-	  for (i = Nrows- 1; i >= 0; i--) {
-	    diagvalue = omega/thediagonal[i];
-	    dtemp = rhs[i];
-	    ML_get_matrix_row(Amat, 1, &i, &allocated_space , &cols, &vals,
-			      &length, 0);
-	    valptr = vals; colptr = cols;
-	    for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++]; 
-	    *xptr += dtemp*diagvalue;
-	    xptr--;
-	  }
-	}
-      } /*if (smooth_ptr->symmetric_sweep == 1) */
+      else {
+        for (i = 0; i < Nrows ; i++) {
+          diagvalue = omega/thediagonal[i];
+          dtemp = rhs[i];
+          ML_get_matrix_row(Amat, 1, &i, &allocated_space , &cols, &vals,
+                            &length, 0);
+          valptr = vals; colptr = cols;
+          for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++]; 
+          *xptr += dtemp*diagvalue;
+          xptr++;
+        }
+      }
+    }/* if forward mode */
+    
+    /* backward mode  */
+    if (smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+        (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_POSTSM)){
+      xptr = &(x2[Nrows-1]);
+
+      if (Amat_CrsBindx != NULL) {
+        valptr--; colptr--;  /* set pointer to last element of */
+        /* arrays after forward sweep.    */
+        for (i = Nrows- 1; i >= 0; i--) {
+          diagvalue = omega/thediagonal[i];
+          dtemp = rhs[i];
+          for (j = Amat_CrsRowptr[i]; j < Amat_CrsRowptr[i+1]; j++) 
+            dtemp -= (*valptr--)*x2[*colptr--];
+          *xptr += (dtemp*diagvalue);
+          xptr--;
+        }
+      } else if (Amat_MsrBindx != NULL) {
+        colptr = &(Amat_MsrBindx[Amat_MsrBindx[Nrows]]);  colptr--;
+        valptr = &(Amat_MsrVal[Amat_MsrBindx[Nrows]]);   valptr--;
+        for (i = Nrows- 1; i >= 0; i--) {
+          diagvalue = thediagonal[i];
+          length = Amat_MsrBindx[i+1] -  Amat_MsrBindx[i];
+          dtemp = rhs[i] - Amat_MsrVal[i]*x2[i];
+          for (j = 0; j < length; j++) dtemp -= (*valptr--)*x2[*colptr--];
+          *xptr += omega*dtemp/diagvalue;
+          xptr--;
+        }
+      } else {
+        for (i = Nrows- 1; i >= 0; i--) {
+          diagvalue = omega/thediagonal[i];
+          dtemp = rhs[i];
+          ML_get_matrix_row(Amat, 1, &i, &allocated_space , &cols, &vals,
+                            &length, 0);
+          valptr = vals; colptr = cols;
+          for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++]; 
+          *xptr += dtemp*diagvalue;
+          xptr--;
+        }
+      }
+    } /*if backward mode */
+
   } /*for (iter = 0; iter < smooth_ptr->ntimes; iter++) */
-     
+
+
   if (getrow_comm != NULL) {
     for (i = 0; i < inlen; i++) x[i] = x2[i];
     ML_free(x2);
@@ -1896,56 +1906,63 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
     }
   else x2 = x;
 
+
   for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
     if (getrow_comm != NULL)
       ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
-
-    row = 0;
-    xptr = x2;
-    if (Amat_CrsBindx != NULL) {
-      valptr = Amat_CrsVal;
-      colptr = Amat_CrsBindx;
-      for (i = 0; i < Nblocks; i++) {
-	for (k = 0; k < blocksize; k++) {
-	  dtemp = 0.;
-	  for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
-	    dtemp += (*valptr++)*x2[*colptr++];
-	  correc[k]=rhs[row++]-dtemp;
-	}
-	ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
-      } /*for (i = 0; */
-    }
-    else if (Amat_MsrBindx != NULL) {
-      colptr = &(Amat_MsrBindx[Amat_MsrBindx[0]]);
-      valptr = &(Amat_MsrVal[Amat_MsrBindx[0]]);
-      for (i = 0; i < Nblocks; i++) {
-	for (k = 0; k < blocksize; k++) {
-	  length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
-	  dtemp  = Amat_MsrVal[row]*x2[row];
-	  for (j = 0; j < length; j++) dtemp += (*valptr++)*x2[*colptr++];
-	  correc[k]=rhs[row++]-dtemp;
-	}
-	ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+    /* forward mode */
+    if(smooth_ptr->gs_sweep_type == ML_GS_standard ||
+       smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+       (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_PRESM)){
+    
+      row = 0;
+      xptr = x2;
+      if (Amat_CrsBindx != NULL) {
+        valptr = Amat_CrsVal;
+        colptr = Amat_CrsBindx;
+        for (i = 0; i < Nblocks; i++) {
+          for (k = 0; k < blocksize; k++) {
+            dtemp = 0.;
+            for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
+              dtemp += (*valptr++)*x2[*colptr++];
+            correc[k]=rhs[row++]-dtemp;
+          }
+          ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+          for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+        } /*for (i = 0; */
       }
-    }
-    else {
-      for (i = 0; i < Nblocks; i++) {
-	for (k = 0; k < blocksize; k++) {
-	  dtemp = 0.;
-	  ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
-			    &length, 0);
-	  colptr = cols; valptr = vals;
-	  for (j = 0; j < length; j++) dtemp += (*valptr++)*x2[*colptr++]; 
-	  correc[k]=rhs[row++]-dtemp;
-	}
-	ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+      else if (Amat_MsrBindx != NULL) {
+        colptr = &(Amat_MsrBindx[Amat_MsrBindx[0]]);
+        valptr = &(Amat_MsrVal[Amat_MsrBindx[0]]);
+        for (i = 0; i < Nblocks; i++) {
+          for (k = 0; k < blocksize; k++) {
+            length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
+            dtemp  = Amat_MsrVal[row]*x2[row];
+            for (j = 0; j < length; j++) dtemp += (*valptr++)*x2[*colptr++];
+            correc[k]=rhs[row++]-dtemp;
+          }
+          ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+          for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+        }
       }
-    }
-    /* symmetrize it  */
-    if (smooth_ptr->symmetric_sweep == 1) {
+      else {
+        for (i = 0; i < Nblocks; i++) {
+          for (k = 0; k < blocksize; k++) {
+            dtemp = 0.;
+            ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
+                              &length, 0);
+            colptr = cols; valptr = vals;
+            for (j = 0; j < length; j++) dtemp += (*valptr++)*x2[*colptr++]; 
+            correc[k]=rhs[row++]-dtemp;
+          }
+          ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+          for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+        }
+      }
+    } /* if forward mode */
+    /* backward mode  */
+    if (smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+        (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_POSTSM)) {
       blocksizeminusone = blocksize - 1;
       row = Nblocks*blocksize - 1;
       xptr = &(x2[row]);
@@ -1989,7 +2006,7 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	  for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
 	}
       }
-    } /*if (smooth_ptr->symmetric_sweep == 1) */
+    } /* if backward mode */
   } /*for (iter = 0; iter < smooth_ptr->ntimes; iter++) */
      
   if (getrow_comm != NULL) {
