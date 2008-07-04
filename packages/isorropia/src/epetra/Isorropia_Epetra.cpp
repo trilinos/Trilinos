@@ -34,6 +34,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
+#include <Isorropia_EpetraRedistributor.hpp>
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Map.h>
@@ -443,22 +444,10 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(matrixPtr, costPtr, paramlist));
 
-  const Epetra_Comm& comm = input_matrix.RowMatrixRowMap().Comm();
+  Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
-  try {
-    bal_rowmap = create_target_map(comm, *partitioner);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-  //next, create a new Epetra_RowMatrix (which will be the return-value of
-  //this function) with the new row-distribution.
   Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
-    redistribute_rows(input_matrix, *bal_rowmap);
+    rd.redistribute(input_matrix);
 
   return balanced_matrix;
 }
@@ -522,22 +511,10 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(input_graph, costPtr, paramlist));
 
-  const Epetra_Comm& comm = input_graph->RowMap().Comm();
+  Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
-  try {
-    bal_rowmap = create_target_map(comm, *partitioner);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-  //next, create a new Epetra_CrsMatrix (which will be the return-value of
-  //this function) with the new row-distribution.
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
-    redistribute_rows(input_matrix, *bal_rowmap);
+    rd.redistribute(input_matrix);
 
   return balanced_matrix;
 }
@@ -600,22 +577,10 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(graphPtr, costPtr, paramlist));
 
-  const Epetra_Comm& comm = input_graph.RowMap().Comm();
+  Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
-  try {
-    bal_rowmap = create_target_map(comm, *partitioner);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-  //next, create a new Epetra_CrsGraph (which will be the return-value of
-  //this function) with the new row-distribution.
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
-    redistribute_rows(input_graph, *bal_rowmap);
+    rd.redistribute(input_graph);
 
   return balanced_graph;
 }
@@ -678,193 +643,27 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(rowmat, costPtr, paramlist));
 
-  const Epetra_Comm& comm = rowmat->RowMatrixRowMap().Comm();
+  Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
-  try {
-    bal_rowmap = create_target_map(comm, *partitioner);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy: caught exception: ");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
+  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+    rd.redistribute(*input_problem.GetMatrix());
 
-  Teuchos::RCP<Epetra_CrsMatrix> A;
-  Teuchos::RCP<Epetra_MultiVector> x;
-  Teuchos::RCP<Epetra_MultiVector> b;
+  Teuchos::RefCountPtr<Epetra_MultiVector> balanced_rhs =
+    rd.redistribute(*input_problem.GetRHS());
 
-  try {
-    A = redistribute_rows(*input_problem.GetMatrix(), *bal_rowmap);
+  Teuchos::RCP<Epetra_MultiVector> x=
+    Teuchos::rcp(new Epetra_MultiVector(*input_problem.GetLHS()));
 
-    // Don't redistribute x in Ax=b.  It's a column related object and
-    // this a row balancing operation.
-    //x = redistribute(*input_problem.GetLHS(), *bal_rowmap);
-
-    x = Teuchos::rcp(new Epetra_MultiVector(*input_problem.GetLHS()));
-
-    b = redistribute(*input_problem.GetRHS(), *bal_rowmap);
-  }
-  catch(std::exception& exc) {
-    std::string str1("create_balanced_copy(Epetra_LinearProblem): caught exception:");
-    std::string str2(exc.what());
-    throw Isorropia::Exception(str1+str2);
-  }
-
-#if 0
-  //  TODO remove this after testing
-
-  // Problem: A, x, and b are reference counted pointers.  The objects they
-  // point to get deallocated at the return from this function.  So I need 
-  // to make copies of the objects they point to, and use those copies to 
-  // create the Epetra_LinearProblem.
-
-  Epetra_CrsMatrix *A2 = new Epetra_CrsMatrix(*A);
-  Epetra_MultiVector *x2 = new Epetra_MultiVector(*x);
-  Epetra_MultiVector *b2 = new Epetra_MultiVector(*b);
-
-  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
-    Teuchos::rcp(new Epetra_LinearProblem(A2, x2, b2));
-#else
-
-  A.release();
+  // prevent these from being deallocated on return from create_balanced_copy
+  balanced_matrix.release(); 
+  balanced_rhs.release();
   x.release();
-  b.release();
 
   Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
-    Teuchos::rcp(new Epetra_LinearProblem(A.get(), x.get(), b.get()));
-#endif
+    Teuchos::rcp(new Epetra_LinearProblem(balanced_matrix.get(), x.get(), balanced_rhs.get()));
 
   return( linprob );
 }
-
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
-redistribute_rows(const Epetra_CrsMatrix& input_matrix,
-                  const Epetra_Map& target_rowmap,
-                  Epetra_Import* importer)
-{
-  Epetra_Import* new_importer = 0;
-  if (importer == 0) {
-    new_importer = new Epetra_Import(target_rowmap, input_matrix.RowMap());
-    importer = new_importer;
-  }
-
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> target_matrix =
-    Teuchos::rcp(new Epetra_CrsMatrix(Copy, target_rowmap, 0));
-
-  target_matrix->Import(input_matrix, *importer, Insert);
-
-  //it is safe to delete new_importer even if it is NULL
-  delete new_importer;
-
-  if (!target_matrix->Filled()) {
-    Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
-    target_matrix->FillComplete(newDomainMap, target_rowmap);
-  }
-
-  return(target_matrix);
-}
-
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
-redistribute_rows(const Epetra_RowMatrix& input_matrix,
-                  const Epetra_Map& target_rowmap,
-                  Epetra_Import* importer)
-{
-  Epetra_Import* new_importer = 0;
-  if (importer == 0) {
-    new_importer = new Epetra_Import(target_rowmap, input_matrix.RowMatrixRowMap());
-    importer = new_importer;
-  }
-
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> target_matrix =
-    Teuchos::rcp(new Epetra_CrsMatrix(Copy, target_rowmap, 0));
-
-  target_matrix->Import(input_matrix, *importer, Insert);
-
-  //it is safe to delete new_importer even if it is NULL
-  delete new_importer;
-
-  if (!target_matrix->Filled()) {
-    Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
-    target_matrix->FillComplete(newDomainMap, target_rowmap);
-  }
-
-  return(target_matrix);
-}
-
-Teuchos::RefCountPtr<Epetra_CrsGraph>
-redistribute_rows(const Epetra_CrsGraph& input_graph,
-                  const Epetra_Map& target_rowmap,
-                  Epetra_Import* importer)
-{
-  Epetra_Import* new_importer = 0;
-  if (importer == 0) {
-    new_importer = new Epetra_Import(target_rowmap, input_graph.RowMap());
-    importer = new_importer;
-  }
-
-  Teuchos::RefCountPtr<Epetra_CrsGraph> target_graph =
-    Teuchos::rcp(new Epetra_CrsGraph(Copy, target_rowmap, 0));
-
-  target_graph->Import(input_graph, *importer, Insert);
-
-  //it is safe to delete new_importer even if it is NULL
-  delete new_importer;
-
-  if (!target_graph->Filled()) {
-    Epetra_Map newDomainMap(input_graph.NumGlobalCols(), 0, input_graph.Comm());
-    target_graph->FillComplete(newDomainMap, target_rowmap);
-  }
-
-  return(target_graph);
-}
-
-Teuchos::RefCountPtr<Epetra_MultiVector>
-redistribute(const Epetra_MultiVector& input,
-             const Epetra_BlockMap& target_map,
-             Epetra_Import* importer)
-{
-  Epetra_Import* new_importer = 0;
-  if (importer == 0) {
-    new_importer = new Epetra_Import(target_map, input.Map());
-    importer = new_importer;
-  }
-
-  Teuchos::RefCountPtr<Epetra_MultiVector> target_multivec =
-    Teuchos::rcp(new Epetra_MultiVector(target_map, input.NumVectors(), false));
-
-  target_multivec->Import(input, *importer, Insert);
-
-  //it is safe to delete new_importer even if it is NULL
-  delete new_importer;
-
-  return(target_multivec);
-}
-
-Teuchos::RefCountPtr<Epetra_Vector>
-redistribute(const Epetra_Vector& input,
-             const Epetra_Map& target_map,
-             Epetra_Import* importer)
-{
-  Epetra_Import* new_importer = 0;
-  if (importer == 0) {
-    new_importer = new Epetra_Import(target_map, input.Map());
-    importer = new_importer;
-  }
-
-  Teuchos::RefCountPtr<Epetra_Vector> target_vec =
-    Teuchos::rcp(new Epetra_Vector(target_map, false));
-
-  target_vec->Import(input, *importer, Insert);
-
-  //it is safe to delete new_importer even if it is NULL
-  delete new_importer;
-
-  return(target_vec);
-}
-
-#endif //HAVE_EPETRA
-
+#endif
 }//namespace Epetra
 }//namespace Isorropia
-
