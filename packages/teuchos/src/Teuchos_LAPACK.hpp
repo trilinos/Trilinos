@@ -36,6 +36,10 @@
     This is an example of how to use the Teuchos::LAPACK class.
 */
 
+#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK_wrappers.hpp"
+
 /* for INTEL_CXML, the second arg may need to be changed to 'one'.  If so
 the appropriate declaration of one will need to be added back into
 functions that include the macro:
@@ -52,10 +56,6 @@ functions that include the macro:
 #else
 #define CHAR_MACRO(char_var) &char_var
 #endif
-
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK_wrappers.hpp"
 
 /*! \class Teuchos::LAPACK
     \brief The Templated LAPACK Wrapper Class.

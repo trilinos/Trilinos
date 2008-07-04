@@ -83,75 +83,17 @@
 #    endif
 #  endif
 
-#  ifdef HAVE_CSTDLIB
-#    include <cstdlib>
-#  else
-#    include <stdlib.h>
-#  endif
-
-#  ifdef HAVE_CSTDIO
-#    include <cstdio>
-#  else
-#    include <stdio.h>
-#  endif
-
-#  ifdef HAVE_STRING
-#    include <string>
-#  else
-#    include <string.h>
-#  endif
-
-#  ifdef HAVE_VECTOR
-#    include <vector>
-#  else
-#    include <vector.h>
-#  endif
-
-#  ifdef HAVE_CCTYPE
-#    include <cctype>
-#  else
-#    include <cctype.h>
-#  endif
-
-#  ifdef HAVE_NUMERIC
-#    include <numeric>
-#  else
-#    include <algo.h>
-#  endif
-
-#  ifdef HAVE_COMPLEX
-#    include <complex>
-#  else
-#    include <complex.h>
-#  endif
-
-#  ifdef HAVE_IOSTREAM
-#    include <iostream>
-#  else
-#    include <iostream.h>
-#  endif
-
-#  ifdef HAVE_ITERATOR
-#    include <iterator>
-#  else
-#    include <iterator.h>
-#  endif
-
-#  ifdef HAVE_STDEXCEPT
-#    include <stdexcept>
-#  elif defined HAVE_STDEXCEPT_H
-#    include <stdexcept.h>
-#  endif
-
-#  ifndef JANUS_STLPORT
-#    ifdef HAVE_CMATH
-#      include <cmath>
-#    else
-#      include <math.h>
-#    endif
-#  else /* JANUS_STLPORT */
-#    include <math.h>
-#  endif /* JANUS_STLPORT */
+#include <cstdlib>
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <cctype>
+#include <numeric>
+#include <complex>
+#include <iostream>
+#include <iterator>
+#include <stdexcept>
+#include <cmath>
 
 #else /*TRILINOS_NO_CONFIG_H is defined*/
 
