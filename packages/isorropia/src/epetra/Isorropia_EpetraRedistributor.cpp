@@ -44,6 +44,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
+#include <Epetra_Comm.h>
 #endif
 
 namespace Isorropia {
@@ -91,8 +92,37 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph)
     create_importer(input_graph.RowMap());
   }
 
+  // First obtain the length of each of my new rows
+
+  int myOldRows = input_graph.NumMyRows();
+  int myNewRows = partitioner_->numElemsInPartition(input_graph.Comm().MyPID());
+
+  double *nnz = new double [myOldRows];
+  for (int i=0; i < myOldRows; i++){
+    nnz[i] = input_graph.NumMyIndices(i);
+  }
+
+  Epetra_Vector oldRowSizes(Copy, input_graph.RowMap(), nnz);
+
+  if (myOldRows)
+    delete [] nnz;
+
+  Epetra_Vector newRowSizes(*target_map_);
+
+  newRowSizes.Import(oldRowSizes, *importer_, Insert);
+
+  int *rowSize = new int [myNewRows];
+  for (int i=0; i< myNewRows; i++){
+    rowSize[i] = static_cast<int>(newRowSizes[i]);
+  }
+
+  // Receive new rows, send old rows
+
   Teuchos::RefCountPtr<Epetra_CrsGraph> new_graph =
-    Teuchos::rcp(new Epetra_CrsGraph(Copy, *target_map_, 0));
+    Teuchos::rcp(new Epetra_CrsGraph(Copy, *target_map_, rowSize, true));
+
+  if (myNewRows)
+    delete [] rowSize;
 
   new_graph->Import(input_graph, *importer_, Insert);
 
@@ -111,8 +141,37 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix)
     create_importer(input_matrix.RowMap());
   }
 
+  // First obtain the length of each of my new rows
+
+  int myOldRows = input_matrix.NumMyRows();
+  int myNewRows = partitioner_->numElemsInPartition(input_matrix.Comm().MyPID());
+
+  double *nnz = new double [myOldRows];
+  for (int i=0; i < myOldRows; i++){
+    nnz[i] = input_matrix.NumMyEntries(i);
+  }
+
+  Epetra_Vector oldRowSizes(Copy, input_matrix.RowMap(), nnz);
+
+  if (myOldRows)
+    delete [] nnz;
+
+  Epetra_Vector newRowSizes(*target_map_);
+
+  newRowSizes.Import(oldRowSizes, *importer_, Insert);
+
+  int *rowSize = new int [myNewRows];
+  for (int i=0; i< myNewRows; i++){
+    rowSize[i] = static_cast<int>(newRowSizes[i]);
+  }
+
+  // Receive new rows, send old rows
+
   Teuchos::RefCountPtr<Epetra_CrsMatrix> new_matrix =
-    Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, 0));
+    Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true));
+
+  if (myNewRows)
+    delete [] rowSize;
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
@@ -130,9 +189,39 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix)
   if (!created_importer_) {
     create_importer(input_matrix.RowMatrixRowMap());
   }
+ // First obtain the length of each of my new rows
+
+  int myOldRows = input_matrix.NumMyRows();
+  int myNewRows = partitioner_->numElemsInPartition(input_matrix.Comm().MyPID());
+
+  double *nnz = new double [myOldRows];
+  int val;
+  for (int i=0; i < myOldRows; i++){
+    input_matrix.NumMyRowEntries(i, val);
+    nnz[i] = static_cast<double>(val);
+  }
+
+  Epetra_Vector oldRowSizes(Copy, input_matrix.RowMatrixRowMap(), nnz);
+
+  if (myOldRows)
+    delete [] nnz;
+
+  Epetra_Vector newRowSizes(*target_map_);
+
+  newRowSizes.Import(oldRowSizes, *importer_, Insert);
+
+  int *rowSize = new int [myNewRows];
+  for (int i=0; i< myNewRows; i++){
+    rowSize[i] = static_cast<int>(newRowSizes[i]);
+  }
+
+  // Receive new rows, send old rows
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> new_matrix =
-    Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, 0));
+    Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true));
+
+  if (myNewRows)
+    delete [] rowSize;
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
