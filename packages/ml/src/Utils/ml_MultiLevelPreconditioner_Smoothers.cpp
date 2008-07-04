@@ -319,7 +319,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                                    (void*)&MyIfpackList,(void*)Comm_);
           }
           if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
-            BackwardSmoothingList_= MyIfpackList;
+            ParameterList& BackwardSmoothingList_= MyIfpackList;
             BackwardSmoothingList_.set("relaxation: backward mode",true);        
             ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                  IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
