@@ -62,10 +62,11 @@ namespace PHX {
       //! \todo Need to figure out how to set extra data in ARCP so that the bulk object is deleted when all references to it are gone.
 
       Teuchos::ArrayRCP<DataT> array = Teuchos::arcp(data, 0, num_elements, false);
-	//Teuchos::arcp<DataT>(reinterpret_cast<DataT*>((chunk_.get())[offset_]), 0, num_elements);
       offset_ += required_bytes;
 
-      //! \todo Add call to "new" that calls ctor only for each element - currently no ctor is called on the objects.
+      // call ctor on each element
+      for (std::size_t i=0; i < num_elements; ++i)
+	new (&data[i]) DataT;
 
       return array;
     }
