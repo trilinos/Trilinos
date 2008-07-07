@@ -27,11 +27,11 @@ namespace PHX {
 
     DataT& operator[](int index);
 
-    typename Teuchos::ArrayRCP<DataT>::Ordinal size();
+    typename Teuchos::ArrayRCP<DataT>::Ordinal size() const;
 
     void setFieldTag(const PHX::FieldTag& v);
     
-    void getFieldData(const Teuchos::ArrayRCP<DataT>& d);
+    void setFieldData(const Teuchos::ArrayRCP<DataT>& d);
     
     void print(std::ostream& os) const;
 

@@ -73,7 +73,7 @@ DataT& PHX::Field<DataT>::operator[](int index)
 //**********************************************************************
 template<typename DataT>
 inline
-typename Teuchos::ArrayRCP<DataT>::Ordinal PHX::Field<DataT>::size()
+typename Teuchos::ArrayRCP<DataT>::Ordinal PHX::Field<DataT>::size() const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!data_set, std::logic_error, field_data_error_msg);
@@ -93,7 +93,7 @@ void PHX::Field<DataT>::setFieldTag(const PHX::FieldTag& v)
 
 //**********************************************************************
 template<typename DataT>
-void PHX::Field<DataT>::getFieldData(const Teuchos::ArrayRCP<DataT>& d)
+void PHX::Field<DataT>::setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 { 
 #ifdef PHX_DEBUG
   data_set = true;

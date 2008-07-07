@@ -29,7 +29,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<DataT>& h)
 {
-  h.getFieldData(scalar_containers_.template 
+  h.setFieldData(scalar_containers_.template 
     getAsObject< typename boost::mpl::at<typename Traits::DataToScalarMap,
 	    DataT>::type >()->template getFieldData<DataT>(h.fieldTag()) );
 }

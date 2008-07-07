@@ -11,6 +11,57 @@
 #include "Traits.hpp"
 #include "FactoryTraits.hpp"
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+template<typename ScalarT>
+void compareScalarFields(PHX::Field<ScalarT>& field1, 
+			 PHX::Field<ScalarT>& field2,
+			 double tol)
+{
+  std::cout << "Comparing scalar fields\n" << field1.fieldTag() << "\n" 
+	    << field2.fieldTag() << std::endl; 
+
+  TEST_FOR_EXCEPTION(field1.size() != field2.size(), std::logic_error,
+		     "Fields for comparison do not have the same size!");
+
+  double error = 0.0;
+  for (int i=0; i < field1.size(); ++i)
+    error += fabs(field1[i]-field2[i]);
+  
+  TEST_FOR_EXCEPTION(error > tol, std::runtime_error,
+		     "Fields are not equal in comparison!");
+
+  std::cout << "Passed: " << error << " < " << tol << std::endl; 
+}
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+template<typename ScalarT>
+void compareVectorFields(PHX::Field< MyVector<ScalarT> >& field1, 
+			 PHX::Field< MyVector<ScalarT> >& field2,
+			 double tol)
+{
+  std::cout << "Comparing vector fields\n" << field1.fieldTag() << "\n" 
+	    << field2.fieldTag() << std::endl; 
+
+  TEST_FOR_EXCEPTION(field1.size() != field2.size(), std::logic_error,
+		     "Fields for comparison do not have the same size!");
+
+  double error = 0.0;
+  for (int i=0; i < field1.size(); ++i)
+    for (int j=0; j < 3; ++j)
+      error += fabs(field1[i][j]-field2[i][j]);
+  
+  TEST_FOR_EXCEPTION(error > tol, std::runtime_error,
+		     "Fields are not equal in comparison!");
+
+  std::cout << "Passed: " << error << " < " << tol << std::endl; 
+}
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 int main(int argc, char *argv[]) 
 {
   using namespace std;
@@ -153,10 +204,55 @@ int main(int argc, char *argv[])
 			 "Returned arrays are not sized correctly!");
       
       
-      //Field<double> temp("Temperature", scalar_node);
-      //vm.getFieldData(temp);
-      //for (int i=0; i < temp.size(); ++i)
-      //cout << "temperature_node[" << i << "] = " << temp[i] << endl;
+      cout << endl;
+
+      // Compare temperature fields, should be 2.0
+      Field<double> temp("Temperature", scalar_node);
+      vm.getFieldData(temp);
+      
+      Field<double> temp_base("Temperature Baseline", scalar_node);
+      ArrayRCP<double> temp_base_data = 
+	arcp<double>(num_cells * scalar_node->size());
+      temp_base.setFieldData(temp_base_data);
+      for (int i=0; i<temp_base.size(); ++i)
+	temp_base[i] = 2.0;
+      
+      compareScalarFields(temp, temp_base, 1.0e-12);
+
+      cout << endl;
+
+      // Compare temperature gradient fields, should be 2.0
+      Field< MyVector<double> > tg("Temperature Gradient", vector_qp);
+      vm.getFieldData(tg);
+
+      Field< MyVector<double> > 
+	tg_base("Temperature Gradient Baseline", vector_qp);
+      ArrayRCP< MyVector<double> > tg_base_data = 
+	arcp< MyVector<double> >(num_cells * vector_qp->size());
+      tg_base.setFieldData(tg_base_data);
+      for (int i=0; i<tg_base.size(); ++i)
+	tg_base[i] = 2.0;
+      
+      compareVectorFields(tg, tg_base, 1.0e-12);
+
+      cout << endl;
+
+      // Compare energy flux fields, should be -16.0
+      Field< MyVector<double> > ef("Energy_Flux", vector_qp);
+      vm.getFieldData(ef);
+
+      Field< MyVector<double> > 
+	ef_base("Energy_Flux Baseline", vector_qp);
+      ArrayRCP< MyVector<double> > ef_base_data = 
+	arcp< MyVector<double> >(num_cells * vector_qp->size());
+      ef_base.setFieldData(ef_base_data);
+      for (int i=0; i<ef_base.size(); ++i)
+	ef_base[i] = -16.0;
+      
+      compareVectorFields(ef, ef_base, 1.0e-12);
+
+      cout << endl;
+
     }
     
     // *********************************************************************
@@ -185,3 +281,6 @@ int main(int argc, char *argv[])
     
   return 0;
 }
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -67,18 +67,6 @@ public:
       val[i] /= a.val[i];
     return *this;
   }
-  MyVector<T>& operator*(const T& a)
-  {
-    for (std::size_t i=0; i < 3; ++i)
-      val[i] = val[i] * a;
-    return *this;
-  }
-  MyVector<T>& operator/(const T& a)
-  {
-    for (std::size_t i=0; i < 3; ++i)
-      val[i] = val[i] / a;
-    return *this;
-  }
   void print(std::ostream& os) const
   {
     for (std::size_t i=0; i < 3; ++i)

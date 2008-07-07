@@ -4,7 +4,8 @@
 //**********************************************************************
 template< typename ScalarT, typename Traits> NonlinearSource<ScalarT, Traits>::
 NonlinearSource(const Teuchos::ParameterList& p) :
-  source("Nonlinear Source", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
+  source("Nonlinear Source", 
+	 p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
   density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
   temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout"))
 { 
