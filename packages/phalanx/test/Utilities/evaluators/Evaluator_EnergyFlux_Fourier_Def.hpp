@@ -29,10 +29,10 @@ template<typename ScalarT, typename Traits>
 void Fourier<ScalarT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.setFieldData(flux);
-  vm.setFieldData(density);
-  vm.setFieldData(dc);
-  vm.setFieldData(grad_temp);
+  vm.getFieldData(flux);
+  vm.getFieldData(density);
+  vm.getFieldData(dc);
+  vm.getFieldData(grad_temp);
 
   data_layout_size = flux.fieldTag().dataLayout()->size();
 }

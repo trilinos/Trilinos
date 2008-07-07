@@ -25,9 +25,9 @@ template< typename ScalarT, typename Traits>
 void NonlinearSource<ScalarT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.setFieldData(source);
-  vm.setFieldData(density);
-  vm.setFieldData(temp);
+  vm.getFieldData(source);
+  vm.getFieldData(density);
+  vm.getFieldData(temp);
 
   data_layout_size = source.fieldTag().dataLayout()->size();
 }

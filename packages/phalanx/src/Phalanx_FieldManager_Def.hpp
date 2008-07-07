@@ -27,9 +27,9 @@ template<typename Traits>
 template<typename DataT> 
 inline
 void PHX::FieldManager<Traits>::
-setFieldData(PHX::Field<DataT>& h)
+getFieldData(PHX::Field<DataT>& h)
 {
-  h.setFieldData(scalar_containers_.template 
+  h.getFieldData(scalar_containers_.template 
     getAsObject< typename boost::mpl::at<typename Traits::DataToScalarMap,
 	    DataT>::type >()->template getFieldData<DataT>(h.fieldTag()) );
 }
@@ -39,7 +39,7 @@ template<typename Traits>
 template<typename DataT> 
 inline
 void PHX::FieldManager<Traits>::
-setFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d)
+getFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d)
 {
   d = scalar_containers_.template 
     getAsObject< typename boost::mpl::at<typename Traits::DataToScalarMap,

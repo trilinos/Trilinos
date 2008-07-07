@@ -23,7 +23,7 @@ void Constant<ScalarT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
   using namespace PHX;
-  vm.template setFieldData(constant);
+  vm.template getFieldData(constant);
 
   for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
     constant[i] = value;

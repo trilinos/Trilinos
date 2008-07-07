@@ -38,10 +38,10 @@ namespace PHX {
 				 const Teuchos::RCP< PHX::Evaluator<Traits> >& p);
     
     template<typename DataT> 
-    void setFieldData(PHX::Field<DataT>& h);
+    void getFieldData(PHX::Field<DataT>& h);
     
     template<typename DataT> 
-    void setFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d);
+    void getFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d);
     
     void postRegistrationSetup(std::size_t max_num_cells);
 

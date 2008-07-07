@@ -9,7 +9,7 @@ template<typename DataT>
 const std::string PHX::Field<DataT>::field_tag_error_msg = 
     "Error - PHX::Field::fieldTag() - No tag has been set!";
 template<typename DataT>
-const std::string PHX::Field<DataT>::field_data_error_msg = "Error - PHX::Field::operator[] - No data has been set!  Please call setFieldData(this) on all PHX::Field objects in providers!";
+const std::string PHX::Field<DataT>::field_data_error_msg = "Error - PHX::Field::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::Field objects in providers!";
 #endif
 
 //**********************************************************************
@@ -93,7 +93,7 @@ void PHX::Field<DataT>::setFieldTag(const PHX::FieldTag& v)
 
 //**********************************************************************
 template<typename DataT>
-void PHX::Field<DataT>::setFieldData(const Teuchos::ArrayRCP<DataT>& d)
+void PHX::Field<DataT>::getFieldData(const Teuchos::ArrayRCP<DataT>& d)
 { 
 #ifdef PHX_DEBUG
   data_set = true;

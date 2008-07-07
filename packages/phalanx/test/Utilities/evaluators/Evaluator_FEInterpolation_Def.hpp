@@ -29,9 +29,9 @@ template<typename ScalarT, typename Traits>
 void FEInterpolation<ScalarT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.setFieldData(val_node);
-  vm.setFieldData(val_qp);
-  vm.setFieldData(val_grad_qp);
+  vm.getFieldData(val_node);
+  vm.getFieldData(val_qp);
+  vm.getFieldData(val_grad_qp);
 }
 
 //**********************************************************************

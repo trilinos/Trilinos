@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
       cout << "Testing data members" << endl;
       FieldTag d_var("Density", scalar_qp);
       Field<double> den(d_var); 
-      vm.setFieldData(den);
+      vm.getFieldData(den);
       cout << "size of density = " << den.size() << ", should be " 
 	   << num_cells * d_var.dataLayout()->size() << "." << endl;
       TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(num_cells * d_var.dataLayout()->size()),
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
       
       
       //Field<double> temp("Temperature", scalar_node);
-      //vm.setFieldData(temp);
+      //vm.getFieldData(temp);
       //for (int i=0; i < temp.size(); ++i)
       //cout << "temperature_node[" << i << "] = " << temp[i] << endl;
     }

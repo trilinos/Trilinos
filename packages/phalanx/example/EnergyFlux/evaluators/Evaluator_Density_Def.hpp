@@ -19,8 +19,8 @@ template<typename ScalarT, typename Traits>
 void Density<ScalarT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.setFieldData(density);
-  vm.setFieldData(temp);
+  vm.getFieldData(density);
+  vm.getFieldData(temp);
 
   data_layout_size = density.fieldTag().dataLayout()->size();
 }
