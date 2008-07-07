@@ -425,7 +425,11 @@ private:
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
+  //! Backward-Mode Gauss Seidel 
+  bool DoBackwardGS_;
   // @}
+
+  
 
 };
 

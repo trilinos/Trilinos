@@ -227,7 +227,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
 }
 
 // ====================================================================== 
-bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
+bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, bool backward)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
@@ -239,6 +239,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
   Teuchos::ParameterList List;
   List.set("relaxation: damping factor", 1.0);
   List.set("relaxation: type", PrecType);
+  if(backward) List.set("relaxation: backward mode",backward);  
 
   int Iters1, Iters10;
 
@@ -316,7 +317,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
 }
 
 // ====================================================================== 
-bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
+bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,bool backward)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
@@ -330,6 +331,8 @@ bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
   List.set("relaxation: damping factor", 1.0);
   List.set("relaxation: sweeps",1550);
   List.set("relaxation: type", PrecType);
+  if(backward) List.set("relaxation: backward mode",backward);
+  
 
   Ifpack_PointRelaxation Point(&*A);
 
@@ -399,27 +402,33 @@ int main(int argc, char *argv[])
   // with all point relaxation methods        //
   // ======================================== //
 
-  if(!BasicTest("Jacobi",A))
+  if(!BasicTest("Jacobi",A,false))
     TestPassed = false;
 
-  if(!BasicTest("symmetric Gauss-Seidel",A))
+  if(!BasicTest("symmetric Gauss-Seidel",A,false))
     TestPassed = false;
 
   if (!SymmetricGallery) {
-    if(!BasicTest("Gauss-Seidel",A))
+    if(!BasicTest("Gauss-Seidel",A,false))
       TestPassed = false;
+    if(!BasicTest("Gauss-Seidel",A,true))
+      TestPassed = false;  
+
   }
 
   // ============================= //
   // check uses as preconditioners //
   // ============================= //
   
-  if(!KrylovTest("symmetric Gauss-Seidel",A))
+  if(!KrylovTest("symmetric Gauss-Seidel",A,false))
     TestPassed = false;
 
   if (!SymmetricGallery) {
-    if(!KrylovTest("Gauss-Seidel",A))
+    if(!KrylovTest("Gauss-Seidel",A,false))
       TestPassed = false;
+    if(!KrylovTest("Gauss-Seidel",A,true))
+      TestPassed = false;
+
   }
 
   // ================================== //

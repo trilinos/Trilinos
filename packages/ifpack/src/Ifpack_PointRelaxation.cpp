@@ -69,7 +69,8 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
   NumGlobalNonzeros_(0),
   Matrix_(Teuchos::rcp(Matrix,false)),
   IsParallel_(false),
-  ZeroStartingSolution_(true)
+  ZeroStartingSolution_(true),
+  DoBackwardGS_(false)
 {
 }
 
@@ -105,6 +106,8 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
   ZeroStartingSolution_ = List.get("relaxation: zero starting solution", 
                                    ZeroStartingSolution_);
 
+  DoBackwardGS_         = List.get("relaxation: backward mode",DoBackwardGS_);
+  
   SetLabel();
 
   return(0);
@@ -265,6 +268,8 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
       os << "Type           = Gauss-Seidel" << endl;
     else if (PrecType_ == IFPACK_SGS)
       os << "Type           = symmetric Gauss-Seidel" << endl;
+    if (DoBackwardGS_) 
+      os << "Using backward mode (GS only)" << endl;
     if (ZeroStartingSolution_) 
       os << "Using zero starting solution" << endl;
     else
@@ -324,8 +329,11 @@ void Ifpack_PointRelaxation::SetLabel()
   string PT;
   if (PrecType_ == IFPACK_JACOBI)
     PT = "Jacobi";
-  else if (PrecType_ == IFPACK_GS)
+  else if (PrecType_ == IFPACK_GS){
     PT = "GS";
+    if(DoBackwardGS_)
+      PT = "Backward " + PT;
+  }    
   else if (PrecType_ == IFPACK_SGS)
     PT = "SGS";
 
@@ -472,22 +480,44 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
       double* y20_ptr = y2_ptr[0];
       double* x0_ptr = x_ptr[0];
 
-      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+      if(!DoBackwardGS_){      
+        /* Forward Mode */
+        for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
-        int NumEntries;
-        int col;
-        IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
-                                                 &Values[0], &Indices[0]));
-
-        double dtemp = 0.0;
-        for (int k = 0 ; k < NumEntries ; ++k) {
-
-          col = Indices[k];
-          dtemp += Values[k] * y20_ptr[col];
+          int NumEntries;
+          int col;
+          IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                                   &Values[0], &Indices[0]));
+          
+          double dtemp = 0.0;
+          for (int k = 0 ; k < NumEntries ; ++k) {
+            
+            col = Indices[k];
+            dtemp += Values[k] * y20_ptr[col];
+          }
+          
+          y20_ptr[i] += DampingFactor_ * d_ptr[i] * (x0_ptr[i] - dtemp);
         }
-
-        y20_ptr[i] += DampingFactor_ * d_ptr[i] * (x0_ptr[i] - dtemp);
       }
+      else {
+        /* Backward Mode */
+        for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+          int NumEntries;
+          int col;
+          IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                                   &Values[0], &Indices[0]));
+          double dtemp = 0.0;
+          for (int k = 0 ; k < NumEntries ; ++k) {
+
+            col = Indices[k];
+            dtemp += Values[k] * y20_ptr[i];
+          }
+          
+          y20_ptr[i] += DampingFactor_ * d_ptr[i] * (x0_ptr[i] - dtemp);
+        }
+      }
+      
       // using Export() sounded quite expensive
       if (IsParallel_)
         for (int i = 0 ; i < NumMyRows_ ; ++i)
@@ -495,33 +525,57 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
 
     }
     else {
-
-      for (int i = 0 ; i < NumMyRows_ ; ++i) {
-
-        int NumEntries;
-        int col;
-        IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
-                                                 &Values[0], &Indices[0]));
-
-        for (int m = 0 ; m < NumVectors ; ++m) {
-
-          double dtemp = 0.0;
-          for (int k = 0 ; k < NumEntries ; ++k) {
-
-            col = Indices[k];
-            dtemp += Values[k] * y2_ptr[m][col];
+      if(!DoBackwardGS_){      
+        /* Forward Mode */
+        for (int i = 0 ; i < NumMyRows_ ; ++i) {
+          
+          int NumEntries;
+          int col;
+          IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                                   &Values[0], &Indices[0]));
+          
+          for (int m = 0 ; m < NumVectors ; ++m) {
+            
+            double dtemp = 0.0;
+            for (int k = 0 ; k < NumEntries ; ++k) {
+              
+              col = Indices[k];
+              dtemp += Values[k] * y2_ptr[m][col];
+            }
+            
+            y2_ptr[m][i] += DampingFactor_ * d_ptr[i] * (x_ptr[m][i] - dtemp);
           }
-
-          y2_ptr[m][i] += DampingFactor_ * d_ptr[i] * (x_ptr[m][i] - dtemp);
         }
-        // using Export() sounded quite expensive
+      }
+      else {
+        /* Backward Mode */
+        for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+          int NumEntries;
+          int col;
+          IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                                   &Values[0], &Indices[0]));
+
+          for (int m = 0 ; m < NumVectors ; ++m) {
+            
+            double dtemp = 0.0;
+            for (int k = 0 ; k < NumEntries ; ++k) {
+
+              col = Indices[k];
+              dtemp += Values[k] * y2_ptr[m][col];
+            }
+
+            y2_ptr[m][i] += DampingFactor_ * d_ptr[i] * (x_ptr[m][i] - dtemp);
+
+          }
+        }
       }
 
+      // using Export() sounded quite expensive   
       if (IsParallel_)
         for (int m = 0 ; m < NumVectors ; ++m) 
           for (int i = 0 ; i < NumMyRows_ ; ++i)
             y_ptr[m][i] = y2_ptr[m][i];
-
+      
     }
   }
 
@@ -558,28 +612,55 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
     if (IsParallel_)
       IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    if(!DoBackwardGS_){  
+      /* Forward Mode */
+      for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
-      int NumEntries;
-      int col;
-      double diag = d_ptr[i];
-
-      IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
-
-      for (int m = 0 ; m < NumVectors ; ++m) {
-
-        double dtemp = 0.0;
-
-        for (int k = 0; k < NumEntries; ++k) {
-
-          col = Indices[k];
-          dtemp += Values[k] * y2_ptr[m][col];
+        int NumEntries;
+        int col;
+        double diag = d_ptr[i];
+        
+        IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+        
+        for (int m = 0 ; m < NumVectors ; ++m) {
+          
+          double dtemp = 0.0;
+          
+          for (int k = 0; k < NumEntries; ++k) {
+            
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+          
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
         }
-
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
       }
     }
+    else {
+      /* Backward Mode */
+      for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
 
+        int NumEntries;
+        int col;
+        double diag = d_ptr[i];
+        
+        IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+        
+        for (int m = 0 ; m < NumVectors ; ++m) {
+          
+          double dtemp = 0.0;
+          for (int k = 0; k < NumEntries; ++k) {
+            
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+          
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+          
+        }
+      }
+    }
+    
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m) 
         for (int i = 0 ; i < NumMyRows_ ; ++i)
@@ -616,31 +697,56 @@ ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector
   Y.ExtractView(&y_ptr);
   Y2->ExtractView(&y2_ptr);
   Diagonal_->ExtractView(&d_ptr);
-  
+
   for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
     
     // only one data exchange per sweep
     if (IsParallel_)
       IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
-
-      int col;
-      double diag = d_ptr[i];
-
-      for (int m = 0 ; m < NumVectors ; ++m) {
-
-        double dtemp = 0.0;
-
-        for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
-
-          col = Indices[k];
-          dtemp += Values[k] * y2_ptr[m][col];
-        }
-
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+    if(!DoBackwardGS_){  
+      /* Forward Mode */
+      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+        
+        int col;
+        double diag = d_ptr[i];
+        
+        for (int m = 0 ; m < NumVectors ; ++m) {
+          
+          double dtemp = 0.0;
+          
+          for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+            
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+          
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+        }      
       }
     }
+    else {
+      /* Backward Mode */
+      for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+        int col;
+        double diag = d_ptr[i];
+        
+        for (int m = 0 ; m < NumVectors ; ++m) {
+
+          double dtemp = 0.0;
+          for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+
+        }
+      }
+    }
+    
 
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m) 
