@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	rcp(new Generic<MyTraits::MY_SCALAR>("cell_quantitiy", 1));
       Field<double> density("density", dl);
       ArrayRCP<double> a_density = arcp<double>(size);
-      density.getFieldData(a_density);
+      density.setFieldData(a_density);
       
       {
 	TimeMonitor tm(*arcp_time);
