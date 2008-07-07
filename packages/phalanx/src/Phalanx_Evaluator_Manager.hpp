@@ -5,29 +5,29 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_FieldEvaluator.hpp"
+#include "Phalanx_Evaluator.hpp"
 
 namespace PHX {
   
   template<typename Traits> class FieldManager;
 
-  /*! @brief Class to sort which FieldEvaluators should be called and the order in which to call them such that all dependencies are met.
+  /*! @brief Class to sort which Evaluators should be called and the order in which to call them such that all dependencies are met.
    */
   template<typename Traits>
-  class FieldEvaluatorManager {
+  class EvaluatorManager {
 
   public:
 
-    FieldEvaluatorManager(const std::string& scalar_type_name = "???");
+    EvaluatorManager(const std::string& scalar_type_name = "???");
     
-    ~FieldEvaluatorManager();
+    ~EvaluatorManager();
     
     //! Require a variable to be evaluated.
     void requireField(const PHX::FieldTag& v);
     
     //! Registers a variable provider with the manager.
     void 
-    registerEvaluator(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p);
+    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
     
     /*! Sets up all field dependencies.  This should only be called
       once all variables and DOFs have been added and all providers
@@ -89,7 +89,7 @@ namespace PHX {
       @brief Stores information about variable provider objects.
     */
     
-    std::vector< Teuchos::RCP<PHX::FieldEvaluator<Traits> > > 
+    std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > 
     varProviders;
     std::vector< std::vector<PHX::FieldTag> > providerVariables;
     std::vector< std::vector<PHX::FieldTag> > providerRequirements;
@@ -115,10 +115,10 @@ namespace PHX {
   
   template<typename Traits>
   std::ostream& operator<<(std::ostream& os, 
-			   const PHX::FieldEvaluatorManager<Traits>& m);
+			   const PHX::EvaluatorManager<Traits>& m);
 
 }
 
-#include "Phalanx_FieldEvaluator_Manager_Def.hpp"
+#include "Phalanx_Evaluator_Manager_Def.hpp"
 
 #endif

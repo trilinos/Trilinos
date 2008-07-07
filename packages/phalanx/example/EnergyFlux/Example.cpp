@@ -102,10 +102,10 @@ int main(int argc, char *argv[])
       }
 
       // Build Field Evaluators
-      FieldEvaluatorFactory<MyTraits,MyFactoryTraits<MyTraits> > factory;
-      RCP< vector< RCP<FieldEvaluator_TemplateManager<MyTraits> > > > 
+      EvaluatorFactory<MyTraits,MyFactoryTraits<MyTraits> > factory;
+      RCP< vector< RCP<Evaluator_TemplateManager<MyTraits> > > > 
 	providers;
-      providers = factory.buildFieldEvaluators(evaluators_to_build);
+      providers = factory.buildEvaluators(evaluators_to_build);
  
           
       // Request quantities to assemble PDE operators
@@ -115,8 +115,8 @@ int main(int argc, char *argv[])
       FieldTag source("Nonlinear Source", scalar_qp);
       vm.requireFieldForAllTypes(source);
       
-      // Register all FieldEvaluators 
-      registerFieldEvaluators(providers, vm);
+      // Register all Evaluators 
+      registerEvaluators(providers, vm);
 
       const std::size_t num_cells = 10;
       const std::size_t num_eval_loops = 1;

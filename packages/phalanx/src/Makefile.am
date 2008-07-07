@@ -53,19 +53,19 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataLayout.hpp \
 	$(srcdir)/Phalanx_DebugStrings.hpp \
 	$(srcdir)/Phalanx_DoxygenDocumentation.hpp \
+	$(srcdir)/Phalanx_Evaluator_Base.hpp \
+	$(srcdir)/Phalanx_Evaluator_Derived.hpp \
+	$(srcdir)/Phalanx_Evaluator_Factory_Def.hpp \
+	$(srcdir)/Phalanx_Evaluator_Factory.hpp \
+	$(srcdir)/Phalanx_Evaluator_Factory_UFO.hpp \
+	$(srcdir)/Phalanx_Evaluator.hpp \
+	$(srcdir)/Phalanx_Evaluator_Manager_Def.hpp \
+	$(srcdir)/Phalanx_Evaluator_Manager.hpp \
+	$(srcdir)/Phalanx_Evaluator_TemplateBuilder.hpp \
+	$(srcdir)/Phalanx_Evaluator_TemplateManager.hpp \
+	$(srcdir)/Phalanx_Evaluator_Utilities_Def.hpp \
+	$(srcdir)/Phalanx_Evaluator_Utilities.hpp \
 	$(srcdir)/Phalanx_Field_Def.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Base.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Derived.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Factory_Def.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Factory.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Factory_UFO.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Manager_Def.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Manager.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_TemplateBuilder.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_TemplateManager.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Utilities_Def.hpp \
-	$(srcdir)/Phalanx_FieldEvaluator_Utilities.hpp \
 	$(srcdir)/Phalanx_Field.hpp \
 	$(srcdir)/Phalanx_FieldManager_Def.hpp \
 	$(srcdir)/Phalanx_FieldManager.hpp \

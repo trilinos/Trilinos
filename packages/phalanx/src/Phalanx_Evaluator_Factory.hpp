@@ -5,16 +5,16 @@
 #include <vector>
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Phalanx_FieldEvaluator_TemplateManager.hpp"
+#include "Phalanx_Evaluator_TemplateManager.hpp"
 
 namespace PHX {
 
   template<typename Traits, typename FactoryTraits>
-  class FieldEvaluatorFactory {
+  class EvaluatorFactory {
     
   public:
-    typename Teuchos::RCP< std::vector< Teuchos::RCP<PHX::FieldEvaluator_TemplateManager<Traits> > > > 
-    buildFieldEvaluators(const std::map<std::string, 
+    typename Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator_TemplateManager<Traits> > > > 
+    buildEvaluators(const std::map<std::string, 
 			 Teuchos::RCP<Teuchos::ParameterList> >& data);
     
   };
@@ -22,14 +22,14 @@ namespace PHX {
 
   /*! \brief Nonmember helper function for registering field evaluators for all scalar types that are built with template managers.
 
-  \relates PHX::FieldEvaluatorFactory
+  \relates PHX::EvaluatorFactory
 
   */
   template<typename Traits>
-  void registerFieldEvaluators(const Teuchos::RCP< std::vector< Teuchos::RCP<PHX::FieldEvaluator_TemplateManager<Traits> > > >& t, PHX::FieldManager<Traits>& fm);
+  void registerEvaluators(const Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator_TemplateManager<Traits> > > >& t, PHX::FieldManager<Traits>& fm);
 
 } 
 
-#include "Phalanx_FieldEvaluator_Factory_Def.hpp"
+#include "Phalanx_Evaluator_Factory_Def.hpp"
 
 #endif 

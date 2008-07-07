@@ -6,18 +6,18 @@
 
 //**********************************************************************
 template<typename Traits>
-PHX::FieldEvaluatorUtilities<Traits>::FieldEvaluatorUtilities() :
+PHX::EvaluatorUtilities<Traits>::EvaluatorUtilities() :
   name_("???")
 { }
 
 //**********************************************************************
 template<typename Traits>
-PHX::FieldEvaluatorUtilities<Traits>::~FieldEvaluatorUtilities()
+PHX::EvaluatorUtilities<Traits>::~EvaluatorUtilities()
 { }
 
 //**********************************************************************
 template<typename Traits>
-void PHX::FieldEvaluatorUtilities<Traits>::
+void PHX::EvaluatorUtilities<Traits>::
 addEvaluatedField(const PHX::FieldTag& v)
 { 
   std::vector<FieldTag>::iterator test = 
@@ -30,7 +30,7 @@ addEvaluatedField(const PHX::FieldTag& v)
 //**********************************************************************
 template<typename Traits>
 template<typename DataT>
-void PHX::FieldEvaluatorUtilities<Traits>::
+void PHX::EvaluatorUtilities<Traits>::
 addEvaluatedField(const PHX::Field<DataT>& f)
 { 
   this->template addEvaluatedField(f.fieldTag());
@@ -38,7 +38,7 @@ addEvaluatedField(const PHX::Field<DataT>& f)
 
 //**********************************************************************
 template<typename Traits>
-void PHX::FieldEvaluatorUtilities<Traits>::
+void PHX::EvaluatorUtilities<Traits>::
 addDependentField(const PHX::FieldTag& v)
 {
   std::vector<FieldTag>::iterator test = 
@@ -51,7 +51,7 @@ addDependentField(const PHX::FieldTag& v)
 //**********************************************************************
 template<typename Traits>
 template<typename DataT>
-void PHX::FieldEvaluatorUtilities<Traits>::
+void PHX::EvaluatorUtilities<Traits>::
 addDependentField(const PHX::Field<DataT>& v)
 {
   this->template addDependentField(v.fieldTag());
@@ -59,37 +59,37 @@ addDependentField(const PHX::Field<DataT>& v)
 
 //**********************************************************************
 template<typename Traits>
-void PHX::FieldEvaluatorUtilities<Traits>::
+void PHX::EvaluatorUtilities<Traits>::
 setName(const std::string& name)
 { name_ = name; }
 
 //**********************************************************************
 template<typename Traits>
 const std::vector<PHX::FieldTag>&
-PHX::FieldEvaluatorUtilities<Traits>::evaluatedFields() const
+PHX::EvaluatorUtilities<Traits>::evaluatedFields() const
 { return evaluated_; }
 
 //**********************************************************************
 template<typename Traits>
 const std::vector<PHX::FieldTag>&
-PHX::FieldEvaluatorUtilities<Traits>::dependentFields() const
+PHX::EvaluatorUtilities<Traits>::dependentFields() const
 { return required_; }
 
 //**********************************************************************
 template<typename Traits>
-void PHX::FieldEvaluatorUtilities<Traits>::
+void PHX::EvaluatorUtilities<Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 { }
 
 //**********************************************************************
 template<typename Traits>
-void PHX::FieldEvaluatorUtilities<Traits>::
+void PHX::EvaluatorUtilities<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 { }
 
 //**********************************************************************
 template<typename Traits>
-const std::string& PHX::FieldEvaluatorUtilities<Traits>::
+const std::string& PHX::EvaluatorUtilities<Traits>::
 getName() const
 {return name_;}
 

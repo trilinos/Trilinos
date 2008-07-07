@@ -9,19 +9,19 @@
 namespace PHX {
 
   template<typename Traits, typename ObjectT>
-  class FieldEvaluator_TemplateBuilder {
+  class Evaluator_TemplateBuilder {
     
     Teuchos::RCP<Teuchos::ParameterList> p;
 
   public:
     
-    FieldEvaluator_TemplateBuilder(const Teuchos::RCP<Teuchos::ParameterList>& param) :
+    Evaluator_TemplateBuilder(const Teuchos::RCP<Teuchos::ParameterList>& param) :
       p(param) {}
 
     template <typename ScalarT>
-    Teuchos::RCP< PHX::FieldEvaluatorBase<Traits> > build() const {
+    Teuchos::RCP< PHX::EvaluatorBase<Traits> > build() const {
       typedef typename boost::mpl::apply<ObjectT,ScalarT>::type type;
-      return Teuchos::rcp( static_cast< PHX::FieldEvaluatorBase<Traits>* > (new type(*p)) );
+      return Teuchos::rcp( static_cast< PHX::EvaluatorBase<Traits>* > (new type(*p)) );
     }
     
   };

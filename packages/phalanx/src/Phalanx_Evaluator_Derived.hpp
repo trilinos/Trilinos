@@ -4,19 +4,19 @@
 
 #include <vector>
 
-#include "Phalanx_FieldEvaluator_Base.hpp"
+#include "Phalanx_Evaluator_Base.hpp"
 
 namespace PHX {
 
   template<typename ScalarT, typename Traits>
-  class FieldEvaluatorDerived : 
-    public PHX::FieldEvaluatorBase<Traits> {
+  class EvaluatorDerived : 
+    public PHX::EvaluatorBase<Traits> {
     
   public:
     
-    FieldEvaluatorDerived() {}
+    EvaluatorDerived() {}
 
-    virtual ~FieldEvaluatorDerived() {}
+    virtual ~EvaluatorDerived() {}
     
   };
 

@@ -1,7 +1,7 @@
 #ifndef PHX_SCALAR_CONTAINER_DEF_HPP
 #define PHX_SCALAR_CONTAINER_DEF_HPP
 
-#include "Phalanx_FieldEvaluator.hpp"
+#include "Phalanx_Evaluator.hpp"
 #include "Phalanx_DebugStrings.hpp"
 
 // *************************************************************************
@@ -30,7 +30,7 @@ requireField(const PHX::FieldTag& f)
 // *************************************************************************
 template <typename ScalarT, typename Traits>
 void PHX::ScalarContainer<ScalarT, Traits>::
-registerEvaluator(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p)
+registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
   this->vp_manager_.registerEvaluator(p);
 }

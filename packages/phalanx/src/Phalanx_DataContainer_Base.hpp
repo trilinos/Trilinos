@@ -3,7 +3,7 @@
 
 #include <typeinfo>
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_FieldEvaluator_Manager.hpp"
+#include "Phalanx_Evaluator_Manager.hpp"
 
 namespace PHX {
 

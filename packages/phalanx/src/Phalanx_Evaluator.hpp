@@ -28,15 +28,15 @@ namespace PHX {
       routines to the FieldManager.
   */
   template <typename Traits>
-  class FieldEvaluator {
+  class Evaluator {
     
   public:
     
     //! Ctor
-    FieldEvaluator() {};
+    Evaluator() {};
     
     //! Dtor
-    virtual ~FieldEvaluator() {};
+    virtual ~Evaluator() {};
 
     /*! \brief Allows providers to grab pointers to data arrays.
       

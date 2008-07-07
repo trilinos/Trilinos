@@ -4,7 +4,7 @@
 // mpl (Meta Programming Library) templates
 #include "Sacado_mpl_vector.hpp"
 
-// User Defined FieldEvaluator Types
+// User Defined Evaluator Types
 #include "Evaluator_Constant.hpp"
 #include "Evaluator_Density.hpp"
 #include "Evaluator_EnergyFlux_Fourier.hpp"
@@ -15,10 +15,10 @@
 #include "boost/mpl/placeholders.hpp"
 using namespace boost::mpl::placeholders;
 
-/*! \brief Struct to define FieldEvaluators objects for the FieldEvaluatorFactory.
+/*! \brief Struct to define Evaluators objects for the EvaluatorFactory.
     
     Preconditions:
-    - You must provide a Sacado::mpl::vector named FieldEvaluatorTypes that contain all FieldEvaluator objects. 
+    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects. 
 
 */
 template<typename Traits>
@@ -35,7 +35,7 @@ struct MyFactoryTraits {
  			       Fourier<_,Traits>,              // 2
  			       FEInterpolation<_,Traits>,      // 3
  			       NonlinearSource<_,Traits>       // 4
-  > FieldEvaluatorTypes;
+  > EvaluatorTypes;
 
 };
 

@@ -4,24 +4,24 @@
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Phalanx_FieldEvaluator.hpp"
+#include "Phalanx_Evaluator.hpp"
 
 //=======================================================================
 template<typename Traits>
-PHX::FieldEvaluatorManager<Traits>::
-FieldEvaluatorManager(const std::string& scalar_type_name)
+PHX::EvaluatorManager<Traits>::
+EvaluatorManager(const std::string& scalar_type_name)
   :
   sorting_called_(false)
 { }
 
 //=======================================================================
 template<typename Traits>
-PHX::FieldEvaluatorManager<Traits>::~FieldEvaluatorManager()
+PHX::EvaluatorManager<Traits>::~EvaluatorManager()
 { }
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
+void PHX::EvaluatorManager<Traits>::
 requireField(const PHX::FieldTag& f)
 {
   using namespace std;
@@ -34,8 +34,8 @@ requireField(const PHX::FieldTag& f)
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
-registerEvaluator(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p)
+void PHX::EvaluatorManager<Traits>::
+registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
   varProviders.push_back(p);
   providerVariables.push_back(p->evaluatedFields());
@@ -44,7 +44,7 @@ registerEvaluator(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p)
 
 #ifdef CHARONDEBUG
   char const* const methodID =
-    "charon:FieldEvaluatorManager::registerFieldEvaluator";
+    "charon:EvaluatorManager::registerEvaluator";
   if (DO_DEBUG_OUTPUT(methodID,10)) {
     std::cout << "Registered provider: " << p->getName()
               << std::endl
@@ -65,7 +65,7 @@ registerEvaluator(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p)
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
+void PHX::EvaluatorManager<Traits>::
 sortAndOrderEvaluators()
 {
   if (sorting_called_) {
@@ -99,7 +99,7 @@ sortAndOrderEvaluators()
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
+void PHX::EvaluatorManager<Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
   // Call each providers' post registration setup
@@ -109,7 +109,7 @@ postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::createProviderEvaluationOrder()
+void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
 {
   // Before sorting provider order, we need to add any intermediate
   // variables to the fields_ that are not specified by the operators.
@@ -228,7 +228,7 @@ void PHX::FieldEvaluatorManager<Traits>::createProviderEvaluationOrder()
     }  // for (std::size_t var = 0; var < tmpList.size(); var++) {
 
     if (!removedVariable) {
-      std::string msg = "FieldEvaluatorManager";
+      std::string msg = "EvaluatorManager";
       msg += scalar_type_name_;
       msg += " \nCould not meet dependencies!\n";
       msg += "The following variables either have no provider or have a\n";
@@ -237,7 +237,7 @@ void PHX::FieldEvaluatorManager<Traits>::createProviderEvaluationOrder()
       for (std::size_t i = 0; i < tmpList.size(); i++)
 	ost << tmpList[i] << std::endl;
       msg += ost.str();
-      msg += "\nPrinting FieldEvaluatorManager:\n";
+      msg += "\nPrinting EvaluatorManager:\n";
       std::ostringstream ost2;
       ost2 << *this << std::endl;
       msg += ost2.str();
@@ -250,7 +250,7 @@ void PHX::FieldEvaluatorManager<Traits>::createProviderEvaluationOrder()
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
+void PHX::EvaluatorManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
@@ -259,7 +259,7 @@ evaluateFields(typename Traits::EvalData d)
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
+void PHX::EvaluatorManager<Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
   for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
@@ -268,7 +268,7 @@ preEvaluate(typename Traits::PreEvalData d)
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
+void PHX::EvaluatorManager<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
   for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
@@ -277,7 +277,7 @@ postEvaluate(typename Traits::PostEvalData d)
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::
+void PHX::EvaluatorManager<Traits>::
 setScalarTypeName(const std::string& scalar_type_name)
 {
   scalar_type_name_ = scalar_type_name;
@@ -285,7 +285,7 @@ setScalarTypeName(const std::string& scalar_type_name)
 
 //=======================================================================
 template<typename Traits>
-const std::vector<PHX::FieldTag>& PHX::FieldEvaluatorManager<Traits>::
+const std::vector<PHX::FieldTag>& PHX::EvaluatorManager<Traits>::
 getFieldTags()
 {
   return fields_;
@@ -293,17 +293,17 @@ getFieldTags()
 
 //=======================================================================
 template<typename Traits>
-bool PHX::FieldEvaluatorManager<Traits>::sortingCalled() const
+bool PHX::EvaluatorManager<Traits>::sortingCalled() const
 {
   return sorting_called_;
 }
 
 //=======================================================================
 template<typename Traits>
-void PHX::FieldEvaluatorManager<Traits>::print(std::ostream& os) const
+void PHX::EvaluatorManager<Traits>::print(std::ostream& os) const
 {
   os << "******************************************************" << std::endl;
-  os << "PHX::FieldEvaluatorManager" << std::endl;
+  os << "PHX::EvaluatorManager" << std::endl;
   os << "Scalar Type = " << scalar_type_name_ << std::endl;
   os << "******************************************************" << std::endl;
 
@@ -344,7 +344,7 @@ void PHX::FieldEvaluatorManager<Traits>::print(std::ostream& os) const
   os << "** Finished Provider Evaluation Order" << std::endl;
 
   os << "******************************************************" << std::endl;
-  os << "Finished PHX::FieldEvaluatorManager" << std::endl;
+  os << "Finished PHX::EvaluatorManager" << std::endl;
   os << "******************************************************" << std::endl;
 
 }
@@ -352,7 +352,7 @@ void PHX::FieldEvaluatorManager<Traits>::print(std::ostream& os) const
 //=======================================================================
 template<typename Traits>
 std::ostream&
-PHX::operator<<(std::ostream& os, const PHX::FieldEvaluatorManager<Traits>& m)
+PHX::operator<<(std::ostream& os, const PHX::EvaluatorManager<Traits>& m)
 {
   m.print(os);
   return os;

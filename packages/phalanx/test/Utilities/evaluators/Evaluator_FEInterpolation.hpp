@@ -3,14 +3,14 @@
 #define PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_FieldEvaluator_Utilities.hpp"
-#include "Phalanx_FieldEvaluator_Derived.hpp"
+#include "Phalanx_Evaluator_Utilities.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
 template<typename ScalarT, typename Traits>
-class FEInterpolation : public PHX::FieldEvaluatorUtilities<Traits>,
-			public PHX::FieldEvaluatorDerived<ScalarT, Traits>  {
+class FEInterpolation : public PHX::EvaluatorUtilities<Traits>,
+			public PHX::EvaluatorDerived<ScalarT, Traits>  {
   
 public:
   

@@ -96,10 +96,10 @@ RCP< FieldManager<Traits> > buildFieldManager()
   }
   
   // Build Field Evaluators
-  FieldEvaluatorFactory<Traits,MyFactoryTraits<Traits> > factory;
-  RCP< vector< RCP<FieldEvaluator_TemplateManager<Traits> > > > 
+  EvaluatorFactory<Traits,MyFactoryTraits<Traits> > factory;
+  RCP< vector< RCP<Evaluator_TemplateManager<Traits> > > > 
     providers;
-  providers = factory.buildFieldEvaluators(evaluators_to_build);
+  providers = factory.buildEvaluators(evaluators_to_build);
   
   
   // Request quantities to assemble PDE operators
@@ -109,8 +109,8 @@ RCP< FieldManager<Traits> > buildFieldManager()
   FieldTag source("Nonlinear Source", scalar_qp);
   vm->requireFieldForAllTypes(source);
   
-  // Register all FieldEvaluators
-  registerFieldEvaluators(providers, *vm);
+  // Register all Evaluators
+  registerEvaluators(providers, *vm);
   
   return vm;
 

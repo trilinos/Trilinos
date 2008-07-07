@@ -29,13 +29,13 @@ namespace PHX {
     template<typename ScalarT>
     void requireFieldForScalarType(const PHX::FieldTag& v);
 
-    void registerEvaluatorForAllTypes(const Teuchos::RCP< PHX::FieldEvaluator<Traits> >& p);
+    void registerEvaluatorForAllTypes(const Teuchos::RCP< PHX::Evaluator<Traits> >& p);
     
     template<typename ScalarT>
-    void registerEvaluatorForScalarType(const Teuchos::RCP< PHX::FieldEvaluator<Traits> >& p);
+    void registerEvaluatorForScalarType(const Teuchos::RCP< PHX::Evaluator<Traits> >& p);
 
     void registerEvaluatorForScalarType(typename PHX::FieldManager<Traits>::iterator it,
-				 const Teuchos::RCP< PHX::FieldEvaluator<Traits> >& p);
+				 const Teuchos::RCP< PHX::Evaluator<Traits> >& p);
     
     template<typename DataT> 
     void setFieldData(PHX::Field<DataT>& h);

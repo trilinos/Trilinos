@@ -7,13 +7,13 @@ namespace PHX {
   /*! \brief Template Manager "Base" class object for all field evaluators.
   */
   template<typename Traits>
-  class FieldEvaluatorBase {
+  class EvaluatorBase {
     
   public:
     
-    FieldEvaluatorBase() {}
+    EvaluatorBase() {}
     
-    virtual ~FieldEvaluatorBase() {}
+    virtual ~EvaluatorBase() {}
     
   };
   

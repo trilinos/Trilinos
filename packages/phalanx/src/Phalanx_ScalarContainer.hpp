@@ -5,7 +5,7 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_ScalarContainer_Base.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_FieldEvaluator.hpp"
+#include "Phalanx_Evaluator.hpp"
 #include "Phalanx_DataContainer_TemplateManager.hpp"
 
 namespace PHX {
@@ -27,7 +27,7 @@ namespace PHX {
     void requireField(const PHX::FieldTag& f);
 
     void 
-    registerEvaluator(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p);
+    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
     template <typename DataT> 
     Teuchos::ArrayRCP<DataT> getFieldData(const PHX::FieldTag& f);

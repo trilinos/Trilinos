@@ -4,14 +4,14 @@
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "AlgebraicTypes.hpp"
-#include "Phalanx_FieldEvaluator_Utilities.hpp"
-#include "Phalanx_FieldEvaluator_Derived.hpp"
+#include "Phalanx_Evaluator_Utilities.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
 template<typename ScalarT, typename Traits>
-class Fourier : public PHX::FieldEvaluatorUtilities<Traits>,
-		public PHX::FieldEvaluatorDerived<ScalarT, Traits>  {
+class Fourier : public PHX::EvaluatorUtilities<Traits>,
+		public PHX::EvaluatorDerived<ScalarT, Traits>  {
   
 public:
   

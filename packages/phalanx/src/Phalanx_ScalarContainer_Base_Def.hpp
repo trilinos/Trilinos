@@ -27,7 +27,7 @@ requireField(const PHX::FieldTag& f)
 // **************************************************************************
 template<typename Traits>
 void PHX::ScalarContainerBase<Traits>::
-registerEvaluator(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& e) 
+registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& e) 
 { 
   vp_manager_.registerEvaluator(e);
 }

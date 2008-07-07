@@ -74,7 +74,7 @@ requireFieldForScalarType(const PHX::FieldTag& v)
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-registerEvaluatorForAllTypes(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p)
+registerEvaluatorForAllTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
   typedef PHX::ScalarContainer_TemplateManager<Traits> SCTM;
   
@@ -89,7 +89,7 @@ template<typename Traits>
 template<typename ScalarT>
 inline
 void PHX::FieldManager<Traits>::
-registerEvaluatorForScalarType(const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& p)
+registerEvaluatorForScalarType(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
   scalar_containers_.template getAsBase<ScalarT>()->template registerEvaluator(p);
 }
@@ -99,7 +99,7 @@ template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
 registerEvaluatorForScalarType(FieldManager::iterator it,
-			const Teuchos::RCP<PHX::FieldEvaluator<Traits> >& e)
+			const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
   it->registerEvaluator(e);
 }

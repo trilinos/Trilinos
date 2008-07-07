@@ -4,27 +4,27 @@
 
 #include <vector>
 
-#include "Phalanx_FieldEvaluator.hpp"
+#include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Field.hpp"
 
 namespace PHX {
 
-  /*! @brief Class that provides helper functions for the pure virtual PHX::FieldEvaluator class.
+  /*! @brief Class that provides helper functions for the pure virtual PHX::Evaluator class.
    
       This class implements code that would essentially be repeated in
-      each FieldEvaluator class, making it quicker for developers to
+      each Evaluator class, making it quicker for developers to
       add new evaluators.  All field evaluators should inherit from
       this class instead of the base class so they don't have to code
       the same handlers in all providers, but this is not mandatory.
   */
   template <typename Traits>
-  class FieldEvaluatorUtilities : public PHX::FieldEvaluator<Traits> {
+  class EvaluatorUtilities : public PHX::Evaluator<Traits> {
 
   public:
 
-    FieldEvaluatorUtilities();
+    EvaluatorUtilities();
 
-    virtual ~FieldEvaluatorUtilities();
+    virtual ~EvaluatorUtilities();
 
     virtual void addEvaluatedField(const PHX::FieldTag& v);
 
@@ -63,6 +63,6 @@ namespace PHX {
 
 }
 
-#include "Phalanx_FieldEvaluator_Utilities_Def.hpp"
+#include "Phalanx_Evaluator_Utilities_Def.hpp"
 
 #endif

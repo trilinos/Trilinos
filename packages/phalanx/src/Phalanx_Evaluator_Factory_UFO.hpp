@@ -6,8 +6,8 @@
 #include "Sacado_mpl_at.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Phalanx_FieldEvaluator_TemplateManager.hpp"
-#include "Phalanx_FieldEvaluator_TemplateBuilder.hpp"
+#include "Phalanx_Evaluator_TemplateManager.hpp"
+#include "Phalanx_Evaluator_TemplateBuilder.hpp"
 
 namespace PHX {
 
@@ -17,19 +17,19 @@ namespace PHX {
     
     int object_type;
     Teuchos::RCP<Teuchos::ParameterList> params;
-    Teuchos::RCP< FieldEvaluator_TemplateManager<Traits> >& tm;
+    Teuchos::RCP< Evaluator_TemplateManager<Traits> >& tm;
     bool& found_object;
     
     UFO(int v, const Teuchos::RCP<Teuchos::ParameterList>& p, 
-	Teuchos::RCP< FieldEvaluator_TemplateManager<Traits> >& t,
+	Teuchos::RCP< Evaluator_TemplateManager<Traits> >& t,
 	bool& found) 
       : object_type(v), params(p), tm(t), found_object(found) {}
     
     template<typename T> void operator()(T t)
     {
       if (object_type == t) {
-	typedef typename Sacado::mpl::at<typename FactoryTraits::FieldEvaluatorTypes, T::value >::type type;
-	PHX::FieldEvaluator_TemplateBuilder<Traits, type> builder(params);
+	typedef typename Sacado::mpl::at<typename FactoryTraits::EvaluatorTypes, T::value >::type type;
+	PHX::Evaluator_TemplateBuilder<Traits, type> builder(params);
 	tm->buildObjects(builder);
 	found_object = true;
       }
