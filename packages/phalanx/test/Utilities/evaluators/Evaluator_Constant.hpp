@@ -3,14 +3,14 @@
 #define PHX_EXAMPLE_VP_CONSTANT_HPP
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_Utilities.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
 template<typename ScalarT, typename Traits>
 class Constant : 
-  public PHX::EvaluatorUtilities<Traits>,
+  public PHX::EvaluatorWithBaseImpl<Traits>,
   public PHX::EvaluatorDerived<ScalarT, Traits> {
   
 public:

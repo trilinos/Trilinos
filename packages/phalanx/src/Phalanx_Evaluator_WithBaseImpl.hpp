@@ -1,6 +1,6 @@
 
-#ifndef PHX_FIELD_EVALUATOR_UTILITIES_H
-#define PHX_FIELD_EVALUATOR_UTILITIES_H
+#ifndef PHX_EVALUATOR_WITHBASEIMPL_H
+#define PHX_EVALUATOR_WITHBASEIMPL_H
 
 #include <vector>
 
@@ -9,7 +9,7 @@
 
 namespace PHX {
 
-  /*! @brief Class that provides helper functions for the pure virtual PHX::Evaluator class.
+  /*! @brief Class that implements helper functions for the pure virtual PHX::Evaluator class.
    
       This class implements code that would essentially be repeated in
       each Evaluator class, making it quicker for developers to add
@@ -19,13 +19,13 @@ namespace PHX {
       mandatory.
   */
   template <typename Traits>
-  class EvaluatorUtilities : public PHX::Evaluator<Traits> {
+  class EvaluatorWithBaseImpl : public PHX::Evaluator<Traits> {
 
   public:
 
-    EvaluatorUtilities();
+    EvaluatorWithBaseImpl();
 
-    virtual ~EvaluatorUtilities();
+    virtual ~EvaluatorWithBaseImpl();
 
     virtual void addEvaluatedField(const PHX::FieldTag& v);
 
@@ -64,6 +64,6 @@ namespace PHX {
 
 }
 
-#include "Phalanx_Evaluator_Utilities_Def.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl_Def.hpp"
 
 #endif

@@ -3,13 +3,13 @@
 #define PHX_EXAMPLE_VP_NONLINEAR_SOURCE_HPP
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_Utilities.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
 template<typename ScalarT, typename Traits>
-class NonlinearSource : public PHX::EvaluatorUtilities<Traits>,
+class NonlinearSource : public PHX::EvaluatorWithBaseImpl<Traits>,
 			public PHX::EvaluatorDerived<ScalarT, Traits> {
   
 public:
