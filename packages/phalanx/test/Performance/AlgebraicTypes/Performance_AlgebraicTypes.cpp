@@ -18,11 +18,11 @@ int main(int argc, char* argv[])
   using namespace Teuchos;
 
   const int num_samples = 1;
-  const int num_loops = 50000000;
+  const int num_loops = 500000;
   const int size = 10;
   const int num_vectors = 3;
 
-  TEST_FOR_EXCEPTION(num_loops * size != 500000000, std::logic_error,
+  TEST_FOR_EXCEPTION(num_loops * size != 5000000, std::logic_error,
 		     "Work amount is not constant!");
 
   // Make all vectors in a contiguous block

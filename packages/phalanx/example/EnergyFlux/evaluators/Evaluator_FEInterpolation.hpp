@@ -5,9 +5,14 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_Utilities.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
+/** \brief Finite Element Interpolation Evaluator
+
+    This object evaluates a scalar field and it's gradient at the
+    quadrature points for a specific variable.
+
+*/
 template<typename ScalarT, typename Traits>
 class FEInterpolation : public PHX::EvaluatorUtilities<Traits>,
 			public PHX::EvaluatorDerived<ScalarT, Traits>  {
@@ -28,10 +33,14 @@ public:
   
 private:
 
-  std::vector< PHX::Field< ScalarT > > s_n;
-  std::vector< PHX::Field< ScalarT > > s_qp;
-  std::vector< PHX::Field< ScalarT > > g_n;
-  std::vector< PHX::Field< MyVector<ScalarT> > > g_qp;
+  //! Values at nodes
+  PHX::Field< ScalarT > val_node;
+
+  //! Values at quadrature points
+  PHX::Field< ScalarT > val_qp;
+
+  //! Gradient values at quadrature points
+  PHX::Field< MyVector<ScalarT> > val_grad_qp;
   
 };
 

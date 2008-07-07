@@ -79,19 +79,18 @@ RCP< FieldManager<Traits> > buildFieldManager()
   
   { // FE Interpolation
     RCP<ParameterList> p = rcp(new ParameterList);
-    int type = MyFactoryTraits<Traits>::id_feinterpolation;
-    p->set<int>("Type", type);
-    RCP< vector<FieldTag> > dof_node = rcp(new vector<FieldTag>);
-    dof_node->push_back(FieldTag("Temperature", scalar_node));
-    RCP< vector<FieldTag> > dof_qp = rcp(new vector<FieldTag>);
-    dof_qp->push_back(FieldTag("Temperature", scalar_qp));
-    RCP< vector<FieldTag> > grad_dof_qp = rcp(new vector<FieldTag>);
-    grad_dof_qp->push_back(FieldTag("Temperature Gradient", vector_qp));
     
-    p->set< RCP< vector<FieldTag> > >("Scalar Node", dof_node);
-    p->set< RCP< vector<FieldTag> > >("Scalar QP", dof_qp); 
-    p->set< RCP< vector<FieldTag> > >("Grad Scalar Node", dof_node);
-    p->set< RCP< vector<FieldTag> > >("Grad Vector QP", grad_dof_qp);
+    int type = MyFactoryTraits<MyTraits>::id_feinterpolation;
+    p->set<int>("Type", type);
+    
+    p->set<string>("Node Variable Name", "Temperature");
+    p->set<string>("QP Variable Name", "Temperature");
+    p->set<string>("Gradient QP Variable Name", "Temperature Gradient");
+    
+    p->set< RCP<DataLayout> >("Node Data Layout", scalar_node);
+    p->set< RCP<DataLayout> >("QP Data Layout", scalar_qp);
+    p->set< RCP<DataLayout> >("Gradient QP Data Layout", vector_qp);
+    
     evaluators_to_build["FE Interpolation"] = p;
   }
   

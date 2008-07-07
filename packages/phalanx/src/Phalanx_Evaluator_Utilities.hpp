@@ -12,10 +12,11 @@ namespace PHX {
   /*! @brief Class that provides helper functions for the pure virtual PHX::Evaluator class.
    
       This class implements code that would essentially be repeated in
-      each Evaluator class, making it quicker for developers to
-      add new evaluators.  All field evaluators should inherit from
-      this class instead of the base class so they don't have to code
-      the same handlers in all providers, but this is not mandatory.
+      each Evaluator class, making it quicker for developers to add
+      new evaluators.  All field evaluators should inherit from this
+      class if possible instead of the base class so they don't have
+      to code the same boilerplate in all evaluators, but this is not
+      mandatory.
   */
   template <typename Traits>
   class EvaluatorUtilities : public PHX::Evaluator<Traits> {
