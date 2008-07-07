@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      // getFieldData()
+      // setFieldData()
       cout << "Testing getFieldData() accessor...";
       const int size = 100;
       ArrayRCP<double> a_scalar_scalar = 
@@ -107,12 +107,12 @@ int main(int argc, char *argv[])
       ArrayRCP< MyVector<MyTraits::FadType> > f_vector_fad = 
 	arcp< MyVector<MyTraits::FadType> >(size);
 
-      a.getFieldData(a_scalar_scalar);
-      b.getFieldData(b_vector_scalar);
-      c.getFieldData(c_scalar_fad);
-      d.getFieldData(d_vector_fad);
-      e.getFieldData(e_scalar_scalar);
-      f.getFieldData(f_vector_fad);
+      a.setFieldData(a_scalar_scalar);
+      b.setFieldData(b_vector_scalar);
+      c.setFieldData(c_scalar_fad);
+      d.setFieldData(d_vector_fad);
+      e.setFieldData(e_scalar_scalar);
+      f.setFieldData(f_vector_fad);
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
