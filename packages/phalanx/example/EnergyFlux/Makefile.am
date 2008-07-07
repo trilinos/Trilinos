@@ -72,7 +72,7 @@ example_DEPENDENCIES = \
 example_LDADD = $(EXAMPLE_LIBS)
 
 example_algebraic_types_SOURCES = \
-	$(srcdir)/Example_AlgebraicTypes.cpp \
+	$(srcdir)/auxiliary_tests/Example_AlgebraicTypes.cpp \
 	$(srcdir)/AlgebraicTypes.hpp \
 	$(srcdir)/Traits.hpp \
 	$(srcdir)/FactoryTraits.hpp \
@@ -95,7 +95,7 @@ example_algebraic_types_DEPENDENCIES = \
 example_algebraic_types_LDADD = $(EXAMPLE_LIBS)
 
 example_debug_names_SOURCES = \
-	$(srcdir)/Example_DebugNames.cpp \
+	$(srcdir)/auxiliary_tests/Example_DebugNames.cpp \
 	$(srcdir)/AlgebraicTypes.hpp \
 	$(srcdir)/Traits.hpp
 
