@@ -784,6 +784,10 @@ int Epetra_BlockMap::RemoteIDList(int NumIDs, const int * GIDList,
 //==============================================================================
 bool Epetra_BlockMap::DetermineIsOneToOne()
 {
+  if (Comm().NumProc() < 2) {
+    return(true);
+  }
+  
   if (BlockMapData_->Directory_ == NULL) {
     BlockMapData_->Directory_ = Comm().CreateDirectory(*this);
   }
