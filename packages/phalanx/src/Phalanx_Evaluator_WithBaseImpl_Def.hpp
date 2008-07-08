@@ -1,8 +1,14 @@
 #ifndef PHX_EVALUATOR_WITHBASEIMPL_DEF_H
 #define PHX_EVALUATOR_WITHBASEIMPL_DEF_H
 
-#include <algorithm>
-#include <vector>
+#include "Phalanx_ConfigDefs.hpp"
+
+//**********************************************************************
+template<typename Traits>
+PHX::EvaluatorWithBaseImpl<Traits>::
+EvaluatorWithBaseImpl(const std::string& evaluator_name) :
+  name_(evaluator_name)
+{ }
 
 //**********************************************************************
 template<typename Traits>

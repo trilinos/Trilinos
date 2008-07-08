@@ -73,11 +73,8 @@ int main(int argc, char *argv[])
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
 
-    // *********************************************************************
-    // Start of FieldManager testing
-    // *********************************************************************
     {
-      cout << "\nStarting FieldManager Testing !" << endl;
+      cout << "\nStarting EnergyFlux Example!" << endl;
 
       RCP<DataLayout> scalar_qp = 
 	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_QP", 4));

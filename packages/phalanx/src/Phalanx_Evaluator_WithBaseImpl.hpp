@@ -23,6 +23,8 @@ namespace PHX {
 
   public:
 
+    EvaluatorWithBaseImpl(const std::string& evaluator_name);
+
     EvaluatorWithBaseImpl();
 
     virtual ~EvaluatorWithBaseImpl();
