@@ -1758,7 +1758,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
       xptr = &(x2[Nrows-1]);
 
       if (Amat_CrsBindx != NULL) {
-        valptr--; colptr--;  /* set pointer to last element of */
+        colptr = &(Amat_CrsBindx[Amat_CrsRowptr[Nrows]]); colptr--;
+        valptr = &(Amat_CrsVal[Amat_CrsRowptr[Nrows]]); valptr--;  
         /* arrays after forward sweep.    */
         for (i = Nrows- 1; i >= 0; i--) {
           diagvalue = omega/thediagonal[i];
