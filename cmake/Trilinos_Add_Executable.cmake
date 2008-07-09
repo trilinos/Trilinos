@@ -76,11 +76,33 @@ MACRO(TRILINOS_ADD_EXECUTABLE EXECUTABLE_DIR)
 
 ENDMACRO(TRILINOS_ADD_EXECUTABLE) 
 
+# 2008/07/09: rabartl: ToDo::
+#
+# (*) Change the name of the current TRILINOS_ADD_EXECUTABLE(...) to
+#     TRILINOS_ADD_EXECUTABLE_AND_TEST(...).
+#
+# (*) break these macros each into their separate *.cmake files
+#
+
+
+# 2008/07/09: rabartl: ToDo::
+#
+# (*) Change the name of the current TRILINOS_ADD_TARGET(...) to 
+#     TRILINOS_ADD_EXECUTABLE(...)
+#
+# (*) Add an optional DIRECTORY argument and put the executable in that directory
+#
+# (*) Add same COMM logic for deciding whether to add an executable depending
+#     on serial or COMM
+#
+# (*) ??? 
+#
 MACRO (TRILINOS_ADD_TARGET EXECUTABLE_DIR)
-   PARSE_ARGUMENTS(PARSE        	    #prefix
-                  "SOURCES;NAME" 	#lists
-                   "INSTALL"            #options
-                   ${ARGN} )
+   PARSE_ARGUMENTS(
+     PARSE  #prefix
+     "SOURCES;NAME" #lists
+     "INSTALL" #options
+     ${ARGN} )
   
   SET (EXE_SOURCES)
   SET(EXE_BINARY_NAME "${PROJECT_NAME}-${EXEC_TYPE}-${PARSE_NAME}.exe")
@@ -88,33 +110,97 @@ MACRO (TRILINOS_ADD_TARGET EXECUTABLE_DIR)
     SET (EXE_SOURCES ${EXE_SOURCES} ${EXECUTABLE_DIR}/${ARG})
   ENDFOREACH( ARG )                
   ADD_EXECUTABLE(${EXE_BINARY_NAME} ${EXE_SOURCES})
-ENDMACRO (TRILINOS_ADD_TARGET)
+ENDMACRO()
 
 
+# 2008/07/09: rabartl: ToDo:
+#
+# (*) Support optional DIRECTORY argument
+#
+# (*) Support multiple ARGS keywords
+#
+# (*) Support an optional POSTFIX argument for naming tests with different
+# ARGS keywords
+
+#
 MACRO (TRILINOS_ADD_TEST EXECUTABLE_DIR)
-  PARSE_ARGUMENTS(PARSE        	    #prefix
-                  "COMM;NAME;ARGS;PASS_REGULAR_EXPRESSION;XHOST" 	#lists
-                   "DESEND_INTO_DIR"            #options
-                   ${ARGN} )
-    
-  IF(NOT PARSE_XHOST )
-    SET (PARSE_XHOST NONE )
-  ENDIF (NOT PARSE_XHOST)               
-  IF (NOT ${myhostname} STREQUAL ${PARSE_XHOST})
-    SET(EXE_BINARY_NAME "${PROJECT_NAME}-${EXEC_TYPE}-${PARSE_NAME}.exe")
-    SET(TEST_NAME "${PROJECT_NAME}-${EXEC_TYPE}-${PARSE_NAME}")
-    IF(${PARSE_COMM} STREQUAL serial)     
-        ADD_TEST(${TEST_NAME} ${EXE_BINARY_NAME} ${PARSE_ARGS})
-    ELSEIF(${PARSE_COMM} STREQUAL mpi)
-       SET(TEST_NAME "${PROJECT_NAME}-${EXEC_TYPE}-${PARSE_NAME}-MPI")
+  PARSE_ARGUMENTS(
+     PARSE   #prefix
+     "COMM;NAME;ARGS;PASS_REGULAR_EXPRESSION;HOST;XHOST"  #lists
+     "DESEND_INTO_DIR"   #options
+     ${ARGN} )
+
+  MESSAGE("PARSE_NAME = ${PARSE_NAME}")
+  MESSAGE("PARSE_COMM = ${PARSE_COMM}")
+
+  SET(DUMMY_LIST "one" "two" "three")
+  MESSAGE("DUMMY_LIST = ${DUMMY_LIST}")
+
+  # Don't add the test if the host or xhost tests don't pass
+
+  IF(NOT PARSE_XHOST)
+    SET (PARSE_XHOST NONE)
+  ENDIF()               
+  IF (${TRILINOS_HOSTNAME} STREQUAL ${PARSE_XHOST})
+    RETURN()
+  ENDIF()
+
+  IF(NOT PARSE_HOST)
+    SET (PARSE_HOST ${TRILINOS_HOSTNAME})
+  ENDIF()               
+  IF (NOT ${TRILINOS_HOSTNAME} STREQUAL ${PARSE_HOST})
+    RETURN()
+  ENDIF()
+
+  # 2008/07/09: rabartl: ToDo: Above, change the logic to allow HOST and XHOST
+  # to be lists!
+
+
+  SET(EXE_BINARY_NAME "${PROJECT_NAME}-${EXEC_TYPE}-${PARSE_NAME}.exe")
+  SET(TEST_NAME "${PROJECT_NAME}-${EXEC_TYPE}-${PARSE_NAME}")
+
+  IF (${TRILINOS_HOSTNAME} STREQUAL ${PARSE_XHOST})
+    RETURN()
+  ENDIF()
+
+  SET(ADDED_THE_TEST OFF)    
+  IF(${TRILINOS_ENABLE_MPI})
+    MESSAGE("MPI Mode!")
+    IF (NOT PARSE_COMM)
+      # If no COMM is given assume we will add the test
+      SET(DO_MPI_INDEX 0)
+    ELSE()
+      # Else, if COMM is defined we have to find 'mpi'
+      LIST (FIND PARSE_COMM "mpi" DO_MPI_INDEX)
+    ENDIF()
+    IF(NOT ${DO_MPI_INDEX} EQUAL -1)
+      SET(TEST_NAME "${PROJECT_NAME}-${EXEC_TYPE}-${PARSE_NAME}-MPI")
       GET_TARGET_PROPERTY(EXECUTABLE_PATH ${EXE_BINARY_NAME} LOCATION)
       ADD_TEST(${TEST_NAME} ${MPI_EXECUTABLE} ${MPI_EXECUTABLE_FLAGS} ${EXECUTABLE_PATH} ${PARSE_ARGS})
-    ENDIF(${PARSE_COMM} STREQUAL serial)
+      SET(ADDED_THE_TEST ON)    
+    ENDIF()
+  ELSE()
+    MESSAGE("SERIAL Mode!")
+    IF (NOT PARSE_COMM)
+      # If no COMM is given assume we will add the test
+      SET(DO_SERIAL_INDEX 0)
+    ELSE()
+      # Else, if COMM is defined we have to find 'serial'
+      LIST (FIND PARSE_COMM "serial" DO_SERIAL_INDEX)
+    ENDIF()
+    MESSAGE("DO_SERIAL_INDEX = ${DO_SERIAL_INDEX}")
+    IF(NOT ${DO_SERIAL_INDEX} EQUAL -1)
+      ADD_TEST(${TEST_NAME} ${EXE_BINARY_NAME} ${PARSE_ARGS})
+      SET(ADDED_THE_TEST ON)    
+    ENDIF()
+  ENDIF()
+
+  # 2008/07/09: rabartl: ToDo: Above, create a macho called
+  # ???ITEM_EXITS_IN_LIST??(...) to simplify logic!
     
-    IF (PARSE_PASS_REGULAR_EXPRESSION)
-     SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION ${PARSE_PASS_REGULAR_EXPRESSION})
-    ENDIF(PARSE_PASS_REGULAR_EXPRESSION)
-    
-  ENDIF (NOT ${myhostname} STREQUAL ${PARSE_XHOST})
+  IF (PARSE_PASS_REGULAR_EXPRESSION AND ADDED_THE_TEST)
+   SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION
+     ${PARSE_PASS_REGULAR_EXPRESSION})
+  ENDIF()
 
 ENDMACRO(TRILINOS_ADD_TEST)

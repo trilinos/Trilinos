@@ -8,7 +8,7 @@ SET(${PROJECT_NAME}_VERSION "9.0d")
 #2008/06/13: ejguill: Make the hostname available.  This might need to be refactored to account for
 #machines without the hostname command.
 EXECUTE_PROCESS( COMMAND hostname
-                 OUTPUT_VARIABLE myhostname
+                 OUTPUT_VARIABLE TRILINOS_HOSTNAME
                  OUTPUT_STRIP_TRAILING_WHITESPACE
                 )
 
@@ -23,7 +23,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 SET(${PROJECT_NAME}_PACKAGES
  Teuchos
  Epetra
- Anasazi
+ #Anasazi
  RBGen
 )
 

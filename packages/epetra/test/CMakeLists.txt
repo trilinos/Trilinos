@@ -19,10 +19,29 @@ TRILINOS_ADD_EXECUTABLE(BlockMap ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap
 # Problem setting up MPI version of following test due to argument requirements
 TRILINOS_ADD_EXECUTABLE(BasicPerfTest TEST INSTALL SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v)
 TRILINOS_ADD_EXECUTABLE(Comm ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+
 #TRILINOS_ADD_EXECUTABLE(CrsGraph ${TEST_ARGUMENTS}  SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_TARGET(CrsGraph ${TEST_ARGUMENTS}  NAME CrsGraphEJG SOURCES cxx_main.cpp )
-TRILINOS_ADD_TEST(CrsGraph ${TEST_ARGUMENTS}  NAME CrsGraphEJG  ARGS -v COMM mpi PASS_REGULAR_EXPRESSION "Tests passed" XHOST localhost2.localdomain)
-TRILINOS_ADD_EXECUTABLE(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_TEST(
+  CrsGraph
+  NAME CrsGraphEJG
+  ARGS -v
+  COMM serial mpi
+  XHOST localhost2.localdomain
+  )
+
+#TRILINOS_ADD_EXECUTABLE(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+TRILINOS_ADD_TARGET(CrsMatrix ${TEST_ARGUMENTS} NAME CrsMatrixEJG SOURCES cxx_main.cpp)
+TRILINOS_ADD_TEST(
+  CrsMatrix
+  NAME CrsMatrixEJG
+  ARGS -v
+  PASS_REGULAR_EXPRESSION "tests PASSED"
+  )
+
+
+#TRILINOS_ADD_EXECUTABLE(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+
 TRILINOS_ADD_EXECUTABLE(RowMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(CrsRectMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(Directory ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
