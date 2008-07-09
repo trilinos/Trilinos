@@ -542,6 +542,8 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PostList.set("zero starting solution", false);
     PostList.set("ML label","(1,1) block fine post-smoother");
     PostList.set("ML output",output);
+    PostList.set("smoother: Gauss-Seidel efficient symmetric",List.get("smoother: Gauss-Seidel efficient symmetric",false));
+    
     PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
     PostEdgeSmoother = new MultiLevelPreconditioner(*SM_Matrix_,PostList);    
   }/*end else*/
