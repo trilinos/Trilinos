@@ -9,6 +9,8 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 @BUILD_ANASAZI_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
 @BUILD_ANASAZI_EPETRA_TRUE@ANASAZI_EPETRA_INCLUDES = -I@abs_top_srcdir@/epetra/src $(EPETRA_INCLUDES)
 @BUILD_ANASAZI_EPETRA_TRUE@ANASAZI_EPETRA_LIBS = -L@abs_top_builddir@/epetra/src -lanasaziepetra $(EPETRA_LIBS)
+@BUILD_ANASAZI_EPETRA_TRUE@ANASAZI_EPETRA_TEST_INCLUDES = -I@abs_top_srcdir@/epetra/util/ModeLaplace
+@BUILD_ANASAZI_EPETRA_TRUE@ANASAZI_EPETRA_TEST_LIBS = -L@abs_top_builddir@/epetra/util/ModeLaplace -lModeLaplace 
 
 # Optional dependencies on triutils, belos, aztecoo, and ifpack are for 
 # examples only.  We add them ONLY to the test target.
@@ -40,7 +42,6 @@ _ANASAZI_LIBS = @LDFLAGS@ $(ANASAZI_THYRA_LIBS) $(ANASAZI_EPETRA_LIBS) -L@abs_to
 _ANASAZI_TEST_INCLUDES = \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_builddir@/src \
-        -I@abs_top_srcdir@/epetra/util/ModeLaplace \
 	$(IFPACK_INCLUDES) \
 	$(BELOS_INCLUDES) \
 	$(AMESOS_INCLUDES) \
@@ -48,12 +49,13 @@ _ANASAZI_TEST_INCLUDES = \
 	$(TRIUTILS_INCLUDES) \
 	$(ANASAZI_THYRA_INCLUDES) \
         $(EPETRAEXT_INCLUDES) \
+	$(ANASAZI_EPETRA_TEST_INCLUDES) \
 	$(ANASAZI_EPETRA_INCLUDES) \
 	$(TEUCHOS_INCLUDES)
 
 _ANASAZI_TEST_LIBS = @LDFLAGS@ \
 	$(ANASAZI_THYRA_LIBS) \
-	-L@abs_top_builddir@/epetra/util/ModeLaplace -lModeLaplace \
+	$(ANASAZI_EPETRA_TEST_LIBS) \
 	$(ANASAZI_EPETRA_LIBS) \
 	-L@abs_top_builddir@/src -lanasazi \
 	$(IFPACK_LIBS) \
