@@ -52,7 +52,7 @@ Teuchos::shared_pointer( const RCP<T> &rcp )
 {
   if(rcp.get()) {
     const DeallocBoostSharedPtr<T>
-      *dbsp = get_optional_dealloc<DeallocBoostSharedPtr<T> >(rcp);
+      *dbsp = &*get_optional_dealloc<DeallocBoostSharedPtr<T> >(rcp);
     if(dbsp)
       return dbsp->ptr();
     return boost::shared_ptr<T>(rcp.get(),RCPDeleter<T>(rcp));

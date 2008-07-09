@@ -1044,7 +1044,7 @@ RCP<T2> rcp_dynamic_cast(
  * <tt>extra_data</tt>
  *
  * \param destroy_when [in] Determines when <tt>extra_data</tt> will be
- * destoryed in relation to the underlying reference-counted object.  If
+ * destroyed in relation to the underlying reference-counted object.  If
  * <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt> will be deleted
  * before the underlying reference-counted object.  If
  * <tt>destroy_when==POST_DESTROY</tt> (the default) then <tt>extra_data</tt>

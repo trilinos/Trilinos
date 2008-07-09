@@ -453,14 +453,14 @@ int main( int argc, char* argv[] ) {
 
     boost::shared_ptr<A> a_sptr1(new C());
     RCP<A> a_rsptr1 = rcp(a_sptr1);
-		TEST_FOR_EXCEPT( a_rsptr1.ptr() != a_sptr1.ptr() );
+		TEST_FOR_EXCEPT( a_rsptr1.get() != a_sptr1.get() );
     boost::shared_ptr<A> a_sptr2 = shared_pointer(a_rsptr1);
-		TEST_FOR_EXCEPT( a_sptr2.ptr() != a_sptr1.ptr() );
+		TEST_FOR_EXCEPT( a_sptr2.get() != a_sptr1.get() );
     RCP<A> a_rsptr2 = rcp(a_sptr2);
 		TEST_FOR_EXCEPT( a_rsptr2.ptr() != a_rsptr1.ptr() );
 		//TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 ); // This should work if boost::get_deleter() works correctly!
     boost::shared_ptr<A> a_sptr3 = shared_pointer(a_rsptr2);
-		TEST_FOR_EXCEPT( a_sptr3.ptr() != a_rsptr2.ptr() );
+		TEST_FOR_EXCEPT( a_sptr3.get() != a_rsptr2.get() );
 
 #endif // HAVE_TEUCHOS_BOOST
 

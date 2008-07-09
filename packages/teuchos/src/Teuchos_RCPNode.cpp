@@ -294,10 +294,10 @@ void Teuchos::printActiveRCPNodes(std::ostream &out)
     if(itr != rcp_node_list->end()) {
       out
         << "\n***"
-        << "\n*** Warning! The following Teucho::RCPNode objects were created but have"
-        << "\n*** not been destoryed yet.  This may be an indication that these objects may"
+        << "\n*** Warning! The following Teuchos::RCPNode objects were created but have"
+        << "\n*** not been destroyed yet.  This may be an indication that these objects may"
         << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
-        << "\n*** that these objects are not destoryed correctly."
+        << "\n*** that these objects are not destroyed correctly."
         << "\n***\n";
       while( itr != rcp_node_list->end() ) {
         const rcp_node_list_t::value_type &entry = *itr;
