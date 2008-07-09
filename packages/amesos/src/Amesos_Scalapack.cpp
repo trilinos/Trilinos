@@ -195,9 +195,8 @@ int Amesos_Scalapack::RedistributeA( ) {
     Epetra_CrsMatrix FatIn( Copy, FatInMap, 0 );
     
     
-    const int INITIAL_SIZE = 1; 
-    vector<vector<int> > FatColumnIndices(npcol_,INITIAL_SIZE);
-    vector<vector<double> > FatMatrixValues(npcol_,INITIAL_SIZE);
+    vector<vector<int> > FatColumnIndices(npcol_,vector<int>(1));
+    vector<vector<double> > FatMatrixValues(npcol_,vector<double>(1));
     vector<int> FatRowPtrs(npcol_);  // A FatRowPtrs[i] = the number 
     // of entries in local row LocalRow*npcol_ + i 
     
