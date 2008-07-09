@@ -5,6 +5,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(Trilinos)
 SET(${PROJECT_NAME}_VERSION "9.0d")
 
+#2008/06/13: ejguill: Make the hostname available.  This might need to be refactored to account for
+#machines without the hostname command.
+EXECUTE_PROCESS( COMMAND hostname
+                 OUTPUT_VARIABLE myhostname
+                 OUTPUT_STRIP_TRAILING_WHITESPACE
+                )
+
+
 SET(${PROJECT_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "${PROJECT_NAME} include directories")
 SET(${PROJECT_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "${PROJECT_NAME} library directories")
 SET(${PROJECT_NAME}_LIBRARIES "" CACHE INTERNAL "${PROJECT_NAME} libraries")
@@ -227,3 +235,5 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
 # individual package developers modify it or not letting them change it.  A
 # top-heavy build model is what SIERRA has and it does not provide enough
 # freedom at the package level (i.e. product level for SIERRA).
+
+
