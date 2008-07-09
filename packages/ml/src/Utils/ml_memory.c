@@ -745,18 +745,12 @@ ML_print_it();
 ******************************************************************************/
 #define ML_NIntStats 10
 #define ML_NDblStats 2
-#ifdef ML_TFLOP
-#  include <catamount/catmalloc.h>
-int heap_info(size_t *a, unsigned long *b,
-              unsigned long *c, unsigned long *d);
+/* OS X defines malloc in a non-standard place */
+#ifdef HAVE_MALLOC_H
+#  include "malloc.h"
 #else
-   /* OS X defines malloc in a non-standard place */
-#  ifdef HAVE_MALLOC_H
-#    include "malloc.h"
-#  else
-#    include <stdlib.h>
-#  endif
-#endif /*ifdef ML_TFLOP*/
+#  include <stdlib.h>
+#endif
 #include "ml_utils.h"
 #include <stdarg.h>
 

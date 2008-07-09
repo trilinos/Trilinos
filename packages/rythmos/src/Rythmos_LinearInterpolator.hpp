@@ -45,6 +45,9 @@ class LinearInterpolator : virtual public InterpolatorBase<Scalar>
 public:
 
   /** \brief . */
+  using Teuchos::ParameterListAcceptor::getParameterList;
+
+  /** \brief . */
   ~LinearInterpolator() {};
 
   /** \brief . */

@@ -64,6 +64,9 @@ template<class Scalar>
 class BackwardEulerStepper : virtual public SolverAcceptingStepperBase<Scalar>
 {
 public:
+
+  /** \brief . */
+  using Teuchos::ParameterListAcceptor::getParameterList;
   
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;

@@ -73,7 +73,9 @@ void Thyra::reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
     rcp_op_targs[kc] = op.reduct_obj_create();
     op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  applyOp<Scalar>(op, tuple(ptrInArg(V)), null, op_targs );
+  applyOp<Scalar>(op, tuple(ptrInArg(V)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    op_targs );
   for( int kc = 0; kc < m; ++kc ) {
     norms[kc] = op(*op_targs[kc]);
   }
@@ -93,7 +95,9 @@ void Thyra::dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scala
     rcp_dot_targs[kc] = dot_op.reduct_obj_create();
     dot_targs[kc] = rcp_dot_targs[kc].ptr();
   }
-  applyOp<Scalar>( dot_op, tuple(ptrInArg(V1), ptrInArg(V2)), null, dot_targs );
+  applyOp<Scalar>( dot_op, tuple(ptrInArg(V1), ptrInArg(V2)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    dot_targs );
   for( int kc = 0; kc < m; ++kc ) {
     dots[kc] = dot_op(*dot_targs[kc]);
   }
@@ -151,7 +155,9 @@ void Thyra::scale( Scalar alpha, const Ptr<MultiVectorBase<Scalar> > &V )
     return;
   }
   RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
-  applyOp<Scalar>( scale_vector_op, null, tuple(V), null );
+  applyOp<Scalar>(scale_vector_op,
+    ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
+    tuple(V), null );
 }
 
 
@@ -185,7 +191,9 @@ void Thyra::assign( const Ptr<MultiVectorBase<Scalar> > &V, Scalar alpha )
 {
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
-  applyOp<Scalar>(assign_scalar_op, null, tuple(V), null);
+  applyOp<Scalar>(assign_scalar_op,
+    ArrayView<Ptr<const MultiVectorBase<Scalar> > >(null),
+    tuple(V), null);
 }
 
 

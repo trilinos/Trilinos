@@ -304,12 +304,24 @@ namespace Anasazi {
   }
 
 
+  template<class T1, class T2>
+  class MakePairOp {
+  public:
+    std::pair<T1,T2> operator()( const T1 &t1, const T2 &t2 )
+      { return std::make_pair(t1, t2); }
+  };
+
+
   template<class MagnitudeType>
   void BasicSort<MagnitudeType>::sort(std::vector<MagnitudeType> &r_evals, 
                                       std::vector<MagnitudeType> &i_evals, 
                                       Teuchos::RCP< std::vector<int> > perm,
                                       int n) const 
   {
+
+    typedef typename std::vector<MagnitudeType>::iterator r_eval_iter_t;
+    typedef typename std::vector<MagnitudeType>::iterator i_eval_iter_t;
+
     TEST_FOR_EXCEPTION(n < -1, std::invalid_argument, "Anasazi::BasicSort::sort(r,i): n must be n >= 0 or n == -1.");
     if (n == -1) {
       n = r_evals.size() < i_evals.size() ? r_evals.size() : i_evals.size();
@@ -340,15 +352,17 @@ namespace Anasazi {
         case SR:
         case LM:
         case SM:
-          std::transform(r_evals.begin(),r_evals.begin()+n,
-                         i_evals.begin(),pairs.begin(),
-                         std::make_pair<MagnitudeType,MagnitudeType>);
+          std::transform(
+            r_evals.begin(), r_evals.begin()+n,
+            i_evals.begin(), pairs.begin(),
+            MakePairOp<MagnitudeType,MagnitudeType>());
           break;
         case LI:
         case SI:
-          std::transform(i_evals.begin(),i_evals.begin()+n,
-                         r_evals.begin(),pairs.begin(),
-                         std::make_pair<MagnitudeType,MagnitudeType>);
+          std::transform(
+            i_evals.begin(), i_evals.begin()+n,
+            r_evals.begin(), pairs.begin(),
+            MakePairOp<MagnitudeType,MagnitudeType>());
           break;
       }
 

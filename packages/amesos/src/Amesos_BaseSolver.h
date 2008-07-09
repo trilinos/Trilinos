@@ -221,7 +221,7 @@ matrix will cause a potentially catastrophic error.
 */    
 
 class Amesos_BaseSolver 
-  : virtual public Teuchos::ParameterListAcceptor
+  : public Teuchos::ParameterListAcceptor
 {
 
 #if 0      
@@ -230,6 +230,9 @@ class Amesos_BaseSolver
 #endif
 
  public:
+
+  /** \brief . */
+  using Teuchos::ParameterListAcceptor::getParameterList;
 
   //@{ \name Destructor
   //! Destructor
@@ -403,20 +406,23 @@ revert to their default values.
   //! Prints timing information about the current solver. 
   virtual void PrintTiming() const = 0;
 
-   //! Redefined from Teuchos::ParameterListAcceptor
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList){
+  //! Redefined from Teuchos::ParameterListAcceptor
+  virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+  {
     //    paramList_ = paramlist ;
     //    this->SetParameters( *paramList_ );
   }
 
   //!  This is an empty stub 
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList() {
+  virtual Teuchos::RCP<Teuchos::ParameterList> getParameterList()
+  {
     Teuchos::RCP<Teuchos::ParameterList> PL ;
     return PL ;
   }
 
   //!  This is an empty stub 
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() {
+  virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList()
+  {
     Teuchos::RCP<Teuchos::ParameterList> PL ;
     //    this->SetParameters( *paramList_ );
     return PL ; 

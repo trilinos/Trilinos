@@ -494,7 +494,7 @@ Thyra::norms_inf( const MultiVectorBase<Scalar>& V )
 {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   Array<ScalarMag> norms(V.domain()->dim());
-  Thyra::norms_inf<Scalar>(V, norms);
+  Thyra::norms_inf<Scalar>(V, norms());
   return norms;
 }
 

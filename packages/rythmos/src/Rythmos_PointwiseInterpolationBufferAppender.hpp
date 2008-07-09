@@ -44,6 +44,9 @@ class PointwiseInterpolationBufferAppender
 {
 public:
 
+  /** \brief . */
+  using Teuchos::ParameterListAcceptor::getParameterList;
+
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** \brief Concrete implementation that simply copies the nodal points

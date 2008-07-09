@@ -78,7 +78,10 @@ Scalar Thyra::sum( const VectorBase<Scalar>& v_rhs )
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpSum<Scalar> sum_op;
   Teuchos::RCP<RTOpPack::ReductTarget> sum_targ = sum_op.reduct_obj_create();
-  applyOp<Scalar>(sum_op,tuple(ptrInArg(v_rhs)),null,sum_targ.ptr());
+  applyOp<Scalar>(sum_op,
+    tuple(ptrInArg(v_rhs)),
+    ArrayView<Ptr<VectorBase<Scalar> > >(null),
+    sum_targ.ptr() );
   return sum_op(*sum_targ);
 }
 
@@ -90,7 +93,9 @@ Thyra::norm_1( const VectorBase<Scalar>& v_rhs )
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpNorm1<Scalar> norm_1_op;
   Teuchos::RCP<RTOpPack::ReductTarget> norm_1_targ = norm_1_op.reduct_obj_create();
-  applyOp<Scalar>(norm_1_op,tuple(ptrInArg(v_rhs)),null,norm_1_targ.ptr());
+  applyOp<Scalar>(norm_1_op, tuple(ptrInArg(v_rhs)),
+    ArrayView<Ptr<VectorBase<Scalar> > >(null),
+    norm_1_targ.ptr() );
   return norm_1_op(*norm_1_targ);
 }
 
@@ -102,7 +107,9 @@ Thyra::norm_2( const VectorBase<Scalar>& v_rhs )
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpNorm2<Scalar> norm_2_op;
   Teuchos::RCP<RTOpPack::ReductTarget> norm_2_targ = norm_2_op.reduct_obj_create();
-  applyOp<Scalar>(norm_2_op,tuple(ptrInArg(v_rhs)),null,norm_2_targ.ptr());
+  applyOp<Scalar>(norm_2_op, tuple(ptrInArg(v_rhs)),
+    ArrayView<Ptr<VectorBase<Scalar> > >(null),
+    norm_2_targ.ptr() );
   return norm_2_op(*norm_2_targ);
 }
 
@@ -126,7 +133,9 @@ Thyra::norm_inf( const VectorBase<Scalar>& v_rhs )
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpNormInf<Scalar> norm_inf_op;
   Teuchos::RCP<RTOpPack::ReductTarget> norm_inf_targ = norm_inf_op.reduct_obj_create();
-  applyOp<Scalar>(norm_inf_op,tuple(ptrInArg(v_rhs)),null,norm_inf_targ.ptr());
+  applyOp<Scalar>(norm_inf_op, tuple(ptrInArg(v_rhs)),
+    ArrayView<Ptr<VectorBase<Scalar> > >(null),
+    norm_inf_targ.ptr() );
   return norm_inf_op(*norm_inf_targ);
 }
 
@@ -138,8 +147,11 @@ Scalar Thyra::dot( const VectorBase<Scalar>& v_rhs1, const VectorBase<Scalar>& v
   RTOpPack::ROpDotProd<Scalar> dot_prod_op;
   Teuchos::RCP<RTOpPack::ReductTarget>
     dot_prod_targ = dot_prod_op.reduct_obj_create();
-  applyOp<Scalar>(dot_prod_op, tuple(ptrInArg(v_rhs1), ptrInArg(v_rhs2)), null,
-    dot_prod_targ.ptr());
+  applyOp<Scalar>(dot_prod_op,
+    tuple(ptrInArg(v_rhs1), ptrInArg(v_rhs2))(),
+    ArrayView<Ptr<VectorBase<Scalar> > >(null),
+    dot_prod_targ.ptr()
+    );
   return dot_prod_op(*dot_prod_targ);
 }
 
@@ -150,7 +162,9 @@ Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Index i )
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpSum<Scalar> sum_op;
   Teuchos::RCP<RTOpPack::ReductTarget> sum_targ = sum_op.reduct_obj_create();
-  applyOp<Scalar>(sum_op, tuple(ptrInArg(v)), null, sum_targ.ptr(), i, 1, 0);
+  applyOp<Scalar>(sum_op, tuple(ptrInArg(v)),
+    ArrayView<Ptr<VectorBase<Scalar> > >(null),
+    sum_targ.ptr(), i, 1, 0 );
   return sum_op(*sum_targ);
 }
 
@@ -163,7 +177,10 @@ void Thyra::set_ele( Index i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v )
 {
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
-  applyOp<Scalar>( assign_scalar_op, null, tuple(v), null, i, 1, 0 );
+  applyOp<Scalar>(assign_scalar_op,
+    ArrayView<Ptr<const VectorBase<Scalar> > >(null),
+    tuple(v),
+    null, i, 1, 0 );
 }
 
 
@@ -172,7 +189,9 @@ void Thyra::put_scalar( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_l
 {
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
-  applyOp<Scalar>( assign_scalar_op, null, tuple(v_lhs), null );
+  applyOp<Scalar>(assign_scalar_op,
+    ArrayView<Ptr<const VectorBase<Scalar> > >(null),
+    tuple(v_lhs), null );
 }
 
 
@@ -191,7 +210,9 @@ void Thyra::add_scalar( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_l
 {
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAddScalar<Scalar> add_scalar_op(alpha);
-  applyOp<Scalar>( add_scalar_op, null, tuple(v_lhs), null );
+  applyOp<Scalar>(add_scalar_op,
+    ArrayView<Ptr<const VectorBase<Scalar> > >(null),
+    tuple(v_lhs), null );
 }
 
 
@@ -204,7 +225,9 @@ void Thyra::scale( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &v_lhs )
   }
   else if( alpha != ScalarTraits<Scalar>::one() ) {
     RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
-    applyOp<Scalar>( scale_vector_op, null, tuple(v_lhs), null );
+    applyOp<Scalar>(scale_vector_op,
+      ArrayView<Ptr<const VectorBase<Scalar> > >(null),
+      tuple(v_lhs), null );
   }
 }
 
@@ -336,7 +359,10 @@ void Thyra::randomize( Scalar l, Scalar u, const Ptr<VectorBase<Scalar> > &v )
 {
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpRandomize<Scalar> random_vector_op(l,u);
-  applyOp<Scalar>( random_vector_op, null, tuple(v), null );
+  applyOp<Scalar>( random_vector_op,
+    ArrayView<Ptr<const VectorBase<Scalar> > >(null),
+    tuple(v),
+    null );
   // Warning! If the RTOpPack::TOpRandomize<Scalar> object is ever made
   // static, the one must be careful to change the seed in between calls.
   // Right now the seed is being incremented by the constructor automatically.

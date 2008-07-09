@@ -51,6 +51,13 @@ class DefaultAdjointLinearOpWithSolve:
 {
 public:
 
+  /** \brief . */
+  using LinearOpBase<Scalar>::apply;
+  /** \brief. */
+  using LinearOpWithSolveBase<Scalar>::solve;
+  /** \brief. */
+  using LinearOpWithSolveBase<Scalar>::solveSupportsSolveMeasureType;
+
   /** @name Constructors/initializers/accessors */
   //@{
 

@@ -624,7 +624,7 @@ void applyOp(
   Array<Ptr<VectorBase<Scalar> > > targ_vecs(num_targ_vecs);
   for ( int k = 0; k < num_targ_vecs; ++k )
     targ_vecs[k] = ptr(targ_vecs_inout[k]);
-  applyOp<Scalar>(op, vecs, targ_vecs, ptr(reduct_obj),
+  applyOp<Scalar>(op, vecs(), targ_vecs(), ptr(reduct_obj),
     first_ele_offset, sub_dim, global_offset );
 }
 
