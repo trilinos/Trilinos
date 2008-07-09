@@ -83,7 +83,7 @@ namespace Tpetra {
 
   template <typename OrdinalType>
   SerialPlatform<OrdinalType>::SerialPlatform(SerialPlatform<OrdinalType> const& platform) 
-    : Teuchos::Object(platform.label()) 
+    : Platform<OrdinalType>(), Teuchos::Object(platform.label()) 
   {}
 
   template <typename OrdinalType>

@@ -52,10 +52,10 @@ namespace Tpetra {
             OrdinalType maxAllGID,
             OrdinalType minMyGID,
             OrdinalType maxMyGID,
-            const map<OrdinalType, OrdinalType>& lgMap,
-            const map<OrdinalType, OrdinalType>& glMap,
+            const std::vector<OrdinalType> & lgMap,
+            const std::map<OrdinalType, OrdinalType> & glMap,
             bool contiguous,
-            Teuchos::RCP< Platform<OrdinalType, OrdinalType> > platform,
+            Teuchos::RCP< Platform<OrdinalType> > platform,
             Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm);
 
 		//! Destructor.
@@ -64,29 +64,33 @@ namespace Tpetra {
   private:
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
+    Teuchos::RCP< const Platform<OrdinalType> > platform_;
+		Teuchos::RCP< const Teuchos::Comm<OrdinalType> > comm_;
+		const OrdinalType numGlobalEntries_;
 		const OrdinalType indexBase_;
 		const OrdinalType numMyEntries_;
-		const OrdinalType numGlobalEntries_;
-		Teuchos::RCP< const Teuchos::Comm<OrdinalType> > Comm_;
-    const OrdinalType numMyEntries_;
     const OrdinalType minMyGID_;
     const OrdinalType maxMyGID_;
     const OrdinalType minAllGID_;
     const OrdinalType maxAllGID_;
     const bool contiguous_;
-    const bool global_;
-    bool haveDirectory_;
-    // FINISH: why is lgMap_ const but glMap_ non-const?
+    const bool distributed_;
+    // FINISH: why is lgMap_ const but glMap_ non-const? let's make both const for now, see what breaks
     // FINISH: it seems that lgMap_ requires only direct access, a std::vector should suffice
-    map<OrdinalType, OrdinalType> lgMap_;
-    const map<OrdinalType, OrdinalType> glMap_;
-    std::vector<OrdinalType> myGlobalEntries_;
-    Teuchos::RCP< Directory<OrdinalType> > Directory_;
+    // const std::map<OrdinalType, OrdinalType> lgMap_;
+    const std::vector<OrdinalType> lgMap_;
+    const std::map<OrdinalType, OrdinalType> glMap_;
+    // FINISH: put these back in
+    // bool haveDirectory_;
+    // Teuchos::RCP< Directory<OrdinalType> > Directory_;
 
 		//! Copy constructor (declared but not defined, do not use)
 		MapData(MapData<OrdinalType> const& source);
 		//! Assignment operator (declared but not defined, do not use)
 		MapData<OrdinalType>& operator = (MapData<OrdinalType> const& source);
+
+    bool checkIsDist();
+    
   };
 
 } // namespace Tpetra

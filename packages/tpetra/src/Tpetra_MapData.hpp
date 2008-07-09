@@ -42,32 +42,47 @@ namespace Tpetra {
             OrdinalType maxAllGID,
             OrdinalType minMyGID,
             OrdinalType maxMyGID,
-            const map<OrdinalType, OrdinalType>& lgMap,
-            const map<OrdinalType, OrdinalType>& glMap,
+            const std::vector<OrdinalType>& lgMap,
+            const std::map<OrdinalType, OrdinalType>& glMap,
             bool contiguous,
-            Teuchos::RCP< Platform<OrdinalType, OrdinalType> > platform,
+            Teuchos::RCP< Platform<OrdinalType> > platform,
             Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm)
       : Teuchos::Object("Tpetra::MapData")
-      , Platform_(platform)
-      , Comm_(comm)
+      , platform_(platform)
+      , comm_(comm)
       , numGlobalEntries_(numGlobalEntries)
-      , numMyEntries_(numMyEntries)
       , indexBase_(indexBase)
+      , numMyEntries_(numMyEntries)
       , minMyGID_(minMyGID)
       , maxMyGID_(maxMyGID)
       , minAllGID_(minAllGID)
       , maxAllGID_(maxAllGID)
       , contiguous_(contiguous)
-      , global_(checkGlobalness())
-      , haveDirectory_(false)
+      , distributed_(checkIsDist())
       , lgMap_(lgMap)
       , glMap_(glMap)
-      , myGlobalEntries_()
-      , Directory_()
+      /*, haveDirectory_(false)  FINISH: add these back in
+        , Directory_() */
     {}
 
   template<typename OrdinalType>
   MapData<OrdinalType>::~MapData() {}
+
+  template<typename OrdinalType>
+  bool MapData<OrdinalType>::checkIsDist() {
+    bool global = false;
+    if(comm_->getSize() > 1) {
+      int localRep = 0;
+      int allLocalRep;
+      if(numGlobalEntries_ == numMyEntries_) {
+        localRep = 1;
+      }
+      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MIN,localRep,&allLocalRep);
+      if(allLocalRep != 1)
+        global = true;
+    }
+    return(global);
+  }
 
 } // namespace Tpetra
 

@@ -51,7 +51,7 @@ namespace Tpetra {
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    Map (OrdinalType numGlobalEntries, OrdinalType indexBase, const Platform &platform);
+    Map (OrdinalType numGlobalEntries, OrdinalType indexBase, const Platform<OrdinalType> &platform);
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
      *  The entries are distributed among the nodes so that the subsets of global entries
@@ -63,12 +63,12 @@ namespace Tpetra {
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
     Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, OrdinalType indexBase, 
-         OrdinalType myOffset, const Platform &platform);
+         const Platform<OrdinalType> &platform);
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
     Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, 
-         const std::vector< OrdinalType > &entryList, OrdinalType indexBase, 
-         const Platform &platform);
+         const std::vector<OrdinalType> &entryList, OrdinalType indexBase, 
+         const Platform<OrdinalType> &platform);
 
     //! Map copy constructor.
     Map (const Map<OrdinalType> &Map);
@@ -114,6 +114,9 @@ namespace Tpetra {
     //! Return the global index for a given local index
     OrdinalType getGlobalIndex(OrdinalType localIndex) const;
 
+    //! Return a list of the global entries owned by this image
+    const std::vector<OrdinalType> & getMyGlobalEntires() const;
+
     //! Returns true if the local index value passed in is found on the calling image, returns false if it doesn't.
     bool isMyLocalIndex(OrdinalType localIndex) const;
 
@@ -122,6 +125,9 @@ namespace Tpetra {
 
     //! Returns true if this Map is distributed contiguously, returns false otherwise.
     bool isContiguous() const;
+    
+    //! Returns true if this Map is distributed across more than one image, returns false otherwise.
+    bool isDistributed() const;
 
     //@}
 
@@ -159,7 +165,7 @@ namespace Tpetra {
 
   private:
 
-    Teuchos::RCP< Map<OrdinalType> > MapData_;
+    Teuchos::RCP< MapData<OrdinalType> > MapData_;
 
     // setup the directory
     void directorySetup();

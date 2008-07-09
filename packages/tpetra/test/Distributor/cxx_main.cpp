@@ -35,10 +35,11 @@
 #else
 # include "Tpetra_SerialPlatform.hpp"
 #endif // HAVE_MPI
+#include "Tpetra_Distributor.hpp"
 
 using namespace Teuchos;
 
-template<typename OrdinalType, typename ScalarType>
+template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // HAVE_MPI
 
-  bool verbose = false; 
+  bool verbose = false;
   bool debug = false;
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet"  ,&verbose,"Print messages and results.");
@@ -83,7 +84,7 @@ int main(int argc, char* argv[]) {
 
 
 //======================================================================
-template<typename OrdinalType, typename ScalarType>
+template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   std::string className = "Distributor<" + OrdinalTraits<OrdinalType>::name() + "> with " + ScalarTraits<ScalarType>::name();
   if(verbose) outputHeading("Stating unit tests for " + className);

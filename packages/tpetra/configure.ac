@@ -334,11 +334,10 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/Platform/Makefile
 		test/Distributor/Makefile
-		test/ElementSpace/Makefile
+        test/Map/Makefile
 		test/Directory/Makefile
 		test/ImportExport/Makefile
 		test/BlockElementSpace/Makefile
-		test/VectorSpace/Makefile
 		test/Vector/Makefile
 		test/CisMatrix/Makefile
 		test/DistObject/Makefile

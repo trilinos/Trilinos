@@ -26,15 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+include $(top_builddir)/Makefile.export.tpetra
 
-all-local:
+EXEEXT = .exe
 
-#if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Distributor # Map Directory ImportExport BlockElementSpace Vector CisMatrix DistObject BasicPerfTest
-#endif
+noinst_PROGRAMS = Map_test
 
-SUBDIRS = $(STANDARD_SUBDIRS)
+Map_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-EXTRA_DIST = tpetra_test_util.hpp
+Map_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+Map_test_CXXFLAGS = $(TPETRA_INCLUDES)
+
+Map_test_LDADD = $(TPETRA_LIBS)
 
