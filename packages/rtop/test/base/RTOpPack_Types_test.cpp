@@ -133,6 +133,30 @@ bool testSubVectorView(
     }
   }
 
+
+  {
+    out << "\nCreating SubVectorView for serial ...\n";
+    SubVectorView<Scalar> sv(values);
+
+    out << "\nTesting SubVectorView access functions ...\n";
+    TEST_EQUALITY_CONST(sv.globalOffset(), 0);
+    TEST_EQUALITY(sv.subDim(), as<int>(values.size()));
+    TEST_EQUALITY(sv.values(), values);
+    TEST_EQUALITY_CONST(sv.stride(), 1);
+#ifdef TEUCHOS_DEBUG
+    TEST_THROW(sv[-1],std::out_of_range);
+    TEST_THROW(sv(-1),std::out_of_range);
+    TEST_THROW(sv[subDim],std::out_of_range);
+    TEST_THROW(sv(subDim),std::out_of_range);
+#endif
+    out << "\nTest that sv[i] == i ... ";
+    bool local_success = true;
+    for ( int i = 0; i < subDim; ++i )
+      TEST_ARRAY_ELE_EQUALITY(sv,i,as<Scalar>(i));
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
   out << "\nCreating SubVectorView ...\n";
   const Teuchos_Index globalOffset = 20;
   SubVectorView<Scalar> sv(globalOffset,subDim,values,stride);

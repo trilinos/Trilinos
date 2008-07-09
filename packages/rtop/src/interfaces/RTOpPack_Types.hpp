@@ -120,10 +120,14 @@ public:
   /** \brief . */
   ConstSubVectorView() : globalOffset_(0), subDim_(0), stride_(0) {}
   /** \brief . */
+  ConstSubVectorView(const ArrayRCP<const Scalar> &values)
+    :globalOffset_(0), subDim_(0), stride_(0)
+    { initialize(0, values.size(), values, 1); }
+  /** \brief . */
   ConstSubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
     const ArrayRCP<const Scalar> &values, ptrdiff_t stride)
     :globalOffset_(0), subDim_(0), stride_(0)
-    { initialize(globalOffset, subDim,values, stride); }
+    { initialize(globalOffset, subDim, values, stride); }
   /** \brief . */
   ConstSubVectorView( const ConstSubVectorView<Scalar>& sv )
     :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()),
@@ -229,6 +233,10 @@ class SubVectorView : public ConstSubVectorView<Scalar> {
 public:
   /** \brief . */
   SubVectorView() {}
+  /** \brief . */
+  SubVectorView(const ArrayRCP<Scalar> &values)
+    :ConstSubVectorView<Scalar>(values)
+    {}
   /** \brief . */
   SubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
     const ArrayRCP<Scalar> &values, ptrdiff_t stride)
