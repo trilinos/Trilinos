@@ -1231,6 +1231,8 @@ template<typename T>
 std::vector<T>&
 Array<T>::vec( bool isStructureBeingModified, bool activeIter )
 {
+(void)isStructureBeingModified; // get rid of "unused parameter" warnings
+(void)activeIter;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   if (isStructureBeingModified) {
     // Give up my ArrayRCPs used for iterator access since the array we be

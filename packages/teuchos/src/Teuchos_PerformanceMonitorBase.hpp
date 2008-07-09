@@ -81,6 +81,7 @@ public:
   PerformanceMonitorBase(T& counter_in, bool reset=false)
     : counter_(counter_in), isRecursiveCall_(counter_.isRunning())
     {
+      (void)reset;  // get rid of "unused parameter" warning
       counter_.incrementNumCalls();
     }
 

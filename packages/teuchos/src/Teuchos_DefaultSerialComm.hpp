@@ -136,7 +136,7 @@ void SerialComm<Ordinal>::barrier() const
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::broadcast(
-  const int rootRank, const Ordinal bytes, char buffer[]
+  const int /*rootRank*/, const Ordinal /*bytes*/, char []/*buffer*/
   ) const
 {
   // Nothing to do
@@ -148,6 +148,10 @@ void SerialComm<Ordinal>::gatherAll(
   ,const Ordinal recvBytes, char recvBuffer[]
   ) const
 {
+  (void)sendBytes;  // to remove "unused parameter" warning
+  (void)recvBytes;
+  (void)sendBuffer;
+  (void)recvBuffer;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!(sendBytes==recvBytes));
 #endif
@@ -160,6 +164,7 @@ void SerialComm<Ordinal>::reduceAll(
   ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
   ) const
 {
+  (void)reductOp;
   std::copy(sendBuffer,sendBuffer+bytes,globalReducts);
 }
   
@@ -170,6 +175,12 @@ void SerialComm<Ordinal>::reduceAllAndScatter(
   ,const Ordinal recvCounts[], const Ordinal blockSize, char myGlobalReducts[]
   ) const
 {
+  (void)reductOp;
+  (void)sendBytes;
+  (void)sendBuffer;
+  (void)recvCounts;
+  (void)blockSize;
+  (void)myGlobalReducts;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( recvCounts==NULL || blockSize*recvCounts[0] != sendBytes ); 
 #endif
@@ -182,12 +193,13 @@ void SerialComm<Ordinal>::scan(
   ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
   ) const
 {
+  (void)reductOp;
   std::copy(sendBuffer,sendBuffer+bytes,scanReducts);
 }
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::send(
-  const Ordinal bytes, const char sendBuffer[], const int destRank
+  const Ordinal /*bytes*/, const char []/*sendBuffer*/, const int /*destRank*/
   ) const
 {
   TEST_FOR_EXCEPTION(
@@ -199,7 +211,7 @@ void SerialComm<Ordinal>::send(
   
 template<typename Ordinal>
 int SerialComm<Ordinal>::receive(
-  const int sourceRank, const Ordinal bytes, char recvBuffer[]
+  const int /*sourceRank*/, const Ordinal /*bytes*/, char []/*recvBuffer*/
   ) const
 {
   TEST_FOR_EXCEPTION(
