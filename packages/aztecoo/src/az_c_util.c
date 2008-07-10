@@ -1,13 +1,13 @@
 /* az_f_util.f -- translated by f2c (version 20061008).
    You must link the resulting object file with libf2c:
-        on Microsoft Windows system, link with libf2c.lib;
-        on Linux or Unix systems, link with .../path/to/libf2c.a -lm
-        or, if you install libf2c.a in a standard place, with -lf2c -lm
-        -- in that order, at the end of the command line, as in
-                cc *.o -lf2c -lm
-        Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
+   on Microsoft Windows system, link with libf2c.lib;
+   on Linux or Unix systems, link with .../path/to/libf2c.a -lm
+   or, if you install libf2c.a in a standard place, with -lf2c -lm
+   -- in that order, at the end of the command line, as in
+   cc *.o -lf2c -lm
+   Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
 
-                http://www.netlib.org/f2c/libf2c.zip
+   http://www.netlib.org/f2c/libf2c.zip
 */
 
 /* From f2c.h  --  Standard Fortran to C header file */
@@ -138,7 +138,7 @@ union Multitype {	/* for multiple entry points */
 	doublereal d;
 	complex c;
 	doublecomplex z;
-	};
+};
 
 typedef union Multitype Multitype;
 
@@ -149,14 +149,14 @@ struct Vardesc {	/* for Namelist */
 	char *addr;
 	ftnlen *dims;
 	int  type;
-	};
+};
 typedef struct Vardesc Vardesc;
 
 struct Namelist {
 	char *name;
 	Vardesc **vars;
 	int nvars;
-	};
+};
 typedef struct Namelist Namelist;
 
 #define abs(x) ((x) >= 0 ? (x) : -(x))
@@ -232,28 +232,28 @@ static integer c__1 = 1;
 static doublereal c_b5 = 1.;
 static real c_b19 = 1.f;
 
-/* Subroutine */ int az_dlaic1_c(integer *job, integer *j, doublereal *x, 
-	doublereal *sest, doublereal *w, doublereal *gamma, doublereal *
-	sestpr, doublereal *s, doublereal *c__)
-{
-    /* System generated locals */
-    doublereal d__1, d__2, d__3, d__4;
-
-    /* Builtin functions */
-    double sqrt(doublereal);
-
-double az_d_sign (doublereal * a, doublereal * b) {
+double az_d_sign(doublereal * a, doublereal * b) {
   double x;
   x = (*a >= 0 ? *a : -*a);
   return (*b >= 0 ? x : -x);
 }
-    /* Local variables */
-    static doublereal b, t, s1, s2, eps, tmp;
-    extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
-    static doublereal sine, test, zeta1, zeta2, alpha, norma;
-    extern doublereal dlamch_(char *, ftnlen);
-    static doublereal absgam, absalp, cosine, absest;
+
+/* Subroutine */ int az_dlaic1_c(integer *job, integer *j, doublereal *x, 
+	doublereal *sest, doublereal *w, doublereal *gamma, doublereal *
+	sestpr, doublereal *s, doublereal *c__)
+{
+  /* System generated locals */
+  doublereal d__1, d__2, d__3, d__4;
+
+  /* Builtin functions */
+  double sqrt(doublereal);
+  /* Local variables */
+  static doublereal b, t, s1, s2, eps, tmp;
+  extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *, 
+    integer *);
+  static doublereal sine, test, zeta1, zeta2, alpha, norma;
+  extern doublereal dlamch_(char *, ftnlen);
+  static doublereal absgam, absalp, cosine, absest;
 
 
 /*  -- LAPACK auxiliary routine (version 3.0) -- */
@@ -338,40 +338,40 @@ double az_d_sign (doublereal * a, doublereal * b) {
 /*     .. */
 /*     .. Executable Statements .. */
 
-    /* Parameter adjustments */
-    --w;
-    --x;
+  /* Parameter adjustments */
+  --w;
+  --x;
 
-    /* Function Body */
-    eps = dlamch_("Epsilon", (ftnlen)7);
-    alpha = ddot_(j, &x[1], &c__1, &w[1], &c__1);
+  /* Function Body */
+  eps = dlamch_("Epsilon", (ftnlen)7);
+  alpha = ddot_(j, &x[1], &c__1, &w[1], &c__1);
 
-    absalp = abs(alpha);
-    absgam = abs(*gamma);
-    absest = abs(*sest);
+  absalp = abs(alpha);
+  absgam = abs(*gamma);
+  absest = abs(*sest);
 
-    if (*job == 1) {
+  if (*job == 1) {
 
 /*        Estimating largest singular value */
 
 /*        special cases */
 
-	if (*sest == 0.) {
+    if (*sest == 0.) {
 	    s1 = max(absgam,absalp);
 	    if (s1 == 0.) {
-		*s = 0.;
-		*c__ = 1.;
-		*sestpr = 0.;
+        *s = 0.;
+        *c__ = 1.;
+        *sestpr = 0.;
 	    } else {
-		*s = alpha / s1;
-		*c__ = *gamma / s1;
-		tmp = sqrt(*s * *s + *c__ * *c__);
-		*s /= tmp;
-		*c__ /= tmp;
-		*sestpr = s1 * tmp;
+        *s = alpha / s1;
+        *c__ = *gamma / s1;
+        tmp = sqrt(*s * *s + *c__ * *c__);
+        *s /= tmp;
+        *c__ /= tmp;
+        *sestpr = s1 * tmp;
 	    }
 	    return 0;
-	} else if (absgam <= eps * absest) {
+    } else if (absgam <= eps * absest) {
 	    *s = 1.;
 	    *c__ = 0.;
 	    tmp = max(absest,absalp);
@@ -379,37 +379,37 @@ double az_d_sign (doublereal * a, doublereal * b) {
 	    s2 = absalp / tmp;
 	    *sestpr = tmp * sqrt(s1 * s1 + s2 * s2);
 	    return 0;
-	} else if (absalp <= eps * absest) {
+    } else if (absalp <= eps * absest) {
 	    s1 = absgam;
 	    s2 = absest;
 	    if (s1 <= s2) {
-		*s = 1.;
-		*c__ = 0.;
-		*sestpr = s2;
+        *s = 1.;
+        *c__ = 0.;
+        *sestpr = s2;
 	    } else {
-		*s = 0.;
-		*c__ = 1.;
-		*sestpr = s1;
+        *s = 0.;
+        *c__ = 1.;
+        *sestpr = s1;
 	    }
 	    return 0;
-	} else if (absest <= eps * absalp || absest <= eps * absgam) {
+    } else if (absest <= eps * absalp || absest <= eps * absgam) {
 	    s1 = absgam;
 	    s2 = absalp;
 	    if (s1 <= s2) {
-		tmp = s1 / s2;
-		*s = sqrt(tmp * tmp + 1.);
-		*sestpr = s2 * *s;
-		*c__ = *gamma / s2 / *s;
-		*s = az_d_sign(&c_b5, &alpha) / *s;
+        tmp = s1 / s2;
+        *s = sqrt(tmp * tmp + 1.);
+        *sestpr = s2 * *s;
+        *c__ = *gamma / s2 / *s;
+        *s = az_d_sign(&c_b5, &alpha) / *s;
 	    } else {
-		tmp = s2 / s1;
-		*c__ = sqrt(tmp * tmp + 1.);
-		*sestpr = s1 * *c__;
-		*s = alpha / s1 / *c__;
-		*c__ = az_d_sign(&c_b5, gamma) / *c__;
+        tmp = s2 / s1;
+        *c__ = sqrt(tmp * tmp + 1.);
+        *sestpr = s1 * *c__;
+        *s = alpha / s1 / *c__;
+        *c__ = az_d_sign(&c_b5, gamma) / *c__;
 	    }
 	    return 0;
-	} else {
+    } else {
 
 /*           normal case */
 
@@ -419,9 +419,9 @@ double az_d_sign (doublereal * a, doublereal * b) {
 	    b = (1. - zeta1 * zeta1 - zeta2 * zeta2) * .5;
 	    *c__ = zeta1 * zeta1;
 	    if (b > 0.) {
-		t = *c__ / (b + sqrt(b * b + *c__));
+        t = *c__ / (b + sqrt(b * b + *c__));
 	    } else {
-		t = sqrt(b * b + *c__) - b;
+        t = sqrt(b * b + *c__) - b;
 	    }
 
 	    sine = -zeta1 / t;
@@ -431,22 +431,22 @@ double az_d_sign (doublereal * a, doublereal * b) {
 	    *c__ = cosine / tmp;
 	    *sestpr = sqrt(t + 1.) * absest;
 	    return 0;
-	}
+    }
 
-    } else if (*job == 2) {
+  } else if (*job == 2) {
 
 /*        Estimating smallest singular value */
 
 /*        special cases */
 
-	if (*sest == 0.) {
+    if (*sest == 0.) {
 	    *sestpr = 0.;
 	    if (max(absgam,absalp) == 0.) {
-		sine = 1.;
-		cosine = 0.;
+        sine = 1.;
+        cosine = 0.;
 	    } else {
-		sine = -(*gamma);
-		cosine = alpha;
+        sine = -(*gamma);
+        cosine = alpha;
 	    }
 /* Computing MAX */
 	    d__1 = abs(sine), d__2 = abs(cosine);
@@ -457,42 +457,42 @@ double az_d_sign (doublereal * a, doublereal * b) {
 	    *s /= tmp;
 	    *c__ /= tmp;
 	    return 0;
-	} else if (absgam <= eps * absest) {
+    } else if (absgam <= eps * absest) {
 	    *s = 0.;
 	    *c__ = 1.;
 	    *sestpr = absgam;
 	    return 0;
-	} else if (absalp <= eps * absest) {
+    } else if (absalp <= eps * absest) {
 	    s1 = absgam;
 	    s2 = absest;
 	    if (s1 <= s2) {
-		*s = 0.;
-		*c__ = 1.;
-		*sestpr = s1;
+        *s = 0.;
+        *c__ = 1.;
+        *sestpr = s1;
 	    } else {
-		*s = 1.;
-		*c__ = 0.;
-		*sestpr = s2;
+        *s = 1.;
+        *c__ = 0.;
+        *sestpr = s2;
 	    }
 	    return 0;
-	} else if (absest <= eps * absalp || absest <= eps * absgam) {
+    } else if (absest <= eps * absalp || absest <= eps * absgam) {
 	    s1 = absgam;
 	    s2 = absalp;
 	    if (s1 <= s2) {
-		tmp = s1 / s2;
-		*c__ = sqrt(tmp * tmp + 1.);
-		*sestpr = absest * (tmp / *c__);
-		*s = -(*gamma / s2) / *c__;
-		*c__ = az_d_sign(&c_b5, &alpha) / *c__;
+        tmp = s1 / s2;
+        *c__ = sqrt(tmp * tmp + 1.);
+        *sestpr = absest * (tmp / *c__);
+        *s = -(*gamma / s2) / *c__;
+        *c__ = az_d_sign(&c_b5, &alpha) / *c__;
 	    } else {
-		tmp = s2 / s1;
-		*s = sqrt(tmp * tmp + 1.);
-		*sestpr = absest / *s;
-		*c__ = alpha / s1 / *s;
-		*s = -az_d_sign(&c_b5, gamma) / *s;
+        tmp = s2 / s1;
+        *s = sqrt(tmp * tmp + 1.);
+        *sestpr = absest / *s;
+        *c__ = alpha / s1 / *s;
+        *s = -az_d_sign(&c_b5, gamma) / *s;
 	    }
 	    return 0;
-	} else {
+    } else {
 
 /*           normal case */
 
@@ -511,35 +511,35 @@ double az_d_sign (doublereal * a, doublereal * b) {
 
 /*              root is close to zero, compute directly */
 
-		b = (zeta1 * zeta1 + zeta2 * zeta2 + 1.) * .5;
-		*c__ = zeta2 * zeta2;
-		t = *c__ / (b + sqrt((d__1 = b * b - *c__, abs(d__1))));
-		sine = zeta1 / (1. - t);
-		cosine = -zeta2 / t;
-		*sestpr = sqrt(t + eps * 4. * eps * norma) * absest;
+        b = (zeta1 * zeta1 + zeta2 * zeta2 + 1.) * .5;
+        *c__ = zeta2 * zeta2;
+        t = *c__ / (b + sqrt((d__1 = b * b - *c__, abs(d__1))));
+        sine = zeta1 / (1. - t);
+        cosine = -zeta2 / t;
+        *sestpr = sqrt(t + eps * 4. * eps * norma) * absest;
 	    } else {
 
 /*              root is closer to ONE, shift by that amount */
 
-		b = (zeta2 * zeta2 + zeta1 * zeta1 - 1.) * .5;
-		*c__ = zeta1 * zeta1;
-		if (b >= 0.) {
-		    t = -(*c__) / (b + sqrt(b * b + *c__));
-		} else {
-		    t = b - sqrt(b * b + *c__);
-		}
-		sine = -zeta1 / t;
-		cosine = -zeta2 / (t + 1.);
-		*sestpr = sqrt(t + 1. + eps * 4. * eps * norma) * absest;
+        b = (zeta2 * zeta2 + zeta1 * zeta1 - 1.) * .5;
+        *c__ = zeta1 * zeta1;
+        if (b >= 0.) {
+          t = -(*c__) / (b + sqrt(b * b + *c__));
+        } else {
+          t = b - sqrt(b * b + *c__);
+        }
+        sine = -zeta1 / t;
+        cosine = -zeta2 / (t + 1.);
+        *sestpr = sqrt(t + 1. + eps * 4. * eps * norma) * absest;
 	    }
 	    tmp = sqrt(sine * sine + cosine * cosine);
 	    *s = sine / tmp;
 	    *c__ = cosine / tmp;
 	    return 0;
 
-	}
     }
-    return 0;
+  }
+  return 0;
 
 /*     End of AZ_DLAIC1 */
 
@@ -548,12 +548,12 @@ double az_d_sign (doublereal * a, doublereal * b) {
 /* Subroutine */ int az_dlaswp_c(integer *n, doublereal *a, integer *lda, 
 	integer *k1, integer *k2, integer *ipiv, integer *incx)
 {
-    /* System generated locals */
-    integer a_dim1, a_offset, i__1, i__2, i__3, i__4;
+  /* System generated locals */
+  integer a_dim1, a_offset, i__1, i__2, i__3, i__4;
 
-    /* Local variables */
-    static integer i__, j, k, i1, i2, n32, ip, ix, ix0, inc;
-    static doublereal temp;
+  /* Local variables */
+  static integer i__, j, k, i1, i2, n32, ip, ix, ix0, inc;
+  static doublereal temp;
 
 
 /*  -- LAPACK auxiliary routine (version 3.0) -- */
@@ -617,100 +617,102 @@ double az_d_sign (doublereal * a, doublereal * b) {
 
 /*     Interchange row I with row IPIV(I) for each of rows K1 through K2. */
 
-    /* Parameter adjustments */
-    a_dim1 = *lda;
-    a_offset = 1 + a_dim1;
-    a -= a_offset;
-    --ipiv;
+  /* Parameter adjustments */
+  a_dim1 = *lda;
+  a_offset = 1 + a_dim1;
+  a -= a_offset;
+  --ipiv;
 
-    /* Function Body */
-    if (*incx > 0) {
-	ix0 = *k1;
-	i1 = *k1;
-	i2 = *k2;
-	inc = 1;
-    } else if (*incx < 0) {
-	ix0 = (1 - *k2) * *incx + 1;
-	i1 = *k2;
-	i2 = *k1;
-	inc = -1;
-    } else {
-	return 0;
-    }
+  /* Function Body */
+  if (*incx > 0) {
+    ix0 = *k1;
+    i1 = *k1;
+    i2 = *k2;
+    inc = 1;
+  } else if (*incx < 0) {
+    ix0 = (1 - *k2) * *incx + 1;
+    i1 = *k2;
+    i2 = *k1;
+    inc = -1;
+  } else {
+    return 0;
+  }
 
-    n32 = *n / 32 << 5;
-    if (n32 != 0) {
-	i__1 = n32;
-	for (j = 1; j <= i__1; j += 32) {
+  n32 = *n / 32 << 5;
+  if (n32 != 0) {
+    i__1 = n32;
+    for (j = 1; j <= i__1; j += 32) {
 	    ix = ix0;
 	    i__2 = i2;
 	    i__3 = inc;
 	    for (i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3) 
-		    {
-		ip = ipiv[ix];
-		if (ip != i__) {
-		    i__4 = j + 31;
-		    for (k = j; k <= i__4; ++k) {
-			temp = a[i__ + k * a_dim1];
-			a[i__ + k * a_dim1] = a[ip + k * a_dim1];
-			a[ip + k * a_dim1] = temp;
+      {
+        ip = ipiv[ix];
+        if (ip != i__) {
+          i__4 = j + 31;
+          for (k = j; k <= i__4; ++k) {
+            temp = a[i__ + k * a_dim1];
+            a[i__ + k * a_dim1] = a[ip + k * a_dim1];
+            a[ip + k * a_dim1] = temp;
 /* L10: */
-		    }
-		}
-		ix += *incx;
+          }
+        }
+        ix += *incx;
 /* L20: */
 	    }
 /* L30: */
-	}
     }
-    if (n32 != *n) {
-	++n32;
-	ix = ix0;
-	i__1 = i2;
-	i__3 = inc;
-	for (i__ = i1; i__3 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__3) {
+  }
+  if (n32 != *n) {
+    ++n32;
+    ix = ix0;
+    i__1 = i2;
+    i__3 = inc;
+    for (i__ = i1; i__3 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__3) {
 	    ip = ipiv[ix];
 	    if (ip != i__) {
-		i__2 = *n;
-		for (k = n32; k <= i__2; ++k) {
-		    temp = a[i__ + k * a_dim1];
-		    a[i__ + k * a_dim1] = a[ip + k * a_dim1];
-		    a[ip + k * a_dim1] = temp;
+        i__2 = *n;
+        for (k = n32; k <= i__2; ++k) {
+          temp = a[i__ + k * a_dim1];
+          a[i__ + k * a_dim1] = a[ip + k * a_dim1];
+          a[ip + k * a_dim1] = temp;
 /* L40: */
-		}
+        }
 	    }
 	    ix += *incx;
 /* L50: */
-	}
     }
+  }
 
-    return 0;
+  return 0;
 
 /*     End of AZ_DLASWP */
 
 } /* az_dlaswp */
 
-/* Subroutine */ int az_slaic1_c(integer *job, integer *j, real *x, real *
-	sest, real *w, real *gamma, real *sestpr, real *s, real *c__)
-{
-    /* System generated locals */
-    real r__1, r__2, r__3, r__4;
 
-    /* Builtin functions */
-    double sqrt(doublereal);
-
-double az_r_sign (real * a, real * b) {
+double az_r_sign(real * a, real * b) {
   double x;
   x = (*a >= 0 ? *a : -*a);
   return (*b >= 0 ? x : -x);
 }
 
-    /* Local variables */
-    static real b, t, s1, s2, eps, tmp, sine;
-    extern doublereal sdot_(integer *, real *, integer *, real *, integer *);
-    static real test, zeta1, zeta2, alpha, norma, absgam, absalp;
-    extern doublereal slamch_(char *, ftnlen);
-    static real cosine, absest;
+
+/* Subroutine */ int az_slaic1_c(integer *job, integer *j, real *x, real *
+	sest, real *w, real *gamma, real *sestpr, real *s, real *c__)
+{
+  /* System generated locals */
+  real r__1, r__2, r__3, r__4;
+
+  /* Builtin functions */
+  double sqrt(doublereal);
+
+  /* Local variables */
+  static real b, t, s1, s2, eps, tmp, sine;
+  extern doublereal sdot_(integer *, real *, integer *, real *, integer *);
+  static real test, zeta1, zeta2, alpha, norma, absgam, absalp;
+  extern doublereal slamch_(char *, ftnlen);
+  static real cosine, absest;
 
 
 /*  -- LAPACK auxiliary routine (version 2.0) -- */
@@ -795,40 +797,40 @@ double az_r_sign (real * a, real * b) {
 /*     .. */
 /*     .. Executable Statements .. */
 
-    /* Parameter adjustments */
-    --w;
-    --x;
+  /* Parameter adjustments */
+  --w;
+  --x;
 
-    /* Function Body */
-    eps = slamch_("Epsilon", (ftnlen)7);
-    alpha = sdot_(j, &x[1], &c__1, &w[1], &c__1);
+  /* Function Body */
+  eps = slamch_("Epsilon", (ftnlen)7);
+  alpha = sdot_(j, &x[1], &c__1, &w[1], &c__1);
 
-    absalp = dabs(alpha);
-    absgam = dabs(*gamma);
-    absest = dabs(*sest);
+  absalp = dabs(alpha);
+  absgam = dabs(*gamma);
+  absest = dabs(*sest);
 
-    if (*job == 1) {
+  if (*job == 1) {
 
 /*        Estimating largest singular value */
 
 /*        special cases */
 
-	if (*sest == 0.f) {
+    if (*sest == 0.f) {
 	    s1 = dmax(absgam,absalp);
 	    if (s1 == 0.f) {
-		*s = 0.f;
-		*c__ = 1.f;
-		*sestpr = 0.f;
+        *s = 0.f;
+        *c__ = 1.f;
+        *sestpr = 0.f;
 	    } else {
-		*s = alpha / s1;
-		*c__ = *gamma / s1;
-		tmp = sqrt(*s * *s + *c__ * *c__);
-		*s /= tmp;
-		*c__ /= tmp;
-		*sestpr = s1 * tmp;
+        *s = alpha / s1;
+        *c__ = *gamma / s1;
+        tmp = sqrt(*s * *s + *c__ * *c__);
+        *s /= tmp;
+        *c__ /= tmp;
+        *sestpr = s1 * tmp;
 	    }
 	    return 0;
-	} else if (absgam <= eps * absest) {
+    } else if (absgam <= eps * absest) {
 	    *s = 1.f;
 	    *c__ = 0.f;
 	    tmp = dmax(absest,absalp);
@@ -836,37 +838,37 @@ double az_r_sign (real * a, real * b) {
 	    s2 = absalp / tmp;
 	    *sestpr = tmp * sqrt(s1 * s1 + s2 * s2);
 	    return 0;
-	} else if (absalp <= eps * absest) {
+    } else if (absalp <= eps * absest) {
 	    s1 = absgam;
 	    s2 = absest;
 	    if (s1 <= s2) {
-		*s = 1.f;
-		*c__ = 0.f;
-		*sestpr = s2;
+        *s = 1.f;
+        *c__ = 0.f;
+        *sestpr = s2;
 	    } else {
-		*s = 0.f;
-		*c__ = 1.f;
-		*sestpr = s1;
+        *s = 0.f;
+        *c__ = 1.f;
+        *sestpr = s1;
 	    }
 	    return 0;
-	} else if (absest <= eps * absalp || absest <= eps * absgam) {
+    } else if (absest <= eps * absalp || absest <= eps * absgam) {
 	    s1 = absgam;
 	    s2 = absalp;
 	    if (s1 <= s2) {
-		tmp = s1 / s2;
-		*s = sqrt(tmp * tmp + 1.f);
-		*sestpr = s2 * *s;
-		*c__ = *gamma / s2 / *s;
-		*s = az_r_sign(&c_b19, &alpha) / *s;
+        tmp = s1 / s2;
+        *s = sqrt(tmp * tmp + 1.f);
+        *sestpr = s2 * *s;
+        *c__ = *gamma / s2 / *s;
+        *s = az_r_sign(&c_b19, &alpha) / *s;
 	    } else {
-		tmp = s2 / s1;
-		*c__ = sqrt(tmp * tmp + 1.f);
-		*sestpr = s1 * *c__;
-		*s = alpha / s1 / *c__;
-		*c__ = az_r_sign(&c_b19, gamma) / *c__;
+        tmp = s2 / s1;
+        *c__ = sqrt(tmp * tmp + 1.f);
+        *sestpr = s1 * *c__;
+        *s = alpha / s1 / *c__;
+        *c__ = az_r_sign(&c_b19, gamma) / *c__;
 	    }
 	    return 0;
-	} else {
+    } else {
 
 /*           normal case */
 
@@ -876,9 +878,9 @@ double az_r_sign (real * a, real * b) {
 	    b = (1.f - zeta1 * zeta1 - zeta2 * zeta2) * .5f;
 	    *c__ = zeta1 * zeta1;
 	    if (b > 0.f) {
-		t = *c__ / (b + sqrt(b * b + *c__));
+        t = *c__ / (b + sqrt(b * b + *c__));
 	    } else {
-		t = sqrt(b * b + *c__) - b;
+        t = sqrt(b * b + *c__) - b;
 	    }
 
 	    sine = -zeta1 / t;
@@ -888,22 +890,22 @@ double az_r_sign (real * a, real * b) {
 	    *c__ = cosine / tmp;
 	    *sestpr = sqrt(t + 1.f) * absest;
 	    return 0;
-	}
+    }
 
-    } else if (*job == 2) {
+  } else if (*job == 2) {
 
 /*        Estimating smallest singular value */
 
 /*        special cases */
 
-	if (*sest == 0.f) {
+    if (*sest == 0.f) {
 	    *sestpr = 0.f;
 	    if (dmax(absgam,absalp) == 0.f) {
-		sine = 1.f;
-		cosine = 0.f;
+        sine = 1.f;
+        cosine = 0.f;
 	    } else {
-		sine = -(*gamma);
-		cosine = alpha;
+        sine = -(*gamma);
+        cosine = alpha;
 	    }
 /* Computing MAX */
 	    r__1 = dabs(sine), r__2 = dabs(cosine);
@@ -914,42 +916,42 @@ double az_r_sign (real * a, real * b) {
 	    *s /= tmp;
 	    *c__ /= tmp;
 	    return 0;
-	} else if (absgam <= eps * absest) {
+    } else if (absgam <= eps * absest) {
 	    *s = 0.f;
 	    *c__ = 1.f;
 	    *sestpr = absgam;
 	    return 0;
-	} else if (absalp <= eps * absest) {
+    } else if (absalp <= eps * absest) {
 	    s1 = absgam;
 	    s2 = absest;
 	    if (s1 <= s2) {
-		*s = 0.f;
-		*c__ = 1.f;
-		*sestpr = s1;
+        *s = 0.f;
+        *c__ = 1.f;
+        *sestpr = s1;
 	    } else {
-		*s = 1.f;
-		*c__ = 0.f;
-		*sestpr = s2;
+        *s = 1.f;
+        *c__ = 0.f;
+        *sestpr = s2;
 	    }
 	    return 0;
-	} else if (absest <= eps * absalp || absest <= eps * absgam) {
+    } else if (absest <= eps * absalp || absest <= eps * absgam) {
 	    s1 = absgam;
 	    s2 = absalp;
 	    if (s1 <= s2) {
-		tmp = s1 / s2;
-		*c__ = sqrt(tmp * tmp + 1.f);
-		*sestpr = absest * (tmp / *c__);
-		*s = -(*gamma / s2) / *c__;
-		*c__ = az_r_sign(&c_b19, &alpha) / *c__;
+        tmp = s1 / s2;
+        *c__ = sqrt(tmp * tmp + 1.f);
+        *sestpr = absest * (tmp / *c__);
+        *s = -(*gamma / s2) / *c__;
+        *c__ = az_r_sign(&c_b19, &alpha) / *c__;
 	    } else {
-		tmp = s2 / s1;
-		*s = sqrt(tmp * tmp + 1.f);
-		*sestpr = absest / *s;
-		*c__ = alpha / s1 / *s;
-		*s = -az_r_sign(&c_b19, gamma) / *s;
+        tmp = s2 / s1;
+        *s = sqrt(tmp * tmp + 1.f);
+        *sestpr = absest / *s;
+        *c__ = alpha / s1 / *s;
+        *s = -az_r_sign(&c_b19, gamma) / *s;
 	    }
 	    return 0;
-	} else {
+    } else {
 
 /*           normal case */
 
@@ -968,35 +970,35 @@ double az_r_sign (real * a, real * b) {
 
 /*              root is close to zero, compute directly */
 
-		b = (zeta1 * zeta1 + zeta2 * zeta2 + 1.f) * .5f;
-		*c__ = zeta2 * zeta2;
-		t = *c__ / (b + sqrt((r__1 = b * b - *c__, dabs(r__1))));
-		sine = zeta1 / (1.f - t);
-		cosine = -zeta2 / t;
-		*sestpr = sqrt(t + eps * 4.f * eps * norma) * absest;
+        b = (zeta1 * zeta1 + zeta2 * zeta2 + 1.f) * .5f;
+        *c__ = zeta2 * zeta2;
+        t = *c__ / (b + sqrt((r__1 = b * b - *c__, dabs(r__1))));
+        sine = zeta1 / (1.f - t);
+        cosine = -zeta2 / t;
+        *sestpr = sqrt(t + eps * 4.f * eps * norma) * absest;
 	    } else {
 
 /*              root is closer to ONE, shift by that amount */
 
-		b = (zeta2 * zeta2 + zeta1 * zeta1 - 1.f) * .5f;
-		*c__ = zeta1 * zeta1;
-		if (b >= 0.f) {
-		    t = -(*c__) / (b + sqrt(b * b + *c__));
-		} else {
-		    t = b - sqrt(b * b + *c__);
-		}
-		sine = -zeta1 / t;
-		cosine = -zeta2 / (t + 1.f);
-		*sestpr = sqrt(t + 1.f + eps * 4.f * eps * norma) * absest;
+        b = (zeta2 * zeta2 + zeta1 * zeta1 - 1.f) * .5f;
+        *c__ = zeta1 * zeta1;
+        if (b >= 0.f) {
+          t = -(*c__) / (b + sqrt(b * b + *c__));
+        } else {
+          t = b - sqrt(b * b + *c__);
+        }
+        sine = -zeta1 / t;
+        cosine = -zeta2 / (t + 1.f);
+        *sestpr = sqrt(t + 1.f + eps * 4.f * eps * norma) * absest;
 	    }
 	    tmp = sqrt(sine * sine + cosine * cosine);
 	    *s = sine / tmp;
 	    *c__ = cosine / tmp;
 	    return 0;
 
-	}
     }
-    return 0;
+  }
+  return 0;
 
 /*     End of AZ_SLAIC1 */
 
@@ -1005,13 +1007,13 @@ double az_r_sign (real * a, real * b) {
 /* Subroutine */ int az_slaswp_c(integer *n, real *a, integer *lda, integer *
 	k1, integer *k2, integer *ipiv, integer *incx)
 {
-    /* System generated locals */
-    integer a_dim1, a_offset, i__1;
+  /* System generated locals */
+  integer a_dim1, a_offset, i__1;
 
-    /* Local variables */
-    static integer i__, ip, ix;
-    extern /* Subroutine */ int sswap_c(integer *, real *, integer *, real *, 
-	    integer *);
+  /* Local variables */
+  static integer i__, ip, ix;
+  extern /* Subroutine */ int sswap_c(integer *, real *, integer *, real *, 
+    integer *);
 
 
 /*  -- LAPACK auxiliary routine (version 2.0) -- */
@@ -1071,53 +1073,53 @@ double az_r_sign (real * a, real * b) {
 
 /*     Interchange row I with row IPIV(I) for each of rows K1 through K2. */
 
-    /* Parameter adjustments */
-    a_dim1 = *lda;
-    a_offset = 1 + a_dim1;
-    a -= a_offset;
-    --ipiv;
+  /* Parameter adjustments */
+  a_dim1 = *lda;
+  a_offset = 1 + a_dim1;
+  a -= a_offset;
+  --ipiv;
 
-    /* Function Body */
-    if (*incx == 0) {
-	return 0;
-    }
-    if (*incx > 0) {
-	ix = *k1;
-    } else {
-	ix = (1 - *k2) * *incx + 1;
-    }
-    if (*incx == 1) {
-	i__1 = *k2;
-	for (i__ = *k1; i__ <= i__1; ++i__) {
+  /* Function Body */
+  if (*incx == 0) {
+    return 0;
+  }
+  if (*incx > 0) {
+    ix = *k1;
+  } else {
+    ix = (1 - *k2) * *incx + 1;
+  }
+  if (*incx == 1) {
+    i__1 = *k2;
+    for (i__ = *k1; i__ <= i__1; ++i__) {
 	    ip = ipiv[i__];
 	    if (ip != i__) {
-		sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
+        sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
 	    }
 /* L10: */
-	}
-    } else if (*incx > 1) {
-	i__1 = *k2;
-	for (i__ = *k1; i__ <= i__1; ++i__) {
+    }
+  } else if (*incx > 1) {
+    i__1 = *k2;
+    for (i__ = *k1; i__ <= i__1; ++i__) {
 	    ip = ipiv[ix];
 	    if (ip != i__) {
-		sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
+        sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
 	    }
 	    ix += *incx;
 /* L20: */
-	}
-    } else if (*incx < 0) {
-	i__1 = *k1;
-	for (i__ = *k2; i__ >= i__1; --i__) {
+    }
+  } else if (*incx < 0) {
+    i__1 = *k1;
+    for (i__ = *k2; i__ >= i__1; --i__) {
 	    ip = ipiv[ix];
 	    if (ip != i__) {
-		sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
+        sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
 	    }
 	    ix += *incx;
 /* L30: */
-	}
     }
+  }
 
-    return 0;
+  return 0;
 
 /*     End of AZ_SLASWP */
 
