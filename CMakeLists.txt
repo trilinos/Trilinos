@@ -5,9 +5,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(Trilinos)
 SET(${PROJECT_NAME}_VERSION "9.0d")
 
-#2008/06/13: ejguill: Make the hostname available.  This might need to be refactored to account for
-#machines without the hostname command.
-EXECUTE_PROCESS( COMMAND hostname
+#2008/07/10: ejguill: Updated to use the same command 
+#that the perl test harness uses to get the name of the host
+EXECUTE_PROCESS( COMMAND uname -n
                  OUTPUT_VARIABLE TRILINOS_HOSTNAME
                  OUTPUT_STRIP_TRAILING_WHITESPACE
                 )
