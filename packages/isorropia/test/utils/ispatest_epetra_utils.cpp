@@ -145,10 +145,10 @@ bool test_matrix_vector_multiply(Epetra_CrsMatrix &A)
 #endif
   
   // Want to perform Ax = y, so create x and y.
-
-  Epetra_Map xmap(A.NumGlobalCols(), 0, comm);
-
-  Epetra_Map ymap(A.RowMap());
+  Epetra_Map xmap(A.DomainMap());
+  Epetra_Map ymap(A.RangeMap());
+  // std::cout << "xmap: " << xmap << endl;
+  // std::cout << "ymap: " << ymap << endl;
 
   int myLen = xmap.NumMyElements();
   double *val = NULL;
@@ -189,10 +189,10 @@ bool test_row_matrix_vector_multiply(Epetra_RowMatrix &A)
 #endif
   
   // Want to perform Ax = y, so create x and y.
-
   Epetra_Map xmap(A.NumGlobalCols(), 0, comm);
-
   Epetra_Map ymap(A.RowMatrixRowMap());
+  if (A.NumGlobalRows()==A.NumGlobalCols()) // square
+    xmap= ymap;
 
   int myLen = xmap.NumMyElements();
   double *val = NULL;
