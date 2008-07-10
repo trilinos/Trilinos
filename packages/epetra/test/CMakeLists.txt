@@ -27,7 +27,7 @@ TRILINOS_ADD_TEST(
   NAME CrsGraphEJG
   ARGS -v
   COMM serial mpi
-  XHOST localhost2.localdomain
+  XHOST localhost.localdomain
   )
 
 #TRILINOS_ADD_EXECUTABLE(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
