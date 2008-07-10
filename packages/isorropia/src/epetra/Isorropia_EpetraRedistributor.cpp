@@ -126,10 +126,17 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph)
 
   new_graph->Import(input_graph, *importer_, Insert);
 
-  Epetra_Map newDomainMap(input_graph.NumGlobalCols(), 0, input_graph.Comm());
+  // Set the new domain map such that
+  // (a) if old DomainMap == old RangeMap, preserve this property,
+  // (b) otherwise, let the new DomainMap be the old DomainMap 
+  const Epetra_BlockMap *newDomainMap;
+  if (input_graph.DomainMap().SameAs(input_graph.RangeMap()))
+     newDomainMap = &(new_graph->RangeMap());
+  else
+     newDomainMap = &(input_graph.DomainMap());
 
   if (!new_graph->Filled())
-    new_graph->FillComplete(newDomainMap, *target_map_);
+    new_graph->FillComplete(*newDomainMap, *target_map_);
 
   return( new_graph );
 }
@@ -175,10 +182,17 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix)
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
-  Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
+  // Set the new domain map such that
+  // (a) if old DomainMap == old RangeMap, preserve this property,
+  // (b) otherwise, let the new DomainMap be the old DomainMap 
+  const Epetra_Map *newDomainMap;
+  if (input_matrix.DomainMap().SameAs(input_matrix.RangeMap()))
+     newDomainMap = &(new_matrix->RangeMap());
+  else
+     newDomainMap = &(input_matrix.DomainMap());
 
   if (!new_matrix->Filled())
-    new_matrix->FillComplete(newDomainMap,  *target_map_);
+    new_matrix->FillComplete(*newDomainMap,  *target_map_);
 
   return( new_matrix );
 }
@@ -225,10 +239,19 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix)
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
-  Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
-
-  if (!new_matrix->Filled())
-    new_matrix->FillComplete(newDomainMap, *target_map_);
+  // RowMatrix does not support domain and range maps.
+  // Set the new domain map such that
+  // (a) if matrix is square, use default maps
+  // (b) otherwise, create a linear DomainMap
+  if (input_matrix.NumGlobalRows() == input_matrix.NumGlobalCols()){
+    if (!new_matrix->Filled())
+      new_matrix->FillComplete();
+  }
+  else {
+    Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
+    if (!new_matrix->Filled())
+      new_matrix->FillComplete(newDomainMap, *target_map_);
+  }
 
   return( new_matrix );
 }
