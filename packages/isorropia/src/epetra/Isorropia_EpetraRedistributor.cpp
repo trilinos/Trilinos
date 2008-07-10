@@ -86,7 +86,7 @@ void Redistributor::redistribute(const Epetra_SrcDistObject& src,
 }
 
 Teuchos::RefCountPtr<Epetra_CrsGraph>
-Redistributor::redistribute(const Epetra_CrsGraph& input_graph)
+Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete)
 {
   if (!created_importer_) {
     create_importer(input_graph.RowMap());
@@ -135,14 +135,14 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph)
   else
      newDomainMap = &(input_graph.DomainMap());
 
-  if (!new_graph->Filled())
+  if (callFillComplete && (!new_graph->Filled()))
     new_graph->FillComplete(*newDomainMap, *target_map_);
 
   return( new_graph );
 }
 
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
-Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix)
+Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete)
 {
   if (!created_importer_) {
     create_importer(input_matrix.RowMap());
@@ -191,14 +191,14 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix)
   else
      newDomainMap = &(input_matrix.DomainMap());
 
-  if (!new_matrix->Filled())
+  if (callFillComplete && (!new_matrix->Filled()))
     new_matrix->FillComplete(*newDomainMap,  *target_map_);
 
   return( new_matrix );
 }
 
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
-Redistributor::redistribute(const Epetra_RowMatrix& input_matrix)
+Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete)
 {
   if (!created_importer_) {
     create_importer(input_matrix.RowMatrixRowMap());
@@ -244,12 +244,12 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix)
   // (a) if matrix is square, use default maps
   // (b) otherwise, create a linear DomainMap
   if (input_matrix.NumGlobalRows() == input_matrix.NumGlobalCols()){
-    if (!new_matrix->Filled())
+    if (callFillComplete && (!new_matrix->Filled()))
       new_matrix->FillComplete();
   }
   else {
     Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
-    if (!new_matrix->Filled())
+    if (callFillComplete && (!new_matrix->Filled()))
       new_matrix->FillComplete(newDomainMap, *target_map_);
   }
 

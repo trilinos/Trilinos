@@ -92,7 +92,7 @@ public:
       construct the partitioner.
   */
   Teuchos::RefCountPtr<Epetra_CrsGraph>
-     redistribute(const Epetra_CrsGraph& input_graph);
+     redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete= true);
 
   /** This method is part of the Isorropia API, used
       to redistribute an Epetra object.
@@ -105,7 +105,7 @@ public:
       construct the partitioner.
   */
   Teuchos::RefCountPtr<Epetra_CrsMatrix>
-     redistribute(const Epetra_CrsMatrix& input_matrix);
+     redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete= true);
 
   /** This method is part of the Isorropia API, used
       to redistribute an Epetra object.
@@ -114,7 +114,7 @@ public:
       return a redistributed Epetra_CrsMatrix object.
   */
   Teuchos::RefCountPtr<Epetra_CrsMatrix>
-     redistribute(const Epetra_RowMatrix& input_matrix);
+     redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete= true);
 
   /** This method is part of the Isorropia API, used
       to redistribute an Epetra object.
