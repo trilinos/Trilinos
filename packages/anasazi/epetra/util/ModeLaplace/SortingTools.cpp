@@ -28,6 +28,7 @@
 
 #include "SortingTools.h"
 
+#include <string.h>
 
 int SortingTools::sortScalars(int n, double *y, int *perm) const {
 
