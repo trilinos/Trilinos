@@ -720,7 +720,8 @@ all-local:
 	@echo "Trilinos package new_package built successfully"
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.new_package $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	mkdir -p $(DESTDIR)$(includedir)
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.new_package $(DESTDIR)$(includedir)/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.new_package \
@@ -729,11 +730,11 @@ all-local:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-@USING_EXPORT_MAKEFILES_TRUE@		NEW_PACKAGE > $(exec_prefix)/include/Makefile.export.new_package.macros
+@USING_EXPORT_MAKEFILES_TRUE@		NEW_PACKAGE > $(DESTDIR)$(includedir)/Makefile.export.new_package.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.new_package
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.new_package.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.new_package
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.new_package.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 

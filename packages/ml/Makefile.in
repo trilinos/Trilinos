@@ -779,7 +779,8 @@ install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.ml $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	mkdir -p $(DESTDIR)$(includedir)
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.ml $(DESTDIR)$(includedir)/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.ml \
@@ -787,11 +788,11 @@ install-everything:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/Comm:abs_top_srcdir@/Operator:abs_top_srcdir@/Smoother:@abs_top_srcdir@/Coarsen:@abs_top_srcdir@/Krylov:@abs_top_srcdir@/Main:@abs_top_srcdir@/FEGrid:@abs_top_srcdir@/Utils:@abs_top_srcdir@/MLAPI:@abs_top_srcdir@/Include \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../galeri:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../amesos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../anasazi:@abs_top_builddir@/../aztecoo
-@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ML > $(exec_prefix)/include/Makefile.export.ml.macros
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ML > $(DESTDIR)$(includedir)/Makefile.export.ml.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.ml
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.ml.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.ml
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.ml.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 

@@ -127,7 +127,8 @@ endif
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.triutils $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.triutils $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.triutils \
@@ -135,11 +136,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile TRIUTILS > $(exec_prefix)/include/Makefile.export.triutils.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile TRIUTILS > $(DESTDIR)$(includedir)/Makefile.export.triutils.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.triutils
-	rm -f $(exec_prefix)/include/Makefile.export.triutils.macros
+	rm -f $(includedir)/Makefile.export.triutils
+	rm -f $(includedir)/Makefile.export.triutils.macros
 
 else 
 

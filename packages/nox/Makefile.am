@@ -154,7 +154,8 @@ dox:
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.nox $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.nox $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.nox \
@@ -162,11 +163,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_srcdir@/src-epetra:@abs_top_srcdir@/src-lapack:@abs_top_srcdir@/src-petsc:@abs_top_srcdir@/src-belos:@abs_top_srcdir@/src-thyra:@abs_top_srcdir@/src-loca/src-lapack:@abs_top_srcdir@/src-loca/src-epetra:@abs_top_srcdir@/src-loca/src-mf:@abs_top_srcdir@/src-loca/src:@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src-epetra:@abs_top_builddir@/src-lapack:@abs_top_builddir@/src-petsc:@abs_top_builddir@/src-belos:@abs_top_builddir@/src-thyra:@abs_top_builddir@/src-loca/src-epetra:@abs_top_builddir@/src-loca/src-lapack:@abs_top_builddir@/src-loca/src-mf:@abs_top_builddir@/src-loca/src:@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../epetra:@abs_top_builddir@/../ml:@abs_top_builddir@/../belos:@abs_top_builddir@/../thyra:@abs_top_builddir@/../stratimikos:@abs_top_builddir@/../anasazi:@abs_top_builddir@/../TSFExtended
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile NOX > $(exec_prefix)/include/Makefile.export.nox.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile NOX > $(DESTDIR)$(includedir)/Makefile.export.nox.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.nox
-	rm -f $(exec_prefix)/include/Makefile.export.nox.macros
+	rm -f $(includedir)/Makefile.export.nox
+	rm -f $(includedir)/Makefile.export.nox.macros
 
 else 
 

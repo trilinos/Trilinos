@@ -102,7 +102,8 @@ all-local:
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:
-	cp $(top_builddir)/Makefile.export.new_package $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.new_package $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.new_package \
@@ -111,11 +112,11 @@ install-exec-hook:
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-		NEW_PACKAGE > $(exec_prefix)/include/Makefile.export.new_package.macros
+		NEW_PACKAGE > $(DESTDIR)$(includedir)/Makefile.export.new_package.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.new_package
-	rm -f $(exec_prefix)/include/Makefile.export.new_package.macros
+	rm -f $(includedir)/Makefile.export.new_package
+	rm -f $(includedir)/Makefile.export.new_package.macros
 
 else
 

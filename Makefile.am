@@ -136,14 +136,14 @@ SUBDIRS = packages
 ## #######################################################################
 
 install-exec-hook:	
-	cp $(top_srcdir)/Trilinos_version.h $(exec_prefix)/include/. ;
-	cp $(top_srcdir)/commonTools/buildTools/strip_dup_incl_paths.pl $(exec_prefix)/include/. ;
-	cp $(top_srcdir)/commonTools/buildTools/strip_dup_libs.pl $(exec_prefix)/include/.
+	cp $(top_srcdir)/Trilinos_version.h $(DESTDIR)$(includedir)/. ;
+	cp $(top_srcdir)/commonTools/buildTools/strip_dup_incl_paths.pl $(DESTDIR)$(includedir)/. ;
+	cp $(top_srcdir)/commonTools/buildTools/strip_dup_libs.pl $(DESTDIR)$(includedir)/.
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Trilinos_version.h
-	rm -f $(exec_prefix)/include/strip_dup_incl_paths.pl
-	rm -f $(exec_prefix)/include/strip_dup_libs.pl
+	rm -f $(includedir)/Trilinos_version.h
+	rm -f $(includedir)/strip_dup_incl_paths.pl
+	rm -f $(includedir)/strip_dup_libs.pl
 
 
 #

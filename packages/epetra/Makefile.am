@@ -175,7 +175,8 @@ runtests-mpi :
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.epetra $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.epetra $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.epetra \
@@ -183,11 +184,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(DESTDIR)$(includedir)/Makefile.export.epetra.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.epetra
-	rm -f $(exec_prefix)/include/Makefile.export.epetra.macros
+	rm -f $(includedir)/Makefile.export.epetra
+	rm -f $(includedir)/Makefile.export.epetra.macros
 
 else 
 

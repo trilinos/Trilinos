@@ -235,7 +235,7 @@ include_HEADERS = $(NEW_PACKAGE_H)
 # special.
 
 # All Trilinos headers are now installed in the same directory
-execincludedir = $(exec_prefix)/include
+execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
 nodist_execinclude_HEADERS = New_Package_config.h
 

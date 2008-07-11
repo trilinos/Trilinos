@@ -147,7 +147,8 @@ SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.aztecoo $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.aztecoo $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.aztecoo \
@@ -155,11 +156,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../teuchos
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile AZTECOO > $(exec_prefix)/include/Makefile.export.aztecoo.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile AZTECOO > $(DESTDIR)$(includedir)/Makefile.export.aztecoo.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.aztecoo
-	rm -f $(exec_prefix)/include/Makefile.export.aztecoo.macros
+	rm -f $(includedir)/Makefile.export.aztecoo
+	rm -f $(includedir)/Makefile.export.aztecoo.macros
 
 else 
 

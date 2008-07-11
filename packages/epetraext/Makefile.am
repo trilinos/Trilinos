@@ -140,7 +140,8 @@ SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.epetraext $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.epetraext $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.epetraext \
@@ -148,11 +149,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src/block:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/coloring:@abs_top_srcdir@/src/distdir:@abs_top_srcdir@/src/inout:@abs_top_srcdir@/src/matlab:@abs_top_srcdir@/src/transform:@abs_top_srcdir@/src/zoltan \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../teuchos
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRAEXT > $(exec_prefix)/include/Makefile.export.epetraext.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRAEXT > $(DESTDIR)$(includedir)/Makefile.export.epetraext.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.epetraext
-	rm -f $(exec_prefix)/include/Makefile.export.epetraext.macros
+	rm -f $(includedir)/Makefile.export.epetraext
+	rm -f $(includedir)/Makefile.export.epetraext.macros
 
 else 
 
