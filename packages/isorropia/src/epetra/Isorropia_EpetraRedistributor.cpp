@@ -95,7 +95,7 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillCom
   // First obtain the length of each of my new rows
 
   int myOldRows = input_graph.NumMyRows();
-  int myNewRows = partitioner_->numElemsInPartition(input_graph.Comm().MyPID());
+  int myNewRows = target_map_->NumMyElements();
 
   double *nnz = new double [myOldRows];
   for (int i=0; i < myOldRows; i++){
@@ -151,7 +151,7 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillC
   // First obtain the length of each of my new rows
 
   int myOldRows = input_matrix.NumMyRows();
-  int myNewRows = partitioner_->numElemsInPartition(input_matrix.Comm().MyPID());
+  int myNewRows = target_map_->NumMyElements();
 
   double *nnz = new double [myOldRows];
   for (int i=0; i < myOldRows; i++){
@@ -206,7 +206,8 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillC
  // First obtain the length of each of my new rows
 
   int myOldRows = input_matrix.NumMyRows();
-  int myNewRows = partitioner_->numElemsInPartition(input_matrix.Comm().MyPID());
+  int myNewRows = target_map_->NumMyElements();
+
 
   double *nnz = new double [myOldRows];
   int val;
