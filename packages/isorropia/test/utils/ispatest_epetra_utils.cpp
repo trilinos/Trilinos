@@ -190,9 +190,7 @@ bool test_row_matrix_vector_multiply(Epetra_RowMatrix &A)
   
   // Want to perform Ax = y, so create x and y.
   Epetra_Map xmap(A.OperatorDomainMap());
-  Epetra_Map ymap(A.RowMatrixRowMap()); // same as A.OperatorRangeMap()?
-  if (A.NumGlobalRows()==A.NumGlobalCols()) // square
-    xmap= ymap;
+  Epetra_Map ymap(A.OperatorRangeMap()); // same as A.RowMatrixRowMap()
 
   int myLen = xmap.NumMyElements();
   double *val = NULL;
