@@ -17,7 +17,7 @@ FLIBS="-lg2c" \
 --with-gnumake \
 --disable-default-packages \
 --enable-teuchos --enable-teuchos-extended --disable-teuchos-blasfloat \
-   --enable-teuchos-boost \
+  --enable-teuchos-boost \
 --enable-thyra \
 --enable-epetra \
 --enable-triutils --disable-triutils-tests --disable-triutils-examples \
@@ -27,7 +27,8 @@ FLIBS="-lg2c" \
 --enable-belos \
 --enable-ifpack \
 --enable-ml \
---enable-nox --enable-nox-epetra --enable-nox-epetraext --enable-nox-thyra --enable-nox-thyra-tests --enable-nox-tests \
+--enable-nox --enable-nox-epetra --enable-nox-epetraext --enable-nox-thyra \
+  --enable-nox-thyra-tests --enable-nox-tests \
 --enable-loca \
 --enable-stratimikos \
 --enable-rythmos \
@@ -36,11 +37,6 @@ FLIBS="-lg2c" \
 --enable-tpetra \
 --enable-meros \
 --enable-new_package \
---enable-galeri \
---enable-isorropia \
---enable-rbgen \
---enable-moertel \
 --enable-anasazi \
---enable-intrepid \
 --enable-ctrilinos \
 --enable-didasko
