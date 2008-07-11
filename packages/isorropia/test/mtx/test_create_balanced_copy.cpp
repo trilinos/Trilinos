@@ -109,6 +109,8 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 
+#include <unistd.h>
+
 //#define SHORT_TEST
 
 #define GRAPH_PARTITIONING            1
@@ -276,14 +278,13 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
      (numPartitions == 0) &&                          // >0 would require a parameter
      (keepDenseEdges == 0));                          // >0 would require a parameter
 
-  // Row map for original object
+  // Maps for original object
   const Epetra_Map &sourceRowMap = matrix->RowMap();
-
-  // Column map for original object
+  const Epetra_Map &sourceRangeMap = matrix->RangeMap();
   const Epetra_Map &sourceColMap = matrix->ColMap();
+  const Epetra_Map &sourceDomainMap = matrix->DomainMap();
 
-  int ncols = matrix->NumGlobalCols();
-  int nrows = matrix->NumGlobalRows();
+  int numCols = matrix->NumGlobalCols();
   int nMyRows = sourceRowMap.NumMyElements();
   int base = sourceRowMap.IndexBase();
 
@@ -329,7 +330,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
         if (newVal) delete [] newVal;
       }
 
-      eptr->FillComplete(sourceColMap, sourceRowMap);
+      eptr->FillComplete(sourceDomainMap, sourceRangeMap);
     
       costs.setGraphEdgeWeights(eptr);
     }
@@ -343,7 +344,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       // for this parameter is to use the maximum edge weight provided by any
       // process for a given hyperedge.)
     
-      Epetra_Map hyperEdgeMap(ncols, base, Comm);
+      Epetra_Map hyperEdgeMap(numCols, base, Comm);
 
       hyperEdgeWeights = Teuchos::rcp(new Epetra_Vector(hyperEdgeMap));
     
@@ -593,7 +594,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     
     // Create a linear problem with this matrix.
 
-    LHSmap = new Epetra_Map(ncols, base, Comm);
+    LHSmap = new Epetra_Map(numCols, base, Comm);
 
     int myRHSsize = sourceRowMap.NumMyElements();
     int myLHSsize = LHSmap->NumMyElements();
@@ -807,8 +808,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     if (localProc == 0) std::cout << "ERROR: "+why << std::endl;
   }
 
-  // Try multiplying the rebalanced matrix and its transpose by a vector,
-  // to ensure it's a valid Epetra matrix
+  // Check that input matrix is valid.  This test constructs an "x"
+  // with the matrix->DomainMap() and a "y" with matrix->RangeMap()
+  // and then calculates y = Ax.
 
   if (objectType == EPETRA_LINEARPROBLEM){
     valid = ispatest::test_matrix_vector_multiply(*problemPtr);
@@ -863,10 +865,10 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  // if (getenv("DEBUGME")){
-  //  std::cout << localProc << " gdb test_create_balanced_copy.exe " << getpid() << std::endl;
-  //  sleep(15);
-  // }
+   //if (getenv("DEBUGME")){
+   // std::cout << localProc << " gdb test_create_balanced_copy.exe " << getpid() << std::endl;
+   // sleep(15);
+   //}
 
   Teuchos::CommandLineProcessor clp(false,true);
 
@@ -903,6 +905,14 @@ int main(int argc, char** argv) {
 
   // Read in the matrix market file and distribute its rows across the
   // processes.
+  //
+  // This reader uses the default Epetra_Map for number of rows for the
+  // RowMap() and for the RangeMap().  For non-square matrices it uses
+  // the default Epetra_Map for the number of columns for the DomainMap(),
+  // otherwise it uses the RowMap().
+  //
+  // The maps can be specified with other versions of MMFtoCrsMatrix().
+
 
   Epetra_CrsMatrix *matrixPtr;
   rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname, Comm, matrixPtr);
@@ -914,6 +924,8 @@ int main(int argc, char** argv) {
   }
 
   bool square = (matrixPtr->NumGlobalRows() == matrixPtr->NumGlobalCols());
+  // If matrix is square, determine if it's symmetric  TODO
+
 
   // Run some partitioning tests
   //   Test graph and hypergraph partitioning

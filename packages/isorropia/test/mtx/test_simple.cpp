@@ -106,6 +106,7 @@
 #endif
 #endif
 
+// Only run the first test
 //#define SHORT_TEST 1
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -224,7 +225,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 #endif
 
   if (contract && (partitioningType == NO_ZOLTAN)){
-    ERRORRETURN((localProc==0), "#Partitions < #Processes only works on Zoltan");
+    ERRORRETURN((localProc==0), "#Partitions < #Processes only works with Zoltan");
   }
 
   int numRows = matrix->NumGlobalRows();
@@ -253,7 +254,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     }
   }
 
-  // Check that input matrix is valid
+  // Check that input matrix is valid.  This test constructs an "x"
+  // with the matrix->DomainMap() and a "y" with matrix->RangeMap()
+  // and then calculates y = Ax.
 
   valid = ispatest::test_matrix_vector_multiply(*matrix);
 
@@ -513,7 +516,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS) ||
       (partitioningType == NO_ZOLTAN)){
 
-  Teuchos::RCP<Epetra_CrsMatrix> newMatrix = rd.redistribute(*matrix);
     Teuchos::RCP<Epetra_Vector> newvwgts = rd.redistribute(*vptr);
     costs->setVertexWeights(newvwgts);
   }
@@ -603,7 +605,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     if (localProc == 0) std::cout << "ERROR: "+why << std::endl;
   }
 
-  // Try multiplying the rebalanced and its transpose by a vector,
+  // Try multiplying the rebalanced matrix and its transpose by a vector,
   // to ensure it's a valid Epetra matrix
 
   valid = ispatest::test_matrix_vector_multiply(*newMatrix);
@@ -686,6 +688,13 @@ int main(int argc, char** argv) {
 
   // Read in the matrix market file and distribute its rows across the
   // processes.
+  //
+  // This reader uses the default Epetra_Map for number of rows for the
+  // RowMap() and for the RangeMap().  For non-square matrices it uses
+  // the default Epetra_Map for the number of columns for the DomainMap(),
+  // otherwise it uses the RowMap().
+  //
+  // The maps can be specified with other versions of MMFtoCrsMatrix().
 
   Epetra_CrsMatrix *matrixPtr;
   rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname, Comm, matrixPtr);
@@ -695,6 +704,8 @@ int main(int argc, char** argv) {
   }
 
   bool square = (matrixPtr->NumGlobalRows() == matrixPtr->NumGlobalCols());
+
+  // If matrix is square, determine if it's symmetric  TODO
 
   // Run some partitioning tests
   //   Test graph and hypergraph partitioning
@@ -707,9 +718,13 @@ int main(int argc, char** argv) {
   int failures = 0;
 
 #ifdef SHORT_TEST
-    fail = run_test(testm, verbose, false, 
-               NO_ZOLTAN, SUPPLY_EQUAL_WEIGHTS, SUPPLY_EQUAL_WEIGHTS,
-               EPETRA_CRSMATRIX);
+    fail = run_test(testm,
+               verbose,            // draw graph before and after partitioning
+               false,                   // do not make #partitions < #processes
+               HYPERGRAPH_PARTITIONING,      // do hypergraph partitioning
+               SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
+               SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
+               EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
 
     failures = (fail ? 1 : 0);
     goto Report;
