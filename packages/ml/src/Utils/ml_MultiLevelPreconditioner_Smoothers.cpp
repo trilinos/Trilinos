@@ -202,7 +202,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     if (currentLevel != coarseLevel)
       sprintf(smListName,"smoother: list (level %d)",currentLevel);
     else
-      sprintf(smListName,"coarse: list");
+      strcpy(smListName,"coarse: list");
     ParameterList &smList = List_.sublist(smListName);
 
     int Mynum_smoother_steps = smList.get("smoother: sweeps",num_smoother_steps);
