@@ -48,6 +48,7 @@
            MultiLevelPreconditioner_Maxwell,
            MultiLevelPreconditioner_NonSym,
            MultiLevelPreconditioner_Sym,
+           MultiLevelPreconditioner_Restart,
            MatrixFree,
            Miscellaneous,
            RefMaxwell,
