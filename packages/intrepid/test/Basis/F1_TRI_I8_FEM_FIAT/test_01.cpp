@@ -77,6 +77,9 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n";
 
   int errorFlag = 0;
+
+#ifdef HAVE_INTREPID_FIAT_VERY_HIGH_ORDER
+
   int beginThrowNumber = TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 1;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -360,6 +363,11 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   };
 
+#endif
+
+#ifndef HAVE_INTREPID_FIAT_VERY_HIGH_ORDER
+  *outStream << "\nWarning: FIAT very high order disabled!\n";
+#endif
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
@@ -371,4 +379,3 @@ int main(int argc, char *argv[]) {
 
   return errorFlag;
 }
-

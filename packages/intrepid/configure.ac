@@ -320,6 +320,11 @@ AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 TAC_ARG_ENABLE_FEATURE_SUB( intrepid, debug, [Enable intrepid debug mode],
                 INTREPID_DEBUG, no)
 
+# ------------------------------------------------------------------------
+# Check to see if FIAT very high order bases have been enabled.
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( intrepid, fiatvho, [Enable intrepid FIAT very high order bases],
+                INTREPID_FIAT_VERY_HIGH_ORDER, no)
 
 
 # ------------------------------------------------------------------------
