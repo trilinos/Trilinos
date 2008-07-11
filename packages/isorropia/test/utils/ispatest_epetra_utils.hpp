@@ -40,6 +40,8 @@ class Epetra_CrsGraph;
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
 class Epetra_CrsMatrix;
+class Epetra_Map;
+class Epetra_BlockMap;
 
 namespace ispatest {
 
@@ -64,32 +66,68 @@ int fill_graph(Epetra_CrsGraph& graph,
 
 /** Verify that a matrix is a valid Epetra_CrsMatrix by attempting
   to multiply with it.  Return true if successful, false otherwise.
+
+  A is the input matrix, and "x" and "y" will be created and then
+  y = Ax will be computed.
+
+  "x" will be created with the domain map of the "A",
+  "y" will be created with the range map.
+
+  Return true if successful, false otherwise.
 */
 bool test_matrix_vector_multiply(Epetra_CrsMatrix &A);
 
 /** Verify that a matrix is a valid Epetra_RowMatrix by attempting
   to multiply with it.  Return true if successful, false otherwise.
+
+  y = Rx will be calculated, where "y" will be created with the
+  OperatorRangeMap() of "R" and "x" will be created with 
+  the OperatorDomainMap() of "R".
+
+  Return true if successful, false otherwise.
 */
 bool test_row_matrix_vector_multiply(Epetra_RowMatrix &R);
 
 /** Verify that a matrix is a valid Epetra_CrsGraph by attempting
   to multiply with it.  Return true if successful, false otherwise.
+
+  An Epetra_CrsMatrix (A) will be created from the input graph G, and
+  then y = Ax will be computed.
+
+  "x" will be created with the domain map of "G", and "y" will be 
+  created with the range map of "G".
+
+  Return true if successful, false otherwise.
 */
 bool test_matrix_vector_multiply(Epetra_CrsGraph &G);
 
 /** Verify that the Epetra_RowMatrix in a Epetra_LinearProblem is
     valid by attempting to multiply with it.
 
+  An Epetra_RowMatrix (R) will be extracted from the linear
+  problem, and then y = Rx will be computed.
+
+  "y" will be created with the OperatorRangeMap() of "R" and "x" 
+   will be created with the OperatorDomainMap() of "R".
+
   This test does not use the vectors in the linear problem, it uses
-  a made up vector.
+  a made up vector.  (Maybe it should use rhs and lhs?)
 
   Return true if successful, false otherwise.
 */
 bool test_matrix_vector_multiply(Epetra_LinearProblem &LP);
 
+/** Method to create an Epetra_Map from an Epetra_BlockMap, when using
+    methods that require an Epetra_Map but you only have an Epetra_BlockMap.
+ 
+    Caller should delete the returned map when done with it.
+*/
+Epetra_Map *map_from_blockmap(const Epetra_BlockMap &b);
+
+
 }//namespace ispatest
 
-#endif //HAVE_EPTERA
+#endif //HAVE_EPETRA
 
 #endif
 

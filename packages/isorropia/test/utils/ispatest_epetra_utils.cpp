@@ -144,11 +144,8 @@ bool test_matrix_vector_multiply(Epetra_CrsMatrix &A)
   const Epetra_SerialComm &comm = dynamic_cast<const Epetra_SerialComm &>(A.Comm());
 #endif
   
-  // Want to perform Ax = y, so create x and y.
-  Epetra_Map xmap(A.DomainMap());
-  Epetra_Map ymap(A.RangeMap());
-  // std::cout << "xmap: " << xmap << endl;
-  // std::cout << "ymap: " << ymap << endl;
+  const Epetra_Map &xmap = A.DomainMap();
+  const Epetra_Map &ymap = A.RangeMap();
 
   int myLen = xmap.NumMyElements();
   double *val = NULL;
@@ -188,9 +185,8 @@ bool test_row_matrix_vector_multiply(Epetra_RowMatrix &A)
   const Epetra_SerialComm &comm = dynamic_cast<const Epetra_SerialComm &>(A.Comm());
 #endif
   
-  // Want to perform Ax = y, so create x and y.
-  Epetra_Map xmap(A.OperatorDomainMap());
-  Epetra_Map ymap(A.OperatorRangeMap()); // same as A.RowMatrixRowMap()
+  const Epetra_Map &xmap = A.OperatorDomainMap();
+  const Epetra_Map &ymap = A.OperatorRangeMap(); // same as A.RowMatrixRowMap()
 
   int myLen = xmap.NumMyElements();
   double *val = NULL;
@@ -225,7 +221,13 @@ bool test_row_matrix_vector_multiply(Epetra_RowMatrix &A)
 bool test_matrix_vector_multiply(Epetra_CrsGraph &G)
 {
   Epetra_CrsMatrix A(Copy, G);
-  A.FillComplete(A.DomainMap(), A.RangeMap()); 
+  A.PutScalar(1.0);
+  Epetra_Map *domainMap = map_from_blockmap(G.DomainMap());
+  Epetra_Map *rangeMap = map_from_blockmap(G.RangeMap());
+  A.FillComplete(*domainMap, *rangeMap);
+
+  delete domainMap;
+  delete rangeMap;
 
   return test_matrix_vector_multiply(A);
 }
@@ -237,6 +239,18 @@ bool test_matrix_vector_multiply(Epetra_LinearProblem &LP)
   Epetra_RowMatrix *A = LP.GetMatrix();
   return test_row_matrix_vector_multiply(*A);
 }
+Epetra_Map *map_from_blockmap(const Epetra_BlockMap &b)
+{
+  int base = b.IndexBase();
+  int size = b.NumGlobalElements();
+  int mysize = b.NumMyElements();
+  int *elts = b.MyGlobalElements();
+  const Epetra_Comm &comm = b.Comm();
+
+  Epetra_Map *map = new Epetra_Map(size, mysize, elts, base, comm);
+
+  return map;
+} 
 
 }//namespace ispatest
 
