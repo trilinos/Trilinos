@@ -21,17 +21,19 @@ TRILINOS_ADD_EXECUTABLE(BasicPerfTest TEST INSTALL SOURCES cxx_main.cpp ARGS 16 
 TRILINOS_ADD_EXECUTABLE(Comm ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
 #TRILINOS_ADD_EXECUTABLE(CrsGraph ${TEST_ARGUMENTS}  SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_TARGET(CrsGraph ${TEST_ARGUMENTS}  NAME CrsGraphEJG SOURCES cxx_main.cpp )
+TRILINOS_ADD_TARGET(CrsGraph ${TEST_ARGUMENTS}  NAME CrsGraphEJG SOURCES cxx_main.cpp DIRECTORY CrsGraph)
 TRILINOS_ADD_TEST(
   CrsGraph
   NAME CrsGraphEJG
-  ARGS -v
+  ARGS -v "1 a b c d" 2 3 4 5
+  POSTFIX verbose one two three four five
   COMM serial mpi
-  XHOST localhost.localdomain
+  HOST somehost localhost.localdomain
+  FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_TARGET(CrsMatrix ${TEST_ARGUMENTS} NAME CrsMatrixEJG SOURCES cxx_main.cpp)
+TRILINOS_ADD_TARGET(CrsMatrix ${TEST_ARGUMENTS} NAME CrsMatrixEJG SOURCES cxx_main.cpp DIRECTORY CrsMatrix)
 TRILINOS_ADD_TEST(
   CrsMatrix
   NAME CrsMatrixEJG
