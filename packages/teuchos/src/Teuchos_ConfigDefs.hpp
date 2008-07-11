@@ -79,6 +79,10 @@
 
 #ifdef __cplusplus
 
+#ifdef HAVE_GCC_CHECKEDSTL
+#  define _GLIBCXX_DEBUG
+#endif
+
 #include <cstdio>
 #include <cstdarg>
 #include <cerrno>

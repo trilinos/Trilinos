@@ -65,6 +65,9 @@
 /* define if the compiler supports abi::__cxa_demangle(...) */
 #undef HAVE_GCC_ABI_DEMANGLE
 
+/* Define if want to build gcc-checkedstl */
+#undef HAVE_GCC_CHECKEDSTL
+
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 

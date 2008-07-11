@@ -36,7 +36,10 @@
 namespace RTOpPack {
 
 
-RTOP_ROP_2_REDUCT_SCALAR_SUM( ROpDotProd )
+RTOP_ROP_2_REDUCT_SCALAR( ROpDotProd,
+  Scalar, // Reduction object type
+  REDUCT_TYPE_SUM // Reduction object reduction operator type
+  )
 {
   reduct += ScalarTraits<Scalar>::conjugate(v0)*(v1);
 }

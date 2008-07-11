@@ -85,10 +85,6 @@
   instance_##TEST_GROUP##_##TYPE##_##TEST_NAME##_UnitTest(#TYPE);
 
 
-//
-// Instantiate groups of types
-//
-
 #define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(TEST_GROUP, TEST_NAME)\
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(TEST_GROUP, TEST_NAME, float)
 
@@ -118,6 +114,34 @@
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(TEST_GROUP, TEST_NAME) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_FLOAT(TEST_GROUP, TEST_NAME) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_DOUBLE(TEST_GROUP, TEST_NAME)
+
+
+/** \brief Run setup code statically in a translation unit.
+ *
+ * NOTE: Make sure the call this in an anonymous namespace as:
+ *
+ \verbatim
+
+ namespace {
+
+ TEUCHOS_STATIC_SETUP()
+ {
+   // Some code you want to call before main() runs ...
+   ...
+ }
+
+ } // namespace
+
+ \endverbatim
+ *
+ */
+#define TEUCHOS_STATIC_SETUP() \
+  class StaticSetup { \
+  public: \
+    StaticSetup(); \
+  } staticSetup; \
+  \
+  StaticSetup::StaticSetup()
 
 
 #endif  // TEUCHOS_UNIT_TEST_HELPERS_HPP

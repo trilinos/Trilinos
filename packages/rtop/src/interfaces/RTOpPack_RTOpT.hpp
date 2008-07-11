@@ -83,11 +83,11 @@ RTOpT<Scalar>::reduct_obj_create() const
 
 
 template<class Scalar>
-void RTOpT<Scalar>::reduce_reduct_objs_new(
+void RTOpT<Scalar>::reduct_reduct_objs(
   const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
   ) const
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, should not call!");
+  reduce_reduct_objs(in_reduct_obj, &*inout_reduct_obj);
 }
 
 

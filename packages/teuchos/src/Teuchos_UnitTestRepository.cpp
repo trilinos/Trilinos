@@ -149,13 +149,15 @@ public:
   CommandLineProcessor clp;
   EShowTestDetails showTestDetails;
   bool showSrcLocation;
+  bool noOp;
   std::string groupName;
   std::string testName;
 
   InstanceData()
     :clp(false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
-     showSrcLocation(false)
+     showSrcLocation(false),
+     noOp(false)
     {}
 
 };
@@ -234,40 +236,50 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
           OSTab tab(out);
 
-          const bool result = utd.unitTest->runUnitTest(*localOut);
+          if (!data.noOp) {
 
-          if (!result) {
+            const bool result = utd.unitTest->runUnitTest(*localOut);
 
-            if (!showTestNames)
-              out <<testHeader<<"\n";
-            else if (!showAll)
-              out <<"\n";
-
-            if (!is_null(oss))
-              out << oss->str();
-
-            out
-              << "[FAILED]\n"
-              << "Location: "<<utd.unitTest->unitTestFile()<<":"
-              <<utd.unitTest->unitTestFileLineNumber()<<"\n";
-
-            if (!is_null(oss))
-              out << "\n";
-
-            success = false;
-
-            ++numTestsFailed;
+            if (!result) {
+              
+              if (!showTestNames)
+                out <<testHeader<<"\n";
+              else if (!showAll)
+                out <<"\n";
+              
+              if (!is_null(oss))
+                out << oss->str();
+              
+              out
+                << "[FAILED]\n"
+                << "Location: "<<utd.unitTest->unitTestFile()<<":"
+                <<utd.unitTest->unitTestFileLineNumber()<<"\n";
+              
+              if (!is_null(oss))
+                out << "\n";
+              
+              success = false;
+              
+              ++numTestsFailed;
+              
+            }
+            else {
+              
+              if (showTestNames)
+                out << "[Passed]\n";
+              
+              if (showAll && data.showSrcLocation)
+                out
+                  << "Location: "<<utd.unitTest->unitTestFile()<<":"
+                  <<utd.unitTest->unitTestFileLineNumber()<<"\n";
+              
+            }
 
           }
           else {
 
             if (showTestNames)
-              out << "[Passed]\n";
-
-            if (showAll && data.showSrcLocation)
-              out
-                << "Location: "<<utd.unitTest->unitTestFile()<<":"
-                <<utd.unitTest->unitTestFileLineNumber()<<"\n";
+              out << "[Not Run]\n";
             
           }
 
@@ -284,10 +296,19 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   out
     << "\nSummary: total = " << testCounter
-    << ", run = " << numTestsRun
-    << ", passed = " << (numTestsRun-numTestsFailed)
-    << ", failed = " << numTestsFailed << "\n";
+    << ", run = " << numTestsRun;
 
+  if (!data.noOp) {
+    out
+      << ", passed = " << (numTestsRun-numTestsFailed)
+      << ", failed = " << numTestsFailed << "\n";
+  }
+  else {
+    out
+      << ", passed = ???"
+      << ", failed = ???\n";
+  }
+    
   return success;
 
 }
@@ -367,6 +388,11 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
   clp->setOption(
     "test-name", &getData().testName,
     "If specified, selects only tests that match the test name glob." );
+
+  clp->setOption(
+    "no-op", "do-op", &getData().noOp,
+    "If --no-op, then only the names of the tests that would be run are run."
+    );
   
 }
 

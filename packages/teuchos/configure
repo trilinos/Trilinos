@@ -740,6 +740,8 @@ SUB_TEST_TRUE
 SUB_TEST_FALSE
 SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
+HAVE_GCC_CHECKEDSTL_TRUE
+HAVE_GCC_CHECKEDSTL_FALSE
 HAVE_TEUCHOS_COMPLEX_TRUE
 HAVE_TEUCHOS_COMPLEX_FALSE
 HAVE_TEUCHOS_EXTENDED_TRUE
@@ -1382,6 +1384,8 @@ Optional Features:
                           examples are also disabled. Cannot be disabled when
                           fortran is disabled. (default is yes)
   --enable-teuchos-abc    Enable array bounds checking (default is no)
+  --enable-gcc-checkedstl Enable the checked STL for compatible gcc compilers
+                          (default is no)
   --enable-teuchos-complex
                           Enable Teuchos complex code (default is yes)
   --enable-teuchos-extended
@@ -7485,6 +7489,43 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
+
+#
+#  --enable-gcc-checkedstl
+#
+
+
+# Check whether --enable-gcc-checkedstl was given.
+if test "${enable_gcc_checkedstl+set}" = set; then
+  enableval=$enable_gcc_checkedstl; ac_cv_use_gcc_checkedstl=$enableval
+else
+  ac_cv_use_gcc_checkedstl=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use gcc-checkedstl" >&5
+echo $ECHO_N "checking whether to use gcc-checkedstl... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_gcc_checkedstl" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GCC_CHECKEDSTL
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_gcc_checkedstl" != "Xno"; then
+  HAVE_GCC_CHECKEDSTL_TRUE=
+  HAVE_GCC_CHECKEDSTL_FALSE='#'
+else
+  HAVE_GCC_CHECKEDSTL_TRUE='#'
+  HAVE_GCC_CHECKEDSTL_FALSE=
+fi
 
 
 # ------------------------------------------------------------------------
@@ -16650,6 +16691,13 @@ echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_GCC_CHECKEDSTL_TRUE}" && test -z "${HAVE_GCC_CHECKEDSTL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_GCC_CHECKEDSTL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_GCC_CHECKEDSTL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_TEUCHOS_COMPLEX_TRUE}" && test -z "${HAVE_TEUCHOS_COMPLEX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_COMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -17433,6 +17481,8 @@ SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
 SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
+HAVE_GCC_CHECKEDSTL_TRUE!$HAVE_GCC_CHECKEDSTL_TRUE$ac_delim
+HAVE_GCC_CHECKEDSTL_FALSE!$HAVE_GCC_CHECKEDSTL_FALSE$ac_delim
 HAVE_TEUCHOS_COMPLEX_TRUE!$HAVE_TEUCHOS_COMPLEX_TRUE$ac_delim
 HAVE_TEUCHOS_COMPLEX_FALSE!$HAVE_TEUCHOS_COMPLEX_FALSE$ac_delim
 HAVE_TEUCHOS_EXTENDED_TRUE!$HAVE_TEUCHOS_EXTENDED_TRUE$ac_delim
@@ -17460,7 +17510,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -930,7 +930,57 @@ public:
 
 
 
+
+
+
+
+
 namespace RTOpPack {
+
+
+//
+// Reduction object operator support
+//
+
+
+/** \brief. */
+enum EBasicReductTypes { REDUCT_TYPE_SUM, REDUCT_TYPE_MAX };
+
+
+/** \brief. */
+template<class ReductScalar, int ReductionType>
+class BasicReductObjReductionOp {
+public:
+  /** \brief . */
+  inline void operator()(const ReductScalar& in_reduct, ReductScalar& inout_reduct) const
+    {
+      return in_reduct.this_reduction_type_needs_a_specialization();
+    }
+};
+
+
+/** \brief. */
+template<class ReductScalar>
+class BasicReductObjReductionOp<ReductScalar, REDUCT_TYPE_SUM> {
+public:
+  /** \brief . */
+  inline void operator()(const ReductScalar& in_reduct, ReductScalar& inout_reduct) const
+    {
+      inout_reduct += in_reduct;
+    }
+};
+
+
+/** \brief. */
+template<class ReductScalar>
+class BasicReductObjReductionOp<ReductScalar, REDUCT_TYPE_MAX> {
+public:
+  /** \brief . */
+  inline void operator()(const ReductScalar& in_reduct, ReductScalar& inout_reduct) const
+    {
+      inout_reduct = std::max(inout_reduct, in_reduct);
+    }
+};
 
 
 /** \brief Null reduction object reduction operator. */
@@ -943,6 +993,9 @@ public:
       inout_reduct += in_reduct;
     }
 };
+// 2008/07/03: rabart: Above: I have broken from the Thyra guideline of
+// passing in-out arguments as const Ptr<Type>& and used raw non-const
+// reference Type& instead to allow the user function to be more readable.
 
 
 /** \brief . */
@@ -951,6 +1004,9 @@ class ROpScalarReductionWithOpBase
   : public ROpScalarReductionBase<Scalar, ReductScalar>
 {
 public:
+
+  /** \brief . */
+  using RTOpT<Scalar>::apply_op;
 
   /** \brief . */
   ROpScalarReductionWithOpBase(
@@ -968,7 +1024,7 @@ public:
   //@{
 
   /** \brief . */
-  virtual void reduce_reduct_objs_new(
+  virtual void reduct_reduct_objs(
     const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
     ) const
     {
@@ -983,7 +1039,7 @@ public:
     const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
     ) const
     {
-      reduce_reduct_objs_new( in_reduct_obj, Teuchos::ptr(inout_reduct_obj) );
+      reduct_reduct_objs( in_reduct_obj, Teuchos::ptr(inout_reduct_obj) );
     }
 
   /** \brief Deprecated. */
@@ -993,7 +1049,7 @@ public:
     ReductTarget *reduct_obj
     ) const
     {
-      apply_op_new(
+      apply_op(
         Teuchos::arrayView(sub_vecs, num_vecs),
         Teuchos::arrayView(targ_sub_vecs, num_targ_vecs),
         Teuchos::ptr(reduct_obj)
@@ -1010,17 +1066,20 @@ private:
 
 
 //
-// ROp 1 scalar reduction
+// ROp 1 vector scalar reduction
 //
 
 
 /** \brief Base class for scalar reduction RTOps with one input vector. */
 template<class Scalar, class ReductScalar, class EleWiseReduction,
-  class ReductObjReduction>
+  class ReductObjReduction = SumScalarReductObjReduction<ReductScalar> >
 class ROp_1_ScalarReduction
   : public ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction>
 {
 public:
+
+  /** \brief . */
+  using RTOpT<Scalar>::apply_op;
 
   /** \brief . */
   typedef ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction> base_t;
@@ -1039,7 +1098,7 @@ public:
   //@{
 
   /** \brief . */
-  void apply_op_new(
+  void apply_op(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
     const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
     const Ptr<ReductTarget> &reduct_obj_in
@@ -1081,76 +1140,55 @@ private:
 
 
 /** \brief. */
-#define RTOP_ROP_1_REDUCT_SCALAR_MAG( ROP_CLASS_NAME ) \
-  template<class Scalar> \
+#define RTOP_ROP_1_REDUCT_SCALAR( ROP_CLASS_NAME, REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM) \
+  \
+  template<class Scalar, class ReductScalar> \
   class ROP_CLASS_NAME ## EleWiseReduction \
   { \
   public: \
     inline void operator()( \
       const Scalar &v0, \
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType &reduct \
+      ReductScalar &reduct \
       ) const; \
-  }; \
-  \
-  \
-  template<class ScalarMag> \
-  class ROP_CLASS_NAME ## ReductObjReduction \
-  { \
-  public: \
-    inline void operator()(const ScalarMag& in_reduct, \
-      ScalarMag& inout_reduct) const; \
   }; \
   \
   \
   template<class Scalar> \
   class ROP_CLASS_NAME  \
-    : public ROp_1_ScalarReduction<Scalar, \
-        typename Teuchos::ScalarTraits<Scalar>::magnitudeType, \
-        ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
-        ROP_CLASS_NAME ## ReductObjReduction<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > \
+    : public ROp_1_ScalarReduction< \
+        Scalar, \
+        REDUCT_SCALAR, \
+        ROP_CLASS_NAME ## EleWiseReduction<Scalar, REDUCT_SCALAR>, \
+        BasicReductObjReductionOp<REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM> > \
   { \
   public: \
-    typedef ROp_1_ScalarReduction<Scalar, \
-        typename Teuchos::ScalarTraits<Scalar>::magnitudeType, \
-        ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
-        ROP_CLASS_NAME ## ReductObjReduction<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > base_t; \
     ROP_CLASS_NAME() \
       : RTOpT<Scalar>( #ROP_CLASS_NAME ) \
       {} \
   }; \
   \
   \
-  template<class Scalar> \
-  void ROP_CLASS_NAME ## EleWiseReduction<Scalar>::operator()( \
-    const Scalar &v0, \
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType &reduct \
+  template<class Scalar, class ReductScalar> \
+  void ROP_CLASS_NAME ## EleWiseReduction<Scalar, ReductScalar>::operator()( \
+    const Scalar &v0, ReductScalar &reduct \
     ) const
 
 
-/** \brief . */
-#define RTOP_ROP_1_REDUCT_SCALAR_MAG_REDUCT_OBJ_REDUCTION( ROP_CLASS_NAME ) \
-  template<class ScalarMag> \
-  void ROP_CLASS_NAME ## ReductObjReduction<ScalarMag>::operator()( \
-    const ScalarMag& in_reduct, ScalarMag& inout_reduct) const
-
-
-// 2008/07/03: rabart: Above: I have broken from the Thyra guideline of
-// passing in-out arguments as const Ptr<Type>& and used raw non-const
-// reference Type& instead to allow the user function to be more readable.
-
-
 //
-// ROp 2 scalar reduction
+// ROp 2 vector scalar reduction
 //
 
 
 /** \brief Base class for scalar reduction RTOps with two input vectors. */
 template<class Scalar, class ReductScalar, class EleWiseReduction,
-  class ReductObjReduction>
+  class ReductObjReduction = SumScalarReductObjReduction<ReductScalar> >
 class ROp_2_ScalarReduction
   : public ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction>
 {
 public:
+
+  /** \brief . */
+  using RTOpT<Scalar>::apply_op;
 
   /** \brief . */
   typedef ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction> base_t;
@@ -1169,7 +1207,7 @@ public:
   //@{
 
   /** \brief . */
-  void apply_op_new(
+  void apply_op(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
     const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
     const Ptr<ReductTarget> &reduct_obj_in
@@ -1212,45 +1250,38 @@ private:
 };
 
 
-#define RTOP_ROP_2_REDUCT_SCALAR_SUM( ROP_CLASS_NAME ) \
-  template<class Scalar> \
+/** \brief Declare and define a concreate reduction RTOp that accepts to
+ * vector arguments.
+ */
+#define RTOP_ROP_2_REDUCT_SCALAR( ROP_CLASS_NAME, REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM ) \
+  template<class Scalar, class ReductScalar> \
   class ROP_CLASS_NAME ## EleWiseReduction \
   { \
   public: \
-    inline void operator()(const Scalar &v0, const Scalar &v1, Scalar &reduct) const; \
+    inline void operator()(const Scalar &v0, \
+      const Scalar &v1, \
+      ReductScalar &reduct \
+      ) const; \
   }; \
   \
   \
   template<class Scalar> \
   class ROP_CLASS_NAME  \
-    : public ROp_2_ScalarReduction<Scalar, Scalar, ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
-        RTOpPack::SumScalarReductObjReduction<Scalar> > \
+    : public ROp_2_ScalarReduction< \
+        Scalar, \
+        REDUCT_SCALAR, \
+        ROP_CLASS_NAME ## EleWiseReduction<Scalar, REDUCT_SCALAR>, \
+        BasicReductObjReductionOp<REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM> > \
   { \
   public: \
-    typedef ROp_2_ScalarReduction<Scalar, Scalar, ROP_CLASS_NAME ## EleWiseReduction<Scalar>, \
-      RTOpPack::SumScalarReductObjReduction<Scalar> > base_t; \
     ROP_CLASS_NAME() \
       : RTOpT<Scalar>( #ROP_CLASS_NAME ) \
       {} \
   }; \
   \
-  template<class Scalar> \
-  void ROP_CLASS_NAME ## EleWiseReduction<Scalar>::operator()( \
-    const Scalar &v0, const Scalar &v1, Scalar &reduct) const
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  template<class Scalar, class ReductScalar> \
+  void ROP_CLASS_NAME ## EleWiseReduction<Scalar, ReductScalar>::operator()( \
+    const Scalar &v0, const Scalar &v1, ReductScalar &reduct) const
 
 
 } // namespace RTOpPack

@@ -32,46 +32,85 @@
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
+
 namespace RTOpPack {
 
-/** \brief Two (Euclidean) norm reduction operator: <tt>result = sqrt( sum( conj(v0[i])*v0[i], i=0...n-1 ) )</tt>.
+
+///** \brief Two (Euclidean) norm reduction operator: <tt>result = sqrt( sum( conj(v0[i])*v0[i], i=0...n-1 ) )</tt>.
+// */
+//template<class Scalar>
+//class ROpNorm2 : public ROpScalarReductionBase<Scalar> {
+//  typedef Teuchos::ScalarTraits<Scalar> ST;
+//public:
+//  using RTOpT<Scalar>::apply_op;
+//  /** \brief . */
+//  ROpNorm2() : RTOpT<Scalar>("ROpNorm2") {}
+//  /** \brief . */
+//  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+//  operator()(const ReductTarget& reduct_obj ) const
+//    { return ST::magnitude(ST::squareroot(this->getRawVal(reduct_obj))); }
+//  /** @name Overridden from RTOpT */
+//  //@{
+//  /** \brief . */
+//  void apply_op(
+//    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
+//    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+//    ,ReductTarget *_reduct_obj
+//    ) const
+//    {
+//      using Teuchos::dyn_cast;
+//      ReductTargetScalar<Scalar> &reduct_obj = dyn_cast<ReductTargetScalar<Scalar> >(*_reduct_obj); 
+//      RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
+//      Scalar dot = reduct_obj.get();
+//      if( v0_s == 1 ) {
+//        for( Teuchos_Index i = 0; i < subDim; ++i, ++v0_val )
+//          dot += ST::conjugate(*v0_val) * (*v0_val);
+//      }
+//      else {
+//        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s )
+//          dot += ST::conjugate(*v0_val) * (*v0_val);
+//      }
+//      reduct_obj.set(dot);
+//    }
+//  //@}
+//}; // class ROpNorm2
+
+
+/** \brief Norm 2 element-wise reduction operator. */
+template<class Scalar>
+class ROpNorm2EleWiseReduction
+{
+public:
+  void operator()( const Scalar &v0, Scalar &reduct ) const
+    {
+      typedef ScalarTraits<Scalar> ST;
+      const Scalar mag_v0 = ST::magnitude(v0);
+      reduct += (mag_v0 * mag_v0);
+    }
+};
+
+
+/** \brief Two (Euclidean) norm reduction operator: <tt>result = sqrt( sum(
+ * conj(v0[i])*v0[i], i=0...n-1 ) )</tt>.
  */
 template<class Scalar>
-class ROpNorm2 : public ROpScalarReductionBase<Scalar> {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+class ROpNorm2
+  : public ROp_1_ScalarReduction<Scalar, Scalar, ROpNorm2EleWiseReduction<Scalar> >
+{
 public:
   /** \brief . */
-  ROpNorm2() : RTOpT<Scalar>("ROpNorm2") {}
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   /** \brief . */
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  operator()(const ReductTarget& reduct_obj ) const
+  ROpNorm2()
+    : RTOpT<Scalar>("ROpNorm2")
+    {}
+  /** \brief . */
+  typename ST::magnitudeType operator()(const ReductTarget& reduct_obj ) const
     { return ST::magnitude(ST::squareroot(this->getRawVal(reduct_obj))); }
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *_reduct_obj
-    ) const
-    {
-      using Teuchos::dyn_cast;
-      ReductTargetScalar<Scalar> &reduct_obj = dyn_cast<ReductTargetScalar<Scalar> >(*_reduct_obj); 
-      RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      Scalar dot = reduct_obj.get();
-      if( v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i, ++v0_val )
-          dot += ST::conjugate(*v0_val) * (*v0_val);
-      }
-      else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s )
-          dot += ST::conjugate(*v0_val) * (*v0_val);
-      }
-      reduct_obj.set(dot);
-    }
-  //@}
-}; // class ROpNorm2
+};
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_ROP_NORM2_HPP

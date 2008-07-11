@@ -304,6 +304,12 @@ AC_LANG_RESTORE
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, abc, [Enable array bounds checking], 
 		TEUCHOS_ARRAY_BOUNDSCHECK, no)
 
+#
+#  --enable-gcc-checkedstl
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( gcc, checkedstl, [Enable the checked STL for compatible gcc compilers], GCC_CHECKEDSTL, no)
+AM_CONDITIONAL(HAVE_GCC_CHECKEDSTL, [test "X$ac_cv_use_gcc_checkedstl" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks for addons 

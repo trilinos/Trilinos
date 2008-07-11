@@ -34,41 +34,17 @@
 
 namespace RTOpPack {
 
-/** \brief Summation reduction operator: <tt>result = sum( v0[i], i=0...n-1 )</tt>.
- */
-template<class Scalar>
-class ROpSum : public ROpScalarReductionBase<Scalar> {
-public:
-  /** \brief . */
-  ROpSum() : RTOpT<Scalar>("ROpSum") {}
-  /** \brief . */
-  Scalar operator()(const ReductTarget& reduct_obj ) const { return this->getRawVal(reduct_obj); }
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *_reduct_obj
-    ) const
-    {
-      using Teuchos::dyn_cast;
-      ReductTargetScalar<Scalar> &reduct_obj = dyn_cast<ReductTargetScalar<Scalar> >(*_reduct_obj); 
-      RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      Scalar sum = reduct_obj.get();
-      if( v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
-          sum += *v0_val++;
-      }
-      else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s )
-          sum += *v0_val;
-      }
-      reduct_obj.set(sum);
-    }
-  //@}
-}; // class ROpSum
+
+/** \brief Class ROpSum: <tt>result = sum( v0[i], i=0...n-1 )</tt> */
+RTOP_ROP_1_REDUCT_SCALAR( ROpSum,
+  Scalar, // Reduction object type
+  REDUCT_TYPE_SUM // Reduction object reduction
+  )
+{
+  reduct += v0;
+}
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_ROP_SUM_HPP

@@ -212,7 +212,7 @@ public:
    * The default implementation does not do anything (i.e. by default
    * there is no reduction operation performed).
    */
-  virtual void reduce_reduct_objs_new(
+  virtual void reduct_reduct_objs(
     const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
     ) const;
 
@@ -436,7 +436,7 @@ public:
    * (i.e. <tt>global_offset</tt> and/or <tt>sub_dim</tt> not the same) then
    * IncompatibleVecs is thrown.
    */
-  virtual void apply_op_new(
+  virtual void apply_op(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
     const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
     const Ptr<ReductTarget> &reduct_obj

@@ -693,7 +693,7 @@ T& ParameterList::get(const std::string& name_in, T def_value)
     i = params_.find(name_in);
   } else {
     // The parameter was found, make sure it is the same type as T.
-    this->template validateEntryType<T>("get",name_in,entry(i));
+    this->template validateEntryType<T>("get", name_in, entry(i));
   }
 
   // Return the value of the parameter

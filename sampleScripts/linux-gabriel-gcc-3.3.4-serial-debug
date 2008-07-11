@@ -12,7 +12,9 @@ FLIBS="-lg2c" \
 --enable-export-makefiles \
 --with-gnumake \
 --disable-default-packages \
---enable-teuchos --enable-teuchos-extended --enable-teuchos-debug --enable-teuchos-abc --disable-teuchos-blasfloat \
+--enable-teuchos --enable-teuchos-extended --disable-teuchos-blasfloat \
+ --enable-teuchos-boost \
+  --enable-teuchos-debug \
 --enable-thyra \
 --enable-epetra --enable-epetra-abc \
 --enable-triutils --disable-triutils-tests --disable-triutils-examples \
@@ -22,7 +24,8 @@ FLIBS="-lg2c" \
 --enable-belos \
 --enable-ifpack \
 --enable-ml \
---enable-nox --enable-nox-epetra --enable-nox-epetraext --enable-nox-thyra --enable-nox-thyra-tests --enable-nox-tests \
+--enable-nox --enable-nox-epetra --enable-nox-epetraext --enable-nox-thyra \
+  --enable-nox-thyra-tests --enable-nox-tests \
 --enable-loca \
 --enable-stratimikos \
 --enable-rythmos \
@@ -35,12 +38,15 @@ FLIBS="-lg2c" \
 --enable-isorropia \
 --enable-moertel \
 --enable-anasazi \
+--enable-rbgen \
 --enable-ctrilinos \
 --enable-didasko \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/trilinos/dev/serial/dbg
 
-# 2008/07/03: RBGen is trying to link in the middle of building libraries
-#--enable-rbgen \
+# 200/07/10: Disabling for now since all of Trilinos does not compile and link correctly
+# I need to add -D_GXXLIB_DEBUG to CPPFLAGS so that it will be picked up conistently!
+#CPPFLAGS="-D_GLIBCXX_DEBUG" \
+# --enable-gcc-checkedstl \
 
 # 2008/07/03: Sundance does not support the 'examples' target
 # --enable-sundance \

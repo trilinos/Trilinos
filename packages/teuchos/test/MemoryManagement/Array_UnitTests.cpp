@@ -10,14 +10,11 @@ namespace {
 int n = 4;
 
 
-class UnitTestSetup {
-public:
-  UnitTestSetup()
-    {
-      Teuchos::UnitTestRepository::getCLP().setOption(
-        "n", &n, "Number of elements in the array" );
-    }
-} unitTestSetup;
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "n", &n, "Number of elements in the array" );
+}
 
 
 template<class T>

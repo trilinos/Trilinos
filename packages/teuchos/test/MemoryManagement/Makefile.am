@@ -30,7 +30,12 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test ArrayView_test Tuple_test
+if HAVE_GCC_CHECKEDSTL
+  GCC_CHECKEDSTL_EXE_NAME=GCC_CheckedSTL_UnitTests
+endif
+
+
+bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test ArrayView_test Tuple_test $(GCC_CHECKEDSTL_EXE_NAME)
 
 RCP_test_SOURCES = $(srcdir)/RCP_test.cpp
 RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
@@ -55,6 +60,12 @@ ArrayView_test_LDADD = $(TEUCHOS_LIBS)
 Tuple_test_SOURCES = $(srcdir)/Tuple_test.cpp
 Tuple_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Tuple_test_LDADD = $(TEUCHOS_LIBS)
+
+if HAVE_GCC_CHECKEDSTL
+  GCC_CheckedSTL_UnitTests_SOURCES = $(srcdir)/GCC_CheckedSTL_UnitTests.cpp $(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  GCC_CheckedSTL_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+  GCC_CheckedSTL_UnitTests_LDADD = $(TEUCHOS_LIBS)
+endif
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 

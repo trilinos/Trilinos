@@ -63,7 +63,8 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = RCP_test$(EXEEXT) Ptr_test$(EXEEXT) \
 	ArrayRCP_test$(EXEEXT) Array_test$(EXEEXT) \
-	ArrayView_test$(EXEEXT) Tuple_test$(EXEEXT)
+	ArrayView_test$(EXEEXT) Tuple_test$(EXEEXT) $(am__EXEEXT_1)
+@HAVE_GCC_CHECKEDSTL_FALSE@GCC_CheckedSTL_UnitTests_DEPENDENCIES =
 subdir = test/MemoryManagement
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,6 +99,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Teuchos_config.h
 CONFIG_CLEAN_FILES =
+@HAVE_GCC_CHECKEDSTL_TRUE@am__EXEEXT_1 =  \
+@HAVE_GCC_CHECKEDSTL_TRUE@	GCC_CheckedSTL_UnitTests$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
@@ -107,6 +110,14 @@ am_ArrayView_test_OBJECTS = ArrayView_test.$(OBJEXT)
 ArrayView_test_OBJECTS = $(am_ArrayView_test_OBJECTS)
 am_Array_test_OBJECTS = Array_test.$(OBJEXT)
 Array_test_OBJECTS = $(am_Array_test_OBJECTS)
+am__GCC_CheckedSTL_UnitTests_SOURCES_DIST =  \
+	$(srcdir)/GCC_CheckedSTL_UnitTests.cpp \
+	$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@HAVE_GCC_CHECKEDSTL_TRUE@am_GCC_CheckedSTL_UnitTests_OBJECTS =  \
+@HAVE_GCC_CHECKEDSTL_TRUE@	GCC_CheckedSTL_UnitTests.$(OBJEXT) \
+@HAVE_GCC_CHECKEDSTL_TRUE@	Teuchos_StandardUnitTestMain.$(OBJEXT)
+GCC_CheckedSTL_UnitTests_OBJECTS =  \
+	$(am_GCC_CheckedSTL_UnitTests_OBJECTS)
 am_Ptr_test_OBJECTS = Ptr_test.$(OBJEXT)
 Ptr_test_OBJECTS = $(am_Ptr_test_OBJECTS)
 am_RCP_test_OBJECTS = RCP_test.$(OBJEXT)
@@ -122,11 +133,12 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(ArrayRCP_test_SOURCES) $(ArrayView_test_SOURCES) \
-	$(Array_test_SOURCES) $(Ptr_test_SOURCES) $(RCP_test_SOURCES) \
-	$(Tuple_test_SOURCES)
+	$(Array_test_SOURCES) $(GCC_CheckedSTL_UnitTests_SOURCES) \
+	$(Ptr_test_SOURCES) $(RCP_test_SOURCES) $(Tuple_test_SOURCES)
 DIST_SOURCES = $(ArrayRCP_test_SOURCES) $(ArrayView_test_SOURCES) \
-	$(Array_test_SOURCES) $(Ptr_test_SOURCES) $(RCP_test_SOURCES) \
-	$(Tuple_test_SOURCES)
+	$(Array_test_SOURCES) \
+	$(am__GCC_CheckedSTL_UnitTests_SOURCES_DIST) \
+	$(Ptr_test_SOURCES) $(RCP_test_SOURCES) $(Tuple_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -256,6 +268,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@HAVE_GCC_CHECKEDSTL_TRUE@GCC_CHECKEDSTL_EXE_NAME = GCC_CheckedSTL_UnitTests
 RCP_test_SOURCES = $(srcdir)/RCP_test.cpp
 RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 RCP_test_LDADD = $(TEUCHOS_LIBS)
@@ -274,6 +287,9 @@ ArrayView_test_LDADD = $(TEUCHOS_LIBS)
 Tuple_test_SOURCES = $(srcdir)/Tuple_test.cpp
 Tuple_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Tuple_test_LDADD = $(TEUCHOS_LIBS)
+@HAVE_GCC_CHECKEDSTL_TRUE@GCC_CheckedSTL_UnitTests_SOURCES = $(srcdir)/GCC_CheckedSTL_UnitTests.cpp $(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@HAVE_GCC_CHECKEDSTL_TRUE@GCC_CheckedSTL_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+@HAVE_GCC_CHECKEDSTL_TRUE@GCC_CheckedSTL_UnitTests_LDADD = $(TEUCHOS_LIBS)
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 EXTRA_DIST = TestClasses.hpp
 all: all-am
@@ -341,6 +357,9 @@ ArrayView_test$(EXEEXT): $(ArrayView_test_OBJECTS) $(ArrayView_test_DEPENDENCIES
 Array_test$(EXEEXT): $(Array_test_OBJECTS) $(Array_test_DEPENDENCIES) 
 	@rm -f Array_test$(EXEEXT)
 	$(CXXLINK) $(Array_test_OBJECTS) $(Array_test_LDADD) $(LIBS)
+GCC_CheckedSTL_UnitTests$(EXEEXT): $(GCC_CheckedSTL_UnitTests_OBJECTS) $(GCC_CheckedSTL_UnitTests_DEPENDENCIES) 
+	@rm -f GCC_CheckedSTL_UnitTests$(EXEEXT)
+	$(CXXLINK) $(GCC_CheckedSTL_UnitTests_OBJECTS) $(GCC_CheckedSTL_UnitTests_LDADD) $(LIBS)
 Ptr_test$(EXEEXT): $(Ptr_test_OBJECTS) $(Ptr_test_DEPENDENCIES) 
 	@rm -f Ptr_test$(EXEEXT)
 	$(CXXLINK) $(Ptr_test_OBJECTS) $(Ptr_test_LDADD) $(LIBS)
@@ -360,8 +379,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayRCP_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayView_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Array_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GCC_CheckedSTL_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ptr_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCP_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tuple_test.Po@am__quote@
 
 .cpp.o:
@@ -419,6 +440,34 @@ Array_test.obj: $(srcdir)/Array_test.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Array_test.cpp' object='Array_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Array_test.obj `if test -f '$(srcdir)/Array_test.cpp'; then $(CYGPATH_W) '$(srcdir)/Array_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Array_test.cpp'; fi`
+
+GCC_CheckedSTL_UnitTests.o: $(srcdir)/GCC_CheckedSTL_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GCC_CheckedSTL_UnitTests.o -MD -MP -MF $(DEPDIR)/GCC_CheckedSTL_UnitTests.Tpo -c -o GCC_CheckedSTL_UnitTests.o `test -f '$(srcdir)/GCC_CheckedSTL_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/GCC_CheckedSTL_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/GCC_CheckedSTL_UnitTests.Tpo $(DEPDIR)/GCC_CheckedSTL_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/GCC_CheckedSTL_UnitTests.cpp' object='GCC_CheckedSTL_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GCC_CheckedSTL_UnitTests.o `test -f '$(srcdir)/GCC_CheckedSTL_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/GCC_CheckedSTL_UnitTests.cpp
+
+GCC_CheckedSTL_UnitTests.obj: $(srcdir)/GCC_CheckedSTL_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GCC_CheckedSTL_UnitTests.obj -MD -MP -MF $(DEPDIR)/GCC_CheckedSTL_UnitTests.Tpo -c -o GCC_CheckedSTL_UnitTests.obj `if test -f '$(srcdir)/GCC_CheckedSTL_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/GCC_CheckedSTL_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/GCC_CheckedSTL_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/GCC_CheckedSTL_UnitTests.Tpo $(DEPDIR)/GCC_CheckedSTL_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/GCC_CheckedSTL_UnitTests.cpp' object='GCC_CheckedSTL_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GCC_CheckedSTL_UnitTests.obj `if test -f '$(srcdir)/GCC_CheckedSTL_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/GCC_CheckedSTL_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/GCC_CheckedSTL_UnitTests.cpp'; fi`
+
+Teuchos_StandardUnitTestMain.o: $(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardUnitTestMain.o -MD -MP -MF $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo -c -o Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo $(DEPDIR)/Teuchos_StandardUnitTestMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' object='Teuchos_StandardUnitTestMain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+
+Teuchos_StandardUnitTestMain.obj: $(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardUnitTestMain.obj -MD -MP -MF $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo -c -o Teuchos_StandardUnitTestMain.obj `if test -f '$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; then $(CYGPATH_W) '$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo $(DEPDIR)/Teuchos_StandardUnitTestMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' object='Teuchos_StandardUnitTestMain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StandardUnitTestMain.obj `if test -f '$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; then $(CYGPATH_W) '$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; fi`
 
 Ptr_test.o: $(srcdir)/Ptr_test.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ptr_test.o -MD -MP -MF $(DEPDIR)/Ptr_test.Tpo -c -o Ptr_test.o `test -f '$(srcdir)/Ptr_test.cpp' || echo '$(srcdir)/'`$(srcdir)/Ptr_test.cpp

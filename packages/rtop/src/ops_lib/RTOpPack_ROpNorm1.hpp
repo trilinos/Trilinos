@@ -34,47 +34,18 @@
 
 namespace RTOpPack {
 
-/** \brief One norm reduction operator: <tt>result = max( |v0[i]|, i=0...n-1 )</tt>.
- */
-template<class Scalar>
-class ROpNorm1
-  : public ROpScalarReductionBase<Scalar,typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+
+/** \brief Class ROpNorm1. */
+RTOP_ROP_1_REDUCT_SCALAR( ROpNorm1,
+  typename ScalarTraits<Scalar>::magnitudeType, // Reduction object type
+  REDUCT_TYPE_SUM // Reduction object reduction
+  )
 {
-public:
-  /** \brief . */
-  typedef   typename Teuchos::ScalarTraits<Scalar>::magnitudeType  ScalarMag;
-  /** \brief . */
-  ROpNorm1() : RTOpT<Scalar>("ROpNorm1") {}
-  /** \brief . */
-  ScalarMag operator()(const ReductTarget& reduct_obj ) const
-    { return this->getRawVal(reduct_obj); }
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>    sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>         targ_sub_vecs[]
-    ,ReductTarget *_reduct_obj
-    ) const
-    {
-      using Teuchos::dyn_cast;
-      ReductTargetScalar<ScalarMag>
-        &reduct_obj = dyn_cast<ReductTargetScalar<ScalarMag> >(*_reduct_obj); 
-      RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      ScalarMag norm1 = reduct_obj.get();
-      if( v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
-          norm1 += Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val++);
-      }
-      else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s )
-          norm1 += Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val);
-      }
-      reduct_obj.set(norm1);
-    }
-  //@}
-}; // class ROpNorm1
+  reduct += ScalarTraits<Scalar>::magnitude(v0);
+}
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_ROP_NORM1_HPP
