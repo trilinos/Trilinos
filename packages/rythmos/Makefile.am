@@ -117,12 +117,20 @@ if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
 
+if ENABLE_RYTHMOS_GAASP
+BUILD_RYTHMOS_GAASP_TESTS=cd adapters/gaasp/test && $(MAKE)
+BUILD_RYTHMOS_GAASP_EXAMPLES=cd adapters/gaasp/example && $(MAKE)
+BUILD_RYTHMOS_GAASP_CLEAN_CMD=clean
+BUILD_RYTHMOS_GAASP_INSTALL_CMD=install
+endif
+
 if BUILD_TESTS
 tests: examples
 	@echo ""
 	@echo "Now building rythmos tests."
 	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	$(BUILD_RYTHMOS_GAASP_TESTS)
 	@echo ""
 	@echo "Finished building rythmos tests."
 	@echo ""
@@ -137,12 +145,14 @@ examples:
 	@echo "Now building rythmos examples."
 	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	$(BUILD_RYTHMOS_GAASP_EXAMPLES)
 	@echo ""
 	@echo "Finished building rythmos examples."
 	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install
+	$(BUILD_RYTHMOS_GAASP_EXAMPLES) $(BUILD_RYTHMOS_GAASP_INSTALL_CMD)
 else
 examples:
 	@echo "rythmos examples were disabled at configure time"
@@ -153,9 +163,11 @@ endif
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean
+	$(BUILD_RYTHMOS_GAASP_TESTS) $(BUILD_RYTHMOS_GAASP_CLEAN_CMD)
 
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
+	$(BUILD_RYTHMOS_GAASP_EXAMPLES) $(BUILD_RYTHMOS_GAASP_CLEAN_CMD)
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests

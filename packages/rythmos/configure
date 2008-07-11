@@ -745,6 +745,8 @@ ENABLE_RYTHMOS_EPETRAEXT_TRUE
 ENABLE_RYTHMOS_EPETRAEXT_FALSE
 ENABLE_RYTHMOS_SACADO_TRUE
 ENABLE_RYTHMOS_SACADO_FALSE
+ENABLE_RYTHMOS_GAASP_TRUE
+ENABLE_RYTHMOS_GAASP_FALSE
 ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE
 ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE
 ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE
@@ -1392,9 +1394,12 @@ Optional Features:
                           be overridden with --disable-rythmos-epetraext.
   --enable-rythmos-epetraext
                           Build the EpetraExt adapater support in Rythmos.
-  --enable-sacado         Build the Sacado adapater support in Rythmos. Can be
+  --enable-sacado         Build the Sacado adapter support in Rythmos. Can be
                           overridden with --disable-rythmos-sacado.
-  --enable-rythmos-sacado Build the Sacado adapater support in Rythmos.
+  --enable-rythmos-sacado Build the Sacado adapter support in Rythmos.
+  --enable-gaasp          Build the GAASP adapter support in Rythmos. Can be
+                          overridden with --disable-rythmos-gasp.
+  --enable-rythmos-gaasp  Build the GAASP adapter support in Rythmos.
   --enable-stratimikos    See stratimikos/configure --help
   --enable-amesos         See stratimikos/configure --help
   --enable-stratimikos-amesos
@@ -7807,6 +7812,58 @@ fi
 
 
 
+# Check whether --enable-gaasp was given.
+if test "${enable_gaasp+set}" = set; then
+  enableval=$enable_gaasp; ac_cv_implicit_use_gaasp=$enableval
+else
+  ac_cv_implicit_use_gaasp=no
+fi
+
+
+if test "Xno
+    " != "Xno"; then
+  ac_cv_rythmos_using_gaasp_default=$ac_cv_implicit_use_gaasp
+else
+  ac_cv_rythmos_using_gaasp_default=no
+fi
+
+# Check whether --enable-rythmos-gaasp was given.
+if test "${enable_rythmos_gaasp+set}" = set; then
+  enableval=$enable_rythmos_gaasp; ac_cv_use_gaasp=$enableval
+else
+  ac_cv_use_gaasp=$ac_cv_rythmos_using_gaasp_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional gaasp dependent code in rythmos" >&5
+echo $ECHO_N "checking whether to build optional gaasp dependent code in rythmos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_gaasp" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_GAASP 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_gaasp" = "Xyes"; then
+  ENABLE_RYTHMOS_GAASP_TRUE=
+  ENABLE_RYTHMOS_GAASP_FALSE='#'
+else
+  ENABLE_RYTHMOS_GAASP_TRUE='#'
+  ENABLE_RYTHMOS_GAASP_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-stratimikos was given.
 if test "${enable_stratimikos+set}" = set; then
   enableval=$enable_stratimikos; ac_cv_implicit_use_stratimikos=$enableval
@@ -8742,7 +8799,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile adapters/Makefile adapters/gaasp/Makefile adapters/gaasp/src/Makefile adapters/gaasp/test/Makefile adapters/gaasp/example/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8971,6 +9028,13 @@ if test -z "${ENABLE_RYTHMOS_SACADO_TRUE}" && test -z "${ENABLE_RYTHMOS_SACADO_F
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_SACADO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_RYTHMOS_SACADO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_GAASP_TRUE}" && test -z "${ENABLE_RYTHMOS_GAASP_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_GAASP\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_GAASP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9549,6 +9613,11 @@ do
     "example/epetra/Makefile") CONFIG_FILES="$CONFIG_FILES example/epetra/Makefile" ;;
     "example/timeDiscretizedBackwardEuler/Makefile") CONFIG_FILES="$CONFIG_FILES example/timeDiscretizedBackwardEuler/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+    "adapters/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/Makefile" ;;
+    "adapters/gaasp/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/gaasp/Makefile" ;;
+    "adapters/gaasp/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/gaasp/src/Makefile" ;;
+    "adapters/gaasp/test/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/gaasp/test/Makefile" ;;
+    "adapters/gaasp/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/gaasp/example/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/Makefile" ;;
     "test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
@@ -9788,6 +9857,8 @@ ENABLE_RYTHMOS_EPETRAEXT_TRUE!$ENABLE_RYTHMOS_EPETRAEXT_TRUE$ac_delim
 ENABLE_RYTHMOS_EPETRAEXT_FALSE!$ENABLE_RYTHMOS_EPETRAEXT_FALSE$ac_delim
 ENABLE_RYTHMOS_SACADO_TRUE!$ENABLE_RYTHMOS_SACADO_TRUE$ac_delim
 ENABLE_RYTHMOS_SACADO_FALSE!$ENABLE_RYTHMOS_SACADO_FALSE$ac_delim
+ENABLE_RYTHMOS_GAASP_TRUE!$ENABLE_RYTHMOS_GAASP_TRUE$ac_delim
+ENABLE_RYTHMOS_GAASP_FALSE!$ENABLE_RYTHMOS_GAASP_FALSE$ac_delim
 ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE!$ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE$ac_delim
 ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE!$ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE$ac_delim
 ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE!$ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE$ac_delim
@@ -9815,7 +9886,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 58; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 60; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

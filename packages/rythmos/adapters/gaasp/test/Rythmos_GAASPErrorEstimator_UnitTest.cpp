@@ -28,20 +28,23 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_GAASPErrorEstimator.hpp"
+#include "Rythmos_ErrorEstimateBase.hpp"
+#include "Rythmos_GAASPInterface.hpp"
 
 namespace Rythmos {
 
-TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, newBuffer ) {
-  InterpolationBuffer<double> ib;
-  TEST_EQUALITY_CONST( ib.getStorage(), 2 );
-  TEST_EQUALITY_CONST( ib.getTimeRange().isValid(), false ); 
-  TEST_EQUALITY_CONST( ib.getOrder(), 1 ); // linear interpolator by default
-  TEST_EQUALITY( ib.getParameterList(), Teuchos::null );
+TEUCHOS_UNIT_TEST( Rythmos_GAASPErrorEstimator, defaultConstruct ) {
+  GAASPErrorEstimator gaaspEE;
+  Teuchos::RCP<ErrorEstimateBase<double> > errorEstimate;
+  TEST_THROW( errorEstimate = gaaspEE.getErrorEstimate(), std::logic_error ); 
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_GAASPInterface, defaultConstruct ) {
+  GAASPInterface gI;
+  TEST_THROW( gI.forwardSolve(), std::logic_error );
+}
 
 } // namespace Rythmos
-
 
 

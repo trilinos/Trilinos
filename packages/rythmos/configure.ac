@@ -239,8 +239,13 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   rythmos, sacado, RYTHMOS_SACADO, ENABLE_RYTHMOS_SACADO, yes
-  ,[Build the Sacado adapater support in Rythmos.]
-  ,[Build the Sacado adapater support in Rythmos.  Can be overridden with --disable-rythmos-sacado.])
+  ,[Build the Sacado adapter support in Rythmos.]
+  ,[Build the Sacado adapter support in Rythmos.  Can be overridden with --disable-rythmos-sacado.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+    rythmos, gaasp, RYTHMOS_GAASP, ENABLE_RYTHMOS_GAASP, no
+    ,[Build the GAASP adapter support in Rythmos.]
+    ,[Build the GAASP adapter support in Rythmos.  Can be overridden with --disable-rythmos-gasp.])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
   stratimikos, amesos, RYTHMOS_STRATIMIKOS_AMESOS, ENABLE_RYTHMOS_STRATIMIKOS_AMESOS, yes,
@@ -484,6 +489,11 @@ AC_CONFIG_FILES([
 		example/epetra/Makefile
 		example/timeDiscretizedBackwardEuler/Makefile
 		src/Makefile
+    adapters/Makefile
+    adapters/gaasp/Makefile
+    adapters/gaasp/src/Makefile
+    adapters/gaasp/test/Makefile
+    adapters/gaasp/example/Makefile
 		test/ExplicitTaylorPolynomialStepper/Makefile
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
 		test/Makefile

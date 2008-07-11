@@ -1,7 +1,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//                           Rythmos Package
+//                     Rythmos Package
 //                 Copyright (2006) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,22 +26,41 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
+#ifndef Rythmos_ERROR_ESTIMATOR_BASE_H
+#define Rythmos_ERROR_ESTIMATOR_BASE_H
 
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Thyra_ModelEvaluator.hpp"
+
+#include "Rythmos_ErrorEstimateBase.hpp"
 
 namespace Rythmos {
 
-TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, newBuffer ) {
-  InterpolationBuffer<double> ib;
-  TEST_EQUALITY_CONST( ib.getStorage(), 2 );
-  TEST_EQUALITY_CONST( ib.getTimeRange().isValid(), false ); 
-  TEST_EQUALITY_CONST( ib.getOrder(), 1 ); // linear interpolator by default
-  TEST_EQUALITY( ib.getParameterList(), Teuchos::null );
-}
+enum ERROR_QUANTITY_OF_INTEREST { INVALID_ERROR_QTY, AVERAGE_ERROR_QTY, ENDPOINT_ERROR_QTY };
+
+template<class Scalar> 
+class ErrorEstimatorBase
+  : virtual public Teuchos::Describable
+  , virtual public Teuchos::ParameterListAcceptor
+  , virtual public Teuchos::VerboseObject<ErrorEstimatorBase<Scalar> >
+{
+public:
+
+  // setModel
+  virtual void setModel( const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model ) = 0;
+  
+  // setQuantityOfInterest
+  virtual void setQuantityOfInterest( ERROR_QUANTITY_OF_INTEREST qtyOfInterest ) = 0;
+
+  // getErrorEstimate
+  virtual Teuchos::RCP<ErrorEstimateBase<Scalar> > getErrorEstimate() = 0;
+
+};
 
 
 } // namespace Rythmos
 
 
-
+#endif // Rythmos_ERROR_ESTIMATOR_BASE_H

@@ -1,7 +1,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//                           Rythmos Package
+//                     Rythmos Package
 //                 Copyright (2006) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,22 +26,42 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
+#ifndef Rythmos_GAASP_ERROR_ESTIMATE_H
+#define Rythmos_GAASP_ERROR_ESTIMATE_H
 
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_ErrorEstimateBase.hpp"
 
 namespace Rythmos {
 
-TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, newBuffer ) {
-  InterpolationBuffer<double> ib;
-  TEST_EQUALITY_CONST( ib.getStorage(), 2 );
-  TEST_EQUALITY_CONST( ib.getTimeRange().isValid(), false ); 
-  TEST_EQUALITY_CONST( ib.getOrder(), 1 ); // linear interpolator by default
-  TEST_EQUALITY( ib.getParameterList(), Teuchos::null );
-}
+class GAASPErrorEstimate : public virtual ErrorEstimateBase<double> {
+  public:
+    double getTotalError();
+    
+    // Redefined from Teuchos::Describable
+    /** \brief . */
+    std::string description() const;
 
+    /** \brief . */
+    void describe(
+      Teuchos::FancyOStream       &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ) const;
+
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+  
+  private:
+    Teuchos::RCP<Teuchos::ParameterList> paramList_;
+};
 
 } // namespace Rythmos
 
 
-
+#endif // Rythmos_GAASP_ERROR_ESTIMATE_H

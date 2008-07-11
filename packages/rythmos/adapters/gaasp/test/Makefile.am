@@ -26,20 +26,24 @@
 # ***********************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
+include $(top_builddir)/Makefile.export.rythmos
 
-if ENABLE_RYTHMOS_STRATIMIKOS
-if ENABLE_RYTHMOS_THYRA_EPETRAEXT
-RYTHMOS_STRATIMIKOS_EXAMPLES = diagonalTransient timeDiscretizedBackwardEuler
-if ENABLE_RYTHMOS_NOX
-if ENABLE_RYTHMOS_NOX_EPETRA
-RYTHMOS_NOX_EXAMPLES = epetra
-endif # ENABLE_RYTHMOS_NOX_EPETRA
-endif # ENABLE_RYTHMOS_NOX
-endif # ENABLE_RYTHMOS_THYRA_EPETRAEXT
-endif # ENABLE_RYTHMOS_STRATIMIKOS
+bin_PROGRAMS = test_gaasp_adapters
 
-SUBDIRS = $(RYTHMOS_STRATIMIKOS_EXAMPLES) $(RYTHMOS_NOX_EXAMPLES) 
+#
+# Actual programs
+#
 
+#test_gaasp_adapters_INCLUDES =
+test_gaasp_adapters_SOURCES =\
+	$(srcdir)/test_gaasp_adapters.cpp\
+	$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp
+test_gaasp_adapters_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
+test_gaasp_adapters_LDADD = $(RYTHMOS_GAASP_LIBS) $(RYTHMOS_LIBS) 
+
+AM_CPPFLAGS = $(RYTHMOS_GAASP_INCLUDES) $(RYTHMOS_INCLUDES) 
+
+# This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
+LIBS =

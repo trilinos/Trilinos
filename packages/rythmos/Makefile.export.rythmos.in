@@ -2,6 +2,12 @@
 ## Required dependency on thyra (teuchos is included by thyra)
 include @abs_top_builddir@/../thyra/Makefile.export.thyra
 
+## Optional dependence on gaasp
+@ENABLE_RYTHMOS_GAASP_TRUE@RYTHMOS_GAASP_INCLUDES = \
+@ENABLE_RYTHMOS_GAASP_TRUE@  -I@abs_top_srcdir@/adapters/gaasp/src
+@ENABLE_RYTHMOS_GAASP_TRUE@RYTHMOS_GAASP_LIBS = \
+@ENABLE_RYTHMOS_GAASP_TRUE@  -L@abs_top_builddir@/adapters/gaasp/src -lrythmosgaasp
+
 # Note: the order of the includes here should _not_ be important, unless something is messed up.
 _RYTHMOS_INCLUDES = \
   -I@abs_top_srcdir@/src \

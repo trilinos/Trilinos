@@ -48,6 +48,8 @@ CORE_H = \
   $(srcdir)/Rythmos_ConfigDefs.h\
   $(srcdir)/Rythmos_DataStore.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator.hpp\
+	$(srcdir)/Rythmos_ErrorEstimateBase.hpp\
+	$(srcdir)/Rythmos_ErrorEstimatorBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
@@ -98,8 +100,9 @@ CORE_H = \
   $(srcdir)/Rythmos_extractStateAndSens.hpp\
   $(srcdir)/Rythmos_Version.h
 
+
 CORE = \
-  $(srcdir)/Rythmos_Version.cpp 
+  $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H =
 

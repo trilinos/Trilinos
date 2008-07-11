@@ -1,7 +1,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//                           Rythmos Package
+//                     Rythmos Package
 //                 Copyright (2006) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,22 +26,34 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
+#ifndef Rythmos_GAASP_GMODEL_THYRA_MODEL_EVALUATOR_H
+#define Rythmos_GAASP_GMODEL_THYRA_MODEL_EVALUATOR_H
 
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Thyra_ModelEvaluator.hpp"
+#include "GModelBase.h"
+#include "boost/shared_ptr.hpp"
 
 namespace Rythmos {
 
-TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, newBuffer ) {
-  InterpolationBuffer<double> ib;
-  TEST_EQUALITY_CONST( ib.getStorage(), 2 );
-  TEST_EQUALITY_CONST( ib.getTimeRange().isValid(), false ); 
-  TEST_EQUALITY_CONST( ib.getOrder(), 1 ); // linear interpolator by default
-  TEST_EQUALITY( ib.getParameterList(), Teuchos::null );
-}
+class GModel_ThyraModelEvaluator : public virtual GAASP::GModelBase {
+  public:
+    int calcDerivs(double *yin, double *yout, double t);
+    void updateParameters(std::vector<double>);
+    int getDim();
+    void setThyraModel(Teuchos::RCP<Thyra::ModelEvaluator<double> > model);
+  private:
+    Teuchos::RCP<Thyra::ModelEvaluator<double> > thyraModel_;
+    int dim_;
+    Thyra::ModelEvaluator<double>::InArgs<double> inArgs_;
+    Thyra::ModelEvaluator<double>::OutArgs<double> outArgs_;
+};
 
+// Helper Function
+
+// Convert a Thyra::ModelEvaluator into a GModelBase
+boost::shared_ptr<GModel_ThyraModelEvaluator> gModel_ThyraModelEvaluator(Teuchos::RCP<Thyra::ModelEvaluator<double> > tModel);
 
 } // namespace Rythmos
 
 
-
+#endif // Rythmos_GAASP_GMODEL_THYRA_MODEL_EVALUATOR_H

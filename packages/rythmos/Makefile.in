@@ -288,6 +288,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #tarball.
 @SUB_TEST_TRUE@TEST_SUBDIR = test
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
+@ENABLE_RYTHMOS_GAASP_TRUE@BUILD_RYTHMOS_GAASP_TESTS = cd adapters/gaasp/test && $(MAKE)
+@ENABLE_RYTHMOS_GAASP_TRUE@BUILD_RYTHMOS_GAASP_EXAMPLES = cd adapters/gaasp/example && $(MAKE)
+@ENABLE_RYTHMOS_GAASP_TRUE@BUILD_RYTHMOS_GAASP_CLEAN_CMD = clean
+@ENABLE_RYTHMOS_GAASP_TRUE@BUILD_RYTHMOS_GAASP_INSTALL_CMD = install
 SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
@@ -726,6 +730,7 @@ all-local:
 @BUILD_TESTS_TRUE@	@echo "Now building rythmos tests."
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	$(BUILD_RYTHMOS_GAASP_TESTS)
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Finished building rythmos tests."
 @BUILD_TESTS_TRUE@	@echo ""
@@ -737,12 +742,14 @@ all-local:
 @BUILD_EXAMPLES_TRUE@	@echo "Now building rythmos examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
+@BUILD_EXAMPLES_TRUE@	$(BUILD_RYTHMOS_GAASP_EXAMPLES)
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	@echo "Finished building rythmos examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_EXAMPLES_TRUE@install-examples:
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install
+@BUILD_EXAMPLES_TRUE@	$(BUILD_RYTHMOS_GAASP_EXAMPLES) $(BUILD_RYTHMOS_GAASP_INSTALL_CMD)
 @BUILD_EXAMPLES_FALSE@examples:
 @BUILD_EXAMPLES_FALSE@	@echo "rythmos examples were disabled at configure time"
 
@@ -751,9 +758,11 @@ all-local:
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean
+	$(BUILD_RYTHMOS_GAASP_TESTS) $(BUILD_RYTHMOS_GAASP_CLEAN_CMD)
 
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
+	$(BUILD_RYTHMOS_GAASP_EXAMPLES) $(BUILD_RYTHMOS_GAASP_CLEAN_CMD)
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests

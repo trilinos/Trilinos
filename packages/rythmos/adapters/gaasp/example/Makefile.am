@@ -26,20 +26,54 @@
 # ***********************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
+all-local: $(LORENZ_EXE_LINKS)
+	@echo ""
+	@echo "rythmos/example/lorenz built successfully."
+	@echo ""
 
-if ENABLE_RYTHMOS_STRATIMIKOS
-if ENABLE_RYTHMOS_THYRA_EPETRAEXT
-RYTHMOS_STRATIMIKOS_EXAMPLES = diagonalTransient timeDiscretizedBackwardEuler
-if ENABLE_RYTHMOS_NOX
-if ENABLE_RYTHMOS_NOX_EPETRA
-RYTHMOS_NOX_EXAMPLES = epetra
-endif # ENABLE_RYTHMOS_NOX_EPETRA
-endif # ENABLE_RYTHMOS_NOX
-endif # ENABLE_RYTHMOS_THYRA_EPETRAEXT
-endif # ENABLE_RYTHMOS_STRATIMIKOS
+#
+# Actual programs
+#
 
-SUBDIRS = $(RYTHMOS_STRATIMIKOS_EXAMPLES) $(RYTHMOS_NOX_EXAMPLES) 
+EXAMPLE = lorenz
 
+noinst_PROGRAMS = $(EXAMPLE)
+
+lorenz_SOURCES = \
+	 $(srcdir)/LorenzMain.cpp \
+   $(srcdir)/LorenzModel.cpp
+
+lorenz_DEPENDENCIES = $(common_dependencies)
+
+lorenz_LDADD = $(common_ldadd) 
+
+
+#
+# Common stuff
+#
+
+common_dependencies = \
+  $(top_builddir)/src/librythmos.a 
+
+
+include $(top_builddir)/Makefile.export.rythmos
+
+_EXPORT_INCLUDES = $(RYTHMOS_GAASP_INCLUDES) $(RYTHMOS_TEST_INCLUDES) 
+_EXPORT_LIBS = $(RYTHMOS_GAASP_LIBS) $(RYTHMOS_TEST_LIBS) 
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+else
+EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+EXPORT_LIBS = $(_EXPORT_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES) 
+
+common_ldadd = $(EXPORT_LIBS)
+
+# This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
+LIBS =

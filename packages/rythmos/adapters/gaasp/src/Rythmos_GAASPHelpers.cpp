@@ -1,7 +1,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//                           Rythmos Package
+//                     Rythmos Package
 //                 Copyright (2006) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,22 +26,40 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_GAASPHelpers.hpp"
 
 namespace Rythmos {
+  
+// Helper functions
 
-TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, newBuffer ) {
-  InterpolationBuffer<double> ib;
-  TEST_EQUALITY_CONST( ib.getStorage(), 2 );
-  TEST_EQUALITY_CONST( ib.getTimeRange().isValid(), false ); 
-  TEST_EQUALITY_CONST( ib.getOrder(), 1 ); // linear interpolator by default
-  TEST_EQUALITY( ib.getParameterList(), Teuchos::null );
+// Get a const Thyra::VectorBase view of a double *
+Teuchos::RCP<const Thyra::VectorBase<double> > 
+    constThyraVectorBaseDouble( 
+        Teuchos::RCP<const Thyra::VectorSpaceBase<double> > space, 
+        double *yin, 
+        int dim 
+        ) {
+  Teuchos::ArrayRCP<const double> yin_array = Teuchos::arcp(yin,0,dim,false);
+  RTOpPack::ConstSubVectorView<double> raw_yin( yin_array );
+  Teuchos::RCP<const Thyra::VectorBase<double> > thyra_yin = 
+    Thyra::createMemberView(space, raw_yin);
+  return(thyra_yin);
+}
+
+// Get a nonconst Thyra::VectorBase view of a double *
+Teuchos::RCP<Thyra::VectorBase<double> > 
+    thyraVectorBaseDouble( 
+        Teuchos::RCP<const Thyra::VectorSpaceBase<double> > space, 
+        double *yin, 
+        int dim 
+        ) {
+  Teuchos::ArrayRCP<double> yin_array = Teuchos::arcp(yin,0,dim,false);
+  RTOpPack::SubVectorView<double> raw_yin( yin_array );
+  Teuchos::RCP<Thyra::VectorBase<double> > thyra_yin = 
+    Thyra::createMemberView(space, raw_yin);
+  return(thyra_yin);
 }
 
 
 } // namespace Rythmos
-
-
 

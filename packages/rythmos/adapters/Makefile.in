@@ -62,7 +62,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = example
+subdir = adapters
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -101,7 +101,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = diagonalTransient timeDiscretizedBackwardEuler epetra
+DIST_SUBDIRS = gaasp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -214,9 +214,9 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@@ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE@RYTHMOS_STRATIMIKOS_EXAMPLES = diagonalTransient timeDiscretizedBackwardEuler
-@ENABLE_RYTHMOS_NOX_EPETRA_TRUE@@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@@ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE@RYTHMOS_NOX_EXAMPLES = epetra
-SUBDIRS = $(RYTHMOS_STRATIMIKOS_EXAMPLES) $(RYTHMOS_NOX_EXAMPLES) 
+@ENABLE_RYTHMOS_GAASP_FALSE@GAASP_SUBDIR = 
+@ENABLE_RYTHMOS_GAASP_TRUE@GAASP_SUBDIR = gaasp
+SUBDIRS = $(GAASP_SUBDIR)
 all: all-recursive
 
 .SUFFIXES:
@@ -229,9 +229,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  adapters/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/Makefile
+	  $(AUTOMAKE) --foreign  adapters/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

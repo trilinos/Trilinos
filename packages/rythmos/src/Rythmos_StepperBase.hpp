@@ -129,8 +129,8 @@ public:
     
   /** \brief Specify the model problem to integrate.
    *
-   * By default, the intial condition will be taken from
-   * <tt>model->getNomainValues()</tt>.  If this intial condition is not
+   * By default, the initial condition will be taken from
+   * <tt>model->getNominalValues()</tt>.  If this initial condition is not
    * complete or is not the desired initial condition, it can be set using
    * <tt>setInitialCondition()</tt>.
    *
