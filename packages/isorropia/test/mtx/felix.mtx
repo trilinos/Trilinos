@@ -8,7 +8,7 @@
 %
 % #rows #cols #nonzeros
 %
-% row, column, row weight
+% row, column, value
 %
 28 72 366
 1 25 1.0
