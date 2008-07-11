@@ -26,7 +26,6 @@ TRILINOS_ADD_TEST(
   CrsGraph
   NAME CrsGraphEJG
   ARGS -v "1 a b c d" 2 3 4 5
-  POSTFIX verbose one two three four five
   COMM serial mpi
   HOST somehost localhost.localdomain
   FAIL_REGULAR_EXPRESSION "tests FAILED"
