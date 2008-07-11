@@ -110,7 +110,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test example
+DIST_SUBDIRS = src adapters test example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -292,7 +292,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @ENABLE_RYTHMOS_GAASP_TRUE@BUILD_RYTHMOS_GAASP_EXAMPLES = cd adapters/gaasp/example && $(MAKE)
 @ENABLE_RYTHMOS_GAASP_TRUE@BUILD_RYTHMOS_GAASP_CLEAN_CMD = clean
 @ENABLE_RYTHMOS_GAASP_TRUE@BUILD_RYTHMOS_GAASP_INSTALL_CMD = install
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = src adapters $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_MPI_MAX_PROC = 4

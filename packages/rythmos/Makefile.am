@@ -178,7 +178,7 @@ clean-everything:
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = src adapters $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 
 if USING_EXPORT_MAKEFILES
