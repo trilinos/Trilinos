@@ -248,9 +248,8 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillC
       new_matrix->FillComplete();
   }
   else {
-    Epetra_Map newDomainMap(input_matrix.NumGlobalCols(), 0, input_matrix.Comm());
     if (callFillComplete && (!new_matrix->Filled()))
-      new_matrix->FillComplete(newDomainMap, *target_map_);
+      new_matrix->FillComplete(input_matrix.OperatorDomainMap(), *target_map_);
   }
 
   return( new_matrix );
