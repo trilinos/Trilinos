@@ -4,6 +4,7 @@ rm config.cache
 $HOME/PROJECTS/Trilinos.base/Trilinos/configure \
 --cache-file=config.cache \
 --with-install="/usr/bin/install -p" \
+CPPFLAGS="-D_GLIBCXX_DEBUG" \
 CXXFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions" \
 CFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions" \
 FFLAGS="-g -O0 " \
@@ -15,6 +16,7 @@ FLIBS="-lg2c" \
 --enable-teuchos --enable-teuchos-extended --disable-teuchos-blasfloat \
  --enable-teuchos-boost \
  --enable-teuchos-debug \
+ --enable-gcc-checkedstl \
 --enable-thyra \
 --enable-epetra --enable-epetra-abc \
 --enable-triutils --disable-triutils-tests --disable-triutils-examples \
