@@ -118,9 +118,9 @@ void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::setParameterList(
 
 template<class Scalar>
 RCP<ParameterList>
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getParameterList()
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getNonconstParameterList()
 {
-  return lowsf_.getNonconstObj()->getParameterList();
+  return lowsf_.getNonconstObj()->getNonconstParameterList();
 }
 
 

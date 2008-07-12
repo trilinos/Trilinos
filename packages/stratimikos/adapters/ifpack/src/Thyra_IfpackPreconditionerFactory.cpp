@@ -315,7 +315,7 @@ void IfpackPreconditionerFactory::setParameterList(Teuchos::RCP<Teuchos::Paramet
 }
 
 Teuchos::RCP<Teuchos::ParameterList>
-IfpackPreconditionerFactory::getParameterList()
+IfpackPreconditionerFactory::getNonconstParameterList()
 {
   return paramList_;
 }

@@ -64,9 +64,6 @@ template<class Scalar>
 class BackwardEulerStepper : virtual public SolverAcceptingStepperBase<Scalar>
 {
 public:
-
-  /** \brief . */
-  using Teuchos::ParameterListAcceptor::getParameterList;
   
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
@@ -187,7 +184,7 @@ public:
   void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
   
   /** \brief . */
-  RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getNonconstParameterList();
   
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
@@ -938,7 +935,7 @@ void BackwardEulerStepper<Scalar>::setParameterList(
 
 template <class Scalar>
 RCP<Teuchos::ParameterList>
-BackwardEulerStepper<Scalar>::getParameterList()
+BackwardEulerStepper<Scalar>::getNonconstParameterList()
 {
   return(parameterList_);
 }

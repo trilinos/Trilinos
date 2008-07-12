@@ -65,7 +65,7 @@ public:
 
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
 
   Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
@@ -153,7 +153,7 @@ void AlgorithmA::setParameterList(
 
 
 Teuchos::RCP<Teuchos::ParameterList>
-AlgorithmA::getParameterList()
+AlgorithmA::getNonconstParameterList()
 {
   return paramList_;
 }

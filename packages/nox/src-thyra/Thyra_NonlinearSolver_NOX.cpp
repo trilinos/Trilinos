@@ -32,7 +32,7 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& p)
 // ****************************************************************
 // ****************************************************************
 Teuchos::RCP<Teuchos::ParameterList> 
-Thyra::NOXNonlinearSolver::getParameterList()
+Thyra::NOXNonlinearSolver::getNonconstParameterList()
 {
   return param_list_;
 }

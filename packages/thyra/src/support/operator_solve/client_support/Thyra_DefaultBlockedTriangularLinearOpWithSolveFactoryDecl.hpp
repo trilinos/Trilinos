@@ -139,7 +139,7 @@ public:
   /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList);
   /** \brief . */
-  RCP<ParameterList> getParameterList();
+  RCP<ParameterList> getNonconstParameterList();
   /** \brief . */
   RCP<ParameterList> unsetParameterList();
   /** \brief . */

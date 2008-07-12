@@ -414,7 +414,7 @@ revert to their default values.
   }
 
   //!  This is an empty stub 
-  virtual Teuchos::RCP<Teuchos::ParameterList> getParameterList()
+  virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList()
   {
     Teuchos::RCP<Teuchos::ParameterList> PL ;
     return PL ;

@@ -93,17 +93,20 @@ void GAASPErrorEstimator::describe(
   out << description() << "::describe" << std::endl;
 }
 
-void GAASPErrorEstimator::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+void GAASPErrorEstimator::setParameterList(
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   paramList_ = paramList;
 }
 
-Teuchos::RCP<Teuchos::ParameterList> GAASPErrorEstimator::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList>
+GAASPErrorEstimator::getNonconstParameterList()
 {
   return(paramList_);
 }
 
-Teuchos::RCP<Teuchos::ParameterList> GAASPErrorEstimator::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList>
+GAASPErrorEstimator::unsetParameterList()
 {
   Teuchos::RCP<Teuchos::ParameterList> temp_param_list = paramList_;
   paramList_ = Teuchos::null;

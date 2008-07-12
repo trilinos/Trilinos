@@ -315,7 +315,7 @@ void EpetraModelEvaluator::setParameterList(
 
 
 RCP<Teuchos::ParameterList>
-EpetraModelEvaluator::getParameterList()
+EpetraModelEvaluator::getNonconstParameterList()
 {
   return paramList_;
 }

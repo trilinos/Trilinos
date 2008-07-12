@@ -578,7 +578,7 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
 
 
 template<class Scalar>
-RCP<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::getParameterList()
+RCP<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::getNonconstParameterList()
 {
   return(parameterList_);
 }

@@ -92,7 +92,7 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
     void setParameterList(RCP<ParameterList> const& paramList);
 
     /** \brief . */
-    RCP<ParameterList> getParameterList();
+    RCP<ParameterList> getNonconstParameterList();
 
     /** \brief . */
     RCP<ParameterList> unsetParameterList();
@@ -276,7 +276,7 @@ void HermiteInterpolator<Scalar>::setParameterList(RCP<ParameterList> const& par
 }
 
 template <class Scalar>
-RCP<ParameterList> HermiteInterpolator<Scalar>::getParameterList()
+RCP<ParameterList> HermiteInterpolator<Scalar>::getNonconstParameterList()
 {
   return(parameterList);
 }

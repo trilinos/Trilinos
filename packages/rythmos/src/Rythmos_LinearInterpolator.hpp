@@ -45,9 +45,6 @@ class LinearInterpolator : virtual public InterpolatorBase<Scalar>
 public:
 
   /** \brief . */
-  using Teuchos::ParameterListAcceptor::getParameterList;
-
-  /** \brief . */
   ~LinearInterpolator() {};
 
   /** \brief . */
@@ -82,7 +79,7 @@ public:
   void setParameterList(RCP<ParameterList> const& paramList);
 
   /** \brief . */
-  RCP<ParameterList> getParameterList();
+  RCP<ParameterList> getNonconstParameterList();
 
   /** \brief . */
   RCP<ParameterList> unsetParameterList();
@@ -292,14 +289,16 @@ void LinearInterpolator<Scalar>::setParameterList(
 
 
 template <class Scalar>
-RCP<ParameterList> LinearInterpolator<Scalar>::getParameterList()
+RCP<ParameterList>
+LinearInterpolator<Scalar>::getNonconstParameterList()
 {
   return(parameterList_);
 }
 
 
 template <class Scalar>
-RCP<ParameterList> LinearInterpolator<Scalar>::unsetParameterList()
+RCP<ParameterList>
+LinearInterpolator<Scalar>::unsetParameterList()
 {
   RCP<ParameterList> temp_param_list;
   std::swap( temp_param_list, parameterList_ );

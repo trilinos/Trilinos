@@ -171,7 +171,7 @@ namespace Rythmos {
     void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
 
     /** \brief . */
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
@@ -557,7 +557,7 @@ namespace Rythmos {
 
   template<class Scalar>
   Teuchos::RCP<Teuchos::ParameterList>
-  ExplicitTaylorPolynomialStepper<Scalar>::getParameterList()
+  ExplicitTaylorPolynomialStepper<Scalar>::getNonconstParameterList()
   {
     return parameterList_;
   }

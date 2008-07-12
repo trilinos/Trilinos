@@ -314,7 +314,7 @@ void AztecOOLinearOpWithSolveFactory::setParameterList(
 
 
 Teuchos::RCP<Teuchos::ParameterList>
-AztecOOLinearOpWithSolveFactory::getParameterList()
+AztecOOLinearOpWithSolveFactory::getNonconstParameterList()
 {
   return paramList_;
 }

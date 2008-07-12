@@ -263,7 +263,7 @@ public:
   /** \brief .  */
   void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getNonconstParameterList();
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
@@ -618,7 +618,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::setParameterList(
 
 template<class Scalar>
 RCP<Teuchos::ParameterList>
-DefaultLumpedParameterModelEvaluator<Scalar>::getParameterList()
+DefaultLumpedParameterModelEvaluator<Scalar>::getNonconstParameterList()
 {
   return paramList_;
 }

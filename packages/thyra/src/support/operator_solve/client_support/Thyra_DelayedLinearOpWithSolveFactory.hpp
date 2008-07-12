@@ -101,9 +101,9 @@ void DelayedLinearOpWithSolveFactory<Scalar>::setParameterList(
 
 template<class Scalar>
 RCP<ParameterList>
-DelayedLinearOpWithSolveFactory<Scalar>::getParameterList()
+DelayedLinearOpWithSolveFactory<Scalar>::getNonconstParameterList()
 {
-  return lowsf_->getParameterList();
+  return lowsf_->getNonconstParameterList();
 }
 
 

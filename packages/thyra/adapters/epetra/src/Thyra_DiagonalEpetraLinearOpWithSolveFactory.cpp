@@ -140,7 +140,7 @@ void DiagonalEpetraLinearOpWithSolveFactory::setParameterList(
 {}
 
 Teuchos::RCP<Teuchos::ParameterList>
-DiagonalEpetraLinearOpWithSolveFactory::getParameterList()
+DiagonalEpetraLinearOpWithSolveFactory::getNonconstParameterList()
 {
   return Teuchos::null;
 }

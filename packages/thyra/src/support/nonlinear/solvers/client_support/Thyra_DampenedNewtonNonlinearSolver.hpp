@@ -104,7 +104,7 @@ public:
   /** \brief . */
   void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getNonconstParameterList();
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
@@ -205,7 +205,7 @@ void DampenedNewtonNonlinearSolver<Scalar>::setParameterList(
 
 template<class Scalar>
 RCP<Teuchos::ParameterList>
-DampenedNewtonNonlinearSolver<Scalar>::getParameterList()
+DampenedNewtonNonlinearSolver<Scalar>::getNonconstParameterList()
 {
   return paramList_;
 }

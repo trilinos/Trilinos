@@ -215,7 +215,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(
 
 template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
-BelosLinearOpWithSolveFactory<Scalar>::getParameterList()
+BelosLinearOpWithSolveFactory<Scalar>::getNonconstParameterList()
 {
   return paramList_;
 }

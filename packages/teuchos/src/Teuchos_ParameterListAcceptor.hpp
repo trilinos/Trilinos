@@ -83,7 +83,7 @@ public:
 
   /** \brief Get the parameter list that was set using <tt>setParameterList()</tt>.
    */
-  virtual RCP<ParameterList> getParameterList() = 0;
+  virtual RCP<ParameterList> getNonconstParameterList() = 0;
 
   /** \brief Unset the parameter list that was set using <tt>setParameterList()</tt>.
    *

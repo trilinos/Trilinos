@@ -45,8 +45,6 @@ class PointwiseInterpolationBufferAppender
 public:
 
   /** \brief . */
-  using Teuchos::ParameterListAcceptor::getParameterList;
-
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** \brief Concrete implementation that simply copies the nodal points
@@ -75,7 +73,7 @@ public:
   /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList);
   /** \brief . */
-  RCP<ParameterList> getParameterList();
+  RCP<ParameterList> getNonconstParameterList();
   /** \brief . */
   RCP<ParameterList> unsetParameterList();
 
@@ -165,7 +163,7 @@ void PointwiseInterpolationBufferAppender<Scalar>::setParameterList(
 
 template<class Scalar>
 RCP<ParameterList>
-PointwiseInterpolationBufferAppender<Scalar>::getParameterList()
+PointwiseInterpolationBufferAppender<Scalar>::getNonconstParameterList()
 {
   return(parameterList_);
 }

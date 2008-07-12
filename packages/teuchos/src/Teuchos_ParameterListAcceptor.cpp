@@ -29,22 +29,26 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_RCP.hpp"
 
+
 namespace Teuchos {
+
 
 ParameterListAcceptor::~ParameterListAcceptor()
 {}
 
+
 Teuchos::RCP<const Teuchos::ParameterList>
 ParameterListAcceptor::getParameterList() const
-
 {
-  return const_cast<ParameterListAcceptor*>(this)->getParameterList();
+  return const_cast<ParameterListAcceptor*>(this)->getNonconstParameterList();
 }
+
 
 Teuchos::RCP<const Teuchos::ParameterList>
 ParameterListAcceptor::getValidParameters() const
 {
   return Teuchos::null;
 }
+
 
 } // end namespace Teuchos

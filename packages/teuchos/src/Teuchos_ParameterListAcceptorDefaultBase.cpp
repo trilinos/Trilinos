@@ -36,7 +36,7 @@ namespace Teuchos {
 
 
 RCP<ParameterList>
-ParameterListAcceptorDefaultBase::getParameterList()
+ParameterListAcceptorDefaultBase::getNonconstParameterList()
 {
   return paramList_;
 }

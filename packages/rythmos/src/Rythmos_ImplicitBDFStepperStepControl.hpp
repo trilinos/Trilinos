@@ -950,7 +950,8 @@ ImplicitBDFStepperStepControl<Scalar>::unsetParameterList()
 }
 
 template<class Scalar>
-RCP<Teuchos::ParameterList> ImplicitBDFStepperStepControl<Scalar>::getParameterList()
+RCP<Teuchos::ParameterList>
+ImplicitBDFStepperStepControl<Scalar>::getNonconstParameterList()
 {
   return(parameterList_);
 }

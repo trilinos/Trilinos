@@ -101,7 +101,7 @@ public:
   /** \brief . */
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
   /** \brief . */
   Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
@@ -378,7 +378,7 @@ void ParameterDrivenMultiVectorInput<Scalar>::setParameterList(
 
 template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
-ParameterDrivenMultiVectorInput<Scalar>::getParameterList()
+ParameterDrivenMultiVectorInput<Scalar>::getNonconstParameterList()
 {
   return paramList_;
 }

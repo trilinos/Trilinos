@@ -232,7 +232,7 @@ void DefaultLinearSolverBuilder::setParameterList(
 
 
 RCP<Teuchos::ParameterList>
-DefaultLinearSolverBuilder::getParameterList()
+DefaultLinearSolverBuilder::getNonconstParameterList()
 {
   return paramList_;
 }

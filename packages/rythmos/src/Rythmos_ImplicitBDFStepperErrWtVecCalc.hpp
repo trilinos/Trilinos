@@ -53,7 +53,7 @@ class ImplicitBDFStepperErrWtVecCalc
     void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    RCP<Teuchos::ParameterList> getParameterList();
+    RCP<Teuchos::ParameterList> getNonconstParameterList();
 
     /** \brief . */
     RCP<Teuchos::ParameterList> unsetParameterList();
@@ -126,7 +126,8 @@ ImplicitBDFStepperErrWtVecCalc<Scalar>::unsetParameterList()
 }
 
 template<class Scalar>
-RCP<Teuchos::ParameterList> ImplicitBDFStepperErrWtVecCalc<Scalar>::getParameterList()
+RCP<Teuchos::ParameterList>
+ImplicitBDFStepperErrWtVecCalc<Scalar>::getNonconstParameterList()
 {
   return(paramList_);
 }

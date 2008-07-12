@@ -205,7 +205,7 @@ public:
   void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
 
   /** \brief . */
-  RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getNonconstParameterList();
 
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();

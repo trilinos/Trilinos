@@ -432,7 +432,7 @@ void AmesosLinearOpWithSolveFactory::setParameterList(
 }
 
 RCP<Teuchos::ParameterList>
-AmesosLinearOpWithSolveFactory::getParameterList()
+AmesosLinearOpWithSolveFactory::getNonconstParameterList()
 {
   return paramList_;
 }

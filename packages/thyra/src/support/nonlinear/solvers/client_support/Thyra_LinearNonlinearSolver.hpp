@@ -56,7 +56,7 @@ public:
   /** \brief . */
   void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getNonconstParameterList();
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
@@ -134,7 +134,7 @@ void LinearNonlinearSolver<Scalar>::setParameterList(
 
 template<class Scalar>
 RCP<Teuchos::ParameterList>
-LinearNonlinearSolver<Scalar>::getParameterList()
+LinearNonlinearSolver<Scalar>::getNonconstParameterList()
 {
   return paramList_;
 }

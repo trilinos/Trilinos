@@ -342,7 +342,7 @@ void MLPreconditionerFactory::setParameterList(
 
 
 RCP<ParameterList>
-MLPreconditionerFactory::getParameterList()
+MLPreconditionerFactory::getNonconstParameterList()
 {
   return paramList_;
 }

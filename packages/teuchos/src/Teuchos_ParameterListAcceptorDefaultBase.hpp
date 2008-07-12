@@ -51,7 +51,7 @@ public:
   //@{
 
   /** \brief . */
-  RCP<ParameterList> getParameterList();
+  RCP<ParameterList> getNonconstParameterList();
   /** \brief . */
   RCP<ParameterList> unsetParameterList();
   /** \brief . */
@@ -68,7 +68,7 @@ protected:
   void setMyParamList( const RCP<ParameterList> &paramList );
 
   /** \brief . */
-  RCP<ParameterList> getMyParamList();
+  RCP<ParameterList> getMyNonconstParamList();
 
   /** \brief . */
   RCP<const ParameterList> getMyParamList() const;
@@ -98,7 +98,7 @@ void ParameterListAcceptorDefaultBase::setMyParamList(
 
 inline
 RCP<ParameterList>
-ParameterListAcceptorDefaultBase::getMyParamList()
+ParameterListAcceptorDefaultBase::getMyNonconstParamList()
 {
   return paramList_;
 }

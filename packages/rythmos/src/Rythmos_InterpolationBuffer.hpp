@@ -115,7 +115,7 @@ public:
   void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
 
   /** \brief . */
-  RCP<Teuchos::ParameterList> getParameterList();
+  RCP<Teuchos::ParameterList> getNonconstParameterList();
 
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
@@ -504,7 +504,8 @@ void InterpolationBuffer<Scalar>::setParameterList(RCP<Teuchos::ParameterList> c
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::getParameterList()
+RCP<Teuchos::ParameterList>
+InterpolationBuffer<Scalar>::getNonconstParameterList()
 {
   return(parameterList_);
 }

@@ -52,7 +52,7 @@ class GAASPErrorEstimate : public virtual ErrorEstimateBase<double> {
     void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
 
     /** \brief . */
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();

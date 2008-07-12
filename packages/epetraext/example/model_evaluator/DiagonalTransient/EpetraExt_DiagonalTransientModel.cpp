@@ -244,7 +244,7 @@ void DiagonalTransientModel::setParameterList(
 
 
 Teuchos::RCP<Teuchos::ParameterList> 
-DiagonalTransientModel::getParameterList()
+DiagonalTransientModel::getNonconstParameterList()
 {
   return paramList_;
 }
