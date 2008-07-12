@@ -122,3 +122,7 @@ specific items to form TrilinosPlatform_config.h
 #define HAVE_VECTOR 1
 #define INVALID_TEMPLATE_QUALIFIER 
 #define STDC_HEADERS 1
+#if defined(_AIX)
+#  define TEMPLATE_FRIENDS_NOT_SUPPORTED
+#  define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#endif
