@@ -92,14 +92,14 @@
 #include "nlnml_finelevelnoxinterface.H"
 #include "nlnml_nonlinearlevel.H"
 
-// ---------- Forward Declarations ----------
-class NLNML::NLNML_FineLevelNoxInterface;
-
 using namespace std;
 using namespace Teuchos;
 //! NLNML: default namespace for all ML/NOX nonlinear methods
 namespace NLNML
 {
+
+// ---------- Forward Declarations ----------
+class NLNML_FineLevelNoxInterface;
 
 /*!
  
