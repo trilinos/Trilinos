@@ -90,6 +90,7 @@
 #include <cstdlib>
 #include <string>
 #include <cstring>
+#include <cmath>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
