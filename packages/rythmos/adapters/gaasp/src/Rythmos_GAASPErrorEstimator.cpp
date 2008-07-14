@@ -30,8 +30,13 @@
 #include "Rythmos_GAASPHelpers.hpp"
 #include "GAdjointSolve.h"
 #include "GErrorEstimate.h"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Rythmos {
+  
+// Static members
+
+const std::string GAASPErrorEstimator::GAASPInterface_name_ = "GAASP Interface Parameters";
   
 // GAASPErrorEstimator Definitions
 
@@ -53,15 +58,20 @@ void GAASPErrorEstimator::setQuantityOfInterest(
 
 void GAASPErrorEstimator::initialize_() {
   TEST_FOR_EXCEPT(is_null(model_));
+  
   // Create GAASP interface
   gaaspInterfacePtr_ = Teuchos::rcp(new GAASPInterface );
+  // Pass parameter sublist to GAASP Interface
+  Teuchos::RCP<Teuchos::ParameterList> pl = sublist(paramList_, GAASPInterface_name_);
+  gaaspInterfacePtr_->setParameterList(pl);
+  
   // Verify we have a valid model.
   gaaspInterfacePtr_->setThyraModelEvaluator(model_);
   // Verify we have a valid quantity of interest
   isInitialized_ = true;
 }
 
-Teuchos::RCP<ErrorEstimateBase<double> > GAASPErrorEstimator::getErrorEstimate() {
+Teuchos::RCP<const ErrorEstimateBase<double> > GAASPErrorEstimator::getErrorEstimate() {
   if (!isInitialized_) {
     initialize_();
   }
@@ -71,11 +81,32 @@ Teuchos::RCP<ErrorEstimateBase<double> > GAASPErrorEstimator::getErrorEstimate()
   gaaspInterfacePtr_->forwardSolve();
   *out << "getErrorEstimate:  Calling GAASPInterface::adjointSolve()..." << std::endl;
   gaaspInterfacePtr_->adjointSolve();
-  *out << "getErrorEstimate:  Calling GAASPInterface::computErrorEstimate()..." << std::endl;
-  gaaspInterfacePtr_->computeErrorEstimate();
-  // Copy Error Estimates into ErrorEstimate object
-  Teuchos::RCP<GAASPErrorEstimate> gaaspEE = Teuchos::rcp(new GAASPErrorEstimate);
-  // Pass out ErrorEstimate object
+  *out << "getErrorEstimate:  Calling GAASPInterface::computeErrorEstimate()..." << std::endl;
+  Teuchos::RCP<const GAASPErrorEstimate> gaaspEE = gaaspInterfacePtr_->computeErrorEstimate();
+  *out << "getErrorEstimate:  Global Error Estimate = " << fabs(gaaspEE->getTotalError()) << std::endl;
+  return(gaaspEE);
+}
+
+Teuchos::RCP<const ErrorEstimateBase<double> > GAASPErrorEstimator::controlGlobalError(double uTOL) {
+  if (!isInitialized_) {
+    initialize_();
+  }
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"GAASPErrorEstimator::");
+
+  paramList_->sublist(GAASPInterface_name_).set("uTOL",uTOL);
+  gaaspInterfacePtr_->setParameterList(sublist(paramList_,GAASPInterface_name_));
+  *out << "controlGlobalError:  Global error tolerance = " << uTOL << std::endl;
+
+  Teuchos::RCP<const ErrorEstimateBase<double> > gaaspEE;
+
+  gaaspEE = getErrorEstimate();
+  while (fabs(gaaspEE->getTotalError()) > uTOL) {
+    *out << "controlGlobalError:  Calling GAASPInterface::refineMesh()..." << std::endl;
+    gaaspInterfacePtr_->refineMesh();
+    gaaspEE = getErrorEstimate();
+  }
+
   return(gaaspEE);
 }
 
@@ -96,7 +127,10 @@ void GAASPErrorEstimator::describe(
 void GAASPErrorEstimator::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
   paramList_ = paramList;
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
 Teuchos::RCP<Teuchos::ParameterList>
@@ -111,6 +145,35 @@ GAASPErrorEstimator::unsetParameterList()
   Teuchos::RCP<Teuchos::ParameterList> temp_param_list = paramList_;
   paramList_ = Teuchos::null;
   return(temp_param_list);
+}
+
+Teuchos::RCP<const Teuchos::ParameterList> GAASPErrorEstimator::getValidParameters() const {
+  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+
+  if (is_null(validPL)) {
+
+    Teuchos::RCP<Teuchos::ParameterList>
+      pl = Teuchos::parameterList();
+
+    Teuchos::RCP<Teuchos::ParameterList> gaaspPL = sublist(pl,GAASPInterface_name_);
+    GAASPInterface gaaspI;
+    gaaspPL->setParameters(*(gaaspI.getValidParameters()));
+    
+    Teuchos::setupVerboseObjectSublist(&*pl);
+
+    validPL = pl;
+
+  }
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"getValidParameters");
+  if (Teuchos::as<int>(verbLevel) == Teuchos::VERB_HIGH) {
+    *out << "Setting up valid parameterlist." << std::endl;
+    validPL->print(*out);
+  }
+
+  return (validPL);
 }
 
 

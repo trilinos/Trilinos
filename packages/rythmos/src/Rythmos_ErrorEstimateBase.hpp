@@ -42,7 +42,7 @@ class ErrorEstimateBase
   , virtual public Teuchos::VerboseObject<ErrorEstimateBase<Scalar> >
 {
   public:
-    virtual Scalar getTotalError() = 0;
+    virtual Scalar getTotalError() const = 0;
 };
 
 } // namespace Rythmos

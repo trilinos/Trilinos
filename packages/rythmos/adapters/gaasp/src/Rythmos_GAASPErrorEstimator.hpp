@@ -58,7 +58,15 @@ public:
   void setQuantityOfInterest( ERROR_QUANTITY_OF_INTEREST qtyOfInterest );
 
   // getErrorEstimate
-  Teuchos::RCP<ErrorEstimateBase<double> > getErrorEstimate();
+  Teuchos::RCP<const ErrorEstimateBase<double> > getErrorEstimate();
+
+  // New functions:
+
+  // Global Error Control
+  Teuchos::RCP<const ErrorEstimateBase<double> > controlGlobalError(double uTOL);
+
+  // Get valid parameter list
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   // Redefined from Teuchos::Describable
   /** \brief . */
@@ -90,7 +98,10 @@ private:
   Teuchos::RCP<GAASPInterface> gaaspInterfacePtr_;
   bool isInitialized_;
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
+
+  static const std::string GAASPInterface_name_;
 };
+
 
 } // namespace Rythmos
 

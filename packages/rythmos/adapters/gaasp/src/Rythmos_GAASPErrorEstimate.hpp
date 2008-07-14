@@ -35,8 +35,17 @@ namespace Rythmos {
 
 class GAASPErrorEstimate : public virtual ErrorEstimateBase<double> {
   public:
-    double getTotalError();
     
+    // Constructor
+    GAASPErrorEstimate();
+
+    // Redefined from Rythmos::ErrorEstimateBase
+    double getTotalError() const;
+    
+    // GAASP::ErrorEstimate specific functions:
+    void setErrorEstimate(double errorEstimate);
+    void setIntervalErrorContributions(double **intError);
+
     // Redefined from Teuchos::Describable
     /** \brief . */
     std::string description() const;
@@ -56,9 +65,14 @@ class GAASPErrorEstimate : public virtual ErrorEstimateBase<double> {
 
     /** \brief . */
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+
+    // Get valid parameter list
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   
   private:
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
+    double totalError_;
+    double **intervalErrorContributions_;
 };
 
 } // namespace Rythmos

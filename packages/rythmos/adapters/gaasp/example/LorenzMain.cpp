@@ -125,8 +125,15 @@ int main(int argc, char *argv[])
     RCP<Rythmos::GAASPErrorEstimator> gaaspEE = rcp(new Rythmos::GAASPErrorEstimator);
     gaaspEE->setModel(thyraLorenzModel);
     //gaaspEE->setQuantityOfInterest( AVERAGE_ERROR_QTY );  // Not passed through yet.
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    pl->sublist("GAASP Interface Parameters").set<double>("eTime",1.0);
+    pl->sublist("GAASP Interface Parameters").set<double>("timeStep",0.5);
+    gaaspEE->setParameterList(pl);
 
-    RCP<Rythmos::ErrorEstimateBase<double> > error = gaaspEE->getErrorEstimate();
+    //RCP<const Rythmos::ErrorEstimateBase<double> > error = gaaspEE->getErrorEstimate();
+
+    double uTOL = 1.0e-8;
+    RCP<const Rythmos::ErrorEstimateBase<double> > error = gaaspEE->controlGlobalError(uTOL);
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success);

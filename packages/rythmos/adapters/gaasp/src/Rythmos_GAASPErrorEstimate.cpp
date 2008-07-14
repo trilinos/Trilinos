@@ -27,12 +27,25 @@
 //@HEADER
 
 #include "Rythmos_GAASPErrorEstimate.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Rythmos {
 
-double GAASPErrorEstimate::getTotalError() {
-  TEST_FOR_EXCEPT(true);
-  return(-1.0);
+GAASPErrorEstimate::GAASPErrorEstimate() {
+  totalError_ = -1.0;
+}  
+
+double GAASPErrorEstimate::getTotalError() const {
+  return(totalError_);
+}
+
+void GAASPErrorEstimate::setErrorEstimate(double errorEstimate) {
+  totalError_ = errorEstimate;
+}
+
+void GAASPErrorEstimate::setIntervalErrorContributions(double **intError) {
+  intervalErrorContributions_ = intError;
 }
 
 std::string GAASPErrorEstimate::description() const
@@ -52,7 +65,10 @@ void GAASPErrorEstimate::describe(
 void GAASPErrorEstimate::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
   paramList_ = paramList;
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
 Teuchos::RCP<Teuchos::ParameterList>
@@ -66,6 +82,30 @@ Teuchos::RCP<Teuchos::ParameterList> GAASPErrorEstimate::unsetParameterList()
   Teuchos::RCP<Teuchos::ParameterList> temp_param_list = paramList_;
   paramList_ = Teuchos::null;
   return(temp_param_list);
+}
+
+Teuchos::RCP<const Teuchos::ParameterList> GAASPErrorEstimate::getValidParameters() const {
+  static Teuchos::RCP<Teuchos::ParameterList> validPL;
+
+  if (is_null(validPL)) {
+
+    Teuchos::RCP<Teuchos::ParameterList>
+      pl = Teuchos::parameterList();
+
+    Teuchos::setupVerboseObjectSublist(&*pl);
+
+    validPL = pl;
+  }
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"getValidParameters");
+  if (Teuchos::as<int>(verbLevel) == Teuchos::VERB_HIGH) {
+    *out << "Setting up valid parameterlist." << std::endl;
+    validPL->print(*out);
+  }
+
+  return (validPL);
 }
 
 

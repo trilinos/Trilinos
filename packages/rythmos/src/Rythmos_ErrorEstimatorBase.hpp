@@ -55,7 +55,7 @@ public:
   virtual void setQuantityOfInterest( ERROR_QUANTITY_OF_INTEREST qtyOfInterest ) = 0;
 
   // getErrorEstimate
-  virtual Teuchos::RCP<ErrorEstimateBase<Scalar> > getErrorEstimate() = 0;
+  virtual Teuchos::RCP<const ErrorEstimateBase<Scalar> > getErrorEstimate() = 0;
 
 };
 
