@@ -3653,8 +3653,9 @@ In order to use MLMEX, ML must be configured with (at least) the following optio
   --with-matlab-exec=<directory with matlab binaries> \
   --with-matlab-root=<root directory of matlab install>
 \end{verbatim}
-Additional options (such as \texttt{--enable-zoltan}) can be specified
-as well.
+Most additional options (such as \texttt{--enable-zoltan}) can be specified
+as well.  It is important to note that MLMEX does not work properly
+with MPI, hence MPI must be disabled in order to compile MLMEX .
 
 On 64-bit Intel/AMD architectures, ML and all required Trilinos
 libraries must be compiled with the \texttt{-fPIC} option.  This
