@@ -11,7 +11,7 @@
 # GAASP Interface Unit Tests
 (FRAMEWORK, INSTALL) {
   TESTS = ../adapters/gaasp/test/test_gaasp_adapters.exe;
-  COMM = SERIAL, MPI(1);
+  COMM = SERIAL;
 }
 
 # Default run, Explicit Runge-Kutta 4 stage
