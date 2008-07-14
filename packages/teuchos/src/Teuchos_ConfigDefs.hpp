@@ -79,7 +79,7 @@
 
 #ifdef __cplusplus
 
-#ifdef HAVE_GCC_CHECKEDSTL
+#if defined(HAVE_GCC_CHECKEDSTL) && !defined(_GLIBCXX_DEBUG)
 #  define _GLIBCXX_DEBUG
 #endif
 

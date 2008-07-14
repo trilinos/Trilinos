@@ -60,6 +60,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_opsUnitTests_OBJECTS = ROpSum_UnitTests.$(OBJEXT) \
 	ROpDotProd_UnitTests.$(OBJEXT) ROpNorm1_UnitTests.$(OBJEXT) \
 	ROpNorm2_UnitTests.$(OBJEXT) ROpNormInf_UnitTests.$(OBJEXT) \
+	ROpMax_UnitTests.$(OBJEXT) ROpMin_UnitTests.$(OBJEXT) \
 	opsUnitTestsHelpers.$(OBJEXT) \
 	Teuchos_StandardUnitTestMain.$(OBJEXT)
 opsUnitTests_OBJECTS = $(am_opsUnitTests_OBJECTS)
@@ -194,6 +195,8 @@ opsUnitTests_SOURCES = \
   $(srcdir)/ROpNorm1_UnitTests.cpp \
   $(srcdir)/ROpNorm2_UnitTests.cpp \
   $(srcdir)/ROpNormInf_UnitTests.cpp \
+  $(srcdir)/ROpMax_UnitTests.cpp \
+  $(srcdir)/ROpMin_UnitTests.cpp \
   $(srcdir)/opsUnitTestsHelpers.cpp \
   $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 
@@ -268,6 +271,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpDotProd_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMax_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMin_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpNorm1_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpNorm2_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpNormInf_UnitTests.Po@am__quote@
@@ -358,6 +363,34 @@ ROpNormInf_UnitTests.obj: $(srcdir)/ROpNormInf_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpNormInf_UnitTests.cpp' object='ROpNormInf_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpNormInf_UnitTests.obj `if test -f '$(srcdir)/ROpNormInf_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpNormInf_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpNormInf_UnitTests.cpp'; fi`
+
+ROpMax_UnitTests.o: $(srcdir)/ROpMax_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMax_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMax_UnitTests.Tpo -c -o ROpMax_UnitTests.o `test -f '$(srcdir)/ROpMax_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMax_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMax_UnitTests.Tpo $(DEPDIR)/ROpMax_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMax_UnitTests.cpp' object='ROpMax_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMax_UnitTests.o `test -f '$(srcdir)/ROpMax_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMax_UnitTests.cpp
+
+ROpMax_UnitTests.obj: $(srcdir)/ROpMax_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMax_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMax_UnitTests.Tpo -c -o ROpMax_UnitTests.obj `if test -f '$(srcdir)/ROpMax_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMax_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMax_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMax_UnitTests.Tpo $(DEPDIR)/ROpMax_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMax_UnitTests.cpp' object='ROpMax_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMax_UnitTests.obj `if test -f '$(srcdir)/ROpMax_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMax_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMax_UnitTests.cpp'; fi`
+
+ROpMin_UnitTests.o: $(srcdir)/ROpMin_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMin_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMin_UnitTests.Tpo -c -o ROpMin_UnitTests.o `test -f '$(srcdir)/ROpMin_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMin_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMin_UnitTests.Tpo $(DEPDIR)/ROpMin_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMin_UnitTests.cpp' object='ROpMin_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMin_UnitTests.o `test -f '$(srcdir)/ROpMin_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMin_UnitTests.cpp
+
+ROpMin_UnitTests.obj: $(srcdir)/ROpMin_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMin_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMin_UnitTests.Tpo -c -o ROpMin_UnitTests.obj `if test -f '$(srcdir)/ROpMin_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMin_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMin_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMin_UnitTests.Tpo $(DEPDIR)/ROpMin_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMin_UnitTests.cpp' object='ROpMin_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMin_UnitTests.obj `if test -f '$(srcdir)/ROpMin_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMin_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMin_UnitTests.cpp'; fi`
 
 opsUnitTestsHelpers.o: $(srcdir)/opsUnitTestsHelpers.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT opsUnitTestsHelpers.o -MD -MP -MF $(DEPDIR)/opsUnitTestsHelpers.Tpo -c -o opsUnitTestsHelpers.o `test -f '$(srcdir)/opsUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/opsUnitTestsHelpers.cpp

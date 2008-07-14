@@ -49,6 +49,7 @@ namespace RTOpPack {
 //}
 
 
+/** \brief Norm Inf: <tt>result = max(|x[i]|, i=0...n-1). */
 RTOP_ROP_1_REDUCT_SCALAR(
   ROpNormInf, // Name of the RTOp subclass
   typename ScalarTraits<Scalar>::magnitudeType, // Reduction object type

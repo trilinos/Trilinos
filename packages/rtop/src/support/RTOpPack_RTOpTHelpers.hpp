@@ -62,13 +62,13 @@ struct ScalarIndex {
 template<class Scalar>
 class ReductTargetScalar : public ReductTarget {
 public:
-  ReductTargetScalar( const Scalar &scalar = Teuchos::ScalarTraits<Scalar>::zero() ) : scalar_(scalar) {}
+  ReductTargetScalar( const Scalar &scalar = ScalarTraits<Scalar>::zero() ) : scalar_(scalar) {}
   void set( const Scalar &scalar ) { scalar_ = scalar; }
   const Scalar& get() const { return scalar_; }
   std::string description() const
     {
       std::ostringstream oss;
-      oss << "RTOpPack::ReductTargetScalar<"<<Teuchos::ScalarTraits<Scalar>::name()<<">{scalar="<<scalar_<<"}";
+      oss << "RTOpPack::ReductTargetScalar<"<<ScalarTraits<Scalar>::name()<<">{scalar="<<scalar_<<"}";
       return oss.str();
     }
 private:
@@ -83,13 +83,13 @@ template<class Scalar>
 class ReductTargetScalarIndex : public ReductTarget {
 public:
   ReductTargetScalarIndex(
-    const Scalar &scalar = Teuchos::ScalarTraits<Scalar>::zero()
-    ,const Index &index  = Teuchos::ScalarTraits<Index>::zero()
+    const Scalar &scalar = ScalarTraits<Scalar>::zero()
+    ,const Index &index  = ScalarTraits<Index>::zero()
     )
     :scalarIndex_(scalar,index)
     {}
   ReductTargetScalarIndex(
-    const ScalarIndex<Scalar> &scalarIndex = ScalarIndex<Scalar>(Teuchos::ScalarTraits<Scalar>::zero(),Teuchos::ScalarTraits<Index>::zero())
+    const ScalarIndex<Scalar> &scalarIndex = ScalarIndex<Scalar>(ScalarTraits<Scalar>::zero(),ScalarTraits<Index>::zero())
     )
     :scalarIndex_(scalarIndex)
     {}
@@ -117,7 +117,7 @@ public:
   typedef typename RTOpT<Scalar>::primitive_value_type        primitive_value_type;
   /** \brief . */
   ROpScalarReductionBase(
-    const ReductScalar &initReductObjValue = Teuchos::ScalarTraits<ReductScalar>::zero()
+    const ReductScalar &initReductObjValue = ScalarTraits<ReductScalar>::zero()
     )
     :RTOpT<Scalar>(""), initReductObjValue_(initReductObjValue) 
     {}
@@ -219,7 +219,7 @@ public:
     ,ReductTarget                  *reduct_obj
     ) const
     {
-      typedef Teuchos::ScalarTraits<Scalar> ST;
+      typedef ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
@@ -291,7 +291,7 @@ public:
     const ROpScalarReductionBase<Scalar,ReductScalar> &rtop
     ,const Scalar &rawVal, ReductTarget *reduct_obj
     )
-    { rtop.setRawVal(Teuchos::ScalarTraits<Scalar>::real(rawVal),reduct_obj); }
+    { rtop.setRawVal(ScalarTraits<Scalar>::real(rawVal),reduct_obj); }
 };
 
 template<class Scalar, class ReductScalar>
@@ -328,8 +328,8 @@ public:
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
   /** \brief . */
   ROpScalarIndexReductionBase(
-    const Scalar &initScalarReductObjValue = Teuchos::ScalarTraits<Scalar>::zero()
-    ,const Index  &initIndexReductObjValue = Teuchos::ScalarTraits<Index>::zero()
+    const Scalar &initScalarReductObjValue = ScalarTraits<Scalar>::zero()
+    ,const Index  &initIndexReductObjValue = ScalarTraits<Index>::zero()
     )
     :RTOpT<Scalar>("")
     ,initScalarReductObjValue_(initScalarReductObjValue)
@@ -415,7 +415,7 @@ public:
         ,std::invalid_argument, "Error!"
         );
 #endif
-      Scalar val = Teuchos::ScalarTraits<Scalar>::nan();
+      Scalar val = ScalarTraits<Scalar>::nan();
       Teuchos::PrimitiveTypeTraits<Scalar>::loadPrimitiveObjs( num_values, value_data, &val );
       setRawVal( ScalarIndex<Scalar>(val,index_data[0]), reduct_obj );
     }
@@ -445,7 +445,7 @@ class ROpIndexReductionBase : virtual public RTOpT<Scalar> {
 public:
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
   /** \brief . */
-  ROpIndexReductionBase( const index_type &initReductObjValue = Teuchos::ScalarTraits<index_type>::zero() )
+  ROpIndexReductionBase( const index_type &initReductObjValue = ScalarTraits<index_type>::zero() )
     :RTOpT<Scalar>(""), initReductObjValue_(initReductObjValue) 
     {}
   /** \brief . */
@@ -555,7 +555,7 @@ class ROpScalarTransformationBase : virtual public RTOpT<Scalar> {
 public:
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
   /** \brief . */
-  ROpScalarTransformationBase( const Scalar &scalarData = Teuchos::ScalarTraits<Scalar>::zero() )
+  ROpScalarTransformationBase( const Scalar &scalarData = ScalarTraits<Scalar>::zero() )
     :RTOpT<Scalar>(""), scalarData_(scalarData)
     {}
   /** @name Overridden from RTOpT */
@@ -633,8 +633,8 @@ public:
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
   /** \brief . */
   ROpScalarScalarTransformationBase(
-    const Scalar &scalarData1 = Teuchos::ScalarTraits<Scalar>::zero()
-    ,const Scalar &scalarData2 = Teuchos::ScalarTraits<Scalar>::zero()
+    const Scalar &scalarData1 = ScalarTraits<Scalar>::zero()
+    ,const Scalar &scalarData2 = ScalarTraits<Scalar>::zero()
     )
     :RTOpT<Scalar>(""), scalarData1_(scalarData1), scalarData2_(scalarData2)
     {}
@@ -944,7 +944,7 @@ namespace RTOpPack {
 
 
 /** \brief. */
-enum EBasicReductTypes { REDUCT_TYPE_SUM, REDUCT_TYPE_MAX };
+enum EBasicReductTypes { REDUCT_TYPE_SUM, REDUCT_TYPE_MAX, REDUCT_TYPE_MIN };
 
 
 /** \brief. */
@@ -983,6 +983,18 @@ public:
 };
 
 
+/** \brief. */
+template<class ReductScalar>
+class BasicReductObjReductionOp<ReductScalar, REDUCT_TYPE_MIN> {
+public:
+  /** \brief . */
+  inline void operator()(const ReductScalar& in_reduct, ReductScalar& inout_reduct) const
+    {
+      inout_reduct = std::min(inout_reduct, in_reduct);
+    }
+};
+
+
 /** \brief Null reduction object reduction operator. */
 template<class Scalar>
 class SumScalarReductObjReduction {
@@ -1010,9 +1022,11 @@ public:
 
   /** \brief . */
   ROpScalarReductionWithOpBase(
+    const ReductScalar &initReductObjValue = ScalarTraits<Scalar>::zero(),
     ReductObjReduction reductObjReduction = ReductObjReduction()
     )
     : RTOpT<Scalar>(""),
+      ROpScalarReductionBase<Scalar, ReductScalar>(initReductObjValue),
       reductObjReduction_(reductObjReduction)
     {}
 
@@ -1086,11 +1100,12 @@ public:
 
   /** \brief . */
   ROp_1_ScalarReduction(
+    const ReductScalar &initReductObjValue = ScalarTraits<Scalar>::zero(),
     EleWiseReduction eleWiseReduction = EleWiseReduction(),
     ReductObjReduction reductObjReduction = ReductObjReduction()
     )
     : RTOpT<Scalar>(""),
-      base_t(reductObjReduction),
+      base_t(initReductObjValue, reductObjReduction),
       eleWiseReduction_(eleWiseReduction)
     {}
 
@@ -1106,7 +1121,7 @@ public:
     {
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       using Teuchos::dyn_cast;
-      typedef Teuchos::ScalarTraits<Scalar> ST;
+      typedef ScalarTraits<Scalar> ST;
 
       ReductTargetScalar<ReductScalar> &reduct_obj =
         dyn_cast<ReductTargetScalar<ReductScalar> >(*reduct_obj_in); 
@@ -1140,7 +1155,9 @@ private:
 
 
 /** \brief. */
-#define RTOP_ROP_1_REDUCT_SCALAR( ROP_CLASS_NAME, REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM) \
+#define RTOP_ROP_1_REDUCT_SCALAR_CUSTOM_DEFAULT( ROP_CLASS_NAME, REDUCT_SCALAR, \
+  BASIC_REDUCT_TYPE_ENUM, CUSTOM_DEFAULT \
+  ) \
   \
   template<class Scalar, class ReductScalar> \
   class ROP_CLASS_NAME ## EleWiseReduction \
@@ -1161,9 +1178,16 @@ private:
         ROP_CLASS_NAME ## EleWiseReduction<Scalar, REDUCT_SCALAR>, \
         BasicReductObjReductionOp<REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM> > \
   { \
+    typedef ROp_1_ScalarReduction< \
+      Scalar, \
+      REDUCT_SCALAR, \
+      ROP_CLASS_NAME ## EleWiseReduction<Scalar, REDUCT_SCALAR>, \
+      BasicReductObjReductionOp<REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM> > \
+      base_t; \
   public: \
     ROP_CLASS_NAME() \
-      : RTOpT<Scalar>( #ROP_CLASS_NAME ) \
+      : RTOpT<Scalar>( #ROP_CLASS_NAME ), \
+        base_t(CUSTOM_DEFAULT) \
       {} \
   }; \
   \
@@ -1172,6 +1196,14 @@ private:
   void ROP_CLASS_NAME ## EleWiseReduction<Scalar, ReductScalar>::operator()( \
     const Scalar &v0, ReductScalar &reduct \
     ) const
+
+
+/** \brief. */
+#define RTOP_ROP_1_REDUCT_SCALAR( ROP_CLASS_NAME, REDUCT_SCALAR, \
+  BASIC_REDUCT_TYPE_ENUM \
+  ) \
+  RTOP_ROP_1_REDUCT_SCALAR_CUSTOM_DEFAULT(ROP_CLASS_NAME, REDUCT_SCALAR, \
+    BASIC_REDUCT_TYPE_ENUM, Teuchos::ScalarTraits<REDUCT_SCALAR>::zero() )
 
 
 //
@@ -1199,7 +1231,7 @@ public:
     ReductObjReduction reductObjReduction = ReductObjReduction()
     )
     : RTOpT<Scalar>(""),
-      base_t(reductObjReduction),
+      base_t(ScalarTraits<ReductScalar>::zero(), reductObjReduction),
       eleWiseReduction_(eleWiseReduction)
     {}
 
@@ -1215,7 +1247,7 @@ public:
     {
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       using Teuchos::dyn_cast;
-      typedef Teuchos::ScalarTraits<Scalar> ST;
+      typedef ScalarTraits<Scalar> ST;
 
       ReductTargetScalar<Scalar> &reduct_obj =
         dyn_cast<ReductTargetScalar<Scalar> >(*reduct_obj_in); 
@@ -1253,7 +1285,10 @@ private:
 /** \brief Declare and define a concreate reduction RTOp that accepts to
  * vector arguments.
  */
-#define RTOP_ROP_2_REDUCT_SCALAR( ROP_CLASS_NAME, REDUCT_SCALAR, BASIC_REDUCT_TYPE_ENUM ) \
+#define RTOP_ROP_2_REDUCT_SCALAR( ROP_CLASS_NAME, REDUCT_SCALAR, \
+  BASIC_REDUCT_TYPE_ENUM \
+  ) \
+  \
   template<class Scalar, class ReductScalar> \
   class ROP_CLASS_NAME ## EleWiseReduction \
   { \

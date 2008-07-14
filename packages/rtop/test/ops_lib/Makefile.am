@@ -11,6 +11,8 @@ opsUnitTests_SOURCES = \
   $(srcdir)/ROpNorm1_UnitTests.cpp \
   $(srcdir)/ROpNorm2_UnitTests.cpp \
   $(srcdir)/ROpNormInf_UnitTests.cpp \
+  $(srcdir)/ROpMax_UnitTests.cpp \
+  $(srcdir)/ROpMin_UnitTests.cpp \
   $(srcdir)/opsUnitTestsHelpers.cpp \
   $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 

@@ -32,54 +32,24 @@
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
+
 namespace RTOpPack {
 
-/** \brief Returns the minimum element: <tt>result = min{ v0[i], i=0...n-1 }</tt>.
+
+/** \brief Minimum element: <tt>result = min{ v0[i], i=0...n-1 }</tt>.
  */
-template<class Scalar>
-class ROpMin : public ROpScalarReductionBase<Scalar> {
-public:
-  /** \brief . */
-  ROpMin() : RTOpT<Scalar>("ROpMin"), ROpScalarReductionBase<Scalar>(+Teuchos::ScalarTraits<Scalar>::rmax()) {}
-  /** \brief . */
-  Scalar operator()(const ReductTarget& reduct_obj ) const { return this->getRawVal(reduct_obj); }
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void reduce_reduct_objs(
-    const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
-    ) const
-    {
-      const Scalar in_min_ele    = this->getRawVal(in_reduct_obj);
-      const Scalar inout_min_ele = this->getRawVal(*inout_reduct_obj);
-      this->setRawVal( in_min_ele < inout_min_ele ? in_min_ele : inout_min_ele, inout_reduct_obj );
-    }
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
-    {
-      RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      Scalar min_ele = this->getRawVal(*reduct_obj);
-      if( v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i ) {
-          const Scalar &v0_i = *v0_val++;
-          min_ele = ( v0_i < min_ele ? v0_i : min_ele );
-        }
-      }
-      else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s ) {
-          const Scalar &v0_i = *v0_val;
-          min_ele = ( v0_i < min_ele ? v0_i : min_ele );
-        }
-      }
-      this->setRawVal(min_ele,reduct_obj);
-    }
-  //@}
-}; // class ROpMin
+RTOP_ROP_1_REDUCT_SCALAR_CUSTOM_DEFAULT(
+  ROpMin, // Name of the RTOp subclass
+  Scalar, // Reduction object type
+  REDUCT_TYPE_MIN, // Basic reduction of reduction objects
+  std::numeric_limits<Scalar>::max() // Custom default reduct object value
+  )
+{
+  reduct = std::min(reduct, v0);
+}
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_ROP_MIN_HPP
