@@ -61,23 +61,23 @@ void task_scheduler(TASK_SCHEDULER_ACTION action, int num_threads)
     }
 
     if (num_start_requests == 0) {
-std::cout << "!initializing task_scheduler!"<<std::endl;
+      std::cout << "!initializing task_scheduler!"<<std::endl;
       tpetra_tbb_task_scheduler->initialize(num_threads);
     }
 
     ++num_start_requests;
-std::cout << "num_start_requests="<<num_start_requests<<std::endl;
+    std::cout << "num_start_requests="<<num_start_requests<<std::endl;
   }
 
   if (action == STOP_TASK_SCHEDULER) {
     if (num_stop_requests == num_start_requests-1) {
-std::cout << "!destroying task_scheduler!"<<std::endl;
+      std::cout << "!destroying task_scheduler!"<<std::endl;
       delete tpetra_tbb_task_scheduler;
       tpetra_tbb_task_scheduler = NULL;
     }
 
     ++num_stop_requests;
-std::cout << "num_stop_requests="<<num_stop_requests<<std::endl;
+    std::cout << "num_stop_requests="<<num_stop_requests<<std::endl;
   }
 }
 
