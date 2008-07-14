@@ -1024,9 +1024,16 @@ int ML_Gen_Smoother_EffSymGaussSeidel( ML *ml , int nl, int pre_or_post,
    else { start_level = nl; end_level = nl;}
 
    for (i = start_level; i <= end_level; i++) {
-     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
-     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
-     if (pre_or_post == ML_BOTH) {
+     if (pre_or_post ==  ML_PRESMOOTHER) {
+       ml->pre_smoother[i].pre_or_post=ML_TAG_PRESM;       
+       ml->pre_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
+
+     }
+     else if (pre_or_post == ML_POSTSMOOTHER) {
+       ml->post_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
+       ml->post_smoother[i].pre_or_post=ML_TAG_POSTSM;
+     }
+     else if (pre_or_post == ML_BOTH) {
        ml->pre_smoother[i].pre_or_post=ML_TAG_PRESM;
        ml->pre_smoother[i].gs_sweep_type=ML_GS_efficient_symmetric;
        ml->post_smoother[i].pre_or_post=ML_TAG_POSTSM;       
@@ -1084,7 +1091,7 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
          status = ML_Smoother_Set(&(ml->post_smoother[i]),  NULL,
                                   fun, ntimes, omega, str);
       }
-      else pr_error("ML_Gen_SGSSequential: unknown pre_or_post choice\n");
+      else pr_error("ML_Gen_SGSSequentia       ml->pre_smoother[i].pre_or_post=ML_TAG_PRESM;l: unknown pre_or_post choice\n");
    }
    return(status);
 }
