@@ -8,6 +8,12 @@
   COMM = SERIAL, MPI(1);
 }
 
+# GAASP Interface Unit Tests
+(FRAMEWORK, INSTALL) {
+  TESTS = ../adapters/gaasp/test/test_gaasp_adapters.exe;
+  COMM = SERIAL, MPI(1);
+}
+
 # Default run, Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
     TESTS = complicatedExample/complicatedExample.exe;
