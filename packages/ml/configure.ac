@@ -579,6 +579,14 @@ TAC_ARG_ENABLE_FEATURE_SUB( ml, matlab, [Build ML Matlab wrappers (requires --wi
 AM_CONDITIONAL(BUILD_ML_MATLAB, test "X$ac_cv_use_ml_matlab" != "Xno")
 TAC_ENABLE_MATLAB
 
+if test "X${HAVE_PKG_MPI}" != "Xno"; then
+   #issue an error message and abort if the user has configured with
+   # Matlab and MPI
+   if test "X$ac_cv_use_ml_matlab" = "Xyes"; then
+     AC_MSG_ERROR([[MLMEX requires disabling MPI.]])
+   fi
+fi
+
 
 
 # ------------------------------------------------------------------------

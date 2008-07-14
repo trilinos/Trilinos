@@ -17666,6 +17666,16 @@ fi
 fi
 
 
+if test "X${HAVE_PKG_MPI}" != "Xno"; then
+   #issue an error message and abort if the user has configured with
+   # Matlab and MPI
+   if test "X$ac_cv_use_ml_matlab" = "Xyes"; then
+     { { echo "$as_me:$LINENO: error: MLMEX requires disabling MPI." >&5
+echo "$as_me: error: MLMEX requires disabling MPI." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
+
 
 
 # ------------------------------------------------------------------------
