@@ -36,7 +36,7 @@ namespace Rythmos {
 
 TEUCHOS_UNIT_TEST( Rythmos_GAASPErrorEstimator, defaultConstruct ) {
   GAASPErrorEstimator gaaspEE;
-  Teuchos::RCP<ErrorEstimateBase<double> > errorEstimate;
+  Teuchos::RCP<const ErrorEstimateBase<double> > errorEstimate;
   TEST_THROW( errorEstimate = gaaspEE.getErrorEstimate(), std::logic_error ); 
 }
 
