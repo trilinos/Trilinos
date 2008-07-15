@@ -228,8 +228,8 @@ int Zoltan_Scotch_Order(
   }
 
   /* Construct elimination tree */
-  zz->Order.num_blocks = SCOTCH_dgraphOrderCblkDist (&grafdat, &ordedat);
-  if (zz->Order.num_blocks <= 0) {
+  zz->Order.nbr_blocks = SCOTCH_dgraphOrderCblkDist (&grafdat, &ordedat);
+  if (zz->Order.nbr_blocks <= 0) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch block");
   }
@@ -239,8 +239,8 @@ int Zoltan_Scotch_Order(
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
 
-  tree = (indextype *) ZOLTAN_MALLOC((zz->Order.num_blocks+1)*sizeof(indextype));
-  size = (indextype *) ZOLTAN_MALLOC((zz->Order.num_blocks+1)*sizeof(indextype));
+  tree = (indextype *) ZOLTAN_MALLOC((zz->Order.nbr_blocks+1)*sizeof(indextype));
+  size = (indextype *) ZOLTAN_MALLOC((zz->Order.nbr_blocks+1)*sizeof(indextype));
 
   if ((tree == NULL) || (size == NULL)){
     /* Not enough memory */
@@ -253,14 +253,14 @@ int Zoltan_Scotch_Order(
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch rank array");
   }
 
-  children = (indextype *) ZOLTAN_MALLOC(3*zz->Order.num_blocks*sizeof(indextype));
-  for (numbloc = 0 ; numbloc < 3*zz->Order.num_blocks ; ++numbloc) {
+  children = (indextype *) ZOLTAN_MALLOC(3*zz->Order.nbr_blocks*sizeof(indextype));
+  for (numbloc = 0 ; numbloc < 3*zz->Order.nbr_blocks ; ++numbloc) {
     children[numbloc] = -2;
   }
 
   /* Now convert scotch separator tree in Zoltan elimination tree */
   root = -1;
-  for (numbloc = 0 ; numbloc < zz->Order.num_blocks ; ++numbloc) { /* construct a top-bottom tree */
+  for (numbloc = 0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) { /* construct a top-bottom tree */
     indextype tmp;
     int index=0;
 
@@ -281,10 +281,11 @@ int Zoltan_Scotch_Order(
   }
 
   leafnum = 0;
-  zz->Order.num_blocks = Zoltan_Scotch_Construct_Offset(&zz->Order, children, root, size, tree, 0, &leafnum);
-  zz->Order.leaves[leafnum] =0;
+  zz->Order.nbr_blocks = Zoltan_Scotch_Construct_Offset(&zz->Order, children, root, size, tree, 0, &leafnum);
+  zz->Order.leaves[leafnum] =-1;
+  zz->Order.nbr_leaves = leafnum;
 
-  for (numbloc = 0, start=0 ; numbloc < zz->Order.num_blocks ; ++numbloc) {
+  for (numbloc = 0, start=0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) {
     int tmp;
     tmp = zz->Order.start[numbloc];
     zz->Order.start[numbloc]  = start;
@@ -292,7 +293,7 @@ int Zoltan_Scotch_Order(
     if (zz->Order.ancestor[numbloc] >= 0)
       zz->Order.ancestor[numbloc] = size[zz->Order.ancestor[numbloc]];
   }
-  zz->Order.start[zz->Order.num_blocks]  = start;
+  zz->Order.start[zz->Order.nbr_blocks]  = start;
 
   /* Free temporary tables */
   ZOLTAN_FREE(&tree);
@@ -317,6 +318,8 @@ int Zoltan_Scotch_Order(
     memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
   ZOLTAN_FREE(&ord.rank);
   ZOLTAN_FREE(strat);
+
+  /* Free all other "graph" stuff */
   Zoltan_Third_Exit(&gr, NULL, NULL, &vsp, NULL, NULL);
 
   ZOLTAN_TRACE_EXIT(zz, yo);

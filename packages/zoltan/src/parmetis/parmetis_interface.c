@@ -731,12 +731,6 @@ int Zoltan_ParMetis_Order(
     int numbloc;
     int start;
 
-    if ((!zz->Order.ancestor) || (!zz->Order.leaves)){
-      /* Not enough memory */
-      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
-    }
-
     for (numbloc = 0, start=0 ; numbloc < 2*zz->Num_Proc+1 ; ++numbloc) { /* convert size tab in start tab */
       int tmp;
       tmp = start;
@@ -754,10 +748,11 @@ int Zoltan_ParMetis_Order(
       zz->Order.leaves[numbloc] = numbloc;
     }
     zz->Order.leaves[zz->Num_Proc] = -1;
-    zz->Order.num_blocks = 2*zz->Num_Proc;
+    zz->Order.nbr_leaves = zz->Num_Proc;
+    zz->Order.nbr_blocks = 2*zz->Num_Proc;
   }
   else { /* No tree */
-    zz->Order.num_blocks = 0;
+    zz->Order.nbr_blocks = 0;
     zz->Order.start = NULL;
     zz->Order.ancestor = NULL;
     zz->Order.leaves = NULL;
@@ -779,6 +774,8 @@ int Zoltan_ParMetis_Order(
     memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
   if (ord.iperm != NULL)  ZOLTAN_FREE(&ord.iperm);
   ZOLTAN_FREE(&ord.rank);
+
+  /* Free all other "graph" stuff */
   Zoltan_Third_Exit(&gr, NULL, NULL, &vsp, NULL, NULL);
 
   ZOLTAN_TRACE_EXIT(zz, yo);

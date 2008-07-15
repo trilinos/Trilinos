@@ -188,8 +188,6 @@ void Zoltan_Destroy(ZZ **zz)
  *
  */
 
-  fprintf(stderr, "Boubou is back1");
-
   if (*zz != NULL) {
 
     Zoltan_Free_Zoltan_Struct_Members(*zz);

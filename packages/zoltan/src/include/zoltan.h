@@ -3173,6 +3173,18 @@ extern int Zoltan_Order_Get_Block_Parent(
   int                   block_num   /* Number of the wanted block */
 );
 
+
+/*****************************************************************************/
+/*
+ *  Function to return the number of the leaves in the elimination tree
+ *  Input:
+ *    zz                  --  The ordering computed by Zoltan_Order.
+ *  Returned value:       --  Number of leaves in the elimination tree.
+ */
+
+extern int Zoltan_Order_Get_Nbr_Leaves(struct Zoltan_Struct *zz);
+
+
 /*****************************************************************************/
 /*
  *  Function to return the list of the leaves in the elimination tree
@@ -3181,10 +3193,11 @@ extern int Zoltan_Order_Get_Block_Parent(
  *  Ouput:
  *    leaves              --  List of block indices that are leaves in the
  *                            elimination tree. -1 marks the end of the list.
- *  Returned value:       --  Number of leaves in the elimination tree.
+ *                            The array must be of size nbr_leaves+1, known by calling
+ *                            Zoltan_Order_Get_Nbr_Leaves.
  */
 
-extern int Zoltan_Order_Get_Block_Leaves(
+extern void Zoltan_Order_Get_Block_Leaves(
   struct Zoltan_Struct *zz,          /* Info about ordering */
   int                  *leaves
 );
