@@ -39,10 +39,12 @@ void PrintLine()
   return;
 }
 
+
+
 int TestMultiLevelPreconditioner(char ProblemType[],
 				 Teuchos::ParameterList & MLList,
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
-				 double & TotalErrorExactSol)
+				 double & TotalErrorExactSol,bool cg=false)
 {
   
   Epetra_MultiVector* lhs = Problem.GetLHS();
@@ -72,8 +74,9 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
-  
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
+
+  if(cg) solver.SetAztecOption(AZ_solver, AZ_cg);
+  else solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
   solver.SetAztecOption(AZ_kspace, 160);
   
@@ -169,6 +172,20 @@ int main(int argc, char *argv[]) {
   TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol);
 
+
+  // ============================================== //
+  // default options for SA, efficient symmetric GS //
+  // ============================================== //
+
+  if (Comm.MyPID() == 0) PrintLine();
+
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "Gauss-Seidel");
+  MLList.set("smoother: Gauss-Seidel efficient symmetric",true);
+
+  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+                               TotalErrorResidual, TotalErrorExactSol,true);
+
   // ============================== //
   // default options for SA, Jacobi //
   // ============================== //
@@ -179,7 +196,7 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type", "Jacobi");
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem, TotalErrorResidual,
-                               TotalErrorExactSol);
+                               TotalErrorExactSol,true);
 
   // =========================== //
   // default options for SA, Cheby //
