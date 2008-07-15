@@ -679,7 +679,7 @@ void Teuchos::broadcast(
   ,const int rootRank, Packet *object
   )
 {
-  broadcast(comm,rootRank,1,object);
+  broadcast<Ordinal,Packet>(comm,rootRank,1,object);
 }
 
 template<typename Ordinal, typename Packet>
@@ -777,7 +777,7 @@ void Teuchos::reduceAll(
   ,const Packet &send, Packet *globalReduct
   )
 {
-  reduceAll(comm,reductType,1,&send,globalReduct);
+  reduceAll<Ordinal,Packet>(comm,reductType,1,&send,globalReduct);
 }
 
 template<typename Ordinal, typename Packet>
@@ -913,7 +913,7 @@ void Teuchos::scan(
   ,const Packet &send, Packet *globalReduct
   )
 {
-  scan(comm,reductType,1,&send,globalReduct);
+  scan<Ordinal,Packet>(comm,reductType,1,&send,globalReduct);
 }
 
 template<typename Ordinal, typename Packet>

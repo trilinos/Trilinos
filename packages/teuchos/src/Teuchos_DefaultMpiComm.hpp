@@ -292,6 +292,7 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
   ,const Ordinal recvCounts[], const Ordinal blockSize, char myGlobalReducts[]
   ) const
 {
+  (void)sendBytes;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::reduceAllAndScatter(...)"
     );
