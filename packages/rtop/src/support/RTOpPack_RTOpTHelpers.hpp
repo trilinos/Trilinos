@@ -30,19 +30,28 @@
 #ifndef RTOPPACK_RTOP_NEW_T_HELPERS_HPP
 #define RTOPPACK_RTOP_NEW_T_HELPERS_HPP
 
+
 //#define RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+
+
+#include <typeinfo>
+
 
 #include "RTOpPack_RTOpT.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+
 
 #ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
 #  include "Teuchos_VerboseObject.hpp"
 namespace RTOpPack { extern bool rtop_helpers_dump_all; }
 #endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
 
+
 namespace RTOpPack {
+
 
 /** \brief Simple struct for a Scalar and an Index object.
  *
@@ -52,8 +61,11 @@ template<class Scalar>
 struct ScalarIndex {
   Scalar scalar;
   Index  index;
-  ScalarIndex( const Scalar &_scalar, const Index &_index ) : scalar(_scalar), index(_index) {}
+  ScalarIndex( const Scalar &_scalar, const Index &_index )
+    : scalar(_scalar), index(_index)
+    {}
 };
+
 
 /** \brief Simple <tt>ReductTarget</tt> subclass for simple scalar objects.
  *
@@ -75,6 +87,7 @@ private:
   Scalar scalar_;
 };
 
+
 /** \brief Simple <tt>ReductTarget</tt> subclass for <tt>Scalar,Index</tt> objects.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
@@ -82,15 +95,13 @@ private:
 template<class Scalar>
 class ReductTargetScalarIndex : public ReductTarget {
 public:
-  ReductTargetScalarIndex(
-    const Scalar &scalar = ScalarTraits<Scalar>::zero()
-    ,const Index &index  = ScalarTraits<Index>::zero()
-    )
-    :scalarIndex_(scalar,index)
+  ReductTargetScalarIndex()
+    :scalarIndex_(ScalarTraits<Scalar>::zero(), ScalarTraits<Index>::zero())
     {}
-  ReductTargetScalarIndex(
-    const ScalarIndex<Scalar> &scalarIndex = ScalarIndex<Scalar>(ScalarTraits<Scalar>::zero(),ScalarTraits<Index>::zero())
-    )
+  ReductTargetScalarIndex(const Scalar &scalar, const Index &index)
+    :scalarIndex_(scalar, index)
+    {}
+  ReductTargetScalarIndex(const ScalarIndex<Scalar> &scalarIndex)
     :scalarIndex_(scalarIndex)
     {}
   void set( const ScalarIndex<Scalar> &scalarIndex ) { scalarIndex_ = scalarIndex; }
@@ -98,6 +109,7 @@ public:
 private:
   ScalarIndex<Scalar> scalarIndex_;
 };
+
 
 template<bool isComplex, bool isScalarReductScalar, class Scalar, class ReductScalar>
 class ROpScalarReductionBaseRawValSetter;
@@ -284,6 +296,7 @@ protected:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( ReductScalar, initReductObjValue );
 };
 
+
 template<class Scalar, class ReductScalar>
 class ROpScalarReductionBaseRawValSetter<true,false,Scalar,ReductScalar> {
 public:
@@ -293,6 +306,7 @@ public:
     )
     { rtop.setRawVal(ScalarTraits<Scalar>::real(rawVal),reduct_obj); }
 };
+
 
 template<class Scalar, class ReductScalar>
 class ROpScalarReductionBaseRawValSetter<true,true,Scalar,ReductScalar> {
@@ -304,6 +318,7 @@ public:
     { rtop.setRawVal(rawVal,reduct_obj); }
 };
 
+
 template<bool isScalarReductScalar, class Scalar, class ReductScalar>
 class ROpScalarReductionBaseRawValSetter<false,isScalarReductScalar,Scalar,ReductScalar> {
 public:
@@ -313,6 +328,7 @@ public:
     )
     { rtop.setRawVal(rawVal,reduct_obj); }
 };
+
 
 /** \brief Base class for all reduction operators that return a
  * <tt>ScalarIndex</tt> reduction object.
@@ -428,8 +444,10 @@ private:
   static const int num_values_;
 };
 
+
 template<class Scalar>
 const int ROpScalarIndexReductionBase<Scalar>::num_values_=Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
+
 
 /** \brief Simple base class for all reduction operators that return a simple
  * index reduction object.
@@ -541,6 +559,7 @@ protected:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( index_type, initReductObjValue );
 };
 
+
 /** \brief Simple base class for all transformation operators that
  * use a single piece of Scalar data.
  *
@@ -615,8 +634,10 @@ private:
   static const int num_values_;
 };
 
+
 template<class Scalar>
 const int ROpScalarTransformationBase<Scalar>::num_values_=Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
+
 
 /** \brief Simple base class for all transformation operators that
  * use a pair of Scalar data members.
@@ -701,6 +722,7 @@ private:
 
 template<class Scalar>
 const int ROpScalarScalarTransformationBase<Scalar>::num_values_=2*Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
+
 
 /** \brief Do a transformation and reduce to a bool. Needed for the NVector
  * adapters for the SUNDIALS interface.
@@ -929,13 +951,123 @@ public:
 
 
 
-
-
-
-
+//
+// New stuff
+//
 
 
 namespace RTOpPack {
+
+
+/** \brief Validate the input to an apply_op(...) function.
+ *
+ * \param op [in] The RTOpT object we are validating apply_op(...) input for.
+ *
+ * \param allowed_num_sub_vecs [in] The allowed number of subvectors for
+ * sub_vecs.size().  If <tt>allowed_num_sub_vecs < 0</tt> then this number is
+ * not valided.
+ *
+ * \param allowed_num_targ_sub_vecs [in] The allowed number of subvectors for
+ * targ_sub_vecs.size().  If <tt>allowed_num_targ_sub_vecs < 0</tt> then this
+ * number is not valided.
+ *
+ * \param expect_reduct_obj [in] Determines if reduct_obj must be present or
+ * not and the type will be validated as well.
+ *
+ * \param sub_vecs [in] Input to apply_op(...) being validated
+ *
+ * \param targ_sub_vecs [in] Input to apply_op(...) being validated, not
+ * modified here
+ *
+ * \param reduct_obj_in [in] Input to apply_op(...) being validated
+ */
+template<class Scalar>
+void validate_apply_op(
+  const RTOpT<Scalar> &op,
+  const int allowed_num_sub_vecs,
+  const int allowed_num_targ_sub_vecs,
+  const bool expect_reduct_obj,
+  const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+  const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+  const Ptr<const ReductTarget> &reduct_obj
+  )
+{
+
+  using Teuchos::as;
+
+  const int num_sub_vecs = sub_vecs.size();
+  const int num_targ_sub_vecs = targ_sub_vecs.size();
+
+  const std::string op_name_str = "op.name() = " + op.op_name();
+
+  if (allowed_num_sub_vecs >= 0) {
+    TEST_FOR_EXCEPTION( allowed_num_sub_vecs != as<int>(sub_vecs.size()),
+      InvalidNumVecs,
+      op_name_str<<": Error, sub_vecs.size()="<<sub_vecs.size()
+      <<" != allowed_num_sub_vecs="<<allowed_num_sub_vecs<<"!" );
+  }
+
+  if (allowed_num_targ_sub_vecs >= 0) {
+    TEST_FOR_EXCEPTION( allowed_num_targ_sub_vecs != as<int>(targ_sub_vecs.size()),
+      InvalidNumTargVecs,
+      op_name_str<<": Error, targ_sub_vecs.size()="<<targ_sub_vecs.size()
+      <<" != allowed_num_targ_sub_vecs="<<allowed_num_targ_sub_vecs<<"!" );
+  }
+  
+  TEST_FOR_EXCEPTION( sub_vecs.size() == 0 && targ_sub_vecs.size() == 0,
+    InvalidNumVecs,
+    op_name_str<<": Error, apply_op(...) must be passed some vectors!"
+    );
+  
+  const index_type subDim =
+    (sub_vecs.size() ? sub_vecs[0].subDim() : targ_sub_vecs[0].subDim());
+  
+  const index_type globalOffset =
+    (sub_vecs.size() ? sub_vecs[0].globalOffset() : targ_sub_vecs[0].globalOffset());
+  
+  for (int k = 0; k < num_sub_vecs; ++k ) {
+    TEST_FOR_EXCEPTION(
+      sub_vecs[k].subDim() != subDim || sub_vecs[k].globalOffset() != globalOffset,
+      IncompatibleVecs,
+      op_name_str<<": Error, sub_vec["<<k<<"] "
+      "(subDim="<<sub_vecs[k].subDim()<<",globalOffset="<<sub_vecs[k].globalOffset()<<")"
+      " is not compatible with (subDim="<<subDim<<",globalOffset="<<globalOffset<<")!"
+      );
+  }
+  
+  for (int k = 0; k < num_targ_sub_vecs; ++k ) {
+    TEST_FOR_EXCEPTION(
+      targ_sub_vecs[k].subDim() != subDim || targ_sub_vecs[k].globalOffset() != globalOffset,
+      IncompatibleVecs,
+      op_name_str<<": Error, sub_vec["<<k<<"] "
+      "(subDim="<<targ_sub_vecs[k].subDim()<<",globalOffset="<<targ_sub_vecs[k].globalOffset()<<")"
+      " is not compatible with (subDim="<<subDim<<",globalOffset="<<globalOffset<<")!"
+      );
+  }
+  
+  if (expect_reduct_obj) {
+    
+    TEST_FOR_EXCEPTION( is_null(reduct_obj),
+      IncompatibleReductObj,
+      op_name_str<<": Error, expected a reduction target object!"
+      );
+    
+    const RCP<ReductTarget> dummy_reduct_obj = op.reduct_obj_create();
+    
+    const std::type_info &reduct_obj_type = typeid(*reduct_obj);
+    const std::type_info &dummy_reduct_obj_type = typeid(*dummy_reduct_obj);
+    
+    TEST_FOR_EXCEPTION( reduct_obj_type != dummy_reduct_obj_type,
+      IncompatibleReductObj,
+      op_name_str<<": Error, the type of the input reduct_obj = "
+      <<Teuchos::demangleName(reduct_obj_type.name())<<" is not equal to"
+      " the expected type "<<Teuchos::demangleName(dummy_reduct_obj_type.name())
+      <<"!"
+      );
+
+  }
+      
+}
 
 
 //
@@ -1116,15 +1248,20 @@ public:
   void apply_op(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
     const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
-    const Ptr<ReductTarget> &reduct_obj_in
+    const Ptr<ReductTarget> &reduct_obj_inout
     ) const
     {
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       using Teuchos::dyn_cast;
       typedef ScalarTraits<Scalar> ST;
 
+#ifdef TEUCHOS_DEBUG
+      validate_apply_op<Scalar>(*this, 1, 0, true,
+        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+#endif
+
       ReductTargetScalar<ReductScalar> &reduct_obj =
-        dyn_cast<ReductTargetScalar<ReductScalar> >(*reduct_obj_in); 
+        dyn_cast<ReductTargetScalar<ReductScalar> >(*reduct_obj_inout); 
       ReductScalar reduct = reduct_obj.get();
       
       const RTOpPack::index_type subDim = sub_vecs[0].subDim();
@@ -1140,13 +1277,13 @@ public:
         for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s )
           eleWiseReduction_( *v0_val, reduct);
       }
-
+      
       reduct_obj.set(reduct);
-
+      
     }
-
+  
   //@}
-
+  
 private:
 
   EleWiseReduction eleWiseReduction_;
@@ -1242,15 +1379,20 @@ public:
   void apply_op(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
     const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
-    const Ptr<ReductTarget> &reduct_obj_in
+    const Ptr<ReductTarget> &reduct_obj_inout
     ) const
     {
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       using Teuchos::dyn_cast;
       typedef ScalarTraits<Scalar> ST;
 
+#ifdef TEUCHOS_DEBUG
+      validate_apply_op<Scalar>(*this, 2, 0, true,
+        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+#endif
+
       ReductTargetScalar<Scalar> &reduct_obj =
-        dyn_cast<ReductTargetScalar<Scalar> >(*reduct_obj_in); 
+        dyn_cast<ReductTargetScalar<Scalar> >(*reduct_obj_inout); 
       Scalar reduct = reduct_obj.get();
 
       const RTOpPack::index_type subDim = sub_vecs[0].subDim();

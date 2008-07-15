@@ -36,6 +36,8 @@
 
 
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 
 namespace Teuchos {
@@ -280,13 +282,19 @@ bool compareArrays(
  */
 #define TEUCHOS_TEST_THROW( code, ExceptType, out, success  ) \
   try { \
-    (out) << "Test that code {"#code";} throws : "; \
+    (out) << "Test that code {"#code";} throws " \
+          <<Teuchos::TypeNameTraits<ExceptType>::name()<<": "; \
     code; \
     (success) = false; \
     (out) << "failed\n"; \
   } \
   catch (const ExceptType& except) { \
     out << "passed\n"; \
+    out << "\nException message for expected exception:\n\n"; \
+    { \
+      Teuchos::OSTab tab(out); \
+      out << except.what() << "\n\n"; \
+    } \
   }
 
 

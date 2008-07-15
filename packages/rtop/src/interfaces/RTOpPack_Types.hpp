@@ -88,6 +88,9 @@ class InvalidNumTargVecs : public std::logic_error
 /** \brief . */
 class IncompatibleVecs : public std::logic_error
 {public: IncompatibleVecs(const std::string& what_arg) : std::logic_error(what_arg) {}};
+/** \brief . */
+class IncompatibleReductObj : public std::logic_error
+{public: IncompatibleReductObj(const std::string& what_arg) : std::logic_error(what_arg) {}};
 
 
 //

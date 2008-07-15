@@ -49,7 +49,7 @@ RTOpT<Scalar>::RTOpT( const std::string &op_name_base )
 template<class Scalar>
 void RTOpT<Scalar>::setOpNameBase( const std::string &op_name_base )
 {
-  op_name_ = op_name_base + std::string(Teuchos::ScalarTraits<Scalar>::name());
+  op_name_ = op_name_base+"<"+ScalarTraits<Scalar>::name()+">";
 }
 
 
@@ -132,7 +132,7 @@ void RTOpT<Scalar>::load_reduct_obj_state(
 
 
 template<class Scalar>
-const std::string RTOpT<Scalar>::op_name_new() const
+const std::string RTOpT<Scalar>::op_name() const
 {
   return op_name_;
 }
@@ -216,13 +216,6 @@ bool RTOpT<Scalar>::coord_invariant() const
 
 
 // Deprecated
-
-
-template<class Scalar>
-const char* RTOpT<Scalar>::op_name() const
-{
-  return op_name_.c_str();
-}
 
 
 template<class Scalar>

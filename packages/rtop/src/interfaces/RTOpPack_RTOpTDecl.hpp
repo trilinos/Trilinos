@@ -267,7 +267,7 @@ public:
    * The default implementation uses the value created in the
    * constructor <tt>RTOpT()</tt>.
    */
-  virtual const std::string op_name_new() const;
+  virtual const std::string op_name() const;
 
   // 2007/11/14: rabartl: ToDo: Above: change to return std::string.  Don't
   // bother deprecating the old function since you can't really do it very
@@ -451,9 +451,6 @@ public:
 
   /** \name Deprecated */
   //@{
-  
-  /** \brief Deprecated */
-  virtual const char* op_name() const;
 
   /** \brief Deprecated */
   virtual RTOpT<Scalar>& operator=(const RTOpT<Scalar>& op);

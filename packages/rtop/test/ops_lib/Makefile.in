@@ -61,6 +61,7 @@ am_opsUnitTests_OBJECTS = ROpSum_UnitTests.$(OBJEXT) \
 	ROpDotProd_UnitTests.$(OBJEXT) ROpNorm1_UnitTests.$(OBJEXT) \
 	ROpNorm2_UnitTests.$(OBJEXT) ROpNormInf_UnitTests.$(OBJEXT) \
 	ROpMax_UnitTests.$(OBJEXT) ROpMin_UnitTests.$(OBJEXT) \
+	validate_apply_op_UnitTests.$(OBJEXT) \
 	opsUnitTestsHelpers.$(OBJEXT) \
 	Teuchos_StandardUnitTestMain.$(OBJEXT)
 opsUnitTests_OBJECTS = $(am_opsUnitTests_OBJECTS)
@@ -197,6 +198,7 @@ opsUnitTests_SOURCES = \
   $(srcdir)/ROpNormInf_UnitTests.cpp \
   $(srcdir)/ROpMax_UnitTests.cpp \
   $(srcdir)/ROpMin_UnitTests.cpp \
+  $(srcdir)/validate_apply_op_UnitTests.cpp \
   $(srcdir)/opsUnitTestsHelpers.cpp \
   $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 
@@ -279,6 +281,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpSum_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opsUnitTestsHelpers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validate_apply_op_UnitTests.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -391,6 +394,20 @@ ROpMin_UnitTests.obj: $(srcdir)/ROpMin_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMin_UnitTests.cpp' object='ROpMin_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMin_UnitTests.obj `if test -f '$(srcdir)/ROpMin_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMin_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMin_UnitTests.cpp'; fi`
+
+validate_apply_op_UnitTests.o: $(srcdir)/validate_apply_op_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT validate_apply_op_UnitTests.o -MD -MP -MF $(DEPDIR)/validate_apply_op_UnitTests.Tpo -c -o validate_apply_op_UnitTests.o `test -f '$(srcdir)/validate_apply_op_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/validate_apply_op_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/validate_apply_op_UnitTests.Tpo $(DEPDIR)/validate_apply_op_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/validate_apply_op_UnitTests.cpp' object='validate_apply_op_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o validate_apply_op_UnitTests.o `test -f '$(srcdir)/validate_apply_op_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/validate_apply_op_UnitTests.cpp
+
+validate_apply_op_UnitTests.obj: $(srcdir)/validate_apply_op_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT validate_apply_op_UnitTests.obj -MD -MP -MF $(DEPDIR)/validate_apply_op_UnitTests.Tpo -c -o validate_apply_op_UnitTests.obj `if test -f '$(srcdir)/validate_apply_op_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/validate_apply_op_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/validate_apply_op_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/validate_apply_op_UnitTests.Tpo $(DEPDIR)/validate_apply_op_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/validate_apply_op_UnitTests.cpp' object='validate_apply_op_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o validate_apply_op_UnitTests.obj `if test -f '$(srcdir)/validate_apply_op_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/validate_apply_op_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/validate_apply_op_UnitTests.cpp'; fi`
 
 opsUnitTestsHelpers.o: $(srcdir)/opsUnitTestsHelpers.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT opsUnitTestsHelpers.o -MD -MP -MF $(DEPDIR)/opsUnitTestsHelpers.Tpo -c -o opsUnitTestsHelpers.o `test -f '$(srcdir)/opsUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/opsUnitTestsHelpers.cpp
