@@ -150,6 +150,11 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
     return *_problem;
   }
 
+  //! Get the iteration count for the most recent call to \c solve().
+  int getNumIters() const {
+    return _numIters;
+  }
+
   /*! \brief Return the Ritz values from the most recent solve.
    */
   std::vector<Value<ScalarType> > getRitzValues() const {
@@ -217,6 +222,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   int _maxRestarts;
   bool _relconvtol,_conjSplit;
   int _blockSize, _numBlocks, _stepSize, _nevBlocks, _xtra_nevBlocks;
+  int _numIters;
   int _verbosity;
   bool _inSituRestart;
 
@@ -247,6 +253,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _stepSize(0),
   _nevBlocks(0),
   _xtra_nevBlocks(0),
+  _numIters(0),
   _verbosity(Anasazi::Errors),
   _inSituRestart(false),
   _timerSolve(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr::solve()")),
@@ -693,6 +700,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   _problem->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
+
+  // get the number of iterations performed during this solve.
+  _numIters = bks_solver->getNumIters();
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from BlockKrylovSchurSolMgr::solve() 

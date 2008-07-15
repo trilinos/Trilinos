@@ -258,7 +258,8 @@ int main(int argc, char *argv[])
     OPT::Apply( *M, *Kvecs, *Mvecs );
     MVT::MvDot( *Mvecs, *Kvecs, normV );
 
-    os << "Direct residual norms computed in LOBPCG_test.exe" << endl
+    os << "Number of iterations performed in LOBPCG_test.exe: " << MySolverMan.getNumIters() << endl
+       << "Direct residual norms computed in LOBPCG_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {

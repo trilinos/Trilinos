@@ -120,6 +120,10 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     return *problem_;
   }
 
+  int getNumIters() const {
+    return numIters_;
+  }
+
   //@}
 
   //! @name Solver application methods
@@ -143,6 +147,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   int verb_;
   int blockSize_;
   int maxIters_;
+  int numIters_;
 };
 
 
@@ -156,7 +161,8 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
   tol_(1e-6),
   verb_(Anasazi::Errors),
   blockSize_(0),
-  maxIters_(100)
+  maxIters_(100),
+  numIters_(0)
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
@@ -383,6 +389,9 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   problem_->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
 
+  // get the number of iterations performed for this solve.
+  numIters_ = lobpcg_solver->getNumIters();
+ 
   // return from SolMgr::solve()
   if (sol.numVecs < nev) return Unconverged;
   return Converged;

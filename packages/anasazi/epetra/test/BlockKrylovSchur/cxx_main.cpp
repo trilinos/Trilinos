@@ -247,7 +247,8 @@ int main(int argc, char *argv[])
     std::vector<MagnitudeType> resnorm(numev);
     MVT::MvNorm( *Kvecs, resnorm );
 
-    os << "Direct residual norms computed in BlockKrylovSchur_test.exe" << endl
+    os << "Number of iterations performed in BlockKrylovSchur_test.exe: " << MySolverMgr.getNumIters() << endl
+       << "Direct residual norms computed in BlockKrylovSchur_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual" << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {

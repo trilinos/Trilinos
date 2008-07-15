@@ -161,6 +161,11 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
     return *problem_;
   }
 
+  //! Get the iteration count for the most recent call to \c solve().
+  int getNumIters() const { 
+    return numIters_; 
+  }
+
   /*! \brief Return the timers for this object. 
    *
    * The timers are ordered as follows:
@@ -229,7 +234,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   int maxRestarts_;
   bool useLocking_;
   bool relconvtol_, rellocktol_;
-  int blockSize_, numBlocks_;
+  int blockSize_, numBlocks_, numIters_;
   int maxLocked_;
   int lockQuorum_;
   bool inSituRestart_;
@@ -261,6 +266,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   rellocktol_(true),
   blockSize_(0),
   numBlocks_(0),
+  numIters_(0),
   maxLocked_(0),
   lockQuorum_(1),
   inSituRestart_(false),
@@ -1253,6 +1259,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   problem_->setSolution(sol);
   printer_->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
+
+  // get the number of iterations taken for this call to solve().
+  numIters_ = bd_solver->getNumIters();
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from BlockDavidsonSolMgr::solve() 

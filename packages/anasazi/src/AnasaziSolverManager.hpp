@@ -68,6 +68,9 @@ class SolverManager {
   //! Return the eigenvalue problem.
   virtual const Eigenproblem<ScalarType,MV,OP>& getProblem() const = 0;
 
+  //! Get the iteration count for the most recent call to \c solve().
+  virtual int getNumIters() const = 0;
+
   //@}
 
   //! @name Solver application methods

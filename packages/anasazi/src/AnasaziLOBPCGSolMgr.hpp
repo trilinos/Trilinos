@@ -159,6 +159,11 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     return *problem_;
   }
 
+  //! Get the iteration count for the most recent call to \c solve().
+  int getNumIters() const { 
+    return numIters_; 
+  }
+
   /*! \brief Return the timers for this object. 
    *
    * The timers are ordered as follows:
@@ -229,7 +234,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   std::string whch_, ortho_;
 
   MagnitudeType convtol_, locktol_;
-  int maxIters_;
+  int maxIters_, numIters_;
   bool useLocking_;
   bool relconvtol_, rellocktol_;
   int blockSize_;
@@ -259,6 +264,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   ortho_("SVQB"),
   convtol_(MT::prec()),
   maxIters_(100),
+  numIters_(0),
   useLocking_(false),
   relconvtol_(true),
   rellocktol_(true),
@@ -945,6 +951,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   problem_->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
+
+  // get the number of iterations performed in this call to solve.
+  numIters_ = lobpcg_solver->getNumIters();
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from LOBPCGSolMgr::solve() 
