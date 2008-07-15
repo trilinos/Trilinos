@@ -145,16 +145,58 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
 AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_octreepartitioning" != "Xno"])
+
 TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, no)
 AM_CONDITIONAL(BUILD_PARMETIS, [test "X$ac_cv_use_parmetis" != "Xno"])
 TAC_ARG_WITH_3PL_SUB(parmetis, libdir, [Specify where the Parmetis library is located.  Ex. /path/to/library])
 if test "X$tac_with_parmetis_libdir" != "Xno"; then
-  LIBS="-L${tac_with_parmetis_libdir} -lparmetis ${LIBS}"
+  LIBS="-L${tac_with_parmetis_libdir} -lparmetis -lmetis ${LIBS}"
 fi
 TAC_ARG_WITH_3PL_SUB(parmetis, incdir, [Specify where the Parmetis header files are located.  Ex. /path/to/headers])
 if test "X$tac_with_parmetis_incdir" != "Xno"; then
   CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 fi
+
+TAC_ARG_WITH_PACKAGE(scotch, [Enable Scotch support.], SCOTCH, no)
+AM_CONDITIONAL(BUILD_SCOTCH, [test "X$ac_cv_use_scotch" != "Xno"])
+TAC_ARG_WITH_3PL_SUB(scotch, libdir, [Specify where the Scotch library is located.  Ex. /path/to/library])
+if test "X$tac_with_scotch_libdir" != "Xno"; then
+  LIBS="-L${tac_with_scotch_libdir} -lptscotch -lscotch -lscotcherr ${LIBS}"
+fi
+TAC_ARG_WITH_3PL_SUB(scotch, incdir, [Specify where the Scotch header files are located.  Ex. /path/to/headers])
+if test "X$tac_with_scotch_incdir" != "Xno"; then
+  CPPFLAGS="-I${tac_with_scotch_incdir}  ${CPPFLAGS}"
+fi
+
+TAC_ARG_WITH_PACKAGE(patoh, [Enable Patoh support.], PATOH, no)
+TAC_ARG_WITH_3PL_SUB(patoh, libdir, [Specify where the Patoh library is located.  Ex. /path/to/library])
+if test "X$tac_with_patoh_libdir" != "Xno"; then
+  LIBS="-L${tac_with_patoh_libdir} -lpatoh ${LIBS}"
+fi
+TAC_ARG_WITH_3PL_SUB(patoh, incdir, [Specify where the Patoh header files are located.  Ex. /path/to/headers])
+if test "X$tac_with_patoh_incdir" != "Xno"; then
+  CPPFLAGS="-I${tac_with_patoh_incdir}  ${CPPFLAGS}"
+fi
+
+TAC_ARG_WITH_PACKAGE(drum, [Enable Drum support.  Library name as well as library and include paths must be specified using LDFLAGS and CPPFLAGS.], DRUM, no)
+#TAC_ARG_WITH_3PL_SUB(drum, libdir, [Specify where the Drum library is located.  Ex. /path/to/library])
+#if test "X$tac_with_drum_libdir" != "Xno"; then
+#  LIBS="-L${tac_with_drum_libdir} ${LIBS}"
+#fi
+#TAC_ARG_WITH_3PL_SUB(drum, incdir, [Specify where the Drum header files are located.  Ex. /path/to/headers])
+#if test "X$tac_with_drum_incdir" != "Xno"; then
+#  CPPFLAGS="-I${tac_with_drum_incdir}  ${CPPFLAGS}"
+#fi
+
+#TAC_ARG_WITH_PACKAGE(parkway, [Enable Parkway support.], PARKWAY, no)
+#TAC_ARG_WITH_3PL_SUB(parkway, libdir, [Specify where the Parkway library is located.  Ex. /path/to/library])
+#if test "X$tac_with_parkway_libdir" != "Xno"; then
+#  LIBS="-L${tac_with_parkway_libdir} -lparkway -lpmpich++ -lstdc++ ${LIBS}"
+#fi
+#TAC_ARG_WITH_3PL_SUB(parkway, incdir, [Specify where the Parkway header files are located.  Ex. /path/to/headers])
+#if test "X$tac_with_parkway_incdir" != "Xno"; then
+#  CPPFLAGS="-I${tac_with_parkway_incdir}  ${CPPFLAGS}"
+#fi
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built

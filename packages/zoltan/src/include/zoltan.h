@@ -76,6 +76,30 @@ extern "C" {
 /* This file passes values from configure to the source code. */
 #include "Zoltan_config.h"
 
+#ifdef HAVE_PARMETIS
+#define ZOLTAN_PARMETIS
+#endif
+
+#ifdef HAVE_SCOTCH
+#define ZOLTAN_SCOTCH
+#endif
+
+#ifdef HAVE_PATOH
+#define ZOLTAN_PATOH
+#endif
+
+#ifdef HAVE_DRUM
+#define ZOLTAN_DRUM
+#endif
+
+#ifdef HAVE_PARKWAY
+#define ZOLTAN_PARKWAY
+#endif
+
+#ifdef HAVE_OCTREEPARTITIONING
+#define ZOLTAN_OCTREEPARTITIONING
+#endif
+
 #endif /* TRILINOS_NO_CONFIG_H */
 
 /*****************************************************************************

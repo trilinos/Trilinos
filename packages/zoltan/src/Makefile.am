@@ -218,6 +218,20 @@ EXTRA_SCOTCH_INTERFACE_H = \
 EXTRA_SCOTCH_INTERFACE = \
 	$(srcdir)/parmetis/scotch_interface.c
 
+if BUILD_SCOTCH
+
+SCOTCH_INTERFACE_H = $(EXTRA_SCOTCH_INTERFACE_H)
+
+SCOTCH_INTERFACE = $(EXTRA_SCOTCH_INTERFACE)
+
+else
+
+SCOTCH_INTERFACE_H =
+
+SCOTCH_INTERFACE =
+
+endif
+
 PHG_H = \
 	$(srcdir)/phg/phg_comm.h \
 	$(srcdir)/phg/phg_const.h \
@@ -380,6 +394,7 @@ ZOLTAN_H = \
 	$(PHG_H) \
 	$(RCB_H) \
 	$(REFTREE_H) \
+	$(SCOTCH_INTERFACE_H) \
 	$(TIMER_H) \
 	$(UTILITIES_H) \
 	$(ZZ_H)
@@ -401,6 +416,7 @@ libzoltan_a_SOURCES = \
 	$(PHG) \
 	$(RCB) \
 	$(REFTREE) \
+	$(SCOTCH_INTERFACE) \
 	$(SIMPLE) \
 	$(TIMER) \
 	$(UTILITIES) \

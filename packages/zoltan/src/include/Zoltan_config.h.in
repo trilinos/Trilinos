@@ -1,5 +1,8 @@
 /* src/include/Zoltan_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if want to build with drum enabled */
+#undef HAVE_DRUM
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
@@ -14,6 +17,12 @@
 
 /* Define if want to build with parmetis enabled */
 #undef HAVE_PARMETIS
+
+/* Define if want to build with patoh enabled */
+#undef HAVE_PATOH
+
+/* Define if want to build with scotch enabled */
+#undef HAVE_SCOTCH
 
 /* Define if want to build tests */
 #undef HAVE_TESTS

@@ -144,7 +144,8 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/reftree/reftree_build.c \
 	$(srcdir)/reftree/reftree_coarse_path.c \
 	$(srcdir)/reftree/reftree_hash.c \
-	$(srcdir)/reftree/reftree_part.c $(srcdir)/simple/block.c \
+	$(srcdir)/reftree/reftree_part.c \
+	$(srcdir)/parmetis/scotch_interface.c $(srcdir)/simple/block.c \
 	$(srcdir)/simple/random.c $(srcdir)/timer/timer_params.c \
 	$(srcdir)/Utilities/Communication/comm_exchange_sizes.c \
 	$(srcdir)/Utilities/Communication/comm_invert_map.c \
@@ -230,9 +231,11 @@ am__objects_17 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
 	shared.$(OBJEXT)
 am__objects_18 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
 	reftree_hash.$(OBJEXT) reftree_part.$(OBJEXT)
-am__objects_19 = block.$(OBJEXT) random.$(OBJEXT)
-am__objects_20 = timer_params.$(OBJEXT)
-am__objects_21 = comm_exchange_sizes.$(OBJEXT) \
+am__objects_19 = scotch_interface.$(OBJEXT)
+@BUILD_SCOTCH_TRUE@am__objects_20 = $(am__objects_19)
+am__objects_21 = block.$(OBJEXT) random.$(OBJEXT)
+am__objects_22 = timer_params.$(OBJEXT)
+am__objects_23 = comm_exchange_sizes.$(OBJEXT) \
 	comm_invert_map.$(OBJEXT) comm_do.$(OBJEXT) \
 	comm_do_reverse.$(OBJEXT) comm_info.$(OBJEXT) \
 	comm_create.$(OBJEXT) comm_resize.$(OBJEXT) \
@@ -245,7 +248,7 @@ am__objects_21 = comm_exchange_sizes.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn2.$(OBJEXT) DD_Set_Hash_Fn.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) mem.$(OBJEXT) \
 	zoltan_align.$(OBJEXT) zoltan_id.$(OBJEXT)
-am__objects_22 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
+am__objects_24 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
 	zz_hash.$(OBJEXT) zz_heap.$(OBJEXT) zz_init.$(OBJEXT) \
 	zz_obj_list.$(OBJEXT) zz_rand.$(OBJEXT) zz_set_fn.$(OBJEXT) \
 	zz_sort.$(OBJEXT) zz_struct.$(OBJEXT) zz_util.$(OBJEXT)
@@ -254,8 +257,9 @@ am_libzoltan_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_9) \
 	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
 	$(am__objects_13) $(am__objects_15) $(am__objects_16) \
-	$(am__objects_17) $(am__objects_18) $(am__objects_19) \
-	$(am__objects_20) $(am__objects_21) $(am__objects_22)
+	$(am__objects_17) $(am__objects_18) $(am__objects_20) \
+	$(am__objects_21) $(am__objects_22) $(am__objects_23) \
+	$(am__objects_24)
 libzoltan_a_OBJECTS = $(am_libzoltan_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -311,7 +315,9 @@ am__include_HEADERS_DIST = $(srcdir)/all/all_allo_const.h \
 	$(srcdir)/rcb/rcb_const.h $(srcdir)/rcb/rcb.h \
 	$(srcdir)/rcb/rib_const.h $(srcdir)/rcb/rib.h \
 	$(srcdir)/rcb/shared.h $(srcdir)/reftree/reftree_const.h \
-	$(srcdir)/reftree/reftree.h $(srcdir)/timer/timer_const.h \
+	$(srcdir)/reftree/reftree.h \
+	$(srcdir)/parmetis/scotch_interface.h \
+	$(srcdir)/timer/timer_const.h \
 	$(srcdir)/Utilities/Communication/zoltan_comm.h \
 	$(srcdir)/Utilities/Communication/zoltan_comm_cpp.h \
 	$(srcdir)/Utilities/Timer/zoltan_timer_cpp.h \
@@ -631,6 +637,10 @@ EXTRA_SCOTCH_INTERFACE_H = \
 EXTRA_SCOTCH_INTERFACE = \
 	$(srcdir)/parmetis/scotch_interface.c
 
+@BUILD_SCOTCH_FALSE@SCOTCH_INTERFACE_H = 
+@BUILD_SCOTCH_TRUE@SCOTCH_INTERFACE_H = $(EXTRA_SCOTCH_INTERFACE_H)
+@BUILD_SCOTCH_FALSE@SCOTCH_INTERFACE = 
+@BUILD_SCOTCH_TRUE@SCOTCH_INTERFACE = $(EXTRA_SCOTCH_INTERFACE)
 PHG_H = \
 	$(srcdir)/phg/phg_comm.h \
 	$(srcdir)/phg/phg_const.h \
@@ -793,6 +803,7 @@ ZOLTAN_H = \
 	$(PHG_H) \
 	$(RCB_H) \
 	$(REFTREE_H) \
+	$(SCOTCH_INTERFACE_H) \
 	$(TIMER_H) \
 	$(UTILITIES_H) \
 	$(ZZ_H)
@@ -814,6 +825,7 @@ libzoltan_a_SOURCES = \
 	$(PHG) \
 	$(RCB) \
 	$(REFTREE) \
+	$(SCOTCH_INTERFACE) \
 	$(SIMPLE) \
 	$(TIMER) \
 	$(UTILITIES) \
@@ -2571,6 +2583,20 @@ reftree_part.obj: $(srcdir)/reftree/reftree_part.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o reftree_part.obj `if test -f '$(srcdir)/reftree/reftree_part.c'; then $(CYGPATH_W) '$(srcdir)/reftree/reftree_part.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reftree/reftree_part.c'; fi`
 
+scotch_interface.o: $(srcdir)/parmetis/scotch_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.o -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.o `test -f '$(srcdir)/parmetis/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scotch_interface.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scotch_interface.Tpo $(DEPDIR)/scotch_interface.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scotch_interface.c' object='scotch_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.o `test -f '$(srcdir)/parmetis/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scotch_interface.c
+
+scotch_interface.obj: $(srcdir)/parmetis/scotch_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.obj -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.obj `if test -f '$(srcdir)/parmetis/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scotch_interface.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scotch_interface.Tpo $(DEPDIR)/scotch_interface.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scotch_interface.c' object='scotch_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.obj `if test -f '$(srcdir)/parmetis/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scotch_interface.c'; fi`
+
 block.o: $(srcdir)/simple/block.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT block.o -MD -MP -MF $(DEPDIR)/block.Tpo -c -o block.o `test -f '$(srcdir)/simple/block.c' || echo '$(srcdir)/'`$(srcdir)/simple/block.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/block.Tpo $(DEPDIR)/block.Po
@@ -3144,20 +3170,6 @@ zz_util.obj: $(srcdir)/zz/zz_util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/zz_util.c' object='zz_util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_util.obj `if test -f '$(srcdir)/zz/zz_util.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_util.c'; fi`
-
-scotch_interface.o: $(srcdir)/parmetis/scotch_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.o -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.o `test -f '$(srcdir)/parmetis/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scotch_interface.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scotch_interface.Tpo $(DEPDIR)/scotch_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scotch_interface.c' object='scotch_interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.o `test -f '$(srcdir)/parmetis/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scotch_interface.c
-
-scotch_interface.obj: $(srcdir)/parmetis/scotch_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.obj -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.obj `if test -f '$(srcdir)/parmetis/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scotch_interface.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scotch_interface.Tpo $(DEPDIR)/scotch_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scotch_interface.c' object='scotch_interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.obj `if test -f '$(srcdir)/parmetis/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scotch_interface.c'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
