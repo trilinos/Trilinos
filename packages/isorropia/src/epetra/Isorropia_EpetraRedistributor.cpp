@@ -240,11 +240,11 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillC
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
-  // RowMatrix does not support domain and range maps.
   // Set the new domain map such that
-  // (a) if matrix is square, use default maps
-  // (b) otherwise, create a linear DomainMap
-  if (input_matrix.NumGlobalRows() == input_matrix.NumGlobalCols()){
+  // (a) if old DomainMap == old RangeMap, preserve this property,
+  // (b) otherwise, use the original OperatorDomainMap
+  //if (input_matrix.NumGlobalRows() == input_matrix.NumGlobalCols()){
+  if (input_matrix.OperatorDomainMap().SameAs(input_matrix.OperatorRangeMap())){
     if (callFillComplete && (!new_matrix->Filled()))
       new_matrix->FillComplete();
   }
