@@ -1766,8 +1766,6 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
   int        i;
   int maxint = 2147483647; /* 2^31 -1 */
 
-  printf("CMS: seed = %d\n",ml_random_vec_seed);
-  
   /*********************** BEGIN EXECUTION *********************************/
 
   /* Distribute the seeds evenly in [1,maxint-1].  This guarantees nothing
