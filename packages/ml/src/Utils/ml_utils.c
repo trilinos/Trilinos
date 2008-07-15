@@ -1714,6 +1714,12 @@ int ML_find_index(int key, int list[], int length)
 
 static int ml_random_vec_seed = 0;
 static int ml_random_vec_start = 1;
+
+int ML_get_random_vec_seed(){
+  return ml_random_vec_seed;
+}
+
+
 void ML_reseed_random_vec(int seed){
 /*******************************************************************************
 
@@ -1760,6 +1766,8 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
   int        i;
   int maxint = 2147483647; /* 2^31 -1 */
 
+  printf("CMS: seed = %d\n",ml_random_vec_seed);
+  
   /*********************** BEGIN EXECUTION *********************************/
 
   /* Distribute the seeds evenly in [1,maxint-1].  This guarantees nothing

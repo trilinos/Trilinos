@@ -166,6 +166,7 @@ std::cout << "--- Leaving:
    int    ML_Check_Context( void * );
    int    ML_randomize( int , int * ); 
    int    ML_random_init(void);
+   int    ML_get_random_vec_seed();     
    void   ML_reseed_random_vec(int seed);
    void   ML_random_vec(double u[], int N, ML_Comm *comm);
    double ML_srandom1(int *seed);
