@@ -250,7 +250,7 @@ package:
 	$(PYTHON) $(srcdir)/setup.py build
 
 install:
-	$(PYTHON) $(srcdir)/setup.py install
+	$(PYTHON) $(srcdir)/setup.py install --destdir=$(DESTDIR)
 
 uninstall:
 	$(PYTHON) $(srcdir)/setup.py uninstall

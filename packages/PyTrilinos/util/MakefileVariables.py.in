@@ -100,12 +100,13 @@ import sys
 
 # Define regular expressions for Makefile assignments, blank line, continuation
 # lines, include statements and variable references
-assignRE   = re.compile(r"^\s*([A-Za-z_][A-Za-z_0-9]*)\s*=\s*(.*)$")
-blankRE    = re.compile(r"^\s*$"                                   )
-continueRE = re.compile(r"(.*)\\\s*$"                              )
-includeRE  = re.compile(r"\s*include\s+(.+)"                       )
-makeVarRE  = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)"          )
-shellRE    = re.compile(r"\$\(shell"                               )
+assignRE     = re.compile(r"^\s*([A-Za-z_][A-Za-z_0-9]*)\s*=\s*(.*)$")
+blankRE      = re.compile(r"^\s*$"                                   )
+continueRE   = re.compile(r"(.*)\\\s*$"                              )
+includeRE    = re.compile(r"\s*include\s+(.+)"                       )
+makeVarParRE = re.compile(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)"          )
+makeVarCurRE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}"          )
+shellRE      = re.compile(r"\$\(shell"                               )
 
 #############################################################################
 
@@ -258,18 +259,19 @@ def parseMakefile(filename):
 def evaluate(value, dict):
     """
     Evaluate the string 'value' by applying the following algorithm: if value
-    contains substring '$(VARNAME)' and dict has key VARNAME, substitute
-    dict[VARNAME] for the variable reference.  If VARNAME is not a key for the
-    dictionary, substitute the null string.  If value contains substring
-    '$(shell ...)', then call this routine recursively on the obtained command
-    string.  If the resulting command string is unchanged, execute it as a shell
-    command and substitutue the results.  Return the evaluated string.
+    contains substring '$(VARNAME)' or '${VARNAME}' and dict has key VARNAME,
+    substitute dict[VARNAME] for the variable reference.  If VARNAME is not a
+    key for the dictionary, substitute the null string.  If value contains
+    substring '$(shell ...)', then call this routine recursively on the obtained
+    command string.  If the resulting command string is unchanged, execute it as
+    a shell command and substitutue the results.  Return the evaluated string.
     """
     # Initialize
     change = False
 
     # Evaluate $(VARNAME)
-    match = makeVarRE.search(value)
+    match = makeVarParRE.search(value)
+    if match is None: match = makeVarCurRE.search(value)
     if match:
         subVarName = match.group(1)
         start      = match.start(1)-2

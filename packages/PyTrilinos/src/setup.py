@@ -54,8 +54,8 @@ modules = [
 
 # System imports
 from   distutils.core import *
-from   distutils      import sysconfig
 from   distutils.util import get_platform
+from   distutils.sysconfig import get_python_lib
 import os
 import sys
 
@@ -129,15 +129,11 @@ if __name__ == "__main__":
 
     # Determine the installation information
     srcdir            = makeMacros["srcdir"]
-    prefix            = makeMacros["prefix"]
-    pythonPrefix      = makeMacros["PYTHON_PREFIX"]
     pyTrilinosVersion = makeMacros["PACKAGE_VERSION"]
-    pyVersion         = "python%d.%d" % sys.version_info[:2]
+    pySiteDir         = get_python_lib(1)
     install           = makeMacros["INSTALL"]
     mkdir             = makeMacros["mkdir_p"]
-    libDir            = os.path.join(prefix, "lib")
-    pyTrilinosDir     = os.path.join(pythonPrefix, "lib", pyVersion, "site-packages",
-                                     PyTrilinos)
+    pyTrilinosDir     = os.path.join(pySiteDir, PyTrilinos)
 
     #########################################################
     # Build/clean/uninstall the PyTrilinos __init__.py file #

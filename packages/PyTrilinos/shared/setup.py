@@ -75,10 +75,9 @@ from   MakefileVariables import *
 import SharedUtils
 
 # Main logic
-def main():
+def main(command, destdir):
 
     # Command-line arguments
-    command = sys.argv[1]
     if command not in ("build","install","clean","uninstall"):
         raise RuntimeError, "Command '%s' not supported" % command
 
@@ -94,9 +93,9 @@ def main():
                                          "false") == "true"]
 
     # Determine the installation information
-    prefix  = makeMacros["prefix"]
-    mkdir   = makeMacros["mkdir_p"]
-    libDir  = os.path.join(prefix, "lib")
+    mkdir      = makeMacros["mkdir_p"]
+    libDir     = makeMacros["libdir"]
+    installDir = os.path.join(destdir,libDir)
 
     ######################################################
     # Build/clean/install/uninstall the shared libraries #
@@ -142,7 +141,7 @@ def main():
             builders.append(SharedUtils.SharedPyTrilinosBuilder())
 
         # Build command
-        if command in ("build", "install"):
+        if command == "build":
             # Convert package libraries to shared
             for builder in builders:
                 builder.buildShared()
@@ -156,10 +155,10 @@ def main():
         # Install command
         if command == "install":
             # Make sure the lib directory exists
-            SharedUtils.runCommand(" ".join([mkdir, libDir]))
+            SharedUtils.runCommand(" ".join([mkdir, installDir]))
             # Install the shared libraries
             for builder in builders:
-                builder.install()
+                builder.install(installDir)
 
         # Uninstall command
         if command == "uninstall":
@@ -169,4 +168,11 @@ def main():
 
 # Main script
 if __name__ == "__main__":
-    main()
+    command = ""
+    destdir = ""
+    for argument in sys.argv:
+        if argument in ("build", "clean", "install", "uninstall"):
+            command = argument
+        if argument.startswith( "--destdir" ):
+            destdir = argument.split( "=" )[1]
+    main(command, destdir)

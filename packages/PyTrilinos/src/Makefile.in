@@ -701,7 +701,11 @@ package: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: package
-	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
+	if test -z '$(DESTDIR)'; then \
+	$(PYTHON) $(srcdir)/setup.py install; \
+	else \
+	$(PYTHON) $(srcdir)/setup.py install --root $(DESTDIR); \
+	fi
 
 uninstall:
 	$(PYTHON) $(srcdir)/setup.py uninstall
