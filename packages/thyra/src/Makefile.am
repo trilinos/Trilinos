@@ -258,6 +258,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveFactoryDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DelayedLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DelayedLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DelayedLinearOpWithSolveFactory.hpp\

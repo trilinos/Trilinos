@@ -5,8 +5,7 @@ EXEEXT = .exe
 # Actual programs
 #
 
-#SILLY_POWER_METHOD_TPETRA = sillyPowerMethod_tpetra
-SILLY_POWER_METHOD_TPETRA =
+SILLY_POWER_METHOD_TPETRA = sillyPowerMethod_tpetra
 
 noinst_PROGRAMS = $(SILLY_POWER_METHOD_TPETRA)
 

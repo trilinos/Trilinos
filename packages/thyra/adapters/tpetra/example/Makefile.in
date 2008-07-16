@@ -56,10 +56,30 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Thyra_Config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 =
+am__EXEEXT_1 = sillyPowerMethod_tpetra$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-SOURCES =
-DIST_SOURCES =
+am__objects_1 =
+am_sillyPowerMethod_tpetra_OBJECTS =  \
+	sillyPowerMethod_tpetra.$(OBJEXT) $(am__objects_1)
+sillyPowerMethod_tpetra_OBJECTS =  \
+	$(am_sillyPowerMethod_tpetra_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(THYRA_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(sillyPowerMethod_tpetra_SOURCES)
+DIST_SOURCES = $(sillyPowerMethod_tpetra_SOURCES)
+ETAGS = etags
+CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -177,9 +197,7 @@ top_srcdir = @top_srcdir@
 #
 # Actual programs
 #
-
-#SILLY_POWER_METHOD_TPETRA = sillyPowerMethod_tpetra
-SILLY_POWER_METHOD_TPETRA = 
+SILLY_POWER_METHOD_TPETRA = sillyPowerMethod_tpetra
 sillyPowerMethod_tpetra_SOURCES = $(srcdir)/sillyPowerMethod_tpetra.cpp $(common_sources)
 sillyPowerMethod_tpetra_DEPENDENCIES = $(common_dependencies)
 sillyPowerMethod_tpetra_LDADD = $(common_ldadd)
@@ -199,6 +217,7 @@ EXTRA_DIST = $(srcdir)/createExampleTridiagTpetraLinearOp.hpp
 all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -231,12 +250,93 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+sillyPowerMethod_tpetra$(EXEEXT): $(sillyPowerMethod_tpetra_OBJECTS) $(sillyPowerMethod_tpetra_DEPENDENCIES) 
+	@rm -f sillyPowerMethod_tpetra$(EXEEXT)
+	$(CXXLINK) $(sillyPowerMethod_tpetra_OBJECTS) $(sillyPowerMethod_tpetra_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sillyPowerMethod_tpetra.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+sillyPowerMethod_tpetra.o: $(srcdir)/sillyPowerMethod_tpetra.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sillyPowerMethod_tpetra.o -MD -MP -MF $(DEPDIR)/sillyPowerMethod_tpetra.Tpo -c -o sillyPowerMethod_tpetra.o `test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp' || echo '$(srcdir)/'`$(srcdir)/sillyPowerMethod_tpetra.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/sillyPowerMethod_tpetra.Tpo $(DEPDIR)/sillyPowerMethod_tpetra.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sillyPowerMethod_tpetra.cpp' object='sillyPowerMethod_tpetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sillyPowerMethod_tpetra.o `test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp' || echo '$(srcdir)/'`$(srcdir)/sillyPowerMethod_tpetra.cpp
+
+sillyPowerMethod_tpetra.obj: $(srcdir)/sillyPowerMethod_tpetra.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sillyPowerMethod_tpetra.obj -MD -MP -MF $(DEPDIR)/sillyPowerMethod_tpetra.Tpo -c -o sillyPowerMethod_tpetra.obj `if test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp'; then $(CYGPATH_W) '$(srcdir)/sillyPowerMethod_tpetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sillyPowerMethod_tpetra.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/sillyPowerMethod_tpetra.Tpo $(DEPDIR)/sillyPowerMethod_tpetra.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sillyPowerMethod_tpetra.cpp' object='sillyPowerMethod_tpetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sillyPowerMethod_tpetra.obj `if test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp'; then $(CYGPATH_W) '$(srcdir)/sillyPowerMethod_tpetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sillyPowerMethod_tpetra.cpp'; fi`
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique
 tags: TAGS
-TAGS:
 
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	if test -z "$(ETAGS_ARGS)$$tags$$unique"; then :; else \
+	  test -n "$$unique" || unique=$$empty_fix; \
+	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	    $$tags $$unique; \
+	fi
 ctags: CTAGS
-CTAGS:
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(CTAGS_ARGS)$$tags$$unique" \
+	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$tags $$unique
 
+GTAGS:
+	here=`$(am__cd) $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -297,8 +397,10 @@ clean: clean-am
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -329,12 +431,13 @@ install-ps: install-ps-am
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -348,16 +451,18 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS distclean distclean-generic distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am uninstall uninstall-am
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am
 
 
 include $(top_builddir)/Makefile.export.thyra

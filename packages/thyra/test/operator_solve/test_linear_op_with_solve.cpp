@@ -26,12 +26,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_DefaultSerialDenseLinearOpWithSolve.hpp"
+#include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultAdjointLinearOpWithSolve.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DefaultInverseLinearOp.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_TestingTools.hpp"
@@ -88,8 +89,12 @@ bool run_linear_op_with_solve_tests(
   randomize<Scalar>(-ST::one(), ST::one(), M.ptr());
 
   out << "\nC) Create DefaultSerialDenseLinearOpWithSolve object M_lows from M ...\n";
-  RCP<Thyra::LinearOpWithSolveBase<Scalar> > 
-    M_lows_nonconst = Thyra::defaultSerialDenseLinearOpWithSolve<Scalar>(M);
+
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+    M_lows_nonconst = Thyra::linearOpWithSolve<Scalar>(
+      *Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>(),
+      M );
+
   RCP<const Thyra::LinearOpWithSolveBase<Scalar> > 
     M_lows = M_lows_nonconst;
 

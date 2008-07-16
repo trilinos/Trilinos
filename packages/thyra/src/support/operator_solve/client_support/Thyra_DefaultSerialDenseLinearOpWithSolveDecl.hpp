@@ -179,6 +179,18 @@ private:
  */
 template<class Scalar>
 RCP<DefaultSerialDenseLinearOpWithSolve<Scalar> >
+defaultSerialDenseLinearOpWithSolve()
+{
+  return Teuchos::rcp(new DefaultSerialDenseLinearOpWithSolve<Scalar>);
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultSerialDenseLinearOpWithSolve
+ */
+template<class Scalar>
+RCP<DefaultSerialDenseLinearOpWithSolve<Scalar> >
 defaultSerialDenseLinearOpWithSolve( const RCP<const MultiVectorBase<Scalar> > &M )
 {
   RCP<DefaultSerialDenseLinearOpWithSolve<Scalar> >
