@@ -2401,16 +2401,16 @@ double NOX::Direction::Tensor::getDirectionalDerivative(
 }
 
 
-void NOX::Direction::Tensor::printDirectionInfo(char* dirName,
+void NOX::Direction::Tensor::printDirectionInfo(const std::string& dirName,
 					    const NOX::Abstract::Vector& dir,
 					    const NOX::Abstract::Group& soln,
 					    const NOX::Solver::Generic& solver,
 					    bool isTensorModel) const
 {
   double residual = getNormModelResidual(dir, soln, solver, isTensorModel);
-  printf(" %s model residual = %8e\n", dirName, residual);
+  printf(" %s model residual = %8e\n", dirName.c_str(), residual);
   double fprime = getDirectionalDerivative(dir, soln);
-  printf(" %s directional derivative = %e\n", dirName, fprime);  
+  printf(" %s directional derivative = %e\n", dirName.c_str(), fprime);  
   //printf(" norm(dir) = %e\n", dir.norm());
 }
 
@@ -2421,7 +2421,7 @@ NOX::Direction::Tensor::applyPreconditioner(bool useTranspose,
 					    Teuchos::ParameterList& params,
 					    const NOX::Abstract::Vector& input,
 					    NOX::Abstract::Vector& result,
-					    char* errLocation) const
+					    const std::string& errLocation) const
 {
   NOX::Abstract::Group::ReturnType status;
   

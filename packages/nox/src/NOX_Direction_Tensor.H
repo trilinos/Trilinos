@@ -231,7 +231,7 @@ private:
 				  const NOX::Abstract::Group& soln) const;
 
   //!  Compute residuals and print out information
-  void printDirectionInfo(char* dirName,
+  void printDirectionInfo(const std::string& dirName,
 			  const NOX::Abstract::Vector& dir,
 			  const NOX::Abstract::Group& soln,
 			  const NOX::Solver::Generic& solver,
@@ -244,7 +244,7 @@ private:
 		      Teuchos::ParameterList& params,
 		      const NOX::Abstract::Vector& input,
 		      NOX::Abstract::Vector& result,
-		      char* errLocation) const;
+		      const std::string& errLocation) const;
     
   
   //!  Backsolve an upper triangular system Ux=b.
