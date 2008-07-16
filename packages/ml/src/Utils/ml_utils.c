@@ -70,6 +70,13 @@ return( machine_dependent_second());
 #endif
 }
 
+
+/* Random Numbers */
+static int ml_random_seed = 0;
+static int ml_random_start = 1;
+
+
+
 /* ******************************************************************** */
 /* StartTimer                                                           */
 /*   t0   (out) start time                                              */ 
@@ -588,18 +595,12 @@ int ML_random_init()
 int ML_randomize(int nlist, int *list) 
 {
    int    i, nm1, iran1, iran2, itmp;
-   long   sparam;
-   double stime;
 
    nm1    = nlist - 1;
-   stime  = GetClock();
-   stime  = (stime - (long) stime) * 1.0E6;
-   sparam = (long) stime;
-   srand( (unsigned long) sparam );
    for ( i = 0; i < 3*nlist; i++ )
    {
-      iran1 = (int) ( nm1 * drand48() );
-      iran2 = (int) ( nm1 * drand48() );
+      iran1 = (int) ( nm1 * ML_srandom1(&ml_random_seed) );
+      iran2 = (int) ( nm1 * ML_srandom1(&ml_random_seed) );
       if ( iran1 != iran2 )
       {
          itmp        = list[iran2];
@@ -1712,18 +1713,24 @@ int ML_find_index(int key, int list[], int length)
 /******************************************************************************/
 
 
-static int ml_random_vec_seed = 0;
-static int ml_random_vec_start = 1;
+int ML_get_random_seed(){
+/*******************************************************************************
 
-int ML_get_random_vec_seed(){
-  return ml_random_vec_seed;
+  Returns the random seed
+
+  Author:          Chris Siefert
+  =======
+*******************************************************************************/
+
+
+  return ml_random_seed;
 }
 
 
-void ML_reseed_random_vec(int seed){
+void ML_set_random_seed(int seed){
 /*******************************************************************************
 
-  Resets the seed for the ML_random_vec function
+  Sets the random seed for the ML
 
   Author:          Chris Siefert
   =======
@@ -1734,8 +1741,8 @@ void ML_reseed_random_vec(int seed){
   seed:            New seed to use
 *******************************************************************************/
 
-  ml_random_vec_seed=seed;
-  ml_random_vec_start=0;
+  ml_random_seed=seed;
+  ml_random_start=0;
 }
 
 
@@ -1760,9 +1767,6 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
 {
 
   /* local variables */
-
-  /*  static int seed = 0; */
-  /*  static int start = 1;*/
   int        i;
   int maxint = 2147483647; /* 2^31 -1 */
 
@@ -1773,14 +1777,14 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
    * in parallel when multiplying by a PID.  It would be better to use
    * a good parallel random number generator. */
 
-  if (ml_random_vec_start) {
-    ml_random_vec_seed = (int)((maxint-1) * (1.0 -(comm->ML_mypid+1)/(comm->ML_nprocs+1.0)) );
-    ml_random_vec_start = 0;
+  if (ml_random_start) {
+    ml_random_seed = (int)((maxint-1) * (1.0 -(comm->ML_mypid+1)/(comm->ML_nprocs+1.0)) );
+    ml_random_start = 0;
   }
-  if (ml_random_vec_seed < 1 || ml_random_vec_seed == maxint)
-    pr_error("ML*ERR* Problem detected in ML_random_vec with seed = %d.\nML*ERR* It should be in the interval [1,2^31-2].\n",ml_random_vec_seed);
+  if (ml_random_seed < 1 || ml_random_seed == maxint)
+    pr_error("ML*ERR* Problem detected in ML_random_vec with seed = %d.\nML*ERR* It should be in the interval [1,2^31-2].\n",ml_random_seed);
 
-  for (i = 0; i < N; i++) u[i] = ML_srandom1(&ml_random_vec_seed);
+  for (i = 0; i < N; i++) u[i] = ML_srandom1(&ml_random_seed);
 
 } /* ML_random_vec */
 

@@ -72,7 +72,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   AztecOO solver(Problem);
   
   MLList.set("ML output", 0);
-  ML_reseed_random_vec(24601);
+  ML_set_random_seed(24601);
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   
   // tell AztecOO to use this preconditioner, then solve
@@ -94,7 +94,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   Epetra_LinearProblem Problem2(A,&lhs2,&rhs2);
 
   AztecOO solver2(Problem2);
-  ML_reseed_random_vec(24601);  
+  ML_set_random_seed(24601);  
   ML_Epetra::MultiLevelPreconditioner * MLPrec2 = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   
   // tell AztecOO to use this preconditioner, then solve
