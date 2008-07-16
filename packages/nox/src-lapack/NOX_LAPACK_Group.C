@@ -42,8 +42,8 @@
 #include "NOX_Common.H"
 #include "NOX_LAPACK_Group.H"	// class definition
 #include "NOX_Abstract_MultiVector.H"
-#include "NOX_BLAS_Wrappers.H"
-#include "NOX_LAPACK_Wrappers.H"
+#include "Teuchos_BLAS_wrappers.hpp"
+#include "Teuchos_LAPACK_wrappers.hpp"
 
 NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface):
   xVector(interface.getInitialGuess()),	// deep copy      

@@ -41,7 +41,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_LAPACK_Vector.H"
-#include "NOX_BLAS_Wrappers.H"
+#include "Teuchos_BLAS_wrappers.hpp"  // for blas access
 #include "NOX_Random.H" // for Random class
 
 NOX::LAPACK::Vector::Vector() :

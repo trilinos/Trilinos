@@ -187,7 +187,7 @@
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Group.H"
 #include "NOX_LAPACK_Matrix.H"
-#include "NOX_LAPACK_Wrappers.H"
+#include "Teuchos_LAPACK_wrappers.hpp"
 
 //! An interface to the linear example described in Linear.C
 class Linear : public NOX::LAPACK::Interface {
