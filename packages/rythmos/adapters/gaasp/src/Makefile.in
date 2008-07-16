@@ -92,6 +92,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -263,8 +264,12 @@ SOURCE = \
   $(srcdir)/Rythmos_GAASPHelpers.cpp \
   $(srcdir)/Rythmos_GAASPInterface.cpp
 
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
+_EXPORT_INCLUDES = \
+  $(GAASP_INCLUDES) \
+  $(RYTHMOS_INCLUDES) 
+
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # --------------------------------------------------------------------
@@ -303,7 +308,7 @@ librythmosgaasp_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 # --------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # --------------------------------------------------------------------
-lib_LIBRARIES = $(RYTHMOS_GAASP_LIB)
+lib_LIBRARIES = $(GAASP_LIBS) $(RYTHMOS_GAASP_LIB)
 
 # --------------------------------------------------------------------
 # List of all headers to install in $(includedir)

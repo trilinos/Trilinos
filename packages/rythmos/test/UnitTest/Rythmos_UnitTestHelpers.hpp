@@ -66,6 +66,7 @@ Teuchos::RCP<Thyra::ProductVectorBase<Scalar> > createDefaultProductVector(int b
   return(pvec);
 }
 
+
 } // namespace Rythmos
 #endif // Rythmos_UNITTEST_HELPERS_H
 

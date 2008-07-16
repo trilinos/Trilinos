@@ -41,9 +41,9 @@ test_gaasp_adapters_SOURCES =\
 	$(srcdir)/test_gaasp_adapters.cpp\
 	$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp
 test_gaasp_adapters_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
-test_gaasp_adapters_LDADD = $(RYTHMOS_GAASP_LIBS) $(RYTHMOS_LIBS) 
+test_gaasp_adapters_LDADD = $(RYTHMOS_GAASP_LIBS) $(GAASP_LIBS) $(RYTHMOS_LIBS) 
 
-AM_CPPFLAGS = $(RYTHMOS_GAASP_INCLUDES) $(RYTHMOS_INCLUDES) 
+AM_CPPFLAGS = $(RYTHMOS_GAASP_INCLUDES) $(GAASP_INCLUDES) $(RYTHMOS_INCLUDES) 
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -29,6 +29,7 @@
 #ifndef Rythmos_IMPLICIT_RK_STEPPER_H
 #define Rythmos_IMPLICIT_RK_STEPPER_H
 
+#include "Rythmos_Types.hpp"
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
@@ -58,7 +59,7 @@ class ImplicitRKStepper : virtual public SolverAcceptingStepperBase<Scalar>
 public:
   
   /** \brief . */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   
   /** \name Constructors, intializers, Misc. */
   //@{
@@ -168,16 +169,16 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<ParameterList> const& paramList);
   
   /** \brief . */
-  RCP<Teuchos::ParameterList> getNonconstParameterList();
+  RCP<ParameterList> getNonconstParameterList();
   
   /** \brief . */
-  RCP<Teuchos::ParameterList> unsetParameterList();
+  RCP<ParameterList> unsetParameterList();
   
   /** \brief. */
-  RCP<const Teuchos::ParameterList> getValidParameters() const;
+  RCP<const ParameterList> getValidParameters() const;
  
   //@}
 
@@ -186,7 +187,7 @@ public:
   
   /** \brief . */
   void describe(
-    Teuchos::FancyOStream  &out,
+    FancyOStream  &out,
     const Teuchos::EVerbosityLevel verbLevel
     ) const;
 
@@ -201,7 +202,7 @@ private:
   RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
-  RCP<Teuchos::ParameterList> paramList_;
+  RCP<ParameterList> paramList_;
 
   int numStages_; // Temp hack to select between first and second order!
 
@@ -363,7 +364,7 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
   )
 {
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
   TEST_FOR_EXCEPT( is_null(model_) );
@@ -420,11 +421,11 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   using Teuchos::as;
   using Teuchos::incrVerbLevel;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef ScalarTraits<Scalar> ST;
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
   typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
 
-  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  RCP<FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::takeStep");
   VOTSNSB solver_outputTempState(solver_,out,incrVerbLevel(verbLevel,-1));
@@ -465,7 +466,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   // x_{k+1} = x_k + dt*sum_{i}^{p}(b_i*x_stage_bar_[i])
 
   assembleIRKSolution( irkButcherTableau_.b(), current_dt, *x_old_, *x_stage_bar_,
-    &*x_
+    outArg(*x_)
     );
 
   // Update time range
@@ -571,7 +572,7 @@ int ImplicitRKStepper<Scalar>::getOrder() const
 
 template <class Scalar>
 void ImplicitRKStepper<Scalar>::setParameterList(
-  RCP<Teuchos::ParameterList> const& paramList
+  RCP<ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(is_null(paramList));
@@ -583,7 +584,7 @@ void ImplicitRKStepper<Scalar>::setParameterList(
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 ImplicitRKStepper<Scalar>::getNonconstParameterList()
 {
   return(paramList_);
@@ -591,10 +592,10 @@ ImplicitRKStepper<Scalar>::getNonconstParameterList()
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 ImplicitRKStepper<Scalar>::unsetParameterList()
 {
-  RCP<Teuchos::ParameterList>
+  RCP<ParameterList>
     temp_param_list = paramList_;
   paramList_ = Teuchos::null;
   return(temp_param_list);
@@ -602,10 +603,9 @@ ImplicitRKStepper<Scalar>::unsetParameterList()
 
 
 template<class Scalar>
-RCP<const Teuchos::ParameterList>
+RCP<const ParameterList>
 ImplicitRKStepper<Scalar>::getValidParameters() const
 {
-  using Teuchos::ParameterList;
   static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -622,7 +622,7 @@ ImplicitRKStepper<Scalar>::getValidParameters() const
 
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::describe(
-  Teuchos::FancyOStream &out,
+  FancyOStream &out,
   const Teuchos::EVerbosityLevel verbLevel
   ) const
 {

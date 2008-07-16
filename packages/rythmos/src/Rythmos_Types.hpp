@@ -58,7 +58,11 @@ namespace Rythmos {
 /** \brief . */
 using Teuchos::Ptr;
 /** \brief . */
+using Teuchos::outArg;
+/** \brief . */
 using Teuchos::RCP;
+/** \brief . */
+using Teuchos::rcp;
 /** \brief . */
 using Teuchos::FancyOStream;
 /** \brief . */

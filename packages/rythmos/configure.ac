@@ -242,10 +242,10 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   ,[Build the Sacado adapter support in Rythmos.]
   ,[Build the Sacado adapter support in Rythmos.  Can be overridden with --disable-rythmos-sacado.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-    rythmos, gaasp, RYTHMOS_GAASP, ENABLE_RYTHMOS_GAASP, no
-    ,[Build the GAASP adapter support in Rythmos.]
-    ,[Build the GAASP adapter support in Rythmos.  Can be overridden with --disable-rythmos-gasp.])
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  teuchos, boost, RYTHMOS_TEUCHOS_BOOST, ENABLE_RYTHMOS_TEUCHOS_BOOST, yes,
+  [See teuchos/configure --help],
+  [See teuchos/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
   stratimikos, amesos, RYTHMOS_STRATIMIKOS_AMESOS, ENABLE_RYTHMOS_STRATIMIKOS_AMESOS, yes,
@@ -281,6 +281,16 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
   nox, epetra, RYTHMOS_NOX_EPETRA, ENABLE_RYTHMOS_NOX_EPETRA, no
   ,[See nox/configure --help]
   ,[See nox/configure --help])
+
+# ------------------------------------------------------------------------
+# Check for GAASP support
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE_SUB( rythmos, gaasp, [Enable GAASP adapter support], RYTHMOS_GAASP, yes)
+AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP, [test "X$ac_cv_use_rythmos_gaasp" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( rythmos, gaaspinternal, [Build internal GAASP TPL library], RYTHMOS_GAASP_INTERNAL, yes)
+AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP_INTERNAL, [test "X$ac_cv_use_rythmos_gaaspinternal" != "Xno"])
 
 # ------------------------------------------------------------------------
 # RYTHMOS interface libraries (uses config/tac_arg_enable_rythmos_interface.m4)
@@ -494,6 +504,7 @@ AC_CONFIG_FILES([
     adapters/gaasp/src/Makefile
     adapters/gaasp/test/Makefile
     adapters/gaasp/example/Makefile
+    adapters/gaasp/tpl_src/Makefile
 		test/ExplicitTaylorPolynomialStepper/Makefile
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
 		test/Makefile

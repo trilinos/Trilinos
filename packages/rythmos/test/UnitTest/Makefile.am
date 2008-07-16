@@ -28,7 +28,6 @@
 
 EXEEXT = .exe
 
-include $(top_builddir)/Makefile.export.rythmos
 
 bin_PROGRAMS = Rythmos_UnitTest
 
@@ -37,18 +36,44 @@ bin_PROGRAMS = Rythmos_UnitTest
 #
 
 Rythmos_UnitTest_INCLUDES =\
-  $(srcdir)/Rythmos_UnitTestHelpers.hpp
+  $(srcdir)/Rythmos_UnitTestHelpers.hpp\
+	$(srcdir)/Rythmos_UnitTestModels.hpp
 Rythmos_UnitTest_SOURCES =\
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp
-Rythmos_UnitTest_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
-Rythmos_UnitTest_LDADD = $(RYTHMOS_LIBS) 
+Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_UnitTest_LDADD = $(common_ldadd)
 
-AM_CPPFLAGS = $(RYTHMOS_INCLUDES) 
+#
+# Common stuff
+# 
+
+common_dependencies = \
+  $(top_builddir)/src/librythmos.a
+
+include $(top_builddir)/Makefile.export.rythmos
+
+_EXPORT_INCLUDES = $(RYTHMOS_TEST_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_TEST_LIBS)
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+else
+EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+EXPORT_LIBS = $(_EXPORT_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+common_ldadd = $(EXPORT_LIBS)
+
+CPPFLAGS += -I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -145,7 +145,7 @@ implicitRKModelEvaluator(
   )
 {
   RCP<ImplicitRKModelEvaluator<Scalar> >
-    irkModel = Teuchos::rcp(new ImplicitRKModelEvaluator<Scalar>());
+    irkModel = rcp(new ImplicitRKModelEvaluator<Scalar>());
   irkModel->initializeIRKModel(daeModel,basePoint,irk_W_factory,irkButcherTableau);
   return irkModel;
 }
@@ -174,8 +174,24 @@ void ImplicitRKModelEvaluator<Scalar>::initializeIRKModel(
   const RKButcherTableau<Scalar> &irkButcherTableau
   )
 {
-
   // ToDo: Assert input arguments!
+  // How do I verify the basePoint is an authentic InArgs from daeModel?
+  TEST_FOR_EXCEPTION( 
+      is_null(basePoint.get_x()), 
+      std::logic_error,
+      "Error!  The basepoint x vector is null!"
+      );
+  TEST_FOR_EXCEPTION( 
+      is_null(daeModel), 
+      std::logic_error,
+      "Error!  The model evaluator pointer is null!"
+      );
+  TEST_FOR_EXCEPTION( 
+      !daeModel->get_x_space()->isCompatible(*(basePoint.get_x()->space())), 
+      std::logic_error,
+      "Error!  The basepoint input arguments are incompatible with the model evaluator vector space!"
+      );
+  TEST_FOR_EXCEPT(is_null(irk_W_factory));
 
   daeModel_ = daeModel;
   basePoint_ = basePoint;
@@ -207,7 +223,9 @@ void ImplicitRKModelEvaluator<Scalar>::setTimeStepPoint(
   typedef ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPT( is_null(x_old) );
   TEST_FOR_EXCEPT( delta_t <= ST::zero() );
-  // ToDo: Validate input
+  // Verify x_old is compatible with the vector space in the DAE Model.
+  TEST_FOR_EXCEPTION(!daeModel_->get_x_space()->isCompatible(*(x_old->space())), std::logic_error,
+      "Error!  The incoming VectorBase object is not compatible with the DAE model that was provided at initialization!");
   x_old_ = x_old;
   t_old_ = t_old;
   delta_t_ = delta_t;
@@ -334,7 +352,7 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   for ( int i = 0; i < numStages; ++i ) {
 
     // B.1) Setup the DAE's inArgs for stage f(i) ...
-    assembleIRKState( i, irkButcherTableau_.A(), delta_t_, *x_old_, *x_bar, &*x_i );
+    assembleIRKState( i, irkButcherTableau_.A(), delta_t_, *x_old_, *x_bar, outArg(*x_i) );
     daeInArgs.set_x( x_i );
     daeInArgs.set_x_dot( x_bar->getVectorBlock(i) );
     daeInArgs.set_t( t_old_ + irkButcherTableau_.c()(i) * delta_t_ );

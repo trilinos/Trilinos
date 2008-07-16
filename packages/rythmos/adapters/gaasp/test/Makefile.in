@@ -76,6 +76,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -231,8 +232,8 @@ test_gaasp_adapters_SOURCES = \
 	$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp
 
 test_gaasp_adapters_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
-test_gaasp_adapters_LDADD = $(RYTHMOS_GAASP_LIBS) $(RYTHMOS_LIBS) 
-AM_CPPFLAGS = $(RYTHMOS_GAASP_INCLUDES) $(RYTHMOS_INCLUDES) 
+test_gaasp_adapters_LDADD = $(RYTHMOS_GAASP_LIBS) $(GAASP_LIBS) $(RYTHMOS_LIBS) 
+AM_CPPFLAGS = $(RYTHMOS_GAASP_INCLUDES) $(GAASP_INCLUDES) $(RYTHMOS_INCLUDES) 
 all: all-am
 
 .SUFFIXES:

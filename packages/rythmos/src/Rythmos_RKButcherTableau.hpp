@@ -87,7 +87,7 @@ void assembleIRKState(
   const Scalar dt,
   const Thyra::VectorBase<Scalar> &x_base,
   const Thyra::ProductVectorBase<Scalar> &x_stage_bar,
-  Thyra::VectorBase<Scalar> *x
+  Teuchos::Ptr<Thyra::VectorBase<Scalar> > x_out_ptr
   )
 {
 
@@ -98,10 +98,11 @@ void assembleIRKState(
   TEUCHOS_ASSERT_EQUALITY( A.numRows(), numStages );
   TEUCHOS_ASSERT_EQUALITY( A.numCols(), numStages );
   TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
+  Thyra::VectorBase<Scalar>& x_out = *x_out_ptr;
 
-  V_V( x, x_base );
+  V_V( outArg(x_out), x_base );
   for ( int j = 0; j < numStages; ++j ) {
-    Vp_StV( x, dt * A(stageIndex,j), *x_stage_bar.getVectorBlock(j) );
+    Vp_StV( outArg(x_out), dt * A(stageIndex,j), *x_stage_bar.getVectorBlock(j) );
   }
 
 }
@@ -114,7 +115,7 @@ void assembleIRKSolution(
   const Scalar dt,
   const Thyra::VectorBase<Scalar> &x_base,
   const Thyra::ProductVectorBase<Scalar> &x_stage_bar,
-  Thyra::VectorBase<Scalar> *x
+  Teuchos::Ptr<Thyra::VectorBase<Scalar> > x_out_ptr
   )
 {
 
@@ -123,10 +124,11 @@ void assembleIRKSolution(
   const int numStages = b.length();
   TEUCHOS_ASSERT_EQUALITY( b.length(), numStages );
   TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
+  Thyra::VectorBase<Scalar>& x_out = *x_out_ptr;
 
-  V_V( x, x_base );
+  V_V( outArg(x_out), x_base );
   for ( int j = 0; j < numStages; ++j ) {
-    Vp_StV( x, dt * b(j), *x_stage_bar.getVectorBlock(j) );
+    Vp_StV( outArg(x_out), dt * b(j), *x_stage_bar.getVectorBlock(j) );
   }
 
 }

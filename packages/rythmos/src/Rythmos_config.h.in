@@ -72,8 +72,11 @@
 /* Define if want to build rythmos-examples */
 #undef HAVE_RYTHMOS_EXAMPLES
 
-/* Define if want to build with rythmos enabled */
+/* Define if want to build rythmos-gaasp */
 #undef HAVE_RYTHMOS_GAASP
+
+/* Define if want to build rythmos-gaaspinternal */
+#undef HAVE_RYTHMOS_GAASP_INTERNAL
 
 /* Define if want to build with rythmos enabled */
 #undef HAVE_RYTHMOS_NOX
@@ -104,6 +107,9 @@
 
 /* Define if want to build rythmos-tests */
 #undef HAVE_RYTHMOS_TESTS
+
+/* Define if want to build with teuchos enabled */
+#undef HAVE_RYTHMOS_TEUCHOS_BOOST
 
 /* Define if want to build with thyra enabled */
 #undef HAVE_RYTHMOS_THYRA_EPETRAEXT

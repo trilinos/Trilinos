@@ -76,6 +76,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -91,12 +92,20 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_Rythmos_UnitTest_OBJECTS = Rythmos_DataStore_UnitTest.$(OBJEXT) \
+am_Rythmos_UnitTest_OBJECTS =  \
+	EpetraExt_DiagonalTransientModel.$(OBJEXT) \
+	Rythmos_DataStore_UnitTest.$(OBJEXT) \
 	Rythmos_ImplicitRK_UnitTest.$(OBJEXT) \
 	Rythmos_InterpolationBuffer_UnitTest.$(OBJEXT) \
 	Rythmos_TimeRange_UnitTest.$(OBJEXT) \
 	Rythmos_UnitTest.$(OBJEXT) Rythmos_UnitTestHelpers.$(OBJEXT)
 Rythmos_UnitTest_OBJECTS = $(am_Rythmos_UnitTest_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -120,7 +129,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CPPFLAGS = @CPPFLAGS@
+CPPFLAGS = @CPPFLAGS@ \
+	-I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -228,9 +238,11 @@ top_srcdir = @top_srcdir@
 # Actual programs
 #
 Rythmos_UnitTest_INCLUDES = \
-  $(srcdir)/Rythmos_UnitTestHelpers.hpp
+  $(srcdir)/Rythmos_UnitTestHelpers.hpp\
+	$(srcdir)/Rythmos_UnitTestModels.hpp
 
 Rythmos_UnitTest_SOURCES = \
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
@@ -238,9 +250,23 @@ Rythmos_UnitTest_SOURCES = \
 	$(srcdir)/Rythmos_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp
 
-Rythmos_UnitTest_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
-Rythmos_UnitTest_LDADD = $(RYTHMOS_LIBS) 
-AM_CPPFLAGS = $(RYTHMOS_INCLUDES) 
+Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_UnitTest_LDADD = $(common_ldadd)
+
+#
+# Common stuff
+# 
+common_dependencies = \
+  $(top_builddir)/src/librythmos.a
+
+_EXPORT_INCLUDES = $(RYTHMOS_TEST_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_TEST_LIBS)
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(_EXPORT_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -307,6 +333,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_DiagonalTransientModel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DataStore_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRK_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer_UnitTest.Po@am__quote@
@@ -327,6 +354,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+EpetraExt_DiagonalTransientModel.o: $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_DiagonalTransientModel.o -MD -MP -MF $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo -c -o EpetraExt_DiagonalTransientModel.o `test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo $(DEPDIR)/EpetraExt_DiagonalTransientModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' object='EpetraExt_DiagonalTransientModel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_DiagonalTransientModel.o `test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+
+EpetraExt_DiagonalTransientModel.obj: $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_DiagonalTransientModel.obj -MD -MP -MF $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo -c -o EpetraExt_DiagonalTransientModel.obj `if test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_DiagonalTransientModel.Tpo $(DEPDIR)/EpetraExt_DiagonalTransientModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' object='EpetraExt_DiagonalTransientModel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_DiagonalTransientModel.obj `if test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; fi`
 
 Rythmos_DataStore_UnitTest.o: $(srcdir)/Rythmos_DataStore_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_DataStore_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_DataStore_UnitTest.Tpo -c -o Rythmos_DataStore_UnitTest.o `test -f '$(srcdir)/Rythmos_DataStore_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_DataStore_UnitTest.cpp
