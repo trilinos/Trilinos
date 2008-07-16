@@ -30,20 +30,22 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = Comm_test ReduceAllAndScatter_test
+bin_PROGRAMS = Comm_test ReduceAllAndScatter_test DefaultMpiComm_UnitTests
 
 Comm_test_SOURCES = \
-	$(srcdir)/Comm_test.cpp
-
+  $(srcdir)/Comm_test.cpp
 Comm_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-
 Comm_test_LDADD = $(TEUCHOS_LIBS)
 
+DefaultMpiComm_UnitTests_SOURCES = \
+  $(srcdir)/DefaultMpiComm_UnitTests.cpp \
+  $(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+DefaultMpiComm_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+DefaultMpiComm_UnitTests_LDADD = $(TEUCHOS_LIBS)
+
 ReduceAllAndScatter_test_SOURCES = \
-	$(srcdir)/ReduceAllAndScatter_test.cpp
-
+  $(srcdir)/ReduceAllAndScatter_test.cpp
 ReduceAllAndScatter_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-
 ReduceAllAndScatter_test_LDADD = $(TEUCHOS_LIBS)
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)

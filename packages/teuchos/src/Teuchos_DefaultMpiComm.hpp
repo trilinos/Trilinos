@@ -29,6 +29,7 @@
 #ifndef TEUCHOS_MPI_COMM_HPP
 #define TEUCHOS_MPI_COMM_HPP
 
+
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommUtilities.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
@@ -39,33 +40,39 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "mpi.h"
 
+
+// This must be defined globally for the whole program!
 //#define TEUCHOS_MPI_COMM_DUMP
+
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
 #  include "Teuchos_VerboseObject.hpp"
 #endif
 
+
 namespace Teuchos {
 
+
 #ifdef TEUCHOS_MPI_COMM_DUMP
-template<typename Ordinal>
-void dumpCharBuffer(
+template<typename Ordinal, typename T>
+void dumpBuffer(
   const std::string &funcName, const std::string &buffName
-  ,const Ordinal bytes, const char buff[]
+  ,const Ordinal bytes, const T buff[]
   )
 {
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
   *out
-    << "\n" << funcName << "::" << buffName << ":";
+    << "\n" << funcName << "::" << buffName << ":\n";
   tab.incrTab();
   for( Ordinal i = 0; i < bytes; ++i ) {
-    *out << buffName << "[" << i << "] = " << buff[i] << "\n";
+    *out << buffName << "[" << i << "] = '" << buff[i] << "'\n";
   }
   *out << "\n";
 }
 #endif // TEUCHOS_MPI_COMM_DUMP
+
 
 /** \brief Concrete communicator subclass based on MPI.
  *
@@ -127,7 +134,7 @@ public:
   void reduceAllAndScatter(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal sendBytes, const char sendBuffer[]
-    ,const Ordinal recvCounts[], const Ordinal blockSize, char myGlobalReducts[]
+    ,const Ordinal recvCounts[], char myGlobalReducts[]
     ) const;
   /** \brief . */
 	void scan(
@@ -160,9 +167,9 @@ private:
   static int tagCounter_;
 
   RCP<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
-  int                                         rank_;
-  int                                         size_;
-  int                                         tag_;
+  int rank_;
+  int size_;
+  int tag_;
 
   // Not defined and not to be called!
   MpiComm();
@@ -173,6 +180,7 @@ public:
 #endif // TEUCHOS_MPI_COMM_DUMP
 	
 };
+
 
 /** \brief Helper function that creates a dynamically allocated
  * <tt>MpiComm</tt> object or returns <tt>Teuchos::null</tt> to correctly
@@ -193,15 +201,20 @@ createMpiComm(
   const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   );
 
+
 // ////////////////////////
 // Implementations
 
+
 // Static members
+
 
 template<typename Ordinal>
 int MpiComm<Ordinal>::tagCounter_ = MpiComm<Ordinal>::minTag_;
 
+
 // Constructors
+
 
 template<typename Ordinal>
 MpiComm<Ordinal>::MpiComm(
@@ -218,19 +231,23 @@ MpiComm<Ordinal>::MpiComm(
   tag_ = tagCounter_++;
 }
 
+
 // Overridden from Comm
+
   
 template<typename Ordinal>
 int MpiComm<Ordinal>::getRank() const
 {
   return rank_;
 }
+
   
 template<typename Ordinal>
 int MpiComm<Ordinal>::getSize() const
 {
   return size_;
 }
+
   
 template<typename Ordinal>
 void MpiComm<Ordinal>::barrier() const
@@ -240,6 +257,7 @@ void MpiComm<Ordinal>::barrier() const
     );
   MPI_Barrier(*rawMpiComm_);
 }
+
   
 template<typename Ordinal>
 void MpiComm<Ordinal>::broadcast(
@@ -251,6 +269,7 @@ void MpiComm<Ordinal>::broadcast(
     );
   MPI_Bcast(buffer,bytes,MPI_CHAR,rootRank,*rawMpiComm_);
 }
+
   
 template<typename Ordinal>
 void MpiComm<Ordinal>::gatherAll(
@@ -268,6 +287,7 @@ void MpiComm<Ordinal>::gatherAll(
     ,*rawMpiComm_
     );
 }
+
   
 template<typename Ordinal>
 void MpiComm<Ordinal>::reduceAll(
@@ -285,28 +305,47 @@ void MpiComm<Ordinal>::reduceAll(
     );
 }
 
+
 template<typename Ordinal>
 void MpiComm<Ordinal>::reduceAllAndScatter(
   const ValueTypeReductionOp<Ordinal,char> &reductOp
   ,const Ordinal sendBytes, const char sendBuffer[]
-  ,const Ordinal recvCounts[], const Ordinal blockSize, char myGlobalReducts[]
+  ,const Ordinal recvCounts[], char myGlobalReducts[]
   ) const
 {
-  (void)sendBytes;
+
+  (void)sendBytes; // Ignore if not in debug mode
+
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::reduceAllAndScatter(...)"
     );
+
 #ifdef TEUCHOS_DEBUG
   Ordinal sumRecvBytes = 0;
-  for( Ordinal i = 0; i < size_; ++i )
+  for( Ordinal i = 0; i < size_; ++i ) {
     sumRecvBytes += recvCounts[i];
-  sumRecvBytes *= blockSize;
+  }
   TEST_FOR_EXCEPT(!(sumRecvBytes==sendBytes));
 #endif // TEUCHOS_DEBUG
+
+#ifdef TEUCHOS_MPI_COMM_DUMP
+  if(show_dump) {
+    dumpBuffer<Ordinal,char>(
+      "Teuchos::MpiComm<Ordinal>::reduceAllAndScatter(...)",
+      "sendBuffer", sendBytes, sendBuffer );
+    dumpBuffer<Ordinal,Ordinal>(
+      "Teuchos::MpiComm<Ordinal>::reduceAllAndScatter(...)",
+      "recvCounts", as<Ordinal>(size_), recvCounts );
+    dumpBuffer<Ordinal,char>(
+      "Teuchos::MpiComm<Ordinal>::reduceAllAndScatter(...)",
+      "myGlobalReducts", as<char>(recvCounts[rank_]), myGlobalReducts );
+  }
+#endif // TEUCHOS_MPI_COMM_DUMP
+
+  // Create a new recvCount[] if Ordinal!=int
   WorkspaceStore* wss = get_default_workspace_store().get();
-  // Create a of recvCount[] if Ordinal!=int
   const bool Ordinal_is_int = typeid(int)==typeid(Ordinal);
-  Workspace<int> _recvCounts(wss,Ordinal_is_int?0:size_);
+  Workspace<int> ws_int_recvCounts(wss,Ordinal_is_int?0:size_);
   const int *int_recvCounts = 0;
   if(Ordinal_is_int) {
     int_recvCounts = reinterpret_cast<const int*>(recvCounts);
@@ -316,24 +355,23 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
     // conditionals but I don't want to bother.
   }
   else {
-    std::copy(recvCounts, recvCounts+size_, &_recvCounts[0]);
-    int_recvCounts = &_recvCounts[0];
+    std::copy(recvCounts, recvCounts+size_, &ws_int_recvCounts[0]);
+    int_recvCounts = &ws_int_recvCounts[0];
   }
-  MPI_Datatype _chars_type;
-  MPI_Type_contiguous(blockSize, MPI_CHAR, &_chars_type);
-  RCP<const OpaqueWrapper<MPI_Datatype> >
-    chars_type = opaqueWrapper(_chars_type, MPI_Type_free);
+
   // Perform the operation
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp, false)));
   MPI_Reduce_scatter(
     const_cast<char*>(sendBuffer), myGlobalReducts,
     const_cast<int*>(int_recvCounts),
-    *chars_type,
+    MPI_CHAR,
     op.mpi_op(),
     *rawMpiComm_
     );
+
 }
-  
+
+
 template<typename Ordinal>
 void MpiComm<Ordinal>::scan(
   const ValueTypeReductionOp<Ordinal,char> &reductOp
@@ -349,6 +387,7 @@ void MpiComm<Ordinal>::scan(
     ,*rawMpiComm_
     );
 }
+
 
 template<typename Ordinal>
 void MpiComm<Ordinal>::send(
@@ -367,7 +406,7 @@ void MpiComm<Ordinal>::send(
 #endif // TEUCHOS_DEBUG
 #ifdef TEUCHOS_MPI_COMM_DUMP
   if(show_dump) {
-    dumpCharBuffer<Ordinal>(
+    dumpBuffer<Ordinal,char>(
       "Teuchos::MpiComm<Ordinal>::send(...)"
       ,"sendBuffer", bytes, sendBuffer
       );
@@ -378,6 +417,7 @@ void MpiComm<Ordinal>::send(
     );
   // ToDo: What about error handling???
 }
+
 
 template<typename Ordinal>
 int MpiComm<Ordinal>::receive(
@@ -403,7 +443,7 @@ int MpiComm<Ordinal>::receive(
     );
 #ifdef TEUCHOS_MPI_COMM_DUMP
   if(show_dump) {
-    dumpCharBuffer<Ordinal>(
+    dumpBuffer<Ordinal,char>(
       "Teuchos::MpiComm<Ordinal>::receive(...)"
       ,"recvBuffer", bytes, recvBuffer
       );
@@ -413,7 +453,9 @@ int MpiComm<Ordinal>::receive(
   // ToDo: What about error handling???
 }
 
+
 // Overridden from Describable
+
 
 template<typename Ordinal>
 std::string MpiComm<Ordinal>::description() const
@@ -429,12 +471,15 @@ std::string MpiComm<Ordinal>::description() const
   return oss.str();
 }
 
+
 #ifdef TEUCHOS_MPI_COMM_DUMP
 template<typename Ordinal>
 bool MpiComm<Ordinal>::show_dump = false;
-#endif // TEUCHOS_MPI_COMM_DUMP
+#endif
+
 
 } // namespace Teuchos
+
 
 template<typename Ordinal>
 Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
@@ -446,5 +491,6 @@ Teuchos::createMpiComm(
     return rcp(new MpiComm<Ordinal>(rawMpiComm));
   return Teuchos::null;
 }
+
 
 #endif // TEUCHOS_MPI_COMM_HPP

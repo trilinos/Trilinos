@@ -33,11 +33,13 @@
 
 namespace Teuchos {
 
+
 template<typename T>
 struct UndefinedSerializationTraits {
   //! This function should not compile if there is an attempt to instantiate!
   static inline T notDefined() {return(T::this_type_is_missing_a_specialization());}
 };
+
 
 /** \brief Serialization traits class for types that use value semantics.
  *
@@ -132,6 +134,7 @@ public:
   //@}
 
 };
+
 
 template <typename Ordinal, typename T>
 class DirectSerializationTraits {

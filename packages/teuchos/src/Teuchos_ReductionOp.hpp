@@ -31,7 +31,9 @@
 
 #include "Teuchos_Describable.hpp"
 
+
 namespace Teuchos {
+
 
 /** \brief Base interface class for user-defined reduction operations for
  * objects that use value semantics.
@@ -43,11 +45,12 @@ class ValueTypeReductionOp : public Describable {
 public:
   /** \brief . */
   virtual void reduce(
-    const Ordinal     count
-    ,const T          inBuffer[]
-    ,T                inoutBuffer[]
+    const Ordinal count,
+    const T inBuffer[],
+    T inoutBuffer[]
     ) const = 0;
 };
+
 
 /** \brief Base interface class for user-defined reduction operations for
  * objects that use reference semantics.
@@ -59,12 +62,14 @@ class ReferenceTypeReductionOp : public Describable {
 public:
   /** \brief . */
   virtual void reduce(
-    const Ordinal     count
-    ,const T*const     inBuffer[]
-    ,T*const           inoutBuffer[]
+    const Ordinal count,
+    const T*const inBuffer[],
+    T*const inoutBuffer[]
     ) const = 0;
 };
 
+
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_REDUCTION_OP_HPP

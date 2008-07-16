@@ -38,6 +38,8 @@
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_Workspace.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Teuchos {
 
@@ -340,6 +342,7 @@ int receive(
 // Standard reduction subclasses for objects that use value semantics
 //
 
+
 /** \brief Standard summation operator for types with value semantics.
  *
  * \relates Comm
@@ -350,11 +353,12 @@ class SumValueReductionOp : public ValueTypeReductionOp<Ordinal,Packet>
 public:
   /** \brief . */
   void reduce(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal count,
+    const Packet inBuffer[],
+    Packet inoutBuffer[]
     ) const;
 };
+
 
 /** \brief Standard min operator for types with value semantics.
  *
@@ -370,9 +374,9 @@ class MinValueReductionOp : public ValueTypeReductionOp<Ordinal,Packet>
 public:
   /** \brief . */
   void reduce(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal count,
+    const Packet inBuffer[],
+    Packet inoutBuffer[]
     ) const;
 };
 
@@ -390,9 +394,9 @@ class MaxValueReductionOp : public ValueTypeReductionOp<Ordinal,Packet>
 public:
   /** \brief . */
   void reduce(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal count,
+    const Packet inBuffer[],
+    Packet inoutBuffer[]
     ) const;
 };
 
@@ -408,24 +412,24 @@ class ANDValueReductionOp : public ValueTypeReductionOp<Ordinal,Packet>
 public:
   /** \brief . */
   void reduce(
-    const Ordinal     count
-    ,const Packet       inBuffer[]
-    ,Packet             inoutBuffer[]
+    const Ordinal count,
+    const Packet inBuffer[],
+    Packet inoutBuffer[]
     ) const;
 };
-
-
-
 
 
 // ////////////////////////////////////////////////////////////
 // Implementation details (not for geneal users to mess with)
 
+
 //
 // ReductionOp Utilities
 //
 
+
 namespace MixMaxUtilities {
+
 
 template<bool isComparable, typename Ordinal, typename Packet>
 class Min {};
@@ -444,6 +448,7 @@ public:
     }
 };
 
+
 template<typename Ordinal, typename Packet>
 class Min<false,Ordinal,Packet> {
 public:
@@ -461,8 +466,10 @@ public:
     }
 };
 
+
 template<bool isComparable, typename Ordinal, typename Packet>
 class Max {};
+
 
 template<typename Ordinal, typename Packet>
 class Max<true,Ordinal,Packet> {
@@ -477,6 +484,7 @@ public:
         inoutBuffer[i] = TEUCHOS_MAX(inoutBuffer[i],inBuffer[i]);
     }
 };
+
 
 template<typename Ordinal, typename Packet>
 class Max<false,Ordinal,Packet> {
@@ -495,8 +503,10 @@ public:
     }
 };
 
+
 template<bool isComparable, typename Ordinal, typename Packet>
 class AND {};
+
 
 template<typename Ordinal, typename Packet>
 class AND<true,Ordinal,Packet> {
@@ -511,6 +521,7 @@ public:
       inoutBuffer[i] = inoutBuffer[i] && inBuffer[i];
   }
 };
+
 
 template<typename Ordinal, typename Packet>
 class AND<false,Ordinal,Packet> {
@@ -529,7 +540,9 @@ public:
     }
 };
 
+
 } // namespace MixMaxUtilities
+
 
 template<typename Ordinal, typename Packet>
 void SumValueReductionOp<Ordinal,Packet>::reduce(
@@ -541,6 +554,7 @@ void SumValueReductionOp<Ordinal,Packet>::reduce(
   for( int i = 0; i < count; ++i )
     inoutBuffer[i] += inBuffer[i];
 }
+
 
 template<typename Ordinal, typename Packet>
 void MinValueReductionOp<Ordinal,Packet>::reduce(
@@ -555,6 +569,7 @@ void MinValueReductionOp<Ordinal,Packet>::reduce(
     );
 }
 
+
 template<typename Ordinal, typename Packet>
 void MaxValueReductionOp<Ordinal,Packet>::reduce(
   const Ordinal     count
@@ -567,6 +582,7 @@ void MaxValueReductionOp<Ordinal,Packet>::reduce(
     count,inBuffer,inoutBuffer
     );
 }
+
 
 template<typename Ordinal, typename Packet>
 void ANDValueReductionOp<Ordinal,Packet>::reduce(
@@ -581,14 +597,18 @@ void ANDValueReductionOp<Ordinal,Packet>::reduce(
     );
 }
 
+
 } // namespace Teuchos
+
 
 // //////////////////////////
 // Template implemenations
 
+
 //
 // ReductionOp utilities
 //
+
 
 namespace Teuchos {
 
@@ -598,7 +618,8 @@ namespace Teuchos {
 // this is just fine since I can just use std::auto_ptr to make sure things
 // are deleted correctly.
 template<typename Ordinal, typename Packet>
-ValueTypeReductionOp<Ordinal,Packet>* createOp( const EReductionType reductType )
+ValueTypeReductionOp<Ordinal,Packet>*
+createOp( const EReductionType reductType )
 {
   typedef ScalarTraits<Packet> ST;
   switch(reductType) {
@@ -626,11 +647,14 @@ ValueTypeReductionOp<Ordinal,Packet>* createOp( const EReductionType reductType 
   return 0; // Will never be called!
 }
 
+
 } // namespace Teuchos
+
 
 //
 // Teuchos::Comm wrapper functions
 //
+
 
 template<typename Ordinal>
 int Teuchos::rank(const Comm<Ordinal>& comm)
@@ -638,11 +662,13 @@ int Teuchos::rank(const Comm<Ordinal>& comm)
   return comm.getRank();
 }
 
+
 template<typename Ordinal>
 int Teuchos::size(const Comm<Ordinal>& comm)
 {
   return comm.getSize();
 }
+
 
 template<typename Ordinal>
 void Teuchos::barrier(const Comm<Ordinal>& comm)
@@ -654,6 +680,7 @@ void Teuchos::barrier(const Comm<Ordinal>& comm)
     );
   comm.barrier();
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
@@ -673,6 +700,7 @@ void Teuchos::broadcast(
     );
 }
 
+
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
   const Comm<Ordinal>& comm
@@ -681,6 +709,7 @@ void Teuchos::broadcast(
 {
   broadcast<Ordinal,Packet>(comm,rootRank,1,object);
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
@@ -699,6 +728,7 @@ void Teuchos::broadcast(
     rootRank,charBuffer.getBytes(),charBuffer.getCharBuffer()
     );
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::gatherAll(
@@ -722,6 +752,7 @@ void Teuchos::gatherAll(
     );
 }
 
+
 template<typename Ordinal, typename Packet>
 void Teuchos::gatherAll(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
@@ -731,6 +762,7 @@ void Teuchos::gatherAll(
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
@@ -748,12 +780,13 @@ void Teuchos::reduceAll(
   ValueTypeSerializationBuffer<Ordinal,Packet>
     charGlobalReducts(count,globalReducts);
   CharToValueTypeReductionOp<Ordinal,Packet>
-    _reductOp(rcp(&reductOp,false));
+    charReductOp(rcp(&reductOp,false));
   comm.reduceAll(
-    _reductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    charReductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
     ,charGlobalReducts.getCharBuffer()
     );
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
@@ -771,6 +804,7 @@ void Teuchos::reduceAll(
   reduceAll(comm,*reductOp,count,sendBuffer,globalReducts);
 }
 
+
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
   const Comm<Ordinal>& comm, const EReductionType reductType
@@ -779,6 +813,7 @@ void Teuchos::reduceAll(
 {
   reduceAll<Ordinal,Packet>(comm,reductType,1,&send,globalReduct);
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
@@ -797,52 +832,71 @@ void Teuchos::reduceAll(
   ReferenceTypeSerializationBuffer<Ordinal,Packet>
     charGlobalReducts(serializer,count,globalReducts);
   CharToReferenceTypeReductionOp<Ordinal,Packet>
-    _reductOp(rcp(&serializer,false),rcp(&reductOp,false));
+    charReductOp(rcp(&serializer,false),rcp(&reductOp,false));
   comm.reduceAll(
-    _reductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    charReductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
     ,charGlobalReducts.getCharBuffer()
     );
 }
 
+
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAllAndScatter(
-  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal sendCount, const Packet sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet myGlobalReducts[]
+  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
   )
 {
+
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: reduceAllAndScatter<"
     <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
     <<">( value type, user-defined op )"
     );
+
+  const Ordinal size = Teuchos::size(comm);
+  const Ordinal rank = Teuchos::rank(comm);
+
 #ifdef TEUCHOS_DEBUG
   Ordinal sumRecvCounts = 0;
-  const int size = Teuchos::size(comm);
   for( Ordinal i = 0; i < size; ++i )
     sumRecvCounts += recvCounts[i];
   TEST_FOR_EXCEPT(!(sumRecvCounts==sendCount));
 #endif
-  const int rank = Teuchos::rank(comm);
+
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
     charSendBuffer(sendCount,sendBuffer);
   ValueTypeSerializationBuffer<Ordinal,Packet>
-    charMyGlobalReducts(recvCounts[rank],myGlobalReducts);
+    charMyGlobalReducts(recvCounts[rank], myGlobalReducts);
   CharToValueTypeReductionOp<Ordinal,Packet>
-    _reductOp(rcp(&reductOp,false));
+    charReductOp(rcp(&reductOp,false));
+
   const Ordinal
-    blockSize = charSendBuffer.getBytes()/sendCount;
+    packetSize = charSendBuffer.getBytes()/sendCount;
+
+  WorkspaceStore* wss = get_default_workspace_store().get();
+  Workspace<Ordinal> charRecvCounts(wss, size);
+  for (Ordinal k = 0; k < size; ++k) {
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPT_MSG( recvCounts[k] != as<Ordinal>(1),
+      "Error, we have not tested recvCounts[k] != 1 yet (but it might work)!" );
+#endif
+    charRecvCounts[k] = as<Ordinal>(recvCounts[k] * packetSize);
+  }
+  
   comm.reduceAllAndScatter(
-    _reductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
-    ,recvCounts,blockSize,charMyGlobalReducts.getCharBuffer()
+    charReductOp, charSendBuffer.getBytes(), charSendBuffer.getCharBuffer(),
+    &charRecvCounts[0], charMyGlobalReducts.getCharBuffer()
     );
+
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAllAndScatter(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Ordinal sendCount, const Packet sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet myGlobalReducts[]
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -853,9 +907,10 @@ void Teuchos::reduceAllAndScatter(
   std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
     reductOp(createOp<Ordinal,Packet>(reductType));
   reduceAllAndScatter(
-    comm,*reductOp,sendCount,sendBuffer,recvCounts,myGlobalReducts
+    comm, *reductOp, sendCount, sendBuffer, recvCounts, myGlobalReducts
     );
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAllAndScatter(
@@ -867,6 +922,7 @@ void Teuchos::reduceAllAndScatter(
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
@@ -884,12 +940,13 @@ void Teuchos::scan(
   ValueTypeSerializationBuffer<Ordinal,Packet>
     charScanReducts(count,scanReducts);
   CharToValueTypeReductionOp<Ordinal,Packet>
-    _reductOp(rcp(&reductOp,false));
+    charReductOp(rcp(&reductOp,false));
   comm.scan(
-    _reductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    charReductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
     ,charScanReducts.getCharBuffer()
     );
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
@@ -907,6 +964,7 @@ void Teuchos::scan(
   scan(comm,*reductOp,count,sendBuffer,scanReducts);
 }
 
+
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
   const Comm<Ordinal>& comm, const EReductionType reductType
@@ -915,6 +973,7 @@ void Teuchos::scan(
 {
   scan<Ordinal,Packet>(comm,reductType,1,&send,globalReduct);
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
@@ -925,6 +984,7 @@ void Teuchos::scan(
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
@@ -945,6 +1005,7 @@ void Teuchos::send(
     );
 }
 
+
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
   const Comm<Ordinal>& comm
@@ -954,6 +1015,7 @@ void Teuchos::send(
   Teuchos::send<Ordinal,Packet>(comm,1,&send,destRank);
 }
 
+
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
@@ -962,6 +1024,7 @@ void Teuchos::send(
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
+
 
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
@@ -982,6 +1045,7 @@ int Teuchos::receive(
     );
 }
 
+
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
   const Comm<Ordinal>& comm
@@ -991,6 +1055,7 @@ int Teuchos::receive(
   return Teuchos::receive<Ordinal,Packet>(comm,sourceRank,1,recv);
 }
 
+
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
@@ -999,5 +1064,6 @@ int Teuchos::receive(
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
+
 
 #endif // TEUCHOS_COMM_HELPERS_HPP

@@ -92,6 +92,18 @@ public:
 };
 
 
+/** \brief . 
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template <class Scalar>
+Scalar defaultSmallNumber()
+{
+  const bool hasMachineParameters = ScalarTraits<Scalar>::hasMachineParameters;
+  return RelErrSmallNumber<hasMachineParameters,Scalar>::smallNumber();
+}
+
+
 /** \brief Return relative error of two scalars.
  *
  * ToDo: Finish documentation!
@@ -370,15 +382,15 @@ bool Teuchos::testRelErr(
   if (!is_null(out)) {
     *out
       << endl
-      << "Check: rel_err(" << v1_name << "," << v2_name << ")\n"
-      << "       = rel_err(" << v1 << "," << v2 << ") "
+      << "Check: rel_err(" << v1_name << ", " << v2_name << ")\n"
+      << "       = rel_err(" << v1 << ", " << v2 << ") "
       << "= " << rel_err << endl
       << "         <= " << maxRelErr_error_name
       << " = " << maxRelErr_error << " : " << passfail(success) << endl;
     if( success && rel_err >= maxRelErr_warning ) {
       *out
-        << "Warning! rel_err(" << v1_name << "," << v2_name << ")\n"
-        << "       = rel_err(" << v1 << "," << v2 << ") "
+        << "Warning! rel_err(" << v1_name << ", " << v2_name << ")\n"
+        << "       = rel_err(" << v1 << ", " << v2 << ") "
         << "= " << rel_err << endl
         << "         >= " << maxRelErr_warning_name
         << " = " << maxRelErr_warning << "!\n";

@@ -177,6 +177,7 @@ struct ScalarTraits<char>
   static inline char conjugate(char x) { return x; }
   static inline char real(char x) { return x; }
   static inline char imag(char) { return 0; }
+  static inline bool isnaninf(char x) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -206,6 +207,7 @@ struct ScalarTraits<int>
   static inline int conjugate(int x) { return x; }
   static inline int real(int x) { return x; }
   static inline int imag(int) { return 0; }
+  static inline bool isnaninf(int x) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__

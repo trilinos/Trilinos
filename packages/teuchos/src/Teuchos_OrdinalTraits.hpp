@@ -83,7 +83,6 @@ struct OrdinalTraits {
 
 template<>
 struct OrdinalTraits<char> {
-
   static const bool hasMachineParameters = false;
   static inline char zero()                   {return(0);}
   static inline char one()                    {return(1);}
@@ -92,7 +91,6 @@ struct OrdinalTraits<char> {
 
 template<>
 struct OrdinalTraits<short int> {
-
   static const bool hasMachineParameters = false;
   static inline short int zero()                   {return(0);}
   static inline short int one()                    {return(1);}
@@ -101,7 +99,6 @@ struct OrdinalTraits<short int> {
 
 template<>
 struct OrdinalTraits<int> {
-
   static const bool hasMachineParameters = false;
   static inline int zero()                   {return(0);}
   static inline int one()                    {return(1);}
@@ -110,14 +107,25 @@ struct OrdinalTraits<int> {
 
 template<>
 struct OrdinalTraits<long int> {
-
   static const bool hasMachineParameters = false;
   static inline long int zero()              {return(static_cast<long int>(0));}
   static inline long int one()               {return(static_cast<long int>(1));}
   static inline std::string name()           {return("long int");}
 };
 
-#endif
+#ifdef HAVE_TUECHOS_LONG_LONG_INT
+
+template<>
+struct OrdinalTraits<long long int> {
+  static const bool hasMachineParameters = false;
+  static inline long long int zero() {return(static_cast<long long int>(0));}
+  static inline long long int one() {return(static_cast<long long int>(1));}
+  static inline std::string name() {return("long long int");}
+};
+
+#endif // HAVE_TUECHOS_LONG_LONG_INT
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Teuchos
 

@@ -34,6 +34,7 @@ bool checkSumResult(
   return passed;
 }
 
+
 template<typename Ordinal, typename Packet>
 bool testComm(
   const Teuchos::Comm<Ordinal> &comm,
@@ -123,6 +124,7 @@ bool testComm(
 #endif
 
   }
+
 
   //
   // broadcast/reduceAll(sum)
