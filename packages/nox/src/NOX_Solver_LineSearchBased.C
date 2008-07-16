@@ -152,6 +152,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   // First check status
   if (status != NOX::StatusTest::Unconverged) {
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
@@ -167,6 +168,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
@@ -185,6 +187,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
       utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - line search failed" << endl;
       status = NOX::StatusTest::Failed;
       prePostOperator.runPostIterate(*this);
+      printUpdate();
       return status;
     }
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
@@ -198,6 +201,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
@@ -206,7 +210,8 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
  
   prePostOperator.runPostIterate(*this);
 
-  // Return status.
+  printUpdate();
+
   return status;
 }
 
@@ -215,11 +220,8 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
   prePostOperator.runPreSolve(*this);
 
   // Iterate until converged or failed
-  while (status == NOX::StatusTest::Unconverged) 
-  {
-    status = step();
-    printUpdate();
-  }
+  while (status == NOX::StatusTest::Unconverged)
+    step();
 
   Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");
   outputParams.set("Nonlinear Iterations", nIter);
