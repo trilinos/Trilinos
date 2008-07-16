@@ -1426,9 +1426,9 @@ Optional Features:
   --enable-nox            See nox/configure --help
   --enable-epetra         See nox/configure --help
   --enable-nox-epetra     See nox/configure --help
-  --enable-rythmos-gaasp  Enable GAASP adapter support (default is yes)
+  --enable-rythmos-gaasp  Enable GAASP adapter support (default is no)
   --enable-rythmos-gaaspinternal
-                          Build internal GAASP TPL library (default is yes)
+                          Build internal GAASP TPL library (default is no)
 
   --enable-rythmos-examples
                           Make Rythmos examples buildable with 'make examples'
@@ -8331,7 +8331,7 @@ fi
 if test "${enable_rythmos_gaasp+set}" = set; then
   enableval=$enable_rythmos_gaasp; ac_cv_use_rythmos_gaasp=$enableval
 else
-  ac_cv_use_rythmos_gaasp=yes
+  ac_cv_use_rythmos_gaasp=no
 fi
 
 
@@ -8351,7 +8351,9 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
- if test "X$ac_cv_use_rythmos_gaasp" != "Xno"; then
+if test "X$ac_cv_use_rythmos_gaasp" != "Xno" &&
+   test "X$ac_cv_use_rythmos_teuchos_boost" != "Xno" ; then
+   if true; then
   ENABLE_RYTHMOS_GAASP_TRUE=
   ENABLE_RYTHMOS_GAASP_FALSE='#'
 else
@@ -8359,13 +8361,23 @@ else
   ENABLE_RYTHMOS_GAASP_FALSE=
 fi
 
+else
+   if false; then
+  ENABLE_RYTHMOS_GAASP_TRUE=
+  ENABLE_RYTHMOS_GAASP_FALSE='#'
+else
+  ENABLE_RYTHMOS_GAASP_TRUE='#'
+  ENABLE_RYTHMOS_GAASP_FALSE=
+fi
+
+fi
 
 
 # Check whether --enable-rythmos-gaaspinternal was given.
 if test "${enable_rythmos_gaaspinternal+set}" = set; then
   enableval=$enable_rythmos_gaaspinternal; ac_cv_use_rythmos_gaaspinternal=$enableval
 else
-  ac_cv_use_rythmos_gaaspinternal=yes
+  ac_cv_use_rythmos_gaaspinternal=no
 fi
 
 
@@ -8385,7 +8397,9 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
- if test "X$ac_cv_use_rythmos_gaaspinternal" != "Xno"; then
+if test "X$ac_cv_use_rythmos_gaasp" != "Xno" &&
+   test "X$ac_cv_use_rythmos_gaaspinternal " != "Xno" ; then
+   if true; then
   ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE=
   ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE='#'
 else
@@ -8393,6 +8407,16 @@ else
   ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE=
 fi
 
+else
+   if false; then
+  ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE=
+  ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE='#'
+else
+  ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE='#'
+  ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE=
+fi
+
+fi
 
 # ------------------------------------------------------------------------
 # RYTHMOS interface libraries (uses config/tac_arg_enable_rythmos_interface.m4)
@@ -9181,6 +9205,20 @@ if test -z "${ENABLE_RYTHMOS_GAASP_TRUE}" && test -z "${ENABLE_RYTHMOS_GAASP_FAL
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_GAASP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_RYTHMOS_GAASP\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_GAASP_TRUE}" && test -z "${ENABLE_RYTHMOS_GAASP_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_GAASP\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_GAASP\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE}" && test -z "${ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_GAASP_INTERNAL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_GAASP_INTERNAL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
