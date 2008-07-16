@@ -248,9 +248,9 @@ test_01_LDADD = $(EXPORT_LIBS)
 test_01_CXXFLAGS = -I$(srcdir)
 Dummy_SOURCES = Dummy
 EXTRA_DIST = \
-  0.dat \
-  1.dat \
-  CURL.dat
+  data/0.dat \
+  data/1.dat \
+  data/CURL.dat
 
 all: all-am
 
