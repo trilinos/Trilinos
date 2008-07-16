@@ -409,7 +409,9 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/basis/Intrepid_F1_TET_I9_FEM_FIAT.hpp \
   $(srcdir)/local/basis/Intrepid_F1_TET_I9_FEM_FIATDef.hpp \
   $(srcdir)/local/basis/Intrepid_F1_TET_I10_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TET_I10_FEM_FIATDef.hpp
+  $(srcdir)/local/basis/Intrepid_F1_TET_I10_FEM_FIATDef.hpp \
+  $(srcdir)/local/basis/FIAT/FIAT_AffineMap.hpp \
+  $(srcdir)/local/basis/FIAT/FIAT_AffineMapDef.hpp  
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp

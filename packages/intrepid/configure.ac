@@ -428,6 +428,7 @@ AC_CONFIG_FILES([
   test/Basis/F1_TET_I8_FEM_FIAT/Makefile
   test/Basis/F1_TET_I9_FEM_FIAT/Makefile
   test/Basis/F1_TET_I10_FEM_FIAT/Makefile
+  test/Basis/FIAT/Makefile
 ])
 
 AC_OUTPUT()
