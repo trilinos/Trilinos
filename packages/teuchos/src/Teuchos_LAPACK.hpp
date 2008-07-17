@@ -260,16 +260,20 @@ namespace Teuchos
 
     //! Computes for a pair of \c n by \c n nonsymmetric matrices (\c A,\c B) the generalized eigenvalues, and optionally, the left and/or right generalized eigenvectors.
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, MagnitudeType* ALPHAR, MagnitudeType* ALPHAI, ScalarType* BETA, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, MagnitudeType* LSCALE, MagnitudeType* RSCALE, MagnitudeType* abnrm, MagnitudeType* bbnrm, MagnitudeType* RCONDE, MagnitudeType* RCONDV, ScalarType* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
+
+    /*! Computes for a pair of \c n by \c n nonsymmetric matrices (\c A,\c B) the generalized eigenvalues, and optionally, the left and/or right generalized eigenvectors.
+       \note (This is the function is only defined for \c ScalarType = \c float or \c double.)
+    */
+    void GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb, MagnitudeType *ALPHAR, MagnitudeType *ALPHAI, ScalarType *BETA, ScalarType *VL, const OrdinalType ldvl, ScalarType *VR, const OrdinalType ldvr, ScalarType *WORK, const OrdinalType lwork, OrdinalType *info) const;
+
     //@}
 
 
-
-    //! @name Non-Hermitian Eigenproblem Routines
+    //! @name Singular Value Decompositon Routines
     //@{ 
     //! Computes the singular values (and optionally, vectors) of a real matrix \c A.
     void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, MagnitudeType* S, ScalarType* U, const OrdinalType ldu, ScalarType* V, const OrdinalType ldv, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* info) const;
     //@}
-
 
 
     //! @name Orthogonal matrix routines
@@ -596,6 +600,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb, MagnitudeType *ALPHAR, MagnitudeType *ALPHAI, ScalarType *BETA, ScalarType *VL, const OrdinalType ldvl, ScalarType *VR, const OrdinalType ldvr, ScalarType *WORK, const OrdinalType lwork, OrdinalType *info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -746,6 +756,7 @@ namespace Teuchos
     void GEES(const char JOBVS, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, float* VS, const OrdinalType ldvs, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
     void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, float* A, const OrdinalType lda, float* WR, float* WI, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
+    void GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, float *A, const OrdinalType lda, float *B, const OrdinalType ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const OrdinalType ldvl, float *VR, const OrdinalType ldvr, float *WORK, const OrdinalType lwork, OrdinalType *info) const;
 
     // SVD routine
     void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* S, float* U, const OrdinalType ldu, float* V, const OrdinalType ldv, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
@@ -1007,6 +1018,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, float *A, const OrdinalType lda, float *B, const OrdinalType ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const OrdinalType ldvl, float *VR, const OrdinalType ldvr, float *WORK, const OrdinalType lwork, OrdinalType *info) const
+  {
+    SGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
+  }
+
+  template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     SORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
@@ -1166,6 +1183,8 @@ namespace Teuchos
     void GEES(const char JOBVS, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, double* VS, const OrdinalType ldvs, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
     void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, double* A, const OrdinalType lda, double* WR, double* WI, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
+    void GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, double *A, const OrdinalType lda, double *B, const OrdinalType ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const OrdinalType ldvl, double *VR, const OrdinalType ldvr, double *WORK, const OrdinalType lwork, OrdinalType *info) const;
+
 
     // SVD routine
     void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* S, double* U, const OrdinalType ldu, double* V, const OrdinalType ldv, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
@@ -1425,6 +1444,12 @@ namespace Teuchos
   void LAPACK<OrdinalType, double>::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const
   {
     DGGEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, ilo, ihi, LSCALE, RSCALE, abnrm, bbnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, BWORK, info);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, double *A, const OrdinalType lda, double *B, const OrdinalType ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const OrdinalType ldvl, double *VR, const OrdinalType ldvr, double *WORK, const OrdinalType lwork, OrdinalType *info) const
+  {
+    DGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
   }
 
   template<typename OrdinalType>

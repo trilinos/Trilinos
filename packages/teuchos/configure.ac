@@ -596,6 +596,9 @@ AC_CHECK_FUNCS([pow sqrt])
 TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
+# Find valid LAPACK _GGEV function [LAPACK library may only offer deprecated _GEGV function].
+ACX_GGEV
+
 else
 
   if test "X$ac_cv_use_fortran" != "Xno"; then

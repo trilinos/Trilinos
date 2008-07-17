@@ -83,6 +83,12 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
+/* Define if you have LAPACK _GEGV. */
+#undef HAVE_LAPACK_GEGV
+
+/* Define if you have LAPACK _GGEV. */
+#undef HAVE_LAPACK_GGEV
+
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
 
