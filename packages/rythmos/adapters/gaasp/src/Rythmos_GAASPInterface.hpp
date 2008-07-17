@@ -40,7 +40,7 @@
 #include "GAdjointSolve.h"
 #include "GErrorEstimate.h"
 #include "GMeshRefine.h"
-#include "boost/shared_ptr.hpp"
+#include "Teuchos_RCPBoostSharedPtrConversions.hpp"
 
 namespace Rythmos {
 

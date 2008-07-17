@@ -215,8 +215,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@ENABLE_RYTHMOS_GAASP_FALSE@GAASP_SUBDIR = 
-@ENABLE_RYTHMOS_GAASP_TRUE@GAASP_SUBDIR = gaasp
+@ENABLE_RYTHMOS_GAASP_TRUE@@ENABLE_RYTHMOS_TEUCHOS_BOOST_TRUE@GAASP_SUBDIR = gaasp
 SUBDIRS = $(GAASP_SUBDIR)
 all: all-recursive
 

@@ -31,7 +31,7 @@
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "GModelBase.h"
-#include "boost/shared_ptr.hpp"
+#include "Teuchos_RCPBoostSharedPtrConversions.hpp"
 
 namespace Rythmos {
 

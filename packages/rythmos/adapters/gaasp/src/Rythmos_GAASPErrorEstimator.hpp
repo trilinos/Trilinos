@@ -37,7 +37,7 @@
 #include "GModelBase.h"
 #include "InitGaaspOO.h"
 #include "GForwardSolve.h"
-#include "boost/shared_ptr.hpp"
+#include "Teuchos_RCPBoostSharedPtrConversions.hpp"
 
 namespace Rythmos {
 

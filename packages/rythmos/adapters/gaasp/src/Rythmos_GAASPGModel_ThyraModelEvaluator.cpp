@@ -29,6 +29,7 @@
 
 #include "Rythmos_GAASPGModel_ThyraModelEvaluator.hpp"
 #include "Rythmos_GAASPHelpers.hpp"
+#include "Teuchos_RCPBoostSharedPtrConversions.hpp"
 
 namespace Rythmos {
 

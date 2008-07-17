@@ -286,21 +286,12 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
 # Check for GAASP support
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB( rythmos, gaasp, [Enable GAASP adapter support], RYTHMOS_GAASP, no)
-if test "X$ac_cv_use_rythmos_gaasp" != "Xno" && 
-   test "X$ac_cv_use_rythmos_teuchos_boost" != "Xno" ; then
-  AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP, true)
-else
-  AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP, false)
-fi
+TAC_ARG_ENABLE_FEATURE_SUB( rythmos, gaasp, [Enable GAASP adapter support, requires teuchos-boost], RYTHMOS_GAASP, no)
+AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP, [test "X$ac_cv_use_rythmos_gaasp" != "Xno"])
 
-TAC_ARG_ENABLE_FEATURE_SUB( rythmos, gaaspinternal, [Build internal GAASP TPL library], RYTHMOS_GAASP_INTERNAL, no)
-if test "X$ac_cv_use_rythmos_gaasp" != "Xno" && 
-   test "X$ac_cv_use_rythmos_gaaspinternal " != "Xno" ; then
-  AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP_INTERNAL, true)
-else
-  AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP_INTERNAL, false)
-fi
+TAC_ARG_ENABLE_FEATURE_SUB( rythmos, gaaspinternal, [Build internal GAASP TPL library], RYTHMOS_GAASP_INTERNAL, yes)
+AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP_INTERNAL, [test "X$ac_cv_use_rythmos_gaaspinternal" != "Xno"])
+
 
 # ------------------------------------------------------------------------
 # RYTHMOS interface libraries (uses config/tac_arg_enable_rythmos_interface.m4)
