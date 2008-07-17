@@ -12,6 +12,7 @@
 @ML_USING_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 @ML_USING_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
 @ML_USING_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@ML_USING_ISORROPIA_TRUE@include @abs_top_builddir@/../isorropia/Makefile.export.isorropia
 
 # These are the needed includes to build the library
 _ML_BUILD_LIB_INCLUDES = \
@@ -28,6 +29,7 @@ _ML_BUILD_LIB_INCLUDES = \
 	    -I@abs_top_srcdir@/src/MLAPI \
 	    -I@abs_top_srcdir@/src/MatrixFree \
 	    -I@abs_top_srcdir@/src/Include \
+	    $(ISORROPIA_INCLUDES) \
 	    $(GALERI_INCLUDES) \
 	    $(EPETRA_INCLUDES) \
 	    $(AMESOS_INCLUDES) \
@@ -52,6 +54,7 @@ _ML_INCLUDES = \
 	    -I@abs_top_srcdir@/src/MatrixFree \
 	    -I@abs_top_srcdir@/src/RefMaxwell \
 	    -I@abs_top_srcdir@/src/Include \
+	    $(ISORROPIA_INCLUDES) \
 	    $(GALERI_INCLUDES) \
 	    $(EPETRA_INCLUDES) \
 	    $(AMESOS_INCLUDES) \
@@ -60,7 +63,7 @@ _ML_INCLUDES = \
 	    $(AZTECOO_INCLUDES) \
 	    $(EPETRAEXT_INCLUDES)
 
-_ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lml $(GALERI_LIBS) $(EPETRA_LIBS) $(AMESOS_LIBS) $(IFPACK_LIBS) $(TEUCHOS_LIBS) $(AZTECOO_LIBS) $(EPETRAEXT_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
+_ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lml $(GALERI_LIBS) $(ISORROPIA_LIBS) $(EPETRA_LIBS) $(AMESOS_LIBS) $(IFPACK_LIBS) $(TEUCHOS_LIBS) $(AZTECOO_LIBS) $(EPETRAEXT_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@ML_BUILD_LIB_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ML_BUILD_LIB_INCLUDES))
 @USING_GNUMAKE_TRUE@ML_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ML_INCLUDES))

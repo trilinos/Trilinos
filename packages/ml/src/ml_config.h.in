@@ -120,6 +120,9 @@
 /* Define if want to build with ml enabled */
 #undef HAVE_ML_IFPACK
 
+/* Define if want to build with ml enabled */
+#undef HAVE_ML_ISORROPIA
+
 /* Define if want to build ml-matlab */
 #undef HAVE_ML_MATLAB
 

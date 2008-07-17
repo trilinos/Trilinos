@@ -758,6 +758,8 @@ ML_USING_AZTECOO_TRUE
 ML_USING_AZTECOO_FALSE
 ML_USING_EPETRAEXT_TRUE
 ML_USING_EPETRAEXT_FALSE
+ML_USING_ISORROPIA_TRUE
+ML_USING_ISORROPIA_FALSE
 ML_USING_GALERI_TRUE
 ML_USING_GALERI_FALSE
 ML_STANDALONE_MODE_TRUE
@@ -1472,6 +1474,11 @@ Optional Features:
                           Can be overridden with --disable-ml-epetraext.
   --enable-ml-epetraext   Enable EpetraExt support. EpetraExt requires
                           --enable-epetra. See notes for --enable-ml_metis.
+  --enable-isorropia      Enable Isorropia support. Isorropia requires
+                          --enable-isorropia. See notes for --enable-ml_metis.
+                          Can be overridden with --disable-ml-isorropia.
+  --enable-ml-isorropia   Enable Isorropia support. Isorropia requires
+                          --enable-isorropia. See notes for --enable-ml_metis.
   --enable-galeri         Enable Galeri support. Galeri, a Trilinos package,
                           is used in some ML examples to construct the linear
                           system and can optionally be used by the MLAPI. Can
@@ -9220,6 +9227,57 @@ fi
 else
   ML_USING_EPETRAEXT_TRUE='#'
   ML_USING_EPETRAEXT_FALSE=
+fi
+
+
+
+#
+
+
+# Check whether --enable-isorropia was given.
+if test "${enable_isorropia+set}" = set; then
+  enableval=$enable_isorropia; ac_cv_implicit_use_isorropia=$enableval
+else
+  ac_cv_implicit_use_isorropia=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_ml_using_isorropia_default=$ac_cv_implicit_use_isorropia
+else
+  ac_cv_ml_using_isorropia_default=no
+fi
+
+# Check whether --enable-ml-isorropia was given.
+if test "${enable_ml_isorropia+set}" = set; then
+  enableval=$enable_ml_isorropia; ac_cv_use_isorropia=$enableval
+else
+  ac_cv_use_isorropia=$ac_cv_ml_using_isorropia_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional isorropia dependent code in ml" >&5
+echo $ECHO_N "checking whether to build optional isorropia dependent code in ml... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_isorropia" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_ISORROPIA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_isorropia" = "Xyes"; then
+  ML_USING_ISORROPIA_TRUE=
+  ML_USING_ISORROPIA_FALSE='#'
+else
+  ML_USING_ISORROPIA_TRUE='#'
+  ML_USING_ISORROPIA_FALSE=
 fi
 
 
@@ -18402,6 +18460,13 @@ echo "$as_me: error: conditional \"ML_USING_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${ML_USING_ISORROPIA_TRUE}" && test -z "${ML_USING_ISORROPIA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ML_USING_ISORROPIA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ML_USING_ISORROPIA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${ML_USING_GALERI_TRUE}" && test -z "${ML_USING_GALERI_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ML_USING_GALERI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -19294,6 +19359,8 @@ ML_USING_AZTECOO_TRUE!$ML_USING_AZTECOO_TRUE$ac_delim
 ML_USING_AZTECOO_FALSE!$ML_USING_AZTECOO_FALSE$ac_delim
 ML_USING_EPETRAEXT_TRUE!$ML_USING_EPETRAEXT_TRUE$ac_delim
 ML_USING_EPETRAEXT_FALSE!$ML_USING_EPETRAEXT_FALSE$ac_delim
+ML_USING_ISORROPIA_TRUE!$ML_USING_ISORROPIA_TRUE$ac_delim
+ML_USING_ISORROPIA_FALSE!$ML_USING_ISORROPIA_FALSE$ac_delim
 ML_USING_GALERI_TRUE!$ML_USING_GALERI_TRUE$ac_delim
 ML_USING_GALERI_FALSE!$ML_USING_GALERI_FALSE$ac_delim
 ML_STANDALONE_MODE_TRUE!$ML_STANDALONE_MODE_TRUE$ac_delim
@@ -19329,7 +19396,7 @@ ac_aux_dir!$ac_aux_dir$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 79; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 81; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

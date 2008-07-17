@@ -480,6 +480,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, aztecoo, ML_AZTECOO, ML_USING_AZTECOO, yes, [
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, epetraext, ML_EPETRAEXT, ML_USING_EPETRAEXT, yes, [Enable EpetraExt support. EpetraExt requires --enable-epetra. See notes for --enable-ml_metis.], [Enable EpetraExt support. EpetraExt requires --enable-epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-epetraext.])
 #
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, isorropia, ML_ISORROPIA, ML_USING_ISORROPIA, yes, [Enable Isorropia support. Isorropia requires --enable-isorropia. See notes for --enable-ml_metis.], [Enable Isorropia support. Isorropia requires --enable-isorropia. See notes for --enable-ml_metis. Can be overridden with --disable-ml-isorropia.])
+#
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, galeri, ML_GALERI, ML_USING_GALERI, yes, [Enable Galeri support. Galeri, a Trilinos package, is used in some ML examples to construct the linear system and can optionally be used by the MLAPI.], [Enable Galeri support.  Galeri, a Trilinos package, is used in some ML examples to construct the linear system and can optionally be used by the MLAPI.  Can be overridden with --disable-ml-galeri.])
 
 #if we're not using epetra, then build certain ML examples
