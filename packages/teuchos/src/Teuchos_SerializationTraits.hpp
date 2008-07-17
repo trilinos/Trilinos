@@ -26,6 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
+
+// NOTE: Before adding specializations of ScalarTraits, make sure that they do not duplicate 
+// specializations already present in PyTrilinos (see packages/PyTrilinos/src/Teuchos_Traits.i)
+
+
 #ifndef TEUCHOS_SERIALIZATION_TRAITS_HPP
 #define TEUCHOS_SERIALIZATION_TRAITS_HPP
 

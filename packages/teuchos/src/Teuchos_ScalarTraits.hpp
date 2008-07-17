@@ -34,6 +34,9 @@
 // 07.14.03 -- Fixed int rand() function (was set up to return a floating-point style random number)
 // 07.17.03 -- Added squareroot() function
 
+// NOTE: Before adding specializations of ScalarTraits, make sure that they do not duplicate 
+// specializations already present in PyTrilinos (see packages/PyTrilinos/src/Teuchos_Traits.i)
+
 #ifndef _TEUCHOS_SCALARTRAITS_HPP_
 #define _TEUCHOS_SCALARTRAITS_HPP_
 
