@@ -44,7 +44,7 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = test_01
+noinst_PROGRAMS = test_01 test_02
 
 # Dependencies used when rebuilding tests without building everything from scratch.
 test_01_DEPENDENCIES = \
@@ -54,3 +54,11 @@ test_01_DEPENDENCIES = \
 test_01_SOURCES = test_01.cpp
 test_01_LDADD = $(EXPORT_LIBS)
 test_01_CXXFLAGS = -I$(srcdir)
+
+test_02_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+test_02_SOURCES = test_02.cpp
+test_02_LDADD = $(EXPORT_LIBS)
+test_02_CXXFLAGS = -I$(srcdir)
