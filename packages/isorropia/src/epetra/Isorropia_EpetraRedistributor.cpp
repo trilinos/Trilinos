@@ -285,6 +285,39 @@ Redistributor::redistribute(const Epetra_MultiVector& input_vector)
   return( new_vec );
 }
 
+// Reverse redistribute methods (for vectors). 
+
+Teuchos::RefCountPtr<Epetra_Vector>
+Redistributor::redistribute_reverse(const Epetra_Vector& input_vector)
+{
+  if (!created_importer_) {
+    create_importer(input_vector.Map());
+  }
+
+  Teuchos::RefCountPtr<Epetra_Vector> new_vec = Teuchos::rcp(new Epetra_Vector(*target_map_));
+
+  // Export using the importer
+  new_vec->Export(input_vector, *importer_, Insert);
+
+  return( new_vec );
+}
+
+Teuchos::RefCountPtr<Epetra_MultiVector>
+Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector)
+{
+  if (!created_importer_) {
+    create_importer(input_vector.Map());
+  }
+
+  Teuchos::RefCountPtr<Epetra_MultiVector> new_vec =
+    Teuchos::rcp(new Epetra_MultiVector(*target_map_, input_vector.NumVectors()));
+
+  // Export using the importer
+  new_vec->Export(input_vector, *importer_, Insert);
+
+  return( new_vec );
+}
+
 void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
   if (created_importer_) return;

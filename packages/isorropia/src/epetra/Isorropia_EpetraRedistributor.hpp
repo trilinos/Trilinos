@@ -134,6 +134,16 @@ public:
   Teuchos::RefCountPtr<Epetra_MultiVector>
      redistribute(const Epetra_MultiVector& input_vector);
 
+  /** Reverse redistribute an Epetra_Vector.
+  */
+  Teuchos::RefCountPtr<Epetra_Vector>
+     redistribute_reverse(const Epetra_Vector& input_vector);
+
+  /** Reverse redistribute an Epetra_MultiVector.
+  */
+  Teuchos::RefCountPtr<Epetra_MultiVector>
+     redistribute_reverse(const Epetra_MultiVector& input_vector);
+
 private:
   /** This is an internal method of the Redistributor class.
    */
