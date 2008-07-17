@@ -30,6 +30,7 @@
 #define TPETRA_MAPDATA_HPP
 
 #include "Tpetra_MapDataDecl.hpp"
+#include "Tpetra_Directory.hpp"
 
 namespace Tpetra {
 

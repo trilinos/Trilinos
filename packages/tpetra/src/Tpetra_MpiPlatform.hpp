@@ -87,7 +87,7 @@ namespace Tpetra {
 
   template <typename OrdinalType>
   MpiPlatform<OrdinalType>::MpiPlatform(MpiPlatform<OrdinalType> const& platform) 
-  : Teuchos::Object(platform.label())
+  : Platform<OrdinalType>(), Teuchos::Object(platform.label())
   , MpiComm_(platform.MpiComm_)
   {}
 
@@ -113,7 +113,7 @@ namespace Tpetra {
 
   template <typename OrdinalType>
   void MpiPlatform<OrdinalType>::print(ostream& os) const 
-  {}
+  { (void)os; }
 
   template <typename OrdinalType>
   void MpiPlatform<OrdinalType>::

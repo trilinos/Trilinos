@@ -102,20 +102,29 @@ namespace Tpetra {
     //! Returns maximum global index owned by this image
     OrdinalType getMaxGlobalIndex() const;
 
-    //! Return the local index for a given global index
-    OrdinalType getLocalIndex(OrdinalType globalIndex) const;
-
     //! Return the minimum global index over all images
     OrdinalType getMinAllGlobalIndex() const;
 
     //! Return the maximum global index over all images
     OrdinalType getMaxAllGlobalIndex() const;
 
+    //! Return the local index for a given global index
+    OrdinalType getLocalIndex(OrdinalType globalIndex) const;
+
     //! Return the global index for a given local index
     OrdinalType getGlobalIndex(OrdinalType localIndex) const;
 
+    //! Returns the node IDs and corresponding local indices for a given list of global indices.
+    void getRemoteIndexList(const std::vector<OrdinalType> & GIDList, 
+                                  std::vector<OrdinalType> & imageIDList, 
+                                  std::vector<OrdinalType> & LIDList) const;
+
+    //! Returns the node IDs for a given list of global indices.
+    void getRemoteIndexList(const std::vector<OrdinalType> & GIDList, 
+                                  std::vector<OrdinalType> & imageIDList) const;
+
     //! Return a list of the global entries owned by this image
-    const std::vector<OrdinalType> & getMyGlobalEntires() const;
+    const std::vector<OrdinalType> & getMyGlobalEntries() const;
 
     //! Returns true if the local index value passed in is found on the calling image, returns false if it doesn't.
     bool isMyLocalIndex(OrdinalType localIndex) const;

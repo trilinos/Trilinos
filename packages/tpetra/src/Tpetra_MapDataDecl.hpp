@@ -30,6 +30,7 @@
 #define TPETRA_MAPDATA_DECL_HPP
 
 #include <Teuchos_Object.hpp>
+#include "Tpetra_Directory.hpp"
 
 namespace Tpetra {
 
@@ -80,9 +81,7 @@ namespace Tpetra {
     // const std::map<OrdinalType, OrdinalType> lgMap_;
     const std::vector<OrdinalType> lgMap_;
     const std::map<OrdinalType, OrdinalType> glMap_;
-    // FINISH: put these back in
-    // bool haveDirectory_;
-    // Teuchos::RCP< Directory<OrdinalType> > Directory_;
+    Teuchos::RCP< Directory<OrdinalType> > directory_;
 
 		//! Copy constructor (declared but not defined, do not use)
 		MapData(MapData<OrdinalType> const& source);

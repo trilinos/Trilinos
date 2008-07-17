@@ -306,6 +306,8 @@ namespace Tpetra {
              bool const& deterministic,
              OrdinalType& numRemoteIDs) 
   {
+    // FINISH: consider deleting parameter deterministic
+    (void)deterministic;
     OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
 
@@ -533,6 +535,10 @@ namespace Tpetra {
       OrdinalType packetSize,
       std::vector<ScalarType>& imports) 
   {
+    (void)exports;
+    (void)packetSize;
+    (void)imports;
+    // FINISH
   }
 
   template <typename OrdinalType>
@@ -542,11 +548,16 @@ namespace Tpetra {
       OrdinalType packetSize,
       std::vector<ScalarType>& imports) 
   {
+    (void)exports;
+    (void)packetSize;
+    (void)imports;
+    // FINISH
   }
 
   template <typename OrdinalType>
   void Distributor<OrdinalType>::doWaits() 
   {
+    // FINISH
   }
 
   template <typename OrdinalType>
@@ -556,6 +567,10 @@ namespace Tpetra {
       OrdinalType packetSize,
       std::vector<ScalarType>& imports) 
   {
+    (void)exports;
+    (void)packetSize;
+    (void)imports;
+    // FINISH
   }
 
   template <typename OrdinalType>
@@ -565,11 +580,16 @@ namespace Tpetra {
       OrdinalType packetSize,
       std::vector<ScalarType>& imports) 
   {
+    (void)exports;
+    (void)packetSize;
+    (void)imports;
+    // FINISH
   }
 
   template <typename OrdinalType>
   void Distributor<OrdinalType>::doReverseWaits() 
   {
+    // FINISH
   }
   
   //! print method inherited from Teuchos::Object

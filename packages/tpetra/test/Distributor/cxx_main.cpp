@@ -149,12 +149,12 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
-  else
+  else {
     if(verbose) cout << "passed" << endl;
+  }
   returnierr += ierr;
   ierr = 0;
   //distributorS->printInfo(cout);
-
 
   // ========================================
   // test createFromRecvs
@@ -185,18 +185,22 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
     outputData(myImageID, numImages, "exportImageIDs: " + Tpetra::toString(exportImageIDs) + " Expected: " + Tpetra::toString(remoteImageIDs));
     if(verbose) cout << "createFromRecvs test ";
   }
-  if(numExportIDs != numRemoteIDs)
+  if(numExportIDs != numRemoteIDs) {
     ierr++;
-  if(exportGIDs != expectedGIDs)
+  }
+  if(exportGIDs != expectedGIDs) {
     ierr++;
-  if(exportImageIDs != remoteImageIDs)
+  }
+  if(exportImageIDs != remoteImageIDs) {
     ierr++;
+  }
   if(ierr != 0) {
     ierr = 1;
     if(verbose) cout << "failed" << endl;
   }
-  else
+  else {
     if(verbose) cout << "passed" << endl;
+  }
   returnierr += ierr;
   ierr = 0;
 
@@ -227,8 +231,9 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
     ierr = 1;
     if(verbose) cout << "failed" << endl;
   }
-  else
+  else {
     if(verbose) cout << "passed" << endl;
+  }
   returnierr += ierr;
   ierr = 0;
 #endif // HAVE_MPI
@@ -239,10 +244,12 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 
   comm->barrier();
   if(verbose) {
-    if(returnierr == 0)
+    if(returnierr == 0) {
       outputHeading("Unit tests for " + className + " passed.");
-    else
+    }
+    else {
       outputHeading("Unit tests for " + className + " failed.");
+    }
   }
   return(returnierr);
 }

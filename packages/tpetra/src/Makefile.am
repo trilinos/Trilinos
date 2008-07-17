@@ -50,7 +50,8 @@ CORE_H = \
 	$(srcdir)/Tpetra_OmniPlatformData.hpp \
 	$(srcdir)/Tpetra_Comm.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \
-	$(srcdir)/Tpetra_Directory.hpp
+	$(srcdir)/Tpetra_Directory.hpp \
+	$(srcdir)/Tpetra_DirectoryDecl.hpp
 
 CORE = 
 
