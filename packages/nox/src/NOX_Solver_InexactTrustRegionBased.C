@@ -354,6 +354,8 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::step()
   
   prePostOperator.runPostIterate(*this);
 
+  printUpdate();
+
   return status;
 }
 
@@ -1011,7 +1013,6 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
   // Iterate until converged or failed
   while (status == StatusTest::Unconverged) {
     status = step();
-    printUpdate();
   }
 
   if (writeOutputParamsToList) {

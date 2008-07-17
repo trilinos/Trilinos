@@ -237,6 +237,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
     utilsPtr->out() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
     status = StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
@@ -246,6 +247,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
     utilsPtr->err() << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
@@ -480,6 +482,8 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 
   prePostOperator.runPostIterate(*this);
 
+  printUpdate();
+    
   return status;
 }
 
@@ -490,7 +494,6 @@ NOX::StatusTest::StatusType TrustRegionBased::solve()
   // Iterate until converged or failed
   while (status == StatusTest::Unconverged) {
     status = step();
-    printUpdate();
   }
 
   Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");

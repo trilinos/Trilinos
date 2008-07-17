@@ -313,6 +313,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
   if (status != NOX::StatusTest::Unconverged)
   { 
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
@@ -329,6 +330,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
 	   << "unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
@@ -349,6 +351,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
 	     << endl;
       status = NOX::StatusTest::Failed;
       prePostOperator.runPostIterate(*this);
+      printUpdate();
       return status;
     }
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
@@ -365,12 +368,15 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
 	   << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
+    printUpdate();
     return status;
   }
 
   status = test.checkStatus(*this, checkType);
  
   prePostOperator.runPostIterate(*this);
+  
+  printUpdate();
 
   return status;
 }
@@ -384,7 +390,6 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
   while (status == NOX::StatusTest::Unconverged)
   {
     status = step();
-    printUpdate();
   }
 
   Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");
