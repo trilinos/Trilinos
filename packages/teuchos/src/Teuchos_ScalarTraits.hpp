@@ -177,7 +177,7 @@ struct ScalarTraits<char>
   static inline char conjugate(char x) { return x; }
   static inline char real(char x) { return x; }
   static inline char imag(char) { return 0; }
-  static inline bool isnaninf(char x) { return false; }
+  static inline bool isnaninf(char ) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -194,6 +194,35 @@ struct ScalarTraits<char>
 };
 
 template<>
+struct ScalarTraits<short int>
+{
+  typedef short int magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(short int a) { return static_cast<short int>(std::fabs(static_cast<double>(a))); }
+  static inline short int zero()  { return 0; }
+  static inline short int one()   { return 1; }
+  static inline short int conjugate(short int x) { return x; }
+  static inline short int real(short int x) { return x; }
+  static inline short int imag(short int) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline short int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "short int"; }
+  static inline short int squareroot(short int x) { return (short int) std::sqrt((double) x); }
+  static inline short int pow(short int x, short int y) { return (short int) std::pow((double)x,(double)y); }
+};
+
+template<>
 struct ScalarTraits<int>
 {
   typedef int magnitudeType;
@@ -207,7 +236,7 @@ struct ScalarTraits<int>
   static inline int conjugate(int x) { return x; }
   static inline int real(int x) { return x; }
   static inline int imag(int) { return 0; }
-  static inline bool isnaninf(int x) { return false; }
+  static inline bool isnaninf(int) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -221,6 +250,35 @@ struct ScalarTraits<int>
   static inline std::string name() { return "int"; }
   static inline int squareroot(int x) { return (int) std::sqrt((double) x); }
   static inline int pow(int x, int y) { return (int) std::pow((double)x,(double)y); }
+};
+
+template<>
+struct ScalarTraits<long int>
+{
+  typedef long int magnitudeType;
+  static const bool isComplex = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(long int a) { return static_cast<long int>(std::fabs(static_cast<double>(a))); }
+  static inline long int zero()  { return 0; }
+  static inline long int one()   { return 1; }
+  static inline long int conjugate(long int x) { return x; }
+  static inline long int real(long int x) { return x; }
+  static inline long int imag(long int) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline long int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "long int"; }
+  static inline long int squareroot(long int x) { return (long int) std::sqrt((double) x); }
+  static inline long int pow(long int x, long int y) { return (long int) std::pow((double)x,(double)y); }
 };
 
 #ifndef __sun

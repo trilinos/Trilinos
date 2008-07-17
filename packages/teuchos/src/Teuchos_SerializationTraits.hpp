@@ -63,22 +63,22 @@ public:
   //@{
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */
-  static Ordinal fromCountToDirectBytes(const Ordinal count) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static Ordinal fromCountToDirectBytes(const Ordinal count) { (void)count; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   /** \brief Convert the pointer type to <tt>char*</tt>. */
-  static char* convertToCharPtr( T* ptr ) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static char* convertToCharPtr( T* ptr ) { (void)ptr; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   /** \brief Convert the pointer type to <tt>const char*</tt>. */
-  static const char* convertToCharPtr( const T* ptr ) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static const char* convertToCharPtr( const T* ptr ) { (void)ptr; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
-  static Ordinal fromDirectBytesToCount(const Ordinal bytes) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static Ordinal fromDirectBytesToCount(const Ordinal bytes) { (void)bytes; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   /** \brief Convert the pointer type from <tt>char*</tt>. */
-  static T* convertFromCharPtr( char* ptr ) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static T* convertFromCharPtr( char* ptr ) { (void)ptr; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   /** \brief Convert the pointer type from <tt>char*</tt>. */
-  static const T* convertFromCharPtr( const char* ptr ) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static const T* convertFromCharPtr( const char* ptr ) { (void)ptr; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   //@}
 
@@ -86,7 +86,7 @@ public:
   //@{
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */
-  static Ordinal fromCountToIndirectBytes(const Ordinal count) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static Ordinal fromCountToIndirectBytes(const Ordinal count) { (void)count; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   /** \brief Serialize to an indirect <tt>char[]</tt> buffer.
    *
@@ -106,10 +106,10 @@ public:
   static void serialize(
     const Ordinal count, const T buffer[], const Ordinal bytes, char charBuffer[]
     )
-    { UndefinedSerializationTraits<T>::notDefined(); }
+    { (void)count; (void)buffer; (void)bytes; (void)charBuffer; UndefinedSerializationTraits<T>::notDefined(); }
 
   /** \brief Return the number of objects for <tt>bytes</tt> of storage. */
-  static Ordinal fromIndirectBytesToCount(const Ordinal bytes) { UndefinedSerializationTraits<T>::notDefined(); return 0; }
+  static Ordinal fromIndirectBytesToCount(const Ordinal bytes) { (void)bytes; UndefinedSerializationTraits<T>::notDefined(); return 0; }
 
   /** \brief Deserialize from an indirect <tt>char[]</tt> buffer.
    *
@@ -129,7 +129,8 @@ public:
   static void deserialize(
     const Ordinal bytes, const char charBuffer[], const Ordinal count, T buffer[]
     )
-    { UndefinedSerializationTraits<T>::notDefined(); }
+    { (void)bytes; (void)charBuffer; (void)count; (void)buffer;
+      UndefinedSerializationTraits<T>::notDefined(); }
   
   //@}
 
@@ -186,8 +187,18 @@ class SerializationTraits<Ordinal,char>
 {};
 
 template<typename Ordinal>
+class SerializationTraits<Ordinal,short int>
+  : public DirectSerializationTraits<Ordinal,short int>
+{};
+
+template<typename Ordinal>
 class SerializationTraits<Ordinal,int>
   : public DirectSerializationTraits<Ordinal,int>
+{};
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal,long int>
+  : public DirectSerializationTraits<Ordinal,long int>
 {};
 
 template<typename Ordinal>
