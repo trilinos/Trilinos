@@ -124,6 +124,7 @@ private:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
+  bool setTimeStepPointCalled_;
   RCP<const Thyra::VectorBase<Scalar> > x_old_;
   Scalar t_old_;
   Scalar delta_t_;
@@ -160,7 +161,9 @@ implicitRKModelEvaluator(
 
 template<class Scalar>
 ImplicitRKModelEvaluator<Scalar>::ImplicitRKModelEvaluator()
-{}
+{
+  setTimeStepPointCalled_ = false;
+}
 
 
 // Overridden from ImplicitRKModelEvaluatorBase
@@ -229,6 +232,7 @@ void ImplicitRKModelEvaluator<Scalar>::setTimeStepPoint(
   x_old_ = x_old;
   t_old_ = t_old;
   delta_t_ = delta_t;
+  setTimeStepPointCalled_ = true;
 }
 
 
@@ -325,6 +329,10 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   typedef Thyra::VectorBase<Scalar> VB;
   typedef Thyra::ProductVectorBase<Scalar> PVB;
   typedef Thyra::BlockedLinearOpBase<Scalar> BLWB;
+
+  TEST_FOR_EXCEPTION( !setTimeStepPointCalled_, std::logic_error,
+      "Error! setTimeStepPoint must be called before evalModel"
+      );
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
     "Rythmos::ImplicitRKModelEvaluator",inArgs_bar,outArgs_bar,daeModel_

@@ -455,8 +455,12 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, evalModel ) {
   V_S(outArg(*x_in),5.0);
   inArgs.set_x(x_in);
   
+  // We need to call setTimeStepPoint before evalModel
   TEST_THROW( irkME->evalModel(inArgs,outArgs), std::logic_error );
       
+  double delta_t = 6.0;
+  irkME->setTimeStepPoint( base_x, base_t, delta_t );
+  irkME->evalModel(inArgs,outArgs);
 
   // Verify contents of f_out and W_op_out.
   // TODO
