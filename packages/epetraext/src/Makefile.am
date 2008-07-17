@@ -427,6 +427,32 @@ BLOCK =
 
 endif
 
+
+# Matrix/Vector restriction
+
+EXTRA_RESTRICT_H = \
+     $(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.h \
+     $(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.h 
+
+EXTRA_RESTRICT= \
+     $(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp \
+     $(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp
+
+if BUILD_RESTRICT
+RESTRICT_H = \
+    $(EXTRA_RESTRICT_H)
+
+RESTRICT = \
+    $(EXTRA_RESTRICT)
+else
+
+RESTRICT_H =
+
+RESTRICT =
+
+endif
+
+
 ### Only build PETSc interfaces if both the PETSc and experimental
 ### configure flags are set
 if BUILD_PETSC
@@ -454,6 +480,7 @@ libepetraext_a_SOURCES = \
      $(TRANSFORM) \
      $(BTF) \
      $(INOUT) \
+     $(RESTRICT) \
      $(ZOLTAN) \
      $(COLORING) \
      $(MATLAB) \
@@ -481,6 +508,7 @@ EPETRAEXT_H = \
      $(TRANSFORM_H) \
      $(BTF_H) \
      $(INOUT_H) \
+     $(RESTRICT_H) \
      $(ZOLTAN_H) \
      $(COLORING_H) \
      $(MATLAB_H) \

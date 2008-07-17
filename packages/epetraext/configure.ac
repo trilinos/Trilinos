@@ -320,7 +320,10 @@ AM_CONDITIONAL(BUILD_TRANSFORM, [test "X$ac_cv_use_epetraext_transform" != "Xno"
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, inout, [Enable EpetraExt InOut subpkg], INOUT, yes)
 AM_CONDITIONAL(BUILD_INOUT, [test "X$ac_cv_use_epetraext_inout" != "Xno"])
 
-TAC_ARG_ENABLE_FEATURE_SUB( epetraext, coloring, [Enable EpetraExt Coloring subpkg], INOUT, yes)
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, restrict, [Enable EpetraExt Restrict subpkg], RESTRICT, yes)
+AM_CONDITIONAL(BUILD_RESTRICT, [test "X$ac_cv_use_epetraext_restrict" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, coloring, [Enable EpetraExt Coloring subpkg], COLORING, yes)
 AM_CONDITIONAL(BUILD_COLORING, [test "X$ac_cv_use_epetraext_coloring" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, zoltan, [Enable EpetraExt interface support for Zoltan], ZOLTAN, no)

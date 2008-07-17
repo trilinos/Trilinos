@@ -742,6 +742,8 @@ BUILD_TRANSFORM_TRUE
 BUILD_TRANSFORM_FALSE
 BUILD_INOUT_TRUE
 BUILD_INOUT_FALSE
+BUILD_RESTRICT_TRUE
+BUILD_RESTRICT_FALSE
 BUILD_COLORING_TRUE
 BUILD_COLORING_FALSE
 BUILD_ZOLTAN_TRUE
@@ -1398,6 +1400,8 @@ Optional Features:
                           Enable EpetraExt Transform subpkg (default is yes)
   --enable-epetraext-inout
                           Enable EpetraExt InOut subpkg (default is yes)
+  --enable-epetraext-restrict
+                          Enable EpetraExt Restrict subpkg (default is yes)
   --enable-epetraext-coloring
                           Enable EpetraExt Coloring subpkg (default is yes)
   --enable-epetraext-zoltan
@@ -8707,6 +8711,40 @@ fi
 
 
 
+# Check whether --enable-epetraext-restrict was given.
+if test "${enable_epetraext_restrict+set}" = set; then
+  enableval=$enable_epetraext_restrict; ac_cv_use_epetraext_restrict=$enableval
+else
+  ac_cv_use_epetraext_restrict=yes
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use epetraext-restrict" >&5
+echo $ECHO_N "checking whether to use epetraext-restrict... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetraext_restrict" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RESTRICT
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetraext_restrict" != "Xno"; then
+  BUILD_RESTRICT_TRUE=
+  BUILD_RESTRICT_FALSE='#'
+else
+  BUILD_RESTRICT_TRUE='#'
+  BUILD_RESTRICT_FALSE=
+fi
+
+
+
 # Check whether --enable-epetraext-coloring was given.
 if test "${enable_epetraext_coloring+set}" = set; then
   enableval=$enable_epetraext_coloring; ac_cv_use_epetraext_coloring=$enableval
@@ -8723,7 +8761,7 @@ if test "X$ac_cv_use_epetraext_coloring" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_INOUT
+#define HAVE_COLORING
 _ACEOF
 
 else
@@ -11564,6 +11602,13 @@ echo "$as_me: error: conditional \"BUILD_INOUT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_RESTRICT_TRUE}" && test -z "${BUILD_RESTRICT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_RESTRICT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_RESTRICT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_COLORING_TRUE}" && test -z "${BUILD_COLORING_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_COLORING\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -12404,6 +12449,8 @@ BUILD_TRANSFORM_TRUE!$BUILD_TRANSFORM_TRUE$ac_delim
 BUILD_TRANSFORM_FALSE!$BUILD_TRANSFORM_FALSE$ac_delim
 BUILD_INOUT_TRUE!$BUILD_INOUT_TRUE$ac_delim
 BUILD_INOUT_FALSE!$BUILD_INOUT_FALSE$ac_delim
+BUILD_RESTRICT_TRUE!$BUILD_RESTRICT_TRUE$ac_delim
+BUILD_RESTRICT_FALSE!$BUILD_RESTRICT_FALSE$ac_delim
 BUILD_COLORING_TRUE!$BUILD_COLORING_TRUE$ac_delim
 BUILD_COLORING_FALSE!$BUILD_COLORING_FALSE$ac_delim
 BUILD_ZOLTAN_TRUE!$BUILD_ZOLTAN_TRUE$ac_delim
@@ -12442,7 +12489,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 66; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 68; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

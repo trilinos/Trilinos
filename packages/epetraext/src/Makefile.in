@@ -161,6 +161,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/inout/EpetraExt_HDF5.cpp \
 	$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp \
 	$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
+	$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp \
+	$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp \
 	$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp \
 	$(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp \
 	$(srcdir)/zoltan/EpetraExt_ZoltanQuery.cpp \
@@ -235,7 +237,10 @@ am__objects_8 = EpetraExt_readEpetraLinearSystem.$(OBJEXT)
 @BUILD_EPETRAEXT_TRIUTILS_FALSE@@BUILD_INOUT_TRUE@am__objects_9 = $(am__objects_7)
 @BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@am__objects_9 = $(am__objects_7) \
 @BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@	$(am__objects_8)
-am__objects_10 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
+am__objects_10 = EpetraExt_RestrictedMultiVectorWrapper.$(OBJEXT) \
+	EpetraExt_RestrictedCrsMatrixWrapper.$(OBJEXT)
+@BUILD_RESTRICT_TRUE@am__objects_11 = $(am__objects_10)
+am__objects_12 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
 	EpetraExt_ZoltanOrder_CrsGraph.$(OBJEXT) \
 	EpetraExt_ZoltanQuery.$(OBJEXT) Zoltan_LoadBalance.$(OBJEXT) \
 	Zoltan_MigrationContainer.$(OBJEXT) \
@@ -243,36 +248,36 @@ am__objects_10 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
 	Zoltan_MigrationObject.$(OBJEXT) \
 	Zoltan_QueryContainer.$(OBJEXT) \
 	Zoltan_QueryFunctions.$(OBJEXT) Zoltan_QueryObject.$(OBJEXT)
-am__objects_11 =
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@am__objects_12 = $(am__objects_10)
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_12 =  \
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_10) \
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_11)
-am__objects_13 = EpetraExt_MapColoring.$(OBJEXT) \
+am__objects_13 =
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@am__objects_14 = $(am__objects_12)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_14 =  \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_12) \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_13)
+am__objects_15 = EpetraExt_MapColoring.$(OBJEXT) \
 	EpetraExt_MapColoringIndex.$(OBJEXT)
-@BUILD_COLORING_TRUE@am__objects_14 = $(am__objects_13)
-am__objects_15 = EpetraExt_MatlabEngine.$(OBJEXT) \
+@BUILD_COLORING_TRUE@am__objects_16 = $(am__objects_15)
+am__objects_17 = EpetraExt_MatlabEngine.$(OBJEXT) \
 	EpetraExt_PutMultiVector.$(OBJEXT) \
 	EpetraExt_PutRowMatrix.$(OBJEXT) \
 	EpetraExt_PutBlockMap.$(OBJEXT)
-@BUILD_MATLAB_TRUE@am__objects_16 = $(am__objects_15)
-am__objects_17 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
+@BUILD_MATLAB_TRUE@am__objects_18 = $(am__objects_17)
+am__objects_19 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
 	EpetraExt_BlockMultiVector.$(OBJEXT) \
 	EpetraExt_BlockVector.$(OBJEXT) \
 	EpetraExt_BlockUtility.$(OBJEXT) \
 	EpetraExt_MultiPointModelEvaluator.$(OBJEXT) \
 	EpetraExt_MultiSerialComm.$(OBJEXT)
-am__objects_18 = EpetraExt_MultiMpiComm.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_19 = $(am__objects_18)
-@BUILD_BLOCK_TRUE@am__objects_20 = $(am__objects_17) $(am__objects_19)
-am__objects_21 = EpetraExt_ModelEvaluator.$(OBJEXT) \
+am__objects_20 = EpetraExt_MultiMpiComm.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_21 = $(am__objects_20)
+@BUILD_BLOCK_TRUE@am__objects_22 = $(am__objects_19) $(am__objects_21)
+am__objects_23 = EpetraExt_ModelEvaluator.$(OBJEXT) \
 	EpetraExt_ModelEvaluatorScalingTools.$(OBJEXT)
-@BUILD_MODEL_EVALUATOR_TRUE@am__objects_22 = $(am__objects_21)
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@am__objects_23 = EpetraExt_PETScAIJMatrix.$(OBJEXT)
+@BUILD_MODEL_EVALUATOR_TRUE@am__objects_24 = $(am__objects_23)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@am__objects_25 = EpetraExt_PETScAIJMatrix.$(OBJEXT)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
-	$(am__objects_6) $(am__objects_9) $(am__objects_12) \
-	$(am__objects_14) $(am__objects_16) $(am__objects_20) \
-	$(am__objects_22) $(am__objects_23)
+	$(am__objects_6) $(am__objects_9) $(am__objects_11) \
+	$(am__objects_14) $(am__objects_16) $(am__objects_18) \
+	$(am__objects_22) $(am__objects_24) $(am__objects_25)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -338,6 +343,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/inout/EpetraExt_HDF5_Handle.h \
 	$(srcdir)/inout/EpetraExt_DistArray.h \
 	$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
+	$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.h \
+	$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.h \
 	$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.h \
 	$(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.h \
 	$(srcdir)/zoltan/EpetraExt_ZoltanQuery.h \
@@ -798,6 +805,24 @@ EXTRA_BLOCK_MPI = \
 @BUILD_BLOCK_TRUE@BLOCK = \
 @BUILD_BLOCK_TRUE@   $(EXTRA_BLOCK) $(BLOCK_MPI)
 
+
+# Matrix/Vector restriction
+EXTRA_RESTRICT_H = \
+     $(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.h \
+     $(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.h 
+
+EXTRA_RESTRICT = \
+     $(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp \
+     $(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp
+
+@BUILD_RESTRICT_FALSE@RESTRICT_H = 
+@BUILD_RESTRICT_TRUE@RESTRICT_H = \
+@BUILD_RESTRICT_TRUE@    $(EXTRA_RESTRICT_H)
+
+@BUILD_RESTRICT_FALSE@RESTRICT = 
+@BUILD_RESTRICT_TRUE@RESTRICT = \
+@BUILD_RESTRICT_TRUE@    $(EXTRA_RESTRICT)
+
 @BUILD_EXPERIMENTAL_FALSE@@BUILD_PETSC_TRUE@PETSC_H = 
 
 ### Only build PETSc interfaces if both the PETSc and experimental
@@ -816,6 +841,7 @@ libepetraext_a_SOURCES = \
      $(TRANSFORM) \
      $(BTF) \
      $(INOUT) \
+     $(RESTRICT) \
      $(ZOLTAN) \
      $(COLORING) \
      $(MATLAB) \
@@ -845,6 +871,7 @@ EPETRAEXT_H = \
      $(TRANSFORM_H) \
      $(BTF_H) \
      $(INOUT_H) \
+     $(RESTRICT_H) \
      $(ZOLTAN_H) \
      $(COLORING_H) \
      $(MATLAB_H) \
@@ -1037,6 +1064,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Reindex_CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Reindex_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Reindex_MultiVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_RestrictedCrsMatrixWrapper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_RestrictedMultiVectorWrapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_RowMatrixOut.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Scale_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_SolverMap_CrsMatrix.Po@am__quote@
@@ -1666,6 +1695,34 @@ EpetraExt_readEpetraLinearSystem.obj: $(srcdir)/inout/EpetraExt_readEpetraLinear
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' object='EpetraExt_readEpetraLinearSystem.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_readEpetraLinearSystem.obj `if test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; fi`
+
+EpetraExt_RestrictedMultiVectorWrapper.o: $(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_RestrictedMultiVectorWrapper.o -MD -MP -MF $(DEPDIR)/EpetraExt_RestrictedMultiVectorWrapper.Tpo -c -o EpetraExt_RestrictedMultiVectorWrapper.o `test -f '$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp' || echo '$(srcdir)/'`$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_RestrictedMultiVectorWrapper.Tpo $(DEPDIR)/EpetraExt_RestrictedMultiVectorWrapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp' object='EpetraExt_RestrictedMultiVectorWrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_RestrictedMultiVectorWrapper.o `test -f '$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp' || echo '$(srcdir)/'`$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp
+
+EpetraExt_RestrictedMultiVectorWrapper.obj: $(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_RestrictedMultiVectorWrapper.obj -MD -MP -MF $(DEPDIR)/EpetraExt_RestrictedMultiVectorWrapper.Tpo -c -o EpetraExt_RestrictedMultiVectorWrapper.obj `if test -f '$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp'; then $(CYGPATH_W) '$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_RestrictedMultiVectorWrapper.Tpo $(DEPDIR)/EpetraExt_RestrictedMultiVectorWrapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp' object='EpetraExt_RestrictedMultiVectorWrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_RestrictedMultiVectorWrapper.obj `if test -f '$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp'; then $(CYGPATH_W) '$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/restrict/EpetraExt_RestrictedMultiVectorWrapper.cpp'; fi`
+
+EpetraExt_RestrictedCrsMatrixWrapper.o: $(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_RestrictedCrsMatrixWrapper.o -MD -MP -MF $(DEPDIR)/EpetraExt_RestrictedCrsMatrixWrapper.Tpo -c -o EpetraExt_RestrictedCrsMatrixWrapper.o `test -f '$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp' || echo '$(srcdir)/'`$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_RestrictedCrsMatrixWrapper.Tpo $(DEPDIR)/EpetraExt_RestrictedCrsMatrixWrapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp' object='EpetraExt_RestrictedCrsMatrixWrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_RestrictedCrsMatrixWrapper.o `test -f '$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp' || echo '$(srcdir)/'`$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp
+
+EpetraExt_RestrictedCrsMatrixWrapper.obj: $(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_RestrictedCrsMatrixWrapper.obj -MD -MP -MF $(DEPDIR)/EpetraExt_RestrictedCrsMatrixWrapper.Tpo -c -o EpetraExt_RestrictedCrsMatrixWrapper.obj `if test -f '$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp'; then $(CYGPATH_W) '$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_RestrictedCrsMatrixWrapper.Tpo $(DEPDIR)/EpetraExt_RestrictedCrsMatrixWrapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp' object='EpetraExt_RestrictedCrsMatrixWrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_RestrictedCrsMatrixWrapper.obj `if test -f '$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp'; then $(CYGPATH_W) '$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/restrict/EpetraExt_RestrictedCrsMatrixWrapper.cpp'; fi`
 
 EpetraExt_Zoltan_CrsGraph.o: $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_Zoltan_CrsGraph.o -MD -MP -MF $(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Tpo -c -o EpetraExt_Zoltan_CrsGraph.o `test -f '$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp

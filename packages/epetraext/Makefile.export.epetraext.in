@@ -13,6 +13,7 @@ _EPETRAEXT_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
                      -I@abs_top_srcdir@/src/coloring \
                      -I@abs_top_srcdir@/src/distdir \
                      -I@abs_top_srcdir@/src/inout \
+                     -I@abs_top_srcdir@/src/restrict \
                      -I@abs_top_srcdir@/src/matlab \
                      -I@abs_top_srcdir@/src/model_evaluator \
                      -I@abs_top_srcdir@/src/transform \
