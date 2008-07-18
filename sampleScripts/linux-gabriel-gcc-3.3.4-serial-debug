@@ -12,7 +12,9 @@ FLIBS="-lg2c" \
 --enable-export-makefiles \
 --with-gnumake \
 --disable-default-packages \
---enable-teuchos --enable-teuchos-extended --disable-teuchos-blasfloat \
+--enable-teuchos \
+ --enable-teuchos-extended \
+ --disable-teuchos-blasfloat \
  --enable-teuchos-boost \
  --enable-teuchos-debug \
 --enable-thyra \

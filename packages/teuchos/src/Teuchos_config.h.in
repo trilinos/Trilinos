@@ -210,6 +210,9 @@
 /* Define if want to build teuchos-libxml2 */
 #undef HAVE_TEUCHOS_LIBXML2
 
+/* Define if want to build teuchos-long_long */
+#undef HAVE_TEUCHOS_LONG_LONG_INT
+
 /* Define if want to build teuchos-tests */
 #undef HAVE_TEUCHOS_TESTS
 

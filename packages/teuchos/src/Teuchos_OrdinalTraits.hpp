@@ -113,7 +113,7 @@ struct OrdinalTraits<long int> {
   static inline std::string name()           {return("long int");}
 };
 
-#ifdef HAVE_TUECHOS_LONG_LONG_INT
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 
 template<>
 struct OrdinalTraits<long long int> {
@@ -123,7 +123,7 @@ struct OrdinalTraits<long long int> {
   static inline std::string name() {return("long long int");}
 };
 
-#endif // HAVE_TUECHOS_LONG_LONG_INT
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

@@ -77,15 +77,6 @@
 #  define HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 #endif
 
-#ifdef HAVE_MPI
-#  define HAVE_TUECHOS_LONG_LONG_INT
-/* 2008/07/16: rabartl: Above, I am assuming that if you have MPI that long
- * long int will be allowed.  If this is not true, then we need to add a
- * configure-time option to turn this on and off independent from whether MPI
- * is used are not.
- */
-#endif
-
 #ifdef __cplusplus
 
 #if defined(HAVE_GCC_CHECKEDSTL) && !defined(_GLIBCXX_DEBUG)

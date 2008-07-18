@@ -744,6 +744,8 @@ HAVE_GCC_CHECKEDSTL_TRUE
 HAVE_GCC_CHECKEDSTL_FALSE
 HAVE_TEUCHOS_COMPLEX_TRUE
 HAVE_TEUCHOS_COMPLEX_FALSE
+HAVE_TEUCHOS_LONG_LONG_INT_TRUE
+HAVE_TEUCHOS_LONG_LONG_INT_FALSE
 HAVE_TEUCHOS_EXTENDED_TRUE
 HAVE_TEUCHOS_EXTENDED_FALSE
 HAVE_TEUCHOS_BLASFLOAT_TRUE
@@ -1388,6 +1390,9 @@ Optional Features:
                           (default is no)
   --enable-teuchos-complex
                           Enable Teuchos complex code (default is yes)
+  --enable-teuchos-long_long
+                          Enable long long int support in Teuchos (default is
+                          no)
   --enable-teuchos-extended
                           Enable Teuchos extended code (default is yes)
   --enable-teuchos-arprec Enable Teuchos interface support for the ARbitrary
@@ -7567,6 +7572,44 @@ fi
 else
   HAVE_TEUCHOS_COMPLEX_TRUE='#'
   HAVE_TEUCHOS_COMPLEX_FALSE=
+fi
+
+
+#
+#  --enable-teuchos-long-long
+#
+
+
+# Check whether --enable-teuchos-long_long was given.
+if test "${enable_teuchos_long_long+set}" = set; then
+  enableval=$enable_teuchos_long_long; ac_cv_use_teuchos_long_long=$enableval
+else
+  ac_cv_use_teuchos_long_long=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use teuchos-long_long" >&5
+echo $ECHO_N "checking whether to use teuchos-long_long... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_teuchos_long_long" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_LONG_LONG_INT
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_teuchos_long_long_int" != "Xno"; then
+  HAVE_TEUCHOS_LONG_LONG_INT_TRUE=
+  HAVE_TEUCHOS_LONG_LONG_INT_FALSE='#'
+else
+  HAVE_TEUCHOS_LONG_LONG_INT_TRUE='#'
+  HAVE_TEUCHOS_LONG_LONG_INT_FALSE=
 fi
 
 
@@ -16897,6 +16940,13 @@ echo "$as_me: error: conditional \"HAVE_TEUCHOS_COMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_TEUCHOS_LONG_LONG_INT_TRUE}" && test -z "${HAVE_TEUCHOS_LONG_LONG_INT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_LONG_LONG_INT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_TEUCHOS_LONG_LONG_INT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_TEUCHOS_EXTENDED_TRUE}" && test -z "${HAVE_TEUCHOS_EXTENDED_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -17677,6 +17727,8 @@ HAVE_GCC_CHECKEDSTL_TRUE!$HAVE_GCC_CHECKEDSTL_TRUE$ac_delim
 HAVE_GCC_CHECKEDSTL_FALSE!$HAVE_GCC_CHECKEDSTL_FALSE$ac_delim
 HAVE_TEUCHOS_COMPLEX_TRUE!$HAVE_TEUCHOS_COMPLEX_TRUE$ac_delim
 HAVE_TEUCHOS_COMPLEX_FALSE!$HAVE_TEUCHOS_COMPLEX_FALSE$ac_delim
+HAVE_TEUCHOS_LONG_LONG_INT_TRUE!$HAVE_TEUCHOS_LONG_LONG_INT_TRUE$ac_delim
+HAVE_TEUCHOS_LONG_LONG_INT_FALSE!$HAVE_TEUCHOS_LONG_LONG_INT_FALSE$ac_delim
 HAVE_TEUCHOS_EXTENDED_TRUE!$HAVE_TEUCHOS_EXTENDED_TRUE$ac_delim
 HAVE_TEUCHOS_EXTENDED_FALSE!$HAVE_TEUCHOS_EXTENDED_FALSE$ac_delim
 HAVE_TEUCHOS_BLASFLOAT_TRUE!$HAVE_TEUCHOS_BLASFLOAT_TRUE$ac_delim
@@ -17702,7 +17754,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

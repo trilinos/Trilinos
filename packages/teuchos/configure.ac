@@ -323,6 +323,13 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, complex, [Enable Teuchos complex code], TEU
 AM_CONDITIONAL(HAVE_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
 
 #
+#  --enable-teuchos-long-long
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, long_long, [Enable long long int support in Teuchos], TEUCHOS_LONG_LONG_INT, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_LONG_LONG_INT, [test "X$ac_cv_use_teuchos_long_long_int" != "Xno"])
+
+#
 #  --enable-teuchos-extended
 #
 

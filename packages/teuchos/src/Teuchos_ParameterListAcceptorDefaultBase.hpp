@@ -40,8 +40,8 @@ namespace Teuchos {
  * that implements some of the needed behavior automatically.
  *
  * Subclasses just need to implement <tt>setParameterList()</tt> and
- * <tt>getValidParameters()</tt>.  The underlying paraemeter list is accessed
- * using the protected members <tt>setMyParamList()</tt> and
+ * <tt>getValidParameters()</tt>.  The underlying parameter list is accessed
+ * using the non-virtual protected members <tt>setMyParamList()</tt> and
  * <tt>getMyParamList()</tt>.
  */
 class ParameterListAcceptorDefaultBase : virtual public ParameterListAcceptor {
