@@ -112,7 +112,7 @@ namespace FIAT
     (*measure)[0][0] = 1.0;
     (*measure)[0][1] = 1.0;
     Scalar diff = (*verts)(1,0) - (*verts)(0,0);
-    (*measure)[1][0] = diff > 0 ? 
+    (*measure)[1][0] = diff >= 0 ? diff : -diff;
 
     return measure;
   }

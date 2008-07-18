@@ -215,7 +215,9 @@ namespace FIAT
     RefCountPtr<Array<Array<Scalar> > > measure_;
   };
 
+}
+
 #include "FIAT_ReferenceElementDef.hpp"
  
-}
+
 #endif
