@@ -787,47 +787,5 @@ int test_Utils::test3()
 
 int test_Utils::test4()
 {
-  FEI_COUT << "testing snl_fei::insertion_sort_with_companions...";
-
-  int len = 5;
-  feiArray<int> array(len);
-  feiArray<double> darray(len);
-
-  array[0] = 2;
-  array[1] = 3;
-  array[2] = 0;
-  array[3] = 4;
-  array[4] = 1;
-
-  darray[0] = 2.0;
-  darray[1] = 3.0;
-  darray[2] = 0.0;
-  darray[3] = 4.0;
-  darray[4] = 1.0;
-
-  snl_fei::insertion_sort_with_companions(len, array.dataPtr(), darray.dataPtr());
-
-  for(int i=0; i<len; ++i) {
-    if (array[i] != i) {
-      return(-1);
-    }
-
-    if (std::abs(darray[i] - 1.0*i) > 1.e-49) {
-      return(-2);
-    }
-  }
-
-  array.resize(20);
-
-  len = 4;
-
-  array[10] = 91;
-  array[11] = 2225;
-  array[12] = 214;
-  array[13] = 3;
-
-  snl_fei::insertion_sort_with_companions(len, &array[10], &darray[0]);
-
-  FEI_COUT << "ok"<<FEI_ENDL;
   return(0);
 }

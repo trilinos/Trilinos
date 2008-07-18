@@ -86,16 +86,14 @@ am__objects_2 = BCNodeSet.$(OBJEXT) CommNodeSet.$(OBJEXT) \
 	test_Database.$(OBJEXT) test_EqnBuffer.$(OBJEXT) \
 	test_EqnCommMgr.$(OBJEXT) test_Factory.$(OBJEXT) \
 	test_Factory_helper.$(OBJEXT) test_FEI.$(OBJEXT) \
-	test_FEI_Implementation.$(OBJEXT) test_FillableMat.$(OBJEXT) \
-	test_FillableVec.$(OBJEXT) test_LinearSystem.$(OBJEXT) \
+	test_FEI_Implementation.$(OBJEXT) test_LinearSystem.$(OBJEXT) \
 	test_Matrix.$(OBJEXT) test_MatrixGraph.$(OBJEXT) \
 	test_misc.$(OBJEXT) test_PointBlockMap.$(OBJEXT) \
 	test_Reducer.$(OBJEXT) test_Set.$(OBJEXT) \
-	test_SNL_FEI_Structure.$(OBJEXT) test_CSMat.$(OBJEXT) \
-	test_SSMat.$(OBJEXT) test_FEI_Impl.$(OBJEXT) \
-	test_Tables.$(OBJEXT) test_Utils.$(OBJEXT) \
-	test_Vector.$(OBJEXT) test_VectorSpace.$(OBJEXT) \
-	test_benchmarks.$(OBJEXT)
+	test_SNL_FEI_Structure.$(OBJEXT) test_SSMat.$(OBJEXT) \
+	test_FEI_Impl.$(OBJEXT) test_Tables.$(OBJEXT) \
+	test_Utils.$(OBJEXT) test_Vector.$(OBJEXT) \
+	test_VectorSpace.$(OBJEXT) test_benchmarks.$(OBJEXT)
 am_libfei_test_utils_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libfei_test_utils_a_OBJECTS = $(am_libfei_test_utils_a_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -274,8 +272,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/test_Factory_helper.hpp \
 	$(top_srcdir)/test_utils/test_FEI.hpp \
 	$(top_srcdir)/test_utils/test_FEI_Implementation.hpp \
-	$(top_srcdir)/test_utils/test_FillableMat.hpp \
-	$(top_srcdir)/test_utils/test_FillableVec.hpp \
 	$(top_srcdir)/test_utils/test_LinearSystem.hpp \
 	$(top_srcdir)/test_utils/test_MatrixGraph.hpp \
 	$(top_srcdir)/test_utils/test_Matrix.hpp \
@@ -284,7 +280,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/test_Reducer.hpp \
 	$(top_srcdir)/test_utils/test_Set.hpp \
 	$(top_srcdir)/test_utils/test_SNL_FEI_Structure.hpp \
-	$(top_srcdir)/test_utils/test_CSMat.hpp \
 	$(top_srcdir)/test_utils/test_SSMat.hpp \
 	$(top_srcdir)/test_utils/test_FEI_Impl.hpp \
 	$(top_srcdir)/test_utils/test_Tables.hpp \
@@ -328,8 +323,6 @@ CORE = \
 	$(srcdir)/test_Factory_helper.cpp \
 	$(srcdir)/test_FEI.cpp \
 	$(srcdir)/test_FEI_Implementation.cpp \
-	$(srcdir)/test_FillableMat.cpp \
-	$(srcdir)/test_FillableVec.cpp \
 	$(srcdir)/test_LinearSystem.cpp \
 	$(srcdir)/test_Matrix.cpp \
 	$(srcdir)/test_MatrixGraph.cpp \
@@ -338,7 +331,6 @@ CORE = \
 	$(srcdir)/test_Reducer.cpp \
 	$(srcdir)/test_Set.cpp \
 	$(srcdir)/test_SNL_FEI_Structure.cpp \
-	$(srcdir)/test_CSMat.cpp \
 	$(srcdir)/test_SSMat.cpp \
 	$(srcdir)/test_FEI_Impl.cpp \
 	$(srcdir)/test_Tables.cpp \
@@ -451,7 +443,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/snl_fei_tester.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Algebraic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_AztecWrappers.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_CSMat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_CommUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Database.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_EqnBuffer.Po@am__quote@
@@ -461,8 +452,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_FEI_Implementation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Factory_helper.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_FillableMat.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_FillableVec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_LinearSystem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_MatrixGraph.Po@am__quote@
@@ -969,34 +958,6 @@ test_FEI_Implementation.obj: $(srcdir)/test_FEI_Implementation.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_FEI_Implementation.obj `if test -f '$(srcdir)/test_FEI_Implementation.cpp'; then $(CYGPATH_W) '$(srcdir)/test_FEI_Implementation.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_FEI_Implementation.cpp'; fi`
 
-test_FillableMat.o: $(srcdir)/test_FillableMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_FillableMat.o -MD -MP -MF $(DEPDIR)/test_FillableMat.Tpo -c -o test_FillableMat.o `test -f '$(srcdir)/test_FillableMat.cpp' || echo '$(srcdir)/'`$(srcdir)/test_FillableMat.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_FillableMat.Tpo $(DEPDIR)/test_FillableMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_FillableMat.cpp' object='test_FillableMat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_FillableMat.o `test -f '$(srcdir)/test_FillableMat.cpp' || echo '$(srcdir)/'`$(srcdir)/test_FillableMat.cpp
-
-test_FillableMat.obj: $(srcdir)/test_FillableMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_FillableMat.obj -MD -MP -MF $(DEPDIR)/test_FillableMat.Tpo -c -o test_FillableMat.obj `if test -f '$(srcdir)/test_FillableMat.cpp'; then $(CYGPATH_W) '$(srcdir)/test_FillableMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_FillableMat.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_FillableMat.Tpo $(DEPDIR)/test_FillableMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_FillableMat.cpp' object='test_FillableMat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_FillableMat.obj `if test -f '$(srcdir)/test_FillableMat.cpp'; then $(CYGPATH_W) '$(srcdir)/test_FillableMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_FillableMat.cpp'; fi`
-
-test_FillableVec.o: $(srcdir)/test_FillableVec.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_FillableVec.o -MD -MP -MF $(DEPDIR)/test_FillableVec.Tpo -c -o test_FillableVec.o `test -f '$(srcdir)/test_FillableVec.cpp' || echo '$(srcdir)/'`$(srcdir)/test_FillableVec.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_FillableVec.Tpo $(DEPDIR)/test_FillableVec.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_FillableVec.cpp' object='test_FillableVec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_FillableVec.o `test -f '$(srcdir)/test_FillableVec.cpp' || echo '$(srcdir)/'`$(srcdir)/test_FillableVec.cpp
-
-test_FillableVec.obj: $(srcdir)/test_FillableVec.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_FillableVec.obj -MD -MP -MF $(DEPDIR)/test_FillableVec.Tpo -c -o test_FillableVec.obj `if test -f '$(srcdir)/test_FillableVec.cpp'; then $(CYGPATH_W) '$(srcdir)/test_FillableVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_FillableVec.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_FillableVec.Tpo $(DEPDIR)/test_FillableVec.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_FillableVec.cpp' object='test_FillableVec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_FillableVec.obj `if test -f '$(srcdir)/test_FillableVec.cpp'; then $(CYGPATH_W) '$(srcdir)/test_FillableVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_FillableVec.cpp'; fi`
-
 test_LinearSystem.o: $(srcdir)/test_LinearSystem.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_LinearSystem.o -MD -MP -MF $(DEPDIR)/test_LinearSystem.Tpo -c -o test_LinearSystem.o `test -f '$(srcdir)/test_LinearSystem.cpp' || echo '$(srcdir)/'`$(srcdir)/test_LinearSystem.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_LinearSystem.Tpo $(DEPDIR)/test_LinearSystem.Po
@@ -1108,20 +1069,6 @@ test_SNL_FEI_Structure.obj: $(srcdir)/test_SNL_FEI_Structure.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_SNL_FEI_Structure.cpp' object='test_SNL_FEI_Structure.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_SNL_FEI_Structure.obj `if test -f '$(srcdir)/test_SNL_FEI_Structure.cpp'; then $(CYGPATH_W) '$(srcdir)/test_SNL_FEI_Structure.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_SNL_FEI_Structure.cpp'; fi`
-
-test_CSMat.o: $(srcdir)/test_CSMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_CSMat.o -MD -MP -MF $(DEPDIR)/test_CSMat.Tpo -c -o test_CSMat.o `test -f '$(srcdir)/test_CSMat.cpp' || echo '$(srcdir)/'`$(srcdir)/test_CSMat.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_CSMat.Tpo $(DEPDIR)/test_CSMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_CSMat.cpp' object='test_CSMat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_CSMat.o `test -f '$(srcdir)/test_CSMat.cpp' || echo '$(srcdir)/'`$(srcdir)/test_CSMat.cpp
-
-test_CSMat.obj: $(srcdir)/test_CSMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_CSMat.obj -MD -MP -MF $(DEPDIR)/test_CSMat.Tpo -c -o test_CSMat.obj `if test -f '$(srcdir)/test_CSMat.cpp'; then $(CYGPATH_W) '$(srcdir)/test_CSMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_CSMat.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_CSMat.Tpo $(DEPDIR)/test_CSMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_CSMat.cpp' object='test_CSMat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_CSMat.obj `if test -f '$(srcdir)/test_CSMat.cpp'; then $(CYGPATH_W) '$(srcdir)/test_CSMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_CSMat.cpp'; fi`
 
 test_SSMat.o: $(srcdir)/test_SSMat.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_SSMat.o -MD -MP -MF $(DEPDIR)/test_SSMat.Tpo -c -o test_SSMat.o `test -f '$(srcdir)/test_SSMat.cpp' || echo '$(srcdir)/'`$(srcdir)/test_SSMat.cpp

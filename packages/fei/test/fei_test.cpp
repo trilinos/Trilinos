@@ -29,9 +29,6 @@
 #include <test_utils/test_SNL_FEI_Structure.hpp>
 #include <test_utils/test_FEI_Implementation.hpp>
 #include <test_utils/test_FEI_Impl.hpp>
-#include <test_utils/test_FillableMat.hpp>
-#include <test_utils/test_FillableVec.hpp>
-#include <test_utils/test_CSMat.hpp>
 #include <test_utils/test_Tables.hpp>
 #include <test_utils/test_PointBlockMap.hpp>
 #include <test_utils/test_VectorSpace.hpp>
@@ -387,9 +384,6 @@ void execute_unit_tests(const std::string& path,
   //the array running the tests on each class instance.
 
   testers.push_back(fei::SharedPtr<tester>(new test_misc(comm)));
-  testers.push_back(fei::SharedPtr<tester>(new test_FillableVec(comm)));
-  testers.push_back(fei::SharedPtr<tester>(new test_FillableMat(comm)));
-  testers.push_back(fei::SharedPtr<tester>(new test_CSMat(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_CommUtils(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Utils(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Set(comm)));

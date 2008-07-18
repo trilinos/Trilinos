@@ -130,5 +130,18 @@ FillableMat::getRow(int row)
   return iter->second;
 }
 
+void
+FillableMat::clear()
+{
+  feipoolmat::iterator
+    iter = matdata_.begin(), end = matdata_.end();
+  for(; iter!=end; ++iter) {
+    vecpool_.destroy(iter->second);
+    vecpool_.deallocate(iter->second, 1);
+  }
+
+  matdata_.clear();
+}
+
 }//namespace fei
 

@@ -92,8 +92,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/test_Factory_helper.hpp \
 	$(top_srcdir)/test_utils/test_FEI.hpp \
 	$(top_srcdir)/test_utils/test_FEI_Implementation.hpp \
-	$(top_srcdir)/test_utils/test_FillableMat.hpp \
-	$(top_srcdir)/test_utils/test_FillableVec.hpp \
 	$(top_srcdir)/test_utils/test_LinearSystem.hpp \
 	$(top_srcdir)/test_utils/test_MatrixGraph.hpp \
 	$(top_srcdir)/test_utils/test_Matrix.hpp \
@@ -102,7 +100,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/test_Reducer.hpp \
 	$(top_srcdir)/test_utils/test_Set.hpp \
 	$(top_srcdir)/test_utils/test_SNL_FEI_Structure.hpp \
-	$(top_srcdir)/test_utils/test_CSMat.hpp \
 	$(top_srcdir)/test_utils/test_SSMat.hpp \
 	$(top_srcdir)/test_utils/test_FEI_Impl.hpp \
 	$(top_srcdir)/test_utils/test_Tables.hpp \
@@ -146,8 +143,6 @@ CORE = \
 	$(srcdir)/test_Factory_helper.cpp \
 	$(srcdir)/test_FEI.cpp \
 	$(srcdir)/test_FEI_Implementation.cpp \
-	$(srcdir)/test_FillableMat.cpp \
-	$(srcdir)/test_FillableVec.cpp \
 	$(srcdir)/test_LinearSystem.cpp \
 	$(srcdir)/test_Matrix.cpp \
 	$(srcdir)/test_MatrixGraph.cpp \
@@ -156,7 +151,6 @@ CORE = \
 	$(srcdir)/test_Reducer.cpp \
 	$(srcdir)/test_Set.cpp \
 	$(srcdir)/test_SNL_FEI_Structure.cpp \
-	$(srcdir)/test_CSMat.cpp \
 	$(srcdir)/test_SSMat.cpp \
 	$(srcdir)/test_FEI_Impl.cpp \
 	$(srcdir)/test_Tables.cpp \

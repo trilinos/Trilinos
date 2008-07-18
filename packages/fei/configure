@@ -5445,7 +5445,7 @@ else
   BUILD_TESTS_FALSE=
 fi
 
- if example "X$ac_cv_use_examples" != "Xno"; then
+ if test "X$ac_cv_use_examples" != "Xno"; then
   BUILD_EXAMPLES_TRUE=
   BUILD_EXAMPLES_FALSE='#'
 else

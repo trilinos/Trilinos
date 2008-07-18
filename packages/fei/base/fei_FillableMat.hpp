@@ -45,6 +45,8 @@ class FillableMat {
   const_iterator begin() const {return matdata_.begin();}
   const_iterator end() const {return matdata_.end();}
 
+  void clear();
+
  private:
   feipoolmat matdata_;
   fei_Pool_alloc<FillableVec> vecpool_;

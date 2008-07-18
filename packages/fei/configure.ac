@@ -408,7 +408,7 @@ TAC_ARG_ENABLE_FEATURE(tests, [Build tests for FEI package], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for FEI package], EXAMPLES, yes)
 
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
-AM_CONDITIONAL(BUILD_EXAMPLES, example "X$ac_cv_use_examples" != "Xno")
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories

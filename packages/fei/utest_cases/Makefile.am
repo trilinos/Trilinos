@@ -54,7 +54,7 @@ endif
 # ------------------------------------------------------------------------
 
 DEFS =
-DEFAULT_INCLUDES = $(FEI_INCLUDES) $(HYPRE_CPPFLAGS) $(PETSC_CPPFLAGS) $(PROMETHEUS_CPPFLAGS) $(FETIDP_CPPFLAGS)
+DEFAULT_INCLUDES = -I$(top_srcdir)/utest_cases $(FEI_INCLUDES) $(HYPRE_CPPFLAGS) $(PETSC_CPPFLAGS) $(PROMETHEUS_CPPFLAGS) $(FETIDP_CPPFLAGS)
 
 CORE_H = \
 	$(top_srcdir)/utest_cases/fei_unit_testcase.hpp \
@@ -67,7 +67,8 @@ CORE = \
 	$(srcdir)/fei_unit_testcontainer.cpp \
 	$(srcdir)/fei_unit_register_tests.cpp \
 	$(srcdir)/fei_unit_test_runner.cpp \
-	$(srcdir)/fei_unit_CSRMat_CSVec.cpp
+	$(srcdir)/fei_unit_CSRMat_CSVec.cpp \
+	$(srcdir)/fei_unit_utils.cpp
 
 # ------------------------------------------------------------------------
 # FEI library specifications
