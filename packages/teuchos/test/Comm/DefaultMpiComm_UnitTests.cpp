@@ -24,7 +24,7 @@ using Teuchos::defaultSmallNumber;
 bool testMpi = true;
 
 
-double errorTolSlack = 1e-2;
+double errorTolSlack = 1e+1;
 
 
 TEUCHOS_STATIC_SETUP()
