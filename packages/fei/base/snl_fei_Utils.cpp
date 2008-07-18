@@ -384,7 +384,7 @@ void snl_fei::packSSMat(SSMat& mat,
   feiArray<int>& rowNumbers = mat.getRowNumbers();
   feiArray<SSVec*>& rows = mat.getRows();
 
-  intdata.resize(1+rowNumbers.length()*2+nnz);
+  intdata.resize(1+rowNumbers.size()*2+nnz);
   doubledata.resize(nnz);
 
   int* intdata_ptr = &intdata[0];
@@ -393,15 +393,15 @@ void snl_fei::packSSMat(SSMat& mat,
   int ioffset = 0;
   int doffset = 0;
 
-  intdata_ptr[ioffset++] = rowNumbers.length();
+  intdata_ptr[ioffset++] = rowNumbers.size();
 
-  for(int i=0; i<rowNumbers.length(); ++i) {
+  for(int i=0; i<rowNumbers.size(); ++i) {
     intdata_ptr[ioffset++] = rowNumbers[i];
     SSVec* row = rows[i];
-    int* rowindices = row->indices().dataPtr();
-    double* rowcoefs = row->coefs().dataPtr();
-    intdata_ptr[ioffset++] = row->length();
-    for(int j=0; j<row->length(); ++j) {
+    int* rowindices = &(row->indices()[0]);
+    double* rowcoefs = &(row->coefs()[0]);
+    intdata_ptr[ioffset++] = row->size();
+    for(int j=0; j<row->size(); ++j) {
       intdata_ptr[ioffset++] = rowindices[j];
       doubledata_ptr[doffset++] = rowcoefs[j];
     }
@@ -462,7 +462,7 @@ int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
 {
   feiArray<int>& bcEqnNumbers = bcEqnBuf.getRowNumbers();
   feiArray<SSVec*>& bcEqns  = bcEqnBuf.getRows();
-  int numBCEqns = bcEqns.length();
+  int numBCEqns = bcEqns.size();
 
   double fei_eps = 1.e-49;
 
@@ -521,6 +521,29 @@ int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
 }
 
 //----------------------------------------------------------------------------
+int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
+                            std::vector<int>& essEqns,
+                            std::vector<double>& values)
+{
+  feiArray<int>& bcEqnNumbers = bcEqnBuf.getRowNumbers();
+  feiArray<SSVec*>& bcEqns  = bcEqnBuf.getRows();
+  int numBCEqns = bcEqns.size();
+
+  essEqns.clear();
+  values.clear();
+
+  for(int i=0; i<numBCEqns; i++){
+    feiArray<double>& bcCoefs = bcEqns[i]->coefs();
+
+    essEqns.push_back(bcEqnNumbers[i]);
+
+    values.push_back(bcCoefs[0]);
+  }
+
+  return(0);
+}
+
+//----------------------------------------------------------------------------
 int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
 				   fei::Matrix& bcEqns,
                                    feiArray<int>& bcEqnNumbers)
@@ -557,8 +580,8 @@ int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
 
     CHK_ERR( matrixGraph.getConstraintConnectivityIndices(cr, cr_indices) );
 
-    feiArray<double>* weights = cr->getMasterWeights();
-    double* weightsPtr = weights->dataPtr();
+    feiArray<double>& weights = *(cr->getMasterWeights());
+    double* weightsPtr = &weights[0];
 
     int len = cr_indices.size();
     int* cr_indPtr = &(cr_indices[0]);
@@ -596,7 +619,7 @@ int snl_fei::gatherRemoteEssBCs(feiArray<int>& essEqns,
   int* rowOffsPtr = &(rrowOffs[0]);
   int* rcolsPtr = &(rcols[0]);
 
-  for(int j=0; j<essEqns.length(); ++j) {
+  for(int j=0; j<essEqns.size(); ++j) {
 
     int eqn = essEqns[j];
 
@@ -629,9 +652,9 @@ int snl_fei::gatherRemoteEssBCs(SSVec& essBCs,
   std::vector<int>& rrowOffs = remoteGraph->rowOffsets;
   std::vector<int>& rcols = remoteGraph->packedColumnIndices;
 
-  int* essEqns = essBCs.indices().dataPtr();
-  int numEssEqns = essBCs.length();
-  double* coefs = essBCs.coefs().dataPtr();
+  int* essEqns = &(essBCs.indices()[0]);
+  int numEssEqns = essBCs.size();
+  double* coefs = &(essBCs.coefs()[0]);
 
   if (rrowOffs.size() > 0 && rcols.size() > 0) {
 
@@ -674,13 +697,13 @@ void snl_fei::globalUnion(MPI_Comm comm, SSVec& localVec, SSVec& globalUnionVec)
   feiArray<double>& feilocaldoubledata = localVec.coefs();
 
   std::vector<int> localintdata;
-  if (feilocalintdata.length() > 0) {
-    localintdata.assign(&feilocalintdata[0], &feilocalintdata[0]+feilocalintdata.length());
+  if (feilocalintdata.size() > 0) {
+    localintdata.assign(&feilocalintdata[0], &feilocalintdata[0]+feilocalintdata.size());
   }
 
   std::vector<double> localdoubledata;
-  if (feilocaldoubledata.length() > 0) {
-    localdoubledata.assign(&feilocaldoubledata[0], &feilocaldoubledata[0]+feilocaldoubledata.length());
+  if (feilocaldoubledata.size() > 0) {
+    localdoubledata.assign(&feilocaldoubledata[0], &feilocaldoubledata[0]+feilocaldoubledata.size());
   }
 
   //use Allgatherv to place every processor's arrays onto every
@@ -784,16 +807,16 @@ void snl_fei::create_col_to_row_map(SSMat& D, std::multimap<int,int>& crmap)
   crmap.clear();
 
   feiArray<int>& rowNumbers = D.getRowNumbers();
-  if (rowNumbers.length() == 0) return;
+  if (rowNumbers.size() == 0) return;
 
   feiArray<SSVec*>& rows = D.getRows();
 
-  for(int i=0; i<rowNumbers.length(); ++i) {
+  for(int i=0; i<rowNumbers.size(); ++i) {
     int rowNum = rowNumbers[i];
     SSVec& row = *(rows[i]);
 
-    int numCols = row.length();
-    int* colNums = row.indices().dataPtr();
+    int numCols = row.size();
+    int* colNums = &(row.indices()[0]);
     for(int j=0; j<numCols; ++j) {
       int colNum = colNums[j];
 
@@ -809,7 +832,7 @@ int snl_fei::removeCouplings(SSMat& D)
   feiArray<int> tempIndices;
 
   feiArray<int>& rowNumbers = D.getRowNumbers();
-  SSVec** rows = D.getRows().dataPtr();
+  SSVec** rows = &(D.getRows()[0]);
 
   bool finished = false;
   while(!finished) {
@@ -819,7 +842,7 @@ int snl_fei::removeCouplings(SSMat& D)
     typedef std::multimap<int,int>::iterator MM_Iter;
 
     bool foundCoupling = false;
-    for(int i=0; i<rowNumbers.length(); ++i) {
+    for(int i=0; i<rowNumbers.size(); ++i) {
       int rownum = rowNumbers[i];
 
       std::pair<MM_Iter,MM_Iter> mmi = crmap.equal_range(rownum);
@@ -828,8 +851,8 @@ int snl_fei::removeCouplings(SSMat& D)
         int cri_row = cri->second;
 
         SSVec* row = D.getRow(cri_row);
-        int rowlen = row->length();
-        int* cols = row->indices().dataPtr();
+        int rowlen = row->size();
+        int* cols = &(row->indices()[0]);
 
         int coloffset = snl_fei::binarySearch(rownum, cols, rowlen);
         if (coloffset < 0) {
@@ -845,12 +868,12 @@ int snl_fei::removeCouplings(SSMat& D)
 	tempIndices = rows[i]->indices();
 	tempCoefs = rows[i]->coefs();
 
-	double* tempCoefsPtr = tempCoefs.dataPtr();
-	for(int ii=0; ii<tempCoefs.length(); ++ii) {
+	double* tempCoefsPtr = &tempCoefs[0];
+	for(int ii=0; ii<tempCoefs.size(); ++ii) {
 	  tempCoefsPtr[ii] *= coef;
 	}
 
-	row->addEntries(tempCoefs.length(), tempCoefsPtr, tempIndices.dataPtr());
+	row->addEntries(tempCoefs.size(), tempCoefsPtr, &tempIndices[0]);
       }
     }
 

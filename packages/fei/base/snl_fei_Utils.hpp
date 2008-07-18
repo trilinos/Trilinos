@@ -247,6 +247,12 @@ namespace snl_fei {
 		     feiArray<double>& otherBeta,
 		     feiArray<double>& otherGamma);
 
+  /** Get boundary-conditions from an SSMat
+  */
+  int separateBCEqns(SSMat& bcEqnBuf,
+                     std::vector<int>& essEqns,
+                     std::vector<double>& values);
+
   /** Resolve conflicts between constraint-relations and essential (dirichlet)
       boundary conditions.
   */

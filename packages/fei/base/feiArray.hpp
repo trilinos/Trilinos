@@ -128,6 +128,11 @@ class feiArray {
       return(length_);
     }
 
+  int size() const
+    {
+      return(length_);
+    }
+
   /** Return the actual allocated length of the internal data array, which
       will always be equal to or greater than the value returned by length().
   */

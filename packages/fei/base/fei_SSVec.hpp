@@ -52,6 +52,7 @@ class SSVec {
   void logicalClear();
 
   int length() const;
+  int size() const;
 
   /** Function to set the internal data. */
   int setInternalData(int numEntries, const int* indices, const double* coefs);

@@ -68,8 +68,14 @@ void SSVec::logicalClear()
 //----------------------------------------------------------------------------
 int SSVec::length() const
 {
-  if (indices_ == NULL) return(0); 
-  else return(indices_->length());
+  return size();
+}
+
+//----------------------------------------------------------------------------
+int SSVec::size() const
+{
+  if (indices_ == NULL) return(0);
+  else return(indices_->size());
 }
 
 //----------------------------------------------------------------------------
