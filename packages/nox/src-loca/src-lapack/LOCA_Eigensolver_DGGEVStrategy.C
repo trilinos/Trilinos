@@ -50,7 +50,8 @@
 #include "LOCA_Eigensolver_DGGEVStrategy.H"
 #include "LOCA_EigenvalueSort_Strategies.H"
 
-#include "NOX_LAPACK_Wrappers.H"
+//#include "NOX_LAPACK_Wrappers.H"
+#include "Teuchos_LAPACK_wrappers.hpp"
 #include "LOCA_LAPACK_Group.H"
 
 
@@ -158,7 +159,7 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
     // Copy mass matrix since lapack routines overwrite it
     M = massMatrix;
 
-#ifdef HAVE_LAPACK_GENEV
+#if defined(HAVE_LAPACK_GGEV) || defined(HAVE_LAPACK_GEGV)
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, &work0, &lwork, &info);
 #endif
@@ -174,7 +175,7 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 
   // Calculate eigenvalues, eigenvectors
   if (hasMassMatrix) {
-#ifdef HAVE_LAPACK_GENEV
+#if defined(HAVE_LAPACK_GGEV) || defined(HAVE_LAPACK_GEGV)
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, work, &lwork, &info);
 #endif

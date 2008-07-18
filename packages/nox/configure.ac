@@ -657,14 +657,16 @@ if test X${REQUIRE_LIB_CHECK} = Xyes || test X${ac_cv_use_libcheck} = Xyes; then
   AC_F77_LIBRARY_LDFLAGS
   LIBS=" ${FLIBS} ${LIBS}"
 
+  ## The following three checks are done by Teuchos, so we don't need them
+
   # Find valid BLAS
-  TAC_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
+  ##TAC_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
 
   # Find valid LAPACK
-  TAC_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
+  ##TAC_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
 
   # Find valid LAPACK DGGEV function
-  ACX_DGGEV
+  ##ACX_DGGEV
 
 fi
 
