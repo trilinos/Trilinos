@@ -50,7 +50,6 @@
 #include "LOCA_Eigensolver_DGGEVStrategy.H"
 #include "LOCA_EigenvalueSort_Strategies.H"
 
-//#include "NOX_LAPACK_Wrappers.H"
 #include "Teuchos_LAPACK_wrappers.hpp"
 #include "LOCA_LAPACK_Group.H"
 
