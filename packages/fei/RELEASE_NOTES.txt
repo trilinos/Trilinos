@@ -444,3 +444,12 @@ July 7 2005: version 2.14.00
     used, output of matrix files can be specified for some of them rather than
     all or none.
 
+ July 21 2008 minor version 2.22.05
+  - Fix insidious memory leak where fei::FillableMat (which uses a pool-
+    allocator) wasn't returning its memory to the pool on destruction. This
+    resulted in memory leaking during the program's execution, but the memory
+    still gets cleaned up at program exit. Thus tools like purify couldn't 
+    spot it, but it was exhausting available memory for long runs.
+  - Fix a link error on IBM due to fei_Aztec_Vector.cpp containing an explicit
+    reference to dcopy_. IBM's fortran symbols don't have trailing underscores.
+

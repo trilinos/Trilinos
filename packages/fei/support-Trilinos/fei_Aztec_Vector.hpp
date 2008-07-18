@@ -69,18 +69,6 @@ class Aztec_Vector {
 
     const double* startPointer() const {return localCoeffs_;};
 
-// emulated RTTI
-    const char* myType() const {return "Aztec_Vector";};
-    bool isDynCastToOK(const Aztec_Vector& trial) const {
-        if (!strcmp(Aztec_Vector::myType(),trial.myType())) {
-            return true;
-        }
-        else {
-            // explicitly call parent's isDynCastToOK function
-            return Aztec_Vector::isDynCastToOK(trial);
-        }
-    };
-
     //Special function
     bool readFromFile(const char *fileName);
     bool writeToFile(const char *fileName) const;

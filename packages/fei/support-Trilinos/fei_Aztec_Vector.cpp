@@ -264,8 +264,6 @@ Aztec_Vector& Aztec_Vector::operator= (const Aztec_Vector& rhs) {
 /**=========================================================================**/
 void Aztec_Vector::assign(const Aztec_Vector& rhs) {
 
-// monomorphic assignment
-
    if ((amap_.globalSize() != rhs.amap_.globalSize()) ||
       (amap_.localSize() != rhs.amap_.localSize()) ) {
       FEI_CERR << "Aztec_Vector::assign: ERROR, incompatible maps."
@@ -273,20 +271,12 @@ void Aztec_Vector::assign(const Aztec_Vector& rhs) {
       return;
    }
 
-//  Use RTTI to ensure compatible types at run time.
-//        development version
-    assert (rhs.isDynCastToOK(*this));
-//        production version
-   if (!rhs.isDynCastToOK(*this)) {
-      // handle error. fixit
-   }
-    
-//  Code to copy any extra derived class data goes here.
    int N_update = amap_.localSize();
-   int one = 1;
    double *pr = (double*)rhs.startPointer();
 
-   dcopy_(&N_update,pr,&one,localCoeffs_,&one);
+   for(int i=0; i<N_update; ++i) {
+     localCoeffs_[i] = pr[i];
+   }
 
    return;    
 }

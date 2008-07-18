@@ -19,6 +19,12 @@ FillableMat::FillableMat()
 
 FillableMat::~FillableMat()
 {
+  feipoolmat::iterator
+    iter = matdata_.begin(), end = matdata_.end();
+  for(; iter!=end; ++iter) {
+    vecpool_.destroy(iter->second);
+    vecpool_.deallocate(iter->second, 1);
+  }
 }
 
 void
