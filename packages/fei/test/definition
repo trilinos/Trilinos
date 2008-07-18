@@ -14,6 +14,12 @@
 
 (FRAMEWORK, FeiTests) {
   TESTS = fei_test.exe;
+  ARGS = -d ./remEssBCs -i pll_RemEssBCs.i;
+  COMM = SERIAL, MPI(1,3);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
   ARGS = -d ./elemDOF_Aztec -i elemDOF.i;
   COMM = SERIAL, MPI(1-2);
 }

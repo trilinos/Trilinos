@@ -435,6 +435,7 @@ AC_CONFIG_FILES([
                 test/cr_lagrange_20quad_old/Makefile
                 test/cr_multifield_slave/Makefile
                 test/elemDOF_Aztec/Makefile
+                test/remEssBCs/Makefile
                 test/utest_base/Makefile
 		utest/Makefile
 		utest_cases/Makefile

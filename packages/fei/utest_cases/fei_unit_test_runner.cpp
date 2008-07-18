@@ -21,14 +21,14 @@ test_runner::~test_runner()
   destroy_tests(get_testcontainer());
 }
 
-void test_runner::run_tests(int numProcs, int localProc, MPI_Comm comm)
+int test_runner::run_tests(int numProcs, int localProc, MPI_Comm comm)
 {
   std::vector<fei::unit::testcase*>& all_tests = get_testcontainer();
 
   std::vector<fei::unit::testcase*>::iterator
     iter = all_tests.begin(), iter_end = all_tests.end();
 
-  bool all_tests_passed = true;
+  int tests_failed = 0;
 
   for(; iter != iter_end; ++iter) {
     fei::unit::testcase& tstcase = *(*iter);
@@ -38,24 +38,30 @@ void test_runner::run_tests(int numProcs, int localProc, MPI_Comm comm)
     try {
       bool result = tstcase.run(comm);
       if (result != true) {
-        all_tests_passed = false;
+        tests_failed = 1;
         FEI_COUT << "test FAILED" << FEI_ENDL;
       }
     }
     catch(fei::Exception& exc) {
-      all_tests_passed = false;
+      tests_failed = 1;
       FEI_COUT << "test failed with message: " << exc.what() << FEI_ENDL;
     }
   }
 
+  int global_tests_failed = 0;
+  MPI_Allreduce(&tests_failed, &global_tests_failed, 1,
+                MPI_INT, MPI_MAX, comm);
+
   if (localProc == 0) {
-    if (all_tests_passed) {
+    if (global_tests_failed == 0) {
       FEI_COUT << "\n\nAll Tests passed.\n" << FEI_ENDL;
     }
     else {
       FEI_COUT << "\n\nAt least 1 test FAILED.\n" << FEI_ENDL;
     }
   }
+
+  return global_tests_failed;
 }
 
 }//namespace unit

@@ -47,6 +47,7 @@ endif
 if BUILD_TESTS
 TESTS=test_utils test utest_cases utest \
 	test/elemDOF_Aztec \
+	test/remEssBCs \
 	test/cr_lagrange_20quad \
 	test/cr_lagrange_20quad_AZLSC \
 	test/cr_lagrange_20quad_old \

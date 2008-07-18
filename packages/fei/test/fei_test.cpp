@@ -134,6 +134,9 @@ int main(int argc, char** argv) {
     }
   }
 
+  int global_err_code = 0;
+  intCommUtils.GlobalSum(errcode, global_err_code);
+
 #ifndef FEI_SER
   if (MPI_Finalize() != MPI_SUCCESS) ERReturn(-1);
 #endif
@@ -143,7 +146,7 @@ int main(int argc, char** argv) {
     FEI_COUT << "Proc0 CPU  time: " << elapsedTime << " seconds." << FEI_ENDL;
   }
 
-  return(0);
+  return(global_err_code);
 }
 
 void read_input_and_execute_fullsystem_tests(const std::string& filename,
@@ -157,9 +160,7 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
   //the test should be run on.
 
   std::vector<std::string> inputFileNames;
-  int global_err = 0;
   if (!filename.empty()) {
-    int errcode = 0;
     const char* filename_c_str = filename.c_str();
     fei_test_utils::read_input_file(filename_c_str, MPI_COMM_WORLD, inputFileNames);
     fei::ParameterSet name_numproc_pairs;
@@ -175,10 +176,8 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
     }
     catch(fei::Exception& exc) {
       FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
-      errcode = -1;
+      throw;
     }
-
-    intCommUtils.GlobalSum(errcode, global_err);
 
 #ifndef FEI_SER
     //Next, if we're running on 4 procs, create two new communicators each
@@ -186,7 +185,7 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
     //communicators.
     int numProcs = intCommUtils.numProcs();
     int localProc = intCommUtils.localProc();
-    if (numProcs == 4 && global_err == 0) {
+    if (numProcs == 4) {
       intCommUtils.Barrier();
       if (localProc == 0) {
         FEI_COUT

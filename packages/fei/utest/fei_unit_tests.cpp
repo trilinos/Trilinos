@@ -26,12 +26,12 @@ int main(int argc, char** argv) {
 
   fei::unit::test_runner runner;
 
-  runner.run_tests(numProcs, localProc,  MPI_COMM_WORLD);
+  int return_value = runner.run_tests(numProcs, localProc,  MPI_COMM_WORLD);
 
 #ifndef FEI_SER
   MPI_Finalize();
 #endif
 
-  return(0);
+  return(return_value);
 }
 

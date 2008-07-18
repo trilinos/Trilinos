@@ -111,6 +111,12 @@ void test_multiply_CSRMat_CSRMat()
     throw fei::Exception("CSRMAT C=AB test 12 failed.");
   }
 
+  fa2.clear();
+
+  if (fa2.getNumRows() != 0 || fa2.begin() != fa2.end()) {
+    throw fei::Exception("FillableMat::clear() test failed.");
+  }
+
   FEI_COUT << "ok"<<FEI_ENDL;
 }
 

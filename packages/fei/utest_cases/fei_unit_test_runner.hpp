@@ -11,7 +11,7 @@ class test_runner {
   test_runner();
   ~test_runner();
 
-  void run_tests(int numProcs, int localProc, MPI_Comm comm);
+  int run_tests(int numProcs, int localProc, MPI_Comm comm);
 
 };//class test_runner
 
