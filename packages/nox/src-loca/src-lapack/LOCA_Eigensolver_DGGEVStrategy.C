@@ -89,7 +89,9 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
  
   // Check to make sure we have dggev available if we need generalized 
   // eigenvalues.
-#ifndef HAVE_LAPACK_GENEV
+#if defined(HAVE_LAPACK_GGEV) || defined(HAVE_LAPACK_GEGV)
+  // Do nothing
+#else
   if (hasMassMatrix) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
       globalData->locaErrorCheck->printWarning(
