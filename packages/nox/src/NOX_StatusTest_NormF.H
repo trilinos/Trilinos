@@ -99,7 +99,7 @@ namespace StatusTest {
   the constructor.
 
   - If an initial guess is provided, we use a relative tolerance
-  defined by \f[ \beta = \frac{\mbox{tolerance}}{\alpha_0} \f] Here
+  defined by \f[ \beta = \alpha_0 * \mbox{tolerance} \f] Here
   \f$\alpha_0\f$ is the \f$\alpha\f$ (as defined above) associated with
   the initial guess.
 
@@ -160,6 +160,19 @@ public:
   virtual NOX::StatusTest::StatusType getStatus() const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
+
+  /* @name Reset Functions
+     Used to change the tolerances in the status test after construction.
+  */
+  //@{
+  
+  //! Resets the user specified absolute or relative tolerance. 
+  virtual void reset(double tolerance);
+
+  //! Resets the user specified relative tolerance.
+  virtual void reset(NOX::Abstract::Group& initialGuess, double tolerance);
+
+  //@}
 
   /* @name Accessor Functions
      Used to query current values of variables in the status test.

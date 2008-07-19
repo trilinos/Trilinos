@@ -366,11 +366,11 @@ int main(int argc, char *argv[])
   if (status == NOX::StatusTest::Converged && 
       solver->getNumIterations() == 12) {
     final_status_value += 0;
-    cout << "Convergence tests passed!" << endl;
+    cout << "\nConvergence tests passed!" << endl;
   }
   else {
     final_status_value += 1;
-    cout << "Convergence tests Failed!" << endl;
+    cout << "\nConvergence tests Failed!" << endl;
   }
 
   // Re-run test with complete checks of status tests
@@ -397,16 +397,17 @@ int main(int argc, char *argv[])
   
     status = solver->solve();
 
+    cout << *tmpParams << endl;
+
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 12) {
       final_status_value += 0;
-      cout << "Convergence (Complete) tests passed!" << endl;
+      cout << "Convergence (Complete) tests passed!\n" << endl;
     }
     else {
       final_status_value += 1;
-      cout << "Convergence (Complete)tests Failed!" << endl;
+      cout << "Convergence (Complete)tests Failed!\n" << endl;
     }
-    cout << *tmpParams << endl;
 
   }
 
@@ -445,11 +446,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Converged && 
 	solver->getNumIterations() == 11) {
       final_status_value += 0;
-      cout << "User Defined test passed!" << endl;
+      cout << "\nUser Defined test passed!\n" << endl;
     }
     else {
       final_status_value += 1;
-      cout << "User Defined test failed!" << endl;
+      cout << "\nUser Defined test failed!\n" << endl;
     }
   }
 
@@ -484,6 +485,108 @@ int main(int argc, char *argv[])
     }
   }
 
+  // NormF RELATIVE tolerance
+  {
+    
+    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    cout << "Testing NOX::StatusTest::NormF RELATIVE Test" << endl;
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+
+    Teuchos::ParameterList p;
+
+    p.set("Test Type", "Combo");
+    p.set("Combo Type", "OR");
+    p.set("Number of Tests", 2);
+
+    Teuchos::ParameterList& conv = p.sublist("Test 0");
+    conv.set("Test Type", "Combo");
+    conv.set("Combo Type", "AND");
+    conv.set("Number of Tests", 3);    
+
+    Teuchos::ParameterList& normF_rel = conv.sublist("Test 0");
+    normF_rel.set("Test Type", "NormF");
+    normF_rel.set("Tolerance", 1.0e-2);
+    normF_rel.set("Norm Type", "Two Norm");
+    normF_rel.set("Scale Type", "Unscaled");
+    normF_rel.set("Tag", "Rel Test");
+    
+    Broyden interface(100,0.99);
+    RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
+    Teuchos::RCP<NOX::Abstract::Group> ig = group;
+
+    normF_rel.set("Initial Guess", ig);
+
+    Teuchos::ParameterList& normF_rel2 = conv.sublist("Test 1");
+    normF_rel2.set("Test Type", "NormF");
+    normF_rel2.set("Tolerance", 1.0e-2);
+    normF_rel2.set("Norm Type", "Two Norm");
+    normF_rel2.set("Scale Type", "Unscaled");
+    normF_rel2.set("Tag", "Rel Test 2");
+    normF_rel2.set("Initial Guess", ig);
+
+    Teuchos::ParameterList& normF_abs = conv.sublist("Test 2");
+    normF_abs.set("Test Type", "NormF");
+    normF_abs.set("Tolerance", 1.0e-2);
+    normF_abs.set("Norm Type", "Two Norm");
+    normF_abs.set("Scale Type", "Unscaled");
+    normF_abs.set("Tag", "Abs Test");
+
+    Teuchos::ParameterList& max_iters = p.sublist("Test 1");
+    max_iters.set("Test Type", "MaxIters");
+    max_iters.set("Maximum Iterations", 15);
+
+    std::map< std::string, Teuchos::RCP<NOX::StatusTest::Generic> > tag_map;
+    statusTestsCombo = NOX::StatusTest::buildStatusTests(p, utils, &tag_map);
+    
+    RCP<Teuchos::ParameterList> sp = rcp(new Teuchos::ParameterList);
+    sp->set("Nonlinear Solver", "Line Search Based");
+    sp->sublist("Printing") = printParams;
+    sp->sublist("Solver Options").set("Status Test Check Type", "Complete");
+
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(ig, statusTestsCombo, sp);
+
+    NOX::StatusTest::StatusType status = solver->solve();
+    
+    if (status == NOX::StatusTest::Converged && 
+	solver->getNumIterations() == 10) {
+      final_status_value += 0;
+      cout << "\nNormF RELATIVE test 1/2 passed!\n" << endl;
+    }
+    else {
+      final_status_value += 1;
+      cout << "\nNormF RELATIVE test 1/2 failed!\n" << endl;
+    }
+
+    // reset absolute and relative tolerance and keep going
+    Teuchos::RCP<NOX::StatusTest::NormF> abs_test = 
+      Teuchos::rcp_dynamic_cast<NOX::StatusTest::NormF>(tag_map["Abs Test"]);
+    Teuchos::RCP<NOX::StatusTest::NormF> rel_test = 
+      Teuchos::rcp_dynamic_cast<NOX::StatusTest::NormF>(tag_map["Rel Test"]);
+    Teuchos::RCP<NOX::StatusTest::NormF> rel_test2 = 
+      Teuchos::rcp_dynamic_cast<NOX::StatusTest::NormF>(tag_map["Rel Test 2"]);
+    NOX::Abstract::Group& nonconst_solution = 
+      const_cast<NOX::Abstract::Group&>(solver->getSolutionGroup());
+
+    abs_test->reset(1.0e-8);
+    rel_test->reset(nonconst_solution, 1.0e-4);
+    rel_test2->reset(1.0e-4);
+
+    solver->reset(solver->getSolutionGroup().getX());
+    status = solver->solve();
+    
+    if (status == NOX::StatusTest::Converged && 
+	solver->getNumIterations() == 2) {
+      final_status_value += 0;
+      cout << "\nNormF RELATIVE test 2/2 passed!\n" << endl;
+    }
+    else {
+      final_status_value += 1;
+      cout << "\nNormF RELATIVE test 2/2 failed!\n" << endl;
+    }
+
+  }
+
   // **********************
   // Individual status test options - for failure tests
   // **********************
@@ -507,11 +610,11 @@ int main(int argc, char *argv[])
     // A failure reported by max iters is a passing test
     if (status == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "MaxIters test passed!" << endl;
+      cout << "\nMaxIters test passed!\n" << endl;
     }
     else {
       final_status_value += 1;
-      cout << "MaxIters test failed!" << endl;
+      cout << "\nMaxIters test failed!\n" << endl;
     }
   }
 
@@ -538,11 +641,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Failed && 
 	fvst->getStatus() == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "FiniteValue test passed!" << endl;
+      cout << "\nFiniteValue test passed!\n" << endl;
     }
     else {
       final_status_value += 1;
-      cout << "FiniteValue test failed!" << endl;
+      cout << "\nFiniteValue test failed!\n" << endl;
     }
   }
 
@@ -569,11 +672,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Failed &&
 	divst->getStatus() == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "Divergence test passed!" << endl;
+      cout << "\nDivergence test passed!\n" << endl;
     }
     else {
       final_status_value += 1;
-      cout << "Divergence test failed!" << endl;
+      cout << "\nDivergence test failed!\n" << endl;
     }
 
   }
@@ -601,11 +704,11 @@ int main(int argc, char *argv[])
     if (status == NOX::StatusTest::Failed &&
 	stagst->getStatus() == NOX::StatusTest::Failed) {
       final_status_value += 0;
-      cout << "Stagnation test passed!" << endl;
+      cout << "\nStagnation test passed!\n" << endl;
     }
     else {
       final_status_value += 1;
-      cout << "Stagnation test failed!" << endl;
+      cout << "\nStagnation test failed!\n" << endl;
     }
   }
 

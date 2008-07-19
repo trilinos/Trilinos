@@ -225,7 +225,7 @@ buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 
   RCP<NOX::StatusTest::NormF> status_test;
 
-  if (use_relative_tolerance == true)
+  if (use_relative_tolerance)
     status_test = rcp(new NOX::StatusTest::NormF(*group,
 						 tolerance,
 						 norm_type,

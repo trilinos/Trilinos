@@ -122,6 +122,38 @@ NOX::StatusTest::NormF::~NormF()
 {
 }
 
+void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
+{
+  NOX::Abstract::Group::ReturnType rtype;
+  rtype = initialGuess.computeF();
+  if (rtype != NOX::Abstract::Group::Ok) 
+  {
+    utils.err() << "NOX::StatusTest::NormF::NormF - Unable to compute F" 
+		<< endl;
+    throw "NOX Error";
+  }
+    
+  initialTolerance = computeNorm(initialGuess); 
+  trueTolerance = specifiedTolerance * initialTolerance;
+}
+
+void NOX::StatusTest::NormF::reset(double tolerance)
+{
+  specifiedTolerance = tolerance;
+  
+  if (toleranceType == Absolute)
+    trueTolerance = tolerance;
+  else
+    trueTolerance = specifiedTolerance * initialTolerance;
+}
+
+void NOX::StatusTest::NormF::reset(NOX::Abstract::Group& initialGuess,
+				   double tolerance)
+{
+  specifiedTolerance = tolerance;
+  relativeSetup(initialGuess);
+}
+
 double NOX::StatusTest::NormF::computeNorm(const NOX::Abstract::Group& grp)
 {
   if (!grp.isF())
@@ -150,21 +182,6 @@ double NOX::StatusTest::NormF::computeNorm(const NOX::Abstract::Group& grp)
   return norm;
 }
 
-
-void NOX::StatusTest::NormF::relativeSetup(NOX::Abstract::Group& initialGuess)
-{
-  NOX::Abstract::Group::ReturnType rtype;
-  rtype = initialGuess.computeF();
-  if (rtype != NOX::Abstract::Group::Ok) 
-  {
-    utils.err() << "NOX::StatusTest::NormF::NormF - Unable to compute F" 
-		<< endl;
-    throw "NOX Error";
-  }
-    
-  initialTolerance = computeNorm(initialGuess); 
-  trueTolerance = specifiedTolerance / initialTolerance;
-}
 
 NOX::StatusTest::StatusType NOX::StatusTest::NormF::
 checkStatus(const NOX::Solver::Generic& problem,
