@@ -16015,7 +16015,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 { echo "$as_me:$LINENO: result: $acx_ggev_ok" >&5
 echo "${ECHO_T}$acx_ggev_ok" >&6; }
-if test $acx_dggev_ok = yes; then
+if test $acx_ggev_ok = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LAPACK_GGEV 1
@@ -16104,7 +16104,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 	{ echo "$as_me:$LINENO: result: $acx_gegv_ok" >&5
 echo "${ECHO_T}$acx_gegv_ok" >&6; }
-	if test $acx_dgegv_ok = yes; then
+	if test $acx_gegv_ok = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LAPACK_GEGV 1

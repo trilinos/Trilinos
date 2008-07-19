@@ -25,7 +25,7 @@ AC_F77_FUNC(dggev)
 AC_MSG_CHECKING([for $dggev in $LAPACK_LIBS])
 AC_TRY_LINK_FUNC($dggev, [acx_ggev_ok=yes])
 AC_MSG_RESULT($acx_ggev_ok)
-if test $acx_dggev_ok = yes; then
+if test $acx_ggev_ok = yes; then
 	AC_DEFINE(HAVE_LAPACK_GGEV,1,[Define if you have LAPACK _GGEV.])
 else
 	# Next try dgegv
@@ -33,7 +33,7 @@ else
 	AC_MSG_CHECKING([for $dgegv in $LAPACK_LIBS])
 	AC_TRY_LINK_FUNC($dgegv, [acx_gegv_ok=yes])
 	AC_MSG_RESULT($acx_gegv_ok)
-	if test $acx_dgegv_ok = yes; then
+	if test $acx_gegv_ok = yes; then
 		AC_DEFINE(HAVE_LAPACK_GEGV,1,[Define if you have LAPACK _GEGV.])	
 	fi
 fi
