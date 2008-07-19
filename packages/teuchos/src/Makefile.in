@@ -262,6 +262,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_Describable.hpp $(srcdir)/Teuchos_ENull.hpp \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_Exceptions.hpp \
+	$(srcdir)/Teuchos_ExplicitInstantiationHelpers.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp $(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
@@ -539,6 +540,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_ENull.hpp \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_Exceptions.hpp \
+	$(srcdir)/Teuchos_ExplicitInstantiationHelpers.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \

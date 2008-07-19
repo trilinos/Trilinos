@@ -1,9 +1,15 @@
+#include "EpetraExt_ConfigDefs.h"
+
+
+#ifdef HAVE_MPI
+
+
 #include "EpetraExt_RestrictedCrsMatrixWrapper.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 
-#ifdef HAVE_MPI
+
 namespace EpetraExt{
 
 RestrictedCrsMatrixWrapper::RestrictedCrsMatrixWrapper()

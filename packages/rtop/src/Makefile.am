@@ -50,33 +50,35 @@ all-local:
 #
 
 RTOP_INTERFACES_H = \
-  $(srcdir)/interfaces/RTOpPack_Types.hpp\
-  $(srcdir)/interfaces/RTOpPack_RTOpTDecl.hpp\
-  $(srcdir)/interfaces/RTOpPack_RTOpT.hpp
+  $(srcdir)/interfaces/RTOpPack_RTOpT.hpp \
+  $(srcdir)/interfaces/RTOpPack_RTOpT_decl.hpp\
+  $(srcdir)/interfaces/RTOpPack_RTOpT_def.hpp\
+  $(srcdir)/interfaces/RTOpPack_Types.hpp
+
+RTOP_INTERFACES = \
+  $(srcdir)/interfaces/RTOpPack_RTOpT.cpp
 
 RTOP_SUPPORT_H = \
-  $(srcdir)/support/RTOpPack_MPI_apply_op.hpp\
-  $(srcdir)/support/RTOpPack_MPI_apply_op_decl.hpp\
   $(srcdir)/support/RTOpPack_RTOpServer.hpp\
   $(srcdir)/support/RTOpPack_RTOpServerDecl.hpp\
   $(srcdir)/support/RTOpPack_RTOpTHelpers.hpp\
+  $(srcdir)/support/RTOpPack_RTOpTHelpers_decl.hpp\
+  $(srcdir)/support/RTOpPack_RTOpTHelpers_def.hpp\
   $(srcdir)/support/RTOpPack_SPMD_apply_op.hpp\
   $(srcdir)/support/RTOpPack_SPMD_apply_op_decl.hpp\
+  $(srcdir)/support/RTOpPack_SPMD_apply_op_def.hpp\
   $(srcdir)/support/RTOpPack_SparseSubVectorT.hpp\
   $(srcdir)/support/RTOpPack_TOpUnaryFuncPtr.hpp\
   $(srcdir)/support/RTOpPack_TOpUnaryFuncPtrDecl.hpp
 
 RTOP_SUPPORT = \
-  $(srcdir)/support/RTOpPack_MPI_apply_op.cpp\
+  $(srcdir)/support/RTOpPack_RTOpTHelpers.cpp \
   $(srcdir)/support/RTOpPack_SPMD_apply_op.cpp
 
 RTOP_SUPPORT_C_H = \
-  $(srcdir)/support/RTOp_MPI_config.h\
-  $(srcdir)/support/RTOp_mpi.h\
   $(srcdir)/support/RTOp_parallel_helpers.h
 
 RTOP_SUPPORT_C = \
-  $(srcdir)/support/RTOp_mpi.c\
   $(srcdir)/support/RTOp_parallel_helpers.c
 
 RTOP_OPS_LIB_H = \
@@ -144,6 +146,7 @@ RTOP_H = \
 
 librtop_a_SOURCES = \
   $(srcdir)/RTOpPack_version.cpp \
+  $(RTOP_INTERFACES) \
   $(RTOP_SUPPORT_C) \
   $(RTOP_SUPPORT) \
   $(RTOP_LAPACK)

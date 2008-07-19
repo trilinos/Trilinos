@@ -316,6 +316,16 @@ AM_CONDITIONAL(HAVE_GCC_CHECKEDSTL, [test "X$ac_cv_use_gcc_checkedstl" != "Xno"]
 # ------------------------------------------------------------------------
 
 #
+#  --enable-teuchos-explicit_instantiation
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, explicit_instantiation,
+  [Enable explicit template instantiation for selected types],
+   TEUCHOS_EXPLICIT_INSTANTIATION, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_EXPLICIT_INSTANTIATION,
+  [test "X$ac_cv_use_teuchos_explicit_instantiation" != "Xno"])
+
+#
 #  --enable-teuchos-complex
 #
 

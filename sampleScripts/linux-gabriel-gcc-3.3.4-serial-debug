@@ -14,9 +14,10 @@ FLIBS="-lg2c" \
 --disable-default-packages \
 --enable-teuchos \
  --enable-teuchos-extended \
- --disable-teuchos-blasfloat \
  --enable-teuchos-boost \
+ --enable-teuchos-explicit_instantiation \
  --enable-teuchos-debug \
+ --disable-teuchos-blasfloat \
 --enable-thyra \
 --enable-epetra --enable-epetra-abc \
 --enable-triutils --disable-triutils-tests --disable-triutils-examples \

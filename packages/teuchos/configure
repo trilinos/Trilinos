@@ -742,6 +742,8 @@ SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
 HAVE_GCC_CHECKEDSTL_TRUE
 HAVE_GCC_CHECKEDSTL_FALSE
+HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_TRUE
+HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_FALSE
 HAVE_TEUCHOS_COMPLEX_TRUE
 HAVE_TEUCHOS_COMPLEX_FALSE
 HAVE_TEUCHOS_LONG_LONG_INT_TRUE
@@ -1388,6 +1390,9 @@ Optional Features:
   --enable-teuchos-abc    Enable array bounds checking (default is no)
   --enable-gcc-checkedstl Enable the checked STL for compatible gcc compilers
                           (default is no)
+  --enable-teuchos-explicit_instantiation
+                          Enable explicit template instantiation for selected
+                          types (default is no)
   --enable-teuchos-complex
                           Enable Teuchos complex code (default is yes)
   --enable-teuchos-long_long
@@ -7536,6 +7541,44 @@ fi
 # ------------------------------------------------------------------------
 # Checks for addons
 # ------------------------------------------------------------------------
+
+#
+#  --enable-teuchos-explicit_instantiation
+#
+
+
+# Check whether --enable-teuchos-explicit_instantiation was given.
+if test "${enable_teuchos_explicit_instantiation+set}" = set; then
+  enableval=$enable_teuchos_explicit_instantiation; ac_cv_use_teuchos_explicit_instantiation=$enableval
+else
+  ac_cv_use_teuchos_explicit_instantiation=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use teuchos-explicit_instantiation" >&5
+echo $ECHO_N "checking whether to use teuchos-explicit_instantiation... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_teuchos_explicit_instantiation" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_teuchos_explicit_instantiation" != "Xno"; then
+  HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_TRUE=
+  HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_FALSE='#'
+else
+  HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_TRUE='#'
+  HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_FALSE=
+fi
+
 
 #
 #  --enable-teuchos-complex
@@ -16933,6 +16976,13 @@ echo "$as_me: error: conditional \"HAVE_GCC_CHECKEDSTL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_TRUE}" && test -z "${HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_EXPLICIT_INSTANTIATION\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_TEUCHOS_EXPLICIT_INSTANTIATION\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_TEUCHOS_COMPLEX_TRUE}" && test -z "${HAVE_TEUCHOS_COMPLEX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_COMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -17725,6 +17775,8 @@ SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 HAVE_GCC_CHECKEDSTL_TRUE!$HAVE_GCC_CHECKEDSTL_TRUE$ac_delim
 HAVE_GCC_CHECKEDSTL_FALSE!$HAVE_GCC_CHECKEDSTL_FALSE$ac_delim
+HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_TRUE!$HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_TRUE$ac_delim
+HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_FALSE!$HAVE_TEUCHOS_EXPLICIT_INSTANTIATION_FALSE$ac_delim
 HAVE_TEUCHOS_COMPLEX_TRUE!$HAVE_TEUCHOS_COMPLEX_TRUE$ac_delim
 HAVE_TEUCHOS_COMPLEX_FALSE!$HAVE_TEUCHOS_COMPLEX_FALSE$ac_delim
 HAVE_TEUCHOS_LONG_LONG_INT_TRUE!$HAVE_TEUCHOS_LONG_LONG_INT_TRUE$ac_delim
@@ -17754,7 +17806,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 59; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

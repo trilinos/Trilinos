@@ -27,16 +27,45 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef RTOPPACK_SPMD_APPLY_OP_HPP
-#define RTOPPACK_SPMD_APPLY_OP_HPP
+
+#include "RTOpPack_RTOpTHelpers_decl.hpp"
 
 
-#include "RTOpPack_SPMD_apply_op_decl.hpp"
-
-
-#ifndef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
-#  include "RTOpPack_SPMD_apply_op_def.hpp"
+#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+bool RTOpPack::rtop_helpers_dump_all = false;
 #endif
 
 
-#endif // RTOPPACK_SPMD_APPLY_OP_HPP
+#ifdef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+
+
+#include "RTOpPack_RTOpTHelpers_def.hpp"
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
+
+
+namespace RTOpPack {
+
+
+TEUCHOS_MACRO_TEMPLATE_INSTANT_SCALAR_TYPES(
+  RTOPPACK_RTOPT_HELPERS_INSTANT_SCALAR)
+
+
+RTOPPACK_RTOPT_HELPERS_REDUCTTARGETSCALAR_INSTANT(int)
+
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+
+RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_REDUCE_REDUCT_OBJS_INSTANT(
+  std::complex<float>, float)
+RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_REDUCE_REDUCT_OBJS_INSTANT(
+  std::complex<double>, double)
+
+
+#endif // HAVE_TEUCHOS_COMPLEX
+
+
+} // namespace RTOpPack
+
+
+#endif // HAVE_TEUCHOS_EXCPLICIT_INSTANTIATION

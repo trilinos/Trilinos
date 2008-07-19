@@ -32,7 +32,7 @@
 #ifndef RTOP_PARALLEL_HELPERS_H
 #define RTOP_PARALLEL_HELPERS_H
 
-#include "RTOp_MPI_config.h"
+#include "RTOp_ConfigDefs.hpp"
 
 #ifdef __cplusplus
 extern "C" {

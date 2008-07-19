@@ -201,6 +201,9 @@
 /* Define if want to build teuchos-expat */
 #undef HAVE_TEUCHOS_EXPAT
 
+/* Define if want to build teuchos-explicit_instantiation */
+#undef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+
 /* Define if want to build teuchos-extended */
 #undef HAVE_TEUCHOS_EXTENDED
 

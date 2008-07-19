@@ -27,8 +27,23 @@
 // ***********************************************************************
 // @HEADER
 
-#include "RTOpPack_MPI_apply_op.hpp"
+#include "RTOpPack_RTOpT_decl.hpp"
 
-#ifdef RTOPPACK_MPI_APPLY_OP_DUMP
-bool RTOpPack::show_mpi_apply_op_dump = false;
-#endif // RTOPPACK_MPI_APPLY_OP_DUMP
+
+#ifdef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+
+
+#include "RTOpPack_RTOpT_def.hpp"
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
+
+
+namespace RTOpPack {
+
+
+TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(RTOpT)
+
+
+} // namespace RTOpPack
+
+
+#endif // HAVE_TEUCHOS_EXCPLICIT_INSTANTIATION
