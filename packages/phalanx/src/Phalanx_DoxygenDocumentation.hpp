@@ -21,12 +21,39 @@
 
 \section introduction Introduction
 
-Phalanx is a library to handle arbitrary function evaluation with complex nonlinear dependency chains for discretized partial differential equation systems.  It provides a flexible and efficient mechanism for switching dependencies and computing computing sensitivities using automatic differentiation.  It can be used with any cell-based discretization technique including finite element, finite volume and finite difference.
+Phalanx is a library to handle arbitrary function evaluation with complex nonlinear dependency chains for discretized partial differential equation systems.  It provides a flexible and efficient mechanism for switching dependencies and computing sensitivities either analytically or via automatic differentiation.  It can be used with any cell-based discretization technique including finite element, finite volume and finite difference.
+
+A simple example would be the construction of a Fourier energy flux for the heat equation:
+
+\f[
+  \mathbf{q} = -\rho C_p \nabla T
+\f]
 
 \section overview Overview
 
+Phalanx is used to break down complex dependencies into manageable algorithmic blocks.  It was written to address a variety of difficulties encountered when writing a general PDE code that allows for flexible switching of dependencies at runtime.  
+
+Before describing the library, the nomenclature must be defined.
+
+ - A "Field" is a concrete data type that has allocated storage space.  A field can be defined for a number of cells and is specific to a DataLayout.
+ - A "DataLayout" is a description of a unique topologic entity used for defining where a field lives. 
+ - An "Evaluator" will evaluate the value(s) of fields(s) and is in turn dependent on other fields.
+
+Specific issues that Phalanx addresses:
+
+ - Determine the order of variable evaluation so that the correct
+ evaluation is performed: For example, to compute the density at the
+ quadrature points, it could be a constant, it could be a function of
+ temperature or it could be a function of temperature and pressure.  A
+ factory creates the density provider and from this, the manager
+ automatically figures out the correct evaluation order - whether T
+ and/or P will have to be evaluated before the density.  This is an
+ easy example, but there are much more complex dependency chains.
+
 
 \section user_guide User's Guide
+
+Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It has direct dependencies on the following third party libraries:
 
  - Requires the <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a> utilities library, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.
  
