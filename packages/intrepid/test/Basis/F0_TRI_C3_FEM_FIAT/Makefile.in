@@ -230,7 +230,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(INTREPID_TEST_LIBS)
@@ -249,11 +248,11 @@ test_01_LDADD = $(EXPORT_LIBS)
 test_01_CXXFLAGS = -I$(srcdir)
 Dummy_SOURCES = Dummy
 EXTRA_DIST = \
-  0.dat \
-  1.dat \
-  2.dat \
-  3.dat \
-  CURL.dat
+  data/0.dat \
+  data/1.dat \
+  data/2.dat \
+  data/3.dat \
+  data/CURL.dat
 
 all: all-am
 

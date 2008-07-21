@@ -61,5 +61,5 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 	if [ $(srcdir) != '.' ]; then mkdir data; cp -r $(srcdir)/./data/*.dat data; fi
 
 EXTRA_DIST = \
-  0.dat \
-  CURL.dat
+  data/0.dat \
+  data/CURL.dat
