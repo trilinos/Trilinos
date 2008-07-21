@@ -32,7 +32,7 @@ class Epetra_Comm;
 class Epetra_CrsMatrix;
 class Epetra_Map;
 namespace EpetraExt {
- 
+
   //! Constructs an Epetra_CrsMatrix object from a Matlab format file, distributes rows evenly across processors.
   /*! This function constructs an Epetra_CrsMatrix object by reading a Matlab (i,j,value) format file.
 
@@ -82,13 +82,15 @@ must be integer values and in those in the third column must be floating point f
 \endhtmlonly
   */
   int MatlabFileToCrsMatrix( const char *filename, const Epetra_Comm & comm, Epetra_CrsMatrix * & A);
- 
+
   //! Constructs an Epetra_CrsMatrix object from a Matrix Market format file, simplest version: requires matrix to be square, distributes rows evenly across processors.
   /*! This function constructs an Epetra_CrsMatrix object by reading a Matrix Market file.
 
       \param filename (In) A filename, including path if desired.  The matrix to be read should be in this file in 
                            Matrix Market coordinate format.
       \param comm (In) An Epetra_Comm object.
+      \param transpose (In) A boolean value indicating whether the reader should transpose the matrix as it is read into matrix A.  (default = 0).
+      \param verbose (In) A boolean value indicating whether the reader should print diagnostic statements to stdout.  (default = 0).
       \param A (Out) An Epetra_CrsMatrix object constructed from file contents.  
       \warning User must delete!!.
 
@@ -99,7 +101,7 @@ must be integer values and in those in the third column must be floating point f
 \endhtmlonly
 
   */
-  int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Comm & comm, Epetra_CrsMatrix * & A);
+  int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Comm & comm, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
  
   //! Constructs an Epetra_CrsMatrix object from a Matrix Market format file, row, range and domain map specified; typically used for rectangular matrices.
   /*! Reads an Epetra_CrsMatrix object from a matrix-market file, but
@@ -113,6 +115,8 @@ must be integer values and in those in the third column must be floating point f
       \param rangeMap (In) An Epetra_Map object describing the distribution of range vectors that will be used with this matrix, must be 1-to-1.
       \param domainMap (In) An Epetra_Map object describing the distribution of domain vectors that will be used with this matrix, must be 1-to-1.
 
+      \param transpose (In) A boolean value indicating whether the reader should transpose the matrix as it is read into matrix A.  (default = 0).
+      \param verbose (In) A boolean value indicating whether the reader should print diagnostic statements to stdout.  (default = 0).
       \param A (Out) An Epetra_CrsMatrix object constructed from file contents.  
       \warning User must delete!!.
 
@@ -122,7 +126,7 @@ must be integer values and in those in the third column must be floating point f
 \endhtmlonly
   */
   int MatrixMarketFileToCrsMatrix(const char *filename,const Epetra_Map & rowMap, 
-				  const Epetra_Map& rangeMap, const Epetra_Map& domainMap, Epetra_CrsMatrix * & A);
+				  const Epetra_Map& rangeMap, const Epetra_Map& domainMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
 
   //! Constructs an Epetra_CrsMatrix object from a Matrix Market format file, only row map specified; allows user defined distribution of matrix rows, requires square matrix.
   /*! This function constructs an Epetra_CrsMatrix object by reading a Matrix Market file.
@@ -130,6 +134,8 @@ must be integer values and in those in the third column must be floating point f
       \param filename (In) A filename, including path if desired.  The matrix to be read should be in this file in 
                            Matrix Market coordinate format.
       \param rowMap (In) An Epetra_Map object describing the desired row distribution of the matrix.
+      \param transpose (In) A boolean value indicating whether the reader should transpose the matrix as it is read into matrix A.  (default = 0).
+      \param verbose (In) A boolean value indicating whether the reader should print diagnostic statements to stdout.  (default = 0).
       \param A (Out) An Epetra_CrsMatrix object constructed from file contents.  
       \warning User must delete!!.
 
@@ -140,7 +146,7 @@ must be integer values and in those in the third column must be floating point f
 \endhtmlonly
 
   */
-  int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap, Epetra_CrsMatrix * & A);
+  int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
  
   //! Constructs an Epetra_CrsMatrix object from a Matrix Market format file, both row and column map specified; this version is seldom used unless you want explicit control over column map.
   /*! This function constructs an Epetra_CrsMatrix object by reading a Matrix Market file.
@@ -151,6 +157,8 @@ must be integer values and in those in the third column must be floating point f
       \param rowMap (In) An Epetra_Map object describing the desired row distribution of the matrix.
       \param colMap (In) An Epetra_Map object describing the desired column distribution of the matrix.
 
+      \param transpose (In) A boolean value indicating whether the reader should transpose the matrix as it is read into matrix A.  (default = 0).
+      \param verbose (In) A boolean value indicating whether the reader should print diagnostic statements to stdout.  (default = 0).
       \param A (Out) An Epetra_CrsMatrix object constructed from file contents.  
       \warning User must delete!!.
 
@@ -160,7 +168,7 @@ must be integer values and in those in the third column must be floating point f
 (See the <a href="http://math.nist.gov/MatrixMarket">Matrix Market</a> home page for details.)
 \endhtmlonly
   */
-  int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap, Epetra_CrsMatrix * & A);
+  int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
 
 
   //! Constructs an Epetra_CrsMatrix object from a Matrix Market format file, row, column, range and domain map specified; this version is seldom required unless you want explicit control over column map.
@@ -175,6 +183,8 @@ must be integer values and in those in the third column must be floating point f
       \param colMap (In) An Epetra_Map object describing the desired column distribution of the matrix.
       \param rangeMap (In) An Epetra_Map object describing the distribution of range vectors that will be used with this matrix, must be 1-to-1.
       \param domainMap (In) An Epetra_Map object describing the distribution of domain vectors that will be used with this matrix, must be 1-to-1.
+      \param transpose (In) A boolean value indicating whether the reader should transpose the matrix as it is read into matrix A.  (default = 0).
+      \param verbose (In) A boolean value indicating whether the reader should print diagnostic statements to stdout.  (default = 0).
 
       \param A (Out) An Epetra_CrsMatrix object constructed from file contents.  
       \warning User must delete!!.
@@ -185,7 +195,7 @@ must be integer values and in those in the third column must be floating point f
 \endhtmlonly
   */
   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap,
-				  const Epetra_Map& rangeMap, const Epetra_Map& domainMap, Epetra_CrsMatrix * & A);
+				  const Epetra_Map& rangeMap, const Epetra_Map& domainMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
   // Internal function
   int MatrixMarketFileToCrsMatrixHandle( const char *filename,
 					 const Epetra_Comm & comm,
@@ -193,7 +203,9 @@ must be integer values and in those in the third column must be floating point f
 					 const Epetra_Map * rowMap = 0,
 					 const Epetra_Map * colMap = 0,
 					 const Epetra_Map * rangeMap = 0,
-					 const Epetra_Map * domainMap = 0);
+					 const Epetra_Map * domainMap = 0,
+                                         const bool transpose = 0, 
+                                         const bool verbose=0);
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_CRSMATRIXIN_H */
