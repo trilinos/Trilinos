@@ -80,7 +80,8 @@ int main(int argc, char *argv[])
        nlPrintParams.set("Output Information", 
 			 NOX::Utils::Error +
 			 NOX::Utils::Details +
-			 NOX::Utils::OuterIteration + 
+			 NOX::Utils::OuterIterationStatusTest + 
+			 NOX::Utils::OuterIteration +
 			 NOX::Utils::InnerIteration + 
 			 NOX::Utils::Warning +
 			 NOX::Utils::TestDetails + 
@@ -113,8 +114,12 @@ int main(int argc, char *argv[])
     grp->setParams(p);
 
     // Set up the status tests
+    grp->computeF();
+    double size = sqrt(static_cast<double>(grp->getX().length()));
+    double normF_0 = grp->getNormF() / size;
+    double tolerance = 1.0e-8 / normF_0 / normF_0;
     Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
-      Teuchos::rcp(new NOX::StatusTest::NormF(*grp, 1.0e-8));
+      Teuchos::rcp(new NOX::StatusTest::NormF(*grp, tolerance));
     Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
     Teuchos::RCP<NOX::StatusTest::Combo> combo = 
