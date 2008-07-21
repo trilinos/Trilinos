@@ -43,7 +43,7 @@ int RestrictedCrsMatrixWrapper::SetMPISubComm(MPI_Comm MPI_SubComm){
 
 
 
-int RestrictedCrsMatrixWrapper::restrict(Teuchos::RCP<Epetra_CrsMatrix> input_matrix){
+int RestrictedCrsMatrixWrapper::restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> input_matrix){
   /* Pull the Matrix Info */
   input_matrix_=input_matrix;
   
@@ -97,7 +97,7 @@ int RestrictedCrsMatrixWrapper::restrict(Teuchos::RCP<Epetra_CrsMatrix> input_ma
   }
 
   return 0;
-}/*end restrict*/
+}/*end restrict_comm*/
 
 
 

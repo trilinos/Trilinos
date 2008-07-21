@@ -78,7 +78,7 @@ public:
      \return 0 if sucessful, -1 if the input_multivector is deficient, and -2 if the
   MPI_Comm object set with SetMPISubComm is not consistent with the input multivector.
   */
-  int restrict(Teuchos::RCP<Epetra_MultiVector> input_mv);
+  int restrict_comm(Teuchos::RCP<Epetra_MultiVector> input_mv);
 
 private:
   bool proc_is_active;

@@ -78,7 +78,7 @@ public:
      \return 0 if sucessful, -1 if the input_matrix is deficient, and -2 if the
   MPI_Comm object set with SetMPISubComm is not consistent with the input matrix.
   */
-  int restrict(Teuchos::RCP<Epetra_CrsMatrix> input_matrix);
+  int restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> input_matrix);
 
 private:
   bool proc_is_active;
