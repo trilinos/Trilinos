@@ -1,6 +1,6 @@
 .: ../SIERRA/bjam/config_headers[*.h]
-amesos: src[*.h]
-anasazi: src[*.hpp]
+amesos: src[*.h] 
+anasazi: src[*.hpp] thyra/src[*.hpp] epetra/src[*.hpp]
 aztecoo: src[*.h]
 claps: src[*.hpp *.H]
 epetra: src[*.h]
