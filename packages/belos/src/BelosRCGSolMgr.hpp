@@ -180,6 +180,7 @@ namespace Belos {
     
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
     
+    void resetRecycleSpace( ) { existU_ = false; }
     //@}
     
     //! @name Solver application methods
@@ -1042,7 +1043,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
     for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
     Teuchos::RCP<MV> AUtmp = MVT::CloneView( *AU_, index );
     // Initialize AU
-    problem_->apply( *Utmp, *AUtmp );
+    problem_->applyOp( *Utmp, *AUtmp );
     // Initialize UTAU
     Teuchos::SerialDenseMatrix<int,ScalarType> UTAUtmp( Teuchos::View, *UTAU_, recycleBlocks_, recycleBlocks_ );
     MVT::MvTransMv( one, *Utmp, *AUtmp, UTAUtmp );
