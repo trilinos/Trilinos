@@ -1317,6 +1317,7 @@ bool NOX::Epetra::LinearSystemAztecOO::destroyPreconditioner() const
     }
   }
   isPrecConstructed = false;
+  solvePrecOpPtr = Teuchos::null;
   return true;
 }
 
