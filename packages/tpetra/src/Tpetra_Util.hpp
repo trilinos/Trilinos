@@ -61,8 +61,8 @@ namespace Tpetra {
 	// if it doesn't, insert is used.
 	template<typename MapType, typename KeyArgType, typename ValueArgType>
 	typename MapType::iterator efficientAddOrUpdate(MapType& m, 
-													KeyArgType const& k, 
-													ValueArgType const& v) 
+													const KeyArgType & k, 
+													const ValueArgType & v) 
 	{
 		typename MapType::iterator lb = m.lower_bound(k);
 		if(lb != m.end() && !(m.key_comp()(k, lb->first))) {
@@ -77,39 +77,41 @@ namespace Tpetra {
 
 	// type conversion functions
 	template<typename OrdinalType, typename ScalarType>
-	void ordinalToScalar(OrdinalType const& source, ScalarType& dest) {
+	void ordinalToScalar(const OrdinalType & source, ScalarType& dest) {
 		dest = static_cast<ScalarType>(source);
 	}
 	template<typename OrdinalType, typename ScalarType>
-	void scalarToOrdinal(ScalarType const& source, OrdinalType& dest) {
+	void scalarToOrdinal(const ScalarType & source, OrdinalType& dest) {
 		dest = static_cast<OrdinalType>(source);
 	}
 
 	// functions for converting types to strings
 	// mainly used for doing output
 	template <typename T>
-	std::string toString(T const& x) {return(Teuchos::toString(x));}
+	std::string toString(const T & x) {return(Teuchos::toString(x));}
 
 	// this function works much the way Teuchos::Array::toString works.
 	// it allows std::vector to be used with an ostream.
 	// The contents of the vector are printed in the following format:
 	// "{4, 7, 18, 23, 6, 2}"
 	template <typename T>
-	std::string toString(std::vector<T> const& x) {
-		std::string output("{");
-		if(!x.empty()) {
-			typename std::vector<T>::const_iterator i = x.begin();
-			output += toString(*i);
+	std::string toString(const std::vector<T> & x) {
+    ostringstream os;
+    os << "{";
+    typename std::vector<T>::const_iterator i = x.begin();
+    if (i != x.end()) {
+      os << *i;
 			i++;
-			for(; i != x.end(); i++)
-				output = output + "," + toString(*i);
-		}
-		output += "}";
-		return(output);
+			for(; i != x.end(); i++) {
+				os << "," << *i;
+      }
+    }
+    os << "}";
+		return(os.str());
 	}
 
 	template <typename T>
-	std::string toString(std::complex<T> const& x) {
+	std::string toString(const std::complex<T> & x) {
 		return("(" + toString(x.real()) + "," + toString(x.imag()) + ")");
 	}
  
@@ -133,7 +135,7 @@ namespace Tpetra {
 		typename std::vector<T1>::iterator keyIter = sortVals.begin();
 		typename std::vector<T2>::iterator valueIter = otherVals.begin();
 		for(; keyIter != sortVals.end(); keyIter++, valueIter++)
-			tempMap.insert(std::pair<T1 const,T2>(*keyIter, *valueIter));
+			tempMap.insert(std::pair<const T1,T2>(*keyIter, *valueIter));
 
 		// multimap will automatically sort them, we just need to pull them out in order
 		// and write them back to the original arrays
@@ -163,7 +165,7 @@ namespace Tpetra {
 		typename std::vector<T2>::iterator valueIter1 = otherVals1.begin();
 		typename std::vector<T3>::iterator valueIter2 = otherVals2.begin();
 		for(; keyIter != sortVals.end(); keyIter++, valueIter1++, valueIter2++)
-			tempMap.insert(std::pair<T1 const, ValuePair>(*keyIter, ValuePair(*valueIter1, *valueIter2)));
+			tempMap.insert(std::pair<const T1, ValuePair>(*keyIter, ValuePair(*valueIter1, *valueIter2)));
 
 		// multimap will automatically sort them, we just need to pull them out in order
 		// and write them back to the original arrays

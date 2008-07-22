@@ -161,6 +161,12 @@ namespace Tpetra {
     //! Assignment operator
     Map<OrdinalType>& operator = (const Map<OrdinalType> & Source);
 
+    //! Get the Platform object for this Map
+    Teuchos::RCP< const Platform<OrdinalType> > getPlatform() const;
+
+    //! Get the Comm object for this Map
+    Teuchos::RCP< Teuchos::Comm<OrdinalType> > getComm() const;
+
     //@}
 
     //@{ Implements Teuchos::Object 

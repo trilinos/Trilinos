@@ -1,12 +1,15 @@
-* inherit off Teuchos::Describable, not Teuchos::Object
-* finish ElementSpace
-* switch ElementSpace,VectorSpace with Map
-* write multivector, move vector to subclass
-* write CrsMatrix, kill CisMatrix
+CURRENT
+* update Distributor,Directory,Import,Export to match new Tpetra::Map
+
+TODO
+* update vector,multivector (vector is subclass of multivector)
+* update CrsMatrix, kill CisMatrix
 * explicit instantiation
 
+CONSIDER
+* inherit off Teuchos::Describable, not Teuchos::Object
 * think about Platform and Node
-
+* how to handle local maps (local objects)
 
 * Didasko
   all examples have been disabled
@@ -18,3 +21,5 @@
 DONE   
 * kill Tpetra::Comm and replace with Teuchos::Comm, same with MpiComm and SerialComm
 * remove ScalarType template from Tpetra::Platform 
+* write Tpetra::Map, in the model of Epetra_Map, but without BlockMap
+* switch ElementSpace,VectorSpace with Map

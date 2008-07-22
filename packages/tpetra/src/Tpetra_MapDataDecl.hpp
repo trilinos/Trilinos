@@ -66,7 +66,7 @@ namespace Tpetra {
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
     Teuchos::RCP< const Platform<OrdinalType> > platform_;
-		Teuchos::RCP< const Teuchos::Comm<OrdinalType> > comm_;
+		Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm_;
 		const OrdinalType numGlobalEntries_;
 		const OrdinalType indexBase_;
 		const OrdinalType numMyEntries_;

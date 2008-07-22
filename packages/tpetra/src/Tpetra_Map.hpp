@@ -514,7 +514,7 @@ namespace Tpetra {
       return globalIndex - getMinGlobalIndex();
     }
     else {
-      typename std::map<OrdinalType,OrdinalType>::iterator i;
+      typename std::map<OrdinalType,OrdinalType>::const_iterator i;
       i = MapData_->glMap_.find(globalIndex);
       TEST_FOR_EXCEPTION(
         i == MapData_->glMap_.end(), std::invalid_argument,
@@ -666,7 +666,7 @@ namespace Tpetra {
 
   template<typename OrdinalType>
   bool Map<OrdinalType>::isDistributed() const {
-    return MapData_->global_;
+    return MapData_->distributed_;
   }
 
   template<typename OrdinalType>
@@ -749,6 +749,17 @@ namespace Tpetra {
   }
 
 
+  template<typename OrdinalType>
+  Teuchos::RCP<const Platform<OrdinalType> >
+  Map<OrdinalType>::getPlatform() const {
+    return MapData_->platform_;
+  }
+
+  template<typename OrdinalType>
+  Teuchos::RCP< Teuchos::Comm<OrdinalType> >
+  Map<OrdinalType>::getComm() const {
+    return MapData_->comm_;
+  }
 
 
 } // Tpetra namespace

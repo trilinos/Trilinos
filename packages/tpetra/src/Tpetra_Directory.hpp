@@ -30,6 +30,7 @@
 #define TPETRA_DIRECTORY_HPP
 
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include "Tpetra_DirectoryDecl.hpp"
 #include "Tpetra_Distributor.hpp"
 
@@ -40,31 +41,29 @@ namespace Tpetra {
     : Teuchos::Object("Tpetra::Directory") 
     , map_(map) 
   {
-  /*
     // initialize Comm instance
-    comm_ = map_.platform().createComm();
+    comm_ = map_.getComm();
 
     // A directory is not necessary for a non-global ES.
-    if(map.isGlobal()) {
+    if(map.isDistributed()) {
       // If map is contiguously allocated, we can construct the 
       // directory from the minMyGID value from each image.
       if(map.isContiguous()) {
         const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
         // make room for the min on each proc, plus one element at the end for the max cap
-        allMinGIDs_.resize(map.comm().getSize() + one);
+        allMinGIDs_.resize(comm_->getSize() + one);
         // get my min
-        OrdinalType minMyGID = map.getMinMyGID();
+        OrdinalType minMyGID = map.getMinGlobalIndex();
         // gather all of the mins into the first getSize() elements of allMinDIGs_
-        Teuchos::gatherAll(map.comm(),one,minMyGID,&allMinGIDs_.front(),map.comm().getSize());
+        Teuchos::gatherAll(*comm_,one,&minMyGID,(OrdinalType)(map.getComm()->getSize()),&allMinGIDs_.front());
         // put the max cap at the end
-        allMinGIDs_.back() = map.getMaxAllGID() + one; // TODO: is this right?
+        allMinGIDs_.back() = map.getMaxAllGlobalIndex() + one; // FINISH: is this right?
       }
       // Otherwise we have to generate the directory using MPI calls.
       else {
         generateDirectory();
       }
     }
-  */
   }
 
   template<typename OrdinalType>
@@ -99,11 +98,15 @@ namespace Tpetra {
 
   template<typename OrdinalType>
   void Directory<OrdinalType>::getEntries(
-      std::vector<OrdinalType> const& globalEntries, 
-      std::vector<OrdinalType>& images, 
-      std::vector<OrdinalType>& localEntries, 
-      bool computeLIDs) const 
+      const std::vector<OrdinalType> & globalEntries, 
+            std::vector<OrdinalType> & images, 
+            std::vector<OrdinalType> & localEntries, 
+             bool computeLIDs) const 
   {
+    (void)globalEntries;
+    (void)images;
+    (void)localEntries;
+    (void)computeLIDs;
   /*
     OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -116,15 +119,15 @@ namespace Tpetra {
       localEntries.assign(globalEntries.size(), negOne);
 
     bool ierr = false;
-    OrdinalType const myImageID = es().comm().getRank();
-    OrdinalType const numImages = es().comm().getSize();
+    OrdinalType const myImageID = map_.getComm()->getRank();
+    OrdinalType const numImages = map_.getComm()->getSize();
     OrdinalType const numEntries = globalEntries.size();
-    OrdinalType const nOverP = es().getNumGlobalElements() / numImages;
+    OrdinalType const nOverP = map_.getNumGlobalElements() / numImages;
 
     // Easiest case: Map is serial or locally-replicated
-    if(!es().isGlobal()) {
+    if(!map_.isGlobal()) {
       for(OrdinalType i = zero; i < numEntries; i++) {
-        if(!es().isMyGID(globalEntries[i])) { // This means something bad happened
+        if(!map_.isMyGID(globalEntries[i])) { // This means something bad happened
           ierr = true;                        // As there should be no non-local elements in a non-global ES
         }
         else {
@@ -138,9 +141,9 @@ namespace Tpetra {
     }
 
     // Next Easiest Case: Map is distributed but allocated contiguously
-    else if(es().isContiguous()) {
-      OrdinalType minAllGID = es().getMinAllGID();
-      OrdinalType maxAllGID = es().getMaxAllGID();
+    else if(map_.isContiguous()) {
+      OrdinalType minAllGID = map_.getMinAllGlobalIndex();
+      OrdinalType maxAllGID = map_.getMaxAllGlobalIndex();
       for(OrdinalType i = zero; i < numEntries; i++) {
         OrdinalType LID = negOne; // Assume not found
         OrdinalType image = negOne;
@@ -243,71 +246,74 @@ namespace Tpetra {
   */
   }
     
-    // directory setup for non-contiguous ES
+    // directory setup for non-contiguous Map
   template<typename OrdinalType>
   void Directory<OrdinalType>::generateDirectory() 
   {
-  /*
-    OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
-    OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    OrdinalType const negOne = zero - one;
+    const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
+    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+    const OrdinalType negOne = zero - one;
+          
+    const OrdinalType minAllGID = map_.getMinAllGlobalIndex();
+    const OrdinalType maxAllGID = map_.getMaxAllGlobalIndex();
 
-    OrdinalType const minAllGID = es().getMinAllGID();
-    OrdinalType const maxAllGID = es().getMaxAllGID();
+    // initialize Comm instance
+    comm_ = map_.getComm();
 
-    // DirectoryES will have a range of elements from the minimum to the maximum
-    // GID of the user ES, and an indexBase of minAllGID from the user ES
-    OrdinalType numGlobalElements = maxAllGID - minAllGID + one;
+    // DirectoryMap will have a range of elements from the minimum to the maximum
+    // GID of the user Map, and an indexBase of minAllGID from the user Map
+    OrdinalType numGlobalEntries = maxAllGID - minAllGID + one;
 
     // Create a uniform linear map to contain the directory
-    directoryES_ = Teuchos::rcp(new Map<OrdinalType>(numGlobalElements, minAllGID, es().platform()));
+    directoryMap_ = Teuchos::rcp(new Map<OrdinalType>(numGlobalEntries, minAllGID, *map_.getPlatform()));
 
-    OrdinalType directory_numMyElements = directoryES_->getNumMyElements();
+    OrdinalType dir_numMyEntries = directoryMap_->getNumMyEntries();
 
     // Allocate imageID List and LID List.  Initialize to -1s.
     // Initialize values to -1 in case the user global element list does
     // fill all IDs from minAllGID to maxAllGID (e.g., allows global indices to be 
     // all even integers).
-    imageIDs_.resize(directory_numMyElements, negOne);
-    LIDs_.resize(directory_numMyElements, negOne);
+    imageIDs_.resize(dir_numMyEntries, negOne);
+    LIDs_.resize(dir_numMyEntries, negOne);
 
 
     // Get list of images owning the directory entries for the Map GIDs
-    OrdinalType myImageID = es().comm().getRank();
-    OrdinalType numMyElements = es().getNumMyElements();
-    std::vector<OrdinalType> sendImageIDs(numMyElements);
-    std::vector<OrdinalType> myGlobalElements = es().getMyGlobalElements();
-    directoryES_->getRemoteIDList(myGlobalElements, sendImageIDs);
+    OrdinalType myImageID = comm_->getRank();
+    OrdinalType numMyEntries = map_.getNumMyEntries();
+    std::vector<OrdinalType> sendImageIDs(numMyEntries);
+    const std::vector<OrdinalType> & myGlobalEntries = map_.getMyGlobalEntries();
+    directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs);
 
     // Create distributor & call createFromSends
     OrdinalType numReceives = Teuchos::OrdinalTraits<OrdinalType>::zero();
     Distributor<OrdinalType> distor(comm_);      
-    distor.createFromSends(es().getNumMyElements(), sendImageIDs, true, numReceives);
+    distor.createFromSends(sendImageIDs, numReceives);
 
     // Execute distributor plan
     // Transfer GIDs, ImageIDs, and LIDs that we own to all images
     // End result is all images have list of all GIDs and corresponding ImageIDs and LIDs
-    std::vector<OrdinalType> exportElements;
+    std::vector<OrdinalType> exportEntries;
     OrdinalType packetSize = one + one + one; // We will send GIDs, ImageIDs, and LIDs.
 
-    exportElements.reserve(packetSize * numMyElements);
-    for(OrdinalType i = zero; i < numMyElements; i++) {
-      exportElements.push_back(myGlobalElements[i]);
-      exportElements.push_back(myImageID);
-      exportElements.push_back(i);
+    exportEntries.reserve(packetSize * numMyEntries);
+    for(OrdinalType i = zero; i < numMyEntries; i++) {
+      exportEntries.push_back(myGlobalEntries[i]);
+      exportEntries.push_back(myImageID);
+      exportEntries.push_back(i);
     }
 
     std::vector<OrdinalType> importElements;
-    comm_->doPostsAndWaits(distor, exportElements, packetSize, importElements);
+    distor.doPostsAndWaits(exportEntries, packetSize, importElements);
 
     typename std::vector<OrdinalType>::iterator ptr = importElements.begin();
     for(OrdinalType i = zero; i < numReceives; i++) {
-      OrdinalType currLID = directoryES_->getLID(*ptr++); // Convert incoming GID to Directory LID
+      OrdinalType currLID = directoryMap_->getLocalIndex(*ptr++); // Convert incoming GID to Directory LID
       assert(currLID != negOne); // Internal error
+      TEST_FOR_EXCEPTION(currLID == negOne, std::logic_error,
+        "Tpetra::Directory<" << Teuchos::OrdinalTraits<OrdinalType>::name() << ">::generateDirectory(): logic error. Contact Tpetra team.");
       imageIDs_[currLID] = *ptr++;
       LIDs_[currLID] = *ptr++;
     }
-  */
   }
     
 } // namespace Tpetra
