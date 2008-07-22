@@ -27,7 +27,22 @@ This will be updated for release 9.0
 
 Phalanx is a library to handle arbitrary function evaluation with complex nonlinear dependency chains for discretized partial differential equation systems.  It provides a flexible and efficient mechanism for switching dependencies and computing sensitivities either analytically or via automatic differentiation.  It can be used with any cell-based discretization technique including finite element, finite volume and finite difference.
 
-A simple example would be the construction of a Fourier energy flux for the heat equation:
+A simple example (found in phalanx/example/energyFlux) is the construction of a Fourier energy flux for the heat equation.  Suppose that we want to solve the heat equation using finite elements:
+
+\f[
+  \nabla \cdot (\mathbf{q}) + s = 0
+\f] 
+
+where \f$\mathbf{q}\f$ is the heat flux, \f$ \mathbf{q} = -\rho C_p \nabla T \f$  and \f$s\f$ is a nonlinear source term.  Integrating by parts and using the test function \f$ \phi \f$ results in the following weak form equation:
+
+\f[
+  - \int_{\Omega} \nabla \phi \cdot \mathbf{q} d\Omega 
+  + \int_{\Gamma} \phi \mathbf{n} \cdot \mathbf{q} 
+  + \int_{\Omega} \phi s d\Omega = 0 
+\f]
+
+
+
 
 \f[
   \mathbf{q} = -\rho C_p \nabla T
