@@ -1,7 +1,7 @@
 ../configure \
-CXXFLAGS="-g -O3 -fPIC" \
-CFLAGS="-g -O3 -fPIC" \
-FFLAGS="-g -O3 -fPIC" \
+CXXFLAGS="-O3 -fPIC" \
+CFLAGS="-O3 -fPIC" \
+FFLAGS="-O3 -fPIC" \
 --with-swig=/usr/alt/bin/swig \
 --with-lapack="-L/usr/lib64 -llapack" \
 --with-blas="-L/usr/lib64 -lblas" \
