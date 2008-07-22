@@ -224,6 +224,7 @@ int main(int argc, char *argv[])
        nlPrintParams.set("Output Information", 
 				  NOX::Utils::Error +
 				  NOX::Utils::Details +
+			          NOX::Utils::LinearSolverDetails +
 				  NOX::Utils::OuterIteration + 
 				  NOX::Utils::InnerIteration + 
 				  NOX::Utils::Warning +
