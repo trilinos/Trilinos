@@ -116,8 +116,8 @@ namespace LOCA {
 	  const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup,
 	  const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
 	  const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp) = 0;
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dfdp,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dJndp) = 0;
 
 	/*! 
 	 * \brief Solves the extended system as defined above
@@ -130,6 +130,20 @@ namespace LOCA {
 	  Teuchos::ParameterList& params,
 	  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
 	  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const = 0;
+
+	/*! 
+	 * \brief Solves the transpose of the extended system as defined above
+	 */
+	/*!
+	 * The \em params argument is the linear solver parameters. 
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	solveTranspose(
+	  Teuchos::ParameterList& params,
+	  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
+	  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const {
+	  return NOX::Abstract::Group::NotDefined; 
+	}
 
       private:
 

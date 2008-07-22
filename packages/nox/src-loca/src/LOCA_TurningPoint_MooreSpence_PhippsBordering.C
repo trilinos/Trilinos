@@ -81,8 +81,8 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::setBlocks(
 	 const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup_,
 	 const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector_,
 	 const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector_,
-	 const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp_,
-	 const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp_)
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& dfdp_,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& dJndp_)
 {
   group = group_;
   tpGroup = tpGroup_;
@@ -157,7 +157,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
   cont_input_x->setBlock(*input_x, index_input);
   
   // Set column m+1 to dfdp
-  (*cont_input_x)[m] = *dfdp;
+  (*cont_input_x)[m] = (*dfdp)[0];
   
   // Initialize column m+2 to 0
   (*cont_input_x)[m+1].init(0.0);
@@ -166,7 +166,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solve(
   cont_input_null->setBlock(*input_null, index_input);
   
   // Set column m+1 to dJndp
-  (*cont_input_null)[m] = *dJndp;
+  (*cont_input_null)[m] = (*dJndp)[0];
   
   // Initialize column m+2 to 0
   (*cont_input_null)[m+1].init(0.0);

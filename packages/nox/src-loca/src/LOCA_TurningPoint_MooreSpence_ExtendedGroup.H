@@ -46,6 +46,7 @@
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"             // base class
+#include "LOCA_Abstract_TransposeSolveGroup.H"            // base class
 #include "LOCA_TurningPoint_MooreSpence_ExtendedVector.H" // class data element
 #include "LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H" // class data element
 
@@ -131,7 +132,8 @@ namespace LOCA {
 
       class ExtendedGroup 
 	: public virtual LOCA::Extended::MultiAbstractGroup,
-	  public virtual LOCA::MultiContinuation::AbstractGroup {
+	  public virtual LOCA::MultiContinuation::AbstractGroup,
+	  public virtual LOCA::Abstract::TransposeSolveGroup {
 
       public:
 
@@ -431,6 +433,29 @@ namespace LOCA {
 	 virtual void printSolution(const NOX::Abstract::Vector& x_,
 				    const double conParam) const;
 
+	//@}
+
+	/*! 
+	 * @name Implementation of LOCA::Abstract::TransposeSolveGroup
+	 * virtual methods 
+	 */
+	//@{
+
+	//! Solve Jacobian-tranpose system
+	virtual NOX::Abstract::Group::ReturnType 
+	applyJacobianTransposeInverse(Teuchos::ParameterList& params, 
+				      const NOX::Abstract::Vector& input, 
+				      NOX::Abstract::Vector& result) const;
+
+	//! Solve Jacobian-tranpose system with multiple right-hand sides
+	virtual NOX::Abstract::Group::ReturnType 
+	applyJacobianTransposeInverseMultiVector(
+				   Teuchos::ParameterList& params, 
+				   const NOX::Abstract::MultiVector& input, 
+				   NOX::Abstract::MultiVector& result) const;
+
+	//@}
+
 	//! Get bifurcation parameter
 	double getBifParam() const;
 
@@ -443,6 +468,10 @@ namespace LOCA {
 	 */
 	void lTransNorm(const NOX::Abstract::MultiVector& n,
 			NOX::Abstract::MultiVector::DenseMatrix& result) const;
+
+	//! Return length normalization vector
+	Teuchos::RCP<NOX::Abstract::Vector>
+	getLengthVector() const;
 
       protected:
 

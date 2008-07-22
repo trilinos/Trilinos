@@ -163,6 +163,13 @@ namespace LOCA {
 		   const NOX::Abstract::Vector& nullVector,
 		   NOX::Abstract::Vector& result) const;
 
+        //! Compute vector (w^TJn)_{x}
+    virtual NOX::Abstract::Group::ReturnType 
+    computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
+		   const NOX::Abstract::MultiVector& w,
+		   const NOX::Abstract::Vector& nullVector,
+		   NOX::Abstract::MultiVector& result) const;
+
     //! Compute derivative of (J+iwM)(y+iz) with respect to parameter, 
     virtual NOX::Abstract::Group::ReturnType 
     computeDCeDp(LOCA::Hopf::MooreSpence::AbstractGroup& grp,

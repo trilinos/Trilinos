@@ -1444,7 +1444,77 @@ LOCA::MultiContinuation::ConstrainedGroup::fillC(
   my_CC.assign(*my_C);
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverse(
+					  Teuchos::ParameterList& params, 
+					  const NOX::Abstract::Vector& input,
+					  NOX::Abstract::Vector& result) const 
+{
+  // Convert input, result to multivectors
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
+    input.createMultiVector(1, NOX::DeepCopy);
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
+    result.createMultiVector(1, NOX::DeepCopy);
 
+  // Call multivector version of applyJacobianTransposeInverse
+  NOX::Abstract::Group::ReturnType status = 
+    applyJacobianTransposeInverseMultiVector(params, *mv_input, *mv_result);
+
+  // Copy result
+  result = (*mv_result)[0];
+
+  return status;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverseMultiVector(
+				     Teuchos::ParameterList& params,
+				     const NOX::Abstract::MultiVector& input,
+				     NOX::Abstract::MultiVector& result) const 
+{
+  string callingFunction = 
+    "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverseMultiVector()";
+  
+  if (!isJacobian()) {
+    globalData->locaErrorCheck->throwError(callingFunction,
+					    "Called with invalid Jacobian!");
+  }
+
+  // Cast inputs to continuation multivectors
+  const LOCA::MultiContinuation::ExtendedMultiVector& c_input = 
+    dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(input);
+  LOCA::MultiContinuation::ExtendedMultiVector& c_result = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(result);
+
+  // Get x, param componenets of input vector
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
+    c_input.getXMultiVec();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
+
+  // Get references to x, param components of result vector
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
+    c_result.getXMultiVec();
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+    c_result.getScalars();
+
+  // Call bordered solver applyInverseTranspose method
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status = 
+    borderedSolver->initForTransposeSolve();
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
+  status = borderedSolver->applyInverseTranspose(params, input_x.get(), 
+						 input_param.get(), 
+						 *result_x, *result_param);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
+
+  return finalStatus;
+}
 
 Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::MultiContinuation::ConstrainedGroup::getGroup()

@@ -313,8 +313,8 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
 		  Teuchos::rcp(this, false),
 		  xVec->getNullVec(), 
 		  fVec->getNullVec(),
-		  fMultiVec.getColumn(1)->getXVec(), 
-		  fMultiVec.getColumn(1)->getNullVec());
+		  dfdpMultiVec->getXMultiVec(), 
+		  dfdpMultiVec->getNullMultiVec());
 
   isValidJacobian = true;
 
@@ -496,7 +496,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 
   // compute J*x + p*dR/dp
   result_x->update(Teuchos::NO_TRANS, 1.0, *(dfdpMultiVec->getXMultiVec()), 
-		   *input_param);
+		   *input_param, 1.0);
 
   // compute J*y
   status = grpPtr->applyJacobianMultiVector(*input_null, *result_null);
@@ -507,7 +507,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
   // compute J*y + p*dJy/dp
   result_null->update(Teuchos::NO_TRANS, 1.0, 
 		      *(dfdpMultiVec->getNullMultiVec()), 
-		      *input_param);
+		      *input_param, 1.0);
 
   // compute (dJy/dx)*x
   status = grpPtr->computeDJnDxaMulti(*(xVec->getNullVec()), 
@@ -531,11 +531,88 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVecto
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
-  globalData->locaErrorCheck->throwError(
-		  "LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector()",
-		  "Method not implemented!");
+  string callingFunction = 
+    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
 
-  return NOX::Abstract::Group::NotDefined;
+  if (!isJacobian()) {
+    globalData->locaErrorCheck->throwError(callingFunction,
+				 "Called with invalid Jacobian!");
+  }
+
+  // Cast vectors to TP vectors
+  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_input = 
+    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(input);
+  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_result = 
+    dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(result);
+
+  // Get constant references to input vector components
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
+    tp_input.getXMultiVec();
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null = 
+    tp_input.getNullMultiVec();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = 
+    tp_input.getScalars();
+
+  // Get non-constant references to result vector components
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
+    tp_result.getXMultiVec();
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_null = 
+    tp_result.getNullMultiVec();
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+    tp_result.getScalars();
+
+  // Temporary vector
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
+    input_null->clone(NOX::ShapeCopy);
+
+  // verify underlying Jacobian is valid
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+
+  // compute J^T*x
+  status = grpPtr->applyJacobianTransposeMultiVector(*input_x, *result_x);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  // compute J^T*y
+  status = grpPtr->applyJacobianTransposeMultiVector(*input_null, *result_null);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+
+  // compute (dJn/dx)^T*y
+  status = grpPtr->computeDwtJnDxMulti(*input_null, *(xVec->getNullVec()), 
+				       *tmp);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+
+  // compute J^T*x + (dJn/dx)^T*y
+  result_x->update(1.0, *tmp, 1.0);
+
+  // compute J^T*y + phi*z
+  result_null->update(Teuchos::NO_TRANS, 1.0/lengthVec->length(), *lengthMultiVec, *input_param, 1.0);
+
+  // compute (df/dp)^T*x
+  input_x->multiply(1.0, *(dfdpMultiVec->getXMultiVec()), *result_param);
+
+  // compute (dJn/dp)^T*y
+  NOX::Abstract::MultiVector::DenseMatrix t(1, input_param->numCols());
+  input_null->multiply(1.0, *(dfdpMultiVec->getNullMultiVec()), t);
+
+  // compute (df/dp)^T*x + (dJn/dp)^T*y
+  *result_param += t;
+
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -861,6 +938,43 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
   grpPtr->printSolution(*tp_x.getNullVec(), tp_x.getBifParam());
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeInverse(
+					  Teuchos::ParameterList& params, 
+					  const NOX::Abstract::Vector& input,
+					  NOX::Abstract::Vector& result) const 
+{
+  // Convert input, result to multivectors
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
+    input.createMultiVector(1, NOX::DeepCopy);
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
+    result.createMultiVector(1, NOX::DeepCopy);
+
+  // Call multivector version of applyJacobianInverse
+  NOX::Abstract::Group::ReturnType status = 
+    applyJacobianTransposeInverseMultiVector(params, *mv_input, *mv_result);
+
+  // Copy result
+  result = (*mv_result)[0];
+
+  return status;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeInverseMultiVector( 
+				     Teuchos::ParameterList& params, 	
+				     const NOX::Abstract::MultiVector& input,
+				     NOX::Abstract::MultiVector& result) const 
+{
+  // Cast vectors to TP vectors
+  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_input = 
+    dynamic_cast<const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(input);
+  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_result = 
+    dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(result);
+  
+  return solverStrategy->solveTranspose(params, tp_input, tp_result);
+}
+
 double
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::getBifParam() const 
 {
@@ -880,6 +994,14 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::lTransNorm(
 			NOX::Abstract::MultiVector::DenseMatrix& result) const
 {
   n.multiply(1.0 / lengthVec->length(), *lengthMultiVec, result);
+}
+
+Teuchos::RCP<NOX::Abstract::Vector>
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getLengthVector() const
+{
+  Teuchos::RCP<NOX::Abstract::Vector> l = lengthVec->clone();
+  l->scale(1.0 / lengthVec->length());
+  return l;
 }
 
 void
@@ -919,10 +1041,10 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
   // Rescale length vector so that the normalization condition is met
   double lVecDotNullVec = lTransNorm(*(xVec->getNullVec()));
 
-  if (fabs(lVecDotNullVec) < 1.0e-8) {
+  if (lVecDotNullVec == 0.0) {
     globalData->locaErrorCheck->throwError(
 		   "LOCA::TurningPoint::MooreSpence::ExtendedGroup::init()",
-		   "null vector cannot be orthogonal to length-scaling vector: ");
+		   "null vector can be orthogonal to length-scaling vector");
   }
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() << 

@@ -129,8 +129,8 @@ namespace LOCA {
 	  const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup,
 	  const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
 	  const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp);
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dfdp,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dJndp);
 
 	/*! 
 	 * \brief Solves the extended system as defined above
@@ -144,11 +144,34 @@ namespace LOCA {
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
 	   LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const;
 
+	/*! 
+	 * \brief Solves the transpose of the extended system as defined above
+	 */
+	/*!
+	 * The \em params argument is the linear solver parameters. 
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	solveTranspose(
+	  Teuchos::ParameterList& params,
+	  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
+	  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const;
+
       protected:
 
 	//! Solves equations with contiguous arguments
 	NOX::Abstract::Group::ReturnType 
 	solveContiguous(
+	          Teuchos::ParameterList& params,
+		  const NOX::Abstract::MultiVector& input_x,
+		  const NOX::Abstract::MultiVector& input_null,
+	          const NOX::Abstract::MultiVector::DenseMatrix& input_param,
+		  NOX::Abstract::MultiVector& result_x,
+		  NOX::Abstract::MultiVector& result_null,
+	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const;
+
+	//! Solves equations with contiguous arguments
+	NOX::Abstract::Group::ReturnType 
+	solveTransposeContiguous(
 	          Teuchos::ParameterList& params,
 		  const NOX::Abstract::MultiVector& input_x,
 		  const NOX::Abstract::MultiVector& input_null,
@@ -186,10 +209,10 @@ namespace LOCA {
 	Teuchos::RCP<const NOX::Abstract::Vector> JnVector;
 
 	//! df/dp
-	Teuchos::RCP<const NOX::Abstract::Vector> dfdp;
+	Teuchos::RCP<const NOX::Abstract::MultiVector> dfdp;
 
 	//! d(Jn)/dp
-	Teuchos::RCP<const NOX::Abstract::Vector> dJndp;
+	Teuchos::RCP<const NOX::Abstract::MultiVector> dJndp;
 
       }; // Class SalingerBordering
       

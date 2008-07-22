@@ -623,11 +623,43 @@ fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
   conGroup->fillC(C);
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+applyJacobianTransposeInverse(Teuchos::ParameterList& params, 
+		     const NOX::Abstract::Vector& input,
+		     NOX::Abstract::Vector& result) const 
+{
+  return conGroup->applyJacobianTransposeInverse(params, input, result);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+applyJacobianTransposeInverseMultiVector(Teuchos::ParameterList& params,
+					 const NOX::Abstract::MultiVector& input,
+					 NOX::Abstract::MultiVector& result) const 
+{
+  return conGroup->applyJacobianTransposeInverseMultiVector(params, input, result);
+}
+
 double
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
 getBifParam() const
 {
   return grpPtr->getParam(bifParamID);
+}
+
+Teuchos::RCP<const NOX::Abstract::Vector>
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getLeftNullVec() const
+{
+  return constraint->getLeftNullVec();
+}
+
+Teuchos::RCP<const NOX::Abstract::Vector>
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getRightNullVec() const
+{
+  return constraint->getRightNullVec();
 }
 
 void

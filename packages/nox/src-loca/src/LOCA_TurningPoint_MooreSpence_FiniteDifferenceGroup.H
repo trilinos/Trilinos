@@ -126,6 +126,20 @@ namespace LOCA {
 			   const NOX::Abstract::MultiVector& aVector,
 			   NOX::Abstract::MultiVector& result);
 
+	/*! 
+	 * \brief Computes the derivative 
+	 * \f$\frac{\partial w^TJn}{\partial x}\f$. 
+	 */
+	/*! 
+	 * The calculation is implemented by calling the corresponding
+	 * LOCA::DerivUtils::computeDwtJnDx() method of the passed 
+	 * LOCA::DerivUtils object.
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	computeDwtJnDxMulti(const NOX::Abstract::MultiVector& w,
+			    const NOX::Abstract::Vector& nullVector,
+			    NOX::Abstract::MultiVector& result);
+
 	//! Bring NOX::Abstract::Group::operator=() into scope
 	using NOX::Abstract::Group::operator=;
   

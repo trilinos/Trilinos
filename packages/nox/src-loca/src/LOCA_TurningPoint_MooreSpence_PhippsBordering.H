@@ -173,8 +173,8 @@ namespace LOCA {
 	  const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup,
 	  const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
 	  const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp);
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dfdp,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dJndp);
 
 	/*! 
 	 * \brief Solves the extended system as defined above
@@ -230,10 +230,10 @@ namespace LOCA {
 	Teuchos::RCP<const NOX::Abstract::Vector> JnVector;
 
 	//! df/dp
-	Teuchos::RCP<const NOX::Abstract::Vector> dfdp;
+	Teuchos::RCP<const NOX::Abstract::MultiVector> dfdp;
 
 	//! d(Jn)/dp
-	Teuchos::RCP<const NOX::Abstract::Vector> dJndp;
+	Teuchos::RCP<const NOX::Abstract::MultiVector> dJndp;
 
 	//! Bordered solver for solving (n+1)x(n+1) sets of equations
 	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;

@@ -88,3 +88,13 @@ LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::computeDJnDxaMulti(
   return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
     computeDJnDxa(*this, nullVector, aVector, JnVector, result);
 }
+
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::computeDwtJnDxMulti(
+				       const NOX::Abstract::MultiVector& w,
+				       const NOX::Abstract::Vector& nullVector,
+				       NOX::Abstract::MultiVector& result)
+{
+  return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
+    computeDwtJnDx(*this, w, nullVector, result);
+}
