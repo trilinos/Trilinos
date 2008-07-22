@@ -54,6 +54,7 @@ FFLAGS=-O3 \
 --enable-nox-tests \
 --enable-nox-thyra \
 --enable-pamgen \
+--enable-phalanx \
 --enable-pytrilinos \
 --enable-pliris \
 --enable-rythmos \
