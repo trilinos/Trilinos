@@ -21,11 +21,22 @@ This will be updated for release 9.0
 
   - \ref faq
 
-  - \ref authors 
+  - \ref history
+
+  - \ref authors
 
 \section introduction Introduction
 
 Phalanx is a library to handle arbitrary function evaluation with complex nonlinear dependency chains for discretized partial differential equation systems.  It provides a flexible and efficient mechanism for switching dependencies and computing sensitivities either analytically or via automatic differentiation.  It can be used with any cell-based discretization technique including finite element, finite volume and finite difference.
+
+\section overview Overview
+
+Phalanx is used to break down complex dependencies into manageable algorithmic blocks.  It was written to address a variety of difficulties encountered when writing a general PDE code that allows for flexible switching of dependencies at runtime.  
+
+Definitions:
+ - A "Field" is a concrete data type that has allocated storage space.  A field can be defined for a number of cells and is specific to a DataLayout.
+ - A "Data Layout" is a description of a unique topologic entity used for defining where a field lives.  The API for a data layout contains a size (number of entities on a cell) and allows for a comparison operator.
+ - An "Evaluator" will evaluate the values of fields and is in turn dependent on other fields.
 
 A simple example (found in phalanx/example/energyFlux) is the construction of a Fourier energy flux for the heat equation.  Suppose that we want to solve the heat equation using finite elements:
 
@@ -48,17 +59,13 @@ where \f$\mathbf{q}\f$ is the heat flux, \f$ \mathbf{q} = -\rho C_p \nabla T \f$
   \mathbf{q} = -\rho C_p \nabla T
 \f]
 
-\section overview Overview
+Advantages of using Phalanx:
 
-Phalanx is used to break down complex dependencies into manageable algorithmic blocks.  It was written to address a variety of difficulties encountered when writing a general PDE code that allows for flexible switching of dependencies at runtime.  
+ - Increased flexibility because each simpler piece becomes an extension point that can be swapped out with different implementations.
 
-Before describing the library, the nomenclature must be defined.
+ - Easier to implement new code because each piece is simpler, more focused and easier to test in isolation.  
 
- - A "Field" is a concrete data type that has allocated storage space.  A field can be defined for a number of cells and is specific to a DataLayout.
- - A "DataLayout" is a description of a unique topologic entity used for defining where a field lives. 
- - An "Evaluator" will evaluate the value(s) of fields(s) and is in turn dependent on other fields.
-
-Specific issues that Phalanx addresses:
+ - Ensures that complex dependency chains are evaluated correctly.  
 
  - Determine the order of variable evaluation so that the correct
  evaluation is performed: For example, to compute the density at the
@@ -69,6 +76,13 @@ Specific issues that Phalanx addresses:
  and/or P will have to be evaluated before the density.  This is an
  easy example, but there are much more complex dependency chains.
 
+Disadvantages of using Phalanx:
+
+ - A potential performance loss due to fragmentation of the over-all algorithm (e.g., several small loops instead of one large loop) 
+
+ - A potential loss of visibility of the original, composite problem (since the code is scattered into multiple places).  
+
+Managing these trade-offs can result in application code that both performs well and supports rapid development and extensibility.  
 
 \section user_guide User's Guide
 
@@ -88,6 +102,10 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
   - Why name it Phalanx?  The phalanx was one of the most dominant military formations of the Greek armies in the classical period.  It was a strictly ordered formation.  The Phalanx software library figures out ordered dependencies of field evaluators.   A second more obscure reference relates to the US Navy.  The Phalanx software package was designed to provide nonlinear functionality for the <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a> itegration library.  Intrepid was the name of an aircraft carrier during in WW II.  Modern US aircraft carriers are protected by a Close-In Weapons System (CIWS) named the Phalanx.  Finally, the PI of this project is an avid strategy warfare gamer and leans towards military references.
 
   - Why is the scalar type not embedded in the FieldTag?  We designed the FieldTag to be scalar type independent.  The reason is that we could then use FieldTags as arguments for Evaluator objects of ANY scalar type.  We have a factory that can automatically build Evaluators for all scalar types.  This automation requires constructor arguments that are not dependent on the scalar type.  
+
+\section history History
+
+Phalanx grew out of the Variable Manger in the Charon code and the Expression Manager in the Aria code.  It is an attempt at merging the two capabilities and is slated to provide nonlinear function evaluation to the Intrepid discretiztion package.
 
 \section authors Authors
 
