@@ -67,6 +67,7 @@ FFLAGS=-O3 \
 --enable-teuchos-expat \
 --enable-thyra \
 --enable-tpetra \
+--enable-trikota \
 --enable-trilinoscouplings \
 --enable-triutils \
 --enable-moocho \
