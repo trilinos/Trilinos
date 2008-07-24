@@ -312,60 +312,57 @@ bool testComm(
   // reduceAllAndScatter(...)
   //
 
-/* I am commenting this out for now since it seems to be hanging on some platforms.
- * There is obviously something major wrong here but I can not see what it is
- * for the life of me.
- *
- */
-/*
   *out << "\nReducing/summing sendBuff[] and scattering into recvBuff[] ...\n";
 
-  std::fill_n(&recvBuff[0], 1, as<Packet>(0));
-
-  Teuchos::Array<Ordinal> recvCounts(numProcs);
-  
+  // there are count items in sendbuff
+  // the intermediate reduction operation will result in a vector of length count
+  // each process will recieve numItemsPerProcess == count/numProcs == numProcs*2/numProcs == 2  of this intermediate reduction
   const Ordinal numItemsPerProcess = count/numProcs;
-
+  Teuchos::Array<Ordinal> recvCounts(numProcs);
+  // fill recvCounts with {2,...,2}
   std::fill(recvCounts.begin(), recvCounts.end(), numItemsPerProcess);
+  // initialize recieve buffer to zero
+  std::fill(recvBuff.begin(),recvBuff.end(),as<Packet>(0));
 
   reduceAllAndScatter(
     comm, Teuchos::REDUCE_SUM,
     count, &sendBuff[0], &recvCounts[0], &recvBuff[0]
     );
 
+  /* on proc rank, sendBuff[i] == (rank+1)*i
+     after REDUCE_SUM,
+         sendBuff[i] == \sum_k (k+1)*i 
+                     == i*\sum_k (k+1) 
+                     == i*(1+2+...+numProcs)
+                     == i*numProcs*(numProcs+1)/2
+  */
   *out << "\nChecking that recvBuff[i] == sum(k+1,k=0...numProcs-1) * (offset+i) ...";
   result = true;
-  int sumProcRanks = 0;
-  for( int k = 0; k < numProcs; ++k ) sumProcRanks += (k+1);
+  int sumProcRanks = (numProcs*(numProcs+1))/2;
   for( int i = 0; i < numItemsPerProcess; ++i ) {
     const int offset = procRank * numItemsPerProcess;
     const Packet expected = Packet(sumProcRanks)*Packet(offset+i);
-    *out 
-      << "\n  expected["<<i<<"]=sum(k+1,k=0...numProcs-1)*(offset+i)="
-      << sumProcRanks<<"*"<<(offset+i)<<"="<<expected;
-    *out
-      << "\n  recvBuffer["<<i<<"]="<<recvBuff[i];
-//    if( recvBuff[i] != expected ) {
-//      result = false;
-//      *out
-//        << "\n  recvBuffer["<<i<<"]="<<recvBuff[i]
-//        << " == sum(k+1,k=0...numProcs-1)*(offset+i)="<<sumProcRanks<<"*"<<(offset+i)<<"="<<expected<<" : failed";
-//    }
+    if( recvBuff[i] != expected ) {
+      result = false;
+      *out
+        << "\n  recvBuffer["<<i<<"]="<<recvBuff[i]
+        << " == sum(k+1,k=0...numProcs-1)*(offset+i)="<<sumProcRanks<<"*"<<(offset+i)<<"="<<expected<<" : failed";
+    }
   }
-//  if(result) {
-//    *out << " passed\n";
-//  }
-//  else {
-//    *out << "\n";
-//    success = false;
-//  }
+  for( int i = numItemsPerProcess; i < count; i++ ) {
+    // latter entries in recvBuff should be unchanged (i.e., still zero)
+    if ( recvBuff[i] != as<Packet>(0) ) result = false;
+  }
+  if(result) {
+    *out << " passed\n";
+  }
+  else {
+    *out << "\n";
+    success = false;
+  }
 
-//  result = checkSumResult(comm,out,result);
-//  if(!result) success = false;
-
-*/
-
-  *out << "\n*** Warning, the output shows that reduceAllAndScatter(...) does not seem to be working as I understand it should ...\n";
+  result = checkSumResult(comm,out,result);
+  if(!result) success = false;
 
   //
   // The End!
@@ -400,7 +397,7 @@ bool masterTestComm(
 
   RCP<const Teuchos::Comm<Ordinal> >
     comm = Teuchos::DefaultComm<Ordinal>::getComm();
-	
+
 #ifdef HAVE_MPI
 
   // Test that the DefaultComm is really a DefaultMpiComm.
@@ -427,9 +424,9 @@ bool masterTestComm(
     }
     else {
       *out
-	<< "\n***"
-	<< "\n*** Successfully got the raw MPI_Comm pointer from the Teuchos::MpiComm<" << OT::name() << ">!"
-	<< "\n***\n";
+        << "\n***"
+        << "\n*** Successfully got the raw MPI_Comm pointer from the Teuchos::MpiComm<" << OT::name() << ">!"
+        << "\n***\n";
     }
   }
   
@@ -490,7 +487,7 @@ int main(int argc, char* argv[])
 
   try {
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 
@@ -498,7 +495,7 @@ int main(int argc, char* argv[])
 
     clp.setOption( "show-timers", "no-show-timers", &showTimers, "Determine if timers are shown or not" );
     
-		CommandLineProcessor::EParseCommandLineReturn
+    CommandLineProcessor::EParseCommandLineReturn
       parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
       return parse_return;

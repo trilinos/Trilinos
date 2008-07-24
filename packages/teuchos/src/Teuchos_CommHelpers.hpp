@@ -453,9 +453,9 @@ template<typename Ordinal, typename Packet>
 class Min<false,Ordinal,Packet> {
 public:
   static void min(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal
+    ,const Packet[]
+    ,      Packet[]
     )
     {
       TEST_FOR_EXCEPTION(
@@ -490,9 +490,9 @@ template<typename Ordinal, typename Packet>
 class Max<false,Ordinal,Packet> {
 public:
   static void max(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal
+    ,const Packet[]
+    ,      Packet[]
     )
     {
       TEST_FOR_EXCEPTION(
@@ -527,9 +527,9 @@ template<typename Ordinal, typename Packet>
 class AND<false,Ordinal,Packet> {
 public:
   static void And(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal
+    ,const Packet[]
+    ,      Packet[]
     )
     {
       TEST_FOR_EXCEPTION(
