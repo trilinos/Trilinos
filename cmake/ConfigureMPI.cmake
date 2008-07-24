@@ -28,16 +28,28 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
   )
   IF(MPI_EXECUTABLE)
     IF(${MPI_EXECUTABLE} MATCHES mpiexec)
+      #The number of processors should not be hard coded
       SET(MPI_EXECUTABLE_FLAGS 
   	    -n 2
 	    CACHE STRING
         "Flags for the MPI executable."
       )
+      SET(MPI_NUMPROCS_FLAG 
+  	    -n
+	    CACHE STRING
+        "Flag setting the number of processors to use."
+      )
     ELSE(${MPI_EXECUTABLE} MATCHES mpiexec)
+      #The number of processors should not be hard coded
       SET(MPI_EXECUTABLE_FLAGS 
   	    -np 2
 	    CACHE STRING
         "Flags for the MPI executable."
+      )
+      SET(MPI_NUMPROCS_FLAG 
+  	    -np
+	    CACHE STRING
+        "Flag setting the number of processors to use."
       )
     ENDIF(${MPI_EXECUTABLE} MATCHES mpiexec)
     MARK_AS_ADVANCED(MPI_EXECUTABLE_FLAGS)
