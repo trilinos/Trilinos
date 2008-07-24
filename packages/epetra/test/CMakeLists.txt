@@ -31,9 +31,10 @@ TRILINOS_ADD_TARGET(
   )
 TRILINOS_ADD_TEST(
   CrsGraph_test
-  
+  DIRECTORY CrsGraph
+  KEYWORDS unit
   NAME CrsGraph_test
-  
+  ARGS -v
   COMM mpi
   HOST somehost localhost.localdomain
   FAIL_REGULAR_EXPRESSION "tests FAILED"
@@ -50,8 +51,9 @@ TRILINOS_ADD_TARGET(
   )
 TRILINOS_ADD_TEST(
   CrsMatrix_test
+  DIRECTORY CrsMatrix
   COMM serial mpi
-  NUM_MPI_PROCS 1
+  NUM_MPI_PROCS 1-20
   NAME CrsMatrix_test_big
   ARGS -v "1 a b c d" 2 3 4 5
   PASS_REGULAR_EXPRESSION "tests PASSED"
