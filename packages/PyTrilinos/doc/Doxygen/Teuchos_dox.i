@@ -605,9 +605,9 @@ is changed by the client that this will automatically be recognized by
 called again, with the entire sublist. ";
 
 %feature("docstring")
-Teuchos::ParameterListAcceptor::getParameterList "virtual
+Teuchos::ParameterListAcceptor::getNonconstParameterList "virtual
 RCP<ParameterList>
-Teuchos::ParameterListAcceptor::getParameterList()=0
+Teuchos::ParameterListAcceptor::getNonconstParameterList()=0
 
 Get the parameter list that was set using  setParameterList(). ";
 
@@ -657,17 +657,18 @@ Intermediate node base class for objects that accept parameter lists
 that implements some of the needed behavior automatically.
 
 Subclasses just need to implement  setParameterList() and
-getValidParameters(). The underlying paraemeter list is accessed using
-the protected members  setMyParamList() and  getMyParamList().
+getValidParameters(). The underlying parameter list is accessed using
+the non-virtual protected members  setMyParamList() and
+getMyParamList().
 
 C++ includes: Teuchos_ParameterListAcceptorDefaultBase.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
 
 %feature("docstring")
-Teuchos::ParameterListAcceptorDefaultBase::getParameterList "RCP<
-ParameterList >
-Teuchos::ParameterListAcceptorDefaultBase::getParameterList() ";
+Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList "RCP< ParameterList >
+Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList()
+";
 
 %feature("docstring")
 Teuchos::ParameterListAcceptorDefaultBase::unsetParameterList "RCP<
@@ -754,6 +755,14 @@ C++ includes: Teuchos_ScalarTraits.hpp ";
 
 // File: structTeuchos_1_1ScalarTraits_3_01int_01_4.xml
 %feature("docstring") Teuchos::ScalarTraits< int > " ";
+
+
+// File: structTeuchos_1_1ScalarTraits_3_01long_01int_01_4.xml
+%feature("docstring") Teuchos::ScalarTraits< long int > " ";
+
+
+// File: structTeuchos_1_1ScalarTraits_3_01short_01int_01_4.xml
+%feature("docstring") Teuchos::ScalarTraits< short int > " ";
 
 
 // File: classTeuchos_1_1StringInputSource.xml
@@ -1468,10 +1477,10 @@ XML version of the parameter list specification. ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_daa2443682d0f547b84c7fa838636502.xml
+// File: dir_c6119c6605ba4ae06da89348acc7d827.xml
 
 
-// File: dir_2c9d975476051ec1d3cf6e8ee401cf57.xml
+// File: dir_dc938ace364e02eaf23f1ff46a5b82d6.xml
 
 
 // File: ParameterList_2cxx__main_8cpp-example.xml

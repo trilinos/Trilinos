@@ -6481,14 +6481,25 @@ We set $\\\\beta$ as follows, based on the value of tolerance in the
 constructor.
 
 If an initial guess is provided, we use a relative tolerance defined
-by \\\\[ \\\\beta = \\\\frac{\\\\mbox{tolerance}}{\\\\alpha_0} \\\\]
-Here $\\\\alpha_0$ is the $\\\\alpha$ (as defined above) associated
-with the initial guess.
+by \\\\[ \\\\beta = \\\\alpha_0 * \\\\mbox{tolerance} \\\\] Here
+$\\\\alpha_0$ is the $\\\\alpha$ (as defined above) associated with
+the initial guess.
 
 Otherwise, we use an absolute tolerance defined by \\\\[ \\\\beta =
 \\\\mbox{tolerance} \\\\]
 
 C++ includes: NOX_StatusTest_NormF.H ";
+
+%feature("docstring")  NOX::StatusTest::NormF::reset "void
+NOX::StatusTest::NormF::reset(double tolerance)
+
+Resets the user specified absolute or relative tolerance. ";
+
+%feature("docstring")  NOX::StatusTest::NormF::reset "void
+NOX::StatusTest::NormF::reset(NOX::Abstract::Group &initialGuess,
+double tolerance)
+
+Resets the user specified relative tolerance. ";
 
 %feature("docstring")  NOX::StatusTest::NormF::getNormF "double
 NOX::StatusTest::NormF::getNormF() const
@@ -9744,13 +9755,13 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 // File: deprecated.xml
 
 
-// File: dir_a9d3f64d6c63347af9cd4f0fea68f236.xml
+// File: dir_e7bb972fb76fb15d2d2bf66a325dbc03.xml
 
 
-// File: dir_99bee0a6f766fd7187291f2180a0a36c.xml
+// File: dir_1d63dbacd1cd7f54fba948451b809b40.xml
 
 
-// File: dir_f746085b285a8510bcd8c947f4a4015d.xml
+// File: dir_11a8b4cd265098abd718f8f6a22af659.xml
 
 
 // File: indexpage.xml

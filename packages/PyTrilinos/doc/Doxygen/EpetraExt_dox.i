@@ -1,6 +1,33 @@
 
 // File: index.xml
 
+// File: classEpetraExt_1_1BlockAdjacencyGraph.xml
+%feature("docstring") EpetraExt::BlockAdjacencyGraph "";
+
+%feature("docstring")
+EpetraExt::BlockAdjacencyGraph::~BlockAdjacencyGraph "EpetraExt::BlockAdjacencyGraph::~BlockAdjacencyGraph()
+
+Destructor ";
+
+%feature("docstring")
+EpetraExt::BlockAdjacencyGraph::BlockAdjacencyGraph "EpetraExt::BlockAdjacencyGraph::BlockAdjacencyGraph()
+
+Constructor ";
+
+%feature("docstring")  EpetraExt::BlockAdjacencyGraph::compute "Teuchos::RCP< Epetra_CrsGraph >
+EpetraExt::BlockAdjacencyGraph::compute(Epetra_CrsGraph &B, int nbrr,
+std::vector< int > &r, std::vector< double > &weights)
+
+Constructs an adjacency graph representing the block connectivity of
+the input graph, where nbrr is the number of block rows in B and r
+contains the row index where each block begins. A reference-counted
+pointer to an Epetra_CrsGraph that has nbrr rows is returned as well
+as the vector of weights. This vector is of length nbrr returns some
+weighting on the block adjacency graph that can be used to balance the
+original graph B. Right now, that weighting is just the number of rows
+in each block. ";
+
+
 // File: classEpetraExt_1_1CrsGraph__AMD.xml
 %feature("docstring") EpetraExt::CrsGraph_AMD "
 
@@ -283,9 +310,90 @@ Constructor. ";
 
 %feature("docstring")  EpetraExt::CrsMatrixStruct::CrsMatrixStruct "EpetraExt::CrsMatrixStruct::CrsMatrixStruct() ";
 
-%feature("docstring")  EpetraExt::CrsMatrixStruct::~CrsMatrixStruct "virtual EpetraExt::CrsMatrixStruct::~CrsMatrixStruct() ";
+%feature("docstring")  EpetraExt::CrsMatrixStruct::~CrsMatrixStruct "EpetraExt::CrsMatrixStruct::~CrsMatrixStruct() ";
 
 %feature("docstring")  EpetraExt::CrsMatrixStruct::deleteContents "void EpetraExt::CrsMatrixStruct::deleteContents() ";
+
+
+// File: classEpetraExt_1_1CrsWrapper.xml
+%feature("docstring") EpetraExt::CrsWrapper "";
+
+%feature("docstring")  EpetraExt::CrsWrapper::~CrsWrapper "virtual
+EpetraExt::CrsWrapper::~CrsWrapper() ";
+
+%feature("docstring")  EpetraExt::CrsWrapper::RowMap "virtual const
+Epetra_Map& EpetraExt::CrsWrapper::RowMap() const =0 ";
+
+%feature("docstring")  EpetraExt::CrsWrapper::Filled "virtual bool
+EpetraExt::CrsWrapper::Filled()=0 ";
+
+%feature("docstring")  EpetraExt::CrsWrapper::InsertGlobalValues "virtual int EpetraExt::CrsWrapper::InsertGlobalValues(int GlobalRow,
+int NumEntries, double *Values, int *Indices)=0 ";
+
+%feature("docstring")  EpetraExt::CrsWrapper::SumIntoGlobalValues "virtual int EpetraExt::CrsWrapper::SumIntoGlobalValues(int GlobalRow,
+int NumEntries, double *Values, int *Indices)=0 ";
+
+
+// File: classEpetraExt_1_1CrsWrapper__Epetra__CrsMatrix.xml
+%feature("docstring") EpetraExt::CrsWrapper_Epetra_CrsMatrix "";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::CrsWrapper_Epetra_CrsMatrix "EpetraExt::CrsWrapper_Epetra_CrsMatrix::CrsWrapper_Epetra_CrsMatrix(Epetra_CrsMatrix
+&epetracrsmatrix) ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::~CrsWrapper_Epetra_CrsMatrix "EpetraExt::CrsWrapper_Epetra_CrsMatrix::~CrsWrapper_Epetra_CrsMatrix()
+";
+
+%feature("docstring")  EpetraExt::CrsWrapper_Epetra_CrsMatrix::RowMap
+"const Epetra_Map & EpetraExt::CrsWrapper_Epetra_CrsMatrix::RowMap()
+const ";
+
+%feature("docstring")  EpetraExt::CrsWrapper_Epetra_CrsMatrix::Filled
+"bool EpetraExt::CrsWrapper_Epetra_CrsMatrix::Filled() ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::InsertGlobalValues "int
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::InsertGlobalValues(int
+GlobalRow, int NumEntries, double *Values, int *Indices) ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::SumIntoGlobalValues "int
+EpetraExt::CrsWrapper_Epetra_CrsMatrix::SumIntoGlobalValues(int
+GlobalRow, int NumEntries, double *Values, int *Indices) ";
+
+
+// File: classEpetraExt_1_1CrsWrapper__GraphBuilder.xml
+%feature("docstring") EpetraExt::CrsWrapper_GraphBuilder "";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_GraphBuilder::CrsWrapper_GraphBuilder "EpetraExt::CrsWrapper_GraphBuilder::CrsWrapper_GraphBuilder(const
+Epetra_Map &emap) ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_GraphBuilder::~CrsWrapper_GraphBuilder "EpetraExt::CrsWrapper_GraphBuilder::~CrsWrapper_GraphBuilder() ";
+
+%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::RowMap "const Epetra_Map& EpetraExt::CrsWrapper_GraphBuilder::RowMap() const
+";
+
+%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::Filled "bool EpetraExt::CrsWrapper_GraphBuilder::Filled() ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_GraphBuilder::InsertGlobalValues "int
+EpetraExt::CrsWrapper_GraphBuilder::InsertGlobalValues(int GlobalRow,
+int NumEntries, double *Values, int *Indices) ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_GraphBuilder::SumIntoGlobalValues "int
+EpetraExt::CrsWrapper_GraphBuilder::SumIntoGlobalValues(int GlobalRow,
+int NumEntries, double *Values, int *Indices) ";
+
+%feature("docstring")  EpetraExt::CrsWrapper_GraphBuilder::get_graph "std::map< int, std::set< int > * > &
+EpetraExt::CrsWrapper_GraphBuilder::get_graph() ";
+
+%feature("docstring")
+EpetraExt::CrsWrapper_GraphBuilder::get_max_row_length "int
+EpetraExt::CrsWrapper_GraphBuilder::get_max_row_length() ";
 
 
 // File: classEpetraExt_1_1DistArray.xml
@@ -894,28 +1002,35 @@ where appropriate.
 
 We define these trait structs in this file rather than in a separate
 file in an attempt to avoid some template-instantiation
-complications... ";
+complications...
+
+C++ includes: EpetraExt_Permutation_impl.h ";
 
 
 // File: structEpetraExt_1_1Perm__traits_3_01Epetra__CrsGraph_01_4.xml
 %feature("docstring") EpetraExt::Perm_traits< Epetra_CrsGraph > "
 
 A specialization of Perm_traits for the specific type Epetra_CrsGraph.
-";
+
+C++ includes: EpetraExt_Permutation_impl.h ";
 
 
 // File: structEpetraExt_1_1Perm__traits_3_01Epetra__CrsMatrix_01_4.xml
 %feature("docstring") EpetraExt::Perm_traits< Epetra_CrsMatrix > "
 
 A specialization of Perm_traits for the specific type
-Epetra_CrsMatrix. ";
+Epetra_CrsMatrix.
+
+C++ includes: EpetraExt_Permutation_impl.h ";
 
 
 // File: structEpetraExt_1_1Perm__traits_3_01Epetra__MultiVector_01_4.xml
 %feature("docstring") EpetraExt::Perm_traits< Epetra_MultiVector > "
 
 A specialization of Perm_traits for the specific type
-Epetra_MultiVector. ";
+Epetra_MultiVector.
+
+C++ includes: EpetraExt_Permutation_impl.h ";
 
 
 // File: classEpetraExt_1_1Permutation.xml
@@ -1680,24 +1795,21 @@ Method for internal use... sparsedot forms a dot-product between two
 sparsely-populated 'vectors'. Important assumption: assumes the
 indices in u_ind and v_ind are sorted. ";
 
-%feature("docstring")  EpetraExt::dumpCrsMatrixStruct "int
-EpetraExt::dumpCrsMatrixStruct(const CrsMatrixStruct &M) ";
-
 %feature("docstring")  EpetraExt::mult_A_B "int
 EpetraExt::mult_A_B(CrsMatrixStruct &Aview, CrsMatrixStruct &Bview,
-Epetra_CrsMatrix &C) ";
+CrsWrapper &C) ";
 
 %feature("docstring")  EpetraExt::mult_A_Btrans "int
 EpetraExt::mult_A_Btrans(CrsMatrixStruct &Aview, CrsMatrixStruct
-&Bview, Epetra_CrsMatrix &C) ";
+&Bview, CrsWrapper &C) ";
 
 %feature("docstring")  EpetraExt::mult_Atrans_B "int
 EpetraExt::mult_Atrans_B(CrsMatrixStruct &Aview, CrsMatrixStruct
-&Bview, Epetra_CrsMatrix &C) ";
+&Bview, CrsWrapper &C) ";
 
 %feature("docstring")  EpetraExt::mult_Atrans_Btrans "int
 EpetraExt::mult_Atrans_Btrans(CrsMatrixStruct &Aview, CrsMatrixStruct
-&Bview, Epetra_CrsMatrix &C) ";
+&Bview, CrsWrapper &C) ";
 
 %feature("docstring")  EpetraExt::import_and_extract_views "int
 EpetraExt::import_and_extract_views(const Epetra_CrsMatrix &M, const
@@ -1717,6 +1829,13 @@ EpetraExt::form_map_union(const Epetra_Map *map1, const Epetra_Map
 
 %feature("docstring")  EpetraExt::find_rows_containing_cols "Epetra_Map* EpetraExt::find_rows_containing_cols(const
 Epetra_CrsMatrix &M, const Epetra_Map *colmap) ";
+
+%feature("docstring")  EpetraExt::dumpCrsMatrixStruct "int
+EpetraExt::dumpCrsMatrixStruct(const CrsMatrixStruct &M) ";
+
+%feature("docstring")  EpetraExt::insert_matrix_locations "void
+EpetraExt::insert_matrix_locations(CrsWrapper_GraphBuilder
+&graphbuilder, Epetra_CrsMatrix &C) ";
 
 %feature("docstring")  EpetraExt::EpetraExt_Version "std::string
 EpetraExt::EpetraExt_Version() ";
@@ -2745,6 +2864,15 @@ Returns 0 if no error, -1 if any problems with file system. ";
 %feature("docstring")  EpetraExt::writeVector "int
 EpetraExt::writeVector(std::FILE *handle, const Epetra_Vector &A) ";
 
+%feature("docstring")  EpetraExt::compare_ints "int
+EpetraExt::compare_ints(const void *a, const void *b)
+
+Given an Epetra_CrsGraph that has block structure, an adjacency graph
+is constructed representing the block connectivity of the original
+graph.
+
+David Day, Heidi Thornquist ";
+
 
 // File: namespaceTeuchos.xml
 
@@ -2753,6 +2881,12 @@ EpetraExt::writeVector(std::FILE *handle, const Epetra_Vector &A) ";
 
 
 // File: EpetraExt__AMD__CrsGraph_8h.xml
+
+
+// File: EpetraExt__BlockAdjacencyGraph_8cpp.xml
+
+
+// File: EpetraExt__BlockAdjacencyGraph_8h.xml
 
 
 // File: EpetraExt__BlockMapIn_8cpp.xml
@@ -2842,6 +2976,12 @@ EpetraExt::writeVector(std::FILE *handle, const Epetra_Vector &A) ";
 // File: EpetraExt__MatrixMatrix_8h.xml
 
 
+// File: EpetraExt__MMHelpers_8cpp.xml
+
+
+// File: EpetraExt__MMHelpers_8h.xml
+
+
 // File: EpetraExt__mmio_8cpp.xml
 
 
@@ -2876,6 +3016,9 @@ EpetraExt::writeVector(std::FILE *handle, const Epetra_Vector &A) ";
 
 
 // File: EpetraExt__Permutation_8h.xml
+
+
+// File: EpetraExt__Permutation__impl_8h.xml
 
 
 // File: EpetraExt__ProductOperator_8cpp.xml
@@ -3019,17 +3162,17 @@ std::string &delimiters=\" \") ";
 // File: EpetraExt__XMLWriter_8h.xml
 
 
-// File: dir_5160b780ca5eeed2130957ad6c24b8fe.xml
+// File: dir_00dd7a994c29257c1296e36c9b5a05a5.xml
 
 
-// File: dir_b0a614e57f8b15865ce8ecc71bf75a9b.xml
+// File: dir_9ab166f3894d2d05522f1633bad49695.xml
 
 
-// File: dir_47d8c79f7cdbd834e539a30c847c8ef7.xml
+// File: dir_1f2c9c78a4bcedffcb475829cda5ec40.xml
 
 
-// File: dir_145b3fcc995de1835eb81e0108c7b537.xml
+// File: dir_cbfdc2f8534606e1dcc91dfecf0d8b0b.xml
 
 
-// File: dir_0c80dd837b56e19c0fe33bd14868bace.xml
+// File: dir_86878f79ab8a3b96ce3f1f3faf7d116e.xml
 

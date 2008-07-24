@@ -317,18 +317,19 @@ Amesos_BaseSolver::PrintTiming() const =0
 
 Prints timing information about the current solver. ";
 
-%feature("docstring")  Amesos_BaseSolver::setParameterList "void
-Amesos_BaseSolver::setParameterList(Teuchos::RCP<
+%feature("docstring")  Amesos_BaseSolver::setParameterList "virtual
+void Amesos_BaseSolver::setParameterList(Teuchos::RCP<
 Teuchos::ParameterList > const &paramList)
 
 Redefined from Teuchos::ParameterListAcceptor. ";
 
-%feature("docstring")  Amesos_BaseSolver::getParameterList "Teuchos::RCP<Teuchos::ParameterList>
-Amesos_BaseSolver::getParameterList()
+%feature("docstring")  Amesos_BaseSolver::getNonconstParameterList "virtual Teuchos::RCP<Teuchos::ParameterList>
+Amesos_BaseSolver::getNonconstParameterList()
 
 This is an empty stub. ";
 
-%feature("docstring")  Amesos_BaseSolver::unsetParameterList "Teuchos::RCP<Teuchos::ParameterList>
+%feature("docstring")  Amesos_BaseSolver::unsetParameterList "virtual
+Teuchos::RCP<Teuchos::ParameterList>
 Amesos_BaseSolver::unsetParameterList()
 
 This is an empty stub. ";
@@ -4185,8 +4186,8 @@ taucs_supernodal_factor_free_ptr(taucs_ccs_matrix
 // File: Amesos__Utils_8h.xml
 
 
-// File: dir_3b09264d69d076c0a3b5a8b401bfd1f8.xml
+// File: dir_8c64e8b49f9e6d0e8decbdbdc6b22651.xml
 
 
-// File: dir_e562a79e1d7f66fb5a29a2640e5c2e71.xml
+// File: dir_2492866b582b95bf045c53c319168da9.xml
 

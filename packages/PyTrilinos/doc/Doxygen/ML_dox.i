@@ -1667,9 +1667,62 @@ Operator &A, Teuchos::ParameterList &List, Operator &Ptent)
 
 Builds the tentative prolongator with default null space. ";
 
+%feature("docstring")  MLAPI::GetPtent "void MLAPI::GetPtent(const
+Epetra_RowMatrix &A, Teuchos::ParameterList &List, double *thisns,
+Teuchos::RCP< Epetra_CrsMatrix > &Ptent, Teuchos::RCP<
+Epetra_MultiVector > &NextNS, const int domainoffset=0)
+
+Builds the tentative prolongator using aggregation.
+
+Build Ptent and NextNS as usual but as Epetra objects.
+
+Parameters:
+-----------
+
+A:  (in): Matrix to be aggregated on
+
+List:  (in): ParameterList containing ML options
+
+thisns:  (in): nullspace in format ML accepts
+
+Ptent(out):  ::  Matrix containing tentative prolongator
+
+NextNS:  (out): MultiVector containing next level nullspace.
+
+domainoffset:  (in,optional): give an offset such that the domainmap
+of Ptent starts global numbering from domainoffset instead from zero.
+This is useful to create block matrices.
+
+Michael Gee (gee@lnm.mw.tum.de) ";
+
+%feature("docstring")  MLAPI::GetPtent "void MLAPI::GetPtent(const
+Epetra_RowMatrix &A, Teuchos::ParameterList &List, double *thisns,
+Teuchos::RCP< Epetra_CrsMatrix > &Ptent, const int domainoffset=0)
+
+Builds the tentative prolongator using aggregation.
+
+Build Ptent and NextNS as usual but as Epetra objects.
+
+Parameters:
+-----------
+
+A:  (in): Matrix to be aggregated on
+
+List:  (in): ParameterList containing ML options
+
+thisns:  (in): nullspace in format ML accepts
+
+Ptent(out):  ::  Matrix containing tentative prolongator
+
+domainoffset:  (in,optional): give an offset such that the domainmap
+of Ptent starts global numbering from domainoffset instead from zero.
+This is useful to create block matrices.
+
+Michael Gee (gee@lnm.mw.tum.de) ";
+
 %feature("docstring")  MLAPI::GetAggregates "int
-MLAPI::GetAggregates(const Operator &A, Teuchos::ParameterList &List,
-const MultiVector &ThisNS, Epetra_IntVector &aggrinfo)
+MLAPI::GetAggregates(Epetra_RowMatrix &A, Teuchos::ParameterList
+&List, double *thisns, Epetra_IntVector &aggrinfo)
 
 Call ML aggregation on A according to parameters supplied in List.
 Return aggregates in aggrinfo.
@@ -1688,9 +1741,42 @@ A:  (in): Matrix to be aggregated on
 
 List:  (in): ParameterList containing ML options
 
-ThisNS:  (in): nullspace
+thisns:  (in): nullspace
 
 aggrinfo(out):  ::  vector containing aggregation information
+
+Map of aggrinfo has to match rowmap of A on input.
+
+returns processor-local number of aggregates
+
+Michael Gee (gee@lnm.mw.tum.de) ";
+
+%feature("docstring")  MLAPI::GetGlobalAggregates "int
+MLAPI::GetGlobalAggregates(Epetra_RowMatrix &A, Teuchos::ParameterList
+&List, double *thisns, Epetra_IntVector &aggrinfo)
+
+Call ML aggregation on A according to parameters supplied in List.
+Return aggregates in aggrinfo.
+
+On input, map of aggrinfo has to map row map of A. On output,
+aggrinfo[i] contains number of global aggregate the row belongs to,
+where aggregates are numbered starting from 0 globally. Return value
+is the processor-local number of aggregates build. If aggrinfo[i] < 0,
+then i is a processor local row that ML has detected to be on a
+Dirichlet BC. if aggrinfo[i] >= 0, then i is a processor local row and
+aggrinfo[i] is a global aggregate id.
+
+Parameters:
+-----------
+
+A:  (in): Matrix to be aggregated on
+
+List:  (in): ParameterList containing ML options
+
+thisns:  (in): nullspace
+
+aggrinfo(out):  ::  vector containing aggregation information in
+global numbering
 
 Map of aggrinfo has to match rowmap of A on input.
 
@@ -2064,14 +2150,14 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__Workspace_8h.xml
 
 
-// File: dir_675942c6029ac094066b3b01798a20e5.xml
+// File: dir_64c508b1ac1ccaf3956e0ee0b37560ae.xml
 
 
-// File: dir_cbc5cef1c09d94196b66e1045b0d879a.xml
+// File: dir_338b8420a0ee522f0a6fa3b40e3f95c0.xml
 
 
-// File: dir_5c2a07a4854ec895e04db044a77b08e2.xml
+// File: dir_f4d81dd9062b5b5f5d2b4745c7e5a212.xml
 
 
-// File: dir_c42f661d3164c34551290526b5f2c443.xml
+// File: dir_3dd8c33ac8c47bbd7cbee230366b1207.xml
 

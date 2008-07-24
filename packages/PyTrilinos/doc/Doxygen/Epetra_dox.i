@@ -1227,13 +1227,13 @@ Returns the LID of the element that contains the given local PointID,
 and the Offset of the point in that element. ";
 
 %feature("docstring")  Epetra_BlockMap::MyGID "bool
-Epetra_BlockMap::MyGID(int GID) const
+Epetra_BlockMap::MyGID(int GID_in) const
 
 Returns true if the GID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_BlockMap::MyLID "bool
-Epetra_BlockMap::MyLID(int LID) const
+Epetra_BlockMap::MyLID(int LID_in) const
 
 Returns true if the LID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
@@ -1580,6 +1580,27 @@ will receive a copy of Values. ";
 
 %feature("docstring")  Epetra_Comm::Broadcast "virtual int
 Epetra_Comm::Broadcast(long *MyVals, int Count, int Root) const =0
+
+Epetra_Comm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_Comm::Broadcast "virtual int
+Epetra_Comm::Broadcast(char *MyVals, int Count, int Root) const =0
 
 Epetra_Comm Broadcast function.
 
@@ -1984,7 +2005,7 @@ Epetra_CompObject destructor. ";
 /*  Set/Get counter method  */
 
 %feature("docstring")  Epetra_CompObject::SetFlopCounter "void
-Epetra_CompObject::SetFlopCounter(const Epetra_Flops &FlopCounter)
+Epetra_CompObject::SetFlopCounter(const Epetra_Flops &FlopCounter_in)
 
 Set the internal Epetra_Flops() pointer. ";
 
@@ -2021,22 +2042,22 @@ vector. ";
 /*  Update flop count methods  */
 
 %feature("docstring")  Epetra_CompObject::UpdateFlops "void
-Epetra_CompObject::UpdateFlops(int Flops) const
+Epetra_CompObject::UpdateFlops(int Flops_in) const
 
 Increment Flop count for this object. ";
 
 %feature("docstring")  Epetra_CompObject::UpdateFlops "void
-Epetra_CompObject::UpdateFlops(long int Flops) const
+Epetra_CompObject::UpdateFlops(long int Flops_in) const
 
 Increment Flop count for this object. ";
 
 %feature("docstring")  Epetra_CompObject::UpdateFlops "void
-Epetra_CompObject::UpdateFlops(double Flops) const
+Epetra_CompObject::UpdateFlops(double Flops_in) const
 
 Increment Flop count for this object. ";
 
 %feature("docstring")  Epetra_CompObject::UpdateFlops "void
-Epetra_CompObject::UpdateFlops(float Flops) const
+Epetra_CompObject::UpdateFlops(float Flops_in) const
 
 Increment Flop count for this object. ";
 
@@ -3022,19 +3043,19 @@ graph. ";
 /*  Local/Global ID methods  */
 
 %feature("docstring")  Epetra_CrsGraph::LRID "int
-Epetra_CrsGraph::LRID(int GRID) const
+Epetra_CrsGraph::LRID(int GRID_in) const
 
 Returns the local row index for given global row index, returns -1 if
 no local row for this global row. ";
 
 %feature("docstring")  Epetra_CrsGraph::GRID "int
-Epetra_CrsGraph::GRID(int LRID) const
+Epetra_CrsGraph::GRID(int LRID_in) const
 
 Returns the global row index for give local row index, returns
 IndexBase-1 if we don't have this local row. ";
 
 %feature("docstring")  Epetra_CrsGraph::LCID "int
-Epetra_CrsGraph::LCID(int GCID) const
+Epetra_CrsGraph::LCID(int GCID_in) const
 
 Returns the local column index for given global column index, returns
 -1 if no local column for this global column.
@@ -3042,7 +3063,7 @@ Returns the local column index for given global column index, returns
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
 %feature("docstring")  Epetra_CrsGraph::GCID "int
-Epetra_CrsGraph::GCID(int LCID) const
+Epetra_CrsGraph::GCID(int LCID_in) const
 
 Returns the global column index for give local column index, returns
 IndexBase-1 if we don't have this local column.
@@ -3050,19 +3071,19 @@ IndexBase-1 if we don't have this local column.
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
 %feature("docstring")  Epetra_CrsGraph::MyGRID "bool
-Epetra_CrsGraph::MyGRID(int GRID) const
+Epetra_CrsGraph::MyGRID(int GRID_in) const
 
 Returns true if the GRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_CrsGraph::MyLRID "bool
-Epetra_CrsGraph::MyLRID(int LRID) const
+Epetra_CrsGraph::MyLRID(int LRID_in) const
 
 Returns true if the LRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_CrsGraph::MyGCID "bool
-Epetra_CrsGraph::MyGCID(int GCID) const
+Epetra_CrsGraph::MyGCID(int GCID_in) const
 
 Returns true if the GCID passed in belongs to the calling processor in
 this map, otherwise returns false.
@@ -3070,7 +3091,7 @@ this map, otherwise returns false.
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
 %feature("docstring")  Epetra_CrsGraph::MyLCID "bool
-Epetra_CrsGraph::MyLCID(int LCID) const
+Epetra_CrsGraph::MyLCID(int LCID_in) const
 
 Returns true if the LRID passed in belongs to the calling processor in
 this map, otherwise returns false.
@@ -4052,8 +4073,8 @@ processors that any individual row of the matrix is replicated on.
 Parameters:
 -----------
 
-x:  - (Out) An Epetra_Vector containing the row sums of the this
-matrix.
+x:  - (Out) An Epetra_Vector containing the inverse of the row sums of
+the this matrix.
 
 WARNING:  When rows are fully replicated on multiple processors, it is
 assumed that the distribution of x is the same as the rows (
@@ -4071,7 +4092,7 @@ Unchanged. ";
 %feature("docstring")  Epetra_CrsMatrix::InvRowMaxs "int
 Epetra_CrsMatrix::InvRowMaxs(Epetra_Vector &x) const
 
-Computes the max of absolute values of the rows of the
+Computes the inverse of the max of absolute values of the rows of the
 Epetra_CrsMatrix, results returned in x.
 
 The vector x will return such that x[i] will contain the inverse of
@@ -4082,8 +4103,8 @@ contain partial sums for individual entries.
 Parameters:
 -----------
 
-x:  - (Out) An Epetra_Vector containing the row maxs of the this
-matrix.
+x:  - (Out) An Epetra_Vector containing the inverse of the row maxs of
+the this matrix.
 
 WARNING:  When rows are fully replicated on multiple processors, it is
 assumed that the distribution of x is the same as the rows (
@@ -4463,19 +4484,19 @@ matrix. ";
 /*  Local/Global ID methods  */
 
 %feature("docstring")  Epetra_CrsMatrix::LRID "int
-Epetra_CrsMatrix::LRID(int GRID) const
+Epetra_CrsMatrix::LRID(int GRID_in) const
 
 Returns the local row index for given global row index, returns -1 if
 no local row for this global row. ";
 
 %feature("docstring")  Epetra_CrsMatrix::GRID "int
-Epetra_CrsMatrix::GRID(int LRID) const
+Epetra_CrsMatrix::GRID(int LRID_in) const
 
 Returns the global row index for give local row index, returns
 IndexBase-1 if we don't have this local row. ";
 
 %feature("docstring")  Epetra_CrsMatrix::LCID "int
-Epetra_CrsMatrix::LCID(int GCID) const
+Epetra_CrsMatrix::LCID(int GCID_in) const
 
 Returns the local column index for given global column index, returns
 -1 if no local column for this global column.
@@ -4483,7 +4504,7 @@ Returns the local column index for given global column index, returns
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
 %feature("docstring")  Epetra_CrsMatrix::GCID "int
-Epetra_CrsMatrix::GCID(int LCID) const
+Epetra_CrsMatrix::GCID(int LCID_in) const
 
 Returns the global column index for give local column index, returns
 IndexBase-1 if we don't have this local column.
@@ -4491,19 +4512,19 @@ IndexBase-1 if we don't have this local column.
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
 %feature("docstring")  Epetra_CrsMatrix::MyGRID "bool
-Epetra_CrsMatrix::MyGRID(int GRID) const
+Epetra_CrsMatrix::MyGRID(int GRID_in) const
 
 Returns true if the GRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_CrsMatrix::MyLRID "bool
-Epetra_CrsMatrix::MyLRID(int LRID) const
+Epetra_CrsMatrix::MyLRID(int LRID_in) const
 
 Returns true if the LRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_CrsMatrix::MyGCID "bool
-Epetra_CrsMatrix::MyGCID(int GCID) const
+Epetra_CrsMatrix::MyGCID(int GCID_in) const
 
 Returns true if the GCID passed in belongs to the calling processor in
 this map, otherwise returns false.
@@ -4511,7 +4532,7 @@ this map, otherwise returns false.
 HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
 %feature("docstring")  Epetra_CrsMatrix::MyLCID "bool
-Epetra_CrsMatrix::MyLCID(int LCID) const
+Epetra_CrsMatrix::MyLCID(int LCID_in) const
 
 Returns true if the LRID passed in belongs to the calling processor in
 this map, otherwise returns false.
@@ -4540,7 +4561,7 @@ Epetra_CrsMatrix::Label() const
 Returns a character string describing the operator. ";
 
 %feature("docstring")  Epetra_CrsMatrix::SetUseTranspose "int
-Epetra_CrsMatrix::SetUseTranspose(bool UseTranspose)
+Epetra_CrsMatrix::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -4681,7 +4702,7 @@ underlying data structure assumptions  */
 
 %feature("docstring")  Epetra_CrsMatrix::ExtractCrsDataPointers "int
 Epetra_CrsMatrix::ExtractCrsDataPointers(int *&IndexOffset, int
-*&Indices, double *&Values) const
+*&Indices, double *&Values_in) const
 
 Returns internal data pointers associated with Crs matrix format.
 
@@ -5917,6 +5938,24 @@ Copy Constructor. ";
 Destructor. ";
 
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
+Epetra_FECrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
+double *Values, int *Indices)
+
+override base-class Epetra_CrsMatrix::SumIntoGlobalValues method ";
+
+%feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
+Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
+double *Values, int *Indices)
+
+override base-class Epetra_CrsMatrix::InsertGlobalValues method ";
+
+%feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
+Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
+double *Values, int *Indices)
+
+override base-class Epetra_CrsMatrix::ReplaceGlobalValues method ";
+
+%feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(int numIndices, const int
 *indices, const double *values, int
 format=Epetra_FECrsMatrix::COLUMN_MAJOR)
@@ -6773,7 +6812,7 @@ Creates a Epetra_Flops instance. This instance can be queried for the
 number of floating point operations performed for the associated this
 object. ";
 
-%feature("docstring")  Epetra_Flops::Epetra_Flops "Epetra_Flops::Epetra_Flops(const Epetra_Flops &Flops)
+%feature("docstring")  Epetra_Flops::Epetra_Flops "Epetra_Flops::Epetra_Flops(const Epetra_Flops &Flops_in)
 
 Epetra_Flops Copy Constructor.
 
@@ -7412,7 +7451,8 @@ should be sized with the Size() or Resize functions. Values should be
 defined by using the [] or () operators. ";
 
 %feature("docstring")
-Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector "Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(int Length)
+Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector "Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(int
+Length_in)
 
 Sized constructor; defines a variable-sized object.
 
@@ -7429,7 +7469,7 @@ Values should be defined by using the [] or () operators. ";
 
 %feature("docstring")
 Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector "Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess
-CV, int *Values, int Length)
+CV_in, int *Values_in, int Length_in)
 
 Set object values from one-dimensional array.
 
@@ -7452,7 +7492,7 @@ Epetra_IntSerialDenseVector &Source)
 Epetra_IntSerialDenseVector copy constructor. ";
 
 %feature("docstring")  Epetra_IntSerialDenseVector::Size "int
-Epetra_IntSerialDenseVector::Size(int Length)
+Epetra_IntSerialDenseVector::Size(int Length_in)
 
 Set length of a Epetra_IntSerialDenseVector object; init values to
 zero.
@@ -7470,7 +7510,7 @@ resized vector starts off with all zero values.
 Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Epetra_IntSerialDenseVector::Resize "int
-Epetra_IntSerialDenseVector::Resize(int Length)
+Epetra_IntSerialDenseVector::Resize(int Length_in)
 
 Resize a Epetra_IntSerialDenseVector object.
 
@@ -9801,6 +9841,27 @@ Count:  In On entry, contains the length of the list of Values.
 Root:  In On entry, contains the processor from which all processors
 will receive a copy of Values. ";
 
+%feature("docstring")  Epetra_MpiComm::Broadcast "int
+Epetra_MpiComm::Broadcast(char *MyVals, int Count, int Root) const
+
+Epetra_MpiComm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
 /*  Gather Methods  */
 
 %feature("docstring")  Epetra_MpiComm::GatherAll "int
@@ -10479,6 +10540,29 @@ Epetra_MpiSmpComm::Broadcast(long *MyVals, int Count, int Root) const
 Epetra_MpiSmpComm Broadcast function.
 
 Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+/*  Broadcast Methods  */
+
+%feature("docstring")  Epetra_MpiSmpComm::Broadcast "int
+Epetra_MpiSmpComm::Broadcast(char *MyVals, int Count, int Root) const
+
+Epetra_MpiSmpComm Broadcast function.
+
+Takes list of input values from the root processor and sends to all
 other processors.
 
 Parameters:
@@ -11887,7 +11971,7 @@ ScalarAB * B @ A where @ denotes element-wise division. ";
 /*  Random number utilities  */
 
 %feature("docstring")  Epetra_MultiVector::SetSeed "int
-Epetra_MultiVector::SetSeed(unsigned int Seed)
+Epetra_MultiVector::SetSeed(unsigned int Seed_in)
 
 Set seed for Random function.
 
@@ -12275,6 +12359,1369 @@ Returns the Epetra_Map object associated with the range of this
 operator. ";
 
 
+// File: classEpetra__OskiError.xml
+%feature("docstring") Epetra_OskiError "
+
+Epetra_OskiError: The Epetra OSKI Class to provide access to get and
+set error handling routines in OSKI.
+
+C++ includes: Epetra_OskiError.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_OskiError::Epetra_OskiError "Epetra_OskiError::Epetra_OskiError()
+
+Default Constructor. ";
+
+%feature("docstring")  Epetra_OskiError::~Epetra_OskiError "virtual
+Epetra_OskiError::~Epetra_OskiError()
+
+Destructor. ";
+
+/*  Set/Get  */
+
+%feature("docstring")  Epetra_OskiError::OskiGetErrorHandler "Epetra_OskiError Epetra_OskiError::OskiGetErrorHandler()
+
+Gets a pointer to the current error handler routine being used by
+OSKI. ";
+
+%feature("docstring")  Epetra_OskiError::OskiSetErrorHandler "void
+Epetra_OskiError::OskiSetErrorHandler(Epetra_OskiError
+&NewErrorHandler)
+
+Sets the error handling routine to be used by OSKI to NewErrorHandler.
+";
+
+
+// File: classEpetra__OskiMatrix.xml
+%feature("docstring") Epetra_OskiMatrix "
+
+Epetra_OskiMatrix: A class for constructing and using OSKI Matrices
+within Epetra.
+
+The Epetra_OskiMatrix class is a utility for wrapping OSKI matrix
+calls into Epetra. It can convert Epetra matrices to OSKI matrices for
+use by OSKI functions. It also calls all OSKI functions that access
+OSKI data and perform calculations on OSKI matrices.
+
+The calculation kernels to perform matrix-vector and matrix multi-
+vector calculations are provided along with runtime tuning function
+calls.
+
+C++ includes: Epetra_OskiMatrix.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_OskiMatrix::Epetra_OskiMatrix "Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_OskiMatrix &Source)
+
+Copy constructor. ";
+
+%feature("docstring")  Epetra_OskiMatrix::Epetra_OskiMatrix "Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_CrsMatrix &Source,
+const Teuchos::ParameterList &List)
+
+Constructor creates an Epetra_OskiMatrix from an Epetra_CrsMatrix.
+
+Parameters:
+-----------
+
+Source:  (In) An Epetra_CrsMatrix that is to be wrapped as an
+Epetra_OskiMatrix.
+
+List:  (In) Any options or data wanted or needed for the conversion.
+The actual values that can go here will be listed later depending on
+what can be gotten from Epetra and what is applicable to our
+implementation. Examples of parameters will be matrix storage format
+and whether the indices are zero or one based.
+
+Pointer to an Epetra_OskiMatrix. ";
+
+%feature("docstring")  Epetra_OskiMatrix::~Epetra_OskiMatrix "virtual
+Epetra_OskiMatrix::~Epetra_OskiMatrix()
+
+Destructor. ";
+
+/*  Extract/Replace Values  */
+
+%feature("docstring")  Epetra_OskiMatrix::ReplaceMyValues "int
+Epetra_OskiMatrix::ReplaceMyValues(int MyRow, int NumEntries, double
+*Values, int *Indices)
+
+Replace current values with this list of entries for a given local row
+of the matrix. Warning this could be expensive.
+
+The reason this function could be expensive is its underlying
+implementation. Both the OSKI and Epetra versions of the Matrix must
+be changed when the matrix has been permuted. When this is the case a
+call must be made to the Epetra ReplaceMyValues and NumEntries calls
+must be made to a function that changes the OSKI matrix's values one
+at a time.
+
+Parameters:
+-----------
+
+MyRow:  (In) Row number (in local coordinates) to put elements.
+
+NumEntries:  (In) Number of entries.
+
+Values:  (In) Values to enter.
+
+Indices:  (In) Local column indices corresponding to the values.
+
+Integer error code, set to 0 if successful. Note that if the allocated
+length of the row has to be expanded, Oski will fail a positive
+warning code may be returned but this should be treated as a fatal
+error as part of the data will be changed and OSKI cannot support
+adding in new data values.
+
+IndicesAreLocal()==true
+
+The given Values at the given Indices have been summed into the
+entries of MyRow. ";
+
+%feature("docstring")  Epetra_OskiMatrix::SumIntoMyValues "int
+Epetra_OskiMatrix::SumIntoMyValues(int MyRow, int NumEntries, double
+*Values, int *Indices)
+
+Add this list of entries to existing values for a given local row of
+the matrix. Warning this could be expensive.
+
+The reason this function could be expensive is its underlying
+implementation. Both the OSKI and Epetra versions of the Matrix must
+be changed when the matrix has been permuted. When this is the case a
+call must be made to the Epetra SumIntoMyValues and NumEntries calls
+must be made to a function that changes the OSKI matrix's values one
+at a time.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Row number (in local coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if the allocated
+length of the row has to be expanded, a positive warning code may be
+returned but this should be treated as a fatal error as part of the
+data will be changed and OSKI cannot support adding in new data
+values.
+
+IndicesAreLocal()==true
+
+The given Values at the given Indices have been summed into the
+entries of MyRow. ";
+
+%feature("docstring")  Epetra_OskiMatrix::ExtractDiagonalCopy "int
+Epetra_OskiMatrix::ExtractDiagonalCopy(Epetra_Vector &Diagonal) const
+
+Returns a copy of the main diagonal in a user-provided vector.
+
+Parameters:
+-----------
+
+Diagonal:  - (Out) Extracted main diagonal.
+
+Integer error code, set to 0 if successful and non-zero if not.
+
+Filled()==true
+
+Unchanged. ";
+
+%feature("docstring")  Epetra_OskiMatrix::ReplaceDiagonalValues "int
+Epetra_OskiMatrix::ReplaceDiagonalValues(const Epetra_OskiVector
+&Diagonal)
+
+Replaces diagonal values of the matrix with those in the user-provided
+vector.
+
+This routine is meant to allow replacement of { existing} diagonal
+values. If a diagonal value does not exist for a given row, the
+corresponding value in the input Epetra_OskiVector will be ignored and
+the return code will be set to 1.
+
+Parameters:
+-----------
+
+Diagonal:  - (In) New values to be placed in the main diagonal.
+
+Integer error code, set to 0 if successful, set to 1 on the calling
+processor if one or more diagonal entries not present in matrix. Other
+error codes can be returned as well indicating improperly constructed
+matrices or vectors.
+
+Filled()==true
+
+Diagonal values have been replaced with the values of Diagonal. ";
+
+/*  Computational methods  */
+
+%feature("docstring")  Epetra_OskiMatrix::Multiply "int
+Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y) const
+
+Performs a matrix vector multiply of y = this^TransA*x.
+
+The vectors x and y can be either Epetra_Vectors or
+Epetra_OskiVectors.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the product.
+
+x:  (In) The vector the matrix is multiplied by.
+
+y:  (Out) The vector where the calculation result is stored.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::Multiply "int
+Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y, double Alpha, double Beta=0.0) const
+
+Performs a matrix vector multiply of y = Alpha*this^TransA*x + Beta*y.
+
+The vectors x and y can be either Epetra_Vectors or
+Epetra_OskiVectors.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the product.
+
+x:  (In) The vector the matrix is multiplied by.
+
+y:  (In/Out) The vector where the calculation result is stored.
+
+Alpha:  (In) A scalar constant used to scale x.
+
+Beta:  (In) A scalar constant used to scale y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::Multiply "int
+Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Performs a matrix multi-vector multiply of Y = this^TransA*X.
+
+The multi-vectors X and Y can be either Epetra_MultiVectors or
+Epetra_OskiMultiVectors.
+
+Parameters:
+-----------
+
+TransA:  (In) If Trans = TRUE then use the transpose of the matrix in
+computing the product.
+
+X:  (In) The multi-vector the matrix is multiplied by.
+
+Y:  (Out) The multi-vector where the calculation result is stored.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::Multiply "int
+Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y, double Alpha, double Beta=0.0) const
+
+Performs a matrix multi-vector multiply of Y = Alpha*this^TransA*X +
+Beta*Y.
+
+The multi-vectors X and Y can be either Epetra_MultiVectors or
+Epetra_OskiMultiVectors.
+
+Parameters:
+-----------
+
+TransA:  (In) If Trans = TRUE then use the transpose of the matrix in
+computing the product.
+
+X:  (In) The multi-vector the matrix is multiplied by.
+
+Y:  (In/Out) The multi-vector where the calculation result is stored.
+
+Alpha:  (In) A scalar constant used to scale X.
+
+Beta:  (In) A scalar constant used to scale Y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::Solve "int
+Epetra_OskiMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal,
+const Epetra_Vector &x, Epetra_Vector &y) const
+
+Performs a triangular solve of y = (this^TransA)^-1*x where this is a
+triangular matrix.
+
+The vector x can be either be an Epetra_Vector or Epetra_OskiVector.
+The OskiMatrix must already be triangular and the UnitDiagonal setting
+associated with it will be used.
+
+Parameters:
+-----------
+
+Upper:  (In) This parameter is ignored only here to match the
+Epetra_CrsMatrix::Solve syntax.
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+solving the equations.
+
+UnitDiagonal:  (In) This parameter is ignored only here to match the
+Epetra_CrsMatrix::Solve syntax.
+
+x:  (In) The vector solved against.
+
+y:  (Out) The solution vector.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::Solve "int
+Epetra_OskiMatrix::Solve(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y, double Alpha=1.0) const
+
+Performs a triangular solve of y = Alpha*(this^TransA)^-1*x where this
+is a triangular matrix.
+
+The vector x can be either be an Epetra_Vector or Epetra_OskiVector.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+solving the equations.
+
+x:  (In) The vector solved against.
+
+y:  (Out) The solution vector.
+
+Alpha:  (In) A scalar constant used to scale x.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::Solve "int
+Epetra_OskiMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+
+Performs a triangular solve of Y = (this^TransA)^-1*X where this is a
+triangular matrix.
+
+The vector X can be either be an Epetra_MultiVector or
+Epetra_OskiMultiVector. The OskiMatrix must already be triangular and
+the UnitDiagonal setting associated with it will be used.
+
+Parameters:
+-----------
+
+Upper:  (In) This parameter is ignored only here to match the
+Epetra_CrsMatrix::Solve syntax.
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+solving the equations.
+
+UnitDiagonal:  (In) This parameter is ignored only here to match the
+Epetra_CrsMatrix::Solve syntax.
+
+X:  (In) The multi-vector solved against.
+
+Y:  (Out) The solution multi-vector.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::Solve "int
+Epetra_OskiMatrix::Solve(bool TransA, const Epetra_MultiVector &X,
+Epetra_MultiVector &Y, double Alpha=1.0) const
+
+Performs a triangular solve of Y = Alpha*(this^TransA)^-1*X where this
+is a triangular matrix.
+
+The vector X can be either be an Epetra_MultiVector or
+Epetra_OskiMultiVector.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+solving the equations.
+
+X:  (In) The multi-vector solved against.
+
+Y:  (Out) The solution multi-vector.
+
+Alpha:  (In) A scalar constant used to scale X.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
+Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_Vector
+&x, Epetra_Vector &y, Epetra_Vector &t, double Alpha=1.0, double
+Beta=1.0) const
+
+Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x
++ Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
+
+The vectors x, y and t can be either Epetra_Vectors or
+Epetra_OskiVectors. This composed routine is most commonly used in
+linear least squares and bidiagonalization methods.
+
+Parameters:
+-----------
+
+ATA:  (In) If TransA = TRUE then compute this^T*this*x otherwise
+compute this*this^T*x.
+
+x:  (In) The vector the matrix is multiplied by.
+
+y:  (In/Out) The vector where the calculation result is stored.
+
+t:  (Out) The vector where the result of the this*x is stored if
+TransA = true and this^T*x is stored otherwise.
+
+Alpha:  (In) A scalar constant used to scale x.
+
+Beta:  (In) A scalar constant used to scale y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
+Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiVector &T,
+double Alpha=1.0, double Beta=1.0) const
+
+Performs two matrix multi-vector multiplies of Y =
+Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X +
+Beta*Y.
+
+The multi-vectors X, Y and T can be either Epetra_MultiVectors or
+Epetra_OskiMultiVectors. This composed routine is most commonly used
+in linear least squares and bidiagonalization methods.
+
+Parameters:
+-----------
+
+ATA:  (In) If TransA = TRUE then compute this^T*this*X otherwise
+compute this*this^T*X.
+
+X:  (In) The vector the matrix is multiplied by.
+
+Y:  (In/Out) The vector where the calculation result is stored.
+
+T:  (Out) The multi-vector where the result of the this*X is stored if
+TransA = true and this^T*X is stored otherwise.
+
+Alpha:  (In) A scalar constant used to scale X.
+
+Beta:  (In) A scalar constant used to scale Y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
+Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_Vector
+&x, Epetra_Vector &y, double Alpha=1.0, double Beta=1.0) const
+
+Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x
++ Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
+
+The vectors x, y and t can be either Epetra_Vectors or
+Epetra_OskiVectors. This composed routine is most commonly used in
+linear least squares and bidiagonalization methods.
+
+Parameters:
+-----------
+
+ATA:  (In) If TransA = TRUE then compute this^T*this*x otherwise
+compute this*this^T*x.
+
+x:  (In) The vector the matrix is multiplied by.
+
+y:  (In/Out) The vector where the calculation result is stored.
+
+Alpha:  (In) A scalar constant used to scale x.
+
+Beta:  (In) A scalar constant used to scale y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
+Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y, double Alpha=1.0, double
+Beta=1.0) const
+
+Performs two matrix multi-vector multiplies of Y =
+Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X +
+Beta*Y.
+
+The multi-vectors X, Y and T can be either Epetra_MultiVectors or
+Epetra_OskiMultiVectors. This composed routine is most commonly used
+in linear least squares and bidiagonalization methods.
+
+Parameters:
+-----------
+
+ATA:  (In) If TransA = TRUE then compute this^T*this*X otherwise
+compute this*this^T*X.
+
+X:  (In) The vector the matrix is multiplied by.
+
+Y:  (In/Out) The vector where the calculation result is stored.
+
+Alpha:  (In) A scalar constant used to scale X.
+
+Beta:  (In) A scalar constant used to scale Y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MultiplyAndMatTransMultiply
+"int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
+const Epetra_Vector &x, Epetra_Vector &y, const Epetra_Vector &w,
+Epetra_Vector &z, double Alpha=1.0, double Beta=0.0, double Omega=1.0,
+double Zeta=0.0) const
+
+Performs the two matrix vector multiplies of y = Alpha*this*x + Beta*y
+and z = Omega*this^TransA*w + Zeta*z.
+
+The vectors x, y, w and z can be either Epetra_Vectors or
+Epetra_OskiVectors. This composed routine is most commonly used in bi-
+conjugate gradient calculations.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the second product.
+
+x:  (In) A vector the matrix is multiplied by.
+
+y:  (In/Out) A vector where the calculation result of the first
+multiply is stored.
+
+w:  (In) A vector the matrix is multiplied by.
+
+z:  (In/Out) A vector where the calculation result of the second
+multiply is stored.
+
+Alpha:  (In) A scalar constant used to scale x.
+
+Beta:  (In) A scalar constant used to scale y.
+
+Omega:  (In) A scalar constant used to scale w.
+
+Zeta:  (In) A scalar constant used to scale z.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MultiplyAndMatTransMultiply
+"int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
+const Epetra_MultiVector &X, Epetra_MultiVector &Y, const
+Epetra_MultiVector &W, Epetra_MultiVector &Z, double Alpha=1.0, double
+Beta=0.0, double Omega=1.0, double Zeta=0.0) const
+
+Performs the two matrix multi-vector multiplies of Y = Alpha*this*X +
+Beta*Y and Z = Omega*this^TransA*W + Zeta*Z.
+
+The multi-vectors X, Y, W and Z can be either Epetra_MultiVectors or
+Epetra_OskiMultiVectors. This composed routine is most commonly used
+in bi-conjugate gradient calculations.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the second product.
+
+X:  (In) A multi-vector the matrix is multiplied by.
+
+Y:  (In/Out) A multi-vector where the calculation result of the first
+multiply is stored.
+
+W:  (In) A multi-vector the matrix is multiplied by.
+
+Z:  (In/Out) A multi-vector where the calculation result of the second
+multiply is stored.
+
+Alpha:  (In) A scalar constant used to scale X.
+
+Beta:  (In) A scalar constant used to scale Y.
+
+Omega:  (In) A scalar constant used to scale W.
+
+Zeta:  (In) A scalar constant used to scale Z.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatPowMultiply "int
+Epetra_OskiMatrix::MatPowMultiply(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y, Epetra_MultiVector &T, int Power=2, double
+Alpha=1.0, double Beta=0.0) const
+
+Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x +
+Beta*y.
+
+The vectors x and y can be either Epetra_Vectors or
+Epetra_OskiVectors. The vector T can be either an Epetra_MultiVector
+or and Epetra_OskiMultiVector. This composed routine is used in power
+and S-step methods.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the product.
+
+x:  (In) The vector the matrix is multiplied by.
+
+y:  (In/Out) The vector where the calculation result is stored.
+
+T:  (Out) The multi-vector where the result of each subsequent
+multiplication this*x ... this^(Power-1)*x is stored.
+
+Power:  (In) The power to raise the matrix to in the calculation.
+
+Alpha:  (In) A scalar constant used to scale x.
+
+Beta:  (In) A scalar constant used to scale y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatPowMultiply "int
+Epetra_OskiMatrix::MatPowMultiply(bool TransA, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiVector &T,
+int Power=2, double Alpha=1.0, double Beta=0.0) const
+
+Performs a matrix multi-vector multiply of Y =
+Alpha*(this^TransA)^Power*X + Beta*Y.
+
+The multi-vectors X, Y and T can be either Epetra_MultiVectors or
+Epetra_OskiMultiVectors. This composed routine is used in power and
+S-step methods.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the product.
+
+X:  (In) The multi-vector the matrix is multiplied by.
+
+Y:  (In/Out) The multi-vector where the calculation result is stored.
+
+T:  (Out) The multi-vector where the result of each subsequent
+multiplication this*X ... this^(Power-1)*X is stored.
+
+Power:  (In) The power to raise the matrix to in the calculation.
+
+Alpha:  (In) A scalar constant used to scale X.
+
+Beta:  (In) A scalar constant used to scale Y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatPowMultiply "int
+Epetra_OskiMatrix::MatPowMultiply(bool TransA, const Epetra_Vector &x,
+Epetra_Vector &y, int Power=2, double Alpha=1.0, double Beta=0.0)
+const
+
+Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x +
+Beta*y.
+
+The vectors x and y can be either Epetra_Vectors or
+Epetra_OskiVectors. This composed routine is used in power and S-step
+methods.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the product.
+
+x:  (In) The vector the matrix is multiplied by.
+
+y:  (In/Out) The vector where the calculation result is stored.
+
+Power:  (In) The power to raise the matrix to in the calculation.
+
+Alpha:  (In) A scalar constant used to scale x.
+
+Beta:  (In) A scalar constant used to scale y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+%feature("docstring")  Epetra_OskiMatrix::MatPowMultiply "int
+Epetra_OskiMatrix::MatPowMultiply(bool TransA, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y, int Power=2, double
+Alpha=1.0, double Beta=0.0) const
+
+Performs a matrix multi-vector multiply of Y =
+Alpha*(this^TransA)^Power*X + Beta*Y.
+
+The multi-vectors X, Y and T can be either Epetra_MultiVectors or
+Epetra_OskiMultiVectors. This composed routine is used in power and
+S-step methods.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
+computing the product.
+
+X:  (In) The multi-vector the matrix is multiplied by.
+
+Y:  (In/Out) The multi-vector where the calculation result is stored.
+
+Power:  (In) The power to raise the matrix to in the calculation.
+
+Alpha:  (In) A scalar constant used to scale X.
+
+Beta:  (In) A scalar constant used to scale Y.
+
+Integer error code, set to 0 if successful.
+
+Filled()==true
+
+Unchanged ";
+
+/*  Tuning  */
+
+%feature("docstring")  Epetra_OskiMatrix::SetHint "int
+Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList &List)
+
+Stores the hints in List in the matrix structure.
+
+Parameters:
+-----------
+
+List:  (In) A list of hints and options to register along with the
+matrix used for tuning purposes. The full list is below for now and
+will either stay there and/or be moved to the user guide in the
+future.
+
+On successful storage of the hint 0 is returned. On failure an error
+code is returned.  The available hints are as follows within each
+section only one hint may be set at a time.
+
+NO_BLOCKS, SINGLE_BLOCKSIZE [int r, c], MULTIPLE_BLOCKSIZES [int k,
+r1, c1, ..., rk, ck]
+
+ALIGNED_BLOCKS, UNALIGNED_BLOCKS
+
+SYMM_PATTERN, NONSYMM_PATTERN
+
+RANDOM_PATTERN, CORRELATED_PATTERN
+
+NO_DIAGS, DIAGS ";
+
+%feature("docstring")  Epetra_OskiMatrix::SetHintMultiply "int
+Epetra_OskiMatrix::SetHintMultiply(bool TransA, double Alpha, const
+Epetra_OskiMultiVector &InVec, double Beta, const
+Epetra_OskiMultiVector &OutVec, int NumCalls, const
+Teuchos::ParameterList &List)
+
+Workload hints for computing a matrix-vector multiply used by
+OskiTuneMat to optimize the data structure storage and the routine to
+compute the calculation.
+
+Parameters:
+-----------
+
+Trans:  (In) If Trans = true then the transpose of the matrix will be
+used in computing the product.
+
+Alpha:  (In) A scalar constant used to scale InVec.
+
+InVec:  (In) The vector the matrix is multiplied by or whether it is a
+single vector or multi-vector.
+
+Beta:  (In) A scalar constant used to scale OutVec.
+
+OutVec:  (In) The vector where the calculation result is stored or
+whether it is a single vector or multi-vector.
+
+NumCalls:  (In) The number of times the operation is called or the
+tuning level wanted.
+
+List:  (In) Used for denoting the use of symbolic vectors for both
+InVec and OutVec as well as for level of aggressive tuning if either
+NumCalls not known or to be overridden. Options are shown below it
+should be noted that by using these options the associated vector or
+NumCalls becomes invalid.
+
+Stores the workload hint in the matrix if the operation is valid. If
+the operation is not valid an error code is returned.
+SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+
+SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+
+ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+
+%feature("docstring")  Epetra_OskiMatrix::SetHintSolve "int
+Epetra_OskiMatrix::SetHintSolve(bool TransA, double Alpha, const
+Epetra_OskiMultiVector &Vector, int NumCalls, const
+Teuchos::ParameterList &List)
+
+Workload hints for computing a triangular solve used by OskiTuneMat to
+optimize the data structure storage and the routine to compute the
+calculation.
+
+Parameters:
+-----------
+
+Trans:  (In) If Trans = true then the transpose of the matrix will be
+used in computing the product.
+
+Alpha:  (In) A scalar constant used to scale InVec.
+
+Vector:  (In) The vector being used in the solve and to store the
+solution.
+
+NumCalls:  (In) The number of times the operation is called or the
+tuning level wanted.
+
+List:  (In) Used for denoting the use of a symbolic vectors as well as
+for level of aggressive tuning if either NumCalls not known or to be
+overridden. Options are shown below it should be noted that by using
+these options the associated vector or NumCalls becomes invalid.
+
+Stores the workload hint in the matrix if the operation is valid. If
+the operation is not valid an error code is returned.
+SYMBOLIC_VECTOR, SYMBOLIC_MULTIVECTOR
+
+ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+
+%feature("docstring")  Epetra_OskiMatrix::SetHintMatTransMatMultiply "int Epetra_OskiMatrix::SetHintMatTransMatMultiply(bool ATA, double
+Alpha, const Epetra_OskiMultiVector &InVec, double Beta, const
+Epetra_OskiMultiVector &OutVec, const Epetra_OskiMultiVector
+&Intermediate, int NumCalls, const Teuchos::ParameterList &List)
+
+Workload hints for computing a two matrix-vector multiplies that are
+composed used by OskiTuneMat to optimize the data structure storage
+and the routine to compute the calculation.
+
+Parameters:
+-----------
+
+ATA:  (In) If ATA = true then this^T*this*x will be computed otherwise
+this*this^T*x will be.
+
+Alpha:  (In) A scalar constant used to scale InVec.
+
+InVec:  (In) The vector the matrix is multiplied by or whether it is a
+single vector or multi-vector.
+
+Beta:  (In) A scalar constant used to scale OutVec.
+
+OutVec:  (In) The vector where the calculation result is stored or
+whether it is a single vector or multi-vector.
+
+Intermediate:  (In) The vector where result of the first product can
+be stored or whether it is a single vector or multi-vector. If this
+quantity is NULL then the intermediate product is not stored.
+
+NumCalls:  (In) The number of times the operation is called or the
+tuning level wanted.
+
+List:  (In) Used for denoting the use of symbolic vectors for both
+InVec, OutVec and Intermediate along with the level of aggressive
+tuning if either NumCalls not known or to be overridden. Options are
+shown below it should be noted that by using these options the
+associated vector or NumCalls becomes invalid.
+
+Stores the workload hint in the matrix if the operation is valid. If
+the operation is not valid an error code is returned.
+SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+
+SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+
+SYMBOLIC_INTER_VEC, SYMBOLIC_INTER_MULTIVEC, INVALID_INTER
+
+ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+
+%feature("docstring")
+Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply "int
+Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply(bool TransA,
+double Alpha, const Epetra_OskiMultiVector &InVec, double Beta, const
+Epetra_OskiMultiVector &OutVec, double Omega, const
+Epetra_OskiMultiVector &InVec2, double Zeta, const
+Epetra_OskiMultiVector &OutVec2, int NumCalls, const
+Teuchos::ParameterList &List)
+
+Workload hints for computing two matrix-vector multiplies used by
+OskiTuneMat to optimize the data structure storage and the routine to
+compute the calculation.
+
+Parameters:
+-----------
+
+Trans:  (In) If Trans = true then the transpose of the matrix will be
+used in computing the product.
+
+Alpha:  (In) A scalar constant used to scale InVec.
+
+InVec:  (In) The vector the matrix is multiplied by or whether it is a
+single vector or multi-vector.
+
+Beta:  (In) A scalar constant used to scale OutVec.
+
+OutVec:  (In) The vector where the calculation result is stored or
+whether it is a single vector or multi-vector.
+
+Omega:  (In) A scalar constant used to scale InVec2.
+
+InVec2:  (In) The vector the matrix is multiplied by or whether it is
+a single vector or multi-vector.
+
+Zeta:  (In) A scalar constant used to scale OutVec2.
+
+OutVec2:  (In) The vector where the calculation result is stored or
+whether it is a single vector or multi-vector.
+
+NumCalls:  (In) The number of times the operation is called or the
+tuning level wanted.
+
+List:  (In) Used for denoting the use of symbolic vectors for both
+InVec and OutVec as well as for level of aggressive tuning if either
+NumCalls not known or to be overridden. Options are shown below it
+should be noted that by using these options the associated vector or
+NumCalls becomes invalid.
+
+Stores the workload hint in the matrix if the operation is valid. If
+the operation is not valid an error code is returned.
+SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+
+SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+
+SYMBOLIC_IN_VEC2, SYMBOLIC_IN_MULTIVEC2
+
+SYMBOLIC_OUT_VEC2, SYMBOLIC_OUT_MULTIVEC2
+
+ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+
+%feature("docstring")  Epetra_OskiMatrix::SetHintPowMultiply "int
+Epetra_OskiMatrix::SetHintPowMultiply(bool TransA, double Alpha, const
+Epetra_OskiMultiVector &InVec, double Beta, const
+Epetra_OskiMultiVector &OutVec, const Epetra_OskiMultiVector
+&Intermediate, int Power, int NumCalls, const Teuchos::ParameterList
+&List)
+
+Workload hints for computing a matrix-vector multiply performed Power
+times used by OskiTuneMat to optimize the data structure storage and
+the routine to compute the calculation.
+
+Parameters:
+-----------
+
+Trans:  (In) If Trans = true then the transpose of the matrix will be
+used in computing the product.
+
+Alpha:  (In) A scalar constant used to scale InVec.
+
+InVec:  (In) The vector the matrix is multiplied by or whether it is a
+single vector or multi-vector.
+
+Beta:  (In) A scalar constant used to scale OutVec.
+
+OutVec:  (In) The vector where the calculation result is stored or
+whether it is a single vector or multi-vector.
+
+Intermediate:  (In) The multi-vector where result of the first product
+can be stored or whether it is a single vector or multi-vector. If
+this quantity is NULL then the intermediate product is not stored.
+
+Power:  (In) The power to raise the matrix to in the calculation.
+
+NumCalls:  (In) The number of times the operation is called or the
+tuning level wanted.
+
+List:  (In) Used for denoting the use of symbolic vectors for both
+InVec and OutVec as well as for level of aggressive tuning if either
+NumCalls not known or to be overridden. Options are shown below it
+should be noted that by using these options the associated vector or
+NumCalls becomes invalid.
+
+Stores the workload hint in the matrix if the operation is valid. If
+the operation is not valid an error code is returned.
+SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+
+SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+
+SYMBOLIC_INTER_MULTIVEC, INVALID_INTER
+
+ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+
+%feature("docstring")  Epetra_OskiMatrix::TuneMatrix "int
+Epetra_OskiMatrix::TuneMatrix()
+
+Tunes the matrix multiply if its deemed profitable.
+
+The routine tunes based upon user provided hints if given. If hints
+are not given the tuning is performed based on expected future
+workload for the calculation. On success returns a non-negative status
+code of the transformations performed. On failure an error code is
+returned. ";
+
+/*  Data Structure Transformation Methods  */
+
+%feature("docstring")  Epetra_OskiMatrix::IsMatrixTransformed "int
+Epetra_OskiMatrix::IsMatrixTransformed() const
+
+Returns 1 if the matrix has been reordered by tuning and 0 if it has
+not been. ";
+
+%feature("docstring")  Epetra_OskiMatrix::ViewTransformedMat "const
+Epetra_OskiMatrix& Epetra_OskiMatrix::ViewTransformedMat() const
+
+Returns the transformed version of InMat if InMat has been
+transformed. If InMat has not been transformed then the return will
+equal InMat. ";
+
+%feature("docstring")  Epetra_OskiMatrix::ViewRowPermutation "const
+Epetra_OskiPermutation& Epetra_OskiMatrix::ViewRowPermutation() const
+
+Returns a read only row/left permutation of the Matrix. ";
+
+%feature("docstring")  Epetra_OskiMatrix::ViewColumnPermutation "const Epetra_OskiPermutation&
+Epetra_OskiMatrix::ViewColumnPermutation() const
+
+Returns a read only column/right permutation of the Matrix. ";
+
+%feature("docstring")  Epetra_OskiMatrix::GetMatrixTransforms "char*
+Epetra_OskiMatrix::GetMatrixTransforms() const
+
+Returns a string holding the transformations performed on the matrix
+when it was tuned.
+
+Upon success returns a newly-allocated string that stores the
+transformations applied to the matrix during tuning. NULL is returned
+upon an error. It is the users responsibility to deallocate the
+returned string. ";
+
+%feature("docstring")  Epetra_OskiMatrix::ApplyMatrixTransforms "int
+Epetra_OskiMatrix::ApplyMatrixTransforms(const char *Transforms)
+
+Replaces the current data structure of the matrix with the one
+specified in Transforms.
+
+If a previously tuned copy of the Matrix existed it is now replaced by
+one specified in Transforms.
+
+Parameters:
+-----------
+
+Transforms:  (In) A string that holds the transformations to be
+applied to the matrix. If Transforms is NULL or the empty string then
+no changes to the data structure are made.
+
+If the transformation was successful 0 is returned. Otherwise an error
+code is returned. ";
+
+
+// File: classEpetra__OskiMultiVector.xml
+%feature("docstring") Epetra_OskiMultiVector "
+
+Epetra_OskiMultiVector: A class for constructing and using dense Oski
+multi-vectors on a single processor or a single core of a multi-
+processor.
+
+The Epetra_OskiMultiVector class enables the construction and use of
+real-valued, double- precision dense vectors and multi-vectors, in a
+serial environment. The dimensions of the dense multi-vectors comes
+from the inherited Epetra_MultiVector object. All values and data
+layouts are kept the same and the multi- vector is wrapped for use
+with OSKI.
+
+C++ includes: Epetra_OskiMultiVector.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_OskiMultiVector::Epetra_OskiMultiVector
+"Epetra_OskiMultiVector::Epetra_OskiMultiVector(const
+Epetra_OskiMultiVector &Source)
+
+Copy constructor. ";
+
+%feature("docstring")  Epetra_OskiMultiVector::Epetra_OskiMultiVector
+"Epetra_OskiMultiVector::Epetra_OskiMultiVector(const
+Epetra_MultiVector &Source)
+
+Constructor creates and Epetra_OskiMultiVector from an
+Epetra_MultiVector.
+
+Parameters:
+-----------
+
+Source:  (In) An Epetra_MultiVector that is wrapped as an
+Epetra_OskiMultiVector.
+
+Pointer to an Epetra_OskiMultiVector.
+
+If the Epetra_MultiVector is not stored contigously according to the
+BLAS standard then a deep copy is made. ";
+
+%feature("docstring")  Epetra_OskiMultiVector::~Epetra_OskiMultiVector
+"virtual Epetra_OskiMultiVector::~Epetra_OskiMultiVector()
+
+Destructor. ";
+
+/*  Extraction Methods  */
+
+%feature("docstring")  Epetra_OskiMultiVector::Copy_Created "bool
+Epetra_OskiMultiVector::Copy_Created() const
+
+Returns true if a deep copy of the multi-vector was created by the
+constructor. ";
+
+%feature("docstring")  Epetra_OskiMultiVector::Oski_View "oski_vecview_t Epetra_OskiMultiVector::Oski_View() const
+
+Returns the Oski portion of the Multi-Vector. ";
+
+%feature("docstring")  Epetra_OskiMultiVector::Epetra_View "const
+Epetra_MultiVector* Epetra_OskiMultiVector::Epetra_View() const
+
+Returns the Epetra portion of the Multi-Vector. ";
+
+/*  Operators  */
+
+
+// File: classEpetra__OskiPermutation.xml
+%feature("docstring") Epetra_OskiPermutation "
+
+Epetra_OskiPermutation: A class for storing the permutation performed
+on a Epetra_OskiMatrix.
+
+The Epetra_OskiPermutation is one of the possible transformations that
+OSKI can perform on a matrix. The permutation is stored with the
+matrix in OSKI. Using this class a Epetra_OskiPermutation can be
+applied to an Epetra_OskiMultiVector.
+
+C++ includes: Epetra_OskiPermutation.h ";
+
+/*  Constructor/Destructor  */
+
+%feature("docstring")  Epetra_OskiPermutation::Epetra_OskiPermutation
+"Epetra_OskiPermutation::Epetra_OskiPermutation()
+
+Default Constructor. ";
+
+%feature("docstring")  Epetra_OskiPermutation::Epetra_OskiPermutation
+"Epetra_OskiPermutation::Epetra_OskiPermutation(const
+Epetra_OskiPermutation &Source)
+
+Copy Constructor. ";
+
+%feature("docstring")  Epetra_OskiPermutation::Epetra_OskiPermutation
+"Epetra_OskiPermutation::Epetra_OskiPermutation(bool RowPerm, const
+Epetra_OskiMatrix &Source)
+
+Constructor creates an Epetra_OskiPermutation from an
+Epetra_OskiMatrix.
+
+Acquires the permutation from the passed in matrix and stores it
+within the object. If RowPerm is true this is a row permutation and if
+RowPerm is false this is a column permutation. ";
+
+%feature("docstring")  Epetra_OskiPermutation::~Epetra_OskiPermutation
+"virtual Epetra_OskiPermutation::~Epetra_OskiPermutation()
+
+Destructor. ";
+
+/*  Replace Method  */
+
+%feature("docstring")  Epetra_OskiPermutation::ReplacePermutation "void Epetra_OskiPermutation::ReplacePermutation(const oski_perm_t
+&InPerm)
+
+Stores a permutation in the data structure. ";
+
+/*  Apply  */
+
+%feature("docstring")  Epetra_OskiPermutation::PermuteVector "int
+Epetra_OskiPermutation::PermuteVector(const bool TransA,
+Epetra_OskiMultiVector &Vector) const
+
+Permutes Vector according to the Permutation. If a transpose is
+desired it performs that operation.
+
+The Vector passed into this function is a view. It is the underlying
+object that is permuted by the function.
+
+Parameters:
+-----------
+
+TransA:  (In) If TransA = TRUE then use the transpose of the
+permutation and apply it to Vector.
+
+Vector:  (In/Out) The vector that is permuted by Permutation^Trans.
+
+When successful returns 0. On error Vector is not permuted and a error
+code is returned. ";
+
+
+// File: classEpetra__OskiUtils.xml
+%feature("docstring") Epetra_OskiUtils "
+
+Epetra_OskiUtils: The Epetra OSKI Class to handle all operations that
+do not involve the use of a matrix, vector, error or permutation
+object.
+
+The Epetra_OskiUtils class is a helper class used to call OSKI
+functions that do not use matrix, vector, error or permutation
+objects. It provides an interface to access the initialization and
+finalize routines of OSKI.
+
+All functions are public to allow access to methods needed by programs
+using OSKI. There are no data members of the class as all data is kept
+in the matrix, vector, multi-vector, error and permutation classes.
+
+C++ includes: Epetra_OskiUtils.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_OskiUtils::Epetra_OskiUtils "Epetra_OskiUtils::Epetra_OskiUtils()
+
+Default Constructor. ";
+
+%feature("docstring")  Epetra_OskiUtils::~Epetra_OskiUtils "virtual
+Epetra_OskiUtils::~Epetra_OskiUtils()
+
+Destructor. ";
+
+/*  Start/End  */
+
+%feature("docstring")  Epetra_OskiUtils::Init "void
+Epetra_OskiUtils::Init()
+
+Initializes OSKI.
+
+Calls the OSKI routine to initialize the use of OSKI. This routine is
+required before OSKI can be used. ";
+
+%feature("docstring")  Epetra_OskiUtils::Close "void
+Epetra_OskiUtils::Close()
+
+Finalizes the use of OSKI.
+
+When done using OSKI this routine performs cleanup operations. While
+not strictly required it is highly recommended to be called when OSKI
+is no longer being used. ";
+
+
+// File: classEpetra__OskiVector.xml
+%feature("docstring") Epetra_OskiVector "
+
+Epetra_OskiVector: A class for constructing and using dense OSKI
+vectors on a single processor or a single core of a multi-processor.
+
+The Epetra_OskiVector class enables the construction and use of real-
+valued, double- precision dense vectors in a serial environment. The
+dimensions of the dense vectors comes from the inherited Epetra_Vector
+object. All values and data layouts are kept the same and the vector
+is wrapped for use with OSKI.
+
+C++ includes: Epetra_OskiVector.h ";
+
+/*  Constructors/Destructor  */
+
+%feature("docstring")  Epetra_OskiVector::Epetra_OskiVector "Epetra_OskiVector::Epetra_OskiVector(const Epetra_OskiVector &Source)
+
+Copy constructor. ";
+
+%feature("docstring")  Epetra_OskiVector::Epetra_OskiVector "Epetra_OskiVector::Epetra_OskiVector(const Epetra_Vector &Source)
+
+Constructor creates and Epetra_OskiVector from an Epetra_Vector.
+
+Parameters:
+-----------
+
+Source:  (In) An Epetra_Vector that is to be wrapped as an
+Epetra_OskiVector.
+
+Pointer to an Epetra_OskiVector. ";
+
+%feature("docstring")  Epetra_OskiVector::~Epetra_OskiVector "virtual
+Epetra_OskiVector::~Epetra_OskiVector()
+
+Destructor. ";
+
+/*  Extraction Method  */
+
+%feature("docstring")  Epetra_OskiVector::Epetra_View "const
+Epetra_Vector* Epetra_OskiVector::Epetra_View() const
+
+Returns a view to the Epetra Object. ";
+
+/*  Operators  */
+
+
 // File: classEpetra__RowMatrix.xml
 %feature("docstring") Epetra_RowMatrix "
 
@@ -12334,7 +13781,7 @@ Out:  NumEntries - Number of nonzero entries extracted.
 
 Out:  Values - Extracted values for this row.
 
-Out:  Indices - Extracted global column indices for the corresponding
+Out:  Indices - Extracted local column indices for the corresponding
 values.
 
 Integer error code, set to 0 if successful. ";
@@ -12811,6 +14258,26 @@ Count:  In On entry, contains the length of the list of MyVals.
 Root:  In On entry, contains the processor from which all processors
 will receive a copy of MyVals. ";
 
+%feature("docstring")  Epetra_SerialComm::Broadcast "int
+Epetra_SerialComm::Broadcast(char *MyVals, int Count, int Root) const
+
+Epetra_SerialComm Broadcast function.
+
+A no-op for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of MyVals.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of MyVals. ";
+
 /*  Gather Methods  */
 
 %feature("docstring")  Epetra_SerialComm::GatherAll "int
@@ -13268,7 +14735,7 @@ should be defined by using the [] or () operators. ";
 
 %feature("docstring")
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix "Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess
-CV, double *A, int LDA, int NumRows, int NumCols, bool
+CV, double *A_in, int LDA_in, int NumRows, int NumCols, bool
 set_object_label=true)
 
 Set object values from two-dimensional array.
@@ -13505,7 +14972,7 @@ method). ";
 */
 
 %feature("docstring")  Epetra_SerialDenseMatrix::SetUseTranspose "virtual int Epetra_SerialDenseMatrix::SetUseTranspose(bool
-UseTranspose)
+UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -14602,7 +16069,7 @@ Epetra_SerialDenseVector destructor. ";
 /*  Post-construction modification routines  */
 
 %feature("docstring")  Epetra_SerialDenseVector::Size "int
-Epetra_SerialDenseVector::Size(int Length)
+Epetra_SerialDenseVector::Size(int Length_in)
 
 Set length of a Epetra_SerialDenseVector object; init values to zero.
 
@@ -14619,7 +16086,7 @@ resized vector starts off with all zero values.
 Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Epetra_SerialDenseVector::Resize "int
-Epetra_SerialDenseVector::Resize(int Length)
+Epetra_SerialDenseVector::Resize(int Length_in)
 
 Resize a Epetra_SerialDenseVector object.
 
@@ -15005,7 +16472,8 @@ Epetra_SerialDenseSolver destructor. ";
 /*  Set Methods  */
 
 %feature("docstring")  Epetra_SerialSpdDenseSolver::SetMatrix "int
-Epetra_SerialSpdDenseSolver::SetMatrix(Epetra_SerialSymDenseMatrix &A)
+Epetra_SerialSpdDenseSolver::SetMatrix(Epetra_SerialSymDenseMatrix
+&A_in)
 
 Sets the pointers for coefficient matrix; special version for
 symmetric matrices. ";
@@ -15519,7 +16987,7 @@ Get seed from Random function.
 Current random number seed. ";
 
 %feature("docstring")  Epetra_Util::SetSeed "int
-Epetra_Util::SetSeed(unsigned int Seed)
+Epetra_Util::SetSeed(unsigned int Seed_in)
 
 Set seed for Random function.
 
@@ -16808,49 +18276,49 @@ matrix. ";
 /*  Local/Global ID methods  */
 
 %feature("docstring")  Epetra_VbrMatrix::LRID "int
-Epetra_VbrMatrix::LRID(int GRID) const
+Epetra_VbrMatrix::LRID(int GRID_in) const
 
 Returns the local row index for given global row index, returns -1 if
 no local row for this global row. ";
 
 %feature("docstring")  Epetra_VbrMatrix::GRID "int
-Epetra_VbrMatrix::GRID(int LRID) const
+Epetra_VbrMatrix::GRID(int LRID_in) const
 
 Returns the global row index for give local row index, returns
 IndexBase-1 if we don't have this local row. ";
 
 %feature("docstring")  Epetra_VbrMatrix::LCID "int
-Epetra_VbrMatrix::LCID(int GCID) const
+Epetra_VbrMatrix::LCID(int GCID_in) const
 
 Returns the local column index for given global column index, returns
 -1 if no local column for this global column. ";
 
 %feature("docstring")  Epetra_VbrMatrix::GCID "int
-Epetra_VbrMatrix::GCID(int LCID) const
+Epetra_VbrMatrix::GCID(int LCID_in) const
 
 Returns the global column index for give local column index, returns
 IndexBase-1 if we don't have this local column. ";
 
 %feature("docstring")  Epetra_VbrMatrix::MyGRID "bool
-Epetra_VbrMatrix::MyGRID(int GRID) const
+Epetra_VbrMatrix::MyGRID(int GRID_in) const
 
 Returns true if the GRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_VbrMatrix::MyLRID "bool
-Epetra_VbrMatrix::MyLRID(int LRID) const
+Epetra_VbrMatrix::MyLRID(int LRID_in) const
 
 Returns true if the LRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_VbrMatrix::MyGCID "bool
-Epetra_VbrMatrix::MyGCID(int GCID) const
+Epetra_VbrMatrix::MyGCID(int GCID_in) const
 
 Returns true if the GCID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
 
 %feature("docstring")  Epetra_VbrMatrix::MyLCID "bool
-Epetra_VbrMatrix::MyLCID(int LCID) const
+Epetra_VbrMatrix::MyLCID(int LCID_in) const
 
 Returns true if the LRID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
@@ -16877,7 +18345,7 @@ Epetra_VbrMatrix::Label() const
 Returns a character string describing the operator. ";
 
 %feature("docstring")  Epetra_VbrMatrix::SetUseTranspose "int
-Epetra_VbrMatrix::SetUseTranspose(bool UseTranspose)
+Epetra_VbrMatrix::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -17690,7 +19158,7 @@ Integer error code, set to 0 if successful. ";
 /*  Expert-only unsupported methods  */
 
 %feature("docstring")  Epetra_Vector::ResetView "int
-Epetra_Vector::ResetView(double *Values)
+Epetra_Vector::ResetView(double *Values_in)
 
 Reset the view of an existing vector to point to new user data.
 
@@ -18709,6 +20177,42 @@ const int *n, float *t, const int *ldt, float *q, const int *ldq, int
 // File: Epetra__Operator_8h.xml
 
 
+// File: Epetra__OskiError_8cpp.xml
+
+
+// File: Epetra__OskiError_8h.xml
+
+
+// File: Epetra__OskiMatrix_8cpp.xml
+
+
+// File: Epetra__OskiMatrix_8h.xml
+
+
+// File: Epetra__OskiMultiVector_8cpp.xml
+
+
+// File: Epetra__OskiMultiVector_8h.xml
+
+
+// File: Epetra__OskiPermutation_8cpp.xml
+
+
+// File: Epetra__OskiPermutation_8h.xml
+
+
+// File: Epetra__OskiUtils_8cpp.xml
+
+
+// File: Epetra__OskiUtils_8h.xml
+
+
+// File: Epetra__OskiVector_8cpp.xml
+
+
+// File: Epetra__OskiVector_8h.xml
+
+
 // File: Epetra__RowMatrix_8h.xml
 
 
@@ -18997,8 +20501,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_18b2d64510239fed06b88e74196cfd3f.xml
+// File: dir_069fd9c22f965500f8b3c38048be015a.xml
 
 
-// File: dir_4368af47e412e90c65d06ecb9459c00d.xml
+// File: dir_d2197c749d70a88047915b4da73e6244.xml
 

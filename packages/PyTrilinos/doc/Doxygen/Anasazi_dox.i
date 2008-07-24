@@ -523,43 +523,38 @@ Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 
 C++ includes: AnasaziBasicSort.hpp ";
 
-%feature("docstring")  Anasazi::BasicSort::BasicSort "Anasazi::BasicSort< ScalarType, MV, OP >::BasicSort(const std::string
-which=\"LM\")
+%feature("docstring")  Anasazi::BasicSort::BasicSort "Anasazi::BasicSort< MagnitudeType >::BasicSort(Teuchos::ParameterList
+&pl)
 
-Constructor.
+Parameter list driven constructor.
 
-Parameters:
------------
+This constructor accepts a paramter list with the following options:
+\"Sort Strategy\" - a string specifying the desired sorting strategy.
+See setSortType() for valid options. ";
 
-which:  [in] The eigenvalues of interest for this eigenproblem. \"LM\"
-- Largest Magnitude [ default ]
+%feature("docstring")  Anasazi::BasicSort::BasicSort "Anasazi::BasicSort< MagnitudeType >::BasicSort(const std::string
+&which=\"LM\")
 
-\"SM\" - Smallest Magnitude
+String driven constructor.
 
-\"LR\" - Largest Real
+Directly pass the string specifying sort strategy. See setSortType()
+for valid options. ";
 
-\"SR\" - Smallest Real
-
-\"LI\" - Largest Imaginary
-
-\"SI\" - Smallest Imaginary ";
-
-%feature("docstring")  Anasazi::BasicSort::~BasicSort "virtual
-Anasazi::BasicSort< ScalarType, MV, OP >::~BasicSort()
+%feature("docstring")  Anasazi::BasicSort::~BasicSort "Anasazi::BasicSort< MagnitudeType >::~BasicSort()
 
 Destructor. ";
 
 %feature("docstring")  Anasazi::BasicSort::setSortType "void
-Anasazi::BasicSort< ScalarType, MV, OP >::setSortType(const
-std::string which)
+Anasazi::BasicSort< MagnitudeType >::setSortType(const std::string
+&which)
 
 Set sort type.
 
 Parameters:
 -----------
 
-which:  [in] The eigenvalues of interest for this eigenproblem. \"LM\"
-- Largest Magnitude [ default ]
+which:  [in] The eigenvalues of interest for this eigenproblem.
+\"LM\" - Largest Magnitude [ default ]
 
 \"SM\" - Smallest Magnitude
 
@@ -572,36 +567,38 @@ which:  [in] The eigenvalues of interest for this eigenproblem. \"LM\"
 \"SI\" - Smallest Imaginary ";
 
 %feature("docstring")  Anasazi::BasicSort::sort "void
-Anasazi::BasicSort< ScalarType, MV, OP >::sort(Eigensolver<
-ScalarType, MV, OP > *solver, const int n, std::vector< typename
-Teuchos::ScalarTraits< ScalarType >::magnitudeType > &evals,
-std::vector< int > *perm=0) const
+Anasazi::BasicSort< MagnitudeType >::sort(std::vector< MagnitudeType >
+&evals, Teuchos::RCP< std::vector< int > > perm=Teuchos::null, int
+n=-1) const
 
-Sort the vector of eigenvalues, optionally returning the permutation
-vector.
+Sort real eigenvalues, optionally returning the permutation vector.
+
+This method is not valid when the sort manager is configured for
+\"LI\" or \"SI\" sorting (i.e., sorting by the imaginary components).
+Calling this method in that scenario will result in a SortManagerError
+exception.
 
 Parameters:
 -----------
 
-solver:  [in] Eigensolver that is calling the sorting routine
+evals:  [in/out] Vector of length at least n containing the
+eigenvalues to be sorted.  On output, the first n eigenvalues will be
+sorted. The rest will be unchanged.
 
-n:  [in] Number of values in evals to be sorted.
+perm:  [out] Vector of length at least n to store the permutation
+index (optional).  If specified, on output the first n eigenvalues
+will contain the permutation indices, in the range [0,n-1], such that
+evals_out[i] = evals_in[perm[i]]
 
-evals:  [in/out] Vector of length n containing the eigenvalues to be
-sorted
-
-perm:  [out] Vector of length n to store the permutation index
-(optional) ";
+n:  [in] Number of values in evals to be sorted. If n == -1, all
+values will be sorted. ";
 
 %feature("docstring")  Anasazi::BasicSort::sort "void
-Anasazi::BasicSort< ScalarType, MV, OP >::sort(Eigensolver<
-ScalarType, MV, OP > *solver, const int n, std::vector< typename
-Teuchos::ScalarTraits< ScalarType >::magnitudeType > &r_evals,
-std::vector< typename Teuchos::ScalarTraits< ScalarType
->::magnitudeType > &i_evals, std::vector< int > *perm=0) const
+Anasazi::BasicSort< MagnitudeType >::sort(std::vector< MagnitudeType >
+&r_evals, std::vector< MagnitudeType > &i_evals, Teuchos::RCP<
+std::vector< int > > perm=Teuchos::null, int n=-1) const
 
-Sort the vectors of eigenpairs, optionally returning the permutation
-vector.
+Sort complex eigenvalues, optionally returning the permutation vector.
 
 This routine takes two vectors, one for each part of a complex
 eigenvalue. This is helpful for solving real, non-symmetric eigenvalue
@@ -610,18 +607,37 @@ problems.
 Parameters:
 -----------
 
-solver:  [in] Eigensolver that is calling the sorting routine
+r_evals:  [in/out] Vector of length at least n containing the real
+part of the eigenvalues to be sorted.  On output, the first n
+eigenvalues will be sorted. The rest will be unchanged.
 
-n:  [in] Number of values in r_evals,i_evals to be sorted.
+i_evals:  [in/out] Vector of length at least n containing the
+imaginary part of the eigenvalues to be sorted.  On output, the first
+n eigenvalues will be sorted. The rest will be unchanged.
 
-r_evals:  [in/out] Vector of length n containing the real part of the
-eigenvalues to be sorted
+perm:  [out] Vector of length at least n to store the permutation
+index (optional).  If specified, on output the first n eigenvalues
+will contain the permutation indices, in the range [0,n-1], such that
+r_evals_out[i] = r_evals_in[perm[i]] and similarly for i_evals.
 
-i_evals:  [in/out] Vector of length n containing the imaginary part of
-the eigenvalues to be sorted
+n:  [in] Number of values in r_evals, i_evals to be sorted. If n ==
+-1, all values will be sorted, as decided by the minimum of the length
+of r_evals and the length of i_evals. ";
 
-perm:  [out] Vector of length n to store the permutation index
-(optional) ";
+
+// File: structAnasazi_1_1BasicSort_1_1compAlg.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1compMag.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1compMag2.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1sel1st.xml
+
+
+// File: structAnasazi_1_1BasicSort_1_1sel2nd.xml
 
 
 // File: classAnasazi_1_1BlockDavidson.xml
@@ -643,11 +659,11 @@ C++ includes: AnasaziBlockDavidson.hpp ";
 
 %feature("docstring")  Anasazi::BlockDavidson::BlockDavidson "Anasazi::BlockDavidson< ScalarType, MV, OP >::BlockDavidson(const
 Teuchos::RCP< Eigenproblem< ScalarType, MV, OP > > &problem, const
-Teuchos::RCP< SortManager< ScalarType, MV, OP > > &sorter, const
-Teuchos::RCP< OutputManager< ScalarType > > &printer, const
-Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
-Teuchos::RCP< MatOrthoManager< ScalarType, MV, OP > > &ortho,
-Teuchos::ParameterList &params)
+Teuchos::RCP< SortManager< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > > &sorter, const Teuchos::RCP< OutputManager<
+ScalarType > > &printer, const Teuchos::RCP< StatusTest< ScalarType,
+MV, OP > > &tester, const Teuchos::RCP< MatOrthoManager< ScalarType,
+MV, OP > > &ortho, Teuchos::ParameterList &params)
 
 BlockDavidson constructor with eigenproblem, solver utilities, and
 parameter list of solver options.
@@ -1119,7 +1135,26 @@ Destructor. ";
 /*  Accessor methods  */
 
 %feature("docstring")  Anasazi::BlockDavidsonSolMgr::getProblem "const Eigenproblem<ScalarType,MV,OP>& Anasazi::BlockDavidsonSolMgr<
-ScalarType, MV, OP >::getProblem() const ";
+ScalarType, MV, OP >::getProblem() const
+
+Return the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::BlockDavidsonSolMgr::getNumIters "int
+Anasazi::BlockDavidsonSolMgr< ScalarType, MV, OP >::getNumIters()
+const
+
+Get the iteration count for the most recent call to  solve(). ";
+
+%feature("docstring")  Anasazi::BlockDavidsonSolMgr::getTimers "Teuchos::Array<Teuchos::RCP<Teuchos::Time> >
+Anasazi::BlockDavidsonSolMgr< ScalarType, MV, OP >::getTimers() const
+
+Return the timers for this object.
+
+The timers are ordered as follows: time spent in solve() routine
+
+time spent restarting
+
+time spent locking converged eigenvectors ";
 
 /*  Solver application methods  */
 
@@ -1237,9 +1272,10 @@ C++ includes: AnasaziBlockKrylovSchur.hpp ";
 
 %feature("docstring")  Anasazi::BlockKrylovSchur::BlockKrylovSchur "Anasazi::BlockKrylovSchur< ScalarType, MV, OP
 >::BlockKrylovSchur(const Teuchos::RCP< Eigenproblem< ScalarType, MV,
-OP > > &problem, const Teuchos::RCP< SortManager< ScalarType, MV, OP >
-> &sorter, const Teuchos::RCP< OutputManager< ScalarType > > &printer,
-const Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
+OP > > &problem, const Teuchos::RCP< SortManager< typename
+Teuchos::ScalarTraits< ScalarType >::magnitudeType > > &sorter, const
+Teuchos::RCP< OutputManager< ScalarType > > &printer, const
+Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
 Teuchos::RCP< OrthoManager< ScalarType, MV > > &ortho,
 Teuchos::ParameterList &params)
 
@@ -1656,7 +1692,7 @@ Basic constructor for BlockKrylovSchurSolMgr.
 
 This constructor accepts the Eigenproblem to be solved in addition to
 a parameter list of options for the solver manager. These options
-include the following: Solver parameters \"Which\" - a string
+include the following: Solver parameters  \"Which\" - a string
 specifying the desired eigenvalues: SM, LM, SR or LR. Default: \"LM\"
 
 \"Block Size\" - a int specifying the block size to be used by the
@@ -1678,12 +1714,9 @@ orthogonalization: DGKS and SVQB. Default: \"SVQB\"
 \"Verbosity\" - a sum of MsgType specifying the verbosity. Default:
 Anasazi::Errors
 
-Convergence parameters Locking parameters (if using default locking
-test; see setLockingStatusTest())
-
-\"Convergence Tolerance\" - a MagnitudeType specifying the level that
-residual norms must reach to decide convergence. Default: machine
-precision.
+Convergence parameters  \"Convergence Tolerance\" - a MagnitudeType
+specifying the level that residual norms must reach to decide
+convergence. Default: machine precision.
 
 \"Relative Convergence Tolerance\" - a bool specifying whether
 residuals norms should be scaled by their eigenvalues for the
@@ -1699,7 +1732,14 @@ Destructor. ";
 /*  Accessor methods  */
 
 %feature("docstring")  Anasazi::BlockKrylovSchurSolMgr::getProblem "const Eigenproblem<ScalarType,MV,OP>& Anasazi::BlockKrylovSchurSolMgr<
-ScalarType, MV, OP >::getProblem() const ";
+ScalarType, MV, OP >::getProblem() const
+
+Return the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::BlockKrylovSchurSolMgr::getNumIters "int Anasazi::BlockKrylovSchurSolMgr< ScalarType, MV, OP
+>::getNumIters() const
+
+Get the iteration count for the most recent call to  solve(). ";
 
 %feature("docstring")  Anasazi::BlockKrylovSchurSolMgr::getRitzValues
 "std::vector<Value<ScalarType> > Anasazi::BlockKrylovSchurSolMgr<
@@ -2144,11 +2184,11 @@ Default Constructor. ";
 
 %feature("docstring")  Anasazi::Eigensolver::Eigensolver "Anasazi::Eigensolver< ScalarType, MV, OP >::Eigensolver(const
 Teuchos::RCP< Eigenproblem< ScalarType, MV, OP > > &problem, const
-Teuchos::RCP< SortManager< ScalarType, MV, OP > > &sorter, const
-Teuchos::RCP< OutputManager< ScalarType > > &printer, const
-Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
-Teuchos::RCP< OrthoManager< ScalarType, MV > > &ortho,
-Teuchos::ParameterList &params)
+Teuchos::RCP< SortManager< ScalarType > > &sorter, const Teuchos::RCP<
+OutputManager< ScalarType > > &printer, const Teuchos::RCP<
+StatusTest< ScalarType, MV, OP > > &tester, const Teuchos::RCP<
+OrthoManager< ScalarType, MV > > &ortho, Teuchos::ParameterList
+&params)
 
 Basic Constructor.
 
@@ -2321,580 +2361,6 @@ void Anasazi::Eigensolver< ScalarType, MV, OP
 
 This method requests that the solver print out its current status to
 screen. ";
-
-
-// File: classAnasazi_1_1EpetraGenOp.xml
-%feature("docstring") Anasazi::EpetraGenOp "
-
-Adapter class for creating an operators often used in solving
-generalized eigenproblems.
-
-This class will apply the operation $A^{-1}M$ [default] or $AM$, for
-the Apply method of the Epetra_Operator / Anasazi::Operator. The
-Anasazi::EpetraGenOp operator is useful when spectral transformations
-are used within eigensolvers. For instance, $A^{-1}M$ is a shift and
-invert spectral transformation commonly used with
-Anasazi::BlockKrylovSchur to compute the smallest-magnitude
-eigenvalues for the eigenproblem $Ax = \\\\lambda Mx$.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::EpetraGenOp "Anasazi::EpetraGenOp::EpetraGenOp(const Teuchos::RCP< Epetra_Operator
-> &AOp, const Teuchos::RCP< Epetra_Operator > &MOp, bool
-isAInverse=true)
-
-Basic constructor for applying operator $A^{-1}M$ [default] or $AM$.
-
-If isAInverse is true this operator will apply $A^{-1}M$, else it will
-apply $AM$. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::~EpetraGenOp "Anasazi::EpetraGenOp::~EpetraGenOp()
-
-Destructor. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::Apply "void
-Anasazi::EpetraGenOp::Apply(const MultiVec< double > &X, MultiVec<
-double > &Y) const
-
-Apply method [inherited from Anasazi::Operator class].
-
-This method will apply $A^{-1}M$ or $AM$ to X, returning Y. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::Apply "int
-Anasazi::EpetraGenOp::Apply(const Epetra_MultiVector &X,
-Epetra_MultiVector &Y) const
-
-Apply method [inherited from Epetra_Operator class].
-
-This method will apply $A^{-1}M$ or $AM$ to X, returning Y. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::ApplyInverse "int
-Anasazi::EpetraGenOp::ApplyInverse(const Epetra_MultiVector &X,
-Epetra_MultiVector &Y) const
-
-Apply inverse method [inherited from Epetra_Operator class].
-
-This method will apply $(A^{-1}M)^{-1}$ or $(AM)^{-1}$ to X, returning
-Y. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::Label "const char*
-Anasazi::EpetraGenOp::Label() const
-
-Returns a character string describing the operator. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::UseTranspose "bool
-Anasazi::EpetraGenOp::UseTranspose() const
-
-Returns the current UseTranspose setting [always false for this
-operator]. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::SetUseTranspose "int
-Anasazi::EpetraGenOp::SetUseTranspose(bool UseTranspose_in)
-
-If set true, the transpose of this operator will be applied [not
-functional for this operator]. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::HasNormInf "bool
-Anasazi::EpetraGenOp::HasNormInf() const
-
-Returns true if this object can provide an approximate inf-norm
-[always false for this operator]. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::NormInf "double
-Anasazi::EpetraGenOp::NormInf() const
-
-Returns the infinity norm of the global matrix [not functional for
-this operator]. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::Comm "const Epetra_Comm&
-Anasazi::EpetraGenOp::Comm() const
-
-Returns the Epetra_Comm communicator associated with this operator. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::OperatorDomainMap "const
-Epetra_Map& Anasazi::EpetraGenOp::OperatorDomainMap() const
-
-Returns the Epetra_Map object associated with the domain of this
-operator. ";
-
-%feature("docstring")  Anasazi::EpetraGenOp::OperatorRangeMap "const
-Epetra_Map& Anasazi::EpetraGenOp::OperatorRangeMap() const
-
-Returns the Epetra_Map object associated with the range of this
-operator. ";
-
-
-// File: classAnasazi_1_1EpetraMultiVec.xml
-%feature("docstring") Anasazi::EpetraMultiVec "
-
-Basic adapter class for Anasazi::MultiVec that uses
-Epetra_MultiVector.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-/*  Constructors/Destructors  */
-
-%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap &Map_in,
-const int numvecs)
-
-Basic EpetraMultiVec constructor.
-
-Parameters:
------------
-
-Map:  [in] An Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
-
-numvecs:  [in] Number of vectors in multi-vector.
-
-Pointer to an EpetraMultiVec ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(const Epetra_MultiVector
-&P_vec)
-
-Copy constructor. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap &Map_in,
-double *array, const int numvecs, const int stride=0)
-
-Create multi-vector with values from two dimensional array.
-
-Parameters:
------------
-
-Map:  [in] An Epetra_LocalMap, Epetra_Map or Epetra_BlockMap
-
-array:  [in] Pointer to an array of double precision numbers. The
-first vector starts at array, the second at array+stride, and so on.
-This array is copied.
-
-numvecs:  [in] Number of vectors in the multi-vector.
-
-stride:  [in] The stride between vectors in memory of array.
-
-Pointer to an EpetraMultiVec ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::EpetraMultiVec "Anasazi::EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, const
-Epetra_MultiVector &P_vec, const std::vector< int > &index)
-
-Create multi-vector from list of vectors in an existing
-EpetraMultiVec.
-
-Parameters:
------------
-
-CV:  [in] Enumerated type set to Copy or View.
-
-P_vec:  [in] An existing fully constructed Epetra_MultiVector.
-
-index:  [in] A integer vector containing the indices of the vectors to
-copy out of P_vec.
-
-Pointer to an EpetraMultiVec ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::~EpetraMultiVec "virtual Anasazi::EpetraMultiVec::~EpetraMultiVec()
-
-Destructor. ";
-
-/*  Creation methods  */
-
-%feature("docstring")  Anasazi::EpetraMultiVec::Clone "MultiVec<
-double > * Anasazi::EpetraMultiVec::Clone(const int numvecs) const
-
-Creates a new empty EpetraMultiVec containing numvecs columns.
-
-Pointer to an EpetraMultiVec ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::CloneCopy "MultiVec<
-double > * Anasazi::EpetraMultiVec::CloneCopy() const
-
-Creates a new EpetraMultiVec and copies contents of *this into the new
-vector (deep copy).
-
-Pointer to an EpetraMultiVec ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::CloneCopy "MultiVec<
-double > * Anasazi::EpetraMultiVec::CloneCopy(const std::vector< int >
-&index) const
-
-Creates a new EpetraMultiVec and copies the selected contents of *this
-into the new vector (deep copy).
-
-The copied vectors from *this are indicated by the index.size()
-indices in index.
-
-Pointer to an EpetraMultiVec ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::CloneView "MultiVec<
-double > * Anasazi::EpetraMultiVec::CloneView(const std::vector< int >
-&index)
-
-Creates a new EpetraMultiVec that shares the selected contents of
-*this.
-
-The index of the numvecs vectors shallow copied from *this are
-indicated by the indices given in index.
-
-Pointer to an EpetraMultiVec ";
-
-/*  Attribute methods  */
-
-%feature("docstring")  Anasazi::EpetraMultiVec::GetNumberVecs "int
-Anasazi::EpetraMultiVec::GetNumberVecs() const
-
-Obtain the vector length of *this. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::GetVecLength "int
-Anasazi::EpetraMultiVec::GetVecLength() const
-
-Obtain the number of vectors in *this. ";
-
-/*  Update methods  */
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvTimesMatAddMv "void
-Anasazi::EpetraMultiVec::MvTimesMatAddMv(double alpha, const MultiVec<
-double > &A, const Teuchos::SerialDenseMatrix< int, double > &B,
-double beta)
-
-Update *this with $\\\\alpha AB + \\\\beta (*this)$. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvAddMv "void
-Anasazi::EpetraMultiVec::MvAddMv(double alpha, const MultiVec< double
-> &A, double beta, const MultiVec< double > &B)
-
-Replace *this with $\\\\alpha A + \\\\beta B$. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvTransMv "void
-Anasazi::EpetraMultiVec::MvTransMv(double alpha, const MultiVec<
-double > &A, Teuchos::SerialDenseMatrix< int, double > &B) const
-
-Compute a dense matrix B through the matrix-matrix multiply $\\\\alpha
-A^T(*this)$. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvDot "void
-Anasazi::EpetraMultiVec::MvDot(const MultiVec< double > &A,
-std::vector< double > &b) const
-
-Compute a vector b where the components are the individual dot-
-products, i.e. $ b[i] = A[i]^H(this[i])$ where A[i] is the i-th column
-of A. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvScale "void
-Anasazi::EpetraMultiVec::MvScale(double alpha)
-
-Scale each element of the vectors in *this with alpha. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvScale "void
-Anasazi::EpetraMultiVec::MvScale(const std::vector< double > &alpha)
-
-Scale each element of the i-th vector in *this with alpha[i]. ";
-
-/*  Norm method  */
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvNorm "void
-Anasazi::EpetraMultiVec::MvNorm(std::vector< double > &normvec) const
-
-Compute the 2-norm of each individual vector of *this. Upon return,
-normvec[i] holds the 2-norm of the i-th vector of *this. ";
-
-/*  Initialization methods  */
-
-%feature("docstring")  Anasazi::EpetraMultiVec::SetBlock "void
-Anasazi::EpetraMultiVec::SetBlock(const MultiVec< double > &A, const
-std::vector< int > &index)
-
-Copy the vectors in A to a set of vectors in *this.
-
-The numvecs vectors in A are copied to a subset of vectors in *this
-indicated by the indices given in index. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvRandom "void
-Anasazi::EpetraMultiVec::MvRandom()
-
-Fill the vectors in *this with random numbers. ";
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvInit "void
-Anasazi::EpetraMultiVec::MvInit(double alpha)
-
-Replace each element of the vectors in *this with alpha. ";
-
-/*  Print method  */
-
-%feature("docstring")  Anasazi::EpetraMultiVec::MvPrint "void
-Anasazi::EpetraMultiVec::MvPrint(std::ostream &os) const
-
-Print *this EpetraMultiVec. ";
-
-
-// File: classAnasazi_1_1EpetraMultiVecFailure.xml
-%feature("docstring") Anasazi::EpetraMultiVecFailure "
-
-EpetraMultiVecFailure is thrown when a return value from an Epetra
-call on an Epetra_MultiVector is non-zero.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-%feature("docstring")
-Anasazi::EpetraMultiVecFailure::EpetraMultiVecFailure "Anasazi::EpetraMultiVecFailure::EpetraMultiVecFailure(const
-std::string &what_arg) ";
-
-
-// File: classAnasazi_1_1EpetraOp.xml
-%feature("docstring") Anasazi::EpetraOp "
-
-Basic adapter class for Anasazi::Operator that uses Epetra_Operator.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-/*  Constructor/Destructor  */
-
-%feature("docstring")  Anasazi::EpetraOp::EpetraOp "Anasazi::EpetraOp::EpetraOp(const Teuchos::RCP< Epetra_Operator > &Op)
-
-Basic constructor. Accepts reference-counted pointer to an
-Epetra_Operator. ";
-
-%feature("docstring")  Anasazi::EpetraOp::~EpetraOp "Anasazi::EpetraOp::~EpetraOp()
-
-Destructor. ";
-
-/*  Operator application method  */
-
-%feature("docstring")  Anasazi::EpetraOp::Apply "void
-Anasazi::EpetraOp::Apply(const MultiVec< double > &X, MultiVec< double
-> &Y) const
-
-This method takes the Anasazi::MultiVec X and applies the operator to
-it resulting in the Anasazi::MultiVec Y. ";
-
-
-// File: classAnasazi_1_1EpetraOpFailure.xml
-%feature("docstring") Anasazi::EpetraOpFailure "
-
-EpetraOpFailure is thrown when a return value from an Epetra call on
-an Epetra_Operator is non-zero.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-%feature("docstring")  Anasazi::EpetraOpFailure::EpetraOpFailure "Anasazi::EpetraOpFailure::EpetraOpFailure(const std::string &what_arg)
-";
-
-
-// File: classAnasazi_1_1EpetraSymMVOp.xml
-%feature("docstring") Anasazi::EpetraSymMVOp "
-
-Adapter class for creating a symmetric operator from an
-Epetra_MultiVector.
-
-This class will apply the operation $A^TA$ [default] or $AA^T$, for
-the Apply method of the Epetra_Operator / Anasazi::Operator. The
-Anasazi::EpetraSymMvOp operator is useful when trying to compute a few
-singular values of the Epetra_MultiVector $A$. The singular values are
-the square-root of the eigenvalues of $A^TA$ and $AA^T$.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-%feature("docstring")  Anasazi::EpetraSymMVOp::EpetraSymMVOp "Anasazi::EpetraSymMVOp::EpetraSymMVOp(const Teuchos::RCP< const
-Epetra_MultiVector > &MV, bool isTrans=false)
-
-Basic constructor for applying operator $A^TA$ [default] or $AA^T$.
-
-If isTrans is false this operator will apply $A^TA$, else it will
-apply $AA^T$. ";
-
-%feature("docstring")  Anasazi::EpetraSymMVOp::~EpetraSymMVOp "Anasazi::EpetraSymMVOp::~EpetraSymMVOp()
-
-Destructor. ";
-
-%feature("docstring")  Anasazi::EpetraSymMVOp::Apply "void
-Anasazi::EpetraSymMVOp::Apply(const MultiVec< double > &X, MultiVec<
-double > &Y) const
-
-Apply method.
-
-This method will apply $A^TA$ or $AA^T$ to X, returning Y. ";
-
-
-// File: classAnasazi_1_1EpetraSymOp.xml
-%feature("docstring") Anasazi::EpetraSymOp "
-
-Adapter class for creating a symmetric operator from an
-Epetra_Operator.
-
-This class will apply the operation $A^TA$ [default] or $AA^T$, for
-the Apply method of the Epetra_Operator / Anasazi::Operator. The
-Anasazi::EpetraSymOp operator is useful when trying to compute a few
-singular values of the operator $A$. The singular values are the
-square-root of the eigenvalues of $A^TA$ and $AA^T$.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::EpetraSymOp "Anasazi::EpetraSymOp::EpetraSymOp(const Teuchos::RCP< Epetra_Operator
-> &Op, bool isTrans=false)
-
-Basic constructor for applying operator $A^TA$ [default] or $AA^T$.
-
-If isTrans is false this operator will apply $A^TA$, else it will
-apply $AA^T$. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::~EpetraSymOp "Anasazi::EpetraSymOp::~EpetraSymOp()
-
-Destructor. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::Apply "void
-Anasazi::EpetraSymOp::Apply(const MultiVec< double > &X, MultiVec<
-double > &Y) const
-
-Apply method [inherited from Anasazi::Operator class].
-
-This method will apply $A^TA$ or $AA^T$ to X, returning Y. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::Apply "int
-Anasazi::EpetraSymOp::Apply(const Epetra_MultiVector &X,
-Epetra_MultiVector &Y) const
-
-Apply method [inherited from Epetra_Operator class].
-
-This method will apply $A^TA$ or $AA^T$ to X, returning Y. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::ApplyInverse "int
-Anasazi::EpetraSymOp::ApplyInverse(const Epetra_MultiVector &X,
-Epetra_MultiVector &Y) const
-
-Apply inverse method [inherited from Epetra_Operator class].
-
-This method will apply $(A^TA)^{-1}$ or $(AA^T)^{-1}$ to X, returning
-Y. This method is only defined if $A^{-1}$ is defined for the given
-Epetra_Operator. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::Label "const char*
-Anasazi::EpetraSymOp::Label() const
-
-Returns a character string describing the operator. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::UseTranspose "bool
-Anasazi::EpetraSymOp::UseTranspose() const
-
-Returns the current UseTranspose setting [always false for this
-operator]. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::SetUseTranspose "int
-Anasazi::EpetraSymOp::SetUseTranspose(bool UseTranspose_in)
-
-If set true, the transpose of this operator will be applied [not
-functional for this operator]. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::HasNormInf "bool
-Anasazi::EpetraSymOp::HasNormInf() const
-
-Returns true if this object can provide an approximate inf-norm
-[always false for this operator]. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::NormInf "double
-Anasazi::EpetraSymOp::NormInf() const
-
-Returns the infinity norm of the global matrix [not functional for
-this operator]. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::Comm "const Epetra_Comm&
-Anasazi::EpetraSymOp::Comm() const
-
-Returns the Epetra_Comm communicator associated with this operator. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::OperatorDomainMap "const
-Epetra_Map& Anasazi::EpetraSymOp::OperatorDomainMap() const
-
-Returns the Epetra_Map object associated with the domain of this
-operator. ";
-
-%feature("docstring")  Anasazi::EpetraSymOp::OperatorRangeMap "const
-Epetra_Map& Anasazi::EpetraSymOp::OperatorRangeMap() const
-
-Returns the Epetra_Map object associated with the range of this
-operator. ";
-
-
-// File: classAnasazi_1_1EpetraW2SymMVOp.xml
-%feature("docstring") Anasazi::EpetraW2SymMVOp "
-
-Adapter class for creating a weighted symmetric operator from an
-Epetra_MultiVector and Epetra_Operator.
-
-This class will apply the operation $(WA)^T*WA$ for the Apply method
-of the Anasazi::Operator. The Anasazi::EpetraW2SymMvOp operator is
-useful when trying to compute a few singular values of the
-Epetra_MultiVector $A$ under the weighting matrix $W$. The singular
-values are the square-root of the eigenvalues of $(WA)^T*WA$.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-%feature("docstring")  Anasazi::EpetraW2SymMVOp::EpetraW2SymMVOp "Anasazi::EpetraW2SymMVOp::EpetraW2SymMVOp(const Teuchos::RCP< const
-Epetra_MultiVector > &MV, const Teuchos::RCP< Epetra_Operator > &OP)
-
-Basic constructor for applying operator $A^T*W*A$. ";
-
-%feature("docstring")  Anasazi::EpetraW2SymMVOp::~EpetraW2SymMVOp "Anasazi::EpetraW2SymMVOp::~EpetraW2SymMVOp()
-
-Destructor. ";
-
-%feature("docstring")  Anasazi::EpetraW2SymMVOp::Apply "void
-Anasazi::EpetraW2SymMVOp::Apply(const MultiVec< double > &X, MultiVec<
-double > &Y) const
-
-Apply method.
-
-This method will apply $(WA)^T*WA$ to X, returning Y. ";
-
-
-// File: classAnasazi_1_1EpetraWSymMVOp.xml
-%feature("docstring") Anasazi::EpetraWSymMVOp "
-
-Adapter class for creating a weighted operator from an
-Epetra_MultiVector and Epetra_Operator.
-
-This class will apply the operation $A^T*W*A$ for the Apply method of
-the Anasazi::Operator. The Anasazi::EpetraWSymMvOp operator is useful
-when trying to compute a few singular values of the Epetra_MultiVector
-$A$ under the weighting matrix $W$. The singular values are the
-square-root of the eigenvalues of $A^T*W*A$.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-%feature("docstring")  Anasazi::EpetraWSymMVOp::EpetraWSymMVOp "Anasazi::EpetraWSymMVOp::EpetraWSymMVOp(const Teuchos::RCP< const
-Epetra_MultiVector > &MV, const Teuchos::RCP< Epetra_Operator > &OP)
-
-Basic constructor for applying operator $A^T*W*A$. ";
-
-%feature("docstring")  Anasazi::EpetraWSymMVOp::~EpetraWSymMVOp "Anasazi::EpetraWSymMVOp::~EpetraWSymMVOp()
-
-Destructor. ";
-
-%feature("docstring")  Anasazi::EpetraWSymMVOp::Apply "void
-Anasazi::EpetraWSymMVOp::Apply(const MultiVec< double > &X, MultiVec<
-double > &Y) const
-
-Apply method.
-
-This method will apply $(WA)^T*WA$ to X, returning Y. ";
 
 
 // File: classAnasazi_1_1GenOrthoManager.xml
@@ -3465,10 +2931,11 @@ C++ includes: AnasaziLOBPCG.hpp ";
 %feature("docstring")  Anasazi::LOBPCG::LOBPCG "Anasazi::LOBPCG<
 ScalarType, MV, OP >::LOBPCG(const Teuchos::RCP< Eigenproblem<
 ScalarType, MV, OP > > &problem, const Teuchos::RCP< SortManager<
-ScalarType, MV, OP > > &sorter, const Teuchos::RCP< OutputManager<
-ScalarType > > &printer, const Teuchos::RCP< StatusTest< ScalarType,
-MV, OP > > &tester, const Teuchos::RCP< MatOrthoManager< ScalarType,
-MV, OP > > &ortho, Teuchos::ParameterList &params)
+typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > >
+&sorter, const Teuchos::RCP< OutputManager< ScalarType > > &printer,
+const Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
+Teuchos::RCP< MatOrthoManager< ScalarType, MV, OP > > &ortho,
+Teuchos::ParameterList &params)
 
 LOBPCG constructor with eigenproblem, solver utilities, and parameter
 list of solver options.
@@ -3984,7 +3451,23 @@ Destructor. ";
 
 %feature("docstring")  Anasazi::LOBPCGSolMgr::getProblem "const
 Eigenproblem<ScalarType,MV,OP>& Anasazi::LOBPCGSolMgr< ScalarType, MV,
-OP >::getProblem() const ";
+OP >::getProblem() const
+
+Return the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::LOBPCGSolMgr::getNumIters "int
+Anasazi::LOBPCGSolMgr< ScalarType, MV, OP >::getNumIters() const
+
+Get the iteration count for the most recent call to  solve(). ";
+
+%feature("docstring")  Anasazi::LOBPCGSolMgr::getTimers "Teuchos::Array<Teuchos::RCP<Teuchos::Time> > Anasazi::LOBPCGSolMgr<
+ScalarType, MV, OP >::getTimers() const
+
+Return the timers for this object.
+
+The timers are ordered as follows: time spent in solve() routine
+
+time spent locking converged eigenvectors ";
 
 /*  Solver application methods  */
 
@@ -4080,6 +3563,10 @@ LOBPCG::getState().
 C++ includes: AnasaziLOBPCG.hpp ";
 
 %feature("docstring")  Anasazi::LOBPCGState::LOBPCGState "Anasazi::LOBPCGState< ScalarType, MultiVector >::LOBPCGState() ";
+
+
+// File: classAnasazi_1_1MakePairOp.xml
+%feature("docstring") Anasazi::MakePairOp "";
 
 
 // File: classAnasazi_1_1MatOrthoManager.xml
@@ -4661,190 +4148,6 @@ std::ostream &os)
 Print the mv multi-vector to the os output stream. ";
 
 
-// File: classAnasazi_1_1MultiVecTraits_3_01double_00_01Epetra__MultiVector_01_4.xml
-%feature("docstring") Anasazi::MultiVecTraits< double,
-Epetra_MultiVector > "
-
-Template specialization of Anasazi::MultiVecTraits class using the
-Epetra_MultiVector class.
-
-This interface will ensure that any Epetra_MultiVector will be
-accepted by the Anasazi templated solvers.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
-
-/*  Creation methods  */
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::Clone " static Teuchos::RCP<Epetra_MultiVector>
-Anasazi::MultiVecTraits< double, Epetra_MultiVector >::Clone(const
-Epetra_MultiVector &mv, const int numvecs)
-
-Creates a new empty Epetra_MultiVector containing numvecs columns.
-
-Reference-counted pointer to the new Epetra_MultiVector. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneCopy " static
-Teuchos::RCP<Epetra_MultiVector> Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneCopy(const Epetra_MultiVector &mv)
-
-Creates a new Epetra_MultiVector and copies contents of mv into the
-new vector (deep copy).
-
-Reference-counted pointer to the new Epetra_MultiVector. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneCopy " static
-Teuchos::RCP<Epetra_MultiVector> Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneCopy(const Epetra_MultiVector &mv, const
-std::vector< int > &index)
-
-Creates a new Epetra_MultiVector and copies the selected contents of
-mv into the new vector (deep copy).
-
-The copied vectors from mv are indicated by the indeX.size() indices
-in index. Reference-counted pointer to the new Epetra_MultiVector. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneView " static
-Teuchos::RCP<Epetra_MultiVector> Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneView(Epetra_MultiVector &mv, const
-std::vector< int > &index)
-
-Creates a new Epetra_MultiVector that shares the selected contents of
-mv (shallow copy).
-
-The index of the numvecs vectors shallow copied from mv are indicated
-by the indices given in index. Reference-counted pointer to the new
-Epetra_MultiVector. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneView " static Teuchos::RCP<const
-Epetra_MultiVector> Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::CloneView(const Epetra_MultiVector &mv, const
-std::vector< int > &index)
-
-Creates a new const Epetra_MultiVector that shares the selected
-contents of mv (shallow copy).
-
-The index of the numvecs vectors shallow copied from mv are indicated
-by the indices given in index. Reference-counted pointer to the new
-const Epetra_MultiVector. ";
-
-/*  Attribute methods  */
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::GetVecLength " static int
-Anasazi::MultiVecTraits< double, Epetra_MultiVector
->::GetVecLength(const Epetra_MultiVector &mv)
-
-Obtain the vector length of mv. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::GetNumberVecs " static int
-Anasazi::MultiVecTraits< double, Epetra_MultiVector
->::GetNumberVecs(const Epetra_MultiVector &mv)
-
-Obtain the number of vectors in mv. ";
-
-/*  Update methods  */
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvTimesMatAddMv " static void
-Anasazi::MultiVecTraits< double, Epetra_MultiVector
->::MvTimesMatAddMv(double alpha, const Epetra_MultiVector &A, const
-Teuchos::SerialDenseMatrix< int, double > &B, double beta,
-Epetra_MultiVector &mv)
-
-Update mv with $ \\\\alpha AB + \\\\beta mv $. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvAddMv " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvAddMv(double alpha, const
-Epetra_MultiVector &A, double beta, const Epetra_MultiVector &B,
-Epetra_MultiVector &mv)
-
-Replace mv with $\\\\alpha A + \\\\beta B$. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvTransMv " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvTransMv(double alpha, const
-Epetra_MultiVector &A, const Epetra_MultiVector &mv,
-Teuchos::SerialDenseMatrix< int, double > &B)
-
-Compute a dense matrix B through the matrix-matrix multiply $
-\\\\alpha A^Tmv $. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvDot " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvDot(const Epetra_MultiVector &A, const
-Epetra_MultiVector &B, std::vector< double > &b)
-
-Compute a vector b where the components are the individual dot-
-products of the i-th columns of A and mv, i.e. $b[i] = A[i]^Tmv[i]$.
-";
-
-/*  Norm method  */
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvNorm " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvNorm(const Epetra_MultiVector &mv,
-std::vector< double > &normvec)
-
-Compute the 2-norm of each individual vector of mv. Upon return,
-normvec[i] holds the value of $||mv_i||_2$, the i-th column of mv. ";
-
-/*  Initialization methods  */
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::SetBlock " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::SetBlock(const Epetra_MultiVector &A,
-const std::vector< int > &index, Epetra_MultiVector &mv)
-
-Copy the vectors in A to a set of vectors in mv indicated by the
-indices given in index. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvScale " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvScale(Epetra_MultiVector &mv, double
-alpha)
-
-Scale each element of the vectors in mv with alpha. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvScale " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvScale(Epetra_MultiVector &mv, const
-std::vector< double > &alpha)
-
-Scale each element of the i-th vector in mv with alpha[i]. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvRandom " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvRandom(Epetra_MultiVector &mv)
-
-Replace the vectors in mv with random vectors. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvInit " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvInit(Epetra_MultiVector &mv, double
-alpha=Teuchos::ScalarTraits< double >::zero())
-
-Replace each element of the vectors in mv with alpha. ";
-
-/*  Print method  */
-
-%feature("docstring")  Anasazi::MultiVecTraits< double,
-Epetra_MultiVector >::MvPrint " static void Anasazi::MultiVecTraits<
-double, Epetra_MultiVector >::MvPrint(const Epetra_MultiVector &mv,
-std::ostream &os)
-
-Print the mv multi-vector to the os output stream. ";
-
-
 // File: classAnasazi_1_1MultiVecTraits_3_01ScalarType_00_01MultiVec_3_01ScalarType_01_4_01_4.xml
 %feature("docstring") Anasazi::MultiVecTraits< ScalarType, MultiVec<
 ScalarType > > "
@@ -5096,22 +4399,6 @@ const MV &x, MV &y)
 
 Application method which performs operation y = Op*x. An OperatorError
 exception is thrown if there is an error. ";
-
-
-// File: classAnasazi_1_1OperatorTraits_3_01double_00_01Epetra__MultiVector_00_01Epetra__Operator_01_4.xml
-%feature("docstring") Anasazi::OperatorTraits< double,
-Epetra_MultiVector, Epetra_Operator > "
-
-Template specialization of Anasazi::OperatorTraits class using the
-Epetra_Operator virtual base class and Epetra_MultiVector class.
-
-This interface will ensure that any Epetra_Operator and
-Epetra_MultiVector will be accepted by the Anasazi templated solvers.
-
-The Epetra package performs double-precision arithmetic, so the use of
-Epetra with Anasazi will only provide a double-precision eigensolver.
-
-C++ includes: AnasaziEpetraAdapter.hpp ";
 
 
 // File: classAnasazi_1_1OperatorTraits_3_01ScalarType_00_01MultiVec_3_01ScalarType_01_4_00_01Operator_3_01ScalarType_01_4_01_4.xml
@@ -5528,7 +4815,14 @@ Destructor. ";
 
 %feature("docstring")  Anasazi::SimpleLOBPCGSolMgr::getProblem "const
 Eigenproblem<ScalarType,MV,OP>& Anasazi::SimpleLOBPCGSolMgr<
-ScalarType, MV, OP >::getProblem() const ";
+ScalarType, MV, OP >::getProblem() const
+
+Return the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::SimpleLOBPCGSolMgr::getNumIters "int
+Anasazi::SimpleLOBPCGSolMgr< ScalarType, MV, OP >::getNumIters() const
+
+Get the iteration count for the most recent call to  solve(). ";
 
 /*  Solver application methods  */
 
@@ -5568,7 +4862,15 @@ Destructor. ";
 
 %feature("docstring")  Anasazi::SolverManager::getProblem "virtual
 const Eigenproblem<ScalarType,MV,OP>& Anasazi::SolverManager<
-ScalarType, MV, OP >::getProblem() const =0 ";
+ScalarType, MV, OP >::getProblem() const =0
+
+Return the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::SolverManager::getNumIters "virtual
+int Anasazi::SolverManager< ScalarType, MV, OP >::getNumIters() const
+=0
+
+Get the iteration count for the most recent call to  solve(). ";
 
 /*  Solver application methods  */
 
@@ -5741,56 +5043,56 @@ When M is not specified, the identity is used. ";
 %feature("docstring") Anasazi::SortManager "
 
 Anasazi's templated pure virtual class for managing the sorting of
-approximate eigenvalues computed by the eigensolver.
-
-A concrete implementation of this class is necessary. The user can
-create their own implementation if those supplied are not suitable for
-their needs.
+approximate eigenvalues computed by the eigensolver. A concrete
+implementation of this class is necessary.
 
 Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 
 C++ includes: AnasaziSortManager.hpp ";
 
-%feature("docstring")  Anasazi::SortManager::SortManager "Anasazi::SortManager< ScalarType, MV, OP >::SortManager()
+%feature("docstring")  Anasazi::SortManager::SortManager "Anasazi::SortManager< MagnitudeType >::SortManager()
 
-Default Constructor. ";
+Default constructor. ";
+
+%feature("docstring")  Anasazi::SortManager::SortManager "Anasazi::SortManager< MagnitudeType
+>::SortManager(Teuchos::ParameterList &pl)
+
+Constructor accepting a Teuchos::ParameterList. This is the default
+mode for instantiating a SortManager. ";
 
 %feature("docstring")  Anasazi::SortManager::~SortManager "virtual
-Anasazi::SortManager< ScalarType, MV, OP >::~SortManager()
+Anasazi::SortManager< MagnitudeType >::~SortManager()
 
 Destructor. ";
 
 %feature("docstring")  Anasazi::SortManager::sort "virtual void
-Anasazi::SortManager< ScalarType, MV, OP >::sort(Eigensolver<
-ScalarType, MV, OP > *solver, const int n, std::vector< typename
-Teuchos::ScalarTraits< ScalarType >::magnitudeType > &evals,
-std::vector< int > *perm=0) const =0
+Anasazi::SortManager< MagnitudeType >::sort(std::vector< MagnitudeType
+> &evals, Teuchos::RCP< std::vector< int > > perm=Teuchos::null, int
+n=-1) const =0
 
-Sort the vector of eigenvalues, optionally returning the permutation
-vector.
+Sort real eigenvalues, optionally returning the permutation vector.
 
 Parameters:
 -----------
 
-solver:  [in] Eigensolver that is calling the sorting routine
+evals:  [in/out] Vector of length at least n containing the
+eigenvalues to be sorted.  On output, the first n eigenvalues will be
+sorted. The rest will be unchanged.
 
-n:  [in] Number of values in evals to be sorted.
+perm:  [out] Vector of length at least n to store the permutation
+index (optional).  If specified, on output the first n eigenvalues
+will contain the permutation indices, in the range [0,n-1], such that
+evals_out[i] = evals_in[perm[i]]
 
-evals:  [in/out] Vector of length n containing the eigenvalues to be
-sorted
-
-perm:  [out] Vector of length n to store the permutation index
-(optional) ";
+n:  [in] Number of values in evals to be sorted. If n == -1, all
+values will be sorted. ";
 
 %feature("docstring")  Anasazi::SortManager::sort "virtual void
-Anasazi::SortManager< ScalarType, MV, OP >::sort(Eigensolver<
-ScalarType, MV, OP > *solver, const int n, std::vector< typename
-Teuchos::ScalarTraits< ScalarType >::magnitudeType > &r_evals,
-std::vector< typename Teuchos::ScalarTraits< ScalarType
->::magnitudeType > &i_evals, std::vector< int > *perm=0) const =0
+Anasazi::SortManager< MagnitudeType >::sort(std::vector< MagnitudeType
+> &r_evals, std::vector< MagnitudeType > &i_evals, Teuchos::RCP<
+std::vector< int > > perm=Teuchos::null, int n=-1) const =0
 
-Sort the vectors of eigenpairs, optionally returning the permutation
-vector.
+Sort complex eigenvalues, optionally returning the permutation vector.
 
 This routine takes two vectors, one for each part of a complex
 eigenvalue. This is helpful for solving real, non-symmetric eigenvalue
@@ -5799,18 +5101,21 @@ problems.
 Parameters:
 -----------
 
-solver:  [in] Eigensolver that is calling the sorting routine
+r_evals:  [in/out] Vector of length at least n containing the real
+part of the eigenvalues to be sorted.  On output, the first n
+eigenvalues will be sorted. The rest will be unchanged.
 
-n:  [in] Number of values in r_evals,i_evals to be sorted.
+i_evals:  [in/out] Vector of length at least n containing the
+imaginary part of the eigenvalues to be sorted.  On output, the first
+n eigenvalues will be sorted. The rest will be unchanged.
 
-r_evals:  [in/out] Vector of length n containing the real part of the
-eigenvalues to be sorted
+perm:  [out] Vector of length at least n to store the permutation
+index (optional).  If specified, on output the first n eigenvalues
+will contain the permutation indices, in the range [0,n-1], such that
+r_evals_out[i] = r_evals_in[perm[i]] and similarly for i_evals.
 
-i_evals:  [in/out] Vector of length n containing the imaginary part of
-the eigenvalues to be sorted
-
-perm:  [out] Vector of length n to store the permutation index
-(optional) ";
+n:  [in] Number of values in r_evals, i_evals to be sorted. If n ==
+-1, all values will be sorted. ";
 
 
 // File: classAnasazi_1_1SortManagerError.xml
@@ -6511,8 +5816,8 @@ C++ includes: AnasaziStatusTestWithOrdering.hpp ";
 %feature("docstring")
 Anasazi::StatusTestWithOrdering::StatusTestWithOrdering "Anasazi::StatusTestWithOrdering< ScalarType, MV, OP
 >::StatusTestWithOrdering(Teuchos::RCP< StatusTest< ScalarType, MV, OP
-> > test, Teuchos::RCP< SortManager< ScalarType, MV, OP > > sorter,
-int quorum=-1)
+> > test, Teuchos::RCP< SortManager< typename Teuchos::ScalarTraits<
+ScalarType >::magnitudeType > > sorter, int quorum=-1)
 
 Constructor. ";
 
@@ -6963,12 +6268,6 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziEigensolverDecl_8hpp.xml
 
 
-// File: AnasaziEpetraAdapter_8cpp.xml
-
-
-// File: AnasaziEpetraAdapter_8hpp.xml
-
-
 // File: AnasaziGenOrthoManager_8hpp.xml
 
 
@@ -7050,10 +6349,10 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziVersion_8cpp.xml
 
 
-// File: dir_dc5a21cdf9ae5c2aac185b6aad0b5f42.xml
+// File: dir_25f3fdecdebb7b36cddc029076d92c3b.xml
 
 
-// File: dir_7c2139b3455d9e99d84c8cdfb950729b.xml
+// File: dir_329f685d83025f0b4e78caff3f0f70b5.xml
 
 
 // File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml
