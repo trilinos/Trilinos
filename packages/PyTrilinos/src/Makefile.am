@@ -323,7 +323,7 @@ package: $(WRAPPERS)
 
 install: package
 	if test -z '$(DESTDIR)'; then \
-	$(PYTHON) $(srcdir)/setup.py install; \
+	$(PYTHON) $(srcdir)/setup.py install --prefix $(PYTHON_PREFIX); \
 	else \
 	$(PYTHON) $(srcdir)/setup.py install --root $(DESTDIR); \
 	fi
