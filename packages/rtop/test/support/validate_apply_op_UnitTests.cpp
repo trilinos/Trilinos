@@ -2,7 +2,8 @@
 #include "RTOpPack_ROpSum.hpp"
 #include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_TOpAXPY.hpp"
-#include "opsUnitTestsHelpers.hpp"
+
+#include "supportUnitTestsHelpers.hpp"
 
 
 namespace {
@@ -196,7 +197,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( validate_apply_op, incompatibleReductObj, Sca
 
   ConstSubVectorView<Scalar> sv = newSubVectorView<Scalar>(n, ST::random());
   RCP<RTOpPack::ReductTarget> sum =
-    Teuchos::rcp(new RTOpPack::ReductTargetScalarIndex<Scalar>);
+    Teuchos::rcp(new RTOpPack::DefaultReductTarget<RTOpPack::index_type>(0));
   TEST_THROW(
     RTOpPack::validate_apply_op<Scalar>( sumOp, 1, 0, true,
       tuple(sv)(), null, sum.ptr() ),

@@ -85,6 +85,8 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_ROpCountNanInf.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpDotProd.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector_decl.hpp\
+  $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector_def.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpMax.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpMaxIndex.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpMaxIndexLessThanBound.hpp\
@@ -110,7 +112,11 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_TOpReciprocal.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpScaleVector.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.hpp\
-  $(srcdir)/ops_lib/RTOpPack_SUNDIALS_Ops.hpp
+  $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector_def.hpp
+
+RTOP_OPS_LIB = \
+  $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.cpp
 
 RTOP_LAPACK_H = \
   $(srcdir)/lapack/RTOpPack_LapackWrappers.hpp
@@ -149,6 +155,7 @@ librtop_a_SOURCES = \
   $(RTOP_INTERFACES) \
   $(RTOP_SUPPORT_C) \
   $(RTOP_SUPPORT) \
+  $(RTOP_OPS_LIB) \
   $(RTOP_LAPACK)
 
 #We need the following to support separate build directories

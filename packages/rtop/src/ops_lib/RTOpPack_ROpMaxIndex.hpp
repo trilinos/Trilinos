@@ -34,63 +34,80 @@
 
 namespace RTOpPack {
 
+
+/** \brief . */
+template<class Scalar>
+class ROpMaxIndexEleWiseReductionOp {
+public:
+  /** \brief . */
+  void operator()(const index_type i, const Scalar &v0,
+    ScalarIndex<Scalar> &reduct) const
+    {
+      if(
+        v0 > reduct.scalar
+        ||
+        (v0 == reduct.scalar && i < reduct.index)
+        )
+      {
+        reduct = ScalarIndex<Scalar>(v0, i);
+      }
+    }
+};
+
+
+/** \brief. */
+template<class Scalar>
+class ROpMaxIndexReductObjReductionOp {
+public:
+  /** \brief . */
+  void operator()(
+    const ScalarIndex<Scalar>& in_reduct, ScalarIndex<Scalar>& inout_reduct
+    ) const
+    {
+      if(
+        in_reduct.scalar > inout_reduct.scalar
+        ||
+        (
+          in_reduct.scalar == inout_reduct.scalar
+          &&
+          in_reduct.index < inout_reduct.index
+          )
+        )
+      {
+        inout_reduct = in_reduct;
+      }
+    }
+};
+
+
 /** \brief Returns the maximum element and its index:
  * <tt>result.scalar = x(k)</tt> and <tt>result.index = k</tt> such
  * that <tt>x(k) >= x(i)</tt> for <tt>i=0...n-1</tt> and <tt>k</tt> is
  * the minimum index to break ties.
  */
 template<class Scalar>
-class ROpMaxIndex : public ROpScalarIndexReductionBase<Scalar> {
+class ROpMaxIndex
+  : public ROp_1_CoordVariantScalarReduction<
+      Scalar,
+      ScalarIndex<Scalar>,
+      ROpMaxIndexEleWiseReductionOp<Scalar>,
+      ROpMaxIndexReductObjReductionOp<Scalar> >
+{
 public:
   /** \brief . */
   ROpMaxIndex()
     :RTOpT<Scalar>("ROpMaxIndex")
-    ,ROpScalarIndexReductionBase<Scalar>(-Teuchos::ScalarTraits<Scalar>::rmax(),-1)
-    {}
-  /** \brief . */
-  ScalarIndex<Scalar> operator()(const ReductTarget& reduct_obj ) const { return this->getRawVal(reduct_obj); }
-  /** @name Overridden from RTOpT */
-  //@{
-  /// This RTOp is NOT coordinate invariant!
-  bool coord_invariant() const { return false; }
-  /** \brief . */
-  void reduce_reduct_objs(
-    const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
-    ) const
     {
-      const ScalarIndex<Scalar> in    = this->getRawVal(in_reduct_obj);
-      const ScalarIndex<Scalar> inout = this->getRawVal(*inout_reduct_obj);
-      if( in.scalar > inout.scalar || (in.scalar == inout.scalar && in.index < inout.index) )
-        this->setRawVal(in,inout_reduct_obj);
+      initReductObjValue(
+        ScalarIndex<Scalar>(-ScalarTraits<Scalar>::rmax(), -1));
     }
   /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
-    {
-      RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      ScalarIndex<Scalar> maxEle = this->getRawVal(*reduct_obj);
-      if( v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i ) {
-          const Scalar &v0_i = *v0_val++;
-          if( v0_i > maxEle.scalar || ( v0_i == maxEle.scalar && globalOffset + i < maxEle.index ) )
-            maxEle = ScalarIndex<Scalar>(v0_i,globalOffset+i);
-        }
-      }
-      else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s ) {
-          const Scalar &v0_i = *v0_val;
-          if( v0_i > maxEle.scalar || ( v0_i == maxEle.scalar && globalOffset + i < maxEle.index ) )
-            maxEle = ScalarIndex<Scalar>(v0_i,globalOffset+i);
-        }
-      }
-      this->setRawVal(maxEle,reduct_obj);
-    }
-  //@}
-}; // class ROpMaxIndex
+  ScalarIndex<Scalar> operator()(const ReductTarget& reduct_obj) const
+    { return this->getRawVal(reduct_obj); }
+};
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_ROP_MAX_INDEX_HPP

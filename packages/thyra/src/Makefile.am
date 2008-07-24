@@ -134,7 +134,6 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_MultiVectorTesterDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_OperatorVectorClientSupport.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_ParameterDrivenMultiVectorInput.hpp\
-  $(srcdir)/support/operator_vector/client_support/Thyra_SUNDIALS_Ops.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_SingleRhsLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_SingleRhsLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_SingleScalarLinearOpBase.hpp\

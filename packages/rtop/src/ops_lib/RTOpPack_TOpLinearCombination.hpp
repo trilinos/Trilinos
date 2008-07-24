@@ -93,8 +93,8 @@ public:
     ,ReductTarget *reduct_obj
     ) const
     {
-      typedef Teuchos::ScalarTraits<Scalar> ST;
       using Teuchos::Workspace;
+      typedef Teuchos::ScalarTraits<Scalar> ST;
       typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
       typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
       Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();

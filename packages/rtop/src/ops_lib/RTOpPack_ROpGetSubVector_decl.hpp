@@ -27,42 +27,79 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef RTOPPACK_TOP_SET_SUB_VECTOR_HPP
-#define RTOPPACK_TOP_SET_SUB_VECTOR_HPP
+#ifndef RTOPPACK_ROP_GET_SUB_VECTOR_DECL_HPP
+#define RTOPPACK_ROP_GET_SUB_VECTOR_DECL_HPP
+
 
 #include "RTOpPack_RTOpTHelpers.hpp"
-#include "RTOpPack_SparseSubVectorT.hpp"
 
 
 namespace RTOpPack {
 
 
-/** \brief Advanced transformation operator that assigns elements from a
- * sparse explicit vector.
+/** \brief Reduction operator that extracts a sub-vector in the range of
+ * global zero-based indexes [l,u].
  *
  * ToDo: Finish documentation!
  */
 template<class Scalar>
-class TOpSetSubVector : public RTOpT<Scalar> {
+class ROpGetSubVector : public RTOpT<Scalar> {
 public:
 
+  /** \brief . */
   using RTOpT<Scalar>::apply_op;
-  
+
   /** \brief . */
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
 
   /** \brief . */
-  TOpSetSubVector();
+  ROpGetSubVector( const index_type l = 0, const index_type u = 0 );
 
-  /** \brief . */
-  TOpSetSubVector( const SparseSubVectorT<Scalar> &sub_vec );
+  /** \brief Set the range of global indexes to extract elements for. */
+  void set_range( const index_type l, const index_type u );
 
-  /** \brief . */
-  void set_sub_vec( const SparseSubVectorT<Scalar> &sub_vec );
+  /** \brief Extract the subvector after all of the reductions are
+   * completed.
+   */
+  const ConstSubVectorView<Scalar> operator()(
+    const ReductTarget& reduct_obj ) const;
 
   /** @name Overridden from RTOpT */
   //@{
 
+  /** \brief . */
+  void get_reduct_type_num_entries(
+    int* num_values
+    ,int* num_indexes
+    ,int* num_chars
+    ) const;
+  /** \brief . */
+  Teuchos::RCP<ReductTarget> reduct_obj_create() const;
+  /** \brief . */
+  void reduce_reduct_objs(
+    const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj) const;
+  /** \brief . */
+  void reduct_obj_reinit( ReductTarget* reduct_obj ) const;
+  /** \brief . */
+  void extract_reduct_obj_state(
+    const ReductTarget &reduct_obj
+    ,int num_values
+    ,primitive_value_type value_data[]
+    ,int num_indexes
+    ,Teuchos_Index index_data[]
+    ,int num_chars
+    ,::RTOpPack::char_type char_data[]
+    ) const;
+  /** \brief . */
+  void load_reduct_obj_state(
+    int num_values
+    ,const primitive_value_type value_data[]
+    ,int num_indexes
+    ,const Teuchos_Index index_data[]
+    ,int num_chars
+    ,const ::RTOpPack::char_type char_data[]
+    ,ReductTarget *reduct_obj
+    ) const;
   /** \brief . */
   void get_op_type_num_entries(
     int* num_values
@@ -74,21 +111,27 @@ public:
     int num_values
     ,primitive_value_type value_data[]
     ,int num_indexes
-    ,index_type index_data[]
+    ,Teuchos_Index index_data[]
     ,int num_chars
-    ,char_type char_data[]
+    ,::RTOpPack::char_type char_data[]
     ) const;
   /** \brief . */
   void load_op_state(
     int num_values
     ,const primitive_value_type value_data[]
     ,int num_indexes
-    ,const index_type index_data[]
+    ,const Teuchos_Index index_data[]
     ,int num_chars
-    ,const char_type char_data[]
+    ,const ::RTOpPack::char_type char_data[]
     );
   /** \brief . */
   bool coord_invariant() const;
+  /** \brief . */
+  void apply_op_impl(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const;
 
   //@}
 
@@ -112,35 +155,15 @@ public:
 
   //@}
 
-protected:
-
-  /** \name Overridden protected functions from RTOpT. */
-  //@{
-
-  /** \brief . */
-  void apply_op_impl(
-    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
-    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
-    const Ptr<ReductTarget> &reduct_obj
-    ) const;
-
-  //@}
-
 private:
 
-  enum { num_sub_vec_members = 6 };
+  index_type l_;
+  index_type u_;
 
-  SparseSubVectorT<Scalar> sub_vec_;
-
-}; // class TOpSetSubVector
+}; // class ROpGetSubVector
 
 
 } // namespace RTOpPack
 
 
-#ifndef HAVE_TEUCHOS_EXPLICIT_INSTANIATION
-#  include "RTOpPack_TOpSetSubVector_def.hpp"
-#endif
-
-
-#endif // RTOPPACK_TOP_SET_SUB_VECTOR_HPP
+#endif // RTOPPACK_ROP_GET_SUB_VECTOR_DECL_HPP

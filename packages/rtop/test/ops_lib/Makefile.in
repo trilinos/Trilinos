@@ -57,12 +57,18 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_opsUnitTests_OBJECTS = ROpSum_UnitTests.$(OBJEXT) \
-	ROpDotProd_UnitTests.$(OBJEXT) ROpNorm1_UnitTests.$(OBJEXT) \
-	ROpNorm2_UnitTests.$(OBJEXT) ROpNormInf_UnitTests.$(OBJEXT) \
-	ROpMax_UnitTests.$(OBJEXT) ROpMin_UnitTests.$(OBJEXT) \
-	validate_apply_op_UnitTests.$(OBJEXT) \
-	opsUnitTestsHelpers.$(OBJEXT) \
+am_opsUnitTests_OBJECTS = ROpCountNanInf_UnitTests.$(OBJEXT) \
+	ROpDotProd_UnitTests.$(OBJEXT) \
+	ROpGetSubVector_UnitTests.$(OBJEXT) \
+	ROpMaxIndexLessThanBound_UnitTests.$(OBJEXT) \
+	ROpMaxIndex_UnitTests.$(OBJEXT) ROpMax_UnitTests.$(OBJEXT) \
+	ROpMinIndexGreaterThanBound_UnitTests.$(OBJEXT) \
+	ROpMinIndex_UnitTests.$(OBJEXT) ROpMin_UnitTests.$(OBJEXT) \
+	ROpNorm1_UnitTests.$(OBJEXT) ROpNorm2_UnitTests.$(OBJEXT) \
+	ROpNormInf_UnitTests.$(OBJEXT) ROpSum_UnitTests.$(OBJEXT) \
+	ROpWeightedNorm2_UnitTests.$(OBJEXT) \
+	TOpSetSubVector_UnitTests.$(OBJEXT) \
+	supportUnitTestsHelpers.$(OBJEXT) \
 	Teuchos_StandardUnitTestMain.$(OBJEXT)
 opsUnitTests_OBJECTS = $(am_opsUnitTests_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -191,21 +197,27 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 opsUnitTests_SOURCES = \
-  $(srcdir)/ROpSum_UnitTests.cpp \
+  $(srcdir)/ROpCountNanInf_UnitTests.cpp \
   $(srcdir)/ROpDotProd_UnitTests.cpp \
+  $(srcdir)/ROpGetSubVector_UnitTests.cpp \
+  $(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp \
+  $(srcdir)/ROpMaxIndex_UnitTests.cpp \
+  $(srcdir)/ROpMax_UnitTests.cpp \
+  $(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp \
+  $(srcdir)/ROpMinIndex_UnitTests.cpp \
+  $(srcdir)/ROpMin_UnitTests.cpp \
   $(srcdir)/ROpNorm1_UnitTests.cpp \
   $(srcdir)/ROpNorm2_UnitTests.cpp \
   $(srcdir)/ROpNormInf_UnitTests.cpp \
-  $(srcdir)/ROpMax_UnitTests.cpp \
-  $(srcdir)/ROpMin_UnitTests.cpp \
-  $(srcdir)/validate_apply_op_UnitTests.cpp \
-  $(srcdir)/opsUnitTestsHelpers.cpp \
+  $(srcdir)/ROpSum_UnitTests.cpp \
+  $(srcdir)/ROpWeightedNorm2_UnitTests.cpp \
+  $(srcdir)/TOpSetSubVector_UnitTests.cpp \
+  $(top_srcdir)/test/support/supportUnitTestsHelpers.cpp \
   $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 
 opsUnitTests_DEPENDENCIES = $(top_builddir)/src/librtop.a $(top_builddir)/../teuchos/src/libteuchos.a
 opsUnitTests_LDADD = $(RTOP_LIBS)
-AM_CPPFLAGS = $(RTOP_INCLUDES)
-EXTRA_DIST = opsUnitTestsHelpers.hpp
+AM_CPPFLAGS = $(RTOP_INCLUDES) -I$(top_srcdir)/test/support
 all: all-am
 
 .SUFFIXES:
@@ -272,16 +284,23 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpCountNanInf_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpDotProd_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpGetSubVector_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMaxIndexLessThanBound_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMaxIndex_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMax_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMinIndexGreaterThanBound_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMinIndex_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpMin_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpNorm1_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpNorm2_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpNormInf_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpSum_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpWeightedNorm2_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpSetSubVector_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opsUnitTestsHelpers.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validate_apply_op_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/supportUnitTestsHelpers.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -297,19 +316,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ROpSum_UnitTests.o: $(srcdir)/ROpSum_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpSum_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpSum_UnitTests.Tpo -c -o ROpSum_UnitTests.o `test -f '$(srcdir)/ROpSum_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpSum_UnitTests.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpSum_UnitTests.Tpo $(DEPDIR)/ROpSum_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpSum_UnitTests.cpp' object='ROpSum_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+ROpCountNanInf_UnitTests.o: $(srcdir)/ROpCountNanInf_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpCountNanInf_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpCountNanInf_UnitTests.Tpo -c -o ROpCountNanInf_UnitTests.o `test -f '$(srcdir)/ROpCountNanInf_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpCountNanInf_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpCountNanInf_UnitTests.Tpo $(DEPDIR)/ROpCountNanInf_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpCountNanInf_UnitTests.cpp' object='ROpCountNanInf_UnitTests.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpSum_UnitTests.o `test -f '$(srcdir)/ROpSum_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpSum_UnitTests.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpCountNanInf_UnitTests.o `test -f '$(srcdir)/ROpCountNanInf_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpCountNanInf_UnitTests.cpp
 
-ROpSum_UnitTests.obj: $(srcdir)/ROpSum_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpSum_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpSum_UnitTests.Tpo -c -o ROpSum_UnitTests.obj `if test -f '$(srcdir)/ROpSum_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpSum_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpSum_UnitTests.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpSum_UnitTests.Tpo $(DEPDIR)/ROpSum_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpSum_UnitTests.cpp' object='ROpSum_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+ROpCountNanInf_UnitTests.obj: $(srcdir)/ROpCountNanInf_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpCountNanInf_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpCountNanInf_UnitTests.Tpo -c -o ROpCountNanInf_UnitTests.obj `if test -f '$(srcdir)/ROpCountNanInf_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpCountNanInf_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpCountNanInf_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpCountNanInf_UnitTests.Tpo $(DEPDIR)/ROpCountNanInf_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpCountNanInf_UnitTests.cpp' object='ROpCountNanInf_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpSum_UnitTests.obj `if test -f '$(srcdir)/ROpSum_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpSum_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpSum_UnitTests.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpCountNanInf_UnitTests.obj `if test -f '$(srcdir)/ROpCountNanInf_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpCountNanInf_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpCountNanInf_UnitTests.cpp'; fi`
 
 ROpDotProd_UnitTests.o: $(srcdir)/ROpDotProd_UnitTests.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpDotProd_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpDotProd_UnitTests.Tpo -c -o ROpDotProd_UnitTests.o `test -f '$(srcdir)/ROpDotProd_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpDotProd_UnitTests.cpp
@@ -324,6 +343,104 @@ ROpDotProd_UnitTests.obj: $(srcdir)/ROpDotProd_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpDotProd_UnitTests.cpp' object='ROpDotProd_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpDotProd_UnitTests.obj `if test -f '$(srcdir)/ROpDotProd_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpDotProd_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpDotProd_UnitTests.cpp'; fi`
+
+ROpGetSubVector_UnitTests.o: $(srcdir)/ROpGetSubVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpGetSubVector_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpGetSubVector_UnitTests.Tpo -c -o ROpGetSubVector_UnitTests.o `test -f '$(srcdir)/ROpGetSubVector_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpGetSubVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpGetSubVector_UnitTests.Tpo $(DEPDIR)/ROpGetSubVector_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpGetSubVector_UnitTests.cpp' object='ROpGetSubVector_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpGetSubVector_UnitTests.o `test -f '$(srcdir)/ROpGetSubVector_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpGetSubVector_UnitTests.cpp
+
+ROpGetSubVector_UnitTests.obj: $(srcdir)/ROpGetSubVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpGetSubVector_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpGetSubVector_UnitTests.Tpo -c -o ROpGetSubVector_UnitTests.obj `if test -f '$(srcdir)/ROpGetSubVector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpGetSubVector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpGetSubVector_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpGetSubVector_UnitTests.Tpo $(DEPDIR)/ROpGetSubVector_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpGetSubVector_UnitTests.cpp' object='ROpGetSubVector_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpGetSubVector_UnitTests.obj `if test -f '$(srcdir)/ROpGetSubVector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpGetSubVector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpGetSubVector_UnitTests.cpp'; fi`
+
+ROpMaxIndexLessThanBound_UnitTests.o: $(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMaxIndexLessThanBound_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMaxIndexLessThanBound_UnitTests.Tpo -c -o ROpMaxIndexLessThanBound_UnitTests.o `test -f '$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMaxIndexLessThanBound_UnitTests.Tpo $(DEPDIR)/ROpMaxIndexLessThanBound_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp' object='ROpMaxIndexLessThanBound_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMaxIndexLessThanBound_UnitTests.o `test -f '$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp
+
+ROpMaxIndexLessThanBound_UnitTests.obj: $(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMaxIndexLessThanBound_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMaxIndexLessThanBound_UnitTests.Tpo -c -o ROpMaxIndexLessThanBound_UnitTests.obj `if test -f '$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMaxIndexLessThanBound_UnitTests.Tpo $(DEPDIR)/ROpMaxIndexLessThanBound_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp' object='ROpMaxIndexLessThanBound_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMaxIndexLessThanBound_UnitTests.obj `if test -f '$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMaxIndexLessThanBound_UnitTests.cpp'; fi`
+
+ROpMaxIndex_UnitTests.o: $(srcdir)/ROpMaxIndex_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMaxIndex_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMaxIndex_UnitTests.Tpo -c -o ROpMaxIndex_UnitTests.o `test -f '$(srcdir)/ROpMaxIndex_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMaxIndex_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMaxIndex_UnitTests.Tpo $(DEPDIR)/ROpMaxIndex_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMaxIndex_UnitTests.cpp' object='ROpMaxIndex_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMaxIndex_UnitTests.o `test -f '$(srcdir)/ROpMaxIndex_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMaxIndex_UnitTests.cpp
+
+ROpMaxIndex_UnitTests.obj: $(srcdir)/ROpMaxIndex_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMaxIndex_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMaxIndex_UnitTests.Tpo -c -o ROpMaxIndex_UnitTests.obj `if test -f '$(srcdir)/ROpMaxIndex_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMaxIndex_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMaxIndex_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMaxIndex_UnitTests.Tpo $(DEPDIR)/ROpMaxIndex_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMaxIndex_UnitTests.cpp' object='ROpMaxIndex_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMaxIndex_UnitTests.obj `if test -f '$(srcdir)/ROpMaxIndex_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMaxIndex_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMaxIndex_UnitTests.cpp'; fi`
+
+ROpMax_UnitTests.o: $(srcdir)/ROpMax_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMax_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMax_UnitTests.Tpo -c -o ROpMax_UnitTests.o `test -f '$(srcdir)/ROpMax_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMax_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMax_UnitTests.Tpo $(DEPDIR)/ROpMax_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMax_UnitTests.cpp' object='ROpMax_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMax_UnitTests.o `test -f '$(srcdir)/ROpMax_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMax_UnitTests.cpp
+
+ROpMax_UnitTests.obj: $(srcdir)/ROpMax_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMax_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMax_UnitTests.Tpo -c -o ROpMax_UnitTests.obj `if test -f '$(srcdir)/ROpMax_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMax_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMax_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMax_UnitTests.Tpo $(DEPDIR)/ROpMax_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMax_UnitTests.cpp' object='ROpMax_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMax_UnitTests.obj `if test -f '$(srcdir)/ROpMax_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMax_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMax_UnitTests.cpp'; fi`
+
+ROpMinIndexGreaterThanBound_UnitTests.o: $(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMinIndexGreaterThanBound_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMinIndexGreaterThanBound_UnitTests.Tpo -c -o ROpMinIndexGreaterThanBound_UnitTests.o `test -f '$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMinIndexGreaterThanBound_UnitTests.Tpo $(DEPDIR)/ROpMinIndexGreaterThanBound_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp' object='ROpMinIndexGreaterThanBound_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMinIndexGreaterThanBound_UnitTests.o `test -f '$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp
+
+ROpMinIndexGreaterThanBound_UnitTests.obj: $(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMinIndexGreaterThanBound_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMinIndexGreaterThanBound_UnitTests.Tpo -c -o ROpMinIndexGreaterThanBound_UnitTests.obj `if test -f '$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMinIndexGreaterThanBound_UnitTests.Tpo $(DEPDIR)/ROpMinIndexGreaterThanBound_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp' object='ROpMinIndexGreaterThanBound_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMinIndexGreaterThanBound_UnitTests.obj `if test -f '$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMinIndexGreaterThanBound_UnitTests.cpp'; fi`
+
+ROpMinIndex_UnitTests.o: $(srcdir)/ROpMinIndex_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMinIndex_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMinIndex_UnitTests.Tpo -c -o ROpMinIndex_UnitTests.o `test -f '$(srcdir)/ROpMinIndex_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMinIndex_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMinIndex_UnitTests.Tpo $(DEPDIR)/ROpMinIndex_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMinIndex_UnitTests.cpp' object='ROpMinIndex_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMinIndex_UnitTests.o `test -f '$(srcdir)/ROpMinIndex_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMinIndex_UnitTests.cpp
+
+ROpMinIndex_UnitTests.obj: $(srcdir)/ROpMinIndex_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMinIndex_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMinIndex_UnitTests.Tpo -c -o ROpMinIndex_UnitTests.obj `if test -f '$(srcdir)/ROpMinIndex_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMinIndex_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMinIndex_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMinIndex_UnitTests.Tpo $(DEPDIR)/ROpMinIndex_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMinIndex_UnitTests.cpp' object='ROpMinIndex_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMinIndex_UnitTests.obj `if test -f '$(srcdir)/ROpMinIndex_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMinIndex_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMinIndex_UnitTests.cpp'; fi`
+
+ROpMin_UnitTests.o: $(srcdir)/ROpMin_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMin_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMin_UnitTests.Tpo -c -o ROpMin_UnitTests.o `test -f '$(srcdir)/ROpMin_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMin_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMin_UnitTests.Tpo $(DEPDIR)/ROpMin_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMin_UnitTests.cpp' object='ROpMin_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMin_UnitTests.o `test -f '$(srcdir)/ROpMin_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMin_UnitTests.cpp
+
+ROpMin_UnitTests.obj: $(srcdir)/ROpMin_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMin_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMin_UnitTests.Tpo -c -o ROpMin_UnitTests.obj `if test -f '$(srcdir)/ROpMin_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMin_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMin_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMin_UnitTests.Tpo $(DEPDIR)/ROpMin_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMin_UnitTests.cpp' object='ROpMin_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMin_UnitTests.obj `if test -f '$(srcdir)/ROpMin_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMin_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMin_UnitTests.cpp'; fi`
 
 ROpNorm1_UnitTests.o: $(srcdir)/ROpNorm1_UnitTests.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpNorm1_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpNorm1_UnitTests.Tpo -c -o ROpNorm1_UnitTests.o `test -f '$(srcdir)/ROpNorm1_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpNorm1_UnitTests.cpp
@@ -367,61 +484,61 @@ ROpNormInf_UnitTests.obj: $(srcdir)/ROpNormInf_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpNormInf_UnitTests.obj `if test -f '$(srcdir)/ROpNormInf_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpNormInf_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpNormInf_UnitTests.cpp'; fi`
 
-ROpMax_UnitTests.o: $(srcdir)/ROpMax_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMax_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMax_UnitTests.Tpo -c -o ROpMax_UnitTests.o `test -f '$(srcdir)/ROpMax_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMax_UnitTests.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMax_UnitTests.Tpo $(DEPDIR)/ROpMax_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMax_UnitTests.cpp' object='ROpMax_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+ROpSum_UnitTests.o: $(srcdir)/ROpSum_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpSum_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpSum_UnitTests.Tpo -c -o ROpSum_UnitTests.o `test -f '$(srcdir)/ROpSum_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpSum_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpSum_UnitTests.Tpo $(DEPDIR)/ROpSum_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpSum_UnitTests.cpp' object='ROpSum_UnitTests.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMax_UnitTests.o `test -f '$(srcdir)/ROpMax_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMax_UnitTests.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpSum_UnitTests.o `test -f '$(srcdir)/ROpSum_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpSum_UnitTests.cpp
 
-ROpMax_UnitTests.obj: $(srcdir)/ROpMax_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMax_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMax_UnitTests.Tpo -c -o ROpMax_UnitTests.obj `if test -f '$(srcdir)/ROpMax_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMax_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMax_UnitTests.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMax_UnitTests.Tpo $(DEPDIR)/ROpMax_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMax_UnitTests.cpp' object='ROpMax_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+ROpSum_UnitTests.obj: $(srcdir)/ROpSum_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpSum_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpSum_UnitTests.Tpo -c -o ROpSum_UnitTests.obj `if test -f '$(srcdir)/ROpSum_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpSum_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpSum_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpSum_UnitTests.Tpo $(DEPDIR)/ROpSum_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpSum_UnitTests.cpp' object='ROpSum_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMax_UnitTests.obj `if test -f '$(srcdir)/ROpMax_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMax_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMax_UnitTests.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpSum_UnitTests.obj `if test -f '$(srcdir)/ROpSum_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpSum_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpSum_UnitTests.cpp'; fi`
 
-ROpMin_UnitTests.o: $(srcdir)/ROpMin_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMin_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpMin_UnitTests.Tpo -c -o ROpMin_UnitTests.o `test -f '$(srcdir)/ROpMin_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMin_UnitTests.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMin_UnitTests.Tpo $(DEPDIR)/ROpMin_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMin_UnitTests.cpp' object='ROpMin_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+ROpWeightedNorm2_UnitTests.o: $(srcdir)/ROpWeightedNorm2_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpWeightedNorm2_UnitTests.o -MD -MP -MF $(DEPDIR)/ROpWeightedNorm2_UnitTests.Tpo -c -o ROpWeightedNorm2_UnitTests.o `test -f '$(srcdir)/ROpWeightedNorm2_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpWeightedNorm2_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpWeightedNorm2_UnitTests.Tpo $(DEPDIR)/ROpWeightedNorm2_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpWeightedNorm2_UnitTests.cpp' object='ROpWeightedNorm2_UnitTests.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMin_UnitTests.o `test -f '$(srcdir)/ROpMin_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpMin_UnitTests.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpWeightedNorm2_UnitTests.o `test -f '$(srcdir)/ROpWeightedNorm2_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ROpWeightedNorm2_UnitTests.cpp
 
-ROpMin_UnitTests.obj: $(srcdir)/ROpMin_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpMin_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpMin_UnitTests.Tpo -c -o ROpMin_UnitTests.obj `if test -f '$(srcdir)/ROpMin_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMin_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMin_UnitTests.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpMin_UnitTests.Tpo $(DEPDIR)/ROpMin_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpMin_UnitTests.cpp' object='ROpMin_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+ROpWeightedNorm2_UnitTests.obj: $(srcdir)/ROpWeightedNorm2_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ROpWeightedNorm2_UnitTests.obj -MD -MP -MF $(DEPDIR)/ROpWeightedNorm2_UnitTests.Tpo -c -o ROpWeightedNorm2_UnitTests.obj `if test -f '$(srcdir)/ROpWeightedNorm2_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpWeightedNorm2_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpWeightedNorm2_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ROpWeightedNorm2_UnitTests.Tpo $(DEPDIR)/ROpWeightedNorm2_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ROpWeightedNorm2_UnitTests.cpp' object='ROpWeightedNorm2_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpMin_UnitTests.obj `if test -f '$(srcdir)/ROpMin_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpMin_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpMin_UnitTests.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ROpWeightedNorm2_UnitTests.obj `if test -f '$(srcdir)/ROpWeightedNorm2_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ROpWeightedNorm2_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ROpWeightedNorm2_UnitTests.cpp'; fi`
 
-validate_apply_op_UnitTests.o: $(srcdir)/validate_apply_op_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT validate_apply_op_UnitTests.o -MD -MP -MF $(DEPDIR)/validate_apply_op_UnitTests.Tpo -c -o validate_apply_op_UnitTests.o `test -f '$(srcdir)/validate_apply_op_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/validate_apply_op_UnitTests.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/validate_apply_op_UnitTests.Tpo $(DEPDIR)/validate_apply_op_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/validate_apply_op_UnitTests.cpp' object='validate_apply_op_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+TOpSetSubVector_UnitTests.o: $(srcdir)/TOpSetSubVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpSetSubVector_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpSetSubVector_UnitTests.Tpo -c -o TOpSetSubVector_UnitTests.o `test -f '$(srcdir)/TOpSetSubVector_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpSetSubVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpSetSubVector_UnitTests.Tpo $(DEPDIR)/TOpSetSubVector_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpSetSubVector_UnitTests.cpp' object='TOpSetSubVector_UnitTests.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o validate_apply_op_UnitTests.o `test -f '$(srcdir)/validate_apply_op_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/validate_apply_op_UnitTests.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpSetSubVector_UnitTests.o `test -f '$(srcdir)/TOpSetSubVector_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpSetSubVector_UnitTests.cpp
 
-validate_apply_op_UnitTests.obj: $(srcdir)/validate_apply_op_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT validate_apply_op_UnitTests.obj -MD -MP -MF $(DEPDIR)/validate_apply_op_UnitTests.Tpo -c -o validate_apply_op_UnitTests.obj `if test -f '$(srcdir)/validate_apply_op_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/validate_apply_op_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/validate_apply_op_UnitTests.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/validate_apply_op_UnitTests.Tpo $(DEPDIR)/validate_apply_op_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/validate_apply_op_UnitTests.cpp' object='validate_apply_op_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+TOpSetSubVector_UnitTests.obj: $(srcdir)/TOpSetSubVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpSetSubVector_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpSetSubVector_UnitTests.Tpo -c -o TOpSetSubVector_UnitTests.obj `if test -f '$(srcdir)/TOpSetSubVector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpSetSubVector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpSetSubVector_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpSetSubVector_UnitTests.Tpo $(DEPDIR)/TOpSetSubVector_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpSetSubVector_UnitTests.cpp' object='TOpSetSubVector_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o validate_apply_op_UnitTests.obj `if test -f '$(srcdir)/validate_apply_op_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/validate_apply_op_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/validate_apply_op_UnitTests.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpSetSubVector_UnitTests.obj `if test -f '$(srcdir)/TOpSetSubVector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpSetSubVector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpSetSubVector_UnitTests.cpp'; fi`
 
-opsUnitTestsHelpers.o: $(srcdir)/opsUnitTestsHelpers.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT opsUnitTestsHelpers.o -MD -MP -MF $(DEPDIR)/opsUnitTestsHelpers.Tpo -c -o opsUnitTestsHelpers.o `test -f '$(srcdir)/opsUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/opsUnitTestsHelpers.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/opsUnitTestsHelpers.Tpo $(DEPDIR)/opsUnitTestsHelpers.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/opsUnitTestsHelpers.cpp' object='opsUnitTestsHelpers.o' libtool=no @AMDEPBACKSLASH@
+supportUnitTestsHelpers.o: $(top_srcdir)/test/support/supportUnitTestsHelpers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT supportUnitTestsHelpers.o -MD -MP -MF $(DEPDIR)/supportUnitTestsHelpers.Tpo -c -o supportUnitTestsHelpers.o `test -f '$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/supportUnitTestsHelpers.Tpo $(DEPDIR)/supportUnitTestsHelpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp' object='supportUnitTestsHelpers.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o opsUnitTestsHelpers.o `test -f '$(srcdir)/opsUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/opsUnitTestsHelpers.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o supportUnitTestsHelpers.o `test -f '$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp
 
-opsUnitTestsHelpers.obj: $(srcdir)/opsUnitTestsHelpers.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT opsUnitTestsHelpers.obj -MD -MP -MF $(DEPDIR)/opsUnitTestsHelpers.Tpo -c -o opsUnitTestsHelpers.obj `if test -f '$(srcdir)/opsUnitTestsHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/opsUnitTestsHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/opsUnitTestsHelpers.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/opsUnitTestsHelpers.Tpo $(DEPDIR)/opsUnitTestsHelpers.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/opsUnitTestsHelpers.cpp' object='opsUnitTestsHelpers.obj' libtool=no @AMDEPBACKSLASH@
+supportUnitTestsHelpers.obj: $(top_srcdir)/test/support/supportUnitTestsHelpers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT supportUnitTestsHelpers.obj -MD -MP -MF $(DEPDIR)/supportUnitTestsHelpers.Tpo -c -o supportUnitTestsHelpers.obj `if test -f '$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp'; then $(CYGPATH_W) '$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/supportUnitTestsHelpers.Tpo $(DEPDIR)/supportUnitTestsHelpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp' object='supportUnitTestsHelpers.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o opsUnitTestsHelpers.obj `if test -f '$(srcdir)/opsUnitTestsHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/opsUnitTestsHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/opsUnitTestsHelpers.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o supportUnitTestsHelpers.obj `if test -f '$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp'; then $(CYGPATH_W) '$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp'; fi`
 
 Teuchos_StandardUnitTestMain.o: $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardUnitTestMain.o -MD -MP -MF $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo -c -o Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp

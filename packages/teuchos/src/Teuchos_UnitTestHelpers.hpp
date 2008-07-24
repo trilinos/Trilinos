@@ -141,8 +141,8 @@
 /** \brief Tempalte instantiation for a single templated type. */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2) \
   \
-  template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2>; \
-  TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2> \
+  template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2 >; \
+  TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2 > \
   instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2);
 
 

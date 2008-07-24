@@ -5690,7 +5690,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.rtop src/Makefile test/Makefile test/base/Makefile test/lapack/Makefile test/ops_lib/Makefile test/spmd/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.rtop src/Makefile test/Makefile test/base/Makefile test/lapack/Makefile test/ops_lib/Makefile test/spmd/Makefile test/support/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -6371,6 +6371,7 @@ do
     "test/lapack/Makefile") CONFIG_FILES="$CONFIG_FILES test/lapack/Makefile" ;;
     "test/ops_lib/Makefile") CONFIG_FILES="$CONFIG_FILES test/ops_lib/Makefile" ;;
     "test/spmd/Makefile") CONFIG_FILES="$CONFIG_FILES test/spmd/Makefile" ;;
+    "test/support/Makefile") CONFIG_FILES="$CONFIG_FILES test/support/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

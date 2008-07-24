@@ -23,9 +23,11 @@ extern bool verbose;
 namespace {
 
 
+using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::as;
 using Teuchos::tuple;
+using Teuchos::outArg;
 using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
 using Teuchos::ScalarTraits;
@@ -65,6 +67,42 @@ newStridedSubVectorView(const int n, const int stride, const Scalar &val)
   }
   return SubVectorView<Scalar>(
     0, n, vals, stride);
+}
+
+
+template<class Scalar>
+class ConstSubVectorViewAsArray {
+public:
+  ConstSubVectorViewAsArray(const ConstSubVectorView<Scalar> &sv)
+    :sv_(sv)
+    {}
+  int size() const { return sv_.subDim(); }
+  const Scalar operator[](int i) const { return sv_(i); }
+private:
+  ConstSubVectorView<Scalar> sv_;
+};
+
+
+template<class Scalar>
+ConstSubVectorViewAsArray<Scalar>
+constSubVectorViewAsArray(const ConstSubVectorView<Scalar> &sv)
+{
+  return ConstSubVectorViewAsArray<Scalar>(sv);
+}
+
+
+template<class Scalar>
+void dumpSubVectorView(
+  const ConstSubVectorView<Scalar> &sv, const std::string &sv_name,
+  std::ostream &out )
+{
+  out << sv_name << " = {";
+  for (index_type k = 0; k < sv.subDim(); ++k) {
+    out << sv[k];
+    if (k < sv.subDim() - 1)
+      out << ", ";
+  }
+  out << "}\n";
 }
 
 

@@ -38,15 +38,18 @@ namespace RTOpPack {
 
 
 //
-// ReductTargetScalar
+// DefaultReductTarget
 //
 
 
-template<class Scalar>
-std::string ReductTargetScalar<Scalar>::description() const
+template<class ConcreteReductObj>
+std::string DefaultReductTarget<ConcreteReductObj>::description() const
 {
   std::ostringstream oss;
-  oss << "RTOpPack::ReductTargetScalar<"<<ScalarTraits<Scalar>::name()<<">{scalar="<<scalar_<<"}";
+  oss
+    << "RTOpPack::DefaultReductTarget<"
+    <<TypeNameTraits<ConcreteReductObj>::name()<<">"
+    << "{concreteReductObj="<<concreteReductObj_<<"}";
   return oss.str();
 }
 
@@ -56,41 +59,17 @@ std::string ReductTargetScalar<Scalar>::description() const
 //
 
 
-template<class Scalar, class ReductScalar>
-void ROpScalarReductionBase<Scalar, ReductScalar>::reduce_reduct_objs(
+template<class Scalar, class ConcreteReductObj>
+void ROpScalarReductionBase<Scalar, ConcreteReductObj>::reduce_reduct_objs(
   const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
   ) const
 {
-  const ReductScalar in_val    = getRawVal(in_reduct_obj);
-  const ReductScalar inout_val = getRawVal(*inout_reduct_obj);
-#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  Teuchos::OSTab tab(out);
-  if(rtop_helpers_dump_all) {
-    *out << "\nEntering RTOpPack::ROpScalarReductionBase::reduce_reduct_objs(...) ...\n";
-    *out
-      << "\nop = " << this->description() << "\n"
-      << "in_reduct_obj = " << Teuchos::describe(in_reduct_obj,Teuchos::VERB_EXTREME)
-      << "in_val = " << in_val << "\n"
-      << "inout_reduct_obj (before reduction) = "
-      <<     Teuchos::describe(*inout_reduct_obj,Teuchos::VERB_EXTREME)
-      << "inout_val (before reduction) = " << inout_val << "\n";
-  }
-#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-  setRawVal( in_val + inout_val, inout_reduct_obj );
-#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-  if(rtop_helpers_dump_all) {
-    *out
-      << "\ninout_reduct_obj (after reduction) = "
-      << Teuchos::describe(*inout_reduct_obj,Teuchos::VERB_EXTREME);
-  }
-#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+  TEST_FOR_EXCEPT(true); // ToDo: This function should not even exist!
 }
 
 
-template<class Scalar, class ReductScalar>
-void ROpScalarReductionBase<Scalar, ReductScalar>::load_reduct_obj_state(
+template<class Scalar, class ConcreteReductObj>
+void ROpScalarReductionBase<Scalar, ConcreteReductObj>::load_reduct_obj_state(
   int num_values,
   const primitive_value_type value_data[],
   int num_indexes,
@@ -100,13 +79,11 @@ void ROpScalarReductionBase<Scalar, ReductScalar>::load_reduct_obj_state(
   ReductTarget *reduct_obj
   ) const
 {
+
+  using Teuchos::arrayView;
   typedef ScalarTraits<Scalar> ST;
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
-    num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
-    ,std::invalid_argument, "Error!"
-    );
-#endif
+  typedef PrimitiveTypeTraits<Scalar, ConcreteReductObj> PTT;
+
 #ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -139,17 +116,25 @@ void ROpScalarReductionBase<Scalar, ReductScalar>::load_reduct_obj_state(
     }
   }
 #endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-  Scalar val = ST::nan();
-  Teuchos::PrimitiveTypeTraits<Scalar>::loadPrimitiveObjs( num_values, value_data, &val );
-  ROpScalarReductionBaseRawValSetter<ST::isComplex,sizeof(Scalar)==sizeof(ReductScalar),Scalar,ReductScalar>::setRawVal( *this, val, reduct_obj );
+
+  ConcreteReductObj concrete_reduct_obj;
+
+  PTT::loadPrimitiveObjs(
+    arrayView(value_data, num_values), arrayView(index_data, num_indexes),
+    arrayView(char_data, num_chars),
+    Teuchos::outArg(concrete_reduct_obj) );
+
+  this->setRawVal( concrete_reduct_obj, reduct_obj );
+
 #ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
   if(rtop_helpers_dump_all) {
     *out << "\nOn output:\n";
     Teuchos::OSTab tab(out);
     *out << "val = " << val << "\n";
-    *out << "reduct_op = " << Teuchos::describe(*reduct_obj,Teuchos::VERB_EXTREME);
+    *out << "reduct_op = " << Teuchos::describe(*reduct_obj, Teuchos::VERB_EXTREME);
   }
 #endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+
 }
 
 
@@ -256,12 +241,12 @@ void RTOpPack::validate_apply_op(
 //
 
 
-#define RTOPPACK_RTOPT_HELPERS_REDUCTTARGETSCALAR_INSTANT(SCALAR) \
+#define RTOPPACK_RTOPT_HELPERS_DEFAULTREDUCTTARGET_INSTANT(SCALAR) \
   \
-  template std::string ReductTargetScalar<SCALAR >::description() const;
+  template std::string DefaultReductTarget<SCALAR >::description() const;
 
 
-#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_REDUCE_REDUCT_OBJS_INSTANT( \
+#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT( \
   SCALAR, REDUCTSCALAR \
   ) \
   \
@@ -279,11 +264,37 @@ void RTOpPack::validate_apply_op(
     ReductTarget *reduct_obj \
     ) const;
 
+
+#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INDEX_INSTANT( \
+  SCALAR \
+  ) \
+  \
+  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, index_type)
+
+
+#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_SCALARINDEX_INSTANT( \
+  SCALAR \
+  ) \
+  \
+  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, ScalarIndex<SCALAR >)
+
+
+#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_SUBVECTORVIEW_INSTANT( \
+  SCALAR \
+  ) \
+  \
+  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, SubVectorView<SCALAR >)
+
+
 #define RTOPPACK_RTOPT_HELPERS_INSTANT_SCALAR(SCALAR) \
   \
-  RTOPPACK_RTOPT_HELPERS_REDUCTTARGETSCALAR_INSTANT(SCALAR) \
+  RTOPPACK_RTOPT_HELPERS_DEFAULTREDUCTTARGET_INSTANT(SCALAR) \
   \
-  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_REDUCE_REDUCT_OBJS_INSTANT(SCALAR, SCALAR) \
+  RTOPPACK_RTOPT_HELPERS_DEFAULTREDUCTTARGET_INSTANT(ScalarIndex<SCALAR >) \
+  \
+  RTOPPACK_RTOPT_HELPERS_DEFAULTREDUCTTARGET_INSTANT(SubVectorView<SCALAR >) \
+  \
+  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, SCALAR) \
   \
   template void validate_apply_op<SCALAR >( \
     const RTOpT<SCALAR > &op, \

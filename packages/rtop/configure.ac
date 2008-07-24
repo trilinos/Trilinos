@@ -298,6 +298,7 @@ AC_CONFIG_FILES([
     test/lapack/Makefile
     test/ops_lib/Makefile
     test/spmd/Makefile
+    test/support/Makefile
     ])
 
 AC_OUTPUT()

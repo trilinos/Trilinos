@@ -284,19 +284,8 @@ void VectorDefaultBase<Scalar>::releaseDetachedMultiVectorViewImpl(
   RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
   ) const
 {
-#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
-  *dbgout << "\nThyra::VectorDefaultBase<"
-          <<Teuchos::ScalarTraits<Scalar>::name()
-          <<">::releaseDetachedMultiVectorViewImpl() const called!\n";
-#endif
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(sub_mv==NULL);
-#endif
-  RTOpPack::ConstSubVectorView<Scalar> sv(
-    sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
-  releaseDetachedView(&sv);
-  sub_mv->set_uninitialized();
+  TEST_FOR_EXCEPT(sub_mv == 0);
+  sub_mv->uninitialize();
 }
 
 
@@ -343,7 +332,7 @@ void VectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
   RTOpPack::SubVectorView<Scalar> sv(
     sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
   commitDetachedView(&sv);
-  sub_mv->set_uninitialized();
+  sub_mv->uninitialize();
 }
 
 
@@ -364,10 +353,6 @@ void VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
     " Error, rng = ["<<rng.lbound()<<","<<rng.ubound()
     <<"] is not in range = [0,"<<(this->space()->dim()-1)<<"]" );
 #endif
-  // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
-  if( sub_vec_inout->values().get() ) {
-    delete [] sub_vec_inout->values().get();
-  }
   // Initialize the operator
   RTOpPack::ROpGetSubVector<Scalar> get_sub_vector_op(rng.lbound(),rng.ubound());
   // Create the reduction object (another sub_vec)
@@ -376,14 +361,11 @@ void VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
   // Perform the reduction (get the sub-vector requested)
   const VectorBase<Scalar>* sub_vecs[] = { this };
   ::Thyra::applyOp<Scalar>(
-    get_sub_vector_op,1,sub_vecs,0,NULL,&*reduct_obj
-    ,rng.lbound(),rng.size(),rng.lbound() // first_ele_offset,sub_dim,global_offset
+    get_sub_vector_op, 1, sub_vecs, 0, NULL, &*reduct_obj,
+    rng.lbound(),rng.size(),rng.lbound() // first_ele_offset,sub_dim,global_offset
     );
-  // Get the sub-vector.  Note reduct_obj will go out of scope so the sub_vec parameter will
-  // own the memory allocated within get_sub_vector_op.create_reduct_obj_raw(...).  This is okay
-  // since the client is required to call release_sub_vector(...) so release memory!
-  RTOpPack::ReductTargetSubVectorT<Scalar> &sub_vec_ro = get_sub_vector_op(*reduct_obj);
-  sub_vec_ro.transfer(sub_vec_inout);
+  // Get the sub-vector.
+  *sub_vec_inout = get_sub_vector_op(*reduct_obj);
 }
 
 
@@ -392,9 +374,8 @@ void VectorDefaultBase<Scalar>::releaseDetachedVectorViewImpl(
   RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  // Free sub_vec if needed (note this is dependent on the implementation of
-  // this operator class!)
-  RTOpPack::ReductTargetSubVectorT<Scalar>::free(sub_vec);
+  TEST_FOR_EXCEPT(sub_vec == 0);
+  sub_vec->uninitialize();
 }
 
 
@@ -416,7 +397,7 @@ void VectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(
   VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl( rng, &sub_vec );
   sub_vec_inout->initialize(
     sub_vec.globalOffset(), sub_vec.subDim(),
-    const_cast<Scalar*>(sub_vec.values().get()),sub_vec.stride()
+    Teuchos::arcp_const_cast<Scalar>(sub_vec.values()), sub_vec.stride()
     );
 }
 
@@ -426,14 +407,13 @@ void VectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(
   RTOpPack::SubVectorView<Scalar>* sub_vec_inout
   )
 {
+  TEST_FOR_EXCEPT(sub_vec_inout == 0);
   RTOpPack::SparseSubVectorT<Scalar> spc_sub_vec(
     sub_vec_inout->globalOffset(), sub_vec_inout->subDim()
-    ,sub_vec_inout->values().get(), sub_vec_inout->stride()
+    ,sub_vec_inout->values(), sub_vec_inout->stride()
     );
-  VectorDefaultBase<Scalar>::setSubVectorImpl( spc_sub_vec ); // Commit the changes!
-  RTOpPack::ConstSubVectorView<Scalar> sub_vec(*sub_vec_inout);
-  VectorDefaultBase<Scalar>::releaseDetachedVectorViewImpl( &sub_vec ); // Free the memory!
-  sub_vec_inout->set_uninitialized(); // Make null as promised!
+  VectorDefaultBase<Scalar>::setSubVectorImpl(spc_sub_vec); // Commit the changes!
+  sub_vec_inout->uninitialize(); // Make null as promised!
 }
 
 

@@ -228,8 +228,8 @@ int main(int argc, char *argv[])
     Teuchos::RCP<const Epetra_Vector> final_x = 
       get_Epetra_Vector(*(epetraModel->get_x_map()), stepper.getStepStatus().solution);
     double final_tol = 1.0e-2;
-    if (abs((*final_x)[0]-1.93704) < final_tol &&
-	abs((*final_x)[1]+0.70225) < final_tol)
+    if (std::abs((*final_x)[0]-1.93704) < final_tol &&
+      std::abs((*final_x)[1]+0.70225) < final_tol)
       success = true;
     else 
       success = false;

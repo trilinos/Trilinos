@@ -162,7 +162,7 @@ public:
   SparseSubVectorT( const ConstSubVectorView<Scalar>& sv )
     :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()), subNz_(sv.subDim()),
      values_(sv.values()),  valuesStride_(sv.stride()), indicesStride_(0),
-     localOffset_(0), isSorted_(sv.isSorted())
+     localOffset_(0), isSorted_(true)
     {}
   /** \brief . */
   void initialize(

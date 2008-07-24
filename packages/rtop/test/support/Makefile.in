@@ -33,8 +33,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = RTOpPack_Types_test$(EXEEXT) baseUnitTests$(EXEEXT)
-subdir = test/base
+bin_PROGRAMS = supportUnitTests$(EXEEXT)
+subdir = test/support
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
@@ -57,11 +57,10 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_RTOpPack_Types_test_OBJECTS = RTOpPack_Types_test.$(OBJEXT)
-RTOpPack_Types_test_OBJECTS = $(am_RTOpPack_Types_test_OBJECTS)
-am_baseUnitTests_OBJECTS = PrimitiveTypeTraits_UnitTests.$(OBJEXT) \
+am_supportUnitTests_OBJECTS = validate_apply_op_UnitTests.$(OBJEXT) \
+	supportUnitTestsHelpers.$(OBJEXT) \
 	Teuchos_StandardUnitTestMain.$(OBJEXT)
-baseUnitTests_OBJECTS = $(am_baseUnitTests_OBJECTS)
+supportUnitTests_OBJECTS = $(am_supportUnitTests_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -70,8 +69,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(RTOpPack_Types_test_SOURCES) $(baseUnitTests_SOURCES)
-DIST_SOURCES = $(RTOpPack_Types_test_SOURCES) $(baseUnitTests_SOURCES)
+SOURCES = $(supportUnitTests_SOURCES)
+DIST_SOURCES = $(supportUnitTests_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -187,18 +186,15 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-RTOpPack_Types_test_SOURCES = \
-	$(srcdir)/RTOpPack_Types_test.cpp
-
-RTOpPack_Types_test_DEPENDENCIES = $(top_builddir)/src/librtop.a
-RTOpPack_Types_test_LDADD = $(RTOP_LIBS)
-baseUnitTests_SOURCES = \
-  $(srcdir)/PrimitiveTypeTraits_UnitTests.cpp \
+supportUnitTests_SOURCES = \
+  $(srcdir)/validate_apply_op_UnitTests.cpp \
+  $(srcdir)/supportUnitTestsHelpers.cpp \
   $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 
-baseUnitTests_DEPENDENCIES = $(top_builddir)/src/librtop.a $(top_builddir)/../teuchos/src/libteuchos.a
-baseUnitTests_LDADD = $(RTOP_LIBS)
+supportUnitTests_DEPENDENCIES = $(top_builddir)/src/librtop.a $(top_builddir)/../teuchos/src/libteuchos.a
+supportUnitTests_LDADD = $(RTOP_LIBS)
 AM_CPPFLAGS = $(RTOP_INCLUDES)
+EXTRA_DIST = $(srcdir)/supportUnitTestsHelpers.hpp
 all: all-am
 
 .SUFFIXES:
@@ -212,9 +208,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/base/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/support/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/base/Makefile
+	  $(AUTOMAKE) --foreign  test/support/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -255,12 +251,9 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-RTOpPack_Types_test$(EXEEXT): $(RTOpPack_Types_test_OBJECTS) $(RTOpPack_Types_test_DEPENDENCIES) 
-	@rm -f RTOpPack_Types_test$(EXEEXT)
-	$(CXXLINK) $(RTOpPack_Types_test_OBJECTS) $(RTOpPack_Types_test_LDADD) $(LIBS)
-baseUnitTests$(EXEEXT): $(baseUnitTests_OBJECTS) $(baseUnitTests_DEPENDENCIES) 
-	@rm -f baseUnitTests$(EXEEXT)
-	$(CXXLINK) $(baseUnitTests_OBJECTS) $(baseUnitTests_LDADD) $(LIBS)
+supportUnitTests$(EXEEXT): $(supportUnitTests_OBJECTS) $(supportUnitTests_DEPENDENCIES) 
+	@rm -f supportUnitTests$(EXEEXT)
+	$(CXXLINK) $(supportUnitTests_OBJECTS) $(supportUnitTests_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -268,9 +261,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrimitiveTypeTraits_UnitTests.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_Types_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/supportUnitTestsHelpers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validate_apply_op_UnitTests.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -286,33 +279,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-RTOpPack_Types_test.o: $(srcdir)/RTOpPack_Types_test.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_Types_test.o -MD -MP -MF $(DEPDIR)/RTOpPack_Types_test.Tpo -c -o RTOpPack_Types_test.o `test -f '$(srcdir)/RTOpPack_Types_test.cpp' || echo '$(srcdir)/'`$(srcdir)/RTOpPack_Types_test.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RTOpPack_Types_test.Tpo $(DEPDIR)/RTOpPack_Types_test.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RTOpPack_Types_test.cpp' object='RTOpPack_Types_test.o' libtool=no @AMDEPBACKSLASH@
+validate_apply_op_UnitTests.o: $(srcdir)/validate_apply_op_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT validate_apply_op_UnitTests.o -MD -MP -MF $(DEPDIR)/validate_apply_op_UnitTests.Tpo -c -o validate_apply_op_UnitTests.o `test -f '$(srcdir)/validate_apply_op_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/validate_apply_op_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/validate_apply_op_UnitTests.Tpo $(DEPDIR)/validate_apply_op_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/validate_apply_op_UnitTests.cpp' object='validate_apply_op_UnitTests.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_Types_test.o `test -f '$(srcdir)/RTOpPack_Types_test.cpp' || echo '$(srcdir)/'`$(srcdir)/RTOpPack_Types_test.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o validate_apply_op_UnitTests.o `test -f '$(srcdir)/validate_apply_op_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/validate_apply_op_UnitTests.cpp
 
-RTOpPack_Types_test.obj: $(srcdir)/RTOpPack_Types_test.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_Types_test.obj -MD -MP -MF $(DEPDIR)/RTOpPack_Types_test.Tpo -c -o RTOpPack_Types_test.obj `if test -f '$(srcdir)/RTOpPack_Types_test.cpp'; then $(CYGPATH_W) '$(srcdir)/RTOpPack_Types_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RTOpPack_Types_test.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RTOpPack_Types_test.Tpo $(DEPDIR)/RTOpPack_Types_test.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RTOpPack_Types_test.cpp' object='RTOpPack_Types_test.obj' libtool=no @AMDEPBACKSLASH@
+validate_apply_op_UnitTests.obj: $(srcdir)/validate_apply_op_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT validate_apply_op_UnitTests.obj -MD -MP -MF $(DEPDIR)/validate_apply_op_UnitTests.Tpo -c -o validate_apply_op_UnitTests.obj `if test -f '$(srcdir)/validate_apply_op_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/validate_apply_op_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/validate_apply_op_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/validate_apply_op_UnitTests.Tpo $(DEPDIR)/validate_apply_op_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/validate_apply_op_UnitTests.cpp' object='validate_apply_op_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_Types_test.obj `if test -f '$(srcdir)/RTOpPack_Types_test.cpp'; then $(CYGPATH_W) '$(srcdir)/RTOpPack_Types_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RTOpPack_Types_test.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o validate_apply_op_UnitTests.obj `if test -f '$(srcdir)/validate_apply_op_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/validate_apply_op_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/validate_apply_op_UnitTests.cpp'; fi`
 
-PrimitiveTypeTraits_UnitTests.o: $(srcdir)/PrimitiveTypeTraits_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PrimitiveTypeTraits_UnitTests.o -MD -MP -MF $(DEPDIR)/PrimitiveTypeTraits_UnitTests.Tpo -c -o PrimitiveTypeTraits_UnitTests.o `test -f '$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PrimitiveTypeTraits_UnitTests.Tpo $(DEPDIR)/PrimitiveTypeTraits_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp' object='PrimitiveTypeTraits_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+supportUnitTestsHelpers.o: $(srcdir)/supportUnitTestsHelpers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT supportUnitTestsHelpers.o -MD -MP -MF $(DEPDIR)/supportUnitTestsHelpers.Tpo -c -o supportUnitTestsHelpers.o `test -f '$(srcdir)/supportUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/supportUnitTestsHelpers.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/supportUnitTestsHelpers.Tpo $(DEPDIR)/supportUnitTestsHelpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/supportUnitTestsHelpers.cpp' object='supportUnitTestsHelpers.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PrimitiveTypeTraits_UnitTests.o `test -f '$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o supportUnitTestsHelpers.o `test -f '$(srcdir)/supportUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/supportUnitTestsHelpers.cpp
 
-PrimitiveTypeTraits_UnitTests.obj: $(srcdir)/PrimitiveTypeTraits_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PrimitiveTypeTraits_UnitTests.obj -MD -MP -MF $(DEPDIR)/PrimitiveTypeTraits_UnitTests.Tpo -c -o PrimitiveTypeTraits_UnitTests.obj `if test -f '$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PrimitiveTypeTraits_UnitTests.Tpo $(DEPDIR)/PrimitiveTypeTraits_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp' object='PrimitiveTypeTraits_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+supportUnitTestsHelpers.obj: $(srcdir)/supportUnitTestsHelpers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT supportUnitTestsHelpers.obj -MD -MP -MF $(DEPDIR)/supportUnitTestsHelpers.Tpo -c -o supportUnitTestsHelpers.obj `if test -f '$(srcdir)/supportUnitTestsHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/supportUnitTestsHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/supportUnitTestsHelpers.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/supportUnitTestsHelpers.Tpo $(DEPDIR)/supportUnitTestsHelpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/supportUnitTestsHelpers.cpp' object='supportUnitTestsHelpers.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PrimitiveTypeTraits_UnitTests.obj `if test -f '$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PrimitiveTypeTraits_UnitTests.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o supportUnitTestsHelpers.obj `if test -f '$(srcdir)/supportUnitTestsHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/supportUnitTestsHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/supportUnitTestsHelpers.cpp'; fi`
 
 Teuchos_StandardUnitTestMain.o: $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardUnitTestMain.o -MD -MP -MF $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo -c -o Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp

@@ -33,7 +33,6 @@
 
 
 #include "RTOpPack_Types.hpp"
-#include "Teuchos_PrimitiveTypeTraits.hpp"
 #include "Teuchos_Describable.hpp"
 
 
@@ -168,7 +167,7 @@ public:
   //@{
 
   /** \brief . */
-  typedef typename Teuchos::PrimitiveTypeTraits<Scalar>::primitiveType
+  typedef typename PrimitiveTypeTraits<Scalar,Scalar>::primitiveType
   primitive_value_type;
 
   //@}
@@ -442,9 +441,7 @@ public:
     const Ptr<ReductTarget> &reduct_obj
     ) const
     {
-      this->apply_op(sub_vecs.size(), sub_vecs.getRawPtr(),
-        targ_sub_vecs.size(), targ_sub_vecs.getRawPtr(),
-        reduct_obj.get() );
+      apply_op_impl(sub_vecs, targ_sub_vecs, reduct_obj);
     }
 
   //@}
@@ -470,6 +467,18 @@ public:
   //@}
 
 protected:
+
+  /** \brief . */
+  virtual void apply_op_impl(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const
+    {
+      this->apply_op(sub_vecs.size(), sub_vecs.getRawPtr(),
+        targ_sub_vecs.size(), targ_sub_vecs.getRawPtr(),
+        reduct_obj.get() );
+    }
 
   /** \brief Constructor that creates an operator name appended with the
    * type. */

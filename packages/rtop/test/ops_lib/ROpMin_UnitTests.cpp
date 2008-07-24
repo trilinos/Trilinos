@@ -1,6 +1,6 @@
 
 #include "RTOpPack_ROpMin.hpp"
-#include "opsUnitTestsHelpers.hpp"
+#include "supportUnitTestsHelpers.hpp"
 
 
 namespace {
@@ -68,7 +68,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMin, reduct, Scalar )
 {
   using Teuchos::as;
   using Teuchos::dyn_cast;
-  using RTOpPack::ReductTargetScalar;
+  using RTOpPack::DefaultReductTarget;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef ScalarTraits<ScalarMag> SMT;
@@ -81,8 +81,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMin, reduct, Scalar )
   RCP<RTOpPack::ReductTarget> reduct1 = minOp.reduct_obj_create();
   RCP<RTOpPack::ReductTarget> reduct2 = minOp.reduct_obj_create();
 
-  ReductTargetScalar<ScalarMag> &scalarReduct1 =
-    dyn_cast<ReductTargetScalar<ScalarMag> >(*reduct1); 
+  DefaultReductTarget<ScalarMag> &scalarReduct1 =
+    dyn_cast<DefaultReductTarget<ScalarMag> >(*reduct1); 
 
   scalarReduct1.set(two);
   minOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );

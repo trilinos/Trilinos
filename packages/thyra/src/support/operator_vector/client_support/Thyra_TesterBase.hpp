@@ -32,18 +32,14 @@
 
 #include "Thyra_LinearOperatorImpl.hpp"
 #include "Thyra_TestSpecifier.hpp"
-#include "Thyra_SUNDIALS_Ops.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
 
-namespace Thyra
-{
-using Teuchos::RCP;
-using Teuchos::ScalarTraits;
+namespace Thyra {
 
-/** */
+/** \brief . */
 template <class Scalar>
 class TesterBase 
 {
@@ -51,7 +47,7 @@ public:
   /** \brief Local typedef for promoted scalar magnitude */
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-  /** */
+  /** \brief . */
   TesterBase(const RCP<const Comm<int> >& comm,
     const VectorSpace<Scalar>& space, int nCols,
     Teuchos::RCP<Teuchos::FancyOStream>& out)
@@ -66,31 +62,31 @@ public:
            << endl;
     }
 
-  /** */
+  /** \brief . */
   virtual ~TesterBase(){;}
 
-  /** */
+  /** \brief . */
   virtual bool runAllTests() const = 0 ;
 
 
-  /** */
+  /** \brief . */
   bool checkTest(const TestSpecifier<Scalar>& spec,
     const ScalarMag& err, 
     const string& testName) const ;
 
-  /** */
+  /** \brief . */
   void randomizeVec(Vector<Scalar>& x) const ;
 
-  /** */
+  /** \brief . */
   LinearOperator<Scalar> randomDenseOp() const ;
 
-  /** */
+  /** \brief . */
   const VectorSpace<Scalar>& space() const {return space_;}
 
-  /** */
+  /** \brief . */
   ostream& out() const {return *out_;}
 
-  /** */
+  /** \brief . */
   const Comm<int>& comm() const {return *comm_;}
     
 private:
@@ -100,6 +96,7 @@ private:
   mutable Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 
+
 template <class Scalar> 
 inline void TesterBase<Scalar>
 ::randomizeVec(Vector<Scalar>& x) const
@@ -108,6 +105,7 @@ inline void TesterBase<Scalar>
   randomize(Scalar(-ST::one()),Scalar(+ST::one()),x.ptr().get());
     
 }
+
 
 template <class Scalar> 
 inline bool TesterBase<Scalar>
@@ -138,6 +136,7 @@ inline bool TesterBase<Scalar>
   return rtn;
 }
 
+
 template <class Scalar>
 inline LinearOperator<Scalar> TesterBase<Scalar>
 ::randomDenseOp() const 
@@ -148,8 +147,9 @@ inline LinearOperator<Scalar> TesterBase<Scalar>
   RCP<LinearOpBase<Scalar> > rtn = mv;
   return rtn;
 }
+ 
+ 
+} // namespace Thyra
 
-  
-  
-}
-#endif
+
+#endif // THYRA_TESTERBASE_HPP

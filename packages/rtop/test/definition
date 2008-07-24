@@ -18,15 +18,31 @@
 
 
 (FRAMEWORK,INSTALL) {
-    TESTS = spmd/runSpmdTests.exe;
+    TESTS = base/baseUnitTests.exe;
     ARGS = ;
     EXIT-STATUS = STRING-COMPARISON;
-    COMM = MPI, SERIAL;
+    COMM = MPI(1), SERIAL;
+}
+
+
+(FRAMEWORK,INSTALL) {
+    TESTS = support/supportUnitTests.exe;
+    ARGS = ;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1), SERIAL;
 }
 
 
 (FRAMEWORK,INSTALL) {
     TESTS = ops_lib/opsUnitTests.exe;
+    ARGS = ;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1), SERIAL;
+}
+
+
+(FRAMEWORK,INSTALL) {
+    TESTS = spmd/runSpmdTests.exe;
     ARGS = ;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI, SERIAL;

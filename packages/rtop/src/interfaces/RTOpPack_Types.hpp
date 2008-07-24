@@ -37,7 +37,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_implicit_cast.hpp"
 
 
 namespace RTOpPack {
@@ -61,6 +63,8 @@ using Teuchos::ArrayView;
 using Teuchos::Array;
 /** \brief . */
 using Teuchos::ScalarTraits;
+/** \brief . */
+using Teuchos::TypeNameTraits;
 
 /** \brief Depreciated. */
 typedef Teuchos_Index index_type;
@@ -142,10 +146,16 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_ASSERT(globalOffset >= 0);
-      TEUCHOS_ASSERT(subDim >= 0);
-      TEUCHOS_ASSERT(stride != 0);
-      TEUCHOS_ASSERT(subDim*std::abs(stride) - 1 <= values.upperOffset());
-      TEUCHOS_ASSERT(values.lowerOffset() <= 0);
+      if (!is_null(values)) {
+        TEUCHOS_ASSERT(subDim >= 0);
+        TEUCHOS_ASSERT(stride != 0);
+        TEUCHOS_ASSERT(subDim*std::abs(stride) - 1 <= values.upperOffset());
+        TEUCHOS_ASSERT(values.lowerOffset() <= 0);
+      }
+      else {
+        TEUCHOS_ASSERT(stride == 0);
+        TEUCHOS_ASSERT(subDim==0);
+      }
 #endif
       globalOffset_=globalOffset;
       subDim_=subDim;
@@ -294,6 +304,24 @@ void assign_entries( const Ptr<const SubVectorView<Scalar> > &msv,
 }
 
 
+/** \brief .
+ *
+ * \relates ConstSubVectorView
+ */
+template<class Scalar>
+std::ostream& operator<<(std::ostream &out, const ConstSubVectorView<Scalar> &sv)
+{
+  out
+    << "{"
+    << "globalOffset="<<sv.globalOffset()
+    << ",subDim="<<sv.subDim()
+    << ",values="<<sv.values()
+    << ",stride="<<sv.stride()
+    << "}";
+  return out;
+}
+
+
 //
 // MultiVectorBase subviews
 //
@@ -355,11 +383,18 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_ASSERT(globalOffset >= 0);
-      TEUCHOS_ASSERT(subDim >= 0);
       TEUCHOS_ASSERT(colOffset >= 0);
-      TEUCHOS_ASSERT(leadingDim >= subDim);
-      TEUCHOS_ASSERT(numSubCols*leadingDim - 1 <= values.upperOffset());
-      TEUCHOS_ASSERT(values.lowerOffset() <= 0);
+      if (!is_null(values)) {
+        TEUCHOS_ASSERT(subDim >= 0);
+        TEUCHOS_ASSERT(leadingDim >= subDim);
+        TEUCHOS_ASSERT(numSubCols*leadingDim - 1 <= values.upperOffset());
+        TEUCHOS_ASSERT(values.lowerOffset() <= 0);
+      }
+      else {
+        TEUCHOS_ASSERT(subDim == 0);
+        TEUCHOS_ASSERT(leadingDim == 0);
+        TEUCHOS_ASSERT(numSubCols == 0);
+      }
 #endif
       globalOffset_=globalOffset;
       subDim_=subDim;
@@ -567,7 +602,302 @@ void assign_entries( const Ptr<const SubMultiVectorView<Scalar> > &msmv,
 
 
 //
-// Templated types
+// Primitive Type Traits
+//
+
+
+/** \brief A templated traits class for decomposing object into an
+ * array of primitive objects.
+ *
+ * The idea behind this traits class it that it allows an object of
+ * semi-complex structure to be externalized into arrays of primitive data
+ * types.
+ *
+ * This default traits class works just fine for types that are
+ * already primitive.
+ */
+template <class Scalar, class ConcreteObj>
+class PrimitiveTypeTraits {
+public:
+  /** \brief . */
+  typedef Scalar primitiveType;
+  /** \brief . */
+  static int numPrimitiveObjs()
+    { return Scalar::this_type_is_missing_a_specialization(); }
+  /** \brief . */
+  static int numIndexObjs()
+    { return Scalar::this_type_is_missing_a_specialization(); }
+  /** \brief . */
+  static int numCharObjs()
+    { return Scalar::this_type_is_missing_a_specialization(); }
+  /** \brief . */
+  static void extractPrimitiveObjs(
+    const Scalar &obj,
+    const ArrayView<primitiveType> &primitiveObjs,
+    const ArrayView<index_type> &indexObjs,
+    const ArrayView<char> &charObjs
+    )
+    {
+      Scalar::this_type_is_missing_a_specialization(obj);
+    }
+  /** \brief . */
+  static void loadPrimitiveObjs(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs,
+    const Ptr<Scalar> &obj
+    )
+    {
+      *obj = Scalar::this_type_is_missing_a_specialization();
+    }
+};
+
+
+
+/** \brief Specialization where the scalar type is the same as the concrete
+ * object type.
+ */
+template <class Scalar>
+class PrimitiveTypeTraits<Scalar, Scalar> {
+public:
+  /** \brief . */
+  typedef Scalar primitiveType;
+  /** \brief . */
+  static int numPrimitiveObjs() { return 1; }
+  /** \brief . */
+  static int numIndexObjs() { return 0; }
+  /** \brief . */
+  static int numCharObjs() { return 0; }
+  /** \brief . */
+  static void extractPrimitiveObjs(
+    const Scalar &obj,
+    const ArrayView<primitiveType> &primitiveObjs,
+    const ArrayView<index_type> &indexObjs,
+    const ArrayView<char> &charObjs
+    )
+    {
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      primitiveObjs[0] = obj;
+    }
+  /** \brief . */
+  static void loadPrimitiveObjs(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs,
+    const Ptr<Scalar> &obj
+    )
+    {
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      *obj = primitiveObjs[0];
+    }
+private:
+  static void assertInput(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs
+    )
+    {
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPT( primitiveObjs.size()!=1 || indexObjs.size()!=0
+        || charObjs.size()!=0 );
+#endif
+    }
+};
+
+
+/** \brief Specialization for index_type concrete object. */
+template <class Scalar>
+class PrimitiveTypeTraits<Scalar, index_type> {
+public:
+  /** \brief . */
+  typedef PrimitiveTypeTraits<Scalar,Scalar> ScalarPrimitiveTypeTraits;
+  /** \brief . */
+  typedef typename ScalarPrimitiveTypeTraits::primitiveType primitiveType;
+  /** \brief . */
+  static int numPrimitiveObjs() { return 0; }
+  /** \brief . */
+  static int numIndexObjs() { return 1; }
+  /** \brief . */
+  static int numCharObjs() { return 0; }
+  /** \brief . */
+  static void extractPrimitiveObjs(
+    const index_type &obj,
+    const ArrayView<primitiveType> &primitiveObjs,
+    const ArrayView<index_type> &indexObjs,
+    const ArrayView<char> &charObjs
+    )
+    {
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      indexObjs[0] = obj;
+    }
+  /** \brief . */
+  static void loadPrimitiveObjs(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs,
+    const Ptr<index_type> &obj
+    )
+    {
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      *obj = indexObjs[0];
+    }
+private:
+  static void assertInput(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs
+    )
+    {
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPT( primitiveObjs.size()!=0 || indexObjs.size()!=1
+        || charObjs.size()!=0 );
+#endif
+    }
+};
+
+
+#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+
+
+/** \brief Partial specialization of <tt>PrimitiveTypeTraits</tt> for
+ * <tt>std::complex<Scalar> scalar type and reduction type</tt>.
+ */
+template <class Scalar>
+class PrimitiveTypeTraits<std::complex<Scalar>, std::complex<Scalar> > {
+public:
+  /** \brief . */
+  typedef PrimitiveTypeTraits<Scalar,Scalar> ScalarPrimitiveTypeTraits;
+  /** \brief . */
+  typedef typename ScalarPrimitiveTypeTraits::primitiveType primitiveType;
+  /** \brief . */
+  static int numPrimitiveObjs()
+    { return 2*ScalarPrimitiveTypeTraits::numPrimitiveObjs(); }
+  /** \brief . */
+  static int numIndexObjs() { return 0; }
+  /** \brief . */
+  static int numCharObjs() { return 0; }
+  /** \brief . */
+  static void extractPrimitiveObjs(
+    const std::complex<Scalar> &obj,
+    const ArrayView<primitiveType> &primitiveObjs,
+    const ArrayView<index_type> &indexObjs,
+    const ArrayView<char> &charObjs
+    )
+    {
+      using Teuchos::null;
+      const int numScalarPrimitiveObjs =
+        ScalarPrimitiveTypeTraits::numPrimitiveObjs();
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      ScalarPrimitiveTypeTraits::extractPrimitiveObjs(
+        obj.real(), primitiveObjs(0,numScalarPrimitiveObjs), null, null );
+      ScalarPrimitiveTypeTraits::extractPrimitiveObjs(
+        obj.imag(), primitiveObjs(numScalarPrimitiveObjs,numScalarPrimitiveObjs), null, null );
+    }
+  /** \brief . */
+  static void loadPrimitiveObjs(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs,
+    const Ptr<std::complex<Scalar> > &obj
+    )
+    {
+      using Teuchos::null;
+      using Teuchos::outArg;
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      const int numScalarPrimitiveObjs =
+        ScalarPrimitiveTypeTraits::numPrimitiveObjs();
+      Scalar real, imag;
+      ScalarPrimitiveTypeTraits::loadPrimitiveObjs(
+        primitiveObjs(0,numScalarPrimitiveObjs), null, null,
+        outArg(real) );
+      ScalarPrimitiveTypeTraits::loadPrimitiveObjs(
+        primitiveObjs(numScalarPrimitiveObjs,numScalarPrimitiveObjs), null, null,
+        outArg(imag) );
+      *obj = std::complex<Scalar>( real, imag );
+    }
+private:
+  static void assertInput(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs
+    )
+    {
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPT(
+        primitiveObjs.size()!=2*ScalarPrimitiveTypeTraits::numPrimitiveObjs()
+        || indexObjs.size()!=0
+        || charObjs.size()!=0 );
+#endif
+    }
+};
+
+
+/** \brief Partial specialization of <tt>PrimitiveTypeTraits</tt> for
+ * <tt>std::complex<Scalar> scalar type and Scalar reduction type</tt>.
+ */
+template <class Scalar>
+class PrimitiveTypeTraits<std::complex<Scalar>, Scalar> {
+public:
+  /** \brief . */
+  typedef PrimitiveTypeTraits<Scalar,Scalar> ScalarPrimitiveTypeTraits;
+  /** \brief . */
+  typedef typename ScalarPrimitiveTypeTraits::primitiveType primitiveType;
+  /** \brief . */
+  static int numPrimitiveObjs()
+    { return ScalarPrimitiveTypeTraits::numPrimitiveObjs(); }
+  /** \brief . */
+  static int numIndexObjs() { return 0; }
+  /** \brief . */
+  static int numCharObjs() { return 0; }
+  /** \brief . */
+  static void extractPrimitiveObjs(
+    const Scalar &obj,
+    const ArrayView<primitiveType> &primitiveObjs,
+    const ArrayView<index_type> &indexObjs,
+    const ArrayView<char> &charObjs
+    )
+    {
+      using Teuchos::null;
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      ScalarPrimitiveTypeTraits::extractPrimitiveObjs(
+        obj, primitiveObjs, null, null );
+    }
+  /** \brief . */
+  static void loadPrimitiveObjs(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs,
+    const Ptr<Scalar > &obj
+    )
+    {
+      using Teuchos::null;
+      assertInput(primitiveObjs, indexObjs, charObjs);
+      ScalarPrimitiveTypeTraits::loadPrimitiveObjs(
+        primitiveObjs, null, null, obj );
+    }
+private:
+  static void assertInput(
+    const ArrayView<const primitiveType> &primitiveObjs,
+    const ArrayView<const index_type> &indexObjs,
+    const ArrayView<const char> &charObjs
+    )
+    {
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPT(
+        primitiveObjs.size()!=ScalarPrimitiveTypeTraits::numPrimitiveObjs()
+        || indexObjs.size()!=0
+        || charObjs.size()!=0 );
+#endif
+    }
+};
+
+
+#endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+
+
+
+//
+// Forward declaration for templated types
 //
 
 

@@ -109,7 +109,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_Polynomial.hpp \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
-	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Ptr.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \

@@ -1,12 +1,13 @@
 
 #include "RTOpPack_ROpNorm2.hpp"
-#include "opsUnitTestsHelpers.hpp"
+#include "supportUnitTestsHelpers.hpp"
 
 
 namespace {
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm2, unitStride, Scalar )
+template<class Scalar>
+void basicTest(const int stride, FancyOStream &out, bool &success)
 {
   using Teuchos::as;
   typedef ScalarTraits<Scalar> ST;
@@ -14,11 +15,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm2, unitStride, Scalar )
   typedef ScalarTraits<ScalarMag> SMT;
   const Scalar v = ST::random();
   out << "v="<<v<<"\n";
-  SubVectorView<Scalar> sv = newSubVectorView<Scalar>(n, v);
+  ConstSubVectorView<Scalar> sv = newStridedSubVectorView<Scalar>(n, stride, v);
   RTOpPack::ROpNorm2<Scalar> norm2Op;
   RCP<RTOpPack::ReductTarget> norm2 = norm2Op.reduct_obj_create();
   norm2Op.apply_op(
-    tuple<ConstSubVectorView<Scalar> >(sv)(),
+    tuple(sv)(),
     Teuchos::null,
     norm2.ptr()
     );
@@ -27,28 +28,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm2, unitStride, Scalar )
     as<ScalarMag>(ST::eps() * errorTolSlack) );
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm2, unitStride, Scalar )
+{
+  basicTest<Scalar>(1, out, success);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ROpNorm2, unitStride )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm2, nonunitStride, Scalar )
 {
-  using Teuchos::as;
-  typedef ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
-  typedef ScalarTraits<ScalarMag> SMT;
-  const Scalar v = ST::random();
-  out << "v="<<v<<"\n";
-  SubVectorView<Scalar> sv = newStridedSubVectorView<Scalar>(n, 3, v);
-  RTOpPack::ROpNorm2<Scalar> norm2Op;
-  RCP<RTOpPack::ReductTarget> norm2 = norm2Op.reduct_obj_create();
-  norm2Op.apply_op(
-    tuple<ConstSubVectorView<Scalar> >(sv)(),
-    Teuchos::null,
-    norm2.ptr()
-    );
-  TEST_FLOATING_EQUALITY( norm2Op(*norm2),
-    SMT::squareroot(n)*ST::magnitude(v),
-    as<ScalarMag>(ST::eps() * errorTolSlack) );
+  basicTest<Scalar>(4, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ROpNorm2, nonunitStride )
@@ -58,7 +49,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm2, reduct, Scalar )
 {
   using Teuchos::as;
   using Teuchos::dyn_cast;
-  using RTOpPack::ReductTargetScalar;
+  using RTOpPack::DefaultReductTarget;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef ScalarTraits<ScalarMag> SMT;
@@ -72,10 +63,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm2, reduct, Scalar )
   RCP<RTOpPack::ReductTarget> reduct1 = norm2Op.reduct_obj_create();
   RCP<RTOpPack::ReductTarget> reduct2 = norm2Op.reduct_obj_create();
 
-  ReductTargetScalar<Scalar> &scalarReduct1 =
-    dyn_cast<ReductTargetScalar<Scalar> >(*reduct1); 
-  ReductTargetScalar<Scalar> &scalarReduct2 =
-    dyn_cast<ReductTargetScalar<Scalar> >(*reduct2); 
+  DefaultReductTarget<Scalar> &scalarReduct1 =
+    dyn_cast<DefaultReductTarget<Scalar> >(*reduct1); 
+  DefaultReductTarget<Scalar> &scalarReduct2 =
+    dyn_cast<DefaultReductTarget<Scalar> >(*reduct2); 
 
   scalarReduct1.set(three);
   scalarReduct2.set(four);

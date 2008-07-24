@@ -36,15 +36,14 @@
 namespace RTOpPack {
 
 
-/** \brief Norm 2 element-wise reduction operator. */
+/** \brief . */
 template<class Scalar>
 class ROpNorm2EleWiseReduction
 {
 public:
   void operator()( const Scalar &v0, Scalar &reduct ) const
     {
-      const Scalar mag_v0 = ScalarTraits<Scalar>::magnitude(v0);
-      reduct += (mag_v0 * mag_v0);
+      reduct += ScalarTraits<Scalar>::conjugate(v0)*v0;
     }
 };
 

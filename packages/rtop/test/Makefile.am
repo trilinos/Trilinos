@@ -31,7 +31,7 @@
 
 all-local:
 
-SUBDIRS = base spmd ops_lib lapack
+SUBDIRS = base spmd ops_lib lapack support
 
 EXTRA_DIST = definition
 
