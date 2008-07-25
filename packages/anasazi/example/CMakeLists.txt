@@ -1,28 +1,28 @@
 # $Header$
 
 # Required modules
-INCLUDE(Trilinos_Add_Executable)
+INCLUDE(Trilinos_Add_Executable_And_Test)
 
 # Setup include directories and library dependencies
 INCLUDE_DIRECTORIES(${${PROJECT_NAME}_INCLUDE_DIRS})
 LINK_LIBRARIES(${${PROJECT_NAME}_LIBRARIES})
 
 # Example definitions
-TRILINOS_ADD_EXECUTABLE(BlockDavidson NAME BlockDavidsonEpetraEx EXAMPLE SOURCES BlockDavidsonEpetraEx.cpp)
-TRILINOS_ADD_EXECUTABLE(BlockKrylovSchur NAME BlockKrylovSchurEpetraEx EXAMPLE SOURCES BlockKrylovSchurEpetraEx.cpp)
-TRILINOS_ADD_EXECUTABLE(BlockKrylovSchur NAME BlockKrylovSchurEpetraExSVD EXAMPLE SOURCES BlockKrylovSchurEpetraExSVD.cpp)
-TRILINOS_ADD_EXECUTABLE(LOBPCG NAME LOBPCGEpetraEx EXAMPLE SOURCES LOBPCGEpetraEx.cpp)
-TRILINOS_ADD_EXECUTABLE(LOBPCG NAME LOBPCGEpetraExSimple EXAMPLE SOURCES LOBPCGEpetraExSimple.cpp)
-TRILINOS_ADD_EXECUTABLE(MVOPTester NAME EXAMPLE SOURCES MVOPTesterEx.cpp)
+TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockDavidson NAME BlockDavidsonEpetraEx EXAMPLE SOURCES BlockDavidsonEpetraEx.cpp)
+TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockKrylovSchur NAME BlockKrylovSchurEpetraEx EXAMPLE SOURCES BlockKrylovSchurEpetraEx.cpp)
+TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockKrylovSchur NAME BlockKrylovSchurEpetraExSVD EXAMPLE SOURCES BlockKrylovSchurEpetraExSVD.cpp)
+TRILINOS_ADD_EXECUTABLE_AND_TEST(LOBPCG NAME LOBPCGEpetraEx EXAMPLE SOURCES LOBPCGEpetraEx.cpp)
+TRILINOS_ADD_EXECUTABLE_AND_TEST(LOBPCG NAME LOBPCGEpetraExSimple EXAMPLE SOURCES LOBPCGEpetraExSimple.cpp)
+TRILINOS_ADD_EXECUTABLE_AND_TEST(MVOPTester NAME EXAMPLE SOURCES MVOPTesterEx.cpp)
 
 # Requires Trilinos packages not yet setup
-#TRILINOS_ADD_EXECUTABLE(BlockDavidson NAME BlockDavidsonEpetraExFile EXAMPLE SOURCES BlockDavidsonEpetraExFile.cpp)
-#TRILINOS_ADD_EXECUTABLE(BlockKrylovSchur NAME BlockKrylovSchurEpetraExFile EXAMPLE SOURCES BlockKrylovSchurEpetraExFile.cpp)
-#TRILINOS_ADD_EXECUTABLE(LOBPCG NAME LOBPCGEpetraExFile EXAMPLE SOURCES LOBPCGEpetraExFile.cpp)
-#TRILINOS_ADD_EXECUTABLE(BlockKrylovSchur NAME BlockKrylovSchurEpetraExGenAmesos EXAMPLE SOURCES BlockKrylovSchurEpetraExGenAmesos.cpp)
-#TRILINOS_ADD_EXECUTABLE(BlockKrylovSchur NAME BlockKrylovSchurEpetraExGenAztecOO EXAMPLE SOURCES BlockKrylovSchurEpetraExGenAztecOO.cpp)
-#TRILINOS_ADD_EXECUTABLE(BlockKrylovSchur NAME BlockKrylovSchurEpetraExGenBelos EXAMPLE SOURCES BlockKrylovSchurEpetraExGenBelos.cpp)
-#TRILINOS_ADD_EXECUTABLE(BlockDavidson NAME BlockDavidsonEpetraExGen EXAMPLE SOURCES BlockDavidsonEpetraExGen.cpp)
-#TRILINOS_ADD_EXECUTABLE(BlockDavidson NAME BlockDavidsonEpetraExGenPrecIfpack EXAMPLE SOURCES BlockDavidsonEpetraExGenPrecIfpack.cpp)
-#TRILINOS_ADD_EXECUTABLE(LOBPCG NAME LOBPCGEpetraExGen EXAMPLE SOURCES LOBPCGEpetraExGen.cpp)
-#TRILINOS_ADD_EXECUTABLE(LOBPCG NAME LOBPCGEpetraExGenPrecIfpack EXAMPLE SOURCES LOBPCGEpetraExGenPrecIfpack.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockDavidson NAME BlockDavidsonEpetraExFile EXAMPLE SOURCES BlockDavidsonEpetraExFile.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockKrylovSchur NAME BlockKrylovSchurEpetraExFile EXAMPLE SOURCES BlockKrylovSchurEpetraExFile.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(LOBPCG NAME LOBPCGEpetraExFile EXAMPLE SOURCES LOBPCGEpetraExFile.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockKrylovSchur NAME BlockKrylovSchurEpetraExGenAmesos EXAMPLE SOURCES BlockKrylovSchurEpetraExGenAmesos.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockKrylovSchur NAME BlockKrylovSchurEpetraExGenAztecOO EXAMPLE SOURCES BlockKrylovSchurEpetraExGenAztecOO.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockKrylovSchur NAME BlockKrylovSchurEpetraExGenBelos EXAMPLE SOURCES BlockKrylovSchurEpetraExGenBelos.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockDavidson NAME BlockDavidsonEpetraExGen EXAMPLE SOURCES BlockDavidsonEpetraExGen.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockDavidson NAME BlockDavidsonEpetraExGenPrecIfpack EXAMPLE SOURCES BlockDavidsonEpetraExGenPrecIfpack.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(LOBPCG NAME LOBPCGEpetraExGen EXAMPLE SOURCES LOBPCGEpetraExGen.cpp)
+#TRILINOS_ADD_EXECUTABLE_AND_TEST(LOBPCG NAME LOBPCGEpetraExGenPrecIfpack EXAMPLE SOURCES LOBPCGEpetraExGenPrecIfpack.cpp)
