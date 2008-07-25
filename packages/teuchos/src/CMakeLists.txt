@@ -82,7 +82,7 @@ SET(HEADERS
 	Teuchos_Polynomial.hpp 
 	Teuchos_PolynomialDecl.hpp 
 	Teuchos_PolynomialTraits.hpp 
-	Teuchos_PrimitiveTypeTraits.hpp 
+	#Teuchos_PrimitiveTypeTraits.hpp 
 	Teuchos_PromotionTraits.hpp 
 	Teuchos_Ptr.hpp 
 	Teuchos_RCP.hpp 
