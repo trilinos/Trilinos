@@ -237,7 +237,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
 # freedom at the package level (i.e. product level for SIERRA).
 
 SET(RUN_TEST_KEYWORDS 
-  	    framework
+  	    ""
 	    CACHE STRING
         "Keywords used to determine which tests should be run."
       )
