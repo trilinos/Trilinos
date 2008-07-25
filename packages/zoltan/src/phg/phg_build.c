@@ -2914,6 +2914,9 @@ static int getObjectSizes(ZZ *zz, ZHG *zhg)
           }
         }
       }
+      else {
+        for (i = 0; i < zhg->nObj; i++) zhg->AppObjSizes[i] = 1;
+      }
     }
  End:
     return ierr;
