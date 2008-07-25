@@ -676,9 +676,6 @@ class ROpScalarReductionWithOpBase
 public:
 
   /** \brief . */
-  using RTOpT<Scalar>::apply_op;
-
-  /** \brief . */
   ROpScalarReductionWithOpBase(
     const ConcreteReductObj &initReductObjValue = ScalarTraits<Scalar>::zero(),
     ReductObjReduction reductObjReduction = ReductObjReduction()
@@ -721,7 +718,7 @@ public:
     ReductTarget *reduct_obj
     ) const
     {
-      apply_op(
+      RTOpT<Scalar>::apply_op(
         Teuchos::arrayView(sub_vecs, num_vecs),
         Teuchos::arrayView(targ_sub_vecs, num_targ_vecs),
         Teuchos::ptr(reduct_obj)
@@ -749,9 +746,6 @@ class ROp_1_ScalarReduction
   : public ROpScalarReductionWithOpBase<Scalar, ConcreteReductObj, ReductObjReduction>
 {
 public:
-
-  /** \brief . */
-  using RTOpT<Scalar>::apply_op;
 
   /** \brief . */
   typedef ROpScalarReductionWithOpBase<Scalar, ConcreteReductObj, ReductObjReduction> base_t;
@@ -888,9 +882,6 @@ class ROp_1_CoordVariantScalarReduction
 public:
 
   /** \brief . */
-  using RTOpT<Scalar>::apply_op;
-
-  /** \brief . */
   typedef ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction> base_t;
 
   /** \brief . */
@@ -979,9 +970,6 @@ class ROp_2_ScalarReduction
   : public ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction>
 {
 public:
-
-  /** \brief . */
-  using RTOpT<Scalar>::apply_op;
 
   /** \brief . */
   typedef ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction>
