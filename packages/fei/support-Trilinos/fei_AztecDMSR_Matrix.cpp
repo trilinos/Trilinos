@@ -589,9 +589,13 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
     int incol = incols[inoffset];
     while (incol == row) {
       val[localRow] += coefs_i[indirect[inoffset++]];
-      if (inoffset >= numCols) continue;
+      if (inoffset >= numCols) break;
       incol = incols[inoffset];
     }
+
+    if (inoffset >= numCols) continue;
+
+    //rowOffset is the offset into the row at which incol appears.
 
     int rowOffset = snl_fei::binarySearch<int>(incol, tmp_array_, rowLength);
     if (rowOffset < 0) {
@@ -603,7 +607,8 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
     rowCoefs[rowOffset++] += coefs_i[indirect[inoffset++]];
 
-    if (incols[inoffset] == tmp_array_[rowOffset-1]) --rowOffset;
+    //check whether incols has a repeated column-index
+    if (inoffset>0 && incols[inoffset] == incols[inoffset-1]) --rowOffset;
 
     while(inoffset < numCols) {
       incol = incols[inoffset];
@@ -623,7 +628,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
       }
 
       rowCoefs[rowOffset++] += coefs_i[indirect[inoffset++]];
-      if (incols[inoffset] == tmp_array_[rowOffset-1]) --rowOffset;
+      if (inoffset>0 && incols[inoffset] == incols[inoffset-1]) --rowOffset;
     }
   }
 
