@@ -150,7 +150,7 @@ int Zoltan_RB_find_bisector(
   int     nprocs = zz->Num_Proc;     /* Total number of processors */
   int     ierr = ZOLTAN_OK;          /* error code */
   int     wtflag = 0;                /* (1) no wgts supplied on entry. */
-  int     indexlo, indexhi;          /* indices of dot closest to bisector */
+  int     indexlo=0, indexhi=0;      /* indices of dots closest to bisector */
   int     breakflag=0;               /* for breaking out of bisector iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank;                      /* rank in partition (Tflops_Special) */
