@@ -96,9 +96,9 @@ class ROpMaxIndex
 public:
   /** \brief . */
   ROpMaxIndex()
-    :RTOpT<Scalar>("ROpMaxIndex")
     {
-      initReductObjValue(
+      this->setOpNameBase("ROpMaxIndex");
+      this->initReductObjValue(
         ScalarIndex<Scalar>(-ScalarTraits<Scalar>::rmax(), -1));
     }
   /** \brief . */

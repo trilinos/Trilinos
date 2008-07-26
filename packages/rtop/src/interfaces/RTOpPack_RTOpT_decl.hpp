@@ -59,22 +59,21 @@ class ReductTarget : public Teuchos::Describable
  * design is motivated partly by the "Visitor" patter (Gamma, 1995).
  *
  * This interface is designed to allow implementation of a distributed
- * parallel application without the explicit knowledge by the
- * application.
+ * parallel abstract numerical algorithm without the explicit knowledge of the
+ * algorithm.
  *
- * In the following discussion, <tt>v[k]</tt>, <tt>x</tt>, <tt>y</tt>
- * and <tt>z</tt> are some abstract vector objects of dimension
- * <tt>n</tt>.  Users can define operators to perform reduction and/or
- * transformation operations.  Reduction operations applied over all
- * of the elements of a vector require communication between nodes in
- * a parallel environment but do not change any of the vectors
- * involved.  Transformation operations don't require communication
- * between nodes in a parallel environment.  The targets of a
- * transformation operation is a set of one or more vectors which are
- * mutated in some way.
+ * In the following discussion, <tt>v[k]</tt>, <tt>x</tt>, <tt>y</tt> and
+ * <tt>z</tt> are some abstract vector objects of dimension <tt>n</tt>.  Users
+ * can define operators to perform reduction and/or transformation operations.
+ * Reduction operations applied over all of the elements of a vector require
+ * communication between nodes in a parallel environment but do not change any
+ * of the vectors involved.  Transformation operations don't require
+ * communication between nodes in a parallel environment.  The targets of a
+ * transformation operation is a set of one or more vectors which are changed
+ * in some way.
  *
- * The idea is that the user may want to perform reduction
- * operations of the form:
+ * The idea is that the user may want to perform reduction operations of the
+ * form:
  *
  \verbatim
 
@@ -90,8 +89,9 @@ class ReductTarget : public Teuchos::Describable
  op(v[0](i)...v[*](i),z[0](i)...z[*](i)) -> z[0](i)...z[*](i), for i = 0...n-1
  \endverbatim
  *
- * Operators can also be defined that perform reduction and
- * transformation operations.
+ * Operators can also be defined that perform reduction and transformation
+ * operations on the same vectors that that should only be done for efficiency
+ * reasons.
  *
  * The tricky part though, is that the <tt>reduct_obj</tt> object of
  * the reduction operation may be more complex than a single scalar
@@ -111,9 +111,9 @@ class ReductTarget : public Teuchos::Describable
  min_max_sum{ x(i), i = 0...n-1 } -> [ x(j_min), j_min, x(j_max), j_max, x_sum ]
  \endverbatim
  *
- * Transformation operations are much simpler to think about and to
- * deal with.  Some off-the-wall examples of transformation operations
- * that this design will support are:
+ * Transformation operations are much simpler to think about and to deal with.
+ * Some off-the-wall examples of transformation operations that this design
+ * will support are:
  *
  \verbatim
 
@@ -124,11 +124,10 @@ class ReductTarget : public Teuchos::Describable
  alpha * x(i) * y(i) + beta * z(i) -> z(i), for i = 0...n-1
  \endverbatim
  *
- * Reduction operations present the more difficult technical
- * challenge since they require information gathered from all of the
- * elements to arrive at the final result.  This design allows
- * operator classes to be defined that can simultaneously perform
- * reduction and transformation operations:
+ * Reduction operations present the more difficult technical challenge since
+ * they require information gathered from all of the elements to arrive at the
+ * final result.  This design allows operator classes to be defined that can
+ * simultaneously perform reduction and transformation operations:
  *
  \verbatim
 
@@ -137,27 +136,26 @@ class ReductTarget : public Teuchos::Describable
  \endverbatim
  *
  * This design is based on a few assumptions about the reduction and
- * transformation operations and vector implementations themselves.
- * First, we will assume that vectors are stored and manipulated as
- * chunks of sub-vectors (of dimension <tt>subDim</tt>) where each
- * sub-vector is sufficiently large.  This design supports dense
- * strided sub-vectors (see <tt>ConstSubVectorView</tt> and <tt>SubVectorView</tt>)
- * and is relatively flexible.
+ * transformation operations and vector implementations themselves.  First, we
+ * will assume that vectors are stored and manipulated as chunks of
+ * sub-vectors (of dimension <tt>subDim</tt>) where each sub-vector is
+ * sufficiently large to overcome the inherent overhead of this design.  This
+ * design supports dense strided sub-vectors (see <tt>ConstSubVectorView</tt>
+ * and <tt>SubVectorView</tt>) but is relatively flexible.
  *
- * It is strictly the responsibilities of the vector implementations
- * to determine how these operators are applied.  For instance, if we
- * are performing a transformation operation of the form:
+ * It is strictly the responsibility of the vector implementations to
+ * determine how these operators are applied.  For instance, if we are
+ * performing a transformation operation of the form:
  *
  \verbatim
 
  op( x(i), y(i), z(i) ) -> z(i), for i = 0...n-1
  \endverbatim
  *
- * where <tt>x</tt>, <tt>y</tt>, and <tt>z</tt> are distributed
- * parallel vectors, then we would assume that the elements would be
- * partitioned onto the various processors with the same local
- * elements stored on each processor so as not to require any
- * communication between processors.
+ * where <tt>x</tt>, <tt>y</tt>, and <tt>z</tt> are distributed parallel
+ * vectors, then we would assume that the elements would be partitioned onto
+ * the various processors with the same local elements stored on each
+ * processor so as not to require any communication between processors.
  */
 template<class Scalar>
 class RTOpT : public Teuchos::Describable {
@@ -172,7 +170,7 @@ public:
 
   //@}
 
-  /** @name Reduction object functions */
+  /** @name Reduction object functions (NVI) */
   //@{
 
   /** \brief Get the number of entries of each basic data type in the externalized state for
@@ -190,9 +188,14 @@ public:
    * <tt>*num_chars</tt> (i.e. by default there is no reduction
    * operation performed).
    */
-  virtual void get_reduct_type_num_entries(
-    int* num_values, int* num_indexes, int* num_chars
-    ) const;
+  void get_reduct_type_num_entries(
+    const Ptr<int> &num_values,
+    const Ptr<int> &num_indexes,
+    const Ptr<int> &num_chars
+    ) const
+    {
+      get_reduct_type_num_entries_impl(num_values, num_indexes, num_chars);
+    }
 
   /** \brief Creates a new reduction target object initialized and ready to be used in
    * a reduction.
@@ -204,16 +207,22 @@ public:
    * The default implementation returns <tt>return.get()==NULL</tt>
    * (i.e. by default there is no reduction operation performed).
    */
-  virtual Teuchos::RCP<ReductTarget> reduct_obj_create() const;
+  Teuchos::RCP<ReductTarget> reduct_obj_create() const
+    {
+      return reduct_obj_create_impl();
+    }
 
   /** \brief Reduce intermediate reduction target objects.
    *
    * The default implementation does not do anything (i.e. by default
    * there is no reduction operation performed).
    */
-  virtual void reduct_reduct_objs(
+  void reduce_reduct_objs(
     const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
-    ) const;
+    ) const
+    {
+      reduce_reduct_objs_impl( in_reduct_obj, inout_reduct_obj );
+    }
 
   /** \brief Reinitialize an already created reduction object.
    *
@@ -222,7 +231,10 @@ public:
    *
    * \param reduct_obj [in/out] Reduction object is reinitialized on output.
    */
-  virtual void reduct_obj_reinit( ReductTarget* reduct_obj ) const;
+  void reduct_obj_reinit( const Ptr<ReductTarget> &reduct_obj ) const
+    {
+      reduct_obj_reinit_impl(reduct_obj);
+    }
 
   /** \brief Extract the state of an already created reduction object.
    *
@@ -233,28 +245,35 @@ public:
    * The default implementation does nothing (i.e. by default there is
    * no reduction operation performed).
    */
-  virtual void extract_reduct_obj_state(
+  void extract_reduct_obj_state(
     const ReductTarget &reduct_obj,
-    int num_values, primitive_value_type value_data[],
-    int num_indexes, index_type index_data[],
-    int num_chars, char_type char_data[]
-    ) const;
+    const ArrayView<primitive_value_type> &value_data,
+    const ArrayView<index_type> &index_data,
+    const ArrayView<char_type> &char_data
+    ) const
+    {
+      extract_reduct_obj_state_impl( reduct_obj,
+        value_data, index_data, char_data );
+    }
 
   /** \brief Load the state of an already created reduction object given
    * arrays of primitive objects.
    *
    * The default implementation does nothing.
    */
-  virtual void load_reduct_obj_state(
-    int num_values, const primitive_value_type value_data[],
-    int num_indexes, const index_type index_data[],
-    int num_chars, const char_type char_data[],
-    ReductTarget *reduct_obj
-    ) const;
+  void load_reduct_obj_state(
+    const ArrayView<const primitive_value_type> &value_data,
+    const ArrayView<const index_type> &index_data,
+    const ArrayView<const char_type> &char_data,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const
+    {
+      load_reduct_obj_state_impl( value_data, index_data, char_data, reduct_obj );
+    }
 
   //@}
 
-  /** @name Operator functions */
+  /** @name Operator functions (NIV) */
   //@{
 
   /** \brief Return the name (as a null-terminated C-style string) of the operator.
@@ -266,103 +285,24 @@ public:
    * The default implementation uses the value created in the
    * constructor <tt>RTOpT()</tt>.
    */
-  virtual const std::string op_name() const;
+  const std::string op_name() const
+    {
+      return op_name_impl();
+    }
 
   // 2007/11/14: rabartl: ToDo: Above: change to return std::string.  Don't
   // bother deprecating the old function since you can't really do it very
   // well.
-
-  /** \brief Copy the state of another operator object into this one.
-   *
-   * This default version uses <tt>op->ref extract_op_state()</tt> and
-   * <tt>this->\ref load_op_state()</tt> to perform the copy. No
-   * override should be needed by subclasses (unless a slightly more
-   * efficient implementation is desired).
-   */
-  virtual RTOpT<Scalar>& copyStateFrom(const RTOpT<Scalar>& op);
-
-  /** \brief Return the number of entries of each type of basic data type in
-   * the externalized state for the operator object.
-   *
-   * The default implementation returns zeros for
-   * <tt>*num_values</tt>, <tt>*num_indexes</tt> and
-   * <tt>*num_chars</tt> (i.e. the default reduction/transformation
-   * operator has no state).
-   */
-  virtual void get_op_type_num_entries(
-    int* num_values, int* num_indexes, int* num_chars
-    ) const;
-
-  /** \brief Extract the state of the object in a portable format.
-   *
-   * This method allows the state of a reduction/transformation
-   * operator to be externalized so that it can be passed over a
-   * heterogeneous network of computers.
-   *
-   * The default implementation does nothing (i.e. the default
-   * reduction/transformation operator has no state).
-   *
-   * \param num_values [in] Value returned from
-   * <tt>this->get_op_type_num_entries()</tt>.
-   *
-   * \param value_data [out] Array (size <tt>num_values</tt>) of floating
-   * point data.
-   *
-   * \param num_indexes [in] Value returned from
-   * <tt>this->get_op_type_num_entries()</tt>.
-   *
-   * \param index_data [out] Array (size <tt>num_indexes</tt>) of integral
-   * data.
-   *
-   * \param num_chars [in] Value returned from
-   * <tt>this->get_op_type_num_entries()</tt>.
-   *
-   * \param char_data [out] Array (size <tt>num_chars</tt>) of character data.
-   */
-  virtual void extract_op_state(
-    int num_values, primitive_value_type value_data[],
-    int num_indexes, index_type index_data[],
-    int num_chars, char_type char_data[]
-    ) const;
-
-  /** \brief Load the state of the object from a portable format.
-   *
-   * This method allows the state of the operator object to be set given an the externalized
-   * state as extracted using <tt>\ref extract_op_state "extract_op_state(...)"</tt>
-   * called on a compatible operator object (possibly on a different heterogeneous computer).
-   *
-   * The default implementation does nothing (i.e. the default reduction/transformation
-   * operator has no state).
-   *
-   * \param num_values [in] Value returned from
-   * <tt>this->get_op_type_num_entries()</tt>.
-   *
-   * \param value_data [out] Array (size <tt>num_values</tt>) of floating
-   * point data.
-   *
-   * \param num_indexes [in] Value returned from
-   * <tt>this->get_op_type_num_entries()</tt>.
-   *
-   * \param index_data [out] Array (size <tt>num_indexes</tt>) of integral
-   * data.
-   *
-   * \param num_chars [in] Value returned from
-   * <tt>this->get_op_type_num_entries()</tt>.
-   *
-   * \param char_data [out] Array (size <tt>num_chars</tt>) of character data.
-   */
-  virtual void load_op_state(
-    int num_values, const primitive_value_type value_data[],
-    int num_indexes, const index_type index_data[],
-    int num_chars, const char_type char_data[]
-    );
 
   /** \brief Returns <tt>true</tt> if this operator is coordinate invariant.
    *
    * The default implementation returns <tt>true</tt> as most vector
    * operators are coordinate invariant.
    */
-  virtual bool coord_invariant() const;
+  bool coord_invariant() const
+    {
+      return coord_invariant_impl();
+    }
 
   /** \brief Apply the reduction/transformation operator to a set of
    * sub-vectors.
@@ -409,9 +349,9 @@ public:
    * , for <tt>k = 0,...,num_vecs-1</tt>
    * <li> <tt>[num_targ_vecs > 0] globalOffset==targ_sub_vecs[k].globalOffset</tt>
    * , for <tt>k = 0,...,num_targ_vecs-1</tt>
-   * <li> <tt>[num_vecs > 0] sub_dim==sub_vecs[k].subDim()</tt>
+   * <li> <tt>[num_vecs > 0] subDim==sub_vecs[k].subDim()</tt>
    * , for <tt>k = 0,...,num_vecs-1</tt>
-   * <li> <tt>[num_targ_vecs > 0] sub_dim==targ_sub_vecs[k].subDim()</tt>
+   * <li> <tt>[num_targ_vecs > 0] subDim==targ_sub_vecs[k].subDim()</tt>
    * , for <tt>k = 0,...,num_targ_vecs-1</tt>
    * </ul>
    *
@@ -432,10 +372,10 @@ public:
    *
    * If <tt>num_vecs</tt> is incompatible with the underlying operator object then
    * <tt>InvalidNumVecs</tt> is thrown. If the sub-vectors are not compatible
-   * (i.e. <tt>global_offset</tt> and/or <tt>sub_dim</tt> not the same) then
+   * (i.e. <tt>globalOffset</tt> and/or <tt>subDim</tt> not the same) then
    * IncompatibleVecs is thrown.
    */
-  virtual void apply_op(
+  void apply_op(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
     const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
     const Ptr<ReductTarget> &reduct_obj
@@ -446,50 +386,148 @@ public:
 
   //@}
 
-  /** \name Deprecated */
+  /** \name Deprecated (NVI) */
   //@{
 
   /** \brief Deprecated */
-  virtual RTOpT<Scalar>& operator=(const RTOpT<Scalar>& op);
+  void get_reduct_type_num_entries(
+    int* num_values, int* num_indexes, int* num_chars
+    ) const
+    {
+      using Teuchos::ptr;
+      get_reduct_type_num_entries_impl(ptr(num_values),
+        ptr(num_indexes), ptr(num_chars) );
+    }
 
   /** \brief Deprecated */
-  virtual void reduce_reduct_objs(
+  void reduce_reduct_objs(
     const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
-    ) const;
+    ) const
+    {
+      reduce_reduct_objs_impl( in_reduct_obj, Teuchos::ptr(inout_reduct_obj) );
+    }
 
   /** \brief Deprecated */
-  virtual void apply_op(
+  void reduct_obj_reinit( ReductTarget* reduct_obj ) const
+    {
+      reduct_obj_reinit_impl(Teuchos::ptr(reduct_obj));
+    }
+
+  /** \brief Deprecated */
+  void extract_reduct_obj_state(
+    const ReductTarget &reduct_obj,
+    int num_values, primitive_value_type value_data[],
+    int num_indexes, index_type index_data[],
+    int num_chars, char_type char_data[]
+    ) const
+    {
+      using Teuchos::arrayView;
+      extract_reduct_obj_state_impl( reduct_obj,
+        arrayView(value_data, num_values), arrayView(index_data, num_indexes),
+        arrayView(char_data, num_chars) );
+    }
+
+  /** \brief Deprecated */
+  void load_reduct_obj_state(
+    int num_values, const primitive_value_type value_data[],
+    int num_indexes, const index_type index_data[],
+    int num_chars, const char_type char_data[],
+    ReductTarget *reduct_obj
+    ) const
+    {
+      using Teuchos::arrayView;
+      load_reduct_obj_state_impl( arrayView(value_data, num_values),
+        arrayView(index_data, num_indexes), arrayView(char_data, num_chars),
+        Teuchos::ptr(reduct_obj) );
+    }
+
+  /** \brief Deprecated */
+  void apply_op(
     const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[],
     const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[],
     ReductTarget *reduct_obj
-    ) const = 0;
+    ) const
+    {
+      apply_op_impl(
+        Teuchos::arrayView(sub_vecs, num_vecs),
+        Teuchos::arrayView(targ_sub_vecs, num_targ_vecs),
+        Teuchos::ptr(reduct_obj)
+        );
+    }
 
   //@}
 
 protected:
+
+  /** \brief Protected virtual functions to be overridden by subclasses. */
+  //@{
+
+  /** \brief . */
+  virtual void get_reduct_type_num_entries_impl(
+    const Ptr<int> &num_values,
+    const Ptr<int> &num_indexes,
+    const Ptr<int> &num_chars
+    ) const;
+
+  /** \brief . */
+  virtual Teuchos::RCP<ReductTarget> reduct_obj_create_impl() const;
+
+  /** \brief . */
+  virtual void reduce_reduct_objs_impl(
+    const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
+    ) const;
+
+  /** \brief . */
+  virtual void reduct_obj_reinit_impl( const Ptr<ReductTarget> &reduct_obj ) const;
+
+  /** \brief . */
+  virtual void extract_reduct_obj_state_impl(
+    const ReductTarget &reduct_obj,
+    const ArrayView<primitive_value_type> &value_data,
+    const ArrayView<index_type> &index_data,
+    const ArrayView<char_type> &char_data
+    ) const;
+
+  /** \brief . */
+  virtual void load_reduct_obj_state_impl(
+    const ArrayView<const primitive_value_type> &value_data,
+    const ArrayView<const index_type> &index_data,
+    const ArrayView<const char_type> &char_data,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const;
+
+  /** \brief . */
+  virtual const std::string op_name_impl() const;
+
+  /** \brief . */
+  virtual bool coord_invariant_impl() const;
 
   /** \brief . */
   virtual void apply_op_impl(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
     const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
     const Ptr<ReductTarget> &reduct_obj
-    ) const
-    {
-      this->apply_op(sub_vecs.size(), sub_vecs.getRawPtr(),
-        targ_sub_vecs.size(), targ_sub_vecs.getRawPtr(),
-        reduct_obj.get() );
-    }
+    ) const = 0;
+
+  //@}
+
+  /** \brief Nonvirtual protected functions. */
+  //@{
 
   /** \brief Constructor that creates an operator name appended with the
    * type. */
-  RTOpT( const std::string &op_name_base );
+  RTOpT( const std::string &op_name_base = "" );
 
   /** \brief Just set the opeator name. */
   void setOpNameBase( const std::string &op_name_base );
 
+  //@}
+
 private:
 
   std::string op_name_;
+
+  void throwNoReductError() const;
 
 }; // end class RTOpT
 

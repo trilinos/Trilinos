@@ -54,95 +54,6 @@ std::string DefaultReductTarget<ConcreteReductObj>::description() const
 }
 
 
-//
-// ROpScalarReductionBase
-//
-
-
-template<class Scalar, class ConcreteReductObj>
-void ROpScalarReductionBase<Scalar, ConcreteReductObj>::reduce_reduct_objs(
-  const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
-  ) const
-{
-  TEST_FOR_EXCEPT(true); // ToDo: This function should not even exist!
-}
-
-
-template<class Scalar, class ConcreteReductObj>
-void ROpScalarReductionBase<Scalar, ConcreteReductObj>::load_reduct_obj_state(
-  int num_values,
-  const primitive_value_type value_data[],
-  int num_indexes,
-  const index_type index_data[],
-  int num_chars,
-  const char_type char_data[],
-  ReductTarget *reduct_obj
-  ) const
-{
-
-  using Teuchos::arrayView;
-  typedef ScalarTraits<Scalar> ST;
-  typedef PrimitiveTypeTraits<Scalar, ConcreteReductObj> PTT;
-
-#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  Teuchos::OSTab tab(out);
-  if(rtop_helpers_dump_all) {
-    *out << "\nEntering ROpScalarReductionBase::load_reduct_obj_state(...) ...\n"
-         << "\nOn input:\n";
-    Teuchos::OSTab tab(out);
-    *out << "op = " << this->description() << "\n";
-    *out << "num_values = " << num_values << "\n";
-    if(num_values) {
-      *out <<"value_data[] = { ";
-      for( int i = 0; i < num_values-1; ++i )
-        *out << value_data[i] << ", ";
-      *out << value_data[num_values-1] << " }\n";
-    }
-    *out << "num_indexes = " << num_indexes << "\n";
-    if(num_indexes) {
-      *out <<"index_data[] = { ";
-      for( int i = 0; i < num_indexes-1; ++i )
-        *out << index_data[i] << ", ";
-      *out << index_data[num_indexes-1] << " }\n";
-    }
-    *out << "num_chars = " << num_chars << "\n";
-    if(num_chars) {
-      *out <<"char_data[] = { ";
-      for( int i = 0; i < num_chars-1; ++i )
-        *out << char_data[i] << ", ";
-      *out << char_data[num_chars-1] << " }\n";
-    }
-  }
-#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-
-  ConcreteReductObj concrete_reduct_obj;
-
-  PTT::loadPrimitiveObjs(
-    arrayView(value_data, num_values), arrayView(index_data, num_indexes),
-    arrayView(char_data, num_chars),
-    Teuchos::outArg(concrete_reduct_obj) );
-
-  this->setRawVal( concrete_reduct_obj, reduct_obj );
-
-#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-  if(rtop_helpers_dump_all) {
-    *out << "\nOn output:\n";
-    Teuchos::OSTab tab(out);
-    *out << "val = " << val << "\n";
-    *out << "reduct_op = " << Teuchos::describe(*reduct_obj, Teuchos::VERB_EXTREME);
-  }
-#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-
-}
-
-
-//
-// ROpScalarReductionWithOpBase
-//
-
-
 } // namespace RTOpPack
 
 
@@ -246,46 +157,6 @@ void RTOpPack::validate_apply_op(
   template std::string DefaultReductTarget<SCALAR >::description() const;
 
 
-#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT( \
-  SCALAR, REDUCTSCALAR \
-  ) \
-  \
-  template void ROpScalarReductionBase<SCALAR, REDUCTSCALAR >::reduce_reduct_objs( \
-    const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj \
-    ) const; \
-  \
-  template void ROpScalarReductionBase<SCALAR, REDUCTSCALAR >::load_reduct_obj_state( \
-    int num_values, \
-    const primitive_value_type value_data[], \
-    int num_indexes, \
-    const index_type index_data[], \
-    int num_chars, \
-    const char_type char_data[], \
-    ReductTarget *reduct_obj \
-    ) const;
-
-
-#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INDEX_INSTANT( \
-  SCALAR \
-  ) \
-  \
-  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, index_type)
-
-
-#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_SCALARINDEX_INSTANT( \
-  SCALAR \
-  ) \
-  \
-  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, ScalarIndex<SCALAR >)
-
-
-#define RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_SUBVECTORVIEW_INSTANT( \
-  SCALAR \
-  ) \
-  \
-  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, SubVectorView<SCALAR >)
-
-
 #define RTOPPACK_RTOPT_HELPERS_INSTANT_SCALAR(SCALAR) \
   \
   RTOPPACK_RTOPT_HELPERS_DEFAULTREDUCTTARGET_INSTANT(SCALAR) \
@@ -293,8 +164,6 @@ void RTOpPack::validate_apply_op(
   RTOPPACK_RTOPT_HELPERS_DEFAULTREDUCTTARGET_INSTANT(ScalarIndex<SCALAR >) \
   \
   RTOPPACK_RTOPT_HELPERS_DEFAULTREDUCTTARGET_INSTANT(SubVectorView<SCALAR >) \
-  \
-  RTOPPACK_RTOPT_HELPERS_ROPSCALARREDUCTIONBASE_INSTANT(SCALAR, SCALAR) \
   \
   template void validate_apply_op<SCALAR >( \
     const RTOpT<SCALAR > &op, \

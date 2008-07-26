@@ -32,32 +32,20 @@
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
+
 namespace RTOpPack {
 
-/** \brief Transformation operator that takes absolute values of elements: <tt>z0[i] = abs(v0[i]), i=0...n-1</tt>.
+
+/** \brief Transformation operator that takes absolute values of elements:
+ * <tt>z0[i] = abs(v0[i]), i=0...n-1</tt>.
  */
-template<class Scalar>
-class TOpAbs : public RTOpT<Scalar> {
-public:
-  /** \brief . */
-  TOpAbs() : RTOpT<Scalar>("TOpAbs") {}
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
-    {
-      RTOP_APPLY_OP_1_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s, z0_val += z0_s ) {
-        *z0_val = Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val);
-      }
-    }
-  //@}
-}; // class TOpAbs
+RTOP_TOP_1_1( TOpAbs )
+{
+  z0 = ScalarTraits<Scalar>::magnitude(v0);
+}
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_TOP_ABS_HPP

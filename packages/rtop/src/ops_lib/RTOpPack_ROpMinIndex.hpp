@@ -98,9 +98,9 @@ class ROpMinIndex
 public:
   /** \brief . */
   ROpMinIndex()
-    :RTOpT<Scalar>("ROpMinIndex")
     {
-      initReductObjValue(
+      this->setOpNameBase("ROpMinIndex");
+      this->initReductObjValue(
         ScalarIndex<Scalar>(+ScalarTraits<Scalar>::rmax(), -1));
     }
   /** \brief . */

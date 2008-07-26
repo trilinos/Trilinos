@@ -91,10 +91,10 @@ public:
   ROpMaxIndexLessThanBound(
     const Scalar &bound_in = Teuchos::ScalarTraits<Scalar>::zero()
     )
-    :RTOpT<Scalar>("ROpMaxIndexLessThanBound")
     {
+      this->setOpNameBase("ROpMaxIndexLessThanBound");
       bound(bound_in);
-      initReductObjValue(
+      this->initReductObjValue(
         ScalarIndex<Scalar>(-ScalarTraits<Scalar>::rmax(), -1));
     }
   /** \brief . */

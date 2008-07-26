@@ -28,7 +28,7 @@
 
 EXEEXT = .exe
 
-all-local: $(DIAGONAL_EXE_LINKS)
+all-local: $(DIAGONAL_EXE_LINKS) $(XML_FILES)
 	@echo ""
 	@echo "rythmos/example/diagonalTransient built successfully."
 	@echo ""
@@ -109,6 +109,15 @@ DIAGONAL_EXE_LINKS = \
   $(LINK_DIAGONAL_BELOS_ML)
 
 #
+# XML Files
+#
+
+XML_FILES = diagonalTransient_aztecoo.xml
+
+diagonalTransient_aztecoo.xml: $(srcdir)/_diagonalTransient_aztecoo.xml
+	cp $(srcdir)/_diagonalTransient_aztecoo.xml diagonalTransient_aztecoo.xml
+
+#
 # Common stuff
 #
 
@@ -136,3 +145,6 @@ CPPFLAGS += -I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransie
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =
+
+
+EXTRA_DIST = _diagonalTransient_aztecoo.xml

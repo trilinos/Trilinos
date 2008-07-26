@@ -45,11 +45,12 @@ namespace RTOpPack {
 template<class Scalar>
 class TOpSetSubVector : public RTOpT<Scalar> {
 public:
-
-  using RTOpT<Scalar>::apply_op;
   
   /** \brief . */
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
+
+  /** \name Constructors/initializers. */
+  //@{
 
   /** \brief . */
   TOpSetSubVector();
@@ -60,62 +61,15 @@ public:
   /** \brief . */
   void set_sub_vec( const SparseSubVectorT<Scalar> &sub_vec );
 
-  /** @name Overridden from RTOpT */
-  //@{
-
-  /** \brief . */
-  void get_op_type_num_entries(
-    int* num_values
-    ,int* num_indexes
-    ,int* num_chars
-    ) const;
-  /** \brief . */
-  void extract_op_state(
-    int num_values
-    ,primitive_value_type value_data[]
-    ,int num_indexes
-    ,index_type index_data[]
-    ,int num_chars
-    ,char_type char_data[]
-    ) const;
-  /** \brief . */
-  void load_op_state(
-    int num_values
-    ,const primitive_value_type value_data[]
-    ,int num_indexes
-    ,const index_type index_data[]
-    ,int num_chars
-    ,const char_type char_data[]
-    );
-  /** \brief . */
-  bool coord_invariant() const;
-
-  //@}
-
-  /** \name Deprecated. */
-  //@{
-
-
-  /** \brief Deprecated. */
-  virtual void apply_op(
-    const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[],
-    const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[],
-    ReductTarget *reduct_obj
-    ) const
-    {
-      apply_op(
-        Teuchos::arrayView(sub_vecs, num_vecs),
-        Teuchos::arrayView(targ_sub_vecs, num_targ_vecs),
-        Teuchos::ptr(reduct_obj)
-        );
-    }
-
   //@}
 
 protected:
 
   /** \name Overridden protected functions from RTOpT. */
   //@{
+
+  /** \brief . */
+  bool coord_invariant_impl() const;
 
   /** \brief . */
   void apply_op_impl(

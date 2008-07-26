@@ -30,7 +30,7 @@
 #include "RTOpPack_RTOpT_decl.hpp"
 
 
-#ifdef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+#ifdef HAVE_RTOP_EXPLICIT_INSTANTIATION
 
 
 #include "RTOpPack_RTOpT_def.hpp"

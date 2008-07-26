@@ -78,7 +78,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( validate_apply_op, inCompatibleSubVecs_1_1_a,
   using Teuchos::as;
   typedef ScalarTraits<Scalar> ST;
 
-  RTOpPack::TOpAXPY<Scalar> axpyOp;
+  RTOpPack::TOpAXPY<Scalar> axpyOp(ST::one());
 
   ConstSubVectorView<Scalar> sv = newSubVectorView<Scalar>(n, ST::random());
   SubVectorView<Scalar> tsv = newSubVectorView<Scalar>(n+1, ST::random());
@@ -101,7 +101,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( validate_apply_op, inCompatibleSubVecs_1_1_b,
   using Teuchos::as;
   typedef ScalarTraits<Scalar> ST;
 
-  RTOpPack::TOpAXPY<Scalar> axpyOp;
+  RTOpPack::TOpAXPY<Scalar> axpyOp(ST::one());
 
   ConstSubVectorView<Scalar> sv = newSubVectorView<Scalar>(n, ST::random());
   SubVectorView<Scalar> tsv = newSubVectorView<Scalar>(n, ST::random());
@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( validate_apply_op, inCompatibleSubVecs_2_0_a,
   using Teuchos::as;
   typedef ScalarTraits<Scalar> ST;
 
-  RTOpPack::TOpAXPY<Scalar> axpyOp;
+  RTOpPack::TOpAXPY<Scalar> axpyOp(ST::one());
 
   ConstSubVectorView<Scalar> sv1 = newSubVectorView<Scalar>(n, ST::random());
   ConstSubVectorView<Scalar> sv2 = newSubVectorView<Scalar>(n+1, ST::random());
@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( validate_apply_op, inCompatibleSubVecs_2_0_b,
   using Teuchos::as;
   typedef ScalarTraits<Scalar> ST;
 
-  RTOpPack::TOpAXPY<Scalar> axpyOp;
+  RTOpPack::TOpAXPY<Scalar> axpyOp(ST::one());
 
   ConstSubVectorView<Scalar> sv1 = newSubVectorView<Scalar>(n, ST::random());
   ConstSubVectorView<Scalar> sv2 = newSubVectorView<Scalar>(n, ST::random());

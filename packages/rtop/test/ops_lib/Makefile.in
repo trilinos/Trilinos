@@ -67,7 +67,19 @@ am_opsUnitTests_OBJECTS = ROpCountNanInf_UnitTests.$(OBJEXT) \
 	ROpNorm1_UnitTests.$(OBJEXT) ROpNorm2_UnitTests.$(OBJEXT) \
 	ROpNormInf_UnitTests.$(OBJEXT) ROpSum_UnitTests.$(OBJEXT) \
 	ROpWeightedNorm2_UnitTests.$(OBJEXT) \
-	TOpSetSubVector_UnitTests.$(OBJEXT) \
+	TOpSetSubVector_UnitTests.$(OBJEXT) TOpAbs_UnitTests.$(OBJEXT) \
+	TOpAddScalar_UnitTests.$(OBJEXT) \
+	TOpAssignScalar_UnitTests.$(OBJEXT) \
+	TOpAssignVectors_UnitTests.$(OBJEXT) \
+	TOpAXPY_UnitTests.$(OBJEXT) \
+	TOpEleWiseConjProd_UnitTests.$(OBJEXT) \
+	TOpEleWiseDivide_UnitTests.$(OBJEXT) \
+	TOpEleWiseProd_UnitTests.$(OBJEXT) \
+	TOpEleWiseProdUpdate_UnitTests.$(OBJEXT) \
+	TOpLinearCombination_UnitTests.$(OBJEXT) \
+	TOpRandomize_UnitTests.$(OBJEXT) \
+	TOpReciprocal_UnitTests.$(OBJEXT) \
+	TOpScaleVector_UnitTests.$(OBJEXT) \
 	supportUnitTestsHelpers.$(OBJEXT) \
 	Teuchos_StandardUnitTestMain.$(OBJEXT)
 opsUnitTests_OBJECTS = $(am_opsUnitTests_OBJECTS)
@@ -212,6 +224,19 @@ opsUnitTests_SOURCES = \
   $(srcdir)/ROpSum_UnitTests.cpp \
   $(srcdir)/ROpWeightedNorm2_UnitTests.cpp \
   $(srcdir)/TOpSetSubVector_UnitTests.cpp \
+  $(srcdir)/TOpAbs_UnitTests.cpp \
+  $(srcdir)/TOpAddScalar_UnitTests.cpp \
+  $(srcdir)/TOpAssignScalar_UnitTests.cpp \
+  $(srcdir)/TOpAssignVectors_UnitTests.cpp \
+  $(srcdir)/TOpAXPY_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseConjProd_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseDivide_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseProd_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp \
+  $(srcdir)/TOpLinearCombination_UnitTests.cpp \
+  $(srcdir)/TOpRandomize_UnitTests.cpp \
+  $(srcdir)/TOpReciprocal_UnitTests.cpp \
+  $(srcdir)/TOpScaleVector_UnitTests.cpp \
   $(top_srcdir)/test/support/supportUnitTestsHelpers.cpp \
   $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 
@@ -298,6 +323,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpNormInf_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpSum_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ROpWeightedNorm2_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpAXPY_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpAbs_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpAddScalar_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpAssignScalar_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpAssignVectors_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpEleWiseConjProd_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpEleWiseDivide_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpEleWiseProdUpdate_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpEleWiseProd_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpLinearCombination_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpRandomize_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpReciprocal_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpScaleVector_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TOpSetSubVector_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/supportUnitTestsHelpers.Po@am__quote@
@@ -525,6 +563,188 @@ TOpSetSubVector_UnitTests.obj: $(srcdir)/TOpSetSubVector_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpSetSubVector_UnitTests.cpp' object='TOpSetSubVector_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpSetSubVector_UnitTests.obj `if test -f '$(srcdir)/TOpSetSubVector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpSetSubVector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpSetSubVector_UnitTests.cpp'; fi`
+
+TOpAbs_UnitTests.o: $(srcdir)/TOpAbs_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAbs_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpAbs_UnitTests.Tpo -c -o TOpAbs_UnitTests.o `test -f '$(srcdir)/TOpAbs_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAbs_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAbs_UnitTests.Tpo $(DEPDIR)/TOpAbs_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAbs_UnitTests.cpp' object='TOpAbs_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAbs_UnitTests.o `test -f '$(srcdir)/TOpAbs_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAbs_UnitTests.cpp
+
+TOpAbs_UnitTests.obj: $(srcdir)/TOpAbs_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAbs_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpAbs_UnitTests.Tpo -c -o TOpAbs_UnitTests.obj `if test -f '$(srcdir)/TOpAbs_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAbs_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAbs_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAbs_UnitTests.Tpo $(DEPDIR)/TOpAbs_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAbs_UnitTests.cpp' object='TOpAbs_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAbs_UnitTests.obj `if test -f '$(srcdir)/TOpAbs_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAbs_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAbs_UnitTests.cpp'; fi`
+
+TOpAddScalar_UnitTests.o: $(srcdir)/TOpAddScalar_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAddScalar_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpAddScalar_UnitTests.Tpo -c -o TOpAddScalar_UnitTests.o `test -f '$(srcdir)/TOpAddScalar_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAddScalar_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAddScalar_UnitTests.Tpo $(DEPDIR)/TOpAddScalar_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAddScalar_UnitTests.cpp' object='TOpAddScalar_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAddScalar_UnitTests.o `test -f '$(srcdir)/TOpAddScalar_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAddScalar_UnitTests.cpp
+
+TOpAddScalar_UnitTests.obj: $(srcdir)/TOpAddScalar_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAddScalar_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpAddScalar_UnitTests.Tpo -c -o TOpAddScalar_UnitTests.obj `if test -f '$(srcdir)/TOpAddScalar_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAddScalar_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAddScalar_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAddScalar_UnitTests.Tpo $(DEPDIR)/TOpAddScalar_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAddScalar_UnitTests.cpp' object='TOpAddScalar_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAddScalar_UnitTests.obj `if test -f '$(srcdir)/TOpAddScalar_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAddScalar_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAddScalar_UnitTests.cpp'; fi`
+
+TOpAssignScalar_UnitTests.o: $(srcdir)/TOpAssignScalar_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAssignScalar_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpAssignScalar_UnitTests.Tpo -c -o TOpAssignScalar_UnitTests.o `test -f '$(srcdir)/TOpAssignScalar_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAssignScalar_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAssignScalar_UnitTests.Tpo $(DEPDIR)/TOpAssignScalar_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAssignScalar_UnitTests.cpp' object='TOpAssignScalar_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAssignScalar_UnitTests.o `test -f '$(srcdir)/TOpAssignScalar_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAssignScalar_UnitTests.cpp
+
+TOpAssignScalar_UnitTests.obj: $(srcdir)/TOpAssignScalar_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAssignScalar_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpAssignScalar_UnitTests.Tpo -c -o TOpAssignScalar_UnitTests.obj `if test -f '$(srcdir)/TOpAssignScalar_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAssignScalar_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAssignScalar_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAssignScalar_UnitTests.Tpo $(DEPDIR)/TOpAssignScalar_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAssignScalar_UnitTests.cpp' object='TOpAssignScalar_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAssignScalar_UnitTests.obj `if test -f '$(srcdir)/TOpAssignScalar_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAssignScalar_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAssignScalar_UnitTests.cpp'; fi`
+
+TOpAssignVectors_UnitTests.o: $(srcdir)/TOpAssignVectors_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAssignVectors_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpAssignVectors_UnitTests.Tpo -c -o TOpAssignVectors_UnitTests.o `test -f '$(srcdir)/TOpAssignVectors_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAssignVectors_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAssignVectors_UnitTests.Tpo $(DEPDIR)/TOpAssignVectors_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAssignVectors_UnitTests.cpp' object='TOpAssignVectors_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAssignVectors_UnitTests.o `test -f '$(srcdir)/TOpAssignVectors_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAssignVectors_UnitTests.cpp
+
+TOpAssignVectors_UnitTests.obj: $(srcdir)/TOpAssignVectors_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAssignVectors_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpAssignVectors_UnitTests.Tpo -c -o TOpAssignVectors_UnitTests.obj `if test -f '$(srcdir)/TOpAssignVectors_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAssignVectors_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAssignVectors_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAssignVectors_UnitTests.Tpo $(DEPDIR)/TOpAssignVectors_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAssignVectors_UnitTests.cpp' object='TOpAssignVectors_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAssignVectors_UnitTests.obj `if test -f '$(srcdir)/TOpAssignVectors_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAssignVectors_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAssignVectors_UnitTests.cpp'; fi`
+
+TOpAXPY_UnitTests.o: $(srcdir)/TOpAXPY_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAXPY_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpAXPY_UnitTests.Tpo -c -o TOpAXPY_UnitTests.o `test -f '$(srcdir)/TOpAXPY_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAXPY_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAXPY_UnitTests.Tpo $(DEPDIR)/TOpAXPY_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAXPY_UnitTests.cpp' object='TOpAXPY_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAXPY_UnitTests.o `test -f '$(srcdir)/TOpAXPY_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpAXPY_UnitTests.cpp
+
+TOpAXPY_UnitTests.obj: $(srcdir)/TOpAXPY_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpAXPY_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpAXPY_UnitTests.Tpo -c -o TOpAXPY_UnitTests.obj `if test -f '$(srcdir)/TOpAXPY_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAXPY_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAXPY_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpAXPY_UnitTests.Tpo $(DEPDIR)/TOpAXPY_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpAXPY_UnitTests.cpp' object='TOpAXPY_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpAXPY_UnitTests.obj `if test -f '$(srcdir)/TOpAXPY_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpAXPY_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpAXPY_UnitTests.cpp'; fi`
+
+TOpEleWiseConjProd_UnitTests.o: $(srcdir)/TOpEleWiseConjProd_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseConjProd_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpEleWiseConjProd_UnitTests.Tpo -c -o TOpEleWiseConjProd_UnitTests.o `test -f '$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseConjProd_UnitTests.Tpo $(DEPDIR)/TOpEleWiseConjProd_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp' object='TOpEleWiseConjProd_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseConjProd_UnitTests.o `test -f '$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp
+
+TOpEleWiseConjProd_UnitTests.obj: $(srcdir)/TOpEleWiseConjProd_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseConjProd_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpEleWiseConjProd_UnitTests.Tpo -c -o TOpEleWiseConjProd_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseConjProd_UnitTests.Tpo $(DEPDIR)/TOpEleWiseConjProd_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp' object='TOpEleWiseConjProd_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseConjProd_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseConjProd_UnitTests.cpp'; fi`
+
+TOpEleWiseDivide_UnitTests.o: $(srcdir)/TOpEleWiseDivide_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseDivide_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpEleWiseDivide_UnitTests.Tpo -c -o TOpEleWiseDivide_UnitTests.o `test -f '$(srcdir)/TOpEleWiseDivide_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseDivide_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseDivide_UnitTests.Tpo $(DEPDIR)/TOpEleWiseDivide_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseDivide_UnitTests.cpp' object='TOpEleWiseDivide_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseDivide_UnitTests.o `test -f '$(srcdir)/TOpEleWiseDivide_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseDivide_UnitTests.cpp
+
+TOpEleWiseDivide_UnitTests.obj: $(srcdir)/TOpEleWiseDivide_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseDivide_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpEleWiseDivide_UnitTests.Tpo -c -o TOpEleWiseDivide_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseDivide_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseDivide_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseDivide_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseDivide_UnitTests.Tpo $(DEPDIR)/TOpEleWiseDivide_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseDivide_UnitTests.cpp' object='TOpEleWiseDivide_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseDivide_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseDivide_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseDivide_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseDivide_UnitTests.cpp'; fi`
+
+TOpEleWiseProd_UnitTests.o: $(srcdir)/TOpEleWiseProd_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseProd_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpEleWiseProd_UnitTests.Tpo -c -o TOpEleWiseProd_UnitTests.o `test -f '$(srcdir)/TOpEleWiseProd_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseProd_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseProd_UnitTests.Tpo $(DEPDIR)/TOpEleWiseProd_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseProd_UnitTests.cpp' object='TOpEleWiseProd_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseProd_UnitTests.o `test -f '$(srcdir)/TOpEleWiseProd_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseProd_UnitTests.cpp
+
+TOpEleWiseProd_UnitTests.obj: $(srcdir)/TOpEleWiseProd_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseProd_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpEleWiseProd_UnitTests.Tpo -c -o TOpEleWiseProd_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseProd_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseProd_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseProd_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseProd_UnitTests.Tpo $(DEPDIR)/TOpEleWiseProd_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseProd_UnitTests.cpp' object='TOpEleWiseProd_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseProd_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseProd_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseProd_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseProd_UnitTests.cpp'; fi`
+
+TOpEleWiseProdUpdate_UnitTests.o: $(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseProdUpdate_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpEleWiseProdUpdate_UnitTests.Tpo -c -o TOpEleWiseProdUpdate_UnitTests.o `test -f '$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseProdUpdate_UnitTests.Tpo $(DEPDIR)/TOpEleWiseProdUpdate_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp' object='TOpEleWiseProdUpdate_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseProdUpdate_UnitTests.o `test -f '$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp
+
+TOpEleWiseProdUpdate_UnitTests.obj: $(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpEleWiseProdUpdate_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpEleWiseProdUpdate_UnitTests.Tpo -c -o TOpEleWiseProdUpdate_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpEleWiseProdUpdate_UnitTests.Tpo $(DEPDIR)/TOpEleWiseProdUpdate_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp' object='TOpEleWiseProdUpdate_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpEleWiseProdUpdate_UnitTests.obj `if test -f '$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp'; fi`
+
+TOpLinearCombination_UnitTests.o: $(srcdir)/TOpLinearCombination_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpLinearCombination_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpLinearCombination_UnitTests.Tpo -c -o TOpLinearCombination_UnitTests.o `test -f '$(srcdir)/TOpLinearCombination_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpLinearCombination_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpLinearCombination_UnitTests.Tpo $(DEPDIR)/TOpLinearCombination_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpLinearCombination_UnitTests.cpp' object='TOpLinearCombination_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpLinearCombination_UnitTests.o `test -f '$(srcdir)/TOpLinearCombination_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpLinearCombination_UnitTests.cpp
+
+TOpLinearCombination_UnitTests.obj: $(srcdir)/TOpLinearCombination_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpLinearCombination_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpLinearCombination_UnitTests.Tpo -c -o TOpLinearCombination_UnitTests.obj `if test -f '$(srcdir)/TOpLinearCombination_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpLinearCombination_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpLinearCombination_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpLinearCombination_UnitTests.Tpo $(DEPDIR)/TOpLinearCombination_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpLinearCombination_UnitTests.cpp' object='TOpLinearCombination_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpLinearCombination_UnitTests.obj `if test -f '$(srcdir)/TOpLinearCombination_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpLinearCombination_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpLinearCombination_UnitTests.cpp'; fi`
+
+TOpRandomize_UnitTests.o: $(srcdir)/TOpRandomize_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpRandomize_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpRandomize_UnitTests.Tpo -c -o TOpRandomize_UnitTests.o `test -f '$(srcdir)/TOpRandomize_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpRandomize_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpRandomize_UnitTests.Tpo $(DEPDIR)/TOpRandomize_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpRandomize_UnitTests.cpp' object='TOpRandomize_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpRandomize_UnitTests.o `test -f '$(srcdir)/TOpRandomize_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpRandomize_UnitTests.cpp
+
+TOpRandomize_UnitTests.obj: $(srcdir)/TOpRandomize_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpRandomize_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpRandomize_UnitTests.Tpo -c -o TOpRandomize_UnitTests.obj `if test -f '$(srcdir)/TOpRandomize_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpRandomize_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpRandomize_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpRandomize_UnitTests.Tpo $(DEPDIR)/TOpRandomize_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpRandomize_UnitTests.cpp' object='TOpRandomize_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpRandomize_UnitTests.obj `if test -f '$(srcdir)/TOpRandomize_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpRandomize_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpRandomize_UnitTests.cpp'; fi`
+
+TOpReciprocal_UnitTests.o: $(srcdir)/TOpReciprocal_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpReciprocal_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpReciprocal_UnitTests.Tpo -c -o TOpReciprocal_UnitTests.o `test -f '$(srcdir)/TOpReciprocal_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpReciprocal_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpReciprocal_UnitTests.Tpo $(DEPDIR)/TOpReciprocal_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpReciprocal_UnitTests.cpp' object='TOpReciprocal_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpReciprocal_UnitTests.o `test -f '$(srcdir)/TOpReciprocal_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpReciprocal_UnitTests.cpp
+
+TOpReciprocal_UnitTests.obj: $(srcdir)/TOpReciprocal_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpReciprocal_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpReciprocal_UnitTests.Tpo -c -o TOpReciprocal_UnitTests.obj `if test -f '$(srcdir)/TOpReciprocal_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpReciprocal_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpReciprocal_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpReciprocal_UnitTests.Tpo $(DEPDIR)/TOpReciprocal_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpReciprocal_UnitTests.cpp' object='TOpReciprocal_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpReciprocal_UnitTests.obj `if test -f '$(srcdir)/TOpReciprocal_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpReciprocal_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpReciprocal_UnitTests.cpp'; fi`
+
+TOpScaleVector_UnitTests.o: $(srcdir)/TOpScaleVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpScaleVector_UnitTests.o -MD -MP -MF $(DEPDIR)/TOpScaleVector_UnitTests.Tpo -c -o TOpScaleVector_UnitTests.o `test -f '$(srcdir)/TOpScaleVector_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpScaleVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpScaleVector_UnitTests.Tpo $(DEPDIR)/TOpScaleVector_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpScaleVector_UnitTests.cpp' object='TOpScaleVector_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpScaleVector_UnitTests.o `test -f '$(srcdir)/TOpScaleVector_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TOpScaleVector_UnitTests.cpp
+
+TOpScaleVector_UnitTests.obj: $(srcdir)/TOpScaleVector_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TOpScaleVector_UnitTests.obj -MD -MP -MF $(DEPDIR)/TOpScaleVector_UnitTests.Tpo -c -o TOpScaleVector_UnitTests.obj `if test -f '$(srcdir)/TOpScaleVector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpScaleVector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpScaleVector_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TOpScaleVector_UnitTests.Tpo $(DEPDIR)/TOpScaleVector_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TOpScaleVector_UnitTests.cpp' object='TOpScaleVector_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TOpScaleVector_UnitTests.obj `if test -f '$(srcdir)/TOpScaleVector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/TOpScaleVector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TOpScaleVector_UnitTests.cpp'; fi`
 
 supportUnitTestsHelpers.o: $(top_srcdir)/test/support/supportUnitTestsHelpers.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT supportUnitTestsHelpers.o -MD -MP -MF $(DEPDIR)/supportUnitTestsHelpers.Tpo -c -o supportUnitTestsHelpers.o `test -f '$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp' || echo '$(srcdir)/'`$(top_srcdir)/test/support/supportUnitTestsHelpers.cpp

@@ -34,7 +34,7 @@
 #include "RTOpPack_ROpGetSubVector_decl.hpp"
 
 
-#ifndef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+#ifndef HAVE_RTOP_EXPLICIT_INSTANTIATION
 #  include "RTOpPack_ROpGetSubVector_def.hpp"
 #endif
 

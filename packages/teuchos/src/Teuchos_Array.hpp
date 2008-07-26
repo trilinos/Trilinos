@@ -1080,17 +1080,7 @@ int Array<T>::length() const
 template<typename T> inline
 std::string Array<T>::toString() const
 {
-  std::ostringstream ss;
-  ss << "{";
-
-  for (int i=0; i<length(); i++)
-  {
-    ss << operator[](i);
-    if (i<length()-1) ss << ", ";
-  }
-  ss << "}";
-
-  return ss.str();
+  return (*this)().toString();
 }
 
 

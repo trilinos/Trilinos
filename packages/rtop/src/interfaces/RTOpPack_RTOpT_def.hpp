@@ -39,6 +39,88 @@
 namespace RTOpPack {
 
 
+// Protected functions to be overridden by subclasses
+
+
+template<class Scalar>
+void RTOpT<Scalar>::get_reduct_type_num_entries_impl(
+  const Ptr<int> &num_values,
+  const Ptr<int> &num_indexes,
+  const Ptr<int> &num_chars
+  ) const
+{
+  *num_values  = 0;
+  *num_indexes = 0;
+  *num_chars   = 0;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<ReductTarget>
+RTOpT<Scalar>::reduct_obj_create_impl() const
+{
+  return Teuchos::null;
+}
+
+
+template<class Scalar>
+void RTOpT<Scalar>::reduce_reduct_objs_impl(
+  const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
+  ) const
+{
+  throwNoReductError();
+}
+
+
+template<class Scalar>
+void RTOpT<Scalar>::reduct_obj_reinit_impl(
+  const Ptr<ReductTarget> &reduct_obj ) const
+{
+  throwNoReductError();
+}
+
+
+template<class Scalar>
+void RTOpT<Scalar>::extract_reduct_obj_state_impl(
+  const ReductTarget &reduct_obj,
+  const ArrayView<primitive_value_type> &value_data,
+  const ArrayView<index_type> &index_data,
+  const ArrayView<char_type> &char_data
+  ) const
+{
+  throwNoReductError();
+}
+
+
+template<class Scalar>
+void RTOpT<Scalar>::load_reduct_obj_state_impl(
+  const ArrayView<const primitive_value_type> &value_data,
+  const ArrayView<const index_type> &index_data,
+  const ArrayView<const char_type> &char_data,
+  const Ptr<ReductTarget> &reduct_obj
+  ) const
+{
+  throwNoReductError();
+}
+
+
+template<class Scalar>
+const std::string RTOpT<Scalar>::op_name_impl() const
+{
+  return op_name_;
+}
+
+
+template<class Scalar>
+bool RTOpT<Scalar>::coord_invariant_impl() const
+{
+  return true;
+}
+
+
+// Nonvirtual protected functions
+
+
 template<class Scalar>
 RTOpT<Scalar>::RTOpT( const std::string &op_name_base )
 {
@@ -53,185 +135,17 @@ void RTOpT<Scalar>::setOpNameBase( const std::string &op_name_base )
 }
 
 
-// Reduction object functions
+// private
 
 
 template<class Scalar>
-void RTOpT<Scalar>::get_reduct_type_num_entries(
-  int*   num_values
-  ,int*  num_indexes
-  ,int*  num_chars
-  ) const
+void RTOpT<Scalar>::throwNoReductError() const
 {
-#ifdef RTOp_DEBUG
-  TEST_FOR_EXCEPTION( !num_values, std::logic_error, "Error!" );
-  TEST_FOR_EXCEPTION( !num_indexes, std::logic_error, "Error!"  );
-  TEST_FOR_EXCEPTION( !num_chars, std::logic_error, "Error!"  );
-#endif
-  *num_values  = 0;
-  *num_indexes = 0;
-  *num_chars   = 0;
+  TEST_FOR_EXCEPTION(true, std::logic_error,
+    "Error, no reduction is defined for concrete reduction op \'"
+    << this->description() << "\'!" );
 }
 
-
-template<class Scalar>
-Teuchos::RCP<ReductTarget>
-RTOpT<Scalar>::reduct_obj_create() const
-{
-  return Teuchos::null;
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::reduct_reduct_objs(
-  const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
-  ) const
-{
-  reduce_reduct_objs(in_reduct_obj, &*inout_reduct_obj);
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::reduct_obj_reinit( ReductTarget* reduct_obj ) const
-{
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, should not call!");
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::extract_reduct_obj_state(
-  const ReductTarget     &reduct_obj
-  ,int                      num_values
-  ,primitive_value_type     value_data[]
-  ,int                      num_indexes
-  ,index_type               index_data[]
-  ,int                      num_chars
-  ,char_type                char_data[]
-  ) const
-{
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, should not call!");
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::load_reduct_obj_state(
-  int                            num_values
-  ,const primitive_value_type    value_data[]
-  ,int                           num_indexes
-  ,const index_type              index_data[]
-  ,int                           num_chars
-  ,const char_type               char_data[]
-  ,ReductTarget               *reduct_obj
-  ) const
-{
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, should not call!");
-}
-
-
-// Operator functions
-
-
-template<class Scalar>
-const std::string RTOpT<Scalar>::op_name() const
-{
-  return op_name_;
-}
-
-
-template<class Scalar>
-RTOpT<Scalar>& RTOpT<Scalar>::copyStateFrom(const RTOpT<Scalar>& op)
-{
-  using Teuchos::Workspace;
-  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-  int num_values = 0, num_indexes = 0, num_chars = 0;
-  op.get_op_type_num_entries( &num_values, &num_indexes, &num_chars );
-  Workspace<primitive_value_type> value_data(wss,num_values,false);
-  Workspace<index_type>           index_data(wss,num_indexes,false);
-  Workspace<char_type>            char_data(wss,num_chars,false);
-  op.extract_op_state(
-    num_values,   num_values  ? &value_data[0] : NULL
-    ,num_indexes, num_indexes ? &index_data[0] : NULL
-    ,num_chars,   num_chars   ? &char_data[0]  : NULL
-    );
-  this->load_op_state(
-    num_values,   num_values  ? &value_data[0] : NULL
-    ,num_indexes, num_indexes ? &index_data[0] : NULL
-    ,num_chars,   num_chars   ? &char_data[0]  : NULL
-    );
-  return *this;
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::get_op_type_num_entries(
-  int*  num_values
-  ,int* num_indexes
-  ,int* num_chars
-  ) const
-{
-#ifdef RTOp_DEBUG
-  TEST_FOR_EXCEPTION( !num_values, std::logic_error, "Error!" );
-  TEST_FOR_EXCEPTION( !num_indexes, std::logic_error, "Error!"  );
-  TEST_FOR_EXCEPTION( !num_chars, std::logic_error, "Error!"  );
-#endif
-  *num_values  = 0;
-  *num_indexes = 0;
-  *num_chars   = 0;
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::extract_op_state(
-  int                             num_values
-  ,primitive_value_type           value_data[]
-  ,int                            num_indexes
-  ,index_type                     index_data[]
-  ,int                            num_chars
-  ,char_type                      char_data[]
-  ) const
-{
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, should not call!");
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::load_op_state(
-  int                           num_values
-  ,const primitive_value_type   value_data[]
-  ,int                          num_indexes
-  ,const index_type             index_data[]
-  ,int                          num_chars
-  ,const char_type              char_data[]
-  )
-{
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, should not call!");
-}
-
-
-template<class Scalar>
-bool RTOpT<Scalar>::coord_invariant() const
-{
-  return true;
-}
-
-
-// Deprecated
-
-
-template<class Scalar>
-RTOpT<Scalar>& RTOpT<Scalar>::operator=(const RTOpT<Scalar>& op)
-{
-  return copyStateFrom(op);
-}
-
-
-template<class Scalar>
-void RTOpT<Scalar>::reduce_reduct_objs(
-  const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
-  ) const
-{
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, should not call!");
-}
 
 
 } // end namespace RTOpPack

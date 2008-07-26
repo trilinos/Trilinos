@@ -54,10 +54,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpSum, reduct, Scalar )
 
   scalarReduct1.set(v1);
   scalarReduct2.set(v2);
-  sumOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  sumOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(v3);
-  sumOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  sumOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   TEST_FLOATING_EQUALITY( sumOp(*reduct2), v1+v2+v3,
     as<ScalarMag>(ST::eps() * errorTolSlack) );

@@ -21,6 +21,19 @@ opsUnitTests_SOURCES = \
   $(srcdir)/ROpSum_UnitTests.cpp \
   $(srcdir)/ROpWeightedNorm2_UnitTests.cpp \
   $(srcdir)/TOpSetSubVector_UnitTests.cpp \
+  $(srcdir)/TOpAbs_UnitTests.cpp \
+  $(srcdir)/TOpAddScalar_UnitTests.cpp \
+  $(srcdir)/TOpAssignScalar_UnitTests.cpp \
+  $(srcdir)/TOpAssignVectors_UnitTests.cpp \
+  $(srcdir)/TOpAXPY_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseConjProd_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseDivide_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseProd_UnitTests.cpp \
+  $(srcdir)/TOpEleWiseProdUpdate_UnitTests.cpp \
+  $(srcdir)/TOpLinearCombination_UnitTests.cpp \
+  $(srcdir)/TOpRandomize_UnitTests.cpp \
+  $(srcdir)/TOpReciprocal_UnitTests.cpp \
+  $(srcdir)/TOpScaleVector_UnitTests.cpp \
   $(top_srcdir)/test/support/supportUnitTestsHelpers.cpp \
   $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
 

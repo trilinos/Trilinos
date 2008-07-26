@@ -82,6 +82,14 @@
 
 
 /** \brief . */
+#define TEST_COMPARE_FLOATING_ARRAYS( a1, a2, tol ) \
+  { \
+    const bool result = compareFloatingArrays(a1,#a1,a2,#a2,tol,out); \
+    if (!result) success = false; \
+  }
+
+
+/** \brief . */
 #define TEST_THROW( code, ExceptType  ) \
   TEUCHOS_TEST_THROW( code, ExceptType, out, success  )
 

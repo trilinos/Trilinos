@@ -42,17 +42,6 @@ typedef RTOpPack::index_type index_type;
 
 template<class Scalar>
 SubVectorView<Scalar>
-newSubVectorView(const int n, const Scalar &val)
-{
-  ArrayRCP<Scalar> vals = Teuchos::arcp<Scalar>(n);
-  std::fill(vals.begin(), vals.end(), val);
-  return SubVectorView<Scalar>(
-    0, n, vals, 1);
-}
-
-
-template<class Scalar>
-SubVectorView<Scalar>
 newStridedSubVectorView(const int n, const int stride, const Scalar &val)
 {
   ArrayRCP<Scalar> vals = Teuchos::arcp<Scalar>(n*stride);
@@ -71,6 +60,34 @@ newStridedSubVectorView(const int n, const int stride, const Scalar &val)
 
 
 template<class Scalar>
+SubVectorView<Scalar>
+newStridedRandomSubVectorView(const int n, const int stride)
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  ArrayRCP<Scalar> vals = Teuchos::arcp<Scalar>(n*stride);
+  std::fill(vals.begin(), vals.end(), ST::nan());
+  for (
+    typename ArrayRCP<Scalar>::iterator itr = vals.begin();
+    itr != vals.end();
+    itr += stride
+    )
+  {
+    *itr = ST::random();
+  }
+  return SubVectorView<Scalar>(
+    0, n, vals, stride);
+}
+
+
+template<class Scalar>
+SubVectorView<Scalar>
+newSubVectorView(const int n, const Scalar &val)
+{
+  return newStridedSubVectorView(n, 1, val);
+}
+
+
+template<class Scalar>
 class ConstSubVectorViewAsArray {
 public:
   ConstSubVectorViewAsArray(const ConstSubVectorView<Scalar> &sv)
@@ -81,6 +98,13 @@ public:
 private:
   ConstSubVectorView<Scalar> sv_;
 };
+
+
+template<class Scalar>
+const RTOpPack::RTOpT<Scalar>& rtopt( const RTOpPack::RTOpT<Scalar> &op )
+{
+  return op;
+}
 
 
 template<class Scalar>

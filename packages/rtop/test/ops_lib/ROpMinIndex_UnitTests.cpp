@@ -69,10 +69,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reduct, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  minIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(four, 2));
-  minIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> minIndex_vals = minIndexOp(*reduct2);
   TEST_EQUALITY( minIndex_vals.scalar, two );
@@ -97,10 +97,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reductTie_1, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 4));
-  minIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  minIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> minIndex_vals = minIndexOp(*reduct2);
   TEST_EQUALITY( minIndex_vals.scalar, two );
@@ -125,10 +125,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reductTie_2, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  minIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 4));
-  minIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> minIndex_vals = minIndexOp(*reduct2);
   TEST_EQUALITY( minIndex_vals.scalar, two );

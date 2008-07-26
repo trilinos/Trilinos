@@ -1,0 +1,70 @@
+
+#include "RTOpPack_TOpAXPY.hpp"
+
+#include "supportUnitTestsHelpers.hpp"
+
+
+namespace {
+
+
+template<class Scalar>
+void basicTest(const int stride, FancyOStream &out, bool &success)
+{
+
+  using Teuchos::as;
+  typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+
+  ConstSubVectorView<Scalar> v0 =
+    newStridedRandomSubVectorView<Scalar>(n, stride);
+
+  SubVectorView<Scalar> orig_z0 =
+    newStridedRandomSubVectorView<Scalar>(n, stride);
+  
+  SubVectorView<Scalar> z0 =
+    newStridedSubVectorView<Scalar>(n, stride, ST::nan());
+  RTOpPack::assign_entries<Scalar>( Teuchos::outArg(z0), orig_z0 );
+
+  const Scalar alpha = ST::random();
+
+  RTOpPack::TOpAXPY<Scalar> op(alpha);
+  op.apply_op( tuple(v0), tuple(z0)(), null );
+
+  SubVectorView<Scalar> expected_z0
+    = newStridedSubVectorView<Scalar>(n, stride, ST::nan());
+  for (int k = 0; k < v0.subDim(); ++k)
+    expected_z0[k] = orig_z0[k] + alpha * v0[k];
+
+  if (verbose) {
+    out << "alpha = " << alpha << "\n";
+    dumpSubVectorView(v0, "v0", out);
+    dumpSubVectorView(orig_z0, "orig_z0", out);
+    dumpSubVectorView(z0, "z0", out);
+    dumpSubVectorView(expected_z0, "expected_z0", out);
+  }
+
+  TEST_COMPARE_FLOATING_ARRAYS( constSubVectorViewAsArray(z0),
+    constSubVectorViewAsArray(expected_z0),
+    as<ScalarMag>(ST::eps() * errorTolSlack)
+    );
+
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpAXPY, unitStride, Scalar )
+{
+  basicTest<Scalar>(1, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpAXPY, unitStride )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpAXPY, nonunitStride, Scalar )
+{
+  basicTest<Scalar>(4, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpAXPY, nonunitStride )
+
+
+} // namespace

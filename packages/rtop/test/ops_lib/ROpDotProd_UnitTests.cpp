@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpDotProd, reduct, Scalar )
   scalarReduct1.set(v1);
   scalarReduct2.set(v2);
 
-  dotProdOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  dotProdOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   TEST_FLOATING_EQUALITY( scalarReduct2.get(), v1+v2, as<ScalarMag>(ST::eps()*errorTolSlack) );
 

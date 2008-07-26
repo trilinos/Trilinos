@@ -138,9 +138,9 @@ bool testRelErr(
 /** \brief Compare if two array objects are the same or not.
  *
  * This function works with any two array objects are the same size and have
- * the same values.  The funtion is templated on the container types and
- * therefore can compare any two objects that have size() and operator[](i)
- * defined.
+ * the same element value types.  The funtion is templated on the container
+ * types and therefore can compare any two objects that have size() and
+ * operator[](i) defined.
  *
  * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
  *
@@ -150,6 +150,27 @@ template<class Array1, class Array2>
 bool compareArrays(
   const Array1 &a1, const std::string &a1_name,
   const Array2 &a2, const std::string &a2_name,
+  Teuchos::FancyOStream &out
+  );
+
+
+/** \brief Compare if two array objects are the same or not up to a relative
+ * floating point precision.
+ *
+ * This function works with any two array objects are the same size and have
+ * the same element value types.  The funtion is templated on the container
+ * types and therefore can compare any two objects that have size() and
+ * operator[](i) defined.
+ *
+ * \returns Returns <tt>true</tt> if the compare and <tt>false</tt> otherwise.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+template<class Array1, class Array2, class ScalarMag>
+bool compareFloatingArrays(
+  const Array1 &a1, const std::string &a1_name,
+  const Array2 &a2, const std::string &a2_name,
+  const ScalarMag &tol,
   Teuchos::FancyOStream &out
   );
 
@@ -427,6 +448,48 @@ bool Teuchos::compareArrays(
     if (!result) {
       out << "\nError, "<<a1_name<<"["<<i<<"] = "<<a1[i]<<" == "
           << a2_name<<"["<<i<<"] = "<<a2[i]<<": failed!\n";
+      success = false;
+    }
+  }
+  if (success) {
+    out << "passed\n";
+  }
+
+  return success;
+
+}
+
+
+template<class Array1, class Array2, class ScalarMag>
+bool Teuchos::compareFloatingArrays(
+  const Array1 &a1, const std::string &a1_name,
+  const Array2 &a2, const std::string &a2_name,
+  const ScalarMag &tol,
+  Teuchos::FancyOStream &out
+  )
+{
+  using Teuchos::as;
+  bool success = true;
+
+  out << "Comparing " << a1_name << " == " << a2_name << " ... ";
+
+  const int n = a1.size();
+
+  // Compare sizes
+  if (as<int>(a2.size()) != n) {
+    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == " 
+        << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
+    return false;
+  }
+  
+  // Compare elements
+  for( int i = 0; i < n; ++i ) {
+    const ScalarMag err = relErr( a1[i], a2[i] );
+    if ( err > tol ) {
+      out
+        <<"\nError, relErr("<<a1_name<<"["<<i<<"],"
+        <<a2_name<<"["<<i<<"]) = relErr("<<a1[i]<<","<<a2[i]<<") = "
+        <<err<<" <= tol = "<<tol<<": failed!\n";
       success = false;
     }
   }

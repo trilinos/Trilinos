@@ -108,6 +108,7 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProd.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProdUpdate.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination_def.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpRandomize.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpReciprocal.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpScaleVector.hpp\
@@ -116,6 +117,7 @@ RTOP_OPS_LIB_H = \
 
 RTOP_OPS_LIB = \
   $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp\
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.cpp
 
 RTOP_LAPACK_H = \

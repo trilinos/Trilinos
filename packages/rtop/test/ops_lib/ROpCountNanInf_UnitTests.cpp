@@ -65,13 +65,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpCountNanInf, reduct, Scalar )
     dyn_cast<DefaultReductTarget<index_type> >(*reduct1); 
 
   scalarReduct1.set(1);
-  countNanInfOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  countNanInfOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(0);
-  countNanInfOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  countNanInfOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(2);
-  countNanInfOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  countNanInfOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   TEST_EQUALITY( countNanInfOp(*reduct2), as<index_type>(3) )
 

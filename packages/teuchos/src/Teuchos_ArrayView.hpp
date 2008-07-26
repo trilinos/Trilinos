@@ -32,6 +32,7 @@
 
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace Teuchos {
@@ -125,6 +126,24 @@ template<class T> inline
 typename ArrayView<T>::Ordinal ArrayView<T>::size() const
 {
   return size_;
+}
+
+
+template<typename T>
+std::string ArrayView<T>::toString() const
+{
+  using Teuchos::as;
+  std::ostringstream ss;
+  ss << "{";
+
+  for (int i=0; i < as<int>(size()); ++i)
+  {
+    ss << operator[](i);
+    if (i < size()-1) ss << ", ";
+  }
+  ss << "}";
+
+  return ss.str();
 }
 
 
@@ -374,8 +393,7 @@ std::vector<T> Teuchos::createVector( const ArrayView<const T> &ptr )
 template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayView<T>& p )
 {
-  TEST_FOR_EXCEPT(true);
-  return out;
+  return out << p.toString();
 }
 
 

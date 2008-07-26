@@ -87,12 +87,13 @@ class ROpMinIndexGreaterThanBound
       ROpMinIndexReductObjReductionOp<Scalar> >
 {
 public:
+
   /** \brief . */
   ROpMinIndexGreaterThanBound(
     const Scalar &bound_in = Teuchos::ScalarTraits<Scalar>::zero()
     )
-    :RTOpT<Scalar>("ROpMinIndexGreaterThanBound")
     {
+      this->setOpNameBase("ROpMinIndexGreaterThanBound");
       bound(bound_in);
       initReductObjValue(
         ScalarIndex<Scalar>(+ScalarTraits<Scalar>::rmax(), -1));
@@ -107,6 +108,7 @@ public:
   /** \brief . */
   ScalarIndex<Scalar> operator()(const ReductTarget& reduct_obj ) const
     { return this->getRawVal(reduct_obj); }
+  
 };
 
 

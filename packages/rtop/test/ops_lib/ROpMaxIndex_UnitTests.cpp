@@ -70,13 +70,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndex, reduct, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(three, 3));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(four, 10));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 2));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> maxIndex_vals = maxIndexOp(*reduct2);
   TEST_EQUALITY( maxIndex_vals.scalar, four );
@@ -102,13 +102,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndex, reductTie_1, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 2));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(three, 4));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(three, 10));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> maxIndex_vals = maxIndexOp(*reduct2);
   TEST_EQUALITY( maxIndex_vals.scalar, three );
@@ -134,13 +134,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndex, reductTie_2, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(three, 10));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 5));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(three, 4));
-  maxIndexOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> maxIndex_vals = maxIndexOp(*reduct2);
   TEST_EQUALITY( maxIndex_vals.scalar, three );

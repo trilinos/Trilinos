@@ -75,10 +75,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNormInf, reduct, Scalar )
 
   scalarReduct1.set(three);
   scalarReduct2.set(four);
-  normInfOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  normInfOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(two);
-  normInfOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  normInfOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   TEST_EQUALITY( normInfOp(*reduct2), four );
 

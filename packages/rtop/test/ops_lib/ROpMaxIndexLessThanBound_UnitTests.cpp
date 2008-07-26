@@ -71,10 +71,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reduct, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  maxIndexLessThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(four, 2));
-  maxIndexLessThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> maxIndex_vals = maxIndexLessThanBoundOp(*reduct2);
   TEST_EQUALITY( maxIndex_vals.scalar, four );
@@ -99,10 +99,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reductTie_1, Scalar
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 4));
-  maxIndexLessThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  maxIndexLessThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> maxIndex_vals = maxIndexLessThanBoundOp(*reduct2);
   TEST_EQUALITY( maxIndex_vals.scalar, two );
@@ -127,10 +127,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reductTie_2, Scalar
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  maxIndexLessThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 4));
-  maxIndexLessThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> maxIndex_vals = maxIndexLessThanBoundOp(*reduct2);
   TEST_EQUALITY( maxIndex_vals.scalar, two );

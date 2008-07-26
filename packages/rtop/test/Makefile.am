@@ -31,9 +31,7 @@
 
 all-local:
 
-#SUBDIRS = base spmd ops_lib lapack support
-SUBDIRS = base spmd lapack support
-# 2008/07/26: Disabling ops_lib tests until I can fix this right.
+SUBDIRS = base spmd ops_lib lapack support
 
 EXTRA_DIST = definition
 

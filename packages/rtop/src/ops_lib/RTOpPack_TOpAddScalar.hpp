@@ -32,38 +32,46 @@
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
+
 namespace RTOpPack {
 
-/** \brief Add a scalar to a vector transformation operator: <tt>z0[i] += alpha, i=0...n-1</tt>.
+
+/** \brief Element-wise transformation operator for TOpAddScalar. */
+template<class Scalar>
+class TOpAddScalarEleWiseTransformation
+{
+public:
+  TOpAddScalarEleWiseTransformation( const Scalar &alpha )
+    : alpha_(alpha)
+    {}
+  void operator()( Scalar &z0 ) const
+    {
+      z0 += alpha_;
+    }
+private:
+  Scalar alpha_;
+};
+
+
+/** \brief Add a scalar to a vector transformation operator: <tt>z0[i] +=
+ * alpha, i=0...n-1</tt>.
  */
 template<class Scalar>
-class TOpAddScalar : public ROpScalarTransformationBase<Scalar> {
+class TOpAddScalar
+  : public TOp_0_1_Base<Scalar, TOpAddScalarEleWiseTransformation<Scalar> >
+{
 public:
+  typedef TOp_0_1_Base<Scalar, TOpAddScalarEleWiseTransformation<Scalar> > base_t;
   /** \brief . */
-  void alpha( const Scalar& alpha ) { this->scalarData(alpha); }
-  /** \brief . */
-  Scalar alpha() const { return this->scalarData(); }
-  /** \brief . */
-  TOpAddScalar( const Scalar &alpha = Teuchos::ScalarTraits<Scalar>::zero() )
-    : RTOpT<Scalar>("TOpAddScalar"), ROpScalarTransformationBase<Scalar>(alpha)
-    {}
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
+  TOpAddScalar( const Scalar &alpha )
+    : base_t(TOpAddScalarEleWiseTransformation<Scalar>(alpha))
     {
-      RTOP_APPLY_OP_0_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s ) {
-        *z0_val += alpha();
-      }
-}
-  //@}
-}; // class TOpAddScalar
+      this->setOpNameBase("TOpAddScalar");
+    }
+};
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_TOP_ADD_SCALAR_HPP

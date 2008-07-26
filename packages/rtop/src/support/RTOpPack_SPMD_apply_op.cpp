@@ -35,7 +35,7 @@ bool RTOpPack::show_spmd_apply_op_dump = false;
 #endif
 
 
-#ifdef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+#ifdef HAVE_RTOP_EXPLICIT_INSTANTIATION
 
 
 #include "RTOpPack_SPMD_apply_op_def.hpp"

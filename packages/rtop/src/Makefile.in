@@ -105,6 +105,7 @@ am__objects_2 = RTOp_parallel_helpers.$(OBJEXT)
 am__objects_3 = RTOpPack_RTOpTHelpers.$(OBJEXT) \
 	RTOpPack_SPMD_apply_op.$(OBJEXT)
 am__objects_4 = RTOpPack_ROpGetSubVector.$(OBJEXT) \
+	RTOpPack_TOpLinearCombination.$(OBJEXT) \
 	RTOpPack_TOpSetSubVector.$(OBJEXT)
 am__objects_5 = RTOpPack_LapackWrappers.$(OBJEXT)
 am_librtop_a_OBJECTS = RTOpPack_version.$(OBJEXT) $(am__objects_1) \
@@ -315,6 +316,7 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProd.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProdUpdate.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination_def.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpRandomize.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpReciprocal.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpScaleVector.hpp\
@@ -323,6 +325,7 @@ RTOP_OPS_LIB_H = \
 
 RTOP_OPS_LIB = \
   $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp\
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.cpp
 
 RTOP_LAPACK_H = \
@@ -498,6 +501,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_RTOpT.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_RTOpTHelpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_SPMD_apply_op.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_TOpLinearCombination.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_TOpSetSubVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOpPack_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RTOp_parallel_helpers.Po@am__quote@
@@ -613,6 +617,20 @@ RTOpPack_ROpGetSubVector.obj: $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp' object='RTOpPack_ROpGetSubVector.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_ROpGetSubVector.obj `if test -f '$(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp'; then $(CYGPATH_W) '$(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.cpp'; fi`
+
+RTOpPack_TOpLinearCombination.o: $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_TOpLinearCombination.o -MD -MP -MF $(DEPDIR)/RTOpPack_TOpLinearCombination.Tpo -c -o RTOpPack_TOpLinearCombination.o `test -f '$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp' || echo '$(srcdir)/'`$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RTOpPack_TOpLinearCombination.Tpo $(DEPDIR)/RTOpPack_TOpLinearCombination.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp' object='RTOpPack_TOpLinearCombination.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_TOpLinearCombination.o `test -f '$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp' || echo '$(srcdir)/'`$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp
+
+RTOpPack_TOpLinearCombination.obj: $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_TOpLinearCombination.obj -MD -MP -MF $(DEPDIR)/RTOpPack_TOpLinearCombination.Tpo -c -o RTOpPack_TOpLinearCombination.obj `if test -f '$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp'; then $(CYGPATH_W) '$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RTOpPack_TOpLinearCombination.Tpo $(DEPDIR)/RTOpPack_TOpLinearCombination.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp' object='RTOpPack_TOpLinearCombination.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RTOpPack_TOpLinearCombination.obj `if test -f '$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp'; then $(CYGPATH_W) '$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.cpp'; fi`
 
 RTOpPack_TOpSetSubVector.o: $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RTOpPack_TOpSetSubVector.o -MD -MP -MF $(DEPDIR)/RTOpPack_TOpSetSubVector.Tpo -c -o RTOpPack_TOpSetSubVector.o `test -f '$(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.cpp' || echo '$(srcdir)/'`$(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.cpp

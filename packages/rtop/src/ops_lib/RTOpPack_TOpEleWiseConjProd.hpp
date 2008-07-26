@@ -37,42 +37,39 @@
 namespace RTOpPack {
 
 
+/** \brief Element-wise transformation operator for TOpEleWiseConjProd. */
+template<class Scalar>
+class TOpEleWiseConjProdEleWiseTransformation
+{
+public:
+  TOpEleWiseConjProdEleWiseTransformation( const Scalar &alpha )
+    : alpha_(alpha)
+    {}
+  void operator()( const Scalar &v0, const Scalar &v1, Scalar &z0 ) const
+    {
+      z0 += alpha_ * ScalarTraits<Scalar>::conjugate(v0) * v1;
+    }
+private:
+  Scalar alpha_;
+};
+
+
 /** \brief Element-wise product transformation operator: <tt>z0[i] +=
- * alpha*v0[i]*v1[i], i=0...n-1</tt>.
+ * alpha*conj(v0[i])*v1[i], i=0...n-1</tt>.
  */
 template<class Scalar>
-class TOpEleWiseConjProd : public ROpScalarTransformationBase<Scalar> {
+class TOpEleWiseConjProd
+  : public TOp_2_1_Base<Scalar, TOpEleWiseConjProdEleWiseTransformation<Scalar> >
+{
 public:
+  typedef TOp_2_1_Base<Scalar, TOpEleWiseConjProdEleWiseTransformation<Scalar> > base_t;
   /** \brief . */
-  void alpha( const Scalar& alpha ) { this->scalarData(alpha); }
-  /** \brief . */
-  Scalar alpha() const { return this->scalarData(); }
-  /** \brief . */
-  TOpEleWiseConjProd( const Scalar &alpha = Teuchos::ScalarTraits<Scalar>::one() )
-    : RTOpT<Scalar>("TOpEleWiseConjProd"), ROpScalarTransformationBase<Scalar>(alpha) 
-    {}
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[]
-    ,const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
+  TOpEleWiseConjProd( const Scalar &alpha )
+    : base_t(TOpEleWiseConjProdEleWiseTransformation<Scalar>(alpha))
     {
-      typedef Teuchos::ScalarTraits<Scalar> ST;
-      RTOP_APPLY_OP_2_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      for(
-        Teuchos_Index i = 0;
-        i < subDim;
-        ++i, v0_val += v0_s, v1_val += v1_s, z0_val += z0_s
-        )
-      {
-        *z0_val += alpha() * ST::conjugate(*v0_val) * (*v1_val);
-      }
+      this->setOpNameBase("TOpEleWiseConjProd");
     }
-  //@}
-}; // class TOpEleWiseConjProd
+};
 
 
 } // namespace RTOpPack

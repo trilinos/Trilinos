@@ -30,8 +30,7 @@
 #ifndef RTOPPACK_TOP_LINEAR_COMBINATION_HPP
 #define RTOPPACK_TOP_LINEAR_COMBINATION_HPP
 
-#include "RTOpPack_RTOpT.hpp"
-#include "Teuchos_Workspace.hpp"
+#include "RTOpPack_RTOpTHelpers.hpp"
 
 
 namespace RTOpPack {
@@ -55,303 +54,32 @@ public:
   TOpLinearCombination(
     const ArrayView<const Scalar> &alpha_in = Teuchos::null,
     const Scalar &beta = Teuchos::ScalarTraits<Scalar>::zero()
-    )
-    :RTOpT<Scalar>("TOpLinearCombination"),
-    beta_(beta)
-    {
-      if (alpha_in.size())
-        alpha(alpha_in);
-    }
+    );
 
   /** \brief . */
-  void beta( const Scalar& beta_in ) { beta_ = beta_in; }
+  void alpha( const ArrayView<const Scalar> &alpha_in );
 
   /** \brief . */
-  Scalar beta() const { return beta_; }
+  const ArrayView<const Scalar> alpha() const;
 
   /** \brief . */
-  void alpha( const ArrayView<const Scalar> &alpha_in )
-    {
-      TEST_FOR_EXCEPT( alpha_in.size() == 0 );
-      alpha_ = alpha_in;
-    }
+  void beta( const Scalar& beta_in );
 
   /** \brief . */
-  int num_vecs() const { return alpha_.size(); }
+  Scalar beta() const;
 
   /** \brief . */
-  const ArrayView<const Scalar> alpha() const
-    { return alpha_; }
+  int num_vecs() const;
 
   /** @name Overridden from RTOpT */
   //@{
 
   /** \brief . */
-  void apply_op(
-    const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[]
-    ,const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
-    {
-      using Teuchos::Workspace;
-      typedef Teuchos::ScalarTraits<Scalar> ST;
-      typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
-      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
-      Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-      // Validate input
-#ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPT( static_cast<int>(alpha_.size()) != num_vecs );
-      TEST_FOR_EXCEPT( sub_vecs == NULL );
-      TEST_FOR_EXCEPT( num_targ_vecs != 1 );
-      TEST_FOR_EXCEPT( targ_sub_vecs == NULL );
-#endif
-      // Get pointers to local data
-      const RTOpPack::index_type subDim = targ_sub_vecs[0].subDim();
-      iter_t z0_val = targ_sub_vecs[0].values().begin();
-      const ptrdiff_t z0_s = targ_sub_vecs[0].stride();
-      Workspace<const_iter_t> v_val(wss,num_vecs);
-      Workspace<ptrdiff_t> v_s(wss,num_vecs,false);
-      for( int k = 0; k < num_vecs; ++k ) {
-#ifdef TEUCHOS_DEBUG
-        TEST_FOR_EXCEPT( sub_vecs[k].subDim() != subDim );
-        TEST_FOR_EXCEPT( sub_vecs[k].globalOffset() != targ_sub_vecs[0].globalOffset() );
-#endif					
-        v_val[k] = sub_vecs[k].values().begin();
-        v_s[k] = sub_vecs[k].stride();
-      }
-      //
-      // Perform the operation and specialize the cases for num_vecs = 1 and 2
-      // in order to get good performance.
-      //
-      if( num_vecs == 1 ) {
-        //
-        // z0 = alpha*v0 + beta*z0
-        //
-        const Scalar alpha = alpha_[0], beta = beta_;
-        const_iter_t v0_val = v_val[0];
-        const ptrdiff_t v0_s = v_s[0]; 
-        if( beta==ST::zero() ) {
-          // z0 = alpha*v0
-          if( z0_s==1 && v0_s==1 ) {
-            for( int j = 0; j < subDim; ++j )
-              (*z0_val++) = alpha * (*v0_val++);
-          }
-          else {
-            for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s )
-              (*z0_val) = alpha * (*v0_val);
-          }
-        }
-        else if( beta==ST::one() ) {
-          //
-          // z0 = alpha*v0 + z0
-          //
-          if( z0_s==1 && v0_s==1 ) {
-            for( int j = 0; j < subDim; ++j )
-              (*z0_val++) += alpha * (*v0_val++);
-          }
-          else {
-            for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s )
-              (*z0_val) += alpha * (*v0_val);
-          }
-        }
-        else {
-          // z0 = alpha*v0 + beta*z0
-          if( z0_s==1 && v0_s==1 ) {
-            for( int j = 0; j < subDim; ++j, ++z0_val )
-              (*z0_val) = alpha * (*v0_val++) + beta*(*z0_val);
-          }
-          else {
-            for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s )
-              (*z0_val) = alpha * (*v0_val) + beta*(*z0_val);
-          }
-        }
-      }
-      else if( num_vecs == 2 ) {
-        //
-        // z0 = alpha0*v0 + alpha1*v1 + beta*z0
-        //
-        const Scalar alpha0 = alpha_[0], alpha1=alpha_[1], beta = beta_;
-        const_iter_t v0_val = v_val[0];
-        const ptrdiff_t v0_s = v_s[0]; 
-        const_iter_t v1_val = v_val[1];
-        const ptrdiff_t v1_s = v_s[1]; 
-        if( beta==ST::zero() ) {
-          if( alpha0 == ST::one() ) {
-            if( alpha1 == ST::one() ) {
-              // z0 = v0 + v1
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j )
-                  (*z0_val++) = (*v0_val++) + (*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = (*v0_val) + (*v1_val);
-              }
-            }
-            else {
-              // z0 = v0 + alpha1*v1
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j )
-                  (*z0_val++) = (*v0_val++) + alpha1*(*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = (*v0_val) + alpha1*(*v1_val);
-              }
-            }
-          }
-          else {
-            if( alpha1 == ST::one() ) {
-              // z0 = alpha0*v0 + v1
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j )
-                  (*z0_val++) = alpha0*(*v0_val++) + (*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = alpha0*(*v0_val) + (*v1_val);
-              }
-            }
-            else {
-              // z0 = alpha0*v0 + alpha1*v1
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j )
-                  (*z0_val++) = alpha0*(*v0_val++) + alpha1*(*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = alpha0*(*v0_val) + alpha1*(*v1_val);
-              }
-            }
-          }
-        }
-        else if( beta==ST::one() ) {
-          if( alpha0 == ST::one() ) {
-            if( alpha1 == ST::one() ) {
-              // z0 = v0 + v1 + z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) += (*v0_val++) + (*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) += (*v0_val) + (*v1_val);
-              }
-            }
-            else {
-              // z0 = v0 + alpha1*v1 + z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) += (*v0_val++) + alpha1*(*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) += (*v0_val) + alpha1*(*v1_val);
-              }
-            }
-          }
-          else {
-            if( alpha1 == ST::one() ) {
-              // z0 = alpha0*v0 + v1 + z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) += alpha0*(*v0_val++) + (*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) += alpha0*(*v0_val) + (*v1_val);
-              }
-            }
-            else {
-              // z0 = alpha0*v0 + alpha1*v1 + z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) += alpha0*(*v0_val++) + alpha1*(*v1_val++);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) += alpha0*(*v0_val) + alpha1*(*v1_val);
-              }
-            }
-          }
-        }
-        else {
-          if( alpha0 == ST::one() ) {
-            if( alpha1 == ST::one() ) {
-              // z0 = v0 + v1 + beta*z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) = (*v0_val++) + (*v1_val++) + beta*(*z0_val);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = (*v0_val) + (*v1_val) + beta*(*z0_val);
-              }
-            }
-            else {
-              // z0 = v0 + alpha1*v1 + beta*z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) = (*v0_val++) + alpha1*(*v1_val++) + beta*(*z0_val);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = (*v0_val) + alpha1*(*v1_val) + beta*(*z0_val);
-              }
-            }
-          }
-          else {
-            if( alpha1 == ST::one() ) {
-              // z0 = alpha0*v0 + v1 + beta*z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) = alpha0*(*v0_val++) + (*v1_val++) + beta*(*z0_val);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = alpha0*(*v0_val) + (*v1_val) + beta*(*z0_val);
-              }
-            }
-            else {
-              // z0 = alpha0*v0 + alpha1*v1 + beta*z0
-              if( z0_s==1 && v0_s==1 && v1_s==1 ) {
-                for( int j = 0; j < subDim; ++j, ++z0_val )
-                  (*z0_val) = alpha0*(*v0_val++) + alpha1*(*v1_val++) + beta*(*z0_val);
-              }
-              else {
-                for( int j = 0; j < subDim; ++j, z0_val+=z0_s, v0_val+=v0_s, v1_val+=v1_s )
-                  (*z0_val) = alpha0*(*v0_val) + alpha1*(*v1_val) + beta*(*z0_val);
-              }
-            }
-          }
-        }
-      }
-      else {
-        //
-        // Totally general implementation (but least efficient)
-        //
-        // z0 *= beta
-        if( beta_ == ST::zero() ) {
-          for( int j = 0; j < subDim; ++j, z0_val += z0_s )
-            (*z0_val) = ST::zero();
-        }
-        else if( beta_ != ST::one() ) {
-          for( int j = 0; j < subDim; ++j, z0_val += z0_s )
-            (*z0_val) *= beta_;
-        }
-        // z0 += sum( alpha[k]*v[k], k=0...num_vecs-1)
-        z0_val = targ_sub_vecs[0].values().begin();
-        for( int j = 0; j < subDim; ++j, z0_val += z0_s ) {
-          for( int k = 0; k < num_vecs; ++k ) {
-            const Scalar
-              &alpha_k = alpha_[k],
-              &v_k_val = *v_val[k];
-            (*z0_val) += alpha_k * v_k_val;
-            v_val[k] += v_s[k];
-          }
-        }
-      }
-    }
+  void apply_op_impl(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj_inout
+    ) const;
 
   //@}
 
@@ -360,10 +88,15 @@ private:
   Scalar beta_;
   Array<Scalar> alpha_;
 
-}; // class TOpLinearCombination
+};
 
 
 } // namespace RTOpPack
 
 
-#endif // RTOPPACK_TOP_LINEAR_COMBINATION_HPP
+#ifndef HAVE_TEUCHOS_EXPLICIT_INSTANIATION
+#  include "RTOpPack_TOpLinearCombination_def.hpp"
+#endif
+
+
+#endif // RTOPPACK_TOP_LINEAR_COMBINATION_HPP 

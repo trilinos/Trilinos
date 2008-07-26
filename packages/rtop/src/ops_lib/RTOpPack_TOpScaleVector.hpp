@@ -32,45 +32,46 @@
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
+
 namespace RTOpPack {
+
+
+/** \brief Element-wise transformation operator for TOpScaleVector. */
+template<class Scalar>
+class TOpScaleVectorEleWiseTransformation
+{
+public:
+  TOpScaleVectorEleWiseTransformation( const Scalar &alpha )
+    : alpha_(alpha)
+    {}
+  void operator()( Scalar &z0 ) const
+    {
+      z0 *= alpha_;
+    }
+private:
+  Scalar alpha_;
+};
+
 
 /** \brief Simple transformation operator that scales every vector element by
  * a scalar <tt>alpha</tt>.
  */
 template<class Scalar>
-class TOpScaleVector : public ROpScalarTransformationBase<Scalar> {
+class TOpScaleVector
+  : public TOp_0_1_Base<Scalar, TOpScaleVectorEleWiseTransformation<Scalar> >
+{
 public:
+  typedef TOp_0_1_Base<Scalar, TOpScaleVectorEleWiseTransformation<Scalar> > base_t;
   /** \brief . */
-  void alpha( const Scalar& alpha ) { this->scalarData(alpha); }
-  /** \brief . */
-  Scalar alpha() const { return this->scalarData(); }
-  /** \brief . */
-  TOpScaleVector( const Scalar &alpha = Teuchos::ScalarTraits<Scalar>::zero() )
-    : RTOpT<Scalar>("TOpScaleVector"), ROpScalarTransformationBase<Scalar>(alpha)
-    {}
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
+  TOpScaleVector( const Scalar &alpha )
+    : base_t(TOpScaleVectorEleWiseTransformation<Scalar>(alpha))
     {
-      RTOP_APPLY_OP_0_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      const Scalar alpha = this->alpha();
-      if( z0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
-          *z0_val++ *= alpha;
-      }
-      else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s )
-          *z0_val *= alpha;
-      }
-}
-  //@}
-}; // class TOpScaleVector
+      this->setOpNameBase("TOpScaleVector");
+    }
+};
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_TOP_SCALE_VECTOR_HPP

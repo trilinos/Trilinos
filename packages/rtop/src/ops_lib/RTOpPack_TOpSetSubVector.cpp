@@ -30,7 +30,7 @@
 #include "RTOpPack_TOpSetSubVector.hpp"
 
 
-#ifdef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+#ifdef HAVE_RTOP_EXPLICIT_INSTANTIATION
 
 
 #include "RTOpPack_TOpSetSubVector_def.hpp"

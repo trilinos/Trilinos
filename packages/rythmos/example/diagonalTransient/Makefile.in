@@ -260,6 +260,11 @@ DIAGONAL_EXE_LINKS = \
 
 
 #
+# XML Files
+#
+XML_FILES = diagonalTransient_aztecoo.xml
+
+#
 # Common stuff
 #
 common_dependencies = \
@@ -273,6 +278,7 @@ _EXPORT_LIBS = $(RYTHMOS_TEST_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
+EXTRA_DIST = _diagonalTransient_aztecoo.xml
 all: all-am
 
 .SUFFIXES:
@@ -539,7 +545,7 @@ uninstall-am:
 	uninstall-am
 
 
-all-local: $(DIAGONAL_EXE_LINKS)
+all-local: $(DIAGONAL_EXE_LINKS) $(XML_FILES)
 	@echo ""
 	@echo "rythmos/example/diagonalTransient built successfully."
 	@echo ""
@@ -564,6 +570,9 @@ diagonalTransient_belos_ifpack.exe: diagonalTransient.exe
 
 diagonalTransient_belos_ml.exe: diagonalTransient.exe
 	if [ ! -x $@ ]; then ln -s $< $@; fi
+
+diagonalTransient_aztecoo.xml: $(srcdir)/_diagonalTransient_aztecoo.xml
+	cp $(srcdir)/_diagonalTransient_aztecoo.xml diagonalTransient_aztecoo.xml
 
 include $(top_builddir)/Makefile.export.rythmos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

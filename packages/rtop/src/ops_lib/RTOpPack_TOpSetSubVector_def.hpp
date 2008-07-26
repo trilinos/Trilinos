@@ -59,55 +59,7 @@ void TOpSetSubVector<Scalar>::set_sub_vec( const SparseSubVectorT<Scalar> &sub_v
 
 
 template<class Scalar>
-void TOpSetSubVector<Scalar>::get_op_type_num_entries(
-  int* num_values
-  ,int* num_indexes
-  ,int* num_chars
-  ) const
-{
-  typedef PrimitiveTypeTraits<Scalar,Scalar> PTT;
-  TEST_FOR_EXCEPT( !num_values || !num_indexes || !num_chars ); 
-  const int num_prim_objs_per_scalar = PTT::numPrimitiveObjs();
-  *num_values = num_prim_objs_per_scalar*sub_vec_.subNz(); // values[]
-  *num_indexes =
-    num_sub_vec_members // globalOffset,subDim,subNz,localOffset,isSorted,ownsMem
-    + (sub_vec_.indices().get() ? sub_vec_.subNz() : 0 ); // indices[]
-  *num_chars = 0;
-}
-
-
-template<class Scalar>
-void TOpSetSubVector<Scalar>::extract_op_state(
-  int num_values
-  ,primitive_value_type value_data[]
-  ,int num_indexes
-  ,index_type index_data[]
-  ,int num_chars
-  ,char_type char_data[]
-  ) const
-{
-  TEST_FOR_EXCEPT(true);
-}
-
-
-template<class Scalar>
-void TOpSetSubVector<Scalar>::load_op_state(
-  int num_values
-  ,const primitive_value_type value_data[]
-  ,int num_indexes
-  ,const index_type index_data[]
-  ,int num_chars
-  ,const char_type char_data[]
-  )
-{
-  // This function needs updating and I don't think it is being tested
-  // so I am commenting it out and putting in this throw!
-  TEST_FOR_EXCEPT(true);
-}
-
-
-template<class Scalar>
-bool TOpSetSubVector<Scalar>::coord_invariant() const
+bool TOpSetSubVector<Scalar>::coord_invariant_impl() const
 {
   return false;
 }

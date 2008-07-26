@@ -86,10 +86,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMax, reduct, Scalar )
     dyn_cast<DefaultReductTarget<ScalarMag> >(*reduct1); 
 
   scalarReduct1.set(m_two);
-  maxOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(m_four);
-  maxOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  maxOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   TEST_EQUALITY( maxOp(*reduct2), m_two );
 

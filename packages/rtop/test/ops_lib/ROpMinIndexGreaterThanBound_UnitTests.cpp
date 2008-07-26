@@ -70,10 +70,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndexGreaterThanBound, reduct, Scalar )
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  minIndexGreaterThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexGreaterThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(four, 2));
-  minIndexGreaterThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexGreaterThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> minIndex_vals = minIndexGreaterThanBoundOp(*reduct2);
   TEST_EQUALITY( minIndex_vals.scalar, two );
@@ -98,10 +98,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndexGreaterThanBound, reductTie_1, Sca
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 4));
-  minIndexGreaterThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexGreaterThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  minIndexGreaterThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexGreaterThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> minIndex_vals = minIndexGreaterThanBoundOp(*reduct2);
   TEST_EQUALITY( minIndex_vals.scalar, two );
@@ -126,10 +126,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndexGreaterThanBound, reductTie_2, Sca
     dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
-  minIndexGreaterThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexGreaterThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 4));
-  minIndexGreaterThanBoundOp.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  minIndexGreaterThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   const ScalarIndex<Scalar> minIndex_vals = minIndexGreaterThanBoundOp(*reduct2);
   TEST_EQUALITY( minIndex_vals.scalar, two );

@@ -60,10 +60,11 @@ public:
   typedef Teuchos::ScalarTraits<Scalar> ST;
   /** \brief . */
   ROpNorm2()
-    : RTOpT<Scalar>("ROpNorm2")
-    {}
+    {
+      this->setOpNameBase("ROpNorm2");
+    }
   /** \brief . */
-  typename ST::magnitudeType operator()(const ReductTarget& reduct_obj ) const
+  typename ST::magnitudeType operator()(const ReductTarget& reduct_obj) const
     { return ST::magnitude(ST::squareroot(this->getRawVal(reduct_obj))); }
 };
 

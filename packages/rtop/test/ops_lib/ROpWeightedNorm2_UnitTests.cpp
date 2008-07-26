@@ -75,10 +75,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpWeightedNorm2, reduct, Scalar )
 
   scalarReduct1.set(three);
   scalarReduct2.set(four);
-  weightedNorm2Op.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  weightedNorm2Op.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   scalarReduct1.set(two);
-  weightedNorm2Op.reduct_reduct_objs( *reduct1, reduct2.ptr() );
+  weightedNorm2Op.reduce_reduct_objs( *reduct1, reduct2.ptr() );
 
   TEST_FLOATING_EQUALITY( weightedNorm2Op(*reduct2), SMT::squareroot(three+four+two),
     as<ScalarMag>(ST::eps() * errorTolSlack) );

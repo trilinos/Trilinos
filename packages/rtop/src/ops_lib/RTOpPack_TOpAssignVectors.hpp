@@ -34,35 +34,17 @@
 
 namespace RTOpPack {
 
-/** \brief VectorBase assignment transformation operator: <tt>z0[i] = v0[i], i=0...n-1</tt>.
+
+/** \brief VectorBase assignment transformation operator: <tt>z0[i] = v0[i],
+ * i=0...n-1</tt>.
  */
-template<class Scalar>
-class TOpAssignVectors : public RTOpT<Scalar> {
-public:
-  /** \brief . */
-  TOpAssignVectors() : RTOpT<Scalar>("TOpAssignVector") {}
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
-    {
-      RTOP_APPLY_OP_1_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      if( z0_s == 1 && v0_s == 1 ) {
-        for( Teuchos_Index i = 0; i < subDim; ++i )
-          *z0_val++ = *v0_val++;
-      }
-      else {
-        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s, z0_val += z0_s )
-          *z0_val = *v0_val;
-      }
-    }
-  //@}
-}; // class TOpAssignVectors
+RTOP_TOP_1_1( TOpAssignVectors )
+{
+  z0 = v0;
+}
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_TOP_ASSIGN_VECTORS_HPP

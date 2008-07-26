@@ -181,6 +181,9 @@ public:
   /** \brief The total number of items in the managed array. */
   Ordinal size() const;
 
+  /** \brief Convert an ArrayView<T> to an <tt>std::string</tt> */
+  std::string toString() const;
+
   //@}
 
   //! @name Element Access Functions 

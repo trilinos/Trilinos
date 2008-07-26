@@ -32,39 +32,46 @@
 
 #include "RTOpPack_RTOpTHelpers.hpp"
 
+
 namespace RTOpPack {
+
+
+/** \brief Element-wise transformation operator for TOpEleWiseProdUpdate. */
+template<class Scalar>
+class TOpEleWiseProdUpdateEleWiseTransformation
+{
+public:
+  TOpEleWiseProdUpdateEleWiseTransformation( const Scalar &alpha )
+    : alpha_(alpha)
+    {}
+  void operator()( const Scalar &v0, Scalar &z0 ) const
+    {
+      z0 *= alpha_ * v0;
+    }
+private:
+  Scalar alpha_;
+};
+
 
 /** \brief Element-wise product update transformation operator: 
  * <tt>z0[i] *= alpha*v0[i], i=0...n-1</tt>.
  */
 template<class Scalar>
-class TOpEleWiseProdUpdate : public ROpScalarTransformationBase<Scalar> {
+class TOpEleWiseProdUpdate
+  : public TOp_1_1_Base<Scalar, TOpEleWiseProdUpdateEleWiseTransformation<Scalar> >
+{
 public:
+  typedef TOp_1_1_Base<Scalar, TOpEleWiseProdUpdateEleWiseTransformation<Scalar> > base_t;
   /** \brief . */
-  void alpha( const Scalar& alpha ) { this->scalarData(alpha); }
-  /** \brief . */
-  Scalar alpha() const { return this->scalarData(); }
-  /** \brief . */
-  TOpEleWiseProdUpdate( const Scalar &alpha = Teuchos::ScalarTraits<Scalar>::one() )
-    : RTOpT<Scalar>("TOpEleWiseProdUpdate"), ROpScalarTransformationBase<Scalar>(alpha) 
-    {}
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
+  TOpEleWiseProdUpdate( const Scalar &alpha )
+    : base_t(TOpEleWiseProdUpdateEleWiseTransformation<Scalar>(alpha))
     {
-      RTOP_APPLY_OP_1_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      for( Teuchos_Index i = 0; i < subDim; ++i,  v0_val += v0_s,  z0_val += z0_s ) {
-        *z0_val *= alpha() * (*v0_val);
-      }
-}
-  //@}
-}; // class TOpEleWiseProdUpdate
+      this->setOpNameBase("TOpEleWiseProdUpdate");
+    }
+};
+
 
 } // namespace RTOpPack
+
 
 #endif // RTOPPACK_TOP_ELE_WISE_PROD_UPDATE_HPP
