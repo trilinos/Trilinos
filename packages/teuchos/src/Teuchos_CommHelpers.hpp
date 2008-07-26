@@ -877,10 +877,6 @@ void Teuchos::reduceAllAndScatter(
   WorkspaceStore* wss = get_default_workspace_store().get();
   Workspace<Ordinal> charRecvCounts(wss, size);
   for (Ordinal k = 0; k < size; ++k) {
-#ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPT_MSG( recvCounts[k] != as<Ordinal>(1),
-      "Error, we have not tested recvCounts[k] != 1 yet (but it might work)!" );
-#endif
     charRecvCounts[k] = as<Ordinal>(recvCounts[k] * packetSize);
   }
   

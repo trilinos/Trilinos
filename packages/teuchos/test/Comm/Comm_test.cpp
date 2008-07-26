@@ -314,9 +314,10 @@ bool testComm(
 
   *out << "\nReducing/summing sendBuff[] and scattering into recvBuff[] ...\n";
 
-  // there are count items in sendbuff
-  // the intermediate reduction operation will result in a vector of length count
-  // each process will recieve numItemsPerProcess == count/numProcs == numProcs*2/numProcs == 2  of this intermediate reduction
+  // there are count items in sendbuff the intermediate reduction operation
+  // will result in a vector of length count each process will recieve
+  // numItemsPerProcess == count/numProcs == numProcs*2/numProcs == 2 of this
+  // intermediate reduction
   const Ordinal numItemsPerProcess = count/numProcs;
   Teuchos::Array<Ordinal> recvCounts(numProcs);
   // fill recvCounts with {2,...,2}
