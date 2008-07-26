@@ -1,6 +1,0 @@
-
-always-build:
-	./build_docs
-
-clean:
-	rm -rf html

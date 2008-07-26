@@ -1,2 +1,0 @@
-@INCLUDE = rtop/doc/TagFiles   # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
-TAGFILES += $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesOperatorVectorANAFundamental.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/operator_vector/ana/fundamental/doc/html

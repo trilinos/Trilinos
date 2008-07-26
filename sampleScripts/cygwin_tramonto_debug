@@ -1,8 +1,0 @@
-../configure --enable-mpi --with-mpi=/usr/MPICH/SDK.gcc \
---prefix=/home/mheroux/TRILINOS_TRAMONTO_DEBUG -C \
-CXXFLAGS="-O0 -g" CFLAGS="-O0 -g" FFLAGS="-O0 -g" \
-CXX=g++ CC=gcc F77=g77 CXXFLAGS='-O0 -g' \
---with-mpi-libs=-lmpich \
---with-mpi-cxx=g++ --with-mpi-cc=gcc --with-mpi-f77=g77 \
---disable-default-packages --enable-eptra --enable-teuchos --enable-aztecoo --enable-ifpack \
---enable-epetraext --enable-triutils --disable-examples --disable-tests --disable-libcheck
