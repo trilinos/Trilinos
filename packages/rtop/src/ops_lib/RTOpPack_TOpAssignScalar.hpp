@@ -40,17 +40,20 @@ namespace RTOpPack {
 template<class Scalar>
 class TOpAssignScalarEleWiseTransformation
 {
+  Scalar alpha_;
 public:
   TOpAssignScalarEleWiseTransformation( const Scalar &alpha )
-    : alpha_(alpha)
-    {}
+    {
+      alpha_ = alpha;
+    }
   void operator()( Scalar &z0 ) const
     {
       z0 = alpha_;
     }
-private:
-  Scalar alpha_;
 };
+// 2008/07/27: rabartl: Above, I am reorganizing the structure of the code
+// different from what I usually would in order to try to get around a
+// compiler "Bus Error" on s858352 (see bug 4010).
 
 
 /** \brief Assign a scalar to a vector transformation operator: <tt>z0[i] =
