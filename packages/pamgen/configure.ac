@@ -370,7 +370,6 @@ AC_CONFIG_FILES([
 		src/Makefile
 		example/Makefile
 		test/Makefile
-		test/test1/Makefile
 		])
 
 AC_OUTPUT()

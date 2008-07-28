@@ -225,48 +225,6 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-#run_test_script_01 \
-#	run_test_script_02 \
-#	run_test_script_03 \
-#	run_test_script_04 \
-#	run_test_script_05 \
-#	run_test_script_06 \
-#	run_test_script_07 \
-#	run_test_script_08 \
-#	run_test_script_09 \
-#	run_test_script_10 \
-#	run_test_script_11 \
-#	run_test_script_12 \
-#	run_test_script_13 \
-#	run_test_script_14 \
-#	run_test_script_15 \
-#	run_test_script_16 \
-#	run_test_script_17 \
-#	run_test_script_18 \
-#	run_test_script_19 \
-#	run_test_script_21 \
-#	run_test_script_22 \
-#	run_test_script_23 \
-#	run_test_script_24 \
-#	run_test_script_25 \
-#	run_test_script_26 \
-#	run_test_script_27 \
-#	run_test_script_28 \
-#	run_test_script_29 \
-#	run_test_script_30 \
-#	run_test_script_31 \
-#	run_test_script_32 \
-#	run_test_script_33 \
-#	run_test_script_34 \
-#	run_test_script_35 \
-#	run_test_script_36 \
-#	run_test_script_37 \
-#	run_test_script_38 \
-#	run_test_script_39 \
-#	run_test_script_40 \
-#	run_test_script_41 \
-#	run_test_script_42 
 pamgen_test_driver_SOURCES = $(srcdir)/../example/pamgen_test_driver.c $(srcdir)/../example/getopts.C
 
 #np# Specify locations of include files within Trilinos, but outside np
