@@ -42,16 +42,10 @@ all-local:
 
 CORE_H = \
 	$(srcdir)/Tpetra_DistObject.hpp \
-	$(srcdir)/Tpetra_OutputObject.hpp \
-	$(srcdir)/Tpetra_OutputManager.hpp \
-	$(srcdir)/Tpetra_MsgType.hpp \
 	$(srcdir)/Tpetra_Platform.hpp \
-	$(srcdir)/Tpetra_OmniPlatform.hpp \
-	$(srcdir)/Tpetra_OmniPlatformData.hpp \
-	$(srcdir)/Tpetra_Comm.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \
-	$(srcdir)/Tpetra_Directory.hpp \
-	$(srcdir)/Tpetra_DirectoryDecl.hpp
+	$(srcdir)/Tpetra_DirectoryDecl.hpp \
+	$(srcdir)/Tpetra_Directory.hpp
 
 CORE = 
 
@@ -73,16 +67,12 @@ UNIPROC_H =
 UNIPROC = 
 
 SERIAL_H = \
-	$(srcdir)/Tpetra_SerialPlatform.hpp \
-	$(srcdir)/Tpetra_SerialComm.hpp
+	$(srcdir)/Tpetra_SerialPlatform.hpp
 
 SERIAL = 
 
 EXTRA_MPI_H = \
-	$(srcdir)/Tpetra_MpiPlatform.hpp \
-	$(srcdir)/Tpetra_MpiComm.hpp \
-	$(srcdir)/Tpetra_MpiData.hpp \
-	$(srcdir)/Tpetra_MpiTraits.hpp 
+	$(srcdir)/Tpetra_MpiPlatform.hpp
 
 EXTRA_MPI = 
 
@@ -108,14 +98,10 @@ LANG_WRAPS_H =
 LANG_WRAPS = 
 
 DIST_H = \
-	$(srcdir)/Tpetra_Map.hpp \
-	$(srcdir)/Tpetra_MapData.hpp \
 	$(srcdir)/Tpetra_MapDecl.hpp \
+	$(srcdir)/Tpetra_Map.hpp \
 	$(srcdir)/Tpetra_MapDataDecl.hpp \
-	$(srcdir)/Tpetra_ElementSpace.hpp \
-	$(srcdir)/Tpetra_ElementSpaceData.hpp \
-	$(srcdir)/Tpetra_VectorSpace.hpp \
-	$(srcdir)/Tpetra_VectorSpaceData.hpp \
+	$(srcdir)/Tpetra_MapData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
 	$(srcdir)/Tpetra_ImportData.hpp \
 	$(srcdir)/Tpetra_Export.hpp \
@@ -139,7 +125,9 @@ COMP =
 
 # List locations of include files within Trilinos but outside of this package
 
-AM_CPPFLAGS = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+	-I$(top_srcdir)/../kokkos/src -I$(top_builddir)/../kokkos/src
 
 # The following section can be duplicated for building multiple libraries -
 # make sure to list the correct categories with each library.
@@ -183,12 +171,9 @@ EXTRA_libtpetra_a_SOURCES = \
 # define it manually.
 
 if USE_ALTERNATE_AR
-
 libtpetra_a_AR = $(ALTERNATE_AR)
 else
-
 libtpetra_a_AR = $(AR) cru
-
 endif
 
 # ------------------------------------------------------------------------
@@ -228,9 +213,4 @@ nodist_execinclude_HEADERS = Tpetra_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-
-
-
-
 

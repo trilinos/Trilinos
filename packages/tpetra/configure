@@ -8524,8 +8524,18 @@ fi
 # ------------------------------------------------------------------------
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile example/Makefile example/verySimple/Makefile example/EpetraTpetraProfile/Makefile example/TpetraOPs/Makefile test/Makefile test/Platform/Makefile test/Distributor/Makefile test/Map/Makefile test/Directory/Makefile test/ImportExport/Makefile test/BlockElementSpace/Makefile test/Vector/Makefile test/CisMatrix/Makefile test/DistObject/Makefile test/BasicPerfTest/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile test/Makefile test/Platform/Makefile test/Distributor/Makefile test/Map/Makefile test/Directory/Makefile"
 
+# example/Makefile
+# example/verySimple/Makefile
+# example/EpetraTpetraProfile/Makefile
+# example/TpetraOPs/Makefile
+# test/ImportExport/Makefile
+# test/BlockElementSpace/Makefile
+# test/Vector/Makefile
+# test/CisMatrix/Makefile
+# test/DistObject/Makefile
+# test/BasicPerfTest/Makefile
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -9214,21 +9224,11 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "Makefile.export.tpetra") CONFIG_FILES="$CONFIG_FILES Makefile.export.tpetra" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-    "example/verySimple/Makefile") CONFIG_FILES="$CONFIG_FILES example/verySimple/Makefile" ;;
-    "example/EpetraTpetraProfile/Makefile") CONFIG_FILES="$CONFIG_FILES example/EpetraTpetraProfile/Makefile" ;;
-    "example/TpetraOPs/Makefile") CONFIG_FILES="$CONFIG_FILES example/TpetraOPs/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/Platform/Makefile") CONFIG_FILES="$CONFIG_FILES test/Platform/Makefile" ;;
     "test/Distributor/Makefile") CONFIG_FILES="$CONFIG_FILES test/Distributor/Makefile" ;;
     "test/Map/Makefile") CONFIG_FILES="$CONFIG_FILES test/Map/Makefile" ;;
     "test/Directory/Makefile") CONFIG_FILES="$CONFIG_FILES test/Directory/Makefile" ;;
-    "test/ImportExport/Makefile") CONFIG_FILES="$CONFIG_FILES test/ImportExport/Makefile" ;;
-    "test/BlockElementSpace/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockElementSpace/Makefile" ;;
-    "test/Vector/Makefile") CONFIG_FILES="$CONFIG_FILES test/Vector/Makefile" ;;
-    "test/CisMatrix/Makefile") CONFIG_FILES="$CONFIG_FILES test/CisMatrix/Makefile" ;;
-    "test/DistObject/Makefile") CONFIG_FILES="$CONFIG_FILES test/DistObject/Makefile" ;;
-    "test/BasicPerfTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/BasicPerfTest/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

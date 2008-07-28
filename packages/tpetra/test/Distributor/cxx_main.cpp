@@ -27,8 +27,10 @@
 // @HEADER
 
 #include "../tpetra_test_util.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #ifdef HAVE_MPI
 # include "Tpetra_MpiPlatform.hpp"
@@ -43,43 +45,43 @@ template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
-  int myImageID = 0; // assume we are on serial
-  int numImages = 1; // if MPI, will be reset later
 
-  // initialize MPI if needed
-#ifdef HAVE_MPI
-  numImages = -1;
-  myImageID = -1;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &numImages);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
-#endif // HAVE_MPI
-
-  bool verbose = false;
-  bool debug = false;
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet"  ,&verbose,"Print messages and results.");
-  cmdp.setOption("debug"  ,"nodebug",&debug  ,"Print debugging info.");
-  cmdp.parse(argc,argv);
-  // change verbose to only be true on Image 0
-  // if debug is enabled, it will still output on all nodes
-  verbose = ((verbose || debug) && (myImageID == 0));
-
-
-  // start the testing
-  if(verbose) outputStartMessage("Distributor");
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  int myImageID = mpiSession.getRank();
+  int numImages = mpiSession.getNProc();
+  bool success = false;
   int ierr = 0;
 
-  // call the actual test routines
-  ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
-  ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
+  try {
+    bool verbose = false;
+    bool debug = false;
+    CommandLineProcessor cmdp(false,true);
+    cmdp.setOption("verbose","quiet"  ,&verbose,"Print messages and results.");
+    cmdp.setOption("debug"  ,"nodebug",&debug  ,"Print debugging info.");
+    CommandLineProcessor::EParseCommandLineReturn
+      parse_return = cmdp.parse(argc,argv);
+    if (parse_return != CommandLineProcessor::PARSE_SUCCESSFUL) {
+      return parse_return;
+    }
+    // change verbose to only be true on Image 0
+    // if debug is enabled, it will still output on all nodes
+    verbose = ((verbose || debug) && (myImageID == 0));
 
-  // finish up
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  if(verbose) outputEndMessage("Distributor", (ierr == 0));
-  return(ierr);
+    // start the testing
+    if(verbose) outputStartMessage("Distributor");
+
+    // call the actual test routines
+    ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+    ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
+    if (ierr) {
+      success = false;
+    }
+
+    // if(verbose) outputEndMessage("Distributor", (ierr == 0));
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
+
+  return ierr;
 }
 
 
@@ -119,9 +121,9 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 
 #ifdef HAVE_MPI // Only do rest of testing if not in a serial build
   // fixtures
-  OrdinalType const zero = OrdinalTraits<OrdinalType>::zero();
-  OrdinalType const length = intToOrdinal<OrdinalType>(numImages);
-  OrdinalType const invalid = intToOrdinal<OrdinalType>(-99);
+  const OrdinalType zero = OrdinalTraits<OrdinalType>::zero();
+  const OrdinalType length = intToOrdinal<OrdinalType>(numImages);
+  const OrdinalType invalid = intToOrdinal<OrdinalType>(-99);
   OrdinalType numExportIDs;
   std::vector<OrdinalType> exportImageIDs;
   OrdinalType numRemoteIDs;
@@ -137,7 +139,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   for(OrdinalType i = zero; i < length; i++) 
     exportImageIDs.push_back(i);
 
-  distributorS.createFromSends(numExportIDs, exportImageIDs, true, numRemoteIDs);
+  distributorS.createFromSends(exportImageIDs, numRemoteIDs);
   if(debug) {
     if(verbose) cout << endl;
     outputData(myImageID, numImages, "exportImageIDs: " + Tpetra::toString(exportImageIDs));
@@ -154,7 +156,6 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   }
   returnierr += ierr;
   ierr = 0;
-  //distributorS->printInfo(cout);
 
   // ========================================
   // test createFromRecvs
@@ -174,7 +175,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   std::vector<OrdinalType> exportGIDs(length, invalid);
   exportImageIDs = exportGIDs; // fill with same thing
 
-  distributorR.createFromRecvs(numRemoteIDs, remoteGIDs, remoteImageIDs, true, numExportIDs, exportGIDs, exportImageIDs);
+  distributorR.createFromRecvs(remoteGIDs, remoteImageIDs, exportGIDs, exportImageIDs);
   std::vector<OrdinalType> expectedGIDs;
   generateColumn(expectedGIDs, myImageID, numImages);
   if(debug) {

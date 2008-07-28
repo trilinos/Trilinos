@@ -119,21 +119,21 @@ namespace Tpetra {
     /*! We will receive lengthsFrom[i] elements from image imagesFrom[i] */
     const std::vector<OrdinalType> & getLengthsFrom() const;
 
-    // getImagesTo - list of images we're sending elements to
+    //! getImagesTo - list of images we're sending elements to
     const std::vector<OrdinalType> & getImagesTo() const;
 
-    // getIndicesTo
+    //! getIndicesTo
     /*! (Used only if exportImageIDs was not blocked by image.)
         Gives the order to the export buffer, in order to get
       a version that is sorted by imageID. */
     const std::vector<OrdinalType> & getIndicesTo() const;
 
-    // getStartsTo - list of offsets into export buffer
+    //! getStartsTo - list of offsets into export buffer
     /*! Given an export buffer that contains all of the elements we're sending out, 
         image i's block of elements will start at position startsTo[i] */
     const std::vector<OrdinalType> & getStartsTo() const;
 
-    // getLengthsTo - number of elements we're sending to each image
+    //! getLengthsTo - number of elements we're sending to each image
     /*! We will send lengthsTo[i] elements to image imagesTo[i] */
     const std::vector<OrdinalType> & getLengthsTo() const;
 
@@ -160,16 +160,14 @@ namespace Tpetra {
              On exit, contains the values exported to us. (\c imports will be resized
              if necessary, and any existing values will be overwritten.)
     */
-    template <typename ScalarType>
-    void doPostsAndWaits(std::vector<ScalarType>& exports,
-                         OrdinalType packetSize,
-                         std::vector<ScalarType>& imports);
+    template <typename PacketType>
+    void doPostsAndWaits(const std::vector<PacketType>& exports,
+                               std::vector<PacketType>& imports);
 
     //! doPosts
-    template <typename ScalarType>
-    void doPosts(std::vector<ScalarType>& exports,
-                 OrdinalType packetSize,
-                 std::vector<ScalarType>& imports);
+    template <typename PacketType>
+    void doPosts(const std::vector<PacketType>& exports,
+                       std::vector<PacketType>& imports);
 
     //! doWaits
     void doWaits();
@@ -178,22 +176,18 @@ namespace Tpetra {
     /*! Execute a reverse plan specified by the distributor object.
       \param exports In
              On entry, contains the values we're exporting.
-      \param packetSize In
-             On entry, the number of ScalarType variables that make up an element.
       \param imports Out
              On exit, contains the values exported to us. (imports will be resized
              if necessary, and any existing values will be overwritten.)
     */
-    template <typename ScalarType>
-    void doReversePostsAndWaits(std::vector<ScalarType>& exports,
-                                OrdinalType packetSize,
-                                std::vector<ScalarType>& imports);
+    template <typename PacketType>
+    void doReversePostsAndWaits(const std::vector<PacketType>& exports,
+                                      std::vector<PacketType>& imports);
 
     //! doReversePosts
-    template <typename ScalarType>
-    void doReversePosts(std::vector<ScalarType>& exports,
-                        OrdinalType packetSize,
-                        std::vector<ScalarType>& imports);
+    template <typename PacketType>
+    void doReversePosts(const std::vector<PacketType>& exports,
+                              std::vector<PacketType>& imports);
     
     //! doReverseWaits
     void doReverseWaits();
@@ -501,27 +495,25 @@ namespace Tpetra {
   }
 
   template <typename OrdinalType>
-  template <typename ScalarType>
+  template <typename PacketType>
   void Distributor<OrdinalType>::doPostsAndWaits(
-      std::vector<ScalarType>& exports,
-      OrdinalType packetSize,
-      std::vector<ScalarType>& imports) 
+      const std::vector<PacketType>& exports,
+            std::vector<PacketType>& imports) 
   {
     (void)exports;
     (void)packetSize;
     (void)imports;
-    // FINISH
+    doPosts(exports, imports);
+    doWaits();
   }
 
   template <typename OrdinalType>
-  template <typename ScalarType>
+  template <typename PacketType>
   void Distributor<OrdinalType>::doPosts(
-      std::vector<ScalarType>& exports,
-      OrdinalType packetSize,
-      std::vector<ScalarType>& imports) 
+      const std::vector<PacketType>& exports,
+            std::vector<PacketType>& imports) 
   {
     (void)exports;
-    (void)packetSize;
     (void)imports;
     // FINISH
   }
@@ -530,30 +522,31 @@ namespace Tpetra {
   void Distributor<OrdinalType>::doWaits() 
   {
     // FINISH
+    const OrdinalType & numReceives = getNumReceives();
+    std::vector<MPI_Status> statuses(numReceives);
+    if(numReceives > Teuchos::OrdinalTraits<OrdinalType>::zero())
+      MPI_Waitall(numReceives, &request_.front(), &statuses.front());
   }
 
   template <typename OrdinalType>
-  template <typename ScalarType>
+  template <typename PacketType>
   void Distributor<OrdinalType>::doReversePostsAndWaits(
-      std::vector<ScalarType>& exports,
-      OrdinalType packetSize,
-      std::vector<ScalarType>& imports) 
+      const std::vector<PacketType>& exports,
+            std::vector<PacketType>& imports) 
   {
     (void)exports;
-    (void)packetSize;
     (void)imports;
-    // FINISH
+    doReversePosts(exports, imports);
+    doReverseWaits();
   }
 
   template <typename OrdinalType>
-  template <typename ScalarType>
+  template <typename PacketType>
   void Distributor<OrdinalType>::doReversePosts(
-      std::vector<ScalarType>& exports,
-      OrdinalType packetSize,
-      std::vector<ScalarType>& imports) 
+      const std::vector<PacketType>& exports,
+            std::vector<PacketType>& imports) 
   {
     (void)exports;
-    (void)packetSize;
     (void)imports;
     // FINISH
   }
@@ -563,7 +556,7 @@ namespace Tpetra {
   {
     // FINISH
   }
-  
+
   //! print method inherited from Teuchos::Object
   template <typename OrdinalType>
   void Distributor<OrdinalType>::print(ostream& os) const 
@@ -665,7 +658,6 @@ namespace Tpetra {
       std::vector<OrdinalType>& exportImageIDs)
   {
     int myImageID = getComm().getRank();
-    int numImages = getComm().getSize();
     const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
     const OrdinalType two = one + one;

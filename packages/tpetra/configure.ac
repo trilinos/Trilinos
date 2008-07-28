@@ -327,22 +327,22 @@ AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export.tpetra
 		src/Makefile
-		example/Makefile
-		example/verySimple/Makefile
-		example/EpetraTpetraProfile/Makefile
-		example/TpetraOPs/Makefile
 		test/Makefile
 		test/Platform/Makefile
 		test/Distributor/Makefile
         test/Map/Makefile
 		test/Directory/Makefile
-		test/ImportExport/Makefile
-		test/BlockElementSpace/Makefile
-		test/Vector/Makefile
-		test/CisMatrix/Makefile
-		test/DistObject/Makefile
-		test/BasicPerfTest/Makefile
 		])
+# example/Makefile
+# example/verySimple/Makefile
+# example/EpetraTpetraProfile/Makefile
+# example/TpetraOPs/Makefile
+# test/ImportExport/Makefile
+# test/BlockElementSpace/Makefile
+# test/Vector/Makefile
+# test/CisMatrix/Makefile
+# test/DistObject/Makefile
+# test/BasicPerfTest/Makefile
 
 AC_OUTPUT()
 
