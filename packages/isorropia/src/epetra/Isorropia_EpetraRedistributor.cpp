@@ -167,9 +167,12 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillC
 
   newRowSizes.Import(oldRowSizes, *importer_, Insert);
 
-  int *rowSize = new int [myNewRows];
-  for (int i=0; i< myNewRows; i++){
-    rowSize[i] = static_cast<int>(newRowSizes[i]);
+  int *rowSize=0;
+  if(myNewRows){
+    rowSize = new int [myNewRows];
+    for (int i=0; i< myNewRows; i++){
+      rowSize[i] = static_cast<int>(newRowSizes[i]);
+    }
   }
 
   // Receive new rows, send old rows
@@ -287,35 +290,28 @@ Redistributor::redistribute(const Epetra_MultiVector& input_vector)
 
 // Reverse redistribute methods (for vectors). 
 
-Teuchos::RefCountPtr<Epetra_Vector>
-Redistributor::redistribute_reverse(const Epetra_Vector& input_vector)
+void
+Redistributor::redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Vector& output_vector)
 {
   if (!created_importer_) {
     create_importer(input_vector.Map());
   }
 
-  Teuchos::RefCountPtr<Epetra_Vector> new_vec = Teuchos::rcp(new Epetra_Vector(*target_map_));
-
   // Export using the importer
-  new_vec->Export(input_vector, *importer_, Insert);
+  output_vector.Export(input_vector, *importer_, Insert);
 
-  return( new_vec );
 }
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
-Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector)
+void
+Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector)
 {
   if (!created_importer_) {
     create_importer(input_vector.Map());
   }
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> new_vec =
-    Teuchos::rcp(new Epetra_MultiVector(*target_map_, input_vector.NumVectors()));
-
   // Export using the importer
-  new_vec->Export(input_vector, *importer_, Insert);
+  output_vector.Export(input_vector, *importer_, Insert);
 
-  return( new_vec );
 }
 
 void Redistributor::create_importer(const Epetra_BlockMap& src_map)

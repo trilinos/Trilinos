@@ -131,19 +131,18 @@ public:
       Method to accept a Epetra_MultiVector object, and
       return a redistributed Epetra_MultiVector object.
   */
-  Teuchos::RefCountPtr<Epetra_MultiVector>
+  Teuchos::RefCountPtr<Epetra_MultiVector>  
      redistribute(const Epetra_MultiVector& input_vector);
 
   /** Reverse redistribute an Epetra_Vector.
   */
-  Teuchos::RefCountPtr<Epetra_Vector>
-     redistribute_reverse(const Epetra_Vector& input_vector);
+  void
+     redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Vector& output_vector);
 
   /** Reverse redistribute an Epetra_MultiVector.
-  */
-  Teuchos::RefCountPtr<Epetra_MultiVector>
-     redistribute_reverse(const Epetra_MultiVector& input_vector);
-
+   */
+  void
+     redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector);
 private:
   /** This is an internal method of the Redistributor class.
    */
