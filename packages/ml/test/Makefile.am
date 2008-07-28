@@ -35,6 +35,7 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
       MultiLevelPreconditioner_Maxwell   \
       MultiLevelPreconditioner_Aux       \
       MultiLevelPreconditioner_Restart   \
+      MultiLevelPreconditioner_Reduce    \
       ML_Operator2Epetra_RowMatrix       \
       AztecSimple                        \
       IFPACKSmoothers                    \

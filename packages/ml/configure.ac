@@ -711,6 +711,7 @@ AC_CONFIG_FILES([
         test/MultiLevelPreconditioner_Maxwell/Makefile
         test/MultiLevelPreconditioner_Aux/Makefile
         test/MultiLevelPreconditioner_Restart/Makefile
+        test/MultiLevelPreconditioner_Reduce/Makefile
         test/ML_Operator2Epetra_RowMatrix/Makefile
         test/AztecSimple/Makefile
         test/2d_Poisson/Makefile
