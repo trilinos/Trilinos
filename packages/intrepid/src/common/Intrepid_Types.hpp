@@ -44,9 +44,18 @@
 #define INTREPID_MAX_ADJ_CELLS  24
 
 /** \def   INTREPID_MAX_CELL_NODES
-  \brief The maximum number of (topological) nodes in a cell.
+\brief The maximum number of (topological) nodes in a cell.
 */
 #define INTREPID_MAX_CELL_NODES 32
+
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//  replaces INTREPID_MAX_CELL_NODES                         
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/** \def   INTREPID_MAX_CELL_VERTICES
+\brief The maximum number of vertices in a cell.
+*/
+#define INTREPID_MAX_CELL_VERTICES 32
 
 /** \def   INTREPID_MAX_ORDER
   \brief The maximum reconstruction order.
@@ -932,6 +941,98 @@ namespace Intrepid {
       \brief   A Tag can be anything, so we define it as a void**.
   */
   typedef void** Tag;
+  
+  
+  //===========================================================================================
+  //===========================================================================================
+  //===========================================================================================
+  //===========================================================================================
+  //===========================================================================================
+  // new types added after July 20
+  //===========================================================================================
+  //===========================================================================================
+  //===========================================================================================
+  //===========================================================================================
+  //===========================================================================================
+  //===========================================================================================
+  
+  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  //  replaces ConnTemplate                       
+  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  /** \struct Intrepid::TopologyTemplate
+    \brief  Relational (with respect to a 1, 2, or 3-cell) topology template to describe arbitrary
+    cell types. Four TopologyTemplate structs are used to fully describe topological connectivity of
+    any given (parent) cell type in up to three space dimensions. For example, the topological   
+    definition of a prism with a triangular base looks as the following 4-array of TopologyTemplate 
+    objects:
+    
+    \verbatim
+    triPrismTemplate[4] =
+    { // prism with triangular base
+      { // triprism -> 0 cell                     DEFINITIONS:
+        3,                                    ----> topological dimension of the parent cell
+        6,                                    ----> number of subcells that are 0-cells
+        {CELL_NODE, CELL_NODE, CELL_NODE,     ----> canonical or custom types of subcells
+         CELL_NODE, CELL_NODE, CELL_NODE},    
+        {{0},{1},{2},{3},{4},{5}}             ----> local vertex connectivities for each subcell
+      },
+      { // triprism -> 1cell                       
+        3,                                    ----> topological dimension of the parent cell
+        9,                                    ----> number of subcells that are 1-cells
+        {CELL_EDGE, CELL_EDGE, CELL_EDGE,     ----> canonical or custom types of subcells
+         CELL_EDGE, CELL_EDGE, CELL_EDGE, 
+         CELL_EDGE, CELL_EDGE, CELL_EDGE},                         
+        {{0,1}, {1,2}, {2,0}, {0,3},          ----> local vertex connectivities for each subcell
+         {1,4}, {2,5}, {3,4}, {4,5}, {5,3}}   
+      },
+        { // triprism -> 2cell                     MORE CONCRETELY:
+          3,                                  ----> a prism is a 3D object
+          5,                                  ----> a wedge prism contains five faces
+          {CELL_QUAD,CELL_QUAD,CELL_QUAD,     ----> the faces are three quads and two triangles
+           CELL_TRI, CELL_TRI},                  
+          {{0,1,4,3}, {1,2,5,4}, {2,0,3,5},   ----> local node connectivities for each face
+           {0,1,2}, {3,4,5}}                    
+        },
+          { // triprism -> 3cell                   MORE CONCRETELY:
+            3,                                ----> again, a prism is a 3D object
+            1,                                ----> a prism consists of one 3-cell
+            {CELL_TRIPRISM},                  ----> the only 3-cell is ... a prism
+            {{0,1,2,3,4,5}}                   ----> local vertex numbers
+          }
+    };  // end prism
+  \endverbatim
+    
+    Also see data member documentation.
+    */
+  struct TopologyTemplate {
+    /** \brief Topological dimension of the parent cell.
+    */
+    int topologicalDim_;
+    
+    /** \brief Number of subcells of a given dimension in the parent cell.
+    */
+    int numSubcells_;
+    
+    /** \brief Type of each subcell.
+      */
+    ECell subcellType_[INTREPID_MAX_ADJ_CELLS];
+    
+    /** \brief Node connectivity of each subcell.
+      */
+    int vertexList_[INTREPID_MAX_ADJ_CELLS][INTREPID_MAX_CELL_VERTICES];
+  };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
 } //namespace Intrepid
 #endif
