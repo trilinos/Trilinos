@@ -118,6 +118,10 @@ Phalanx grew out of the Variable Manger in the Charon code and the Expression Ma
 
 /*! \page developer_notes Developer Notes
 
+\section dnotes_princliples Design Princliples
+
+- The evaluate call is fixed for each scalar type.  Each scalar type figuresout it's own dependency chain.  However you can trick the evaluate routine into using mixed scalar types based on writing the evaluator to use a hard-coded scalar type.  This is nasty and can have problems if the provider is only registered for one scalar type.  This will need to be addressed in the future.  The problem is that the variable is independent of the ScalarType.
+
 \section dnotes_notz Description
 
 This is a description Pat Notz called his elevator speech on Phalanx:
