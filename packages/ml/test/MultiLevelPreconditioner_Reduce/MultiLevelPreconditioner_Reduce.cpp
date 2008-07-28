@@ -50,13 +50,6 @@ void PrintLine()
   return;
 }
 
-/* Exports the data from the redistributed vector to out_vector */
-//void reverse_redistribute(const Isorropia::Epetra::Redistributor & rd, Epetra_MultiVector &in_vector,Epetra_MultiVector &out_vector){
-//  out_vector.Export(in_vector,*(rd.get_importer()),Insert);      
-//}
-
-
-
 int TestMultiLevelPreconditioner(char ProblemType[],
 				 Teuchos::ParameterList & MLList,
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
@@ -143,12 +136,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     solver1.SetAztecOption(AZ_output, 32);
     solver1.SetAztecOption(AZ_kspace, 160);  
     solver1.Iterate(1550, 1e-12);
-
-
-    /*    RowMatrixToMatlabFile("mat_1.dat",*SubA1);  
-    MultiVectorToMatrixMarketFile("lhs_1.dat",*SubX1,0,0,false);
-    MultiVectorToMatrixMarketFile("rhs_1.dat",*SubB1,0,0,false);*/       
-    
     delete SubPrec1;
 
   }
@@ -165,12 +152,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     solver2.SetAztecOption(AZ_output, 32);
     solver2.SetAztecOption(AZ_kspace, 160);  
     solver2.Iterate(1550, 1e-12);
-
-    /*    RowMatrixToMatlabFile("mat_2.dat",*SubA2);
-    MultiVectorToMatrixMarketFile("lhs_2.dat",*SubX2,0,0,false);
-    MultiVectorToMatrixMarketFile("rhs_2.dat",*SubB2,0,0,false); */
-
-   
     delete SubPrec2;
 
   }
@@ -192,8 +173,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   delete FullPrec;
 
 
-  //  printf("[%d] Length(ans1) = %d  Length(lhs) = %d\n",PID,ans1->MyLength(),lhs->MyLength());
-  
   /* Solution Comparison */
   ans1.Update(1.0,*lhs,-1.0);
   ans2.Update(1.0,*lhs,-1.0);
