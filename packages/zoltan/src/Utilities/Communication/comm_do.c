@@ -24,6 +24,23 @@
 extern "C" {
 #endif
 
+static void show_int_buffers(int me, int procs, char *buf, int *bcounts, int *boffsets)
+{
+  int i,p;
+  int *ibuf = (int *)buf;
+
+  printf("%d  count offset (values)\n",me);
+
+  for (p=0; p < procs; p++){
+    printf("%d %d (",bcounts[p]/4, boffsets[p]/4);
+    for (i=0; i < bcounts[p]/4; i++){
+      printf("%d ",*ibuf++);
+    } 
+    printf(")\n\n");
+    fflush(stdout);
+  }
+}
+
 
 /* Given the communication object, perform a communication operation as
    efficiently as possible. */
@@ -462,6 +479,7 @@ char *recv_data)		/* array of data I'll own after comm */
    * put them in the recv_data buffer.
    */
 
+
   /* CREATE SEND BUFFER */
 
   sorted = 0;
@@ -480,7 +498,6 @@ char *recv_data)		/* array of data I'll own after comm */
      * Each message contains items for a process, and each item may be
      * a different size.
      */
-
     for (i=0, outbufLen=0; i < nSendMsgs; i++){
       outbufLen += plan->sizes_to[i];
     }
@@ -514,7 +531,7 @@ char *recv_data)		/* array of data I'll own after comm */
   
         outbufCounts[p] = length;
         if (p){
-          outbufOffsets[p] = outbufOffsets[p-1] + length;
+          outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
         }
       }
     }
@@ -522,7 +539,6 @@ char *recv_data)		/* array of data I'll own after comm */
       /*
        * items are stored contiguously for each message
        */
-
       if (!sorted || (plan->nvals > nSendItems) ){
         buf = outbuf = (char *)ZOLTAN_MALLOC(outbufLen * nbytes);
         if (outbufLen && nbytes && !outbuf){
@@ -553,7 +569,7 @@ char *recv_data)		/* array of data I'll own after comm */
   
         outbufCounts[p] = length;
         if (p){
-          outbufOffsets[p] = outbufOffsets[p-1] + length;
+          outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
         }
       }
     }
@@ -563,7 +579,6 @@ char *recv_data)		/* array of data I'll own after comm */
      * item sizes are constant, however the items belonging in a given
      * message may not be contiguous in send_data
      */
-
     buf = outbuf = (char *)ZOLTAN_MALLOC(nSendItems * nbytes);
     if (nSendMsgs && nbytes && !outbuf){
       ZOLTAN_COMM_ERROR("memory error", yo, me);
@@ -585,7 +600,7 @@ char *recv_data)		/* array of data I'll own after comm */
 
       outbufCounts[p] = length;
       if (p){
-        outbufOffsets[p] = outbufOffsets[p-1] + length;
+        outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
       }
     }
   }
@@ -626,7 +641,7 @@ char *recv_data)		/* array of data I'll own after comm */
 
       outbufCounts[p] = length;
       if (p){
-        outbufOffsets[p] = outbufOffsets[p-1] + length;
+        outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
       }
     }
   }
@@ -679,20 +694,16 @@ char *recv_data)		/* array of data I'll own after comm */
 
   /* EXCHANGE DATA */
 
-#if 0
-if (me == 0){
-printf("offsets and counts for %d outgoing messages\n",nSendMsgs);
-for (i=0; i<nSendMsgs; i++){
-  printf("%d %d\n",outbufOffsets[i],outbufCounts[i]);
-}
-printf("offsets and counts for %d incoming messages\n",nRecvMsgs);
-for (i=0; i<nRecvMsgs; i++){
-  printf("%d %d\n",inbufOffsets[i],inbufCounts[i]);
-}
-}
 
-MPI_Finalize();
-exit(0);
+#if 0
+if (nbytes == sizeof(int)){
+
+  for (p=0; p < nprocs ; p++){
+    if (p == me) show_int_buffers(me, nprocs, outbuf, outbufCounts, outbufOffsets);
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+}
 #endif
 
   rc = MPI_Alltoallv(outbuf, outbufCounts, outbufOffsets, MPI_BYTE,
