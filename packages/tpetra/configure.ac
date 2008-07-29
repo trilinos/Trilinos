@@ -327,13 +327,13 @@ AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export.tpetra
 		src/Makefile
+		example/Makefile
 		test/Makefile
 		test/Platform/Makefile
 		test/Distributor/Makefile
         test/Map/Makefile
 		test/Directory/Makefile
 		])
-# example/Makefile
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile
 # example/TpetraOPs/Makefile

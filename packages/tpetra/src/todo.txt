@@ -1,4 +1,8 @@
 CURRENT
+* add necessary support to Teuchos::Comm, Comm_Helpers
+  - MPI_Rsend   (ready send)
+  - MPI_Irecv   (non-block receive)
+  - MPI_WaitAll (wait all)
 * update Distributor,Directory,Import,Export to match new Tpetra::Map
 
 TODO

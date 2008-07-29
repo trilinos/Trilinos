@@ -32,7 +32,7 @@ all-local:
 
 #if BUILD_TPETRA_EXAMPLES
 if BUILD_PROFILE_EXAMPLE
-EPETRA_TPETRA_PROFILE=EpetraTpetraProfile TpetraOPs
+EPETRA_TPETRA_PROFILE=#EpetraTpetraProfile TpetraOPs
 endif
 STANDARD_SUBDIRS = #$(EPETRA_TPETRA_PROFILE) verySimple
 #endif
