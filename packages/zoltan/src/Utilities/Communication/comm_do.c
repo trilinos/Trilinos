@@ -688,7 +688,7 @@ char *recv_data)		/* array of data I'll own after comm */
 
     inbufCounts[p] = length;
     if (p){
-      inbufOffsets[p] = inbufOffsets[p-1] + length;
+      inbufOffsets[p] = inbufOffsets[p-1] + inbufCounts[p-1];
     }
   }
 
