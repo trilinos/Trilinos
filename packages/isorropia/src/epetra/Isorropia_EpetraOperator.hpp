@@ -29,15 +29,16 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_EpetraPartitioner_hpp_
-#define _Isorropia_EpetraPartitioner_hpp_
+#ifndef _Isorropia_EpetraOperator_hpp_
+#define _Isorropia_EpetraOperator_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
-#include <Isorropia_EpetraOperator.hpp>
+#include <Isorropia_Operator.hpp>
+#include <Isorropia_EpetraLibrary.hpp>
 
 #ifdef HAVE_EPETRA
 class Epetra_Map;
@@ -60,7 +61,7 @@ namespace Epetra {
 
 */
 
-class Partitioner : public Operator {
+class Operator : virtual public Isorropia::Operator {
 public:
   /** Constructor that accepts an Epetra_CrsGraph object, called by
         API function create_partitioner().
@@ -85,9 +86,8 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-              const Teuchos::ParameterList& paramlist,
-              bool compute_partitioning_now=true);
+  Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+              const Teuchos::ParameterList& paramlist);
 
   /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
         API function create_partitioner().
@@ -115,10 +115,9 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+  Operator (Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
               Teuchos::RefCountPtr<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist,
-              bool compute_partitioning_now=true);
+              const Teuchos::ParameterList& paramlist);
 
   /**
      Constructor that accepts an Epetra_RowMatrix object, called by
@@ -144,9 +143,8 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-              const Teuchos::ParameterList& paramlist,
-              bool compute_partitioning_now=true);
+  Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+	   const Teuchos::ParameterList& paramlist);
 
   /**
      Constructor that accepts an Epetra_RowMatrix object and a
@@ -175,13 +173,12 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-              Teuchos::RefCountPtr<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist,
-              bool compute_partitioning_now=true);
+  Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+	   Teuchos::RefCountPtr<CostDescriber> costs,
+	   const Teuchos::ParameterList& paramlist);
 
   /** Destructor */
-  virtual ~Partitioner();
+  virtual ~Operator();
 
   /** setParameters() is an internal Partitioner method which handles
       the parameters from a Teuchos::ParameterList object. 
@@ -199,47 +196,60 @@ public:
   include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
   0 to 10, default is 1), etc.
    */
+  void setParameters(const Teuchos::ParameterList& paramlist);
 
-  /**  compute_partitioning is an internal method that computes 
-       a rebalanced partitioning for the data in the object
-      that this class was constructed with.
+  virtual void compute(bool force_compute) = 0 ; /* Make the class virtual, must be implemented in child class */
 
-      \param force_repartitioning Optional argument defaults to false. By
-         default, compute_partitioning() only does anything the first time
-         it is called, and subsequent repeated calls are no-ops. If the user's
-         intent is to re-compute the partitioning (e.g., if parameters
-         or other inputs have been changed), then setting this flag to
-         true will force a new partitioning to be computed.
+  /** Query whether compute_partitioning() has already been called.
    */
-  void compute_partitioning(bool force_repartitioning=false);
+  bool alreadyComputed() const ;
 
-  virtual void compute(bool forceRecomputing=false);
 
-  /** An internal method which determines whether the 
-      method compute_partitioning() has already been
-      called on this class instance.
-  */
-  bool partitioning_already_computed() const;
+  int getNumberOfProperties() const;
 
-  /** An internal method which returns the new partition ID for a given element that
+  /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  int newPartitionNumber(int myElem) const;
+  int getNewPropertyOfElem(int myElem) const;
 
-  /** An internal method which returns the number of elements in a given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
+  /** Return the number of elements in a given partition.
   */
-  int numElemsInPartition(int partition) const;
+  int getNbrElemsWithProperty(int property) const;
 
-  /** An internal method which fills caller-allocated list (of length len) with the
+  /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
   */
-  void elemsInPartition(int partition, int* elementList, int len) const;
+  void getElemsWithProperty(int property,
+			    int* elementList,
+			    int len) const;
 
-};//class Partitioner
+private:
+
+  void paramsToUpper(Teuchos::ParameterList &, int &changed);
+  void stringToUpper(std::string &s, int &changed);
+
+protected:
+  Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix_;
+  Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs_;
+  Teuchos::RefCountPtr<Epetra_Vector> weights_;
+
+  Teuchos::ParameterList paramlist_;
+
+  std::map<int,int> exports_, imports_;
+  std::vector<int> myNewElements_;
+
+  bool operation_already_computed_;
+  int numberOfProperties_;
+
+  int global_num_vertex_weights_;
+  int global_num_graph_edge_weights_;
+  int global_num_hg_edge_weights_;
+
+  Teuchos::RefCountPtr<Library> lib_;
+
+};//class Operator
 
 }//namespace Epetra
 }//namespace Isorropia

@@ -44,6 +44,8 @@ CORE = \
 CORE_H = \
 	$(srcdir)/Isorropia_CostDescriber.hpp \
 	$(srcdir)/Isorropia_Partitioner.hpp \
+	$(srcdir)/Isorropia_Operator.hpp \
+	$(srcdir)/Isorropia_Colorer.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
@@ -51,23 +53,33 @@ CORE_H = \
 
 EPETRA = \
 	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraOperator.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp
 
 EPETRA_H = \
 	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraOperator.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraColorer.hpp \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp
+	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.hpp
 
 EPETRA_ZOLTAN = \
-	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraColorer.cpp \
 	$(srcdir)/epetra/zoltanLib/QueryObject.cpp
+# 	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp 
 
 EPETRA_ZOLTAN_H = \
-	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp \
 	$(srcdir)/epetra/zoltanLib/QueryObject.hpp
+#	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp 
 
 DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
 

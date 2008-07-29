@@ -53,7 +53,7 @@ class Epetra_RowMatrix;
 
 #include <QueryObject.hpp>
 
-class Isorropia::Epetra::CostDescriber;
+// class Isorropia::Epetra::CostDescriber;
 
 namespace Isorropia{
 
@@ -89,6 +89,7 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,
             std::map<int,int>& imports);
+
 
 /** Partition an Epetra_RowMatrix using Zoltan.
 
