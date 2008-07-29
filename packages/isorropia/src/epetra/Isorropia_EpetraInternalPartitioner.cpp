@@ -202,6 +202,15 @@ color(Teuchos::ParameterList& paramList,
   return (-1);
 }
 
+int InternalPartitioner::
+order(Teuchos::ParameterList& paramList,
+      std::vector<int>& myNewElements)
+{
+  throw Isorropia::Exception("Ordering only available in Zoltan");
+  return (-1);
+}
+
+
 int InternalPartitioner::postcompute() {};
 
 

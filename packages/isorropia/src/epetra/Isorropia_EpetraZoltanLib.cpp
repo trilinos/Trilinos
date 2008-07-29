@@ -248,6 +248,9 @@ int ZoltanLibClass::precompute()
   zz_->Set_Num_Obj_Fn(ZoltanLib::QueryObject::Number_Objects, (void *)queryObject_.get());
   zz_->Set_Obj_List_Fn(ZoltanLib::QueryObject::Object_List, (void *)queryObject_.get());
 
+  int ierr;
+  num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
+
   if (lb_meth == "HYPERGRAPH"){
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
@@ -560,12 +563,6 @@ color(Teuchos::ParameterList& zoltanParamList,
   zoltanParamList_ = zoltanParamList;
 
   precompute();
-  preCheckPartition();
-
-  std::string lb_approach_str("LB_APPROACH");
-  if (!zoltanParamList_.isParameter(lb_approach_str)) {
-    zoltanParamList_.set(lb_approach_str, "PARTITION");
-  }
 
   //Generate Load Balance
   int changes, num_gid_entries, num_lid_entries;
@@ -584,6 +581,34 @@ color(Teuchos::ParameterList& zoltanParamList,
   }
 
   delete[] colors;
+}
+
+int ZoltanLibClass::
+order(Teuchos::ParameterList& zoltanParamList,
+      std::vector<int>& myNewElements)
+{
+  zoltanParamList_ = zoltanParamList;
+
+  precompute();
+
+  //Generate Load Balance
+  int changes, num_gid_entries, num_lid_entries;
+  ZOLTAN_ID_PTR import_global_ids, import_local_ids;
+  int *rank = new int(num_obj_);
+
+  int err = zz_->Order(num_gid_entries, num_lid_entries, num_obj_, import_global_ids, import_local_ids, rank, NULL);
+
+  if (err != ZOLTAN_OK){
+    throw Isorropia::Exception("Error computing partitioning with Zoltan");
+    return -1;
+  }
+
+  for (int i = 0 ; i < num_obj_ ; ++i) {
+    myNewElements[i] = rank[i];
+  }
+
+  delete[] rank;
+
 }
 
 

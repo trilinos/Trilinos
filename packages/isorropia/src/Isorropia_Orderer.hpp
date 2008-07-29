@@ -29,51 +29,31 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_EpetraColorer_hpp_
-#define _Isorropia_EpetraColorer_hpp_
+#ifndef _Isorropia_Orderer_hpp_
+#define _Isorropia_Orderer_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
-
-#include <Isorropia_EpetraCostDescriber.hpp>
-#include <Isorropia_EpetraOperator.hpp>
-#include <Isorropia_Colorer.hpp>
-
-
-#ifdef HAVE_EPETRA
-class Epetra_Map;
-class Epetra_BlockMap;
-class Epetra_Import;
-class Epetra_Vector;
-class Epetra_MultiVector;
-class Epetra_CrsGraph;
-class Epetra_CrsMatrix;
-class Epetra_RowMatrix;
-class Epetra_LinearProblem;
+#include <Isorropia_Operator.hpp>
 
 namespace Isorropia {
 
-namespace Epetra {
+/** Interface (abstract base class) for computing a new partitioning and
+  describing the layout of elements in the new partitions.
 
-/** An implementation of the Partitioner interface that operates on
-    Epetra matrices and linear systems.
-
+  If the methods which describe the new partitioning (e.g., 
+  newPartitionNumber(), etc.) are called before compute_partitioning()
+  has been called, behavior is not well defined. Implementations will
+  either return empty/erroneous data, or throw an exception. In most
+  cases, implementations will probably call compute_partitioning()
+  internally in a constructor or factory method, so this won't usually
+  be an issue.
 */
-
-class Colorer : virtual public Isorropia::Colorer, public Isorropia::Epetra::Operator {
+class Orderer : virtual public Operator {
 public:
 
-  Colorer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-	  const Teuchos::ParameterList& paramlist,
-	  bool compute_now=true);
-
-  Colorer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-	  const Teuchos::ParameterList& paramlist,
-	  bool compute_now=true);
-
   /** Destructor */
-  ~Colorer() {} ;
+  virtual ~Orderer() =0 ; 
 
   /** Method which does the work of computing a new partitioning.
      Implementations of this interface will typically be constructed
@@ -89,22 +69,13 @@ public:
         inputs have been changed), then setting this flag to true
         will force a new partitioning to be computed.
    */
-  void color(bool force_coloring=false);
+  virtual void order(bool force_ordering=false) = 0;
 
 
-  /** Return the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
-  int colorNumber(int myElem) const;
 
-private:
-  int nbr_color_;
 };//class Colorer
 
-}//namespace Epetra
 }//namespace Isorropia
-
-#endif //HAVE_EPETRA
 
 #endif
 

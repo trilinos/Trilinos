@@ -82,6 +82,9 @@ public:
   color(Teuchos::ParameterList& paramlist,
 	std::vector<int>& myNewElements);
 
+  virtual int
+  order(Teuchos::ParameterList& paramlist,
+	std::vector<int>& myNewElements);
 
 protected:
 

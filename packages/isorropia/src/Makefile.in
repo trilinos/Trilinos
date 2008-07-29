@@ -119,25 +119,27 @@ am__libisorropia_a_SOURCES_DIST = $(srcdir)/Isorropia_Utils.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraOperator.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraColorer.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraColorer.cpp \
 	$(srcdir)/epetra/zoltanLib/QueryObject.cpp
 am__objects_1 = Isorropia_Utils.$(OBJEXT) \
 	Isorropia_Exception.$(OBJEXT)
 am__objects_2 = Isorropia_EpetraCostDescriber.$(OBJEXT) \
 	Isorropia_EpetraOperator.$(OBJEXT) \
 	Isorropia_EpetraPartitioner.$(OBJEXT) \
-	Isorropia_Epetra.$(OBJEXT) \
+	Isorropia_EpetraColorer.$(OBJEXT) \
+	Isorropia_EpetraOrderer.$(OBJEXT) Isorropia_Epetra.$(OBJEXT) \
 	Isorropia_EpetraRedistributor.$(OBJEXT) \
 	Isorropia_EpetraLibrary.$(OBJEXT) \
 	Isorropia_EpetraInternalPartitioner.$(OBJEXT)
 @BUILD_EPETRA_TRUE@am__objects_3 = $(am__objects_2)
 am__objects_4 = Isorropia_EpetraZoltanLib.$(OBJEXT) \
-	Isorropia_EpetraColorer.$(OBJEXT) QueryObject.$(OBJEXT)
+	QueryObject.$(OBJEXT)
 @BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_5 =  \
 @BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_4)
 am_libisorropia_a_OBJECTS = $(am__objects_1) $(am__objects_3) \
@@ -153,9 +155,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(libisorropia_a_SOURCES)
 DIST_SOURCES = $(am__libisorropia_a_SOURCES_DIST)
 am__include_HEADERS_DIST = $(srcdir)/Isorropia_CostDescriber.hpp \
-	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Operator.hpp \
+	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Colorer.hpp \
+	$(srcdir)/Isorropia_Orderer.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
@@ -164,6 +167,7 @@ am__include_HEADERS_DIST = $(srcdir)/Isorropia_CostDescriber.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraOperator.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraColorer.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraOrderer.hpp \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
@@ -294,9 +298,10 @@ CORE = \
 
 CORE_H = \
 	$(srcdir)/Isorropia_CostDescriber.hpp \
-	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Operator.hpp \
+	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Colorer.hpp \
+	$(srcdir)/Isorropia_Orderer.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
@@ -306,6 +311,8 @@ EPETRA = \
 	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraOperator.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraColorer.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
@@ -316,6 +323,7 @@ EPETRA_H = \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraOperator.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraColorer.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraOrderer.hpp \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
@@ -323,7 +331,6 @@ EPETRA_H = \
 
 EPETRA_ZOLTAN = \
 	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraColorer.cpp \
 	$(srcdir)/epetra/zoltanLib/QueryObject.cpp
 
 # 	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp 
@@ -484,6 +491,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraInternalPartitioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraLibrary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraOperator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraOrderer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraPartitioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraRedistributor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraZoltanLib.Po@am__quote@
@@ -575,6 +583,34 @@ Isorropia_EpetraPartitioner.obj: $(srcdir)/epetra/Isorropia_EpetraPartitioner.cp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraPartitioner.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp'; fi`
 
+Isorropia_EpetraColorer.o: $(srcdir)/epetra/Isorropia_EpetraColorer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraColorer.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraColorer.Tpo -c -o Isorropia_EpetraColorer.o `test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraColorer.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraColorer.Tpo $(DEPDIR)/Isorropia_EpetraColorer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' object='Isorropia_EpetraColorer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraColorer.o `test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraColorer.cpp
+
+Isorropia_EpetraColorer.obj: $(srcdir)/epetra/Isorropia_EpetraColorer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraColorer.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraColorer.Tpo -c -o Isorropia_EpetraColorer.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraColorer.Tpo $(DEPDIR)/Isorropia_EpetraColorer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' object='Isorropia_EpetraColorer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraColorer.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; fi`
+
+Isorropia_EpetraOrderer.o: $(srcdir)/epetra/Isorropia_EpetraOrderer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraOrderer.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraOrderer.Tpo -c -o Isorropia_EpetraOrderer.o `test -f '$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraOrderer.Tpo $(DEPDIR)/Isorropia_EpetraOrderer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp' object='Isorropia_EpetraOrderer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraOrderer.o `test -f '$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp
+
+Isorropia_EpetraOrderer.obj: $(srcdir)/epetra/Isorropia_EpetraOrderer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraOrderer.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraOrderer.Tpo -c -o Isorropia_EpetraOrderer.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraOrderer.Tpo $(DEPDIR)/Isorropia_EpetraOrderer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp' object='Isorropia_EpetraOrderer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraOrderer.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp'; fi`
+
 Isorropia_Epetra.o: $(srcdir)/epetra/Isorropia_Epetra.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Epetra.o -MD -MP -MF $(DEPDIR)/Isorropia_Epetra.Tpo -c -o Isorropia_Epetra.o `test -f '$(srcdir)/epetra/Isorropia_Epetra.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_Epetra.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Epetra.Tpo $(DEPDIR)/Isorropia_Epetra.Po
@@ -644,20 +680,6 @@ Isorropia_EpetraZoltanLib.obj: $(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' object='Isorropia_EpetraZoltanLib.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraZoltanLib.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; fi`
-
-Isorropia_EpetraColorer.o: $(srcdir)/epetra/Isorropia_EpetraColorer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraColorer.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraColorer.Tpo -c -o Isorropia_EpetraColorer.o `test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraColorer.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraColorer.Tpo $(DEPDIR)/Isorropia_EpetraColorer.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' object='Isorropia_EpetraColorer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraColorer.o `test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraColorer.cpp
-
-Isorropia_EpetraColorer.obj: $(srcdir)/epetra/Isorropia_EpetraColorer.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraColorer.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraColorer.Tpo -c -o Isorropia_EpetraColorer.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraColorer.Tpo $(DEPDIR)/Isorropia_EpetraColorer.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraColorer.cpp' object='Isorropia_EpetraColorer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraColorer.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraColorer.cpp'; fi`
 
 QueryObject.o: $(srcdir)/epetra/zoltanLib/QueryObject.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT QueryObject.o -MD -MP -MF $(DEPDIR)/QueryObject.Tpo -c -o QueryObject.o `test -f '$(srcdir)/epetra/zoltanLib/QueryObject.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/zoltanLib/QueryObject.cpp

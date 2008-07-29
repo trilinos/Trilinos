@@ -29,7 +29,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#include <Isorropia_EpetraColorer.hpp>
+#include <Isorropia_EpetraOrderer.hpp>
 #ifdef HAVE_ISORROPIA_ZOLTAN
 #include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_EpetraZoltanLib.hpp>
@@ -66,7 +66,7 @@ namespace Isorropia {
 namespace Epetra {
 
 
-Colorer::Colorer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Orderer::Orderer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_graph, paramlist) {
@@ -74,10 +74,10 @@ Colorer::Colorer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
   lib_->setInputType("GRAPH");
 
   if (compute_now)
-    color(true);
+    order(true);
 }
 
-Colorer::Colorer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Orderer::Orderer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_matrix, paramlist) {
@@ -85,15 +85,16 @@ Colorer::Colorer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
   lib_->setInputType("GRAPH");
 
   if (compute_now)
-    color(true);
+    order(true);
 }
 
+
 void
-Colorer::color(bool force_coloring)
+Orderer::order(bool force_ordering)
 {
-  if (alreadyComputed() && !force_coloring)
+  if (alreadyComputed() && !force_ordering)
     return;
-  lib_->color(paramlist_, myNewElements_);
+  lib_->order(paramlist_, myNewElements_);
   operation_already_computed_ = true;
 }
 

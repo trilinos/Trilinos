@@ -29,14 +29,17 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_EpetraLibrary_hpp_
-#define _Isorropia_EpetraLibrary_hpp_
+#ifndef _Isorropia_EpetraOrderer_hpp_
+#define _Isorropia_EpetraOrderer_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
+#include <Isorropia_EpetraOperator.hpp>
+#include <Isorropia_Orderer.hpp>
+
 
 #ifdef HAVE_EPETRA
 class Epetra_Map;
@@ -52,63 +55,49 @@ class Epetra_LinearProblem;
 namespace Isorropia {
 
 namespace Epetra {
-  class CostDescriber;
 
 /** An implementation of the Partitioner interface that operates on
     Epetra matrices and linear systems.
 
 */
 
-class Library {
+class Orderer : virtual public Isorropia::Orderer, public Isorropia::Epetra::Operator {
 public:
 
-  Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph);
-  Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-	  Teuchos::RefCountPtr<CostDescriber> costs);
-  Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix);
-  Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
- 	  Teuchos::RefCountPtr<CostDescriber> costs);
+  Orderer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+	  const Teuchos::ParameterList& paramlist,
+	  bool compute_now=true);
 
-  virtual ~Library();
+  Orderer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+	  const Teuchos::ParameterList& paramlist,
+	  bool compute_now=true);
 
-  void setInput(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph);
-  void setInput(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-		Teuchos::RefCountPtr<CostDescriber> costs);
-  void setInput(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix);
-  void setInput(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-		Teuchos::RefCountPtr<CostDescriber> costs);
+  /** Destructor */
+  ~Orderer() {} ;
 
-  virtual int
-  repartition(Teuchos::ParameterList& paramlist,
-	      std::vector<int>& myNewElements,
-	      std::map<int,int>& exports,
-	      std::map<int,int>& imports) = 0;
+  /** Method which does the work of computing a new partitioning.
+     Implementations of this interface will typically be constructed
+     with an object or information describing the existing ('old')
+     partitioning. This method computes a 'new' rebalanced
+     partitioning for that input data.
 
-  virtual int
-  color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements) = 0 ;
+     \param force_repartitioning Optional argument defaults to false.
+        Depending on the implementation, compute_partitioning() should
+        only perform a repartitioning the first time it is called, and
+        subsequent repeated calls are no-ops. If the user's intent is
+        to re-compute the partitioning (e.g., if parameters or other
+        inputs have been changed), then setting this flag to true
+        will force a new partitioning to be computed.
+   */
+  void order(bool force_ordering=false);
 
-  virtual int
-  order(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements) = 0 ;
 
-  void setInputType(std::string inputType) {
-    inputType_ = inputType;
-  }
+  /** Return the new partition ID for a given element that
+     resided locally in the old partitioning.
+  */
+  int newNumber(int myElem) const;
 
-protected:
-  std::string inputType_;
-
-  Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix_;
-  Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs_;
-  Teuchos::RefCountPtr<Epetra_Vector> weights_;
-
-  virtual int precompute();
-  virtual int postcompute() = 0;
-
-};//class Library
+};//class Orderer
 
 }//namespace Epetra
 }//namespace Isorropia
