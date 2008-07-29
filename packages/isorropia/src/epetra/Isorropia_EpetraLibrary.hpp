@@ -86,9 +86,7 @@ public:
 
   virtual int
   color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements,
-	std::map<int,int>& exports,
-	std::map<int,int>& imports) = 0 ;
+	std::vector<int>& myNewElements) = 0 ;
 
 
   void setInputType(std::string inputType) {

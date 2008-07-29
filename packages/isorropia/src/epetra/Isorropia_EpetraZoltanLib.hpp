@@ -77,9 +77,7 @@ public:
 
   virtual int
   color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements,
-	std::map<int,int>& exports,
-	std::map<int,int>& imports);
+	std::vector<int>& myNewElements);
 
 protected:
   virtual int precompute();
@@ -93,6 +91,7 @@ private:
   Teuchos::ParameterList zoltanParamList_;
   Zoltan *zz_;
   Teuchos::RefCountPtr<ZoltanLib::QueryObject> queryObject_;
+  int num_obj_;
 };//class ZoltanLibClass
 
 }//namespace Epetra

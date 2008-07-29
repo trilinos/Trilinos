@@ -156,7 +156,7 @@ int ZoltanLibClass::precompute()
 
   computeCost();
 
-  preCheckPartition();
+//   preCheckPartition();
 
 
   if (input_matrix_.get() == 0) {
@@ -240,6 +240,8 @@ int ZoltanLibClass::precompute()
     const std::string& value = Teuchos::getValue<std::string>(iter->second);
     zz_->Set_Param(name, value);
   }
+
+
 
   // Set the query functions
 
@@ -490,6 +492,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   zoltanParamList_ = zoltanParamList;
 
   precompute();
+  preCheckPartition();
 
   std::string lb_approach_str("LB_APPROACH");
   if (!zoltanParamList_.isParameter(lb_approach_str)) {
@@ -552,10 +555,36 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
 int ZoltanLibClass::
 color(Teuchos::ParameterList& zoltanParamList,
-      std::vector<int>& myNewElements,
-      std::map<int,int>& exports,
-      std::map<int,int>& imports)
-{}
+      std::vector<int>& myNewElements)
+{
+  zoltanParamList_ = zoltanParamList;
+
+  precompute();
+  preCheckPartition();
+
+  std::string lb_approach_str("LB_APPROACH");
+  if (!zoltanParamList_.isParameter(lb_approach_str)) {
+    zoltanParamList_.set(lb_approach_str, "PARTITION");
+  }
+
+  //Generate Load Balance
+  int changes, num_gid_entries, num_lid_entries;
+  ZOLTAN_ID_PTR import_global_ids, import_local_ids;
+  int *colors = new int(num_obj_);
+
+  int err = zz_->Color(num_gid_entries, num_lid_entries, num_obj_, import_global_ids, import_local_ids, colors);
+
+  if (err != ZOLTAN_OK){
+    throw Isorropia::Exception("Error computing partitioning with Zoltan");
+    return -1;
+  }
+
+  for (int i = 0 ; i < num_obj_ ; ++i) {
+    myNewElements[i] = colors[i];
+  }
+
+  delete[] colors;
+}
 
 
 

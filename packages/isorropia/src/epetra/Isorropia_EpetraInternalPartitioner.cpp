@@ -196,10 +196,7 @@ repartition(Teuchos::ParameterList& paramList,
 
 int InternalPartitioner::
 color(Teuchos::ParameterList& paramList,
-      std::vector<int>& myNewElements,
-      std::map<int,int>& exports,
-      std::map<int,int>& imports)
-
+      std::vector<int>& myNewElements)
 {
   throw Isorropia::Exception("Coloring only available in Zoltan");
   return (-1);

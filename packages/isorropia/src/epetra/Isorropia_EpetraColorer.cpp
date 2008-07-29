@@ -83,7 +83,7 @@ Colorer::color(bool force_coloring)
 {
   if (alreadyComputed() && !force_coloring)
     return;
-  lib_->color(paramlist_, myNewElements_, exports_, imports_);
+  lib_->color(paramlist_, myNewElements_);
   operation_already_computed_ = true;
 }
 
