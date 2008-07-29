@@ -65,7 +65,7 @@ extern "C" int RAD_Const_Warn(const void*);// outside any namespace for
 #endif
 
 namespace Sacado {
-namespace Rad {
+namespace RadVec {
 
 #ifdef RAD_AUTO_AD_Const
 #undef RAD_DEBUG_BLOCKKEEP
@@ -2038,7 +2038,7 @@ T F copy(Ai x)
 #undef Dtype
 #undef Padvinit
 
-} /* namespace Rad */
+} /* namespace RadVec */
 } /* namespace Sacado */
 
 #undef SNS

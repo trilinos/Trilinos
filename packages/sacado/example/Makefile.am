@@ -53,6 +53,7 @@ noinst_PROGRAMS = \
 	sfad_example \
 	dmfad_example \
 	trad_example \
+	tradvec_example \
 	trad_dfad_example \
 	taylor_example \
 	dfad_taylor_example \
@@ -88,8 +89,13 @@ dmfad_example_LDADD = $(dfad_example_LDADD)
 
 trad_example_SOURCES = $(srcdir)/trad_example.cpp
 trad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
-trad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
-trad_example_LDADD = $(dfad_example_LDADD)
+#trad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+#trad_example_LDADD = $(dfad_example_LDADD)
+
+tradvec_example_SOURCES = $(srcdir)/tradvec_example.cpp
+tradvec_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+#tradvec_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+#tradvec_example_LDADD = $(dfad_example_LDADD)
 
 trad_dfad_example_SOURCES = $(srcdir)/trad_dfad_example.cpp
 trad_dfad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
