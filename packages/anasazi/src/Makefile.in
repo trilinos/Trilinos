@@ -278,17 +278,21 @@ CORE_H = \
 	$(srcdir)/AnasaziGenOrthoManager.hpp \
 	$(srcdir)/AnasaziHelperTraits.hpp \
 	$(srcdir)/AnasaziICGSOrthoManager.hpp \
+	$(srcdir)/AnasaziIRTR.hpp \
 	$(srcdir)/AnasaziMatOrthoManager.hpp \
-	$(srcdir)/AnasaziSolverUtils.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziMultiVecTraits.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOrthoManager.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
+	$(srcdir)/AnasaziRTRBase.hpp \
+	$(srcdir)/AnasaziRTRSolMgr.hpp \
 	$(srcdir)/AnasaziSimpleLOBPCGSolMgr.hpp \
+	$(srcdir)/AnasaziSIRTR.hpp \
 	$(srcdir)/AnasaziSolverManager.hpp \
 	$(srcdir)/AnasaziSortManager.hpp \
+	$(srcdir)/AnasaziSolverUtils.hpp \
 	$(srcdir)/AnasaziStatusTest.hpp \
 	$(srcdir)/AnasaziStatusTestDecl.hpp \
 	$(srcdir)/AnasaziStatusTestCombo.hpp \
@@ -338,10 +342,14 @@ COMP_H = \
 	$(srcdir)/AnasaziBlockDavidson.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
 	$(srcdir)/AnasaziLOBPCG.hpp \
+	$(srcdir)/AnasaziRTRBase.hpp \
+	$(srcdir)/AnasaziIRTR.hpp \
+	$(srcdir)/AnasaziSIRTR.hpp \
 	$(srcdir)/AnasaziBlockDavidsonSolMgr.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchurSolMgr.hpp \
 	$(srcdir)/AnasaziLOBPCGSolMgr.hpp \
-	$(srcdir)/AnasaziSimpleLOBPCGSolMgr.hpp
+	$(srcdir)/AnasaziSimpleLOBPCGSolMgr.hpp \
+	$(srcdir)/AnasaziRTRSolMgr.hpp
 
 COMP = 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ANASAZI_INCLUDES)

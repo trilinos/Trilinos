@@ -218,7 +218,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-DISABLED = 
+DISABLED = IRTR
 SUBDIRS = LOBPCG MVOPTester OrthoManager scripts BlockDavidson BlockKrylovSchur StatusTest SortManager ARPACKExamples
 EXTRA_DIST = definition
 all: all-recursive

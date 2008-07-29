@@ -15,6 +15,8 @@
             ../epetra/test/LOBPCG/LOBPCG_solvertest.exe,
             ../epetra/test/LOBPCG/LOBPCG_auxtest.exe,
             ../epetra/test/LOBPCG/LOBPCG_simple.exe,
+            ../epetra/test/IRTR/IRTR_test.exe,
+            # ../epetra/test/IRTR/IRTR_auxtest.exe,
             ../epetra/test/BlockDavidson/BlockDavidson_solvertest.exe,
             ../epetra/test/BlockDavidson/BlockDavidson_auxtest.exe,
             ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,

@@ -216,7 +216,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_ANASAZI_THYRA_TRUE@@BUILD_EPETRA_THYRA_TRUE@THYRA_TEST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur
+@BUILD_ANASAZI_THYRA_TRUE@@BUILD_EPETRA_THYRA_TRUE@THYRA_TEST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur #IRTR
 SUBDIRS = $(THYRA_TEST_SUBDIRS)
 all: all-recursive
 
