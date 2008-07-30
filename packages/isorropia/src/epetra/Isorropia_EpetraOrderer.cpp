@@ -70,8 +70,13 @@ Orderer::Orderer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_graph, paramlist) {
+#ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph));
   lib_->setInputType("GRAPH");
+#else /* HAVE_ISORROPIA_ZOLTAN */
+  throw Isorropia::Exception("Ordering only available in Zoltan");
+  return ;
+#endif /* HAVE_ISORROPIA_ZOLTAN */
 
   if (compute_now)
     order(true);
@@ -81,8 +86,13 @@ Orderer::Orderer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_matrix, paramlist) {
+#ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix));
   lib_->setInputType("GRAPH");
+#else /* HAVE_ISORROPIA_ZOLTAN */
+  throw Isorropia::Exception("Ordering only available in Zoltan");
+  return ;
+#endif /* HAVE_ISORROPIA_ZOLTAN */
 
   if (compute_now)
     order(true);
