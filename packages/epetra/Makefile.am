@@ -46,7 +46,12 @@ EXTRA_DIST = config/generate-makeoptions.pl \
        config/token-replace.pl \
        CMakeLists.txt cmake/Epetra_config.h.in \
        cmake/EpetraConfig.cmake.in test/CMakeLists.txt \
-       src/CMakeLists.txt example/CMakeLists.txt
+       src/CMakeLists.txt example/CMakeLists.txt \
+       example/CrsSingletonFilterExample/Makefile \
+       example/CrsSingletonFilterExample/README \
+       example/CrsSingletonFilterExample/cxx_main.cpp \
+       example/CrsSingletonFilterExample/hutch3.hb \
+       example/CrsSingletonFilterExample/referenceOutput4procs
 
 
 ## #######################################################################
