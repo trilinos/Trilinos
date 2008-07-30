@@ -110,6 +110,7 @@ SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
 	$(srcdir)/Sacado_trad.hpp \
 	$(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_tradvec.hpp \
 	$(srcdir)/Sacado_rad.hpp \
 	$(srcdir)/Sacado_rad2.hpp
 

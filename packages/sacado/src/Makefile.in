@@ -165,8 +165,9 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_Tay_Taylor.hpp \
 	$(srcdir)/Sacado_Tay_TaylorImp.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_rad.hpp \
-	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_tradvec.hpp \
+	$(srcdir)/Sacado_rad.hpp $(srcdir)/Sacado_rad2.hpp \
+	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
 	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_none.hpp \
@@ -307,8 +308,9 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Tay_Taylor.hpp \
 	$(srcdir)/Sacado_Tay_TaylorImp.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_rad.hpp \
-	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_tradvec.hpp \
+	$(srcdir)/Sacado_rad.hpp $(srcdir)/Sacado_rad2.hpp \
+	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
 	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_none.hpp \
@@ -563,6 +565,7 @@ SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
 	$(srcdir)/Sacado_trad.hpp \
 	$(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_tradvec.hpp \
 	$(srcdir)/Sacado_rad.hpp \
 	$(srcdir)/Sacado_rad2.hpp
 
