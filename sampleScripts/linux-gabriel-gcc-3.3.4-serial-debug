@@ -38,16 +38,16 @@ FLIBS="-lg2c" \
 --enable-meros \
 --enable-new_package \
 --enable-galeri \
---enable-isorropia \
 --enable-moertel \
 --enable-anasazi \
 --enable-rbgen \
 --enable-ctrilinos \
+--enable-sundance --enable-sundance-tests --enable-sundance-examples \
 --enable-didasko \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/trilinos/dev/serial/dbg
 
-# 2008/07/03: Sundance does not support the 'examples' target
-# --enable-sundance \
+# 2008/07/29: Issoropia fails to build
+#--enable-isorropia \
 
 # 2008/07/03: Intrepid hangs when building tests?
 #--enable-intrepid \

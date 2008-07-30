@@ -41,7 +41,9 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_as.hpp"
 
+
 namespace Teuchos {
+
 
 //
 // Teuchos::Comm Helper Functions
@@ -301,6 +303,8 @@ void send(
 /** \brief Send objects that use reference semantics to another process.
  *
  * \relates Comm
+ *
+ * NOTE: Not implemented yet!
  */
 template<typename Ordinal, typename Packet>
 void send(
@@ -337,6 +341,89 @@ int receive(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   );
+
+
+/** \brief Send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+RCP<CommRequest> isend(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<const Packet> &sendBuffer,
+  const int destRank
+  );
+
+
+/** \brief Send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+RCP<CommRequest> isend(
+  const Comm<Ordinal>& comm,
+  const RCP<const Packet> &send,
+  const int destRank
+  );
+
+
+// 2008/07/29: rabartl: ToDo: Add reference semantics version of isend!
+
+
+/** \brief Send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+RCP<CommRequest> ireceive(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  );
+
+
+/** \brief Send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+RCP<CommRequest> ireceive(
+  const Comm<Ordinal>& comm,
+  const RCP<Packet> &recv,
+  const int sourceRank
+  );
+
+
+// 2008/07/29: rabartl: ToDo: Add reference semantics version of ireceive!
+
+
+/** \brief Wait for an array of Teuchos::CommRequest objects.
+ *
+ * Blocks until all communication operations associated with the CommRequest
+ * objects have completed.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal>
+void waitAll(
+  const Comm<Ordinal>& comm,
+  const ArrayView<RCP<CommRequest> > &requests
+  );
+
+
+/** \brief Wait on on a single request
+ *
+ * Blocks until the communication operation associated with the CommRequest
+ * object has completed.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal>
+void wait(
+  const Comm<Ordinal>& comm,
+  const Ptr<RCP<CommRequest> > &request
+  );
+
 
 //
 // Standard reduction subclasses for objects that use value semantics
@@ -1021,7 +1108,6 @@ void Teuchos::send(
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
-
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
   const Comm<Ordinal>& comm
@@ -1059,6 +1145,107 @@ int Teuchos::receive(
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+}
+
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::isend(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<const Packet> &sendBuffer,
+  const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: isend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet>
+    charSendBuffer(sendBuffer.size(), sendBuffer.get());
+  RCP<CommRequest> commRequest = comm.isend(
+    charSendBuffer.getCharBufferView(), destRank );
+  set_extra_data( sendBuffer, "buffer", &commRequest );
+  return commRequest;
+}
+
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::isend(
+  const Comm<Ordinal>& comm,
+  const RCP<const Packet> &send,
+  const int destRank
+  )
+{
+  const ArrayRCP<const Packet> sendBuffer =
+    arcpWithEmbeddedObj( send.get(), 0, 1, send, false );
+  // 2008/07/29: rabartl: Above: I need to write a helper function to create
+  // new ArrayRCP object given a single object to copy.
+  return isend<Ordinal, Packet>( comm, sendBuffer, destRank );
+}
+
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::ireceive(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  )
+{
+  typedef std::pair<RCP<CommRequest>, ArrayRCP<const Packet> > comm_buffer_pair_t;
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: isend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ValueTypeSerializationBuffer<Ordinal,Packet>
+    charRecvBuffer(recvBuffer.size(), recvBuffer.get());
+  RCP<CommRequest> commRequest = comm.ireceive(
+    charRecvBuffer.getCharBufferView(), sourceRank );
+  set_extra_data( recvBuffer, "buffer", &commRequest );
+  return commRequest;
+}
+
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::ireceive(
+  const Comm<Ordinal>& comm,
+  const RCP<Packet> &recv,
+  const int sourceRank
+  )
+{
+  const ArrayRCP<Packet> recvBuffer =
+    arcpWithEmbeddedObj( recv.get(), 0, 1, recv, false );
+  // 2008/07/29: rabartl: Above: I need to write a helper function to create
+  // new ArrayRCP object given a single object to copy.
+  return ireceive<Ordinal, Packet>( comm, recvBuffer, sourceRank );
+}
+
+
+template<typename Ordinal>
+void Teuchos::waitAll(
+  const Comm<Ordinal>& comm,
+  const ArrayView<RCP<CommRequest> > &requests
+  )
+{
+  TEST_FOR_EXCEPT(true); // ToDo: Implement!
+}
+
+
+template<typename Ordinal>
+void Teuchos::wait(
+  const Comm<Ordinal>& comm,
+  const Ptr<RCP<CommRequest> > &request
+  )
+{
+  if (is_null(*request)) {
+    return; // Nothing to wait on ...
+  }
+  comm.wait(request);
+  // NOTE: This will release the ArrayRCP to the buffer of data!
 }
 
 

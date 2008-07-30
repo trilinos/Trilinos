@@ -30,6 +30,7 @@
 #define TEUCHOS_SERIALIZATION_TRAITS_HELPERS_HPP
 
 #include "Teuchos_SerializationTraits.hpp"
+#include "Teuchos_ArrayView.hpp"
 
 namespace Teuchos {
 
@@ -51,6 +52,8 @@ public:
   char* getCharBuffer() const;
   /** \brief . */
   Ordinal getBytes() const;
+  /** \brief . */
+  const ArrayView<char> getCharBufferView() const;
 private:
   Ordinal    count_;
   T          *buffer_;
@@ -80,6 +83,8 @@ public:
   const char* getCharBuffer() const;
   /** \brief . */
   Ordinal getBytes() const;
+  /** \brief . */
+  const ArrayView<const char> getCharBufferView() const;
 private:
   Ordinal    count_;
   const T    *buffer_;
@@ -192,6 +197,15 @@ Ordinal ValueTypeSerializationBuffer<Ordinal,T>::getBytes() const
   return bytes_;
 }
 
+
+template <typename Ordinal, typename T>
+const ArrayView<char>
+ValueTypeSerializationBuffer<Ordinal,T>::getCharBufferView() const
+{
+  return arrayView(charBuffer_, bytes_);
+}
+
+
 //
 // ConstValueTypeSerializationBuffer
 //
@@ -228,6 +242,13 @@ template <typename Ordinal, typename T>
 Ordinal ConstValueTypeSerializationBuffer<Ordinal,T>::getBytes() const
 {
   return bytes_;
+}
+
+template <typename Ordinal, typename T>
+const ArrayView<const char>
+ConstValueTypeSerializationBuffer<Ordinal,T>::getCharBufferView() const
+{
+  return arrayView(charBuffer_, bytes_);
 }
 
 //

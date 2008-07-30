@@ -149,15 +149,70 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
 }
 
 
-// 2008/07/16: rabartl: If more complex use-cases where different numbers of
-// elements are needed for different processors, then I need to write a unit
-// test for this!
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive_1, Ordinal, Packet )
+{
+
+  using Teuchos::as;
+  using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
+  using Teuchos::isend;
+  using Teuchos::ireceive;
+  using Teuchos::wait;
+  typedef Teuchos::ScalarTraits<Packet> PT;
+  typedef typename PT::magnitudeType PacketMag;
+  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+
+  RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
+  const Ordinal numProcs = size(*comm);
+  const Ordinal procRank = rank(*comm);
+
+  if (numProcs == 1) {
+    out << "\nCan't test send/receive on one process so successs!";
+    return;
+  }
+
+  const Packet input_data = as<Packet>(1);
+  Packet output_data = as<Packet>(-1);
+
+  RCP<Teuchos::CommRequest> recvRequest;
+  RCP<Teuchos::CommRequest> sendRequest;
+
+  if (procRank == 0) {
+    // Create copy of data to make sure that peristing relationship is
+    // maintained!
+    sendRequest = isend<Ordinal, Packet>(
+      *comm, Teuchos::rcp(new Packet(input_data)), numProcs-1);
+  }
+  if (procRank == numProcs-1) {
+    // We will need to read output_data after wait(...) below
+    recvRequest = ireceive<Ordinal, Packet>(
+      *comm, rcpFromRef(output_data), 0);
+  }
+
+  if (procRank == 0) {
+    wait( *comm, outArg(sendRequest) );
+  }
+  if (procRank == numProcs-1) {
+    wait<Ordinal>( *comm, outArg(recvRequest) );
+  }
+  
+  TEST_EQUALITY_CONST( sendRequest, Teuchos::null );
+  TEST_EQUALITY_CONST( recvRequest, Teuchos::null );
+
+  if (procRank == numProcs-1) {
+    TEST_EQUALITY( output_data, input_data );
+  }
+
+  int globalSuccess_int = -1;
+  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+  TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+}
 
 
 //
 // Instantiations
 //
-
 
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -175,7 +230,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
 
 #define UNIT_TEST_GROUP_ORDINAL_PACKET( ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_1, ORDINAL, PACKET ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_2, ORDINAL, PACKET )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_2, ORDINAL, PACKET ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive_1, ORDINAL, PACKET )
 
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
@@ -186,8 +242,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
   UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive_1, ORDINAL) \
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
-  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL)
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive_1, ORDINAL)
 
 
 UNIT_TEST_GROUP_ORDINAL(char)

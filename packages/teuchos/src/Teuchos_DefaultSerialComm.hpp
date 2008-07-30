@@ -54,43 +54,61 @@ public:
   //@{
 
   /** \brief . */
-  int getRank() const;
+  virtual int getRank() const;
   /** \brief . */
-  int getSize() const;
+  virtual int getSize() const;
   /** \brief . */
-  void barrier() const;
+  virtual void barrier() const;
   /** \brief . */
-  void broadcast(
+  virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const;
   /** \brief . */
-  void gatherAll(
+  virtual void gatherAll(
     const Ordinal sendBytes, const char sendBuffer[]
     ,const Ordinal recvBytes, char recvBuffer[]
     ) const;
   /** \brief . */
-  void reduceAll(
+  virtual void reduceAll(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
     ) const;
   /** \brief . */
-  void reduceAllAndScatter(
+  virtual void reduceAllAndScatter(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal sendBytes, const char sendBuffer[]
     ,const Ordinal recvCounts[], char myGlobalReducts[]
     ) const;
   /** \brief . */
-	void scan(
+	virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
     ) const;
   /** \brief . */
-  void send(
+  virtual void send(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
   /** \brief . */
-  int receive(
+  virtual int receive(
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
+    ) const;
+  /** \brief . */
+  virtual RCP<CommRequest> isend(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const;
+  /** \brief . */
+  virtual RCP<CommRequest> ireceive(
+    const ArrayView<char> &Buffer,
+    const int sourceRank
+    ) const;
+  /** \brief . */
+  virtual void waitAll(
+    const ArrayView<RCP<CommRequest> > &requests
+    ) const;
+  /** \brief . */
+  virtual void wait(
+    const Ptr<RCP<CommRequest> > &request
     ) const;
 
   //@}
@@ -223,6 +241,47 @@ int SerialComm<Ordinal>::receive(
   // The next line will never be reached, but a return is required on some platforms
   return 0; 
 }
+
+
+template<typename Ordinal>
+RCP<CommRequest> SerialComm<Ordinal>::isend(
+  const ArrayView<const char> &sendBuffer,
+  const int destRank
+  ) const
+{
+  TEST_FOR_EXCEPT(true);
+  return null;
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest> SerialComm<Ordinal>::ireceive(
+  const ArrayView<char> &Buffer,
+  const int sourceRank
+  ) const
+{
+  TEST_FOR_EXCEPT(true);
+  return null;
+}
+
+
+template<typename Ordinal>
+void SerialComm<Ordinal>::waitAll(
+  const ArrayView<RCP<CommRequest> > &requests
+  ) const
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+
+template<typename Ordinal>
+void SerialComm<Ordinal>::wait(
+  const Ptr<RCP<CommRequest> > &request
+  ) const
+{
+  TEST_FOR_EXCEPT(true);
+}
+
 
 // Overridden from Describable
 

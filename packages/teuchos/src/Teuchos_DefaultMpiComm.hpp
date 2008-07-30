@@ -74,6 +74,38 @@ void dumpBuffer(
 #endif // TEUCHOS_MPI_COMM_DUMP
 
 
+/** \brief . */
+class MpiCommRequest : public CommRequest {
+public:
+  /** \brief . */
+  MpiCommRequest( MPI_Request rawMpiRequest )
+    :rawMpiRequest_(rawMpiRequest)
+    {}
+  /** \brief . */
+  MPI_Request releaseRawMpiRequest()
+    {
+      MPI_Request tmp_rawMpiRequest = rawMpiRequest_;
+      rawMpiRequest_ = MPI_REQUEST_NULL;
+      return tmp_rawMpiRequest;
+    }
+private:
+  MPI_Request rawMpiRequest_;
+  MpiCommRequest(); // Not defined
+};
+
+
+/** \brief Nonmember constructor .
+ *
+ * \relates MpiCommRequest
+ */
+inline
+const RCP<MpiCommRequest>
+mpiCommRequest( MPI_Request rawMpiRequest  )
+{
+  return Teuchos::rcp(new MpiCommRequest(rawMpiRequest));
+}
+
+
 /** \brief Concrete communicator subclass based on MPI.
  *
  * <b>Assertions:</b><ul>
@@ -111,43 +143,61 @@ public:
   //@{
 
   /** \brief . */
-  int getRank() const;
+  virtual int getRank() const;
   /** \brief . */
-  int getSize() const;
+  virtual int getSize() const;
   /** \brief . */
-  void barrier() const;
+  virtual void barrier() const;
   /** \brief . */
-  void broadcast(
+  virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]
     ) const;
   /** \brief . */
-  void gatherAll(
+  virtual void gatherAll(
     const Ordinal sendBytes, const char sendBuffer[]
     ,const Ordinal recvBytes, char recvBuffer[]
     ) const;
   /** \brief . */
-  void reduceAll(
+  virtual void reduceAll(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
     ) const;
   /** \brief . */
-  void reduceAllAndScatter(
+  virtual void reduceAllAndScatter(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal sendBytes, const char sendBuffer[]
     ,const Ordinal recvCounts[], char myGlobalReducts[]
     ) const;
   /** \brief . */
-	void scan(
+	virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
     ) const;
   /** \brief . */
-  void send(
+  virtual void send(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
   /** \brief . */
-  int receive(
+  virtual int receive(
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
+    ) const;
+  /** \brief . */
+  virtual RCP<CommRequest> isend(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const;
+  /** \brief . */
+  virtual RCP<CommRequest> ireceive(
+    const ArrayView<char> &Buffer,
+    const int sourceRank
+    ) const;
+  /** \brief . */
+  virtual void waitAll(
+    const ArrayView<RCP<CommRequest> > &requests
+    ) const;
+  /** \brief . */
+  virtual void wait(
+    const Ptr<RCP<CommRequest> > &request
     ) const;
 
   //@}
@@ -170,6 +220,8 @@ private:
   int rank_;
   int size_;
   int tag_;
+
+  void assertRank(const int rank, const std::string &rankName) const;
 
   // Not defined and not to be called!
   MpiComm();
@@ -454,6 +506,75 @@ int MpiComm<Ordinal>::receive(
 }
 
 
+template<typename Ordinal>
+RCP<CommRequest> MpiComm<Ordinal>::isend(
+  const ArrayView<const char> &sendBuffer,
+  const int destRank
+  ) const
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::isend(...)"
+    );
+#ifdef TEUCHOS_DEBUG
+  assertRank(destRank, "destRank");
+#endif // TEUCHOS_DEBUG
+  MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
+  MPI_Isend(
+    const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(), MPI_CHAR, destRank,
+    tag_, *rawMpiComm_, &rawMpiRequest );
+  return mpiCommRequest(rawMpiRequest);
+  // ToDo: What about MPI error handling???
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest> MpiComm<Ordinal>::ireceive(
+  const ArrayView<char> &recvBuffer,
+  const int sourceRank
+  ) const
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::ireceive(...)"
+    );
+#ifdef TEUCHOS_DEBUG
+  assertRank(sourceRank, "sourceRank");
+#endif // TEUCHOS_DEBUG
+  MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
+  MPI_Irecv(
+    const_cast<char*>(recvBuffer.getRawPtr()), recvBuffer.size(), MPI_CHAR, sourceRank,
+    tag_, *rawMpiComm_, &rawMpiRequest );
+  return mpiCommRequest(rawMpiRequest);
+  // ToDo: What about MPI error handling???
+}
+
+
+template<typename Ordinal>
+void MpiComm<Ordinal>::waitAll(
+  const ArrayView<RCP<CommRequest> > &requests
+  ) const
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+
+template<typename Ordinal>
+void MpiComm<Ordinal>::wait(
+  const Ptr<RCP<CommRequest> > &request
+  ) const
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::wait(...)"
+    );
+  const RCP<MpiCommRequest> mpiCommRequest =
+    rcp_dynamic_cast<MpiCommRequest>(*request);
+  MPI_Request rawMpiRequest = mpiCommRequest->releaseRawMpiRequest();
+  MPI_Status status;
+  MPI_Wait( &rawMpiRequest, &status );
+  // ToDo: We really should check the status?
+  *request = null;
+}
+
+
 // Overridden from Describable
 
 
@@ -476,6 +597,20 @@ std::string MpiComm<Ordinal>::description() const
 template<typename Ordinal>
 bool MpiComm<Ordinal>::show_dump = false;
 #endif
+
+
+// private
+
+
+template<typename Ordinal>
+void MpiComm<Ordinal>::assertRank(const int rank, const std::string &rankName) const
+{
+  TEST_FOR_EXCEPTION(
+    ! ( 0 <= rank && rank < size_ ), std::logic_error
+    ,"Error, "<<rankName<<" = " << rank << " is not < 0 or is not"
+    " in the range [0,"<<size_-1<<"]!"
+    );
+}
 
 
 } // namespace Teuchos

@@ -30,8 +30,14 @@
 #define TEUCHOS_COMM_HPP
 
 #include "Teuchos_ReductionOp.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 namespace Teuchos {
+
+
+/** \brief . */
+class CommRequest : public Teuchos::Describable {};
+
 
 /** \brief Abstract interface class for a basic communication channel between
  * one or more processes.
@@ -188,7 +194,7 @@ public:
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
     ) const = 0;
 
-  //! @name Point-to-Point Operations 
+  //! @name Blocking Point-to-Point Operations 
   //@{
 
   /** \brief Blocking send of data from this process to another process.
@@ -234,6 +240,33 @@ public:
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
     ) const = 0;
   
+  //@}
+
+  //! @name Nonblocking Point-to-Point Operations 
+  //@{
+
+  /** \brief . */
+  virtual RCP<CommRequest> isend(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const = 0;
+
+  /** \brief . */
+  virtual RCP<CommRequest> ireceive(
+    const ArrayView<char> &Buffer,
+    const int sourceRank
+    ) const = 0;
+  
+  /** \brief . */
+  virtual void waitAll(
+    const ArrayView<RCP<CommRequest> > &requests
+    ) const = 0;
+
+  /** \brief . */
+  virtual void wait(
+    const Ptr<RCP<CommRequest> > &request
+    ) const = 0;
+
   //@}
 	
 }; // class Comm
