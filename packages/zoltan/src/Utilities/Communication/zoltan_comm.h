@@ -52,11 +52,10 @@ int Zoltan_Comm_Resize(ZOLTAN_COMM_OBJ*, int*, int, int*);
 int Zoltan_Comm_Do     (ZOLTAN_COMM_OBJ*, int, char*, int, char*);
 int Zoltan_Comm_Do_Post(ZOLTAN_COMM_OBJ*, int, char*, int, char*);
 int Zoltan_Comm_Do_Wait(ZOLTAN_COMM_OBJ*, int, char*, int, char*);
-int Zoltan_Comm_Do_AlltoAll(ZOLTAN_COMM_OBJ*, int, char*, int, char*);
+int Zoltan_Comm_Do_AlltoAll(ZOLTAN_COMM_OBJ*, char*, int, char*);
 
 int Zoltan_Comm_Do_Reverse     (ZOLTAN_COMM_OBJ*, int, char*, int, int*, char*);
-int Zoltan_Comm_Do_Reverse_Post(ZOLTAN_COMM_OBJ*, int, char*, int, int*, char*);
-int Zoltan_Comm_Do_Reverse_Wait(ZOLTAN_COMM_OBJ*, int, char*, int, int*, char*);
+int Zoltan_Comm_Reverse_Plan(ZOLTAN_COMM_OBJ*, int, int*);
 
 int Zoltan_Comm_Info(ZOLTAN_COMM_OBJ*, int*, int*, int*, int*, int*, int*, int*,
  int*, int*, int*, int*, int*, int*);

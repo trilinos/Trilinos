@@ -24,6 +24,25 @@
 extern "C" {
 #endif
 
+#if 0
+static void show_int_buffers(int me, int procs, char *buf, int *bcounts, int *boffsets)
+{
+  int i,p;
+  int *ibuf = (int *)buf;
+
+  printf("%d  count offset (values)\n",me);
+
+  for (p=0; p < procs; p++){
+    printf("%d %d (",bcounts[p]/4, boffsets[p]/4);
+    for (i=0; i < bcounts[p]/4; i++){
+      printf("%d ",*ibuf);
+      ibuf++;
+    }
+    printf(")\n\n");
+    fflush(stdout);
+  }
+}
+#endif
 
 /* Given the communication object, perform a communication operation as
    efficiently as possible. */
@@ -63,7 +82,7 @@ char *recv_data)		/* array of data I'll own after comm */
        status = Zoltan_Comm_Do_Wait (plan, tag, send_data, nbytes, recv_data);
   }
   else{
-    status = Zoltan_Comm_Do_AlltoAll(plan, tag, send_data, nbytes, recv_data);
+    status = Zoltan_Comm_Do_AlltoAll(plan, send_data, nbytes, recv_data);
   }
 
   return status;
@@ -418,7 +437,6 @@ char *recv_data)		/* array of data I'll own after comm */
 
 int       Zoltan_Comm_Do_AlltoAll(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
-int tag,			/* message tag for communicating */
 char *send_data,		/* array of data I currently own */
 int nbytes,			/* multiplier for sizes */
 char *recv_data)		/* array of data I'll own after comm */
@@ -494,27 +512,29 @@ char *recv_data)		/* array of data I'll own after comm */
         ZOLTAN_COMM_ERROR("memory error", yo, me);
       }
 
-      for (p=0, i=-1, k=0; p < nprocs; p++){
+      for (p=0, i=0, k=0; p < nprocs; p++){
 
         length = 0;
 
-        if (plan->procs_to[i+1] == p){   /* procs_to is sorted */
-          i++;
-
-          for (j=0; j < plan->lengths_to[i]; j++,k++){
-            itemSize = plan->sizes[plan->indices_to[k]] * nbytes;
-            offset = plan->indices_to_ptr[k] * nbytes;
-
-            memcpy(buf, send_data + offset, itemSize);
-
-            buf += itemSize;
-            length += itemSize;
+        if (i < nSendMsgs){
+          if (plan->procs_to[i] == p){   /* procs_to is sorted */
+  
+            for (j=0; j < plan->lengths_to[i]; j++,k++){
+              itemSize = plan->sizes[plan->indices_to[k]] * nbytes;
+              offset = plan->indices_to_ptr[k] * nbytes;
+  
+              memcpy(buf, send_data + offset, itemSize);
+  
+              buf += itemSize;
+              length += itemSize;
+            }
+            i++;
           }
         }
   
         outbufCounts[p] = length;
         if (p){
-          outbufOffsets[p] = outbufOffsets[p-1] + length;
+          outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
         }
       }
     }
@@ -536,24 +556,26 @@ char *recv_data)		/* array of data I'll own after comm */
         outbuf = send_data;
       }
 
-      for (p=0, i=-1; p < nprocs; p++){
+      for (p=0, i=0; p < nprocs; p++){
 
         length = 0;
 
-        if (plan->procs_to[i+1] == p){   /* procs_to is sorted */
-          i++;
-          length = plan->sizes_to[i] * nbytes;
-          offset = plan->starts_to_ptr[i] * nbytes;
-
-          if ((!sorted || (plan->nvals > nSendItems)) && length){
-            memcpy(buf, send_data + offset, length);
-            buf += length;
+        if (i < nSendMsgs){
+          if (plan->procs_to[i] == p){   /* procs_to is sorted */
+            length = plan->sizes_to[i] * nbytes;
+            offset = plan->starts_to_ptr[i] * nbytes;
+  
+            if ((!sorted || (plan->nvals > nSendItems)) && length){
+              memcpy(buf, send_data + offset, length);
+              buf += length;
+            }
+            i++;
           }
         }
   
         outbufCounts[p] = length;
         if (p){
-          outbufOffsets[p] = outbufOffsets[p-1] + length;
+          outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
         }
       }
     }
@@ -569,23 +591,25 @@ char *recv_data)		/* array of data I'll own after comm */
       ZOLTAN_COMM_ERROR("memory error", yo, me);
     }
 
-    for (p=0, i=-1, k=0; p < nprocs; p++){
-      if (plan->procs_to[i+1] == p){   /* procs_to is sorted */
-        i++;
-        for (j=0; j < plan->lengths_to[i]; j++,k++){
-          offset = plan->indices_to[k] * nbytes;
-          memcpy(buf, send_data + offset, nbytes);
-          buf += nbytes;
+    for (p=0, i=0, k=0; p < nprocs; p++){
+
+      length = 0;
+     
+      if (i < nSendMsgs){
+        if (plan->procs_to[i] == p){   /* procs_to is sorted */
+          for (j=0; j < plan->lengths_to[i]; j++,k++){
+            offset = plan->indices_to[k] * nbytes;
+            memcpy(buf, send_data + offset, nbytes);
+            buf += nbytes;
+          }
+          length = plan->lengths_to[i] * nbytes;
+          i++;
         }
-        length = plan->lengths_to[i] * nbytes;
-      }
-      else{
-        length = 0;
       }
 
       outbufCounts[p] = length;
       if (p){
-        outbufOffsets[p] = outbufOffsets[p-1] + length;
+        outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
       }
     }
   }
@@ -609,24 +633,26 @@ char *recv_data)		/* array of data I'll own after comm */
       outbuf = send_data;
     }
 
-    for (p=0,i=-1; p < nprocs; p++){
-      if (plan->procs_to[i+1] == p){    /* procs_to is sorted */
-        i++;
-        offset = plan->starts_to[i] * nbytes;
-        length = plan->lengths_to[i] * nbytes;
+    for (p=0,i=0; p < nprocs; p++){
 
-        if ((!sorted || (plan->nvals > nSendItems)) && length){
-          memcpy(buf, send_data + offset, length);
-          buf += length;
+      length = 0;
+     
+      if (i < nSendMsgs){
+        if (plan->procs_to[i] == p){    /* procs_to is sorted */
+          offset = plan->starts_to[i] * nbytes;
+          length = plan->lengths_to[i] * nbytes;
+  
+          if ((!sorted || (plan->nvals > nSendItems)) && length){
+            memcpy(buf, send_data + offset, length);
+            buf += length;
+          }
+          i++;
         }
-      }
-      else{
-        length = 0;
       }
 
       outbufCounts[p] = length;
       if (p){
-        outbufOffsets[p] = outbufOffsets[p-1] + length;
+        outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
       }
     }
   }
@@ -657,43 +683,29 @@ char *recv_data)		/* array of data I'll own after comm */
     }
   }
 
-  for (p=0, i=-1; p < nprocs; p++){
+  for (p=0, i=0; p < nprocs; p++){
     length = 0;
 
-    if (plan->procs_from[i+1] == p){
-      i++;
-
-      if (plan->sizes == NULL){
-        length = plan->lengths_from[i] * nbytes;
+    if (i < nRecvMsgs){
+      if (plan->procs_from[i] == p){
+  
+        if (plan->sizes == NULL){
+          length = plan->lengths_from[i] * nbytes;
+        }
+        else{
+          length = plan->sizes_from[i] * nbytes;
+        }  
+        i++;
       }
-      else{
-        length = plan->sizes_from[i] * nbytes;
-      }  
     }
 
     inbufCounts[p] = length;
     if (p){
-      inbufOffsets[p] = inbufOffsets[p-1] + length;
+      inbufOffsets[p] = inbufOffsets[p-1] + inbufCounts[p-1];
     }
   }
 
   /* EXCHANGE DATA */
-
-#if 0
-if (me == 0){
-printf("offsets and counts for %d outgoing messages\n",nSendMsgs);
-for (i=0; i<nSendMsgs; i++){
-  printf("%d %d\n",outbufOffsets[i],outbufCounts[i]);
-}
-printf("offsets and counts for %d incoming messages\n",nRecvMsgs);
-for (i=0; i<nRecvMsgs; i++){
-  printf("%d %d\n",inbufOffsets[i],inbufCounts[i]);
-}
-}
-
-MPI_Finalize();
-exit(0);
-#endif
 
   rc = MPI_Alltoallv(outbuf, outbufCounts, outbufOffsets, MPI_BYTE,
                      inbuf, inbufCounts, inbufOffsets, MPI_BYTE,
@@ -702,6 +714,8 @@ exit(0);
   if (outbuf != send_data){
     ZOLTAN_FREE(&outbuf);
   }
+  ZOLTAN_FREE(&outbufCounts);
+  ZOLTAN_FREE(&outbufOffsets);
 
   /* WRITE RECEIVED DATA INTO USER'S BUFFER WHERE IT'S EXPECTED */
 
@@ -717,15 +731,16 @@ exit(0);
         for (i=0; i < nRecvMsgs; i++){
           offset = plan->starts_from[i] * nbytes;
           length = plan->lengths_from[i] * nbytes;
-          memcpy(buf, inbuf + offset, length);
+          memcpy(recv_data + offset, buf, length);
           buf += length;
         }
       }
       else{
         for (i=0,k=0; i < nRecvMsgs; i++){
+
           for (j=0; j < plan->lengths_from[i]; j++,k++){
-            offset = plan->indices_from[k++] * nbytes;
-            memcpy(buf, inbuf + offset, nbytes);
+            offset = plan->indices_from[k] * nbytes;
+            memcpy(recv_data + offset, buf, nbytes);
             buf += nbytes;
           }
         }
@@ -735,16 +750,19 @@ exit(0);
 
       /* items can be different sizes */
 
-      for (i=0,k=0; i < nRecvMsgs; i++){
+      for (i=0; i < nRecvMsgs; i++){
         offset = plan->starts_from_ptr[i] * nbytes;
         length = plan->sizes_from[i] * nbytes;
-        memcpy(buf, inbuf + offset, length);
+        memcpy(recv_data + offset, buf, length);
         buf += length;
       }
     }
 
     ZOLTAN_FREE(&inbuf);
   }
+
+  ZOLTAN_FREE(&inbufCounts);
+  ZOLTAN_FREE(&inbufOffsets);
 
   return ZOLTAN_OK;
 }
