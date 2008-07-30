@@ -324,8 +324,8 @@ int Ifpack_ILU::Compute()
   // Get Maximun Row length
   int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 1;
 
-  vector<int> InI(MaxNumEntries); // Allocate temp space
-  vector<double> InV(MaxNumEntries);
+  vector<int> InI(MaxNumEntries+1);    // Allocate temp space, pad by one to 
+  vector<double> InV(MaxNumEntries+1); // to avoid debugger complaints for pathological cases
   vector<int> colflag(NumMyCols());
 
   double *DV;
