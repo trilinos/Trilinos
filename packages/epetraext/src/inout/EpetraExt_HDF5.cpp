@@ -519,7 +519,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
   {
     // we need to first create a linear map, read the std::vector,
     // then import it to the actual nonlinear map
-    Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+    Epetra_Map LinearMap(GlobalLength, Map.IndexBase(), Comm_);
     Epetra_IntVector LinearX(LinearMap);
 
     Read(GroupName, "Values", LinearMap.NumMyElements(), 
@@ -899,7 +899,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
     LinearX = Teuchos::rcp(const_cast<Epetra_MultiVector*>(&X), false);
   else
   {
-    Epetra_Map LinearMap(X.GlobalLength(), 0, Comm_);
+    Epetra_Map LinearMap(X.GlobalLength(), X.Map().IndexBase(), Comm_);
     LinearX = Teuchos::rcp(new Epetra_MultiVector(LinearMap, X.NumVectors()));
     Epetra_Import Importer(LinearMap, X.Map());
     LinearX->Import(X, Importer, Insert);
@@ -927,7 +927,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 #endif
 
   // Select hyperslab in the file.
-  hsize_t offset[] = {0, LinearX->Map().GID(0)};
+  hsize_t offset[] = {0, LinearX->Map().GID(0)-X.Map().IndexBase()};
   hsize_t stride[] = {1, 1};
   hsize_t count[] = {NumVectors, 1};
   hsize_t block[] = {1, LinearX->MyLength()};
@@ -1101,7 +1101,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
   {
     // we need to first create a linear map, read the std::vector,
     // then import it to the actual nonlinear map
-    Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+    Epetra_Map LinearMap(GlobalLength, Map.IndexBase(), Comm_);
     EpetraExt::DistArray<int> LinearX(LinearMap, RowSize);
 
     Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
@@ -1203,7 +1203,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
   {
     // we need to first create a linear map, read the std::vector,
     // then import it to the actual nonlinear map
-    Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+    Epetra_Map LinearMap(GlobalLength, Map.IndexBase(), Comm_);
     EpetraExt::DistArray<double> LinearX(LinearMap, RowSize);
 
     Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
