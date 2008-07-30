@@ -110,8 +110,6 @@ int ZoltanLibClass::precompute()
   std::string str2;
   MPI_Comm mpicomm;
 
-  Library::precompute();
-
   bool isHypergraph = true;
   std::string lb_method_str("LB_METHOD");
   if (zoltanParamList_.isParameter(lb_method_str)){
@@ -122,37 +120,37 @@ int ZoltanLibClass::precompute()
     }
   }
 
-
-  if (!isHypergraph){
-    bool square = false;
-    bool symmetric = false;
-    if (input_graph_.get() != 0){
-      if (input_graph_->NumGlobalRows() == input_graph_->NumGlobalCols()){
-	square = true;
-	// TODO - is there a quick way to figure out if the graph is
-	// symmetric?  I can't see a way to do it.  For now we let
-	// Zoltan figure this out.
-	symmetric = true;
-      }
-    }
-    else{
-      if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
-	square = true;
-	// TODO - is there a quick way to figure out if the matrix is
-	// symmetric?  I can't see a way to do it.  For now we let
-	// Zoltan figure this out.
-	symmetric = true;
-      }
-    }
-    if (!square){
-      str2 = "LB_METHOD=GRAPH, matrix or graph must be square";
-      throw Isorropia::Exception(str1+str2);
-    }
-    if (!symmetric){
-      str2 = "LB_METHOD=GRAPH, matrix or graph must be symmetric";
-      throw Isorropia::Exception(str1+str2);
-    }
-  }
+  Library::precompute();
+//   if (!isHypergraph){
+//     bool square = false;
+//     bool symmetric = false;
+//     if (input_graph_.get() != 0){
+//       if (input_graph_->NumGlobalRows() == input_graph_->NumGlobalCols()){
+// 	square = true;
+// 	// TODO - is there a quick way to figure out if the graph is
+// 	// symmetric?  I can't see a way to do it.  For now we let
+// 	// Zoltan figure this out.
+// 	symmetric = true;
+//       }
+//     }
+//     else{
+//       if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
+// 	square = true;
+// 	// TODO - is there a quick way to figure out if the matrix is
+// 	// symmetric?  I can't see a way to do it.  For now we let
+// 	// Zoltan figure this out.
+// 	symmetric = true;
+//       }
+//     }
+//     if (!square){
+//       str2 = "LB_METHOD=GRAPH, matrix or graph must be square";
+//       throw Isorropia::Exception(str1+str2);
+//     }
+//     if (!symmetric){
+//       str2 = "LB_METHOD=GRAPH, matrix or graph must be symmetric";
+//       throw Isorropia::Exception(str1+str2);
+//     }
+//   }
 
   computeCost();
 

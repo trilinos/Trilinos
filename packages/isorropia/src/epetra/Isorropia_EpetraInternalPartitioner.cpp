@@ -71,27 +71,27 @@ namespace Epetra {
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph):
   Library(input_graph)
  {
-   setInputType("GRAPH");
+   setInputType("HYPERGRAPH");
  }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 			  Teuchos::RefCountPtr<CostDescriber> costs):
   Library(input_graph, costs)
 {
-   setInputType("GRAPH");
+   setInputType("HYPERGRAPH");
 }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix):
   Library(input_matrix)
 {
-   setInputType("GRAPH");
+   setInputType("HYPERGRAPH");
 }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 			  Teuchos::RefCountPtr<CostDescriber> costs):
   Library(input_matrix, costs)
 {
-   setInputType("GRAPH");
+   setInputType("HYPERGRAPH");
 }
 
 InternalPartitioner::~InternalPartitioner() {}
@@ -105,40 +105,6 @@ int InternalPartitioner::precompute()
 
 
   Library::precompute();
-
-  if (inputType_ != "GRAPH"){
-      str2 = "Isorropia partitioner works only on GRAPH";
-      throw Isorropia::Exception(str1+str2);
-  }
-
-  bool square = false;
-  bool symmetric = false;
-  if (input_graph_.get() != 0){
-    if (input_graph_->NumGlobalRows() == input_graph_->NumGlobalCols()){
-      square = true;
-      // TODO - is there a quick way to figure out if the graph is
-      // symmetric?  I can't see a way to do it.  For now we let
-      // Zoltan figure this out.
-      symmetric = true;
-    }
-  }
-  else{
-    if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
-      square = true;
-      // TODO - is there a quick way to figure out if the matrix is
-      // symmetric?  I can't see a way to do it.  For now we let
-      // Zoltan figure this out.
-      symmetric = true;
-    }
-  }
-  if (!square){
-    str2 = "LB_METHOD=GRAPH, matrix or graph must be square";
-    throw Isorropia::Exception(str1+str2);
-  }
-  if (!symmetric){
-    str2 = "LB_METHOD=GRAPH, matrix or graph must be symmetric";
-    throw Isorropia::Exception(str1+str2);
-  }
 
 }
 
