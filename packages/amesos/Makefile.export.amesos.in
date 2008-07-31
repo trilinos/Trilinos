@@ -14,6 +14,7 @@ _AMESOS_INCLUDES = \
   $(EPETRAEXT_INCLUDES) \
   -I@abs_top_srcdir@/src \
   -I@abs_top_srcdir@/src/SuiteSparse/BTF/Include \
+  -I@abs_top_srcdir@/src/SuiteSparse/AMD/Include \
   -I@abs_top_srcdir@/src/SuiteSparse/UFconfig \
   -I@abs_top_builddir@/src
 
