@@ -15,6 +15,8 @@ This will be updated for release 9.0
 
   - \ref overview
 
+  - \ref domain_design
+
   - \ref user_guide
 
   - \ref developer_guide
@@ -96,6 +98,8 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
 
 \section developer_guide Developer's Guide
+
+ - \ref domain_design
 
 \section faq Frequently Asked Questions
 
@@ -244,6 +248,37 @@ easier to use) as a trilinos package to be used with Intrepid to aid in
 element assembly for nonlinear equation sets.
 
   */
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page domain_design Domain Design
+
+Concepts
+
+0. Cell
+Partial differential equations are solved in a domain.  This domain is discretized into cells (also called elements for the finite element method).  This library assumes that the block of cells being iterated over is of the same type!  If different evaluators (i.e. different material properties) are required in different blocks of cells, a new FieldMangager must be used to switch material properties.  This is required for efficiency.  A contiguous block of memory can be used for all fields allowing for very fast evaluation.
+
+1. Scalar Type
+A scalar type, typically the template argument \beginverbatim ScalarT \endverbatim in Phalanx, is the type of scalar used for fields.  It is typically a double, but can be special object types such as a foward automatic differentiation object (FAD) or a reverse automatic differentaion object when used to produce sensitivity information.
+
+2. Algebraic Type
+An algebraic type is the type of objects that.  It is a rank n tensor.  For example it can be a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
+
+3. Data Type
+A data type, typically the tempalte argument \beginverbatim DataT \enfverbatin in Phalanx, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  
+
+4. Computation Type
+The computation type defines a unique type of evaluation to perform.  A ComputationContainer is allocated for each conputation type specified in the traits class.  Examples include a residual type, a Jacobian type, and a sensitivity type.  Prior to the addition of this type, the ComputationContainer was called the ScalarContainer and was instantiated for each scaalar type.  This was somewhat restictive if you wanted to do different computations with different evaluators that used teh same scalar type.  An example would be computing the Jacobian and computing parameter sensitivities.  They might both use FAD types. 
+
+4. Storage
+A DataContainer object stores all fields of a particular data type.  A template manager in the ComputationContainer builds a std::vector of DataContainers, one for each data type.
+
+5. Data Layout
+The DataLayout object is used to define a unique entity on a cell.
+
+
+*/
 
 /* ************************************************************************ */
 /* ************************************************************************ */
