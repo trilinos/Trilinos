@@ -1,6 +1,6 @@
 //**********************************************************************
-template<typename ScalarT, typename Traits> 
-Fourier<ScalarT, Traits>::
+template<typename EvalT, typename Traits> 
+Fourier<EvalT, Traits>::
 Fourier(const Teuchos::ParameterList& p) :
   flux("Energy_Flux", 
        p.get< Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout") ),
@@ -20,26 +20,26 @@ Fourier(const Teuchos::ParameterList& p) :
 }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits> 
-Fourier<ScalarT, Traits>::~Fourier()
+template<typename EvalT, typename Traits> 
+Fourier<EvalT, Traits>::~Fourier()
 { }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits> 
-void Fourier<ScalarT, Traits>::
+template<typename EvalT, typename Traits> 
+void Fourier<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.getFieldData(flux);
-  vm.getFieldData(density);
-  vm.getFieldData(dc);
-  vm.getFieldData(grad_temp);
+  this->utils.setFieldData(flux,vm);
+  this->utils.setFieldData(density,vm);
+  this->utils.setFieldData(dc,vm);
+  this->utils.setFieldData(grad_temp,vm);
 
   data_layout_size = flux.fieldTag().dataLayout()->size();
 }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits>
-void Fourier<ScalarT, Traits>::evaluateFields(typename Traits::EvalData d)
+template<typename EvalT, typename Traits>
+void Fourier<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { 
   std::size_t size = d.size() * data_layout_size;
 

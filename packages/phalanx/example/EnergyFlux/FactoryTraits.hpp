@@ -15,7 +15,7 @@
 #include "boost/mpl/placeholders.hpp"
 using namespace boost::mpl::placeholders;
 
-/*! \brief Struct to define Evaluators objects for the EvaluatorFactory.
+/*! \brief Struct to define Evaluator objects for the EvaluatorFactory.
     
     Preconditions:
     - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects. 

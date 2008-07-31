@@ -12,7 +12,7 @@ PHX::FieldManager<Traits>::FieldManager() :
   m_max_num_cells(-1)
 {
   m_num_evaluation_types = 
-    Sacado::mpl::size<typename Traits::ScalarTypes>::value;
+    Sacado::mpl::size<typename Traits::EvalTypes>::value;
   PHX::EvaluationContainer_TemplateBuilder<Traits> builder;
   m_eval_containers.buildObjects(builder);
 }
@@ -25,26 +25,24 @@ PHX::FieldManager<Traits>::~FieldManager()
 
 // **************************************************************
 template<typename Traits>
-template<typename DataT> 
+template<typename DataT, typename EvalT> 
 inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<DataT>& h)
 {
   h.setFieldData(m_eval_containers.template 
-    getAsObject< typename boost::mpl::at<typename Traits::DataToScalarMap,
-	    DataT>::type >()->template getFieldData<DataT>(h.fieldTag()) );
+    getAsObject<EvalT>()->template getFieldData<DataT>(h.fieldTag()) );
 }
     
 // **************************************************************
 template<typename Traits>
-template<typename DataT> 
+template<typename DataT, typename EvalT> 
 inline
 void PHX::FieldManager<Traits>::
 getFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d)
 {
   d = m_eval_containers.template 
-    getAsObject< typename boost::mpl::at<typename Traits::DataToScalarMap,
-    DataT>::type >()->template getFieldData<DataT>(v);
+    getAsObject<EvalT>()->template getFieldData<DataT>(v);
 }
 
 // **************************************************************
@@ -63,12 +61,12 @@ requireFieldForAllTypes(const PHX::FieldTag& v)
 
 // **************************************************************
 template<typename Traits>
-template<typename ScalarT>
+template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
 requireFieldForScalarType(const PHX::FieldTag& v)
 {
-  m_eval_containers.template getAsBase<ScalarT>()->template requireField(v);
+  m_eval_containers.template getAsBase<EvalT>()->template requireField(v);
 }
     
 // **************************************************************
@@ -87,12 +85,12 @@ registerEvaluatorForAllTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 
 // **************************************************************
 template<typename Traits>
-template<typename ScalarT>
+template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
 registerEvaluatorForScalarType(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
-  m_eval_containers.template getAsBase<ScalarT>()->template registerEvaluator(p);
+  m_eval_containers.template getAsBase<EvalT>()->template registerEvaluator(p);
 }
 
 // **************************************************************
@@ -121,32 +119,32 @@ postRegistrationSetup(std::size_t max_num_cells)
 
 // **************************************************************
 template<typename Traits>
-template<typename ScalarT>
+template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  m_eval_containers.template getAsBase<ScalarT>()->template evaluateFields(d);
+  m_eval_containers.template getAsBase<EvalT>()->template evaluateFields(d);
 }
 
 // **************************************************************
 template<typename Traits>
-template<typename ScalarT>
+template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-  m_eval_containers.template getAsBase<ScalarT>()->template preEvaluate(d);
+  m_eval_containers.template getAsBase<EvalT>()->template preEvaluate(d);
 }
 
 // **************************************************************
 template<typename Traits>
-template<typename ScalarT>
+template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
-  m_eval_containers.template getAsBase<ScalarT>()->template postEvaluate(d);
+  m_eval_containers.template getAsBase<EvalT>()->template postEvaluate(d);
 }
 
 // **************************************************************

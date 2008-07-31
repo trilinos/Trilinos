@@ -2,8 +2,8 @@
 #include "Phalanx_DataLayout.hpp"
 
 //**********************************************************************
-template< typename ScalarT, typename Traits>
-FEInterpolation<ScalarT, Traits>::
+template< typename EvalT, typename Traits>
+FEInterpolation<EvalT, Traits>::
 FEInterpolation(const Teuchos::ParameterList& p) :
   val_node(p.get<std::string>("Node Variable Name"), 
 	   p.get< Teuchos::RCP<PHX::DataLayout> >("Node Data Layout") ),
@@ -20,23 +20,23 @@ FEInterpolation(const Teuchos::ParameterList& p) :
 }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits>
-FEInterpolation<ScalarT, Traits>::~FEInterpolation()
+template<typename EvalT, typename Traits>
+FEInterpolation<EvalT, Traits>::~FEInterpolation()
 { }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits> 
-void FEInterpolation<ScalarT, Traits>::
+template<typename EvalT, typename Traits> 
+void FEInterpolation<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.getFieldData(val_node);
-  vm.getFieldData(val_qp);
-  vm.getFieldData(val_grad_qp);
+  this->utils.setFieldData(val_node,vm);
+  this->utils.setFieldData(val_qp,vm);
+  this->utils.setFieldData(val_grad_qp,vm);
 }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits>
-void FEInterpolation<ScalarT, Traits>::
+template<typename EvalT, typename Traits>
+void FEInterpolation<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData cell_data)
 { 
   

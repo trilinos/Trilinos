@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
     {
       TimeMonitor t(*time_fmn);
       for (std::size_t i=0; i < num_eval_loops; ++i)
-	fmn->evaluateFields<double>(cells);
+	fmn->evaluateFields<MyTraits::Residual>(cells);
     }
 
     RCP<Time> time_fmc = 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     {
       TimeMonitor t(*time_fmc);
       for (std::size_t i=0; i < num_eval_loops; ++i)
-	fmc->evaluateFields<double>(cells);
+	fmc->evaluateFields<MyCTraits::Residual>(cells);
     }
 
     // *********************************************************************

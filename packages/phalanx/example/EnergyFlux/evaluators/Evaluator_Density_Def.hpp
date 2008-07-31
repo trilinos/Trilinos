@@ -1,5 +1,5 @@
 //**********************************************************************
-template<typename ScalarT, typename Traits> Density<ScalarT, Traits>::
+template<typename EvalT, typename Traits> Density<EvalT, Traits>::
 Density(const Teuchos::ParameterList& p) :
   density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
   temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
@@ -10,24 +10,24 @@ Density(const Teuchos::ParameterList& p) :
 }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits>
-Density<ScalarT, Traits>::~Density()
+template<typename EvalT, typename Traits>
+Density<EvalT, Traits>::~Density()
 { }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits>
-void Density<ScalarT, Traits>::
+template<typename EvalT, typename Traits>
+void Density<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.getFieldData(density);
-  vm.getFieldData(temp);
+  this->utils.setFieldData(density,vm);
+  this->utils.setFieldData(temp,vm);
 
   data_layout_size = density.fieldTag().dataLayout()->size();
 }
 
 //**********************************************************************
-template<typename ScalarT, typename Traits>
-void Density<ScalarT, Traits>::evaluateFields(typename Traits::EvalData d)
+template<typename EvalT, typename Traits>
+void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { 
   std::size_t size = d.size() * data_layout_size;
   

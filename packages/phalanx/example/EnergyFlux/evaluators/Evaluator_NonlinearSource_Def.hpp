@@ -2,7 +2,7 @@
 #define PHX_EXAMPLE_VP_NONLINEAR_SOURCE_DEF_HPP
 
 //**********************************************************************
-template< typename ScalarT, typename Traits> NonlinearSource<ScalarT, Traits>::
+template<typename EvalT, typename Traits> NonlinearSource<EvalT, Traits>::
 NonlinearSource(const Teuchos::ParameterList& p) :
   source("Nonlinear Source", 
 	 p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
@@ -17,25 +17,26 @@ NonlinearSource(const Teuchos::ParameterList& p) :
 }
 
 //**********************************************************************
-template< typename ScalarT, typename Traits> 
-NonlinearSource<ScalarT, Traits>::~NonlinearSource()
+template<typename EvalT, typename Traits> 
+NonlinearSource<EvalT, Traits>::~NonlinearSource()
 { }
 
 //**********************************************************************
-template< typename ScalarT, typename Traits>
-void NonlinearSource<ScalarT, Traits>::
+template<typename EvalT, typename Traits>
+void NonlinearSource<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  vm.getFieldData(source);
-  vm.getFieldData(density);
-  vm.getFieldData(temp);
+  this->utils.setFieldData(source,vm);
+  this->utils.setFieldData(density,vm);
+  this->utils.setFieldData(temp,vm);
 
   data_layout_size = source.fieldTag().dataLayout()->size();
 }
 
 //**********************************************************************
-template< typename ScalarT, typename Traits>
-void NonlinearSource<ScalarT, Traits>::evaluateFields(typename Traits::EvalData d)
+template<typename EvalT, typename Traits>
+void NonlinearSource<EvalT, Traits>::
+evaluateFields(typename Traits::EvalData d)
 { 
   std::size_t size = d.size() * data_layout_size;
   
@@ -44,8 +45,8 @@ void NonlinearSource<ScalarT, Traits>::evaluateFields(typename Traits::EvalData 
 }
 
 //**********************************************************************
-template< typename ScalarT, typename Traits>
-void NonlinearSource<ScalarT, Traits>::
+template<typename EvalT, typename Traits>
+void NonlinearSource<EvalT, Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 { 
   using namespace std;
@@ -53,8 +54,8 @@ preEvaluate(typename Traits::PreEvalData d)
 }
 
 //**********************************************************************
-template< typename ScalarT, typename Traits>
-void NonlinearSource<ScalarT, Traits>::
+template< typename EvalT, typename Traits>
+void NonlinearSource<EvalT, Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 { 
   using namespace std;

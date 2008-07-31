@@ -14,7 +14,7 @@ namespace PHX {
   
   template<class ScalarT, typename Traits>
   class DataContainer_TemplateManager :
-    public PHX::TemplateManager<typename boost::mpl::at<typename Traits::DataTypes, ScalarT>::type,
+    public PHX::TemplateManager<typename boost::mpl::at<typename Traits::EvalToDataMap, ScalarT>::type,
 				PHX::DataContainerBase<Traits>,
 				PHX::DataContainer<_, Traits> > {
     

@@ -13,9 +13,9 @@
     quadrature points for a specific variable.
 
 */
-template<typename ScalarT, typename Traits>
+template<typename EvalT, typename Traits>
 class FEInterpolation : public PHX::EvaluatorWithBaseImpl<Traits>,
-			public PHX::EvaluatorDerived<ScalarT, Traits>  {
+			public PHX::EvaluatorDerived<EvalT, Traits>  {
   
 public:
   
@@ -27,11 +27,9 @@ public:
   
   void evaluateFields(typename Traits::EvalData d);
   
-  void preEvaluate() {}
-  
-  void postEvaluate() {}
-  
 private:
+
+  typedef typename EvalT::ScalarT ScalarT;
 
   //! Values at nodes
   PHX::Field< ScalarT > val_node;

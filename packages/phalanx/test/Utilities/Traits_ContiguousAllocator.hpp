@@ -18,18 +18,8 @@
 
 namespace PHX {
 
-  /*! \brief Struct to define traits for the FieldManager.
+  /*! \brief Traits class for tests with contiguous allocator.
     
-      The user must define a number of objects in the traits class:
-      
-      \item ScalarTypes - an mpl::vector with the Scalar types.  Size of number of scalar types.
-      
-      \item DataTypes - an mpl::map.  The key is a scalar type and the value is an mpl::vector of valid data types built on the corresponding data type.  Size of number of scalar types.
-      
-      \item Algebraic types - simple structs that represent the algebraic types.
-      
-      \item Allocator type - type that defines the allocator class to use to allocate the memory for data storage.
-      
   */
   struct MyCTraits : public PHX::TraitsBase {
     
@@ -41,18 +31,13 @@ namespace PHX {
     typedef double RealType;
     typedef Sacado::Fad::DFad<double> FadType;
     
-    // Create the vector
-    typedef Sacado::mpl::vector<> ValidTypes0;
-    
-    // Add real type
-    typedef Sacado::mpl::push_back<ValidTypes0, RealType>::type ValidTypes1;
-  
-    // Add the fad type
-    typedef Sacado::mpl::push_back<ValidTypes1, FadType>::type ValidTypes2;
-    
-    // Declare the final valid types
-    typedef ValidTypes2 ScalarTypes;
-    
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef RealType ScalarT; };
+    struct Jacobian { typedef FadType ScalarT;  };
+    typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
+
     // ******************************************************************
     // *** Data Types
     // ******************************************************************
@@ -63,19 +48,19 @@ namespace PHX {
     typedef Sacado::mpl::vector< RealType, 
 				 MyVector<RealType>,
 				 MyTensor<RealType> 
-    > ValidDoubleTypes;
+    > ResidualDataTypes;
   
     // Fad<double, double>
     typedef Sacado::mpl::vector< FadType,
 				 MyVector<FadType>,
 				 MyTensor<FadType> 
-    > ValidFadTypes;
+    > JacobianDataTypes;
 
-    // Maps the key ScalarType to the value that is a vector of DataTypes
+    // Maps the key EvalType a vector of DataTypes
     typedef boost::mpl::map<
-      boost::mpl::pair<RealType, ValidDoubleTypes>,
-      boost::mpl::pair<FadType, ValidFadTypes>
-    >::type DataTypes;
+      boost::mpl::pair<Residual, ResidualDataTypes>,
+      boost::mpl::pair<Jacobian, JacobianDataTypes>
+    >::type EvalToDataMap;
 
     // ******************************************************************
     // *** Algebraic Types
@@ -99,16 +84,6 @@ namespace PHX {
       boost::mpl::pair< MyTensor<FadType> , MY_TENSOR>
     >::type DataToAlgebraicMap;
     
-    // Maps the key DataType to the value ScalarType
-    typedef boost::mpl::map<
-      boost::mpl::pair< RealType          , RealType>,
-      boost::mpl::pair< MyVector<RealType>, RealType>,
-      boost::mpl::pair< MyTensor<RealType>, RealType>,
-      boost::mpl::pair< FadType           , FadType>,
-      boost::mpl::pair< MyVector<FadType> , FadType>,
-      boost::mpl::pair< MyTensor<FadType> , FadType>
-    >::type DataToScalarMap;
-
     // ******************************************************************
     // *** Allocator Type
     // ******************************************************************
@@ -125,28 +100,12 @@ namespace PHX {
  
   // ******************************************************************
   // ******************************************************************
-  // Specializations of the DataTypeInfo found in 
-  // PHX::TraitsBase::DataTypeInfo
-  // ******************************************************************
-  // ******************************************************************
-  /*
-  template<>
-  struct MyTraits::DataTypeInfo<MyTraits::RealType>
-  {
-  typedef MyTraits::RealType scalar_type;
-  typedef MyTraits::RealType algebric_type;
-  };
-  */
-
-  // ******************************************************************
-  // ******************************************************************
   // Debug strings.
   // 1. Initialize the name member for Algebric Types
   // 2. Specialize the Scalar types and Data types for the TypeString
   //    object in the PHX::TraitsBase class.
   // ******************************************************************
   // ******************************************************************
-
 
   // Define the string names for the Algebraic Types
   const std::string MyCTraits::MY_SCALAR::name = "Scalar";
@@ -156,7 +115,20 @@ namespace PHX {
   // These will already be defined in Traits.hpp so we need to hide
   // them if both files are present.  
   /*
-  // Scalar Types
+  // Evaluation Types
+  template<>
+  struct MyTraits::TypeString<MyTraits::Residual> 
+  { static const std::string value; };
+  const std::string MyTraits::TypeString<MyTraits::Residual>::value = 
+    "Residual";
+
+  template<>
+  struct MyTraits::TypeString<MyTraits::Jacobian> 
+  { static const std::string value; };
+  const std::string MyTraits::TypeString<MyTraits::Jacobian>::value = 
+    "Jacobian";
+
+  // Data Types
   template<>
   struct MyCTraits::TypeString<MyCTraits::RealType> 
   { static const std::string value; };
@@ -169,7 +141,6 @@ namespace PHX {
   const std::string MyCTraits::TypeString<MyCTraits::FadType>::value = 
     "Sacado::Fad::DFad<double>";
 
-  // Data Types
   template<>
   struct MyCTraits::TypeString< MyVector<MyCTraits::RealType> > 
   { static const std::string value; };

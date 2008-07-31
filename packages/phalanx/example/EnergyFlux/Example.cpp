@@ -181,19 +181,19 @@ int main(int argc, char *argv[])
 
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time");
 
-      vm.preEvaluate<double>(NULL);
+      vm.preEvaluate<MyTraits::Residual>(NULL);
       {
 	TimeMonitor t(*eval_time);
 	for (std::size_t i=0; i < num_eval_loops; ++i)
-	  vm.evaluateFields<double>(cells);
+	  vm.evaluateFields<MyTraits::Residual>(cells);
       }
-      vm.postEvaluate<double>(NULL);
+      vm.postEvaluate<MyTraits::Residual>(NULL);
 
       // Test data retrieval
       cout << "Testing data members" << endl;
       FieldTag d_var("Density", scalar_qp);
       Field<double> den(d_var); 
-      vm.getFieldData(den);
+      vm.getFieldData<double,MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
 	   << num_cells * d_var.dataLayout()->size() << "." << endl;
       TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(num_cells * d_var.dataLayout()->size()),
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 
       // Compare temperature fields, should be 2.0
       Field<double> temp("Temperature", scalar_node);
-      vm.getFieldData(temp);
+      vm.getFieldData<double,MyTraits::Residual>(temp);
       
       Field<double> temp_base("Temperature Baseline", scalar_node);
       ArrayRCP<double> temp_base_data = 
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 
       // Compare temperature gradient fields, should be 2.0
       Field< MyVector<double> > tg("Temperature Gradient", vector_qp);
-      vm.getFieldData(tg);
+      vm.getFieldData<MyVector<double>,MyTraits::Residual>(tg);
 
       Field< MyVector<double> > 
 	tg_base("Temperature Gradient Baseline", vector_qp);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 
       // Compare energy flux fields, should be -16.0
       Field< MyVector<double> > ef("Energy_Flux", vector_qp);
-      vm.getFieldData(ef);
+      vm.getFieldData<MyVector<double>,MyTraits::Residual>(ef);
 
       Field< MyVector<double> > 
 	ef_base("Energy_Flux Baseline", vector_qp);

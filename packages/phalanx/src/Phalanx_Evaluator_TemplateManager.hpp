@@ -11,7 +11,7 @@ namespace PHX {
   
   template<typename Traits>
   class Evaluator_TemplateManager : 
-    public PHX::TemplateManager<typename Traits::ScalarTypes,
+    public PHX::TemplateManager<typename Traits::EvalTypes,
 				PHX::EvaluatorBase<Traits>,
 				PHX::EvaluatorDerived<_,Traits> > {
     

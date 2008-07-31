@@ -69,6 +69,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_Evaluator_Manager.hpp \
 	$(srcdir)/Phalanx_Evaluator_TemplateBuilder.hpp \
 	$(srcdir)/Phalanx_Evaluator_TemplateManager.hpp \
+	$(srcdir)/Phalanx_Evaluator_Utilities.hpp \
 	$(srcdir)/Phalanx_Evaluator_WithBaseImpl_Def.hpp \
 	$(srcdir)/Phalanx_Evaluator_WithBaseImpl.hpp \
 	$(srcdir)/Phalanx_Field_Def.hpp \

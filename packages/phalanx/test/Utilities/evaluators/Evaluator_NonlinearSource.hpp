@@ -8,9 +8,9 @@
 #include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
-template<typename ScalarT, typename Traits>
+template<typename EvalT, typename Traits>
 class NonlinearSource : public PHX::EvaluatorWithBaseImpl<Traits>,
-			public PHX::EvaluatorDerived<ScalarT, Traits> {
+			public PHX::EvaluatorDerived<EvalT, Traits> {
   
 public:
   
@@ -28,6 +28,8 @@ public:
   
 private:
   
+  typedef typename EvalT::ScalarT ScalarT;
+
   PHX::Field<ScalarT> source;
   PHX::Field<ScalarT> density;
   PHX::Field<ScalarT> temp;

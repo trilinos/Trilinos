@@ -5,10 +5,11 @@
 #include <vector>
 
 #include "Phalanx_Evaluator_Base.hpp"
+#include "Phalanx_Evaluator_Utilities.hpp"
 
 namespace PHX {
 
-  template<typename ScalarT, typename Traits>
+  template<typename EvalT, typename Traits>
   class EvaluatorDerived : 
     public PHX::EvaluatorBase<Traits> {
     
@@ -18,6 +19,10 @@ namespace PHX {
 
     virtual ~EvaluatorDerived() {}
     
+  protected:
+    
+    PHX::EvaluatorUtilities<EvalT,Traits> utils;
+
   };
 
 }
