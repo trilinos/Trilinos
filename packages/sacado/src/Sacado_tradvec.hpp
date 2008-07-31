@@ -1125,7 +1125,6 @@ ADcontext<Double>::derp_init(size_t n)
 	size_t len;
 
 	if (!rad_need_reinit) {
-		rad_need_reinit = 1;
 		rad_mleft_save = Mleft;
 		Oldbusy = Busy;
 		}
@@ -1152,6 +1151,7 @@ ADcontext<Double>::derp_init(size_t n)
 		Mleft = rad_mleft_save;
 		Busy = Oldbusy;
  aval_alloc:
+		rad_need_reinit = 0;
 		nmax = n;
 		*ADVari::Last_ADvari = 0;
 		for(a = ADVari::First_ADvari; a; a = a->Next) {
@@ -1176,6 +1176,7 @@ ADcontext<Double>::derp_init(size_t n)
 		do *d = 0.; while(++d < de);
 		}
 	Mleft = 0;
+	rad_need_reinit = 1;
 #ifdef RAD_DEBUG
 	if (ADVari::gcgen_cur == ADVari::zap_gcgen1) {
 		const char *fname;
