@@ -38,6 +38,9 @@ noinst_PROGRAMS = pamgen_test_driver
 
 pamgen_test_driver_SOURCES = $(srcdir)/pamgen_test_driver.c $(srcdir)/getopts.C
 
+# EXTRA_DIST will force these files to be included in the distribution tarball
+EXTRA_DIST = $(srcdir)/getopts.h $(srcdir)/copyright.h
+
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
@@ -51,14 +54,6 @@ pamgen_test_driver_DEPENDENCIES = \
 #np# List libraries that np is dependent on.
 pamgen_test_driver_LDADD = $(PAMGEN_LIBS)
 
-#
-#  This is a crude but effective way to move files from the source tree to the build tree
-#  We recommend renaming files because, although we recommend against the practice, some
-#  users will configure and build in the same tree.
-#
-#  This requires at least one file to end in .exe (or whatever EXEEXT is set to).
-#  The other files can have arbitrary names. (In this case Suppressions)
-#
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
 #np# conditionally.
