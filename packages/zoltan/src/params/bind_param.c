@@ -25,6 +25,7 @@ extern "C" {
 #include "params_const.h"
 #include "zoltan_mem.h"
 #include "zoltan_util.h"
+#include "zz_const.h"
 
 int       Zoltan_Bind_Param(
 PARAM_VARS *params,		/* parameter structure */

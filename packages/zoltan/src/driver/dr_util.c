@@ -15,6 +15,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
+#include "dr_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

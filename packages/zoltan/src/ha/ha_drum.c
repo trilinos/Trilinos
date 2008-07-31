@@ -11,7 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifdef ZOLTAN_DRUM
 
 /* Implementation of DRUM interface with Zoltan */
 /* Compile with ZOLTAN_DRUM and set USE_DRUM parameter to 1 to use */
@@ -25,6 +24,7 @@ extern "C" {
 #include "zz_const.h"
 #include <string.h>
 
+#ifdef ZOLTAN_DRUM
 /* These belong in drum.h, but we want to avoid the dependency on
    drum.h for Zoltan_Struct */
 extern int DRUM_hierCreateCallbacks(DRUM_machineModel *dmm, 
@@ -360,8 +360,8 @@ int Zoltan_Drum_Set_Part_Sizes(ZZ *zz) {
   return ZOLTAN_OK;
 }
 
+#endif /* ZOLTAN_DRUM */
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
 
-#endif /* ZOLTAN_DRUM */

@@ -22,6 +22,7 @@ extern "C" {
 #include <stdlib.h>
 #include <float.h>
 #include "par_median_const.h"
+#include "zz_const.h"
 
 #define TINY   1.0e-6
 

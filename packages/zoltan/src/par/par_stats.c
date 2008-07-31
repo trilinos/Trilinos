@@ -21,6 +21,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include "par_const.h"
+#include "zz_const.h"
 
 
 /************ R O U T I N E S   I N   T H I S   F I L E  **********************

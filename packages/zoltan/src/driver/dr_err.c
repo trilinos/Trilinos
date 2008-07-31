@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "dr_err_const.h"
+#include "dr_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

@@ -24,6 +24,7 @@ extern "C" {
 #include <string.h>
 #include "params_const.h"
 #include "zoltan_util.h"
+#include "zz_const.h"
 
 
 int       Zoltan_Check_Param(

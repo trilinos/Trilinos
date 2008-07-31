@@ -42,6 +42,7 @@ extern "C" {
 #include "ha_drum.h"
 #endif
 #include "coloring_const.h"
+#include "zz_const.h"
 
 static int add_param(ZZ *, char **, char **, int);
 static int remove_param(ZZ *, char *, int);
