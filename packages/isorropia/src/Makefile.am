@@ -61,6 +61,7 @@ EPETRA = \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp
 
 EPETRA_H = \
@@ -72,17 +73,16 @@ EPETRA_H = \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.hpp
 
 EPETRA_ZOLTAN = \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp \
-	$(srcdir)/epetra/zoltanLib/QueryObject.cpp
-# 	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp 
+	$(srcdir)/epetra/zoltanLib/QueryObject.cpp \
+ 	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp 
 
 EPETRA_ZOLTAN_H = \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp \
-	$(srcdir)/epetra/zoltanLib/QueryObject.hpp
-#	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp 
+	$(srcdir)/epetra/zoltanLib/QueryObject.hpp \
+	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp 
 
 DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
 
