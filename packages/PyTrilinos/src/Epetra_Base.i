@@ -305,7 +305,7 @@ or it will hang your code."
   // object given to the python print command.
   std::string __str__()
   {
-    std::stringstream os;
+    std::ostringstream os;
     self->Print(os);             // Put the output in os
     std::string s = os.str();    // Extract the string from os
     int last = s.length();       // Get the last index

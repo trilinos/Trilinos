@@ -50,9 +50,9 @@ PyObject* Finalize();
 "Broadcast(self, numpy.ndarray myObj, int root)
 
 Argument myObj must be a numpy array, so that the Broadcast can be
-performed in-place.  Its scalar data type must be int, long or double.
-In C++, this routine has an integer error return code.  In python, a
-non-zero return code is converted to an exception.")
+performed in-place.  Its scalar data type must be int, long, double or
+string.  In C++, this routine has an integer error return code.  In
+python, a non-zero return code is converted to an exception.")
 Epetra_Comm::Broadcast;
 %feature("docstring")
 Epetra_Comm::GatherAll
@@ -161,7 +161,7 @@ PyObject* methodName(PyObject* partialObj)
   PyObject* Broadcast(PyObject* myObj, int root)
   {
     int count, type, result;
-    PyArrayObject* myArray = NULL;
+    PyArrayObject* myArray  = NULL;
     myArray = obj_to_array_no_conversion(myObj, NPY_NOTYPE);
     if (!myArray || !require_contiguous(myArray)) goto fail;
     count = PyArray_SIZE(myArray);
@@ -169,21 +169,28 @@ PyObject* methodName(PyObject* partialObj)
     if (type == NPY_INT)
     {
       int* myVals = (int*) array_data(myArray);
-      result = self->Broadcast(myVals,count,root);
+      result = self->Broadcast(myVals, count, root);
     }
     else if (type == NPY_LONG)
     {
       long* myVals = (long*) array_data(myArray);
-      result = self->Broadcast(myVals,count,root);
+      result = self->Broadcast(myVals, count, root);
     }
     else if (type == NPY_DOUBLE)
     {
       double* myVals = (double*) array_data(myArray);
-      result = self->Broadcast(myVals,count,root);
+      result = self->Broadcast(myVals, count, root);
+    }
+    else if (type == NPY_STRING)
+    {
+      count = PyArray_NBYTES(myArray);
+      char* myVals = (char*) array_data(myArray);
+      result = self->Broadcast(myVals, count, root);
     }
     else
     {
-      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
+      PyErr_Format(PyExc_TypeError,
+		   "Require an array of int, long, double or string; got %s array",
 		   typecode_string(type));
       goto fail;
     }

@@ -30,7 +30,7 @@
 # Initialization 
 # ------------------------------------------------------------------------
 
-AC_INIT(PyTrilinos, 4.0, wfspotz@sandia.gov)
+AC_INIT(PyTrilinos, 4.1, wfspotz@sandia.gov)
 
 # Hello World!
 echo "-----------------------------------"

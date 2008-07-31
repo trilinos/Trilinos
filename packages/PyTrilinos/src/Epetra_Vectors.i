@@ -127,6 +127,84 @@ Epetra_NumPyIntVector::ExtractView
 Epetra_NumPyIntVector::Values
 "Return a numpy.ndarray that is a view of the IntVector."
 %rename(NumPyIntVector) Epetra_NumPyIntVector;
+// Wrappers for the Epetra_NumPyIntVector one- and two-argument
+// constructors behave differently depending upon the version of swig
+// (and possibly numpy) being used.  (Specifically, the generated
+// dispatch functions assign priorities differently, and PyObject*
+// arguments can have too high a priority.)  To avoid problems, I take
+// control of these constructors here.
+%extend Epetra_NumPyIntVector
+{
+  Epetra_NumPyIntVector(PyObject * arg1)
+  {
+    int                     res   = 0;
+    Epetra_BlockMap       * bmap  = NULL;
+    Epetra_IntVector      * eiv   = NULL;
+    Epetra_NumPyIntVector * enpiv = NULL;
+    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+    if (SWIG_CheckState(res))
+    {
+      enpiv = new Epetra_NumPyIntVector(*bmap);
+    }
+    else
+    {
+      res = SWIG_ConvertPtr(arg1, (void**)&eiv, SWIGTYPE_p_Epetra_IntVector, 0);
+      if (SWIG_CheckState(res))
+      {
+	enpiv = new Epetra_NumPyIntVector(*eiv);
+      }
+      else
+      {
+	enpiv = new Epetra_NumPyIntVector(arg1);
+      }
+    }
+    if (enpiv == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError,
+		      "Error constructing Epetra_NumPyIntVector\n"
+		      "  Valid one-argument constructors:\n"
+		      "    Epetra_NumPyIntVector(Epetra_BlockMap)\n"
+		      "    Epetra_NumPyIntVector(Epetra_IntVector)\n"
+		      "    Epetra_NumPyIntVector(array)");
+    }
+    return enpiv;
+  }
+
+  Epetra_NumPyIntVector(PyObject * arg1, PyObject * arg2)
+  {
+    int                     res     = 0;
+    Epetra_BlockMap       * bmap    = NULL;
+    bool                    zeroOut = true;
+    Epetra_NumPyIntVector * enpiv   = NULL;
+    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+    if (SWIG_CheckState(res))
+    {
+      if (PyBool_Check(arg2))
+      {
+	zeroOut = (arg2 == Py_True) ? true : false;
+	enpiv = new Epetra_NumPyIntVector(*bmap, zeroOut);
+      }
+      else
+      {
+	enpiv = new Epetra_NumPyIntVector(*bmap, arg2);
+      }
+    }
+    if (enpiv == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError,
+		      "Error constructing Epetra_NumPyIntVector\n"
+		      "  Valid two-argument constructors:\n"
+		      "    Epetra_NumPyIntVector(Epetra_BlockMap, bool)\n"
+		      "    Epetra_NumPyIntVector(Epetra_BlockMap, array)");
+    }
+    return enpiv;
+  }
+}
+%ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap&);
+%ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_IntVector&);
+%ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(PyObject*);
+%ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap&, bool);
+%ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap&, PyObject*);
 %include "Epetra_NumPyIntVector.h"
 %pythoncode
 %{
@@ -490,6 +568,100 @@ Epetra_NumPyVector::SumIntoGlobalValues
 Epetra_NumPyVector::SumIntoMyValues
 "Sum into local values at specified indices (and offset)"
 %rename(NumPyVector) Epetra_NumPyVector;
+// Wrappers for the Epetra_NumPyVector one- and two-argument
+// constructors behave differently depending upon the version of swig
+// (and possibly numpy) being used.  (Specifically, the generated
+// dispatch functions assign priorities differently, and PyObject*
+// arguments can have too high a priority.)  To avoid problems, I take
+// control of these constructors here.
+%extend Epetra_NumPyVector
+{
+  Epetra_NumPyVector(PyObject * arg1)
+  {
+    int                  res  = 0;
+    Epetra_BlockMap    * bmap = NULL;
+    Epetra_Vector      * ev   = NULL;
+    Epetra_NumPyVector * enpv = NULL;
+    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+    if (SWIG_CheckState(res))
+    {
+      enpv = new Epetra_NumPyVector(*bmap);
+    }
+    else
+    {
+      res = SWIG_ConvertPtr(arg1, (void**)&ev, SWIGTYPE_p_Epetra_Vector, 0);
+      if (SWIG_CheckState(res))
+      {
+	enpv = new Epetra_NumPyVector(*ev);
+      }
+      else
+      {
+	enpv = new Epetra_NumPyVector(arg1);
+      }
+    }
+    if (enpv == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError,
+		      "Error constructing Epetra_NumPyVector\n"
+		      "  Valid one-argument constructors:\n"
+		      "    Epetra_NumPyVector(Epetra_BlockMap)\n"
+		      "    Epetra_NumPyVector(Epetra_Vector)\n"
+		      "    Epetra_NumPyVector(array)");
+    }
+    return enpv;
+  }
+
+  Epetra_NumPyVector(PyObject * arg1, PyObject * arg2)
+  {
+    int                  res     = 0;
+    Epetra_BlockMap    * bmap    = NULL;
+    bool                 zeroOut = true;
+    Epetra_Vector      * ev      = NULL;
+    Epetra_NumPyVector * enpv    = NULL;
+    Epetra_DataAccess    cv;
+    res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+    if (SWIG_CheckState(res))
+    {
+      if (PyBool_Check(arg2))
+      {
+	zeroOut = (arg2 == Py_True) ? true : false;
+	enpv = new Epetra_NumPyVector(*bmap, zeroOut);
+      }
+      else
+      {
+	enpv = new Epetra_NumPyVector(*bmap, arg2);
+      }
+    }
+    else
+    {
+      if (PyInt_Check(arg1))
+      {
+	cv  = static_cast< Epetra_DataAccess >(PyInt_AsLong(arg1));
+	res = SWIG_ConvertPtr(arg2, (void**)&ev, SWIGTYPE_p_Epetra_Vector, 0);
+	if (SWIG_CheckState(res))
+	{
+	  enpv = new Epetra_NumPyVector(cv, *ev);
+	}
+      }
+    }
+    if (enpv == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError,
+		      "Error constructing Epetra_NumPyVector\n"
+		      "  Valid two-argument constructors:\n"
+		      "    Epetra_NumPyVector(Epetra_BlockMap, bool)\n"
+		      "    Epetra_NumPyVector(Epetra_BlockMap, array)\n"
+		      "    Epetra_NumPyVector(Epetra_DataAccess, Epetra_Vector)");
+    }
+    return enpv;
+  }
+}
+%ignore Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap&);
+%ignore Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_Vector&);
+%ignore Epetra_NumPyVector::Epetra_NumPyVector(PyObject*);
+%ignore Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap&, bool);
+%ignore Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap&, PyObject*);
+%ignore Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess, const Epetra_Vector&);
 %include "Epetra_NumPyVector.h"
 %pythoncode
 %{
