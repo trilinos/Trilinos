@@ -1,13 +1,7 @@
-# $Header$
 
-# Required modules
 INCLUDE(Trilinos_Add_Executable_And_Test)
 INCLUDE(Trilinos_Add_Executable)
 INCLUDE(Trilinos_Add_Test)
-
-# Setup include directories and library dependencies
-INCLUDE_DIRECTORIES(${${PROJECT_NAME}_INCLUDE_DIRS})
-LINK_LIBRARIES(${${PROJECT_NAME}_LIBRARIES})
 
 # Test arguments for MPI
 IF(TRILINOS_ENABLE_MPI)
