@@ -9,7 +9,19 @@ source .bash_profile
 
 # Test cases
 
-TRILINOS_BASE_DIR=/mnt/disk2/rabartl/Trilinos.nightly-tests/Trilinos
+TRILINOS_BASE_DIR=/mnt/disk2/rabartl/Trilinos.nightly-tests
+TRILINOS_DIR=$TRILINOS_BASE_DIR/Trilinos
+
+
+echo
+echo "Checking out TrilinosData"
+echo
+date
+echo
+
+cd  $TRILINOS_BASE_DIR
+cvs -d :ext:software:/space/CVS co TrilinosData
+
 
 if [ "$TRILINOS_BUILD" == "serial" ]; then
 
@@ -19,8 +31,8 @@ if [ "$TRILINOS_BUILD" == "serial" ]; then
   date
   echo
   
-  cd  $TRILINOS_BASE_DIR/commonTools/test/harness
-  perl runharness --trilinos-dir=$TRILINOS_BASE_DIR --build-name=gabriel-nighly-serial-debug
+  cd  $TRILINOS_DIR/commonTools/test/harness
+  perl runharness --trilinos-dir=$TRILINOS_DIR --build-name=gabriel-nighly-serial-debug
   
 fi
 
@@ -32,8 +44,8 @@ if [ "$TRILINOS_BUILD" == "mpi" ]; then
   date
   echo
   
-  cd  $TRILINOS_BASE_DIR/commonTools/test/harness
-  perl runharness --trilinos-dir=$TRILINOS_BASE_DIR --build-name=gabriel-nighly-mpi
+  cd  $TRILINOS_DIR/commonTools/test/harness
+  perl runharness --trilinos-dir=$TRILINOS_DIR --build-name=gabriel-nighly-mpi
   
 fi
 
