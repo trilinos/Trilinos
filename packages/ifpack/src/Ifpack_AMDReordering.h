@@ -59,46 +59,46 @@ public:
   virtual ~Ifpack_AMDReordering() {};
   
   //! Sets integer parameters `Name'.
-  virtual int SetParameter(const string Name, const int Value);
+  int SetParameter(const string Name, const int Value);
 
   //! Sets double parameters `Name'.
-  virtual int SetParameter(const string Name, const double Value);
+  int SetParameter(const string Name, const double Value);
   
   //! Sets all parameters.
-  virtual int SetParameters(Teuchos::ParameterList& List);
+  int SetParameters(Teuchos::ParameterList& List);
 
   //! Computes all it is necessary to initialize the reordering object.
-  virtual int Compute(const Ifpack_Graph& Graph);
+  int Compute(const Ifpack_Graph& Graph);
 
   //! Computes all it is necessary to initialize the reordering object.
-  virtual int Compute(const Epetra_RowMatrix& Matrix);
+  int Compute(const Epetra_RowMatrix& Matrix);
 
   //! Returns \c true is the reordering object has been successfully initialized, false otherwise.
-  virtual bool IsComputed() const
+  bool IsComputed() const
   {
     return(IsComputed_);
   }
 
   //! Returns the reordered index of row \c i.
-  virtual inline int Reorder(const int i) const;
+  inline int Reorder(const int i) const;
 
   //! Returns the inverse reordered index of row \c i.
-  virtual inline int InvReorder(const int i) const;
+  inline int InvReorder(const int i) const;
 
   //! Applies reordering to multivector X, whose local length equals the number of local rows.
-  virtual int P(const Epetra_MultiVector& Xorig,
-		Epetra_MultiVector& Xreord) const;
+  int P(const Epetra_MultiVector& Xorig,
+	Epetra_MultiVector& Xreord) const;
 
   //! Applies inverse reordering to multivector X, whose local length equals the number of local rows.
-  virtual int Pinv(const Epetra_MultiVector& Xorig,
-		   Epetra_MultiVector& Xinvreord) const;
+  int Pinv(const Epetra_MultiVector& Xorig,
+	   Epetra_MultiVector& Xinvreord) const;
 
   
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  ostream& Print(std::ostream& os) const;
 
   //! Returns the number of local rows.
-  virtual int NumMyRows() const 
+  int NumMyRows() const 
   {
     return(NumMyRows_);
   }

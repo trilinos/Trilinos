@@ -37,7 +37,7 @@
 #include "Ifpack_AMDReordering.h"
 
 extern "C" {
-#include <amd.h>
+#include <amesos_amd.h>
 }
 
 //==============================================================================
@@ -157,7 +157,7 @@ int Ifpack_AMDReordering::Compute(const Ifpack_Graph& Graph)
   Reorder_.resize(NumMyRows_);
   vector<double> info(AMD_INFO);
 
-  amd_order( NumMyRows_, &iat[0], &jat[0], &Reorder_[0], NULL, &info[0] );
+  amesos_amd_order( NumMyRows_, &iat[0], &jat[0], &Reorder_[0], NULL, &info[0] );
 
   if( info[AMD_STATUS] == AMD_INVALID )
     cout << "AMD ORDERING: Invalid!!!!\n";
