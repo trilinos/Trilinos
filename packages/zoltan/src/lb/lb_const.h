@@ -69,7 +69,6 @@ typedef enum Zoltan_LB_Method {
   HSFC,
   GRAPH,
   HYPERGRAPH,
-  SPARSE_MATRIX,
   HIER,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
@@ -291,11 +290,6 @@ extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
 extern ZOLTAN_LB_FN Zoltan_PHG;
 extern ZOLTAN_LB_FN Zoltan_Hier;
-
-extern int Zoltan_Matrix_Partition(struct Zoltan_Struct *);
-
-extern ZOLTAN_LB_PART2D_FN Zoltan_Random2d;
-extern ZOLTAN_LB_PART2D_FN Zoltan_2d_from_1d;
 
 /* FREE DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;

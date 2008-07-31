@@ -67,13 +67,6 @@ INCLUDE_H = \
 
 #       $(srcdir)/Zoltan_ConfigDefs.h
 
-MATRIX_H = \
-	$(srcdir)/matrix/matrix_partition.h
-
-MATRIX = \
-	$(srcdir)/matrix/matrix_partition.c \
-	$(srcdir)/matrix/random2d.c
-
 LB_H = \
 	$(srcdir)/lb/lb_const.h \
 	$(srcdir)/lb/lb_init_const.h
@@ -384,7 +377,6 @@ ZOLTAN_H = \
 	$(HSFC_H) \
 	$(INCLUDE_H) \
 	$(LB_H) \
-	$(MATRIX_H) \
 	$(OCT_H) \
 	$(ORDER_H) \
 	$(PAR_H) \
@@ -406,7 +398,6 @@ libzoltan_a_SOURCES = \
 	$(HIER) \
 	$(HSFC) \
 	$(LB) \
-	$(MATRIX) \
 	$(OCT) \
 	$(ORDER) \
 	$(PAR) \

@@ -339,15 +339,6 @@ int main(int argc, char *argv[])
      * the migration
      */
   
-    if (!strcasecmp(prob.method, "SPARSE_MATRIX")){
-      if (!run_zoltan_sparse_matrix(zz, Proc, &prob, &mesh, &pio_info)) {
-        Gen_Error(0, "fatal: Error returned from run_zoltan_sparse_matrix\n");
-        error_report(Proc);
-        print_output = 0;
-        goto End;
-      }
-    }
-    else{
 #ifdef IGNORE_FIRST_ITERATION_STATS
 if (iteration == 1) {
   /* Exercise partitioner once on Tbird because first run is slow. */
@@ -368,12 +359,11 @@ if (iteration == 1) {
   Zoltan_Destroy(&zzcopy);
 }
 #endif /* IGNORE_FIRST_ITERATION_STATS */
-      if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
-        Gen_Error(0, "fatal: Error returned from run_zoltan\n");
-        error_report(Proc);
-        print_output = 0;
-        goto End;
-      }
+    if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
+      Gen_Error(0, "fatal: Error returned from run_zoltan\n");
+      error_report(Proc);
+      print_output = 0;
+      goto End;
     }
 
     /* Reset the mesh data structure for next iteration. */

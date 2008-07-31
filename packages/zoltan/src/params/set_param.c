@@ -65,7 +65,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
        Zoltan_PHG_Set_Param,
-       Zoltan_MP_Set_Param,
 #ifdef ZOLTAN_HIER
        Zoltan_Hier_Set_Param,
 #endif

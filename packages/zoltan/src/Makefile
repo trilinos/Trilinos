@@ -177,7 +177,7 @@ SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
 		  ../phg  ../simple ../util \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
-                  ../order ../ha ../reftree ../hier ../matrix \
+                  ../order ../ha ../reftree ../hier  \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory ../Utilities/Timer \
 		  ../postprocessing/ordering
@@ -186,13 +186,13 @@ SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../coloring -I../simple -I../oct  \
 		  -I../order -I../hsfc -I../phg  -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
-		  -I../parmetis -I../timer -I../matrix \
+		  -I../parmetis -I../timer  \
                   -I../ha -I../hier -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
 		  coloring oct phg simple util \
-                  hsfc parmetis params hier matrix \
+                  hsfc parmetis params hier  \
 		  timer ha  reftree include postprocessing/ordering
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory Utilities/Timer
@@ -294,8 +294,6 @@ HIER_CSRC       =
 HIER_INC        = 
 endif
 
-MATRIX_CSRC	= matrix_partition.c
-MATRIX_INC	= matrix_partition.h
 
 # source code and defines for zdrive and zCPPdrive
 DR_BOTH_SRC	= dr_err.c dr_input.c dr_par_util.c \
@@ -359,8 +357,7 @@ ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) \
-		  $(HIER_CSRC) $(THIRD_PARTY_CSRC) $(SIMPLE_CSRC) \
-		  $(MATRIX_CSRC)
+		  $(HIER_CSRC) $(THIRD_PARTY_CSRC) $(SIMPLE_CSRC) 
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 
