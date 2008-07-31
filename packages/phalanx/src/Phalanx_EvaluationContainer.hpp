@@ -3,7 +3,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Phalanx_ScalarContainer_Base.hpp"
+#include "Phalanx_EvaluationContainer_Base.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_DataContainer_TemplateManager.hpp"
@@ -56,6 +56,6 @@ namespace PHX {
   
 } 
 
-#include "Phalanx_ScalarContainer_Def.hpp"
+#include "Phalanx_EvaluationContainer_Def.hpp"
 
 #endif 

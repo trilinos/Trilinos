@@ -83,7 +83,7 @@ Managing these trade-offs can result in application code that both performs well
 
 \section user_guide User's Guide
 
-Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It has direct dependencies on the following third party libraries:
+Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It can be enabled as part of a trilinos build with the configure flag "--enable-phalanx".  Phalanx currently has direct dependencies on the following third party libraries:
 
  - Requires the <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a> utilities library, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.
  
@@ -91,40 +91,57 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
  - Requires the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>
 
-\section domain_design Domain Design
+We plan to remove the Sacado and Boost dependencies in a future release.  
+
+\section domain_design Domain Design Model
+
+<h3>A. Concepts</h3>
 
 <ul>
 <li><h3>Cell</h3>
 Partial differential equations are solved in a domain.  This domain is discretized into cells (also called elements for the finite element method).  This library assumes that the block of cells being iterated over is of the same type!  If different evaluators (i.e. different material properties) are required in different blocks of cells, a new FieldMangager must be used to switch material properties.  This is required for efficiency.  A contiguous block of memory can be used for all fields allowing for very fast evaluation.
 
 <li><h3>Scalar Type</h3>
-A scalar type, typically the template argument \beginverbatim ScalarT \endverbatim in Phalanx, is the type of scalar used for fields.  It is typically a double, but can be special object types such as a foward automatic differentiation object (FAD) or a reverse automatic differentaion object when used to produce sensitivity information.
+A scalar type, typically the template argument ScalarT in Phalanx code, is the default type of scalar used in an evaluation.  It is typically a double, but can be special object types such as a foward automatic differentiation object (FAD) or a reverse automatic differentaion object when used to produce sensitivity information.
 
 <li><h3>Algebraic Type</h3>
-An algebraic type is the type of objects that.  It is a rank n tensor.  For example it can be a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
+An algebraic type is the type of objects that hold data.  It is a rank n tensor.  For example it can be a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
 
 <li><h3>Data Type</h3>
-A data type, typically the tempalte argument \beginverbatim DataT \enfverbatin in Phalanx, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  
+A data type, typically the template argument DataT in Phalanx code, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  For example it can be a vector object of doubles: Vector<double>, or it could be a tensor object of FAD type: Tensor<Scadao::FAD<double> >, or it could just be a double.
 
-<li><h3>Computation Type</h3>
-The computation type defines a unique type of evaluation to perform.  A ComputationContainer is allocated for each conputation type specified in the traits class.  Examples include a residual type, a Jacobian type, and a sensitivity type.  Prior to the addition of this type, the ComputationContainer was called the ScalarContainer and was instantiated for each scaalar type.  This was somewhat restictive if you wanted to do different computations with different evaluators that used teh same scalar type.  An example would be computing the Jacobian and computing parameter sensitivities.  They might both use FAD types. 
+<li><h3>Evaluation Type</h3>
+The evaluation type, typically the template argument EvalT in Phalanx code, defines a unique type of evaluation to perform.  An EvaluationContainer is allocated for each conputation type specified in the traits class.  Examples include a residual type, a Jacobian type, and a parameter sensitivity type.  The EvaluationContainer is associated with at least one scalar type and possibly more.  The scalar type usually determines what is being evaluated. For example, to evaluate the equation residuals, the scalar type is usually a double.  To evaluate a Jacobian, the scalar type could be a forward automatic differentiation object, FAD<double>.  By using an evaluation type, the same scalar type can be used for different evaluation types.  For example computing the Jacobian and computing parameter sensitivities both could use the FAD scalar type.
 
 <li><h3>Storage</h3>
-A DataContainer object stores all fields of a particular data type.  A template manager in the ComputationContainer builds a std::vector of DataContainers, one for each data type.
+A DataContainer object stores all fields of a particular data type.  Each evaluation type holds a vector of containers, one container for each vaid data type.
 
 <li><h3>Data Layout</h3>
-The DataLayout object is used to define a unique entity on a cell.
+The DataLayout object is used to define a unique entity in a cell.  It's main purpose is to distinguish fields that have the same name, but exist on a different entity in the cell.  For example, supposed we have a field named "density".  We might want to store values in a cell associated with a set of integration points (quadrature points in finite elements) and another set of values associated with the nodes (nodal basis points in finite elements).  It additionally contains the number of entities in the cell.  This is not needed to distinguish uniqueness, since the number of entities can be the same for different entities.  It is stored here for convenience.
 
 <li><h3>Field Tag</h3>
+The FieldTag is a description of a field.  It is used to describe every field that is stored in the field manager.  It contains a unique identifier and a data layout.  It DOES NOT distinguish the actual data type for the field.  The same field tag can be passed to all evaluation type containers and each container can decide what data type it is associated with.  This leaves flexibility so that each evaluation type can change the data type for efficiency.  For example, one evaluation might want a field to be a FAD type, while another evaluation might want to change a field to a double type to eliminate wasted flops. 
 
 <li><h3>Field</h3>
+A Field is a set of values for a particular quantity of interest that must be evaluated.  It is templated on the data type, DataT.  It consists of a FieldTag and a reference counted smart pointer (Teuchos::RCP<DataT>) to the data array where the values are stored.  
 
 <li><h3>Evaluator</h3>
+An Evaluator is an object that evaluates a set of Fields.  It contains two sets of Fields, one set are the fields it will evaluate and one set are the fields it depends on for the evaluation.  For example to evaluate a density field that is a function of temperature and pressure, the field the evaluator will evaluate (the first field set) is a density field, and the set of field it requires to meet its dependencies are the temperature and pressure fields (the second field set).  The evaluator is templated on the evaluation type and the traits class.
 
 <li><h3>Evaluator Manager</h3>
-
+The main object that stores all fields and evauation routines. Users can get access to all fields through this object. 
 
 </ul>
+
+<h3>B. Design</h3>
+
+- The evaluate call is fixed for each scalar type.  Each scalar type figures out it's own dependency chain.  However you can trick the evaluate routine into using mixed scalar types based on writing the evaluator to use a hard-coded scalar type.  This is nasty and can have problems if the provider is only registered for one scalar type.  This will need to be addressed in the future.  The problem is that the variable is independent of the ScalarType.
+
+- Previous design built a manager for each scalar type.  This is too restrictive, so an additional layer was added called a computation type.  This allows for multiple evaluations that used the same Scalar type, but different evaluators specific to the CalculationType.
+
+- The fields of a Computation type should be constructed on the same scalar type.  If you are doing a Jacobian evaluation using the scalar type FAD to get sensitivities, changing some fields to double will break the dependency chain.  There are, however, compelling use cases where one might want ot break that chain and drop sensitivites with respect to certain components.  Therefore, a calculation type cal have multiple scalar types.  This is a departure from the original design in Charon that enforced each calculation type to be a unique scalar type.
+
+- Each evaluator must be templated on the calculation type to be able to use teh automated factory class to build the evaluator for each calculation type.  Each evaluator must be constructed with a parameter list as the single argument to be able to use the automated factory class.
 
 \section developer_guide Developer's Guide
 
@@ -148,16 +165,6 @@ Phalanx grew out of the Variable Manger in the Charon code and the Expression Ma
 /* ************************************************************************ */
 
 /*! \page developer_notes Developer Notes
-
-\section dnotes_princliples Design Princliples
-
-- The evaluate call is fixed for each scalar type.  Each scalar type figuresout it's own dependency chain.  However you can trick the evaluate routine into using mixed scalar types based on writing the evaluator to use a hard-coded scalar type.  This is nasty and can have problems if the provider is only registered for one scalar type.  This will need to be addressed in the future.  The problem is that the variable is independent of the ScalarType.
-
-- Previous design built a manager for each scalar type.  This is too restrictive, so an additional layer was added called a computation type.  This allows for multiple evaluations that used the same Scalar type, but different evaluators specific to the CalculationType.
-
-- The fields of a Computation type should be constructed on the same scalar type.  If you are doing a Jacobian evaluation using the scalar type FAD to get sensitivities, changing some fields to double will break the dependency chain.  There are, however, compelling use cases where one might want ot break that chain and drop sensitivites with respect to certain components.  Therefore, a calculation type cal have multiple scalar types.  This is a departure from the original design in Charon that enforced each calculation type to be a unique scalar type.
-
-- Each evaluator must be templated on the calculation type to be able to use teh automated factory class to build the evaluator for each calculation type.  Each evaluator must be constructed with a parameter list as the single argument to be able to use the automated factory class.
 
 \section dnotes_notz Description
 

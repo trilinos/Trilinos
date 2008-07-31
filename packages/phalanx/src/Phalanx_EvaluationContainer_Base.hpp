@@ -44,6 +44,6 @@ namespace PHX {
   
 }
 
-#include "Phalanx_ScalarContainer_Base_Def.hpp"
+#include "Phalanx_EvaluationContainer_Base_Def.hpp"
 
 #endif 

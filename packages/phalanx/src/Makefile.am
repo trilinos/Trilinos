@@ -53,6 +53,12 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataLayout.hpp \
 	$(srcdir)/Phalanx_DebugStrings.hpp \
 	$(srcdir)/Phalanx_DoxygenDocumentation.hpp \
+	$(srcdir)/Phalanx_EvaluationContainer_Base_Def.hpp \
+	$(srcdir)/Phalanx_EvaluationContainer_Base.hpp \
+	$(srcdir)/Phalanx_EvaluationContainer_Def.hpp \
+	$(srcdir)/Phalanx_EvaluationContainer.hpp \
+	$(srcdir)/Phalanx_EvaluationContainer_TemplateBuilder.hpp \
+	$(srcdir)/Phalanx_EvaluationContainer_TemplateManager.hpp \
 	$(srcdir)/Phalanx_Evaluator_Base.hpp \
 	$(srcdir)/Phalanx_Evaluator_Derived.hpp \
 	$(srcdir)/Phalanx_Evaluator_Factory_Def.hpp \
@@ -70,12 +76,6 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_FieldManager_Def.hpp \
 	$(srcdir)/Phalanx_FieldManager.hpp \
 	$(srcdir)/Phalanx_FieldTag.hpp \
-	$(srcdir)/Phalanx_ScalarContainer_Base_Def.hpp \
-	$(srcdir)/Phalanx_ScalarContainer_Base.hpp \
-	$(srcdir)/Phalanx_ScalarContainer_Def.hpp \
-	$(srcdir)/Phalanx_ScalarContainer.hpp \
-	$(srcdir)/Phalanx_ScalarContainer_TemplateBuilder.hpp \
-	$(srcdir)/Phalanx_ScalarContainer_TemplateManager.hpp \
 	$(srcdir)/Phalanx_TemplateIterator.hpp \
 	$(srcdir)/Phalanx_TemplateManager_Def.hpp \
 	$(srcdir)/Phalanx_TemplateManager.hpp \

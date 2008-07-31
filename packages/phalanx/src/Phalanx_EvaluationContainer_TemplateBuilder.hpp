@@ -1,7 +1,7 @@
 #ifndef PHX_SCALAR_CONTAINER_TEMPLATE_BUILDER_HPP
 #define PHX_SCALAR_CONTAINER_TEMPLATE_BUILDER_HPP
 
-#include "Phalanx_ScalarContainer.hpp"
+#include "Phalanx_EvaluationContainer.hpp"
 
 namespace PHX {
 

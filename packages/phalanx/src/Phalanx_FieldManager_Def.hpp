@@ -3,7 +3,7 @@
 
 #include "Sacado_mpl_size.hpp"
 #include "boost/mpl/at.hpp"
-#include "Phalanx_ScalarContainer_TemplateBuilder.hpp"
+#include "Phalanx_EvaluationContainer_TemplateBuilder.hpp"
 
 // **************************************************************
 template<typename Traits>

@@ -2,7 +2,7 @@
 #define PHX_SCALAR_CONTAINER_TEMPLATE_MANAGER_HPP
 
 #include "Phalanx_TemplateManager.hpp"
-#include "Phalanx_ScalarContainer.hpp"
+#include "Phalanx_EvaluationContainer.hpp"
 
 #include "boost/mpl/placeholders.hpp"
 using namespace boost::mpl::placeholders;
