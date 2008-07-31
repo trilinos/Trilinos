@@ -8,7 +8,7 @@
 #define AMESOS_KLU_INTERNAL_H
 
 #include "amesos_klu_decl.h" 
-#include "amesos_btf.h"
+#include "amesos_btf_decl.h"
 #include "amesos_klu_version.h"
 
 /* ========================================================================== */

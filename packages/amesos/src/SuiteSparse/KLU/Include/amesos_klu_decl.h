@@ -14,7 +14,7 @@ extern "C" {
 
 #include "amesos_amd.h"
 #include "amesos_colamd.h"
-#include "amesos_btf.h"
+#include "amesos_btf_decl.h"
 
 /* -------------------------------------------------------------------------- */
 /* Symbolic object - contains the pre-ordering computed by klu_analyze */

@@ -26,7 +26,7 @@
  * with support from Sandia National Laboratories.  All Rights Reserved.
  */
 
-#include "amesos_btf.h"
+#include "amesos_btf_decl.h"
 #include "amesos_btf_internal.h"
 
 /* This function only operates on square matrices (either structurally full-

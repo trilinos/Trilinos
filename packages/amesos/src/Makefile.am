@@ -134,7 +134,7 @@ KLU_H = \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_decl.h \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_internal.h \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_version.h \
-	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf.h \
+	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_decl.h \
 	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_internal.h \
 	$(srcdir)/Amesos_Klu.h
 
@@ -142,7 +142,7 @@ KLU = \
 	$(srcdir)/Amesos_Klu.cpp \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c \
+	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_diagnostics.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_dump.c \

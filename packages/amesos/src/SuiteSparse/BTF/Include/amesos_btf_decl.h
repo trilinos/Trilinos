@@ -85,8 +85,8 @@
  * matrix to MC21A and it will happily return a column permutation.
  */
 
-#ifndef AMESOS_BTF_H
-#define AMESOS_BTF_H
+#ifndef AMESOS_BTF_DECL_H
+#define AMESOS_BTF_DECL_H
 
 /* make it easy for C++ programs to include BTF */
 #ifdef __cplusplus

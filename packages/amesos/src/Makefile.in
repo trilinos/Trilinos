@@ -142,7 +142,7 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
 	$(srcdir)/Amesos_Klu.cpp \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c \
-	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c \
+	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_diagnostics.c \
 	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_dump.c \
@@ -261,7 +261,7 @@ am__objects_8 = amesos_amd_1.$(OBJEXT) amesos_amd_2.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@am__objects_10 = Amesos_Klu.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_analyze.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_analyze_given.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	amesos_klu.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	amesos_klu_impl.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_defaults.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_diagnostics.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_dump.$(OBJEXT) \
@@ -399,7 +399,7 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_decl.h \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_internal.h \
 	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_version.h \
-	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf.h \
+	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_decl.h \
 	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_internal.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/SuiteSparse/PARAKLETE/Include/amesos_paraklete_decl.h \
@@ -642,7 +642,7 @@ SUPPORT = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp $(srcdir)/Am
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_decl.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_internal.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Include/amesos_klu_version.h \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_decl.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/BTF/Include/amesos_btf_internal.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.h
 
@@ -651,7 +651,7 @@ SUPPORT = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp $(srcdir)/Am
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.cpp \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_diagnostics.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_dump.c \
@@ -1172,7 +1172,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_colamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_colamd_global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_colamd_l.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_analyze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_analyze_given.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_defaults.Po@am__quote@
@@ -1182,6 +1181,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_free_numeric.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_free_symbolic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_impl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_kernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_l.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_klu_l_analyze.Po@am__quote@
@@ -1577,19 +1577,19 @@ amesos_klu_analyze_given.obj: $(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyz
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_klu_analyze_given.obj `if test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_analyze_given.c'; fi`
 
-amesos_klu.o: $(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_klu.o -MD -MP -MF $(DEPDIR)/amesos_klu.Tpo -c -o amesos_klu.o `test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_klu.Tpo $(DEPDIR)/amesos_klu.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c' object='amesos_klu.o' libtool=no @AMDEPBACKSLASH@
+amesos_klu_impl.o: $(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_klu_impl.o -MD -MP -MF $(DEPDIR)/amesos_klu_impl.Tpo -c -o amesos_klu_impl.o `test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_klu_impl.Tpo $(DEPDIR)/amesos_klu_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c' object='amesos_klu_impl.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_klu.o `test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_klu_impl.o `test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c
 
-amesos_klu.obj: $(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_klu.obj -MD -MP -MF $(DEPDIR)/amesos_klu.Tpo -c -o amesos_klu.obj `if test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_klu.Tpo $(DEPDIR)/amesos_klu.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c' object='amesos_klu.obj' libtool=no @AMDEPBACKSLASH@
+amesos_klu_impl.obj: $(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_klu_impl.obj -MD -MP -MF $(DEPDIR)/amesos_klu_impl.Tpo -c -o amesos_klu_impl.obj `if test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_klu_impl.Tpo $(DEPDIR)/amesos_klu_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c' object='amesos_klu_impl.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_klu.obj `if test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/KLU/Source/amesos_klu.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_klu_impl.obj `if test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_impl.c'; fi`
 
 amesos_klu_defaults.o: $(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_klu_defaults.o -MD -MP -MF $(DEPDIR)/amesos_klu_defaults.Tpo -c -o amesos_klu_defaults.o `test -f '$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/KLU/Source/amesos_klu_defaults.c

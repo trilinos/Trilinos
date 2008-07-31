@@ -25,7 +25,7 @@
 
 #include "amesos_cholmod.h"
 #include "amesos_cholmod_internal.h"
-#include "amesos_btf.h"
+#include "amesos_btf_decl.h"
 #include "amesos_klu_decl.h"
 
 #ifndef NMPI
