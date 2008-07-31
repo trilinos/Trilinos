@@ -35,11 +35,9 @@
 #include "Amesos_Support.h"
 
 extern "C" {
-  // #include "amd.h"
-#include "klu.h"
-#if 0
-#include "klu_dump.h"
-#endif
+
+#include "amesos_klu_decl.h"
+
 }
 
 namespace {
@@ -52,7 +50,7 @@ class DeallocFunctorDeleteWithCommon
 public:
   DeallocFunctorDeleteWithCommon(
 				 const RCP<klu_common>  &common
-				 ,DeleteFunctor                        deleteFunctor
+				 ,DeleteFunctor         deleteFunctor
 				 )
     : common_(common), deleteFunctor_(deleteFunctor)
     {}
@@ -439,16 +437,16 @@ int Amesos_Klu::PerformSymbolicFactorization()
   if (MyPID_ == 0) {
 
     PrivateKluData_->common_ = rcp(new klu_common());
-    klu_defaults(&*PrivateKluData_->common_) ;
+    amesos_klu_defaults(&*PrivateKluData_->common_) ;
     PrivateKluData_->Symbolic_ =
       rcp(
-	  klu_analyze (NumGlobalElements_, &Ap[0], Ai,  &*PrivateKluData_->common_ ) 
-	  ,deallocFunctorDeleteWithCommon<klu_symbolic>(PrivateKluData_->common_,klu_free_symbolic)
+	  amesos_klu_analyze (NumGlobalElements_, &Ap[0], Ai,  &*PrivateKluData_->common_ ) 
+	  ,deallocFunctorDeleteWithCommon<klu_symbolic>(PrivateKluData_->common_,amesos_klu_free_symbolic)
 	  ,true
 	  );
-
-	symbolic_ok = (PrivateKluData_->Symbolic_.get() != NULL) 
-	  && PrivateKluData_->common_->status == KLU_OK ;
+    
+    symbolic_ok = (PrivateKluData_->Symbolic_.get() != NULL) 
+      && PrivateKluData_->common_->status == KLU_OK ;
 
   }
 
@@ -481,14 +479,14 @@ int Amesos_Klu::PerformNumericFactorization( )
 
   // This needs to be 1 just in case the pivot ordering is reused.
   int numeric_ok = 1;
-
+  
   if (MyPID_ == 0) {
-
+    
     bool factor_with_pivoting = true ;
-
+    
     // set the default parameters
     PrivateKluData_->common_->scale = ScaleMethod_ ;
-
+    
     const bool NumericNonZero =  PrivateKluData_->Numeric_.get() != 0 ; 
     
     // see if we can "refactorize"
@@ -496,17 +494,17 @@ int Amesos_Klu::PerformNumericFactorization( )
       // refactorize using the existing Symbolic and Numeric objects, and
       // using the identical pivot ordering as the prior klu_factor.
       // No partial pivoting is done.
-      int result = klu_refactor (&Ap[0], Ai, Aval,
-				 &*PrivateKluData_->Symbolic_, 
-				 &*PrivateKluData_->Numeric_, &*PrivateKluData_->common_) ;
+      int result = amesos_klu_refactor (&Ap[0], Ai, Aval,
+					&*PrivateKluData_->Symbolic_, 
+					&*PrivateKluData_->Numeric_, &*PrivateKluData_->common_) ;
       // Did it work?
       const  bool refactor_ok = result == 1 && PrivateKluData_->common_->status == KLU_OK ;
       if ( refactor_ok ) { 
 	
-	klu_rcond (&*PrivateKluData_->Symbolic_,
-		   &*PrivateKluData_->Numeric_,
-		   &*PrivateKluData_->common_) ;
-       
+	amesos_klu_rcond (&*PrivateKluData_->Symbolic_,
+			  &*PrivateKluData_->Numeric_,
+			  &*PrivateKluData_->common_) ;
+	
 	double rcond = PrivateKluData_->common_->rcond;
  	
 	if ( rcond > rcond_threshold_ ) {
@@ -525,9 +523,9 @@ int Amesos_Klu::PerformNumericFactorization( )
       
       // factor the matrix using partial pivoting
       PrivateKluData_->Numeric_ =
-	rcp( klu_factor(&Ap[0], Ai, Aval,
-			&*PrivateKluData_->Symbolic_, &*PrivateKluData_->common_),
-	     deallocFunctorDeleteWithCommon<klu_numeric>(PrivateKluData_->common_,klu_free_numeric)
+	rcp( amesos_klu_factor(&Ap[0], Ai, Aval,
+			       &*PrivateKluData_->Symbolic_, &*PrivateKluData_->common_),
+	     deallocFunctorDeleteWithCommon<klu_numeric>(PrivateKluData_->common_,amesos_klu_free_numeric)
 	     ,true
 	     );
       
@@ -536,7 +534,7 @@ int Amesos_Klu::PerformNumericFactorization( )
       
     }
   }
-
+  
   // Communicate the state of the numeric factorization with everyone.
   Comm().Broadcast(&numeric_ok, 1, 0);
 
@@ -546,18 +544,18 @@ int Amesos_Klu::PerformNumericFactorization( )
     } else 
       return( NumericallySingularMatrixError );
   }
-
+  
   if ( !TrustMe_ ) {
     NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_, 0);
   }
-
+  
   return 0;
 }
 
 //=============================================================================
 bool Amesos_Klu::MatrixShapeOK() const {
   bool OK = true;
-
+  
   // Comment by Tim:  The following code seems suspect.  The variable "OK"
   // is not set if the condition is true.
   // Does the variable "OK" default to true?
@@ -573,18 +571,18 @@ int Amesos_Klu::SymbolicFactorization()
 {
   MyPID_    = Comm().MyPID();
   NumProcs_ = Comm().NumProc();
-
+  
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
   
   CreateTimer(Comm(), 2);
-
+  
   ResetTimer(1);
-
+  
   // "overhead" time for the following method is considered here
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
-
+  
   //
   //  Perform checks in SymbolicFactorization(), but none in 
   //  NumericFactorization() or Solve()
@@ -648,15 +646,15 @@ int Amesos_Klu::NumericFactorization()
     }  else {
       AMESOS_CHK_ERR( ConvertToKluCRS(false) );
     }
-
+    
     OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   }
-
+  
   // this time is all for KLU
   AMESOS_CHK_ERR( PerformNumericFactorization() );
-
+  
   NumNumericFact_++;
-
+  
   IsNumericFactorizationOK_ = true;
   
   return 0;
@@ -667,7 +665,7 @@ int Amesos_Klu::Solve()
 {
   Epetra_MultiVector* vecX = 0 ;
   Epetra_MultiVector* vecB = 0 ;
-
+  
 #ifdef Bug_8212
   //  This demonstrates Bug #2812 - Valgrind does not catch this
   //  memory leak
@@ -688,15 +686,15 @@ int Amesos_Klu::Solve()
 
     SerialB_ = Problem_->GetRHS() ;
     SerialX_ = Problem_->GetLHS() ;
-
+    
     Epetra_MultiVector* OrigVecX ;
     Epetra_MultiVector* OrigVecB ;
-
+    
     if (IsNumericFactorizationOK_ == false)
       AMESOS_CHK_ERR(NumericFactorization());
     
     ResetTimer(1);
-
+    
     //
     //  Reindex the LHS and RHS 
     //
@@ -770,11 +768,11 @@ int Amesos_Klu::Solve()
       SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
     }
     if (UseTranspose()) {
-      klu_solve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
-		     SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
+      amesos_klu_solve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
+			SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
     } else {
-      klu_tsolve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
-		      SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
+      amesos_klu_tsolve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
+			 SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
     }
   }
 

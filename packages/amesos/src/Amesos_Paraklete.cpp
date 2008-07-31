@@ -34,7 +34,7 @@
 #include "Epetra_Util.h"
 #include "Amesos_Support.h"
 extern "C" {
-#include "paraklete.h"
+#include "amesos_paraklete_decl.h"
 }
 
 // The following hack allows assert to work even though it has been turned off by paraklete.h bug #1952 
@@ -522,9 +522,9 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
   
   if ( IamInGroup_ ) 
     PrivateParakleteData_->LUsymbolic_ =
-      rcp( paraklete_analyze ( &PrivateParakleteData_->pk_A_, &*PrivateParakleteData_->common_ )
+      rcp( amesos_paraklete_analyze ( &PrivateParakleteData_->pk_A_, &*PrivateParakleteData_->common_ )
 	   ,deallocFunctorDeleteWithCommon<paraklete_symbolic>(PrivateParakleteData_->common_,
-							       paraklete_free_symbolic)
+							       amesos_paraklete_free_symbolic)
 	   ,true
 	   );
   
@@ -547,10 +547,10 @@ int Amesos_Paraklete::PerformNumericFactorization( )
   
   if ( IamInGroup_ ) 
     PrivateParakleteData_->LUnumeric_ =
-      rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
+      rcp( amesos_paraklete_factorize ( &PrivateParakleteData_->pk_A_,
                                  &*PrivateParakleteData_->LUsymbolic_, 
                                  &*PrivateParakleteData_->common_ ) 
-           ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
+           ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,amesos_paraklete_free_numeric)
 	   ,true
 	   );
 
@@ -670,8 +670,8 @@ int Amesos_Paraklete::SymbolicFactorization()
   
   paraklete_common& pk_common =  *PrivateParakleteData_->common_ ;
   cholmod_common *cm = &(pk_common.cm) ;
-  cholmod_l_start (cm) ;
-  DEBUG_INIT ("pk", cm) ;
+  amesos_cholmod_l_start (cm) ;
+  PK_DEBUG_INIT ("pk", cm) ;
   pk_common.nproc = MaxProcesses_ ;
   pk_common.myid = Comm().MyPID() ; 
   //pk_common.mpicomm = PK_Comm ; 
@@ -833,7 +833,7 @@ int Amesos_Paraklete::Solve()
   }
   if ( IamInGroup_ ) 
     for (int i = 0; i < NumVectors_ ; i++ ) { 
-      paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
+      amesos_paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
 			&SerialXBvalues_[i*SerialXlda_],  &*PrivateParakleteData_->common_ );
     }
   SolveTime_ = AddTime("Total solve time", SolveTime_, 0);
