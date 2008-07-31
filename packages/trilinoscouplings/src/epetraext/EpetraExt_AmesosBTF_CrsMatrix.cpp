@@ -33,7 +33,7 @@
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 
-#include <btf.h>
+#include <amesos_btf_decl.h>
 
 using std::vector;
 
@@ -144,7 +144,7 @@ operator()( OriginalTypeRef orig )
     // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
     // (k,k)th entry in P*A*Q is structurally zero.
     
-    numBlocks_ = btf_order( n, &ia[0], &ja[0], maxWork, &workPerf,
+    numBlocks_ = amesos_btf_order( n, &ia[0], &ja[0], maxWork, &workPerf,
 			    &colperm[0], &rowperm[0], &blockptr[0], 
 			    &numMatch, &work[0] );
     
