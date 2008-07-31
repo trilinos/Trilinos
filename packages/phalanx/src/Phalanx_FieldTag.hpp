@@ -30,9 +30,9 @@ namespace PHX {
 
   protected:
 
-    std::string name_;
+    std::string m_name;
     
-    Teuchos::RCP<PHX::DataLayout> data_layout_;
+    Teuchos::RCP<PHX::DataLayout> m_data_layout;
 
   };
 

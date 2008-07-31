@@ -37,15 +37,15 @@ namespace PHX {
 
   private:
     
-    PHX::FieldTag tag;
+    PHX::FieldTag m_tag;
     
-    Teuchos::ArrayRCP<DataT> field_data;
+    Teuchos::ArrayRCP<DataT> m_field_data;
 
 #ifdef PHX_DEBUG
-    bool tag_set;
-    bool data_set;
-    static const std::string field_tag_error_msg;
-    static const std::string field_data_error_msg;
+    bool m_tag_set;
+    bool m_data_set;
+    static const std::string m_field_tag_error_msg;
+    static const std::string m_field_data_error_msg;
 #endif
 
   };

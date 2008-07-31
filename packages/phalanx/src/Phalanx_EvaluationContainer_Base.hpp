@@ -8,13 +8,13 @@ namespace PHX {
   template<typename Traits> class FieldManager;
 
   template<typename Traits>
-  class ScalarContainerBase {
+  class EvaluationContainerBase {
 
   public:
 
-    ScalarContainerBase();
+    EvaluationContainerBase();
 
-    virtual ~ScalarContainerBase();
+    virtual ~EvaluationContainerBase();
 
     virtual void requireField(const PHX::FieldTag& v);
 
@@ -40,7 +40,7 @@ namespace PHX {
 
   template<typename Traits>
   std::ostream& operator<<(std::ostream& os, 
-		  const PHX::ScalarContainerBase<Traits>& sc);
+			   const PHX::EvaluationContainerBase<Traits>& sc);
   
 }
 

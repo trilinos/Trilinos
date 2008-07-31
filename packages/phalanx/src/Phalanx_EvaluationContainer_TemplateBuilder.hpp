@@ -6,15 +6,15 @@
 namespace PHX {
 
   template <typename Traits>
-  class ScalarContainer_TemplateBuilder {
+  class EvaluationContainer_TemplateBuilder {
 
   public:
     
-    ScalarContainer_TemplateBuilder() {}
+    EvaluationContainer_TemplateBuilder() {}
 
     template <typename ScalarT>
-    Teuchos::RCP<PHX::ScalarContainerBase<Traits> > build() const {
-      return Teuchos::rcp( new ScalarContainer<ScalarT, Traits>);
+    Teuchos::RCP<PHX::EvaluationContainerBase<Traits> > build() const {
+      return Teuchos::rcp( new EvaluationContainer<ScalarT, Traits>);
     }
     
   };

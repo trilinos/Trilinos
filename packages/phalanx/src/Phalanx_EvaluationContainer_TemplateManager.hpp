@@ -10,16 +10,16 @@ using namespace boost::mpl::placeholders;
 namespace PHX {
 
   template<typename Traits>
-  class ScalarContainer_TemplateManager : 
+  class EvaluationContainer_TemplateManager : 
     public PHX::TemplateManager<typename Traits::ScalarTypes,
-				PHX::ScalarContainerBase<Traits>,
-				PHX::ScalarContainer<_,Traits> > {
+				PHX::EvaluationContainerBase<Traits>,
+				PHX::EvaluationContainer<_,Traits> > {
 
   public:
 
-    ScalarContainer_TemplateManager() {}
+    EvaluationContainer_TemplateManager() {}
 
-    ~ScalarContainer_TemplateManager() {}
+    ~EvaluationContainer_TemplateManager() {}
 
   };
 

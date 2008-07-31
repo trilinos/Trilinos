@@ -9,11 +9,12 @@
 template<typename Traits>
 inline
 PHX::FieldManager<Traits>::FieldManager() :
-  max_num_cells_(-1)
+  m_max_num_cells(-1)
 {
-  num_scalar_types_ = Sacado::mpl::size<typename Traits::ScalarTypes>::value;
-  PHX::ScalarContainer_TemplateBuilder<Traits> builder;
-  scalar_containers_.buildObjects(builder);
+  m_num_evaluation_types = 
+    Sacado::mpl::size<typename Traits::ScalarTypes>::value;
+  PHX::EvaluationContainer_TemplateBuilder<Traits> builder;
+  m_eval_containers.buildObjects(builder);
 }
 
 // **************************************************************
@@ -29,7 +30,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<DataT>& h)
 {
-  h.setFieldData(scalar_containers_.template 
+  h.setFieldData(m_eval_containers.template 
     getAsObject< typename boost::mpl::at<typename Traits::DataToScalarMap,
 	    DataT>::type >()->template getFieldData<DataT>(h.fieldTag()) );
 }
@@ -41,7 +42,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d)
 {
-  d = scalar_containers_.template 
+  d = m_eval_containers.template 
     getAsObject< typename boost::mpl::at<typename Traits::DataToScalarMap,
     DataT>::type >()->template getFieldData<DataT>(v);
 }
@@ -52,10 +53,10 @@ inline
 void PHX::FieldManager<Traits>::
 requireFieldForAllTypes(const PHX::FieldTag& v)
 {
-  typedef PHX::ScalarContainer_TemplateManager<Traits> SCTM;
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   
-  typename SCTM::iterator it = scalar_containers_.begin();
-  for (; it != scalar_containers_.end(); ++it) {
+  typename SCTM::iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it) {
     it->requireField(v);
   }
 }
@@ -67,7 +68,7 @@ inline
 void PHX::FieldManager<Traits>::
 requireFieldForScalarType(const PHX::FieldTag& v)
 {
-  scalar_containers_.template getAsBase<ScalarT>()->template requireField(v);
+  m_eval_containers.template getAsBase<ScalarT>()->template requireField(v);
 }
     
 // **************************************************************
@@ -76,10 +77,10 @@ inline
 void PHX::FieldManager<Traits>::
 registerEvaluatorForAllTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
-  typedef PHX::ScalarContainer_TemplateManager<Traits> SCTM;
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   
-  typename SCTM::iterator it = scalar_containers_.begin();
-  for (; it != scalar_containers_.end(); ++it) {
+  typename SCTM::iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it) {
     it->registerEvaluator(p);
   }
 }
@@ -91,7 +92,7 @@ inline
 void PHX::FieldManager<Traits>::
 registerEvaluatorForScalarType(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
-  scalar_containers_.template getAsBase<ScalarT>()->template registerEvaluator(p);
+  m_eval_containers.template getAsBase<ScalarT>()->template registerEvaluator(p);
 }
 
 // **************************************************************
@@ -110,12 +111,12 @@ inline
 void PHX::FieldManager<Traits>::
 postRegistrationSetup(std::size_t max_num_cells)
 {
-  max_num_cells_ = max_num_cells;
+  m_max_num_cells = max_num_cells;
 
-  typedef PHX::ScalarContainer_TemplateManager<Traits> SCTM;
-  typename SCTM::iterator it = scalar_containers_.begin();
-  for (; it != scalar_containers_.end(); ++it)
-    it->postRegistrationSetup(max_num_cells_, *this);
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+  typename SCTM::iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it)
+    it->postRegistrationSetup(m_max_num_cells, *this);
 }
 
 // **************************************************************
@@ -125,7 +126,7 @@ inline
 void PHX::FieldManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  scalar_containers_.template getAsBase<ScalarT>()->template evaluateFields(d);
+  m_eval_containers.template getAsBase<ScalarT>()->template evaluateFields(d);
 }
 
 // **************************************************************
@@ -135,7 +136,7 @@ inline
 void PHX::FieldManager<Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-  scalar_containers_.template getAsBase<ScalarT>()->template preEvaluate(d);
+  m_eval_containers.template getAsBase<ScalarT>()->template preEvaluate(d);
 }
 
 // **************************************************************
@@ -145,7 +146,7 @@ inline
 void PHX::FieldManager<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
-  scalar_containers_.template getAsBase<ScalarT>()->template postEvaluate(d);
+  m_eval_containers.template getAsBase<ScalarT>()->template postEvaluate(d);
 }
 
 // **************************************************************
@@ -153,7 +154,7 @@ template<typename Traits>
 inline
 std::size_t PHX::FieldManager<Traits>::getMaxNumCells() const
 {
-  return max_num_cells_;
+  return m_max_num_cells;
 }
 
 // **************************************************************
@@ -162,7 +163,7 @@ inline
 typename PHX::FieldManager<Traits>::iterator 
 PHX::FieldManager<Traits>::begin()
 {
-  return scalar_containers_.begin();
+  return m_eval_containers.begin();
 }
 
 // **************************************************************
@@ -171,7 +172,7 @@ inline
 typename PHX::FieldManager<Traits>::iterator 
 PHX::FieldManager<Traits>::end()
 {
-  return scalar_containers_.end();
+  return m_eval_containers.end();
 }
 
 // **************************************************************
@@ -179,9 +180,9 @@ template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::print(std::ostream& os) const
 {
-  typedef PHX::ScalarContainer_TemplateManager<Traits> SCTM;
-  typename SCTM::const_iterator it = scalar_containers_.begin();
-  for (; it != scalar_containers_.end(); ++it)
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+  typename SCTM::const_iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it)
     os << (*it);
 }
 

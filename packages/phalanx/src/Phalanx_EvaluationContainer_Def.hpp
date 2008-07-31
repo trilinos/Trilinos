@@ -6,7 +6,7 @@
 
 // *************************************************************************
 template <typename ScalarT, typename Traits>
-PHX::ScalarContainer<ScalarT, Traits>::ScalarContainer()
+PHX::EvaluationContainer<ScalarT, Traits>::EvaluationContainer()
 {
   this->vp_manager_.setScalarTypeName( PHX::getTypeString<ScalarT, Traits>() );
   this->data_container_template_manager_.buildObjects();
@@ -14,14 +14,14 @@ PHX::ScalarContainer<ScalarT, Traits>::ScalarContainer()
 
 // *************************************************************************
 template <typename ScalarT, typename Traits> 
-PHX::ScalarContainer<ScalarT, Traits>::~ScalarContainer()
+PHX::EvaluationContainer<ScalarT, Traits>::~EvaluationContainer()
 {
 
 }
 
 // *************************************************************************
 template <typename ScalarT, typename Traits>
-void PHX::ScalarContainer<ScalarT, Traits>::
+void PHX::EvaluationContainer<ScalarT, Traits>::
 requireField(const PHX::FieldTag& f)
 {
   this->vp_manager_.requireField(f);
@@ -29,7 +29,7 @@ requireField(const PHX::FieldTag& f)
 
 // *************************************************************************
 template <typename ScalarT, typename Traits>
-void PHX::ScalarContainer<ScalarT, Traits>::
+void PHX::EvaluationContainer<ScalarT, Traits>::
 registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
   this->vp_manager_.registerEvaluator(p);
@@ -37,7 +37,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 
 // *************************************************************************
 template <typename ScalarT, typename Traits> 
-void PHX::ScalarContainer<ScalarT, Traits>::
+void PHX::EvaluationContainer<ScalarT, Traits>::
 postRegistrationSetup(std::size_t max_num_cells,
 		      PHX::FieldManager<Traits>& fm)
 {
@@ -86,7 +86,7 @@ postRegistrationSetup(std::size_t max_num_cells,
 
 // *************************************************************************
 template <typename ScalarT, typename Traits>
-void PHX::ScalarContainer<ScalarT, Traits>::
+void PHX::EvaluationContainer<ScalarT, Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   this->vp_manager_.evaluateFields(d);
@@ -94,7 +94,7 @@ evaluateFields(typename Traits::EvalData d)
 
 // *************************************************************************
 template <typename ScalarT, typename Traits>
-void PHX::ScalarContainer<ScalarT, Traits>::
+void PHX::EvaluationContainer<ScalarT, Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
   this->vp_manager_.preEvaluate(d);
@@ -102,7 +102,7 @@ preEvaluate(typename Traits::PreEvalData d)
 
 // *************************************************************************
 template <typename ScalarT, typename Traits>
-void PHX::ScalarContainer<ScalarT, Traits>::
+void PHX::EvaluationContainer<ScalarT, Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
   this->vp_manager_.postEvaluate(d);
@@ -111,7 +111,7 @@ postEvaluate(typename Traits::PostEvalData d)
 // *************************************************************************
 template <typename ScalarT, typename Traits> template <typename DataT>
 Teuchos::ArrayRCP<DataT> 
-PHX::ScalarContainer<ScalarT, Traits>::getFieldData(const PHX::FieldTag& f)
+PHX::EvaluationContainer<ScalarT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
   Teuchos::ArrayRCP<DataT> r = 
     data_container_template_manager_.template getAsObject<DataT>()->
@@ -122,12 +122,12 @@ PHX::ScalarContainer<ScalarT, Traits>::getFieldData(const PHX::FieldTag& f)
 
 // *************************************************************************
 template <typename ScalarT, typename Traits>
-void PHX::ScalarContainer<ScalarT, Traits>::print(std::ostream& os) const
+void PHX::EvaluationContainer<ScalarT, Traits>::print(std::ostream& os) const
 {
   std::string type = PHX::getTypeString<ScalarT, Traits>();
 
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-  os << "Starting PHX::ScalarContainer Output" << std::endl;
+  os << "Starting PHX::EvaluationContainer Output" << std::endl;
   os << "Scalar Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->vp_manager_ << std::endl;
@@ -135,7 +135,7 @@ void PHX::ScalarContainer<ScalarT, Traits>::print(std::ostream& os) const
   for (; it != data_container_template_manager_.end(); ++it)
     os << *it << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-  os << "Finished PHX::ScalarContainer Output" << std::endl;
+  os << "Finished PHX::EvaluationContainer Output" << std::endl;
   os << "Scalar Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << std::endl;

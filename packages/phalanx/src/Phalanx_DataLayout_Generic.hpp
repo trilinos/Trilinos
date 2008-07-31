@@ -35,9 +35,9 @@ namespace PHX{
 
   private:
 
-    const std::string name_;
+    const std::string m_name;
 
-    const std::size_t size_;
+    const std::size_t m_size;
 
   };
 

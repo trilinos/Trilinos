@@ -18,7 +18,7 @@ namespace PHX {
     
   public:
 
-    typedef typename PHX::ScalarContainer_TemplateManager<Traits>::iterator iterator;
+    typedef typename PHX::EvaluationContainer_TemplateManager<Traits>::iterator iterator;
 
     FieldManager();
 
@@ -56,23 +56,23 @@ namespace PHX {
 
     std::size_t getMaxNumCells() const;
 
-    //! Return iterator to first ScalarContainer
+    //! Return iterator to first EvaluationContainer
     typename FieldManager::iterator begin();
 
-    //! Return iterator to last ScalarContainer
+    //! Return iterator to last EvaluationContainer
     typename FieldManager::iterator end();
 
     void print(std::ostream& os) const;
 
   private:
 
-    typedef PHX::ScalarContainer_TemplateManager<Traits> SCTM;
+    typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
 
-    std::size_t num_scalar_types_;
+    std::size_t m_num_evaluation_types;
 
-    PHX::ScalarContainer_TemplateManager<Traits> scalar_containers_;
+    PHX::EvaluationContainer_TemplateManager<Traits> m_eval_containers;
 
-    std::size_t max_num_cells_;
+    std::size_t m_max_num_cells;
 
   };
 

@@ -8,8 +8,8 @@
 template<typename Entity>
 PHX::Generic<Entity>::
 Generic(const std::string& unique_identifier, std::size_t size) :
-  name_(unique_identifier),
-  size_(size)
+  m_name(unique_identifier),
+  m_size(size)
 { }
 
 //**********************************************************************
@@ -35,12 +35,12 @@ bool PHX::Generic<Entity>::operator==(const PHX::DataLayout& right) const
 //**********************************************************************
 template<typename Entity>
 const std::string& PHX::Generic<Entity>::name() const
-{ return name_; }
+{ return m_name; }
 
 //**********************************************************************
 template<typename Entity>
 std::size_t PHX::Generic<Entity>::size() const
-{ return size_; }
+{ return m_size; }
 
 //**********************************************************************
 template<typename Entity>
@@ -58,7 +58,7 @@ void PHX::Generic<Entity>::print(std::ostream& os, int indent) const
   for (int i = 0; i < indent; i++)
     s << " ";
 
-  os << s.str() << name_ << ", size = " << size_ << ", " 
+  os << s.str() << m_name << ", size = " << m_size << ", " 
      << Entity::name;
 }
 

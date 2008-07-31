@@ -4,21 +4,21 @@
 #include "Teuchos_TestForException.hpp"
 // **************************************************************************
 template<typename Traits>
-PHX::ScalarContainerBase<Traits>::ScalarContainerBase()
+PHX::EvaluationContainerBase<Traits>::EvaluationContainerBase()
 {
 
 }
 
 // **************************************************************************
 template<typename Traits>
-PHX::ScalarContainerBase<Traits>::~ScalarContainerBase()
+PHX::EvaluationContainerBase<Traits>::~EvaluationContainerBase()
 {
 
 }
 
 // **************************************************************************
 template<typename Traits>
-void PHX::ScalarContainerBase<Traits>::
+void PHX::EvaluationContainerBase<Traits>::
 requireField(const PHX::FieldTag& f) 
 { 
   vp_manager_.requireField(f);
@@ -26,7 +26,7 @@ requireField(const PHX::FieldTag& f)
 
 // **************************************************************************
 template<typename Traits>
-void PHX::ScalarContainerBase<Traits>::
+void PHX::EvaluationContainerBase<Traits>::
 registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& e) 
 { 
   vp_manager_.registerEvaluator(e);
@@ -35,7 +35,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 // **************************************************************************
 template<typename Traits>
 std::ostream&
-PHX::operator<<(std::ostream& os, const PHX::ScalarContainerBase<Traits>& sc)
+PHX::operator<<(std::ostream& os, const PHX::EvaluationContainerBase<Traits>& sc)
 { 
   sc.print(os);
   return os;

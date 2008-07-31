@@ -4,8 +4,8 @@
 //**********************************************************************
 PHX::FieldTag::FieldTag(const std::string& name,
 			const Teuchos::RCP<PHX::DataLayout>& dl) :
-  name_(name),
-  data_layout_(dl)
+  m_name(name),
+  m_data_layout(dl)
 { }
 
 //**********************************************************************
@@ -15,8 +15,8 @@ PHX::FieldTag::~FieldTag()
 //**********************************************************************
 PHX::FieldTag& PHX::FieldTag::operator=(const PHX::FieldTag& a)
 {
-  name_ = a.name();
-  data_layout_ = a.dataLayout();
+  m_name = a.name();
+  m_data_layout = a.dataLayout();
   return *this;
 }
 
@@ -40,11 +40,11 @@ bool PHX::FieldTag::operator<(const PHX::FieldTag& a) const
 
 //**********************************************************************
 const std::string& PHX::FieldTag::name() const
-{ return name_; }
+{ return m_name; }
 
 //**********************************************************************
 const Teuchos::RCP<PHX::DataLayout> PHX::FieldTag::dataLayout() const
-{ return data_layout_; }
+{ return m_data_layout; }
 
 //**********************************************************************
 void PHX::FieldTag::print(std::ostream& os, int indent) const
@@ -53,7 +53,8 @@ void PHX::FieldTag::print(std::ostream& os, int indent) const
   for (int i = 0; i < indent; i++)
     s << " ";
 
-  os << s.str() << "FieldTag:  " << name_ << ", DataLayout: " << *data_layout_;
+  os << s.str() << "FieldTag:  " << m_name << ", DataLayout: " 
+     << *m_data_layout;
 
 }
 

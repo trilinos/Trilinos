@@ -15,13 +15,13 @@ namespace PHX {
 
   */
   template <typename ScalarT, typename Traits>
-  class ScalarContainer : public PHX::ScalarContainerBase<Traits> {
+  class EvaluationContainer : public PHX::EvaluationContainerBase<Traits> {
     
   public:
     
-    ScalarContainer();
+    EvaluationContainer();
     
-    ~ScalarContainer();
+    ~EvaluationContainer();
     
     //! Requests that the container must compute this field.
     void requireField(const PHX::FieldTag& f);

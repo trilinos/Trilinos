@@ -6,40 +6,40 @@
 //**********************************************************************
 #ifdef PHX_DEBUG
 template<typename DataT>
-const std::string PHX::Field<DataT>::field_tag_error_msg = 
+const std::string PHX::Field<DataT>::m_field_tag_error_msg = 
     "Error - PHX::Field::fieldTag() - No tag has been set!";
 template<typename DataT>
-const std::string PHX::Field<DataT>::field_data_error_msg = "Error - PHX::Field::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::Field objects in providers!";
+const std::string PHX::Field<DataT>::m_field_data_error_msg = "Error - PHX::Field::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::Field objects in providers!";
 #endif
 
 //**********************************************************************
 template<typename DataT>
 PHX::Field<DataT>::Field(const std::string& name, 
 			 const Teuchos::RCP<PHX::DataLayout>& t) :
-  tag(name,t)
+  m_tag(name,t)
 #ifdef PHX_DEBUG
-  , tag_set(true),
-  data_set(false)
+  , m_tag_set(true),
+  m_data_set(false)
 #endif
 { }
 
 //**********************************************************************
 template<typename DataT>
 PHX::Field<DataT>::Field(const PHX::FieldTag& v) :
-  tag(v)
+  m_tag(v)
 #ifdef PHX_DEBUG
-  ,tag_set(true),
-  data_set(false)
+  ,m_tag_set(true),
+  m_data_set(false)
 #endif
 { }
 
 //**********************************************************************
 template<typename DataT>
 PHX::Field<DataT>::Field() :
-  tag("???", Teuchos::null)
+  m_tag("???", Teuchos::null)
 #ifdef PHX_DEBUG
-  ,tag_set(false),
-  data_set(false)
+  ,m_tag_set(false),
+  m_data_set(false)
 #endif
 { }
 
@@ -54,9 +54,9 @@ inline
 const PHX::FieldTag& PHX::Field<DataT>::fieldTag() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!tag_set, std::logic_error, field_tag_error_msg);
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
 #endif
-  return tag;
+  return m_tag;
 }
 
 //**********************************************************************
@@ -65,9 +65,9 @@ inline
 DataT& PHX::Field<DataT>::operator[](int index)
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!data_set, std::logic_error, field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
-  return field_data[index];
+  return m_field_data[index];
 }
 
 //**********************************************************************
@@ -76,9 +76,9 @@ inline
 typename Teuchos::ArrayRCP<DataT>::Ordinal PHX::Field<DataT>::size() const
 { 
 #ifdef PHX_DEBUG
-  TEST_FOR_EXCEPTION(!data_set, std::logic_error, field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
-  return field_data.size();
+  return m_field_data.size();
 }
 
 //**********************************************************************
@@ -86,9 +86,9 @@ template<typename DataT>
 void PHX::Field<DataT>::setFieldTag(const PHX::FieldTag& v)
 {  
 #ifdef PHX_DEBUG
-  tag_set = true;
+  m_tag_set = true;
 #endif
-  tag = v;
+  m_tag = v;
 }
 
 //**********************************************************************
@@ -96,19 +96,19 @@ template<typename DataT>
 void PHX::Field<DataT>::setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 { 
 #ifdef PHX_DEBUG
-  data_set = true;
+  m_data_set = true;
 #endif
-  field_data = d;
+  m_field_data = d;
 }
 
 //**********************************************************************
 template<typename DataT>
 void PHX::Field<DataT>::print(std::ostream& os) const
 {
-  os << "Printing Field: \n" << tag << std::endl;
+  os << "Printing Field: \n" << m_tag << std::endl;
   typedef typename Teuchos::ArrayRCP<DataT>::Ordinal size_type;
-  for (size_type i = 0; i < field_data.size(); ++i)
-    os << "value[" << i << "] = " << field_data[i] << std::endl;
+  for (size_type i = 0; i < m_field_data.size(); ++i)
+    os << "value[" << i << "] = " << m_field_data[i] << std::endl;
 }
 
 //**********************************************************************
