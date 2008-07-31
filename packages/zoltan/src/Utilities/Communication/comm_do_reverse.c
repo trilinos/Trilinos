@@ -109,38 +109,21 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
     plan->plan_reverse->starts_from_ptr = NULL;
     plan->plan_reverse->indices_to_ptr = NULL;
     plan->plan_reverse->indices_from_ptr = NULL;
-    plan->plan_reverse->maxed_recvs = 0;
 
-    if (MAX_MPI_RECVS > 0){
-      /* If we have a limit to the number of posted receives we are allowed,
-      ** and our plan has exceeded that, then switch to an MPI_Alltoallv so
-      ** that we will have fewer receives posted when we do the communication.
-      */
-      MPI_Allreduce(&plan->nsends, &i, 1, MPI_INT, MPI_MAX, plan->comm);
-      if (i > MAX_MPI_RECVS){
-        plan->plan_reverse->maxed_recvs = 1;
-      }
+
+    plan->plan_reverse->request = (MPI_Request *)
+	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Request));
+    if (plan->plan_reverse->request == NULL && plan->plan_reverse->nrecvs != 0) {
+        ZOLTAN_FREE(&plan->plan_reverse);
+	return(ZOLTAN_MEMERR);
     }
 
-    if (plan->plan_reverse->maxed_recvs){
-      plan->plan_reverse->request = NULL;
-      plan->plan_reverse->status = NULL;
-    }
-    else{
-      plan->plan_reverse->request = (MPI_Request *)
-  	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Request));
-      if (plan->plan_reverse->request == NULL && plan->plan_reverse->nrecvs != 0) {
-          ZOLTAN_FREE(&plan->plan_reverse);
-  	return(ZOLTAN_MEMERR);
-      }
-  
-      plan->plan_reverse->status = (MPI_Status *)
-  	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Status));
-      if (plan->plan_reverse->status == NULL && plan->plan_reverse->nrecvs != 0) {
-          ZOLTAN_FREE(&(plan->plan_reverse->request));
-          ZOLTAN_FREE(&plan->plan_reverse);
-  	return(ZOLTAN_MEMERR);
-      }
+    plan->plan_reverse->status = (MPI_Status *)
+	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Status));
+    if (plan->plan_reverse->status == NULL && plan->plan_reverse->nrecvs != 0) {
+        ZOLTAN_FREE(&(plan->plan_reverse->request));
+        ZOLTAN_FREE(&plan->plan_reverse);
+	return(ZOLTAN_MEMERR);
     }
 
     comm_flag =Zoltan_Comm_Resize(plan->plan_reverse,sizes,tag,&sum_recv_sizes);

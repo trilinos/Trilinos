@@ -287,34 +287,16 @@ Mem_Err:
     plan->self_msg = self_msg;
     plan->max_send_size = max_send_size;
     plan->total_recv_size = total_recv_size;
-    plan->maxed_recvs = 0;
     plan->comm = comm;
 
-    if (MAX_MPI_RECVS > 0){
-      /* If we have a limit to the number of posted receives we are allowed,
-      ** and our plan has exceeded that, then switch to an MPI_Alltoallv so
-      ** that we will have fewer receives posted when we do the communication.
-      */
-      MPI_Allreduce(&nrecvs, &i, 1, MPI_INT, MPI_MAX, comm);
-      if (i > MAX_MPI_RECVS){
-        plan->maxed_recvs = 1;
-      }
-    }
+    plan->request = (MPI_Request *) ZOLTAN_MALLOC(plan->nrecvs * sizeof(MPI_Request));
+    plan->status = (MPI_Status *) ZOLTAN_MALLOC(plan->nrecvs * sizeof(MPI_Status));
 
-    if (plan->maxed_recvs){
-      plan->request = NULL;
-      plan->status = NULL;
-    }
-    else{
-      plan->request = (MPI_Request *) ZOLTAN_MALLOC(plan->nrecvs * sizeof(MPI_Request));
-      plan->status = (MPI_Status *) ZOLTAN_MALLOC(plan->nrecvs * sizeof(MPI_Status));
-      if (plan->nrecvs && ((plan->request == NULL) || (plan->status == NULL))) 
+    if (plan->nrecvs && ((plan->request == NULL) || (plan->status == NULL))) 
         comm_flag = ZOLTAN_MEMERR;
-    }
 
     *pnvals_recv = total_recv_size;
     *cobj = plan;
-
     return (comm_flag);
 }
 #define COPY_BUFFER(buf, type, num) \
