@@ -80,6 +80,7 @@ int main( int argc, char* argv[] ) {
       // Test null construction
       Ptr<A> a_ptr;
       TEUCHOS_ASSERT_EQUALITY( 0, a_ptr.get() );
+      TEUCHOS_ASSERT_EQUALITY( 0, a_ptr.getRawPtr() );
 #ifdef TEUCHOS_DEBUG
       try {
         A &a = *a_ptr; // Should throw!
@@ -109,6 +110,7 @@ int main( int argc, char* argv[] ) {
       Ptr<A> a_ptr(&a);
       TEUCHOS_ASSERT_EQUALITY( &a, &*a_ptr );
       TEUCHOS_ASSERT_EQUALITY( &a, a_ptr.get() );
+      TEUCHOS_ASSERT_EQUALITY( &a, a_ptr.getRawPtr() );
     }
  
     {

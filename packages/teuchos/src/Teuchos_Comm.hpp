@@ -257,12 +257,30 @@ public:
     const int sourceRank
     ) const = 0;
   
-  /** \brief . */
+  /** \brief Wait on a set of communication request.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>requests.size() > 0</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li> <tt>is_null(request[i]))</tt> for <tt>i=0...requests.size()-1</tt>
+   * </ul>
+   */
   virtual void waitAll(
     const ArrayView<RCP<CommRequest> > &requests
     ) const = 0;
 
-  /** \brief . */
+  /** \brief Wait on a single communication request.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>!is_null(request))</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li> <tt>is_null(*request))</tt>
+   * </ul>
+   */
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
     ) const = 0;

@@ -27,50 +27,14 @@
 // @HEADER
 
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
 #include "Teuchos_Assert.hpp"
-#include "Teuchos_TestingHelpers.hpp"
-
-
-//
-// Define local macros to make defining tests easier for this particular test
-// code.
-//
-// Note, macros with these types of names should only exist in a *.cpp file
-// after all #includes are done!
-//
-
-
-#define TEST_EQUALITY_CONST( v1, v2 ) \
-  TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success )
-
-#define TEST_EQUALITY( v1, v2 ) \
-  TEUCHOS_TEST_EQUALITY( v1, v2, out, success )
-
-#define TEST_ITER_EQUALITY( iter1, iter2 ) \
-  TEUCHOS_TEST_ITER_EQUALITY( iter1, iter2, out, success )
-
-#define TEST_ARRAY_ELE_EQUALITY( a, i, val ) \
-   TEUCHOS_TEST_ARRAY_ELE_EQUALITY( a, i, val, false, out, local_success )
-
-#define TEST_COMPARE( v1, comp, v2 ) \
-  TEUCHOS_TEST_COMPARE( v1, comp, v2, out, success )
-
-#define TEST_COMPARE_ARRAYS( a1, a2 ) \
-  { \
-    const bool l_result = compareArrays(a1,#a1,a2,#a2,out); \
-    if (!l_result) success = false; \
-  }
-
-#define TEST_THROW( code, ExceptType  ) \
-  TEUCHOS_TEST_THROW( code, ExceptType, out, success  )
-
-#define TEST_NOTHROW( code  ) \
-  TEUCHOS_TEST_NOTHROW( code, out, success  )
+#include "Teuchos_LocalTestingHelpers.hpp"
 
 
 // Temporarily uncomment any or all of these macros to see compilation
@@ -275,6 +239,7 @@ bool test_ArrayRCP(
   }
 
   TEST_FOR_EXCEPT( !(&*ptr == ptr.get()) );
+  TEST_FOR_EXCEPT( !(&*ptr == ptr.getRawPtr()) );
 
   result = test_ArrayRCP_iterators(ptr,out);
   if (!result) success = false;
@@ -338,6 +303,18 @@ bool test_ArrayRCP(
   {
     out << "\nTest implicit conversion from ArrayRCP<T> to ArrayRCP<const T> ...\n";
     const ArrayRCP<const T> ptr2 = ptr;
+    TEST_COMPARE_ARRAYS( ptr2, ptr );
+  }
+
+  {
+    out << "\nTest clone of ArrayView<T> to ArrayRCP<T> ...\n";
+    const ArrayRCP<T> ptr2 = Teuchos::arcpClone<T>(ptr());
+    TEST_COMPARE_ARRAYS( ptr2, ptr );
+  }
+
+  {
+    out << "\nTest clone of ArrayPtr<const T> to ArrayRCP<T> ...\n";
+    const ArrayRCP<T> ptr2 = Teuchos::arcpClone<T>(ptr.getConst());
     TEST_COMPARE_ARRAYS( ptr2, ptr );
   }
 
@@ -580,34 +557,61 @@ int main( int argc, char* argv[] ) {
     for( int i = 0; i < doubleptr_ptr1.size(); ++i )
       delete doubleptr_ptr1[i];
 
-    *out << "\nWrapping std::vector<T> objects as ArrayRefCount objects ...\n";
+    *out << "\nWrapping RCP<std::vector<T> > objects as ArrayRCP objects ...\n";
 
-    ArrayRCP<char>
-      vchar_ptr1 = arcp(rcp(new std::vector<char>(total_bytes)));
+    {
 
-    *out << "\nvchar_ptr1 = " << vchar_ptr1 << "\n";
+      ArrayRCP<char>
+        vchar_ptr1 = arcp(rcp(new std::vector<char>(total_bytes)));
+      
+      *out << "\nvchar_ptr1 = " << vchar_ptr1 << "\n";
+      
+      result = test_ArrayRCP(vchar_ptr1,*out);
+      if (!result) success = false;
+      
+      ArrayRCP<const char> vchar_ptr2 =
+        arcp(
+          Teuchos::rcp_implicit_cast<const std::vector<char> >(
+            Teuchos::get_std_vector(vchar_ptr1)
+            )
+          );
  
-    result = test_ArrayRCP(vchar_ptr1,*out);
-    if (!result) success = false;
- 
-    ArrayRCP<const char> vchar_ptr2 =
-      arcp(
-        Teuchos::rcp_implicit_cast<const std::vector<char> >(
-          Teuchos::get_std_vector(vchar_ptr1)
-          )
-        );
- 
-    *out << "\nvchar_ptr2 = " << vchar_ptr2 << "\n";
-
-    result = test_ArrayRCP_iterators(vchar_ptr2,*out);
-    if (!result) success = false;
-
+      *out << "\nvchar_ptr2 = " << vchar_ptr2 << "\n";
+      
+      result = test_ArrayRCP_iterators(vchar_ptr2,*out);
+      if (!result) success = false;
+      
 #ifndef __sun
-    // RAB: 2006/07/12: The sun compiler declares this call to
-    // get_std_vector(...) to be ambiguous (which is nonsense based on
-    // everything I know about C++)!
-    TEST_FOR_EXCEPT( Teuchos::get_std_vector(vchar_ptr2)->size() != static_cast<size_t>(total_bytes) );
+      // RAB: 2006/07/12: The sun compiler declares this call to
+      // get_std_vector(...) to be ambiguous (which is nonsense based on
+      // everything I know about C++)!
+      TEST_FOR_EXCEPT( Teuchos::get_std_vector(vchar_ptr2)->size() != static_cast<size_t>(total_bytes) );
 #endif
+      
+    }
+
+    *out << "\nWrapping RCP<ARray<T> > objects as ArrayRCP objects ...\n";
+
+    {
+
+      ArrayRCP<char>
+        vchar_ptr1 = arcp(rcp(new Teuchos::Array<char>(total_bytes)));
+      
+      *out << "\nvchar_ptr1 = " << vchar_ptr1 << "\n";
+      
+      result = test_ArrayRCP(vchar_ptr1,*out);
+      if (!result) success = false;
+
+/*      
+      ArrayRCP<const char> vchar_ptr2 =
+        arcp(
+          Teuchos::rcp_implicit_cast<const std::vector<char> >(
+            Teuchos::get_std_vector(vchar_ptr1)
+            )
+          );
+*/
+
+    }
  
     // ToDo: Fill in the rest of the tests!
  

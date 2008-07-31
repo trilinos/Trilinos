@@ -209,6 +209,15 @@ public:
 	 */
 	T* get() const;
 
+  /** \brief Get the raw C++ pointer to the underlying object.
+   *
+	 * <b>Preconditions:</b><ul>
+   * <li>[<tt>*this != null</tt>] <tt>this->lowerOffset() <= 0</tt>
+   * <li>[<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
+	 * </ul>
+	 */
+	T* getRawPtr() const;
+
 	/** \brief Random object access.
 	 *
 	 * <b>Preconditions:</b><ul>
@@ -628,6 +637,14 @@ ArrayRCP<T> arcp(
  */
 template<class T>
 ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
+
+ 
+/** \brief Allocate a new array by cloning data from an input array view.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<T> arcpClone( const ArrayView<const T> &v );
 
 
 /** \brief Create an ArrayRCP with and also put in an embedded object.

@@ -220,6 +220,11 @@ C &c_ref = *c_ptr;
 \code
 C *c_rptr = c_ptr.get();
 \endcode
+or
+
+\code
+C *c_rptr = c_ptr.getRawPtr();
+\endcode
 
 <li> <b>Access to object pointer (debug runtime checked, will not return <tt>NULL</tt>)</b> : <tt>Teuchos::RCP::operator*()</tt>
 
@@ -503,9 +508,14 @@ public:
   T& operator*() const;
   /** \brief Get the raw C++ pointer to the underlying object.
    *
-   * NOTE: Prefer to get the safer Ptr<T> object from ptr()!
+   * NOTE: Prefer to get the safer Ptr<T> object from <tt>this->ptr()</tt>!
    */
   T* get() const;
+  /** \brief Get the raw C++ pointer to the underlying object.
+   *
+   * NOTE: Prefer to get the safer Ptr<T> object from <tt>this->ptr()</tt>!
+   */
+  T* getRawPtr() const;
   /** \brief Get a safer wrapper raw C++ pointer to the underlying object. */
   Ptr<T> ptr() const;
   /** \brief Release the ownership of the underlying dynamically allocated object.

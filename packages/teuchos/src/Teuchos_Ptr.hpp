@@ -158,6 +158,9 @@ public:
   /** \brief Get the raw C++ pointer to the underlying object. */
 	T* get() const;
 
+  /** \brief Get the raw C++ pointer to the underlying object. */
+	T* getRawPtr() const;
+
 	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */
@@ -492,6 +495,13 @@ T& Ptr<T>::operator*() const
 
 template<class T> inline
 T* Ptr<T>::get() const
+{
+  return ptr_;
+}
+
+
+template<class T> inline
+T* Ptr<T>::getRawPtr() const
 {
   return ptr_;
 }

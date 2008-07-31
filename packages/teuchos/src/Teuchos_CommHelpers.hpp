@@ -105,8 +105,20 @@ void barrier(const Comm<Ordinal>& comm);
  */
 template<typename Ordinal, typename Packet>
 void broadcast(
-  const Comm<Ordinal>& comm
-  ,const int rootRank, const Ordinal count, Packet buffer[]
+  const Comm<Ordinal>& comm,
+  const int rootRank,
+  const Ordinal count, Packet buffer[]
+  );
+
+/** \brief Broadcast array of objects that use value semantics.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void broadcast(
+  const Comm<Ordinal>& comm,
+  const int rootRank,
+  const ArrayView<Packet> &buffer
   );
 
 /** \brief Broadcast single object that use value semantics.
@@ -790,6 +802,17 @@ void Teuchos::broadcast(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
+  const Comm<Ordinal>& comm,
+  const int rootRank,
+  const ArrayView<Packet> &buffer
+  )
+{
+  broadcast<Ordinal, Packet>(comm, rootRank, buffer.size(), buffer.getRawPtr() );
+}
+
+
+template<typename Ordinal, typename Packet>
+void Teuchos::broadcast(
   const Comm<Ordinal>& comm
   ,const int rootRank, Packet *object
   )
@@ -1162,7 +1185,7 @@ Teuchos::isend(
     <<">( value type )"
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
-    charSendBuffer(sendBuffer.size(), sendBuffer.get());
+    charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr());
   RCP<CommRequest> commRequest = comm.isend(
     charSendBuffer.getCharBufferView(), destRank );
   set_extra_data( sendBuffer, "buffer", &commRequest );
@@ -1201,7 +1224,7 @@ Teuchos::ireceive(
     <<">( value type )"
     );
   ValueTypeSerializationBuffer<Ordinal,Packet>
-    charRecvBuffer(recvBuffer.size(), recvBuffer.get());
+    charRecvBuffer(recvBuffer.size(), recvBuffer.getRawPtr());
   RCP<CommRequest> commRequest = comm.ireceive(
     charRecvBuffer.getCharBufferView(), sourceRank );
   set_extra_data( recvBuffer, "buffer", &commRequest );
@@ -1231,7 +1254,7 @@ void Teuchos::waitAll(
   const ArrayView<RCP<CommRequest> > &requests
   )
 {
-  TEST_FOR_EXCEPT(true); // ToDo: Implement!
+  comm.waitAll(requests);
 }
 
 
@@ -1241,9 +1264,6 @@ void Teuchos::wait(
   const Ptr<RCP<CommRequest> > &request
   )
 {
-  if (is_null(*request)) {
-    return; // Nothing to wait on ...
-  }
   comm.wait(request);
   // NOTE: This will release the ArrayRCP to the buffer of data!
 }

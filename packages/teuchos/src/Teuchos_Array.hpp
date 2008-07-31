@@ -476,6 +476,40 @@ private:
 };
 
 
+/** \brief Wrap an <tt>Array<T></tt> object as an
+ * <tt>ArrayRCP<T></tt> object.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<T> arcp( const RCP<Array<T> > &v )
+{
+  if ( is_null(v) || !v->size() )
+    return null;
+  return arcpWithEmbeddedObjPostDestroy<T,RCP<Array<T> > >(
+    &(*v)[0], 0, v->size(),
+    v, false
+    );
+}
+
+
+/** \brief Wrap a <tt>const Array<T></tt> object as an
+ * <tt>ArrayRCP<const T></tt> object.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<const T> arcp( const RCP<const Array<T> > &v )
+{
+  if ( is_null(v) || !v->size() )
+    return null;
+  return arcpWithEmbeddedObjPostDestroy<const T,RCP<const Array<T> > >(
+    &(*v)[0], 0, v->size(),
+    v, false
+    );
+}
+
+
 /** \brief Traits specialization for RCP.
  *
  * \ingroup teuchos_mem_mng_grp

@@ -38,6 +38,7 @@
 #include "Teuchos_SerializationTraitsHelpers.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_as.hpp"
 #include "mpi.h"
 
 
@@ -51,6 +52,13 @@
 
 
 namespace Teuchos {
+
+
+template<>
+class TypeNameTraits<MPI_Request> {
+public:
+  static std::string name() { return "MPI_Request"; }
+};
 
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
@@ -553,7 +561,30 @@ void MpiComm<Ordinal>::waitAll(
   const ArrayView<RCP<CommRequest> > &requests
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::waitAll(...)"
+    );
+  const int count = requests.size();
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( requests.size() == 0 );
+#endif
+  
+  Array<MPI_Request> rawMpiRequests(count, MPI_REQUEST_NULL);
+  for (int i = 0; i < count; ++i) {
+    RCP<CommRequest> &request = requests[i];
+    if (!is_null(request)) {
+      const RCP<MpiCommRequest> mpiCommRequest =
+        rcp_dynamic_cast<MpiCommRequest>(request);
+      rawMpiRequests[i] = mpiCommRequest->releaseRawMpiRequest();
+    }
+    // else already null
+    request = null;
+  }
+
+  Array<MPI_Status> rawMpiStatuses(count);
+  MPI_Waitall( count, rawMpiRequests.getRawPtr(), rawMpiStatuses.getRawPtr() );
+  // ToDo: We really should check the status?
+
 }
 
 
@@ -565,6 +596,9 @@ void MpiComm<Ordinal>::wait(
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::wait(...)"
     );
+  if (is_null(*request)) {
+    return; // Nothing to wait on ...
+  }
   const RCP<MpiCommRequest> mpiCommRequest =
     rcp_dynamic_cast<MpiCommRequest>(*request);
   MPI_Request rawMpiRequest = mpiCommRequest->releaseRawMpiRequest();

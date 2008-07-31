@@ -121,6 +121,13 @@
     TESTS = Comm/DefaultMpiComm_UnitTests.exe;
     ARGS = --teuchos-suppress-startup-banner --show-test-details=ALL;
     EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1);
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = Comm/DefaultMpiComm_UnitTests.exe;
+    ARGS = --teuchos-suppress-startup-banner --show-test-details=ALL;
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1-4);
     # 2008/07/16: rabartl: Note: We can't run on more than 4 procs or the char
     # ordinals will overflow for std::complex<double> packet type.

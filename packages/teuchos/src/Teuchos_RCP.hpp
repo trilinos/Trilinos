@@ -123,7 +123,8 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
 
 template<class T>
 inline
-T* RCP<T>::operator->() const {
+T* RCP<T>::operator->() const
+{
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
   assert_not_null();
 #endif
@@ -133,7 +134,8 @@ T* RCP<T>::operator->() const {
 
 template<class T>
 inline
-T& RCP<T>::operator*() const {
+T& RCP<T>::operator*() const
+{
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
   assert_not_null();
 #endif
@@ -143,14 +145,24 @@ T& RCP<T>::operator*() const {
 
 template<class T>
 inline
-T* RCP<T>::get() const {
+T* RCP<T>::get() const
+{
   return ptr_;
 }
 
 
 template<class T>
 inline
-Ptr<T> RCP<T>::ptr() const {
+T* RCP<T>::getRawPtr() const
+{
+  return ptr_;
+}
+
+
+template<class T>
+inline
+Ptr<T> RCP<T>::ptr() const
+{
   return Ptr<T>(ptr_);
 }
 
@@ -166,7 +178,8 @@ Ptr<T> RCP<T>::release() {
 
 template<class T>
 REFCOUNTPTR_INLINE
-int RCP<T>::count() const {
+int RCP<T>::count() const
+{
   if(node_)
     return node_->count();
   return 0;
@@ -183,7 +196,8 @@ void RCP<T>::set_has_ownership() {
 
 template<class T>
 REFCOUNTPTR_INLINE
-bool RCP<T>::has_ownership() const {
+bool RCP<T>::has_ownership() const
+{
   if(node_)
     return node_->has_ownership();
   return false;
@@ -193,7 +207,8 @@ bool RCP<T>::has_ownership() const {
 template<class T>
 REFCOUNTPTR_INLINE
 template <class T2>
-bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const {
+bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const
+{
   return node_ == r_ptr.access_node();
   // Note: above, r_ptr is *not* the same class type as *this so we can not
   // access its node_ member directly!  This is an interesting detail to the
@@ -203,7 +218,8 @@ bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const {
 
 template<class T>
 inline
-const RCP<T>& RCP<T>::assert_not_null() const {
+const RCP<T>& RCP<T>::assert_not_null() const
+{
   if(!ptr_) throw_null_ptr_error(TypeNameTraits<T>::name());
   return *this;
 }

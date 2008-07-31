@@ -138,6 +138,14 @@ T* ArrayRCP<T>::get() const
 
 
 template<class T>
+inline
+T* ArrayRCP<T>::getRawPtr() const
+{
+  return this->get();
+}
+
+
+template<class T>
 REFCOUNTPTR_INLINE
 T& ArrayRCP<T>::operator[](Ordinal offset) const
 {
@@ -616,6 +624,17 @@ Teuchos::ArrayRCP<T>
 Teuchos::arcp( typename ArrayRCP<T>::Ordinal size )
 {
   return ArrayRCP<T>(new T[size],0,size-1,true);
+}
+
+
+template<class T>
+inline
+Teuchos::ArrayRCP<T>
+Teuchos::arcpClone( const ArrayView<const T> &v )
+{
+  const ArrayRCP<T> new_arcp = arcp<T>(v.size());
+  std::copy( v.begin(), v.end(), new_arcp.begin() );
+  return new_arcp;
 }
 
 

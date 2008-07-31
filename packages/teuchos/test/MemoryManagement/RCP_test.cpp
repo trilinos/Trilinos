@@ -142,6 +142,7 @@ int main( int argc, char* argv[] ) {
 		TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
 #endif
 		TEST_FOR_EXCEPT( d_ptr1.get() == NULL);
+		TEST_FOR_EXCEPT( d_ptr1.getRawPtr() == NULL);
 
     {
       // Create a weak RCP
@@ -454,6 +455,8 @@ int main( int argc, char* argv[] ) {
     boost::shared_ptr<A> a_sptr1(new C());
     RCP<A> a_rsptr1 = rcp(a_sptr1);
 		TEST_FOR_EXCEPT( a_rsptr1.get() != a_sptr1.get() );
+		TEST_FOR_EXCEPT( a_rsptr1.getRawPtr() != a_sptr1.get() );
+		TEST_FOR_EXCEPT( a_rsptr1.get() != a_rsptr1.getRawPtr() );
     boost::shared_ptr<A> a_sptr2 = shared_pointer(a_rsptr1);
 		TEST_FOR_EXCEPT( a_sptr2.get() != a_sptr1.get() );
     RCP<A> a_rsptr2 = rcp(a_sptr2);
