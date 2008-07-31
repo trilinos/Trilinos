@@ -40,11 +40,14 @@ FLIBS="-lg2c" \
 --enable-galeri \
 --enable-moertel \
 --enable-anasazi \
---enable-rbgen \
 --enable-ctrilinos \
---enable-sundance --enable-sundance-tests --enable-sundance-examples \
+--enable-sundance \
 --enable-didasko \
+--with-trilinosdatadir=/home/rabartl/PROJECTS/Trilinos.base/TrilinosData \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/trilinos/dev/serial/dbg
+
+# 2008/07/31: rbgen fails to link RBGenDriver_EpetraMV
+#--enable-rbgen \
 
 # 2008/07/29: Issoropia fails to build
 #--enable-isorropia \

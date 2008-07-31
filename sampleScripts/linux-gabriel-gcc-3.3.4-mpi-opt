@@ -36,6 +36,7 @@ FLIBS="-lg2c" \
 --enable-rythmos \
 --enable-moocho \
 --enable-sundance \
+--with-trilinosdatadir=/home/rabartl/PROJECTS/Trilinos.base/TrilinosData \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/dev/mpi/opt
 
 # 2008/07/03: Copying intrepid data files is taking too long
