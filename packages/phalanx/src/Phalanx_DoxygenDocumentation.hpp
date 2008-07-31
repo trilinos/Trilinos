@@ -7,7 +7,7 @@
 
 *** WARNING: DOCUMENTATION IS UNDER CONSTRUCTION ***
 
-This will be updated for release 9.0
+This will be updated for Trilinos release 9.0
 
 \section contents Contents
 
@@ -31,14 +31,9 @@ This will be updated for release 9.0
 
 Phalanx is a library to handle arbitrary function evaluation with complex nonlinear dependency chains for discretized partial differential equation systems.  It provides a flexible and efficient mechanism for switching dependencies and computing sensitivities either analytically or via automatic differentiation.  It can be used with any cell-based discretization technique including finite element, finite volume and finite difference.
 
-\section overview Overview
-
 Phalanx is used to break down complex dependencies into manageable algorithmic blocks.  It was written to address a variety of difficulties encountered when writing a general PDE code that allows for flexible switching of dependencies at runtime.  
 
-Definitions:
- - A "Field" is a concrete data type that has allocated storage space.  A field can be defined for a number of cells and is specific to a DataLayout.
- - A "Data Layout" is a description of a unique topologic entity used for defining where a field lives.  The API for a data layout contains a size (number of entities on a cell) and allows for a comparison operator.
- - An "Evaluator" will evaluate the values of fields and is in turn dependent on other fields.
+\section overview Overview
 
 A simple example (found in phalanx/example/energyFlux) is the construction of a Fourier energy flux for the heat equation.  Suppose that we want to solve the heat equation using finite elements:
 
@@ -61,7 +56,7 @@ where \f$\mathbf{q}\f$ is the heat flux, \f$ \mathbf{q} = -\rho C_p \nabla T \f$
   \mathbf{q} = -\rho C_p \nabla T
 \f]
 
-Advantages of using Phalanx:
+<h3>Advantages of using Phalanx:</h3>
 
  - Increased flexibility because each simpler piece becomes an extension point that can be swapped out with different implementations.
 
@@ -78,7 +73,7 @@ Advantages of using Phalanx:
  and/or P will have to be evaluated before the density.  This is an
  easy example, but there are much more complex dependency chains.
 
-Disadvantages of using Phalanx:
+<h3>Disadvantages of using Phalanx:</h3>
 
  - A potential performance loss due to fragmentation of the over-all algorithm (e.g., several small loops instead of one large loop) 
 
@@ -96,10 +91,42 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
  - Requires the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>
 
+\section domain_design Domain Design
+
+<ul>
+<li><h3>Cell</h3>
+Partial differential equations are solved in a domain.  This domain is discretized into cells (also called elements for the finite element method).  This library assumes that the block of cells being iterated over is of the same type!  If different evaluators (i.e. different material properties) are required in different blocks of cells, a new FieldMangager must be used to switch material properties.  This is required for efficiency.  A contiguous block of memory can be used for all fields allowing for very fast evaluation.
+
+<li><h3>Scalar Type</h3>
+A scalar type, typically the template argument \beginverbatim ScalarT \endverbatim in Phalanx, is the type of scalar used for fields.  It is typically a double, but can be special object types such as a foward automatic differentiation object (FAD) or a reverse automatic differentaion object when used to produce sensitivity information.
+
+<li><h3>Algebraic Type</h3>
+An algebraic type is the type of objects that.  It is a rank n tensor.  For example it can be a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
+
+<li><h3>Data Type</h3>
+A data type, typically the tempalte argument \beginverbatim DataT \enfverbatin in Phalanx, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  
+
+<li><h3>Computation Type</h3>
+The computation type defines a unique type of evaluation to perform.  A ComputationContainer is allocated for each conputation type specified in the traits class.  Examples include a residual type, a Jacobian type, and a sensitivity type.  Prior to the addition of this type, the ComputationContainer was called the ScalarContainer and was instantiated for each scaalar type.  This was somewhat restictive if you wanted to do different computations with different evaluators that used teh same scalar type.  An example would be computing the Jacobian and computing parameter sensitivities.  They might both use FAD types. 
+
+<li><h3>Storage</h3>
+A DataContainer object stores all fields of a particular data type.  A template manager in the ComputationContainer builds a std::vector of DataContainers, one for each data type.
+
+<li><h3>Data Layout</h3>
+The DataLayout object is used to define a unique entity on a cell.
+
+<li><h3>Field Tag</h3>
+
+<li><h3>Field</h3>
+
+<li><h3>Evaluator</h3>
+
+<li><h3>Evaluator Manager</h3>
+
+
+</ul>
 
 \section developer_guide Developer's Guide
-
- - \ref domain_design
 
 \section faq Frequently Asked Questions
 
@@ -125,6 +152,12 @@ Phalanx grew out of the Variable Manger in the Charon code and the Expression Ma
 \section dnotes_princliples Design Princliples
 
 - The evaluate call is fixed for each scalar type.  Each scalar type figuresout it's own dependency chain.  However you can trick the evaluate routine into using mixed scalar types based on writing the evaluator to use a hard-coded scalar type.  This is nasty and can have problems if the provider is only registered for one scalar type.  This will need to be addressed in the future.  The problem is that the variable is independent of the ScalarType.
+
+- Previous design built a manager for each scalar type.  This is too restrictive, so an additional layer was added called a computation type.  This allows for multiple evaluations that used the same Scalar type, but different evaluators specific to the CalculationType.
+
+- The fields of a Computation type should be constructed on the same scalar type.  If you are doing a Jacobian evaluation using the scalar type FAD to get sensitivities, changing some fields to double will break the dependency chain.  There are, however, compelling use cases where one might want ot break that chain and drop sensitivites with respect to certain components.  Therefore, a calculation type cal have multiple scalar types.  This is a departure from the original design in Charon that enforced each calculation type to be a unique scalar type.
+
+- Each evaluator must be templated on the calculation type to be able to use teh automated factory class to build the evaluator for each calculation type.  Each evaluator must be constructed with a parameter list as the single argument to be able to use the automated factory class.
 
 \section dnotes_notz Description
 
@@ -248,37 +281,6 @@ easier to use) as a trilinos package to be used with Intrepid to aid in
 element assembly for nonlinear equation sets.
 
   */
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page domain_design Domain Design
-
-Concepts
-
-0. Cell
-Partial differential equations are solved in a domain.  This domain is discretized into cells (also called elements for the finite element method).  This library assumes that the block of cells being iterated over is of the same type!  If different evaluators (i.e. different material properties) are required in different blocks of cells, a new FieldMangager must be used to switch material properties.  This is required for efficiency.  A contiguous block of memory can be used for all fields allowing for very fast evaluation.
-
-1. Scalar Type
-A scalar type, typically the template argument \beginverbatim ScalarT \endverbatim in Phalanx, is the type of scalar used for fields.  It is typically a double, but can be special object types such as a foward automatic differentiation object (FAD) or a reverse automatic differentaion object when used to produce sensitivity information.
-
-2. Algebraic Type
-An algebraic type is the type of objects that.  It is a rank n tensor.  For example it can be a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
-
-3. Data Type
-A data type, typically the tempalte argument \beginverbatim DataT \enfverbatin in Phalanx, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  
-
-4. Computation Type
-The computation type defines a unique type of evaluation to perform.  A ComputationContainer is allocated for each conputation type specified in the traits class.  Examples include a residual type, a Jacobian type, and a sensitivity type.  Prior to the addition of this type, the ComputationContainer was called the ScalarContainer and was instantiated for each scaalar type.  This was somewhat restictive if you wanted to do different computations with different evaluators that used teh same scalar type.  An example would be computing the Jacobian and computing parameter sensitivities.  They might both use FAD types. 
-
-4. Storage
-A DataContainer object stores all fields of a particular data type.  A template manager in the ComputationContainer builds a std::vector of DataContainers, one for each data type.
-
-5. Data Layout
-The DataLayout object is used to define a unique entity on a cell.
-
-
-*/
 
 /* ************************************************************************ */
 /* ************************************************************************ */
