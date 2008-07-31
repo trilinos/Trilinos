@@ -1,5 +1,19 @@
 # $Header$
 
+# 2008/07/31: rabartl: TODO: There are a bunch of cache variables like
+# MPIEXEC, MPIEXEC_MAX_NUMPROCS, MPIEXEC_NUMPROC_FLAG, MPIEXEC_POSTFLAGS, and
+# MPIEXEC_PREFLAGS that are getting defined by in the file MPIConfig.cmake
+# (involed by FIND_PACKAGE(MPI)) that are not being used and are just sitting
+# in the cache.
+#
+# Options:
+#
+# 1) Just reuse the cache variables defined by MPIConfig.cmake as needed and
+# don't define new ones below.
+#
+# 2) Undefine all of the MPI cache variables being defined by MPIConfig.cmake
+
+
 # Use CMake module to find MPI_LIBRARY and MPI_INCLUDE_PATH
 FIND_PACKAGE(MPI)
 
@@ -39,7 +53,7 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
 	    CACHE STRING
         "Flag setting the number of processors to use."
       )
-    ELSE(${MPI_EXECUTABLE} MATCHES mpiexec)
+    ELSE()
       #The number of processors should not be hard coded
       SET(MPI_EXECUTABLE_FLAGS 
   	    -np 2
@@ -51,7 +65,17 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
 	    CACHE STRING
         "Flag setting the number of processors to use."
       )
-    ENDIF(${MPI_EXECUTABLE} MATCHES mpiexec)
+    ENDIF()
+
+    # 2008/07/31: rabartl: TODO: We should consider appending the num-processor
+    # flag to the MPI_EXECUABLE name (e.g. '/usr/local/mpi/bin/mpiexec -np ')
+    # in order to be able to handle systems that need --num-procs=N
+    # (e.g. 'mpirun --num-procs=').
+    #
+    # Perhaps we should use MPI_GO instead defined with all of the input
+    # parameters and significant terminal whitespace (e.g. 'mpiexec -np ' and
+    # 'yod -sz')
+
     MARK_AS_ADVANCED(MPI_EXECUTABLE_FLAGS)
   ENDIF(MPI_EXECUTABLE)
   MARK_AS_ADVANCED(MPI_EXECUTABLE)
