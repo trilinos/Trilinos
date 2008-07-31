@@ -101,18 +101,8 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(pamgen_test_driver_SOURCES)
 DIST_SOURCES = $(pamgen_test_driver_SOURCES)
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-dvi-recursive install-exec-recursive \
-	install-html-recursive install-info-recursive \
-	install-pdf-recursive install-ps-recursive install-recursive \
-	installcheck-recursive installdirs-recursive pdf-recursive \
-	ps-recursive uninstall-recursive
-RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
-  distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -247,8 +237,138 @@ pamgen_test_driver_LDADD = $(PAMGEN_LIBS)
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# example1/ rather than this file.
 # SUBDIRS = example1
-SUBDIRS = 
-all: all-recursive
+#SUBDIRS = 
+EXTRA_DIST = \
+$(srcdir)/test_files/run_test_script_01 \
+$(srcdir)/test_files/run_test_script_02 \
+$(srcdir)/test_files/run_test_script_03 \
+$(srcdir)/test_files/run_test_script_04 \
+$(srcdir)/test_files/run_test_script_05 \
+$(srcdir)/test_files/run_test_script_06 \
+$(srcdir)/test_files/run_test_script_07 \
+$(srcdir)/test_files/run_test_script_08 \
+$(srcdir)/test_files/run_test_script_09 \
+$(srcdir)/test_files/run_test_script_10 \
+$(srcdir)/test_files/run_test_script_11 \
+$(srcdir)/test_files/run_test_script_12 \
+$(srcdir)/test_files/run_test_script_13 \
+$(srcdir)/test_files/run_test_script_14 \
+$(srcdir)/test_files/run_test_script_15 \
+$(srcdir)/test_files/run_test_script_16 \
+$(srcdir)/test_files/run_test_script_17 \
+$(srcdir)/test_files/run_test_script_18 \
+$(srcdir)/test_files/run_test_script_19 \
+$(srcdir)/test_files/run_test_script_20 \
+$(srcdir)/test_files/run_test_script_21 \
+$(srcdir)/test_files/run_test_script_22 \
+$(srcdir)/test_files/run_test_script_23 \
+$(srcdir)/test_files/run_test_script_24 \
+$(srcdir)/test_files/run_test_script_25 \
+$(srcdir)/test_files/run_test_script_26 \
+$(srcdir)/test_files/run_test_script_27 \
+$(srcdir)/test_files/run_test_script_28 \
+$(srcdir)/test_files/run_test_script_29 \
+$(srcdir)/test_files/run_test_script_30 \
+$(srcdir)/test_files/run_test_script_31 \
+$(srcdir)/test_files/run_test_script_32 \
+$(srcdir)/test_files/run_test_script_33 \
+$(srcdir)/test_files/run_test_script_34 \
+$(srcdir)/test_files/run_test_script_35 \
+$(srcdir)/test_files/run_test_script_36 \
+$(srcdir)/test_files/run_test_script_37 \
+$(srcdir)/test_files/run_test_script_38 \
+$(srcdir)/test_files/run_test_script_39 \
+$(srcdir)/test_files/run_test_script_40 \
+$(srcdir)/test_files/run_test_script_41 \
+$(srcdir)/test_files/run_test_script_42 \
+$(srcdir)/test_files/ur.txt \
+$(srcdir)/test_files/report3.txt \
+$(srcdir)/test_files/trisect_multi_theta.txt \
+$(srcdir)/test_files/ui2d.txt \
+$(srcdir)/test_files/2dtribis.txt \
+$(srcdir)/test_files/all_diffs.txt \
+$(srcdir)/test_files/tr.txt \
+$(srcdir)/test_files/report9.txt \
+$(srcdir)/test_files/mesh.txt \
+$(srcdir)/test_files/ok.txt \
+$(srcdir)/test_files/report17.txt \
+$(srcdir)/test_files/btri.txt \
+$(srcdir)/test_files/report12.txt \
+$(srcdir)/test_files/tri.txt \
+$(srcdir)/test_files/foo.txt \
+$(srcdir)/test_files/3dbj.txt \
+$(srcdir)/test_files/m2.txt \
+$(srcdir)/test_files/trisect_multi_theta_2d.txt \
+$(srcdir)/test_files/p.txt \
+$(srcdir)/test_files/report5.txt \
+$(srcdir)/test_files/tp.txt \
+$(srcdir)/test_files/report2.txt \
+$(srcdir)/test_files/ff.txt \
+$(srcdir)/test_files/tri_proc.txt \
+$(srcdir)/test_files/report13.txt \
+$(srcdir)/test_files/2dtri.txt \
+$(srcdir)/test_files/m3.txt \
+$(srcdir)/test_files/messed.txt \
+$(srcdir)/test_files/report15.txt \
+$(srcdir)/test_files/geom_warp2d.txt \
+$(srcdir)/test_files/report14.txt \
+$(srcdir)/test_files/brick.txt \
+$(srcdir)/test_files/report10.txt \
+$(srcdir)/test_files/hbrick.txt \
+$(srcdir)/test_files/mesh7.txt \
+$(srcdir)/test_files/report6.txt \
+$(srcdir)/test_files/geom_warp.txt \
+$(srcdir)/test_files/report1.txt \
+$(srcdir)/test_files/report11.txt \
+$(srcdir)/test_files/ui.txt \
+$(srcdir)/test_files/report7.txt \
+$(srcdir)/test_files/report16.txt \
+$(srcdir)/test_files/report8.txt \
+$(srcdir)/test_files/report4.txt \
+$(srcdir)/test_files/run_test_script_29.res \
+$(srcdir)/test_files/run_test_script_34.res \
+$(srcdir)/test_files/run_test_script_19.res \
+$(srcdir)/test_files/run_test_script_31.res \
+$(srcdir)/test_files/run_test_script_04.res \
+$(srcdir)/test_files/run_test_script_33.res \
+$(srcdir)/test_files/run_test_script_18.res \
+$(srcdir)/test_files/run_test_script_37.res \
+$(srcdir)/test_files/run_test_script_13.res \
+$(srcdir)/test_files/run_test_script_08.res \
+$(srcdir)/test_files/run_test_script_41.res \
+$(srcdir)/test_files/run_test_script_16.res \
+$(srcdir)/test_files/run_test_script_36.res \
+$(srcdir)/test_files/run_test_script_12.res \
+$(srcdir)/test_files/run_test_script_11.res \
+$(srcdir)/test_files/run_test_script_05.res \
+$(srcdir)/test_files/run_test_script_32.res \
+$(srcdir)/test_files/run_test_script_15.res \
+$(srcdir)/test_files/run_test_script_40.res \
+$(srcdir)/test_files/run_test_script_27.res \
+$(srcdir)/test_files/run_test_script_06.res \
+$(srcdir)/test_files/run_test_script_38.res \
+$(srcdir)/test_files/run_test_script_30.res \
+$(srcdir)/test_files/run_test_script_21.res \
+$(srcdir)/test_files/run_test_script_28.res \
+$(srcdir)/test_files/run_test_script_25.res \
+$(srcdir)/test_files/run_test_script_42.res \
+$(srcdir)/test_files/run_test_script_07.res \
+$(srcdir)/test_files/run_test_script_20.res \
+$(srcdir)/test_files/run_test_script_10.res \
+$(srcdir)/test_files/run_test_script_09.res \
+$(srcdir)/test_files/run_test_script_26.res \
+$(srcdir)/test_files/run_test_script_03.res \
+$(srcdir)/test_files/run_test_script_35.res \
+$(srcdir)/test_files/run_test_script_17.res \
+$(srcdir)/test_files/run_test_script_14.res \
+$(srcdir)/test_files/run_test_script_23.res \
+$(srcdir)/test_files/run_test_script_02.res \
+$(srcdir)/test_files/run_test_script_24.res \
+$(srcdir)/test_files/run_test_script_39.res \
+$(srcdir)/test_files/run_test_script_22.res \
+$(srcdir)/test_files/run_test_script_01.res
+
+all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .c .o .obj
@@ -350,76 +470,6 @@ pamgen_test_driver.obj: $(srcdir)/../example/pamgen_test_driver.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pamgen_test_driver.obj `if test -f '$(srcdir)/../example/pamgen_test_driver.c'; then $(CYGPATH_W) '$(srcdir)/../example/pamgen_test_driver.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../example/pamgen_test_driver.c'; fi`
 
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
-
-$(RECURSIVE_CLEAN_TARGETS):
-	@failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
-	done
-
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -430,23 +480,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	  empty_fix=.; \
-	else \
-	  include_option=--include; \
-	  empty_fix=; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test ! -f $$subdir/TAGS || \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -459,7 +496,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -507,37 +544,19 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || $(MKDIR_P) "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    distdir=`$(am__cd) $(distdir) && pwd`; \
-	    top_distdir=`$(am__cd) $(top_distdir) && pwd`; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="$$top_distdir" \
-	        distdir="$$distdir/$$subdir" \
-		am__remove_distdir=: \
-		am__skip_length_check=: \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
+check: check-am
 all-am: Makefile $(PROGRAMS) all-local
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+installdirs:
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -553,79 +572,77 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+clean: clean-am
 
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
 install-data-am:
 
-install-dvi: install-dvi-recursive
+install-dvi: install-dvi-am
 
 install-exec-am:
 
-install-html: install-html-recursive
+install-html: install-html-am
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
-install-pdf: install-pdf-recursive
+install-pdf: install-pdf-am
 
-install-ps: install-ps-recursive
+install-ps: install-ps-am
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
 uninstall-am:
 
-.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) install-am \
-	install-strip
+.MAKE: install-am install-strip
 
-.PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am all-local check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags ctags-recursive distclean \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
 	distclean-compile distclean-generic distclean-tags distdir dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-recursive uninstall uninstall-am
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am
 
 
 include $(top_builddir)/Makefile.export.pamgen
