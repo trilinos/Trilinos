@@ -120,6 +120,7 @@ int ZoltanLibClass::precompute()
     }
   }
 
+
   Library::precompute();
 //   if (!isHypergraph){
 //     bool square = false;
@@ -180,7 +181,6 @@ int ZoltanLibClass::precompute()
 #endif /* HAVE_MPI */
   }
 
-
   float version;
   int argcTmp=0;
   char *argvTmp[1];
@@ -229,6 +229,7 @@ int ZoltanLibClass::precompute()
     }
   }
 
+
   Teuchos::ParameterList::ConstIterator
     iter = zoltanParamList_.begin(),
     iter_end = zoltanParamList_.end();
@@ -238,8 +239,6 @@ int ZoltanLibClass::precompute()
     const std::string& value = Teuchos::getValue<std::string>(iter->second);
     zz_->Set_Param(name, value);
   }
-
-
 
   // Set the query functions
 

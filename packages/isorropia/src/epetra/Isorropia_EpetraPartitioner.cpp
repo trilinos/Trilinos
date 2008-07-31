@@ -244,7 +244,7 @@ compute_partitioning(bool force_repartitioning)
 {
 
   bool use_zoltan = false;
-  Teuchos::ParameterList& sublist = paramlist_;
+  Teuchos::ParameterList sublist = paramlist_;
 
   std::string partitioning_method_str("PARTITIONING_METHOD");
   std::string partitioning_method =
@@ -265,9 +265,9 @@ compute_partitioning(bool force_repartitioning)
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
     else
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
+    sublist = (paramlist_.sublist(zoltan));
   }
 
-  sublist = (paramlist_.sublist(zoltan));
 #else /* HAVE_ISORROPIA_ZOLTAN */
   if (paramlist_.isSublist(zoltan)) {
     throw Isorropia::Exception("Zoltan requested, but Zoltan not enabled.");
@@ -281,7 +281,7 @@ compute_partitioning(bool force_repartitioning)
       lib_ = Teuchos::rcp(new InternalPartitioner(input_graph_, costs_));
   }
 
-  lib_->repartition(paramlist_, myNewElements_, exports_, imports_);
+  lib_->repartition(sublist, myNewElements_, exports_, imports_);
   operation_already_computed_ = true;
 }
 

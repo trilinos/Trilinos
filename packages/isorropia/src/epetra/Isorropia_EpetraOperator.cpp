@@ -129,7 +129,9 @@ Operator::~Operator()
 
 void Operator::setParameters(const Teuchos::ParameterList& paramlist)
 {
+  int changed;
   paramlist_ = paramlist;
+  paramsToUpper(paramlist_, changed);
 }
 
 bool Operator::alreadyComputed() const
