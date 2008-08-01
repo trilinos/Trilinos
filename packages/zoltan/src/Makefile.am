@@ -302,7 +302,7 @@ UTILITIES_H = \
 	$(srcdir)/include/zoltan_comm_cpp.h \
 	$(srcdir)/include/zoltan_timer_cpp.h \
 	$(srcdir)/include/zoltan_timer.h \
-	$(srcdir)/include/timer.h \
+	$(srcdir)/Utilities/Timer/timer.h \
 	$(srcdir)/include/zoltan_dd.h \
 	$(srcdir)/include/zoltan_dd_cpp.h \
 	$(srcdir)/include/zoltan_mem.h \
