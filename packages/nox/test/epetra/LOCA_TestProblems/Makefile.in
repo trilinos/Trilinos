@@ -138,6 +138,7 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(FEAPP_PATH)/FEApp_ElementFactory.cpp \
 	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp \
 	$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.cpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp \
 	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp \
 	$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp \
@@ -153,7 +154,9 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp \
 	$(FEAPP_PATH)/FEApp_Application.cpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp $(srcdir)/Basis.H \
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp $(srcdir)/Basis.H \
 	$(srcdir)/FiniteElementProblem.H $(srcdir)/Problem_Interface.H \
 	$(srcdir)/Tcubed_FiniteElementProblem.H \
 	$(srcdir)/Pitchfork_FiniteElementProblem.H \
@@ -164,6 +167,10 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(FEAPP_PATH)/FEApp_AbstractQuadrature.hpp \
 	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.hpp \
 	$(FEAPP_PATH)/FEApp_QuadratureFactory.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractFunction.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantFunction.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactoryImpl.hpp \
 	$(FEAPP_PATH)/FEApp_AbstractSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
@@ -199,44 +206,48 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(FEAPP_PATH)/FEApp_BlockDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp \
 	$(FEAPP_PATH)/FEApp_Application.hpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.hpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.hpp
 am__objects_1 = FEApp_LinearElement.$(OBJEXT) \
 	FEApp_ElementFactory.$(OBJEXT)
 am__objects_2 = FEApp_GaussianQuadrature2.$(OBJEXT) \
 	FEApp_QuadratureFactory.$(OBJEXT)
-am__objects_3 = FEApp_SourceFunctionFactory.$(OBJEXT)
-am__objects_4 = FEApp_HeatNonlinearSourcePDE.$(OBJEXT) \
+am__objects_3 = FEApp_FunctionFactory.$(OBJEXT)
+am__objects_4 = FEApp_SourceFunctionFactory.$(OBJEXT)
+am__objects_5 = FEApp_HeatNonlinearSourcePDE.$(OBJEXT) \
 	FEApp_BrusselatorPDE.$(OBJEXT)
-am__objects_5 = FEApp_BrusselatorNodeBCStrategy.$(OBJEXT) \
+am__objects_6 = FEApp_BrusselatorNodeBCStrategy.$(OBJEXT) \
 	FEApp_ConstantNodeBCStrategy.$(OBJEXT)
-am__objects_6 = FEApp_BrusselatorProblem.$(OBJEXT) \
+am__objects_7 = FEApp_BrusselatorProblem.$(OBJEXT) \
 	FEApp_HeatNonlinearSourceProblem.$(OBJEXT) \
 	FEApp_ProblemFactory.$(OBJEXT)
-am__objects_7 = FEApp_Mesh.$(OBJEXT)
-am__objects_8 = FEApp_InitPostOps.$(OBJEXT) FEApp_GlobalFill.$(OBJEXT)
-am__objects_9 = FEApp_CZeroDiscretization.$(OBJEXT) \
+am__objects_8 = FEApp_Mesh.$(OBJEXT)
+am__objects_9 = FEApp_InitPostOps.$(OBJEXT) FEApp_GlobalFill.$(OBJEXT)
+am__objects_10 = FEApp_CZeroDiscretization.$(OBJEXT) \
 	FEApp_BlockDiscretization.$(OBJEXT) \
 	FEApp_DiscretizationFactory.$(OBJEXT)
-am__objects_10 = FEApp_Application.$(OBJEXT) \
-	FEApp_ModelEvaluator.$(OBJEXT)
-am__objects_11 = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
+am__objects_11 = FEApp_Application.$(OBJEXT) \
+	FEApp_ModelEvaluator.$(OBJEXT) FEApp_SGMatrixFreeOp.$(OBJEXT) \
+	FEApp_SGMeanPrecOp.$(OBJEXT)
+am__objects_12 = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
 	$(am__objects_4) $(am__objects_5) $(am__objects_6) \
 	$(am__objects_7) $(am__objects_8) $(am__objects_9) \
-	$(am__objects_10)
-@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@am__objects_12 = $(am__objects_11)
-am__objects_13 = Basis.$(OBJEXT) Problem_Interface.$(OBJEXT) \
+	$(am__objects_10) $(am__objects_11)
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@am__objects_13 = $(am__objects_12)
+am__objects_14 = Basis.$(OBJEXT) Problem_Interface.$(OBJEXT) \
 	Tcubed_FiniteElementProblem.$(OBJEXT) \
 	Pitchfork_FiniteElementProblem.$(OBJEXT) \
 	NormConstraint.$(OBJEXT) LinearConstraint.$(OBJEXT) \
-	$(am__objects_12)
-am__objects_14 =
-am__objects_15 = $(am__objects_14) $(am__objects_14) $(am__objects_14) \
-	$(am__objects_14) $(am__objects_14) $(am__objects_14) \
-	$(am__objects_14) $(am__objects_14) $(am__objects_14) \
-	$(am__objects_14)
-@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@am__objects_16 = $(am__objects_15)
-am__objects_17 = $(am__objects_16)
-am_liblocatestproblems_a_OBJECTS = $(am__objects_13) $(am__objects_17)
+	$(am__objects_13)
+am__objects_15 =
+am__objects_16 = $(am__objects_15) $(am__objects_15) $(am__objects_15) \
+	$(am__objects_15) $(am__objects_15) $(am__objects_15) \
+	$(am__objects_15) $(am__objects_15) $(am__objects_15) \
+	$(am__objects_15) $(am__objects_15)
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@am__objects_17 = $(am__objects_16)
+am__objects_18 = $(am__objects_17)
+am_liblocatestproblems_a_OBJECTS = $(am__objects_14) $(am__objects_18)
 liblocatestproblems_a_OBJECTS = $(am_liblocatestproblems_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -424,6 +435,15 @@ SOURCE_H = \
 SOURCE = \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
 
+FUNC_H = \
+	$(FEAPP_PATH)/FEApp_AbstractFunction.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantFunction.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactoryImpl.hpp
+
+FUNC = \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+
 PDE_H = \
 	$(FEAPP_PATH)/FEApp_AbstractPDE_NTBase.hpp \
 	$(FEAPP_PATH)/FEApp_AbstractPDE.hpp \
@@ -491,15 +511,20 @@ DISC = \
 
 APP_H = \
 	$(FEAPP_PATH)/FEApp_Application.hpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.hpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.hpp
 
 APP = \
 	$(FEAPP_PATH)/FEApp_Application.cpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
 
 FEAPP_H = \
 	$(ELEMENT_H) \
 	$(QUADRATURE_H) \
+	$(FUNC_H) \
 	$(SOURCE_H) \
 	$(PDE_H) \
 	$(BC_H) \
@@ -512,6 +537,7 @@ FEAPP_H = \
 FEAPP = \
 	$(ELEMENT) \
 	$(QUADRATURE) \
+	$(FUNC) \
 	$(SOURCE) \
 	$(PDE) \
 	$(BC) \
@@ -643,6 +669,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ConstantNodeBCStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_DiscretizationFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ElementFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_FunctionFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_GaussianQuadrature2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_GlobalFill.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Po@am__quote@
@@ -653,6 +680,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ModelEvaluator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ProblemFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_QuadratureFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGMatrixFreeOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGMeanPrecOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SourceFunctionFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearConstraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NormConstraint.Po@am__quote@
@@ -813,6 +842,20 @@ FEApp_QuadratureFactory.obj: $(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' object='FEApp_QuadratureFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_QuadratureFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; fi`
+
+FEApp_FunctionFactory.o: $(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_FunctionFactory.o -MD -MP -MF $(DEPDIR)/FEApp_FunctionFactory.Tpo -c -o FEApp_FunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_FunctionFactory.Tpo $(DEPDIR)/FEApp_FunctionFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' object='FEApp_FunctionFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_FunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+
+FEApp_FunctionFactory.obj: $(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_FunctionFactory.obj -MD -MP -MF $(DEPDIR)/FEApp_FunctionFactory.Tpo -c -o FEApp_FunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_FunctionFactory.Tpo $(DEPDIR)/FEApp_FunctionFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' object='FEApp_FunctionFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_FunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; fi`
 
 FEApp_SourceFunctionFactory.o: $(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SourceFunctionFactory.o -MD -MP -MF $(DEPDIR)/FEApp_SourceFunctionFactory.Tpo -c -o FEApp_SourceFunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
@@ -1037,6 +1080,34 @@ FEApp_ModelEvaluator.obj: $(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' object='FEApp_ModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ModelEvaluator.obj `if test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; fi`
+
+FEApp_SGMatrixFreeOp.o: $(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMatrixFreeOp.o -MD -MP -MF $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo -c -o FEApp_SGMatrixFreeOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo $(DEPDIR)/FEApp_SGMatrixFreeOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' object='FEApp_SGMatrixFreeOp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMatrixFreeOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+
+FEApp_SGMatrixFreeOp.obj: $(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMatrixFreeOp.obj -MD -MP -MF $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo -c -o FEApp_SGMatrixFreeOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo $(DEPDIR)/FEApp_SGMatrixFreeOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' object='FEApp_SGMatrixFreeOp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMatrixFreeOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; fi`
+
+FEApp_SGMeanPrecOp.o: $(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMeanPrecOp.o -MD -MP -MF $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo -c -o FEApp_SGMeanPrecOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo $(DEPDIR)/FEApp_SGMeanPrecOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' object='FEApp_SGMeanPrecOp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMeanPrecOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+
+FEApp_SGMeanPrecOp.obj: $(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMeanPrecOp.obj -MD -MP -MF $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo -c -o FEApp_SGMeanPrecOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo $(DEPDIR)/FEApp_SGMeanPrecOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' object='FEApp_SGMeanPrecOp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMeanPrecOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

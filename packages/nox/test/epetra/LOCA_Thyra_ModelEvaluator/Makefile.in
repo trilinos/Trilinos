@@ -323,6 +323,15 @@ SOURCE_H = \
 SOURCE = \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
 
+FUNC_H = \
+	$(FEAPP_PATH)/FEApp_AbstractFunction.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantFunction.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactoryImpl.hpp
+
+FUNC = \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+
 PDE_H = \
 	$(FEAPP_PATH)/FEApp_AbstractPDE_NTBase.hpp \
 	$(FEAPP_PATH)/FEApp_AbstractPDE.hpp \
@@ -390,15 +399,20 @@ DISC = \
 
 APP_H = \
 	$(FEAPP_PATH)/FEApp_Application.hpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.hpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.hpp
 
 APP = \
 	$(FEAPP_PATH)/FEApp_Application.cpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
 
 FEAPP_H = \
 	$(ELEMENT_H) \
 	$(QUADRATURE_H) \
+	$(FUNC_H) \
 	$(SOURCE_H) \
 	$(PDE_H) \
 	$(BC_H) \
@@ -411,6 +425,7 @@ FEAPP_H = \
 FEAPP = \
 	$(ELEMENT) \
 	$(QUADRATURE) \
+	$(FUNC) \
 	$(SOURCE) \
 	$(PDE) \
 	$(BC) \
