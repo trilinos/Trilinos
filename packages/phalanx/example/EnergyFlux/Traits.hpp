@@ -22,14 +22,22 @@ namespace PHX {
     
       The user must define a number of objects in the traits class:
       
-      \item ScalarTypes - an mpl::vector with the Scalar types.  Size of number of scalar types.
+      \item EvalTypes - an mpl::vector of user defined evaluation types.
       
-      \item DataTypes - an mpl::map.  The key is a scalar type and the value is an mpl::vector of valid data types built on the corresponding data type.  Size of number of scalar types.
+      \item EvalToDataMap - an mpl::map.  The key is an evaluation type and the value is an mpl::vector of valid data types for that particular evaluation type.
       
-      \item Algebraic types - simple structs that represent the algebraic types.
+      \item Algebraic types - a set of structs that represent the algebraic types.  Must have a string member.
       
+      \item DataToAlgebraicMap - an mpl::map.  The key is a data type and the value is the corresponding algebraic type.
+
       \item Allocator type - type that defines the allocator class to use to allocate the memory for data storage.
       
+      \item EvalData - A user defined type to be passed in to the evaluateFields() call.  Allows users to pass in arbitrary data on the cells.
+
+      \item PreEvalData - A user defined type to be passed in to the preEvaluate() call.  Allows users to pass in arbitrary data on the cells.
+
+      \item EvalData - A user defined type to be passed in to the postEvaluate() call.  Allows users to pass in arbitrary data on the cells.
+
   */
   struct MyTraits : public PHX::TraitsBase {
     

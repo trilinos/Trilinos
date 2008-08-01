@@ -128,7 +128,7 @@ void PHX::EvaluationContainer<ScalarT, Traits>::print(std::ostream& os) const
 
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << "Starting PHX::EvaluationContainer Output" << std::endl;
-  os << "Scalar Type = " << type << std::endl;
+  os << "Evaluation Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->vp_manager_ << std::endl;
   typename DCTM::const_iterator it = data_container_template_manager_.begin();
@@ -136,7 +136,7 @@ void PHX::EvaluationContainer<ScalarT, Traits>::print(std::ostream& os) const
     os << *it << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << "Finished PHX::EvaluationContainer Output" << std::endl;
-  os << "Scalar Type = " << type << std::endl;
+  os << "Evaluation Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << std::endl;
 }
