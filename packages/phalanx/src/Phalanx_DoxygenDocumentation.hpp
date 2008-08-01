@@ -83,7 +83,7 @@ Managing these trade-offs can result in application code that both performs well
 
 \section user_guide User's Guide
 
-Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It can be enabled as part of a trilinos build with the configure flag "--enable-phalanx".  Phalanx currently has direct dependencies on the following third party libraries:
+Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It can be enabled as part of a trilinos build with the configure option "--enable-phalanx".  Phalanx currently has direct dependencies on the following third party libraries:
 
  - Requires the <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a> utilities library, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.
  
@@ -93,7 +93,7 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
  - Optional: Some performance examples runs comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  Use the configure option "--with-tvmet" to enable the tvmet functionality in the performance tests.
 
-We plan to remove the Sacado and Boost dependencies in a future release.  
+We plan to remove the Boost dependencies in a future release.  
 
 \section domain_design Domain Design Model
 
@@ -136,6 +136,8 @@ The main object that stores all fields and evauation routines. Users can get acc
 </ul>
 
 <h3>B. Design</h3>
+
+Roger - these need to be updated!
 
 - The evaluate call is fixed for each scalar type.  Each scalar type figures out it's own dependency chain.  However you can trick the evaluate routine into using mixed scalar types based on writing the evaluator to use a hard-coded scalar type.  This is nasty and can have problems if the provider is only registered for one scalar type.  This will need to be addressed in the future.  The problem is that the variable is independent of the ScalarType.
 
