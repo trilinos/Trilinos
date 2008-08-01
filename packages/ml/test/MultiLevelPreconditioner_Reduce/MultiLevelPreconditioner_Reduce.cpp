@@ -4,7 +4,7 @@
 
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_ZOLTAN)
+#if defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_ZOLTAN) && defined(HAVE_ML_ISORROPIA)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
