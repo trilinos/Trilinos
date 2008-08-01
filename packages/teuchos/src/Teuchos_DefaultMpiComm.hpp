@@ -51,14 +51,21 @@
 #endif
 
 
+// 2008/07/31: rabartl: Below: I provide a dummy definition for an MPI struct
+// with MPI so that typeid(MPI_Request) will compile.  I can't provide a
+// specialization of TypeNameTraits<MPI_Request> because that causes
+// compilation problems with MPI implementations where MPI_Request is a
+// typedef to int, which already has a specialization TypeNameTraits<int> in
+// Teuchos_TypeNameTraits.hpp.  Defining an empty struct like this should be
+// fine since only the guts of OpenMPI will ever see the definition.  This is
+// a silly game we are playing with the C++ type system here but it should
+// work just fine.
+#ifdef OPEN_MPI
+struct ompi_request_t {};
+#endif
+
+
 namespace Teuchos {
-
-
-template<>
-class TypeNameTraits<MPI_Request> {
-public:
-  static std::string name() { return "MPI_Request"; }
-};
 
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
