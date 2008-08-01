@@ -7,9 +7,13 @@
  * \brief  A pure virtual class, derived from Epetra_Operator that adds a
  * matmat routine (using Epetra_CrsMatrix).
  *
- * \date Last update do Doxygen: 25-Jan-07
+ * \date Last update to Doxygen: 25-Jan-07
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #ifndef EPETRA_OPERATOR_WITH_MATMAT_H
 #define EPETRA_OPERATOR_WITH_MATMAT_H
 #if defined(HAVE_ML_EPETRA) 

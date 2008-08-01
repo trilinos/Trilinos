@@ -1,4 +1,8 @@
 /* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
+/* ******************************************************************** */
 /* Declaration of the segregated structure                              */
 /* ******************************************************************** */
 /* Author        : Charles Tong (LLNL) and Raymond Tuminaro (SNL)       */

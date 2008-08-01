@@ -1,6 +1,18 @@
 #ifndef ML_OPERATOR_UTILS_H
 #define ML_OPERATOR_UTILS_H
+/*!
+\file MLAPI_Operator_Utils
 
+\brief Functions to create and compose MLAPI::Operator's.
+
+\author Marzio Sala, SNL 9214.
+
+\date Last updated on Feb-05.
+*/
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #include "ml_common.h"
 
 #include "ml_include.h"
@@ -19,16 +31,6 @@
 #include "MLAPI_Space.h"
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_Operator.h"
-
-/*!
-\file MLAPI_Operator_Utils
-
-\brief Functions to create and compose MLAPI::Operator's.
-
-\author Marzio Sala, SNL 9214.
-
-\date Last updated on Feb-05.
-*/
 
 namespace Teuchos {
   class ParameterList;

@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 /*************************************************************************************       
   HAIM: GLOBAL EIGENVALUE CALCULATIONS FOR MULTIGRID           
   THE GENERALIZED GLOBAL BASIS (GGB) METHOD USING ARPACK                      

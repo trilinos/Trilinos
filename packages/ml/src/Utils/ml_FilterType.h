@@ -5,6 +5,10 @@
  *
  * \brief Enum for filtering.
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 namespace ML_Epetra {
 

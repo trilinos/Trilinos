@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #ifndef __MLXYT__
 #define __MLXYT__
 #include "ml_common.h"

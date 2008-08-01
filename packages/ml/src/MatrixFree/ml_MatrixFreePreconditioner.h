@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #ifndef ML_MATRIX_FREE_PRECONDITIONER
 #define ML_MATRIX_FREE_PRECONDITIONER
 
@@ -10,7 +14,7 @@
  *
  * \author Marzio Sala, ETHZ/D-INFK
  *
- * \date Last update do Doxygen: 01-Apr-06
+ * \date Last update to Doxygen: 01-Apr-06
  *
  */
 

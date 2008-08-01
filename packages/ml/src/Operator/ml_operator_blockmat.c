@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #include "ml_operator_blockmat.h"
 /*****************************************************************/
 /* ML block matvec function that corresponds to an equivalent */

@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #ifndef __MLGGB_
 #define __MLGGB_
 

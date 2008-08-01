@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #define AZ_CONVR0
 /*
 #define AZ_CONVR0
@@ -5,12 +9,6 @@
 #define ML_partition
 #define ReuseOps
 */
-/*****************************************************************************/
-/* Copyright 1999, Sandia Corporation. The United States Government retains  */
-/* a nonexclusive license in this software as prescribed in AL 88-1 and AL   */
-/* 91-7. Export of this program may require a license from the United States */
-/* Government.                                                               */
-/*****************************************************************************/
 
 /*****************************************************************************/
 /* Sample driver for AZTEC/ML package. The software is tested by reading     */ 

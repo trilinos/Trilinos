@@ -5,9 +5,13 @@
  *
  * \brief Class for Reformulated Maxwell's Equations solvers.  Inherited from ML_Epetra_Operator
  *
- * \date Last update do Doxygen: 25-Jan-07
+ * \date Last update to Doxygen: 25-Jan-07
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #ifndef ML_REFMAXWELL_H
 #define ML_REFMAXWELL_H

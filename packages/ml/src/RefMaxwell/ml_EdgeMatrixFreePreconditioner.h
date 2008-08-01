@@ -8,6 +8,10 @@
  * \date Last update to Doxygen: 8-Feb-07
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #ifndef ML_EDGE_MATRIX_FREE_PRECONDITIONER_H
 #define ML_EDGE_MATRIX_FREE_PRECONDITIONER_H

@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 #include "ml_include.h"

@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 /*****************************************************************************/
 /*                                                                           *
  *  This file contains routines for reading input to drive ML from a file.   *

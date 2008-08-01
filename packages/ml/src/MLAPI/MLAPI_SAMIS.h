@@ -1,5 +1,18 @@
 #ifndef MLAPI_SAMIS_H
 #define MLAPI_SAMIS_H
+/*!
+  \file MLAPI_SAMIS
+
+  \brief Input matrix and kernel vectors from SAMIS format.
+
+  \author Marzio Sala, SNL 9214 and Marian Brezina, UC Boulder.
+
+  \date Last updated on Mar-05.
+*/
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #include "ml_common.h"
 
@@ -10,15 +23,6 @@ namespace MLAPI {
 
 class Operator;
 
-/*!
-  \file MLAPI_SAMIS
-
-  \brief Input matrix and kernel vectors from SAMIS format.
-
-  \author Marzio Sala, SNL 9214 and Marian Brezina, UC Boulder.
-
-  \date Last updated on Mar-05.
-*/
 
   // ====================================================================== 
   //! Reads symmetric matrix from SAMIS binary format.

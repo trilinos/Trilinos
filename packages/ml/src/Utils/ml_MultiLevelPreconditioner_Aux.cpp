@@ -5,9 +5,13 @@
  *
  *  \author Marzio Sala, SNL, 9214
  *
- *  \date Last update do Doxygen: 22-Jul-04
+ *  \date Last update to Doxygen: 22-Jul-04
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #include "ml_common.h"
 #include "ml_include.h"

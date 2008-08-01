@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 //@HEADER
 /*!
  * \file ml_RefMaxwell_11_Operator.h
@@ -8,7 +12,7 @@
  * operator for Maxwell.
  * 
  *
- * \date Last update do Doxygen: 25-Jan-07
+ * \date Last update to Doxygen: 25-Jan-07
  *
  */
 

@@ -12,6 +12,10 @@
 
 \date Last updated on Feb-05.
 */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 namespace Teuchos {
   class ParameterList;

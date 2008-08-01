@@ -6,6 +6,10 @@
  *  \date Last update to Doxygen: 22-Jul-04
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 
 #ifndef _ML_EPETRA_UTILS_H_

@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #ifndef ML_ELEMENT_BY_ELEMENT_SINGLE_ELEMENT_H
 #define ML_ELEMENT_BY_ELEMENT_SINGLE_ELEMENT_H
 

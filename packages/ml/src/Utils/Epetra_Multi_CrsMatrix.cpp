@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #include "ml_config.h"
 #if defined(HAVE_ML_EPETRA)
 #include "Epetra_Multi_CrsMatrix.h"

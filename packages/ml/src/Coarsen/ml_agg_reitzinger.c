@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #include "ml_agg_reitzinger.h"
 #include "ml_vampir.h"
 #include "ml_viz_stats.h"

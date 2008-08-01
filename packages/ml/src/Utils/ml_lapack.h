@@ -1,3 +1,7 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 #ifndef ML_BLAS_LAPACK_WRAPPERS_H
 #define ML_BLAS_LAPACK_WRAPPERS_H
 

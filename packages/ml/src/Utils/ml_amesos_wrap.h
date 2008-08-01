@@ -35,6 +35,10 @@
  *
  * \date Last update to Doxygen: 21-Jun-05
  *
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
  */
 
 #ifndef _MLAMESOSWRAP_

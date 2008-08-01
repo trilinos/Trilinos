@@ -6,6 +6,10 @@
  *  \authors Marzio Sala, Ray Tuminaro, Jonathan Hu, Michael Gee, Chris Siefert
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #include "ml_common.h"
 #include "ml_include.h"

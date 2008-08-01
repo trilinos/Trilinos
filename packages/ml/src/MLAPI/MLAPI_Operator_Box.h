@@ -10,6 +10,10 @@
 
 \date Last updated on Mar-06.
 */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #include "ml_operator.h"
 

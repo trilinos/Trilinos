@@ -6,9 +6,13 @@
  * \brief (Mostly) abstract base class wrapper for Epetra_Operator-based ML
  * preconditioners.  Implements a few Teuchos-related query functions.
  *
- * \date Last update do Doxygen: 13-Nov-06
+ * \date Last update to Doxygen: 13-Nov-06
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #ifndef ML_PRECONDITIONER_H
 #define ML_PRECONDITIONER_H

@@ -7,9 +7,13 @@
  * \brief Class that encapsulates multiple CRS matrices and supports
  * MatrixMatrix Multiplies (as a derived class of Epetra_Operator_With_MatMat).
  *
- * \date Last update do Doxygen: 25-Jan-07
+ * \date Last update to Doxygen: 25-Jan-07
  *
  */
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
 
 #ifndef ML_EPETRA_MULTI_CRS_MATRIX_H
 #define ML_EPETRA_MULTI_CRS_MATRIX_H
