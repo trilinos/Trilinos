@@ -90,6 +90,10 @@ extern "C" {
 #define ZOLTAN_OCTREEPARTITIONING
 #endif
 
+#ifdef HAVE_NEMESIS_EXODUS
+#define ZOLTAN_NEMESIS
+#endif
+
 #endif /* TRILINOS_NO_CONFIG_H */
 /*****************************************************************************
  *  Definitions for the LB library driver program.
