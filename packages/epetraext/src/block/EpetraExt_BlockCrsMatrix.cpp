@@ -165,6 +165,29 @@ void BlockCrsMatrix::BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
 }
 
 //==============================================================================
+void BlockCrsMatrix::BlockExtractGlobalRowView(const int BaseRow, 
+					       int& NumEntries, 
+					       double*& Values, 
+					       const int Row, 
+					       const int Col)
+//All arguments could be const, except some were not set as const in CrsMatrix
+{
+  int RowOffset = RowIndices_[Row] * Offset_;
+  int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
+
+  // Get the whole row
+  int ierr = this->ExtractGlobalRowView(BaseRow + RowOffset, NumEntries,
+					Values); 
+
+  // Adjust for just this block column
+  Values += ColOffset;
+  NumEntries -= ColOffset;
+
+  if (ierr != 0) cout << "WARNING BlockCrsMatrix::BlockExtractGlobalRowView err = "
+     << ierr << "\n\t  Row " << BaseRow + RowOffset << "Col " << Col+ColOffset << endl;
+}
+
+//==============================================================================
 void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col)
 {
   int RowOffset = RowIndices_[Row] * Offset_;

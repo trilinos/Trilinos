@@ -98,6 +98,8 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
      double* Values, const int* Indices, const int Row, const int Col);
   void BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
      double* Values, const int* Indices, const int Row, const int Col);
+  void BlockExtractGlobalRowView(const int BaseRow, int& NumEntries, 
+     double*& Values, const int Row, const int Col);
 
   void ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col);
 
