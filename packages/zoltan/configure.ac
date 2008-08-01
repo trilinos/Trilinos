@@ -188,6 +188,13 @@ TAC_ARG_WITH_PACKAGE(drum, [Enable Drum support.  Library name as well as librar
 #  CPPFLAGS="-I${tac_with_drum_incdir}  ${CPPFLAGS}"
 #fi
 
+TAC_ARG_WITH_PACKAGE(nemesis_exodus, [Enable Nemesis/Exodus support for the Zdrive test executable.  Library and include paths must be specified using LDFLAGS and CPPFLAGS.], NEMESIS_EXODUS, no)
+#I am not sure if we can do this.  We may not be able to get things in the right
+#order. JW.
+if test "X$ac_cv_use_nemesis_exodus" != "Xno"; then
+  LIBS="-lnemIc -lexoIIv2c -lnetcdf ${LIBS}"
+fi
+
 #TAC_ARG_WITH_PACKAGE(parkway, [Enable Parkway support.], PARKWAY, no)
 #TAC_ARG_WITH_3PL_SUB(parkway, libdir, [Specify where the Parkway library is located.  Ex. /path/to/library])
 #if test "X$tac_with_parkway_libdir" != "Xno"; then

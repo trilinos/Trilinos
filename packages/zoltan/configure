@@ -1401,6 +1401,10 @@ Optional Packages:
   --with-drum             Enable Drum support. Library name as well as library
                           and include paths must be specified using LDFLAGS
                           and CPPFLAGS. (default is no)
+  --with-nemesis_exodus   Enable Nemesis/Exodus support for the Zdrive test
+                          executable. Library and include paths must be
+                          specified using LDFLAGS and CPPFLAGS. (default is
+                          no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -5796,6 +5800,38 @@ fi
 #if test "X$tac_with_drum_incdir" != "Xno"; then
 #  CPPFLAGS="-I${tac_with_drum_incdir}  ${CPPFLAGS}"
 #fi
+
+
+
+# Check whether --with-nemesis_exodus was given.
+if test "${with_nemesis_exodus+set}" = set; then
+  withval=$with_nemesis_exodus; ac_cv_use_nemesis_exodus=$withval
+else
+  ac_cv_use_nemesis_exodus=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use nemesis_exodus" >&5
+echo $ECHO_N "checking whether to use nemesis_exodus... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_nemesis_exodus" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NEMESIS_EXODUS
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+#I am not sure if we can do this.  We may not be able to get things in the right
+#order. JW.
+if test "X$ac_cv_use_nemesis_exodus" != "Xno"; then
+  LIBS="-lnemIc -lexoIIv2c -lnetcdf ${LIBS}"
+fi
 
 #TAC_ARG_WITH_PACKAGE(parkway, [Enable Parkway support.], PARKWAY, no)
 #TAC_ARG_WITH_3PL_SUB(parkway, libdir, [Specify where the Parkway library is located.  Ex. /path/to/library])
