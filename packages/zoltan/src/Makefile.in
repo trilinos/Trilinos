@@ -46,7 +46,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = src
-DIST_COMMON = README $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
+DIST_COMMON = README $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
@@ -274,56 +274,6 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	install-pdf-recursive install-ps-recursive install-recursive \
 	installcheck-recursive installdirs-recursive pdf-recursive \
 	ps-recursive uninstall-recursive
-am__include_HEADERS_DIST = $(srcdir)/all/all_allo_const.h \
-	$(srcdir)/coloring/coloring_const.h \
-	$(srcdir)/coloring/coloring.h $(srcdir)/coloring/g2l_hash.h \
-	$(srcdir)/ha/ha_const.h $(srcdir)/ha/ha_drum.h \
-	$(srcdir)/hier/hier.h $(srcdir)/hsfc/hsfc.h \
-	$(srcdir)/hsfc/hsfc_const.h \
-	$(srcdir)/hsfc/hsfc_hilbert_const.h \
-	$(srcdir)/include/lbi_const.h $(srcdir)/include/zoltan_align.h \
-	$(srcdir)/include/zoltan_cpp.h $(srcdir)/include/zoltan.h \
-	$(srcdir)/include/zoltan_types.h $(srcdir)/lb/lb_const.h \
-	$(srcdir)/lb/lb_init_const.h $(srcdir)/oct/costs_const.h \
-	$(srcdir)/oct/costs.h $(srcdir)/oct/dfs_const.h \
-	$(srcdir)/oct/dfs.h $(srcdir)/oct/migoct_const.h \
-	$(srcdir)/oct/migreg_const.h $(srcdir)/oct/migreg.h \
-	$(srcdir)/oct/migtags_const.h $(srcdir)/oct/msg_const.h \
-	$(srcdir)/oct/octant_const.h $(srcdir)/oct/octree_const.h \
-	$(srcdir)/oct/octupdate_const.h $(srcdir)/oct/octupdate.h \
-	$(srcdir)/oct/oct_util_const.h $(srcdir)/oct/rootlist_const.h \
-	$(srcdir)/oct/SFC.h $(srcdir)/order/order_const.h \
-	$(srcdir)/par/par_average_const.h \
-	$(srcdir)/par/par_bisect_const.h $(srcdir)/par/par_const.h \
-	$(srcdir)/par/par_median_const.h \
-	$(srcdir)/par/par_tflops_special_const.h \
-	$(srcdir)/params/key_params.h $(srcdir)/params/params_const.h \
-	$(srcdir)/parmetis/third_library_const.h \
-	$(srcdir)/parmetis/third_library.h \
-	$(srcdir)/parmetis/third_library_tools.h \
-	$(srcdir)/parmetis/parmetis_interface.h \
-	$(srcdir)/phg/phg_comm.h $(srcdir)/phg/phg_const.h \
-	$(srcdir)/phg/phg_distrib.h $(srcdir)/phg/phg.h \
-	$(srcdir)/phg/phg_hypergraph.h $(srcdir)/phg/phg_util.h \
-	$(srcdir)/rcb/create_proc_list_const.h \
-	$(srcdir)/rcb/rcb_const.h $(srcdir)/rcb/rcb.h \
-	$(srcdir)/rcb/rib_const.h $(srcdir)/rcb/rib.h \
-	$(srcdir)/rcb/shared.h $(srcdir)/reftree/reftree_const.h \
-	$(srcdir)/reftree/reftree.h \
-	$(srcdir)/parmetis/scotch_interface.h \
-	$(srcdir)/timer/timer_const.h $(srcdir)/include/zoltan_comm.h \
-	$(srcdir)/include/zoltan_comm_cpp.h \
-	$(srcdir)/include/zoltan_timer_cpp.h \
-	$(srcdir)/include/zoltan_timer.h \
-	$(srcdir)/Utilities/Timer/timer.h \
-	$(srcdir)/include/zoltan_dd.h \
-	$(srcdir)/include/zoltan_dd_cpp.h \
-	$(srcdir)/include/zoltan_mem.h \
-	$(srcdir)/Utilities/shared/zoltan_util.h \
-	$(srcdir)/Utilities/shared/zoltan_id.h $(srcdir)/zz/zz_const.h \
-	$(srcdir)/zz/zz_heap.h $(srcdir)/zz/zz_id_const.h \
-	$(srcdir)/zz/zz_rand.h $(srcdir)/zz/zz_sort.h \
-	$(srcdir)/zz/zz_util_const.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -495,7 +445,14 @@ INCLUDE_H = \
 	$(srcdir)/include/zoltan_align.h \
 	$(srcdir)/include/zoltan_cpp.h \
 	$(srcdir)/include/zoltan.h \
-	$(srcdir)/include/zoltan_types.h
+	$(srcdir)/include/zoltan_types.h \
+	$(srcdir)/include/zoltan_comm.h \
+	$(srcdir)/include/zoltan_comm_cpp.h \
+	$(srcdir)/include/zoltan_timer_cpp.h \
+	$(srcdir)/include/zoltan_timer.h \
+	$(srcdir)/include/zoltan_dd.h \
+	$(srcdir)/include/zoltan_dd_cpp.h \
+	$(srcdir)/include/zoltan_mem.h  
 
 
 #       $(srcdir)/Zoltan_ConfigDefs.h
@@ -700,14 +657,7 @@ TIMER = \
 	$(srcdir)/timer/timer_params.c
 
 UTILITIES_H = \
-	$(srcdir)/include/zoltan_comm.h \
-	$(srcdir)/include/zoltan_comm_cpp.h \
-	$(srcdir)/include/zoltan_timer_cpp.h \
-	$(srcdir)/include/zoltan_timer.h \
 	$(srcdir)/Utilities/Timer/timer.h \
-	$(srcdir)/include/zoltan_dd.h \
-	$(srcdir)/include/zoltan_dd_cpp.h \
-	$(srcdir)/include/zoltan_mem.h \
 	$(srcdir)/Utilities/shared/zoltan_util.h \
 	$(srcdir)/Utilities/shared/zoltan_id.h
 
@@ -855,7 +805,8 @@ lib_LIBRARIES = $(ZOLTAN_LIB)
 # ------------------------------------------------------------------------
 
 # Eventually we will try to install fewer headers
-include_HEADERS = $(ZOLTAN_H) 
+include_HEADERS = $(INCLUDE_H) 
+EXTRA_DIST = $(ZOLTAN_H)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
