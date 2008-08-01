@@ -360,10 +360,10 @@ private:
   //! Pointers to the matrix to be preconditioned.
   Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
 
-  //! Amesos solver, use to apply the inverse of the local matrix.
-  Teuchos::RefCountPtr<Amesos_BaseSolver> Solver_;
   //! Linear problem required by Solver_.
   Teuchos::RefCountPtr<Epetra_LinearProblem> Problem_;
+  //! Amesos solver, use to apply the inverse of the local matrix.
+  Teuchos::RefCountPtr<Amesos_BaseSolver> Solver_;
   //! Contains a copy of the input parameter list.
   Teuchos::ParameterList List_;
 
