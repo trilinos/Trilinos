@@ -39,6 +39,7 @@
 #include "Sacado_Handle.hpp"
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
+#include "Stokhos_TayOrthogPolyExpansion.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 
 #include <cmath>
@@ -64,6 +65,10 @@ namespace Sacado {
 
       //! Basis type
       typedef Stokhos::OrthogPolyBasis<T> basis_type;
+
+      //! Expansion type
+      //typedef Stokhos::TayOrthogPolyExpansion<T> expansion_type;
+      typedef Stokhos::OrthogPolyExpansion<T> expansion_type;
 
       //! Default constructor
       OrthogPoly();
@@ -120,11 +125,13 @@ namespace Sacado {
       /*! 
        * Intializes static expansion data.
        */
-      static void initExpansion(
-	const Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> >& e);
+      static void initExpansion(const Teuchos::RCP<expansion_type>& e);
 
       //! Write coefficients in standard basis
       Stokhos::Polynomial<value_type> toStandardBasis() const;
+
+      //! Evaluate polynomial approximation at a point
+      value_type evaluate(const std::vector<value_type>& point) const;
 
       /*!
        * @name Assignment operators
@@ -229,7 +236,7 @@ namespace Sacado {
     public:
 
       //! Expansion type
-      static Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> > expansion;
+      static Teuchos::RCP<expansion_type> expansion;
 
     protected:
 

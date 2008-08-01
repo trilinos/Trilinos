@@ -36,7 +36,7 @@ namespace PCE {
 
 // Initialize static data
 template <typename T> 
-Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> > 
+Teuchos::RCP<typename OrthogPoly<T>::expansion_type> 
 OrthogPoly<T>::expansion = Teuchos::null;
 
 template <typename T> 
@@ -99,7 +99,7 @@ reserve(unsigned int sz)
 template <typename T> 
 void
 OrthogPoly<T>::
-initExpansion(const Teuchos::RCP< Stokhos::OrthogPolyExpansion<T> >& e)
+initExpansion(const Teuchos::RCP<typename OrthogPoly<T>::expansion_type>& e)
 {
   expansion = e;
 }
@@ -110,6 +110,14 @@ OrthogPoly<T>::
 toStandardBasis() const
 {
   return expansion->getBasis().toStandardBasis(th->coeff(), th->size());
+}
+
+template <typename T> 
+typename OrthogPoly<T>::value_type
+OrthogPoly<T>::
+evaluate(const std::vector<typename OrthogPoly<T>::value_type>& point) const
+{
+  return th->evaluate(expansion->getBasis(), point);
 }
 
 template <typename T> 
