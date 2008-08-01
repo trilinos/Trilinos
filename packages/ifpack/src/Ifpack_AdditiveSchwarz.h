@@ -341,8 +341,6 @@ protected:
   bool IsInitialized_;
   //! If true, the preconditioner has been successfully computed.
   bool IsComputed_;
-  //! Pointer to the local solver.
-  Teuchos::RefCountPtr<T> Inverse_;
   //! If \c true, solve with the transpose (not supported by all solvers).
   bool UseTranspose_;
   //! If true, overlapping is used
@@ -389,6 +387,8 @@ protected:
   mutable double ApplyInverseFlops_;
   //! Object used for timing purposes.
   Teuchos::RefCountPtr<Epetra_Time> Time_;
+  //! Pointer to the local solver.
+  Teuchos::RefCountPtr<T> Inverse_;
 
 }; // class Ifpack_AdditiveSchwarz<T>
 
