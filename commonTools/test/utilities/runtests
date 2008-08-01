@@ -815,7 +815,7 @@ cleanUp();
                                 
                                 # Should we descend to the level of the test
                                 # before invoking it?  (default is no)
-                                my $descendDirs = ${ @{ $definitionAoHoA[$i]{'DESCEND_DIRS'} } }[0];
+                                my $descendDirs = ${ \@{ $definitionAoHoA[$i]{'DESCEND_DIRS'} } }[0];
                                 if (defined $descendDirs && $descendDirs =~ m/YES/i) {
                                     $testEntry{'descendDirs'} = "YES";
                                 } else {
