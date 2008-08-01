@@ -43,6 +43,15 @@ namespace EpetraExt {
 class BlockUtility {
  public:
 
+  /*! Creates a BlockMap object
+    
+	\param In
+	BaseMap - Map determining individual block structure, can be distrib. over subset of proc.'s
+	\param In
+	RowIndices - Defines the indices for local block rows
+  */
+  static Epetra_Map * GenerateBlockMap( const Epetra_BlockMap & BaseMap, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+
   //! BlockCrsMatrix constuctor
   /*! Creates a BlockGraph object
     

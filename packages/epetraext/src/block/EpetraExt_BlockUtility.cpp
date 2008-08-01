@@ -35,6 +35,39 @@ namespace EpetraExt {
 using std::vector;
 
 //==============================================================================
+Epetra_Map * BlockUtility::GenerateBlockMap(
+	const Epetra_BlockMap & BaseMap,
+        const vector<int> & RowIndices,
+        const Epetra_Comm & GlobalComm ) 
+{
+  int BaseIndex = BaseMap.IndexBase();
+  int Offset = BlockUtility::CalculateOffset(BaseMap);
+
+  //Get Base Global IDs
+  int NumBlockRows = RowIndices.size();
+  int Size = BaseMap.NumMyElements();
+  int TotalSize = NumBlockRows * Size;
+  vector<int> GIDs(Size);
+  BaseMap.MyGlobalElements( &GIDs[0] );
+
+  vector<int> GlobalGIDs( TotalSize );
+  for( int i = 0; i < NumBlockRows; ++i )
+  {
+    for( int j = 0; j < Size; ++j )
+      GlobalGIDs[i*Size+j] = GIDs[j] + RowIndices[i] * Offset;
+  }
+
+  int GlobalSize;
+  GlobalComm.SumAll( &TotalSize, &GlobalSize, 1 );
+
+  Epetra_Map *GlobalMap = 
+    new Epetra_Map( GlobalSize, TotalSize, &GlobalGIDs[0], BaseIndex, 
+		    GlobalComm );
+
+  return GlobalMap;
+}
+
+//==============================================================================
 Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_CrsGraph & BaseGraph,
         const vector< vector<int> > & RowStencil,
@@ -174,10 +207,12 @@ int BlockUtility::CalculateOffset(const Epetra_BlockMap & BaseMap)
 {
   int MaxGID = BaseMap.MaxAllGID();
 
-  int Offset = 1;
-  while( Offset <= MaxGID ) Offset *= 10;
+//   int Offset = 1;
+//   while( Offset <= MaxGID ) Offset *= 10;
 
-  return Offset;
+//   return Offset;
+
+  return MaxGID+1;
 }
 
 
