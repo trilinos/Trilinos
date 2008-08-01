@@ -54,6 +54,10 @@ namespace Stokhos {
     //! Project derivative of basis polynomial into this basis
     void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
 
+    //! Evaluate basis polynomials at given point
+    virtual void evaluateBases(const std::vector<T>& point,
+			    std::vector<T>& basis_pts) const;
+
   private:
 
     // Prohibit copying

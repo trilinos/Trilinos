@@ -32,6 +32,7 @@
 #define STOKHOS_BASIS_HPP
 
 #include <ostream>
+#include <string>
 #include "Stokhos_Polynomial.hpp"
 
 namespace Stokhos {
@@ -80,8 +81,22 @@ namespace Stokhos {
     //! Evaluate basis polynomial at zero
     virtual T evaluateZero(unsigned int i) const = 0;
 
+    //! Evaluate basis polynomials at given point
+    virtual void evaluateBases(const std::vector<T>& point,
+			       std::vector<T>& basis_pts) const {}
+
     //! Print basis
     virtual void print(std::ostream& os) const = 0;
+
+    //! Get term
+    virtual std::vector<unsigned int> getTerm(unsigned int i) const = 0;
+
+    //! Get index
+    virtual unsigned int 
+    getIndex(const std::vector<unsigned int>& term) const = 0;
+
+    //! Return name of basis
+    virtual const std::string& getName() const = 0;
 
   private:
 

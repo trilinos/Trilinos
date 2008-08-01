@@ -28,54 +28,58 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_LEGENDREBASIS_HPP
-#define STOKHOS_LEGENDREBASIS_HPP
+extern "C" {
+  void ncijk_(int*, int*);
+  void triple_(int*, int*, int*, int*, double*);
+  void psinorm_(int*, double*);
+}
 
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+template <typename BasisT>
+Stokhos::TayTripleProduct<BasisT>::
+TayTripleProduct()
+{
+}
 
-namespace Stokhos {
+template <typename BasisT>
+Stokhos::TayTripleProduct<BasisT>::
+~TayTripleProduct()
+{
+}
 
-  template <typename T>
-  class LegendreBasis : public OrthogPolyBasisBase<T> {
-  public:
+template <typename BasisT>
+unsigned int
+Stokhos::TayTripleProduct<BasisT>::
+num_values(unsigned int k) const
+{
+  int kk = k;
+  int n;
+  ncijk_(&kk, &n);
+  return n;
+}
 
-    //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
+template <typename BasisT>
+void
+Stokhos::TayTripleProduct<BasisT>::
+triple_value(unsigned int k, unsigned int l, 
+	     unsigned int& i, unsigned int& j, 
+	     typename Stokhos::TayTripleProduct<BasisT>::value_type& c) const
+{
+  int kk = k;
+  int ll = l+1;
+  int ii, jj;
+  triple_(&kk, &ll, &ii, &jj, &c);
+  i = ii;
+  j = jj;
+}
 
-    //! Constructor
-    LegendreBasis(unsigned int p);
+template <typename BasisT>
+typename Stokhos::TayTripleProduct<BasisT>::value_type
+Stokhos::TayTripleProduct<BasisT>::
+norm_squared(unsigned int i) const
+{
+  int ii = i;
+  double nrm;
+  psinorm_(&ii, &nrm);
+  return nrm;
+}
 
-    //! Destructor
-    ~LegendreBasis();
-
-    //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
-
-    //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
-
-    //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const std::vector<T>& point,
-			    std::vector<T>& basis_pts) const;
-
-  private:
-
-    // Prohibit copying
-    LegendreBasis(const LegendreBasis&);
-
-    // Prohibit Assignment
-    LegendreBasis& operator=(const LegendreBasis& b);
-
-  protected:
-
-    //! Derivative coefficients
-    std::vector< std::vector<T> > deriv_coeffs;
-
-  }; // class LegendreBasis
-
-} // Namespace Stokhos
-
-// Include template definitions
-#include "Stokhos_LegendreBasisImp.hpp"
-
-#endif

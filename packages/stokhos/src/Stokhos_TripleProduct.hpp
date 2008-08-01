@@ -51,6 +51,10 @@ namespace Stokhos {
     
     //! Destructor
     ~TripleProduct();
+
+    //! Get value (i,j')
+    const value_type& double_deriv(unsigned int i, 
+				   unsigned int j) const;
       
     //! Get value (i,j,k)
     const value_type& triple_value(unsigned int i, 
@@ -62,9 +66,12 @@ namespace Stokhos {
 				   unsigned int j, 
 				   unsigned int k) const;
 
-    //! Get value (i,j')
-    const value_type& double_deriv(unsigned int i, 
-				   unsigned int j) const;
+    //! Return number of non-zero's in Cijk for a given k
+    unsigned int num_values(unsigned int k) const;
+      
+    //! Get value (i,j,k)
+    void triple_value(unsigned int k, unsigned int l, 
+		      unsigned int& i, unsigned int& j, value_type& c) const;
     
     //! Get norm-squared
     const value_type& norm_squared(unsigned int i) const;
@@ -96,14 +103,14 @@ namespace Stokhos {
     //! Basis
     Teuchos::RCP<const BasisT> basis;
 
+    //! Bij' data
+    std::vector<value_type> Bij;
+
     //! Cijk data
     std::vector<value_type> Cijk;
 
     //! Dijk data = Cijk'
     std::vector<value_type> Dijk;
-
-    //! Bij' data
-    std::vector<value_type> Bij;
 
   }; // class Triple Product
 

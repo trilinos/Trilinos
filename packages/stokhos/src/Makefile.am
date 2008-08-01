@@ -61,15 +61,21 @@ STOKHOS_H = \
 	$(srcdir)/Stokhos_HermiteUnitBasisImp.hpp \
 	$(srcdir)/Stokhos_LegendreBasis.hpp \
 	$(srcdir)/Stokhos_LegendreBasisImp.hpp \
+	$(srcdir)/Stokhos_CompletePolynomialBasis.hpp \
+	$(srcdir)/Stokhos_CompletePolynomialBasisImp.hpp \
 	$(srcdir)/Stokhos_TripleProduct.hpp \
 	$(srcdir)/Stokhos_TripleProductImp.hpp \
+	$(srcdir)/Stokhos_TayTripleProduct.hpp \
+	$(srcdir)/Stokhos_TayTripleProductImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyApprox.hpp \
 	$(srcdir)/Stokhos_OrthogPolyApproxImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyExpansion.hpp \
-	$(srcdir)/Stokhos_OrthogPolyExpansionImp.hpp
+	$(srcdir)/Stokhos_OrthogPolyExpansionImp.hpp \
+	$(srcdir)/Stokhos_TayOrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_TayOrthogPolyExpansionImp.hpp
 
 STOKHOS = \
-	$(srcdir)/Stokhos_Version.cpp
+	$(srcdir)/Stokhos_Version.cpp 
 
 # Add packages that this package is dependent on
 include $(top_builddir)/Makefile.export.stokhos

@@ -134,3 +134,29 @@ print(std::ostream& os) const
     os << norms[i] << " ";
   os << "\n";
 }
+
+template <typename T>
+std::vector<unsigned int>
+Stokhos::OrthogPolyBasisBase<T>::
+getTerm(unsigned int i) const
+{
+  std::vector<unsigned int> t(1);
+  t[0] = i;
+  return t;
+}
+
+template <typename T>
+unsigned int
+Stokhos::OrthogPolyBasisBase<T>::
+getIndex(const std::vector<unsigned int>& term) const
+{
+  return term[0];
+}
+
+template <typename T>
+const std::string&
+Stokhos::OrthogPolyBasisBase<T>::
+getName() const
+{
+  return name;
+}

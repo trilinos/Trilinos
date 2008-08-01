@@ -35,22 +35,10 @@ Stokhos::TripleProduct<BasisT>::
 TripleProduct(const Teuchos::RCP<const BasisT>& basis_) :
   l(basis_->size()),
   basis(basis_),
-  Cijk(l*l*l),
-  Dijk(l*l*l),
-  Bij(l*l)
+  Bij(l*l),
+  Cijk(l*l*l)
 {
   compute();
-}
-
-template <typename BasisT>
-Stokhos::TripleProduct<BasisT>::
-TripleProduct(const Stokhos::TripleProduct<BasisT>& tp) :
-  l(tp.l),
-  basis(tp.basis),
-  Cijk(tp.Cijk),
-  Dijk(tp.Dijk),
-  Bij(tp.Bij)
-{
 }
 
 template <typename BasisT>
@@ -60,18 +48,11 @@ Stokhos::TripleProduct<BasisT>::
 }
 
 template <typename BasisT>
-Stokhos::TripleProduct<BasisT>&
+const typename Stokhos::TripleProduct<BasisT>::value_type&
 Stokhos::TripleProduct<BasisT>::
-operator=(const Stokhos::TripleProduct<BasisT>& tp)
+double_deriv(unsigned int i, unsigned int j) const
 {
-  if (this != &tp) {
-    l = tp.l;
-    basis = tp.basis;
-    Cijk = tp.Cijk;
-    Dijk = tp.Dijk;
-    Bij = tp.Bij;
-  }
-  return *this;
+  return Bij[ l*j + i ];
 }
 
 template <typename BasisT>
@@ -88,14 +69,6 @@ Stokhos::TripleProduct<BasisT>::
 triple_deriv(unsigned int i, unsigned int j, unsigned int k) const
 {
   return Dijk[ l*(l*k + j) + i ];
-}
-
-template <typename BasisT>
-const typename Stokhos::TripleProduct<BasisT>::value_type&
-Stokhos::TripleProduct<BasisT>::
-double_deriv(unsigned int i, unsigned int j) const
-{
-  return Bij[ l*j + i ];
 }
 
 template <typename BasisT>
@@ -135,4 +108,23 @@ compute()
 	  Dijk[ l*(l*k+j) + i ] += b[m]*Cijk[ l*(l*m+j) + i ];
       }
   }
+}
+
+template <typename BasisT>
+unsigned int
+Stokhos::TripleProduct<BasisT>::
+num_values(unsigned int k) const
+{
+  return l*l;
+}
+
+template <typename BasisT>
+void
+Stokhos::TripleProduct<BasisT>::
+triple_value(unsigned int k, unsigned int ll, 
+	     unsigned int& i, unsigned int& j, value_type& c) const
+{
+  j = ll/l;
+  i = ll-j*l;
+  c = triple_value(i,j,k);
 }

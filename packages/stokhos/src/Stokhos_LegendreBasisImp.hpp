@@ -131,3 +131,21 @@ projectDerivative(unsigned int i, std::vector<T>& coeffs) const
 {
   coeffs = deriv_coeffs[i];
 }
+
+template <typename T>
+void
+Stokhos::LegendreBasis<T>::
+evaluateBases(const std::vector<T>& point, std::vector<T>& basis_pts) const
+{
+  const T& x = point[0];
+
+  // Evaluate basis polynomials P(x) using 3 term recurrence
+  // P_0(x) = 1
+  // P_1(x) = x
+  // P_i(x) = (2*i-1)/i*x*P_{i-1}(x) - (i-1)/i*P_{i-2}(x), i=2,3,...
+  basis_pts[0] = T(1.0);
+  if (this->p >= 1)
+    basis_pts[1] = x;
+  for (unsigned int i=2; i<=this->p; i++)
+    basis_pts[i] = T(2*i-1)/T(i)*x*basis_pts[i-1] - T(i-1)/T(i)*basis_pts[i-2];
+}

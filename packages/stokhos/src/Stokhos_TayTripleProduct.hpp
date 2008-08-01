@@ -23,59 +23,54 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_LEGENDREBASIS_HPP
-#define STOKHOS_LEGENDREBASIS_HPP
-
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+#ifndef STOKHOS_TAYTRIPLEPRODUCT_HPP
+#define STOKHOS_TAYTRIPLEPRODUCT_HPP
 
 namespace Stokhos {
 
-  template <typename T>
-  class LegendreBasis : public OrthogPolyBasisBase<T> {
+  //! 3-tensor that stores C_{ijk} = < \Psi_i \Psi_j \Psi_k >
+  template <typename BasisT>
+  class TayTripleProduct {
   public:
 
-    //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
-
+    typedef BasisT basis_type;
+    
+    typedef typename BasisT::value_type value_type;
+    
     //! Constructor
-    LegendreBasis(unsigned int p);
-
+    TayTripleProduct();
+    
     //! Destructor
-    ~LegendreBasis();
+    ~TayTripleProduct();
 
-    //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
-
-    //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
-
-    //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const std::vector<T>& point,
-			    std::vector<T>& basis_pts) const;
+    //! Return number of non-zero's in Cijk for a given k
+    unsigned int num_values(unsigned int k) const;
+      
+    //! Get value (i,j,k)
+    void triple_value(unsigned int k, unsigned int l, 
+		      unsigned int& i, unsigned int& j, value_type& c) const;
+    
+    //! Get norm-squared
+    value_type norm_squared(unsigned int i) const;
 
   private:
 
     // Prohibit copying
-    LegendreBasis(const LegendreBasis&);
+    TayTripleProduct(const TayTripleProduct&);
 
     // Prohibit Assignment
-    LegendreBasis& operator=(const LegendreBasis& b);
+    TayTripleProduct& operator=(const TayTripleProduct& b);
 
-  protected:
+  }; // class Triple Product
 
-    //! Derivative coefficients
-    std::vector< std::vector<T> > deriv_coeffs;
-
-  }; // class LegendreBasis
-
-} // Namespace Stokhos
+} // namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_LegendreBasisImp.hpp"
+#include "Stokhos_TayTripleProductImp.hpp"
 
-#endif
+#endif // STOKHOS_TAYTRIPLEPRODUCT_HPP

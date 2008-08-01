@@ -98,9 +98,31 @@ namespace Stokhos {
     //! Array access
     const T& operator[](unsigned int i) const { return coeff_[i]; }
 
+    //! Get term
+    template <typename BasisT>
+    T& 
+    term(const BasisT& basis, 
+	 int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
+	 int i5 = -1, int i6 = -1, int i7 = -1, int i9 = -1, int i9 = -1);
+
+    //! Get term
+    template <typename BasisT>
+    const T& 
+    term(const BasisT& basis, 
+	 int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
+	 int i5 = -1, int i6 = -1, int i7 = -1, int i9 = -1, int i9 = -1) const;
+
     //! Write polynomial approximation in standard basis
     template <typename BasisT>
     Polynomial<T> toStandardBasis(const BasisT& basis) const;
+
+    //! Evaluate polynomial approximation at a point
+    template <typename BasisT>
+    T evaluate(const BasisT& basis, const std::vector<T>& point) const;
+
+    //! Print approximation in basis
+    template <typename BasisT>
+    std::ostream& print(const BasisT& basis, std::ostream& os) const;
 
   protected:
 

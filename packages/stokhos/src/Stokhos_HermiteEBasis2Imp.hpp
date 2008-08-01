@@ -110,3 +110,21 @@ projectDerivative(unsigned int i, std::vector<T>& coeffs) const
   if (i > 0)
     coeffs[i-1] = T(i);
 }
+
+template <typename T>
+void
+Stokhos::HermiteEBasis2<T>::
+evaluateBases(const std::vector<T>& point, std::vector<T>& basis_pts) const
+{
+  const T& x = point[0];
+
+  // Evaluate basis polynomials He(x) using 3 term recurrence
+  // He_0(x) = 1
+  // He_1(x) = x
+  // He_i(x) = x*He_{i-1}(x) - (i-1)*He_{i-2}(x), i=2,3,...
+  basis_pts[0] = T(1.0);
+  if (this->p >= 1)
+    basis_pts[1] = x;
+  for (unsigned int i=2; i<=this->p; i++)
+    basis_pts[i] = x*basis_pts[i-1] - T(i-1)*basis_pts[i-2];
+}

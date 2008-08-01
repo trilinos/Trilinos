@@ -742,6 +742,82 @@ exp(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_ty
     cc[i] = B(i-1,0) * cc[0];
 }
 
+// template <typename T>
+// void
+// Stokhos::OrthogPolyExpansion<T>::
+// exp(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+//     const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
+// {
+//   const char* func = "Stokhos::OrthogPolyExpansion::exp()";
+
+//   unsigned int pc = a.size();
+//   if (pc != c.size())
+//     c.resize(pc);
+
+// #ifdef STOKHOS_DEBUG
+//   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
+// 		     func << ":  Expansion size (" << size() 
+// 		     << ") is too small for computation (" << pc
+// 		     << " needed).");
+// #endif
+
+//   const value_type* ca = a.coeff();
+//   value_type* cc = c.coeff();
+
+//   const typename tp_type::basis_type& basis = Cijk.getBasis();
+//   value_type psi_0 = basis.evaluateZero(0);
+
+//   // Fill A and B
+//   for (unsigned int i=1; i<pc; i++) {
+//     B(i-1,0) = 0.0;
+//     for (unsigned int j=1; j<pc; j++) {
+//       A(i-1,j-1) = 0.0;
+//       for (unsigned int k=0; k<pc; k++) {
+// 	A(i-1,j-1) -= ca[k]*Cijk.triple_integral(i,j,k);
+// 	std::cout << "E[" << i << "," << j << "," << k << "] = " 
+// 		  << Cijk.triple_integral(i,j,k) << std::endl;
+//       }
+//       B(i-1,0) += ca[j]*Cijk.triple_integral(i,0,j);
+//       if (i == j)
+// 	A(i-1,j-1) += 1.0;
+//     }
+//     B(i-1,0) *= psi_0;
+//   }
+
+//   std::cout << "A = " << std::endl;
+//   A.print(std::cout);
+
+//   std::cout << "B = " << std::endl;
+//   B.print(std::cout);
+
+//   // Solve system
+//   int info = solve(pc-1, 1);
+
+//   std::cout << "X = " << std::endl;
+//   B.print(std::cout);
+
+//   TEST_FOR_EXCEPTION(info < 0, std::logic_error,
+// 		     func << ":  Argument " << info 
+// 		     << " for solve had illegal value");
+//   TEST_FOR_EXCEPTION(info > 0, std::logic_error,
+// 		     func << ":  Diagonal entry " << info 
+// 		     << " in LU factorization is exactly zero");
+
+//   // Compute order-0 coefficient
+//   value_type s = psi_0 * ca[0];
+//   value_type t = psi_0;
+//   for (unsigned int i=1; i<pc; i++) {
+//     s += basis.evaluateZero(i) * ca[i];
+//     t += basis.evaluateZero(i) * B(i-1,0);
+//   }
+//   s = std::exp(s);
+//   cc[0] = (s/t);
+
+//   // Compute remaining coefficients
+//   for (unsigned int i=1; i<pc; i++)
+//     cc[i] = B(i-1,0) * cc[0];
+// }
+
 template <typename T>
 void
 Stokhos::OrthogPolyExpansion<T>::
@@ -1385,4 +1461,25 @@ min(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_ty
     c = a;
   else
     c = OrthogPolyApprox<value_type>(a.size(), b);
+}
+
+template <typename T>
+void
+Stokhos::OrthogPolyExpansion<T>::
+derivative(Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& c, 
+    const Stokhos::OrthogPolyApprox<typename Stokhos::OrthogPolyExpansion<T>::value_type >& a)
+{
+  unsigned int pc = a.size();
+  if (pc != c.size())
+    c.resize(pc);
+
+  const value_type* ca = a.coeff();
+  value_type* cc = c.coeff();
+
+  for (unsigned int i=0; i<pc; i++) {
+    cc[i] = 0.0;
+    for (unsigned int j=0; j<pc; j++)
+      cc[i] += ca[j]*Cijk.double_deriv(i,j);
+    cc[i] /= Cijk.norm_squared(i);
+  }
 }
