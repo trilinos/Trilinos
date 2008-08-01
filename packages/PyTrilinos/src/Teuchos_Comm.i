@@ -304,6 +304,13 @@ Teuchos::Comm::reduceAll;
 %ignore Teuchos::Comm::gatherAll;
 %ignore Teuchos::Comm::reduceAll;
 %ignore Teuchos::Comm::scan;
+%ignore Teuchos::Comm::isend;
+%ignore Teuchos::Comm::ireceive;
+%ignore Teuchos::Comm::wait;
+%ignore Teuchos::Comm::waitAll;
+%ignore Teuchos::broadcast(const Comm&, const int, const ArrayView&);
+%ignore Teuchos::wait;
+%ignore Teuchos::waitAll;
 %include "Teuchos_Comm.hpp"
 %template(Comm_long) Teuchos::Comm<long>;
 %pythoncode
