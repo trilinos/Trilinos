@@ -101,7 +101,9 @@ int InternalPartitioner::precompute()
   int err = 0, numChanged = 0;
   std::string str1("Isorropia::InternalPartitioner::precompute ");
   std::string str2;
+#ifdef HAVE_MPI
   MPI_Comm mpicomm;
+#endif
 
 
   Library::precompute();
