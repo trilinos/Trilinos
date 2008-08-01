@@ -47,7 +47,7 @@
 
 #ifdef HAVE_SACADO_STOKHOS
 #include "Sacado_PCE_OrthogPoly.hpp"
-#include "Stokhos_HermiteEBasis.hpp"
+#include "Stokhos_HermiteEBasis2.hpp"
 #endif
 
 // The function to differentiate
@@ -69,8 +69,8 @@ int main(int argc, char **argv)
     u.fastAccessCoeff(2) = 0.06;
     u.fastAccessCoeff(3) = 0.002;
 
-    Sacado::PCE::Hermite<double> w = std::log(u);
-    Sacado::PCE::Hermite<double> v = std::sinh(1.0/(w*w + 1.0));
+    Sacado::PCE::Hermite<double> v = std::log(u);
+    //Sacado::PCE::Hermite<double> v = std::sinh(1.0/(w*w + 1.0));
 
     std::cout.precision(12);
     std::cout << "u (hermite basis) = " << u << std::endl;
@@ -84,25 +84,26 @@ int main(int argc, char **argv)
     for (unsigned int i=0; i<=d; i++)
       ut.fastAccessCoeff(i) = us.coeff(i);
 
-    Sacado::Tay::Taylor<double> wt = std::log(ut);
-    Sacado::Tay::Taylor<double> vt = std::sinh(1.0/(wt*wt + 1.0));
+    Sacado::Tay::Taylor<double> vt = std::log(ut);
+    //Sacado::Tay::Taylor<double> vt = std::sinh(1.0/(wt*wt + 1.0));
 
     std::cout.precision(12);
     std::cout << "u (taylor basis) = " << ut << std::endl;
     std::cout << "v (taylor basis) = " << vt << std::endl;
 
 #ifdef HAVE_SACADO_STOKHOS
-    typedef Stokhos::HermiteEBasis<double> basis_type;
+    typedef Stokhos::HermiteEBasis2<double> basis_type;
+    typedef Sacado::PCE::OrthogPoly<double>::expansion_type expansion_type;
     Teuchos::RCP<basis_type> basis = Teuchos::rcp(new basis_type(d));
-    Teuchos::RCP< Stokhos::OrthogPolyExpansion<double> > expansion
-      = Teuchos::rcp(new Stokhos::OrthogPolyExpansion<double>(basis));
+    Teuchos::RCP<expansion_type> expansion = 
+      Teuchos::rcp(new expansion_type(basis));
     Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
     Sacado::PCE::OrthogPoly<double> ue(d+1);
     for (unsigned int i=0; i<=d; i++)
       ue.fastAccessCoeff(i) = u.coeff(i);
 
-    Sacado::PCE::OrthogPoly<double> we = std::log(ue);
-    Sacado::PCE::OrthogPoly<double> ve = std::sinh(1.0/(we*we + 1.0));
+    Sacado::PCE::OrthogPoly<double> ve = std::log(ue);
+    //Sacado::PCE::OrthogPoly<double> ve = std::sinh(1.0/(we*we + 1.0));
 
     std::cout << "ue (hermite basis) = " << ue << std::endl;
     std::cout << "ue (standard basis) = " << ue.toStandardBasis() << std::endl;
