@@ -298,14 +298,14 @@ TIMER = \
 	$(srcdir)/timer/timer_params.c
 
 UTILITIES_H = \
-	$(srcdir)/Utilities/Communication/zoltan_comm.h \
-	$(srcdir)/Utilities/Communication/zoltan_comm_cpp.h \
-	$(srcdir)/Utilities/Timer/zoltan_timer_cpp.h \
-	$(srcdir)/Utilities/Timer/zoltan_timer.h \
-	$(srcdir)/Utilities/Timer/timer.h \
-	$(srcdir)/Utilities/DDirectory/zoltan_dd.h \
-	$(srcdir)/Utilities/DDirectory/zoltan_dd_cpp.h \
-	$(srcdir)/Utilities/Memory/zoltan_mem.h \
+	$(srcdir)/include/zoltan_comm.h \
+	$(srcdir)/include/zoltan_comm_cpp.h \
+	$(srcdir)/include/zoltan_timer_cpp.h \
+	$(srcdir)/include/zoltan_timer.h \
+	$(srcdir)/include/timer.h \
+	$(srcdir)/include/zoltan_dd.h \
+	$(srcdir)/include/zoltan_dd_cpp.h \
+	$(srcdir)/include/zoltan_mem.h \
 	$(srcdir)/Utilities/shared/zoltan_util.h \
 	$(srcdir)/Utilities/shared/zoltan_id.h
 
