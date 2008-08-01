@@ -39,12 +39,20 @@ generate-sample-output.pl : generate-sample-output.pl.stub
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = hermite_example
+noinst_PROGRAMS = hermite_example product_basis_example dakota_pce
 
 AM_CPPFLAGS = $(STOKHOS_INCLUDES)
 
 hermite_example_SOURCES = $(srcdir)/hermite_example.cpp
 hermite_example_DEPENDENCIES = $(top_builddir)/src/libstokhos.a 
 hermite_example_LDADD = $(STOKHOS_LIBS)
+
+product_basis_example_SOURCES = $(srcdir)/product_basis_example.cpp
+product_basis_example_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
+product_basis_example_LDADD = $(hermite_example_LDADD)
+
+dakota_pce_SOURCES = $(srcdir)/dakota_pce.cpp
+dakota_pce_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
+dakota_pce_LDADD = $(hermite_example_LDADD)
 
 SUBDIRS = 
