@@ -124,10 +124,9 @@ am__libisorropia_a_SOURCES_DIST = $(srcdir)/Isorropia_Utils.cpp \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp \
 	$(srcdir)/epetra/zoltanLib/QueryObject.cpp \
-	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
 am__objects_1 = Isorropia_Utils.$(OBJEXT) \
 	Isorropia_Exception.$(OBJEXT)
 am__objects_2 = Isorropia_EpetraCostDescriber.$(OBJEXT) \
@@ -137,11 +136,10 @@ am__objects_2 = Isorropia_EpetraCostDescriber.$(OBJEXT) \
 	Isorropia_EpetraOrderer.$(OBJEXT) Isorropia_Epetra.$(OBJEXT) \
 	Isorropia_EpetraRedistributor.$(OBJEXT) \
 	Isorropia_EpetraLibrary.$(OBJEXT) \
-	Isorropia_EpetraZoltanLib.$(OBJEXT) \
 	Isorropia_EpetraInternalPartitioner.$(OBJEXT)
 @BUILD_EPETRA_TRUE@am__objects_3 = $(am__objects_2)
 am__objects_4 = QueryObject.$(OBJEXT) \
-	Isorropia_Zoltan_Repartition.$(OBJEXT)
+	Isorropia_EpetraZoltanLib.$(OBJEXT)
 @BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_5 =  \
 @BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_4)
 am_libisorropia_a_OBJECTS = $(am__objects_1) $(am__objects_3) \
@@ -173,10 +171,9 @@ am__include_HEADERS_DIST = $(srcdir)/Isorropia_CostDescriber.hpp \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.hpp \
 	$(srcdir)/epetra/zoltanLib/QueryObject.hpp \
-	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -319,7 +316,6 @@ EPETRA = \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp
 
 EPETRA_H = \
@@ -331,17 +327,18 @@ EPETRA_H = \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.hpp
 
 EPETRA_ZOLTAN = \
 	$(srcdir)/epetra/zoltanLib/QueryObject.cpp \
- 	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp 
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp 
 
+# 	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp 
 EPETRA_ZOLTAN_H = \
 	$(srcdir)/epetra/zoltanLib/QueryObject.hpp \
-	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp 
+	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp 
 
+#	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp 
 DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
 @BUILD_EPETRA_TRUE@EPETRA_SOURCES = $(EPETRA)
 @BUILD_EPETRA_TRUE@EPETRA_HEADERFILES = $(EPETRA_H)
@@ -500,7 +497,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_EpetraZoltanLib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Exception.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Isorropia_Zoltan_Repartition.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QueryObject.Po@am__quote@
 
 .cpp.o:
@@ -657,20 +653,6 @@ Isorropia_EpetraLibrary.obj: $(srcdir)/epetra/Isorropia_EpetraLibrary.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraLibrary.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp'; fi`
 
-Isorropia_EpetraZoltanLib.o: $(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraZoltanLib.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo -c -o Isorropia_EpetraZoltanLib.o `test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo $(DEPDIR)/Isorropia_EpetraZoltanLib.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' object='Isorropia_EpetraZoltanLib.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraZoltanLib.o `test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
-
-Isorropia_EpetraZoltanLib.obj: $(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraZoltanLib.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo -c -o Isorropia_EpetraZoltanLib.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo $(DEPDIR)/Isorropia_EpetraZoltanLib.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' object='Isorropia_EpetraZoltanLib.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraZoltanLib.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; fi`
-
 Isorropia_EpetraInternalPartitioner.o: $(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraInternalPartitioner.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraInternalPartitioner.Tpo -c -o Isorropia_EpetraInternalPartitioner.o `test -f '$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraInternalPartitioner.Tpo $(DEPDIR)/Isorropia_EpetraInternalPartitioner.Po
@@ -699,19 +681,19 @@ QueryObject.obj: $(srcdir)/epetra/zoltanLib/QueryObject.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueryObject.obj `if test -f '$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/zoltanLib/QueryObject.cpp'; fi`
 
-Isorropia_Zoltan_Repartition.o: $(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Zoltan_Repartition.o -MD -MP -MF $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo -c -o Isorropia_Zoltan_Repartition.o `test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo $(DEPDIR)/Isorropia_Zoltan_Repartition.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' object='Isorropia_Zoltan_Repartition.o' libtool=no @AMDEPBACKSLASH@
+Isorropia_EpetraZoltanLib.o: $(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraZoltanLib.o -MD -MP -MF $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo -c -o Isorropia_EpetraZoltanLib.o `test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo $(DEPDIR)/Isorropia_EpetraZoltanLib.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' object='Isorropia_EpetraZoltanLib.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Zoltan_Repartition.o `test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraZoltanLib.o `test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' || echo '$(srcdir)/'`$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
 
-Isorropia_Zoltan_Repartition.obj: $(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_Zoltan_Repartition.obj -MD -MP -MF $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo -c -o Isorropia_Zoltan_Repartition.obj `if test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_Zoltan_Repartition.Tpo $(DEPDIR)/Isorropia_Zoltan_Repartition.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp' object='Isorropia_Zoltan_Repartition.obj' libtool=no @AMDEPBACKSLASH@
+Isorropia_EpetraZoltanLib.obj: $(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Isorropia_EpetraZoltanLib.obj -MD -MP -MF $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo -c -o Isorropia_EpetraZoltanLib.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Isorropia_EpetraZoltanLib.Tpo $(DEPDIR)/Isorropia_EpetraZoltanLib.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp' object='Isorropia_EpetraZoltanLib.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_Zoltan_Repartition.obj `if test -f '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Isorropia_EpetraZoltanLib.obj `if test -f '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; then $(CYGPATH_W) '$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
