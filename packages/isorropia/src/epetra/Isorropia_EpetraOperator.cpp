@@ -75,7 +75,7 @@ Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  paramlist_ = paramlist;
+  setParameters(paramlist);
 }
 
 Operator::
@@ -91,7 +91,7 @@ Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 {
 
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  paramlist_ = paramlist;
+  setParameters(paramlist);
 }
 
 Operator::
@@ -105,7 +105,7 @@ Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  paramlist_ = paramlist;
+  setParameters(paramlist);
 }
 
 Operator::
@@ -120,7 +120,7 @@ Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  paramlist_ = paramlist;
+  setParameters(paramlist);
 }
 
 Operator::~Operator()
