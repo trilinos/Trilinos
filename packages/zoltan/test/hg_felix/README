@@ -1,3 +1,0 @@
-This is a small hypergraph with 28 edges and 72 vertices.
-It has one weight per vertex and one weight per edge.  It
-also has some vertices which are not part of any hyperedge.

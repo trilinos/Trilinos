@@ -1,7 +1,0 @@
-@INCLUDE=thyra/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-@INCLUDE=amesos/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-@INCLUDE=aztecoo/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-@INCLUDE=belos/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-@INCLUDE=ifpack/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/stratimikos.tag=$(TRILINOS_HOME)/packages/stratimikos/doc/html

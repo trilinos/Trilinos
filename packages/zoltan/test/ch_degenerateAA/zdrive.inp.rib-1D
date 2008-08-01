@@ -1,9 +1,0 @@
-Decomposition Method 	= rib
-Zoltan Parameters       = reduce_dimensions=1
-Zoltan Parameters       = degenerate_ratio=9
-Zoltan Parameters       = keep_cuts=1
-File Type		= Chaco
-File Name		= degenerateAA
-Parallel Disk Info	= number=0
-Test Drops		= 1
-gnuplot output = 0

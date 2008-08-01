@@ -1,5 +1,0 @@
-Tests that exercised repartition and fast_repartition with k < p and
-target k < input k.  These tests came from ML.  The exposed flaws in
-construction of the augmented hypergraph, caused by some vertices' not
-generating repartition edges (since they were input from parts that will
-not exist in the new partition).

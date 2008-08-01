@@ -1,9 +1,0 @@
-Decomposition Method 	= hypergraph
-Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
-Zoltan Parameters       = lb_approach=partition
-File Type		= matrixmarket+, initial distribution=file, initial pins=file
-File Name		= ewgt
-Parallel Disk Info	= number=0
-Zoltan Parameters       = edge_weight_dim=1
-

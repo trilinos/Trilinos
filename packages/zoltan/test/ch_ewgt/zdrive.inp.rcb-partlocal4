@@ -1,7 +1,0 @@
-Decomposition Method 	= rcb
-Zoltan Parameters       = comm_weight_dim=1
-Zoltan Parameters	= 
-File Type		= Chaco
-File Name		= ewgt
-Parallel Disk Info	= number=0
-test local partitions	= 4

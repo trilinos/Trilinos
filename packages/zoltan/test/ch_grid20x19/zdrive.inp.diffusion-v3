@@ -1,6 +1,0 @@
-Decomposition Method 	= parmetis
-Zoltan Parameters	= parmetis_method=repartldiffusion
-Zoltan Parameters	= debug_level=3, timer=cpu
-File Type		= Chaco
-File Name		= grid20x19
-Parallel Disk Info	= number=0

@@ -1,7 +1,0 @@
-Decomposition Method 	= parmetis
-Zoltan Parameters	= parmetis_method=partkway
-Zoltan Parameters	= order_method=metis
-File Type		= Chaco
-File Name		= hammond
-Parallel Disk Info	= number=0
-zdrive action = 3

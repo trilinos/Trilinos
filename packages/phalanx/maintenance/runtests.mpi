@@ -1,2 +1,0 @@
-#!/bin/sh
-/home/rppawlo/Trilinos/commonTools/test/utilities/runtests --trilinos-dir=/home/rppawlo/Trilinos --comm=mpi --build-dir=/home/rppawlo/Trilinos/LINUX.MPI --category=FRAMEWORK --package=phalanx --output-dir=/home/rppawlo/junk/TrilinosTestResults --mpi-go="mpirun -np " --max-proc=2

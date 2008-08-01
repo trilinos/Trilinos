@@ -1,9 +1,0 @@
-Simple example of how to use Zoltan for sparse matrix computations.
-
-ex1: Sparse matrix example. We load-balance the nonzeros (not rows)
-     in the matrix among processors. 
-
-Note that you may have to adapt the Makefile to your local conditions.
-
-For more information about Zoltan, go to
- http://www.cs.sandia.gov/Zoltan 

@@ -1,8 +1,0 @@
-Decomposition Method 	= hypergraph
-Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-Zoltan Parameters	= ADD_OBJ_WEIGHT=none
-Zoltan Parameters       = PHG_REFINEMENT_LOOP_LIMIT = 20
-Zoltan Parameters       = lb_approach=partition
-File Type		= matrixmarket
-File Name		= diag500_4
-Parallel Disk Info	= number=0

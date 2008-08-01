@@ -1,7 +1,0 @@
-Decomposition Method 	= none
-Zoltan Parameters	= order_method=nodend, order_type=global
-Zoltan Parameters	= order_start_index=1
-File Type		= Chaco
-File Name		= grid20x19
-Parallel Disk Info	= number=0
-zdrive action = 2

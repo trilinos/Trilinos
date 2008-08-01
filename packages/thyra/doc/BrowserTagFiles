@@ -1,3 +1,0 @@
-@INCLUDE=rtop/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/thyraBrowser.tag=$(TRILINOS_HOME)/packages/thyra/browser/doc/html

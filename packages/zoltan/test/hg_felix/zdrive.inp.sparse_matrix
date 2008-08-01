@@ -1,8 +1,0 @@
-Decomposition Method 	= sparse_matrix
-Zoltan Parameters       = sparse_matrix_approach=phg_rows
-File Type               = matrixmarket+, initial pins=rows
-#Zoltan Parameters      = sparse_matrix_approach=phg_columns
-#File Type               = matrixmarket+, initial pins=columns
-File Name               = felix
-Parallel Disk Info	= number=0
-#zdrive debug level      = 8

@@ -1,7 +1,0 @@
-Decomposition Method 	= rcb
-Zoltan Parameters	= remap=0
-Zoltan Parameters       = debug_level=10
-File Type		= Chaco
-File Name		= nograph
-Parallel Disk Info	= number=0
-test local partitions	= 2

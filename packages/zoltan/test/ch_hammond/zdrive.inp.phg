@@ -1,7 +1,0 @@
-Decomposition Method 	= hypergraph
-zoltan parameters	= hypergraph_package=phg
-zoltan parameters	= lb_approach=partition
-zoltan parameters	= final_output=1
-File Type		= Chaco
-File Name		= hammond
-Parallel Disk Info	= number=0

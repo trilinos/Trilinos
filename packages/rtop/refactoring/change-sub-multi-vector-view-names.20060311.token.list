@@ -1,4 +1,0 @@
-SubVectorT                         ConstSubVectorView
-MutableSubVectorT                  SubVectorView
-SubMultiVectorT                    ConstSubMultiVectorView
-MutableSubMultiVectorT             SubMultiVectorView

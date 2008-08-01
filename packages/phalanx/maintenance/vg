@@ -1,2 +1,0 @@
-#/usr/bin/tcsh
-valgrind --leak-check=yes -v --num-callers=20 $1

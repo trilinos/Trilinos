@@ -1,7 +1,0 @@
-Decomposition Method 	= hypergraph
-Zoltan Parameters       = lb_approach=partition
-Zoltan Parameters       = hypergraph_package=phg
-File Type		= matrixmarket+
-File Name		= simple
-test local partitions   = 4
-Parallel Disk Info	= number=0

@@ -1,2 +1,0 @@
-#/usr/bin/tcsh
-find . -name '*~' | xargs rm

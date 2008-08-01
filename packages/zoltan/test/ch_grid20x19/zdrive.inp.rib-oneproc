@@ -1,5 +1,0 @@
-Decomposition Method 	= rib
-Zoltan Parameters	= debug_level=3, timer=cpu
-File Type		= Chaco, initial procs = 1
-File Name		= grid20x19
-Parallel Disk Info	= number=0

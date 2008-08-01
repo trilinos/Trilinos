@@ -1,9 +1,0 @@
-Decomposition Method 	= hypergraph
-Zoltan Parameters	= remap=0
-Zoltan Parameters	= obj_weight_dim=1
-Zoltan Parameters       = phg_from_graph_method=pairs
-Zoltan Parameters       = phg_edge_size_threshold=1.0
-Zoltan Parameters       = lb_approach = partition
-File Type		= Chaco, initial distribution = file
-File Name		= drake
-Parallel Disk Info	= number=0

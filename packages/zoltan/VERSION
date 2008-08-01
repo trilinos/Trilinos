@@ -1,6 +1,0 @@
-This is Zoltan version 3.0 (or higher).
-
-To determine the exact version number, type
-  grep ZOLTAN_VERSION_NUMBER include/zoltan.h
-
-
