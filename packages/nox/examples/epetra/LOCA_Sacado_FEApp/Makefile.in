@@ -79,6 +79,7 @@
 # FEApp Sources
 # ------------------------------------------------------------------------
 
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -100,7 +101,8 @@ host_triplet = @host@
 target_triplet = @target@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
-@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@noinst_PROGRAMS = brusselator$(EXEEXT)
+@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@noinst_PROGRAMS = brusselator$(EXEEXT) \
+@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@	bratu$(EXEEXT)
 subdir = examples/epetra/LOCA_Sacado_FEApp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -126,42 +128,47 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
+LIBRARIES = $(noinst_LIBRARIES)
+ARFLAGS = cru
+libfeapp_a_LIBADD =
 am__objects_1 =
 am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1)
-am__objects_3 = brusselator-FEApp_LinearElement.$(OBJEXT) \
-	brusselator-FEApp_ElementFactory.$(OBJEXT)
-am__objects_4 = brusselator-FEApp_GaussianQuadrature2.$(OBJEXT) \
-	brusselator-FEApp_QuadratureFactory.$(OBJEXT)
-am__objects_5 = brusselator-FEApp_SourceFunctionFactory.$(OBJEXT)
-am__objects_6 = brusselator-FEApp_HeatNonlinearSourcePDE.$(OBJEXT) \
-	brusselator-FEApp_BrusselatorPDE.$(OBJEXT)
-am__objects_7 = brusselator-FEApp_BrusselatorNodeBCStrategy.$(OBJEXT) \
-	brusselator-FEApp_ConstantNodeBCStrategy.$(OBJEXT)
-am__objects_8 = brusselator-FEApp_BrusselatorProblem.$(OBJEXT) \
-	brusselator-FEApp_HeatNonlinearSourceProblem.$(OBJEXT) \
-	brusselator-FEApp_ProblemFactory.$(OBJEXT)
-am__objects_9 = brusselator-FEApp_Mesh.$(OBJEXT)
-am__objects_10 = brusselator-FEApp_InitPostOps.$(OBJEXT) \
-	brusselator-FEApp_GlobalFill.$(OBJEXT)
-am__objects_11 = brusselator-FEApp_CZeroDiscretization.$(OBJEXT) \
-	brusselator-FEApp_BlockDiscretization.$(OBJEXT) \
-	brusselator-FEApp_DiscretizationFactory.$(OBJEXT)
-am__objects_12 = brusselator-FEApp_Application.$(OBJEXT) \
-	brusselator-FEApp_ModelEvaluator.$(OBJEXT)
-am__objects_13 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	$(am__objects_1) $(am__objects_1)
+am__objects_3 = FEApp_LinearElement.$(OBJEXT) \
+	FEApp_ElementFactory.$(OBJEXT)
+am__objects_4 = FEApp_GaussianQuadrature2.$(OBJEXT) \
+	FEApp_QuadratureFactory.$(OBJEXT)
+am__objects_5 = FEApp_FunctionFactory.$(OBJEXT)
+am__objects_6 = FEApp_SourceFunctionFactory.$(OBJEXT)
+am__objects_7 = FEApp_HeatNonlinearSourcePDE.$(OBJEXT) \
+	FEApp_BrusselatorPDE.$(OBJEXT)
+am__objects_8 = FEApp_BrusselatorNodeBCStrategy.$(OBJEXT) \
+	FEApp_ConstantNodeBCStrategy.$(OBJEXT)
+am__objects_9 = FEApp_BrusselatorProblem.$(OBJEXT) \
+	FEApp_HeatNonlinearSourceProblem.$(OBJEXT) \
+	FEApp_ProblemFactory.$(OBJEXT)
+am__objects_10 = FEApp_Mesh.$(OBJEXT)
+am__objects_11 = FEApp_InitPostOps.$(OBJEXT) \
+	FEApp_GlobalFill.$(OBJEXT)
+am__objects_12 = FEApp_CZeroDiscretization.$(OBJEXT) \
+	FEApp_BlockDiscretization.$(OBJEXT) \
+	FEApp_DiscretizationFactory.$(OBJEXT)
+am__objects_13 = FEApp_Application.$(OBJEXT) \
+	FEApp_ModelEvaluator.$(OBJEXT) FEApp_SGMatrixFreeOp.$(OBJEXT) \
+	FEApp_SGMeanPrecOp.$(OBJEXT)
+am__objects_14 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
-	$(am__objects_12)
-am_brusselator_OBJECTS = brusselator-brusselator.$(OBJEXT) \
-	$(am__objects_2) $(am__objects_13)
+	$(am__objects_12) $(am__objects_13)
+am_libfeapp_a_OBJECTS = $(am__objects_2) $(am__objects_14)
+libfeapp_a_OBJECTS = $(am_libfeapp_a_OBJECTS)
+PROGRAMS = $(noinst_PROGRAMS)
+am_bratu_OBJECTS = bratu.$(OBJEXT)
+bratu_OBJECTS = $(am_bratu_OBJECTS)
+am_brusselator_OBJECTS = brusselator.$(OBJEXT)
 brusselator_OBJECTS = $(am_brusselator_OBJECTS)
-brusselator_DEPENDENCIES =
-brusselator_LINK = $(CXXLD) $(brusselator_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -174,8 +181,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(brusselator_SOURCES)
-DIST_SOURCES = $(brusselator_SOURCES)
+SOURCES = $(libfeapp_a_SOURCES) $(bratu_SOURCES) \
+	$(brusselator_SOURCES)
+DIST_SOURCES = $(libfeapp_a_SOURCES) $(bratu_SOURCES) \
+	$(brusselator_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -348,6 +357,15 @@ SOURCE_H = \
 SOURCE = \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
 
+FUNC_H = \
+	$(FEAPP_PATH)/FEApp_AbstractFunction.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantFunction.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.hpp \
+	$(FEAPP_PATH)/FEApp_FunctionFactoryImpl.hpp
+
+FUNC = \
+	$(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+
 PDE_H = \
 	$(FEAPP_PATH)/FEApp_AbstractPDE_NTBase.hpp \
 	$(FEAPP_PATH)/FEApp_AbstractPDE.hpp \
@@ -415,15 +433,20 @@ DISC = \
 
 APP_H = \
 	$(FEAPP_PATH)/FEApp_Application.hpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.hpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.hpp
 
 APP = \
 	$(FEAPP_PATH)/FEApp_Application.cpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp \
+	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp \
+	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
 
 FEAPP_H = \
 	$(ELEMENT_H) \
 	$(QUADRATURE_H) \
+	$(FUNC_H) \
 	$(SOURCE_H) \
 	$(PDE_H) \
 	$(BC_H) \
@@ -436,6 +459,7 @@ FEAPP_H = \
 FEAPP = \
 	$(ELEMENT) \
 	$(QUADRATURE) \
+	$(FUNC) \
 	$(SOURCE) \
 	$(PDE) \
 	$(BC) \
@@ -445,20 +469,17 @@ FEAPP = \
 	$(DISC) \
 	$(APP)
 
-brusselator_SOURCES = \
-	$(srcdir)/brusselator.C \
-	$(FEAPP_H) \
-	$(FEAPP)
-
-brusselator_CXXFLAGS = \
-	-I$(FEAPP_PATH) \
-	$(LOCA_INCLUDES) \
-	$(SACADO_INCLUDES)
-
-brusselator_LDADD = \
-	$(LOCA_LIBS) \
-	$(SACADO_LIBS)
-
+@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@noinst_LIBRARIES = libfeapp.a
+AM_CPPFLAGS = -I$(FEAPP_PATH) $(LOCA_INCLUDES) $(SACADO_INCLUDES)
+libfeapp_a_SOURCES = $(FEAPP_H) $(FEAPP)
+@USE_ALTERNATE_AR_FALSE@libfeapp_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_TRUE@libfeapp_a_AR = $(ALTERNATE_AR)
+brusselator_SOURCES = $(srcdir)/brusselator.C 
+brusselator_DEPENDENCIES = $(builddir)/libfeapp.a
+brusselator_LDADD = -L$(builddir) -lfeapp $(LOCA_LIBS) $(SACADO_LIBS)
+bratu_SOURCES = $(srcdir)/bratu.C 
+bratu_LDADD = -L$(builddir) -lfeapp $(LOCA_LIBS) $(SACADO_LIBS)
+bratu_DEPENDENCIES = $(builddir)/libfeapp.a
 all: all-am
 
 .SUFFIXES:
@@ -493,11 +514,21 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+libfeapp.a: $(libfeapp_a_OBJECTS) $(libfeapp_a_DEPENDENCIES) 
+	-rm -f libfeapp.a
+	$(libfeapp_a_AR) libfeapp.a $(libfeapp_a_OBJECTS) $(libfeapp_a_LIBADD)
+	$(RANLIB) libfeapp.a
+
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+bratu$(EXEEXT): $(bratu_OBJECTS) $(bratu_DEPENDENCIES) 
+	@rm -f bratu$(EXEEXT)
+	$(CXXLINK) $(bratu_OBJECTS) $(bratu_LDADD) $(LIBS)
 brusselator$(EXEEXT): $(brusselator_OBJECTS) $(brusselator_DEPENDENCIES) 
 	@rm -f brusselator$(EXEEXT)
-	$(brusselator_LINK) $(brusselator_OBJECTS) $(brusselator_LDADD) $(LIBS)
+	$(CXXLINK) $(brusselator_OBJECTS) $(brusselator_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -505,27 +536,31 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_Application.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BlockDiscretization.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_CZeroDiscretization.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_ConstantNodeBCStrategy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_ElementFactory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_GaussianQuadrature2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_GlobalFill.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_HeatNonlinearSourcePDE.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_HeatNonlinearSourceProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_InitPostOps.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_LinearElement.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_Mesh.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_ModelEvaluator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_ProblemFactory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_QuadratureFactory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-brusselator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Application.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BlockDiscretization.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorPDE.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_CZeroDiscretization.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ConstantNodeBCStrategy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_DiscretizationFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ElementFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_FunctionFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_GaussianQuadrature2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_GlobalFill.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_InitPostOps.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_LinearElement.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Mesh.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ModelEvaluator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ProblemFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_QuadratureFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGMatrixFreeOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGMeanPrecOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SourceFunctionFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bratu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -541,299 +576,355 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-brusselator-brusselator.o: $(srcdir)/brusselator.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-brusselator.o -MD -MP -MF $(DEPDIR)/brusselator-brusselator.Tpo -c -o brusselator-brusselator.o `test -f '$(srcdir)/brusselator.C' || echo '$(srcdir)/'`$(srcdir)/brusselator.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-brusselator.Tpo $(DEPDIR)/brusselator-brusselator.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.C' object='brusselator-brusselator.o' libtool=no @AMDEPBACKSLASH@
+FEApp_LinearElement.o: $(FEAPP_PATH)/FEApp_LinearElement.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_LinearElement.o -MD -MP -MF $(DEPDIR)/FEApp_LinearElement.Tpo -c -o FEApp_LinearElement.o `test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_LinearElement.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_LinearElement.Tpo $(DEPDIR)/FEApp_LinearElement.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_LinearElement.cpp' object='FEApp_LinearElement.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-brusselator.o `test -f '$(srcdir)/brusselator.C' || echo '$(srcdir)/'`$(srcdir)/brusselator.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_LinearElement.o `test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_LinearElement.cpp
 
-brusselator-brusselator.obj: $(srcdir)/brusselator.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-brusselator.obj -MD -MP -MF $(DEPDIR)/brusselator-brusselator.Tpo -c -o brusselator-brusselator.obj `if test -f '$(srcdir)/brusselator.C'; then $(CYGPATH_W) '$(srcdir)/brusselator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-brusselator.Tpo $(DEPDIR)/brusselator-brusselator.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.C' object='brusselator-brusselator.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_LinearElement.obj: $(FEAPP_PATH)/FEApp_LinearElement.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_LinearElement.obj -MD -MP -MF $(DEPDIR)/FEApp_LinearElement.Tpo -c -o FEApp_LinearElement.obj `if test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_LinearElement.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_LinearElement.Tpo $(DEPDIR)/FEApp_LinearElement.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_LinearElement.cpp' object='FEApp_LinearElement.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-brusselator.obj `if test -f '$(srcdir)/brusselator.C'; then $(CYGPATH_W) '$(srcdir)/brusselator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_LinearElement.obj `if test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_LinearElement.cpp'; fi`
 
-brusselator-FEApp_LinearElement.o: $(FEAPP_PATH)/FEApp_LinearElement.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_LinearElement.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_LinearElement.Tpo -c -o brusselator-FEApp_LinearElement.o `test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_LinearElement.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_LinearElement.Tpo $(DEPDIR)/brusselator-FEApp_LinearElement.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_LinearElement.cpp' object='brusselator-FEApp_LinearElement.o' libtool=no @AMDEPBACKSLASH@
+FEApp_ElementFactory.o: $(FEAPP_PATH)/FEApp_ElementFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ElementFactory.o -MD -MP -MF $(DEPDIR)/FEApp_ElementFactory.Tpo -c -o FEApp_ElementFactory.o `test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ElementFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ElementFactory.Tpo $(DEPDIR)/FEApp_ElementFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ElementFactory.cpp' object='FEApp_ElementFactory.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_LinearElement.o `test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_LinearElement.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ElementFactory.o `test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ElementFactory.cpp
 
-brusselator-FEApp_LinearElement.obj: $(FEAPP_PATH)/FEApp_LinearElement.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_LinearElement.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_LinearElement.Tpo -c -o brusselator-FEApp_LinearElement.obj `if test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_LinearElement.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_LinearElement.Tpo $(DEPDIR)/brusselator-FEApp_LinearElement.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_LinearElement.cpp' object='brusselator-FEApp_LinearElement.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_ElementFactory.obj: $(FEAPP_PATH)/FEApp_ElementFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ElementFactory.obj -MD -MP -MF $(DEPDIR)/FEApp_ElementFactory.Tpo -c -o FEApp_ElementFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ElementFactory.Tpo $(DEPDIR)/FEApp_ElementFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ElementFactory.cpp' object='FEApp_ElementFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_LinearElement.obj `if test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_LinearElement.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_LinearElement.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ElementFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; fi`
 
-brusselator-FEApp_ElementFactory.o: $(FEAPP_PATH)/FEApp_ElementFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ElementFactory.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ElementFactory.Tpo -c -o brusselator-FEApp_ElementFactory.o `test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ElementFactory.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ElementFactory.Tpo $(DEPDIR)/brusselator-FEApp_ElementFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ElementFactory.cpp' object='brusselator-FEApp_ElementFactory.o' libtool=no @AMDEPBACKSLASH@
+FEApp_GaussianQuadrature2.o: $(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_GaussianQuadrature2.o -MD -MP -MF $(DEPDIR)/FEApp_GaussianQuadrature2.Tpo -c -o FEApp_GaussianQuadrature2.o `test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_GaussianQuadrature2.Tpo $(DEPDIR)/FEApp_GaussianQuadrature2.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' object='FEApp_GaussianQuadrature2.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ElementFactory.o `test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ElementFactory.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_GaussianQuadrature2.o `test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
 
-brusselator-FEApp_ElementFactory.obj: $(FEAPP_PATH)/FEApp_ElementFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ElementFactory.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ElementFactory.Tpo -c -o brusselator-FEApp_ElementFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ElementFactory.Tpo $(DEPDIR)/brusselator-FEApp_ElementFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ElementFactory.cpp' object='brusselator-FEApp_ElementFactory.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_GaussianQuadrature2.obj: $(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_GaussianQuadrature2.obj -MD -MP -MF $(DEPDIR)/FEApp_GaussianQuadrature2.Tpo -c -o FEApp_GaussianQuadrature2.obj `if test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_GaussianQuadrature2.Tpo $(DEPDIR)/FEApp_GaussianQuadrature2.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' object='FEApp_GaussianQuadrature2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ElementFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ElementFactory.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_GaussianQuadrature2.obj `if test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; fi`
 
-brusselator-FEApp_GaussianQuadrature2.o: $(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_GaussianQuadrature2.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_GaussianQuadrature2.Tpo -c -o brusselator-FEApp_GaussianQuadrature2.o `test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_GaussianQuadrature2.Tpo $(DEPDIR)/brusselator-FEApp_GaussianQuadrature2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' object='brusselator-FEApp_GaussianQuadrature2.o' libtool=no @AMDEPBACKSLASH@
+FEApp_QuadratureFactory.o: $(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_QuadratureFactory.o -MD -MP -MF $(DEPDIR)/FEApp_QuadratureFactory.Tpo -c -o FEApp_QuadratureFactory.o `test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_QuadratureFactory.Tpo $(DEPDIR)/FEApp_QuadratureFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' object='FEApp_QuadratureFactory.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_GaussianQuadrature2.o `test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_QuadratureFactory.o `test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
 
-brusselator-FEApp_GaussianQuadrature2.obj: $(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_GaussianQuadrature2.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_GaussianQuadrature2.Tpo -c -o brusselator-FEApp_GaussianQuadrature2.obj `if test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_GaussianQuadrature2.Tpo $(DEPDIR)/brusselator-FEApp_GaussianQuadrature2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp' object='brusselator-FEApp_GaussianQuadrature2.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_QuadratureFactory.obj: $(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_QuadratureFactory.obj -MD -MP -MF $(DEPDIR)/FEApp_QuadratureFactory.Tpo -c -o FEApp_QuadratureFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_QuadratureFactory.Tpo $(DEPDIR)/FEApp_QuadratureFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' object='FEApp_QuadratureFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_GaussianQuadrature2.obj `if test -f '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_QuadratureFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; fi`
 
-brusselator-FEApp_QuadratureFactory.o: $(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_QuadratureFactory.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_QuadratureFactory.Tpo -c -o brusselator-FEApp_QuadratureFactory.o `test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_QuadratureFactory.Tpo $(DEPDIR)/brusselator-FEApp_QuadratureFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' object='brusselator-FEApp_QuadratureFactory.o' libtool=no @AMDEPBACKSLASH@
+FEApp_FunctionFactory.o: $(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_FunctionFactory.o -MD -MP -MF $(DEPDIR)/FEApp_FunctionFactory.Tpo -c -o FEApp_FunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_FunctionFactory.Tpo $(DEPDIR)/FEApp_FunctionFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' object='FEApp_FunctionFactory.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_QuadratureFactory.o `test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_FunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_FunctionFactory.cpp
 
-brusselator-FEApp_QuadratureFactory.obj: $(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_QuadratureFactory.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_QuadratureFactory.Tpo -c -o brusselator-FEApp_QuadratureFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_QuadratureFactory.Tpo $(DEPDIR)/brusselator-FEApp_QuadratureFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp' object='brusselator-FEApp_QuadratureFactory.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_FunctionFactory.obj: $(FEAPP_PATH)/FEApp_FunctionFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_FunctionFactory.obj -MD -MP -MF $(DEPDIR)/FEApp_FunctionFactory.Tpo -c -o FEApp_FunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_FunctionFactory.Tpo $(DEPDIR)/FEApp_FunctionFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_FunctionFactory.cpp' object='FEApp_FunctionFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_QuadratureFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_FunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_FunctionFactory.cpp'; fi`
 
-brusselator-FEApp_SourceFunctionFactory.o: $(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_SourceFunctionFactory.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Tpo -c -o brusselator-FEApp_SourceFunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Tpo $(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' object='brusselator-FEApp_SourceFunctionFactory.o' libtool=no @AMDEPBACKSLASH@
+FEApp_SourceFunctionFactory.o: $(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SourceFunctionFactory.o -MD -MP -MF $(DEPDIR)/FEApp_SourceFunctionFactory.Tpo -c -o FEApp_SourceFunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SourceFunctionFactory.Tpo $(DEPDIR)/FEApp_SourceFunctionFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' object='FEApp_SourceFunctionFactory.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_SourceFunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SourceFunctionFactory.o `test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
 
-brusselator-FEApp_SourceFunctionFactory.obj: $(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_SourceFunctionFactory.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Tpo -c -o brusselator-FEApp_SourceFunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Tpo $(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' object='brusselator-FEApp_SourceFunctionFactory.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_SourceFunctionFactory.obj: $(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SourceFunctionFactory.obj -MD -MP -MF $(DEPDIR)/FEApp_SourceFunctionFactory.Tpo -c -o FEApp_SourceFunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SourceFunctionFactory.Tpo $(DEPDIR)/FEApp_SourceFunctionFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp' object='FEApp_SourceFunctionFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_SourceFunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SourceFunctionFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp'; fi`
 
-brusselator-FEApp_HeatNonlinearSourcePDE.o: $(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_HeatNonlinearSourcePDE.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourcePDE.Tpo -c -o brusselator-FEApp_HeatNonlinearSourcePDE.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourcePDE.Tpo $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourcePDE.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' object='brusselator-FEApp_HeatNonlinearSourcePDE.o' libtool=no @AMDEPBACKSLASH@
+FEApp_HeatNonlinearSourcePDE.o: $(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_HeatNonlinearSourcePDE.o -MD -MP -MF $(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Tpo -c -o FEApp_HeatNonlinearSourcePDE.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Tpo $(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' object='FEApp_HeatNonlinearSourcePDE.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_HeatNonlinearSourcePDE.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_HeatNonlinearSourcePDE.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
 
-brusselator-FEApp_HeatNonlinearSourcePDE.obj: $(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_HeatNonlinearSourcePDE.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourcePDE.Tpo -c -o brusselator-FEApp_HeatNonlinearSourcePDE.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourcePDE.Tpo $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourcePDE.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' object='brusselator-FEApp_HeatNonlinearSourcePDE.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_HeatNonlinearSourcePDE.obj: $(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_HeatNonlinearSourcePDE.obj -MD -MP -MF $(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Tpo -c -o FEApp_HeatNonlinearSourcePDE.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Tpo $(DEPDIR)/FEApp_HeatNonlinearSourcePDE.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp' object='FEApp_HeatNonlinearSourcePDE.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_HeatNonlinearSourcePDE.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_HeatNonlinearSourcePDE.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp'; fi`
 
-brusselator-FEApp_BrusselatorPDE.o: $(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BrusselatorPDE.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Tpo -c -o brusselator-FEApp_BrusselatorPDE.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Tpo $(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' object='brusselator-FEApp_BrusselatorPDE.o' libtool=no @AMDEPBACKSLASH@
+FEApp_BrusselatorPDE.o: $(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorPDE.o -MD -MP -MF $(DEPDIR)/FEApp_BrusselatorPDE.Tpo -c -o FEApp_BrusselatorPDE.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BrusselatorPDE.Tpo $(DEPDIR)/FEApp_BrusselatorPDE.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' object='FEApp_BrusselatorPDE.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BrusselatorPDE.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorPDE.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
 
-brusselator-FEApp_BrusselatorPDE.obj: $(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BrusselatorPDE.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Tpo -c -o brusselator-FEApp_BrusselatorPDE.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Tpo $(DEPDIR)/brusselator-FEApp_BrusselatorPDE.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' object='brusselator-FEApp_BrusselatorPDE.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_BrusselatorPDE.obj: $(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorPDE.obj -MD -MP -MF $(DEPDIR)/FEApp_BrusselatorPDE.Tpo -c -o FEApp_BrusselatorPDE.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BrusselatorPDE.Tpo $(DEPDIR)/FEApp_BrusselatorPDE.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp' object='FEApp_BrusselatorPDE.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BrusselatorPDE.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorPDE.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp'; fi`
 
-brusselator-FEApp_BrusselatorNodeBCStrategy.o: $(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BrusselatorNodeBCStrategy.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Tpo -c -o brusselator-FEApp_BrusselatorNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Tpo $(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' object='brusselator-FEApp_BrusselatorNodeBCStrategy.o' libtool=no @AMDEPBACKSLASH@
+FEApp_BrusselatorNodeBCStrategy.o: $(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorNodeBCStrategy.o -MD -MP -MF $(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Tpo -c -o FEApp_BrusselatorNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Tpo $(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' object='FEApp_BrusselatorNodeBCStrategy.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BrusselatorNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
 
-brusselator-FEApp_BrusselatorNodeBCStrategy.obj: $(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BrusselatorNodeBCStrategy.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Tpo -c -o brusselator-FEApp_BrusselatorNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Tpo $(DEPDIR)/brusselator-FEApp_BrusselatorNodeBCStrategy.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' object='brusselator-FEApp_BrusselatorNodeBCStrategy.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_BrusselatorNodeBCStrategy.obj: $(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorNodeBCStrategy.obj -MD -MP -MF $(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Tpo -c -o FEApp_BrusselatorNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Tpo $(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp' object='FEApp_BrusselatorNodeBCStrategy.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BrusselatorNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp'; fi`
 
-brusselator-FEApp_ConstantNodeBCStrategy.o: $(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ConstantNodeBCStrategy.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ConstantNodeBCStrategy.Tpo -c -o brusselator-FEApp_ConstantNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ConstantNodeBCStrategy.Tpo $(DEPDIR)/brusselator-FEApp_ConstantNodeBCStrategy.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' object='brusselator-FEApp_ConstantNodeBCStrategy.o' libtool=no @AMDEPBACKSLASH@
+FEApp_ConstantNodeBCStrategy.o: $(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ConstantNodeBCStrategy.o -MD -MP -MF $(DEPDIR)/FEApp_ConstantNodeBCStrategy.Tpo -c -o FEApp_ConstantNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ConstantNodeBCStrategy.Tpo $(DEPDIR)/FEApp_ConstantNodeBCStrategy.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' object='FEApp_ConstantNodeBCStrategy.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ConstantNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ConstantNodeBCStrategy.o `test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
 
-brusselator-FEApp_ConstantNodeBCStrategy.obj: $(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ConstantNodeBCStrategy.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ConstantNodeBCStrategy.Tpo -c -o brusselator-FEApp_ConstantNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ConstantNodeBCStrategy.Tpo $(DEPDIR)/brusselator-FEApp_ConstantNodeBCStrategy.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' object='brusselator-FEApp_ConstantNodeBCStrategy.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_ConstantNodeBCStrategy.obj: $(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ConstantNodeBCStrategy.obj -MD -MP -MF $(DEPDIR)/FEApp_ConstantNodeBCStrategy.Tpo -c -o FEApp_ConstantNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ConstantNodeBCStrategy.Tpo $(DEPDIR)/FEApp_ConstantNodeBCStrategy.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp' object='FEApp_ConstantNodeBCStrategy.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ConstantNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ConstantNodeBCStrategy.obj `if test -f '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp'; fi`
 
-brusselator-FEApp_BrusselatorProblem.o: $(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BrusselatorProblem.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Tpo -c -o brusselator-FEApp_BrusselatorProblem.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Tpo $(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' object='brusselator-FEApp_BrusselatorProblem.o' libtool=no @AMDEPBACKSLASH@
+FEApp_BrusselatorProblem.o: $(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorProblem.o -MD -MP -MF $(DEPDIR)/FEApp_BrusselatorProblem.Tpo -c -o FEApp_BrusselatorProblem.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BrusselatorProblem.Tpo $(DEPDIR)/FEApp_BrusselatorProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' object='FEApp_BrusselatorProblem.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BrusselatorProblem.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorProblem.o `test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
 
-brusselator-FEApp_BrusselatorProblem.obj: $(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BrusselatorProblem.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Tpo -c -o brusselator-FEApp_BrusselatorProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Tpo $(DEPDIR)/brusselator-FEApp_BrusselatorProblem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' object='brusselator-FEApp_BrusselatorProblem.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_BrusselatorProblem.obj: $(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorProblem.obj -MD -MP -MF $(DEPDIR)/FEApp_BrusselatorProblem.Tpo -c -o FEApp_BrusselatorProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BrusselatorProblem.Tpo $(DEPDIR)/FEApp_BrusselatorProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp' object='FEApp_BrusselatorProblem.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BrusselatorProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp'; fi`
 
-brusselator-FEApp_HeatNonlinearSourceProblem.o: $(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_HeatNonlinearSourceProblem.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourceProblem.Tpo -c -o brusselator-FEApp_HeatNonlinearSourceProblem.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourceProblem.Tpo $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourceProblem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' object='brusselator-FEApp_HeatNonlinearSourceProblem.o' libtool=no @AMDEPBACKSLASH@
+FEApp_HeatNonlinearSourceProblem.o: $(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_HeatNonlinearSourceProblem.o -MD -MP -MF $(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo -c -o FEApp_HeatNonlinearSourceProblem.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo $(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' object='FEApp_HeatNonlinearSourceProblem.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_HeatNonlinearSourceProblem.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_HeatNonlinearSourceProblem.o `test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
 
-brusselator-FEApp_HeatNonlinearSourceProblem.obj: $(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_HeatNonlinearSourceProblem.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourceProblem.Tpo -c -o brusselator-FEApp_HeatNonlinearSourceProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourceProblem.Tpo $(DEPDIR)/brusselator-FEApp_HeatNonlinearSourceProblem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' object='brusselator-FEApp_HeatNonlinearSourceProblem.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_HeatNonlinearSourceProblem.obj: $(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_HeatNonlinearSourceProblem.obj -MD -MP -MF $(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo -c -o FEApp_HeatNonlinearSourceProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo $(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp' object='FEApp_HeatNonlinearSourceProblem.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_HeatNonlinearSourceProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_HeatNonlinearSourceProblem.obj `if test -f '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp'; fi`
 
-brusselator-FEApp_ProblemFactory.o: $(FEAPP_PATH)/FEApp_ProblemFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ProblemFactory.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ProblemFactory.Tpo -c -o brusselator-FEApp_ProblemFactory.o `test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ProblemFactory.Tpo $(DEPDIR)/brusselator-FEApp_ProblemFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' object='brusselator-FEApp_ProblemFactory.o' libtool=no @AMDEPBACKSLASH@
+FEApp_ProblemFactory.o: $(FEAPP_PATH)/FEApp_ProblemFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ProblemFactory.o -MD -MP -MF $(DEPDIR)/FEApp_ProblemFactory.Tpo -c -o FEApp_ProblemFactory.o `test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ProblemFactory.Tpo $(DEPDIR)/FEApp_ProblemFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' object='FEApp_ProblemFactory.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ProblemFactory.o `test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ProblemFactory.o `test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
 
-brusselator-FEApp_ProblemFactory.obj: $(FEAPP_PATH)/FEApp_ProblemFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ProblemFactory.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ProblemFactory.Tpo -c -o brusselator-FEApp_ProblemFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ProblemFactory.Tpo $(DEPDIR)/brusselator-FEApp_ProblemFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' object='brusselator-FEApp_ProblemFactory.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_ProblemFactory.obj: $(FEAPP_PATH)/FEApp_ProblemFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ProblemFactory.obj -MD -MP -MF $(DEPDIR)/FEApp_ProblemFactory.Tpo -c -o FEApp_ProblemFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ProblemFactory.Tpo $(DEPDIR)/FEApp_ProblemFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' object='FEApp_ProblemFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ProblemFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ProblemFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; fi`
 
-brusselator-FEApp_Mesh.o: $(FEAPP_PATH)/FEApp_Mesh.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_Mesh.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_Mesh.Tpo -c -o brusselator-FEApp_Mesh.o `test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Mesh.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_Mesh.Tpo $(DEPDIR)/brusselator-FEApp_Mesh.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Mesh.cpp' object='brusselator-FEApp_Mesh.o' libtool=no @AMDEPBACKSLASH@
+FEApp_Mesh.o: $(FEAPP_PATH)/FEApp_Mesh.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_Mesh.o -MD -MP -MF $(DEPDIR)/FEApp_Mesh.Tpo -c -o FEApp_Mesh.o `test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Mesh.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_Mesh.Tpo $(DEPDIR)/FEApp_Mesh.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Mesh.cpp' object='FEApp_Mesh.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_Mesh.o `test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Mesh.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_Mesh.o `test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Mesh.cpp
 
-brusselator-FEApp_Mesh.obj: $(FEAPP_PATH)/FEApp_Mesh.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_Mesh.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_Mesh.Tpo -c -o brusselator-FEApp_Mesh.obj `if test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Mesh.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Mesh.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_Mesh.Tpo $(DEPDIR)/brusselator-FEApp_Mesh.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Mesh.cpp' object='brusselator-FEApp_Mesh.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_Mesh.obj: $(FEAPP_PATH)/FEApp_Mesh.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_Mesh.obj -MD -MP -MF $(DEPDIR)/FEApp_Mesh.Tpo -c -o FEApp_Mesh.obj `if test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Mesh.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Mesh.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_Mesh.Tpo $(DEPDIR)/FEApp_Mesh.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Mesh.cpp' object='FEApp_Mesh.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_Mesh.obj `if test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Mesh.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Mesh.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_Mesh.obj `if test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Mesh.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Mesh.cpp'; fi`
 
-brusselator-FEApp_InitPostOps.o: $(FEAPP_PATH)/FEApp_InitPostOps.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_InitPostOps.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_InitPostOps.Tpo -c -o brusselator-FEApp_InitPostOps.o `test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_InitPostOps.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_InitPostOps.Tpo $(DEPDIR)/brusselator-FEApp_InitPostOps.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_InitPostOps.cpp' object='brusselator-FEApp_InitPostOps.o' libtool=no @AMDEPBACKSLASH@
+FEApp_InitPostOps.o: $(FEAPP_PATH)/FEApp_InitPostOps.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_InitPostOps.o -MD -MP -MF $(DEPDIR)/FEApp_InitPostOps.Tpo -c -o FEApp_InitPostOps.o `test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_InitPostOps.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_InitPostOps.Tpo $(DEPDIR)/FEApp_InitPostOps.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_InitPostOps.cpp' object='FEApp_InitPostOps.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_InitPostOps.o `test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_InitPostOps.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_InitPostOps.o `test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_InitPostOps.cpp
 
-brusselator-FEApp_InitPostOps.obj: $(FEAPP_PATH)/FEApp_InitPostOps.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_InitPostOps.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_InitPostOps.Tpo -c -o brusselator-FEApp_InitPostOps.obj `if test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_InitPostOps.Tpo $(DEPDIR)/brusselator-FEApp_InitPostOps.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_InitPostOps.cpp' object='brusselator-FEApp_InitPostOps.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_InitPostOps.obj: $(FEAPP_PATH)/FEApp_InitPostOps.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_InitPostOps.obj -MD -MP -MF $(DEPDIR)/FEApp_InitPostOps.Tpo -c -o FEApp_InitPostOps.obj `if test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_InitPostOps.Tpo $(DEPDIR)/FEApp_InitPostOps.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_InitPostOps.cpp' object='FEApp_InitPostOps.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_InitPostOps.obj `if test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_InitPostOps.obj `if test -f '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_InitPostOps.cpp'; fi`
 
-brusselator-FEApp_GlobalFill.o: $(FEAPP_PATH)/FEApp_GlobalFill.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_GlobalFill.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_GlobalFill.Tpo -c -o brusselator-FEApp_GlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GlobalFill.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_GlobalFill.Tpo $(DEPDIR)/brusselator-FEApp_GlobalFill.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GlobalFill.cpp' object='brusselator-FEApp_GlobalFill.o' libtool=no @AMDEPBACKSLASH@
+FEApp_GlobalFill.o: $(FEAPP_PATH)/FEApp_GlobalFill.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_GlobalFill.o -MD -MP -MF $(DEPDIR)/FEApp_GlobalFill.Tpo -c -o FEApp_GlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GlobalFill.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_GlobalFill.Tpo $(DEPDIR)/FEApp_GlobalFill.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GlobalFill.cpp' object='FEApp_GlobalFill.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_GlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GlobalFill.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_GlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_GlobalFill.cpp
 
-brusselator-FEApp_GlobalFill.obj: $(FEAPP_PATH)/FEApp_GlobalFill.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_GlobalFill.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_GlobalFill.Tpo -c -o brusselator-FEApp_GlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_GlobalFill.Tpo $(DEPDIR)/brusselator-FEApp_GlobalFill.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GlobalFill.cpp' object='brusselator-FEApp_GlobalFill.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_GlobalFill.obj: $(FEAPP_PATH)/FEApp_GlobalFill.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_GlobalFill.obj -MD -MP -MF $(DEPDIR)/FEApp_GlobalFill.Tpo -c -o FEApp_GlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_GlobalFill.Tpo $(DEPDIR)/FEApp_GlobalFill.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_GlobalFill.cpp' object='FEApp_GlobalFill.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_GlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_GlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; fi`
 
-brusselator-FEApp_CZeroDiscretization.o: $(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_CZeroDiscretization.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_CZeroDiscretization.Tpo -c -o brusselator-FEApp_CZeroDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_CZeroDiscretization.Tpo $(DEPDIR)/brusselator-FEApp_CZeroDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' object='brusselator-FEApp_CZeroDiscretization.o' libtool=no @AMDEPBACKSLASH@
+FEApp_CZeroDiscretization.o: $(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_CZeroDiscretization.o -MD -MP -MF $(DEPDIR)/FEApp_CZeroDiscretization.Tpo -c -o FEApp_CZeroDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_CZeroDiscretization.Tpo $(DEPDIR)/FEApp_CZeroDiscretization.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' object='FEApp_CZeroDiscretization.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_CZeroDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_CZeroDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
 
-brusselator-FEApp_CZeroDiscretization.obj: $(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_CZeroDiscretization.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_CZeroDiscretization.Tpo -c -o brusselator-FEApp_CZeroDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_CZeroDiscretization.Tpo $(DEPDIR)/brusselator-FEApp_CZeroDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' object='brusselator-FEApp_CZeroDiscretization.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_CZeroDiscretization.obj: $(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_CZeroDiscretization.obj -MD -MP -MF $(DEPDIR)/FEApp_CZeroDiscretization.Tpo -c -o FEApp_CZeroDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_CZeroDiscretization.Tpo $(DEPDIR)/FEApp_CZeroDiscretization.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' object='FEApp_CZeroDiscretization.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_CZeroDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_CZeroDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; fi`
 
-brusselator-FEApp_BlockDiscretization.o: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BlockDiscretization.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo -c -o brusselator-FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='brusselator-FEApp_BlockDiscretization.o' libtool=no @AMDEPBACKSLASH@
+FEApp_BlockDiscretization.o: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BlockDiscretization.o -MD -MP -MF $(DEPDIR)/FEApp_BlockDiscretization.Tpo -c -o FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BlockDiscretization.Tpo $(DEPDIR)/FEApp_BlockDiscretization.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='FEApp_BlockDiscretization.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
 
-brusselator-FEApp_BlockDiscretization.obj: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_BlockDiscretization.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo -c -o brusselator-FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Tpo $(DEPDIR)/brusselator-FEApp_BlockDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='brusselator-FEApp_BlockDiscretization.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_BlockDiscretization.obj: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BlockDiscretization.obj -MD -MP -MF $(DEPDIR)/FEApp_BlockDiscretization.Tpo -c -o FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BlockDiscretization.Tpo $(DEPDIR)/FEApp_BlockDiscretization.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='FEApp_BlockDiscretization.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
 
-brusselator-FEApp_DiscretizationFactory.o: $(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_DiscretizationFactory.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Tpo -c -o brusselator-FEApp_DiscretizationFactory.o `test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Tpo $(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' object='brusselator-FEApp_DiscretizationFactory.o' libtool=no @AMDEPBACKSLASH@
+FEApp_DiscretizationFactory.o: $(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_DiscretizationFactory.o -MD -MP -MF $(DEPDIR)/FEApp_DiscretizationFactory.Tpo -c -o FEApp_DiscretizationFactory.o `test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_DiscretizationFactory.Tpo $(DEPDIR)/FEApp_DiscretizationFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' object='FEApp_DiscretizationFactory.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_DiscretizationFactory.o `test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_DiscretizationFactory.o `test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 
-brusselator-FEApp_DiscretizationFactory.obj: $(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_DiscretizationFactory.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Tpo -c -o brusselator-FEApp_DiscretizationFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Tpo $(DEPDIR)/brusselator-FEApp_DiscretizationFactory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' object='brusselator-FEApp_DiscretizationFactory.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_DiscretizationFactory.obj: $(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_DiscretizationFactory.obj -MD -MP -MF $(DEPDIR)/FEApp_DiscretizationFactory.Tpo -c -o FEApp_DiscretizationFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_DiscretizationFactory.Tpo $(DEPDIR)/FEApp_DiscretizationFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' object='FEApp_DiscretizationFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_DiscretizationFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_DiscretizationFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp'; fi`
 
-brusselator-FEApp_Application.o: $(FEAPP_PATH)/FEApp_Application.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_Application.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_Application.Tpo -c -o brusselator-FEApp_Application.o `test -f '$(FEAPP_PATH)/FEApp_Application.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Application.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_Application.Tpo $(DEPDIR)/brusselator-FEApp_Application.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Application.cpp' object='brusselator-FEApp_Application.o' libtool=no @AMDEPBACKSLASH@
+FEApp_Application.o: $(FEAPP_PATH)/FEApp_Application.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_Application.o -MD -MP -MF $(DEPDIR)/FEApp_Application.Tpo -c -o FEApp_Application.o `test -f '$(FEAPP_PATH)/FEApp_Application.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Application.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_Application.Tpo $(DEPDIR)/FEApp_Application.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Application.cpp' object='FEApp_Application.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_Application.o `test -f '$(FEAPP_PATH)/FEApp_Application.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Application.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_Application.o `test -f '$(FEAPP_PATH)/FEApp_Application.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Application.cpp
 
-brusselator-FEApp_Application.obj: $(FEAPP_PATH)/FEApp_Application.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_Application.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_Application.Tpo -c -o brusselator-FEApp_Application.obj `if test -f '$(FEAPP_PATH)/FEApp_Application.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Application.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Application.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_Application.Tpo $(DEPDIR)/brusselator-FEApp_Application.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Application.cpp' object='brusselator-FEApp_Application.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_Application.obj: $(FEAPP_PATH)/FEApp_Application.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_Application.obj -MD -MP -MF $(DEPDIR)/FEApp_Application.Tpo -c -o FEApp_Application.obj `if test -f '$(FEAPP_PATH)/FEApp_Application.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Application.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Application.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_Application.Tpo $(DEPDIR)/FEApp_Application.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_Application.cpp' object='FEApp_Application.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_Application.obj `if test -f '$(FEAPP_PATH)/FEApp_Application.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Application.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Application.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_Application.obj `if test -f '$(FEAPP_PATH)/FEApp_Application.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_Application.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_Application.cpp'; fi`
 
-brusselator-FEApp_ModelEvaluator.o: $(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ModelEvaluator.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ModelEvaluator.Tpo -c -o brusselator-FEApp_ModelEvaluator.o `test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ModelEvaluator.Tpo $(DEPDIR)/brusselator-FEApp_ModelEvaluator.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' object='brusselator-FEApp_ModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
+FEApp_ModelEvaluator.o: $(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ModelEvaluator.o -MD -MP -MF $(DEPDIR)/FEApp_ModelEvaluator.Tpo -c -o FEApp_ModelEvaluator.o `test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ModelEvaluator.Tpo $(DEPDIR)/FEApp_ModelEvaluator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' object='FEApp_ModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ModelEvaluator.o `test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ModelEvaluator.o `test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
 
-brusselator-FEApp_ModelEvaluator.obj: $(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_ModelEvaluator.obj -MD -MP -MF $(DEPDIR)/brusselator-FEApp_ModelEvaluator.Tpo -c -o brusselator-FEApp_ModelEvaluator.obj `if test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-FEApp_ModelEvaluator.Tpo $(DEPDIR)/brusselator-FEApp_ModelEvaluator.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' object='brusselator-FEApp_ModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
+FEApp_ModelEvaluator.obj: $(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ModelEvaluator.obj -MD -MP -MF $(DEPDIR)/FEApp_ModelEvaluator.Tpo -c -o FEApp_ModelEvaluator.obj `if test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_ModelEvaluator.Tpo $(DEPDIR)/FEApp_ModelEvaluator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' object='FEApp_ModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ModelEvaluator.obj `if test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ModelEvaluator.obj `if test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; fi`
+
+FEApp_SGMatrixFreeOp.o: $(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMatrixFreeOp.o -MD -MP -MF $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo -c -o FEApp_SGMatrixFreeOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo $(DEPDIR)/FEApp_SGMatrixFreeOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' object='FEApp_SGMatrixFreeOp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMatrixFreeOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+
+FEApp_SGMatrixFreeOp.obj: $(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMatrixFreeOp.obj -MD -MP -MF $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo -c -o FEApp_SGMatrixFreeOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo $(DEPDIR)/FEApp_SGMatrixFreeOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' object='FEApp_SGMatrixFreeOp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMatrixFreeOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; fi`
+
+FEApp_SGMeanPrecOp.o: $(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMeanPrecOp.o -MD -MP -MF $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo -c -o FEApp_SGMeanPrecOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo $(DEPDIR)/FEApp_SGMeanPrecOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' object='FEApp_SGMeanPrecOp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMeanPrecOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+
+FEApp_SGMeanPrecOp.obj: $(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMeanPrecOp.obj -MD -MP -MF $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo -c -o FEApp_SGMeanPrecOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo $(DEPDIR)/FEApp_SGMeanPrecOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' object='FEApp_SGMeanPrecOp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMeanPrecOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; fi`
+
+bratu.o: $(srcdir)/bratu.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bratu.o -MD -MP -MF $(DEPDIR)/bratu.Tpo -c -o bratu.o `test -f '$(srcdir)/bratu.C' || echo '$(srcdir)/'`$(srcdir)/bratu.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/bratu.Tpo $(DEPDIR)/bratu.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bratu.C' object='bratu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bratu.o `test -f '$(srcdir)/bratu.C' || echo '$(srcdir)/'`$(srcdir)/bratu.C
+
+bratu.obj: $(srcdir)/bratu.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bratu.obj -MD -MP -MF $(DEPDIR)/bratu.Tpo -c -o bratu.obj `if test -f '$(srcdir)/bratu.C'; then $(CYGPATH_W) '$(srcdir)/bratu.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bratu.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/bratu.Tpo $(DEPDIR)/bratu.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/bratu.C' object='bratu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o bratu.obj `if test -f '$(srcdir)/bratu.C'; then $(CYGPATH_W) '$(srcdir)/bratu.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/bratu.C'; fi`
+
+brusselator.o: $(srcdir)/brusselator.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT brusselator.o -MD -MP -MF $(DEPDIR)/brusselator.Tpo -c -o brusselator.o `test -f '$(srcdir)/brusselator.C' || echo '$(srcdir)/'`$(srcdir)/brusselator.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator.Tpo $(DEPDIR)/brusselator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.C' object='brusselator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o brusselator.o `test -f '$(srcdir)/brusselator.C' || echo '$(srcdir)/'`$(srcdir)/brusselator.C
+
+brusselator.obj: $(srcdir)/brusselator.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT brusselator.obj -MD -MP -MF $(DEPDIR)/brusselator.Tpo -c -o brusselator.obj `if test -f '$(srcdir)/brusselator.C'; then $(CYGPATH_W) '$(srcdir)/brusselator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator.Tpo $(DEPDIR)/brusselator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.C' object='brusselator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o brusselator.obj `if test -f '$(srcdir)/brusselator.C'; then $(CYGPATH_W) '$(srcdir)/brusselator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.C'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -925,7 +1016,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -953,7 +1044,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-noinstLIBRARIES clean-noinstPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -1011,14 +1103,14 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	clean-noinstLIBRARIES clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am

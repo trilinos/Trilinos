@@ -46,21 +46,30 @@ if BUILD_EPETRA_EXAMPLES
 if ENABLE_LOCA_SACADO
 if BUILD_NOX_EPETRAEXT_SUPPORT
 include $(top_builddir)/../sacado/Makefile.export.sacado
-noinst_PROGRAMS = brusselator
+noinst_LIBRARIES = libfeapp.a
+noinst_PROGRAMS = brusselator bratu
 endif
 endif
 endif
 
-brusselator_SOURCES = \
-	$(srcdir)/brusselator.C \
-	$(FEAPP_H) \
-	$(FEAPP)
+AM_CPPFLAGS = -I$(FEAPP_PATH) $(LOCA_INCLUDES) $(SACADO_INCLUDES)
 
-brusselator_CXXFLAGS = \
-	-I$(FEAPP_PATH) \
-	$(LOCA_INCLUDES) \
-	$(SACADO_INCLUDES)
+libfeapp_a_SOURCES = $(FEAPP_H) $(FEAPP)
 
-brusselator_LDADD = \
-	$(LOCA_LIBS) \
-	$(SACADO_LIBS)
+if USE_ALTERNATE_AR
+libfeapp_a_AR = $(ALTERNATE_AR)
+else
+libfeapp_a_AR = $(AR) cru
+endif
+
+brusselator_SOURCES = $(srcdir)/brusselator.C 
+
+brusselator_DEPENDENCIES = $(builddir)/libfeapp.a
+
+brusselator_LDADD = -L$(builddir) -lfeapp $(LOCA_LIBS) $(SACADO_LIBS)
+
+bratu_SOURCES = $(srcdir)/bratu.C 
+
+bratu_LDADD = -L$(builddir) -lfeapp $(LOCA_LIBS) $(SACADO_LIBS)
+
+bratu_DEPENDENCIES = $(builddir)/libfeapp.a
