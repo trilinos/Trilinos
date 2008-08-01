@@ -51,20 +51,6 @@
 #endif
 
 
-// 2008/07/31: rabartl: Below: I provide a dummy definition for an MPI struct
-// with MPI so that typeid(MPI_Request) will compile.  I can't provide a
-// specialization of TypeNameTraits<MPI_Request> because that causes
-// compilation problems with MPI implementations where MPI_Request is a
-// typedef to int, which already has a specialization TypeNameTraits<int> in
-// Teuchos_TypeNameTraits.hpp.  Defining an empty struct like this should be
-// fine since only the guts of OpenMPI will ever see the definition.  This is
-// a silly game we are playing with the C++ type system here but it should
-// work just fine.
-#ifdef OPEN_MPI
-struct ompi_request_t {};
-#endif
-
-
 namespace Teuchos {
 
 
@@ -576,7 +562,7 @@ void MpiComm<Ordinal>::waitAll(
   TEST_FOR_EXCEPT( requests.size() == 0 );
 #endif
   
-  Array<MPI_Request> rawMpiRequests(count, MPI_REQUEST_NULL);
+  std::vector<MPI_Request> rawMpiRequests(count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
     RCP<CommRequest> &request = requests[i];
     if (!is_null(request)) {
@@ -588,11 +574,21 @@ void MpiComm<Ordinal>::waitAll(
     request = null;
   }
 
-  Array<MPI_Status> rawMpiStatuses(count);
-  MPI_Waitall( count, rawMpiRequests.getRawPtr(), rawMpiStatuses.getRawPtr() );
-  // ToDo: We really should check the status?
+  std::vector<MPI_Status> rawMpiStatuses(count);
+  if (count) {
+    MPI_Waitall( count, &rawMpiRequests[0], &rawMpiStatuses[0] );
+    // ToDo: We really should check the status?
+  }
 
 }
+// 2008/08/01: rabartl: Above, I am using std::vector and not Teuchos::Array
+// or Teuchos::ArrayRCP because of some many problems with trying to embedd
+// MPI objects in these arrays.  The problem is that many MPI implemnetations
+// use pointers to delcared but undefined structs.  This works great for
+// information hiding but typeid(MPI_Blah) (which is called by
+// TypeNameTraits::name(), which is called in debug-mode asserts) gets very
+// upset by this.  I tried several work-arounds (see bug 4016) but I am going
+// to just give up and use std::vector that does not have this problem.
 
 
 template<typename Ordinal>
