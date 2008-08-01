@@ -39,7 +39,7 @@
 #include "Stokhos_HermiteEBasis.hpp"
 
 typedef Stokhos::HermiteEBasis<double> basis_type;
-typedef Stokhos::OrthogPolyExpansion<double> exp_type;
+typedef Sacado::PCE::OrthogPoly<double>::expansion_type exp_type;
 typedef Sacado::PCE::OrthogPoly<double> pce_type;
 
 // Cppunit includes
