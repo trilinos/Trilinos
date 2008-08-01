@@ -72,6 +72,9 @@
 /* Define if want to build phalanx-tests */
 #undef HAVE_PHALANX_TESTS
 
+/* Define if tvmet is available */
+#undef HAVE_PHALANX_TVMET
+
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM
 

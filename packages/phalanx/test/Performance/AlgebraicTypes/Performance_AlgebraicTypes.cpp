@@ -8,8 +8,10 @@
 #include "Special_AlgebraicTypes.hpp"
 
 // TVMET - efficient expression template vector/tensor objects
+#ifdef HAVE_PHALANX_TVMET
 #include "tvmet/Vector.h"
 #include "tvmet/Matrix.h"
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -35,6 +37,7 @@ int main(int argc, char* argv[])
   ArrayRCP< MyVector<double> > c = 
     arcp< MyVector<double> >(&vector_array[2*size], 0, size, false);
 
+#ifdef HAVE_PHALANX_TVMET
   tvmet::Vector<double, 3>* tvmet_array = 
     new tvmet::Vector<double, 3>[num_vectors * size];
   ArrayRCP< tvmet::Vector<double, 3> > d = 
@@ -43,6 +46,7 @@ int main(int argc, char* argv[])
     arcp< tvmet::Vector<double, 3> >(&tvmet_array[size], 0, size, false);
   ArrayRCP< tvmet::Vector<double, 3> > f = 
     arcp< tvmet::Vector<double, 3> >(&tvmet_array[2*size], 0, size, false);
+#endif
 
   double* raw_array = new double[num_vectors * size * 3];
 
@@ -56,12 +60,14 @@ int main(int argc, char* argv[])
     b[i] = 2.0;
   for (int i=0; i < c.size(); ++i)
     c[i] = 3.0;
+#ifdef HAVE_PHALANX_TVMET
   for (int i=0; i < d.size(); ++i)
     d[i] = 1.0;
   for (int i=0; i < e.size(); ++i)
     e[i] = 2.0;
   for (int i=0; i < f.size(); ++i)
     f[i] = 3.0;
+#endif
   for (int i=0; i < size; ++i) {
     int offset = i * 3;
     for (int j=0; j < 3; ++j) {
@@ -73,7 +79,9 @@ int main(int argc, char* argv[])
 
   RCP<Time> vector_time = TimeMonitor::getNewTimer("Vector Time");
   RCP<Time> update_time = TimeMonitor::getNewTimer("Update Time");
+#ifdef HAVE_PHALANX_TVMET
   RCP<Time> tvmet_time = TimeMonitor::getNewTimer("TVMET Time");
+#endif
   RCP<Time> raw_time = TimeMonitor::getNewTimer("Raw Time");
   RCP<Time> raw2_time = TimeMonitor::getNewTimer("Raw2 Time");
 
@@ -95,6 +103,7 @@ int main(int argc, char* argv[])
 	  c[j].update_multiply(a[j], b[j]);
     }
     
+#ifdef HAVE_PHALANX_TVMET
     cout << "TVMET" << endl;
     {
       TimeMonitor t(*tvmet_time);
@@ -102,6 +111,7 @@ int main(int argc, char* argv[])
 	for (int j=0; j < d.size(); ++j)
 	  f[j] = d[j] * e[j];
     }
+#endif
     
     cout << "Raw" << endl;
     {
@@ -132,19 +142,25 @@ int main(int argc, char* argv[])
   
   double f_vector = vector_time->totalElapsedTime() / raw_time->totalElapsedTime();
   double f_update = update_time->totalElapsedTime() / raw_time->totalElapsedTime();
+#ifdef HAVE_PHALANX_TVMET
   double f_tvmet = tvmet_time->totalElapsedTime() / raw_time->totalElapsedTime();
+#endif
   double f_raw = raw_time->totalElapsedTime() / raw_time->totalElapsedTime();
 
   double f_raw2 = raw2_time->totalElapsedTime() / raw_time->totalElapsedTime();
 
   std::cout << "vector = " << f_vector << std::endl;
   std::cout << "update = " << f_update << std::endl;
+#ifdef HAVE_PHALANX_TVMET
   std::cout << "tvmet  = " << f_tvmet << std::endl;
+#endif
   std::cout << "raw    = " << f_raw << std::endl;
   std::cout << "raw2   = " << f_raw2 << std::endl;
 
   delete [] vector_array;
+#ifdef HAVE_PHALANX_TVMET
   delete [] tvmet_array;
+#endif
   delete [] raw_array;
 
   std::cout << "\nTest passed!\n" << std::endl; 

@@ -91,6 +91,8 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
  - Requires the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>
 
+ - Optional: Some performance examples runs comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  Use the configure option "--with-tvmet" to enable the tvmet functionality in the performance tests.
+
 We plan to remove the Sacado and Boost dependencies in a future release.  
 
 \section domain_design Domain Design Model
@@ -295,10 +297,6 @@ element assembly for nonlinear equation sets.
 /*! \page junk Junk
 
   \todo Add a configure check for BOOST.
-
-  \todo Add a configure check for TVMET.
-
-  \todo Add documentation for tvmet.
 
 */
 

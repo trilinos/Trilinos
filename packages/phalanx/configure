@@ -741,6 +741,8 @@ SUB_TEST_TRUE
 SUB_TEST_FALSE
 SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
+BUILD_TVMET_TRUE
+BUILD_TVMET_FALSE
 F77
 FFLAGS
 ac_ct_F77
@@ -1417,6 +1419,7 @@ Optional Packages:
   --with-incdirs          additional directories containing include files:
                           will prepend to search here for includes, use -Idir
                           format
+  --with-tvmet            Enable TVMET support
 
 Some influential environment variables:
   CC          C compiler command
@@ -8219,6 +8222,98 @@ echo "$as_me: error: Cannot find sacado include directory containing Sacado_mpl_
 ##AC_CHECK_HEADERS([boost/mpl/at.h],,AC_MSG_ERROR([[Cannot find the Boost MPL library.  Phalanx requires Boost be installed on your machine.  Use --with-incdirs=-I<DIR> to specify the install directory for Boost.]]))
 
 
+## Optionally require the TVMET Library headers only (don't need a check
+## for the actual library).
+
+# Check whether --with-tvmet was given.
+if test "${with_tvmet+set}" = set; then
+  withval=$with_tvmet;
+  if test "X${withval}" != "Xyes"; then
+     MF_PATH=${withval}
+  fi
+  HAVE_TVMET=yes
+
+else
+  HAVE_TVMET=no
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether tvmet is enabled" >&5
+echo $ECHO_N "checking whether tvmet is enabled... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: result: ${HAVE_TVMET}" >&5
+echo "${ECHO_T}${HAVE_TVMET}" >&6; }
+if test "X${HAVE_TVMET}" != "Xno"; then
+
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "tvmet/Vector.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   have_tvmet_header=yes
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  have_tvmet_header=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+
+  { echo "$as_me:$LINENO: checking for tvmet header Vector.h" >&5
+echo $ECHO_N "checking for tvmet header Vector.h... $ECHO_C" >&6; }
+  { echo "$as_me:$LINENO: result: ${have_tvmet_header}" >&5
+echo "${ECHO_T}${have_tvmet_header}" >&6; }
+  if test $have_tvmet_header = no; then
+    { { echo "$as_me:$LINENO: error: Cannot find tvmet header tvmet/Vector.h.  Please add path to tvmet include directory using --with-incdirs flag." >&5
+echo "$as_me: error: Cannot find tvmet header tvmet/Vector.h.  Please add path to tvmet include directory using --with-incdirs flag." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PHALANX_TVMET 1
+_ACEOF
+
+fi
+ if test X${BUILD_TVMET} = Xyes; then
+  BUILD_TVMET_TRUE=
+  BUILD_TVMET_FALSE='#'
+else
+  BUILD_TVMET_TRUE='#'
+  BUILD_TVMET_FALSE=
+fi
+
+
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
@@ -9246,6 +9341,13 @@ echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_TVMET_TRUE}" && test -z "${BUILD_TVMET_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TVMET\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TVMET\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -9961,6 +10063,8 @@ SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
 SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
+BUILD_TVMET_TRUE!$BUILD_TVMET_TRUE$ac_delim
+BUILD_TVMET_FALSE!$BUILD_TVMET_FALSE$ac_delim
 F77!$F77$ac_delim
 FFLAGS!$FFLAGS$ac_delim
 ac_ct_F77!$ac_ct_F77$ac_delim
@@ -9970,7 +10074,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 36; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

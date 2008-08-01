@@ -320,6 +320,47 @@ TRILINOS_HEADER(sacado,Sacado_mpl_at.hpp,src/mpl)
 ##AC_CHECK_HEADERS([boost/mpl/at.h],,AC_MSG_ERROR([[Cannot find the Boost MPL library.  Phalanx requires Boost be installed on your machine.  Use --with-incdirs=-I<DIR> to specify the install directory for Boost.]]))
 
 
+## Optionally require the TVMET Library headers only (don't need a check 
+## for the actual library).
+AC_ARG_WITH(tvmet,
+[AC_HELP_STRING([--with-tvmet],[Enable TVMET support])],
+[
+  if test "X${withval}" != "Xyes"; then
+     MF_PATH=${withval}
+  fi
+  HAVE_TVMET=yes
+],
+[HAVE_TVMET=no]
+)
+AC_MSG_CHECKING(whether tvmet is enabled)
+AC_MSG_RESULT([${HAVE_TVMET}])
+if test "X${HAVE_TVMET}" != "Xno"; then
+
+  AC_PREPROC_IFELSE([AC_LANG_SOURCE(
+  [[
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "tvmet/Vector.h"
+  ]])],
+    [ have_tvmet_header=yes
+    ],[have_tvmet_header=no])
+
+  AC_MSG_CHECKING(for tvmet header Vector.h)
+  AC_MSG_RESULT([${have_tvmet_header}])
+  if test $have_tvmet_header = no; then
+    AC_MSG_ERROR([Cannot find tvmet header tvmet/Vector.h.  Please add path to tvmet include directory using --with-incdirs flag.])
+  fi
+
+  AC_DEFINE([HAVE_PHALANX_TVMET],1,[Define if tvmet is available])
+fi
+AM_CONDITIONAL(BUILD_TVMET, test X${BUILD_TVMET} = Xyes)
+
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
