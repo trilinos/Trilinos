@@ -39,6 +39,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_OskiPermutation.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Epetra_Comm.h"
 extern "C" {
   #include "oski/oski.h"
 }
@@ -48,7 +49,7 @@ class Epetra_OskiMultiVector;
 class Teuchos_ParameterList;
 class Epetra_OskiPermutation;
 
-//! Epetra_OskiMatrix: A class for constructing and using OSKI Matrices within Epetra.
+//! Epetra_OskiMatrix: A class for constructing and using OSKI Matrices within Epetra.  For information on known issues with OSKI see the detailed description.
 
 /*! The Epetra_OskiMatrix class is a utility for wrapping OSKI matrix calls into Epetra.
     It can convert Epetra matrices to OSKI matrices for use by OSKI functions.  It also
@@ -56,6 +57,41 @@ class Epetra_OskiPermutation;
 
     The calculation kernels to perform matrix-vector and matrix multi-vector calculations are
     provided along with runtime tuning function calls.
+
+    This class provides access to the whole OSKI interface.  However, not all of the interface is implimented.
+    The interface does not provide stock composed kernels so the MatTransMatMultiply and MultiplyAndMatTransMultiply
+    are only advalible after the tune function is called.  In addition, the MatPowMultiply does not work in
+    oski-1.0.1h and is therefore unadvailable in this current implimentation as well.  Furthermore there are some
+    tuning features that are not implimented that are shown in the interface.  These would seem advailable as no errors
+    are thrown upon a call to these features.  These are:
+
+    There are no optimized multivector kernels.
+
+    The tune function cannot transform a (nearly) symetric matrix to be stored as such.
+
+    The ATA calculation kernel will not work in MatTransMatMultiply without fixing the following bug:
+
+    In src/MBCSR/ata.c, lines 34-35 the code is:
+
+    const char *kernel_name = (opA == OP_AT_A)
+        ? "SubmatRperTransSubmatRperMult" : "SubmatRperHermSubmatRperMult";
+
+    The correct code should be:
+
+    const char *kernel_name = (opA == OP_AT_A)
+        ? "SubmatReprTransSubmatReprMult" : "SubmatReprHermSubmatReprMult";
+
+    Also OSKI does not convert between CSR and CSC when it could be profitable such as when someone wants to perform
+    AAT on a CSR matrix. 
+
+    Other tuning features may not work as well as we did not exhaustively test all features.
+
+    For some machines we also had some issues:
+  
+    We were never able to install OSKI on a Barcelona(quad-core Opteron) machine.
+    Also on a single core Xeon OSKI would install, but never would transform matrices.  This includes cases
+    where other machines would transform the same matrices and where based on the OSKI tuning data one would
+    expect the matrix to be transformed.
 */
  
 class Epetra_OskiMatrix: public Epetra_CrsMatrix{
@@ -67,12 +103,18 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
  
 	//! Constructor creates an Epetra_OskiMatrix from an Epetra_CrsMatrix.
 	/*! \param Source (In) An Epetra_CrsMatrix that is to be wrapped as an Epetra_OskiMatrix.
-	    \param List (In) Any options or data wanted or needed for the conversion.  The
-		   actual values that can go here will be listed later depending on what
-		   can be gotten from Epetra and what is applicable to our implementation.
-		   Examples of parameters will be matrix storage format and whether the
-		   indices are zero or one based.
+	    \param List (In) Any options or data wanted or needed for the conversion.  
             \return Pointer to an Epetra_OskiMatrix.
+
+            Options that can be passed to the List are presented below.  They are: "<type> <option name> <default value>: <description of purpose>"
+
+            - bool autotune false: If true Epetra trys to set as many hints as possible based on its knowledge of the matrix.
+	    - string matrixtype general: Other types that can be taken are: uppertri, lowertri, uppersymm, lowersymm, fullsymm, upperherm, lowerherm and fullherm.
+            - bool diagstored false: If true then the diaganol entries are not stored in the matrix and are all assumed to be 1.
+	    - bool zerobased false: If true the array is zero based like in C otherwise it is 1 based like in Fortran.
+            - bool sorted false: If true all elements in the passed in array are sorted.
+            - bool unique false: If true then a value in a column only appears once in each row.
+            - bool deepcopy false: If true when the OSKI matrix is created it will be a deepcopy of the data in the function.
 	*/
 	Epetra_OskiMatrix(const Epetra_CrsMatrix& Source, const Teuchos::ParameterList& List);
 	
@@ -277,7 +319,9 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
 	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.
 	    This composed routine is most commonly used in linear least squares and
-	    bidiagonalization methods.
+	    bidiagonalization methods.  The parrallel version of y = Alpha*this*this^TransA*x + Beta*y
+            uses calls to the Multiply routine under the hood as it is not possible to perform
+            both multiplies automicly.
 	    \param ATA (In) If TransA = TRUE then compute this^T*this*x otherwise compute 
 		   this*this^T*x.
 	    \param x (In) The vector the matrix is multiplied by.
@@ -293,14 +337,16 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	int MatTransMatMultiply(bool ATA, 
 			 	const Epetra_Vector& x,
 				Epetra_Vector& y,
-				Epetra_Vector& t,
+				Epetra_Vector* t,
 				double Alpha = 1.0,
-				double Beta = 1.0) const;
+				double Beta = 0.0) const;
 
 	//! Performs two matrix multi-vector multiplies of Y = Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X + Beta*Y.
 	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
 	    This composed routine is most commonly used in linear least squares and
-	    bidiagonalization methods.
+	    bidiagonalization methods.  The parrallel version of Y = Alpha*this*this^TransA*X + Beta*Y
+            uses calls to the Multiply routine under the hood as it is not possible to perform
+            both multiplies automicly.
 	    \param ATA (In) If TransA = TRUE then compute this^T*this*X otherwise compute 
 		   this*this^T*X.
 	    \param X (In) The vector the matrix is multiplied by.
@@ -316,9 +362,9 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	int MatTransMatMultiply(bool ATA, 
 				const Epetra_MultiVector& X,
 				Epetra_MultiVector& Y,
-				Epetra_MultiVector& T,
+				Epetra_MultiVector* T,
 				double Alpha = 1.0,
-				double Beta = 1.0) const;
+				double Beta = 0.0) const;
 	
 	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
 	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.
@@ -338,7 +384,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			 	const Epetra_Vector& x,
 				Epetra_Vector& y,
 				double Alpha = 1.0,
-				double Beta = 1.0) const;
+				double Beta = 0.0) const;
 
 	//! Performs two matrix multi-vector multiplies of Y = Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X + Beta*Y.
 	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
@@ -358,7 +404,7 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 				const Epetra_MultiVector& X,
 				Epetra_MultiVector& Y,
 				double Alpha = 1.0,
-				double Beta = 1.0) const;
+				double Beta = 0.0) const;
 	
 	//! Performs the two matrix vector multiplies of y = Alpha*this*x + Beta*y and z = Omega*this^TransA*w + Zeta*z.
 	/*! The vectors x, y, w and z can be either Epetra_Vectors or Epetra_OskiVectors.
@@ -414,10 +460,12 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 					double Omega = 1.0,
 					double Zeta = 0.0) const;
 
-	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y
+	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implimented as described in the detailed description.
 	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
 	    The vector T can be either an Epetra_MultiVector or and Epetra_OskiMultiVector.
-	    This composed routine is used in power and S-step methods.
+	    This composed routine is used in power and S-step methods.  This routine is
+            not implimented due a bug in the oski-1.01h kernel that makes testing of correctness
+            impossible.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
 	           computing the product.
 	    \param x (In) The vector the matrix is multiplied by.
@@ -439,33 +487,11 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			   double Alpha = 1.0,
 			   double Beta = 0.0) const;
 
-	//! Performs a matrix multi-vector multiply of Y = Alpha*(this^TransA)^Power*X + Beta*Y
-	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.  
-	    This composed routine is used in power and S-step methods.
-	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
-	           computing the product.
-	    \param X (In) The multi-vector the matrix is multiplied by.
-	    \param Y (In/Out) The multi-vector where the calculation result is stored.
-	    \param T (Out) The multi-vector where the result of each subsequent multiplication 
-		   this*X ... this^(Power-1)*X is stored.
-	    \param Power (In) The power to raise the matrix to in the calculation.
-	    \param Alpha (In) A scalar constant used to scale X.
-	    \param Beta  (In) A scalar constant used to scale Y.
-	    \return Integer error code, set to 0 if successful.
-            \pre Filled()==true
-            \post Unchanged
-	*/
-	int MatPowMultiply(bool TransA,
-			   const Epetra_MultiVector& X,
-			   Epetra_MultiVector& Y,
-			   Epetra_MultiVector& T,
- 			   int Power = 2,
-			   double Alpha = 1.0,
-			   double Beta = 0.0) const;
-	
-	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y
+	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implimented as described in the detailed description.
 	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
-	    This composed routine is used in power and S-step methods.
+	    This composed routine is used in power and S-step methods.  This routine is
+            not implimented due a bug in the oski-1.01h kernel that makes testing of correctness
+            impossible.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
 	           computing the product.
 	    \param x (In) The vector the matrix is multiplied by.
@@ -483,27 +509,6 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
  			   int Power = 2,
 			   double Alpha = 1.0,
 			   double Beta = 0.0) const;
-
-	//! Performs a matrix multi-vector multiply of Y = Alpha*(this^TransA)^Power*X + Beta*Y
-	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.  
-	    This composed routine is used in power and S-step methods.
-	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
-	           computing the product.
-	    \param X (In) The multi-vector the matrix is multiplied by.
-	    \param Y (In/Out) The multi-vector where the calculation result is stored.
-	    \param Power (In) The power to raise the matrix to in the calculation.
-	    \param Alpha (In) A scalar constant used to scale X.
-	    \param Beta  (In) A scalar constant used to scale Y.
-	    \return Integer error code, set to 0 if successful.
-            \pre Filled()==true
-            \post Unchanged
-	*/
-	int MatPowMultiply(bool TransA,
-			   const Epetra_MultiVector& X,
-			   Epetra_MultiVector& Y,
- 			   int Power = 2,
-			   double Alpha = 1.0,
-			   double Beta = 0.0) const;	
 	//@}
 
 	//! @name Tuning
@@ -515,30 +520,42 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \return On successful storage of the hint 0 is returned.  On failure an error code
 		    is returned.
 
-	    The available hints are as follows within each section only one hint may be set at
-	    a time.
+            Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The available hints are grouped by section and only one hint from each section can be true for a given matrix.
 
-	    NO_BLOCKS,
-	    SINGLE_BLOCKSIZE    [int r, c],
-	    MULTIPLE_BLOCKSIZES [int k, r1, c1, ..., rk, ck]
+	    - bool noblocks: If true the matrix has no block structure
+	    - bool singleblocksize: If true the matrix structure is dominated by blocks of the size of the next two parameters.
+              - int row: The number of rows in each block.
+              - int col: The number of columns in each block.
+	    - bool multipleblocksize: If true the matrix consists of multiple block sizes.  The next 3 parameters describe these.
+	      - int blocks: The number of block sizes in the matrix.
+	      - int row<x>: Where x is the block number and x goes from 1 to blocks.  This is the number of rows in block x.
+	      - int col<x>: Where x is the block number and x goes from 1 to blocks.  This is the number of cols in block x.
 
-	    ALIGNED_BLOCKS,
-	    UNALIGNED_BLOCKS
+	    - bool allignedblocks: If true then all blocks are alligned to a grid.
+	    - bool unallignedblocks: If true then blocks are not alligned to a grid.
 	    
-	    SYMM_PATTERN,
-	    NONSYMM_PATTERN
+	    - bool symmetricpattern: If true then the matrix is either symmetric or nearly symmetric.
+	    - bool nonsymmetricpattern: If true the matrix has a very unsymmetric pattern.
 	    
-	    RANDOM_PATTERN,
-	    CORRELATED_PATTERN
+	    - bool randompattern: If true then the matrix's non-zeros are distributed in a random pattern.
+	    - bool correlatedpattern: If true then the row and column indices for non-zeros are highly corolated.
 
-	    NO_DIAGS,
-	    DIAGS
+	    - bool nodiags : If true then the matrix has little or no diagonal structure.
+	    - bool diags: If true the matrix consists of diagnoal structure described the next two parameters.
+              - int numdiags: The number of diaganol sizes known to be present others not listed could be present.
+	      - int diag<x>: Where x is the diaganol number and x goes from 1 to numdiags.  This is the size of the diagonal.
  	*/
 	int SetHint(const Teuchos::ParameterList& List);
 
 	
 	//! Workload hints for computing a matrix-vector multiply used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
-	/*! \param Trans (In) If Trans = true then the transpose of the matrix will be used in
+	/*! In parallel the routine uses symbolic vectors.  This is done for two reasons.  Doing this
+            saves on data allocation and potentially communication overhead.  For a matrix-vector
+            routine there should be no advantage to having the actual vector as its size must be the same
+            as a matrix dimension.  For a matrix-multivector routine there could be gains from knowing the
+            number of vectors in the multi-vector but since OSKI does not perform multi-vector optimizations
+            there is no need to add the overhead.
+            \param Trans (In) If Trans = true then the transpose of the matrix will be used in
 	           computing the product.
 	    \param Alpha (In) A scalar constant used to scale InVec.
 	    \param InVec (In) The vector the matrix is multiplied by or whether it is a single vector or multi-vector.
@@ -551,15 +568,19 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 		   by using these options the associated vector or NumCalls becomes invalid.
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
-	    
-	    SYMBOLIC_IN_VEC,
-	    SYMBOLIC_IN_MULTIVEC
-	
-	    SYMBOLIC_OUT_VEC,
-	    SYMBOLIC_OUT_MULTIVEC
+	   
+            Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The available hints are grouped by section and only one hint from each section can be true for a given matrix.
+  
+	    These replace InVec.
+	    - bool symminvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symminmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
-	    ALWAYS_TUNE,
-	    ALWAYS_TUNE_AGGRESSIVELY
+            These replace OutVec.
+	    - bool symmoutvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symmoutmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
+
+	    - bool tune: If true have OSKI tune moderately rather than using the number of calls passed in.
+	    - bool tuneaggressive: If true have OSKI tune aggressively rather than using the number of calls passed in.
 	*/
 	int SetHintMultiply(bool TransA,
 			    double Alpha,
@@ -570,7 +591,14 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			    const Teuchos::ParameterList& List);
 	
 	//! Workload hints for computing a triangular solve used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
-	/*! \param Trans (In) If Trans = true then the transpose of the matrix will be used in
+	/*! In parallel the routine uses symbolic vectors.  This is done for two reasons.  Doing this             
+            saves on data allocation and potentially communication overhead.  For a matrix-vector
+            routine there should be no advantage to having the actual vector as its size must be the same
+            as a matrix dimension.  For a matrix-multivector routine there could be gains from knowing the
+            number of vectors in the multi-vector but since OSKI does not perform multi-vector optimizations
+            there is no need to add the overhead.
+
+            \param Trans (In) If Trans = true then the transpose of the matrix will be used in
 	           computing the product.
 	    \param Alpha (In) A scalar constant used to scale InVec.
 	    \param Vector (In) The vector being used in the solve and to store the solution.
@@ -582,11 +610,14 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
 	    
-	    SYMBOLIC_VECTOR,
-	    SYMBOLIC_MULTIVECTOR
+            Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The available hints are grouped by section and only one hint from each section can be true for a given matrix.
+  
+	    These replace Vector.
+	    - bool symmvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symmmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
-	    ALWAYS_TUNE,
-	    ALWAYS_TUNE_AGGRESSIVELY
+	    - bool tune: If true have OSKI tune moderately rather than using the number of calls passed in.
+	    - bool tuneaggressive: If true have OSKI tune aggressively rather than using the number of calls passed in.
 	*/
 	int SetHintSolve(bool TransA,
 		         double Alpha,
@@ -595,7 +626,13 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 		   	 const Teuchos::ParameterList& List);
 	
 	//! Workload hints for computing a two matrix-vector multiplies that are composed used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
-	/*! \param ATA (In) If ATA = true then this^T*this*x will be computed otherwise this*this^T*x will be.
+	/*! In parallel the routine uses symbolic vectors.  This is done for two reasons.  Doing this
+            saves on data allocation and potentially communication overhead.  For a matrix-vector
+            routine there should be no advantage to having the actual vector as its size must be the same
+            as a matrix dimension.  For a matrix-multivector routine there could be gains from knowing the
+            number of vectors in the multi-vector but since OSKI does not perform multi-vector optimizations
+            there is no need to add the overhead.
+            \param ATA (In) If ATA = true then this^T*this*x will be computed otherwise this*this^T*x will be.
 	    \param Alpha (In) A scalar constant used to scale InVec.
 	    \param InVec (In) The vector the matrix is multiplied by or whether it is a single vector or multi-vector.
 	    \param Beta  (In) A scalar constant used to scale OutVec.
@@ -611,18 +648,22 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
 	    
-	    SYMBOLIC_IN_VEC,
-	    SYMBOLIC_IN_MULTIVEC
-	
-	    SYMBOLIC_OUT_VEC,
-	    SYMBOLIC_OUT_MULTIVEC
+            Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The available hints are grouped by section and only one hint from each section can be true for a given matrix.
+  
+	    These replace InVec.
+	    - bool symminvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symminmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
-	    SYMBOLIC_INTER_VEC,
-	    SYMBOLIC_INTER_MULTIVEC,
-	    INVALID_INTER
+            These replace OutVec.
+	    - bool symmoutvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symmoutmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
-	    ALWAYS_TUNE,
-	    ALWAYS_TUNE_AGGRESSIVELY
+            These replace Intermediate.
+	    - bool symmintervec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symmintermultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
+
+	    - bool tune: If true have OSKI tune moderately rather than using the number of calls passed in.
+	    - bool tuneaggressive: If true have OSKI tune aggressively rather than using the number of calls passed in.
 	*/
  	int SetHintMatTransMatMultiply(bool ATA,
 			               double Alpha,
@@ -634,7 +675,14 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			   	       const Teuchos::ParameterList& List);
 
 	//! Workload hints for computing two matrix-vector multiplies used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
-	/*! \param Trans (In) If Trans = true then the transpose of the matrix will be used in
+	/*! In parallel the routine uses symbolic vectors.  This is done for two reasons.  Doing this
+            saves on data allocation and potentially communication overhead.  For a matrix-vector
+            routine there should be no advantage to having the actual vector as its size must be the same
+            as a matrix dimension.  For a matrix-multivector routine there could be gains from knowing the
+            number of vectors in the multi-vector but since OSKI does not perform multi-vector optimizations
+            there is no need to add the overhead.
+
+            \param Trans (In) If Trans = true then the transpose of the matrix will be used in
 	           computing the product.
 	    \param Alpha (In) A scalar constant used to scale InVec.
 	    \param InVec (In) The vector the matrix is multiplied by or whether it is a single vector or multi-vector.
@@ -652,20 +700,26 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
 	    
-	    SYMBOLIC_IN_VEC,
-	    SYMBOLIC_IN_MULTIVEC
-	
-	    SYMBOLIC_OUT_VEC,
-	    SYMBOLIC_OUT_MULTIVEC
+            Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The available hints are grouped by section and only one hint from each section can be true for a given matrix.
+  
+	    These replace InVec.
+	    - bool symminvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symminmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
-	    SYMBOLIC_IN_VEC2,
-	    SYMBOLIC_IN_MULTIVEC2
-	
-	    SYMBOLIC_OUT_VEC2,
-	    SYMBOLIC_OUT_MULTIVEC2
+            These replace OutVec.
+	    - bool symmoutvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symmoutmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
-	    ALWAYS_TUNE,
-	    ALWAYS_TUNE_AGGRESSIVELY
+	    These replace InVec2.
+	    - bool symminvec2: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symminmultivec2: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
+
+            These replace OutVec2.
+	    - bool symmoutvec2: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symmoutmultivec2: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
+
+	    - bool tune: If true have OSKI tune moderately rather than using the number of calls passed in.
+	    - bool tuneaggressive: If true have OSKI tune aggressively rather than using the number of calls passed in.
 	*/
 	int SetHintMultiplyAndMatTransMultiply(bool TransA,
 			          	       double Alpha,
@@ -680,7 +734,13 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			   	  	       const Teuchos::ParameterList& List);
 
 	//! Workload hints for computing a matrix-vector multiply performed Power times used by OskiTuneMat to optimize the data structure storage and the routine to compute the calculation.
-	/*! \param Trans (In) If Trans = true then the transpose of the matrix will be used in
+	/*! In parallel the routine uses symbolic vectors.  This is done for two reasons.  Doing this
+            saves on data allocation and potentially communication overhead.  For a matrix-vector
+            routine there should be no advantage to having the actual vector as its size must be the same
+            as a matrix dimension.  For a matrix-multivector routine there could be gains from knowing the
+            number of vectors in the multi-vector but since OSKI does not perform multi-vector optimizations
+            there is no need to add the overhead.
+            \param Trans (In) If Trans = true then the transpose of the matrix will be used in
 	           computing the product.
 	    \param Alpha (In) A scalar constant used to scale InVec.
 	    \param InVec (In) The vector the matrix is multiplied by or whether it is a single vector or multi-vector.
@@ -698,17 +758,21 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	    \return Stores the workload hint in the matrix if the operation is valid.  If the
 	       	    operation is not valid an error code is returned.
 	    
-	    SYMBOLIC_IN_VEC,
-	    SYMBOLIC_IN_MULTIVEC
-	
-	    SYMBOLIC_OUT_VEC,
-	    SYMBOLIC_OUT_MULTIVEC
-	    
-	    SYMBOLIC_INTER_MULTIVEC,
-	    INVALID_INTER
+            Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The available hints are grouped by section and only one hint from each section can be true for a given matrix.
+  
+	    These replace InVec.
+	    - bool symminvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symminmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
 
-	    ALWAYS_TUNE,
-	    ALWAYS_TUNE_AGGRESSIVELY
+            These replace OutVec.
+	    - bool symmoutvec: If true use a symbolic vector rather than the vector passed in for tuning purposes.
+	    - bool symmoutmultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
+            
+            This replaces Intermediate.
+	    - bool symmintermultivec: If true use a symbolic multi-vector rather than the multi-vector passed in for tuning purposes.
+
+	    - bool tune: If true have OSKI tune moderately rather than using the number of calls passed in.
+	    - bool tuneaggressive: If true have OSKI tune aggressively rather than using the number of calls passed in.
 	*/
 	int SetHintPowMultiply(bool TransA,
 			       double Alpha,

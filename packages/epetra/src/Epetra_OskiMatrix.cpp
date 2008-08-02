@@ -32,6 +32,7 @@
 #ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
 #include "Epetra_OskiMatrix.h"
+#include "Epetra_Import.h"
 
 //=============================================================================
 
@@ -217,31 +218,94 @@ int Epetra_OskiMatrix::Multiply(bool TransA,
 				Epetra_Vector& y, 
 				double Alpha, 
 				double Beta) const {
-  Epetra_OskiVector* xCast = NULL;
-  Epetra_OskiVector* yCast = NULL;
-  bool xCreate = false;
-  bool yCreate = false;
   int ReturnVal;
-  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
-  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
-  if (xCast == NULL) {
-    xCast = new Epetra_OskiVector(x);
-    xCreate = true;
+ 
+  if(!Filled())
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  double* xp = (double*) x.Values();
+  double* yp = (double*) y.Values();
+
+  Epetra_Vector * xcopy = 0;
+  if (&x==&y && Importer()==0 && Exporter()==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
   }
-  if (yCast == NULL) {
-    yCast = new Epetra_OskiVector(y);
-    yCreate = true;
+  UpdateImportVector(1); // Refresh import and output vectors if needed
+  UpdateExportVector(1);
+
+  if(!TransA) {
+
+    // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+    if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
+      xp = (double*) ImportVector_->Values();
+    }
+
+    // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+    if(Exporter() != 0) 
+      yp = (double*) ExportVector_->Values();
+    
+
+    oski_vecview_t oskiX;
+    oski_vecview_t oskiY;
+    printf("%d oskiY\n", oskiY);
+    if(Importer() != 0) 
+      oskiX = oski_CreateVecView(xp,ImportVector_->MyLength(),1);
+    else               
+      oskiX = oski_CreateVecView(xp,x.MyLength(),1);
+    if(Exporter() != 0) 
+      oskiY = oski_CreateVecView(yp,ExportVector_->MyLength(),1);
+    else               
+      oskiY = oski_CreateVecView(yp,y.MyLength(),1);
+
+    printf("%d oskiY\n", oskiY);
+    //Do actual computation
+    ReturnVal = oski_MatMult(A_tunable_, OP_NORMAL, Alpha, oskiX, Beta, oskiY);
+
+    if(Exporter() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+  } //if(!TransA)
+  else { // Transpose operation
+
+    // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
+    if(Exporter() != 0) {
+      EPETRA_CHK_ERR(ExportVector_->Import(x, *Exporter(), Insert));
+      xp = (double*) ExportVector_->Values();
+    }
+
+    // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
+    if(Importer() != 0) 
+      yp = (double*) ImportVector_->Values();
+
+    oski_vecview_t oskiX;
+    oski_vecview_t oskiY;
+    if(Importer() != 0) 
+      oskiY = oski_CreateVecView(yp,ImportVector_->MyLength(),1);
+    else               
+      oskiY = oski_CreateVecView(yp,y.MyLength(),1);
+    if(Exporter() != 0) 
+      oskiX = oski_CreateVecView(xp,ExportVector_->MyLength(),1);
+    else               
+      oskiX = oski_CreateVecView(xp,x.MyLength(),1);
+    
+    // Do actual computation
+    ReturnVal = oski_MatMult(A_tunable_, OP_TRANS, Alpha, oskiX, Beta, oskiY);
+
+    if(Importer() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
   }
-  if(TransA)
-    ReturnVal = oski_MatMult(A_tunable_, OP_TRANS, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View());
-  else
-    ReturnVal = oski_MatMult(A_tunable_, OP_NORMAL, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View());
   if(ReturnVal)
     std::cerr << "OskiVector multiply error\n";
-  if(xCreate)
-    delete xCast;
-  if(yCreate)
-    delete yCast;
+  UpdateFlops(2 * NumGlobalNonzeros());
   return ReturnVal;
 }
 
@@ -258,31 +322,107 @@ int Epetra_OskiMatrix::Multiply(bool TransA,
 				Epetra_MultiVector& Y, 
 				double Alpha, 
 				double Beta) const {
-  Epetra_OskiMultiVector* XCast = NULL;
-  Epetra_OskiMultiVector* YCast = NULL;
-  bool XCreate = false;
-  bool YCreate = false;
   int ReturnVal;
-  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
-  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
-  if (XCast == NULL) {
-    XCast = new Epetra_OskiMultiVector(X);
-    XCreate = true;
+
+  if(!Filled())
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  int NumVectors = X.NumVectors();
+  if (NumVectors!=Y.NumVectors()) {
+    EPETRA_CHK_ERR(-2); // Need same number of vectors in each MV
   }
-  if (YCast == NULL) {
-    YCast = new Epetra_OskiMultiVector(Y);
-    YCreate = true;
+
+  double** Xp = (double**) X.Pointers();
+  double** Yp = (double**) Y.Pointers();
+
+  int LDX = X.ConstantStride() ? X.Stride() : 0;
+  int LDY = Y.ConstantStride() ? Y.Stride() : 0;
+
+  Epetra_MultiVector* Xcopy = 0;
+  if (&X==&Y && Importer()==0 && Exporter()==0) {
+    Xcopy = new Epetra_MultiVector(X);
+    Xp = (double **) Xcopy->Pointers();
+    LDX = Xcopy->ConstantStride() ? Xcopy->Stride() : 0;
   }
-  if(TransA)
-    ReturnVal = oski_MatMult(A_tunable_, OP_TRANS, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View());
-  else
-    ReturnVal = oski_MatMult(A_tunable_, OP_NORMAL, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View());
-  if(ReturnVal)
-    std::cerr << "OskiMultiVector multiply error\n";
-  if(XCreate)
-    delete XCast;
-  if(YCreate)
-    delete YCast;
+  UpdateImportVector(NumVectors); // Refresh import and output vectors if needed
+  UpdateExportVector(NumVectors);
+
+  if (!TransA) {
+
+    // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+    if (Importer()!=0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
+      Xp = (double**)ImportVector_->Pointers();
+      LDX = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+    }
+
+    // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+    if (Exporter()!=0) {
+      Yp = (double**)ExportVector_->Pointers();
+      LDY = ExportVector_->ConstantStride() ? ExportVector_->Stride() : 0;
+    }
+
+    oski_vecview_t oskiX;
+    oski_vecview_t oskiY;
+    if (Importer()!=0) 
+      oskiX = oski_CreateMultiVecView(*Xp,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+    else               
+      oskiX = oski_CreateMultiVecView(*Xp,X.MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+    if (Exporter()!=0) 
+      oskiY = oski_CreateMultiVecView(*Yp,ExportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+    else               
+      oskiY = oski_CreateMultiVecView(*Yp,Y.MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+    // Do actual computation
+    ReturnVal = oski_MatMult(A_tunable_, OP_NORMAL, Alpha, oskiX, Beta, oskiY);
+    if(ReturnVal)
+      std::cerr << "OskiMultiVector multiply error\n";
+    if (Exporter()!=0) {
+      Y.PutScalar(0.0);  // Make sure target is zero
+      Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
+  }
+  else { // Transpose operation
+
+    // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
+
+    if (Exporter()!=0) {
+      EPETRA_CHK_ERR(ExportVector_->Import(X, *Exporter(), Insert));
+      Xp = (double**)ExportVector_->Pointers();
+      LDX = ExportVector_->ConstantStride() ? ExportVector_->Stride() : 0;
+    }
+
+    // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
+    if (Importer()!=0) {
+      Yp = (double**)ImportVector_->Pointers();
+      LDY = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+    }
+    
+    oski_vecview_t oskiX;
+    oski_vecview_t oskiY;
+    if (Importer()!=0) 
+      oskiY = oski_CreateMultiVecView(*Yp,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+    else               
+      oskiY = oski_CreateMultiVecView(*Yp,Y.MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+    if (Exporter()!=0) 
+      oskiX = oski_CreateMultiVecView(*Xp,ExportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+    else               
+      oskiX = oski_CreateMultiVecView(*Xp,X.MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+
+    // Do actual computation
+    ReturnVal = oski_MatMult(A_tunable_, OP_TRANS, Alpha, oskiX, Beta, oskiY);
+    if(ReturnVal)
+      std::cerr << "OskiMultiVector multiply error\n";
+    if (Importer()!=0) {
+      Y.PutScalar(0.0);  // Make sure target is zero
+      EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
+  }
+  UpdateFlops(2 * NumGlobalNonzeros());
+  //Y.ResetView(Yp);
   return ReturnVal;
 }
 
@@ -367,86 +507,230 @@ int Epetra_OskiMatrix::Solve(bool TransA, const Epetra_MultiVector& X, Epetra_Mu
 int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, 
 					   const Epetra_Vector& x, 
 					   Epetra_Vector& y, 
-					   Epetra_Vector& t, 
+					   Epetra_Vector* t, 
 					   double Alpha, 
 					   double Beta) const {
-  Epetra_OskiVector* xCast = NULL;
-  Epetra_OskiVector* yCast = NULL;
-  Epetra_OskiVector* tCast = NULL;
-  bool xCreate = false;
-  bool yCreate = false;
-  bool tCreate = false;
   int ReturnVal;
-  tCast = dynamic_cast<Epetra_OskiVector*>(&t);
-  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
-  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
-  if (xCast == NULL) {
-    xCast = new Epetra_OskiVector(x);
-    xCreate = true;
+  
+  if(!Filled())
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  double* xp = (double*) x.Values();
+  double* xp2 = (double*) x.Values();
+  double* yp = (double*) y.Values();
+  double* tp = (double*) t.Values();
+
+  Epetra_Vector* xcopy = 0;
+  if (&x==&y && Importer()==0 && Exporter()==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
   }
-  if (yCast == NULL) {
-    yCast = new Epetra_OskiVector(y);
-    yCreate = true;
+  UpdateImportVector(1); // Refresh import and output vectors if needed
+  UpdateExportVector(1);
+  
+
+  if(ATA) {
+    if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
+      xp = (double*) ImportVector_->Values();
+      xp2 = new double[ImportVector_->MyLength()];
+      for(int i = 0; i < ImportVector_->MyLength(); i++) 
+        xp2[i] = xp[i];
+      EPETRA_CHK_ERR(ImportVector_->Import(y, *Importer(), Insert));
+      yp = (double*) ImportVector_->Values();
+    }
+
+    // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+    if(Exporter() != 0 && (&t) != NULL) {
+      tp = (double*) ExportVector_->Values();
+    }
+
+    oski_vecview_t oskiX=0;
+    oski_vecview_t oskiY=0;
+    oski_vecview_t oskiT=0;
+    if(Importer() != 0) 
+      oskiX = oski_CreateVecView(xp2,ImportVector_->MyLength(),1);
+    else
+      oskiX = oski_CreateVecView(xp2,x.MyLength(),1);
+    if(Importer() != 0) 
+      oskiY = oski_CreateVecView(yp,ImportVector_->MyLength(),1);
+    else
+      oskiY = oski_CreateVecView(yp,y.MyLength(),1);
+
+    if (&t != NULL) {
+      if(Exporter() != 0) 
+          oskiT = oski_CreateVecView(tp,ExportVector_->MyLength(),1);
+      else
+        oskiT = oski_CreateVecView(tp,t.MyLength(),1);
+
+    }
+    else
+      oskiT = INVALID_VEC;
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, oskiX, Beta, oskiY, oskiT);
+
+    if(Importer() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+    
+    if(Exporter() != 0 && (&t != NULL)) {
+      t.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(t.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(t.Reduce());
+    UpdateFlops(4 * NumGlobalNonzeros());
+
   }
-  if (tCast == NULL) {
-    tCast = new Epetra_OskiVector(t);
-    tCreate = true;
+  else {
+    if(this->Comm().NumProc() == 1) {
+      oski_vecview_t oskiX=0;
+      oski_vecview_t oskiY=0;
+      oski_vecview_t oskiT=0;
+      if (&t != NULL)
+        oskiT = oski_CreateVecView(tp,t.MyLength(),1);
+      oskiX = oski_CreateVecView(xp,x.MyLength(),1);
+      oskiY = oski_CreateVecView(yp,y.MyLength(),1);
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, oskiX, Beta, oskiY, oskiT);
+      UpdateFlops(4 * NumGlobalNonzeros());
+    }
+    else {
+      ReturnVal = this->Multiply(false, x, t, 1.0, 0.0);
+      int ReturnVal2 = this->Multiply(true, t, y, Alpha, Beta);
+      if(ReturnVal < ReturnVal2)
+        ReturnVal = ReturnVal2;
+    } 
   }
-  if(ATA)
-    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
-  else
-    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*tCast).Oski_View());
-  if(ReturnVal)
-    std::cerr << "OskiVector MatTransMatMultiply error\n";
-  if(xCreate)
-    delete xCast;
-  if(yCreate)
-    delete yCast;
-  if(tCreate)
-    delete tCast;
+  if (xcopy!=0) {
+    delete xcopy;
+    EPETRA_CHK_ERR(1); // Return positive code to alert the user about needing extra copy of x
+    return(1);
+  }
   return ReturnVal;
 }
 
 int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, 
 					   const Epetra_MultiVector& X, 
 					   Epetra_MultiVector& Y, 
-					   Epetra_MultiVector& T, 
+					   Epetra_MultiVector* T, 
 					   double Alpha, 
 				           double Beta) const {
-  Epetra_OskiMultiVector* XCast = NULL;
-  Epetra_OskiMultiVector* YCast = NULL;
-  Epetra_OskiMultiVector* TCast = NULL;
-  bool XCreate = false;
-  bool YCreate = false;
-  bool TCreate = false;
   int ReturnVal;
-  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
-  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
-  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
-  if (XCast == NULL) {
-    XCast = new Epetra_OskiMultiVector(X);
-    XCreate = true;
+  
+  if(!Filled())
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  int NumVectors = X.NumVectors();
+  if (NumVectors!=Y.NumVectors()) {
+    EPETRA_CHK_ERR(-2); // Need same number of vectors in each MV
   }
-  if (YCast == NULL) {
-    YCast = new Epetra_OskiMultiVector(Y);
-    YCreate = true;
+
+  
+
+  double** Xp = (double**) X.Pointers();
+  double** Xp2 = (double**) X.Pointers();
+  double** Yp = (double**) Y.Pointers();
+  double** Tp = (double**) T.Pointers();
+ 
+  int LDX = X.ConstantStride() ? X.Stride() : 0;
+  int LDY = Y.ConstantStride() ? Y.Stride() : 0;
+  int LDT = T.ConstantStride() ? T.Stride() : 0;
+
+  Epetra_MultiVector* Xcopy = 0;
+  Epetra_MultiVector* X2 = 0;
+  if (&X==&Y && Importer()==0 && Exporter()==0) {
+    Xcopy = new Epetra_MultiVector(X);
+    Xp = (double **) Xcopy->Pointers();
+    LDX = Xcopy->ConstantStride() ? Xcopy->Stride() : 0;
   }
-  if (TCast == NULL && (&T) != NULL) {
-    TCast = new Epetra_OskiMultiVector(T);
-    TCreate = true;
+  UpdateImportVector(NumVectors); // Refresh import and output vectors if needed
+  UpdateExportVector(NumVectors);
+  
+
+  if(ATA) {
+    if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
+      Xp = (double**) ImportVector_->Pointers();
+      LDX = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+//      need to think about this
+      X2 = new Epetra_MultiVector(X);
+      double** Xp2 = (double**) X2->Pointers();
+      Xp2 = (double **) X2->Pointers();
+      EPETRA_CHK_ERR(ImportVector_->Import(Y, *Importer(), Insert));
+      Yp = (double**) ImportVector_->Pointers();
+      LDY = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+    }
+
+    // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+    if(Exporter() != 0 && (&T) != NULL) {
+      Tp = (double**) ExportVector_->Pointers();
+      LDT = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+    }
+    oski_vecview_t oskiX=0;
+    oski_vecview_t oskiY=0;
+    oski_vecview_t oskiT=0;
+    if(Importer() != 0) 
+      oskiX = oski_CreateMultiVecView(*Xp2,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+    else
+      oskiX = oski_CreateMultiVecView(*Xp2,X.MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+    if(Importer() != 0) 
+      oskiY = oski_CreateMultiVecView(*Yp,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+    else
+      oskiY = oski_CreateMultiVecView(*Yp,Y.MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+
+    if (&T != NULL) {
+      if(Exporter() != 0) 
+          oskiT = oski_CreateMultiVecView(*Tp,ExportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDT);
+      else
+        oskiT = oski_CreateMultiVecView(*Tp,T.MyLength(),NumVectors,LAYOUT_COLMAJ,LDT);
+
+    }
+    else
+      oskiT = INVALID_VEC;
+    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, oskiX, Beta, oskiY, oskiT);
+
+    if(Importer() != 0) {
+      Y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
+    
+    if(Exporter() != 0 && (&T != NULL)) {
+      T.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(T.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(T.Reduce());
+    UpdateFlops(4 * NumGlobalNonzeros());
+
   }
-  if(ATA)
-    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_AT_A, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
-  else
-    ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
-  if(ReturnVal)
-    std::cerr << "OskiMultiVector MatTransMatMultiply error\n";
-  if(TCreate)
-    delete TCast;
-  if(XCreate)
-    delete XCast;
-  if(YCreate)
-    delete YCast;
+  else {
+    if(this->Comm().NumProc() == 1) {
+      oski_vecview_t oskiX=0;
+      oski_vecview_t oskiY=0;
+      oski_vecview_t oskiT=0;
+      if (&T != NULL)
+        oskiT = oski_CreateMultiVecView(*Tp,T.MyLength(),NumVectors, LAYOUT_COLMAJ,LDT);
+      oskiX = oski_CreateMultiVecView(*Xp,X.MyLength(),NumVectors, LAYOUT_COLMAJ,LDX);
+      oskiY = oski_CreateMultiVecView(*Yp,Y.MyLength(),NumVectors, LAYOUT_COLMAJ,LDY);
+      ReturnVal = oski_MatTransMatMult(A_tunable_, OP_A_AT, Alpha, oskiX, Beta, oskiY, oskiT);
+      UpdateFlops(4 * NumGlobalNonzeros() *NumVectors);
+    }
+    else {
+      ReturnVal = this->Multiply(false, X, T, 1.0, 0.0);
+      int ReturnVal2 = this->Multiply(true, T, Y, Alpha, Beta);
+      if(ReturnVal < ReturnVal2)
+        ReturnVal = ReturnVal2;
+    } 
+  }
+  if (Xcopy!=0) {
+    delete Xcopy;
+    EPETRA_CHK_ERR(1); // Return positive code to alert the user about needing extra copy of x
+    return(1);
+  }
   return ReturnVal;
 }
 
@@ -525,49 +809,146 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
 						   double Beta, 
 						   double Omega, 
 						   double Zeta) const {
-  Epetra_OskiVector* xCast = NULL;
-  Epetra_OskiVector* yCast = NULL;
-  Epetra_OskiVector* wCast = NULL;
-  Epetra_OskiVector* zCast = NULL;
-  bool xCreate = false;
-  bool yCreate = false;
-  bool wCreate = false;
-  bool zCreate = false;
+
   int ReturnVal;
-  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
-  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
-  wCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&w));
-  zCast = dynamic_cast<Epetra_OskiVector*>(&z);
-  if (xCast == NULL) {
-    xCast = new Epetra_OskiVector(x);
-    xCreate = true;
+
+  if(!Filled())
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  double* xp = (double*) x.Values();
+  double* xp2 = (double*) x.Values();
+  double* wp = (double*) w.Values();
+  double* yp = (double*) y.Values();
+//  double* yp2 = (double*) y.Values();
+  double* zp = (double*) z.Values();
+  Epetra_MultiVector* yp2;
+  Epetra_Vector* xcopy = 0;
+  if (&x==&y && Importer()==0 && Exporter()==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
   }
-  if (yCast == NULL) {
-    yCast = new Epetra_OskiVector(y);
-    yCreate = true;
+  Epetra_Vector* wcopy = 0;
+  if (&w==&z && Importer()==0 && Exporter()==0) {
+    wcopy = new Epetra_Vector(w);
+    wp = (double *) wcopy->Values();
   }
-  if (wCast == NULL) {
-    wCast = new Epetra_OskiVector(w);
-    wCreate = true;
+  UpdateImportVector(1); // Refresh import and output vectors if needed
+  UpdateExportVector(1);
+
+  if(TransA) {
+
+    if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
+      xp = (double*) ImportVector_->Values();
+      xp2 = new double[ImportVector_->MyLength()];
+      for(int i = 0; i < ImportVector_->MyLength(); i++)
+        xp2[i] = xp[i];
+      EPETRA_CHK_ERR(ImportVector_->Import(z, *Importer(), Insert));
+      zp = (double*) ImportVector_->Values();
+    }
+    if(Exporter() != 0) {
+      yp2 = new Epetra_MultiVector(*ExportVector_);
+      yp = (double*) yp2->Values();
+      
+      //for(int i = 0; i < ExportVector_->MyLength(); i++)
+        //yp2[i] = yp[i];
+      wp = (double*) ExportVector_->Values();
+    }
+
+    oski_vecview_t oskiX=0;
+    oski_vecview_t oskiY=0;
+    oski_vecview_t oskiW=0;
+    oski_vecview_t oskiZ=0;
+    if(Importer() != 0) {
+      oskiX = oski_CreateVecView(xp2,ImportVector_->MyLength(),1);
+      oskiZ = oski_CreateVecView(zp,ImportVector_->MyLength(),1);
+    }
+    else {
+      oskiX = oski_CreateVecView(xp2,x.MyLength(),1);
+      oskiZ = oski_CreateVecView(zp,z.MyLength(),1);
+    }
+    if(Exporter() != 0) {
+      oskiY = oski_CreateVecView(yp,ExportVector_->MyLength(),1);
+      oskiW = oski_CreateVecView(wp,ExportVector_->MyLength(),1);
+    }
+    else {
+      oskiY = oski_CreateVecView(yp,y.MyLength(),1);
+      oskiW = oski_CreateVecView(wp,w.MyLength(),1);
+    }
+   
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, oskiX, Beta, oskiY, OP_TRANS, Omega, oskiW, Zeta, oskiZ);
+    if(Exporter() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*yp2, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    if(Importer() != 0) {
+      z.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(z.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(z.Reduce());
+
+    UpdateFlops(4 * NumGlobalNonzeros());
   }
-  if (zCast == NULL) {
-    zCast = new Epetra_OskiVector(z);
-    zCreate = true;
+  //  ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_TRANS, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
+  else {
+
+   if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
+      xp = (double*) ImportVector_->Values();
+      xp2 = new double[ImportVector_->MyLength()];
+      for(int i = 0; i < ImportVector_->MyLength(); i++)
+        xp2[i] = xp[i];
+      EPETRA_CHK_ERR(ImportVector_->Import(w, *Importer(), Insert));
+      wp = (double*) ImportVector_->Values();
+    }
+    if(Exporter() != 0) {
+      yp2 = new Epetra_MultiVector(*ExportVector_);
+      yp = (double*) yp2->Values();
+      
+      //for(int i = 0; i < ExportVector_->MyLength(); i++)
+        //yp2[i] = yp[i];
+      zp = (double*) ExportVector_->Values();
+    }
+
+    oski_vecview_t oskiX=0;
+    oski_vecview_t oskiY=0;
+    oski_vecview_t oskiW=0;
+    oski_vecview_t oskiZ=0;
+    if(Importer() != 0) {
+      oskiX = oski_CreateVecView(xp2,ImportVector_->MyLength(),1);
+      oskiW = oski_CreateVecView(wp,ImportVector_->MyLength(),1);
+    }
+    else {
+      oskiX = oski_CreateVecView(xp2,x.MyLength(),1);
+      oskiW = oski_CreateVecView(wp,w.MyLength(),1);
+    }
+    if(Exporter() != 0) {
+      oskiY = oski_CreateVecView(yp,ExportVector_->MyLength(),1);
+      oskiZ = oski_CreateVecView(zp,ExportVector_->MyLength(),1);
+    }
+    else {
+      oskiY = oski_CreateVecView(yp,y.MyLength(),1);
+      oskiZ = oski_CreateVecView(zp,z.MyLength(),1);
+    }
+   
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, oskiX, Beta, oskiY, OP_NORMAL, Omega, oskiW, Zeta, oskiZ);
+    if(Exporter() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*yp2, *Exporter(), Add)); // Fill y with Values from export vector
+      z.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(z.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector*/
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(z.Reduce());
+
+    UpdateFlops(4 * NumGlobalNonzeros());
+
   }
-  if(TransA)
-    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_TRANS, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
-  else
-    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_NORMAL, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
   if(ReturnVal)
     std::cerr << "OskiVector multiply error\n";
-  if(xCreate)
-    delete xCast;
-  if(yCreate)
-    delete yCast;
-  if(wCreate)
-    delete wCast;
-  if(zCreate)
-    delete zCast;
   return ReturnVal;
 }
 
@@ -580,49 +961,152 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
 						   double Beta, 
 						   double Omega, 
 						   double Zeta) const {
-  Epetra_OskiMultiVector* XCast = NULL;
-  Epetra_OskiMultiVector* YCast = NULL;
-  Epetra_OskiMultiVector* WCast = NULL;
-  Epetra_OskiMultiVector* ZCast = NULL;
-  bool XCreate = false;
-  bool YCreate = false;
-  bool WCreate = false;
-  bool ZCreate = false;
   int ReturnVal;
-  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
-  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
-  WCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&W));
-  ZCast = dynamic_cast<Epetra_OskiMultiVector*>(&Z);
-  if (XCast == NULL) {
-    XCast = new Epetra_OskiMultiVector(X);
-    XCreate = true;
+  if(!Filled())
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+  int NumVectors = X.NumVectors();
+  if (NumVectors!=Y.NumVectors()) {
+    EPETRA_CHK_ERR(-2); // Need same number of vectors in each MV
   }
-  if (YCast == NULL) {
-    YCast = new Epetra_OskiMultiVector(Y);
-    YCreate = true;
+
+
+  Epetra_MultiVector* Y2 = 0;
+  double** Xp = (double**) X.Pointers();
+  double** Xp2 = (double**) X.Pointers();
+  double** Wp = (double**) W.Pointers();
+  double** Yp = (double**) Y.Pointers();
+  double** Zp = (double**) Z.Pointers();
+  int LDX = X.ConstantStride() ? X.Stride() : 0;
+  int LDY = Y.ConstantStride() ? Y.Stride() : 0;
+  int LDW = W.ConstantStride() ? W.Stride() : 0;
+  int LDZ = Z.ConstantStride() ? Z.Stride() : 0;
+
+  Epetra_MultiVector* Yp2;
+  Epetra_MultiVector* X2 = 0;
+  Epetra_MultiVector* Xcopy = 0;
+  if (&X==&Y && Importer()==0 && Exporter()==0) {
+    Xcopy = new Epetra_MultiVector(X);
+    Xp = (double **) Xcopy->Pointers();
+    LDX = Xcopy->ConstantStride() ? Xcopy->Stride() : 0;
   }
-  if (WCast == NULL) {
-    WCast = new Epetra_OskiMultiVector(W);
-    WCreate = true;
+  Epetra_MultiVector* Wcopy = 0;
+  if (&W==&Z && Importer()==0 && Exporter()==0) {
+    Wcopy = new Epetra_MultiVector(W);
+    Wp = (double **) Wcopy->Values();
+    LDW = Wcopy->ConstantStride() ? Wcopy->Stride() : 0;
   }
-  if (ZCast == NULL) {
-    ZCast = new Epetra_OskiMultiVector(Z);
-    ZCreate = true;
+  UpdateImportVector(NumVectors); // Refresh import and output vectors if needed
+  UpdateExportVector(NumVectors);
+
+  if(TransA) {
+
+    if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
+      Xp = (double**) ImportVector_->Pointers();
+      LDX = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+      X2 = new Epetra_MultiVector(X);
+      double** Xp2 = (double**) X2->Pointers();
+      Xp2 = (double **) X2->Pointers();
+      EPETRA_CHK_ERR(ImportVector_->Import(Y, *Importer(), Insert));
+      Zp = (double**) ImportVector_->Pointers();
+      LDZ = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+    }
+    if(Exporter() != 0) {
+      Yp2 = new Epetra_MultiVector(*ExportVector_);
+      Yp = (double**) Yp2->Pointers();
+      Wp = (double**) ExportVector_->Pointers();
+    }
+
+    oski_vecview_t oskiX=0;
+    oski_vecview_t oskiY=0;
+    oski_vecview_t oskiW=0;
+    oski_vecview_t oskiZ=0;
+    if(Importer() != 0) {
+      oskiX = oski_CreateMultiVecView(*Xp2,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+      oskiZ = oski_CreateMultiVecView(*Zp,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDZ);
+    }
+    else {
+      oskiX = oski_CreateMultiVecView(*Xp2,X.MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+      oskiZ = oski_CreateMultiVecView(*Zp,Z.MyLength(),NumVectors,LAYOUT_COLMAJ,LDZ);
+    }
+    if(Exporter() != 0) {
+      oskiY = oski_CreateMultiVecView(*Yp,ExportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+      oskiW = oski_CreateMultiVecView(*Wp,ExportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDW);
+    }
+    else {
+      oskiY = oski_CreateMultiVecView(*Yp,Y.MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+      oskiW = oski_CreateMultiVecView(*Wp,W.MyLength(),NumVectors,LAYOUT_COLMAJ,LDW);
+    }
+   
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, oskiX, Beta, oskiY, OP_TRANS, Omega, oskiW, Zeta, oskiZ);
+    if(Exporter() != 0) {
+      Y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(Y.Export(*Yp2, *Exporter(), Add)); // Fill y with Values from export vector
+    }
+    if(Importer() != 0) {
+      Z.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(Z.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Z.Reduce());
+
+    UpdateFlops(4 * NumGlobalNonzeros());
   }
-  if(TransA)
-    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), OP_TRANS, Omega, (*WCast).Oski_View(), Zeta, (*ZCast).Oski_View());
-  else
-    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), OP_NORMAL, Omega, (*WCast).Oski_View(), Zeta, (*ZCast).Oski_View());
-  if(ReturnVal)
-    std::cerr << "OskiVector multiply error\n";
-  if(XCreate)
-    delete XCast;
-  if(YCreate)
-    delete YCast;
-  if(WCreate)
-    delete WCast;
-  if(ZCreate)
-    delete ZCast;
+  //  ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), OP_TRANS, Omega, (*wCast).Oski_View(), Zeta, (*zCast).Oski_View());
+  else {
+
+   if(Importer() != 0) {
+      EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
+      Xp = (double**) ImportVector_->Pointers();
+      LDX = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+      X2 = new Epetra_MultiVector(X);
+      Xp2 = (double**) X2->Pointers();
+      EPETRA_CHK_ERR(ImportVector_->Import(W, *Importer(), Insert));
+      Wp = (double**) ImportVector_->Pointers();
+      LDW = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+    }
+    if(Exporter() != 0) {
+      Yp2 = new Epetra_MultiVector(*ExportVector_);
+      Yp = (double**) Yp2->Pointers();
+      Zp = (double**) ExportVector_->Pointers();
+    }
+
+    oski_vecview_t oskiX=0;
+    oski_vecview_t oskiY=0;
+    oski_vecview_t oskiW=0;
+    oski_vecview_t oskiZ=0;
+    if(Importer() != 0) {
+      oskiX = oski_CreateMultiVecView(*Xp2,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+      oskiW = oski_CreateMultiVecView(*Wp,ImportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDW);
+    }
+    else {
+      oskiX = oski_CreateMultiVecView(*Xp2,X.MyLength(),NumVectors,LAYOUT_COLMAJ,LDX);
+      oskiW = oski_CreateMultiVecView(*Wp,W.MyLength(),NumVectors,LAYOUT_COLMAJ,LDW);
+    }
+    if(Exporter() != 0) {
+      oskiY = oski_CreateMultiVecView(*Yp,ExportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+      oskiZ = oski_CreateMultiVecView(*Zp,ExportVector_->MyLength(),NumVectors,LAYOUT_COLMAJ,LDZ);
+    }
+    else {
+      oskiY = oski_CreateMultiVecView(*Yp,Y.MyLength(),NumVectors,LAYOUT_COLMAJ,LDY);
+      oskiZ = oski_CreateMultiVecView(*Zp,Z.MyLength(),NumVectors,LAYOUT_COLMAJ,LDZ);
+    }
+   
+    ReturnVal = oski_MatMultAndMatTransMult(A_tunable_, Alpha, oskiX, Beta, oskiY, OP_NORMAL, Omega, oskiW, Zeta, oskiZ);
+    if(Exporter() != 0) {
+      Y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(Y.Export(*Yp2, *Exporter(), Add)); // Fill y with Values from export vector
+      Z.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(Z.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector*/
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Z.Reduce());
+
+    UpdateFlops(4 * NumGlobalNonzeros());
+
+  }
   return ReturnVal;
 }
 
@@ -633,84 +1117,64 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      int Power,
 				      double Alpha, 
 				      double Beta) const {
-  Epetra_OskiVector* xCast = NULL;
-  Epetra_OskiVector* yCast = NULL;
-  Epetra_OskiMultiVector* TCast = NULL;
-  bool xCreate = false;
-  bool yCreate = false;
-  bool TCreate = false;
-  int ReturnVal;
-  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
-  xCast = dynamic_cast<Epetra_OskiVector*>(const_cast <Epetra_Vector*>(&x));
-  yCast = dynamic_cast<Epetra_OskiVector*>(&y);
-  if (xCast == NULL) {
-    xCast = new Epetra_OskiVector(x);
-    xCreate = true;
-  }
-  if (yCast == NULL) {
-    yCast = new Epetra_OskiVector(y);
-    yCreate = true;
-  }
-  if (TCast == NULL) {
-    TCast = new Epetra_OskiMultiVector(T);
-    TCreate = true;
-  }
-  if(TransA)
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*TCast).Oski_View());
-  else
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), (*TCast).Oski_View());
-  if(ReturnVal)
-    std::cerr << "OskiVector matpow multiply error\n";
-  if(xCreate)
-    delete xCast;
-  if(yCreate)
-    delete yCast;
-  if(TCreate)
-    delete TCast;
-  return ReturnVal;
-}
 
-int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
-				      const Epetra_MultiVector& X,
-				      Epetra_MultiVector& Y, 
-				      Epetra_MultiVector& T, 
-				      int Power, 
-				      double Alpha, 
-				      double Beta) const {
-  Epetra_OskiMultiVector* XCast = NULL;
-  Epetra_OskiMultiVector* YCast = NULL;
-  Epetra_OskiMultiVector* TCast = NULL;
-  bool XCreate = false;
-  bool YCreate = false;
-  bool TCreate = false;
+  std::cerr << "MatPowMultiply not implimented at this time due toa bug in oski-1.01h release.\n";
+  return -1;
+
   int ReturnVal;
-  TCast = dynamic_cast<Epetra_OskiMultiVector*>(&T);
-  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
-  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
-  if (XCast == NULL) {
-    XCast = new Epetra_OskiMultiVector(X);
-    XCreate = true;
+
+
+  if(!Filled())
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  double* xp = (double*) x.Values();
+  double* yp = (double*) y.Values();
+  double** Tp = (double**) T.Pointers();
+
+  Epetra_MultiVector *Tptr;
+
+  int LDT = T.ConstantStride() ? T.Stride() : 0;
+
+
+  if(this->Comm().NumProc() == 1) {
+    oski_vecview_t oskiX=0;
+    oski_vecview_t oskiY=0;
+    oski_vecview_t oskiT=0;
+    if (&T != NULL)
+      oskiT = oski_CreateMultiVecView(*Tp,T.MyLength(),Power,LAYOUT_COLMAJ,LDT);
+    oskiX = oski_CreateVecView(xp,x.MyLength(),1);
+    oskiY = oski_CreateVecView(yp,y.MyLength(),1);
+
+    if(TransA)
+      ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, oskiX, Beta, oskiY, oskiT);
+    else
+      ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, oskiX, Beta, oskiY, oskiT);
+    if(ReturnVal)
+      std::cerr << "OskiVector matpow multiply error\n";
   }
-  if (YCast == NULL) {
-    YCast = new Epetra_OskiMultiVector(Y);
-    YCreate = true;
-  }
-  if (TCast == NULL) {
-    TCast = new Epetra_OskiMultiVector(T);
-    TCreate = true;
-  }
-  if(TransA)
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
-  else
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), (*TCast).Oski_View());
-  if(ReturnVal)
-    std::cerr << "OskiVector matpow multiply error\n";
-  if(XCreate)
-    delete XCast;
-  if(YCreate)
-    delete YCast;
-  if(TCreate)
-    delete TCast;
+  else {
+    if(&T == NULL) 
+      Tptr = new Epetra_MultiVector(x.Map(), Power);
+    else
+      Tptr = &T;
+    if(TransA) {
+      ReturnVal = this->Multiply(true, x, Tptr[1], 1.0, 0.0);
+      for(int i = 1; i < Power-1; i++)
+        ReturnVal = this->Multiply(true, Tptr[i], Tptr[i+1], 1.0, 0.0);
+      ReturnVal = this->Multiply(true, Tptr[Power-2], y, Alpha, Beta);
+    }
+    else {
+      ReturnVal = this->Multiply(false, x, Tptr[1], 1.0, 0.0);
+      for(int i = 1; i < Power-1; i++)
+        ReturnVal = this->Multiply(false, Tptr[i], Tptr[i+1], 1.0, 0.0);
+      ReturnVal = this->Multiply(false, Tptr[Power-2], y, Alpha, Beta);
+    }
+    if(ReturnVal)
+      std::cerr << "OskiVector matpow multiply error\n";
+    if(&T == NULL)
+      delete(Tptr);
+  }    
+  UpdateFlops(2 * Power * NumGlobalNonzeros());
   return ReturnVal;
 }
 
@@ -720,6 +1184,10 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      int Power,
 				      double Alpha, 
 				      double Beta) const {
+
+  std::cerr << "MatPowMultiply not implimented at this time due toa bug in oski-1.01h release.\n";
+  return -1;
+  std::cerr << "mult\n";
   Epetra_OskiVector* xCast = NULL;
   Epetra_OskiVector* yCast = NULL;
   bool xCreate = false;
@@ -735,10 +1203,12 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
     yCast = new Epetra_OskiVector(y);
     yCreate = true;
   }
+  std::cerr << "mult\n";
   if(TransA)
     ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), NULL);
   else
     ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*xCast).Oski_View(), Beta, (*yCast).Oski_View(), NULL);
+  std::cerr << "done\n";
   if(ReturnVal)
     std::cerr << "OskiVector matpow multiply error\n";
   if(xCreate)
@@ -747,41 +1217,6 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
     delete yCast;
   return ReturnVal;
 }
-
-int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
-				      const Epetra_MultiVector& X,
-				      Epetra_MultiVector& Y, 
-				      int Power, 
-				      double Alpha, 
-				      double Beta) const {
-  Epetra_OskiMultiVector* XCast = NULL;
-  Epetra_OskiMultiVector* YCast = NULL;
-  bool XCreate = false;
-  bool YCreate = false;
-  int ReturnVal;
-  XCast = dynamic_cast<Epetra_OskiMultiVector*>(const_cast <Epetra_MultiVector*>(&X));
-  YCast = dynamic_cast<Epetra_OskiMultiVector*>(&Y);
-  if (XCast == NULL) {
-    XCast = new Epetra_OskiMultiVector(X);
-    XCreate = true;
-  }
-  if (YCast == NULL) {
-    YCast = new Epetra_OskiMultiVector(Y);
-    YCreate = true;
-  }
-  if(TransA)
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_TRANS, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), NULL);
-  else
-    ReturnVal = oski_MatPowMult(A_tunable_, OP_NORMAL, Power, Alpha, (*XCast).Oski_View(), Beta, (*YCast).Oski_View(), NULL);
-  if(ReturnVal)
-    std::cerr << "OskiVector matpow multiply error\n";
-  if(XCreate)
-    delete XCast;
-  if(YCreate)
-    delete YCast;
-  return ReturnVal;
-}
-
 
 int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
   int* ArgArray = NULL;
@@ -810,8 +1245,10 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
         std::cerr << "Error setting hint nonsymmetric pattern.\n";
   if(List.isParameter("alignedblocks"))
     if(Teuchos::getParameter<bool>(List, "alignedblocks"))
+    {
       if(ReturnVal = oski_SetHint(A_tunable_, HINT_ALIGNED_BLOCKS))
         std::cerr << "Error setting hint aligned blocks.\n";
+    }
   if(List.isParameter("unalignedblocks"))
     if(Teuchos::getParameter<bool>(List, "unalignedblocks"))
       if(ReturnVal = oski_SetHint(A_tunable_, HINT_UNALIGNED_BLOCKS))
@@ -833,11 +1270,11 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
         if(List.isParameter("col"))
           ArgArray[1] = Teuchos::getParameter<int>(List, "col");
         if(ReturnVal = oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray))
-          std::cerr << "Error setting hint no blocks.\n";
+          std::cerr << "Error setting hint single block size.\n";
       }
       else
         if(ReturnVal = oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray))
-          std::cerr << "Error setting hint no blocks.\n";
+          std::cerr << "Error setting hint single block size.\n";
       delete ArgArray;
       ArgArray = NULL;
     }
@@ -880,13 +1317,13 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
             ArgArray[i + 1] = Teuchos::getParameter<int>(List, Diag);
         }
         if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray))
-          std::cerr << "Error setting hint no blocks.\n";
+          std::cerr << "Error setting hint diags\n";
         delete ArgArray;
       }
       else
       {
         if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray))
-          std::cerr << "Error setting hint no blocks.\n";
+          std::cerr << "Error setting hint digs.\n";
       }
   return ReturnVal;
 }
@@ -921,6 +1358,16 @@ int Epetra_OskiMatrix::SetHintMultiply(bool TransA,
   if(List.isParameter("symmoutmultivec"))
     if(Teuchos::getParameter<bool>(List, "symmoutmultivec"))
       OutView = SYMBOLIC_MULTIVEC;
+  if(this->Comm().NumProc() > 1) {
+    if(InVec.NumVectors() == 1)
+      InView = SYMBOLIC_VEC;
+    else
+      InView = SYMBOLIC_MULTIVEC;
+    if(OutVec.NumVectors() == 1)
+      OutView = SYMBOLIC_VEC;
+    else
+      OutView = SYMBOLIC_MULTIVEC;
+  }
   if(TransA)
     ReturnVal = oski_SetHintMatMult(A_tunable_, OP_TRANS, Alpha, InView, Beta, OutView, NumCalls);
   else
@@ -950,6 +1397,12 @@ int Epetra_OskiMatrix::SetHintSolve(bool TransA,
   if(List.isParameter("symmmultivec"))
     if(Teuchos::getParameter<bool>(List, "symmmultivec"))
       VecView = SYMBOLIC_MULTIVEC;
+  if(this->Comm().NumProc() > 1) {
+    if(Vector.NumVectors() == 1)
+      VecView = SYMBOLIC_VEC;
+    else
+      VecView = SYMBOLIC_MULTIVEC;
+  }
   if(TransA)
     ReturnVal = oski_SetHintMatTrisolve(A_tunable_, OP_TRANS, Alpha, VecView, NumCalls);
   else
@@ -1002,6 +1455,20 @@ int Epetra_OskiMatrix::SetHintMatTransMatMultiply (bool ATA,
   if(List.isParameter("invalidinter"))
     if(Teuchos::getParameter<bool>(List, "invalidinter"))
       IntermediateView = NULL;
+  if(this->Comm().NumProc() > 1) {
+    if(InVec.NumVectors() == 1)
+      InView = SYMBOLIC_VEC;
+    else
+      InView = SYMBOLIC_MULTIVEC;
+    if(OutVec.NumVectors() == 1)
+      OutView = SYMBOLIC_VEC;
+    else
+      OutView = SYMBOLIC_MULTIVEC;
+    if(Intermediate.NumVectors() == 1)
+      IntermediateView = SYMBOLIC_VEC;
+    else
+      IntermediateView = SYMBOLIC_MULTIVEC;
+  }
   if(ATA)
     ReturnVal = oski_SetHintMatTransMatMult(A_tunable_, OP_AT_A, Alpha, InView, Beta, OutView, IntermediateView, NumCalls);
   else
@@ -1061,6 +1528,24 @@ int Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply(bool TransA,
   if(List.isParameter("symmoutmultivec2"))
     if(Teuchos::getParameter<bool>(List, "symmoutmultivec2"))
       OutView2 = SYMBOLIC_MULTIVEC;
+  if(this->Comm().NumProc() > 1) {
+    if(InVec.NumVectors() == 1)
+      InView = SYMBOLIC_VEC;
+    else
+      InView = SYMBOLIC_MULTIVEC;
+    if(OutVec.NumVectors() == 1)
+      OutView = SYMBOLIC_VEC;
+    else
+      OutView = SYMBOLIC_MULTIVEC;
+    if(InVec2.NumVectors() == 1)
+      InView2 = SYMBOLIC_VEC;
+    else
+      InView2 = SYMBOLIC_MULTIVEC;
+    if(OutVec2.NumVectors() == 1)
+      OutView2 = SYMBOLIC_VEC;
+    else
+      OutView2 = SYMBOLIC_MULTIVEC;
+  }
   if(TransA)
     ReturnVal = oski_SetHintMatMultAndMatTransMult(A_tunable_, Alpha, InView, Beta, OutView, OP_TRANS, Omega, InView2, Zeta, OutView2, NumCalls);
   else
@@ -1111,6 +1596,20 @@ int Epetra_OskiMatrix::SetHintPowMultiply(bool TransA,
   if(List.isParameter("invalidinter"))
     if(Teuchos::getParameter<bool>(List, "invalidinter"))
       IntermediateView = NULL;
+  if(this->Comm().NumProc() > 1) {
+    if(InVec.NumVectors() == 1)
+      InView = SYMBOLIC_VEC;
+    else
+      InView = SYMBOLIC_MULTIVEC;
+    if(OutVec.NumVectors() == 1)
+      OutView = SYMBOLIC_VEC;
+    else
+      OutView = SYMBOLIC_MULTIVEC;
+    if(Intermediate.NumVectors() == 1)
+      IntermediateView = SYMBOLIC_VEC;
+    else
+      IntermediateView = SYMBOLIC_MULTIVEC;
+  }
   if(TransA)
     ReturnVal = oski_SetHintMatPowMult(A_tunable_, OP_TRANS, Power, Alpha, InView, Beta, OutView, IntermediateView, NumCalls);
   else
