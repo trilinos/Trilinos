@@ -160,7 +160,7 @@ public:
    * contributed from each process.
    *
    * \param recvCounts [in] Array (length <tt>this->getSize()</tt>) which
-   * gives the number of chars from the global reduction that will be recieved
+   * gives the number of chars from the global reduction that will be received
    * in each process.
    *
    * \param myGlobalReducts [out] Array (length
@@ -197,6 +197,7 @@ public:
   //! @name Blocking Point-to-Point Operations 
   //@{
 
+
   /** \brief Blocking send of data from this process to another process.
    *
    * \param  bytes
@@ -206,7 +207,7 @@ public:
    *           This buffer can be immediately destroyed or reused as soon as the function
    *           exits (that is why this function is "blocking").
    * \param  destRank
-   *           [in] The rank of the process to recieve the data.
+   *           [in] The rank of the process to receive the data.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
@@ -217,11 +218,12 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
 
+
   /** \brief Blocking receive of data from this process to another process.
    *
    * \param  sourceRank
-   *           [in] The rank of the process to recieve the data from.  If <tt>sourceRank < 0</tt> then
-   *           data will be recieved from any process.
+   *           [in] The rank of the process to receive the data from.  If <tt>sourceRank < 0</tt> then
+   *           data will be received from any process.
    * \param  bytes
    *           [in] The number of bytes of data being passed between processes.
    * \param  recvBuffer
@@ -239,24 +241,72 @@ public:
   virtual int receive(
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
     ) const = 0;
+
+
+  /** \brief Ready send of data from this process to another process.
+   *
+   * \param  sendBuffer
+   *           [in] The data to be sent.
+   * \param  destRank
+   *           [in] The rank of the process to receive the data.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
+   * <li><tt>destRank != this->getRank()</tt>
+   * </ul>
+   */
+  virtual void readySend(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const = 0;
   
+
   //@}
 
-  //! @name Nonblocking Point-to-Point Operations 
+
+  //! @name Non-blocking Point-to-Point Operations 
   //@{
 
-  /** \brief . */
+
+  /** \brief Non-blocking send. 
+   *
+   * \param  sendBuffer
+   *           [in] The data buffer to be sent.
+   * \param  destRank
+   *           [in] The rank of the process to receive the data.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
+   * <li><tt>destRank != this->getRank()</tt>
+   * </ul>
+   */
   virtual RCP<CommRequest> isend(
     const ArrayView<const char> &sendBuffer,
     const int destRank
     ) const = 0;
 
-  /** \brief . */
+
+  /** \brief Non-blocking receive. 
+   *
+   * \param  recvBuffer
+   *           [out] The location for storing the received data.
+   * \param  sourceRank
+   *           [in] The rank of the process to receive the data from.  If <tt>sourceRank < 0</tt> then
+   *           data will be received from any process.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li>[<tt>sourceRank >= 0] <tt>sourceRank < this->getSize()</tt>
+   * <li><tt>sourceRank != this->getRank()</tt>
+   * </ul>
+   *
+   * \return Returns the senders rank.
+   */
   virtual RCP<CommRequest> ireceive(
-    const ArrayView<char> &Buffer,
+    const ArrayView<char> &recvBuffer,
     const int sourceRank
     ) const = 0;
-  
+
+
   /** \brief Wait on a set of communication request.
    *
    * <b>Preconditions:</b><ul>
@@ -271,6 +321,7 @@ public:
     const ArrayView<RCP<CommRequest> > &requests
     ) const = 0;
 
+
   /** \brief Wait on a single communication request.
    *
    * <b>Preconditions:</b><ul>
@@ -284,6 +335,7 @@ public:
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
     ) const = 0;
+
 
   //@}
 	

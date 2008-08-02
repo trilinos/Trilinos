@@ -42,7 +42,7 @@ namespace Teuchos {
 
 
 template<class T> inline
-ArrayView<T>::ArrayView( ENull null_arg )
+ArrayView<T>::ArrayView( ENull /*null_arg*/ )
   :ptr_(0), size_(0)
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   ,node_(0)

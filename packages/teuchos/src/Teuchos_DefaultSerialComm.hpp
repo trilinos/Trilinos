@@ -93,6 +93,11 @@ public:
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
     ) const;
   /** \brief . */
+  virtual void readySend(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const;
+  /** \brief . */
   virtual RCP<CommRequest> isend(
     const ArrayView<const char> &sendBuffer,
     const int destRank
@@ -242,11 +247,25 @@ int SerialComm<Ordinal>::receive(
   return 0; 
 }
 
+template<typename Ordinal>
+void SerialComm<Ordinal>::readySend(
+  const ArrayView<const char> &/*sendBuffer*/,
+  const int /*destRank*/
+  ) const
+{
+  TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"SerialComm<Ordinal>::readySend(...): Error, you can not call readySend(...) when you"
+    " only have one process!"
+    );
+}
+
+
 
 template<typename Ordinal>
 RCP<CommRequest> SerialComm<Ordinal>::isend(
-  const ArrayView<const char> &sendBuffer,
-  const int destRank
+  const ArrayView<const char> &/*sendBuffer*/,
+  const int /*destRank*/
   ) const
 {
   TEST_FOR_EXCEPT(true);
@@ -256,8 +275,8 @@ RCP<CommRequest> SerialComm<Ordinal>::isend(
 
 template<typename Ordinal>
 RCP<CommRequest> SerialComm<Ordinal>::ireceive(
-  const ArrayView<char> &Buffer,
-  const int sourceRank
+  const ArrayView<char> &/*Buffer*/,
+  const int /*sourceRank*/
   ) const
 {
   TEST_FOR_EXCEPT(true);
@@ -267,7 +286,7 @@ RCP<CommRequest> SerialComm<Ordinal>::ireceive(
 
 template<typename Ordinal>
 void SerialComm<Ordinal>::waitAll(
-  const ArrayView<RCP<CommRequest> > &requests
+  const ArrayView<RCP<CommRequest> > &/*requests*/
   ) const
 {
   TEST_FOR_EXCEPT(true);
@@ -276,7 +295,7 @@ void SerialComm<Ordinal>::waitAll(
 
 template<typename Ordinal>
 void SerialComm<Ordinal>::wait(
-  const Ptr<RCP<CommRequest> > &request
+  const Ptr<RCP<CommRequest> > &/*request*/
   ) const
 {
   TEST_FOR_EXCEPT(true);

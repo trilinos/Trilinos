@@ -150,6 +150,231 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend1, Ordinal, Packet )
+{
+
+  using Teuchos::broadcast;
+  using Teuchos::readySend;
+  using Teuchos::wait;
+  using Teuchos::as;
+  using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
+  using Teuchos::isend;
+  using Teuchos::ireceive;
+  using Teuchos::wait;
+  using Teuchos::SerialComm;
+  using Teuchos::is_null;
+  using Teuchos::arcp;
+  using Teuchos::arcpClone;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ptr;
+  typedef Teuchos::ScalarTraits<Packet> PT;
+  typedef typename PT::magnitudeType PacketMag;
+  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+
+  RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
+  const Ordinal numProcs = size(*comm);
+  const Ordinal procRank = rank(*comm);
+
+  if (
+    numProcs == 1
+    &&
+    !is_null(rcp_dynamic_cast<const SerialComm<Ordinal> >(comm))
+    )
+  {
+    out << "\nThis is Teuchos::SerialComm which does not support readySend!\n";
+    return; // Pass!
+  }
+
+  PT::seedrandom(as<unsigned int>(procRank));
+  Packet origSendData = PT::random();
+  Packet origRecvData = PT::random();
+  broadcast<Ordinal, Packet>( *comm, 0, outArg(origSendData) );
+
+  Packet sendData = origSendData;
+  Packet recvData = origRecvData;
+
+  RCP<Teuchos::CommRequest> recvRequest;
+
+  // Post non-block receive on proc 0
+  if (procRank == 0) {
+    // Post non-blocking receive from proc n-1
+    recvRequest = ireceive<Ordinal, Packet>(
+        *comm,
+        rcp(&recvData,false),
+        numProcs-1
+        );
+  }
+  barrier(*comm);
+
+  if (procRank == numProcs-1) {
+    // ready send from proc n-1 to proc 0
+    // send data in sendData
+    readySend<Ordinal, Packet>(
+        *comm,
+        sendData,
+        0
+        );
+  }
+  barrier(*comm);
+
+  if (procRank == 0) {
+    // wait for request on 0
+    wait( *comm, outArg(recvRequest) );
+  }
+  barrier(*comm);
+
+  // test that all procs have recvRequest == Teuchos::null
+  TEST_EQUALITY_CONST( recvRequest, Teuchos::null );
+
+  // proc 0 should have recvData == sendData
+  if (procRank == 0) {
+    TEST_EQUALITY( recvData, sendData );
+  }
+  // other procs should have recvData == origRecvData (i.e., unchanged)
+  else {
+    TEST_EQUALITY( recvData, origRecvData );
+  }
+  // all procs should have sendData == origSendData
+  TEST_EQUALITY( sendData, origSendData );
+
+  // All procs fail if any proc fails
+  int globalSuccess_int = -1;
+  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+  TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend, Ordinal, Packet )
+{
+
+  using Teuchos::broadcast;
+  using Teuchos::readySend;
+  using Teuchos::wait;
+  using Teuchos::as;
+  using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
+  using Teuchos::isend;
+  using Teuchos::ireceive;
+  using Teuchos::wait;
+  using Teuchos::SerialComm;
+  using Teuchos::is_null;
+  using Teuchos::arcp;
+  using Teuchos::arcpClone;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::ArrayRCP;
+  typedef Teuchos::ScalarTraits<Packet> PT;
+  typedef typename PT::magnitudeType PacketMag;
+  typedef Teuchos::ScalarTraits<PacketMag> PMT;
+
+  RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
+  const Ordinal numProcs = size(*comm);
+  const Ordinal procRank = rank(*comm);
+
+  if (
+    numProcs == 1
+    &&
+    !is_null(rcp_dynamic_cast<const SerialComm<Ordinal> >(comm))
+    )
+  {
+    out << "\nThis is Teuchos::SerialComm which does not support readySend!\n";
+    return; // Pass!
+  }
+
+  const int dataLen = 3;
+
+  const ArrayRCP<Packet> origSendData = arcp<Packet>(dataLen);
+  const ArrayRCP<Packet> origRecvData = arcp<Packet>(dataLen);
+  PT::seedrandom(as<unsigned int>(procRank));
+  for (int j = 0; j < dataLen; ++j) {
+    origSendData[j] = PT::random();
+    origRecvData[j] = PT::random();
+  }
+  broadcast<Ordinal, Packet>( *comm, 0, origSendData );
+
+  const ArrayRCP<Packet> sendData = arcpClone<Packet>(origSendData());
+  const ArrayRCP<Packet> recvData = arcpClone<Packet>(origRecvData());
+
+  RCP<Teuchos::CommRequest> recvRequest;
+
+  // both proc 0 and proc n-1 will post non-block receives, into recvData
+  // then proc 0 will initiate a ready-send to proc n-1; the latter will initiate a wait
+  // a barrier
+  // then proc n-1 will initiate a ready-send to proc 0 of the data from recvData; the latter will initiate a wait
+  // a barrier
+  // now both of these procs should have matching data in sendData and recvData
+
+  // Post non-block receive on both procs
+  if (procRank == 0) {
+    // Post non-blocking receive from proc n-1
+    recvRequest = ireceive<Ordinal, Packet>(
+        *comm,
+        recvData.persistingView(0, dataLen),
+        numProcs-1
+        );
+  }
+  else if (procRank == numProcs-1) {
+    // Post non-blocking receive from proc 0
+    recvRequest = ireceive<Ordinal, Packet>(
+        *comm,
+        recvData.persistingView(0, dataLen),
+        0
+        );
+  }
+  barrier(*comm);
+
+  if (procRank == 0) {
+    // ready send from proc 0 to proc n-1
+    // send data in sendData
+    readySend<Ordinal, Packet>(
+        *comm,
+        sendData(),
+        numProcs-1
+        );
+  }
+  else if (procRank == numProcs-1) {
+    // wait for request on proc n-1
+    wait( *comm, outArg(recvRequest) );
+  }
+  barrier(*comm);
+
+  if (procRank == 0) {
+    // wait for request on 0
+    wait( *comm, outArg(recvRequest) );
+  }
+  else if (procRank == numProcs-1) {
+    // ready send from proc n-1 to proc 0
+    // send data in recvData: THIS IS IMPORTANT: SEE ABOVE
+    readySend<Ordinal, Packet>(
+        *comm,
+        recvData(),
+        0
+        );
+  }
+  barrier(*comm);
+
+  // test that all procs (even non-participating) have recvRequest == Teuchos::null
+  TEST_EQUALITY_CONST( recvRequest, Teuchos::null );
+
+  // participating procs should have recvData == sendData
+  if (procRank == 0 || procRank == numProcs-1) {
+    TEST_COMPARE_ARRAYS( recvData, sendData );
+  }
+  // non-participating procs should have recvData == origRecvData (i.e., unchanged)
+  else {
+    TEST_COMPARE_ARRAYS( recvData, origRecvData );
+  }
+  // all procs should have sendData == origSendData
+  TEST_COMPARE_ARRAYS( sendData, origSendData );
+
+  // All procs fail if any proc fails
+  int globalSuccess_int = -1;
+  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+  TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordinal, Packet )
 {
 
@@ -192,7 +417,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   RCP<Teuchos::CommRequest> sendRequest;
 
   if (procRank == 0) {
-    // Create copy of data to make sure that peristing relationship is
+    // Create copy of data to make sure that persisting relationship is
     // maintained!
     sendRequest = isend<Ordinal, Packet>(
       *comm, Teuchos::rcp(new Packet(input_data)), numProcs-1);
@@ -290,7 +515,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
 
   // Send from proc 0 to proc numProcs-1
   if (procRank == 0) {
-    // Create copy of data to make sure that peristing relationship is
+    // Create copy of data to make sure that persisting relationship is
     // maintained!
     int offset = 0;
     for (int i = 0; i < numSendRecv; ++i, offset += sendLen) {
@@ -375,7 +600,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_1, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_2, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive, ORDINAL, PACKET ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceiveSet, ORDINAL, PACKET )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceiveSet, ORDINAL, PACKET ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PACKET ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PACKET )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, basic, ORDINAL ) \
@@ -386,9 +613,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend1, ORDINAL) \
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend, ORDINAL) \
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
   UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
-  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL)
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
+  UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)
 
 
 // Uncomment this for really fast development cycles but make sure to comment

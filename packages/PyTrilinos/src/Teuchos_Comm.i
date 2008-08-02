@@ -308,6 +308,7 @@ Teuchos::Comm::reduceAll;
 %ignore Teuchos::Comm::ireceive;
 %ignore Teuchos::Comm::wait;
 %ignore Teuchos::Comm::waitAll;
+%ignore Teuchos::Comm::readySend;
 %ignore Teuchos::broadcast(const Comm&, const int, const ArrayView&);
 %ignore Teuchos::wait;
 %ignore Teuchos::waitAll;

@@ -131,6 +131,16 @@ void broadcast(
   ,const int rootRank, Packet *object
   );
 
+/** \brief Broadcast single object that use value semantics.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void broadcast(
+  const Comm<Ordinal>& comm
+  ,const int rootRank, const Ptr<Packet> &object
+  );
+
 /** \brief Broadcast array of objects that use reference semantics.
  *
  * \relates Comm
@@ -354,6 +364,28 @@ int receive(
   ,const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   );
 
+
+/** \brief Ready-Send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void readySend(
+  const Comm<Ordinal>& comm
+  ,const ArrayView<const Packet> &sendBuffer
+  ,const int destRank
+  );
+
+/** \brief Ready-Send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void readySend(
+  const Comm<Ordinal>& comm
+  ,const Packet &send
+  ,const int destRank
+  );
 
 /** \brief Send objects that use values semantics to another process.
  *
@@ -823,6 +855,16 @@ void Teuchos::broadcast(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
+  const Comm<Ordinal>& comm
+  ,const int rootRank, const Ptr<Packet> &object
+  )
+{
+  broadcast<Ordinal,Packet>(comm,rootRank,1,object.getRawPtr());
+}
+
+
+template<typename Ordinal, typename Packet>
+void Teuchos::broadcast(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const int rootRank, const Ordinal count, Packet*const buffer[]
   )
@@ -1172,6 +1214,36 @@ int Teuchos::receive(
 
 
 template<typename Ordinal, typename Packet>
+void Teuchos::readySend(
+  const Comm<Ordinal>& comm,
+  const ArrayView<const Packet> &sendBuffer,
+  const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: readySend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet>
+    charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr());
+  comm.readySend( charSendBuffer.getCharBufferView(), destRank );
+}
+
+
+template<typename Ordinal, typename Packet>
+void
+Teuchos::readySend(
+  const Comm<Ordinal>& comm,
+  const Packet &send,
+  const int destRank
+  )
+{
+  readySend<Ordinal, Packet>( comm, arrayView(&send,1), destRank );
+}
+
+
+template<typename Ordinal, typename Packet>
 Teuchos::RCP<Teuchos::CommRequest>
 Teuchos::isend(
   const Comm<Ordinal>& comm,
@@ -1219,7 +1291,7 @@ Teuchos::ireceive(
 {
   typedef std::pair<RCP<CommRequest>, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::CommHelpers: isend<"
+    "Teuchos::CommHelpers: ireceive<"
     <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
     <<">( value type )"
     );

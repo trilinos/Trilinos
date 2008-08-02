@@ -183,6 +183,11 @@ public:
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
     ) const;
   /** \brief . */
+  virtual void readySend(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const;
+  /** \brief . */
   virtual RCP<CommRequest> isend(
     const ArrayView<const char> &sendBuffer,
     const int destRank
@@ -467,6 +472,37 @@ void MpiComm<Ordinal>::send(
 #endif // TEUCHOS_MPI_COMM_DUMP
   MPI_Send(
     const_cast<char*>(sendBuffer),bytes,MPI_CHAR,destRank,tag_,*rawMpiComm_
+    );
+  // ToDo: What about error handling???
+}
+
+
+template<typename Ordinal>
+void MpiComm<Ordinal>::readySend(
+  const ArrayView<const char> &sendBuffer,
+  const int destRank
+  ) const
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::readySend(...)"
+    );
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    ! ( 0 <= destRank && destRank < size_ ), std::logic_error
+    ,"Error, destRank = " << destRank << " is not < 0 or is not"
+    " in the range [0,"<<size_-1<<"]!"
+    );
+#endif // TEUCHOS_DEBUG
+#ifdef TEUCHOS_MPI_COMM_DUMP
+  if(show_dump) {
+    dumpBuffer<Ordinal,char>(
+      "Teuchos::MpiComm<Ordinal>::readySend(...)"
+      ,"sendBuffer", bytes, sendBuffer
+      );
+  }
+#endif // TEUCHOS_MPI_COMM_DUMP
+  MPI_Rsend(
+    const_cast<char*>(sendBuffer.getRawPtr()),sendBuffer.size(),MPI_CHAR,destRank,tag_,*rawMpiComm_
     );
   // ToDo: What about error handling???
 }
