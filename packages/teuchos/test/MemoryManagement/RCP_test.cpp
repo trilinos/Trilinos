@@ -447,6 +447,33 @@ int main( int argc, char* argv[] ) {
 
 #endif // TEUCHOS_DEBUG
 
+#ifndef TEUCHOS_DEBUG 
+
+		if(verbose)
+			out << "\nTesting using RCP to wrap an undefined opaque object (no TNT) ...\n";
+    {
+      RCP<UndefinedType> op_ptr = rcp( createOpaque(),
+        deallocFunctorHandleDelete<UndefinedType>(destroyOpaque), true );
+      TEUCHOS_ASSERT_EQUALITY( getOpaqueValue(&*op_ptr), getOpaqueValue_return );
+    }
+    // 2008/08/01: rabartl: Above, we can only wrap an undefined type in debug
+    // mode since there is no TypeNameTraits class defined for it and the
+    // default uses typeid(...) which you can't call on an undefined type.  If
+    // you define a specialization of TypeNameTraits for this class, then
+
+#endif // not TEUCHOS_DEBUG
+
+		if(verbose)
+			out << "\nTesting using RCP to wrap an undefined opaque object (with TNT) ...\n";
+    {
+      RCP<UndefinedType2> op_ptr = rcp( createOpaque2(),
+        deallocFunctorHandleDelete<UndefinedType2>(destroyOpaque2), true );
+      TEUCHOS_ASSERT_EQUALITY( getOpaque2Value(&*op_ptr), getOpaque2Value_return );
+    }
+    // 2008/08/01: rabartl: Above, we can wrap an undefined type in debug mode
+    // as long as we have a TypeNameTraits specialization of it to avoid
+    // calling typeid(...).
+
 #ifdef HAVE_TEUCHOS_BOOST
 
 		if(verbose)

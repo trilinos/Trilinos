@@ -257,7 +257,7 @@ int numActiveRCPNodes();
 void printActiveRCPNodes(std::ostream &out);
 
 
-/** \brief Throw that an RCP is null. */
+/** \brief Throw that a pointer passed into an RCP object is null. */
 void throw_null_ptr_error( const std::string &type_name );
 
 

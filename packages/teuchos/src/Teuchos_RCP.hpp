@@ -79,10 +79,10 @@ RCP<T>::RCP(const RCP<T>& r_ptr)
 
 template<class T>
 REFCOUNTPTR_INLINE
-template <class T2>
+template<class T2>
 RCP<T>::RCP(const RCP<T2>& r_ptr)
-  : ptr_(const_cast<T2*>(r_ptr.get()))                 // will not compile if T1 is not an ancestor of T2
-  , node_(const_cast<RCPNode*>(r_ptr.access_node()))
+  : ptr_(r_ptr.get()),  // will not compile if T is not base class of T2
+    node_(r_ptr.access_node())
 {
   if(node_) node_->incr_count();
 }
@@ -220,7 +220,7 @@ template<class T>
 inline
 const RCP<T>& RCP<T>::assert_not_null() const
 {
-  if(!ptr_) throw_null_ptr_error(TypeNameTraits<T>::name());
+  if(!ptr_) throw_null_ptr_error(typeName(*this));
   return *this;
 }
 
@@ -240,8 +240,9 @@ RCP<T>::RCP( T* p, bool has_ownership_in )
 #ifdef TEUCHOS_DEBUG
   if(node_ && isTracingActiveRCPNodes()) {
     std::ostringstream os;
-    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
-    add_new_RCPNode(node_,os.str());
+    os << "{T=\'"<<typeName(p)<<"\',Concrete T=\'"
+       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
+    add_new_RCPNode(node_, os.str());
   }
 #endif
 }
@@ -257,8 +258,10 @@ RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership_in )
 #ifdef TEUCHOS_DEBUG
   if(node_ && isTracingActiveRCPNodes()) {
     std::ostringstream os;
-    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
-    add_new_RCPNode(node_,os.str());
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
+       <<TypeNameTraits<T>::concreteName(*p)<<"\',p="
+       <<p<<",has_ownership="<<has_ownership_in<<"}";
+    add_new_RCPNode(node_, os.str());
   }
 #endif
 }
@@ -448,15 +451,15 @@ Teuchos::RCP<T2>
 Teuchos::rcp_dynamic_cast(const RCP<T1>& p1, bool throw_on_fail)
 {
   RCP<T2> p2; // NULL by default
-  if( p1.get() ) {
-    T2 *check = NULL;
-    if(throw_on_fail)
-      check = &dyn_cast<T2>(*p1);
+  if (!is_null(p1)) {
+    T2 *p = NULL;
+    if (throw_on_fail)
+      p = &dyn_cast<T2>(*p1);
     else
-      check = dynamic_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
-    if(check) {
-      p2.access_ptr()  = check;
-      p2.access_node() = const_cast<RCP<T1>&>(p1).access_node();
+      p = dynamic_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
+    if (p) {
+      p2.access_ptr() = p;
+      p2.access_node() = p1.access_node();
       p2.access_node()->incr_count();
     }
   }

@@ -598,7 +598,7 @@ void MpiComm<Ordinal>::waitAll(
   TEST_FOR_EXCEPT( requests.size() == 0 );
 #endif
   
-  std::vector<MPI_Request> rawMpiRequests(count, MPI_REQUEST_NULL);
+  Array<MPI_Request> rawMpiRequests(count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
     RCP<CommRequest> &request = requests[i];
     if (!is_null(request)) {
@@ -610,21 +610,11 @@ void MpiComm<Ordinal>::waitAll(
     request = null;
   }
 
-  std::vector<MPI_Status> rawMpiStatuses(count);
-  if (count) {
-    MPI_Waitall( count, &rawMpiRequests[0], &rawMpiStatuses[0] );
-    // ToDo: We really should check the status?
-  }
+  Array<MPI_Status> rawMpiStatuses(count);
+  MPI_Waitall( count, rawMpiRequests.getRawPtr(), rawMpiStatuses.getRawPtr() );
+  // ToDo: We really should check the status?
 
 }
-// 2008/08/01: rabartl: Above, I am using std::vector and not Teuchos::Array
-// or Teuchos::ArrayRCP because of some many problems with trying to embedd
-// MPI objects in these arrays.  The problem is that many MPI implemnetations
-// use pointers to delcared but undefined structs.  This works great for
-// information hiding but typeid(MPI_Blah) (which is called by
-// TypeNameTraits::name(), which is called in debug-mode asserts) gets very
-// upset by this.  I tried several work-arounds (see bug 4016) but I am going
-// to just give up and use std::vector that does not have this problem.
 
 
 template<typename Ordinal>

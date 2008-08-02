@@ -37,7 +37,7 @@ endif
 
 bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test ArrayView_test Tuple_test $(GCC_CHECKEDSTL_EXE_NAME)
 
-RCP_test_SOURCES = $(srcdir)/RCP_test.cpp
+RCP_test_SOURCES = $(srcdir)/RCP_test.cpp $(srcdir)/TestClasses.cpp
 RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 RCP_test_LDADD = $(TEUCHOS_LIBS)
 

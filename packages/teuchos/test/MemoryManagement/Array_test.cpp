@@ -36,6 +36,8 @@
 #include "Teuchos_as.hpp"
 #include "Teuchos_LocalTestingHelpers.hpp"
 
+#include "TestClasses.hpp"
+
 
 //
 // Main templated array test function
@@ -706,7 +708,165 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     else success = false;
   }
 
-  // ToDo: Test requesting views outside of valid range!
+  {
+    out << "\nTest taking an empty view ...\n";
+    const ArrayView<T> av = a(0,0);
+    TEST_EQUALITY_CONST( av.size(), 0 );
+  }
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest taking views outside of valid range ...\n";
+    TEST_THROW( const ArrayView<T> av = a(-1,n), Teuchos::RangeError );
+    TEST_THROW( const ArrayView<T> av = a(0,n+1), Teuchos::RangeError );
+    TEST_THROW( const ArrayView<T> av = a(0,-1), Teuchos::RangeError );
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  
+  return success;
+
+}
+
+
+template<class T>
+bool testArrayOpaqueWithoutTNT( const int n, const T &someValue, Teuchos::FancyOStream &out )
+{
+  
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::TypeNameTraits;
+  using Teuchos::as;
+  typedef typename Array<T>::size_type size_type;
+
+  bool success = true;
+ 
+  out
+    << "\n***"
+    << "\n*** Testing "<<TypeNameTraits<Array<T> >::name()<<" for opaque type without TNT of size = "<<n
+    << "\n***\n";
+  
+  Teuchos::OSTab tab(out);
+
+  //
+  out << "\nA) Initial setup ...\n\n";
+  //
+
+  // Tests construction using size
+
+  Array<T> a(n);
+
+  TEST_EQUALITY_CONST( a.empty(), false );
+  TEST_EQUALITY( a.length(), n );
+  TEST_EQUALITY( as<int>(a.size()), n );
+  TEST_EQUALITY( a.getRawPtr(), &a[0] );
+  TEST_EQUALITY( getConst(a).getRawPtr(), &getConst(a)[0] );
+  TEST_COMPARE( a.max_size(), >=, as<size_type>(n) );
+  TEST_COMPARE( as<int>(a.capacity()), >=, n );
+ 
+  {
+    out << "\nInitializing data ...\n";
+    for( int i = 0; i < n; ++i )
+      a[i] = someValue; // tests non-const operator[](i)
+  }
+
+  {
+    out << "\nTest that a[i] == "<<someValue<<" ... ";
+    bool local_success = true;
+    for( int i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( a, i, someValue );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+#ifndef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest taking a view of the array ...\n";
+    const ArrayView<T> av = a();
+    TEST_COMPARE_ARRAYS( av, a );
+  }
+  // 2008/08/01: rabartl: Above: We can not create an array view of an
+  // undefined type in debug mode without a specialization of TypeNameTraits.
+#endif // not HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+  // ToDo: Do we need to be testing other things for opaque objects?
+  
+  return success;
+
+}
+
+
+template<class T>
+bool testArrayOpaqueWithTNT( const int n, const T &someValue, Teuchos::FancyOStream &out )
+{
+  
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::TypeNameTraits;
+  using Teuchos::as;
+  typedef typename Array<T>::size_type size_type;
+
+  bool success = true;
+ 
+  out
+    << "\n***"
+    << "\n*** Testing "<<TypeNameTraits<Array<T> >::name()<<" for opaque type with TNT of size = "<<n
+    << "\n***\n";
+  
+  Teuchos::OSTab tab(out);
+
+  //
+  out << "\nA) Initial setup ...\n\n";
+  //
+
+  // Tests construction using size
+
+  Array<T> a(n);
+
+  TEST_EQUALITY_CONST( a.empty(), false );
+  TEST_EQUALITY( a.length(), n );
+  TEST_EQUALITY( as<int>(a.size()), n );
+  TEST_EQUALITY( a.getRawPtr(), &a[0] );
+  TEST_EQUALITY( getConst(a).getRawPtr(), &getConst(a)[0] );
+  TEST_COMPARE( a.max_size(), >=, as<size_type>(n) );
+  TEST_COMPARE( as<int>(a.capacity()), >=, n );
+ 
+  {
+    out << "\nInitializing data ...\n";
+    for( int i = 0; i < n; ++i )
+      a[i] = someValue; // tests non-const operator[](i)
+  }
+
+  {
+    out << "\nTest that a[i] == "<<someValue<<" ... ";
+    bool local_success = true;
+    for( int i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( a, i, someValue );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    out << "\nTest taking a view of the array ...\n";
+    const ArrayView<T> av = a();
+    TEST_COMPARE_ARRAYS( av, a );
+  }
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  {
+    out << "\nTest taking views outside of valid range ...\n";
+    TEST_THROW( const ArrayView<T> av = a(-1,n), Teuchos::RangeError );
+    TEST_THROW( const ArrayView<T> av = a(0,n+1), Teuchos::RangeError );
+    TEST_THROW( const ArrayView<T> av = a(0,-1), Teuchos::RangeError );
+  }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+  // 2008/08/01: rabartl: Above: We can create ArrayViews and any other thing
+  // that we would like since we have defined a TypeNameTraits class for the
+  // undefined type.
+
+  // ToDo: Do we need to be testing other things for opaque objects?
   
   return success;
 
@@ -763,6 +923,15 @@ int main( int argc, char* argv[] ) {
     //result = testArray<std::complex<double> >(n,*out);
     //if (!result) success = false;
     // 2007/12/03: rabartl: Commented this out so I can test comparison operators
+
+    result = testArrayOpaqueWithoutTNT<Opaque_handle>(n, OPAQUE_HANDLE_NULL, *out);
+    if (!result) success = false;
+
+    result = testArrayOpaqueWithTNT<Opaque2_handle>(n, OPAQUE2_HANDLE_NULL, *out);
+    if (!result) success = false;
+
+    result = testArrayOpaqueWithTNT<Opaque3_handle>(n, OPAQUE3_HANDLE_NULL, *out);
+    if (!result) success = false;
  
     // ToDo: Fill in the rest of the types!
  

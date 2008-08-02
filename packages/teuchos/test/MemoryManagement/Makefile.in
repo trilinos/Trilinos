@@ -121,7 +121,7 @@ GCC_CheckedSTL_UnitTests_OBJECTS =  \
 	$(am_GCC_CheckedSTL_UnitTests_OBJECTS)
 am_Ptr_test_OBJECTS = Ptr_test.$(OBJEXT)
 Ptr_test_OBJECTS = $(am_Ptr_test_OBJECTS)
-am_RCP_test_OBJECTS = RCP_test.$(OBJEXT)
+am_RCP_test_OBJECTS = RCP_test.$(OBJEXT) TestClasses.$(OBJEXT)
 RCP_test_OBJECTS = $(am_RCP_test_OBJECTS)
 am_Tuple_test_OBJECTS = Tuple_test.$(OBJEXT)
 Tuple_test_OBJECTS = $(am_Tuple_test_OBJECTS)
@@ -270,7 +270,7 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @HAVE_GCC_CHECKEDSTL_TRUE@GCC_CHECKEDSTL_EXE_NAME = GCC_CheckedSTL_UnitTests
-RCP_test_SOURCES = $(srcdir)/RCP_test.cpp
+RCP_test_SOURCES = $(srcdir)/RCP_test.cpp $(srcdir)/TestClasses.cpp
 RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 RCP_test_LDADD = $(TEUCHOS_LIBS)
 Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp
@@ -383,6 +383,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GCC_CheckedSTL_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ptr_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCP_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestClasses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tuple_test.Po@am__quote@
 
@@ -497,6 +498,20 @@ RCP_test.obj: $(srcdir)/RCP_test.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCP_test.cpp' object='RCP_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCP_test.obj `if test -f '$(srcdir)/RCP_test.cpp'; then $(CYGPATH_W) '$(srcdir)/RCP_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCP_test.cpp'; fi`
+
+TestClasses.o: $(srcdir)/TestClasses.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestClasses.o -MD -MP -MF $(DEPDIR)/TestClasses.Tpo -c -o TestClasses.o `test -f '$(srcdir)/TestClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestClasses.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestClasses.Tpo $(DEPDIR)/TestClasses.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestClasses.cpp' object='TestClasses.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestClasses.o `test -f '$(srcdir)/TestClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestClasses.cpp
+
+TestClasses.obj: $(srcdir)/TestClasses.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TestClasses.obj -MD -MP -MF $(DEPDIR)/TestClasses.Tpo -c -o TestClasses.obj `if test -f '$(srcdir)/TestClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestClasses.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestClasses.Tpo $(DEPDIR)/TestClasses.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestClasses.cpp' object='TestClasses.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestClasses.obj `if test -f '$(srcdir)/TestClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestClasses.cpp'; fi`
 
 Tuple_test.o: $(srcdir)/Tuple_test.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tuple_test.o -MD -MP -MF $(DEPDIR)/Tuple_test.Tpo -c -o Tuple_test.o `test -f '$(srcdir)/Tuple_test.cpp' || echo '$(srcdir)/'`$(srcdir)/Tuple_test.cpp

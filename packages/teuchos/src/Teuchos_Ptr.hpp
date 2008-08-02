@@ -420,6 +420,8 @@ template<typename T>
 class TypeNameTraits<Ptr<T> > {
 public:
   static std::string name() { return "Ptr<"+TypeNameTraits<T>::name()+">"; }
+  static std::string concreteName( const Ptr<T>& t )
+    { return name(); }
 };
 
 

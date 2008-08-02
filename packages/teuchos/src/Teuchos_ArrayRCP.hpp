@@ -442,7 +442,7 @@ const ArrayRCP<T>&
 ArrayRCP<T>::assert_not_null() const
 {
   if(!ptr_)
-    throw_null_ptr_error(TypeNameTraits<T>::name());
+    throw_null_ptr_error(typeName(*this));
   return *this;
 }
 
@@ -456,7 +456,7 @@ ArrayRCP<T>::assert_in_range( Ordinal lowerOffset_in, Ordinal size_in ) const
   TEST_FOR_EXCEPTION(
     !( lowerOffset_ <= lowerOffset_in && lowerOffset_in+size_in-1 <= upperOffset_ ),
     Teuchos::RangeError,
-    "Teuchos::ArrayRCP<"<<TypeNameTraits<T>::name()<<">::assert_in_range:"
+    typeName(*this)<<"::assert_in_range:"
     " Error, [lowerOffset,lowerOffset+size-1] = ["
     <<lowerOffset_in<<","<<(lowerOffset_in+size_in-1)<<"] does not lie in the"
     " range ["<<lowerOffset_<<","<<upperOffset_<<"]!"
@@ -488,7 +488,8 @@ ArrayRCP<T>::ArrayRCP(
   if(node_ && isTracingActiveRCPNodes()) {
     std::ostringstream os;
     os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
-       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
+       <<TypeNameTraits<T>::concreteName(*p)<<"\',p="<<p
+       <<",has_ownership="<<has_ownership_in<<"}";
     add_new_RCPNode(node_,os.str());
   }
 #endif

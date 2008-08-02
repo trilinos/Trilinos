@@ -126,6 +126,7 @@ public:
 
 
 // Need to put this here if we have circular references
+inline
 A::~A() { A_g_ = -1; A_f_ = -1; }
 
 class Get_A_f_return {
@@ -138,20 +139,10 @@ public:
 };
 
 
-void deallocA(A* ptr)
-{
-  std::cout << "\nCalled deallocA(...)!\n";
-  delete ptr;
-}
+void deallocA(A* ptr);
 
 
-void deallocHandleA(A** handle)
-{
-  std::cout << "\nCalled deallocHandleA(...)!\n";
-  A *ptr = *handle;
-  delete ptr;
-  *handle = 0;
-}
+void deallocHandleA(A** handle);
 
 
 /*
@@ -188,6 +179,93 @@ public:
 	int E_g() { return E_g_; }
 	int E_f() const { return E_f_; }
 };
+
+
+/*
+
+Typedef to pointer for undefined struct as an opaque object type without a
+specialization of TypeNameTraits.
+
+This simulates what happens with a lot of MPI implementations.
+
+*/
+
+struct UndefinedType; // Forward declared but never defined!
+typedef UndefinedType* Opaque_handle;
+const Opaque_handle OPAQUE_HANDLE_NULL = 0;
+Opaque_handle createOpaque();
+const int getOpaqueValue_return = 5;
+int getOpaqueValue( Opaque_handle opaque );
+void destroyOpaque( Opaque_handle * opaque );
+
+
+/*
+
+Typedef to pointer for an undefiend struct as an opaque object type out a
+specialization of TypeNameTraits of the actually type.
+
+This allows it to be stored in an RCP object itself.
+
+*/
+
+struct UndefinedType2; // Forward declared but never defined!
+typedef UndefinedType2* Opaque2_handle;
+const Opaque2_handle OPAQUE2_HANDLE_NULL = 0;
+Opaque2_handle createOpaque2();
+const int getOpaque2Value_return = 8;
+int getOpaque2Value( Opaque2_handle opaque );
+void destroyOpaque2( Opaque2_handle * opaque );
+
+
+namespace Teuchos {
+
+
+// Here we define the traits for the underlying type itself.
+template<>
+class TypeNameTraits<UndefinedType2> {
+public:
+  static std::string name() { return "UndefinedType2"; }
+  static std::string concreteName( const UndefinedType2& t )
+    { return name(); }
+};
+
+
+} // namespace Teuchos
+
+
+/*
+
+Typedef to pointer for an undefiend struct as an opaque object type out a
+specialization of TypeNameTraits of the actually type.
+
+This allows handles to the type be used with Array, ArrayRCP, and ArrayView.
+However, this type can *not* be used with RCP since it does not define a
+TypeNameTraits specialization for the underlying undefined type.
+
+This simulates what can happen with MPI implementations.
+
+*/
+
+struct UndefinedType3; // Forward declared but never defined!
+typedef UndefinedType3* Opaque3_handle;
+const Opaque3_handle OPAQUE3_HANDLE_NULL = 0;
+
+
+namespace Teuchos {
+
+// Here we only define the traits class for the handle type and we don't even
+// need to worry about what the underlying type is (unless we already have a
+// speicalization defined for it).
+template<>
+class TypeNameTraits<Opaque3_handle> {
+public:
+  static std::string name() { return "Opaque3_handle"; }
+  static std::string concreteName( Opaque3_handle t )
+    { return name(); }
+};
+
+
+} // namespace Teuchos
 
 
 #endif // TEUCHOS_TEST_CLASSES_HPP

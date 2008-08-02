@@ -282,7 +282,7 @@ template<class T>
 const ArrayView<T>& ArrayView<T>::assert_not_null() const
 {
   if(!ptr_)
-    throw_null_ptr_error(TypeNameTraits<T>::name());
+    throw_null_ptr_error(typeName(*this));
   return *this;
 }
 
@@ -294,7 +294,7 @@ ArrayView<T>::assert_in_range( Ordinal offset, Ordinal size_in ) const
   assert_not_null();
   TEST_FOR_EXCEPTION(
     !( 0 <= offset && offset+size_in <= this->size() ), Teuchos::RangeError,
-    "Teuchos::ArrayView<"<<TypeNameTraits<T>::name()<<">::assert_in_range():"
+    typeName(*this)<<"::assert_in_range():"
     " Error, [offset,offset+size) = ["<<offset<<","<<(offset+size_in)<<")"
     " does not lie in the range [0,"<<this->size()<<")!"
     );

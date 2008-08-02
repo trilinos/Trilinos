@@ -61,6 +61,10 @@ namespace Teuchos {
  * reference to any internally referenced object if that object does not fall
  * with the range of valid data.
  *
+ * <b>Type <tt>T</tt> requirements:</b><ul>
+ * <li> Must have a valid <tt>Teuchos::TypeNameTraits<T></tt> specialization
+ * </ul>
+ *
  * ToDo: Finish documentation!
  *
  * \ingroup teuchos_mem_mng_grp
@@ -585,6 +589,8 @@ template<typename T>
 class TypeNameTraits<ArrayRCP<T> > {
 public:
   static std::string name() { return "ArrayRCP<"+TypeNameTraits<T>::name()+">"; }
+  static std::string concreteName( const ArrayRCP<T>& t2 )
+    { return name(); }
 };
 
 

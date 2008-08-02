@@ -316,7 +316,7 @@ void Teuchos::printActiveRCPNodes(std::ostream &out)
 void Teuchos::throw_null_ptr_error( const std::string &type_name )
 {
   TEST_FOR_EXCEPTION(
-    true, NullReferenceError
-    ,"RCP<"<<type_name<<">::assert_not_null() : You can not"
-    " call operator->() or operator*() if get()==NULL!" );
+    true, NullReferenceError, 
+    type_name << " : You can not call operator->() or operator*()"
+    <<" if getRawPtr()==0!" );
 }

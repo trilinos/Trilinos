@@ -594,6 +594,8 @@ template<>
 class TypeNameTraits<ParameterList> {
 public:
   static std::string name() { return "ParameterList"; }
+  static std::string concreteName( const ParameterList& t2 )
+    { return name(); }
 };
 
 /** \brief Returns true if two parameter lists are the same.

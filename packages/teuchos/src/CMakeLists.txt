@@ -26,6 +26,7 @@ LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 # Set headers
 SET(HEADERS
+	#Teuchos_PrimitiveTypeTraits.hpp 
 	Teuchos_AbstractFactory.hpp 
 	Teuchos_AbstractFactoryStd.hpp 
 	Teuchos_Array.hpp 
@@ -82,14 +83,13 @@ SET(HEADERS
 	Teuchos_Polynomial.hpp 
 	Teuchos_PolynomialDecl.hpp 
 	Teuchos_PolynomialTraits.hpp 
-	#Teuchos_PrimitiveTypeTraits.hpp 
 	Teuchos_PromotionTraits.hpp 
 	Teuchos_Ptr.hpp 
 	Teuchos_RCP.hpp 
-	Teuchos_RCPNode.hpp 
 	Teuchos_RCPBoostSharedPtrConversions.hpp 
 	Teuchos_RCPBoostSharedPtrConversionsDecl.hpp 
 	Teuchos_RCPDecl.hpp 
+	Teuchos_RCPNode.hpp 
 	Teuchos_Range1D.hpp 
 	Teuchos_RawMPITraits.hpp 
 	Teuchos_ReductionOp.hpp 
@@ -117,6 +117,10 @@ SET(HEADERS
 	Teuchos_Time.hpp 
 	Teuchos_TimeMonitor.hpp 
 	Teuchos_TypeNameTraits.hpp 
+	Teuchos_UnitTestBase.hpp
+	Teuchos_UnitTestHarness.hpp
+	Teuchos_UnitTestHelpers.hpp
+	Teuchos_UnitTestRepository.hpp
 	Teuchos_Utils.hpp 
 	Teuchos_VerboseObject.hpp 
 	Teuchos_VerboseObjectParameterListHelpers.hpp 
@@ -168,6 +172,8 @@ SET(SOURCES
 	Teuchos_Time.cpp 
 	Teuchos_TimeMonitor.cpp 
 	Teuchos_TypeNameTraits.cpp 
+	Teuchos_UnitTestBase.cpp
+	Teuchos_UnitTestRepository.cpp
 	Teuchos_Utils.cpp 
 	Teuchos_VerboseObject.cpp 
 	Teuchos_VerboseObjectParameterListHelpers.cpp 

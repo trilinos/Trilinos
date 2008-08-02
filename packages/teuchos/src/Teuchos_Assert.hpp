@@ -74,4 +74,20 @@
   }
 
 
+/** \brief This macro is checks that an inequality between two numbers is
+ * satisified and if not then throws a good exception message.
+ *
+ * \note The <tt>std::exception</tt> thrown is <tt>std::logic_error</tt>.
+ *
+ * \ingroup TestForException_grp
+ */
+#define TEUCHOS_ASSERT_INEQUALITY( val1, comp, val2 ) \
+  { \
+    TEST_FOR_EXCEPTION( \
+      !( (val1) comp (val2) ), std::out_of_range, \
+      "Error, (" #val1 " = " << (val1) << ") " \
+      #comp " (" #val2 " = " << (val2) << ")! FAILED!" ); \
+  }
+
+
 #endif // TEUCHOS_ASSERT_HPP

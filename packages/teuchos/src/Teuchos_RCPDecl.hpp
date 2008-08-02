@@ -394,6 +394,10 @@ if(b1) (*b1)->f();
 
 </ol>
 
+<b>Type <tt>T</tt> requirements:</b><ul>
+<li> Must have a valid <tt>Teuchos::TypeNameTraits<T></tt> specialization
+</ul>
+
 \ingroup teuchos_mem_mng_grp
 
  */
@@ -629,6 +633,8 @@ template<typename T>
 class TypeNameTraits<RCP<T> > {
 public:
   static std::string name() { return "RCP<"+TypeNameTraits<T>::name()+">"; }
+  static std::string concreteName( const RCP<T>& t )
+    { return name(); }
 };
 
 

@@ -73,17 +73,23 @@ std::string typeName( const T &t )
   return demangleName(typeid(t).name());
 }
 
-/** \brief Default traits class that just returns
- * <tt>typeid(T).name()</tt>.
+
+/** \brief Default traits class that just returns <tt>typeid(T).name()</tt>.
  *
  * \ingroup teuchos_language_support_grp
  */
 template<typename T>
 class TypeNameTraits {
 public:
+  /** \brief . */
   static std::string name()
     {
       return demangleName(typeid(T).name());
+    }
+  /** \brief . */
+  static std::string concreteName( const T& t )
+    {
+      return demangleName(typeid(t).name());
     }
 };
 
@@ -93,6 +99,7 @@ template<> \
 class TypeNameTraits<TYPE> { \
 public: \
   static std::string name() { return (#TYPE); } \
+  static std::string concreteName( const TYPE& t2 ) { return name(); } \
 } \
 
 TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(bool);
@@ -107,7 +114,9 @@ TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(double);
 template<typename T>
 class TypeNameTraits<T*> {
 public:
+  typedef T* T_ptr;
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
+  static std::string concreteName( const T_ptr& t2 ) { return name(); }
 };
 
 
@@ -115,13 +124,8 @@ template<>
 class TypeNameTraits<std::string> {
 public:
   static std::string name() { return "string"; }
-};
-
-
-template<typename T>
-class TypeNameTraits<std::vector<T> > {
-public:
-  static std::string name() { return "vector<"+TypeNameTraits<T>::name()+">"; }
+  static std::string concreteName( const std::string& t2 )
+    { return name(); }
 };
 
 
@@ -131,7 +135,10 @@ public:
 template<typename T>
 class TypeNameTraits<std::complex<T> > {
 public:
-  static std::string name() { return "complex<"+TypeNameTraits<T>::name()+">"; }
+  static std::string name()
+    { return "complex<"+TypeNameTraits<T>::name()+">"; }
+  static std::string concreteName( const std::complex<T>& t2 )
+    { return name(); }
 };
 
 

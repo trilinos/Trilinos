@@ -510,17 +510,6 @@ ArrayRCP<const T> arcp( const RCP<const Array<T> > &v )
 }
 
 
-/** \brief Traits specialization for RCP.
- *
- * \ingroup teuchos_mem_mng_grp
- */
-template<typename T>
-class TypeNameTraits<Array<T> > {
-public:
-  static std::string name() { return "Array<"+TypeNameTraits<T>::name()+">"; }
-};
-
-
 /** \brief Write an Array to an ostream.
  *
  * This prints arrays in the form:
@@ -1182,9 +1171,13 @@ ArrayView<T> Array<T>::view( size_type offset, size_type size_in )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(offset);
-  assertIndex(offset+size_in-1);
+  TEUCHOS_ASSERT_INEQUALITY(size_in, >=, 0);
+  if (size_in)
+    assertIndex(offset+size_in-1);
 #endif
-  return arrayView( &vec()[offset], size_in );
+  if (size_in)
+    return arrayView( &vec()[offset], size_in );
+  return Teuchos::null;
   // ToDo: Add support for detecting dangling references!
 }
 
@@ -1329,7 +1322,7 @@ void Array<T>::assertIndex(int i) const
 {
   TEST_FOR_EXCEPTION(
     !( 0 <= i && i < length() ), RangeError,
-    "Array<"<<TypeNameTraits<T>::name()<<">::assertIndex(i): "
+    typeName(*this)<<"::assertIndex(i): "
     "index " << i << " out of range [0, "<< length() << ")"
     );
 }
@@ -1340,7 +1333,7 @@ void Array<T>::assertNotNull() const
 {
   TEST_FOR_EXCEPTION(
     !size(), NullReferenceError,
-    "Array<"<<TypeNameTraits<T>::name()<<">::assertNotNull(): "
+    typeName(*this)<<"::assertNotNull(): "
     "Error, the array has size zero!"
     );
 }
