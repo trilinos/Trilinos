@@ -90,14 +90,13 @@ public:
   
   /** \brief Broadcast values from the root process to the slave processes.
    *
-   * \param  rootRank
-   *           [in] The rank of the root process.
-   * \param  count
-   *           [in] The number of bytes in <tt>buffer[]</tt>.
-   * \param  buffer
-   *           [in/out] Array (length <tt>bytes</tt>) of packed data.  Must be set on input
-   *           on the root processes with rank <tt>root</tt>.  On output, each processs,
-   *           including the root process contains the data.
+   * \param rootRank [in] The rank of the root process.
+   *
+   * \param count [in] The number of bytes in <tt>buffer[]</tt>.
+   *
+   * \param buffer [in/out] Array (length <tt>bytes</tt>) of packed data.
+   * Must be set on input on the root processes with rank <tt>root</tt>.  On
+   * output, each processs, including the root process contains the data.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>0 <= rootRank && rootRank < this->getSize()</tt>
@@ -109,19 +108,21 @@ public:
 
   /** \brief Gather values from each process to collect on all processes.
    *
-   * \param  sendBytes
-   *           [in] Number of entires in <tt>sendBuffer[]</tt> on input.
-   * \param  sendBuffer
-   *           [in] Array (length <tt>sendBytes</tt>) of data being sent from each process.
-   * \param  recvBytes
-   *           [in] Number of entires in <tt>recvBuffer[]</tt> which must be
-   *           equal to <tt>sendBytes*this->getSize()</tt>.  This field is just here
-   *           for debug checking.
-   * \param  recvBuffer
-   *           [out] Array (length <tt>recvBytes</tt>) of all of the entires
-   *           sent from each processes.  Specifically, <tt>recvBuffer[sendBytes*j+i]</tt>,
-   *           for <tt>j=0...this->getSize()-1</tt> and <tt>i=0...sendBytes-1</tt>,
-   *           is the entry <tt>sendBuffer[i]</tt> from process with rank <tt>j</tt>.
+   * \param sendBytes [in] Number of entires in <tt>sendBuffer[]</tt> on
+   * input.
+   *
+   * \param sendBuffer [in] Array (length <tt>sendBytes</tt>) of data being
+   * sent from each process.
+   *
+   * \param recvBytes [in] Number of entires in <tt>recvBuffer[]</tt> which
+   * must be equal to <tt>sendBytes*this->getSize()</tt>.  This field is just
+   * here for debug checking.
+   *
+   * \param recvBuffer [out] Array (length <tt>recvBytes</tt>) of all of the
+   * entires sent from each processes.  Specifically,
+   * <tt>recvBuffer[sendBytes*j+i]</tt>, for <tt>j=0...this->getSize()-1</tt>
+   * and <tt>i=0...sendBytes-1</tt>, is the entry <tt>sendBuffer[i]</tt> from
+   * process with rank <tt>j</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>recvBytes==sendBytes*this->getSize()</tt>
@@ -134,14 +135,16 @@ public:
 
   /** \brief Global reduction.
    *
-   * \param  reductOp
-   *           [in] The user-defined reduction operation
-   * \param  bytes
-   *           [in] The length of the buffers <tt>sendBuffer[]</tt> and <tt>globalReducts[]</tt>.
-   * \param  sendBuffer
-   *           [in] Array (length <tt>bytes</tt>) of the data contributed from each process.
-   * \param  globalReducts
-   *           [out] Array (length <tt>bytes</tt>) of the global reduction from each process.
+   * \param reductOp [in] The user-defined reduction operation
+   *
+   * \param bytes [in] The length of the buffers <tt>sendBuffer[]</tt> and
+   * <tt>globalReducts[]</tt>.
+   *
+   * \param sendBuffer [in] Array (length <tt>bytes</tt>) of the data
+   * contributed from each process.
+   *
+   * \param globalReducts [out] Array (length <tt>bytes</tt>) of the global
+   * reduction from each process.
    */
   virtual void reduceAll(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
@@ -179,15 +182,16 @@ public:
 
   /** \brief Scan reduction.
    *
-   * \param  reductOp
-   *           [in] The user-defined reduction operation
-   * \param  bytes
-   *           [in] The length of the buffers <tt>sendBuffer[]</tt> and <tt>scanReducts[]</tt>.
-   * \param  sendBuffer
-   *           [in] Array (length <tt>bytes</tt>) of the data contributed from each process.
-   * \param  scanReducts
-   *           [out] Array (length <tt>bytes</tt>) of the reduction up to and including
-   *           this process.
+   * \param reductOp [in] The user-defined reduction operation
+   *
+   * \param bytes [in] The length of the buffers <tt>sendBuffer[]</tt> and
+   * <tt>scanReducts[]</tt>.
+   *
+   * \param sendBuffer [in] Array (length <tt>bytes</tt>) of the data
+   * contributed from each process.
+   *
+   * \param scanReducts [out] Array (length <tt>bytes</tt>) of the reduction
+   * up to and including this process.
    */
 	virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
@@ -197,17 +201,16 @@ public:
   //! @name Blocking Point-to-Point Operations 
   //@{
 
-
   /** \brief Blocking send of data from this process to another process.
    *
-   * \param  bytes
-   *           [in] The number of bytes of data being passed between processes.
-   * \param  sendBuffer
-   *           [in] Array (length <tt>bytes</tt>) of data being sent from this process.
-   *           This buffer can be immediately destroyed or reused as soon as the function
-   *           exits (that is why this function is "blocking").
-   * \param  destRank
-   *           [in] The rank of the process to receive the data.
+   * \param bytes [in] The number of bytes of data being passed between
+   * processes.
+   *
+   * \param sendBuffer [in] Array (length <tt>bytes</tt>) of data being sent
+   * from this process.  This buffer can be immediately destroyed or reused as
+   * soon as the function exits (that is why this function is "blocking").
+   *
+   * \param destRank [in] The rank of the process to receive the data.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
@@ -218,18 +221,18 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
 
-
   /** \brief Blocking receive of data from this process to another process.
    *
-   * \param  sourceRank
-   *           [in] The rank of the process to receive the data from.  If <tt>sourceRank < 0</tt> then
-   *           data will be received from any process.
-   * \param  bytes
-   *           [in] The number of bytes of data being passed between processes.
-   * \param  recvBuffer
-   *           [out] Array (length <tt>bytes</tt>) of data being received from this process.
-   *           This buffer can be immediately used to access the data as soon as the function
-   *           exits (that is why this function is "blocking").
+   * \param sourceRank [in] The rank of the process to receive the data from.
+   * If <tt>sourceRank < 0</tt> then data will be received from any process.
+   *
+   * \param bytes [in] The number of bytes of data being passed between
+   * processes.
+   *
+   * \param recvBuffer [out] Array (length <tt>bytes</tt>) of data being
+   * received from this process.  This buffer can be immediately used to
+   * access the data as soon as the function exits (that is why this function
+   * is "blocking").
    *
    * <b>Preconditions:</b><ul>
    * <li>[<tt>sourceRank >= 0] <tt>sourceRank < this->getSize()</tt>
@@ -245,10 +248,9 @@ public:
 
   /** \brief Ready send of data from this process to another process.
    *
-   * \param  sendBuffer
-   *           [in] The data to be sent.
-   * \param  destRank
-   *           [in] The rank of the process to receive the data.
+   * \param sendBuffer [in] The data to be sent.
+   *
+   * \param destRank [in] The rank of the process to receive the data.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
@@ -270,10 +272,9 @@ public:
 
   /** \brief Non-blocking send. 
    *
-   * \param  sendBuffer
-   *           [in] The data buffer to be sent.
-   * \param  destRank
-   *           [in] The rank of the process to receive the data.
+   * \param sendBuffer [in] The data buffer to be sent.
+   *
+   * \param destRank [in] The rank of the process to receive the data.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
@@ -288,11 +289,10 @@ public:
 
   /** \brief Non-blocking receive. 
    *
-   * \param  recvBuffer
-   *           [out] The location for storing the received data.
-   * \param  sourceRank
-   *           [in] The rank of the process to receive the data from.  If <tt>sourceRank < 0</tt> then
-   *           data will be received from any process.
+   * \param recvBuffer [out] The location for storing the received data.
+   *
+   * \param sourceRank [in] The rank of the process to receive the data from.
+   * If <tt>sourceRank < 0</tt> then data will be received from any process.
    *
    * <b>Preconditions:</b><ul>
    * <li>[<tt>sourceRank >= 0] <tt>sourceRank < this->getSize()</tt>

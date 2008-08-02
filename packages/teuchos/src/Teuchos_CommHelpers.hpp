@@ -55,10 +55,10 @@ namespace Teuchos {
  * \relates Comm
  */
 enum EReductionType {
-  REDUCE_SUM     ///< Sum
-  ,REDUCE_MIN    ///< Min
-  ,REDUCE_MAX    ///< Max
-  ,REDUCE_AND    ///< Logical AND
+  REDUCE_SUM, ///< Sum
+  REDUCE_MIN, ///< Min
+  REDUCE_MAX, ///< Max
+  REDUCE_AND ///< Logical AND
 };
 
 /** \brief Convert to std::string representation.
@@ -73,7 +73,7 @@ const char* toString( const EReductionType reductType )
     case REDUCE_MIN: return "REDUCE_MIN";
     case REDUCE_MAX: return "REDUCE_MAX";
     case REDUCE_AND: return "REDUCE_AND";
-   default: TEST_FOR_EXCEPT(true);
+    default: TEST_FOR_EXCEPT(true);
   }
   return 0; // Will never be called
 }
@@ -127,8 +127,8 @@ void broadcast(
  */
 template<typename Ordinal, typename Packet>
 void broadcast(
-  const Comm<Ordinal>& comm
-  ,const int rootRank, Packet *object
+  const Comm<Ordinal>& comm,
+  const int rootRank, Packet *object
   );
 
 /** \brief Broadcast single object that use value semantics.
@@ -137,8 +137,8 @@ void broadcast(
  */
 template<typename Ordinal, typename Packet>
 void broadcast(
-  const Comm<Ordinal>& comm
-  ,const int rootRank, const Ptr<Packet> &object
+  const Comm<Ordinal>& comm,
+  const int rootRank, const Ptr<Packet> &object
   );
 
 /** \brief Broadcast array of objects that use reference semantics.
@@ -147,8 +147,8 @@ void broadcast(
  */
 template<typename Ordinal, typename Packet>
 void broadcast(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int rootRank, const Ordinal count, Packet*const buffer[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const int rootRank, const Ordinal count, Packet*const buffer[]
   );
 
 /** \brief Gather array of objects that use value semantics from every process
@@ -158,9 +158,9 @@ void broadcast(
  */
 template<typename Ordinal, typename Packet>
 void gatherAll(
-  const Comm<Ordinal>& comm
-  ,const Ordinal sendCount, const Packet sendBuffer[]
-  ,const Ordinal recvCount, Packet recvBuffer[]
+  const Comm<Ordinal>& comm,
+  const Ordinal sendCount, const Packet sendBuffer[],
+  const Ordinal recvCount, Packet recvBuffer[]
   );
 
 /** \brief Gather array of objects that use reference semantics from every
@@ -170,9 +170,9 @@ void gatherAll(
  */
 template<typename Ordinal, typename Packet>
 void gatherAll(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal sendCount, const Packet*const sendBuffer[]
-  ,const Ordinal recvCount, Packet*const recvBuffer[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const Ordinal sendCount, const Packet*const sendBuffer[],
+  const Ordinal recvCount, Packet*const recvBuffer[]
   );
 
 /** \brief Collective reduce all of array of objects using value semantics
@@ -182,8 +182,8 @@ void gatherAll(
  */
 template<typename Ordinal, typename Packet>
 void reduceAll(
-  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
+  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
   );
 
 /** \brief Collective reduce all of array of objects using value semantics
@@ -193,8 +193,8 @@ void reduceAll(
  */
 template<typename Ordinal, typename Packet>
 void reduceAll(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
   );
 
 /** \brief Collective reduce all for single object using value semantics using
@@ -204,8 +204,8 @@ void reduceAll(
  */
 template<typename Ordinal, typename Packet>
 void reduceAll(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Packet &send, Packet *globalReduct
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Packet &send, Packet *globalReduct
   );
 
 /** \brief Collective reduce all for array of objects using reference
@@ -215,9 +215,9 @@ void reduceAll(
  */
 template<typename Ordinal, typename Packet>
 void reduceAll(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
   );
 
 /** \brief Reduce and Scatter array of objects that use value semantics using
@@ -227,9 +227,9 @@ void reduceAll(
  */
 template<typename Ordinal, typename Packet>
 void reduceAllAndScatter(
-  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal sendCount, const Packet sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet myGlobalReducts[]
+  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
 /** \brief Reduce and Scatter array of objects that use value semantics using
@@ -239,9 +239,9 @@ void reduceAllAndScatter(
  */
 template<typename Ordinal, typename Packet>
 void reduceAllAndScatter(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Ordinal sendCount, const Packet sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet myGlobalReducts[]
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
 /** \brief Reduce and Scatter array of objects that use reference semantics
@@ -251,10 +251,10 @@ void reduceAllAndScatter(
  */
 template<typename Ordinal, typename Packet>
 void reduceAllAndScatter(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal sendCount, const Packet*const sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet*const myGlobalReducts[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal sendCount, const Packet*const sendBuffer[] ,
+  const Ordinal recvCounts[], Packet*const myGlobalReducts[]
   );
 
 /** \brief Scan/Reduce array of objects that use value semantics using a
@@ -264,8 +264,8 @@ void reduceAllAndScatter(
  */
 template<typename Ordinal, typename Packet>
 void scan(
-  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
   );
 
 /** \brief Scan/Reduce array of objects using value semantics using a
@@ -275,8 +275,8 @@ void scan(
  */
 template<typename Ordinal, typename Packet>
 void scan(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
   );
 
 /** \brief Scan/Reduce single object using value semantics using a predefined
@@ -286,8 +286,8 @@ void scan(
  */
 template<typename Ordinal, typename Packet>
 void scan(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Packet &send, Packet *scanReduct
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Packet &send, Packet *scanReduct
   );
 
 /** \brief Scan/Reduce array of objects that use reference semantics using a
@@ -297,9 +297,9 @@ void scan(
  */
 template<typename Ordinal, typename Packet>
 void scan(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
   );
 
 /** \brief Send objects that use values semantics to another process.
@@ -308,8 +308,8 @@ void scan(
  */
 template<typename Ordinal, typename Packet>
 void send(
-  const Comm<Ordinal>& comm
-  ,const Ordinal count, const Packet sendBuffer[], const int destRank
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
 /** \brief Send a single object that use values semantics to another process.
@@ -318,8 +318,8 @@ void send(
  */
 template<typename Ordinal, typename Packet>
 void send(
-  const Comm<Ordinal>& comm
-  ,const Packet &send, const int destRank
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
   );
 
 /** \brief Send objects that use reference semantics to another process.
@@ -330,8 +330,8 @@ void send(
  */
 template<typename Ordinal, typename Packet>
 void send(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal count, const Packet*const sendBuffer[], const int destRank
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const Ordinal count, const Packet*const sendBuffer[], const int destRank
   );
 
 /** \brief Receive objects that use values semantics from another process.
@@ -340,8 +340,8 @@ void send(
  */
 template<typename Ordinal, typename Packet>
 int receive(
-  const Comm<Ordinal>& comm
-  ,const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  const Comm<Ordinal>& comm,
+  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
   );
 
 /** \brief Receive a single object that use values semantics from another process.
@@ -350,8 +350,8 @@ int receive(
  */
 template<typename Ordinal, typename Packet>
 int receive(
-  const Comm<Ordinal>& comm
-  ,const int sourceRank, Packet *recv 
+  const Comm<Ordinal>& comm,
+  const int sourceRank, Packet *recv 
   );
 
 /** \brief Receive objects that use reference semantics from another process.
@@ -360,20 +360,20 @@ int receive(
  */
 template<typename Ordinal, typename Packet>
 int receive(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   );
 
-
-/** \brief Ready-Send objects that use values semantics to another process.
+/** \brief Ready-Send an array of objects that use values semantics to another
+ * process.
  *
  * \relates Comm
  */
 template<typename Ordinal, typename Packet>
 void readySend(
-  const Comm<Ordinal>& comm
-  ,const ArrayView<const Packet> &sendBuffer
-  ,const int destRank
+  const Comm<Ordinal>& comm,
+  const ArrayView<const Packet> &sendBuffer,
+  const int destRank
   );
 
 /** \brief Ready-Send a single object that use values semantics to another process.
@@ -382,9 +382,9 @@ void readySend(
  */
 template<typename Ordinal, typename Packet>
 void readySend(
-  const Comm<Ordinal>& comm
-  ,const Packet &send
-  ,const int destRank
+  const Comm<Ordinal>& comm,
+  const Packet &send,
+  const int destRank
   );
 
 /** \brief Send objects that use values semantics to another process.
@@ -454,7 +454,6 @@ void waitAll(
   const ArrayView<RCP<CommRequest> > &requests
   );
 
-
 /** \brief Wait on on a single request
  *
  * Blocks until the communication operation associated with the CommRequest
@@ -511,6 +510,7 @@ public:
     ) const;
 };
 
+
 /** \brief Standard Max operator for types with value semantics.
  *
  * Note, this class object will throw an std::exception when used with a packet
@@ -530,7 +530,6 @@ public:
     Packet inoutBuffer[]
     ) const;
 };
-
 
 
 /** \brief Standard logical AND operator for booleans
@@ -565,13 +564,14 @@ namespace MixMaxUtilities {
 template<bool isComparable, typename Ordinal, typename Packet>
 class Min {};
 
+
 template<typename Ordinal, typename Packet>
 class Min<true,Ordinal,Packet> {
 public:
   static void min(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal count,
+    const Packet inBuffer[],
+    Packet inoutBuffer[]
     )
     {
       for( int i = 0; i < count; ++i )
@@ -584,14 +584,14 @@ template<typename Ordinal, typename Packet>
 class Min<false,Ordinal,Packet> {
 public:
   static void min(
-    const Ordinal
-    ,const Packet[]
-    ,      Packet[]
+    const Ordinal,
+    const Packet[],
+    Packet[]
     )
     {
       TEST_FOR_EXCEPTION(
-        true,std::logic_error
-        ,"Error, the type "<<ScalarTraits<Packet>::name()
+        true,std::logic_error,
+        "Error, the type "<<ScalarTraits<Packet>::name()
         <<" does not support comparison operations!"
         );
     }
@@ -606,9 +606,9 @@ template<typename Ordinal, typename Packet>
 class Max<true,Ordinal,Packet> {
 public:
   static void max(
-    const Ordinal     count
-    ,const Packet     inBuffer[]
-    ,Packet           inoutBuffer[]
+    const Ordinal count,
+    const Packet inBuffer[],
+    Packet inoutBuffer[]
     )
     {
       for( int i = 0; i < count; ++i )
@@ -621,14 +621,14 @@ template<typename Ordinal, typename Packet>
 class Max<false,Ordinal,Packet> {
 public:
   static void max(
-    const Ordinal
-    ,const Packet[]
-    ,      Packet[]
+    const Ordinal,
+    const Packet[],
+    Packet[]
     )
     {
       TEST_FOR_EXCEPTION(
-        true,std::logic_error
-        ,"Error, the type "<<ScalarTraits<Packet>::name()
+        true,std::logic_error,
+        "Error, the type "<<ScalarTraits<Packet>::name()
         <<" does not support comparison operations!"
         );
     }
@@ -642,30 +642,30 @@ class AND {};
 template<typename Ordinal, typename Packet>
 class AND<true,Ordinal,Packet> {
 public:
-  static void And(
-                   const Ordinal     count
-                   ,const Packet     inBuffer[]
-                   ,Packet           inoutBuffer[]
-                   )
-  {
-    for( int i = 0; i < count; ++i )
-      inoutBuffer[i] = inoutBuffer[i] && inBuffer[i];
-  }
+  static void andOp(
+    const Ordinal count,
+    const Packet inBuffer[],
+    Packet inoutBuffer[]
+    )
+    {
+      for( int i = 0; i < count; ++i )
+        inoutBuffer[i] = inoutBuffer[i] && inBuffer[i];
+    }
 };
 
 
 template<typename Ordinal, typename Packet>
 class AND<false,Ordinal,Packet> {
 public:
-  static void And(
-    const Ordinal
-    ,const Packet[]
-    ,      Packet[]
+  static void andOp(
+    const Ordinal,
+    const Packet[],
+    Packet[]
     )
     {
       TEST_FOR_EXCEPTION(
-        true,std::logic_error
-        ,"Error, the type "<<ScalarTraits<Packet>::name()
+        true,std::logic_error,
+        "Error, the type "<<ScalarTraits<Packet>::name()
         <<" does not support logical AND operations!"
         );
     }
@@ -677,9 +677,9 @@ public:
 
 template<typename Ordinal, typename Packet>
 void SumValueReductionOp<Ordinal,Packet>::reduce(
-  const Ordinal     count
-  ,const Packet     inBuffer[]
-  ,Packet           inoutBuffer[]
+  const Ordinal count,
+  const Packet inBuffer[],
+  Packet inoutBuffer[]
   ) const
 {
   for( int i = 0; i < count; ++i )
@@ -689,9 +689,9 @@ void SumValueReductionOp<Ordinal,Packet>::reduce(
 
 template<typename Ordinal, typename Packet>
 void MinValueReductionOp<Ordinal,Packet>::reduce(
-  const Ordinal     count
-  ,const Packet     inBuffer[]
-  ,Packet           inoutBuffer[]
+  const Ordinal count,
+  const Packet inBuffer[],
+  Packet inoutBuffer[]
   ) const
 {
   typedef ScalarTraits<Packet> ST;
@@ -703,9 +703,9 @@ void MinValueReductionOp<Ordinal,Packet>::reduce(
 
 template<typename Ordinal, typename Packet>
 void MaxValueReductionOp<Ordinal,Packet>::reduce(
-  const Ordinal     count
-  ,const Packet     inBuffer[]
-  ,Packet           inoutBuffer[]
+  const Ordinal count,
+  const Packet inBuffer[],
+  Packet inoutBuffer[]
   ) const
 {
   typedef ScalarTraits<Packet> ST;
@@ -717,13 +717,13 @@ void MaxValueReductionOp<Ordinal,Packet>::reduce(
 
 template<typename Ordinal, typename Packet>
 void ANDValueReductionOp<Ordinal,Packet>::reduce(
-  const Ordinal     count
-  ,const Packet     inBuffer[]
-  ,Packet           inoutBuffer[]
+  const Ordinal count,
+  const Packet inBuffer[],
+  Packet inoutBuffer[]
   ) const
 {
   typedef ScalarTraits<Packet> ST;
-  MixMaxUtilities::AND<ST::isComparable,Ordinal,Packet>::And(
+  MixMaxUtilities::AND<ST::isComparable,Ordinal,Packet>::andOp(
     count,inBuffer,inoutBuffer
     );
 }
@@ -744,8 +744,8 @@ void ANDValueReductionOp<Ordinal,Packet>::reduce(
 namespace Teuchos {
 
 
-// Not for the general user to use!  I am returning a raw ReducionOp* pointer
-// to avoid the overhead of using RCP.  However, given the use case
+// Not for the general user to use! I am returning a raw ReducionOp* pointer
+// to avoid the overhead of using RCP. However, given the use case
 // this is just fine since I can just use std::auto_ptr to make sure things
 // are deleted correctly.
 template<typename Ordinal, typename Packet>
@@ -815,8 +815,8 @@ void Teuchos::barrier(const Comm<Ordinal>& comm)
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
-  const Comm<Ordinal>& comm
-  ,const int rootRank, const Ordinal count, Packet buffer[]
+  const Comm<Ordinal>& comm,
+  const int rootRank, const Ordinal count, Packet buffer[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -845,8 +845,8 @@ void Teuchos::broadcast(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
-  const Comm<Ordinal>& comm
-  ,const int rootRank, Packet *object
+  const Comm<Ordinal>& comm,
+  const int rootRank, Packet *object
   )
 {
   broadcast<Ordinal,Packet>(comm,rootRank,1,object);
@@ -855,8 +855,8 @@ void Teuchos::broadcast(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
-  const Comm<Ordinal>& comm
-  ,const int rootRank, const Ptr<Packet> &object
+  const Comm<Ordinal>& comm,
+  const int rootRank, const Ptr<Packet> &object
   )
 {
   broadcast<Ordinal,Packet>(comm,rootRank,1,object.getRawPtr());
@@ -865,8 +865,8 @@ void Teuchos::broadcast(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int rootRank, const Ordinal count, Packet*const buffer[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const int rootRank, const Ordinal count, Packet*const buffer[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -884,9 +884,9 @@ void Teuchos::broadcast(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::gatherAll(
-  const Comm<Ordinal>& comm
-  ,const Ordinal sendCount, const Packet sendBuffer[]
-  ,const Ordinal recvCount, Packet recvBuffer[]
+  const Comm<Ordinal>& comm,
+  const Ordinal sendCount, const Packet sendBuffer[],
+  const Ordinal recvCount, Packet recvBuffer[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -907,9 +907,9 @@ void Teuchos::gatherAll(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::gatherAll(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal sendCount, const Packet*const sendBuffer[]
-  ,const Ordinal recvCount, Packet*const recvBuffer[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const Ordinal sendCount, const Packet*const sendBuffer[],
+  const Ordinal recvCount, Packet*const recvBuffer[]
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -942,8 +942,8 @@ void Teuchos::reduceAll(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -969,9 +969,9 @@ void Teuchos::reduceAll(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -1031,7 +1031,7 @@ void Teuchos::reduceAllAndScatter(
   for (Ordinal k = 0; k < size; ++k) {
     charRecvCounts[k] = as<Ordinal>(recvCounts[k] * packetSize);
   }
-  
+ 
   comm.reduceAllAndScatter(
     charReductOp, charSendBuffer.getBytes(), charSendBuffer.getCharBuffer(),
     &charRecvCounts[0], charMyGlobalReducts.getCharBuffer()
@@ -1062,10 +1062,10 @@ void Teuchos::reduceAllAndScatter(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAllAndScatter(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal sendCount, const Packet*const sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet*const myGlobalReducts[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal sendCount, const Packet*const sendBuffer[],
+  const Ordinal recvCounts[], Packet*const myGlobalReducts[]
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -1074,8 +1074,8 @@ void Teuchos::reduceAllAndScatter(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
-  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -1098,8 +1098,8 @@ void Teuchos::scan(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -1115,8 +1115,8 @@ void Teuchos::scan(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
-  const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Packet &send, Packet *globalReduct
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Packet &send, Packet *globalReduct
   )
 {
   scan<Ordinal,Packet>(comm,reductType,1,&send,globalReduct);
@@ -1125,9 +1125,9 @@ void Teuchos::scan(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -1136,8 +1136,8 @@ void Teuchos::scan(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
-  const Comm<Ordinal>& comm
-  ,const Ordinal count, const Packet sendBuffer[], const int destRank
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -1156,8 +1156,8 @@ void Teuchos::send(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
-  const Comm<Ordinal>& comm
-  ,const Packet &send, const int destRank
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
   )
 {
   Teuchos::send<Ordinal,Packet>(comm,1,&send,destRank);
@@ -1166,8 +1166,8 @@ void Teuchos::send(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal count, const Packet*const sendBuffer[], const int destRank
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const Ordinal count, const Packet*const sendBuffer[], const int destRank
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -1175,8 +1175,8 @@ void Teuchos::send(
 
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
-  const Comm<Ordinal>& comm
-  ,const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  const Comm<Ordinal>& comm,
+  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -1195,8 +1195,8 @@ int Teuchos::receive(
 
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
-  const Comm<Ordinal>& comm
-  ,const int sourceRank, Packet *recv 
+  const Comm<Ordinal>& comm,
+  const int sourceRank, Packet *recv 
   )
 {
   return Teuchos::receive<Ordinal,Packet>(comm,sourceRank,1,recv);
@@ -1205,8 +1205,8 @@ int Teuchos::receive(
 
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
-  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -1232,8 +1232,7 @@ void Teuchos::readySend(
 
 
 template<typename Ordinal, typename Packet>
-void
-Teuchos::readySend(
+void Teuchos::readySend(
   const Comm<Ordinal>& comm,
   const Packet &send,
   const int destRank

@@ -32,7 +32,7 @@ TRILINOS_ADD_TEST(
   NAME CrsGraph_test
   ARGS -v
   COMM mpi
-  HOST somehost localhost.localdomain
+  HOST somehost localhost.localdomain gabriel.sandia.gov
   DESEND_INTO_DIR
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
