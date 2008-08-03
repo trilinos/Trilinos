@@ -1,25 +1,31 @@
 
 TODOs for the Trilinos/CMake system
 
-Last updated: 2008/07/31
-
-(*) TRILINOS_ADD_TEST(...) upgrades
-- Add the package name to the beginning test name
-- Change the separator for the test index name from '_' to '-'.
-- Change KEYWORDS to create postfix names to the end of the test name (but
-before the arbitrary number)
+Last updated: 2008/08/03
 
 (*) Change MPI_EXECUTABLE to MPI_GO (see comments in ConfigureMPI.cmake)
 
 (*) Clean up all PACKAGE/test/CMakeList.txt to be a clean as possible
 - Remove the direct calls INCLUDE_DIRECTORIES(...) and LINK_LIBRARIES(...)
-- Remove calls to TRILINOS_ADD_EXECUTABLE_AND_TEST(...) with separate calls to
-TRILINOS_ADD_EXECUTABLE(...) and TRILINOS_ADD_TEST(...)
+- Remove all calls to TRILINOS_ADD_EXECUTABLE_AND_TEST(...) with
+separate calls to TRILINOS_ADD_EXECUTABLE(...) and
+TRILINOS_ADD_TEST(...)
+
+(*) Put in custom target for 'runtests-serial' and 'runtests-mpi' (see
+thyra/Makefile.am for example)
 
 (*) Write skeleton for new Trilinos Developers Guide with CMake instead of
 autotools ... ON GOING ...
 - Give to Jim W. to see if you can actually use cmake to build and test
 Trilinos
 
-(*) Put in custom target for 'runtests-serial' and 'runtests-mpi' (see
-thyra/Makefile.am for example)
+
+Completed:
+----------
+
+(*) TRILINOS_ADD_TEST(...) upgrades
+- Add the package name to the beginning test name [Done]
+- Change the separator for the test index name from '_' to '-' [Done]
+- Change KEYWORDS to create postfix names to the end of the test name (but
+before the arbitrary number) [Done]
+- Enable and test absent DIRECTORY argument [Done]
