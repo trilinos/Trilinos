@@ -87,7 +87,7 @@ public:
       return demangleName(typeid(T).name());
     }
   /** \brief . */
-  static std::string concreteName( const T& t )
+  static std::string concreteName( T& t )
     {
       return demangleName(typeid(t).name());
     }
@@ -116,7 +116,7 @@ class TypeNameTraits<T*> {
 public:
   typedef T* T_ptr;
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
-  static std::string concreteName( const T_ptr& t2 ) { return name(); }
+  static std::string concreteName( T_ptr& t2 ) { return name(); }
 };
 
 
