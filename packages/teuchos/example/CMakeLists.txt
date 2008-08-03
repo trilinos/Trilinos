@@ -1,4 +1,3 @@
-# $Header$ 
 
 # Required modules
 INCLUDE(Trilinos_Add_Executable_And_Test)
@@ -17,3 +16,4 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(TimeMonitor EXAMPLE SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE_AND_TEST(XML EXAMPLE SOURCES XmlToParameterList.cpp)
 TRILINOS_ADD_EXECUTABLE_AND_TEST(hilbert EXAMPLE SOURCES cxx_main.cpp)
 
+ADD_SUBDIRECTORY(ExplicitInstantiation/four_files)

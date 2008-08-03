@@ -36,9 +36,9 @@ namespace Teuchos {
 /** \brief Strategy interface for the indirect serializing and deserializing
  * objects of a given type handled using reference semantics.
  *
- * This interface serializes and serializes objects of type <tt>T</tt> to and
- * from independent <tt>char[]</tt> buffer arrays.  Direct serialization (i.e.
- * just using reinterpret casts) is not possible using this interface.
+ * This interface serializes and deserializes objects of type <tt>T</tt> to
+ * and from independent <tt>char[]</tt> buffer arrays.  Direct serialization
+ * (i.e. just using reinterpret casts) is not possible using this interface.
  */
 template<typename Ordinal, typename T>
 class Serializer {

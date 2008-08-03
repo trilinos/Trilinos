@@ -9,17 +9,23 @@
 # (*) Support an optional POSTFIX argument for naming tests with different
 # ARGS keywords
 
-INCLUDE(Parse_Variable_Arguments)
+INCLUDE(Trilinos_Add_Executable)
 
 FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
    
+  #
+  # A) Parse the input arguments
+  #
+
   PARSE_ARGUMENTS(
      PARSE   #prefix
      "NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;NAME;PASS_REGULAR_EXPRESSION;HOST;XHOST;FAIL_REGULAR_EXPRESSION"  #lists
      "DESEND_INTO_DIR"   #options
      ${ARGN} )
   
-  # Don't add the test if the host or xhost tests don't pass
+  #
+  # B) Do not add any tests if host or xhost says not to
+  #
   
   IF(NOT PARSE_XHOST)
     SET (PARSE_XHOST NONE)
@@ -37,27 +43,38 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
     RETURN()
   ENDIF()
 
-  # 2008/07/09: rabartl: ToDo: Above, change the logic to allow HOST and XHOST
-  # to be lists!
-
-
+  #
+  # C) Set the name and path of the binary that will be run
+  #
   
-  SET(EXE_BINARY_NAME "${EXE_NAME}.exe")
+  SET(EXE_BINARY_NAME "${EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX}")
+  #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
+
   IF(PARSE_NAME)
     SET(TEST_NAME "${PROJECT_NAME}-${PARSE_NAME}")
   ELSE()
     SET(TEST_NAME "${PROJECT_NAME}-${EXE_NAME}")  
   ENDIF()
+  #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: TEST_NAME = ${TEST_NAME}")
+
+  IF(PARSE_DIRECTORY)
+    SET(EXECUTABLE_PATH "./${PARSE_DIRECTORY}/${EXE_BINARY_NAME}")
+  ELSE()
+    SET(EXECUTABLE_PATH "./${EXE_BINARY_NAME}")
+  ENDIF()
+  #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: EXECUTABLE_PATH = ${EXECUTABLE_PATH}")
+
+  #
+  # D) Append keywords the the name of the test
+  #
   
-  #If KEYWORDS are provided then append them to the name of the test
   IF(PARSE_KEYWORDS)
     FOREACH(KEYWORD ${PARSE_KEYWORDS})
       SET(TEST_NAME ${TEST_NAME}-${KEYWORD})
     ENDFOREACH()
   ENDIF()
-  GET_TARGET_PROPERTY(EXECUTABLE_PATH ${EXE_BINARY_NAME} LOCATION)
   
-  SET(ADDED_THE_TEST OFF)  
+  SET(ADDED_THE_TEST OFF)
     
   IF(TRILINOS_ENABLE_MPI)
     SET(NP)
@@ -87,6 +104,9 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
       ENDIF()
     ENDIF()
     
+    #
+    # E) Add the tests
+    #
    
     IF (NOT PARSE_COMM)
       # If no COMM is given assume we will add the test
@@ -98,11 +118,12 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
     IF(NOT ${DO_MPI_INDEX} EQUAL -1)
       SET(TEST_NAME "${TEST_NAME}-MPI")
       
-      SET(COUNTER 0)
       IF(PARSE_ARGS)
+
+        SET(COUNTER 0)
         FOREACH(PARSE_ARG ${PARSE_ARGS})
           
-          
+          #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${MPI_EXECUTABLE}")
           ADD_TEST(${TEST_NAME}_${COUNTER} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} ${PARSE_ARG})
           
           IF (PARSE_PASS_REGULAR_EXPRESSION AND ADDED_THE_TEST)
@@ -114,17 +135,23 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
             SET_TESTS_PROPERTIES(${TEST_NAME}_${COUNTER} PROPERTIES FAIL_REGULAR_EXPRESSION
             ${PARSE_FAIL_REGULAR_EXPRESSION})
           ENDIF()
+
           MATH(EXPR COUNTER ${COUNTER}+1 )
-        
+
         ENDFOREACH()
+
       ELSE()
+
         #ADD_TEST(${TEST_NAME} ${MPI_EXECUTABLE} ${MPI_EXECUTABLE_FLAGS} ${EXECUTABLE_PATH} ${PARSE_ARGS})
+        #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${MPI_EXECUTABLE}")
         ADD_TEST(${TEST_NAME} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} ${PARSE_ARGS})
         
       ENDIF()
       
       SET(ADDED_THE_TEST ON)    
+
     ENDIF()
+
   ELSE()
     
     IF (NOT PARSE_COMM)
@@ -136,10 +163,13 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
     ENDIF()
     
     IF(NOT ${DO_SERIAL_INDEX} EQUAL -1)
-      SET(COUNTER 0)
+
       IF(PARSE_ARGS)
+
+        SET(COUNTER 0)
         FOREACH(PARSE_ARG ${PARSE_ARGS})
        
+          #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${EXECUTABLE_PATH}")
           ADD_TEST(${TEST_NAME}${COUNTER} ${EXECUTABLE_PATH} ${PARSE_ARG})
           
           IF (PARSE_PASS_REGULAR_EXPRESSION AND ADDED_THE_TEST)
@@ -149,18 +179,24 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
   
           IF (PARSE_FAIL_REGULAR_EXPRESSION AND ADDED_THE_TEST)
             SET_TESTS_PROPERTIES(${TEST_NAME}_${COUNTER} PROPERTIES FAIL_REGULAR_EXPRESSION
-            ${PARSE_FAIL_REGULAR_EXPRESSION})
+              ${PARSE_FAIL_REGULAR_EXPRESSION})
           ENDIF()
+
           MATH(EXPR COUNTER ${COUNTER}+1 )
         
         ENDFOREACH()
+
       ELSE()
+
+        #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${EXECUTABLE_PATH}")
         ADD_TEST(${TEST_NAME} ${EXECUTABLE_PATH} ${PARSE_ARGS})
+
       ENDIF()
-      
      
       SET(ADDED_THE_TEST ON)    
+
     ENDIF()
+
   ENDIF()
 
   # 2008/07/09: rabartl: ToDo: Above, create a macho called

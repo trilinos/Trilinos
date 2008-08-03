@@ -36,19 +36,6 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-#if defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
-#  include <cxxabi.h>
-#endif
-
-#ifdef HAVE_TEUCHOS_ARPREC
-#include "mp/mpreal.h"
-#endif
-
-#ifdef HAVE_TEUCHOS_GNU_MP
-#include "gmp.h"
-#include "gmpxx.h"
-#endif
-
 
 namespace  Teuchos {
 

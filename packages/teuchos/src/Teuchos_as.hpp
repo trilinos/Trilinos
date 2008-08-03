@@ -76,9 +76,9 @@ public:
     {
       return t;
       // This default implementation is just an implicit conversion and will
-      // generate compiler warning on dangerous conversions.  No checking can
-      // be done by default; only specializations can define meaningful and
-      // portable runtime checks of conversions.
+      // generate compiler warning on dangerous conversions.  No runtime
+      // checking can be done by default; only specializations can define
+      // meaningful and portable runtime checks of conversions.
     }
 };
 
