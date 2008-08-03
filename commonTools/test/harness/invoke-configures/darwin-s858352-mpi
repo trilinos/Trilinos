@@ -3,6 +3,7 @@ CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
+CXXFLAGS="-O1" \
 --with-incdirs="-I/sw/include -I/usr/include/malloc" \
 --with-ldflags="-framework veclib -L/sw/lib/ -L/usr/local/lib" \
 --with-libs="-lsuperlu -lumfpack -lamd -lg2c -lexpat -lSystemStubs" \
