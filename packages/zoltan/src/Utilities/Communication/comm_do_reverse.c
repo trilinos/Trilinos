@@ -234,9 +234,7 @@ char     *recv_data)            /* array of data I'll own after reverse comm */
 
     comm_flag = Zoltan_Comm_Do_Wait(plan->plan_reverse, tag, send_data, nbytes, recv_data);
 
-    if (sizes != NULL) {
-      free_reverse_plan(plan);
-    }
+    free_reverse_plan(plan);
 
     return(comm_flag);
 }
