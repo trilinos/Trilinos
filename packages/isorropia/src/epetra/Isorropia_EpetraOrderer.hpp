@@ -91,12 +91,6 @@ public:
    */
   void order(bool force_ordering=false);
 
-
-  /** Return the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
-  int newNumber(int myElem) const;
-
 };//class Orderer
 
 }//namespace Epetra

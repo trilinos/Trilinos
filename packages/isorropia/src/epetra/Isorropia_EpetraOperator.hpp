@@ -205,21 +205,21 @@ public:
   bool alreadyComputed() const ;
 
 
-  int getNumberOfProperties() const;
+  int numProperties() const;
 
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  int getNewPropertyOfElem(int myElem) const;
+  const int& operator[](int myElem) const;
 
   /** Return the number of elements in a given partition.
   */
-  int getNbrElemsWithProperty(int property) const;
+  int numElemsWithProperty(int property) const;
 
   /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
   */
-  void getElemsWithProperty(int property,
+  void elemsWithProperty(int property,
 			    int* elementList,
 			    int len) const;
 

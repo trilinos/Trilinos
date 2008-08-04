@@ -53,7 +53,7 @@ class Colorer : virtual public Operator {
 public:
 
   /** Destructor */
-  virtual ~Colorer() =0 ; 
+  virtual ~Colorer() =0 ;
 
   /** Method which does the work of computing a new partitioning.
      Implementations of this interface will typically be constructed
@@ -72,23 +72,21 @@ public:
   virtual void color(bool force_coloring=false) = 0;
 
 
-  /** Return the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
-  virtual int colorNumber(int myElem) const = 0;
+  virtual int numColors() const {
+      return numProperties(); }
 
   /** Return the number of elements in a given partition.
   */
-  virtual int numElemsWithColor(int color) const 
-  { return getNbrElemsWithProperty(color); }
+  virtual int numElemsWithColor(int color) const
+  { return numElemsWithProperty(color); }
 
   /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
   */
   virtual void elemsWithColor(int color,
 			      int* elementList,
-			      int len) {
-    return getElemsWithProperty(color, elementList, len);}
+			      int len) const {
+    return elemsWithProperty(color, elementList, len);}
 
 };//class Colorer
 

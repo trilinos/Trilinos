@@ -211,8 +211,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   int localProc = 0;
   int numProcs = 1;
   double balance1, balance2, cutn1, cutn2, cutl1, cutl2;
-  double cutWgt1, cutWgt2; 
-  int numCuts1, numCuts2, valid;
+  double balance3, cutn3, cutl3;
+  double cutWgt1, cutWgt2, cutWgt3;; 
+  int numCuts1, numCuts2, numCuts3, valid;
   int numPartitions = 0;
   int keepDenseEdges = 0;
 
@@ -236,7 +237,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     keepDenseEdges = 1;
   }
 
-  double myShare = 1.0 / numProcs;
+  double myShareBefore = 1.0 / numProcs;
+  double myShare = myShareBefore;
 
   if (contract){
     numPartitions = numProcs / 2;
@@ -251,6 +253,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       else{
         myShare = 0.0;
       }
+    }
+    else{
+      contract = 0;
     }
   }
 
@@ -409,12 +414,24 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   // Calculate partition quality metrics before calling Zoltan
 
   if (partitioningType == HYPERGRAPH_PARTITIONING){
+   
     rc = ispatest::compute_hypergraph_metrics(matrix->Graph(), *costs,
              myShare, balance1, cutn1, cutl1);
+
+    if (contract){
+      // balance wrt target of balancing weight over *all* procs
+      rc = ispatest::compute_hypergraph_metrics(matrix->Graph(), *costs,
+             myShareBefore, balance3, cutn3, cutl3);
+    }
   }
   else{
     rc = ispatest::compute_graph_metrics(matrix->Graph(), *costs, 
              myShare, balance1, numCuts1, cutWgt1, cutn1, cutl1);
+    if (contract){
+      // balance wrt target of balancing weight over *all* procs
+      rc = ispatest::compute_graph_metrics(matrix->Graph(), *costs, 
+             myShareBefore, balance3, numCuts3, cutWgt3, cutn3, cutl3);
+    }
   }
 
   if (rc){ 
@@ -572,9 +589,21 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
       std::cout << " cutn " << cutn1 ;
-      std::cout << " cutl " << cutl1 << std::endl;
+      std::cout << " cutl " << cutl1 ;
+
+      if (contract){
+        std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
+        std::cout << "Before partitioning: Balance " << balance3 ;
+        std::cout << " cutn " << cutn3 ;
+        std::cout << " cutl " << cutl3 ;
+        std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
+      }
+      std::cout << std::endl;
+
       std::cout << " Total edge cuts: " << numCuts1;
       std::cout << " Total weighted edge cuts: " << cutWgt1 << std::endl;
+
+
       std::cout << "After partitioning: Balance " << balance2 ;
       std::cout << " cutn " << cutn2 ;
       std::cout << " cutl " << cutl2 << std::endl;
@@ -595,7 +624,15 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
       std::cout << " cutn " << cutn1 ;
-      std::cout << " cutl " << cutl1 << std::endl;
+      std::cout << " cutl " << cutl1 ;
+      if (contract){
+        std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
+        std::cout << "Before partitioning: Balance " << balance3 ;
+        std::cout << " cutn " << cutn3 ;
+        std::cout << " cutl " << cutl3 ;
+        std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
+      }
+      std::cout << std::endl;
       std::cout << "After partitioning: Balance " << balance2 ;
       std::cout << " cutn " << cutn2 ;
       std::cout << " cutl " << cutl2 << std::endl;
@@ -647,10 +684,10 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  // if (getenv("DEBUGME")){
-  //   std::cerr << localProc << " gdb test_simple.exe " << getpid() << std::endl;
-  //   sleep(15);
-  // }
+  if (getenv("DEBUGME")){
+    std::cerr << localProc << " gdb test_simple.exe " << getpid() << std::endl;
+    sleep(15);
+  }
 
   Teuchos::CommandLineProcessor clp(false,true);
 
@@ -718,13 +755,13 @@ int main(int argc, char** argv) {
   int failures = 0;
 
 #ifdef SHORT_TEST
-    fail = run_test(testm,
-               verbose,            // draw graph before and after partitioning
-               false,                   // do not make #partitions < #processes
-               HYPERGRAPH_PARTITIONING,      // do hypergraph partitioning
-               SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
-               SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
-               EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
+  fail = run_test(testm,
+             verbose, 
+             true,                   // make #partitions < #processes
+             HYPERGRAPH_PARTITIONING,
+             SUPPLY_UNEQUAL_WEIGHTS,
+             SUPPLY_EQUAL_WEIGHTS,
+             EPETRA_CRSMATRIX);
 
     failures = (fail ? 1 : 0);
     goto Report;

@@ -434,52 +434,52 @@ void ZoltanLibClass::preCheckPartition()
     // One or more processes set NGP or NLP so we need to check
     // them for validity.
 
-  if (maxGparts != myGparts){
-    fixGparts = maxGparts;    // all procs should have same NGP
-  }
-
-  if (maxGparts > 0){
-    if (maxGparts > numrows){
-      // This is an error because we can't split rows among partitions
-      str2 = "NUM_GLOBAL_PARTITIONS exceeds number of rows (objects to be partitioned)";
-      throw Isorropia::Exception(str1+str2);
+    if (maxGparts != myGparts){
+      fixGparts = maxGparts;    // all procs should have same NGP
     }
-
-    if ((sumLparts > 0) && (sumLparts != maxGparts)){
-      // This is an error because local partitions must sum to number of global
-      str2 = "NUM_GLOBAL_PARTITIONS not equal to sum of NUM_LOCAL_PARTITIONS";
-      throw Isorropia::Exception(str1+str2);
+  
+    if (maxGparts > 0){
+      if (maxGparts > numrows){
+        // This is an error because we can't split rows among partitions
+        str2 = "NUM_GLOBAL_PARTITIONS exceeds number of rows (objects to be partitioned)";
+        throw Isorropia::Exception(str1+str2);
+      }
+  
+      if ((sumLparts > 0) && (sumLparts != maxGparts)){
+        // This is an error because local partitions must sum to number of global
+        str2 = "NUM_GLOBAL_PARTITIONS not equal to sum of NUM_LOCAL_PARTITIONS";
+        throw Isorropia::Exception(str1+str2);
+      }
+  
+      if ((sumLparts == 0) && (maxGparts < nprocs)){
+        // Set NUM_LOCAL_PARTITIONS to 1 or 0, because Zoltan will divide
+        // a partition across 2 or more processes when the number of
+        // partitions is less than the number of processes.  This doesn't
+        // work for Epetra matrices, where rows are not owned by more than
+        // one process.
+  
+        fixLparts = (localProc < maxGparts) ? 1 : 0;
+      }
     }
-
-    if ((sumLparts == 0) && (maxGparts < nprocs)){
-      // Set NUM_LOCAL_PARTITIONS to 1 or 0, because Zoltan will divide
-      // a partition across 2 or more processes when the number of
-      // partitions is less than the number of processes.  This doesn't
-      // work for Epetra matrices, where rows are not owned by more than
-      // one process.
-
-      fixLparts = (localProc < maxGparts) ? 1 : 0;
+    else if (maxLparts > 0){
+  
+      // Set NUM_GLOBAL_PARTITIONS to sum of local partitions.  It's possible
+      // that Zoltan does this already, but just to be safe...
+  
+      fixGparts = sumLparts;
     }
-  }
-  else if (maxLparts > 0){
-
-    // Set NUM_GLOBAL_PARTITIONS to sum of local partitions.  It's possible
-    // that Zoltan does this already, but just to be safe...
-
-    fixGparts = sumLparts;
-  }
-  if (fixGparts > 0){
-    std::ostringstream os;
-    os << fixGparts;
-    std::string s = os.str();
-    zoltanParamList_.set(gparts_str, s);
-  }
-  if (fixLparts > 0){
-    std::ostringstream os;
-    os << fixLparts;
-    std::string s = os.str();
-    zoltanParamList_.set(lparts_str, s);
-  }
+    if (fixGparts > 0){
+      std::ostringstream os;
+      os << fixGparts;
+      std::string s = os.str();
+      zoltanParamList_.set(gparts_str, s);
+    }
+    if (fixLparts >= 0){
+      std::ostringstream os;
+      os << fixLparts;
+      std::string s = os.str();
+      zoltanParamList_.set(lparts_str, s);
+    }
   }
 }
 
@@ -491,8 +491,9 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 {
   zoltanParamList_ = zoltanParamList;
 
-  precompute();
   preCheckPartition();
+
+  precompute();
 
   std::string lb_approach_str("LB_APPROACH");
   if (!zoltanParamList_.isParameter(lb_approach_str)) {

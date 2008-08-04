@@ -40,6 +40,9 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_EpetraOperator.hpp>
 #include <Isorropia_Colorer.hpp>
 
+#ifdef HAVE_EPETRAEXT
+#include <Epetra_MapColoring.h>
+#endif /* HAVE_EPETRAEXT */
 
 #ifdef HAVE_EPETRA
 class Epetra_Map;
@@ -91,14 +94,10 @@ public:
    */
   void color(bool force_coloring=false);
 
+#ifdef HAVE_EPETRAEXT
+  Teuchos::RefCountPtr<Epetra_MapColoring> generateMapColoring() ;
+#endif /* HAVE_EPETRAEXT */
 
-  /** Return the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
-  int colorNumber(int myElem) const;
-
-private:
-  int nbr_color_;
 };//class Colorer
 
 }//namespace Epetra

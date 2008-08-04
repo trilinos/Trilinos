@@ -218,8 +218,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   int numProcs = 1;
   int localProc = 0;
   double balance1, balance2, cutn1, cutn2, cutl1, cutl2;
-  double cutWgt1, cutWgt2; 
-  int numCuts1, numCuts2, valid;
+  double balance3, cutn3, cutl3;
+  double cutWgt1, cutWgt2, cutWgt3;;
+  int numCuts1, numCuts2, numCuts3, valid;
   int numPartitions = 0;
   int keepDenseEdges = 0;
 
@@ -242,7 +243,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     keepDenseEdges = 1;
   }
 
-  double myShare = 1.0 / numProcs;
+  double myShareBefore = 1.0 / numProcs;
+  double myShare = myShareBefore;
 
   if (contract){
     numPartitions = numProcs / 2;
@@ -257,6 +259,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       else{
         myShare = 0.0;
       }
+    }
+    else{
+      contract = 0;
     }
   }
 
@@ -435,10 +440,20 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   if (partitioningType == GRAPH_PARTITIONING){
     rc = ispatest::compute_graph_metrics(matrix->Graph(), costs, 
              myShare, balance1, numCuts1, cutWgt1, cutn1, cutl1);
+    if (contract){
+      // balance wrt target of balancing weight over *all* procs
+      rc = ispatest::compute_graph_metrics(matrix->Graph(), costs,
+             myShareBefore, balance3, numCuts3, cutWgt3, cutn3, cutl3);
+    }
   }
   else{
     rc = ispatest::compute_hypergraph_metrics(matrix->Graph(), costs,
              myShare, balance1, cutn1, cutl1);
+    if (contract){
+      // balance wrt target of balancing weight over *all* procs
+      rc = ispatest::compute_hypergraph_metrics(matrix->Graph(), costs,
+             myShareBefore, balance3, cutn3, cutl3);
+    }
   }
 
   if (rc){ 
@@ -774,7 +789,17 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
       std::cout << " cutn " << cutn1 ;
-      std::cout << " cutl " << cutl1 << std::endl;
+      std::cout << " cutl " << cutl1 ;
+
+      if (contract){
+        std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
+        std::cout << "Before partitioning: Balance " << balance3 ;
+        std::cout << " cutn " << cutn3 ;
+        std::cout << " cutl " << cutl3 ;
+        std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
+      }
+      std::cout << std::endl;
+
       std::cout << " Total edge cuts: " << numCuts1;
       std::cout << " Total weighted edge cuts: " << cutWgt1 << std::endl;
       std::cout << "After partitioning: Balance " << balance2 ;
@@ -797,7 +822,15 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
       std::cout << " cutn " << cutn1 ;
-      std::cout << " cutl " << cutl1 << std::endl;
+      std::cout << " cutl " << cutl1 ;
+      if (contract){
+        std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
+        std::cout << "Before partitioning: Balance " << balance3 ;
+        std::cout << " cutn " << cutn3 ;
+        std::cout << " cutl " << cutl3 ;
+        std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
+      }
+      std::cout << std::endl;
       std::cout << "After partitioning: Balance " << balance2 ;
       std::cout << " cutn " << cutn2 ;
       std::cout << " cutl " << cutl2 << std::endl;
