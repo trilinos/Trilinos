@@ -108,7 +108,6 @@ Colorer::color(bool force_coloring)
 }
 
 
-
 } // namespace EPETRA
 
 #endif //HAVE_EPETRA

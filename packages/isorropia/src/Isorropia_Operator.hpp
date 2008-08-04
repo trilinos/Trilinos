@@ -82,23 +82,23 @@ public:
   virtual bool alreadyComputed() const = 0;
 
 
-  virtual int getNumberOfProperties() const = 0;
+  virtual int numProperties() const = 0;
 
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  virtual int getNewPropertyOfElem(int myElem) const = 0;
+  virtual const int& operator[](int myElem) const = 0;
 
   /** Return the number of elements in a given partition.
   */
-  virtual int getNbrElemsWithProperty(int property) const = 0;
+  virtual int numElemsWithProperty(int property) const = 0;
 
   /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
   */
-  virtual void getElemsWithProperty(int property,
-                                int* elementList,
-                                int len) const = 0;
+  virtual void elemsWithProperty(int property,
+				 int* elementList,
+				 int len) const = 0;
 
 };//class Operator
 

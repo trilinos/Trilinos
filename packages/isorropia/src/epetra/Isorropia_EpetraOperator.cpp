@@ -139,7 +139,7 @@ bool Operator::alreadyComputed() const
   return operation_already_computed_;
 }
 
-int Operator::getNewPropertyOfElem(int myElem) const
+const int& Operator::operator[](int myElem) const
 {
   std::map<int,int>::const_iterator iter = exports_.find(myElem);
   if (iter != exports_.end()) {
@@ -149,7 +149,7 @@ int Operator::getNewPropertyOfElem(int myElem) const
   return( input_graph_->RowMap().Comm().MyPID() );
 }
 
-int Operator::getNbrElemsWithProperty(int partition) const
+int Operator::numElemsWithProperty(int partition) const
 {
   int myPart = input_map_->Comm().MyPID();
   if (partition != myPart) {
@@ -160,7 +160,7 @@ int Operator::getNbrElemsWithProperty(int partition) const
 }
 
 void
-Operator::getElemsWithProperty(int partition, int* elementList, int len) const
+Operator::elemsWithProperty(int partition, int* elementList, int len) const
 {
   int myPart = input_map_->Comm().MyPID();
   if (partition != myPart) {
@@ -176,7 +176,7 @@ Operator::getElemsWithProperty(int partition, int* elementList, int len) const
 }
 
 int
-Operator::getNumberOfProperties() const {
+Operator::numProperties() const {
   return (numberOfProperties_);
 }
 

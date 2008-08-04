@@ -103,5 +103,13 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <time.h>
 #endif
 
+
+#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#define __deprecated  __attribute__((__deprecated__))
+#else
+#define __deprecated
+#endif /* __GNUC__ */
+
+
 #endif //_Isorropia_ConfigDefs_hpp_
 

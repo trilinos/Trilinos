@@ -95,10 +95,8 @@ public:
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  int colorNumber(int myElem) const;
+  int numColors() const;
 
-private:
-  int nbr_color_;
 };//class Colorer
 
 }//namespace Epetra

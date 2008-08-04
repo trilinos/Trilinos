@@ -304,7 +304,7 @@ bool Partitioner::partitioning_already_computed() const {
   */
 int Partitioner::newPartitionNumber(int myElem) const
 {
-  return (getNewPropertyOfElem(myElem));
+  return ((*this)[myElem]);
 }
 
   /** An internal method which returns the number of elements in a given partition.
@@ -313,7 +313,7 @@ int Partitioner::newPartitionNumber(int myElem) const
   */
 int Partitioner::numElemsInPartition(int partition) const
 {
-  return (getNbrElemsWithProperty(partition));
+  return (numElemsWithProperty(partition));
 }
 
   /** An internal method which fills caller-allocated list (of length len) with the
@@ -322,7 +322,7 @@ int Partitioner::numElemsInPartition(int partition) const
       (Currently only implemented for the case where 'partition' is local.)
   */
 void Partitioner::elemsInPartition(int partition, int* elementList, int len) const {
-  return (getElemsWithProperty(partition, elementList, len));
+  return (elemsWithProperty(partition, elementList, len));
 }
 
 } // namespace EPETRA

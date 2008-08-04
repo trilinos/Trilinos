@@ -215,16 +215,16 @@ public:
 
   virtual void compute(bool forceRecomputing=false);
 
-  /** An internal method which determines whether the 
+  /** An internal method which determines whether the
       method compute_partitioning() has already been
       called on this class instance.
   */
-  bool partitioning_already_computed() const;
+  bool partitioning_already_computed() const __deprecated;
 
   /** An internal method which returns the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  int newPartitionNumber(int myElem) const;
+  int newPartitionNumber(int myElem) const __deprecated;
 
   /** An internal method which returns the number of elements in a given partition.
 
