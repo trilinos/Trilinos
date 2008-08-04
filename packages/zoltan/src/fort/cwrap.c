@@ -1932,7 +1932,7 @@ int Zfw_Order(
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    Zoltan_Current = lb;
    ierr = Zoltan_Order(lb,num_gid_entries,num_lid_entries,*num_obj,
-                       gids, lids, rank, iperm, NULL);
+                       gids, lids, rank, iperm);
    return ierr;
 }
 
