@@ -58,16 +58,16 @@ class Epetra_OskiPermutation;
     The calculation kernels to perform matrix-vector and matrix multi-vector calculations are
     provided along with runtime tuning function calls.
 
-    This class provides access to the whole OSKI interface.  However, not all of the interface is implimented.
+    This class provides access to the whole OSKI interface.  However, not all of the interface is implemented.
     The interface does not provide stock composed kernels so the MatTransMatMultiply and MultiplyAndMatTransMultiply
-    are only advalible after the tune function is called.  In addition, the MatPowMultiply does not work in
-    oski-1.0.1h and is therefore unadvailable in this current implimentation as well.  Furthermore there are some
-    tuning features that are not implimented that are shown in the interface.  These would seem advailable as no errors
+    are only availible after the tune function is called.  In addition, the MatPowMultiply does not work in
+    oski-1.0.1h and is therefore unavailable in this current implementation as well.  Furthermore there are some
+    tuning features that are not implemented that are shown in the interface.  These would seem available as no errors
     are thrown upon a call to these features.  These are:
 
     There are no optimized multivector kernels.
 
-    The tune function cannot transform a (nearly) symetric matrix to be stored as such.
+    The tune function cannot transform a (nearly) symmetric matrix to be stored as such.
 
     The ATA calculation kernel will not work in MatTransMatMultiply without fixing the following bug:
 
@@ -108,9 +108,9 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 
             Options that can be passed to the List are presented below.  They are: "<type> <option name> <default value>: <description of purpose>"
 
-            - bool autotune false: If true Epetra trys to set as many hints as possible based on its knowledge of the matrix.
+            - bool autotune false: If true Epetra tries to set as many hints as possible based on its knowledge of the matrix.
 	    - string matrixtype general: Other types that can be taken are: uppertri, lowertri, uppersymm, lowersymm, fullsymm, upperherm, lowerherm and fullherm.
-            - bool diagstored false: If true then the diaganol entries are not stored in the matrix and are all assumed to be 1.
+            - bool diagstored false: If true then the diagonal entries are not stored in the matrix and are all assumed to be 1.
 	    - bool zerobased false: If true the array is zero based like in C otherwise it is 1 based like in Fortran.
             - bool sorted false: If true all elements in the passed in array are sorted.
             - bool unique false: If true then a value in a column only appears once in each row.
@@ -319,9 +319,9 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
 	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.
 	    This composed routine is most commonly used in linear least squares and
-	    bidiagonalization methods.  The parrallel version of y = Alpha*this*this^TransA*x + Beta*y
+	    bidiagonalization methods.  The parallel version of y = Alpha*this*this^TransA*x + Beta*y
             uses calls to the Multiply routine under the hood as it is not possible to perform
-            both multiplies automicly.
+            both multiplies automatically.
 	    \param ATA (In) If TransA = TRUE then compute this^T*this*x otherwise compute 
 		   this*this^T*x.
 	    \param x (In) The vector the matrix is multiplied by.
@@ -344,9 +344,9 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	//! Performs two matrix multi-vector multiplies of Y = Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X + Beta*Y.
 	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
 	    This composed routine is most commonly used in linear least squares and
-	    bidiagonalization methods.  The parrallel version of Y = Alpha*this*this^TransA*X + Beta*Y
+	    bidiagonalization methods.  The parallel version of Y = Alpha*this*this^TransA*X + Beta*Y
             uses calls to the Multiply routine under the hood as it is not possible to perform
-            both multiplies automicly.
+            both multiplies automaticly.
 	    \param ATA (In) If TransA = TRUE then compute this^T*this*X otherwise compute 
 		   this*this^T*X.
 	    \param X (In) The vector the matrix is multiplied by.
@@ -460,11 +460,11 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 					double Omega = 1.0,
 					double Zeta = 0.0) const;
 
-	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implimented as described in the detailed description.
+	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implemented as described in the detailed description.
 	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
 	    The vector T can be either an Epetra_MultiVector or and Epetra_OskiMultiVector.
 	    This composed routine is used in power and S-step methods.  This routine is
-            not implimented due a bug in the oski-1.01h kernel that makes testing of correctness
+            not implemented due a bug in the oski-1.01h kernel that makes testing of correctness
             impossible.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
 	           computing the product.
@@ -487,10 +487,10 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 			   double Alpha = 1.0,
 			   double Beta = 0.0) const;
 
-	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implimented as described in the detailed description.
+	//! Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x + Beta*y.  This is not implemented as described in the detailed description.
 	/*! The vectors x and y can be either Epetra_Vectors or Epetra_OskiVectors.  
 	    This composed routine is used in power and S-step methods.  This routine is
-            not implimented due a bug in the oski-1.01h kernel that makes testing of correctness
+            not implemented due a bug in the oski-1.01h kernel that makes testing of correctness
             impossible.
 	    \param TransA (In) If TransA = TRUE then use the transpose of the matrix in
 	           computing the product.
@@ -531,19 +531,20 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 	      - int row<x>: Where x is the block number and x goes from 1 to blocks.  This is the number of rows in block x.
 	      - int col<x>: Where x is the block number and x goes from 1 to blocks.  This is the number of cols in block x.
 
-	    - bool allignedblocks: If true then all blocks are alligned to a grid.
-	    - bool unallignedblocks: If true then blocks are not alligned to a grid.
+	    - bool alignedblocks: If true then all blocks are aligned to a grid.
+	    - bool unalignedblocks: If true then blocks are not aligned to a grid.
 	    
 	    - bool symmetricpattern: If true then the matrix is either symmetric or nearly symmetric.
 	    - bool nonsymmetricpattern: If true the matrix has a very unsymmetric pattern.
 	    
 	    - bool randompattern: If true then the matrix's non-zeros are distributed in a random pattern.
-	    - bool correlatedpattern: If true then the row and column indices for non-zeros are highly corolated.
+	    - bool correlatedpattern: If true then the row and column indices for
+	      non-zeros are highly correlated.
 
 	    - bool nodiags : If true then the matrix has little or no diagonal structure.
-	    - bool diags: If true the matrix consists of diagnoal structure described the next two parameters.
-              - int numdiags: The number of diaganol sizes known to be present others not listed could be present.
-	      - int diag<x>: Where x is the diaganol number and x goes from 1 to numdiags.  This is the size of the diagonal.
+	    - bool diags: If true the matrix consists of diagonal structure described the next two parameters.
+              - int numdiags: The number of diagonal sizes known to be present others not listed could be present.
+	      - int diag<x>: Where x is the diagonal number and x goes from 1 to numdiags.  This is the size of the diagonal.
  	*/
 	int SetHint(const Teuchos::ParameterList& List);
 
