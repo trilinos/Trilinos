@@ -1,9 +1,16 @@
 
 TODOs for the Trilinos/CMake system
 
-Last updated: 2008/08/03
+Last updated: 2008/08/04
 
-(*) Change MPI_EXECUTABLE to MPI_GO (see comments in ConfigureMPI.cmake)
+(*) TRILINOS_ADD_TEST(...) upgrades
+- Add the number of processes that an MPI test is being run with.
+This will allow you to see just from the main output how many
+processors are selected to run with.
+- Look into changing the print width for ctest since it is truncating
+long test names.
+
+(*) Change MPI_EXECUTABLE to MPI_GO? (see comments in ConfigureMPI.cmake)
 
 (*) Clean up all PACKAGE/test/CMakeList.txt to be a clean as possible
 - Remove the direct calls INCLUDE_DIRECTORIES(...) and LINK_LIBRARIES(...)
