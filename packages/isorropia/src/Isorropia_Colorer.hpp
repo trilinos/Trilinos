@@ -85,7 +85,7 @@ public:
   */
   virtual void elemsWithColor(int color,
 			      int* elementList,
-			      int len) {
+			      int len) const {
     return elemsWithProperty(color, elementList, len);}
 
 };//class Colorer

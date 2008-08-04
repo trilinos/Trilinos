@@ -50,7 +50,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
-
 #endif
 
 #include <cstring>
@@ -107,6 +106,23 @@ Colorer::color(bool force_coloring)
   operation_already_computed_ = true;
 }
 
+#ifdef HAVE_EPETRAEXT
+
+Teuchos::RefCountPtr<Epetra_MapColoring>
+Colorer::generateMapColoring()
+{
+  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap;
+
+  color(false);
+  colorMap = Teuchos::rcp(new Epetra_MapColoring(*input_map_));
+
+  for( int i = 0; i < myNewElements_.size(); i++ ) {
+    (*colorMap)[i] = myNewElements_[i];
+  }
+  return (colorMap);
+}
+
+#endif /* HAVE_EPETRAEXT */
 
 } // namespace EPETRA
 
