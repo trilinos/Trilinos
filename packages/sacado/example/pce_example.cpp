@@ -47,7 +47,7 @@
 
 #ifdef HAVE_SACADO_STOKHOS
 #include "Sacado_PCE_OrthogPoly.hpp"
-#include "Stokhos_HermiteEBasis2.hpp"
+#include "Stokhos_HermiteEBasis.hpp"
 #endif
 
 // The function to differentiate
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     std::cout << "v (taylor basis) = " << vt << std::endl;
 
 #ifdef HAVE_SACADO_STOKHOS
-    typedef Stokhos::HermiteEBasis2<double> basis_type;
+    typedef Stokhos::HermiteEBasis<double> basis_type;
     typedef Sacado::PCE::OrthogPoly<double>::expansion_type expansion_type;
     Teuchos::RCP<basis_type> basis = Teuchos::rcp(new basis_type(d));
     Teuchos::RCP<expansion_type> expansion = 
@@ -110,6 +110,8 @@ int main(int argc, char **argv)
     std::cout << "ve (hermite basis) = " << ve << std::endl;
     std::cout << "ve (standard basis) = " << ve.toStandardBasis() << std::endl;
 #endif
+
+    std::cout << "\nExample passed!" << std::endl;
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
