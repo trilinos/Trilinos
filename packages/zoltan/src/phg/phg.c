@@ -188,6 +188,7 @@ End:
 #endif
  
 
+/* UVCUVC DEBUG PRINT
 static double detailed_balance_info(
   ZZ *zz,
   HGraph *hg,
@@ -250,6 +251,7 @@ static double detailed_balance_info(
 
   return  1.0+max_imbal;
 }
+*/
 
 
     
