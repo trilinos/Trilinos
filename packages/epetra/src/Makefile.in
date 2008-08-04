@@ -97,7 +97,7 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" \
-	"$(DESTDIR)$(execincludedir)" "$(DESTDIR)$(includedir)"
+	"$(DESTDIR)$(execincludedir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
@@ -144,7 +144,11 @@ am__libepetra_a_SOURCES_DIST = $(srcdir)/Epetra_BLAS.cpp \
 	$(srcdir)/Epetra_MpiCommData.cpp \
 	$(srcdir)/Epetra_MpiDistributor.cpp $(srcdir)/Epetra_dcrsmv.f \
 	$(srcdir)/Epetra_dcrsmm.f $(srcdir)/Epetra_dcrssv.f \
-	$(srcdir)/Epetra_dcrssm.f
+	$(srcdir)/Epetra_dcrssm.f $(srcdir)/Epetra_OskiUtils.cpp \
+	$(srcdir)/Epetra_OskiMultiVector.cpp \
+	$(srcdir)/Epetra_OskiVector.cpp $(srcdir)/Epetra_OskiError.cpp \
+	$(srcdir)/Epetra_OskiPermutation.cpp \
+	$(srcdir)/Epetra_OskiMatrix.cpp
 am__objects_1 = Epetra_BLAS.$(OBJEXT) Epetra_LAPACK.$(OBJEXT) \
 	Epetra_Object.$(OBJEXT)
 am__objects_2 = Epetra_Flops.$(OBJEXT) Epetra_Time.$(OBJEXT) \
@@ -184,19 +188,15 @@ am__objects_9 = Epetra_MpiComm.$(OBJEXT) Epetra_MpiCommData.$(OBJEXT)
 am__objects_11 = Epetra_dcrsmv.$(OBJEXT) Epetra_dcrsmm.$(OBJEXT) \
 	Epetra_dcrssv.$(OBJEXT) Epetra_dcrssm.$(OBJEXT)
 @FORTRAN_DISABLED_FALSE@am__objects_12 = $(am__objects_11)
+am__objects_13 = Epetra_OskiUtils.$(OBJEXT) \
+	Epetra_OskiMultiVector.$(OBJEXT) Epetra_OskiVector.$(OBJEXT) \
+	Epetra_OskiError.$(OBJEXT) Epetra_OskiPermutation.$(OBJEXT) \
+	Epetra_OskiMatrix.$(OBJEXT)
 am_libepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_8) $(am__objects_10) \
-	$(am__objects_12)
-@BUILD_PRERELEASE_TRUE@nodist_libepetra_a_OBJECTS =  \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiUtils.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiMultiVector.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiVector.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiError.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiPermutation.$(OBJEXT) \
-@BUILD_PRERELEASE_TRUE@	Epetra_OskiMatrix.$(OBJEXT)
-libepetra_a_OBJECTS = $(am_libepetra_a_OBJECTS) \
-	$(nodist_libepetra_a_OBJECTS)
+	$(am__objects_12) $(am__objects_13)
+libepetra_a_OBJECTS = $(am_libepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -213,8 +213,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libepetra_a_SOURCES) $(EXTRA_libepetra_a_SOURCES) \
-	$(nodist_libepetra_a_SOURCES)
+SOURCES = $(libepetra_a_SOURCES) $(EXTRA_libepetra_a_SOURCES)
 DIST_SOURCES = $(am__libepetra_a_SOURCES_DIST) \
 	$(EXTRA_libepetra_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Epetra_BLAS.h \
@@ -257,12 +256,14 @@ am__include_HEADERS_DIST = $(srcdir)/Epetra_BLAS.h \
 	$(srcdir)/Epetra_IntVector.h $(srcdir)/Epetra_BasicRowMatrix.h \
 	$(srcdir)/Epetra_JadMatrix.h $(srcdir)/Epetra_VbrRowMatrix.h \
 	$(srcdir)/Epetra_MpiComm.h $(srcdir)/Epetra_MpiCommData.h \
-	$(srcdir)/Epetra_MpiDistributor.h
+	$(srcdir)/Epetra_MpiDistributor.h $(srcdir)/Epetra_OskiUtils.h \
+	$(srcdir)/Epetra_OskiMultiVector.h \
+	$(srcdir)/Epetra_OskiVector.h $(srcdir)/Epetra_OskiError.h \
+	$(srcdir)/Epetra_OskiPermutation.h \
+	$(srcdir)/Epetra_OskiMatrix.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-nodist_includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS) \
-	$(nodist_include_HEADERS)
+HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -584,6 +585,22 @@ COMP = \
 	$(srcdir)/Epetra_BasicRowMatrix.cpp \
 	$(srcdir)/Epetra_JadMatrix.cpp
 
+OSKI_H = \
+	$(srcdir)/Epetra_OskiUtils.h \
+	$(srcdir)/Epetra_OskiMultiVector.h \
+	$(srcdir)/Epetra_OskiVector.h \
+	$(srcdir)/Epetra_OskiError.h \
+	$(srcdir)/Epetra_OskiPermutation.h \
+	$(srcdir)/Epetra_OskiMatrix.h 
+
+OSKI = \
+	$(srcdir)/Epetra_OskiUtils.cpp \
+	$(srcdir)/Epetra_OskiMultiVector.cpp \
+	$(srcdir)/Epetra_OskiVector.cpp \
+	$(srcdir)/Epetra_OskiError.cpp \
+	$(srcdir)/Epetra_OskiPermutation.cpp \
+	$(srcdir)/Epetra_OskiMatrix.cpp 
+
 
 # ------------------------------------------------------------------------
 # Epetra library specifications
@@ -599,7 +616,8 @@ EPETRA_H = \
 	$(DIST_H) \
 	$(COMP_H) \
 	$(MPI_H) \
-	$(MPISMP_H)
+	$(MPISMP_H) \
+	$(OSKI_H)
 
 libepetra_a_SOURCES = \
 	$(CORE) \
@@ -610,7 +628,8 @@ libepetra_a_SOURCES = \
 	$(COMP) \
 	$(MPI) \
 	$(MPISMP) \
-	$(FORTRAN_KERNELS)
+	$(FORTRAN_KERNELS) \
+	$(OSKI)
 
 EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPI) \
@@ -618,26 +637,6 @@ EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPISMP) \
 	$(EXTRA_MPISMP_H) \
 	$(EXTRA_FORTRAN_KERNELS)
-
-
-# ------------------------------------------------------------------------
-# Parts of the code that are not ready to be included in nightly release
-# ------------------------------------------------------------------------
-@BUILD_PRERELEASE_TRUE@nodist_include_HEADERS = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiUtils.h \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMultiVector.h \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiVector.h \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiError.h \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiPermutation.h \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMatrix.h 
-
-@BUILD_PRERELEASE_TRUE@nodist_libepetra_a_SOURCES = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiUtils.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMultiVector.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiVector.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiError.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiPermutation.cpp \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/Epetra_OskiMatrix.cpp 
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(EPETRA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
@@ -1664,23 +1663,6 @@ uninstall-nodist_execincludeHEADERS:
 	  echo " rm -f '$(DESTDIR)$(execincludedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(execincludedir)/$$f"; \
 	done
-install-nodist_includeHEADERS: $(nodist_include_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
-	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(nodist_includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
-	  $(nodist_includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
-	done
-
-uninstall-nodist_includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
-	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -1760,7 +1742,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) Epetra_config.h all-local
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1808,7 +1790,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS install-nodist_includeHEADERS
+install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-am
 
@@ -1845,8 +1827,7 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS \
-	uninstall-nodist_includeHEADERS
+	uninstall-nodist_execincludeHEADERS
 
 .MAKE: install-am install-strip
 
@@ -1858,15 +1839,13 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-includeHEADERS install-info \
 	install-info-am install-libLIBRARIES install-man \
-	install-nodist_execincludeHEADERS \
-	install-nodist_includeHEADERS install-pdf install-pdf-am \
+	install-nodist_execincludeHEADERS install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES \
-	uninstall-nodist_execincludeHEADERS \
-	uninstall-nodist_includeHEADERS
+	uninstall-nodist_execincludeHEADERS
 
 
 all-local:

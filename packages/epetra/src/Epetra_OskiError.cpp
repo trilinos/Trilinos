@@ -29,8 +29,8 @@
 
 #include "Epetra_ConfigDefs.h"
 
-#ifdef WITH_EPETRA_PRERELEASE
 #ifdef HAVE_OSKI
+#ifdef HAVE_EPETRA_TEUCHOS
 #include "Epetra_OskiError.h"
 
 //=========================================================================

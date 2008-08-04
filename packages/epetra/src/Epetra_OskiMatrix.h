@@ -366,46 +366,6 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 				double Alpha = 1.0,
 				double Beta = 0.0) const;
 	
-	//! Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
-	/*! The vectors x, y and t can be either Epetra_Vectors or Epetra_OskiVectors.
-	    This composed routine is most commonly used in linear least squares and
-	    bidiagonalization methods.
-	    \param ATA (In) If TransA = TRUE then compute this^T*this*x otherwise compute 
-		   this*this^T*x.
-	    \param x (In) The vector the matrix is multiplied by.
-	    \param y (In/Out) The vector where the calculation result is stored.
-	    \param Alpha (In) A scalar constant used to scale x.
-	    \param Beta  (In) A scalar constant used to scale y.
-	    \return Integer error code, set to 0 if successful.
-            \pre Filled()==true
-            \post Unchanged
-	*/
-	int MatTransMatMultiply(bool ATA, 
-			 	const Epetra_Vector& x,
-				Epetra_Vector& y,
-				double Alpha = 1.0,
-				double Beta = 0.0) const;
-
-	//! Performs two matrix multi-vector multiplies of Y = Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X + Beta*Y.
-	/*! The multi-vectors X, Y and T can be either Epetra_MultiVectors or Epetra_OskiMultiVectors.
-	    This composed routine is most commonly used in linear least squares and
-	    bidiagonalization methods.
-	    \param ATA (In) If TransA = TRUE then compute this^T*this*X otherwise compute 
-		   this*this^T*X.
-	    \param X (In) The vector the matrix is multiplied by.
-	    \param Y (In/Out) The vector where the calculation result is stored.
-	    \param Alpha (In) A scalar constant used to scale X.
-	    \param Beta  (In) A scalar constant used to scale Y.
-	    \return Integer error code, set to 0 if successful.
-            \pre Filled()==true
-            \post Unchanged
-	*/
-	int MatTransMatMultiply(bool ATA, 
-				const Epetra_MultiVector& X,
-				Epetra_MultiVector& Y,
-				double Alpha = 1.0,
-				double Beta = 0.0) const;
-	
 	//! Performs the two matrix vector multiplies of y = Alpha*this*x + Beta*y and z = Omega*this^TransA*w + Zeta*z.
 	/*! The vectors x, y, w and z can be either Epetra_Vectors or Epetra_OskiVectors.
 	    This composed routine is most commonly used in bi-conjugate gradient calculations.

@@ -257,6 +257,22 @@ COMP = \
 	$(srcdir)/Epetra_BasicRowMatrix.cpp \
 	$(srcdir)/Epetra_JadMatrix.cpp
 
+OSKI_H = \
+	$(srcdir)/Epetra_OskiUtils.h \
+	$(srcdir)/Epetra_OskiMultiVector.h \
+	$(srcdir)/Epetra_OskiVector.h \
+	$(srcdir)/Epetra_OskiError.h \
+	$(srcdir)/Epetra_OskiPermutation.h \
+	$(srcdir)/Epetra_OskiMatrix.h 
+
+OSKI = \
+	$(srcdir)/Epetra_OskiUtils.cpp \
+	$(srcdir)/Epetra_OskiMultiVector.cpp \
+	$(srcdir)/Epetra_OskiVector.cpp \
+	$(srcdir)/Epetra_OskiError.cpp \
+	$(srcdir)/Epetra_OskiPermutation.cpp \
+	$(srcdir)/Epetra_OskiMatrix.cpp 
+
 
 # ------------------------------------------------------------------------
 # Epetra library specifications
@@ -275,7 +291,8 @@ EPETRA_H = \
 	$(DIST_H) \
 	$(COMP_H) \
 	$(MPI_H) \
-	$(MPISMP_H)
+	$(MPISMP_H) \
+	$(OSKI_H)
 
 libepetra_a_SOURCES = \
 	$(CORE) \
@@ -286,7 +303,8 @@ libepetra_a_SOURCES = \
 	$(COMP) \
 	$(MPI) \
 	$(MPISMP) \
-	$(FORTRAN_KERNELS)
+	$(FORTRAN_KERNELS) \
+	$(OSKI)
 
 EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPI) \
@@ -294,32 +312,6 @@ EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPISMP) \
 	$(EXTRA_MPISMP_H) \
 	$(EXTRA_FORTRAN_KERNELS)
-
-# ------------------------------------------------------------------------
-# Parts of the code that are not ready to be included in nightly release
-# ------------------------------------------------------------------------
-
-
-if BUILD_PRERELEASE
-
-nodist_include_HEADERS = \
-	$(srcdir)/Epetra_OskiUtils.h \
-	$(srcdir)/Epetra_OskiMultiVector.h \
-	$(srcdir)/Epetra_OskiVector.h \
-	$(srcdir)/Epetra_OskiError.h \
-	$(srcdir)/Epetra_OskiPermutation.h \
-	$(srcdir)/Epetra_OskiMatrix.h 
-
-
-nodist_libepetra_a_SOURCES = \
-	$(srcdir)/Epetra_OskiUtils.cpp \
-	$(srcdir)/Epetra_OskiMultiVector.cpp \
-	$(srcdir)/Epetra_OskiVector.cpp \
-	$(srcdir)/Epetra_OskiError.cpp \
-	$(srcdir)/Epetra_OskiPermutation.cpp \
-	$(srcdir)/Epetra_OskiMatrix.cpp 
-
-endif
 
 include $(top_builddir)/Makefile.export.epetra
 
