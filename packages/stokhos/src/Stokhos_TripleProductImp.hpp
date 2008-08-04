@@ -36,7 +36,8 @@ TripleProduct(const Teuchos::RCP<const BasisT>& basis_) :
   l(basis_->size()),
   basis(basis_),
   Bij(l*l),
-  Cijk(l*l*l)
+  Cijk(l*l*l),
+  Dijk(l*l*l)
 {
   compute();
 }
