@@ -86,7 +86,10 @@ class MultiMpiComm: public EpetraExt::MultiComm {
   //@}
   
   //! Get reference to split Communicator for sub-domain
-  Epetra_MpiComm& SubDomainComm() const {return *subComm;}
+  Epetra_Comm& SubDomainComm() const {return *subComm;}
+
+  //! Get reference to split MPI Communicator for sub-domain
+  Epetra_MpiComm& SubDomainMpiComm() const {return *subComm;}
 
   //! Reset total number of time steps, allowing time steps per domain to
   //  be set later than the MultiLevel parallelism is set up.
