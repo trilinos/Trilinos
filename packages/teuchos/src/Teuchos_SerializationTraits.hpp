@@ -216,6 +216,11 @@ class SerializationTraits<Ordinal,double>
   : public DirectSerializationTraits<Ordinal,double>
 {};
 
+template<typename Ordinal, typename Packet>
+class SerializationTraits<Ordinal,std::pair<Packet,Packet> >
+  : public DirectSerializationTraits<Ordinal,std::pair<Packet,Packet> >
+{};
+
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
 template<typename Ordinal>

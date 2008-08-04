@@ -8,6 +8,53 @@
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_as.hpp"
 
+namespace std { 
+  template <typename Packet>
+  ostream & operator<< ( ostream& os, const pair<Packet, Packet>& arg)
+  {
+      os << "(" << arg.first << "," << arg.second << ")";
+      return os;
+  }
+}
+
+namespace Teuchos {
+  template<typename Packet>
+    struct ScalarTraits<std::pair<Packet,Packet> >
+    {
+      typedef ScalarTraits<Packet> PST;
+      typedef  std::pair<typename PST::magnitudeType, typename PST::magnitudeType> magnitudeType;
+      static const bool isComplex = PST::isComplex;
+      static const bool isComparable = PST::isComparable;
+      static const bool hasMachineParameters = PST::hasMachineParameters;
+      // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+      static inline magnitudeType magnitude(std::pair<Packet,Packet> a) { return std::pair<Packet,Packet>( PST::magnitude(a.first), PST::magnitude(a.second) ); }
+      static inline std::pair<Packet,Packet> zero()  { return std::pair<Packet,Packet>(PST::zero(),PST::zero()); }
+      static inline std::pair<Packet,Packet> one()   { return std::pair<Packet,Packet>(PST::one(), PST::one()); }
+      static inline std::pair<Packet,Packet> conjugate(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::conjugate(x.first), PST::conjugate(x.second) ); }
+      static inline std::pair<Packet,Packet> real(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::real(x.first), PST::real(x.second) ); }
+      static inline std::pair<Packet,Packet> imag(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::imag(x.first), PST::imag(x.second) ); }
+      static inline bool isnaninf(std::pair<Packet,Packet> x) { return PST::isnaninf(x.first) || PST::isnaninf(x.second); }
+      static inline void seedrandom(unsigned int s) { PST::seedrandom(s); }
+      static inline std::pair<Packet,Packet> random() { return std::pair<Packet,Packet>( PST::random(), PST::random() ); }
+      static inline std::string name() { return "std::pair<" + Teuchos::TypeNameTraits<Packet>::name() + "," + Teuchos::TypeNameTraits<Packet>::name() + ">"; }
+      static inline std::pair<Packet,Packet> squareroot(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::squareroot(x.first), PST::squareroot(x.second)); }
+      static inline std::pair<Packet,Packet> pow(std::pair<Packet,Packet> x, std::pair<Packet,Packet> y) { return std::pair<Packet,Packet>( PST::pow(x.first,y.first), PST::pow(x.second,y.second) ); }
+    };
+
+  template<class Packet, class ConvertToPacket>
+    class ValueTypeConversionTraits<std::pair<Packet,Packet>, ConvertToPacket> {
+      public:
+        static std::pair<Packet,Packet> convert( const ConvertToPacket t )
+        {
+          return std::pair<Packet,Packet>(t,t);
+        }
+        static std::pair<Packet,Packet> safeConvert( const ConvertToPacket t )
+        {
+          return std::pair<Packet,Packet>(t,t);
+        }
+    };
+}
+
 
 namespace {
 
@@ -21,11 +68,11 @@ using Teuchos::DefaultComm;
 using Teuchos::GlobalMPISession;
 using Teuchos::defaultSmallNumber;
 
-
 bool testMpi = true;
 
 
 double errorTolSlack = 1e+1;
+
 
 
 TEUCHOS_STATIC_SETUP()
@@ -74,7 +121,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_1, Ordina
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);
-  //const Ordinal procRank = rank(*comm);
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
   Teuchos::MpiComm<Ordinal>::show_dump = true;
@@ -99,7 +145,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_1, Ordina
     TEST_EQUALITY( myGlobalReducts[0], as<Packet>(numProcs) );
   }
   else {
-    const PacketMag local_errorTolSlack = static_cast<PacketMag>(errorTolSlack);
+    const PacketMag local_errorTolSlack = as<PacketMag>(errorTolSlack);
     TEST_FLOATING_EQUALITY( myGlobalReducts[0], as<Packet>(numProcs),
       as<PacketMag>(defaultSmallNumber<PacketMag>() * local_errorTolSlack / numProcs)
       );
@@ -134,14 +180,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
     &recvCounts[0], &myGlobalReducts[0]
     );
 
-  const Packet expectedMyGlobalReduct =
-    numProcs * procRank + ((numProcs - 1) * numProcs)/2;
+  const Packet expectedMyGlobalReduct = as<Packet>(
+    numProcs * procRank + ((numProcs - 1) * numProcs)/2 
+    );
 
   if (std::numeric_limits<Packet>::is_integer) {
     TEST_EQUALITY( myGlobalReducts[0], expectedMyGlobalReduct );
   }
   else {
-    const PacketMag local_errorTolSlack = static_cast<PacketMag>(errorTolSlack);
+    const PacketMag local_errorTolSlack = as<PacketMag>(errorTolSlack);
     TEST_FLOATING_EQUALITY( myGlobalReducts[0], expectedMyGlobalReduct,
       as<PacketMag>(defaultSmallNumber<PacketMag>() * local_errorTolSlack / numProcs)
       );
@@ -505,7 +552,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
       }
     }
   }
-  broadcast<Ordinal, Packet>( *comm, 0, origInputData );
+  broadcast<Ordinal, Packet>( *comm, 0, origInputData() );
 
   const ArrayRCP<Packet> inputData = arcpClone<Packet>(origInputData());
   const ArrayRCP<Packet> outputData = arcpClone<Packet>(origOutputData());
@@ -596,6 +643,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
 #endif
 
 
+
 #define UNIT_TEST_GROUP_ORDINAL_PACKET( ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_1, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_2, ORDINAL, PACKET ) \
@@ -604,15 +652,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PACKET )
 
+
+
+#define UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS( ORDINAL, PAIROFPACKETS ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive, ORDINAL, PAIROFPACKETS ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceiveSet, ORDINAL, PAIROFPACKETS ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PAIROFPACKETS ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PAIROFPACKETS )
+
+
+typedef std::pair<char,char>     PairOfChars;
+typedef std::pair<int,int>       PairOfInts;
+typedef std::pair<float,float>   PairOfFloats;
+typedef std::pair<double,double> PairOfDoubles;
+
+
 // Uncomment this for really fast development cycles but make sure to comment
 // it back again before checking in so that we can test all the types.
-#define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+// #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #  define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double)
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
+    UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfDoubles) \
 
   UNIT_TEST_GROUP_ORDINAL(int)
 
@@ -634,13 +698,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)
-  
+
+  // can't test ordinal char with pair<double,double>
+  // char is too small to hold too many pair<double,double> objects, which each require 16 bytes
+
+#  define UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS( ORDINAL ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, basic, ORDINAL ) \
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, char) \
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, int) \
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, float) \
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
+    UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfChars) \
+    UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfInts) \
+    UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfFloats) \
+    UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfDoubles) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend1, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)
+
   UNIT_TEST_GROUP_ORDINAL(char)
   typedef short int ShortInt;
   UNIT_TEST_GROUP_ORDINAL(ShortInt)
-  UNIT_TEST_GROUP_ORDINAL(int)
+  UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS(int)
   typedef long int LongInt;
-  UNIT_TEST_GROUP_ORDINAL(LongInt)
+  UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS(LongInt)
   
 #  ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef long long int LongLongInt;

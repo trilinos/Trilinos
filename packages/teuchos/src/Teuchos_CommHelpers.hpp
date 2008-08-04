@@ -591,7 +591,7 @@ public:
     {
       TEST_FOR_EXCEPTION(
         true,std::logic_error,
-        "Error, the type "<<ScalarTraits<Packet>::name()
+        "Error, the type "<<TypeNameTraits<Packet>::name()
         <<" does not support comparison operations!"
         );
     }
@@ -628,7 +628,7 @@ public:
     {
       TEST_FOR_EXCEPTION(
         true,std::logic_error,
-        "Error, the type "<<ScalarTraits<Packet>::name()
+        "Error, the type "<<TypeNameTraits<Packet>::name()
         <<" does not support comparison operations!"
         );
     }
@@ -665,7 +665,7 @@ public:
     {
       TEST_FOR_EXCEPTION(
         true,std::logic_error,
-        "Error, the type "<<ScalarTraits<Packet>::name()
+        "Error, the type "<<TypeNameTraits<Packet>::name()
         <<" does not support logical AND operations!"
         );
     }
@@ -821,7 +821,7 @@ void Teuchos::broadcast(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: broadcast<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type )"
     );
   ValueTypeSerializationBuffer<Ordinal,Packet>
@@ -891,7 +891,7 @@ void Teuchos::gatherAll(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: gatherAll<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type )"
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
@@ -924,7 +924,7 @@ void Teuchos::reduceAll(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: reduceAll<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, user-defined op )"
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
@@ -948,7 +948,7 @@ void Teuchos::reduceAll(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: reduceAll<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
   std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
@@ -1002,7 +1002,7 @@ void Teuchos::reduceAllAndScatter(
 
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: reduceAllAndScatter<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, user-defined op )"
     );
 
@@ -1049,7 +1049,7 @@ void Teuchos::reduceAllAndScatter(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: reduceAllAndScatter<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
   std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
@@ -1080,7 +1080,7 @@ void Teuchos::scan(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: scan<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, user-defined op )"
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
@@ -1104,7 +1104,7 @@ void Teuchos::scan(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: scan<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type, "<<toString(reductType)<<" )"
     );
   std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
@@ -1142,7 +1142,7 @@ void Teuchos::send(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: send<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type )"
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
@@ -1181,7 +1181,7 @@ int Teuchos::receive(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: receive<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type )"
     );
   ValueTypeSerializationBuffer<Ordinal,Packet>
@@ -1222,7 +1222,7 @@ void Teuchos::readySend(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: readySend<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type )"
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
@@ -1252,7 +1252,7 @@ Teuchos::isend(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: isend<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type )"
     );
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
@@ -1291,7 +1291,7 @@ Teuchos::ireceive(
   typedef std::pair<RCP<CommRequest>, ArrayRCP<const Packet> > comm_buffer_pair_t;
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: ireceive<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( value type )"
     );
   ValueTypeSerializationBuffer<Ordinal,Packet>

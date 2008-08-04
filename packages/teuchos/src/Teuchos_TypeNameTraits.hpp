@@ -86,7 +86,7 @@ template<> \
 class TypeNameTraits<TYPE> { \
 public: \
   static std::string name() { return (#TYPE); } \
-  static std::string concreteName( const TYPE& t2 ) { return name(); } \
+  static std::string concreteName( const TYPE& t2 ) { (void)t2; return name(); } \
 } \
 
 TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(bool);
@@ -112,7 +112,7 @@ class TypeNameTraits<std::string> {
 public:
   static std::string name() { return "string"; }
   static std::string concreteName( const std::string& t2 )
-    { return name(); }
+    { (void)t2; return name(); }
 };
 
 
