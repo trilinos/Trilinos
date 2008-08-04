@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
   Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm = 
     Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, spatialProcs, numTimeSteps));
-  Epetra_MpiComm& Comm = globalComm->SubDomainComm();
+  Epetra_Comm& Comm = globalComm->SubDomainComm();
 
 #else
   // Create a communicator for Epetra objects
