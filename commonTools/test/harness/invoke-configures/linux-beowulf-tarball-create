@@ -55,6 +55,7 @@ FFLAGS=-O3 \
 --enable-nox-thyra \
 --enable-pamgen \
 --enable-phalanx \
+--enable-phdmesh \
 --enable-pytrilinos \
 --enable-pliris \
 --enable-rythmos \
@@ -65,6 +66,7 @@ FFLAGS=-O3 \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
 --enable-teuchos-expat \
+--enable-threadpool \
 --enable-thyra \
 --enable-tpetra \
 --enable-trikota \
