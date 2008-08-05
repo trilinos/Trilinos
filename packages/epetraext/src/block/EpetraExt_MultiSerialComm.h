@@ -75,7 +75,7 @@ class MultiSerialComm: public EpetraExt::MultiComm {
   //@}
   
   //! Get reference to split Communicator for sub-domain
-  Epetra_SerialComm& SubDomainComm() const {return *subComm;}
+  Epetra_Comm& SubDomainComm() const {return *subComm;}
 
   //! Reset total number of time steps, allowing time steps per domain to
   //  be set later than the MultiLevel parallelism is set up.
