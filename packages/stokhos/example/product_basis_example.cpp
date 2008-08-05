@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 								deriv_coeffs));
 //     Teuchos::RCP<basis_type> basis = Teuchos::rcp(new basis_type(p));
     std::cout << *basis << std::endl;
-    Stokhos::TayOrthogPolyExpansion<double> he(basis);
+    Stokhos::OrthogPolyExpansion<double> he(basis);
     unsigned int sz = basis->size();
     Stokhos::OrthogPolyApprox<double> u(sz),v(sz),w(sz),x(sz);
     u.term(*basis, 0,0) = 1.0;
