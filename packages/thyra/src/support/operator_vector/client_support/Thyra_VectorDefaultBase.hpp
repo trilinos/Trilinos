@@ -225,7 +225,8 @@ VectorDefaultBase<Scalar>::nonconstContigSubViewImpl( const Range1D& col_rng )
 
 template<class Scalar>
 RCP<const MultiVectorBase<Scalar> >
-VectorDefaultBase<Scalar>::nonContigSubViewImpl( const ArrayView<int> &cols ) const
+VectorDefaultBase<Scalar>::nonContigSubViewImpl(
+  const ArrayView<const int> &cols ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
@@ -240,7 +241,8 @@ VectorDefaultBase<Scalar>::nonContigSubViewImpl( const ArrayView<int> &cols ) co
 
 template<class Scalar>
 RCP<MultiVectorBase<Scalar> >
-VectorDefaultBase<Scalar>::nonconstNonContigSubViewImpl( const ArrayView<int> &cols )
+VectorDefaultBase<Scalar>::nonconstNonContigSubViewImpl(
+  const ArrayView<const int> &cols )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
@@ -529,7 +531,8 @@ void VectorDefaultBase<Scalar>::validateColRng( const Range1D &col_rng ) const
 
 template<class Scalar>
 inline
-void VectorDefaultBase<Scalar>::validateColIndexes( const ArrayView<int> &cols ) const
+void VectorDefaultBase<Scalar>::validateColIndexes(
+  const ArrayView<const int>&cols ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( cols.size() != 1 || cols[0] != 0 );

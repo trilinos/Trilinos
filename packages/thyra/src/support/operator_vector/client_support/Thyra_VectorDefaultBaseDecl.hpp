@@ -71,7 +71,7 @@ public:
   //@{
 
   /** \brief Default description that gives the label, type, and dimenstion . */
-  std::string description() const;
+  virtual std::string description() const;
 
   /** \brief Generates a default outputting for all vectors.
    *
@@ -95,7 +95,7 @@ public:
    * <tt>Teuchos::OSTab</tt> amount.  A newline is printed after the last
    * <tt>n-1:xn</tt> entry.
    */
-  void describe(
+  virtual void describe(
     Teuchos::FancyOStream                &out
     ,const Teuchos::EVerbosityLevel      verbLevel
     ) const;
@@ -106,9 +106,9 @@ public:
   //@{
 
   /** \brief Returns <tt>this->space()</tt>. */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
+  virtual RCP< const VectorSpaceBase<Scalar> > range() const;
   /** \brief Returns a <tt>DefaultSerialVectorSpace</tt> object with dimension 1. */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
+  virtual RCP< const VectorSpaceBase<Scalar> > domain() const;
 
   //@}
 
@@ -136,37 +136,37 @@ protected:
   //@{
 
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
-  RCP<VectorBase<Scalar> > nonconstColImpl(Index j);
+  virtual RCP<VectorBase<Scalar> > nonconstColImpl(Index j);
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
-  RCP<const MultiVectorBase<Scalar> >
+  virtual RCP<const MultiVectorBase<Scalar> >
   contigSubViewImpl( const Range1D& col_rng ) const;
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
-  RCP<MultiVectorBase<Scalar> >
+  virtual RCP<MultiVectorBase<Scalar> >
   nonconstContigSubViewImpl( const Range1D& col_rng );
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
-  RCP<const MultiVectorBase<Scalar> >
-  nonContigSubViewImpl( const ArrayView<int> &cols ) const;
+  virtual RCP<const MultiVectorBase<Scalar> >
+  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
-  RCP<MultiVectorBase<Scalar> >
-  nonconstNonContigSubViewImpl( const ArrayView<int> &cols );
+  virtual RCP<MultiVectorBase<Scalar> >
+  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols );
   /** \brief Implemented in terms of <tt>this->acquireDetachedView()</tt>. */
-  void acquireDetachedMultiVectorViewImpl(
+  virtual void acquireDetachedMultiVectorViewImpl(
     const Range1D &rowRng,
     const Range1D &colRng,
     RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const;
   /** \brief Implemented in terms of <tt>this->releaseDetachedView()</tt>. */
-  void releaseDetachedMultiVectorViewImpl(
+  virtual void releaseDetachedMultiVectorViewImpl(
     RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
     ) const;
   /** \brief Implemented in terms of <tt>this->acquireDetachedView()</tt>. */
-  void acquireNonconstDetachedMultiVectorViewImpl(
+  virtual void acquireNonconstDetachedMultiVectorViewImpl(
     const Range1D &rowRng,
     const Range1D &colRng,
     RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     );
   /** \brief Implemented in terms of <tt>this->commitDetachedView()</tt>. */
-  void commitNonconstDetachedMultiVectorViewImpl(
+  virtual void commitNonconstDetachedMultiVectorViewImpl(
     RTOpPack::SubMultiVectorView<Scalar>* sub_mv
     );
 
@@ -274,7 +274,7 @@ private:
   // Private member functions
 
   void validateColRng( const Range1D &rowRng ) const;
-  void validateColIndexes( const ArrayView<int> &cols ) const;
+  void validateColIndexes( const ArrayView<const int> &cols ) const;
 
 };
 
