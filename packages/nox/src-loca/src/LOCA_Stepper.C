@@ -94,8 +94,8 @@ LOCA::Stepper::Stepper(
   tangentFactor(1.0),
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
-  calcEigenvalues(false)
-
+  calcEigenvalues(false),
+  return_failed_on_max_steps(true)
 {
   reset(global_data, initialGuess, t, p);
 }
@@ -207,6 +207,8 @@ LOCA::Stepper::reset(
   tangentFactorExponent =
     stepperList->get("Tangent Factor Exponent",1.0);
   calcEigenvalues = stepperList->get("Compute Eigenvalues",false);
+  return_failed_on_max_steps = 
+    stepperList->get("Return Failed on Reaching Max Steps", true);
 
   // Make a copy of the parameter list, change continuation method to
   // natural
@@ -353,6 +355,10 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
   // Return if iteration failed (reached max number of steps)
   if (itStatus == LOCA::Abstract::Iterator::Failed)
     return itStatus;
+
+  bool do_target = stepperList->get("Hit Continuation Bound", true);
+  if (!do_target)
+    return LOCA::Abstract::Iterator::Finished;
 
   // Do one additional step using natural continuation to hit target value
   double value = curGroupPtr->getContinuationParameter();
@@ -575,7 +581,11 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 	<< "\n\tContinuation run stopping: reached maximum number of steps " 
 	<< LOCA::Abstract::Iterator::maxSteps << std::endl;
     }
-    return LOCA::Abstract::Iterator::Failed;
+    if (return_failed_on_max_steps)
+      return LOCA::Abstract::Iterator::Failed;
+    else
+      return LOCA::Abstract::Iterator::Finished;
+      
   }
 
   if (stepStatus == LOCA::Abstract::Iterator::Successful) {

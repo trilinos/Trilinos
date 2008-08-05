@@ -275,8 +275,11 @@ namespace LOCA {
     //! Tangent factor exponent
     double tangentFactorExponent;
 
-    //! Flag indicating whether to compute eigenvalues after eachs step
+    //! Flag indicating whether to compute eigenvalues after each step
     bool calcEigenvalues;
+
+    //! Flag indicating whether to return failed upon reaching max steps
+    bool return_failed_on_max_steps;
   };
 } // end namespace LOCA
 
