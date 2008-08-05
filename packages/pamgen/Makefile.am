@@ -47,10 +47,12 @@ ACLOCAL_AMFLAGS = -I config
 #np# because users should not have to bootstrap.  We distribute them with
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
-EXTRA_DIST = 
+EXTRA_DIST = \
+config/strip_dup_incl_paths.pl            config/strip_dup_libs.pl \
+config/replace-install-prefix.pl          config/generate-makeoptions.pl
 #EXTRA_DIST = \
 #config/depcomp \
-config/ac_cxx_have_std.m4                 config/install-sh \
+#config/ac_cxx_have_std.m4                 config/install-sh \
 #config/missing 				  config/mkinstalldirs \
 #config/tac_arg_check_mpi.m4 		  config/tac_arg_config_mpi.m4 \
 #config/ac_cxx_reinterpret_cast.m4         config/generate-makeoptions.pl \
