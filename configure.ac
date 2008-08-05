@@ -217,7 +217,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
 
-if test "X$ac_cv_use_threadpool" != "Xno"; then
+if test "X$ac_cv_use_threadpool" != "Xno" ||
+	test "X$ac_cv_use_phdmesh" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ThreadPool])
   BUILD_THREADPOOL=yes
   if test "X$ac_cv_use_threadpool_explicit" != "Xyes"; then

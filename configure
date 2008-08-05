@@ -4009,7 +4009,8 @@ else
 fi
 
 
-if test "X$ac_cv_use_threadpool" != "Xno"; then
+if test "X$ac_cv_use_threadpool" != "Xno" ||
+	test "X$ac_cv_use_phdmesh" != "Xno"; then
   subdirs="$subdirs packages/ThreadPool"
 
   BUILD_THREADPOOL=yes
