@@ -215,6 +215,16 @@ IF PACKAGE pamgen THEN
 REMOVE --enable-pamgen
 DONE
 
+# Phalanx ----------------------------------------------------------------------
+IF PACKAGE phalanx THEN
+REMOVE --enable-phalanx
+DONE
+
+# phdMesh ----------------------------------------------------------------------
+IF PACKAGE phdmesh THEN
+REMOVE --enable-phdmesh
+DONE
+
 # Pliris -----------------------------------------------------------------------
 IF PACKAGE pliris THEN
 REMOVE --enable-pliris
@@ -309,6 +319,12 @@ REMOVE --enable-stokhos
 REMOVE --enable-stratimikos
 REMOVE --enable-sundance
 REMOVE --enable-webtrilinos
+DONE
+
+# ThreadPool -------------------------------------------------------------------
+IF PACKAGE threadpool THEN
+REMOVE --enable-threadpool
+REMOVE --enable-phdmesh
 DONE
 
 # Tpetra -----------------------------------------------------------------------
