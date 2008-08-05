@@ -1078,7 +1078,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      double Alpha, 
 				      double Beta) const {
 
-  std::cerr << "MatPowMultiply not implimented at this time due toa bug in oski-1.01h release.\n";
+  std::cerr << "MatPowMultiply not implemented in oski-1.01h release.\n";
   return -1;
 
   int ReturnVal;
@@ -1145,7 +1145,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      double Alpha, 
 				      double Beta) const {
 
-  std::cerr << "MatPowMultiply not implimented at this time due toa bug in oski-1.01h release.\n";
+  std::cerr << "MatPowMultiply not implemented in oski-1.01h release.\n";
   return -1;
   std::cerr << "mult\n";
   Epetra_OskiVector* xCast = NULL;
