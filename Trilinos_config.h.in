@@ -87,6 +87,9 @@
 /* Define if want to build phalanx */
 #undef HAVE_PHALANX
 
+/* Define if want to build phdmesh */
+#undef HAVE_PHDMESH
+
 /* Define if want to build pliris */
 #undef HAVE_PLIRIS
 
@@ -119,6 +122,9 @@
 
 /* Define if want to build teuchos */
 #undef HAVE_TEUCHOS
+
+/* Define if want to build threadpool */
+#undef HAVE_THREADPOOL
 
 /* Define if want to build thyra */
 #undef HAVE_THYRA

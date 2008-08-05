@@ -97,6 +97,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(nox, [Build nox, a nonlinear solver package], NOX
 
 TAC_ARG_ENABLE_FEATURE(phalanx, [Build phalanx, a nonlinear expression assembly kernel], PHALANX, no)
 
+TAC_ARG_ENABLE_FEATURE(phdmesh, [Build phdMesh, a Parallel Heterogneous Dynamic unstructured Mesh package], PHDMESH, no)
+
 TAC_ARG_ENABLE_FEATURE(pliris, [Build pliris, a dense direct solver package], PLIRIS, no)
 
 TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos, a Python wrapper package], PYTRILINOS, no)
@@ -116,6 +118,8 @@ TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos, a tools package], TEUCHOS, no)
 TAC_ARG_ENABLE_FEATURE(pamgen, [Build pamgen, a tools package], PAMGEN, no)
 
 TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOp, a vector reduction/transformation operator package], RTOP, no)
+
+TAC_ARG_ENABLE_FEATURE(threadpool, [Build ThreadPool], THREADPOOL, no)
 
 TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra, an abstract linear solver package], THYRA, no)
 
@@ -212,6 +216,17 @@ else
   BUILD_RTOP=no
 fi
 AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
+
+if test "X$ac_cv_use_threadpool" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/ThreadPool])
+  BUILD_THREADPOOL=yes
+  if test "X$ac_cv_use_threadpool_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-threadpool"
+  fi
+else
+  BUILD_THREADPOOL=no
+fi
+AM_CONDITIONAL(BUILD_THREADPOOL, test "X$BUILD_THREADPOOL" != "Xno")
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
@@ -533,6 +548,17 @@ else
   BUILD_PHALANX=no
 fi
 AM_CONDITIONAL(BUILD_PHALANX, test "X$BUILD_PHALANX" != "Xno")
+
+if test "X$ac_cv_use_phdmesh" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/phdmesh])
+  BUILD_PHDMESH=yes
+  if test "X$ac_cv_use_phdmesh_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-phdmesh"
+  fi
+else
+  BUILD_PHDMESH=no
+fi
+AM_CONDITIONAL(BUILD_PHDMESH, test "X$BUILD_PHDMESH" != "Xno")
 
 if test "X$ac_cv_use_isorropia" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/isorropia])

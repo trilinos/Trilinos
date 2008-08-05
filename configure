@@ -648,6 +648,8 @@ BUILD_PAMGEN_TRUE
 BUILD_PAMGEN_FALSE
 BUILD_RTOP_TRUE
 BUILD_RTOP_FALSE
+BUILD_THREADPOOL_TRUE
+BUILD_THREADPOOL_FALSE
 BUILD_THYRA_TRUE
 BUILD_THYRA_FALSE
 BUILD_STRATIMIKOS_TRUE
@@ -698,6 +700,8 @@ BUILD_NOX_TRUE
 BUILD_NOX_FALSE
 BUILD_PHALANX_TRUE
 BUILD_PHALANX_FALSE
+BUILD_PHDMESH_TRUE
+BUILD_PHDMESH_FALSE
 BUILD_ISORROPIA_TRUE
 BUILD_ISORROPIA_FALSE
 BUILD_NEW_PACKAGE_TRUE
@@ -739,6 +743,7 @@ target_alias'
 ac_subdirs_all='packages/teuchos
 packages/pamgen
 packages/rtop
+packages/ThreadPool
 packages/thyra
 packages/stratimikos
 packages/kokkos
@@ -764,6 +769,7 @@ packages/stokhos
 packages/sacado
 packages/nox
 packages/phalanx
+packages/phdmesh
 packages/isorropia
 packages/new_package
 packages/Sundance
@@ -1421,6 +1427,8 @@ Optional Features:
                           used)
   --enable-phalanx        Build phalanx, a nonlinear expression assembly
                           kernel (default is no)
+  --enable-phdmesh        Build phdMesh, a Parallel Heterogneous Dynamic
+                          unstructured Mesh package (default is no)
   --enable-pliris         Build pliris, a dense direct solver package (default
                           is no)
   --enable-pytrilinos     Build PyTrilinos, a Python wrapper package (default
@@ -1438,6 +1446,7 @@ Optional Features:
   --enable-pamgen         Build pamgen, a tools package (default is no)
   --enable-rtop           Build RTOp, a vector reduction/transformation
                           operator package (default is no)
+  --enable-threadpool     Build ThreadPool (default is no)
   --enable-thyra          Build thyra, an abstract linear solver package
                           (default is no)
   --enable-stratimikos    Build stratimikos, a linear solver strategy package
@@ -3255,6 +3264,34 @@ fi
 
 
 
+# Check whether --enable-phdmesh was given.
+if test "${enable_phdmesh+set}" = set; then
+  enableval=$enable_phdmesh; ac_cv_use_phdmesh=$enableval
+ac_cv_use_phdmesh_explicit=$enableval
+else
+  ac_cv_use_phdmesh=no
+ac_cv_use_phdmesh_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use phdmesh" >&5
+echo $ECHO_N "checking whether to use phdmesh... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_phdmesh" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PHDMESH
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 # Check whether --enable-pliris was given.
 if test "${enable_pliris+set}" = set; then
   enableval=$enable_pliris; ac_cv_use_pliris=$enableval
@@ -3526,6 +3563,34 @@ echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_RTOP
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+# Check whether --enable-threadpool was given.
+if test "${enable_threadpool+set}" = set; then
+  enableval=$enable_threadpool; ac_cv_use_threadpool=$enableval
+ac_cv_use_threadpool_explicit=$enableval
+else
+  ac_cv_use_threadpool=no
+ac_cv_use_threadpool_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use threadpool" >&5
+echo $ECHO_N "checking whether to use threadpool... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_threadpool" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_THREADPOOL
 _ACEOF
 
 else
@@ -3941,6 +4006,25 @@ fi
 else
   BUILD_RTOP_TRUE='#'
   BUILD_RTOP_FALSE=
+fi
+
+
+if test "X$ac_cv_use_threadpool" != "Xno"; then
+  subdirs="$subdirs packages/ThreadPool"
+
+  BUILD_THREADPOOL=yes
+  if test "X$ac_cv_use_threadpool_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-threadpool"
+  fi
+else
+  BUILD_THREADPOOL=no
+fi
+ if test "X$BUILD_THREADPOOL" != "Xno"; then
+  BUILD_THREADPOOL_TRUE=
+  BUILD_THREADPOOL_FALSE='#'
+else
+  BUILD_THREADPOOL_TRUE='#'
+  BUILD_THREADPOOL_FALSE=
 fi
 
 
@@ -4465,6 +4549,25 @@ else
 fi
 
 
+if test "X$ac_cv_use_phdmesh" != "Xno"; then
+  subdirs="$subdirs packages/phdmesh"
+
+  BUILD_PHDMESH=yes
+  if test "X$ac_cv_use_phdmesh_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-phdmesh"
+  fi
+else
+  BUILD_PHDMESH=no
+fi
+ if test "X$BUILD_PHDMESH" != "Xno"; then
+  BUILD_PHDMESH_TRUE=
+  BUILD_PHDMESH_FALSE='#'
+else
+  BUILD_PHDMESH_TRUE='#'
+  BUILD_PHDMESH_FALSE=
+fi
+
+
 if test "X$ac_cv_use_isorropia" != "Xno"; then
   subdirs="$subdirs packages/isorropia"
 
@@ -4912,6 +5015,13 @@ echo "$as_me: error: conditional \"BUILD_RTOP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_THREADPOOL_TRUE}" && test -z "${BUILD_THREADPOOL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_THREADPOOL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_THREADPOOL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_THYRA_TRUE}" && test -z "${BUILD_THYRA_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -5084,6 +5194,13 @@ if test -z "${BUILD_PHALANX_TRUE}" && test -z "${BUILD_PHALANX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_PHALANX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_PHALANX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PHDMESH_TRUE}" && test -z "${BUILD_PHDMESH_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PHDMESH\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PHDMESH\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -5791,6 +5908,8 @@ BUILD_PAMGEN_TRUE!$BUILD_PAMGEN_TRUE$ac_delim
 BUILD_PAMGEN_FALSE!$BUILD_PAMGEN_FALSE$ac_delim
 BUILD_RTOP_TRUE!$BUILD_RTOP_TRUE$ac_delim
 BUILD_RTOP_FALSE!$BUILD_RTOP_FALSE$ac_delim
+BUILD_THREADPOOL_TRUE!$BUILD_THREADPOOL_TRUE$ac_delim
+BUILD_THREADPOOL_FALSE!$BUILD_THREADPOOL_FALSE$ac_delim
 BUILD_THYRA_TRUE!$BUILD_THYRA_TRUE$ac_delim
 BUILD_THYRA_FALSE!$BUILD_THYRA_FALSE$ac_delim
 BUILD_STRATIMIKOS_TRUE!$BUILD_STRATIMIKOS_TRUE$ac_delim
@@ -5817,8 +5936,6 @@ BUILD_KOMPLEX_TRUE!$BUILD_KOMPLEX_TRUE$ac_delim
 BUILD_KOMPLEX_FALSE!$BUILD_KOMPLEX_FALSE$ac_delim
 BUILD_AMESOS_TRUE!$BUILD_AMESOS_TRUE$ac_delim
 BUILD_AMESOS_FALSE!$BUILD_AMESOS_FALSE$ac_delim
-BUILD_EPETRAEXT_TRUE!$BUILD_EPETRAEXT_TRUE$ac_delim
-BUILD_EPETRAEXT_FALSE!$BUILD_EPETRAEXT_FALSE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -5860,6 +5977,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BUILD_EPETRAEXT_TRUE!$BUILD_EPETRAEXT_TRUE$ac_delim
+BUILD_EPETRAEXT_FALSE!$BUILD_EPETRAEXT_FALSE$ac_delim
 BUILD_BELOS_TRUE!$BUILD_BELOS_TRUE$ac_delim
 BUILD_BELOS_FALSE!$BUILD_BELOS_FALSE$ac_delim
 BUILD_ANASAZI_TRUE!$BUILD_ANASAZI_TRUE$ac_delim
@@ -5882,6 +6001,8 @@ BUILD_NOX_TRUE!$BUILD_NOX_TRUE$ac_delim
 BUILD_NOX_FALSE!$BUILD_NOX_FALSE$ac_delim
 BUILD_PHALANX_TRUE!$BUILD_PHALANX_TRUE$ac_delim
 BUILD_PHALANX_FALSE!$BUILD_PHALANX_FALSE$ac_delim
+BUILD_PHDMESH_TRUE!$BUILD_PHDMESH_TRUE$ac_delim
+BUILD_PHDMESH_FALSE!$BUILD_PHDMESH_FALSE$ac_delim
 BUILD_ISORROPIA_TRUE!$BUILD_ISORROPIA_TRUE$ac_delim
 BUILD_ISORROPIA_FALSE!$BUILD_ISORROPIA_FALSE$ac_delim
 BUILD_NEW_PACKAGE_TRUE!$BUILD_NEW_PACKAGE_TRUE$ac_delim
@@ -5918,7 +6039,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 60; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
