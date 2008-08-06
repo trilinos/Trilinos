@@ -2,6 +2,7 @@
 #define PHX_DATA_CONTAINER_BASE_HPP
 
 #include <typeinfo>
+#include "Teuchos_RCP.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_Evaluator_Manager.hpp"
 
@@ -16,11 +17,11 @@ namespace PHX {
 
     virtual ~DataContainerBase();
 
-    virtual void allocateField(const PHX::FieldTag& v,
+    virtual void allocateField(const Teuchos::RCP<PHX::FieldTag>& v,
 			       std::size_t max_num_cells,
 			       typename Traits::Allocator& a) = 0;
     
-    virtual const std::type_info& getAlgebraicTypeInfo() const = 0; 
+    virtual const std::type_info& dataTypeInfo() const = 0; 
 
     virtual std::size_t getSizeOfDataType() const = 0;
 

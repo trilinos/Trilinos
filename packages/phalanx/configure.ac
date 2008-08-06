@@ -53,7 +53,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #auto np# - file name below
-AC_CONFIG_SRCDIR([src/Phalanx_FieldTag.cpp])
+AC_CONFIG_SRCDIR([src/Phalanx_FieldTag.hpp])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -448,6 +448,7 @@ AC_CONFIG_FILES([
 		test/Allocators/Makefile
 		test/DataContainer/Makefile
 		test/DataLayout/Makefile
+		test/EvaluatorManager/Makefile
 		test/FieldTag/Makefile
 		test/Field/Makefile
 		test/Performance/Makefile

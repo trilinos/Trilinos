@@ -28,10 +28,10 @@ template<typename Traits>
 template<typename DataT, typename EvalT> 
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(PHX::Field<DataT>& h)
+getFieldData(PHX::Field<DataT>& f)
 {
-  h.setFieldData(m_eval_containers.template 
-    getAsObject<EvalT>()->template getFieldData<DataT>(h.fieldTag()) );
+  f.setFieldData(m_eval_containers.template 
+    getAsObject<EvalT>()->template getFieldData<DataT>(f.fieldTag()) );
 }
     
 // **************************************************************
@@ -39,23 +39,23 @@ template<typename Traits>
 template<typename DataT, typename EvalT> 
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d)
+getFieldData(const PHX::FieldTag& t, Teuchos::ArrayRCP<DataT>& d)
 {
   d = m_eval_containers.template 
-    getAsObject<EvalT>()->template getFieldData<DataT>(v);
+    getAsObject<EvalT>()->template getFieldData<DataT>(t);
 }
 
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-requireFieldForAllTypes(const PHX::FieldTag& v)
+requireFieldForAllEvaluationTypes(const PHX::FieldTag& t)
 {
   typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
-    it->requireField(v);
+    it->requireField(t);
   }
 }
 
@@ -64,22 +64,22 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-requireFieldForScalarType(const PHX::FieldTag& v)
+requireField(const PHX::FieldTag& t)
 {
-  m_eval_containers.template getAsBase<EvalT>()->template requireField(v);
+  m_eval_containers.template getAsBase<EvalT>()->template requireField(t);
 }
     
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-registerEvaluatorForAllTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
+registerEvaluatorForAllEvaluationTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
   typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
-    it->registerEvaluator(p);
+    it->registerEvaluator(e);
   }
 }
 
@@ -88,17 +88,17 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-registerEvaluatorForScalarType(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
+registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
-  m_eval_containers.template getAsBase<EvalT>()->template registerEvaluator(p);
+  m_eval_containers.template getAsBase<EvalT>()->template registerEvaluator(e);
 }
 
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-registerEvaluatorForScalarType(FieldManager::iterator it,
-			const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
+registerEvaluator(FieldManager::iterator it,
+		  const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
   it->registerEvaluator(e);
 }

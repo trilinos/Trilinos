@@ -1,3 +1,5 @@
+// @HEADER
+// @HEADER
 
 #ifndef PHX_FIELD_EVALUATOR_MANAGER_DEF_HPP
 #define PHX_FIELD_EVALUATOR_MANAGER_DEF_HPP
@@ -5,12 +7,13 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Phalanx_Evaluator.hpp"
+#include "Phalanx_FieldTag_Comparison.hpp"
 
 //=======================================================================
 template<typename Traits>
 PHX::EvaluatorManager<Traits>::
-EvaluatorManager(const std::string& scalar_type_name)
-  :
+EvaluatorManager(const std::string& evaluation_type_name) :
+  evaluation_type_name_(evaluation_type_name),
   sorting_called_(false)
 { }
 
@@ -22,14 +25,19 @@ PHX::EvaluatorManager<Traits>::~EvaluatorManager()
 //=======================================================================
 template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
-requireField(const PHX::FieldTag& f)
+requireField(const PHX::FieldTag& t)
 {
   using namespace std;
+  using namespace Teuchos;
   using namespace PHX;
-  if ( find(fields_.begin(), fields_.end(), f) 
-       == fields_.end() ) {
-    fields_.push_back(f);
-  }
+  
+  FTPredRef pred(t);
+  vector< RCP<FieldTag> >::iterator i = find_if(fields_.begin(), 
+						fields_.end(),
+						pred);
+  
+  if (i == fields_.end())
+    fields_.push_back(t.clone());
 }
 
 //=======================================================================
@@ -91,7 +99,7 @@ sortAndOrderEvaluators()
   for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++) {
     std::size_t k = providerEvalOrderIndex[i];
     for (std::size_t j = 0; j <providerVariables[k].size(); j++)
-      this->requireField(providerVariables[k][j]);
+      this->requireField(*(providerVariables[k][j]));
   }
   
   sorting_called_ = true;
@@ -118,17 +126,17 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
     bool addedVariables = false;
     
     for (std::size_t i = 0; i < fields_.size(); i++) {
-      PHX::FieldTag v = fields_[i];
+      const PHX::FieldTag& v = *(fields_[i]);
       
       // Loop over providers and add any requirements as variables.
       for (std::size_t prov = 0; prov < providerVariables.size(); prov++) {
 	for (std::size_t var = 0; var < providerVariables[prov].size(); var++) {
-	  if (providerVariables[prov][var] == v) {
+	  if (*(providerVariables[prov][var]) == v) {
 	    // Loop over requirements to see if they are in the variable list.
 	    for (std::size_t r = 0; r < providerRequirements[prov].size(); r++) {
 	      bool isVariable = false;
 	      for (std::size_t j = 0; j < fields_.size(); j++) {
-		if (fields_[j] == providerRequirements[prov][r])
+		if (*(fields_[j]) == *(providerRequirements[prov][r]))
 		  isVariable = true;
 	      }
 	      if (!isVariable) {
@@ -144,8 +152,8 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
       done = true;
   }
   
-  std::vector<PHX::FieldTag> tmpList = fields_;
-  std::vector<PHX::FieldTag> tmpProvided;
+  std::vector<Teuchos::RCP<PHX::FieldTag> > tmpList = fields_;
+  std::vector<Teuchos::RCP<PHX::FieldTag> > tmpProvided;
   
   // Loop over variable list until it is empty or we fail to remove var
   while (tmpList.size() > 0) {
@@ -167,7 +175,7 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
 	// Loop over provided variable names in provider[prov]
 	for (std::size_t i = 0; i < providerVariables[prov].size(); i++) {
 	  
-	  if (tmpList[var] == providerVariables[prov][i]) {
+	  if (*(tmpList[var]) == *(providerVariables[prov][i])) {
 	    foundProvider = true;
 	    providerIndex = prov;
 	    break;
@@ -191,7 +199,8 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
 	       req++) {
 	    bool requiredVariableFound = false;
 	    for (std::size_t j = 0; j < tmpProvided.size(); j++) {
-	      if (providerRequirements[providerIndex][req] == tmpProvided[j])
+	      if (*(providerRequirements[providerIndex][req]) == 
+		  *(tmpProvided[j]))
 		requiredVariableFound = true;
 	    }
 	    if (!requiredVariableFound) {
@@ -206,15 +215,17 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
       if (foundProvider && requirementsSatisfied) {
 	
 	// Remove the variable and exit loop
-	std::vector<PHX::FieldTag>::iterator p = tmpList.begin();
+	std::vector<Teuchos::RCP<PHX::FieldTag> >::iterator p = 
+	  tmpList.begin();
 	tmpList.erase(p+var);
 	// Add all vars to provided list and remove all variables
 	// that this provider adds
 	for (std::size_t i = 0; i < providerVariables[providerIndex].size(); i++) {
 	  tmpProvided.push_back(providerVariables[providerIndex][i]);
 	  for (std::size_t j = 0; j < tmpList.size(); j++) {
-	    if (providerVariables[providerIndex][i] == tmpList[j]) {
-	      std::vector<PHX::FieldTag>::iterator a = tmpList.begin();
+	    if (*(providerVariables[providerIndex][i]) == *(tmpList[j])) {
+	      std::vector<Teuchos::RCP<PHX::FieldTag> >::iterator a = 
+		tmpList.begin();
 	      tmpList.erase(a+j);
 	      break;
 	    }
@@ -229,13 +240,13 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
 
     if (!removedVariable) {
       std::string msg = "EvaluatorManager";
-      msg += scalar_type_name_;
+      msg += evaluation_type_name_;
       msg += " \nCould not meet dependencies!\n";
       msg += "The following variables either have no provider or have a\n";
       msg += "provider but could not satisfy provider requirements:\n\n";
       std::ostringstream ost;
       for (std::size_t i = 0; i < tmpList.size(); i++)
-	ost << tmpList[i] << std::endl;
+	ost << *(tmpList[i]) << std::endl;
       msg += ost.str();
       msg += "\nPrinting EvaluatorManager:\n";
       std::ostringstream ost2;
@@ -278,15 +289,15 @@ postEvaluate(typename Traits::PostEvalData d)
 //=======================================================================
 template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
-setScalarTypeName(const std::string& scalar_type_name)
+setEvaluationTypeName(const std::string& evaluation_type_name)
 {
-  scalar_type_name_ = scalar_type_name;
+  evaluation_type_name_ = evaluation_type_name;
 }
 
 //=======================================================================
 template<typename Traits>
-const std::vector<PHX::FieldTag>& PHX::EvaluatorManager<Traits>::
-getFieldTags()
+const std::vector< Teuchos::RCP<PHX::FieldTag> >& 
+PHX::EvaluatorManager<Traits>::getFieldTags()
 {
   return fields_;
 }
@@ -304,47 +315,60 @@ void PHX::EvaluatorManager<Traits>::print(std::ostream& os) const
 {
   os << "******************************************************" << std::endl;
   os << "PHX::EvaluatorManager" << std::endl;
-  os << "Scalar Type = " << scalar_type_name_ << std::endl;
+  os << "Evaluation Type = " << evaluation_type_name_ << std::endl;
   os << "******************************************************" << std::endl;
 
-  os << "\n** Starting Required FieldTag List" << std::endl;
+  os << "\n** Starting Required Field List" << std::endl;
   for (std::size_t i = 0; i < fields_.size(); i++) {
-    os << this->fields_[i] << std::endl;
+    os << *(this->fields_[i]) << std::endl;
   }
-  os << "** Finished Required FieldTag List" << std::endl;
+  os << "** Finished Required Field List" << std::endl;
 
   os << "\n** Starting Registered Field Evaluators" << std::endl;
   for (std::size_t i = 0; i < varProviders.size(); i++) {
-    os << "Provider[" << i << "]: " << providerNames[i] << std::endl;
-    os << "  *Provides:" << std::endl;
+    os << "Evaluator[" << i << "]: " << providerNames[i] << std::endl;
+    os << "  *Evaluates:" << std::endl;
     for (std::size_t j = 0; j < providerVariables[i].size(); j++)
-      os << "    " << (this->providerVariables[i])[j] << std::endl;
-    os << "  *Requires:" << std::endl;
-    for (std::size_t j = 0; j < providerRequirements[i].size(); j++)
-      os << "    " << (this->providerRequirements[i])[j] << std::endl;
+      os << "    " << *((this->providerVariables[i])[j]) << std::endl;
+    os << "  *Dependencies:";
+    if (providerRequirements[i].size() == 0) {
+      os << " None!" << std::endl;
+    }
+    else {
+      os << std::endl;
+      for (std::size_t j = 0; j < providerRequirements[i].size(); j++)
+	os << "    " << *((this->providerRequirements[i])[j]) << std::endl;
+    }
   }
   os << "** Finished Registered Field Evaluators" << std::endl;
 
 
-  os << "\n** Starting Provider Evaluation Order" << std::endl;
+  os << "\n** Starting Evaluator Order" << std::endl;
   for (std::size_t k = 0; k < providerEvalOrderIndex.size(); k++) {
     os << k << "    " << providerEvalOrderIndex[k] << std::endl;
   }
   os << "\nDetails:\n";
   for (std::size_t k = 0; k < providerEvalOrderIndex.size(); k++) {
     int i = providerEvalOrderIndex[k];
-    os << "Provider[" << i << "]: " << providerNames[i] << std::endl;
-    os << "  *Provides:" << std::endl;
+    os << "Evaluator[" << i << "]: " << providerNames[i] << std::endl;
+    os << "  *Evaluates:" << std::endl;
     for (std::size_t j = 0; j < providerVariables[i].size(); j++)
-      os << "    " << (this->providerVariables[i])[j] << std::endl;
-    os << "  *Requires:" << std::endl;
-    for (std::size_t j = 0; j < providerRequirements[i].size(); j++)
-      os << "    " << (this->providerRequirements[i])[j] << std::endl;
+      os << "    " << *((this->providerVariables[i])[j]) << std::endl;
+    os << "  *Dependencies:";
+    if (providerRequirements[i].size() == 0) {
+      os << " None!" << std::endl;
+    }
+    else {
+      os << std::endl;
+      for (std::size_t j = 0; j < providerRequirements[i].size(); j++)
+	os << "    " << *((this->providerRequirements[i])[j]) << std::endl;
+    }
   }
   os << "** Finished Provider Evaluation Order" << std::endl;
 
   os << "******************************************************" << std::endl;
   os << "Finished PHX::EvaluatorManager" << std::endl;
+  os << "Evaluation Type = " << evaluation_type_name_ << std::endl;
   os << "******************************************************" << std::endl;
 
 }

@@ -22,14 +22,10 @@ namespace PHX {
     
       The user must define a number of objects in the traits class:
       
-      \item EvalTypes - an mpl::vector of user defined evaluation types.
+      \item EvalTypes - an mpl::vector of user defined evaluation types.  Each evaluation type must have a typedef member called ScalarT that provides the default scalar type.  This is used to automate the building of evaluators for each evaluation type using the EvaluatorFactory.
       
       \item EvalToDataMap - an mpl::map.  The key is an evaluation type and the value is an mpl::vector of valid data types for that particular evaluation type.
       
-      \item Algebraic types - a set of structs that represent the algebraic types.  Must have a string member.
-      
-      \item DataToAlgebraicMap - an mpl::map.  The key is a data type and the value is the corresponding algebraic type.
-
       \item Allocator type - type that defines the allocator class to use to allocate the memory for data storage.
       
       \item EvalData - A user defined type to be passed in to the evaluateFields() call.  Allows users to pass in arbitrary data on the cells.
@@ -60,15 +56,15 @@ namespace PHX {
     // *** Data Types
     // ******************************************************************
     
-    // Create the data types for each scalar type
+    // Create the data types for each evaluation type
     
-    // <double>
+    // Residual (default scalar type is RealType)
     typedef Sacado::mpl::vector< RealType, 
 				 MyVector<RealType>,
 				 MyTensor<RealType> 
     > ResidualDataTypes;
   
-    // Fad<double, double>
+    // Jacobian (default scalar type is Fad<double, double>)
     typedef Sacado::mpl::vector< FadType,
 				 MyVector<FadType>,
 				 MyTensor<FadType> 
@@ -80,28 +76,6 @@ namespace PHX {
       boost::mpl::pair<Jacobian, JacobianDataTypes>
     >::type EvalToDataMap;
 
-    // ******************************************************************
-    // *** Algebraic Types
-    // ******************************************************************
-
-    struct MY_SCALAR { static const std::string name; };
-    struct MY_VECTOR { static const std::string name; };
-    struct MY_TENSOR { static const std::string name; };
-
-    // ******************************************************************
-    // *** Connectors Types
-    // ******************************************************************
-
-    // Maps the key DataType to the value AlgebraicTypes
-    typedef boost::mpl::map<
-      boost::mpl::pair< RealType          , MY_SCALAR>,
-      boost::mpl::pair< MyVector<RealType>, MY_VECTOR>,
-      boost::mpl::pair< MyTensor<RealType>, MY_TENSOR>,
-      boost::mpl::pair< FadType           , MY_SCALAR>,
-      boost::mpl::pair< MyVector<FadType> , MY_VECTOR>,
-      boost::mpl::pair< MyTensor<FadType> , MY_TENSOR>
-    >::type DataToAlgebraicMap;
-    
     // ******************************************************************
     // *** Allocator Type
     // ******************************************************************
@@ -118,17 +92,10 @@ namespace PHX {
  
   // ******************************************************************
   // ******************************************************************
-  // Debug strings.
-  // 1. Initialize the name member for Algebric Types
-  // 2. Specialize the Scalar types and Data types for the TypeString
-  //    object in the PHX::TraitsBase class.
+  // Debug strings.  Specialize the Evaluation and Data types for the
+  // TypeString object in the PHX::TraitsBase class.
   // ******************************************************************
   // ******************************************************************
-
-  // Define the string names for the Algebraic Types
-  const std::string MyTraits::MY_SCALAR::name = "Scalar";
-  const std::string MyTraits::MY_VECTOR::name = "Vector";
-  const std::string MyTraits::MY_TENSOR::name = "Tensor";
 
   // Evaluation Types
   template<>

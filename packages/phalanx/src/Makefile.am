@@ -48,7 +48,6 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataContainer_Def.hpp \
 	$(srcdir)/Phalanx_DataContainer.hpp \
 	$(srcdir)/Phalanx_DataContainer_TemplateManager.hpp \
-	$(srcdir)/Phalanx_DataLayout_Generic_Def.hpp \
 	$(srcdir)/Phalanx_DataLayout_Generic.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
 	$(srcdir)/Phalanx_DebugStrings.hpp \
@@ -77,6 +76,8 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_FieldManager_Def.hpp \
 	$(srcdir)/Phalanx_FieldManager.hpp \
 	$(srcdir)/Phalanx_FieldTag.hpp \
+	$(srcdir)/Phalanx_FieldTag_Tag_Def.hpp \
+	$(srcdir)/Phalanx_FieldTag_Tag.hpp \
 	$(srcdir)/Phalanx_TemplateIterator.hpp \
 	$(srcdir)/Phalanx_TemplateManager_Def.hpp \
 	$(srcdir)/Phalanx_TemplateManager.hpp \
@@ -84,8 +85,8 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_Version.hpp
 
 PHALANX_CPP = \
-	$(srcdir)/Phalanx_DataLayout.cpp \
-	$(srcdir)/Phalanx_FieldTag.cpp
+	$(srcdir)/Phalanx_DataLayout_Generic.cpp \
+	$(srcdir)/Phalanx_DataLayout.cpp
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies

@@ -5,10 +5,10 @@
 
 namespace PHX {
   
-  template<typename ScalarT, typename Traits>
+  template<typename ObjectT, typename Traits>
   std::string getTypeString() 
   { 
-    return Traits::template TypeString<ScalarT>::value;
+    return Traits::template TypeString<ObjectT>::value;
   }
 
 }

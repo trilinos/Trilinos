@@ -2,14 +2,12 @@
 template<typename EvalT, typename Traits> 
 Fourier<EvalT, Traits>::
 Fourier(const Teuchos::ParameterList& p) :
-  flux("Energy_Flux", 
-       p.get< Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout") ),
-  density("Density", 
-	  p.get< Teuchos::RCP<PHX::DataLayout> >("Scalar Data Layout") ),
+  flux("Energy_Flux", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
+  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
   dc("Diffusion Coefficient", 
-     p.get< Teuchos::RCP<PHX::DataLayout> >("Scalar Data Layout") ),
+     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
   grad_temp("Temperature Gradient", 
-	    p.get< Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout") )
+	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 { 
   this->addEvaluatedField(flux);
   this->addDependentField(density);
@@ -34,7 +32,7 @@ postRegistrationSetup(PHX::FieldManager<Traits>& vm)
   this->utils.setFieldData(dc,vm);
   this->utils.setFieldData(grad_temp,vm);
 
-  data_layout_size = flux.fieldTag().dataLayout()->size();
+  data_layout_size = flux.fieldTag().dataLayout().size();
 }
 
 //**********************************************************************

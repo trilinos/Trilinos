@@ -1,10 +1,13 @@
+// @HEADER
+// @HEADER
+
 #ifndef PHX_FIELD_H
 #define PHX_FIELD_H
 
 #include <iostream>
 #include <string>
 #include "Teuchos_ArrayRCP.hpp"
-#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 
 namespace PHX {
 
@@ -17,7 +20,7 @@ namespace PHX {
     
     Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
     
-    Field(const PHX::FieldTag& v);
+    Field(const PHX::Tag<DataT>& v);
     
     Field();
     
@@ -29,7 +32,7 @@ namespace PHX {
 
     typename Teuchos::ArrayRCP<DataT>::Ordinal size() const;
 
-    void setFieldTag(const PHX::FieldTag& v);
+    void setFieldTag(const PHX::Tag<DataT>& t);
     
     void setFieldData(const Teuchos::ArrayRCP<DataT>& d);
     
@@ -37,7 +40,7 @@ namespace PHX {
 
   private:
     
-    PHX::FieldTag m_tag;
+    PHX::Tag<DataT> m_tag;
     
     Teuchos::ArrayRCP<DataT> m_field_data;
 

@@ -1,42 +1,49 @@
-#ifndef PHX_FIELDTAG_H
-#define PHX_FIELDTAG_H
+// @HEADER
+// @HEADER
+
+#ifndef PHX_FIELDTAG_HPP
+#define PHX_FIELDTAG_HPP
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_DataLayout.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace PHX {
+
+  class DataLayout;
 
   class FieldTag {
 
   public:
 
-    FieldTag(const std::string& name,
-	     const Teuchos::RCP<PHX::DataLayout>& dl);
+    FieldTag() {}
     
-    ~FieldTag();
+    virtual ~FieldTag() {}
 
-    FieldTag& operator=(const FieldTag& a);
+    virtual Teuchos::RCP<FieldTag> clone() const = 0;
+
+    virtual bool operator==(const FieldTag& t) const = 0;
     
-    bool operator==(const FieldTag& a) const;
+    virtual bool operator!=(const FieldTag& t) const
+    { return !(*this == t); };
     
-    bool operator<(const FieldTag& a) const;
+    virtual const std::string& name() const = 0;
+
+    virtual const PHX::DataLayout& dataLayout() const = 0;
+
+    virtual const std::type_info& dataTypeInfo() const = 0;
     
-    const std::string& name() const;
+    //! Unique name identifier that can be used for strict weak ordering in stl std::map keys.
+    virtual const std::string identifier() const = 0;
 
-    const Teuchos::RCP<PHX::DataLayout> dataLayout() const;
-
-    void print(std::ostream& os, int indent = 0) const;
-
-  protected:
-
-    std::string m_name;
-    
-    Teuchos::RCP<PHX::DataLayout> m_data_layout;
+    virtual void print(std::ostream& os) const = 0;
 
   };
 
-  std::ostream& operator<<(std::ostream& os, const PHX::FieldTag& v);
+  std::ostream& operator<<(std::ostream& os, const PHX::FieldTag& t)
+  { 
+    t.print(os); 
+    return os; 
+  }
   
 } 
 

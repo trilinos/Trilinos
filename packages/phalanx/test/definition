@@ -6,6 +6,7 @@
     DIRS = Allocators,
 	   DataContainer,
 	   DataLayout,
+           EvaluatorManager,
            FieldTag,
            Field,
 	   Utilities;

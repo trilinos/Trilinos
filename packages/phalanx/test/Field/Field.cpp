@@ -1,3 +1,6 @@
+// @HEADER
+// @HEADER
+
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx.hpp"
 
@@ -26,17 +29,14 @@ int main(int argc, char *argv[])
     {
 
       // Dummy data layouts
-      RCP<DataLayout> node4 = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_Nodes", 4));
-      RCP<DataLayout> quad4 = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_QuadPoints", 4));
-      RCP<DataLayout> gradQuad4 = 
-	rcp(new Generic<MyTraits::MY_VECTOR>("Q1_QuadPoints", 4));
+      RCP<DataLayout> node4 = rcp(new Generic("Q1_Nodes", 4));
+      RCP<DataLayout> quad4 = rcp(new Generic("Q1_QuadPoints", 4));
       
       // Tags with same name but different topology
-      FieldTag nodal_density("density", node4);
-      FieldTag qp_density("density", quad4);
-      FieldTag grad_qp_density("density", gradQuad4);
+      Tag<double> nodal_density("density", node4);
+      Tag<double> qp_density("density", quad4);
+      Tag< MyVector<double> > grad_qp_density("density", quad4);
+      Tag< MyVector<MyTraits::FadType> > f_grad_qp_density("density", quad4);
       
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
       
       cout << "Testing ctor with individual data...";
       Field<MyTraits::FadType> c("density", node4);
-      Field< MyVector<MyTraits::FadType> > d("density", gradQuad4);
+      Field< MyVector<MyTraits::FadType> > d("density", quad4);
       cout << "passed!" << endl;
       
       cout << "Testing empty ctor...";
@@ -63,36 +63,31 @@ int main(int argc, char *argv[])
 
       const FieldTag& test_a = a.fieldTag();
       TEST_FOR_EXCEPTION( !(test_a == nodal_density),
-			 std::logic_error,
-			 "fieldTag() accessor failed!");
+			  std::logic_error,
+			  "fieldTag() accessor failed!");
       
       const FieldTag& test_b = b.fieldTag();
       TEST_FOR_EXCEPTION( !(test_b == grad_qp_density),
-			 std::logic_error,
-			 "fieldTag() accessor failed!");
+			  std::logic_error,
+			  "fieldTag() accessor failed!");
       
-      const FieldTag& test_c = c.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_c == nodal_density),
-			 std::logic_error,
-			 "fieldTag() accessor failed!");
-
       const FieldTag& test_d = d.fieldTag();
-      TEST_FOR_EXCEPTION( !(test_d == grad_qp_density),
-			 std::logic_error,
-			 "fieldTag() accessor failed!");
-
+      TEST_FOR_EXCEPTION( !(test_d == f_grad_qp_density),
+			  std::logic_error,
+			  "fieldTag() accessor failed!");
+      
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // setFieldTag()
-      cout << "Testing setFieldTag() accessor...";
+      cout << "Testing setFieldTag()...";
       e.setFieldTag(nodal_density);
-      f.setFieldTag(grad_qp_density);
+      f.setFieldTag(f_grad_qp_density);
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // setFieldData()
-      cout << "Testing getFieldData() accessor...";
+      cout << "Testing getFieldData()...";
       const int size = 100;
       ArrayRCP<double> a_scalar_scalar = 
 	arcp<double>(size);

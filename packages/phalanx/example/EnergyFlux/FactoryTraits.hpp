@@ -18,7 +18,7 @@ using namespace boost::mpl::placeholders;
 /*! \brief Struct to define Evaluator objects for the EvaluatorFactory.
     
     Preconditions:
-    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects. 
+    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects that you wish the factory to build.  Do not confuse evaluator types (concrete instances of evaluator objects) with evaluation types (types of evaluations to perform, i.e., Residual, Jacobian). 
 
 */
 template<typename Traits>

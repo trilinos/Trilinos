@@ -8,7 +8,7 @@
 template <typename ScalarT, typename Traits>
 PHX::EvaluationContainer<ScalarT, Traits>::EvaluationContainer()
 {
-  this->vp_manager_.setScalarTypeName( PHX::getTypeString<ScalarT, Traits>() );
+  this->vp_manager_.setEvaluationTypeName( PHX::getTypeString<ScalarT, Traits>() );
   this->data_container_template_manager_.buildObjects();
 }
 
@@ -48,18 +48,20 @@ postRegistrationSetup(std::size_t max_num_cells,
   // Determine total amount of memory for all variables
   allocator_.reset();
   
-  const std::vector<PHX::FieldTag>& var_list = 
+  const std::vector< Teuchos::RCP<PHX::FieldTag> >& var_list = 
     this->vp_manager_.getFieldTags();
 
-  std::vector<PHX::FieldTag>::const_iterator  var = var_list.begin();
+  std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var = 
+    var_list.begin();
   for (; var != var_list.end(); ++var) {
 
     typename DCTM::iterator it = data_container_template_manager_.begin();
     for (; it != data_container_template_manager_.end(); ++it) {
       
-      if (var->dataLayout()->getAlgebraicTypeInfo() == it->getAlgebraicTypeInfo()) {
+      if ((*var)->dataTypeInfo() == it->dataTypeInfo()) {
 	std::size_t size_of_data_type = it->getSizeOfDataType();
-	int total_size = max_num_cells * size_of_data_type * var->dataLayout()->size();
+	int total_size = 
+	  max_num_cells * size_of_data_type * (*var)->dataLayout().size();
 	allocator_.addRequiredBytes(total_size);
       }
     }
@@ -74,7 +76,7 @@ postRegistrationSetup(std::size_t max_num_cells,
     typename DCTM::iterator it = data_container_template_manager_.begin();
     for (; it != data_container_template_manager_.end(); ++it) {
       
-      if (var->dataLayout()->getAlgebraicTypeInfo() == it->getAlgebraicTypeInfo()) {
+      if ((*var)->dataTypeInfo() == it->dataTypeInfo()) {
 	it->allocateField(*var, max_num_cells, allocator_);
       }
     }

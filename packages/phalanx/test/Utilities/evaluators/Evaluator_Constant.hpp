@@ -1,3 +1,5 @@
+// @HEADER
+// @HEADER
 
 #ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
 #define PHX_EXAMPLE_VP_CONSTANT_HPP
@@ -7,6 +9,10 @@
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
+
+namespace Teuchos {
+  class ParameterList;
+}
 
 template<typename EvalT, typename Traits>
 class Constant : 

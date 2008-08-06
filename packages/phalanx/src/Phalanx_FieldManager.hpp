@@ -24,24 +24,24 @@ namespace PHX {
 
     ~FieldManager();
     
-    void requireFieldForAllTypes(const PHX::FieldTag& v);
+    void requireFieldForAllEvaluationTypes(const PHX::FieldTag& t);
     
     template<typename EvalT>
-    void requireFieldForScalarType(const PHX::FieldTag& v);
+    void requireField(const PHX::FieldTag& t);
 
-    void registerEvaluatorForAllTypes(const Teuchos::RCP< PHX::Evaluator<Traits> >& p);
+    void registerEvaluatorForAllEvaluationTypes(const Teuchos::RCP< PHX::Evaluator<Traits> >& e);
     
     template<typename EvalT>
-    void registerEvaluatorForScalarType(const Teuchos::RCP< PHX::Evaluator<Traits> >& p);
+    void registerEvaluator(const Teuchos::RCP< PHX::Evaluator<Traits> >& e);
 
-    void registerEvaluatorForScalarType(typename PHX::FieldManager<Traits>::iterator it,
-				 const Teuchos::RCP< PHX::Evaluator<Traits> >& p);
+    void registerEvaluator(typename PHX::FieldManager<Traits>::iterator it,
+			   const Teuchos::RCP< PHX::Evaluator<Traits> >& e);
     
     template<typename DataT, typename EvalT> 
-    void getFieldData(PHX::Field<DataT>& h);
+    void getFieldData(PHX::Field<DataT>& f);
     
     template<typename DataT, typename EvalT> 
-    void getFieldData(const PHX::FieldTag& v, Teuchos::ArrayRCP<DataT>& d);
+    void getFieldData(const PHX::FieldTag& t, Teuchos::ArrayRCP<DataT>& d);
     
     void postRegistrationSetup(std::size_t max_num_cells);
 

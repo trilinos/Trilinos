@@ -43,9 +43,11 @@ namespace PHX {
 
     virtual void postRegistrationSetup(PHX::FieldManager<Traits>& vm) = 0;
 
-    virtual const std::vector<FieldTag>& evaluatedFields() const;
+    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    evaluatedFields() const;
 
-    virtual const std::vector<FieldTag>& dependentFields() const;
+    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    dependentFields() const;
 
     virtual void evaluateFields(typename Traits::EvalData d) = 0;
 
@@ -57,9 +59,9 @@ namespace PHX {
 
   private:
 
-    std::vector<FieldTag> evaluated_;
+    std::vector< Teuchos::RCP<FieldTag> > evaluated_;
 
-    std::vector<FieldTag> required_;
+    std::vector< Teuchos::RCP<FieldTag> > required_;
 
     std::string name_;
   };

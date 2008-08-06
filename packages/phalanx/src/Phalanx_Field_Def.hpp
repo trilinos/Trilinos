@@ -1,3 +1,6 @@
+// @HEADER
+// @HEADER
+
 #ifndef PHX_FIELD_DEF_H
 #define PHX_FIELD_DEF_H
 
@@ -25,7 +28,7 @@ PHX::Field<DataT>::Field(const std::string& name,
 
 //**********************************************************************
 template<typename DataT>
-PHX::Field<DataT>::Field(const PHX::FieldTag& v) :
+PHX::Field<DataT>::Field(const PHX::Tag<DataT>& v) :
   m_tag(v)
 #ifdef PHX_DEBUG
   ,m_tag_set(true),
@@ -83,7 +86,7 @@ typename Teuchos::ArrayRCP<DataT>::Ordinal PHX::Field<DataT>::size() const
 
 //**********************************************************************
 template<typename DataT>
-void PHX::Field<DataT>::setFieldTag(const PHX::FieldTag& v)
+void PHX::Field<DataT>::setFieldTag(const PHX::Tag<DataT>& v)
 {  
 #ifdef PHX_DEBUG
   m_tag_set = true;

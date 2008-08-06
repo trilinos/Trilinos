@@ -1,10 +1,16 @@
+// @HEADER
+// @HEADER
+
+#include <map>
+
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx.hpp"
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_FieldTag_Comparison.hpp"
+#include "Phalanx_DataLayout_Generic.hpp"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 // From test/Utilities directory
@@ -26,19 +32,23 @@ int main(int argc, char *argv[])
     // *********************************************************************
     {
 
-      // Dummy data layouts
+      // Dummy data layouts (same size different name/type)
       RCP<DataLayout> node4 = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_Nodes", 4));
+	rcp(new Generic("Q1_Nodes", 4));
       RCP<DataLayout> quad4 = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_QuadPoints", 4));
-      RCP<DataLayout> gradQuad4 = 
-	rcp(new Generic<MyTraits::MY_VECTOR>("Q1_QuadPoints", 4));
+	rcp(new Generic("Q1_QuadPoints", 4));
       
-      // Tags with same name but different topology
-      FieldTag nodal_density("density", node4);
-      FieldTag qp_density("density", quad4);
-      FieldTag grad_qp_density("density", gradQuad4);
-      
+      // Allocate tags with same name but different topology
+      RCP<FieldTag> rcp_nodal_density = rcp(new Tag<double>("density", node4));
+      RCP<FieldTag> rcp_qp_density = rcp(new Tag<double>("density", quad4));
+      RCP<FieldTag> rcp_grad_qp_density = 
+	rcp(new Tag<MyVector<double> >("density", quad4));
+
+      // Get references to field tags
+      FieldTag& nodal_density = *rcp_nodal_density;
+      FieldTag& qp_density = *rcp_qp_density;
+      FieldTag& grad_qp_density = *rcp_grad_qp_density;
+    
       // test ostream
       cout << "Printing field tags" << endl;
       cout << nodal_density << endl;
@@ -53,7 +63,9 @@ int main(int argc, char *argv[])
 			 "operator==() failed!");
       
       // New constructor that should be same as nodal_density
-      FieldTag nodal_density_copy("density", node4);
+      RCP<FieldTag> rcp_nodal_density_copy = 
+	rcp(new Tag<double>("density", node4));
+      FieldTag& nodal_density_copy = *rcp_nodal_density_copy;
 
       cout << "Are nodal and nodal copy fields equal (should be true)? = " 
 	   << (nodal_density == nodal_density_copy) << endl;
@@ -69,13 +81,14 @@ int main(int argc, char *argv[])
 			 "operator==() failed for data layout comparison !");
       
       // test operator =
-      FieldTag copy = nodal_density_copy;
-      
-      cout << "Compare copy of operator to itself (should be true)? = " 
-	   << (copy == nodal_density_copy) << endl;
-      TEST_FOR_EXCEPTION(!(copy == nodal_density_copy), 
-			 std::logic_error,
-			 "operator=() failed!");
+      cout << "Testing operator=()...";
+      Tag<double> op_eq("Garbage", node4);
+      TEST_FOR_EXCEPTION(op_eq == nodal_density, std::logic_error, 
+			 "Comparison failed.  Should be different!");
+      op_eq = dynamic_cast< Tag<double>& >(nodal_density);
+      TEST_FOR_EXCEPTION(op_eq != nodal_density, std::logic_error, 
+			 "operator=() failed.  Tags should be the same!");
+      cout << "Passed." << endl;
 
       // name() accessor
       cout << "Testing name() accessor...";
@@ -85,13 +98,50 @@ int main(int argc, char *argv[])
       cout << "Passed." << endl;
       
       // dataLayout() accessor
+      const DataLayout& tmp = *node4;
       cout << "Testing dataLayout() accessor...";
-      TEST_FOR_EXCEPTION(nodal_density.dataLayout() != node4, 
+      TEST_FOR_EXCEPTION(nodal_density.dataLayout() != tmp, 
 			 std::logic_error,
 			 "dataLayout() accessor failed!");
       cout << "Passed." << endl;
       
-    
+      
+      // clone()
+      cout << "Testing clone()...";
+      RCP<FieldTag> my_copy = rcp_nodal_density->clone();
+      TEST_FOR_EXCEPTION( *my_copy != *rcp_nodal_density , 
+			 std::logic_error,
+			 "name() accessor failed!");
+      cout << "Passed." << endl;
+      
+      // Comparison for map key operations
+      cout << "Testing stl std::map with key of RCP<FieldTag>...";
+      
+      map<RCP<FieldTag>, int, FTComp> my_map;
+      my_map[rcp_nodal_density] = 0;
+      my_map[rcp_qp_density] = 1;
+      my_map[rcp_grad_qp_density] = 2;
+      
+      RCP<FieldTag> tmp_rcp_nodal_density = 
+	rcp(new Tag<double>("density", node4));
+      RCP<FieldTag> tmp_rcp_qp_density = 
+	rcp(new Tag<double>("density", quad4));
+      RCP<FieldTag> tmp_rcp_grad_qp_density = 
+	rcp(new Tag<MyVector<double> >("density", quad4));
+      
+      // Make sure we can create a field tag and access matching map entry
+      TEST_FOR_EXCEPTION(my_map[tmp_rcp_nodal_density] != 0,
+			 std::logic_error,
+			 "Failed to find correct FieldTag(0)!");
+      TEST_FOR_EXCEPTION(my_map[tmp_rcp_qp_density] != 1,
+			 std::logic_error,
+			 "Failed to find correct FieldTag(1)!");
+      TEST_FOR_EXCEPTION(my_map[tmp_rcp_grad_qp_density] != 2,
+			 std::logic_error,
+			 "Failed to find correct FieldTag(2)!");
+
+      cout << "Passed." << endl;
+      
     }
 
     // *********************************************************************

@@ -1,3 +1,5 @@
+// @HEADER
+// @HEADER
 
 #ifndef PHX_FIELD_EVALUATOR_MANAGER_HPP
 #define PHX_FIELD_EVALUATOR_MANAGER_HPP
@@ -5,7 +7,9 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_FieldTag.hpp"
+#include "Phalanx_FieldTag_Comparison.hpp"
 #include "Phalanx_Evaluator.hpp"
+#include "Phalanx_DebugStrings.hpp"
 
 namespace PHX {
   
@@ -18,7 +22,7 @@ namespace PHX {
 
   public:
 
-    EvaluatorManager(const std::string& scalar_type_name = "???");
+    EvaluatorManager(const std::string& evaluator_type_name = "???");
     
     ~EvaluatorManager();
     
@@ -62,9 +66,9 @@ namespace PHX {
     */
     void postEvaluate(typename Traits::PostEvalData d);
     
-    void setScalarTypeName(const std::string& scalar_type_name);
+    void setEvaluationTypeName(const std::string& evaluation_type_name);
     
-    const std::vector<PHX::FieldTag>& getFieldTags();
+    const std::vector< Teuchos::RCP<PHX::FieldTag> >& getFieldTags();
 
     bool sortingCalled() const;
 
@@ -81,18 +85,22 @@ namespace PHX {
   protected:
     
     //! Fields required by the user.
-    std::vector<PHX::FieldTag> fields_;
+    std::vector< Teuchos::RCP<PHX::FieldTag> > fields_;
     
     //@{
     /*!
       @name Evaluator Objects
       @brief Stores information about variable provider objects.
-    */
-    
+    */    
     std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > 
     varProviders;
-    std::vector< std::vector<PHX::FieldTag> > providerVariables;
-    std::vector< std::vector<PHX::FieldTag> > providerRequirements;
+    
+    std::vector< std::vector< Teuchos::RCP<PHX::FieldTag> > > 
+    providerVariables;
+
+    std::vector< std::vector< Teuchos::RCP<PHX::FieldTag> > > 
+    providerRequirements;
+
     std::vector<std::string> providerNames;
     //@}
 
@@ -106,10 +114,10 @@ namespace PHX {
     std::vector<int> providerEvalOrderIndex;
     //@}
     
+    std::string evaluation_type_name_;
+
     //! Flag to tell the setup has been called.
     bool sorting_called_;
-    
-    std::string scalar_type_name_;
     
   };
   

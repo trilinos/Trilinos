@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
       double* raw_density = new double[size];
       
       RCP<DataLayout> dl = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("cell_quantitiy", 1));
+	rcp(new Generic("cell_quantitiy", 1));
       Field<double> density("density", dl);
       ArrayRCP<double> a_density = arcp<double>(size);
       density.setFieldData(a_density);

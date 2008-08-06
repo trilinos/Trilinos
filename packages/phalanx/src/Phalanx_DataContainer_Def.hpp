@@ -1,3 +1,6 @@
+// @HEADER
+// @HEADER
+
 #ifndef PHX_DATA_CONTAINER_DEF_HPP
 #define PHX_DATA_CONTAINER_DEF_HPP
 
@@ -13,18 +16,22 @@
 // ************************************************************************
 template <typename DataT, typename Traits>
 Teuchos::ArrayRCP<DataT> PHX::DataContainer<DataT, Traits>::
-getFieldData(const PHX::FieldTag& v)
+getFieldData(const PHX::FieldTag& t)
 {
-  typename std::map<PHX::FieldTag, Teuchos::ArrayRCP<DataT> >::iterator it;
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
 
-  it = data_.find(v);
-  if (it == data_.end()) {
-    DataT data;
+  typename map< RCP<const FieldTag>, ArrayRCP<DataT>, FTComp >::iterator it;
+  it = m_data.find(Teuchos::rcp(&t, false));
+
+  if (it == m_data.end()) {
+    std::string type = PHX::getTypeString<DataT, Traits>();
     std::ostringstream msg;
-    msg << "The field:\n\n" << v
+    msg << "The field:\n\n" << t
 	<< "\n\ndoes not exist in DataContainer of type: " 
-	<< typeid(data).name() << std::endl;
-    TEST_FOR_EXCEPTION(it == data_.end(), std::logic_error, msg.str());
+	<< type << std::endl;
+    TEST_FOR_EXCEPTION(it == m_data.end(), std::logic_error, msg.str());
   }
 
   return it->second;
@@ -33,20 +40,20 @@ getFieldData(const PHX::FieldTag& v)
 // ************************************************************************
 template <typename DataT, typename Traits>
 void PHX::DataContainer<DataT, Traits>::
-allocateField(const PHX::FieldTag& v, std::size_t max_num_cells,
+allocateField(const Teuchos::RCP<PHX::FieldTag>& t, 
+	      std::size_t max_num_cells,
 	      typename Traits::Allocator& a)
 {
-  std::size_t num_elements = v.dataLayout()->size() * max_num_cells;
-  data_[v] = a.template allocate<DataT>(num_elements);
+  std::size_t num_elements = t->dataLayout().size() * max_num_cells;
+  m_data[t] = a.template allocate<DataT>(num_elements);
 }
 
 // ************************************************************************
 template <typename DataT, typename Traits>
 const std::type_info& PHX::DataContainer<DataT, Traits>::
-getAlgebraicTypeInfo() const
+dataTypeInfo() const
 {
-  return typeid(typename boost::mpl::at<typename Traits::DataToAlgebraicMap, 
-		DataT>::type);
+  return typeid(DataT);
 }
 
 // ************************************************************************
@@ -63,23 +70,24 @@ template <typename DataT, typename Traits>
 void PHX::DataContainer<DataT, Traits>::
 print(std::ostream& os) const
 {
+  using namespace std;
+  using namespace Teuchos;
+
   std::string type = PHX::getTypeString<DataT, Traits>();
   
-  using namespace std;
   os << "********************************************" << endl;
   os << "PHX::DataContainer Output" << endl;
   os << "********************************************" << endl;
   os << "  Data Type = " << type << endl;
   os << "  My FieldTags:";
 
-  if (data_.size() == 0)
+  if (m_data.size() == 0)
     os << " None!" << endl;
   else {
     os << endl;
-    typename std::map< PHX::FieldTag, Teuchos::ArrayRCP<DataT> >::const_iterator it =
-      data_.begin();
-    for (; it != data_.end(); ++it)
-      os << "    " << it->first << endl;
+    typename map< RCP<const PHX::FieldTag>, ArrayRCP<DataT> >::const_iterator it = m_data.begin();
+    for (; it != m_data.end(); ++it)
+      os << "    " << *(it->first) << endl;
   }
 
   os << "********************************************" << endl;

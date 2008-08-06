@@ -22,7 +22,7 @@ postRegistrationSetup(PHX::FieldManager<Traits>& vm)
   this->utils.setFieldData(density,vm);
   this->utils.setFieldData(temp,vm);
 
-  data_layout_size = density.fieldTag().dataLayout()->size();
+  data_layout_size = density.fieldTag().dataLayout().size();
 }
 
 //**********************************************************************

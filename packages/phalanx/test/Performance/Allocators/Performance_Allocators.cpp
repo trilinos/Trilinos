@@ -22,12 +22,8 @@ using namespace PHX;
 template<typename Traits>
 RCP< FieldManager<Traits> > buildFieldManager()
 {
-  RCP<DataLayout> scalar_qp = 
-    rcp(new Generic<typename Traits::MY_SCALAR>("Q1_QP", 4));
-  RCP<DataLayout> vector_qp = 
-    rcp(new Generic<typename Traits::MY_VECTOR>("Q1_QP", 4));
-  RCP<DataLayout> scalar_node = 
-    rcp(new Generic<typename Traits::MY_SCALAR>("Q1_NODE", 4));
+  RCP<DataLayout> qp = rcp(new Generic("Q1_QP", 4));
+  RCP<DataLayout> node = rcp(new Generic("Q1_NODE", 4));
 
   // Parser will build parameter list that determines the field
   // evaluators to build
@@ -39,14 +35,14 @@ RCP< FieldManager<Traits> > buildFieldManager()
     p->set<int>("Type", type);
     p->set<string>("Name", "Temperature");
     p->set<double>("Value", 2.0);
-    p->set< RCP<DataLayout> >("Data Layout", scalar_node);
+    p->set< RCP<DataLayout> >("Data Layout", node);
     evaluators_to_build["DOF_Temperature"] = p;
   }
   { // Density
     RCP<ParameterList> p = rcp(new ParameterList);
     int type = MyFactoryTraits<Traits>::id_density;
     p->set<int>("Type", type);
-    p->set< RCP<DataLayout> >("Data Layout", scalar_qp);
+    p->set< RCP<DataLayout> >("Data Layout", qp);
     evaluators_to_build["Density"] = p;
   }
   
@@ -56,7 +52,7 @@ RCP< FieldManager<Traits> > buildFieldManager()
     p->set<int>("Type", type);
     p->set<string>("Name", "Diffusion Coefficient");
     p->set<double>("Value", 2.0);
-    p->set< RCP<DataLayout> >("Data Layout", scalar_qp);
+    p->set< RCP<DataLayout> >("Data Layout", qp);
     evaluators_to_build["Diffusion Coefficient"] = p;
   }
   
@@ -64,7 +60,7 @@ RCP< FieldManager<Traits> > buildFieldManager()
     RCP<ParameterList> p = rcp(new ParameterList);
     int type = MyFactoryTraits<Traits>::id_nonlinearsource;
     p->set<int>("Type", type);
-    p->set< RCP<DataLayout> >("Data Layout", scalar_qp);
+    p->set< RCP<DataLayout> >("Data Layout", qp);
     evaluators_to_build["Nonlinear Source"] = p;
   }
 
@@ -72,8 +68,7 @@ RCP< FieldManager<Traits> > buildFieldManager()
     RCP<ParameterList> p = rcp(new ParameterList);
     int type = MyFactoryTraits<Traits>::id_fourier;
     p->set<int>("Type", type);
-    p->set< RCP<DataLayout> >("Scalar Data Layout", scalar_qp);
-    p->set< RCP<DataLayout> >("Vector Data Layout", vector_qp);
+    p->set< RCP<DataLayout> >("Data Layout", qp);
     evaluators_to_build["Energy Flux"] = p;
   }
   
@@ -87,9 +82,8 @@ RCP< FieldManager<Traits> > buildFieldManager()
     p->set<string>("QP Variable Name", "Temperature");
     p->set<string>("Gradient QP Variable Name", "Temperature Gradient");
     
-    p->set< RCP<DataLayout> >("Node Data Layout", scalar_node);
-    p->set< RCP<DataLayout> >("QP Data Layout", scalar_qp);
-    p->set< RCP<DataLayout> >("Gradient QP Data Layout", vector_qp);
+    p->set< RCP<DataLayout> >("Node Data Layout", node);
+    p->set< RCP<DataLayout> >("QP Data Layout", qp);
     
     evaluators_to_build["FE Interpolation"] = p;
   }
@@ -103,10 +97,10 @@ RCP< FieldManager<Traits> > buildFieldManager()
   
   // Request quantities to assemble PDE operators
   RCP< FieldManager<Traits> > vm = rcp(new FieldManager<Traits>);
-  FieldTag energy_flux("Energy_Flux", vector_qp);
-  vm->requireFieldForAllTypes(energy_flux);
-  FieldTag source("Nonlinear Source", scalar_qp);
-  vm->requireFieldForAllTypes(source);
+  Tag<MyVector<double> > energy_flux("Energy_Flux", qp);
+  vm->template requireField<typename Traits::Residual>(energy_flux);
+  Tag<double> source("Nonlinear Source", qp);
+  vm->template requireField<typename Traits::Residual>(source);
   
   // Register all Evaluators
   registerEvaluators(providers, *vm);

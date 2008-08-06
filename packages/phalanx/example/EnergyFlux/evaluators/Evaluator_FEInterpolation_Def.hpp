@@ -10,7 +10,7 @@ FEInterpolation(const Teuchos::ParameterList& p) :
   val_qp(p.get<std::string>("QP Variable Name"), 
 	 p.get< Teuchos::RCP<PHX::DataLayout> >("QP Data Layout") ),
   val_grad_qp(p.get<std::string>("Gradient QP Variable Name"), 
-	      p.get< Teuchos::RCP<PHX::DataLayout> >("Gradient QP Data Layout") )
+	      p.get< Teuchos::RCP<PHX::DataLayout> >("QP Data Layout") )
 { 
   this->addDependentField(val_node);
   this->addEvaluatedField(val_qp);
@@ -27,11 +27,11 @@ FEInterpolation<EvalT, Traits>::~FEInterpolation()
 //**********************************************************************
 template<typename EvalT, typename Traits> 
 void FEInterpolation<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(PHX::FieldManager<Traits>& fm)
 {
-  this->utils.setFieldData(val_node,vm);
-  this->utils.setFieldData(val_qp,vm);
-  this->utils.setFieldData(val_grad_qp,vm);
+  this->utils.setFieldData(val_node,fm);
+  this->utils.setFieldData(val_qp,fm);
+  this->utils.setFieldData(val_grad_qp,fm);
 }
 
 //**********************************************************************
@@ -40,8 +40,8 @@ void FEInterpolation<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData cell_data)
 { 
   
-  const int nodes_per_cell = val_node.fieldTag().dataLayout()->size();
-  const int qp_per_cell = val_qp.fieldTag().dataLayout()->size();
+  const int nodes_per_cell = val_node.fieldTag().dataLayout().size();
+  const int qp_per_cell = val_qp.fieldTag().dataLayout().size();
 
   // Loop over number of cells
   for (std::size_t cell = 0; cell < cell_data.size(); ++cell) {

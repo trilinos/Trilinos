@@ -1,3 +1,6 @@
+// @HEADER
+// @HEADER
+
 #ifndef PHX_DATA_LAYOUT_GENERIC
 #define PHX_DATA_LAYOUT_GENERIC
 
@@ -14,7 +17,6 @@ namespace PHX{
       user must pass specific external information via Data Layouts.
 
   */
-  template<typename Entity>
   class Generic : public DataLayout {
 
   public:
@@ -23,13 +25,13 @@ namespace PHX{
 
     virtual ~Generic();
 
+    virtual bool operator==(const DataLayout& right) const;
+
     virtual const std::string& name() const;
 
     virtual std::size_t size() const;
 
-    virtual bool operator==(const DataLayout& right) const;
-
-    virtual const std::type_info& getAlgebraicTypeInfo() const;
+    virtual const std::string identifier() const;
 
     virtual void print(std::ostream& os, int indent = 0) const;
 
@@ -41,11 +43,8 @@ namespace PHX{
 
   };
 
-  template<typename Entity>
-  std::ostream& operator<<(std::ostream& os, const PHX::Generic<Entity>& t);
+  std::ostream& operator<<(std::ostream& os, const PHX::Generic& t);
 
 }
-
-#include "Phalanx_DataLayout_Generic_Def.hpp"
 
 #endif

@@ -1,11 +1,19 @@
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx.hpp"
+#include "Phalanx_DataLayout_Generic.hpp"
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
+#include "Phalanx_Evaluator_Manager.hpp"
+#include "Phalanx_DebugStrings.hpp"
+
+// Evaluators
+#include "evaluators/Evaluator_Constant.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 // From test/Utilities directory
 #include "Traits.hpp"
@@ -25,31 +33,58 @@ int main(int argc, char *argv[])
     // Start of Data Container Testing
     // *********************************************************************
     {
-      cout << "\nStarting Data Container Testing\n";
+      cout << "\nStarting EvaluatorManager Testing\n";
 
       
-      cout << "\nConstructing DataContainers...";
-      DataContainer< double, MyTraits > dc_scalar;
-      DataContainer< MyVector<double>, MyTraits > dc_vector;
-      DataContainer< MyTensor<double>, MyTraits > dc_tensor;
+      cout << "\nConstructing EvaluatorManager...";
+      EvaluatorManager<MyTraits> em;
       cout << "Passed!" << endl;
 
-      cout << "\nTesting allocateField()...";
       RCP<DataLayout> nodes = rcp(new Generic("nodes",4));
-      RCP<FieldTag> d_tag = rcp(new Tag<MyVector<double> >("Density", nodes));
-      MyTraits::Allocator allocator;
-      dc_vector.allocateField(d_tag, 100, allocator);
-      cout << "Passed!" << endl;
+      RCP<DataLayout> qp = rcp(new Generic("QP",4));
+
+      RCP<FieldTag> den_n = rcp(new Tag<double>("Density", nodes));
+      RCP<FieldTag> den_qp = rcp(new Tag<double>("Density", qp));
       
-      cout << "\nTesting getFieldData()...";
-      ArrayRCP<MyVector<double> > den = dc_vector.getFieldData(*d_tag);
-      TEST_FOR_EXCEPTION(den == Teuchos::null, std::logic_error,
-			 "Array is null!");
+      
+      cout << "\nTesting requireField()...";
+      em.requireField(*den_n);
+      em.requireField(*den_qp);
       cout << "Passed!" << endl;
 
-      cout << "\nPrinting DataContainer:\n\n";
-      cout << dc_vector << endl;
-      cout << "Printing DataContainer...Passed!" << endl;
+      cout << "\nTesting registerEvaluator()...";
+      { 
+	ParameterList p;
+	p.set<string>("Name", "Density");
+	p.set<double>("Value", 2.0);
+	p.set< RCP<DataLayout> >("Data Layout", nodes);
+	Teuchos::RCP< PHX::Evaluator<MyTraits> > ptr = 
+	  rcp(new Constant<MyTraits::Residual, MyTraits>(p));
+	em.registerEvaluator(ptr);
+      }
+      { 
+	ParameterList p;
+	p.set<string>("Name", "Density");
+	p.set<double>("Value", 2.0);
+	p.set< RCP<DataLayout> >("Data Layout", qp);
+	Teuchos::RCP< PHX::Evaluator<MyTraits> > ptr = 
+	  rcp(new Constant<MyTraits::Residual, MyTraits>(p));
+	em.registerEvaluator(ptr);
+      }
+      cout << "Passed!" << endl;
+      
+      cout << "\nTesting setEvaluationTypeName()...";
+      em.setEvaluationTypeName(PHX::getTypeString<MyTraits::Residual,MyTraits>());
+      cout << "Passed!" << endl;
+
+
+      cout << "\nTesting sortAndOrderEvaluators()...";
+      em.sortAndOrderEvaluators();
+      cout << "Passed!" << endl;
+
+      cout << "\nPrinting EvaluatorManager:\n";
+      cout << em << endl;
+
     }
     
     // *********************************************************************

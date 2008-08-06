@@ -31,13 +31,13 @@ int main(int argc, char *argv[])
       cout << "\nTesting constructor...";
       
       RCP<DataLayout> node4 = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_Nodes", 4));
+	rcp(new Generic("Nodes", 4));
       
       RCP<DataLayout> quad4 = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_QuadPoints", 4));
+	rcp(new Generic("QuadPoints", 4));
       
-      RCP<DataLayout> gradQuad4 = 
-	rcp(new Generic<MyTraits::MY_VECTOR>("Q1_QuadPoints", 4));
+      RCP<DataLayout> quad9 = 
+	rcp(new Generic("QuadPoints", 9));
       
       cout << "passed!" << endl;
 
@@ -45,13 +45,12 @@ int main(int argc, char *argv[])
       // name()
       {
 	cout << "Testing name() accessor...";
-	RCP< Generic<MyTraits::MY_SCALAR> > g_node4 = 
-	  rcp_dynamic_cast< Generic<MyTraits::MY_SCALAR> >(node4);
+	RCP<Generic> g_node4 = rcp_dynamic_cast<Generic>(node4);
 	TEST_FOR_EXCEPTION(is_null(g_node4), 
 			   std::logic_error,
 			   "dynamic cast from DataLayout to Generic failed!");
 	
-	TEST_FOR_EXCEPTION(g_node4->name() != std::string("Q1_Nodes"), 
+	TEST_FOR_EXCEPTION(g_node4->name() != std::string("Nodes"), 
 			   std::logic_error,
 			   "name() accessor failed!");
 	cout << "passed!" << endl;
@@ -72,49 +71,26 @@ int main(int argc, char *argv[])
       {
 	cout << "Testing operator==()...";
 	
-	RCP<DataLayout> unique_node4_copy = 
-	  rcp(new Generic<MyTraits::MY_SCALAR>("Q1_Nodes", 4));
-	
+	RCP<DataLayout> unique_node4_copy = rcp(new Generic("Nodes", 4));
 	
 	// same data layout, different object
 	TEST_FOR_EXCEPTION( !(*node4 == *unique_node4_copy), 
 			    std::logic_error,
-			    "operator==() failed!");
+			    "operator==() failed for separate objects!");
 	
 	// different data layouts - name differentiation
 	TEST_FOR_EXCEPTION( *node4 == *quad4, 
 			    std::logic_error,
-			    "operator==() failed!");
+			    "operator==() failed for name differentiation!");
 	
-	// same name, different algebraic type 
-	TEST_FOR_EXCEPTION( *quad4 == *gradQuad4, 
+	// same name, different size 
+	TEST_FOR_EXCEPTION( *quad4 == *quad9, 
 			    std::logic_error,
-			    "operator==() failed!");
+			    "operator==() failed for size differentiation!");
 	
 	cout << "passed!" << endl;
       }
 
-      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      // getAlgebraicTypeInfo
-      {
-	cout << "Testing getAlgebraicTypeInfo()...";
-
-	RCP< Generic<MyTraits::MY_SCALAR> > g_node4 = 
-	  rcp_dynamic_cast< Generic<MyTraits::MY_SCALAR> >(node4);
-	
-	TEST_FOR_EXCEPTION( node4->getAlgebraicTypeInfo().name() != 
-			    quad4->getAlgebraicTypeInfo().name(), 
-			    std::logic_error,
-			    "getAlgebraicTypeInfo() comparison failed!");
-
-	TEST_FOR_EXCEPTION( node4->getAlgebraicTypeInfo().name() == 
-			    gradQuad4->getAlgebraicTypeInfo().name(), 
-			    std::logic_error,
-			    "getAlgebraicTypeInfo() comparison failed!");
-
-	cout << "passed!" << endl;
-      }
-      
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // ostream
       cout << "Testing ostream...";

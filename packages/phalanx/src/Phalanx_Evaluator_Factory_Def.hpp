@@ -62,14 +62,14 @@ void PHX::registerEvaluators(const Teuchos::RCP< std::vector< Teuchos::RCP<PHX::
     tm = providers->begin();
   for (; tm != providers->end(); ++tm) {
     
-    // Loop over Scalar Types
+    // Loop over Evaluation Types
     typename PHX::FieldManager<Traits>::iterator vmit = fm.begin();
     typename Evaluator_TemplateManager<Traits>::iterator vpit = 
       (*tm)->begin();
     for (; vpit != (*tm)->end(); ++vpit) {
       RCP<PHX::Evaluator<Traits> > vp =
 	rcp_dynamic_cast<PHX::Evaluator<Traits> >(vpit.rcp());
-      fm.registerEvaluatorForScalarType(vmit, vp);
+      fm.registerEvaluator(vmit, vp);
       ++vmit;
     } 
   }

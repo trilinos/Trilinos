@@ -18,6 +18,7 @@
 
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
 #include "Phalanx_FieldTag.hpp"
 
 namespace PHX {
@@ -55,10 +56,12 @@ namespace PHX {
     virtual void postRegistrationSetup(PHX::FieldManager<Traits>& vm) = 0;
 
     //! Returns vector of fields that this object evaluates.
-    virtual const std::vector<FieldTag>& evaluatedFields() const = 0;
+    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    evaluatedFields() const = 0;
 
     //! Returns vector of fields needed to compute the evaluated fields.
-    virtual const std::vector<FieldTag>& dependentFields() const = 0;
+    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    dependentFields() const = 0;
 
     //! Evaluate all fields that the provider supplies.
     /*!

@@ -578,7 +578,7 @@ PACKAGE_VERSION='1.0'
 PACKAGE_STRING='phalanx 1.0'
 PACKAGE_BUGREPORT='rppawlo@sandia.gov'
 
-ac_unique_file="src/Phalanx_FieldTag.cpp"
+ac_unique_file="src/Phalanx_FieldTag.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -9144,7 +9144,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile test/Performance/AlgebraicTypes/Makefile test/Performance/Allocators/Makefile test/Performance/BracketOperator/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/EvaluatorManager/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile test/Performance/AlgebraicTypes/Makefile test/Performance/Allocators/Makefile test/Performance/BracketOperator/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9828,6 +9828,7 @@ do
     "test/Allocators/Makefile") CONFIG_FILES="$CONFIG_FILES test/Allocators/Makefile" ;;
     "test/DataContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/DataContainer/Makefile" ;;
     "test/DataLayout/Makefile") CONFIG_FILES="$CONFIG_FILES test/DataLayout/Makefile" ;;
+    "test/EvaluatorManager/Makefile") CONFIG_FILES="$CONFIG_FILES test/EvaluatorManager/Makefile" ;;
     "test/FieldTag/Makefile") CONFIG_FILES="$CONFIG_FILES test/FieldTag/Makefile" ;;
     "test/Field/Makefile") CONFIG_FILES="$CONFIG_FILES test/Field/Makefile" ;;
     "test/Performance/Makefile") CONFIG_FILES="$CONFIG_FILES test/Performance/Makefile" ;;

@@ -76,12 +76,8 @@ int main(int argc, char *argv[])
     {
       cout << "\nStarting EnergyFlux Example!" << endl;
 
-      RCP<DataLayout> scalar_qp = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_QP", 4));
-      RCP<DataLayout> vector_qp = 
-	rcp(new Generic<MyTraits::MY_VECTOR>("Q1_QP", 4));
-      RCP<DataLayout> scalar_node = 
-	rcp(new Generic<MyTraits::MY_SCALAR>("Q1_NODE", 4));
+      RCP<DataLayout> qp = rcp(new Generic("Q1_QP", 4));
+      RCP<DataLayout> node = rcp(new Generic("Q1_NODE", 4));
 
       // Parser will build parameter list that determines the field
       // evaluators to build
@@ -93,14 +89,14 @@ int main(int argc, char *argv[])
 	p->set<int>("Type", type);
 	p->set<string>("Name", "Temperature");
 	p->set<double>("Value", 2.0);
-	p->set< RCP<DataLayout> >("Data Layout", scalar_node);
+	p->set< RCP<DataLayout> >("Data Layout", node);
 	evaluators_to_build["DOF_Temperature"] = p;
       }
       { // Density
 	RCP<ParameterList> p = rcp(new ParameterList);
 	int type = MyFactoryTraits<MyTraits>::id_density;
 	p->set<int>("Type", type);
-	p->set< RCP<DataLayout> >("Data Layout", scalar_qp);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
 	evaluators_to_build["Density"] = p;
       }
 
@@ -110,7 +106,7 @@ int main(int argc, char *argv[])
 	p->set<int>("Type", type);
 	p->set<string>("Name", "Diffusion Coefficient");
 	p->set<double>("Value", 2.0);
-	p->set< RCP<DataLayout> >("Data Layout", scalar_qp);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
 	evaluators_to_build["Diffusion Coefficient"] = p;
       }
       
@@ -118,7 +114,7 @@ int main(int argc, char *argv[])
 	RCP<ParameterList> p = rcp(new ParameterList);
 	int type = MyFactoryTraits<MyTraits>::id_nonlinearsource;
 	p->set<int>("Type", type);
-	p->set< RCP<DataLayout> >("Data Layout", scalar_qp);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
 	evaluators_to_build["Nonlinear Source"] = p;
       }
 
@@ -126,8 +122,7 @@ int main(int argc, char *argv[])
 	RCP<ParameterList> p = rcp(new ParameterList);
 	int type = MyFactoryTraits<MyTraits>::id_fourier;
 	p->set<int>("Type", type);
-	p->set< RCP<DataLayout> >("Scalar Data Layout", scalar_qp);
-	p->set< RCP<DataLayout> >("Vector Data Layout", vector_qp);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
 	evaluators_to_build["Energy Flux"] = p;
       }
 
@@ -141,9 +136,8 @@ int main(int argc, char *argv[])
 	p->set<string>("QP Variable Name", "Temperature");
 	p->set<string>("Gradient QP Variable Name", "Temperature Gradient");
 
-	p->set< RCP<DataLayout> >("Node Data Layout", scalar_node);
-	p->set< RCP<DataLayout> >("QP Data Layout", scalar_qp);
-	p->set< RCP<DataLayout> >("Gradient QP Data Layout", vector_qp);
+	p->set< RCP<DataLayout> >("Node Data Layout", node);
+	p->set< RCP<DataLayout> >("QP Data Layout", qp);
 
 	evaluators_to_build["FE Interpolation"] = p;
       }
@@ -154,14 +148,27 @@ int main(int argc, char *argv[])
 	evaluators;
       evaluators = factory.buildEvaluators(evaluators_to_build);
  
-          
-      // Request quantities to assemble PDE operators
+      // Create a FieldManager
       FieldManager<MyTraits> vm;
-      FieldTag energy_flux("Energy_Flux", vector_qp);
-      vm.requireFieldForAllTypes(energy_flux);
-      FieldTag source("Nonlinear Source", scalar_qp);
-      vm.requireFieldForAllTypes(source);
-      
+
+      // Request quantities to assemble RESIDUAL PDE operators
+      {
+	typedef MyTraits::Residual::ScalarT ResScalarT;
+	Tag< MyVector<ResScalarT> > energy_flux("Energy_Flux", qp);
+	vm.requireField<MyTraits::Residual>(energy_flux);
+	Tag<ResScalarT> source("Nonlinear Source", qp);
+	vm.requireField<MyTraits::Residual>(source);
+      }
+
+      // Request quantities to assemble JACOBIAN PDE operators
+      {
+	typedef MyTraits::Jacobian::ScalarT JacScalarT;
+	Tag< MyVector<JacScalarT> > energy_flux("Energy_Flux", qp);
+	vm.requireField<MyTraits::Jacobian>(energy_flux);
+	Tag<JacScalarT> source("Nonlinear Source", qp);
+	vm.requireField<MyTraits::Jacobian>(source);
+      }
+
       // Register all Evaluators 
       registerEvaluators(evaluators, vm);
 
@@ -191,12 +198,12 @@ int main(int argc, char *argv[])
 
       // Test data retrieval
       cout << "Testing data members" << endl;
-      FieldTag d_var("Density", scalar_qp);
+      Tag<double> d_var("Density", qp);
       Field<double> den(d_var); 
       vm.getFieldData<double,MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
-	   << num_cells * d_var.dataLayout()->size() << "." << endl;
-      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(num_cells * d_var.dataLayout()->size()),
+	   << num_cells * d_var.dataLayout().size() << "." << endl;
+      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(num_cells * d_var.dataLayout().size()),
 			 std::runtime_error, 
 			 "Returned arrays are not sized correctly!");
       
@@ -204,12 +211,12 @@ int main(int argc, char *argv[])
       cout << endl;
 
       // Compare temperature fields, should be 2.0
-      Field<double> temp("Temperature", scalar_node);
+      Field<double> temp("Temperature", node);
       vm.getFieldData<double,MyTraits::Residual>(temp);
       
-      Field<double> temp_base("Temperature Baseline", scalar_node);
+      Field<double> temp_base("Temperature Baseline", node);
       ArrayRCP<double> temp_base_data = 
-	arcp<double>(num_cells * scalar_node->size());
+	arcp<double>(num_cells * node->size());
       temp_base.setFieldData(temp_base_data);
       for (int i=0; i<temp_base.size(); ++i)
 	temp_base[i] = 2.0;
@@ -219,13 +226,13 @@ int main(int argc, char *argv[])
       cout << endl;
 
       // Compare temperature gradient fields, should be 2.0
-      Field< MyVector<double> > tg("Temperature Gradient", vector_qp);
+      Field< MyVector<double> > tg("Temperature Gradient", qp);
       vm.getFieldData<MyVector<double>,MyTraits::Residual>(tg);
 
       Field< MyVector<double> > 
-	tg_base("Temperature Gradient Baseline", vector_qp);
+	tg_base("Temperature Gradient Baseline", qp);
       ArrayRCP< MyVector<double> > tg_base_data = 
-	arcp< MyVector<double> >(num_cells * vector_qp->size());
+	arcp< MyVector<double> >(num_cells * qp->size());
       tg_base.setFieldData(tg_base_data);
       for (int i=0; i<tg_base.size(); ++i)
 	tg_base[i] = 2.0;
@@ -235,13 +242,12 @@ int main(int argc, char *argv[])
       cout << endl;
 
       // Compare energy flux fields, should be -16.0
-      Field< MyVector<double> > ef("Energy_Flux", vector_qp);
+      Field< MyVector<double> > ef("Energy_Flux", qp);
       vm.getFieldData<MyVector<double>,MyTraits::Residual>(ef);
 
-      Field< MyVector<double> > 
-	ef_base("Energy_Flux Baseline", vector_qp);
+      Field< MyVector<double> > ef_base("Energy_Flux Baseline", qp);
       ArrayRCP< MyVector<double> > ef_base_data = 
-	arcp< MyVector<double> >(num_cells * vector_qp->size());
+	arcp< MyVector<double> >(num_cells * qp->size());
       ef_base.setFieldData(ef_base_data);
       for (int i=0; i<ef_base.size(); ++i)
 	ef_base[i] = -16.0;

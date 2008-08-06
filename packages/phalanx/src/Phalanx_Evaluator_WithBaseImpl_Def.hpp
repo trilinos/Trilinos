@@ -2,6 +2,7 @@
 #define PHX_EVALUATOR_WITHBASEIMPL_DEF_H
 
 #include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_FieldTag_Comparison.hpp"
 
 //**********************************************************************
 template<typename Traits>
@@ -26,11 +27,12 @@ template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::FieldTag& v)
 { 
-  std::vector<FieldTag>::iterator test = 
-    std::find(evaluated_.begin(), evaluated_.end(), v);
+  PHX::FTPredRef pred(v);
+  std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+    std::find_if(evaluated_.begin(), evaluated_.end(), pred);
   
   if ( test == evaluated_.end() )
-    evaluated_.push_back(v);
+    evaluated_.push_back(v.clone());
 }
 
 //**********************************************************************
@@ -47,11 +49,12 @@ template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::FieldTag& v)
 {
-  std::vector<FieldTag>::iterator test = 
-    std::find(required_.begin(), required_.end(), v);
+  PHX::FTPredRef pred(v);
+  std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+    std::find_if(required_.begin(), required_.end(), pred);
   
   if ( test == required_.end() )
-    required_.push_back(v);
+    required_.push_back(v.clone());
 }
 
 //**********************************************************************
@@ -71,13 +74,13 @@ setName(const std::string& name)
 
 //**********************************************************************
 template<typename Traits>
-const std::vector<PHX::FieldTag>&
+const std::vector< Teuchos::RCP<PHX::FieldTag> >&
 PHX::EvaluatorWithBaseImpl<Traits>::evaluatedFields() const
 { return evaluated_; }
 
 //**********************************************************************
 template<typename Traits>
-const std::vector<PHX::FieldTag>&
+const std::vector< Teuchos::RCP<PHX::FieldTag> >&
 PHX::EvaluatorWithBaseImpl<Traits>::dependentFields() const
 { return required_; }
 

@@ -1,3 +1,7 @@
+// @HEADER
+// @HEADER
+
+#include "Teuchos_ParameterList.hpp"
 
 //**********************************************************************
 template<typename EvalT, typename Traits>

@@ -26,18 +26,32 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.phalanx
+
 # The following line helps the test harness recover from build errors.
 
 all-local:
 
-#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-#np# For packages whose tests are located in this directory, rather than
-#np# in a subdirectory of this directory, use the Makefile.am located in
-#np# test1/ rather than this file.
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
+else
+TEST_LIBS     = $(PHALANX_LIBS)
+TEST_INCLUDES = $(PHALANX_INCLUDES)
+endif
 
-SUBDIRS = Utilities Allocators DataContainer DataLayout EvaluatorManager FieldTag Field Performance
+AM_CPPFLAGS = -I$(srcdir)/../Utilities $(TEST_INCLUDES)
 
-EXTRA_DIST = definition
+EXEEXT = .exe
 
+if BUILD_TESTS
+noinst_PROGRAMS = evaluator_manager 
+endif
+
+evaluator_manager_SOURCES = \
+	$(srcdir)/EvaluatorManager.cpp 
+
+evaluator_manager_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+evaluator_manager_LDADD = $(TEST_LIBS)
