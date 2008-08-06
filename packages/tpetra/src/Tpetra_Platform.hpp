@@ -32,6 +32,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
@@ -45,11 +46,14 @@ namespace Tpetra {
       the platform they're running on, or any implementation-specific details.
   */
 
-  template<typename OrdinalType>
-  class Platform {
+  template<typename Ordinal>
+  class Platform : public Teuchos::Object {
   public:
   
     //@{ \name Constructor/Destructor Methods
+
+    //! Constructor
+    Platform(const std::string &str);
 
     //! Destructor
     virtual ~Platform() {};
@@ -58,26 +62,24 @@ namespace Tpetra {
     /*! Returns a copy of this Platform instance. It is allocated on the heap and
         encapsulated in a Teuchos RCP.
     */
-    virtual Teuchos::RCP< Platform<OrdinalType> > clone() const = 0;
+    virtual Teuchos::RCP< Platform<Ordinal> > clone() const = 0;
 
     //@}
   
     //@{ \name Class Creation and Accessor Methods
 
     //! Create a Comm instance for global communication between nodes.
-    virtual Teuchos::RCP< Teuchos::Comm<OrdinalType> > createComm() const = 0;
+    virtual Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const = 0;
 
     //@}
-  
-    //@{ \name I/O Methods
 
-    //! printInfo
-    virtual void printInfo(ostream& os) const = 0;
-
-    //@}
-  
   }; // Platform class
+
+  template<typename Ordinal>
+  Platform<Ordinal>::Platform(const std::string &str)
+  : Teuchos::Object(str.c_str()) {}
   
 } // namespace Tpetra
 
 #endif // TPETRA_PLATFORM_HPP
+

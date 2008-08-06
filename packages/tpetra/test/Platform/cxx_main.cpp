@@ -81,6 +81,9 @@ int main(int argc, char* argv[]) {
 //======================================================================
 template <typename OrdinalType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
+  (void)debug; 
+  (void)myImageID;
+  (void)numImages;
   std::string className = "Platform<" + OrdinalTraits<OrdinalType>::name() + ">";
   if(verbose) outputHeading("Stating unit tests for " + className);
 

@@ -37,8 +37,8 @@
 namespace Tpetra {
 
 	//! Tpetra::SerialPlatform: Serial Implementation of the Platform class.
-	template<typename OrdinalType>
-	class SerialPlatform : public Teuchos::Object, public virtual Platform<OrdinalType> {
+	template<typename Ordinal>
+	class SerialPlatform : public virtual Platform<Ordinal> {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
@@ -47,75 +47,54 @@ namespace Tpetra {
 		SerialPlatform();
 
 		//! Copy constructor
-		SerialPlatform(SerialPlatform<OrdinalType> const& platform);
+		SerialPlatform(const SerialPlatform<Ordinal> & platform);
 
 		//! Destructor
 		~SerialPlatform();
 
 		//! Clone constructor
-		Teuchos::RCP< Platform<OrdinalType> > clone() const;
+		Teuchos::RCP< Platform<Ordinal> > clone() const;
 
 		//@}
 
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instance
-		Teuchos::RCP< Teuchos::Comm<OrdinalType> > createComm() const;
-
-		//@}
-
-		//@{ \name I/O Methods
-
-		//! print - implements Teuchos::Object virtual print method.
-		void print(ostream& os) const;
-
-		//! printInfo - implements Tpetra::Platform virtual printInfo method.
-		void printInfo(ostream& os) const;
+		Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const;
 
 		//@}
 
 	}; // SerialPlatform class
 
-  template <typename OrdinalType>
-  SerialPlatform<OrdinalType>::SerialPlatform() 
-    : Teuchos::Object("Tpetra::SerialPlatform") 
+  template <typename Ordinal>
+  SerialPlatform<Ordinal>::SerialPlatform() 
+    : Platform<Ordinal>("Tpetra::SerialPlatform<"+Teuchos::TypeNameTraits<Ordinal>::name()+">") 
   {}
 
-  template <typename OrdinalType>
-  SerialPlatform<OrdinalType>::SerialPlatform(SerialPlatform<OrdinalType> const& platform) 
-    : Platform<OrdinalType>(), Teuchos::Object(platform.label()) 
+  template <typename Ordinal>
+  SerialPlatform<Ordinal>::SerialPlatform(const SerialPlatform<Ordinal> & /*platform*/) 
+    : Platform<Ordinal>("Tpetra::SerialPlatform<"+Teuchos::TypeNameTraits<Ordinal>::name()+">") 
   {}
 
-  template <typename OrdinalType>
-  SerialPlatform<OrdinalType>::~SerialPlatform() 
+  template <typename Ordinal>
+  SerialPlatform<Ordinal>::~SerialPlatform() 
   {}
 
-  template <typename OrdinalType>
-  Teuchos::RCP< Platform<OrdinalType> > 
-  SerialPlatform<OrdinalType>::clone() const 
+  template <typename Ordinal>
+  Teuchos::RCP< Platform<Ordinal> > 
+  SerialPlatform<Ordinal>::clone() const 
   {
-    Teuchos::RCP< Platform<OrdinalType> > platform;
-    platform = Teuchos::rcp(new SerialPlatform<OrdinalType>(*this));
+    Teuchos::RCP< Platform<Ordinal> > platform;
+    platform = Teuchos::rcp(new SerialPlatform<Ordinal>(*this));
     return platform;
   }
 
-  template <typename OrdinalType>
-  Teuchos::RCP< Teuchos::Comm<OrdinalType> > 
-  SerialPlatform<OrdinalType>::createComm() const 
+  template <typename Ordinal>
+  Teuchos::RCP< Teuchos::Comm<Ordinal> > 
+  SerialPlatform<Ordinal>::createComm() const 
   {
-    return Teuchos::rcp(new Teuchos::SerialComm<OrdinalType>() );
+    return Teuchos::rcp(new Teuchos::SerialComm<Ordinal>() );
   }
-
-  template <typename OrdinalType>
-  void SerialPlatform<OrdinalType>::print(ostream& os) const 
-  { (void)os; }
-
-  template <typename OrdinalType>
-  void SerialPlatform<OrdinalType>::printInfo(ostream& os) const 
-  {
-    os << *this;
-  }
-
 
 } // namespace Tpetra
 

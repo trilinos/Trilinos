@@ -32,13 +32,14 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Object.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 #include "Tpetra_Platform.hpp"
 
 namespace Tpetra {
 
   //! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
-  template<typename OrdinalType>
-  class MpiPlatform : public Teuchos::Object, public virtual Platform<OrdinalType> {
+  template<typename Ordinal>
+  class MpiPlatform : public virtual Platform<Ordinal> {
   public:
 
     //@{ \name Constructor/Destructor Methods
@@ -47,30 +48,20 @@ namespace Tpetra {
     MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
 
     //! Copy Constructor
-    MpiPlatform(MpiPlatform<OrdinalType> const& platform);
+    MpiPlatform(const MpiPlatform<Ordinal> & platform);
 
     //! Destructor
     ~MpiPlatform();
 
     //! Clone Constructor - implements Tpetra::Platform virtual clone method.
-    Teuchos::RCP< Platform<OrdinalType> > clone() const;
+    Teuchos::RCP< Platform<Ordinal> > clone() const;
 
     //@}
 
     //@{ \name Class Creation and Accessor Methods
 
     //! Comm Instance
-    Teuchos::RCP< Teuchos::Comm<OrdinalType> > createComm() const;
-
-    //@}
-
-    //@{ \name I/O Methods
-
-    //! print - implements Teuchos::Object virtual print method.
-    void print(ostream& os) const;
-
-    //! printInfo - implements Tpetra::Platform virtual printInfo method.
-    void printInfo(ostream& os) const;
+    Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const;
 
     //@}
 
@@ -79,49 +70,37 @@ namespace Tpetra {
 
   }; // MpiPlatform class
 
-  template <typename OrdinalType>
-    MpiPlatform<OrdinalType>::MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-    : Teuchos::Object("Tpetra::MpiPlatform")
-    , MpiComm_(rawMpiComm)
+  template <typename Ordinal>
+  MpiPlatform<Ordinal>::MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
+  : Platform<Ordinal>("Tpetra::MpiPlatform<"+Teuchos::TypeNameTraits<Ordinal>::name()+">") 
+  , MpiComm_(rawMpiComm)
   {}
 
-  template <typename OrdinalType>
-  MpiPlatform<OrdinalType>::MpiPlatform(MpiPlatform<OrdinalType> const& platform) 
-  : Platform<OrdinalType>(), Teuchos::Object(platform.label())
+  template <typename Ordinal>
+  MpiPlatform<Ordinal>::MpiPlatform(const MpiPlatform<Ordinal> & platform) 
+  : Platform<Ordinal>("Tpetra::MpiPlatform<"+Teuchos::TypeNameTraits<Ordinal>::name()+">") 
   , MpiComm_(platform.MpiComm_)
   {}
 
-  template <typename OrdinalType>
-  MpiPlatform<OrdinalType>::~MpiPlatform() 
+  template <typename Ordinal>
+  MpiPlatform<Ordinal>::~MpiPlatform() 
   {}
 
-  template <typename OrdinalType>
-  Teuchos::RCP< Platform<OrdinalType> > 
-  MpiPlatform<OrdinalType>::clone() const 
+  template <typename Ordinal>
+  Teuchos::RCP< Platform<Ordinal> > 
+  MpiPlatform<Ordinal>::clone() const 
   {
-    Teuchos::RCP< MpiPlatform<OrdinalType> > platform;
-    platform = Teuchos::rcp(new MpiPlatform<OrdinalType>(*this));
+    Teuchos::RCP< MpiPlatform<Ordinal> > platform;
+    platform = Teuchos::rcp(new MpiPlatform<Ordinal>(*this));
     return platform;
   }
 
-  template <typename OrdinalType>
-  Teuchos::RCP< Teuchos::Comm<OrdinalType> > 
-  MpiPlatform<OrdinalType>::createComm() const 
+  template <typename Ordinal>
+  Teuchos::RCP< Teuchos::Comm<Ordinal> > 
+  MpiPlatform<Ordinal>::createComm() const 
   {
-    return Teuchos::createMpiComm<OrdinalType>(MpiComm_);
+    return Teuchos::createMpiComm<Ordinal>(MpiComm_);
   }
-
-  template <typename OrdinalType>
-  void MpiPlatform<OrdinalType>::print(ostream& os) const 
-  { (void)os; }
-
-  template <typename OrdinalType>
-  void MpiPlatform<OrdinalType>::
-  printInfo(ostream& os) const 
-  {
-    os << *this;
-  }
-
 
 } // namespace Tpetra
 

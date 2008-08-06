@@ -44,17 +44,17 @@ namespace Tpetra {
         operations on a parallel computer.
   */
 
-  template<typename OrdinalType>
+  template<typename Ordinal>
   class Distributor : public Teuchos::Object {
   public:
 
     //@{ \name Constructor/Destructor
 
     //! Comm Constuctor (default ctr)
-    Distributor(const Teuchos::RCP< Teuchos::Comm<OrdinalType> > & comm);
+    Distributor(const Teuchos::RCP< Teuchos::Comm<Ordinal> > & comm);
 
     //! Copy Constructor
-    Distributor(const Distributor<OrdinalType> & distributor);
+    Distributor(const Distributor<Ordinal> & distributor);
 
     //! Destructor.
     ~Distributor();
@@ -72,8 +72,8 @@ namespace Tpetra {
       \param numRemoteIDs Out
              Number of IDs this image will be receiving.
     */
-    void createFromSends(const std::vector<OrdinalType> & exportImageIDs,
-                         OrdinalType & numRemoteIDs);
+    void createFromSends(const std::vector<Ordinal> & exportImageIDs,
+                         Ordinal & numRemoteIDs);
 
     //! Create Distributor object using list of Image IDs to receive from
     /*! Take a list of global IDs and construct a plan for efficiently scattering to these images.
@@ -87,55 +87,55 @@ namespace Tpetra {
       \param exportImageIDs Out
              List of images that will get the exported IDs.
     */
-    void createFromRecvs(const std::vector<OrdinalType> & remoteGIDs, 
-                         const std::vector<OrdinalType> & remoteImageIDs, 
-                         std::vector<OrdinalType>& exportGIDs, 
-                         std::vector<OrdinalType>& exportImageIDs);
+    void createFromRecvs(const std::vector<Ordinal> & remoteGIDs, 
+                         const std::vector<Ordinal> & remoteImageIDs, 
+                         std::vector<Ordinal>& exportGIDs, 
+                         std::vector<Ordinal>& exportImageIDs);
 
     //@}
 
     //@{ \name Attribute Accessor Methods
 
     //! getTotalReceiveLength
-    const OrdinalType & getTotalReceiveLength() const;
+    const Ordinal & getTotalReceiveLength() const;
 
     //! getNumReceives
-    const OrdinalType & getNumReceives() const;
+    const Ordinal & getNumReceives() const;
 
     //! getSelfMessage - flag for if we're sending to ourself
     /*! If we are sending any elements to ourself, returns true. If we aren't, returns false. */
     bool getSelfMessage() const;
 
     //! getNumSends
-    const OrdinalType & getNumSends() const;
+    const Ordinal & getNumSends() const;
 
     //! getMaxSendLength - maximum number of elements we're sending to a remote image
-    const OrdinalType & getMaxSendLength() const;
+    const Ordinal & getMaxSendLength() const;
 
     //! getImagesFrom - list of images sending elements to us
-    const std::vector<OrdinalType> & getImagesFrom() const;
+    const std::vector<Ordinal> & getImagesFrom() const;
 
     //! getLengthsFrom - number of elements we're receiving from each image
     /*! We will receive lengthsFrom[i] elements from image imagesFrom[i] */
-    const std::vector<OrdinalType> & getLengthsFrom() const;
+    const std::vector<Ordinal> & getLengthsFrom() const;
 
     //! getImagesTo - list of images we're sending elements to
-    const std::vector<OrdinalType> & getImagesTo() const;
+    const std::vector<Ordinal> & getImagesTo() const;
 
     //! getIndicesTo
     /*! (Used only if exportImageIDs was not blocked by image.)
         Gives the order to the export buffer, in order to get
       a version that is sorted by imageID. */
-    const std::vector<OrdinalType> & getIndicesTo() const;
+    const std::vector<Ordinal> & getIndicesTo() const;
 
     //! getStartsTo - list of offsets into export buffer
     /*! Given an export buffer that contains all of the elements we're sending out, 
         image i's block of elements will start at position startsTo[i] */
-    const std::vector<OrdinalType> & getStartsTo() const;
+    const std::vector<Ordinal> & getStartsTo() const;
 
     //! getLengthsTo - number of elements we're sending to each image
     /*! We will send lengthsTo[i] elements to image imagesTo[i] */
-    const std::vector<OrdinalType> & getLengthsTo() const;
+    const std::vector<Ordinal> & getLengthsTo() const;
 
     //@}
 
@@ -146,7 +146,7 @@ namespace Tpetra {
     /*! Creates the reverse Distributor if this is the first time this function
         has been called.
     */
-    const Distributor<OrdinalType> & getReverse();
+    const Distributor<Ordinal> & getReverse() const;
 
     //@}
 
@@ -160,14 +160,16 @@ namespace Tpetra {
              On exit, contains the values exported to us. (\c imports will be resized
              if necessary, and any existing values will be overwritten.)
     */
-    template <typename PacketType>
-    void doPostsAndWaits(const std::vector<PacketType>& exports,
-                               std::vector<PacketType>& imports);
+    template <typename Packet>
+    void doPostsAndWaits(const std::vector<Packet>& exports,
+                         const Ordinal numPackets,
+                               std::vector<Packet>& imports);
 
     //! doPosts
-    template <typename PacketType>
-    void doPosts(const std::vector<PacketType>& exports,
-                       std::vector<PacketType>& imports);
+    template <typename Packet>
+    void doPosts(const std::vector<Packet>& exports,
+                 const Ordinal numPackets,
+                       std::vector<Packet>& imports);
 
     //! doWaits
     void doWaits();
@@ -180,14 +182,16 @@ namespace Tpetra {
              On exit, contains the values exported to us. (imports will be resized
              if necessary, and any existing values will be overwritten.)
     */
-    template <typename PacketType>
-    void doReversePostsAndWaits(const std::vector<PacketType>& exports,
-                                      std::vector<PacketType>& imports);
+    template <typename Packet>
+    void doReversePostsAndWaits(const std::vector<Packet>& exports,
+                                const Ordinal numPackets,
+                                      std::vector<Packet>& imports);
 
     //! doReversePosts
-    template <typename PacketType>
-    void doReversePosts(const std::vector<PacketType>& exports,
-                              std::vector<PacketType>& imports);
+    template <typename Packet>
+    void doReversePosts(const std::vector<Packet>& exports,
+                        const Ordinal numPackets,
+                              std::vector<Packet>& imports);
     
     //! doReverseWaits
     void doReverseWaits();
@@ -203,54 +207,55 @@ namespace Tpetra {
 
   private:
 
-    // convenience functions for returning inner data class, both const and nonconst versions.
-    Teuchos::Comm<OrdinalType> & getComm();
-    const Teuchos::Comm<OrdinalType> & getComm() const;
-
     // private data members
-    Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm_;
+    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm_;
 
-    OrdinalType numExports_;
-    OrdinalType selfMessage_;
-    OrdinalType numSends_;
-    std::vector<OrdinalType> imagesTo_;
-    std::vector<OrdinalType> startsTo_;
-    std::vector<OrdinalType> lengthsTo_;
-    OrdinalType maxSendLength_;
-    std::vector<OrdinalType> indicesTo_;
-    OrdinalType numReceives_;
-    OrdinalType totalReceiveLength_;
-    std::vector<OrdinalType> lengthsFrom_;
-    std::vector<OrdinalType> imagesFrom_;
-    std::vector<OrdinalType> indicesFrom_;
-    std::vector<OrdinalType> startsFrom_;
+    Ordinal numExports_;
+    Ordinal selfMessage_;
+    Ordinal numSends_;
+    std::vector<Ordinal> imagesTo_;
+    std::vector<Ordinal> startsTo_;
+    std::vector<Ordinal> lengthsTo_;
+    Ordinal maxSendLength_;
+    std::vector<Ordinal> indicesTo_;
+    Ordinal numReceives_;
+    Ordinal totalReceiveLength_;
+    std::vector<Ordinal> lengthsFrom_;
+    std::vector<Ordinal> imagesFrom_;
+    std::vector<Ordinal> indicesFrom_;
+    std::vector<Ordinal> startsFrom_;
 
-    Teuchos::RCP< Distributor<OrdinalType> > reverseDistributor_;
+    mutable Teuchos::RCP< Distributor<Ordinal> > reverseDistributor_;
 
     void computeReceives();
 
-    void computeSends(const std::vector<OrdinalType> & importIDs,
-                      const std::vector<OrdinalType> & importImageIDs,
-                      std::vector<OrdinalType>& exportIDs,
-                      std::vector<OrdinalType>& exportImageIDs);
+    void computeSends(const std::vector<Ordinal> & importIDs,
+                      const std::vector<Ordinal> & importImageIDs,
+                      std::vector<Ordinal>& exportIDs,
+                      std::vector<Ordinal>& exportImageIDs);
+
+    void createReverseDistributor() const;
+
+    // requests
+    std::vector<Teuchos::RCP<Teuchos::CommRequest> > requests_;
 
   }; // class Distributor
 
 
-  template <typename OrdinalType>
-  Distributor<OrdinalType>::Distributor(Teuchos::RCP< Teuchos::Comm<OrdinalType> > const& comm) 
+  template <typename Ordinal>
+  Distributor<Ordinal>::Distributor(Teuchos::RCP< Teuchos::Comm<Ordinal> > const& comm) 
     : Teuchos::Object("Tpetra::Distributor")
     , comm_(comm)
-    , numExports_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+    , numExports_(Teuchos::OrdinalTraits<Ordinal>::zero())
     , selfMessage_(false)
-    , numSends_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-    , maxSendLength_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-    , numReceives_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-    , totalReceiveLength_(Teuchos::OrdinalTraits<OrdinalType>::zero())
+    , numSends_(Teuchos::OrdinalTraits<Ordinal>::zero())
+    , maxSendLength_(Teuchos::OrdinalTraits<Ordinal>::zero())
+    , numReceives_(Teuchos::OrdinalTraits<Ordinal>::zero())
+    , totalReceiveLength_(Teuchos::OrdinalTraits<Ordinal>::zero())
   {}
 
-  template <typename OrdinalType>
-  Distributor<OrdinalType>::Distributor(Distributor<OrdinalType> const& distributor) 
+  template <typename Ordinal>
+  Distributor<Ordinal>::Distributor(Distributor<Ordinal> const& distributor) 
     : Teuchos::Object(distributor.label())
     , comm_(distributor.comm_)
     , numExports_(distributor.numExports_)
@@ -262,91 +267,94 @@ namespace Tpetra {
     , reverseDistributor_(distributor.reverseDistributor_)
   {}
 
-  template <typename OrdinalType>
-  Distributor<OrdinalType>::~Distributor() 
+  template <typename Ordinal>
+  Distributor<Ordinal>::~Distributor() 
   {}
 
-  template <typename OrdinalType>
-  void Distributor<OrdinalType>::createFromSends(
-      const std::vector<OrdinalType> & exportImageIDs,
-      OrdinalType & numRemoteIDs) 
+  template <typename Ordinal>
+  void Distributor<Ordinal>::createFromSends(
+      const std::vector<Ordinal> & exportImageIDs,
+      Ordinal & numRemoteIDs) 
   {
-    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    const OrdinalType one  = Teuchos::OrdinalTraits<OrdinalType>::one();
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal one  = Teuchos::OrdinalTraits<Ordinal>::one();
 
     numExports_ = exportImageIDs.size();
 
-    int myImageID = getComm().getRank();
-    int numImages = getComm().getSize();
+    const int myImageID = comm_->getRank();
+    const int numImages = comm_->getSize();
 
     // Check to see if items are grouped by images without gaps
     // If so, indices_to -> 0
 
     // Setup data structures for quick traversal of arrays
-    std::vector<OrdinalType> starts(numImages + 1, zero);
+    std::vector<Ordinal> starts(numImages + 1, zero);
 
-    OrdinalType numActive = zero;
+    Ordinal numActive = zero;
     bool noSendBuff = true;
 
-    for(OrdinalType i = zero; i < numExports_; i++) {
-      if(noSendBuff && (i > zero) && (exportImageIDs[i] < exportImageIDs[i-one]))
+    for (int i = 0; i < numExports_; ++i) {
+      if (noSendBuff && (i > 0) && (exportImageIDs[i] < exportImageIDs[i-1])) {
         noSendBuff = false;
-      if(exportImageIDs[i] >= zero) {
+      }
+      if (exportImageIDs[i] >= zero) {
         ++starts[exportImageIDs[i]];
         ++numActive;
       }
     }
 
-    if(starts[myImageID] != zero)
+    if (starts[myImageID] != zero) {
       selfMessage_ = one;
-    else
+    }
+    else {
       selfMessage_ = zero;
+    }
 
     numSends_ = zero;
 
-    if(noSendBuff) { // grouped by image, no send buffer or indicesTo_ needed
-      for(int i=0; i < numImages; ++i) {
-        if(starts[i]) ++numSends_;
+    if (noSendBuff) { // grouped by image, no send buffer or indicesTo_ needed
+      for (int i=0; i < numImages; ++i) {
+        if (starts[i]) ++numSends_;
       }
 
       imagesTo_.resize(numSends_); // can we change these to reserves?
       startsTo_.resize(numSends_);
       lengthsTo_.resize(numSends_);
 
-      for(OrdinalType i = zero, index = zero; i < numSends_; ++i) {
+      for (Ordinal i = zero, index = zero; i < numSends_; ++i) {
         startsTo_[i] = index;
-        OrdinalType imageID = exportImageIDs[index];
+        Ordinal imageID = exportImageIDs[index];
         imagesTo_[i] = imageID;
         index += starts[imageID];
       }
 
-      if(numSends_ > zero) {
+      if (numSends_ > zero) {
         sortArrays(imagesTo_, startsTo_);
       }
 
       maxSendLength_ = zero;
 
-      for(OrdinalType i = zero; i < numSends_; ++i) {
-        OrdinalType imageID = imagesTo_[i];
+      for (int i = 0; i < numSends_; ++i) {
+        Ordinal imageID = imagesTo_[i];
         lengthsTo_[i] = starts[imageID];
-        if((imageID != myImageID) && (lengthsTo_[i] > maxSendLength_)) {
+        if ((imageID != myImageID) && (lengthsTo_[i] > maxSendLength_)) {
           maxSendLength_ = lengthsTo_[i];
         }
       }
     }
     else { // not grouped by image, need send buffer and indicesTo_
-      if(starts.front() != zero ) {
+      if (starts.front() != zero ) {
         numSends_ = one;
       }
 
-      for(int i = 0; i < numImages; i++) {
-        if(starts[i] != zero) {
+      for (int i = 0; i < numImages; i++) {
+        if (starts[i] != zero) {
           ++numSends_;
         }
         starts[i] += starts[i-one];
       }
 
-      for(int i = numImages-1; i != 0; i--) {
+      for (int i = numImages-1; i != 0; i--) {
         starts[i] = starts[i-one];
       }
 
@@ -354,8 +362,8 @@ namespace Tpetra {
 
       indicesTo_.resize(numActive);
 
-      for(OrdinalType i = zero; i < numExports_; i++) {
-        if(exportImageIDs[i] >= zero) {
+      for (Ordinal i = zero; i < numExports_; i++) {
+        if (exportImageIDs[i] >= zero) {
           indicesTo_[starts[exportImageIDs[i]]] = i;
           ++starts[exportImageIDs[i]];
         }
@@ -363,7 +371,7 @@ namespace Tpetra {
 
       // Reconstuct starts array to index into indicesTo.
 
-      for(int i = numImages-1; i != 0; i--) {
+      for (int i = numImages-1; i != 0; i--) {
         starts[i] = starts[i-1];
       }
       starts.front() = zero;       
@@ -375,11 +383,11 @@ namespace Tpetra {
 
       maxSendLength_ = zero;
 
-      for(int i = 0, j = 0; i < numImages; i++ ) {
-        if(starts[i+1] != starts[i]) {
+      for (int i = 0, j = 0; i < numImages; i++ ) {
+        if (starts[i+1] != starts[i]) {
           lengthsTo_[j] = starts[i+1] - starts[i];
           startsTo_[j] = starts[i];
-          if((i != myImageID) && (lengthsTo_[j] > maxSendLength_)) {
+          if ((i != myImageID) && (lengthsTo_[j] > maxSendLength_)) {
             maxSendLength_ = lengthsTo_[j];
           }
           imagesTo_[j] = i;
@@ -396,176 +404,311 @@ namespace Tpetra {
     numRemoteIDs = totalReceiveLength_;
   }
 
-  template <typename OrdinalType>
-  void Distributor<OrdinalType>::createFromRecvs(
-      const std::vector<OrdinalType> & remoteGIDs, 
-      const std::vector<OrdinalType> & remoteImageIDs, 
-      std::vector<OrdinalType> & exportGIDs, 
-      std::vector<OrdinalType> & exportImageIDs)
+  template <typename Ordinal>
+  void Distributor<Ordinal>::createFromRecvs(
+      const std::vector<Ordinal> & remoteGIDs, 
+      const std::vector<Ordinal> & remoteImageIDs, 
+      std::vector<Ordinal> & exportGIDs, 
+      std::vector<Ordinal> & exportImageIDs)
   {
     computeSends(remoteGIDs, remoteImageIDs, exportGIDs, exportImageIDs);
-    OrdinalType testNumRemoteIDs; // dummy
+    Ordinal testNumRemoteIDs; // dummy
     createFromSends(exportImageIDs, testNumRemoteIDs);
   }
 
-  template <typename OrdinalType>
-  const OrdinalType & Distributor<OrdinalType>::getTotalReceiveLength() const 
+  template <typename Ordinal>
+  const Ordinal & Distributor<Ordinal>::getTotalReceiveLength() const 
   { return(totalReceiveLength_); }
 
-  template <typename OrdinalType>
-  const OrdinalType & Distributor<OrdinalType>::getNumReceives() const 
+  template <typename Ordinal>
+  const Ordinal & Distributor<Ordinal>::getNumReceives() const 
   { return(numReceives_); }
 
-  template <typename OrdinalType>
-  bool Distributor<OrdinalType>::getSelfMessage() const 
+  template <typename Ordinal>
+  bool Distributor<Ordinal>::getSelfMessage() const 
   { return(selfMessage_); }
 
-  template <typename OrdinalType>
-  const OrdinalType & Distributor<OrdinalType>::getNumSends() const 
+  template <typename Ordinal>
+  const Ordinal & Distributor<Ordinal>::getNumSends() const 
   { return(numSends_); }
 
-  template <typename OrdinalType>
-  const OrdinalType & Distributor<OrdinalType>::getMaxSendLength() const 
+  template <typename Ordinal>
+  const Ordinal & Distributor<Ordinal>::getMaxSendLength() const 
   { return(maxSendLength_); }
 
-  template <typename OrdinalType>
-  const std::vector<OrdinalType> & Distributor<OrdinalType>::getImagesFrom() const 
+  template <typename Ordinal>
+  const std::vector<Ordinal> & Distributor<Ordinal>::getImagesFrom() const 
   { return(imagesFrom_); }
 
-  template <typename OrdinalType>
-  const std::vector<OrdinalType> & Distributor<OrdinalType>::getLengthsFrom() const 
+  template <typename Ordinal>
+  const std::vector<Ordinal> & Distributor<Ordinal>::getLengthsFrom() const 
   { return(lengthsFrom_); }
 
-  template <typename OrdinalType>
-  const std::vector<OrdinalType> & Distributor<OrdinalType>::getImagesTo() const 
+  template <typename Ordinal>
+  const std::vector<Ordinal> & Distributor<Ordinal>::getImagesTo() const 
   { return(imagesTo_); }
 
-  template <typename OrdinalType>
-  const std::vector<OrdinalType> & Distributor<OrdinalType>::getIndicesTo() const 
+  template <typename Ordinal>
+  const std::vector<Ordinal> & Distributor<Ordinal>::getIndicesTo() const 
   { return(indicesTo_); }
 
-  template <typename OrdinalType>
-  const std::vector<OrdinalType> & Distributor<OrdinalType>::getStartsTo() const 
+  template <typename Ordinal>
+  const std::vector<Ordinal> & Distributor<Ordinal>::getStartsTo() const 
   { return(startsTo_); }
 
-  template <typename OrdinalType>
-  const std::vector<OrdinalType> & Distributor<OrdinalType>::getLengthsTo() const 
+  template <typename Ordinal>
+  const std::vector<Ordinal> & Distributor<Ordinal>::getLengthsTo() const 
   { return(lengthsTo_); }
 
-  template <typename OrdinalType>
-  const Distributor<OrdinalType> & Distributor<OrdinalType>::getReverse() 
+  template <typename Ordinal>
+  const Distributor<Ordinal> & Distributor<Ordinal>::getReverse() const
   {
-    if (reverseDistributor_ == Teuchos::null) { // need to initialize reverse distributor
-      OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-
-      reverseDistributor_ = Teuchos::rcp(new Distributor<OrdinalType>(comm_));
-
-      // compute new totalSendLength
-      OrdinalType totalSendLength = zero;
-      for(OrdinalType i = zero; i < (numSends_ + selfMessage_); i++) {
-        totalSendLength += lengthsTo_[i];
-      }
-
-      // compute new maxReceiveLength
-      OrdinalType maxReceiveLength = zero;
-      int const myImageID = getComm().getRank();
-      for(OrdinalType i = zero; i < numReceives_; i++)
-        if(imagesFrom_[i] != myImageID)
-          if(lengthsFrom_[i] > maxReceiveLength)
-            maxReceiveLength = lengthsFrom_[i];
-      
-      // initialize all of reverseDistributor's data members
-      reverseDistributor_->lengthsTo_ = lengthsFrom_;
-      reverseDistributor_->imagesTo_ = imagesFrom_;
-      reverseDistributor_->indicesTo_ = indicesFrom_;
-      reverseDistributor_->startsTo_ = startsFrom_;
-      reverseDistributor_->lengthsFrom_ = lengthsTo_;
-      reverseDistributor_->imagesFrom_ = imagesTo_;
-      reverseDistributor_->indicesFrom_ = indicesTo_;
-      reverseDistributor_->startsFrom_ = startsTo_;
-      reverseDistributor_->numSends_ = numReceives_;
-      reverseDistributor_->numReceives_ = numSends_;
-      reverseDistributor_->selfMessage_ = selfMessage_;
-      reverseDistributor_->maxSendLength_ = maxReceiveLength;
-      reverseDistributor_->totalReceiveLength_ = totalSendLength;
-      // Note: numExports_ was not copied
+    if (reverseDistributor_ == Teuchos::null) { 
+      // need to create reverse distributor
+      createReverseDistributor();
     }
-
     return(*reverseDistributor_);
   }
 
-  template <typename OrdinalType>
-  template <typename PacketType>
-  void Distributor<OrdinalType>::doPostsAndWaits(
-      const std::vector<PacketType>& exports,
-            std::vector<PacketType>& imports) 
+  template <typename Ordinal>
+  void Distributor<Ordinal>::createReverseDistributor() const {
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+
+    reverseDistributor_ = Teuchos::rcp(new Distributor<Ordinal>(comm_));
+
+    // compute new totalSendLength
+    Ordinal totalSendLength = zero;
+    for (Ordinal i = zero; i < (numSends_ + selfMessage_); i++) {
+      totalSendLength += lengthsTo_[i];
+    }
+
+    // compute new maxReceiveLength
+    Ordinal maxReceiveLength = zero;
+    const int myImageID = comm_->getRank();
+    for (Ordinal i = zero; i < numReceives_; i++) {
+      if (imagesFrom_[i] != myImageID) {
+        if (lengthsFrom_[i] > maxReceiveLength) {
+          maxReceiveLength = lengthsFrom_[i];
+        }
+      }
+    }
+
+    // initialize all of reverseDistributor's data members
+    reverseDistributor_->lengthsTo_ = lengthsFrom_;
+    reverseDistributor_->imagesTo_ = imagesFrom_;
+    reverseDistributor_->indicesTo_ = indicesFrom_;
+    reverseDistributor_->startsTo_ = startsFrom_;
+    reverseDistributor_->lengthsFrom_ = lengthsTo_;
+    reverseDistributor_->imagesFrom_ = imagesTo_;
+    reverseDistributor_->indicesFrom_ = indicesTo_;
+    reverseDistributor_->startsFrom_ = startsTo_;
+    reverseDistributor_->numSends_ = numReceives_;
+    reverseDistributor_->numReceives_ = numSends_;
+    reverseDistributor_->selfMessage_ = selfMessage_;
+    reverseDistributor_->maxSendLength_ = maxReceiveLength;
+    reverseDistributor_->totalReceiveLength_ = totalSendLength;
+    // Note: numExports_ was not copied
+  }
+
+  template <typename Ordinal>
+  template <typename Packet>
+  void Distributor<Ordinal>::doPostsAndWaits(
+      const std::vector<Packet>& exports,
+      const Ordinal numPackets,
+            std::vector<Packet>& imports) 
   {
-    (void)exports;
-    (void)packetSize;
-    (void)imports;
-    doPosts(exports, imports);
+    doPosts(exports, numPackets, imports);
     doWaits();
   }
 
-  template <typename OrdinalType>
-  template <typename PacketType>
-  void Distributor<OrdinalType>::doPosts(
-      const std::vector<PacketType>& exports,
-            std::vector<PacketType>& imports) 
+  template <typename Ordinal>
+  template <typename Packet>
+  void Distributor<Ordinal>::doPosts(
+      const std::vector<Packet>& exports,
+      const Ordinal numPackets,
+            std::vector<Packet>& imports) 
   {
-    (void)exports;
-    (void)imports;
-    // FINISH
+    using Teuchos::ArrayRCP;
+
+    // start of actual doPosts function
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE  = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal myImageID = comm_->getRank();
+    int selfReceiveOffset = 0;
+
+    // FINISH: verify that this resize() doesn't break something
+    imports.resize(totalReceiveLength_ * numPackets);
+
+    // allocate space in requests
+    requests_.reserve(numReceives_);
+    requests_.resize(0);
+
+    // start up the Irecv's
+    {
+      int curBufferOffset = 0;
+      for (int i = 0; i < (numReceives_ + selfMessage_); ++i) {
+        if (imagesFrom_[i] != myImageID) { 
+          // receiving this one from another image
+          // setup reference into imports of the appropriate size and at the appropriate place
+          ArrayRCP<Packet> impptr = Teuchos::arcp(&imports[curBufferOffset],0,lengthsFrom_[i]*numPackets,false);
+          requests_.push_back( Teuchos::ireceive<Ordinal,Packet>(*comm_,impptr,imagesFrom_[i]) );
+        }
+        else {
+          // receiving this one from myself 
+          // note that offset
+          selfReceiveOffset = curBufferOffset;
+        }
+        curBufferOffset += lengthsFrom_[i]*numPackets;
+      }
+    }
+
+    // wait for everyone else before posting ready-sends below to ensure that 
+    // all non-blocking receives above have been posted
+    Teuchos::barrier(*comm_);
+
+    // setup scan through imagesTo_ list starting with higher numbered images
+    // (should help balance message traffic)
+    Ordinal numBlocks = numSends_+ selfMessage_;
+    Ordinal imageIndex = ZERO;
+    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
+      imageIndex++;
+    }
+    if (imageIndex == numBlocks) {
+      imageIndex = ZERO;
+    }
+
+    Ordinal selfNum = ZERO;
+    Ordinal selfIndex = ZERO;
+
+    if (indicesTo_.empty()) { // data is already blocked by processor
+      for (Ordinal i = ZERO; i < numBlocks; ++i) {
+        Ordinal p = i + imageIndex;
+        if (p > (numBlocks - ONE)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID) {
+          // sending it to another image
+          Teuchos::ArrayView<const Packet> tmpSend(&exports[startsTo_[p]*numPackets],lengthsTo_[p]*numPackets);
+          Teuchos::readySend<Ordinal,Packet>(*comm_,tmpSend,imagesTo_[p]);
+        }
+        else {
+          // sending it to ourself
+          selfNum = p;
+        }
+      }
+
+      if (selfMessage_ > ZERO) {
+        std::copy(exports.begin()+startsTo_[selfNum]*numPackets, exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
+                  imports.begin()+selfReceiveOffset);
+      }
+    }
+    else { // data is not blocked by image, use send buffer
+      // allocate sendArray buffer
+      std::vector<Packet> sendArray(maxSendLength_*numPackets); 
+
+      for (Ordinal i = ZERO; i < numBlocks; i++) {
+        Ordinal p = i + imageIndex;
+        if (p > (numBlocks - ONE)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID) { 
+          // sending it to another image
+          typename std::vector<Packet>::const_iterator srcBegin, srcEnd;
+          int sendArrayOffset = 0;
+          int j = startsTo_[p];
+          for (Ordinal k = ZERO; k < lengthsTo_[p]; ++k, ++j) {
+            srcBegin = exports.begin() + indicesTo_[j]*numPackets;
+            srcEnd   = srcBegin + numPackets;
+            std::copy( srcBegin, srcEnd, sendArray.begin()+sendArrayOffset );
+            sendArrayOffset += numPackets;
+          }
+          Teuchos::ArrayView<const Packet> tmpSend(&sendArray[0],lengthsTo_[p]*numPackets);
+          Teuchos::readySend<Ordinal,Packet>(*comm_,tmpSend,imagesTo_[p]);
+        }
+        else { 
+          // sending it to myself
+          selfNum = p;
+          selfIndex = startsTo_[p];
+        }
+      }
+
+      // FINISH: revisit this to make sure it's not stupidly inefficient
+      if (selfMessage_ > ZERO) {
+        for (Ordinal k = ZERO; k < lengthsTo_[selfNum]; ++k) {
+          std::copy( exports.begin()+indicesTo_[selfIndex]*numPackets,
+                     exports.begin()+indicesTo_[selfIndex]*numPackets + numPackets,
+                     imports.begin() + selfReceiveOffset );
+          selfIndex++;
+          selfReceiveOffset += numPackets;
+        }
+      }
+    }
   }
 
-  template <typename OrdinalType>
-  void Distributor<OrdinalType>::doWaits() 
+  template <typename Ordinal>
+  void Distributor<Ordinal>::doWaits() 
   {
-    // FINISH
-    const OrdinalType & numReceives = getNumReceives();
-    std::vector<MPI_Status> statuses(numReceives);
-    if(numReceives > Teuchos::OrdinalTraits<OrdinalType>::zero())
-      MPI_Waitall(numReceives, &request_.front(), &statuses.front());
+    const Ordinal & numReceives = getNumReceives();
+    if (numReceives > Teuchos::OrdinalTraits<Ordinal>::zero()) {
+      Teuchos::waitAll(*comm_,arrayViewFromVector(requests_));
+      // Requests should all be null, clear them
+#ifdef TEUCHOS_DEBUG
+      for (typename requests_::const_iterator i=requests_.begin(); i != requests_.end(); ++i) {
+        TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
+            "Tpetra::Distributor<"<<Teuchos::OrdinalTraits<Ordinal>::name()<<">::doWaits(): Requests should be null after call to Teuchos::waitAll().");
+      }
+#endif
+      requests_.clear();
+    }
   }
 
-  template <typename OrdinalType>
-  template <typename PacketType>
-  void Distributor<OrdinalType>::doReversePostsAndWaits(
-      const std::vector<PacketType>& exports,
-            std::vector<PacketType>& imports) 
+  template <typename Ordinal>
+  template <typename Packet>
+  void Distributor<Ordinal>::doReversePostsAndWaits(
+      const std::vector<Packet>& exports,
+      const Ordinal numPackets,
+            std::vector<Packet>& imports) 
   {
-    (void)exports;
-    (void)imports;
-    doReversePosts(exports, imports);
+    doReversePosts(exports, numPackets, imports);
     doReverseWaits();
   }
 
-  template <typename OrdinalType>
-  template <typename PacketType>
-  void Distributor<OrdinalType>::doReversePosts(
-      const std::vector<PacketType>& exports,
-            std::vector<PacketType>& imports) 
+  template <typename Ordinal>
+  template <typename Packet>
+  void Distributor<Ordinal>::doReversePosts(
+      const std::vector<Packet>& exports,
+      const Ordinal numPackets,
+            std::vector<Packet>& imports) 
   {
-    (void)exports;
-    (void)imports;
-    // FINISH
+    // FINISH: what does this message mean?
+    TEST_FOR_EXCEPTION(getIndicesTo().empty(),std::runtime_error,
+        "Tpetra::Distributor<"<<Teuchos::OrdinalTraits<Ordinal>::name()<<">::doReversePosts(): Can only do reverse comm when original data is blocked by image.");
+    if (reverseDistributor_ == Teuchos::null) {
+      createReverseDistributor();
+    }
+    reverseDistributor_->doPosts(exports,numPackets,imports);
   }
 
-  template <typename OrdinalType>
-  void Distributor<OrdinalType>::doReverseWaits() 
+  template <typename Ordinal>
+  void Distributor<Ordinal>::doReverseWaits() 
   {
-    // FINISH
+    // call doWaits() on the reverse Distributor, if it exists
+    if (reverseDistributor_ != Teuchos::null) {
+      reverseDistributor_->doWaits();
+    }
   }
 
   //! print method inherited from Teuchos::Object
-  template <typename OrdinalType>
-  void Distributor<OrdinalType>::print(ostream& os) const 
+  template <typename Ordinal>
+  void Distributor<Ordinal>::print(ostream& os) const 
   {
-    int const myImageID = getComm().getRank();
-    int const numImages = getComm().getSize();
-    for(int i = 0; i < numImages; i++) {
-      getComm().barrier();
-      if(i == myImageID) {
+    int const myImageID = comm_->getRank();
+    int const numImages = comm_->getSize();
+    for (int i = 0; i < numImages; i++) {
+      comm_->barrier();
+      if (i == myImageID) {
         os << "[Image " << myImageID << " of " << numImages << "]" << endl;
         os << " numExports: " << numExports_ << endl;
         os << " selfMessage: " << selfMessage_ << endl;
@@ -585,35 +728,27 @@ namespace Tpetra {
     }
   }
 
-  template <typename OrdinalType>
-  Teuchos::Comm<OrdinalType> & Distributor<OrdinalType>::getComm() 
-  {return(*comm_);}
-
-  template <typename OrdinalType>
-  const Teuchos::Comm<OrdinalType> & Distributor<OrdinalType>::getComm() const 
-  {return(*comm_);}
-
-  template <typename OrdinalType>
-  void Distributor<OrdinalType>::computeReceives()
+  template <typename Ordinal>
+  void Distributor<Ordinal>::computeReceives()
   {
-    int myImageID = getComm().getRank();
-    int numImages = getComm().getSize();
-    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    const OrdinalType  one = Teuchos::OrdinalTraits<OrdinalType>::one();
-    std::vector<OrdinalType> msg_count(numImages, zero);
-    std::vector<OrdinalType> counts(numImages, 1); // int vector for MPI sumAllAndScatter call
+    int myImageID = comm_->getRank();
+    int numImages = comm_->getSize();
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal  one = Teuchos::OrdinalTraits<Ordinal>::one();
+    std::vector<Ordinal> msg_count(numImages, zero);
+    std::vector<Ordinal> counts(numImages, 1); // int vector for MPI sumAllAndScatter call
 
-    for(OrdinalType i = zero; i < (numSends_ + selfMessage_); i++) {
+    for (Ordinal i = zero; i < (numSends_ + selfMessage_); i++) {
       msg_count[imagesTo_[i]] = one;
     }
     
-    Teuchos::reduceAllAndScatter<OrdinalType>(*comm_,Teuchos::REDUCE_SUM,numImages,&msg_count[0],&counts[0],&numReceives_);
+    Teuchos::reduceAllAndScatter<Ordinal>(*comm_,Teuchos::REDUCE_SUM,numImages,&msg_count[0],&counts[0],&numReceives_);
     lengthsFrom_.assign(numReceives_, zero);
     imagesFrom_.assign(numReceives_, zero);
 
-    for(OrdinalType i = zero; i < (numSends_ + selfMessage_); i++) {
-      if(imagesTo_[i] != myImageID ) {
-        Teuchos::send(getComm(),lengthsTo_[i],imagesTo_[i]);
+    for (Ordinal i = zero; i < (numSends_ + selfMessage_); i++) {
+      if (imagesTo_[i] != myImageID ) {
+        Teuchos::send(*comm_,lengthsTo_[i],imagesTo_[i]);
       }
       else {
         // set selfMessage_ to end block of recv arrays
@@ -621,13 +756,13 @@ namespace Tpetra {
         imagesFrom_[numReceives_-one] = myImageID;
       }
     }
-    for(OrdinalType i = zero; i < (numReceives_ - selfMessage_); i++) {
-      // receive 1 OrdinalType variable from any sender.
+    for (Ordinal i = zero; i < (numReceives_ - selfMessage_); i++) {
+      // receive 1 Ordinal variable from any sender.
       // store the value in lengthsFrom_[i], and store the sender's ImageID in imagesFrom_[i]
-      // imagesFrom_[i] = getComm().receive(&lengthsFrom_[i], 1, -1);
-      imagesFrom_[i] = Teuchos::receive(getComm(),-1,&lengthsFrom_[i]);
+      // imagesFrom_[i] = comm_->receive(&lengthsFrom_[i], 1, -1);
+      imagesFrom_[i] = Teuchos::receive(*comm_,-1,&lengthsFrom_[i]);
     }
-    getComm().barrier();
+    comm_->barrier();
 
     sortArrays(imagesFrom_, lengthsFrom_);
 
@@ -635,59 +770,56 @@ namespace Tpetra {
     totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), zero);
     indicesFrom_.clear();
     indicesFrom_.reserve(totalReceiveLength_);
-    for(OrdinalType i = 0; i < totalReceiveLength_; i++) {
+    for (Ordinal i = 0; i < totalReceiveLength_; i++) {
       indicesFrom_.push_back(i);
     }
 
     startsFrom_.reserve(numReceives_);
-    for(OrdinalType i = zero, j = zero; i < numReceives_; ++i) {
+    for (Ordinal i = zero, j = zero; i < numReceives_; ++i) {
       startsFrom_.push_back(j);
       j += lengthsFrom_[i];
     }
 
     numReceives_ -= selfMessage_;
 
-    getComm().barrier();
+    comm_->barrier();
   }
 
-  template <typename OrdinalType>
-  void Distributor<OrdinalType>::computeSends(
-      const std::vector<OrdinalType> & importIDs,
-      const std::vector<OrdinalType> & importImageIDs,
-      std::vector<OrdinalType>& exportIDs,
-      std::vector<OrdinalType>& exportImageIDs)
+  template <typename Ordinal>
+  void Distributor<Ordinal>::computeSends(
+      const std::vector<Ordinal> & importIDs,
+      const std::vector<Ordinal> & importImageIDs,
+      std::vector<Ordinal>& exportIDs,
+      std::vector<Ordinal>& exportImageIDs)
   {
-    int myImageID = getComm().getRank();
-    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
-    const OrdinalType two = one + one;
+    int myImageID = comm_->getRank();
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
 
-    Distributor<OrdinalType> tempPlan(comm_);
-    std::vector<OrdinalType> imageIDList;
-    std::vector<OrdinalType> importObjs;
+    Distributor<Ordinal> tempPlan(comm_);
+    std::vector<Ordinal> imageIDList;
+    std::vector<Ordinal> importObjs;
 
-    OrdinalType numImports = importImageIDs.size();
+    Ordinal numImports = importImageIDs.size();
     imageIDList = importImageIDs;
 
-    importObjs.resize(two * numImports);
+    importObjs.resize(2*numImports);
 
-    for(OrdinalType i = zero; i < numImports; i++ ) {  
-      importObjs[two*i] = importIDs[i];
-      importObjs[two*i+1] = myImageID;
+    for (Ordinal i = zero; i < numImports; i++ ) {  
+      importObjs[2*i]   = importIDs[i];
+      importObjs[2*i+1] = myImageID;
     }
 
-    OrdinalType numExports;
+    Ordinal numExports;
     tempPlan.createFromSends(imageIDList, numExports);
     exportIDs.resize(numExports);
     exportImageIDs.resize(numExports);
 
-    std::vector<OrdinalType> exportObjs;
-    // comm_->doPostsAndWaits(tempPlan, importObjs, two, exportObjs);
-    tempPlan.doPostsAndWaits(importObjs,two,exportObjs);
+    std::vector<Ordinal> exportObjs;
+    tempPlan.doPostsAndWaits(importObjs,2,exportObjs);
 
-    for(OrdinalType i = zero; i < numExports; i++) {
-      exportIDs[i] = exportObjs[two*i];
-      exportImageIDs[i] = exportObjs[two*i+one];
+    for (Ordinal i = zero; i < numExports; i++) {
+      exportIDs[i]      = exportObjs[2*i];
+      exportImageIDs[i] = exportObjs[2*i+1];
     }
   }
 

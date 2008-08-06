@@ -4,6 +4,8 @@ CURRENT
   - MPI_Irecv   (non-block receive)
   - MPI_WaitAll (wait all)
 * update Distributor,Directory,Import,Export to match new Tpetra::Map
+* write Anasazi/Tpetra adapter
+* write Belos/Tpetra adapter
 
 TODO
 * update vector,multivector (vector is subclass of multivector)

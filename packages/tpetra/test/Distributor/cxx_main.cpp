@@ -97,6 +97,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 
   int ierr = 0;
   int returnierr = 0;
+  using Teuchos::as;
 
   // ======================================================================
   // code coverage section - just call functions, no testing
@@ -122,7 +123,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 #ifdef HAVE_MPI // Only do rest of testing if not in a serial build
   // fixtures
   const OrdinalType zero = OrdinalTraits<OrdinalType>::zero();
-  const OrdinalType length = intToOrdinal<OrdinalType>(numImages);
+  const OrdinalType length = as<OrdinalType>(numImages);
   const OrdinalType invalid = intToOrdinal<OrdinalType>(-99);
   OrdinalType numExportIDs;
   std::vector<OrdinalType> exportImageIDs;
@@ -136,8 +137,9 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   numRemoteIDs = zero; // in MPI, we should be receiving at least one
 
   // fill exportImageIDs with {0, 1, 2, ... numImages-1}
-  for(OrdinalType i = zero; i < length; i++) 
+  for(OrdinalType i = zero; i < length; i++) {
     exportImageIDs.push_back(i);
+  }
 
   distributorS.createFromSends(exportImageIDs, numRemoteIDs);
   if(debug) {
@@ -212,17 +214,15 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   if(verbose) cout << "Testing doPostsAndWaits... ";
   comm->barrier();
 
-  OrdinalType const objectSize = OrdinalTraits<OrdinalType>::one();
   std::vector<ScalarType> imports;
   std::vector<ScalarType> exports;
   generateColumn(exports, myImageID, numImages);
   if(debug) {
     if(verbose) cout << endl;
     outputData(myImageID, numImages, "exports: " + Tpetra::toString(exports));
-    outputData(myImageID, numImages, "objectSize: " + Tpetra::toString(objectSize));
   }
   // FINISH
-  distributorS.doPostsAndWaits(exports, objectSize, imports);
+  distributorS.doPostsAndWaits(exports, imports);
   if(debug) {
     outputData(myImageID, numImages, "imports: " + Tpetra::toString(imports));
     if(verbose) cout << "doPostsAndWaits test: ";
