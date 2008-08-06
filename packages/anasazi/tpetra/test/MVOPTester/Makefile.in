@@ -42,9 +42,6 @@
 # ************************************************************************
 #@HEADER
 
-#np# Specify locations of include files within Trilinos, but outside np
-#np# Add packages that np is dependent on; remove epetra if np does not need it
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -64,8 +61,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = IRTR_test$(EXEEXT) IRTR_auxtest$(EXEEXT)
-subdir = epetra/test/IRTR
+noinst_PROGRAMS = MVOPTester_test$(EXEEXT)
+subdir = tpetra/test/MVOPTester
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -95,18 +92,14 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_IRTR_auxtest_OBJECTS = IRTR_auxtest-cxx_main_auxtest.$(OBJEXT)
-IRTR_auxtest_OBJECTS = $(am_IRTR_auxtest_OBJECTS)
+am_MVOPTester_test_OBJECTS = MVOPTester_test-cxx_main.$(OBJEXT)
+MVOPTester_test_OBJECTS = $(am_MVOPTester_test_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
-IRTR_auxtest_LINK = $(CXXLD) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_IRTR_test_OBJECTS = IRTR_test-cxx_main.$(OBJEXT)
-IRTR_test_OBJECTS = $(am_IRTR_test_OBJECTS)
-IRTR_test_LINK = $(CXXLD) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+MVOPTester_test_LINK = $(CXXLD) $(MVOPTester_test_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -115,8 +108,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(IRTR_auxtest_SOURCES) $(IRTR_test_SOURCES)
-DIST_SOURCES = $(IRTR_auxtest_SOURCES) $(IRTR_test_SOURCES)
+SOURCES = $(MVOPTester_test_SOURCES)
+DIST_SOURCES = $(MVOPTester_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -243,50 +236,24 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-IRTR_test_SOURCES = $(srcdir)/cxx_main.cpp
-
-#IRTR_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
-IRTR_auxtest_SOURCES = $(srcdir)/cxx_main_auxtest.cpp
+MVOPTester_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-IRTR_test_DEPENDENCIES = \
+MVOPTester_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-
-#IRTR_solvertest_DEPENDENCIES = \
-#	$(top_builddir)/src/libanasazi.a \
-#	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
-#	$(top_builddir)/../epetra/src/libepetra.a \
-#	$(top_builddir)/../teuchos/src/libteuchos.a
-IRTR_auxtest_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../tpetra/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-IRTR_test_CXXFLAGS = -I$(top_srcdir)/src
-
-#IRTR_solvertest_CXXFLAGS = -I$(top_srcdir)/src
-IRTR_auxtest_CXXFLAGS = -I$(top_srcdir)/src
+MVOPTester_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-IRTR_test_LDADD = \
-	$(EXPORT_LIBS) 
-
-
-#IRTR_solvertest_LDADD = \
-#	$(EXPORT_LIBS) 
-IRTR_auxtest_LDADD = \
-	$(EXPORT_LIBS) 
-
+MVOPTester_test_LDADD = $(EXPORT_LIBS) 
+EXTRA_DIST = 
 all: all-am
 
 .SUFFIXES:
@@ -300,9 +267,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  epetra/test/IRTR/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  tpetra/test/MVOPTester/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  epetra/test/IRTR/Makefile
+	  $(AUTOMAKE) --foreign  tpetra/test/MVOPTester/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -323,12 +290,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-IRTR_auxtest$(EXEEXT): $(IRTR_auxtest_OBJECTS) $(IRTR_auxtest_DEPENDENCIES) 
-	@rm -f IRTR_auxtest$(EXEEXT)
-	$(IRTR_auxtest_LINK) $(IRTR_auxtest_OBJECTS) $(IRTR_auxtest_LDADD) $(LIBS)
-IRTR_test$(EXEEXT): $(IRTR_test_OBJECTS) $(IRTR_test_DEPENDENCIES) 
-	@rm -f IRTR_test$(EXEEXT)
-	$(IRTR_test_LINK) $(IRTR_test_OBJECTS) $(IRTR_test_LDADD) $(LIBS)
+MVOPTester_test$(EXEEXT): $(MVOPTester_test_OBJECTS) $(MVOPTester_test_DEPENDENCIES) 
+	@rm -f MVOPTester_test$(EXEEXT)
+	$(MVOPTester_test_LINK) $(MVOPTester_test_OBJECTS) $(MVOPTester_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -336,8 +300,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IRTR_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPTester_test-cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -353,33 +316,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-IRTR_auxtest-cxx_main_auxtest.o: $(srcdir)/cxx_main_auxtest.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -MT IRTR_auxtest-cxx_main_auxtest.o -MD -MP -MF $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo -c -o IRTR_auxtest-cxx_main_auxtest.o `test -f '$(srcdir)/cxx_main_auxtest.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_auxtest.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_auxtest.cpp' object='IRTR_auxtest-cxx_main_auxtest.o' libtool=no @AMDEPBACKSLASH@
+MVOPTester_test-cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.o -MD -MP -MF $(DEPDIR)/MVOPTester_test-cxx_main.Tpo -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MVOPTester_test-cxx_main.Tpo $(DEPDIR)/MVOPTester_test-cxx_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_auxtest-cxx_main_auxtest.o `test -f '$(srcdir)/cxx_main_auxtest.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_auxtest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-IRTR_auxtest-cxx_main_auxtest.obj: $(srcdir)/cxx_main_auxtest.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -MT IRTR_auxtest-cxx_main_auxtest.obj -MD -MP -MF $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo -c -o IRTR_auxtest-cxx_main_auxtest.obj `if test -f '$(srcdir)/cxx_main_auxtest.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_auxtest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_auxtest.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_auxtest.cpp' object='IRTR_auxtest-cxx_main_auxtest.obj' libtool=no @AMDEPBACKSLASH@
+MVOPTester_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.obj -MD -MP -MF $(DEPDIR)/MVOPTester_test-cxx_main.Tpo -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MVOPTester_test-cxx_main.Tpo $(DEPDIR)/MVOPTester_test-cxx_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_auxtest-cxx_main_auxtest.obj `if test -f '$(srcdir)/cxx_main_auxtest.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_auxtest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_auxtest.cpp'; fi`
-
-IRTR_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -MT IRTR_test-cxx_main.o -MD -MP -MF $(DEPDIR)/IRTR_test-cxx_main.Tpo -c -o IRTR_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_test-cxx_main.Tpo $(DEPDIR)/IRTR_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='IRTR_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
-
-IRTR_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -MT IRTR_test-cxx_main.obj -MD -MP -MF $(DEPDIR)/IRTR_test-cxx_main.Tpo -c -o IRTR_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_test-cxx_main.Tpo $(DEPDIR)/IRTR_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='IRTR_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

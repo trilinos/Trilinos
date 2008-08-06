@@ -16,34 +16,40 @@
 
 #@HEADER
 # ************************************************************************
-# 
-#                 Anasazi: Block Eigensolvers Package
-#                 Copyright (2004) Sandia Corporation
-# 
+#
+#               Anasazi: Block Eigensolvers Package
+#               Copyright (2001) Sandia Corporation
+#
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
-# 
+#
 # This library is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
 # published by the Free Software Foundation; either version 2.1 of the
 # License, or (at your option) any later version.
-#  
+#
 # This library is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#  
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+#
 # ************************************************************************
 #@HEADER
 
-#np# Specify locations of include files within Trilinos, but outside np
-#np# Add packages that np is dependent on; remove epetra if np does not need it
+#np# Note the following paragraph.
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside New_Package. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -64,9 +70,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = IRTR_test$(EXEEXT) IRTR_auxtest$(EXEEXT)
-subdir = epetra/test/IRTR
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = tpetra/src
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -94,19 +100,24 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am_IRTR_auxtest_OBJECTS = IRTR_auxtest-cxx_main_auxtest.$(OBJEXT)
-IRTR_auxtest_OBJECTS = $(am_IRTR_auxtest_OBJECTS)
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
+AR = ar
+ARFLAGS = cru
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
-IRTR_auxtest_LINK = $(CXXLD) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_IRTR_test_OBJECTS = IRTR_test-cxx_main.$(OBJEXT)
-IRTR_test_OBJECTS = $(am_IRTR_test_OBJECTS)
-IRTR_test_LINK = $(CXXLD) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+libanasazitpetra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__objects_1 = AnasaziTpetraAdapter.$(OBJEXT)
+am__objects_2 =
+@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
+am_libanasazitpetra_a_OBJECTS = $(am__objects_1) $(am__objects_3)
+libanasazitpetra_a_OBJECTS = $(am_libanasazitpetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -115,8 +126,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(IRTR_auxtest_SOURCES) $(IRTR_test_SOURCES)
-DIST_SOURCES = $(IRTR_auxtest_SOURCES) $(IRTR_test_SOURCES)
+SOURCES = $(libanasazitpetra_a_SOURCES)
+DIST_SOURCES = $(libanasazitpetra_a_SOURCES)
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -142,7 +155,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 GREP = @GREP@
 HAVE_PERL = @HAVE_PERL@
 INSTALL = @INSTALL@
@@ -152,9 +165,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-
-# Dummy for new export makefiles
-LIBS = 
+LIBS = @LIBS@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -234,59 +245,124 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ANASAZI_TEST_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
-AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
-#np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
-#np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
-#np# files needed to compile the exe.
-IRTR_test_SOURCES = $(srcdir)/cxx_main.cpp
+#
+#np# There is, at present, no distinction between most of the categories, 
+#np# other than those which start with EXTRA_.  All categories which do not
+#np# start with EXTRA_ are included in all builds.  Categories which start
+#np# with EXTRA_ are included in some builds (typically controlled by 
+#np# --with-xyz or --without-xyz)
+#
+#np# Make sure to list all source files in one of the following categories.
+CORE_H = \
+	$(srcdir)/AnasaziTpetraAdapter.hpp 
 
-#IRTR_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
-IRTR_auxtest_SOURCES = $(srcdir)/cxx_main_auxtest.cpp
-
-#np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
-#np# exe depends on.  (This primary is not absolutely essential.)
-IRTR_test_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+CORE = \
+	$(srcdir)/AnasaziTpetraAdapter.cpp
 
 
-#IRTR_solvertest_DEPENDENCIES = \
-#	$(top_builddir)/src/libanasazi.a \
-#	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
-#	$(top_builddir)/../epetra/src/libepetra.a \
-#	$(top_builddir)/../teuchos/src/libteuchos.a
-IRTR_auxtest_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+#
+#np#  Files which are included in select builds are typically have
+#np#  names that start with EXTRA
+#
+#np#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
+#np#  set up by TAC_ARC_CONFIG_MPI 
+#
+EXTRA_MPI_H = 
+EXTRA_MPI = 
+@HAVE_MPI_FALSE@MPI_H = 
+@HAVE_MPI_TRUE@MPI_H = \
+@HAVE_MPI_TRUE@	$(EXTRA_MPI_H)
+
+@HAVE_MPI_FALSE@MPI = 
+@HAVE_MPI_TRUE@MPI = \
+@HAVE_MPI_TRUE@	$(EXTRA_MPI)
+
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ANASAZI_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+# ------------------------------------------------------------------------	
+#np# The following section can be duplicated for building multiple libraries -
+#np# make sure to list the correct categories with each library.
+#np# replace new_package with the name of the package being autotool'ed here
+# ------------------------------------------------------------------------
+# New_Package library specifications
+# ------------------------------------------------------------------------
+#np# replace new_package with the name of the package being autotool'ed here
+ANASAZI_TPETRA_LIB = libanasazitpetra.a
+
+#np# replace new_package with the name of the package being autotool'ed here
+ANASAZI_TPETRA_H = \
+	$(top_srcdir)/src/AnasaziConfigDefs.hpp \
+	$(CORE_H) \
+	$(MPI_H) 
 
 
-#np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
-#np# building the exe.
-IRTR_test_CXXFLAGS = -I$(top_srcdir)/src
-
-#IRTR_solvertest_CXXFLAGS = -I$(top_srcdir)/src
-IRTR_auxtest_CXXFLAGS = -I$(top_srcdir)/src
-
-#np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
-#np# building the exe.
-IRTR_test_LDADD = \
-	$(EXPORT_LIBS) 
+#np# replace new_package with the name of the package being autotool'ed here
+libanasazitpetra_a_SOURCES = \
+	$(CORE) \
+	$(MPI)
 
 
-#IRTR_solvertest_LDADD = \
-#	$(EXPORT_LIBS) 
-IRTR_auxtest_LDADD = \
-	$(EXPORT_LIBS) 
+#np# replace new_package with the name of the package being autotool'ed here
+@USE_ALTERNATE_AR_FALSE@libanasazitpetra_a_AR = $(AR) cru
 
+#np# replace new_package with the name of the package being autotool'ed here
+#EXTRA_libanasazitpetra_a_SOURCES = \
+#	$(EXTRA_MPI) \
+#	$(EXTRA_MPI_H) 
+
+#We need the following to support separate build directories
+#AM_CPPFLAGS=-I$(builddir)/src
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+#np# replace new_package with the name of the package being autotool'ed here
+@USE_ALTERNATE_AR_TRUE@libanasazitpetra_a_AR = $(ALTERNATE_AR)
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+libanasazitpetra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+lib_LIBRARIES = $(ANASAZI_TPETRA_LIB)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(includedir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+include_HEADERS = $(ANASAZI_TPETRA_H) 
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(execincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: New_Package_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+execincludedir = $(exec_prefix)/include
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
 all: all-am
 
 .SUFFIXES:
@@ -300,9 +376,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  epetra/test/IRTR/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  tpetra/src/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  epetra/test/IRTR/Makefile
+	  $(AUTOMAKE) --foreign  tpetra/src/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -320,15 +396,39 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f=$(am__strip_dir) \
+	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p=$(am__strip_dir) \
+	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
+	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
+	  else :; fi; \
+	done
 
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-IRTR_auxtest$(EXEEXT): $(IRTR_auxtest_OBJECTS) $(IRTR_auxtest_DEPENDENCIES) 
-	@rm -f IRTR_auxtest$(EXEEXT)
-	$(IRTR_auxtest_LINK) $(IRTR_auxtest_OBJECTS) $(IRTR_auxtest_LDADD) $(LIBS)
-IRTR_test$(EXEEXT): $(IRTR_test_OBJECTS) $(IRTR_test_DEPENDENCIES) 
-	@rm -f IRTR_test$(EXEEXT)
-	$(IRTR_test_LINK) $(IRTR_test_OBJECTS) $(IRTR_test_LDADD) $(LIBS)
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libanasazitpetra.a: $(libanasazitpetra_a_OBJECTS) $(libanasazitpetra_a_DEPENDENCIES) 
+	-rm -f libanasazitpetra.a
+	$(libanasazitpetra_a_AR) libanasazitpetra.a $(libanasazitpetra_a_OBJECTS) $(libanasazitpetra_a_LIBADD)
+	$(RANLIB) libanasazitpetra.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -336,8 +436,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IRTR_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziTpetraAdapter.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -353,33 +452,36 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-IRTR_auxtest-cxx_main_auxtest.o: $(srcdir)/cxx_main_auxtest.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -MT IRTR_auxtest-cxx_main_auxtest.o -MD -MP -MF $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo -c -o IRTR_auxtest-cxx_main_auxtest.o `test -f '$(srcdir)/cxx_main_auxtest.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_auxtest.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_auxtest.cpp' object='IRTR_auxtest-cxx_main_auxtest.o' libtool=no @AMDEPBACKSLASH@
+AnasaziTpetraAdapter.o: $(srcdir)/AnasaziTpetraAdapter.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziTpetraAdapter.o -MD -MP -MF $(DEPDIR)/AnasaziTpetraAdapter.Tpo -c -o AnasaziTpetraAdapter.o `test -f '$(srcdir)/AnasaziTpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziTpetraAdapter.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziTpetraAdapter.Tpo $(DEPDIR)/AnasaziTpetraAdapter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziTpetraAdapter.cpp' object='AnasaziTpetraAdapter.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_auxtest-cxx_main_auxtest.o `test -f '$(srcdir)/cxx_main_auxtest.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_auxtest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziTpetraAdapter.o `test -f '$(srcdir)/AnasaziTpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziTpetraAdapter.cpp
 
-IRTR_auxtest-cxx_main_auxtest.obj: $(srcdir)/cxx_main_auxtest.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -MT IRTR_auxtest-cxx_main_auxtest.obj -MD -MP -MF $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo -c -o IRTR_auxtest-cxx_main_auxtest.obj `if test -f '$(srcdir)/cxx_main_auxtest.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_auxtest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_auxtest.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Tpo $(DEPDIR)/IRTR_auxtest-cxx_main_auxtest.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_auxtest.cpp' object='IRTR_auxtest-cxx_main_auxtest.obj' libtool=no @AMDEPBACKSLASH@
+AnasaziTpetraAdapter.obj: $(srcdir)/AnasaziTpetraAdapter.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziTpetraAdapter.obj -MD -MP -MF $(DEPDIR)/AnasaziTpetraAdapter.Tpo -c -o AnasaziTpetraAdapter.obj `if test -f '$(srcdir)/AnasaziTpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/AnasaziTpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziTpetraAdapter.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziTpetraAdapter.Tpo $(DEPDIR)/AnasaziTpetraAdapter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziTpetraAdapter.cpp' object='AnasaziTpetraAdapter.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_auxtest_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_auxtest-cxx_main_auxtest.obj `if test -f '$(srcdir)/cxx_main_auxtest.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_auxtest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_auxtest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziTpetraAdapter.obj `if test -f '$(srcdir)/AnasaziTpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/AnasaziTpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziTpetraAdapter.cpp'; fi`
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
+	  $(includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
+	done
 
-IRTR_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -MT IRTR_test-cxx_main.o -MD -MP -MF $(DEPDIR)/IRTR_test-cxx_main.Tpo -c -o IRTR_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_test-cxx_main.Tpo $(DEPDIR)/IRTR_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='IRTR_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
-
-IRTR_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -MT IRTR_test-cxx_main.obj -MD -MP -MF $(DEPDIR)/IRTR_test-cxx_main.Tpo -c -o IRTR_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IRTR_test-cxx_main.Tpo $(DEPDIR)/IRTR_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='IRTR_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(IRTR_test_CXXFLAGS) $(CXXFLAGS) -c -o IRTR_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -457,8 +559,11 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -483,9 +588,10 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -503,11 +609,11 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-am
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES
 
 install-html: install-html-am
 
@@ -538,24 +644,30 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	clean-libLIBRARIES ctags distclean distclean-compile \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
+	install-exec-am install-html install-html-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am
+	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
 
 
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+#np# List locations of include files within Trilinos but outside of this 
+#np# package
 include $(top_builddir)/Makefile.export.anasazi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

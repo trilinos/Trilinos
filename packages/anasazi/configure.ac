@@ -323,8 +323,8 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot
 
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
-# Required: Epetra, Teuchos
-# Optional: Thyra, Triutils, Belos, AztecOO, and Ifpack
+# Required: Teuchos
+# Optional: Epetra, Tpetra, Thyra, Triutils, Belos, AztecOO, and Ifpack
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes) 
@@ -493,6 +493,11 @@ AC_CONFIG_FILES([
 		thyra/test/LOBPCG/Makefile
 		thyra/test/BlockKrylovSchur/Makefile
 		thyra/test/BlockDavidson/Makefile
+		tpetra/Makefile
+		tpetra/src/Makefile
+		tpetra/example/Makefile
+		tpetra/test/Makefile
+		tpetra/test/MVOPTester/Makefile
 		])
 #		test/IRTR/Makefile
 #		thyra/test/IRTR/Makefile

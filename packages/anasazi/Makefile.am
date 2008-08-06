@@ -112,7 +112,10 @@ tests:
 	@echo ""
 	@echo "Now building anasazi tests."
 	@echo ""
-	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../test && $(MAKE) && cd ../../test && $(MAKE) && cd ../thyra/test && $(MAKE)
+	cd $(abs_top_builddir)/test && $(MAKE) && \
+			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/test && $(MAKE) && \
+			cd $(abs_top_builddir)/thyra/test && $(MAKE) 
+#cd $(abs_top_builddir)/tpetra/test && $(MAKE)
 	@echo ""
 	@echo "Finished building anasazi tests."
 	@echo ""
@@ -126,13 +129,19 @@ examples:
 	@echo ""
 	@echo "Now building anasazi examples."
 	@echo ""
-	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../example && $(MAKE) && cd ../../example && $(MAKE) && cd ../thyra/example && $(MAKE)
+	cd $(abs_top_builddir)/example && $(MAKE) && \
+			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) && \
+			cd $(abs_top_builddir)/thyra/example && $(MAKE)
+#cd $(abs_top_builddir)/tpetra/example && $(MAKE)
 	@echo ""
 	@echo "Finished building anasazi examples."
 	@echo ""
 
 install-examples:
-	cd $(top_builddir)/epetra/util && $(MAKE) && cd ../example && $(MAKE) install && cd ../../example && $(MAKE) install && cd ../thyra/example && $(MAKE) install
+	cd $(abs_top_builddir)/example && $(MAKE) install && \
+			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) install && \
+			cd $(abs_top_builddir)/thyra/example && $(MAKE) install
+#cd $(abs_top_builddir)/tpetra/example && $(MAKE) install
 else
 examples:
 	@echo "anasazi examples were disabled at configure time"
@@ -142,10 +151,16 @@ install-examples:
 endif
 
 clean-tests:
-	cd $(top_builddir)/epetra/util && $(MAKE) clean && cd ../test && $(MAKE) clean && cd ../../test && $(MAKE) clean && cd ../thyra/test && $(MAKE) clean
+	cd $(abs_top_builddir)/test && $(MAKE) clean && \
+			cd $(abs_top_builddir)/epetra/util && $(MAKE) clean && cd $(abs_top_builddir)/epetra/test && $(MAKE) clean && \
+			cd $(abs_top_builddir)/thyra/test && $(MAKE) clean
+#cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
 
 clean-examples:
-	cd $(top_builddir)/epetra/util && $(MAKE) clean && cd ../example && $(MAKE) clean && cd ../../example && $(MAKE) clean && cd ../thyra/example && $(MAKE) clean
+	cd $(abs_top_builddir)/example && $(MAKE) clean && \
+			cd $(abs_top_builddir)/epetra/util && $(MAKE) clean && cd $(abs_top_builddir)/epetra/example && $(MAKE) clean && \
+			cd $(abs_top_builddir)/thyra/example && $(MAKE) clean
+#cd $(abs_top_builddir)/tpetra/example && $(MAKE) clean
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests
@@ -164,7 +179,11 @@ if BUILD_ANASAZI_EPETRA
 EPETRA_SUBDIR = epetra
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR)
+if BUILD_ANASAZI_TPETRA
+TPETRA_SUBDIR = #tpetra
+endif
+
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR) $(TPETRA_SUBDIR) 
 
 ## #######################################################################
 ## The below targets allow you to use the new
@@ -215,7 +234,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../triutils:@abs_top_builddir@/../belos
+		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../tpetra:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../triutils:@abs_top_builddir@/../belos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ANASAZI > $(DESTDIR)$(includedir)/Makefile.export.anasazi.macros
 
 uninstall-hook:
