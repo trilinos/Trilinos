@@ -178,7 +178,7 @@ bool compareFloatingArrays(
 } // namespace Teuchos
 
 
-/** \brief Test if an object is equal to a given constant or not.
+/** \brief Test that an object is equal to a given constant.
  *
  * This macro is not complicated so take a look for yourself!
  *
@@ -193,7 +193,7 @@ bool compareFloatingArrays(
   }
 
 
-/** \brief Test if two values are equal or not.
+/** \brief Test that two values are equal.
  *
  * This macro is not complicated so take a look for yourself!
  *
@@ -203,6 +203,36 @@ bool compareFloatingArrays(
   { \
     (out) << #v1" = "<<(v1)<<" == "#v2" = "<<(v2)<<" : "; \
     const bool l_result = (v1) == (v2); \
+    if (!l_result) (success) = false; \
+    (out) << Teuchos::passfail(l_result) << "\n"; \
+  }
+
+
+/** \brief Test that an object is not equal to a given constant.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_INEQUALITY_CONST( v1, v2, out, success ) \
+  { \
+    (out) << #v1" = "<<(v1)<<" != "<<(v2)<<" : "; \
+    const bool l_result = (v1) != (v2); \
+    (out) << Teuchos::passfail(l_result) << "\n"; \
+    if (!l_result) (success) = false; \
+  }
+
+
+/** \brief Test that two values are not equal.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_INEQUALITY( v1, v2, out, success ) \
+  { \
+    (out) << #v1" = "<<(v1)<<" != "#v2" = "<<(v2)<<" : "; \
+    const bool l_result = (v1) != (v2); \
     if (!l_result) (success) = false; \
     (out) << Teuchos::passfail(l_result) << "\n"; \
   }

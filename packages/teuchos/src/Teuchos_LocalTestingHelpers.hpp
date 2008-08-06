@@ -54,6 +54,16 @@
 
 
 /** \brief . */
+#define TEST_INEQUALITY_CONST( v1, v2 ) \
+  TEUCHOS_TEST_INEQUALITY_CONST( v1, v2, out, success )
+
+
+/** \brief . */
+#define TEST_INEQUALITY( v1, v2 ) \
+  TEUCHOS_TEST_INEQUALITY( v1, v2, out, success )
+
+
+/** \brief . */
 #define TEST_FLOATING_EQUALITY( v1, v2, tol ) \
   TEUCHOS_TEST_FLOATING_EQUALITY( v1, v2, tol, out, success )
 
