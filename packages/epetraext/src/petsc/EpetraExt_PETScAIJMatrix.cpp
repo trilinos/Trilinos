@@ -59,23 +59,22 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
 #else
   Comm_ = new Epetra_SerialComm();
 #endif  
-  MatType petscType; //really const char*
   //TODO PETSc's CHKERRQ macro returns a value, which isn't allowed in ctors.
   int ierr;
-  MatGetType(Amat, &petscType);
-  if ( strcmp(petscType,MATSEQAIJ) != 0 && strcmp(petscType,MATMPIAIJ) != 0 ) {
+  MatGetType(Amat, &MatType_);
+  if ( strcmp(MatType_,MATSEQAIJ) != 0 && strcmp(MatType_,MATMPIAIJ) != 0 ) {
     char errMsg[80];
-    sprintf(errMsg,"PETSc matrix must be either seqaij or mpiaij (but it is %s)",petscType);
+    sprintf(errMsg,"PETSc matrix must be either seqaij or mpiaij (but it is %s)",MatType_);
     //throw Comm_->ReportError("PETSc matrix must be either seqaij or mpiaij", -1);
     throw Comm_->ReportError(errMsg,-1);
   }
   petscMatrixType mt;
   Mat_MPIAIJ* aij=0;
-  if (strcmp(petscType,MATMPIAIJ) == 0) {
+  if (strcmp(MatType_,MATMPIAIJ) == 0) {
     mt = PETSC_MPI_AIJ;
     aij = (Mat_MPIAIJ*)Amat->data;
   }
-  else if (strcmp(petscType,MATSEQAIJ) == 0) {
+  else if (strcmp(MatType_,MATSEQAIJ) == 0) {
     mt = PETSC_SEQ_AIJ;
   }
   int numLocalRows, numLocalCols;
@@ -109,7 +108,6 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
 
   ierr = MatGetInfo(Amat,MAT_GLOBAL_SUM,&info);//CHKERRQ(ierr);
   NumGlobalRows_ = (info.rows_global);
-  cout << "num global rows = " << NumGlobalRows_ << endl;
 
   DomainMap_ = new Epetra_Map(NumGlobalRows_, NumMyRows_, MyGlobalElements, 0, *Comm_);
 
@@ -126,13 +124,6 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
 
   Importer_ = new Epetra_Import(*ColMap_, *DomainMap_);
 
-  cout << "ColMap_" << endl;
-  cout << *ColMap_ << endl;
-  sleep(1);
-  cout << "DomainMap_" << endl;
-  cout << *DomainMap_ << endl;
-  sleep(1);
-  
   delete [] MyGlobalElements;
   delete [] ColGIDs;
 } //Epetra_PETScAIJMatrix(Mat Amat)
@@ -152,26 +143,85 @@ Epetra_PETScAIJMatrix::~Epetra_PETScAIJMatrix(){
 
 //==========================================================================
 
+extern "C" {
+  PetscErrorCode CreateColmap_MPIAIJ_Private(Mat);
+}
+
 int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, double * Values,
-					 int * Indices) const 
+                     int * Indices) const 
 {
   int nz;
-  PetscInt *cols;
+  PetscInt *gcols, *lcols, ierr;
   PetscScalar *vals;
 
   // PETSc assumes the row number is global, whereas Trilinos assumes it's local.
   int globalRow = PetscRowStart_ + Row;
   assert(globalRow < PetscRowEnd_);
   //printf("pid %d: getting global row %d (local row %d, range: [%d-%d]\n",Comm_->MyPID(),globalRow,Row, PetscRowStart_,PetscRowEnd_); fflush(stdout);
-  MatGetRow(Amat_, globalRow, &nz, (const PetscInt**) &cols, (const PetscScalar **) &vals);
+  ierr=MatGetRow(Amat_, globalRow, &nz, (const PetscInt**) &gcols, (const PetscScalar **) &vals);CHKERRQ(ierr);
+
+  // I ripped this bit of code from PETSc's MatSetValues_MPIAIJ() in mpiaij.c.  The PETSc getrow returns everything in
+  // global numbering, so we must convert to local numbering.
+  if (strcmp(MatType_,MATMPIAIJ) == 0) {
+    Mat_MPIAIJ  *aij = (Mat_MPIAIJ*)Amat_->data;
+    lcols = (PetscInt *) malloc(nz * sizeof(int));
+    if (!aij->colmap) {
+      ierr = CreateColmap_MPIAIJ_Private(Amat_);CHKERRQ(ierr);
+    }
+    /*
+      A PETSc parallel aij matrix uses two matrices to represent the local rows.
+      The first matrix, A, is square and contains all local columns.
+      The second matrix, B, is rectangular and contains all non-local columns.
+
+      Matrix A:
+      Local column ID's are mapped to global column id's by adding cmap.rstart.
+      Given the global ID of a local column, the local ID is found by
+      subtracting cmap.rstart.
+
+      Matrix B:
+      Non-local column ID's are mapped to global column id's by the local-to-
+      global map garray.  Given the global ID of a local column, the local ID is
+      found by the global-to-local map colmap.  colmap is either an array or
+      hash table, the latter being the case when PETSC_USE_CTABLE is defined.
+    */
+    int offset = Amat_->cmap.n-1; //offset for non-local column indices
+
+    //printf("cmap.rstart = %d, cmap.rend = %d, cmap.n = %d, cmap.N = %d\n",
+    //        Amat_->cmap.rstart,Amat_->cmap.rend, Amat_->cmap.n,Amat_->cmap.N);
+
+    for (int i=0; i<nz; i++) {
+/*
+      ierr = PetscTableFind(aij->colmap,gcols[i]+1,lcols+i);CHKERRQ(ierr);
+      if (lcols[i] != 0) {lcols[i]--; printf("lcols[%d] = %d\n",i,lcols[i]);}
+      else               {lcols[i] = gcols[i] - Amat_->cmap.rstart;
+                          printf("lcols[%d] = %d (%d - %d)\n",i,lcols[i],gcols[i],Amat_->cmap.rstart);
+      }
+      printf("       %d -> %d\n",gcols[i],lcols[i]);
+*/
+      if (gcols[i] >= Amat_->cmap.rstart && gcols[i] < Amat_->cmap.rend) {
+        lcols[i] = gcols[i] - Amat_->cmap.rstart;
+        //printf("       %d -> %d (local)\n",gcols[i],lcols[i]);
+      } else {
+#       ifdef PETSC_USE_CTABLE
+        ierr = PetscTableFind(aij->colmap,gcols[i]+1,lcols+i);CHKERRQ(ierr);
+        lcols[i] = lcols[i] + offset;
+#       else
+        lcols[i] = aij->colmap[gcols[i]] + offset;
+#       endif
+        //printf("       %d -> %d (ghost)\n",gcols[i],lcols[i]);
+      }
+
+    } //for i=0; i<nz; i++)
+  }
+  else lcols = gcols;
+
   NumEntries = nz;
   if (NumEntries > Length) return(-1);
   for (int i=0; i<NumEntries; i++) {
-    Indices[i] = cols[i];
+    Indices[i] = lcols[i];
     Values[i] = vals[i];
   }
-  //printf("pid %d: restoring row %d\n",Comm_->MyPID(),globalRow); fflush(stdout);
-  MatRestoreRow(Amat_,globalRow,&nz,(const PetscInt**) &cols, (const PetscScalar **) &vals);
+  MatRestoreRow(Amat_,globalRow,&nz,(const PetscInt**) &gcols, (const PetscScalar **) &vals);
   return(0);
 } //ExtractMyRowCopy()
 
@@ -189,15 +239,26 @@ int Epetra_PETScAIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const
 
 int Epetra_PETScAIJMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
+
+  //TODO optimization: only get this diagonal once
   Vec petscDiag;
   double *vals=0;
   int length;
+
+  int ierr=VecCreate(Comm_->Comm(),&petscDiag);CHKERRQ(ierr);
+  VecSetSizes(petscDiag,NumMyRows_,NumGlobalRows_);
+# ifdef HAVE_MPI
+  ierr = VecSetType(petscDiag,VECMPI);CHKERRQ(ierr);
+# else //TODO untested!!
+  VecSetType(petscDiag,VECSEQ);
+# endif
 
   MatGetDiagonal(Amat_, petscDiag);
   VecGetArray(petscDiag,&vals);
   VecGetLocalSize(petscDiag,&length);
   for (int i=0; i<length; i++) Diagonal[i] = vals[i];
   VecRestoreArray(petscDiag,&vals);
+  VecDestroy(petscDiag);
   return(0);
 }
 

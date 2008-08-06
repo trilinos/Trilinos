@@ -60,7 +60,7 @@ class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
-//! Epetra_PETScAIJMatrix: A class for constructing and using real-valued double-precision sparse compressed row matrices.
+//! Epetra_PETScAIJMatrix: A class for constructing and using real-valued sparse compressed row matrices.
 
 /*! The Epetra_PETScAIJMatrix is a wrapper class for PETSc sequential or parallel AIJ matrices.  It is
     derived from the Epetra_RowMatrix class, and so provides PETSc users access to Trilinos preconditioners.
@@ -362,7 +362,7 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
  private:
 
     int GetRow(int Row) const;
-    Mat Amat_;  //general PETSc matrix type
+    Mat Amat_;                //general PETSc matrix type
     mutable double * Values_;
     mutable int * Indices_;
     mutable int MaxNumEntries_;
@@ -384,10 +384,11 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
     int NumMyCols_;
     int PetscRowStart_;
     int PetscRowEnd_;
+    enum petscMatrixType {PETSC_SEQ_AIJ, PETSC_MPI_AIJ};
+    MatType MatType_;         //really const char*
     mutable double NormInf_;
     mutable double NormOne_;
 
-    enum petscMatrixType {PETSC_SEQ_AIJ, PETSC_MPI_AIJ};
     
  //! Copy constructor (not accessible to users).
   //FIXME we need a copy ctor
