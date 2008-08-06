@@ -2,7 +2,7 @@
 #define PHX_EVALUATOR_WITHBASEIMPL_DEF_H
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_FieldTag_Comparison.hpp"
+#include "Phalanx_FieldTag_STL_Functors.hpp"
 
 //**********************************************************************
 template<typename Traits>

@@ -7,7 +7,7 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_FieldTag_Comparison.hpp"
+#include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_DebugStrings.hpp"
 

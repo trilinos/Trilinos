@@ -1,8 +1,8 @@
 // @HEADER
 // @HEADER
 
-#ifndef PHX_FIELDTAG_COMPARISON_HPP
-#define PHX_FIELDTAG_COMPARISON_HPP
+#ifndef PHX_FIELDTAG_STL_FUNCTORS_HPP
+#define PHX_FIELDTAG_STL_FUNCTORS_HPP
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"

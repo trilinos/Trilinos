@@ -6,7 +6,7 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
-#include "Phalanx_FieldTag_Comparison.hpp"
+#include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_DataLayout_Generic.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -139,6 +139,35 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPTION(my_map[tmp_rcp_grad_qp_density] != 2,
 			 std::logic_error,
 			 "Failed to find correct FieldTag(2)!");
+
+      cout << "Passed." << endl;
+      
+      // Comparison for vector search operations
+      cout << "Testing searching of std::vector of RCP<FieldTag> with find_if...";
+      std::vector< Teuchos::RCP<FieldTag> > vec(0);
+      vec.push_back(rcp_nodal_density);
+      vec.push_back(rcp_qp_density);
+      vec.push_back(rcp_grad_qp_density);
+      
+      { // reference version
+	PHX::FTPredRef pred(*rcp_grad_qp_density);
+	std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+	  std::find_if(vec.begin(), vec.end(), pred);
+	
+	TEST_FOR_EXCEPTION(*(*test) !=  *tmp_rcp_grad_qp_density,
+			   std::logic_error, 
+			   "FTPredRef failed to locate correct FieldTag!");
+      }
+
+      { // RCP version
+	PHX::FTPred pred(rcp_grad_qp_density);
+	std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
+	  std::find_if(vec.begin(), vec.end(), pred);
+	
+	TEST_FOR_EXCEPTION(*(*test) !=  *tmp_rcp_grad_qp_density,
+			   std::logic_error, 
+			   "FTPred failed to locate correct FieldTag!");
+      }
 
       cout << "Passed." << endl;
       

@@ -276,6 +276,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_FieldManager_Def.hpp \
 	$(srcdir)/Phalanx_FieldManager.hpp \
 	$(srcdir)/Phalanx_FieldTag.hpp \
+	$(srcdir)/Phalanx_FieldTag_STL_Functors.hpp \
 	$(srcdir)/Phalanx_FieldTag_Tag_Def.hpp \
 	$(srcdir)/Phalanx_FieldTag_Tag.hpp \
 	$(srcdir)/Phalanx_TemplateIterator.hpp \

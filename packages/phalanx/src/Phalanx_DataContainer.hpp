@@ -9,7 +9,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_FieldTag_Comparison.hpp"
+#include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_DataContainer_Base.hpp"
 
 namespace PHX {
