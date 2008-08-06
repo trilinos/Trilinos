@@ -42,6 +42,7 @@ Epetra_OskiError::~Epetra_OskiError() {}
 //=========================================================================
 Epetra_OskiError Epetra_OskiError::OskiGetErrorHandler () {
   ErrorHandler_ = oski_GetErrorHandler();
+  return *this; 
 }
 
 //=========================================================================

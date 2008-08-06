@@ -39,8 +39,8 @@
 
 Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_OskiMatrix& Source) 
   : Epetra_CrsMatrix(Source), 
-  Copy_Created_(true), 
-  Epetra_View_(Source.Epetra_View_) {
+  Epetra_View_(Source.Epetra_View_),
+  Copy_Created_(true) {
     A_tunable_ = oski_CopyMat(Source.A_tunable_);
 }
 
@@ -250,7 +250,6 @@ int Epetra_OskiMatrix::Multiply(bool TransA,
 
     oski_vecview_t oskiX;
     oski_vecview_t oskiY;
-    printf("%d oskiY\n", oskiY);
     if(Importer() != 0) 
       oskiX = oski_CreateVecView(xp,ImportVector_->MyLength(),1);
     else               
@@ -260,7 +259,6 @@ int Epetra_OskiMatrix::Multiply(bool TransA,
     else               
       oskiY = oski_CreateVecView(yp,y.MyLength(),1);
 
-    printf("%d oskiY\n", oskiY);
     //Do actual computation
     ReturnVal = oski_MatMult(A_tunable_, OP_NORMAL, Alpha, oskiX, Beta, oskiY);
 
@@ -519,7 +517,7 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
   double* xp = (double*) x.Values();
   double* xp2 = (double*) x.Values();
   double* yp = (double*) y.Values();
-  double* tp;
+  double* tp = 0;
   if(t != NULL)
     tp = (double*) t->Values();
 
@@ -645,13 +643,13 @@ int Epetra_OskiMatrix::MatTransMatMultiply(bool ATA,
   double** Xp = (double**) X.Pointers();
   double** Xp2 = (double**) X.Pointers();
   double** Yp = (double**) Y.Pointers();
-  double** Tp;
+  double** Tp = 0;
   if(T != NULL)
     Tp = (double**) T->Pointers();
      
   int LDX = X.ConstantStride() ? X.Stride() : 0;
   int LDY = Y.ConstantStride() ? Y.Stride() : 0;
-  int LDT;
+  int LDT = 0;
   if(T != NULL)
     LDT = T->ConstantStride() ? T->Stride() : 0;
 
@@ -781,7 +779,7 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
   double* yp = (double*) y.Values();
 //  double* yp2 = (double*) y.Values();
   double* zp = (double*) z.Values();
-  Epetra_MultiVector* yp2;
+  Epetra_MultiVector* yp2 = 0;
   Epetra_Vector* xcopy = 0;
   if (&x==&y && Importer()==0 && Exporter()==0) {
     xcopy = new Epetra_Vector(x);
@@ -930,7 +928,6 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
   }
 
 
-  Epetra_MultiVector* Y2 = 0;
   double** Xp = (double**) X.Pointers();
   double** Xp2 = (double**) X.Pointers();
   double** Wp = (double**) W.Pointers();
@@ -941,7 +938,7 @@ int Epetra_OskiMatrix::MultiplyAndMatTransMultiply(bool TransA,
   int LDW = W.ConstantStride() ? W.Stride() : 0;
   int LDZ = Z.ConstantStride() ? Z.Stride() : 0;
 
-  Epetra_MultiVector* Yp2;
+  Epetra_MultiVector* Yp2 = 0;
   Epetra_MultiVector* X2 = 0;
   Epetra_MultiVector* Xcopy = 0;
   if (&X==&Y && Importer()==0 && Exporter()==0) {
