@@ -307,7 +307,7 @@ char *val)                      /* value of variable */
  *  Returned value:       --  The number of blocks in ordering.
  */
 
-int Zoltan_Order_Get_Block_nbr(
+int Zoltan_Order_Get_Num_Blocks(
    struct Zoltan_Struct *zz
 )
 {

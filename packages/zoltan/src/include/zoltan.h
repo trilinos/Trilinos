@@ -3056,7 +3056,7 @@ extern int Zoltan_Order(
  *  Returned value:       --  The number of blocks in ordering.
  */
 
-extern int Zoltan_Order_Get_Block_nbr(
+extern int Zoltan_Order_Get_Num_Blocks(
   struct Zoltan_Struct *zz  /* Info about ordering */
 );
 
