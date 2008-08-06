@@ -929,7 +929,7 @@ int aligned_str_mem,aligned_j,aligned_size;
 double *dtmp;
 
   /**************************** execution begins ******************************/
-  size = (int) input_size;
+  size = (long int) input_size;
   current = head;
 
   if (action == -43) {
