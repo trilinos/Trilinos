@@ -236,4 +236,6 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
 # top-heavy build model is what SIERRA has and it does not provide enough
 # freedom at the package level (i.e. product level for SIERRA).
 
+add_custom_target ( runtests-serial ctest -E MPI  )
+add_custom_target ( runtests-mpi ctest -R MPI  )
 
