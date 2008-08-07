@@ -123,9 +123,22 @@ int main(int argc, char *argv[])
     RCP< FieldManager<MyTraits> > fmn = buildFieldManager<MyTraits>();
     RCP< FieldManager<MyCTraits> > fmc = buildFieldManager<MyCTraits>();
     
+    // WARNING: For timings, we should be flushing the cache in
+    // between each evaluation loop, to eliminate cache reuse.  Not a
+    // big deal as we really just wanted to make sure alignment is
+    // correct.
+
+    // 1 * 50 * 100 for checked in test
+    // 4 * 1 * 5000000 for timing results
+    const std::size_t num_samples = 1;
     const std::size_t num_eval_loops = 50;
     const std::size_t num_cells = 100;
+    const std::size_t total_work = num_samples * num_eval_loops * num_cells;
     std::vector<CellData> cells(num_cells);
+
+    TEST_FOR_EXCEPTION(total_work != 5000,
+		       std::logic_error,
+		       "Total work is not consistent!");
 
     RCP<Time> time_fmn_prs = 
       TimeMonitor::getNewTimer("NEW: Post Registration Setup Time");
@@ -145,16 +158,18 @@ int main(int argc, char *argv[])
       TimeMonitor::getNewTimer("NEW: Evaluation Time");
     {
       TimeMonitor t(*time_fmn);
-      for (std::size_t i=0; i < num_eval_loops; ++i)
-	fmn->evaluateFields<MyTraits::Residual>(cells);
+      for (std::size_t i=0; i < num_samples; ++i)
+	for (std::size_t j=0; j < num_eval_loops; ++j)
+	  fmn->evaluateFields<MyTraits::Residual>(cells);
     }
 
     RCP<Time> time_fmc = 
       TimeMonitor::getNewTimer("CONTIGUOUS: Evaluation Time");
     {
       TimeMonitor t(*time_fmc);
-      for (std::size_t i=0; i < num_eval_loops; ++i)
-	fmc->evaluateFields<MyCTraits::Residual>(cells);
+      for (std::size_t i=0; i < num_samples; ++i)
+	for (std::size_t j=0; j < num_eval_loops; ++j)
+	  fmc->evaluateFields<MyCTraits::Residual>(cells);
     }
 
     // *********************************************************************
@@ -163,6 +178,11 @@ int main(int argc, char *argv[])
     std::cout << "\nTest passed!\n" << std::endl; 
     // *********************************************************************
     // *********************************************************************
+
+    std::cout << num_samples << " X " 
+	      << num_eval_loops << " X " 
+	      << num_cells << " = " 
+	      << total_work << std::endl;
 
   }
   catch (const std::exception& e) {
