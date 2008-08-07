@@ -90,15 +90,15 @@ private:
   // /////////////////////////////////////
   // Private member data
 
+	bool      isInitialized_;
+
+  Teuchos::RefCountPtr<const Epetra_Comm>  epetra_comm_;
+
 	double    xt0_;
 	double    xt1_;
 	double    pt0_;
 	double    pt1_;
-        double    d_;
-
-	bool      isInitialized_;
-
-        Teuchos::RefCountPtr<const Epetra_Comm>  epetra_comm_;
+  double    d_;
 	Teuchos::RefCountPtr<const Epetra_Map>   map_x_;
 	Teuchos::RefCountPtr<const Epetra_Map>   map_p_;
 	Teuchos::RefCountPtr<const Epetra_Map>   map_q_;

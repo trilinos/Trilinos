@@ -24,7 +24,8 @@ EpetraMultiPointModelEval4DOpt::EpetraMultiPointModelEval4DOpt(
   ,const double        p01
   ,const double        q0
   )
-  :epetra_comm_(epetra_comm), xt0_(xt0),xt1_(xt1),pt0_(pt0),pt1_(pt1),d_(d)
+  :isInitialized_(false), epetra_comm_(epetra_comm),
+   xt0_(xt0),xt1_(xt1),pt0_(pt0),pt1_(pt1),d_(d)
 {
   using Teuchos::rcp;
 
