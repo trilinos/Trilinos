@@ -1,1 +1,11 @@
 Phalanx - a package for complex dependency management
+
+To generate the Doxygen HTML Documentation:
+
+1. Go to the doc directory:
+> cd phalanx/doc
+2. Build the documentation:
+> doxygen Doxyfile
+3. Open the main web page in your browser:
+phalanx/doc/html/index.html 
+
