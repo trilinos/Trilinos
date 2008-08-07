@@ -59,8 +59,8 @@ class Epetra_OskiPermutation;
     The Epetra_OskiMatrix class provides access to the entire OSKI interface.  However, the following features are not fully implemented in OSKI
     version oski-1.0.1h, and therefore are unsupported in the Epetra_OskiMatrix class:
 
-    - OSKI does not provide stock composed kernels. Hence, the  MatTransMatMultiply and  MultiplyAndMatTransMultiply kernels are only available after the tune function is called.
-    - The  MatPowMultiply kernel does not work.
+    - OSKI does not provide stock composed kernels. Hence, the tune function must be called in order to see performance gains when using the MatTransMatMultiply and MultiplyAndMatTransMultiply kernels.
+    - The MatPowMultiply kernel does not work.
     - Optimized multivector kernels are not created by default when installing OSKI.
     - The tune function cannot transform a (nearly) symmetric matrix to be stored as such.
     - In order to use the \f$A^TA\f$ OSKI kernel (MatTransMatMultiply), in oski/src/MBCSR/ata.c you must replace the lines 
@@ -464,15 +464,15 @@ class Epetra_OskiMatrix: public Epetra_CrsMatrix{
 		   be moved to the user guide in the future.
 	    \return On successful storage of the hint 0 is returned.  On failure an error code
 		    is returned.
-
+         
             Options that can be passed to the List are presented below.  They are: "<type> <option name>: <description of purpose>".  The
-available hints are grouped by section, and only one hint from each section can be true for a given matrix.
+available hints are grouped by section, and only one hint from each section can be true for a given matrix.  For options where multiple arguments can be passed in at once the interface only supports up to 5.  This means only 5 block sizes or 5 diaganols can be passed in at once.  If you have more changing the code to support your needs should be simple, but every case you use must be enumerated.  Of course you can just say there are diagonals and blocks and not pass in specific sizes as wells.
 
 	    - bool noblocks: If true, the matrix has no block structure
 	    - bool singleblocksize: If true, the matrix structure is dominated by blocks of the size of the next two parameters.
               - int row: The number of rows in each block.
               - int col: The number of columns in each block.
-	    - bool multipleblocksize: If true, the matrix consists of multiple block sizes.  The next 3 parameters describe these.
+	    - bool multipleblocksize: If true, the matrix consists of multiple block sizes.  The next 3 parameters describe these and are optional.
 	      - int blocks: The number of block sizes in the matrix.
 	      - int row<x>: Where x is the block number, and x goes from 1 to blocks.  This is the number of rows in block x.
 	      - int col<x>: Where x is the block number, and x goes from 1 to blocks.  This is the number of cols in block x.
@@ -488,7 +488,7 @@ available hints are grouped by section, and only one hint from each section can 
 	      non-zeros are highly correlated.
 
 	    - bool nodiags : If true, the matrix has little or no diagonal structure.
-	    - bool diags: If true, the matrix consists of diagonal structure described the next two parameters.
+	    - bool diags: If true, the matrix consists of diagonal structure described the next two optional parameters.
               - int numdiags: The number of diagonal sizes known to be present others not listed could be present.
 	      - int diag<x>: Where x is the diagonal number, and x goes from 1 to numdiags.  This is the size of the diagonal.
  	*/
