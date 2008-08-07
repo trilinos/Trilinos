@@ -74,8 +74,9 @@ class DefaultInverseLinearOp
 {
 public:
 
-  /** \brief . */
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using SingleScalarLinearOpBase<Scalar>::apply;
+#endif
 
   /** @name Constructors/initializers/accessors */
   //@{

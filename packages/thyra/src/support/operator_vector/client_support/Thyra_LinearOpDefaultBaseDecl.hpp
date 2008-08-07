@@ -42,8 +42,10 @@ template<class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpDefaultBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
 public:
   
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using LinearOpBase<RangeScalar,DomainScalar>::apply;
   using LinearOpBase<RangeScalar,DomainScalar>::describe;
+#endif
 
   /** @name Public functions overridden from Teuchos::Describable */
   //@{

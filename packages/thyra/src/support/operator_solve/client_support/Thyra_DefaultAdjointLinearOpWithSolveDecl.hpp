@@ -51,12 +51,11 @@ class DefaultAdjointLinearOpWithSolve:
 {
 public:
 
-  /** \brief . */
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using LinearOpBase<Scalar>::apply;
-  /** \brief. */
   using LinearOpWithSolveBase<Scalar>::solve;
-  /** \brief. */
   using LinearOpWithSolveBase<Scalar>::solveSupportsSolveMeasureType;
+#endif
 
   /** @name Constructors/initializers/accessors */
   //@{

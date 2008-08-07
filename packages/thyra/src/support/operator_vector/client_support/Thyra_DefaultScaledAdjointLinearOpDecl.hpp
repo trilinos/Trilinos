@@ -119,11 +119,12 @@ class DefaultScaledAdjointLinearOp
 {
 public:
 
-  /** \brief . */
-  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
+#ifdef THYRA_INJECT_USING_DECLARATIONS
+  using SingleScalarLinearOpBase<Scalar>::apply;
+#endif
 
   /** \brief . */
-  using SingleScalarLinearOpBase<Scalar>::apply;
+  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
 
   /** @name Constructors/initializers/accessors */
   //@{

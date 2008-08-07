@@ -58,8 +58,9 @@ template<class Scalar>
 class ScaledAdjointLinearOpBase : virtual public LinearOpBase<Scalar> {
 public:
 
-  /** \brief . */
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using LinearOpBase<Scalar>::apply;
+#endif
 
   /** @name Pure virtual functions to be overridden in subclasses */
   //@{

@@ -48,10 +48,10 @@ template<class Scalar>
 class SingleScalarEuclideanLinearOpBase : virtual public EuclideanLinearOpBase<Scalar> {
 public:
 
-  /** \brief . */
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using EuclideanLinearOpBase<Scalar>::apply;
-  /** \brief . */
   using EuclideanLinearOpBase<Scalar>::euclideanApply;
+#endif
 
   /** @name Overridden from LinearOpBase */
   //@{

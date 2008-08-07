@@ -47,7 +47,9 @@ template<class Scalar>
 class SingleRhsLinearOpBase : virtual public SingleScalarLinearOpBase<Scalar> {
 public:
 
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using SingleScalarLinearOpBase<Scalar>::apply;
+#endif
 
   /** @name Overridden from LinearOpBase */
   //@{

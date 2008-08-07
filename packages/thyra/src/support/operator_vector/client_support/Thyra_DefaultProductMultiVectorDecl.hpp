@@ -63,8 +63,10 @@ class DefaultProductMultiVector
 {
 public:
 
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using MultiVectorDefaultBase<Scalar>::apply;
   using SingleScalarLinearOpBase<Scalar>::apply;
+#endif
 
   /** @name Constructors/initializers/accessors */
   //@{

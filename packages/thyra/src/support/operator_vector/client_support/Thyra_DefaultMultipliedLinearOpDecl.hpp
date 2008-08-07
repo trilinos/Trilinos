@@ -113,11 +113,13 @@ class DefaultMultipliedLinearOp
     virtual public Teuchos::Handleable<LinearOpBase<Scalar> >
 {
 public:
+
+#ifdef THYRA_INJECT_USING_DECLARATIONS
+  using SingleScalarLinearOpBase<Scalar>::apply;
+#endif
+
   /* */
   TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
-
-  /** \brief . */
-  using SingleScalarLinearOpBase<Scalar>::apply;
 
   /** @name Constructors/initializers/accessors */
   //@{

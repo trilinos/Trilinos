@@ -67,7 +67,11 @@ class VectorDefaultBase
 {
 public:
 
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using VectorBase<Scalar>::apply;
+  using MultiVectorDefaultBase<Scalar>::apply;
+  using SingleRhsLinearOpBase<Scalar>::apply;
+#endif
 
   /** @name Public functions overridden from Teuchos::Describable */
   //@{

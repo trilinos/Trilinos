@@ -101,10 +101,10 @@ class SpmdMultiVectorBase
 {
 public:
 
-  /** \brief . */
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
-  /** \brief . */
   using SingleScalarEuclideanLinearOpBase<Scalar>::apply;
+#endif
 
   /** @name  Constructors / initializers / accessors */
   //@{

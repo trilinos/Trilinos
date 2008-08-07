@@ -55,8 +55,10 @@ class DefaultColumnwiseMultiVector
 {
 public:
 
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using MultiVectorDefaultBase<Scalar>::apply;
   using SingleRhsLinearOpBase<Scalar>::apply;
+#endif
 
   /** @name Constructors/Initializers */
   //@{

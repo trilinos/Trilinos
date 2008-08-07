@@ -479,7 +479,9 @@ class MultiVectorBase : virtual public LinearOpBase<Scalar>
 {
 public:
 
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using LinearOpBase<Scalar>::apply;
+#endif
 
   /** @name Provide access to the columns as VectorBase objects */
   //@{

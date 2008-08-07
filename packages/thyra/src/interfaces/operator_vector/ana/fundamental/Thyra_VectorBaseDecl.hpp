@@ -134,7 +134,9 @@ class VectorBase : virtual public MultiVectorBase<Scalar>
 {
 public:
 
+#ifdef THYRA_INJECT_USING_DECLARATIONS
   using MultiVectorBase<Scalar>::apply;
+#endif
 
   /** @name Space membership */
   //@{
