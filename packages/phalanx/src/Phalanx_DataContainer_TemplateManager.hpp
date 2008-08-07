@@ -12,9 +12,9 @@ using namespace boost::mpl::placeholders;
 
 namespace PHX {
   
-  template<class ScalarT, typename Traits>
+  template<class EvalT, typename Traits>
   class DataContainer_TemplateManager :
-    public PHX::TemplateManager<typename boost::mpl::at<typename Traits::EvalToDataMap, ScalarT>::type,
+    public PHX::TemplateManager<typename boost::mpl::at<typename Traits::EvalToDataMap, EvalT>::type,
 				PHX::DataContainerBase<Traits>,
 				PHX::DataContainer<_, Traits> > {
     

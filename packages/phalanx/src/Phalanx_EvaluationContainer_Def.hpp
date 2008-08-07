@@ -5,39 +5,39 @@
 #include "Phalanx_DebugStrings.hpp"
 
 // *************************************************************************
-template <typename ScalarT, typename Traits>
-PHX::EvaluationContainer<ScalarT, Traits>::EvaluationContainer()
+template <typename EvalT, typename Traits>
+PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer()
 {
-  this->vp_manager_.setEvaluationTypeName( PHX::getTypeString<ScalarT, Traits>() );
+  this->vp_manager_.setEvaluationTypeName( PHX::getTypeString<EvalT, Traits>() );
   this->data_container_template_manager_.buildObjects();
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits> 
-PHX::EvaluationContainer<ScalarT, Traits>::~EvaluationContainer()
+template <typename EvalT, typename Traits> 
+PHX::EvaluationContainer<EvalT, Traits>::~EvaluationContainer()
 {
 
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits>
-void PHX::EvaluationContainer<ScalarT, Traits>::
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
 requireField(const PHX::FieldTag& f)
 {
   this->vp_manager_.requireField(f);
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits>
-void PHX::EvaluationContainer<ScalarT, Traits>::
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
 registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
   this->vp_manager_.registerEvaluator(p);
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits> 
-void PHX::EvaluationContainer<ScalarT, Traits>::
+template <typename EvalT, typename Traits> 
+void PHX::EvaluationContainer<EvalT, Traits>::
 postRegistrationSetup(std::size_t max_num_cells,
 		      PHX::FieldManager<Traits>& fm)
 {
@@ -60,9 +60,8 @@ postRegistrationSetup(std::size_t max_num_cells,
       
       if ((*var)->dataTypeInfo() == it->dataTypeInfo()) {
 	std::size_t size_of_data_type = it->getSizeOfDataType();
-	int total_size = 
-	  max_num_cells * size_of_data_type * (*var)->dataLayout().size();
-	allocator_.addRequiredBytes(total_size);
+	int num_elements = max_num_cells * (*var)->dataLayout().size();
+	allocator_.addRequiredChunk(size_of_data_type, num_elements);
       }
     }
   }
@@ -87,33 +86,33 @@ postRegistrationSetup(std::size_t max_num_cells,
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits>
-void PHX::EvaluationContainer<ScalarT, Traits>::
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   this->vp_manager_.evaluateFields(d);
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits>
-void PHX::EvaluationContainer<ScalarT, Traits>::
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
   this->vp_manager_.preEvaluate(d);
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits>
-void PHX::EvaluationContainer<ScalarT, Traits>::
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
   this->vp_manager_.postEvaluate(d);
 }
 
 // *************************************************************************
-template <typename ScalarT, typename Traits> template <typename DataT>
+template <typename EvalT, typename Traits> template <typename DataT>
 Teuchos::ArrayRCP<DataT> 
-PHX::EvaluationContainer<ScalarT, Traits>::getFieldData(const PHX::FieldTag& f)
+PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
   Teuchos::ArrayRCP<DataT> r = 
     data_container_template_manager_.template getAsObject<DataT>()->
@@ -123,10 +122,10 @@ PHX::EvaluationContainer<ScalarT, Traits>::getFieldData(const PHX::FieldTag& f)
 
 
 // *************************************************************************
-template <typename ScalarT, typename Traits>
-void PHX::EvaluationContainer<ScalarT, Traits>::print(std::ostream& os) const
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
 {
-  std::string type = PHX::getTypeString<ScalarT, Traits>();
+  std::string type = PHX::getTypeString<EvalT, Traits>();
 
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << "Starting PHX::EvaluationContainer Output" << std::endl;

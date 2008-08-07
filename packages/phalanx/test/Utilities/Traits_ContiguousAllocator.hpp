@@ -60,7 +60,7 @@ namespace PHX {
     // ******************************************************************
     // *** Allocator Type
     // ******************************************************************
-    typedef PHX::ContiguousAllocator Allocator;
+    typedef PHX::ContiguousAllocator<double> Allocator;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method

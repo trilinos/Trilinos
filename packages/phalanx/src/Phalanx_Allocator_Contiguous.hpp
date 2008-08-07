@@ -7,6 +7,12 @@
 
 namespace PHX {
   
+  /*! \brief Class that allocates a contiguous chunk of memory for all fields.
+    
+      This class will allocate all fields for all data types in one contiguous chunk of memory.  It is templated on AlignmentT which is the size that all variables should be aligned on. 
+
+  */
+  template<typename AlignmentT>
   class ContiguousAllocator {
     
   public:
@@ -26,13 +32,20 @@ namespace PHX {
       chunk_ = Teuchos::null;
     }
 
-    void addRequiredBytes(int num_bytes)
+    //! data_type_size is the size of a single element of the data type and num_elements is the number of elements of the data type that need to be allocated.
+    void addRequiredChunk(std::size_t size_of_data_type, 
+			  std::size_t num_elements)
     { 
       if (setup_called_) {
 	std::string msg = "ERROR - PHX::ContiguousAllocator::addRequiredByte() - The method addRequiredBytes() has been called after the setup() has been called!  Please fix your logic.";
 	TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
-      total_bytes_ += num_bytes;
+
+      std::size_t alignment_size = sizeof(AlignmentT);
+      std::size_t residual = size_of_data_type % alignment_size;
+      std::size_t element_size = size_of_data_type + residual;
+
+      total_bytes_ += num_elements * element_size;
     }
     
     //! Called after all byte requirements are registered.  Allocates the contiguous array.
@@ -44,12 +57,16 @@ namespace PHX {
 
     template<class DataT> 
     Teuchos::ArrayRCP<DataT> allocate(std::size_t num_elements)
-    { 
-      
+    {       
       TEST_FOR_EXCEPTION(!setup_called_, std::logic_error, 
 			 "setup() has not been called.  The memory block has therefore not been allocated yet!  Please call setup before calling allocate().");
 
-      int required_bytes = num_elements * sizeof(DataT);
+      std::size_t size_of_data_type = sizeof(DataT);
+      std::size_t alignment_size = sizeof(AlignmentT);
+      std::size_t residual = size_of_data_type % alignment_size;
+      std::size_t element_size = size_of_data_type + residual;
+
+      int required_bytes = num_elements * element_size;
 
       TEST_FOR_EXCEPTION(offset_ + required_bytes > total_bytes_, 
 			 std::logic_error, 

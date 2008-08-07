@@ -61,8 +61,7 @@ template <typename DataT, typename Traits>
 std::size_t PHX::DataContainer<DataT, Traits>::
 getSizeOfDataType() const
 {
-  std::size_t size = sizeof(DataT);
-  return size;
+  return sizeof(DataT);
 }
 
 // ************************************************************************

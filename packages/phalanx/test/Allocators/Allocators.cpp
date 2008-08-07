@@ -56,16 +56,16 @@ int main(int argc, char *argv[])
     {
       cout << "\nTesting ContiguousAllocator:" << endl;
       cout << "  Testing ctor...";
-      ContiguousAllocator ca;
+      ContiguousAllocator<double> ca;
       cout << "passed!" << endl;
 
-      cout << "  Testing addRequiredBytes()...";
+      cout << "  Testing addRequiredChunk()...";
       const int size = 10;
       const int num_bytes = size * sizeof(double);
-      ca.addRequiredBytes(num_bytes);
-      ca.addRequiredBytes(num_bytes);
-      ca.addRequiredBytes(num_bytes);
-      ca.addRequiredBytes(2 * num_bytes);
+      ca.addRequiredChunk(sizeof(double), size);
+      ca.addRequiredChunk(sizeof(double), size);
+      ca.addRequiredChunk(sizeof(double), size);
+      ca.addRequiredChunk(sizeof(double), 2 * size);
       cout << "passed!" << endl;
       
       cout << "  Testing getTotalBytes()...";

@@ -14,7 +14,7 @@ namespace PHX {
 
 
   */
-  template <typename ScalarT, typename Traits>
+  template <typename EvalT, typename Traits>
   class EvaluationContainer : public PHX::EvaluationContainerBase<Traits> {
     
   public:
@@ -45,9 +45,9 @@ namespace PHX {
 
   protected:
 
-    typedef PHX::DataContainer_TemplateManager<ScalarT, Traits> DCTM;
+    typedef PHX::DataContainer_TemplateManager<EvalT, Traits> DCTM;
 
-    PHX::DataContainer_TemplateManager<ScalarT, Traits> 
+    PHX::DataContainer_TemplateManager<EvalT, Traits> 
     data_container_template_manager_;
     
     typename Traits::Allocator allocator_;

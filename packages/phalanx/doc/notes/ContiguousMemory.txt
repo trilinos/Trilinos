@@ -1,9 +1,3 @@
-Roger,
-
-Revised domain model with (hopefully) improved clarity.
-Based upon feedback within the framework team.
-
----
 
 Simple concept for chunk-layout of heterogeneous members with proper data alignment.
 A 'malloc'ed chunk of memory is always suitable to hold any data type, or array of data types (do a 'man malloc').
@@ -19,8 +13,5 @@ where:
         0 == offset_d % sizeof(double);
 
 The key point is for the offset of each member within the chunk to have the correct alignment, and of course not overlap any other member.
-
---Carter
-
 
 
