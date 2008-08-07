@@ -5,13 +5,18 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(Trilinos)
 SET(${PROJECT_NAME}_VERSION "9.0d")
 
+FIND_PACKAGE(Perl)
+
+SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+SET(TRILINOS_TEST_CATEGORY "FRAMEWORK")
+
 #2008/07/10: ejguill: Updated to use the same command 
 #that the perl test harness uses to get the name of the host
 EXECUTE_PROCESS( COMMAND uname -n
                  OUTPUT_VARIABLE TRILINOS_HOSTNAME
                  OUTPUT_STRIP_TRAILING_WHITESPACE
                 )
-
 
 SET(${PROJECT_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "${PROJECT_NAME} include directories")
 SET(${PROJECT_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "${PROJECT_NAME} library directories")
@@ -236,6 +241,26 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
 # top-heavy build model is what SIERRA has and it does not provide enough
 # freedom at the package level (i.e. product level for SIERRA).
 
-add_custom_target ( runtests-serial ctest -E MPI  )
-add_custom_target ( runtests-mpi ctest -R MPI  )
+ADD_CUSTOM_TARGET(
+  runtests-serial
+   ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
+  --trilinos-dir=${TRILINOS_HOME_DIR}
+  --comm=serial
+  --build-dir=${TRILINOS_BUILD_DIR}
+  --category=${TRILINOS_TEST_CATEGORY}
+  --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
+  )
+
+
+ADD_CUSTOM_TARGET(
+  runtests-mpi
+   ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
+  --trilinos-dir=${TRILINOS_HOME_DIR}
+  --comm=mpi
+  --mpi-go="${TRILINOS_MPI_GO}"
+  --max-proc=${MPIEXEC_MAX_NUMPROCS}
+  --build-dir=${TRILINOS_BUILD_DIR}
+  --category=${TRILINOS_TEST_CATEGORY}
+  --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
+  )
 

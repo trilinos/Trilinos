@@ -66,6 +66,9 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
         "Flag setting the number of processors to use."
       )
     ENDIF()
+    MARK_AS_ADVANCED(MPI_EXECUTABLE_FLAGS)
+    # 2008/08/07: rabartl: TODO: Get rid of MPI_EXECUTABLE_FLAGS
+    # once TRILINOS_ADD_EXECUTABLE_AND_TEST(....) is gone.
 
     # 2008/07/31: rabartl: TODO: We should consider appending the num-processor
     # flag to the MPI_EXECUABLE name (e.g. '/usr/local/mpi/bin/mpiexec -np ')
@@ -76,7 +79,9 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
     # parameters and significant terminal whitespace (e.g. 'mpiexec -np ' and
     # 'yod -sz')
 
-    MARK_AS_ADVANCED(MPI_EXECUTABLE_FLAGS)
+    SET(TRILINOS_MPI_GO ${MPI_EXECUTABLE} ${MPI_NUMPROCS_FLAG})
+
+
   ENDIF(MPI_EXECUTABLE)
   MARK_AS_ADVANCED(MPI_EXECUTABLE)
 
