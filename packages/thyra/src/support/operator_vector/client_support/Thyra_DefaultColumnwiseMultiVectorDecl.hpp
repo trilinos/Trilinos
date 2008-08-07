@@ -55,6 +55,9 @@ class DefaultColumnwiseMultiVector
 {
 public:
 
+  using MultiVectorDefaultBase<Scalar>::apply;
+  using SingleRhsLinearOpBase<Scalar>::apply;
+
   /** @name Constructors/Initializers */
   //@{
 

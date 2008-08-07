@@ -87,6 +87,16 @@ functions that include the macro:
 	</ol>
 */
 
+
+extern "C" {
+
+
+typedef int (*gees_nullfptr_t)(double*,double*);
+
+
+} // extern "C"
+
+
 namespace Teuchos
 {
 
@@ -1424,7 +1434,8 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::GEES(const char JOBVS, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, double* VS, const OrdinalType ldvs, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
   {
-    OrdinalType (*nullfptr)(double*,double*) = NULL;
+    //OrdinalType (*nullfptr)(double*,double*) = NULL;
+    gees_nullfptr_t nullfptr = 0;
     const char sort = 'N';
     DGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info);
   }

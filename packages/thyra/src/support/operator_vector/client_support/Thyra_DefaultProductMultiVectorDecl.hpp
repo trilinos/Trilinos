@@ -63,6 +63,9 @@ class DefaultProductMultiVector
 {
 public:
 
+  using MultiVectorDefaultBase<Scalar>::apply;
+  using SingleScalarLinearOpBase<Scalar>::apply;
+
   /** @name Constructors/initializers/accessors */
   //@{
 

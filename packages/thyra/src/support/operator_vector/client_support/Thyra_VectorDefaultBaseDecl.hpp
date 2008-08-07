@@ -67,6 +67,8 @@ class VectorDefaultBase
 {
 public:
 
+  using VectorBase<Scalar>::apply;
+
   /** @name Public functions overridden from Teuchos::Describable */
   //@{
 

@@ -472,7 +472,7 @@ void DefaultProductVector<Scalar>::applyOpImpl(
       sub_targ_vecs[j] = sub_targ_vecs_rcps[j].ptr();
     }
     Thyra::applyOp<Scalar>(
-      op, sub_vecs, sub_targ_vecs,
+      op, sub_vecs(), sub_targ_vecs(),
       reduct_obj,
       g_off < 0 ? -g_off : 0, // first_ele_offset
       local_sub_dim, // sub_dim

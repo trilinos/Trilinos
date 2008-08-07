@@ -47,7 +47,6 @@ template<class Scalar>
 class SingleRhsLinearOpBase : virtual public SingleScalarLinearOpBase<Scalar> {
 public:
 
-  /** \brief . */
   using SingleScalarLinearOpBase<Scalar>::apply;
 
   /** @name Overridden from LinearOpBase */

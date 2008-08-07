@@ -41,6 +41,8 @@ namespace Thyra {
 template<class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpDefaultBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
 public:
+
+  using LinearOpBase<Scalar>::apply;
   
   /** \brief . */
   using LinearOpBase<RangeScalar,DomainScalar>::apply;

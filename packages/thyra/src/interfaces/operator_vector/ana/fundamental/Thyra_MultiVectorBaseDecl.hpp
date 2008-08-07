@@ -479,6 +479,8 @@ class MultiVectorBase : virtual public LinearOpBase<Scalar>
 {
 public:
 
+  using LinearOpBase<Scalar>::apply;
+
   /** @name Provide access to the columns as VectorBase objects */
   //@{
 

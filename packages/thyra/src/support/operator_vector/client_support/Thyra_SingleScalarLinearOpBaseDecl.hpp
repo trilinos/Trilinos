@@ -47,7 +47,6 @@ template<class Scalar>
 class SingleScalarLinearOpBase : virtual public LinearOpDefaultBase<Scalar> {
 public:
 
-  /** \brief . */
   using LinearOpDefaultBase<Scalar>::apply;
 
   /** @name Overridden from LinearOpBase */

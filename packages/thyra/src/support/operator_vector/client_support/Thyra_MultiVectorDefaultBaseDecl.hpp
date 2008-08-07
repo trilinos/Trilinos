@@ -60,6 +60,9 @@ class MultiVectorDefaultBase
 {
 public:
 
+  using MultiVectorBase<Scalar>::apply;
+  using LinearOpDefaultBase<Scalar>::apply;
+
   /** \name Overridden public member functions from MultiVectorBase */
   //@{
 

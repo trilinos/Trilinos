@@ -228,7 +228,7 @@ DefaultProductMultiVector<Scalar>::clone_mv() const
   Array<RCP<MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
     blocks.push_back(multiVecs_[k].getConstObj()->clone_mv());
-  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
+  return defaultProductMultiVector<Scalar>(productSpace_, blocks());
 }
 
 
@@ -291,7 +291,7 @@ DefaultProductMultiVector<Scalar>::contigSubViewImpl( const Range1D& colRng ) co
   Array<RCP<const MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
     blocks.push_back(multiVecs_[k].getConstObj()->subView(colRng));
-  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
+  return defaultProductMultiVector<Scalar>(productSpace_, blocks());
 }
 
 
@@ -303,7 +303,7 @@ DefaultProductMultiVector<Scalar>::nonconstContigSubViewImpl( const Range1D& col
   Array<RCP<MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
     blocks.push_back(multiVecs_[k].getNonconstObj()->subView(colRng));
-  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
+  return defaultProductMultiVector<Scalar>(productSpace_, blocks());
 }
 
 
@@ -317,7 +317,7 @@ DefaultProductMultiVector<Scalar>::nonContigSubViewImpl(
   Array<RCP<const MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
     blocks.push_back(multiVecs_[k].getConstObj()->subView(cols));
-  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
+  return defaultProductMultiVector<Scalar>(productSpace_, blocks());
 }
 
 
@@ -331,7 +331,7 @@ DefaultProductMultiVector<Scalar>::nonconstNonContigSubViewImpl(
   Array<RCP<MultiVectorBase<Scalar> > > blocks;
   for ( int k = 0; k < numBlocks_; ++k )
     blocks.push_back(multiVecs_[k].getNonconstObj()->subView(cols));
-  return defaultProductMultiVector<Scalar>(productSpace_,blocks);
+  return defaultProductMultiVector<Scalar>(productSpace_, blocks());
 }
 
 
@@ -521,7 +521,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
       // Apply the RTOp object to the MultiVectors for this block
 
       Thyra::applyOp<Scalar>(
-        primary_op, multi_vecs_block_k, targ_multi_vecs_block_k,
+        primary_op, multi_vecs_block_k(), targ_multi_vecs_block_k(),
         reduct_objs,
         g_off < 0 ? -g_off : 0, // primary_first_ele_offset
         local_sub_dim,  // primary_sub_dim
@@ -539,7 +539,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
     // column-by-column implementation that will work correctly in serial.
 
     MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
-      primary_op, multi_vecs_in, targ_multi_vecs_inout,
+      primary_op, multi_vecs_in(), targ_multi_vecs_inout(),
       reduct_objs,
       primary_first_ele_offset_in, primary_sub_dim_in, primary_global_offset_in,
       secondary_first_ele_offset_in, secondary_sub_dim_in

@@ -134,6 +134,8 @@ class VectorBase : virtual public MultiVectorBase<Scalar>
 {
 public:
 
+  using MultiVectorBase<Scalar>::apply;
+
   /** @name Space membership */
   //@{
 

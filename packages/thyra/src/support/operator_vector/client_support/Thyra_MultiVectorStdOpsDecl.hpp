@@ -410,7 +410,7 @@ void linear_combination(
   for ( int k = 0; k < m; ++k )
     X[k] = Teuchos::ptr(X_in[k]);
   linear_combination<Scalar>(
-    Teuchos::arrayView(alpha,m), X, beta, Teuchos::ptr(Y) );
+    Teuchos::arrayView(alpha,m), X(), beta, Teuchos::ptr(Y) );
 }
 
 /** \brief Deprecated. */
