@@ -432,6 +432,8 @@ int Epetra_OskiMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal, const E
 }
 
 int Epetra_OskiMatrix::Solve(bool TransA, const Epetra_Vector& x, Epetra_Vector& y, double Alpha) const {
+  std::cout << "This function Epetra_OskiMatrix::Solve probably works in serial but has not been tested.\n  It will not work in parralel.\n  If you wish to use it feel free to comment out this line and the next return statement.\n  However, correctness and performance are not gareenteed.\n";
+  return(-1);
   Epetra_OskiVector* xCast = NULL;
   Epetra_OskiVector* yCast = NULL;
   Epetra_OskiVector* tCast = NULL;
@@ -471,6 +473,8 @@ int Epetra_OskiMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal, const E
 }
 
 int Epetra_OskiMatrix::Solve(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, double Alpha) const {
+  std::cout << "This function Epetra_OskiMatrix::Solve probably works in serial but has not been tested.\n  It will not work in parralel.\n  If you wish to use it feel free to comment out this line and the next return statement.\n  However, correctness and performance are not gareenteed.\n";
+  return(-1);
   Epetra_OskiMultiVector* XCast = NULL;
   Epetra_OskiMultiVector* YCast = NULL;
   Epetra_OskiMultiVector* TCast = NULL;
@@ -1226,13 +1230,13 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
         ArgArray[0] = Teuchos::getParameter<int>(List, "row");
         if(List.isParameter("col"))
           ArgArray[1] = Teuchos::getParameter<int>(List, "col");
-        if(ReturnVal = oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray))
+        if(ReturnVal = oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray[0], ArgArray[1]))
           std::cerr << "Error setting hint single block size.\n";
       }
       else
-        if(ReturnVal = oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE, ArgArray))
+        if(ReturnVal = oski_SetHint(A_tunable_, HINT_SINGLE_BLOCKSIZE))
           std::cerr << "Error setting hint single block size.\n";
-      delete ArgArray;
+      delete [] ArgArray;
       ArgArray = NULL;
     }
   if(List.isParameter("multipleblocksize"))
@@ -1252,13 +1256,31 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
           if(List.isParameter(Col))
             ArgArray[i*2 + 2] = Teuchos::getParameter<int>(List, Col);
         }
-        if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
-          std::cerr << "Error setting hint multiple blocks.\n";
-        delete ArgArray;
+        switch(Blocks) {
+          case 1 :  if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray[0], ArgArray[1], ArgArray[2]))
+          	      std::cerr << "Error setting hint multiple blocks.\n";
+		    break;
+          case 2 :  if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray[0], ArgArray[1], ArgArray[2], ArgArray[3], ArgArray[4]))
+          	      std::cerr << "Error setting hint multiple blocks.\n";
+		    break;
+          case 3 :  if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray[0], ArgArray[1], ArgArray[2], ArgArray[3], ArgArray[4], ArgArray[5], ArgArray[6]))
+          	      std::cerr << "Error setting hint multiple blocks.\n";
+		    break;
+          case 4 :  if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray[0], ArgArray[1], ArgArray[2], ArgArray[3], ArgArray[4], ArgArray[5], ArgArray[6], ArgArray[7], ArgArray[8]))
+          	      std::cerr << "Error setting hint multiple blocks.\n";
+		    break;
+          case 5 :  if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray[0], ArgArray[1], ArgArray[2], ArgArray[3], ArgArray[4], ArgArray[5], ArgArray[6], ArgArray[7], ArgArray[8], ArgArray[9], ArgArray[10]))
+          	      std::cerr << "Error setting hint multiple blocks.\n";
+		    break;
+          default : if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES))
+                      std::cerr << "Error setting hint multiple blocks.\n";
+                    break;
+        }
+        delete [] ArgArray;
         ArgArray = NULL;
       }
       else
-        if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES, ArgArray))
+        if(ReturnVal = oski_SetHint(A_tunable_, HINT_MULTIPLE_BLOCKSIZES))
           std::cerr << "Error setting hint multiple blocks.\n";
   if(List.isParameter("diags"))
     if(Teuchos::getParameter<bool>(List, "diags"))
@@ -1273,13 +1295,31 @@ int Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList& List) {
           if(List.isParameter(Diag))
             ArgArray[i + 1] = Teuchos::getParameter<int>(List, Diag);
         }
-        if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray))
-          std::cerr << "Error setting hint diags\n";
-        delete ArgArray;
+        switch(Diags) {
+          case 1 : if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray[0], ArgArray[1]))
+                     std::cerr << "Error setting hint diags\n";
+                   break;
+          case 2 : if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray[0], ArgArray[1], ArgArray[2]))
+                     std::cerr << "Error setting hint diags\n";
+                   break;
+          case 3 : if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray[0], ArgArray[1], ArgArray[2], ArgArray[3]))
+                     std::cerr << "Error setting hint diags\n";
+                   break;
+          case 4 : if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray[0], ArgArray[1], ArgArray[2], ArgArray[3], ArgArray[4]))
+                     std::cerr << "Error setting hint diags\n";
+                   break;
+          case 5 : if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray[0], ArgArray[1], ArgArray[2], ArgArray[3], ArgArray[4], ArgArray[5]))
+                     std::cerr << "Error setting hint diags\n";
+                   break;
+          default : if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray[0]))
+                      std::cerr << "Error setting hint diags\n";
+                    break;
+        }
+        delete [] ArgArray;
       }
       else
       {
-        if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS, ArgArray))
+        if(ReturnVal = oski_SetHint(A_tunable_, HINT_DIAGS))
           std::cerr << "Error setting hint digs.\n";
       }
   return ReturnVal;

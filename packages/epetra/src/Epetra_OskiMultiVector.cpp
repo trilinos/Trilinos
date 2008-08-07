@@ -67,6 +67,8 @@ Epetra_OskiMultiVector::Epetra_OskiMultiVector(const Epetra_MultiVector& Source)
       else
         Oski_View_ = oski_CreateMultiVecView(A, Source.MyLength(), Source.NumVectors(), LAYOUT_COLMAJ, LDA);
     }
+    delete [] LDAptr;
+    delete [] Aptr;
 }
 
 Epetra_OskiMultiVector::~Epetra_OskiMultiVector() {
