@@ -126,3 +126,7 @@ specific items to form TrilinosPlatform_config.h
 #  define TEMPLATE_FRIENDS_NOT_SUPPORTED
 #  define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
 #endif
+
+#if defined(__sun) 
+#  define THYRA_INJECT_USING_DECLARATIONS
+#endif
