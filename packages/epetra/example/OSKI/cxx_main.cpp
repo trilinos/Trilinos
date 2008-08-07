@@ -64,7 +64,6 @@ ${ROOT}.o: ${ROOT}.cpp
 
 #ifdef HAVE_OSKI
 #ifdef HAVE_EPETRA_TEUCHOS
-#ifdef HAVE_EPETRAEXT
 #include "Epetra_OskiMatrix.h"
 #include "Epetra_OskiVector.h"
 #include "Epetra_OskiUtils.h"
@@ -103,74 +102,10 @@ int main(int argc, char *argv[])
   int mypid = 0;
 #endif
 
-  // Read XML input deck
-  ParameterList masterList;
-  if (argc > 1) {
-    if (strncmp("-h",argv[1],2) == 0) {
-      cout << "help" << endl;
-    }
-    else {
-      int i=0,j;
-      FILE* fid = fopen(argv[1],"r");
-      if (fid) {
-        i++;
-        fclose(fid);
-      }
-      Comm.SumAll(&i, &j, 1);
-      if (j!=Comm.NumProc()) {
-        cout << "Could not open input file." << endl;
-      }
-      FileInputSource fileSrc(argv[1]);
-      XMLObject fileXML = fileSrc.getObject();
-      XMLParameterListReader ListReader;
-      masterList = ListReader.toParameterList(fileXML);
-    }
-  } else {
-    cout << "No input file specified." << endl;
-}
-
-  char hostname[100];
-  char buf[100];
-  char go;  
-
-
-  ParameterList *fileList, *tests, *tunings;
   ParameterList List;
   ParameterList List2;
-  fileList = &(masterList.sublist("data files",true));
-  tests = &(masterList.sublist("tests"));
-  tunings = &(masterList.sublist("tunings"));
-
-  
-  string matrixfile = fileList->get("matrix input file","A.dat");
+  string matrixfile = "A.dat";
   const char *datafile = matrixfile.c_str();
-  int MultiVecs =  tests->get("multivecs", 5);
-  int Power = tests->get("power", 2);
-  bool Multi = tests->get("multi", false);
-  bool MatVec = tests->get("matvec", false);
-  bool Solve = tests->get("solve", false);
-  bool ATA = tests->get("ata", false);
-  bool AAT = tests->get("aat", false);
-  bool APowX = tests->get("apowx", false);
-  bool TwoMult = tests->get("twomult", false);
-  bool TwoTrans = tests->get("twotrans", false);
-  bool Trans = tests->get("trans", false);
-  bool singleblock = tunings->get("singleblock", false);
-  if(singleblock)
-    List2.set("singleblocksize", true); 
-  int rows = tunings->get("row", 0);
-  if(rows)
-    List2.set("row", 3); 
-  int cols = tunings->get("col", 0);
-  if(cols)
-    List2.set("col", 3); 
-  bool alligned = tunings->get("alligned", false);
-  if(alligned)
-    List2.set("alignedblocks", true); 
-  bool correlated = tunings->get("correlated", false);
-  if(correlated)
-    List2.set("correlatedpattern", true); 
-  int numGlobalRows;
 
   // ===================================================== //
   // READ IN MATRICES FROM FILE                            //
@@ -178,44 +113,23 @@ int main(int argc, char *argv[])
 
   if (!mypid) printf("reading %s\n",datafile); fflush(stdout);
   Epetra_CrsMatrix *Amat=NULL;
-  //Epetra_Map *RowMap=NULL;
   int errCode=0;
   
-  int CRAP[1];
   int N[1];
   int NZ[1];
-  int NZ2[1];
 
-  N[0] = 21879;
-  NZ[0] = 21879;
-  NZ2[0] = 1571926;
+  N[0] = 90;
+  NZ[0] = 90;
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  std::ifstream inFile("A.dat", std::ios::in);
 
-  std::ifstream inFile("A.dat", std::ios::in | std::ios::binary);
-
-  if (inFile == NULL)
-    EPETRA_CHK_ERR(-1); // file not found
-
-  inFile.read((char*)N, sizeof(N));
-  inFile.read((char*)NZ, sizeof(NZ));
-  inFile.read((char*)NZ2, sizeof(NZ2));
-  
-  std::cerr << N[0] << " " << NZ[0] << " " << NZ2[0] << "\n";
-  inFile.close(); 
   Epetra_Map* rowmap;
   Epetra_Map* colmap;
 
-  if(Comm.NumProc() - 1 != mypid) {
-    rowmap = new Epetra_Map (N[0], 0, Comm);
-    colmap = new Epetra_Map (NZ[0], 0, Comm);
-  }
-  else {
-    rowmap = new Epetra_Map (N[0], 0, Comm);
-    colmap = new Epetra_Map (NZ[0], 0, Comm);
-  }
+  rowmap = new Epetra_Map (N[0], 0, Comm);
+  colmap = new Epetra_Map (NZ[0], 0, Comm);
 
-  errCode=EpetraExt::BinaryFileToCrsMatrix(datafile, *rowmap, *colmap, Amat);
+  errCode=EpetraExt::MatrixMarketFileToCrsMatrix(datafile, *rowmap, *colmap, Amat);
   Amat->OptimizeStorage();
 
   //begin epetra code
@@ -257,7 +171,10 @@ int main(int argc, char *argv[])
   OskiAmat->Multiply(true, OskiY, OskiX, 2.0, 1.0);  //Perform X = 2*A^T*Y + X using OSKI multiply with Oski Vectors
 
   //Tune Multiply aggressively
-  //need tuning list params set here
+  List2.set("singleblocksize", true); //Set machine specific hints here for blocks
+  List2.set("row", 3); 
+  List2.set("col", 3); 
+  List2.set("alignedblocks", true); 
   OskiAmat->SetHintMultiply(false, 1.0, Oskix, 0.0, Oskiy, ALWAYS_TUNE_AGGRESSIVELY, List); //Pass routine specific hints
   OskiAmat->SetHint(List2); //Pass matrix specific hints
   OskiAmat->TuneMatrix();  //Tune matrix
@@ -273,6 +190,18 @@ int main(int argc, char *argv[])
   //Tune MultiVec moderately
   //need tuning list params set here
   OskiAmat->SetHintMultiply(true, 2.0, OskiX, 1.0, OskiY, ALWAYS_TUNE, List); //Pass routine specific hints
+  OskiAmat->SetHint(List2); //Pass matrix specific hints
+  OskiAmat->TuneMatrix();  //Tune matrix
+  trans = OskiAmat->GetMatrixTransforms();  //Get and print out transforms performed
+  std::cout << "Moderate transforms performed are: " << trans << "\n";
+  OskiAmat->Multiply(true, OskiX, OskiY, 2, 1); //Perform the tuned multiply
+
+  //Done for demonstration purposes
+  delete OskiAmat;
+  OskiAmat = new Epetra_OskiMatrix(*Amat, List); //Create an OskiMatrix from an Epetra Matrix
+
+  //Tune MultiVec based on calls
+  OskiAmat->SetHintMultiply(true, 2.0, OskiX, 1.0, OskiY, 10, List); //Pass routine specific hints for 10 calls
   OskiAmat->SetHint(List2); //Pass matrix specific hints
   OskiAmat->TuneMatrix();  //Tune matrix
   trans = OskiAmat->GetMatrixTransforms();  //Get and print out transforms performed
