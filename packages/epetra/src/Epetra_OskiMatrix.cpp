@@ -432,7 +432,7 @@ int Epetra_OskiMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal, const E
 }
 
 int Epetra_OskiMatrix::Solve(bool TransA, const Epetra_Vector& x, Epetra_Vector& y, double Alpha) const {
-  std::cout << "This function Epetra_OskiMatrix::Solve probably works in serial but has not been tested.\n  It will not work in parralel.\n  If you wish to use it feel free to comment out this line and the next return statement.\n  However, correctness and performance are not gareenteed.\n";
+  std::cout << "This function Epetra_OskiMatrix::Solve probably works in serial but has not been tested.\n  It will not work in parallel.\n  If you wish to use it feel free to comment out this line and the next return statement.\n  However, correctness and performance are not guaranteed.\n";
   return(-1);
   Epetra_OskiVector* xCast = NULL;
   Epetra_OskiVector* yCast = NULL;
@@ -473,7 +473,7 @@ int Epetra_OskiMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal, const E
 }
 
 int Epetra_OskiMatrix::Solve(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y, double Alpha) const {
-  std::cout << "This function Epetra_OskiMatrix::Solve probably works in serial but has not been tested.\n  It will not work in parralel.\n  If you wish to use it feel free to comment out this line and the next return statement.\n  However, correctness and performance are not gareenteed.\n";
+  std::cout << "This function Epetra_OskiMatrix::Solve probably works in serial but has not been tested.\n  It will not work in parallel.\n  If you wish to use it feel free to comment out this line and the next return statement.\n  However, correctness and performance are not guaranteed.\n";
   return(-1);
   Epetra_OskiMultiVector* XCast = NULL;
   Epetra_OskiMultiVector* YCast = NULL;
@@ -1078,12 +1078,11 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      int Power,
 				      double Alpha, 
 				      double Beta) const {
-
+  //The code has not been tested.  It should work in serial but not in parallel.
   std::cerr << "MatPowMultiply not implemented in oski-1.01h release.\n";
   return -1;
 
-  int ReturnVal;
-
+  int ReturnVal; 
 
   if(!Filled())
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
@@ -1146,6 +1145,7 @@ int Epetra_OskiMatrix::MatPowMultiply(bool TransA,
 				      double Alpha, 
 				      double Beta) const {
 
+  //The code has not been tested.  It should work in serial but not in parallel.
   std::cerr << "MatPowMultiply not implemented in oski-1.01h release.\n";
   return -1;
   std::cerr << "mult\n";
