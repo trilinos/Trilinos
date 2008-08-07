@@ -1,3 +1,37 @@
+/*
+This comment includes my makefile I used to compile this example.  It is ugly but this is what I had to do to get things to work.  Good luck if you try.  IK 08-06-2008
+
+include /home/ikarlin/Trilinos/build_mpi/packages/epetraext/Makefile.export.epetraext
+
+ROOT=cxx_main
+
+FILES=/home/ikarlin/OSKI/install-debug/lib/oski/liboski.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboskilt.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_CSR_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_CSC_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_BCSR_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_MBCSR_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_GCSR_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_CB_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_VBR_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_mat_DENSE_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_heur_regprof_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_heur_symmrb_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski_heur_mregblock_Tid.a \
+/home/ikarlin/OSKI/install-debug/lib/oski/liboski.a
+
+
+all: ${ROOT}.exe
+
+${ROOT}.exe: ${ROOT}.o
+        mpicxx -g -O0 -o ${ROOT}.exe ${ROOT}.o ${EPETRAEXT_INCLUDES} ${EPETRAEXT_LIBS} ${FILES} -ldl -lltdl
+#       mpicxx -o ${ROOT}.exe ${ROOT}.o ${EPETRAEXT_INCLUDES} ${EPETRAEXT_LIBS} -Wl,--whole-archive `/bin/cat /lib/oski/site-modules-static.txt` -Wl,--no-whole-archive -ldl -lltdl
+
+${ROOT}.o: ${ROOT}.cpp
+        mpicxx -g -O0 -c -I/include -DHAVE_CONFIG_H ${EPETRAEXT_INCLUDES} ${ROOT}.cpp
+*/
+
 //@HEADER
 // ************************************************************************
 // 
