@@ -124,7 +124,14 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
         FOREACH(PARSE_ARG ${PARSE_ARGS})
           
           #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${MPI_EXECUTABLE}")
-          ADD_TEST(${TEST_NAME}_${COUNTER} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} ${PARSE_ARG})
+          MESSAGE("PARSE_ARG: " ${PARSE_ARG})
+          
+          #This is a little bit of a hack
+          #If the argument string has multiple arguments then the white space will need 
+          #to replaced by a semicolin.  If this is not done the add_test command will
+          #add a slash to each white space in the argument string.
+          STRING(REPLACE " " ";" MYARG ${PARSE_ARG}) 
+          ADD_TEST(${TEST_NAME}_${COUNTER} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} ${MYARG})
           
           IF (PARSE_PASS_REGULAR_EXPRESSION AND ADDED_THE_TEST)
             SET_TESTS_PROPERTIES(${TEST_NAME}_${COUNTER} PROPERTIES PASS_REGULAR_EXPRESSION
@@ -144,7 +151,7 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
 
         #ADD_TEST(${TEST_NAME} ${MPI_EXECUTABLE} ${MPI_EXECUTABLE_FLAGS} ${EXECUTABLE_PATH} ${PARSE_ARGS})
         #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${MPI_EXECUTABLE}")
-        ADD_TEST(${TEST_NAME} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} ${PARSE_ARGS})
+        ADD_TEST(${TEST_NAME} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} )
         
       ENDIF()
       
@@ -170,7 +177,12 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
         FOREACH(PARSE_ARG ${PARSE_ARGS})
        
           #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${EXECUTABLE_PATH}")
-          ADD_TEST(${TEST_NAME}${COUNTER} ${EXECUTABLE_PATH} ${PARSE_ARG})
+          #This is a little bit of a hack
+          #If the argument string has multiple arguments then the white space will need 
+          #to replaced by a semicolin.  If this is not done the add_test command will
+          #add a slash to each white space in the argument string.
+          STRING(REPLACE " " ";" MYARG ${PARSE_ARG})
+          ADD_TEST(${TEST_NAME}${COUNTER} ${EXECUTABLE_PATH} ${MYARG})
           
           IF (PARSE_PASS_REGULAR_EXPRESSION AND ADDED_THE_TEST)
             SET_TESTS_PROPERTIES(${TEST_NAME}_${COUNTER} PROPERTIES PASS_REGULAR_EXPRESSION
@@ -189,7 +201,7 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
       ELSE()
 
         #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${EXECUTABLE_PATH}")
-        ADD_TEST(${TEST_NAME} ${EXECUTABLE_PATH} ${PARSE_ARGS})
+        ADD_TEST(${TEST_NAME} ${EXECUTABLE_PATH} )
 
       ENDIF()
      
