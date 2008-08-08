@@ -453,8 +453,8 @@ class HDF5
     // @}
     // @{ \name Epetra_MultiVector
 
-    //! Writes a distributed vector to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_MultiVector& x);
+    //! Writes a distributed vector to group \c GroupName, write transpose if writeTranspose set to true.
+    void Write(const string& GroupName, const Epetra_MultiVector& x, bool writeTranspose = false);
 
     //! Reads a vector from group \c GroupName, assumes linear distribution.
     void Read(const string& GroupName, Epetra_MultiVector*& X);

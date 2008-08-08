@@ -883,8 +883,9 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Teuchos::ParameterList&
 // ================== //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVector& X)
+void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVector& X, bool writeTranspose)
 {
+
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
@@ -898,19 +899,25 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   if (Comm().NumProc() == 1 || X.Map().LinearMap())
     LinearX = Teuchos::rcp(const_cast<Epetra_MultiVector*>(&X), false);
   else
-  {
-    Epetra_Map LinearMap(X.GlobalLength(), X.Map().IndexBase(), Comm_);
-    LinearX = Teuchos::rcp(new Epetra_MultiVector(LinearMap, X.NumVectors()));
-    Epetra_Import Importer(LinearMap, X.Map());
-    LinearX->Import(X, Importer, Insert);
-  }
+    {
+      Epetra_Map LinearMap(X.GlobalLength(), X.Map().IndexBase(), Comm_);
+      LinearX = Teuchos::rcp(new Epetra_MultiVector(LinearMap, X.NumVectors()));
+      Epetra_Import Importer(LinearMap, X.Map());
+      LinearX->Import(X, Importer, Insert);
+    }
 
   int NumVectors = X.NumVectors();
   int GlobalLength = X.GlobalLength();
 
   // Create the dataspace for the dataset.
-  hsize_t q_dimsf[] = {NumVectors, GlobalLength};
-  filespace_id = H5Screate_simple(2, q_dimsf, NULL);
+  if (writeTranspose) {
+    hsize_t q_dimsf[] = {GlobalLength, NumVectors};
+    filespace_id = H5Screate_simple(2, q_dimsf, NULL);
+  }
+  else {
+    hsize_t q_dimsf[] = {NumVectors, GlobalLength};
+    filespace_id = H5Screate_simple(2, q_dimsf, NULL);
+  }
 
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
@@ -926,23 +933,40 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
 #endif
 
-  // Select hyperslab in the file.
-  hsize_t offset[] = {0, LinearX->Map().GID(0)-X.Map().IndexBase()};
-  hsize_t stride[] = {1, 1};
-  hsize_t count[] = {NumVectors, 1};
-  hsize_t block[] = {1, LinearX->MyLength()};
-  filespace_id = H5Dget_space(dset_id);
-  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride, 
-                      count, block);
+  // write vectors one by one
 
-  // Each process defines dataset in memory and writes it to the hyperslab in the file.
-  hsize_t dimsm[] = {NumVectors * LinearX->MyLength()};
-  memspace_id = H5Screate_simple(1, dimsm, NULL);
+  for (int n(0); n < NumVectors; ++n)
+    {
+      // Select hyperslab in the file.
 
-  // Write hyperslab
-  status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
-                    plist_id_, LinearX->Values());
-  CHECK_STATUS(status);
+      if (writeTranspose) {
+	hsize_t offset[] = {LinearX->Map().GID(0)-X.Map().IndexBase(),n};
+	hsize_t stride[] = {1, 1};
+	hsize_t count[] = {LinearX->MyLength(),1};
+	hsize_t block[] = {1, 1};
+	filespace_id = H5Dget_space(dset_id);
+	H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
+			    count, block);
+      }
+      else {
+	hsize_t offset[] = {n,LinearX->Map().GID(0)-X.Map().IndexBase()};
+	hsize_t stride[] = {1, 1};
+	hsize_t count[] = {1,LinearX->MyLength()};
+	hsize_t block[] = {1, 1};
+	filespace_id = H5Dget_space(dset_id);
+	H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
+			    count, block);
+      }
+
+      // Each process defines dataset in memory and writes it to the hyperslab in the file.
+      hsize_t dimsm[] = {LinearX->MyLength()};
+      memspace_id = H5Screate_simple(1, dimsm, NULL);
+
+      // Write hyperslab
+      status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id,
+			plist_id_, LinearX->operator[](n));
+      CHECK_STATUS(status);
+    }
   H5Gclose(group_id);
   H5Sclose(memspace_id);
   H5Sclose(filespace_id);
