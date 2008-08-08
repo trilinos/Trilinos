@@ -473,7 +473,7 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
 
   pk_A.z = 0 ; 
   pk_A.stype = 0 ; //  symmetric 
-  pk_A.itype = CHOLMOD_INT ; 
+  pk_A.itype = CHOLMOD_LONG ; 
   pk_A.dtype = CHOLMOD_DOUBLE ; 
   pk_A.sorted = 0 ; 
   pk_A.packed = 1 ; 

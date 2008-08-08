@@ -239,8 +239,6 @@ private:
   bool IamInGroup_;  // True if this process is involved in the computation.  Set by SymbolicFactorization
   
   int SerialXlda_ ;
-  long *Lp, *Li, *Up, *Ui, *P ;	
-  double *Lx, *Ux ;
   //
   //  PrivateParakleteData_ contains pointers to data needed by paraklete whose
   //  data structures are defined by paraklete.h
