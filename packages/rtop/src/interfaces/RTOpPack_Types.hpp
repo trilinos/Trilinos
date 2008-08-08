@@ -149,7 +149,8 @@ public:
       if (!is_null(values)) {
         TEUCHOS_ASSERT(subDim >= 0);
         TEUCHOS_ASSERT(stride != 0);
-        TEUCHOS_ASSERT(subDim*std::abs(stride) - 1 <= values.upperOffset());
+        TEUCHOS_ASSERT(
+          subDim*std::abs(Teuchos::as<int>(stride)) - 1 <= values.upperOffset());
         TEUCHOS_ASSERT(values.lowerOffset() <= 0);
       }
       else {
@@ -202,7 +203,7 @@ private:
     {
       if (stride_ > 0)
         return values_.begin();
-      return values_.begin() + (subDim_*std::abs(stride_) - 1);
+      return values_.begin() + (subDim_*std::abs(Teuchos::as<int>(stride_)) - 1);
     } 
 public:
   /** \brief Deprecated. */
@@ -216,7 +217,8 @@ public:
     const Scalar values[], ptrdiff_t stride)
     {
       globalOffset_=globalOffset; subDim_=subDim;
-      values_=Teuchos::arcp(values,0,subDim*std::abs(stride),false);
+      values_=Teuchos::arcp(values, 0,
+        subDim*std::abs(Teuchos::as<int>(stride)), false);
       stride_=stride;
     }
   /** \brief Deprecated. */
