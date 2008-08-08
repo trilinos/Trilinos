@@ -260,8 +260,6 @@ private:
 #ifdef Bug_8212
   int *lose_this_;
 #endif
-  int *Lp, *Li, *Up, *Ui, *P ;	
-  double *Lx, *Ux ;
   //
   //  PrivateKluData_ contains pointers to data needed by klu whose
   //  data structures are defined by klu.h
@@ -275,9 +273,9 @@ private:
   //! Ai and Aval can point directly into a matrix if it is StorageOptimized(), hence
   //! they may either be in vector form or may be a pointer into Epetra_CrsMatrix 
   //! internals.  Ap must always be constructed.  
-  vector <int> Ap;
-  vector <int> VecAi;
-  vector <double> VecAval;
+  std::vector <int> Ap;
+  std::vector <int> VecAi;
+  std::vector <double> VecAval;
   double* Aval;
   int *Ai;
 
@@ -334,9 +332,9 @@ private:
   const Epetra_LinearProblem * Problem_;
 
   //! Only used for RowMatrices to extract copies.
-  vector<int>ColIndicesV_;
+  std::vector<int> ColIndicesV_;
   //! Only used for RowMatrices to extract copies.
-  vector<double>RowValuesV_;
+  std::vector<double> RowValuesV_;
   //! Importer to process 0.
   Teuchos::RCP<Epetra_Import> ImportToSerial_;
   Teuchos::RCP<Epetra_Import> ImportRangeToSerial_;
