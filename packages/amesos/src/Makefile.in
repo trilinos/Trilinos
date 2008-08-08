@@ -192,28 +192,23 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_colamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_etree.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_rowcolcounts.c \
-	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_analyze.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_ccolamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_camd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_csymamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_metis.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
 	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c \
@@ -311,28 +306,23 @@ am__objects_8 = amesos_amd_1.$(OBJEXT) amesos_amd_2.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_colamd.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_etree.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_rowcolcounts.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_solve.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_analyze.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_ccolamd.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_camd.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_csymamd.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_metis.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_cholmod_l_nesdis.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l1.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l2.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l_aat.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l_order.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l_postorder.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l_post_tree.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_1.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_l2.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_l_aat.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_control.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_defaults.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_dump.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_info.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_order.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_l_postorder.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_preprocess.$(OBJEXT) \
-@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_valid.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l_preprocess.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_amd_l_valid.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_global.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_l2.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@	amesos_camd_l_postorder.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_colamd_l.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_ccolamd_l.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_ccolamd_global.$(OBJEXT) \
@@ -810,28 +800,23 @@ PARAKLETE_KLU_COMMON_H = \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_colamd.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_etree.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_rowcolcounts.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_analyze.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_ccolamd.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_camd.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_csymamd.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_metis.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c \
@@ -1106,9 +1091,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_info.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l_aat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l_post_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l_postorder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l_preprocess.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_l_valid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_post_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_amd_postorder.Po@am__quote@
@@ -1120,20 +1110,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_btf_maxtrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_btf_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_btf_strongcomp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_control.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_defaults.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_dump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_global.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_l2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_l_aat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_l_postorder.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_postorder.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_preprocess.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_camd_valid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_ccolamd_global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_ccolamd_l.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_check.Po@am__quote@
@@ -1165,7 +1146,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_l_sparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_l_transpose.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_memory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_sparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_transpose.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_cholmod_triplet.Po@am__quote@
@@ -2277,20 +2257,6 @@ amesos_cholmod_l_rowcolcounts.obj: $(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_cholmod_l_rowcolcounts.obj `if test -f '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_rowcolcounts.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_rowcolcounts.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_rowcolcounts.c'; fi`
 
-amesos_cholmod_solve.o: $(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_cholmod_solve.o -MD -MP -MF $(DEPDIR)/amesos_cholmod_solve.Tpo -c -o amesos_cholmod_solve.o `test -f '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_cholmod_solve.Tpo $(DEPDIR)/amesos_cholmod_solve.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c' object='amesos_cholmod_solve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_cholmod_solve.o `test -f '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c
-
-amesos_cholmod_solve.obj: $(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_cholmod_solve.obj -MD -MP -MF $(DEPDIR)/amesos_cholmod_solve.Tpo -c -o amesos_cholmod_solve.obj `if test -f '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_cholmod_solve.Tpo $(DEPDIR)/amesos_cholmod_solve.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c' object='amesos_cholmod_solve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_cholmod_solve.obj `if test -f '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c'; fi`
-
 amesos_cholmod_l_analyze.o: $(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_analyze.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_cholmod_l_analyze.o -MD -MP -MF $(DEPDIR)/amesos_cholmod_l_analyze.Tpo -c -o amesos_cholmod_l_analyze.o `test -f '$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_analyze.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_analyze.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_cholmod_l_analyze.Tpo $(DEPDIR)/amesos_cholmod_l_analyze.Po
@@ -2375,6 +2341,20 @@ amesos_cholmod_l_nesdis.obj: $(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_chol
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_cholmod_l_nesdis.obj `if test -f '$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c'; fi`
 
+amesos_amd_l1.o: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l1.o -MD -MP -MF $(DEPDIR)/amesos_amd_l1.Tpo -c -o amesos_amd_l1.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l1.Tpo $(DEPDIR)/amesos_amd_l1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c' object='amesos_amd_l1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l1.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c
+
+amesos_amd_l1.obj: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l1.obj -MD -MP -MF $(DEPDIR)/amesos_amd_l1.Tpo -c -o amesos_amd_l1.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l1.Tpo $(DEPDIR)/amesos_amd_l1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c' object='amesos_amd_l1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l1.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c'; fi`
+
 amesos_amd_l2.o: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l2.o -MD -MP -MF $(DEPDIR)/amesos_amd_l2.Tpo -c -o amesos_amd_l2.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l2.Tpo $(DEPDIR)/amesos_amd_l2.Po
@@ -2388,6 +2368,34 @@ amesos_amd_l2.obj: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c' object='amesos_amd_l2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l2.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c'; fi`
+
+amesos_amd_l_aat.o: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_aat.o -MD -MP -MF $(DEPDIR)/amesos_amd_l_aat.Tpo -c -o amesos_amd_l_aat.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_aat.Tpo $(DEPDIR)/amesos_amd_l_aat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c' object='amesos_amd_l_aat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_aat.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c
+
+amesos_amd_l_aat.obj: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_aat.obj -MD -MP -MF $(DEPDIR)/amesos_amd_l_aat.Tpo -c -o amesos_amd_l_aat.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_aat.Tpo $(DEPDIR)/amesos_amd_l_aat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c' object='amesos_amd_l_aat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_aat.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c'; fi`
+
+amesos_amd_l_order.o: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_order.o -MD -MP -MF $(DEPDIR)/amesos_amd_l_order.Tpo -c -o amesos_amd_l_order.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_order.Tpo $(DEPDIR)/amesos_amd_l_order.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c' object='amesos_amd_l_order.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_order.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c
+
+amesos_amd_l_order.obj: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_order.obj -MD -MP -MF $(DEPDIR)/amesos_amd_l_order.Tpo -c -o amesos_amd_l_order.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_order.Tpo $(DEPDIR)/amesos_amd_l_order.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c' object='amesos_amd_l_order.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_order.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c'; fi`
 
 amesos_amd_l_postorder.o: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_postorder.o -MD -MP -MF $(DEPDIR)/amesos_amd_l_postorder.Tpo -c -o amesos_amd_l_postorder.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c
@@ -2417,19 +2425,47 @@ amesos_amd_l_post_tree.obj: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_t
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_post_tree.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c'; fi`
 
-amesos_camd_1.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_1.o -MD -MP -MF $(DEPDIR)/amesos_camd_1.Tpo -c -o amesos_camd_1.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_1.Tpo $(DEPDIR)/amesos_camd_1.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c' object='amesos_camd_1.o' libtool=no @AMDEPBACKSLASH@
+amesos_amd_l_preprocess.o: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_preprocess.o -MD -MP -MF $(DEPDIR)/amesos_amd_l_preprocess.Tpo -c -o amesos_amd_l_preprocess.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_preprocess.Tpo $(DEPDIR)/amesos_amd_l_preprocess.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c' object='amesos_amd_l_preprocess.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_1.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_preprocess.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c
 
-amesos_camd_1.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_1.obj -MD -MP -MF $(DEPDIR)/amesos_camd_1.Tpo -c -o amesos_camd_1.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_1.Tpo $(DEPDIR)/amesos_camd_1.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c' object='amesos_camd_1.obj' libtool=no @AMDEPBACKSLASH@
+amesos_amd_l_preprocess.obj: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_preprocess.obj -MD -MP -MF $(DEPDIR)/amesos_amd_l_preprocess.Tpo -c -o amesos_amd_l_preprocess.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_preprocess.Tpo $(DEPDIR)/amesos_amd_l_preprocess.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c' object='amesos_amd_l_preprocess.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_1.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_preprocess.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c'; fi`
+
+amesos_amd_l_valid.o: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_valid.o -MD -MP -MF $(DEPDIR)/amesos_amd_l_valid.Tpo -c -o amesos_amd_l_valid.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_valid.Tpo $(DEPDIR)/amesos_amd_l_valid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c' object='amesos_amd_l_valid.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_valid.o `test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c
+
+amesos_amd_l_valid.obj: $(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_amd_l_valid.obj -MD -MP -MF $(DEPDIR)/amesos_amd_l_valid.Tpo -c -o amesos_amd_l_valid.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_amd_l_valid.Tpo $(DEPDIR)/amesos_amd_l_valid.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c' object='amesos_amd_l_valid.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_amd_l_valid.obj `if test -f '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c'; fi`
+
+amesos_camd_global.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_global.o -MD -MP -MF $(DEPDIR)/amesos_camd_global.Tpo -c -o amesos_camd_global.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_global.Tpo $(DEPDIR)/amesos_camd_global.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' object='amesos_camd_global.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_global.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
+
+amesos_camd_global.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_global.obj -MD -MP -MF $(DEPDIR)/amesos_camd_global.Tpo -c -o amesos_camd_global.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_global.Tpo $(DEPDIR)/amesos_camd_global.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' object='amesos_camd_global.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_global.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; fi`
 
 amesos_camd_l2.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_l2.o -MD -MP -MF $(DEPDIR)/amesos_camd_l2.Tpo -c -o amesos_camd_l2.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c
@@ -2445,90 +2481,6 @@ amesos_camd_l2.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_l2.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c'; fi`
 
-amesos_camd_l_aat.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_l_aat.o -MD -MP -MF $(DEPDIR)/amesos_camd_l_aat.Tpo -c -o amesos_camd_l_aat.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_l_aat.Tpo $(DEPDIR)/amesos_camd_l_aat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c' object='amesos_camd_l_aat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_l_aat.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c
-
-amesos_camd_l_aat.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_l_aat.obj -MD -MP -MF $(DEPDIR)/amesos_camd_l_aat.Tpo -c -o amesos_camd_l_aat.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_l_aat.Tpo $(DEPDIR)/amesos_camd_l_aat.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c' object='amesos_camd_l_aat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_l_aat.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c'; fi`
-
-amesos_camd_control.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_control.o -MD -MP -MF $(DEPDIR)/amesos_camd_control.Tpo -c -o amesos_camd_control.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_control.Tpo $(DEPDIR)/amesos_camd_control.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c' object='amesos_camd_control.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_control.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c
-
-amesos_camd_control.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_control.obj -MD -MP -MF $(DEPDIR)/amesos_camd_control.Tpo -c -o amesos_camd_control.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_control.Tpo $(DEPDIR)/amesos_camd_control.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c' object='amesos_camd_control.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_control.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c'; fi`
-
-amesos_camd_defaults.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_defaults.o -MD -MP -MF $(DEPDIR)/amesos_camd_defaults.Tpo -c -o amesos_camd_defaults.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_defaults.Tpo $(DEPDIR)/amesos_camd_defaults.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c' object='amesos_camd_defaults.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_defaults.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c
-
-amesos_camd_defaults.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_defaults.obj -MD -MP -MF $(DEPDIR)/amesos_camd_defaults.Tpo -c -o amesos_camd_defaults.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_defaults.Tpo $(DEPDIR)/amesos_camd_defaults.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c' object='amesos_camd_defaults.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_defaults.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c'; fi`
-
-amesos_camd_dump.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_dump.o -MD -MP -MF $(DEPDIR)/amesos_camd_dump.Tpo -c -o amesos_camd_dump.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_dump.Tpo $(DEPDIR)/amesos_camd_dump.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c' object='amesos_camd_dump.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_dump.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c
-
-amesos_camd_dump.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_dump.obj -MD -MP -MF $(DEPDIR)/amesos_camd_dump.Tpo -c -o amesos_camd_dump.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_dump.Tpo $(DEPDIR)/amesos_camd_dump.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c' object='amesos_camd_dump.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_dump.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c'; fi`
-
-amesos_camd_info.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_info.o -MD -MP -MF $(DEPDIR)/amesos_camd_info.Tpo -c -o amesos_camd_info.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_info.Tpo $(DEPDIR)/amesos_camd_info.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c' object='amesos_camd_info.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_info.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c
-
-amesos_camd_info.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_info.obj -MD -MP -MF $(DEPDIR)/amesos_camd_info.Tpo -c -o amesos_camd_info.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_info.Tpo $(DEPDIR)/amesos_camd_info.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c' object='amesos_camd_info.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_info.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c'; fi`
-
-amesos_camd_order.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_order.o -MD -MP -MF $(DEPDIR)/amesos_camd_order.Tpo -c -o amesos_camd_order.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_order.Tpo $(DEPDIR)/amesos_camd_order.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c' object='amesos_camd_order.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_order.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c
-
-amesos_camd_order.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_order.obj -MD -MP -MF $(DEPDIR)/amesos_camd_order.Tpo -c -o amesos_camd_order.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_order.Tpo $(DEPDIR)/amesos_camd_order.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c' object='amesos_camd_order.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_order.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c'; fi`
-
 amesos_camd_l_postorder.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_l_postorder.o -MD -MP -MF $(DEPDIR)/amesos_camd_l_postorder.Tpo -c -o amesos_camd_l_postorder.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_l_postorder.Tpo $(DEPDIR)/amesos_camd_l_postorder.Po
@@ -2542,48 +2494,6 @@ amesos_camd_l_postorder.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_pos
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c' object='amesos_camd_l_postorder.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_l_postorder.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c'; fi`
-
-amesos_camd_preprocess.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_preprocess.o -MD -MP -MF $(DEPDIR)/amesos_camd_preprocess.Tpo -c -o amesos_camd_preprocess.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_preprocess.Tpo $(DEPDIR)/amesos_camd_preprocess.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c' object='amesos_camd_preprocess.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_preprocess.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
-
-amesos_camd_preprocess.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_preprocess.obj -MD -MP -MF $(DEPDIR)/amesos_camd_preprocess.Tpo -c -o amesos_camd_preprocess.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_preprocess.Tpo $(DEPDIR)/amesos_camd_preprocess.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c' object='amesos_camd_preprocess.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_preprocess.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c'; fi`
-
-amesos_camd_valid.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_valid.o -MD -MP -MF $(DEPDIR)/amesos_camd_valid.Tpo -c -o amesos_camd_valid.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_valid.Tpo $(DEPDIR)/amesos_camd_valid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c' object='amesos_camd_valid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_valid.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c
-
-amesos_camd_valid.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_valid.obj -MD -MP -MF $(DEPDIR)/amesos_camd_valid.Tpo -c -o amesos_camd_valid.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_valid.Tpo $(DEPDIR)/amesos_camd_valid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c' object='amesos_camd_valid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_valid.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c'; fi`
-
-amesos_camd_global.o: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_global.o -MD -MP -MF $(DEPDIR)/amesos_camd_global.Tpo -c -o amesos_camd_global.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_global.Tpo $(DEPDIR)/amesos_camd_global.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' object='amesos_camd_global.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_global.o `test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
-
-amesos_camd_global.obj: $(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_camd_global.obj -MD -MP -MF $(DEPDIR)/amesos_camd_global.Tpo -c -o amesos_camd_global.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/amesos_camd_global.Tpo $(DEPDIR)/amesos_camd_global.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c' object='amesos_camd_global.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o amesos_camd_global.obj `if test -f '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; then $(CYGPATH_W) '$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c'; fi`
 
 amesos_colamd_l.o: $(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT amesos_colamd_l.o -MD -MP -MF $(DEPDIR)/amesos_colamd_l.Tpo -c -o amesos_colamd_l.o `test -f '$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c' || echo '$(srcdir)/'`$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c

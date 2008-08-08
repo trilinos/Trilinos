@@ -324,28 +324,23 @@ PARAKLETE = \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_colamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_etree.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_rowcolcounts.c \
-	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_l_analyze.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_ccolamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_camd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_csymamd.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_metis.c \
 	$(srcdir)/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_l_nesdis.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l1.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l2.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_aat.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_order.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_postorder.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_post_tree.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_1.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_aat.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_control.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_defaults.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_dump.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_info.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_order.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c \
-	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_valid.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_preprocess.c \
+	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_l_valid.c \
 	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_global.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l2.c \
+	$(srcdir)/SuiteSparse/CAMD/Source/amesos_camd_l_postorder.c \
 	$(srcdir)/SuiteSparse/COLAMD/Source/amesos_colamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c \
 	$(srcdir)/SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c \
