@@ -437,19 +437,19 @@ cholmod_dense *CHOLMOD(sparse_to_dense)
     switch (A->xtype)
     {
 	case CHOLMOD_PATTERN:
-	    X = p_cholmod_sparse_to_dense (A, Common) ;
+	    X = amesos_p_cholmod_sparse_to_dense (A, Common) ;
 	    break ;
 
 	case CHOLMOD_REAL:
-	    X = r_cholmod_sparse_to_dense (A, Common) ;
+	    X = amesos_r_cholmod_sparse_to_dense (A, Common) ;
 	    break ;
 
 	case CHOLMOD_COMPLEX:
-	    X = c_cholmod_sparse_to_dense (A, Common) ;
+	    X = amesos_c_cholmod_sparse_to_dense (A, Common) ;
 	    break ;
 
 	case CHOLMOD_ZOMPLEX:
-	    X = z_cholmod_sparse_to_dense (A, Common) ;
+	    X = amesos_z_cholmod_sparse_to_dense (A, Common) ;
 	    break ;
     }
     return (X) ;
@@ -506,15 +506,15 @@ cholmod_sparse *CHOLMOD(dense_to_sparse)
     switch (X->xtype)
     {
 	case CHOLMOD_REAL:
-	    C = r_cholmod_dense_to_sparse (X, values, Common) ;
+	    C = amesos_r_cholmod_dense_to_sparse (X, values, Common) ;
 	    break ;
 
 	case CHOLMOD_COMPLEX:
-	    C = c_cholmod_dense_to_sparse (X, values, Common) ;
+	    C = amesos_c_cholmod_dense_to_sparse (X, values, Common) ;
 	    break ;
 
 	case CHOLMOD_ZOMPLEX:
-	    C = z_cholmod_dense_to_sparse (X, values, Common) ;
+	    C = amesos_z_cholmod_dense_to_sparse (X, values, Common) ;
 	    break ;
     }
     return (C) ;
@@ -574,15 +574,15 @@ int CHOLMOD(copy_dense2)
     switch (X->xtype)
     {
 	case CHOLMOD_REAL:
-	    r_cholmod_copy_dense2 (X, Y) ;
+	    amesos_r_cholmod_copy_dense2 (X, Y) ;
 	    break ;
 
 	case CHOLMOD_COMPLEX:
-	    c_cholmod_copy_dense2 (X, Y) ;
+	    amesos_c_cholmod_copy_dense2 (X, Y) ;
 	    break ;
 
 	case CHOLMOD_ZOMPLEX:
-	    z_cholmod_copy_dense2 (X, Y) ;
+	    amesos_z_cholmod_copy_dense2 (X, Y) ;
 	    break ;
     }
     return (TRUE) ;

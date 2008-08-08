@@ -493,19 +493,19 @@ cholmod_sparse *CHOLMOD(triplet_to_sparse)
     switch (T->xtype)
     {
 	case CHOLMOD_PATTERN:
-	    anz = p_cholmod_triplet_to_sparse (T, R, Common) ;
+	    anz = amesos_p_cholmod_triplet_to_sparse (T, R, Common) ;
 	    break ;
 
 	case CHOLMOD_REAL:
-	    anz = r_cholmod_triplet_to_sparse (T, R, Common) ;
+	    anz = amesos_r_cholmod_triplet_to_sparse (T, R, Common) ;
 	    break ;
 
 	case CHOLMOD_COMPLEX:
-	    anz = c_cholmod_triplet_to_sparse (T, R, Common) ;
+	    anz = amesos_c_cholmod_triplet_to_sparse (T, R, Common) ;
 	    break ;
 
 	case CHOLMOD_ZOMPLEX:
-	    anz = z_cholmod_triplet_to_sparse (T, R, Common) ;
+	    anz = amesos_z_cholmod_triplet_to_sparse (T, R, Common) ;
 	    break ;
     }
 
