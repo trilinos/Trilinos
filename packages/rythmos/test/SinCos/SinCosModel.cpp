@@ -29,6 +29,10 @@
 
 #include "SinCosModel.hpp"
 
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
+
 #ifdef SINCOSMODEL_DEBUG
 #include <iostream>
 #endif
@@ -39,9 +43,7 @@ namespace Rythmos {
 RCP<SinCosModel> sinCosModel(bool implicit) 
 {
   RCP<SinCosModel> model = rcp(new SinCosModel);
-  if (implicit) {
-    model->setImplicitFlag(implicit);
-  }
+  model->setImplicitFlag(implicit);
   return(model);
 }
 
@@ -51,51 +53,59 @@ SinCosModel::SinCosModel()
   dim_ = 2;
   isImplicit_ = false;
   isInitialized_ = false;
+
+  // Create x_space and f_space
+  x_space_ = Thyra::defaultSpmdVectorSpace<double>(dim_);
+  f_space_ = Thyra::defaultSpmdVectorSpace<double>(dim_);
 }
 
 void SinCosModel::setImplicitFlag(bool implicit) 
 {
   if (isImplicit_ != implicit) {
-    isImplicit_ = implicit;
     isInitialized_ = false;
   }
+  isImplicit_ = implicit;
+  initialize_();
 }
+
 
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 {
-  initialize_();
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, setImplicitFlag must be called first!\n"
+      );
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
   double exact_t = t;
   inArgs.set_t(exact_t);
   RCP<VectorBase<double> > exact_x = createMember(x_space_);
-  // get access to underlying double* for exact_x
-  // Fill as follows:
-  // exact_x[0] = sin(t)
-  // exact_x[1] = cos(t)
+  { // scope to delete DetachedVectorView
+    Thyra::DetachedVectorView<double> exact_x_view(*exact_x);
+    exact_x_view[0] = sin(t);
+    exact_x_view[1] = cos(t);
+  }
   inArgs.set_x(exact_x);
   if (isImplicit_) {
     RCP<VectorBase<double> > exact_x_dot = createMember(x_space_);
-    // get access to underlying double* for exact_x_dot
-    // Fill as follows:
-    // exact_x_dot[0] = cos(t)
-    // exact_x_dot[1] = -sin(t)
+    { // scope to delete DetachedVectorView
+      Thyra::DetachedVectorView<double> exact_x_dot_view(*exact_x_dot);
+      exact_x_dot_view[0] = cos(t);
+      exact_x_dot_view[1] = -sin(t);
+    }
     inArgs.set_x_dot(exact_x_dot);
   }
   return(inArgs);
 }
 
-RCP<const VectorSpaceBase<double> >
+RCP<const Thyra::VectorSpaceBase<double> >
 SinCosModel::get_x_space() const
 {
-  initialize_();
   return x_space_;
 }
 
 
-RCP<const VectorSpaceBase<double> >
+RCP<const Thyra::VectorSpaceBase<double> >
 SinCosModel::get_f_space() const
 {
-  initialize_();
   return f_space_;
 }
 
@@ -103,38 +113,41 @@ SinCosModel::get_f_space() const
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::getNominalValues() const
 {
-  initialize_();
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, setImplicitFlag must be called first!\n"
+      );
   return nominalValues_;
 }
 
 
-RCP<Thyra::LinearOpWithSolveBase<double> >
-SinCosModel::create_W() const
-{
-  initialize_();
-
-  RCP<Thyra::MultiVectorBase<double> > matrix = Thyra::createMembers(x_space_, dim_);
-  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
-    Thyra::linearOpWithSolve<double>(
-      *Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>(),
-      matrix
-      );
-  return W;
-}
+//RCP<Thyra::LinearOpWithSolveBase<double> >
+//SinCosModel::create_W() const
+//{
+//  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = 
+//    Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
+//  RCP<Thyra::MultiVectorBase<double> > matrix = Thyra::createMembers(x_space_, dim_);
+//  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
+//    Thyra::linearOpWithSolve<double>(
+//      *W_factory,
+//      matrix
+//      );
+//  return W;
+//}
 
 
 RCP<Thyra::LinearOpBase<double> >
 SinCosModel::create_W_op() const
 {
-  initialize_();
-  return(create_W());
+  RCP<Thyra::MultiVectorBase<double> > matrix = Thyra::createMembers(x_space_, dim_);
+  return(matrix);
 }
-
 
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::createInArgs() const
 {
-  initialize_();
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, setImplicitFlag must be called first!\n"
+      );
   return inArgs_;
 }
 
@@ -145,7 +158,9 @@ SinCosModel::createInArgs() const
 ModelEvaluatorBase::OutArgs<double>
 SinCosModel::createOutArgsImpl() const
 {
-  initialize_();
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, setImplicitFlag must be called first!\n"
+      );
   return outArgs_;
 }
 
@@ -155,65 +170,65 @@ void SinCosModel::evalModelImpl(
   const ModelEvaluatorBase::OutArgs<double> &outArgs
   ) const
 {
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, setImplicitFlag must be called first!\n"
+      );
+
   const RCP<const VectorBase<double> > x_in = inArgs.get_x().assert_not_null();
+  Thyra::ConstDetachedVectorView<double> x_in_view( *x_in ); 
+
   double t = inArgs.get_t();
 
-  const RCP<const VectorBase<double> > x_dot_in;
+  RCP<const VectorBase<double> > x_dot_in;
   double beta = inArgs.get_beta();
-  double alpha;
+  double alpha = -1.0;
   if (isImplicit_) {
     x_dot_in = inArgs.get_x_dot().assert_not_null();
     alpha = inArgs.get_alpha();
   }
 
   const RCP<VectorBase<double> > f_out = outArgs.get_f();
-  // TODO:  Should this be get_W?
-  const RCP<Thyra::LinearOpBase<double> > W_op_out = outArgs.get_W_op();
+  const RCP<Thyra::LinearOpBase<double> > W_out = outArgs.get_W_op();
 
-  // Get direct access to underlying double* for x_in
-  // Get direct access to underlying double* for f_out
+
   if (!isImplicit_) { // isImplicit_ == false
     if (!is_null(f_out)) {
-      // Load the following into f_out:
-      // f_out[0] = x_in[1]
-      // f_out[1] = -x_in[0]
+      Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
+      f_out_view[0] = x_in_view[1];
+      f_out_view[1] = -x_in_view[0];
     }
-    if (!is_null(W_op_out)) {
-      // Load the following into W_op_out:
-      // W_op_out[0][0] = 0.0
-      // W_op_out[0][1] = +beta
-      // W_op_out[1][0] = -beta
-      // W_op_out[1][1] = 0.0
+    if (!is_null(W_out)) {
+      RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
+      Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
+      matrix_view(0,0) = 0.0;
+      matrix_view(0,1) = +beta;
+      matrix_view(1,0) = -beta;
+      matrix_view(1,1) = 0.0;
     }
   } else { // isImplicit_ == true
     if (!is_null(f_out)) {
-      // Get direct access to underlying double* for x_dot_in
-      // Get direct access to underlying double** for W_op_out
-      // Load the following into f_out:
-      // f_out[0] = x_dot_in[0] - x_in[1]
-      // f_out[1] = x_dot_in[1] + x_int[0]
+      Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
+      Thyra::ConstDetachedVectorView<double> x_dot_in_view( *x_dot_in );
+      f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
+      f_out_view[1] = x_dot_in_view[1] + x_in_view[0];
     }
-    if (!is_null(W_op_out)) {
-      // Load the following into W_op_out:
-      // W_op_out[0][0] = alpha
-      // W_op_out[0][1] = -beta
-      // W_op_out[1][0] = +beta
-      // W_op_out[1][1] = alpha
+    if (!is_null(W_out)) {
+      RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
+      Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
+      matrix_view(0,0) = alpha;
+      matrix_view(0,1) = -beta;
+      matrix_view(1,0) = +beta;
+      matrix_view(1,1) = alpha;
     }
   }
-
 }
 
 // private
 
-void SinCosModel::initialize_() const
+void SinCosModel::initialize_() 
 {
   if (!isInitialized_) {
     
-    // Create x_space and f_space
-    x_space_ = Thyra::defaultSpmdVectorSpaceBase<double>(dim_);
-    f_space_ = Thyra::defaultSpmdVectorSpaceBase<double>(dim_);
-
     {
       // Set up prototypical InArgs
       ModelEvaluatorBase::InArgsSetup<double> inArgs;
@@ -239,17 +254,21 @@ void SinCosModel::initialize_() const
     // Set up nominal values 
     nominalValues_ = inArgs_;
     const RCP<VectorBase<double> > x_ic = createMember(x_space_);
-    // access underlying double *
-    // Fill with x_ic[0] = 0.0
-    //           x_ic[1] = 1.0
+    { // scope to delete DetachedVectorView
+      Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
+      x_ic_view[0] = 0.0;
+      x_ic_view[1] = 1.0;
+    }
     nominalValues_.set_x(x_ic);
     double t_ic = 0.0;
     nominalValues_.set_t(t_ic);
     if (isImplicit_) {
       const RCP<VectorBase<double> > x_dot_ic = createMember(x_space_);
-      // access underlying double *
-      // Fill with x_dot_ic[0] = 1.0
-      //           x_dot_ic[1] = 0.0
+      { // scope to delete DetachedVectorView
+        Thyra::DetachedVectorView<double> x_dot_ic_view( *x_dot_ic );
+        x_dot_ic_view[0] = 1.0;
+        x_dot_ic_view[1] = 0.0;
+      }
       nominalValues_.set_x_dot(x_dot_ic);
     }
     isInitialized_ = true;

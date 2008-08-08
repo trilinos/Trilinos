@@ -39,6 +39,8 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+#include "Thyra_VectorBase.hpp"
+
 #ifndef TEUCHOS_DISABLE_ALL_TIMERS
 // Define this to see selected timers
 #define ENABLE_RYTHMOS_TIMERS
@@ -79,6 +81,14 @@ using Teuchos::ScalarTraits;
 using Teuchos::typeName;
 /** \brief . */
 using Teuchos::TypeNameTraits;
+
+
+
+// Using declarations from Teuchos
+
+
+/** \brief . */
+using Thyra::VectorBase;
 
 
 namespace Exceptions {

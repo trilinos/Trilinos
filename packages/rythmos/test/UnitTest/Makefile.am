@@ -44,6 +44,8 @@ Rythmos_UnitTest_SOURCES =\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
+  $(srcdir)/../SinCos/SinCosModel.cpp\
+  $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp
 Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies)

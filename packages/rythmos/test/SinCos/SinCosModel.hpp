@@ -38,16 +38,19 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+using Thyra::ModelEvaluatorBase;
+
 namespace Rythmos {
 
-class SinCosModel : public Thyra::StateFunctionModelEvaluatorBase<double> {
-public:
+class SinCosModel : public Thyra::StateFuncModelEvaluatorBase<double> 
+{
+  public:
 
   // Constructor
   SinCosModel();
 
   // Exact solution
-  RCP<const VectorBase<double> > getExactSolution(double t) const;
+  ModelEvaluatorBase::InArgs<double> getExactSolution(double t) const;
 
   // Set explicit/implicit flag
   void setImplicitFlag(bool implicit);
@@ -56,13 +59,11 @@ public:
   //@{
 
   /** \brief . */
-  RCP<const VectorSpaceBase<double> > get_x_space() const;
+  RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const;
   /** \brief . */
-  RCP<const VectorSpaceBase<double> > get_f_space() const;
+  RCP<const Thyra::VectorSpaceBase<double> > get_f_space() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> getNominalValues() const;
-  /** \brief . */
-  RCP<Thyra::LinearOpWithSolveBase<double> > create_W() const;
   /** \brief . */
   RCP<Thyra::LinearOpBase<double> > create_W_op() const;
   /** \brief . */
@@ -79,27 +80,31 @@ private:
   //@{
 
   /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const;
+  ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs_bar,
-    const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs_bar
+    const ModelEvaluatorBase::InArgs<double> &inArgs_bar,
+    const ModelEvaluatorBase::OutArgs<double> &outArgs_bar
     ) const;
 
   //@}
 
 private:
-  bool isImplicit_; // false => \dot{x} = f(x,t)    W_op = beta*df/dx
-                    // true =>  F(\dot{x},x,t) = 0  W_op = alpha*dF/dxdot + beta*dF/dx
+  int dim_;         // 2
+  bool isImplicit_; // false => \dot{x} = f(x,t)    W = beta*df/dx
+                    // true =>  F(\dot{x},x,t) = 0  W = alpha*dF/dxdot + beta*dF/dx
   bool isInitialized_;
   ModelEvaluatorBase::InArgs<double> inArgs_;
   ModelEvaluatorBase::OutArgs<double> outArgs_;
   ModelEvaluatorBase::InArgs<double> nominalValues_;
-  RCP<const VectorSpaceBase<double> > x_space_;
-  RCP<const VectorSpaceBase<double> > f_space_;
-  RCP<Thyra::LinearOpWithSolveBase<double> > W_;
+  RCP<const Thyra::VectorSpaceBase<double> > x_space_;
+  RCP<const Thyra::VectorSpaceBase<double> > f_space_;
 
 };
+
+// Non-member constructor
+RCP<SinCosModel> sinCosModel(bool implicit);
+
 
 } // namespace Rythmos 
 

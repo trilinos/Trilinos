@@ -97,7 +97,8 @@ am_Rythmos_UnitTest_OBJECTS =  \
 	Rythmos_DataStore_UnitTest.$(OBJEXT) \
 	Rythmos_ImplicitRK_UnitTest.$(OBJEXT) \
 	Rythmos_InterpolationBuffer_UnitTest.$(OBJEXT) \
-	Rythmos_TimeRange_UnitTest.$(OBJEXT) \
+	Rythmos_TimeRange_UnitTest.$(OBJEXT) SinCosModel.$(OBJEXT) \
+	Rythmos_SinCosModel_UnitTest.$(OBJEXT) \
 	Rythmos_UnitTest.$(OBJEXT) Rythmos_UnitTestHelpers.$(OBJEXT)
 Rythmos_UnitTest_OBJECTS = $(am_Rythmos_UnitTest_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -247,6 +248,8 @@ Rythmos_UnitTest_SOURCES = \
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
+  $(srcdir)/../SinCos/SinCosModel.cpp\
+  $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp
 
@@ -337,9 +340,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DataStore_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRK_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer_UnitTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_SinCosModel_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_TimeRange_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_UnitTestHelpers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SinCosModel.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -424,6 +429,34 @@ Rythmos_TimeRange_UnitTest.obj: $(srcdir)/Rythmos_TimeRange_UnitTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_TimeRange_UnitTest.cpp' object='Rythmos_TimeRange_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_TimeRange_UnitTest.obj `if test -f '$(srcdir)/Rythmos_TimeRange_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_TimeRange_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_TimeRange_UnitTest.cpp'; fi`
+
+SinCosModel.o: $(srcdir)/../SinCos/SinCosModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SinCosModel.o -MD -MP -MF $(DEPDIR)/SinCosModel.Tpo -c -o SinCosModel.o `test -f '$(srcdir)/../SinCos/SinCosModel.cpp' || echo '$(srcdir)/'`$(srcdir)/../SinCos/SinCosModel.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/SinCosModel.Tpo $(DEPDIR)/SinCosModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../SinCos/SinCosModel.cpp' object='SinCosModel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SinCosModel.o `test -f '$(srcdir)/../SinCos/SinCosModel.cpp' || echo '$(srcdir)/'`$(srcdir)/../SinCos/SinCosModel.cpp
+
+SinCosModel.obj: $(srcdir)/../SinCos/SinCosModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SinCosModel.obj -MD -MP -MF $(DEPDIR)/SinCosModel.Tpo -c -o SinCosModel.obj `if test -f '$(srcdir)/../SinCos/SinCosModel.cpp'; then $(CYGPATH_W) '$(srcdir)/../SinCos/SinCosModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../SinCos/SinCosModel.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/SinCosModel.Tpo $(DEPDIR)/SinCosModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../SinCos/SinCosModel.cpp' object='SinCosModel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SinCosModel.obj `if test -f '$(srcdir)/../SinCos/SinCosModel.cpp'; then $(CYGPATH_W) '$(srcdir)/../SinCos/SinCosModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../SinCos/SinCosModel.cpp'; fi`
+
+Rythmos_SinCosModel_UnitTest.o: $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_SinCosModel_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_SinCosModel_UnitTest.Tpo -c -o Rythmos_SinCosModel_UnitTest.o `test -f '$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_SinCosModel_UnitTest.Tpo $(DEPDIR)/Rythmos_SinCosModel_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp' object='Rythmos_SinCosModel_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_SinCosModel_UnitTest.o `test -f '$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp
+
+Rythmos_SinCosModel_UnitTest.obj: $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_SinCosModel_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_SinCosModel_UnitTest.Tpo -c -o Rythmos_SinCosModel_UnitTest.obj `if test -f '$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_SinCosModel_UnitTest.Tpo $(DEPDIR)/Rythmos_SinCosModel_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp' object='Rythmos_SinCosModel_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_SinCosModel_UnitTest.obj `if test -f '$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp'; fi`
 
 Rythmos_UnitTest.o: $(srcdir)/Rythmos_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_UnitTest.Tpo -c -o Rythmos_UnitTest.o `test -f '$(srcdir)/Rythmos_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_UnitTest.cpp

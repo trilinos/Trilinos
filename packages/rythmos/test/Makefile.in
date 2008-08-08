@@ -225,7 +225,8 @@ top_srcdir = @top_srcdir@
 SUBDIRS = ExplicitTaylorPolynomialStepper\
           complicatedExample\
           UnitTest \
-          simpleAdjoint
+          simpleAdjoint \
+					SinCos
 
 EXTRA_DIST = definition
 all: all-recursive
