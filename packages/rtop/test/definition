@@ -38,16 +38,6 @@
     ARGS = --error-tol-slack=1e+2;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1), SERIAL;
-    X-HOST = gabriel.sandia.gov;
-}
-
-
-(FRAMEWORK,INSTALL) {
-    TESTS = ops_lib/opsUnitTests.exe;
-    ARGS = --error-tol-slack=1e+1;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = MPI(1), SERIAL;
-    HOST = gabriel.sandia.gov;
 }
 
 
