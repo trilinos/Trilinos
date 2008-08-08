@@ -175,14 +175,6 @@ complex<T> generateValue(complex<T> const x, complex<T> const y) {
 	return(complex<T>(real, imag));
 }
 
-// puts the generated values for (x, 0) ... (x, length-1) into vector
-template <typename T>
-void generateColumn(std::vector<T>& vector, int const x, int const length) {
-	vector.resize(length);
-	for(int y = 0; y < length; y++)
-		vector[y] = generateValue(intToScalar<T>(x), intToScalar<T>(y));
-}
-
 // puts the generated values for (firstx, 0)...(firstx, length-1),(firstx+1, 0),(firstx+1, length-1)...(lastx, length-1) into vector
 template <typename T>
 void generateMultipleColumns(std::vector<T>& vector, int const firstx, int const lastx, int const length) {

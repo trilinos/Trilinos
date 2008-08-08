@@ -24,6 +24,6 @@
 
 (FRAMEWORK, INSTALL) {
     DIRS = Distributor;
-    ARGS = --verbose;
-    COMM = SERIAL; #, MPI;
+    #ARGS = ;
+    COMM = SERIAL, MPI;
 }

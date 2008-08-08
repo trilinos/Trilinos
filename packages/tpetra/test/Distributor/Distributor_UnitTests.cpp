@@ -8,6 +8,9 @@
 
 #include "Tpetra_Distributor.hpp"
 
+// FINISH: test that createFromSends picks up contiguous sends, whether they are
+// sorted or not. test, of course, that it also detects non-contiguous sends.
+
 namespace {
 
   using Teuchos::as;
@@ -17,6 +20,9 @@ namespace {
   using Tpetra::DefaultPlatform;
   using Tpetra::Platform;
   using std::vector;
+  using std::sort;
+  using Teuchos::arrayViewFromVector;
+  using Teuchos::broadcast;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -77,15 +83,14 @@ namespace {
     typedef Teuchos::OrdinalTraits<Ordinal> OT;
 
     RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    out << "platform = " << *platform << std::endl;
     RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
     const Ordinal numImages = comm->getSize();
     const Ordinal ZERO = OT::zero();
 
     // send data to each image, including myself
+    // the consequence is that each image will send to every other images
     const Ordinal numExportIDs = as<Ordinal>(numImages); 
     Ordinal numRemoteIDs = ZERO;
-
     // fill exportImageIDs with {0, 1, 2, ... numImages-1}
     vector<Ordinal> exportImageIDs; 
     exportImageIDs.reserve(numExportIDs);
@@ -96,6 +101,89 @@ namespace {
     Distributor<Ordinal> distributor(comm);
     distributor.createFromSends(exportImageIDs, numRemoteIDs);
     TEST_EQUALITY(numRemoteIDs, numImages);
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), numImages);
+    TEST_EQUALITY(distributor.getNumReceives(), numImages-1);
+    TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
+    TEST_EQUALITY(distributor.getNumSends(), numImages-1);
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(numImages > 1 ? 1 : 0));
+    {
+      vector<Ordinal> imgFrom(distributor.getImagesFrom());
+      vector<Ordinal> imgTo(distributor.getImagesTo());
+      TEST_COMPARE_ARRAYS(imgFrom, imgTo);
+    }
+    {
+      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
+      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
+      TEST_EQUALITY(as<Ordinal>(lenFrom.size()),numImages);
+      TEST_EQUALITY(as<Ordinal>(lenTo.size())  ,numImages);
+      for (int i=0; i<numImages; ++i) {
+        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(1) );
+        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(1) );
+      }
+    }
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(),as<Ordinal>(numImages > 1 ? 1 : 0));
+    TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), 0);
+
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Distributor, doPosts1, Ordinal, Packet )
+  {
+    typedef Teuchos::OrdinalTraits<Ordinal> OT;
+    typedef Teuchos::ScalarTraits<Packet>   PT;
+
+    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
+    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    const Ordinal ZERO = OT::zero();
+
+    // send data to each image, including myself
+    const Ordinal numExportIDs = as<Ordinal>(numImages); 
+    Ordinal numRemoteIDs = ZERO;
+    // fill exportImageIDs with {0, 1, 2, ... numImages-1}
+    vector<Ordinal> exportImageIDs; 
+    exportImageIDs.reserve(numExportIDs);
+    for(Ordinal i = ZERO; i < numExportIDs; ++i) {
+      exportImageIDs.push_back(i);
+    }
+    Distributor<Ordinal> distributor(comm);
+    distributor.createFromSends(exportImageIDs, numRemoteIDs);
+
+    // generate global random data set: each image sends 1 packet to each image
+    // we need numImages*numImages "unique" values (we don't want redundant data allowing false positives)
+    vector<Packet> exports(numImages*numImages);
+    for (int i=0; i<numImages*numImages; i++) {
+        exports[i] = PT::random();
+    }
+    // broadcast
+    broadcast(*comm,0,arrayViewFromVector(exports));
+
+    // pick a subset of entries to post
+    vector<Packet> myExports(&exports[myImageID*numImages],&exports[(myImageID+1)*numImages]);
+    // do posts, one Packet to each image
+    vector<Packet> imports;
+    distributor.doPostsAndWaits(myExports, 1, imports);
+    // imports[i] came from image i. it was element "myImageID" in his "myExports" vector. 
+    // it corresponds to element i*numImages+myImageID in the global export vector
+    // make a copy of the corresponding entries in the global vector, then compare these against the 
+    // entries that I received
+    vector<Packet> expectedImports(numImages);
+    {
+      typename vector<Packet>::iterator eI = expectedImports.begin(), 
+                                         E = exports.begin()+myImageID;
+      for (; eI != expectedImports.end();) {
+        *eI = *E;
+        eI++;
+        E += numImages;
+      }
+    }
+    // check the values 
+    TEST_COMPARE_ARRAYS(expectedImports,imports);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -109,7 +197,6 @@ namespace {
     typedef Teuchos::OrdinalTraits<Ordinal> OT;
 
     RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    out << "platform = " << *platform << std::endl;
     RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getSize();
@@ -167,8 +254,9 @@ namespace {
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, basic, ORDINAL ) \
+      /* TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, * ORDINAL ) */ \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSends, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, double )
 
     UNIT_TEST_GROUP_ORDINAL(int)
 
@@ -176,8 +264,8 @@ namespace {
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, basic, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSends, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL )
+      /* TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, * ORDINAL ) */ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSends, ORDINAL )
 
     UNIT_TEST_GROUP_ORDINAL(char)
     typedef short int ShortInt;
@@ -194,60 +282,3 @@ namespace {
 
 }
 
-
-
-/*
-
-//======================================================================
-template <typename Ordinal, typename ScalarType>
-int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
-  // ========================================
-  // test createFromRecvs
-  // ========================================
-  // ========================================
-  // test doPosts
-  // ========================================
-  if(verbose) cout << "Testing doPostsAndWaits... ";
-  comm->barrier();
-
-  std::vector<ScalarType> imports;
-  std::vector<ScalarType> exports;
-  generateColumn(exports, myImageID, numImages);
-  if(debug) {
-    if(verbose) cout << endl;
-    outputData(myImageID, numImages, "exports: " + Tpetra::toString(exports));
-  }
-  // FINISH
-  distributorS.doPostsAndWaits(exports, imports);
-  if(debug) {
-    outputData(myImageID, numImages, "imports: " + Tpetra::toString(imports));
-    if(verbose) cout << "doPostsAndWaits test: ";
-  }
-
-  if(ierr != 0) {
-    ierr = 1;
-    if(verbose) cout << "failed" << endl;
-  }
-  else {
-    if(verbose) cout << "passed" << endl;
-  }
-  returnierr += ierr;
-  ierr = 0;
-#endif // HAVE_MPI
-
-  // ======================================================================
-  // finish up
-  // ======================================================================
-
-  comm->barrier();
-  if(verbose) {
-    if(returnierr == 0) {
-      outputHeading("Unit tests for " + className + " passed.");
-    }
-    else {
-      outputHeading("Unit tests for " + className + " failed.");
-    }
-  }
-  return(returnierr);
-}
-*/

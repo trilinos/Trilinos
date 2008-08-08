@@ -36,6 +36,9 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
+
+// FINISH: some of the get accessors may not be necessary anymore. clean up.
+
 namespace Tpetra {
   
   //! Tpetra::Distributor:  The Tpetra Gather/Scatter Setup Class.
@@ -68,9 +71,11 @@ namespace Tpetra {
     /*! Take a list of ImageIDs and construct a plan for efficiently scattering to these images.
         Return the number of IDs being sent to me.
       \param exportImageIDs In
-             List of images that will get the exported IDs.
+             List of images that will get the exported data. Image IDs less than zero
+             are ignored; their placement corresponds to null sends in any
+             future exports.
       \param numRemoteIDs Out
-             Number of IDs this image will be receiving.
+             Number of imports this image will be receiving.
     */
     void createFromSends(const std::vector<Ordinal> & exportImageIDs,
                          Ordinal & numRemoteIDs);
@@ -211,33 +216,49 @@ namespace Tpetra {
     Teuchos::RCP< Teuchos::Comm<Ordinal> > comm_;
 
     Ordinal numExports_;
-    Ordinal selfMessage_;
+    // selfMessage_ is whether I have a send for myself
+    bool selfMessage_;
+    // numSends_ is number of sends to other nodes
     Ordinal numSends_;
+    // imagesTo_, startsTo_ and lengthsTo_ each have size 
+    //   numSends_ + selfMessage_
     std::vector<Ordinal> imagesTo_;
     std::vector<Ordinal> startsTo_;
     std::vector<Ordinal> lengthsTo_;
+    // maxSendLength_ is the maximum send to another node: 
+    //   max(lengthsTo_[i]) for i != me
     Ordinal maxSendLength_;
     std::vector<Ordinal> indicesTo_;
+    // numReceives_ is the number of receives by me from other procs, not
+    // counting self receives
     Ordinal numReceives_;
+    // totalReceiveLength_ is the total number of Packet received, used to 
+    // allocate the receive buffer
     Ordinal totalReceiveLength_;
+    // imagesFrom_, startsFrom_ and lengthsFrom_ each have size 
+    //   numReceives_ + selfMessage_
     std::vector<Ordinal> lengthsFrom_;
     std::vector<Ordinal> imagesFrom_;
-    std::vector<Ordinal> indicesFrom_;
     std::vector<Ordinal> startsFrom_;
+    std::vector<Ordinal> indicesFrom_;
+
+    // requests associated with non-blocking receives
+    std::vector<Teuchos::RCP<Teuchos::CommRequest> > requests_;
 
     mutable Teuchos::RCP< Distributor<Ordinal> > reverseDistributor_;
 
+    // compute receive info from sends
     void computeReceives();
 
+    // compute send info from receives
     void computeSends(const std::vector<Ordinal> & importIDs,
                       const std::vector<Ordinal> & importImageIDs,
                       std::vector<Ordinal>& exportIDs,
                       std::vector<Ordinal>& exportImageIDs);
 
+    // create a distributor for the reverse communciation pattern (pretty much
+    // swap all send and receive info)
     void createReverseDistributor() const;
-
-    // requests
-    std::vector<Teuchos::RCP<Teuchos::CommRequest> > requests_;
 
   }; // class Distributor
 
@@ -269,14 +290,25 @@ namespace Tpetra {
 
   template <typename Ordinal>
   Distributor<Ordinal>::~Distributor() 
-  {}
+  {
+  // we shouldn't have any outstanding requests at this point; verify
+# ifdef TEUCHOS_DEBUG
+    for (typename std::vector<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i=requests_.begin(); 
+         i != requests_.end(); ++i) 
+    {
+      TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
+          "Tpetra::Distributor<"<<Teuchos::OrdinalTraits<Ordinal>::name()
+          <<">::doWaits(): Requests should be null after call to Teuchos::waitAll().");
+    }
+#endif
+  }
 
   template <typename Ordinal>
   void Distributor<Ordinal>::createFromSends(
       const std::vector<Ordinal> & exportImageIDs,
       Ordinal & numRemoteIDs) 
   {
-    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal one  = Teuchos::OrdinalTraits<Ordinal>::one();
 
     numExports_ = exportImageIDs.size();
@@ -284,56 +316,133 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
     const int numImages = comm_->getSize();
 
+    // exportImageIDs tells us the communication pattern for this distributor
+    // it dictates the way that the export data will be interpretted in doPosts()
+    // we want to perform at most one communication per node; this is for two
+    // reasons:
+    //   * minimize latency/overhead in the comm routines (nice)
+    //   * match the number of receives and sends between nodes (necessary)
+    // Teuchos::Comm requires that the data for a send is contiguous in a send
+    // buffer
+    // therefore, if the data in the send buffer for doPosts() is not
+    // contiguous, it will need to be copied into a contiguous buffer
+    // 
+    // the user has specified this pattern and we can't do anything about it,
+    // 
+    // howevery, if they do not provide an efficient pattern, we will warn them 
+    // if one of
+    //    THROW_TPETRA_EFFICIENCY_WARNINGS 
+    //    PRINT_TPETRA_EFFICIENCY_WARNINGS 
+    // is on.
+    //
+    // if the data is contiguous, then we can post the sends in situ
+    // 
+    // determine contiguity. there are a number of ways to do this:
+    // * if the export IDs are sorted, then all exports to a particular 
+    //   node must contiguous. this is how epetra does it. 
+    // * if the export ID of the current export already has been listed,
+    //   then the previous listing should correspond to the same export.
+    //   this tests contiguity, but not sortedness.
+    // both of these tests require O(n), where n is the number of 
+    // exports. however, the latter will positively identify a greater
+    // portion of contiguous patterns. we will go with it.
+    // 
     // Check to see if items are grouped by images without gaps
     // If so, indices_to -> 0
 
     // Setup data structures for quick traversal of arrays
-    std::vector<Ordinal> starts(numImages + 1, zero);
+    // this contains the number of sends for each image id
+    std::vector<Ordinal> starts(numImages + 1, ZERO);
 
-    Ordinal numActive = zero;
-    bool noSendBuff = true;
+    // numActive is the number of sends that are not Null
+    Ordinal numActive = ZERO;
+    int needSendBuff = 0;
 
     for (int i = 0; i < numExports_; ++i) {
-      if (noSendBuff && (i > 0) && (exportImageIDs[i] < exportImageIDs[i-1])) {
-        noSendBuff = false;
-      }
-      if (exportImageIDs[i] >= zero) {
-        ++starts[exportImageIDs[i]];
+      Ordinal exportID = exportImageIDs[i];
+      if (exportID >= ZERO) {
+        // increment starts[exportID]
+        ++starts[exportID];
+        // if after incrementing it is greater than one, check that the
+        // previous export went to this node
+        // this is a safe comparison, because starts[exportID] > 1
+        // implies that i > 1. 
+        // null entries break continuity.
+        // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not considered contiguous
+        if (needSendBuff==0 && starts[exportID]>1 && exportID != exportImageIDs[i-1]) {
+          needSendBuff = 1;
+        }
         ++numActive;
       }
     }
 
-    if (starts[myImageID] != zero) {
-      selfMessage_ = one;
+#   if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
+    {
+      int global_needSendBuff;
+      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_SUM,needSendBuff,&global_needSendBuff);
+      std::string err;
+      err += "Tpetra::Distributor<" + Teuchos::TypeNameTraits<Ordinal>::name() 
+        + ">::createFromSends(): Grouping export IDs together leads to improved performance.";
+#   if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
+      TEST_FOR_EXCEPTION(global_needSendBuff != 0, std::runtime_error, err);
+#   else // print warning
+      if (global_needSendBuff) {
+        std::cerr << err << std::endl;
+      }
+    }
+#   endif
+#   endif
+
+    if (starts[myImageID] != ZERO) {
+      selfMessage_ = true;
     }
     else {
-      selfMessage_ = zero;
+      selfMessage_ = false;
     }
 
-    numSends_ = zero;
 
-    if (noSendBuff) { // grouped by image, no send buffer or indicesTo_ needed
+    if (!needSendBuff) {
+      // grouped by image, no send buffer or indicesTo_ needed
+      numSends_ = ZERO;
       for (int i=0; i < numImages; ++i) {
         if (starts[i]) ++numSends_;
       }
 
-      imagesTo_.resize(numSends_); // can we change these to reserves?
-      startsTo_.resize(numSends_);
-      lengthsTo_.resize(numSends_);
+      // not only do we not need these, but empty indicesTo is also a flag for
+      // later
+      indicesTo_.resize(0);
+      // size these to numSends_; note, at the moment, numSends_ includes sends
+      // to myself; set their values to zeros
+      imagesTo_.assign(numSends_,ZERO);
+      startsTo_.assign(numSends_,ZERO);
+      lengthsTo_.assign(numSends_,ZERO);
 
-      for (Ordinal i = zero, index = zero; i < numSends_; ++i) {
-        startsTo_[i] = index;
-        Ordinal imageID = exportImageIDs[index];
-        imagesTo_[i] = imageID;
-        index += starts[imageID];
+      // set startsTo to the offsent for each send (i.e., each image ID)
+      // set imagesTo to the image ID for each send
+      // in interpretting this code, remember that we are assuming contiguity
+      // that is why index skips through the ranks
+      {
+        Ordinal index = ZERO;
+        for (Ordinal i = ZERO; i < numSends_; ++i) {
+          startsTo_[i] = index;
+          Ordinal imageID = exportImageIDs[index];
+          imagesTo_[i] = imageID;
+          index += starts[imageID];
+        }
+#ifdef TEUCHOS_DEBUG
+        SHARED_TEST_FOR_EXCEPTION(index != numActive, std::logic_error,
+            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+#endif
       }
 
-      if (numSends_ > zero) {
+      // sort the startsTo and image IDs together, in ascending order, according
+      // to image IDs
+      if (numSends_ > ZERO) {
         sortArrays(imagesTo_, startsTo_);
       }
 
-      maxSendLength_ = zero;
-
+      // compute the maximum send length
+      maxSendLength_ = ZERO;
       for (int i = 0; i < numSends_; ++i) {
         Ordinal imageID = imagesTo_[i];
         lengthsTo_[i] = starts[imageID];
@@ -342,61 +451,92 @@ namespace Tpetra {
         }
       }
     }
-    else { // not grouped by image, need send buffer and indicesTo_
-      if (starts.front() != zero ) {
+    else { 
+      // not grouped by image, need send buffer and indicesTo_
+
+      // starts[i] is the number of sends to node i
+      // numActive equals number of sends total, \sum_i starts[i]
+
+      // the loop starts at starts[1], so explicitly check starts[0]
+      if (starts[0] == ZERO ) {
+        numSends_ = ZERO;
+      }
+      else {
         numSends_ = one;
       }
-
-      for (int i = 0; i < numImages; i++) {
-        if (starts[i] != zero) {
+      for (int i = 1; i < numImages; --i) {
+        if (starts[i] != ZERO) {
           ++numSends_;
         }
-        starts[i] += starts[i-one];
+        starts[i] += starts[i-1];
       }
+      // starts[i] now contains the number of exports to nodes 0 through i
 
-      for (int i = numImages-1; i != 0; i--) {
-        starts[i] = starts[i-one];
+      for (int i = numImages-1; i != 0; --i) {
+        starts[i] = starts[i-1];
       }
-
-      starts.front() = zero;
+      starts[0] = ZERO;
+      // starts[i] now contains the number of exports to nodes 0 through
+      // i-1, i.e., all nodes before node i
 
       indicesTo_.resize(numActive);
 
-      for (Ordinal i = zero; i < numExports_; i++) {
-        if (exportImageIDs[i] >= zero) {
+      for (Ordinal i = ZERO; i < numExports_; ++i) {
+        if (exportImageIDs[i] >= ZERO) {
+          // record the offset to the sendBuffer for this export
           indicesTo_[starts[exportImageIDs[i]]] = i;
+          // now increment the offset for this node
           ++starts[exportImageIDs[i]];
         }
       }
-
-      // Reconstuct starts array to index into indicesTo.
-
-      for (int i = numImages-1; i != 0; i--) {
-        starts[i] = starts[i-1];
+      // our send buffer will contain the export data for each of the nodes
+      // we communicate with, in order by node id
+      // sendBuffer = {node_0_data, node_1_data, ..., node_np-1_data}
+      // indicesTo now maps each export to the location in our send buffer
+      // associated with the export
+      // data for export i located at sendBuffer[indicesTo[i]]
+      //
+      // starts[i] once again contains the number of exports to 
+      // nodes 0 through i
+      for (int node = numImages-1; node != 0; --node) {
+        starts[node] = starts[node-1];
       }
-      starts.front() = zero;       
+      starts.front() = ZERO;       
       starts[numImages] = numActive;
+      // 
+      // starts[node] once again contains the number of exports to 
+      // nodes 0 through node-1
+      // i.e., the start of my data in the sendBuffer
 
-      imagesTo_.resize(numSends_); // can we change these to reserves?
+      // this contains invalid data at nodes we don't care about, that is okay
+      imagesTo_.resize(numSends_);
       startsTo_.resize(numSends_);
       lengthsTo_.resize(numSends_);
 
-      maxSendLength_ = zero;
-
-      for (int i = 0, j = 0; i < numImages; i++ ) {
-        if (starts[i+1] != starts[i]) {
-          lengthsTo_[j] = starts[i+1] - starts[i];
-          startsTo_[j] = starts[i];
-          if ((i != myImageID) && (lengthsTo_[j] > maxSendLength_)) {
-            maxSendLength_ = lengthsTo_[j];
+      // for each group of sends/exports, record the destination node,
+      // the length, and the offset for this send into the 
+      // send buffer (startsTo_)
+      maxSendLength_ = ZERO;
+      int snd = 0;
+      for (int node = 0; node < numImages; ++node ) {
+        if (starts[node+1] != starts[node]) {
+          lengthsTo_[snd] = starts[node+1] - starts[node];
+          startsTo_[snd] = starts[node];
+          // record max length for all off-node sends
+          if ((node != myImageID) && (lengthsTo_[snd] > maxSendLength_)) {
+            maxSendLength_ = lengthsTo_[snd];
           }
-          imagesTo_[j] = i;
-          j++;
+          imagesTo_[snd] = node;
+          ++snd;
         }
       }
+#ifdef TEUCHOS_DEBUG
+      SHARED_TEST_FOR_EXCEPTION(snd != numSends_, std::logic_error, 
+          "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.", *comm_);
+#endif
     }
 
-    numSends_ -= selfMessage_;
+    if (selfMessage_) --numSends_;
 
     // Invert map to see what msgs are received and what length
     computeReceives();
@@ -478,14 +618,14 @@ namespace Tpetra {
 
     // compute new totalSendLength
     Ordinal totalSendLength = zero;
-    for (Ordinal i = zero; i < (numSends_ + selfMessage_); i++) {
+    for (Ordinal i = zero; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
       totalSendLength += lengthsTo_[i];
     }
 
     // compute new maxReceiveLength
     Ordinal maxReceiveLength = zero;
     const int myImageID = comm_->getRank();
-    for (Ordinal i = zero; i < numReceives_; i++) {
+    for (Ordinal i = zero; i < numReceives_; ++i) {
       if (imagesFrom_[i] != myImageID) {
         if (lengthsFrom_[i] > maxReceiveLength) {
           maxReceiveLength = lengthsFrom_[i];
@@ -536,17 +676,16 @@ namespace Tpetra {
     const Ordinal myImageID = comm_->getRank();
     int selfReceiveOffset = 0;
 
-    // FINISH: verify that this resize() doesn't break something
     imports.resize(totalReceiveLength_ * numPackets);
 
     // allocate space in requests
-    requests_.reserve(numReceives_);
     requests_.resize(0);
+    requests_.reserve(numReceives_);
 
     // start up the Irecv's
     {
       int curBufferOffset = 0;
-      for (int i = 0; i < (numReceives_ + selfMessage_); ++i) {
+      for (int i = 0; i < (numReceives_ + (selfMessage_ ? 1 : 0)); ++i) {
         if (imagesFrom_[i] != myImageID) { 
           // receiving this one from another image
           // setup reference into imports of the appropriate size and at the appropriate place
@@ -571,7 +710,7 @@ namespace Tpetra {
     Ordinal numBlocks = numSends_+ selfMessage_;
     Ordinal imageIndex = ZERO;
     while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
-      imageIndex++;
+      ++imageIndex;
     }
     if (imageIndex == numBlocks) {
       imageIndex = ZERO;
@@ -598,7 +737,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_ > ZERO) {
+      if (selfMessage_) {
         std::copy(exports.begin()+startsTo_[selfNum]*numPackets, exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
                   imports.begin()+selfReceiveOffset);
       }
@@ -607,7 +746,7 @@ namespace Tpetra {
       // allocate sendArray buffer
       std::vector<Packet> sendArray(maxSendLength_*numPackets); 
 
-      for (Ordinal i = ZERO; i < numBlocks; i++) {
+      for (Ordinal i = ZERO; i < numBlocks; ++i) {
         Ordinal p = i + imageIndex;
         if (p > (numBlocks - ONE)) {
           p -= numBlocks;
@@ -634,13 +773,12 @@ namespace Tpetra {
         }
       }
 
-      // FINISH: revisit this to make sure it's not stupidly inefficient
-      if (selfMessage_ > ZERO) {
+      if (selfMessage_) {
         for (Ordinal k = ZERO; k < lengthsTo_[selfNum]; ++k) {
           std::copy( exports.begin()+indicesTo_[selfIndex]*numPackets,
                      exports.begin()+indicesTo_[selfIndex]*numPackets + numPackets,
                      imports.begin() + selfReceiveOffset );
-          selfIndex++;
+          ++selfIndex;
           selfReceiveOffset += numPackets;
         }
       }
@@ -655,9 +793,12 @@ namespace Tpetra {
       Teuchos::waitAll(*comm_,arrayViewFromVector(requests_));
       // Requests should all be null, clear them
 #ifdef TEUCHOS_DEBUG
-      for (typename requests_::const_iterator i=requests_.begin(); i != requests_.end(); ++i) {
+      for (typename std::vector<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i=requests_.begin(); 
+           i != requests_.end(); ++i) 
+      {
         TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
-            "Tpetra::Distributor<"<<Teuchos::OrdinalTraits<Ordinal>::name()<<">::doWaits(): Requests should be null after call to Teuchos::waitAll().");
+            "Tpetra::Distributor<"<<Teuchos::OrdinalTraits<Ordinal>::name()
+            <<">::doWaits(): Requests should be null after call to Teuchos::waitAll().");
       }
 #endif
       requests_.clear();
@@ -682,8 +823,7 @@ namespace Tpetra {
       const Ordinal numPackets,
             std::vector<Packet>& imports) 
   {
-    // FINISH: what does this message mean?
-    TEST_FOR_EXCEPTION(getIndicesTo().empty(),std::runtime_error,
+    TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
         "Tpetra::Distributor<"<<Teuchos::OrdinalTraits<Ordinal>::name()<<">::doReversePosts(): Can only do reverse comm when original data is blocked by image.");
     if (reverseDistributor_ == Teuchos::null) {
       createReverseDistributor();
@@ -706,7 +846,7 @@ namespace Tpetra {
   {
     int const myImageID = comm_->getRank();
     int const numImages = comm_->getSize();
-    for (int i = 0; i < numImages; i++) {
+    for (int i = 0; i < numImages; ++i) {
       comm_->barrier();
       if (i == myImageID) {
         os << "[Image " << myImageID << " of " << numImages << "]" << endl;
@@ -733,31 +873,51 @@ namespace Tpetra {
   {
     int myImageID = comm_->getRank();
     int numImages = comm_->getSize();
-    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-    const Ordinal  one = Teuchos::OrdinalTraits<Ordinal>::one();
-    std::vector<Ordinal> msg_count(numImages, zero);
-    std::vector<Ordinal> counts(numImages, 1); // int vector for MPI sumAllAndScatter call
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal  ONE = Teuchos::OrdinalTraits<Ordinal>::one();
 
-    for (Ordinal i = zero; i < (numSends_ + selfMessage_); i++) {
-      msg_count[imagesTo_[i]] = one;
+    // to_nodes_from_me[i] == number of messages sent by this node to node i
+    // the info in numSends_, imagesTo_, lengthsTo_ concerns the contiguous sends
+    // therefore, each node will be listed in imagesTo_ at most once
+    {
+      std::vector<Ordinal> to_nodes_from_me(numImages, ZERO);
+      for (int i = ZERO; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
+#       ifdef TEUCHOS_DEBUG
+          SHARED_TEST_FOR_EXCEPTION(to_nodes_from_me[imagesTo_[i]] != 0, std::logic_error,
+              "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+#       endif
+        to_nodes_from_me[imagesTo_[i]] = ONE;
+      }
+      // each proc will get back only one item (hence, counts = ones) from the array of globals sums, 
+      // namely that entry corresponding to the node, and detailing how many receives it has.
+      // this total includes self sends
+      std::vector<Ordinal> counts(numImages, 1);
+      Teuchos::reduceAllAndScatter<Ordinal>(*comm_,Teuchos::REDUCE_SUM,numImages,&to_nodes_from_me[0],&counts[0],&numReceives_);
     }
-    
-    Teuchos::reduceAllAndScatter<Ordinal>(*comm_,Teuchos::REDUCE_SUM,numImages,&msg_count[0],&counts[0],&numReceives_);
-    lengthsFrom_.assign(numReceives_, zero);
-    imagesFrom_.assign(numReceives_, zero);
 
-    for (Ordinal i = zero; i < (numSends_ + selfMessage_); i++) {
+    // assign these to length numReceives, with zero entries
+    lengthsFrom_.assign(numReceives_, ZERO);
+    imagesFrom_.assign(numReceives_, ZERO);
+
+    // FINISH: why do these work? they are blocking sends, and should block until completion, which happens below
+    // FINISH: consider switching them to non-blocking
+    // NOTE: epetra has both, old (non-blocking) and new (mysterious)
+
+    for (Ordinal i = ZERO; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
       if (imagesTo_[i] != myImageID ) {
+        // send a message to imagesTo_[i], telling him that our pattern sends him lengthsTo_[i] blocks of packets
         Teuchos::send(*comm_,lengthsTo_[i],imagesTo_[i]);
       }
       else {
         // set selfMessage_ to end block of recv arrays
-        lengthsFrom_[numReceives_-one] = lengthsTo_[i];
-        imagesFrom_[numReceives_-one] = myImageID;
+        lengthsFrom_[numReceives_-ONE] = lengthsTo_[i];
+        imagesFrom_[numReceives_-ONE] = myImageID;
       }
     }
-    for (Ordinal i = zero; i < (numReceives_ - selfMessage_); i++) {
-      // receive 1 Ordinal variable from any sender.
+
+    //
+    for (Ordinal i = ZERO; i < (numReceives_ - (selfMessage_ ? 1 : 0)); ++i) {
+      // receive one Ordinal variable from any sender.
       // store the value in lengthsFrom_[i], and store the sender's ImageID in imagesFrom_[i]
       // imagesFrom_[i] = comm_->receive(&lengthsFrom_[i], 1, -1);
       imagesFrom_[i] = Teuchos::receive(*comm_,-1,&lengthsFrom_[i]);
@@ -767,24 +927,26 @@ namespace Tpetra {
     sortArrays(imagesFrom_, lengthsFrom_);
 
     // Compute indicesFrom_
-    totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), zero);
+    totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), ZERO);
     indicesFrom_.clear();
     indicesFrom_.reserve(totalReceiveLength_);
-    for (Ordinal i = 0; i < totalReceiveLength_; i++) {
+    for (Ordinal i = 0; i < totalReceiveLength_; ++i) {
       indicesFrom_.push_back(i);
     }
 
+    startsFrom_.clear();
     startsFrom_.reserve(numReceives_);
-    for (Ordinal i = zero, j = zero; i < numReceives_; ++i) {
+    for (Ordinal i = ZERO, j = ZERO; i < numReceives_; ++i) {
       startsFrom_.push_back(j);
       j += lengthsFrom_[i];
     }
 
-    numReceives_ -= selfMessage_;
+    if (selfMessage_) --numReceives_;
 
     comm_->barrier();
   }
 
+  // FINISH: walkthrough
   template <typename Ordinal>
   void Distributor<Ordinal>::computeSends(
       const std::vector<Ordinal> & importIDs,
@@ -793,31 +955,25 @@ namespace Tpetra {
       std::vector<Ordinal>& exportImageIDs)
   {
     int myImageID = comm_->getRank();
-    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-
-    Distributor<Ordinal> tempPlan(comm_);
-    std::vector<Ordinal> imageIDList;
-    std::vector<Ordinal> importObjs;
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
 
     Ordinal numImports = importImageIDs.size();
-    imageIDList = importImageIDs;
-
-    importObjs.resize(2*numImports);
-
-    for (Ordinal i = zero; i < numImports; i++ ) {  
+    std::vector<Ordinal> importObjs(2*numImports);
+    for (Ordinal i = ZERO; i < numImports; ++i ) {  
       importObjs[2*i]   = importIDs[i];
       importObjs[2*i+1] = myImageID;
     }
 
     Ordinal numExports;
-    tempPlan.createFromSends(imageIDList, numExports);
+    Distributor<Ordinal> tempPlan(comm_);
+    tempPlan.createFromSends(importImageIDs, numExports);
     exportIDs.resize(numExports);
     exportImageIDs.resize(numExports);
 
     std::vector<Ordinal> exportObjs;
     tempPlan.doPostsAndWaits(importObjs,2,exportObjs);
 
-    for (Ordinal i = zero; i < numExports; i++) {
+    for (int i = 0; i < numExports; ++i) {
       exportIDs[i]      = exportObjs[2*i];
       exportImageIDs[i] = exportObjs[2*i+1];
     }

@@ -32,6 +32,18 @@
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #include <Teuchos_Utils.hpp>
 
+// shared test for exception
+// just like Teuchos TEST_FOR_EXCEPTION, but with the assurance 
+// that all nodes throw the exception
+#define SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
+{ \
+    const int lcl_throw_exception = (throw_exception_test) ? 1 : 0; \
+    int gbl_throw; \
+    Teuchos::reduceAll(comm,Teuchos::REDUCE_MAX,lcl_throw_exception,&gbl_throw); \
+    TEST_FOR_EXCEPTION(gbl_throw,Exception,msg); \
+}
+
+
 namespace Tpetra {
 
   /*! 
