@@ -354,7 +354,7 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
   ResetTimer(0);
   
   //
-  //  Convert matrix to the form that Klu expects (Ap, VecAi, VecAval)
+  //  Convert matrix to the form that Klu expects (Ap, Ai, VecAval)
   //
 
   if (MyPID_==0) {
@@ -374,10 +374,9 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
 
     if ( firsttime ) { 
       Ap.resize( NumGlobalElements_+1 );
+      Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
       if ( ! StorageOptimized ) { 
-	VecAi.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
 	VecAval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ;
-	Ai = &VecAi[0];
 	Aval = &VecAval[0];
       }
     }
@@ -394,8 +393,10 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
 	      ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
 				ColIndices ) != 0 ) 
 	    AMESOS_CHK_ERR( -6 );
+          for ( int j=0; j < NumEntriesThisRow; j++ ) {
+            Ai[Ap[MyRow]+j] = ColIndices[j];
+          }
 	  if ( MyRow == 0 ) {
-	    Ai = ColIndices ;
 	    Aval = RowValues ;
 	  }
 	  Ap[MyRow+1] = Ap[MyRow] + NumEntriesThisRow ;
@@ -433,8 +434,7 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
 	if ( firsttime ) {
 	  Ap[MyRow] = Ai_index ;
 	  for ( int j = 0; j < NumEntriesThisRow; j++ ) {
-	    VecAi[Ai_index] = ColIndices[j] ;
-	    assert( VecAi[Ai_index] == Ai[Ai_index] ) ; 
+	    Ai[Ai_index] = ColIndices[j] ;
 	    //  VecAval[Ai_index] = RowValues[j] ;      //  We have to do this because of the hacks to get around bug #1502 
 	    if (ColIndices[j] == MyRow) {
 	      VecAval[Ai_index] += AddToDiag_;    
@@ -459,7 +459,7 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
   pk_A.ncol = NumGlobalElements_ ; 
   pk_A.nzmax = numentries_ ; 
   pk_A.p = &Ap[0] ;
-  pk_A.i = Ai ;
+  pk_A.i = &Ai[0] ;
   pk_A.nz = 0; 
   if ( firsttime ) { 
     pk_A.x = 0 ; 

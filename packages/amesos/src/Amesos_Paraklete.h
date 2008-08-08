@@ -239,7 +239,7 @@ private:
   bool IamInGroup_;  // True if this process is involved in the computation.  Set by SymbolicFactorization
   
   int SerialXlda_ ;
-  int *Lp, *Li, *Up, *Ui, *P ;	
+  long *Lp, *Li, *Up, *Ui, *P ;	
   double *Lx, *Ux ;
   //
   //  PrivateParakleteData_ contains pointers to data needed by paraklete whose
@@ -255,11 +255,10 @@ private:
   //! Ai and Aval can point directly into a matrix if it is StorageOptimized(), hence
   //! they may either be in vector form or may be a pointer into Epetra_CrsMatrix 
   //! internals.  Ap must always be constructed.  
-  vector <int> Ap;
-  vector <int> VecAi;
-  vector <double> VecAval;
+  std::vector <long> Ap;
+  std::vector <long> Ai;
+  std::vector <double> VecAval;
   double* Aval;
-  int *Ai;
 
   //! 1 if Problem_->GetOperator() is stored entirely on process 0
   int UseDataInPlace_;
@@ -314,9 +313,9 @@ private:
   const Epetra_LinearProblem * Problem_;
 
   //! Only used for RowMatrices to extract copies.
-  vector<int>ColIndicesV_;
+  std::vector<int> ColIndicesV_;
   //! Only used for RowMatrices to extract copies.
-  vector<double>RowValuesV_;
+  std::vector<double> RowValuesV_;
   //! Importer to process 0.
   Teuchos::RCP<Epetra_Import> ImportToSerial_;
   Teuchos::RCP<Epetra_Import> ImportRangeToSerial_;
