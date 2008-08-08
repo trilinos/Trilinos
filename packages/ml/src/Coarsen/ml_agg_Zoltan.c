@@ -552,7 +552,7 @@ void ML_zoltan_obj_size_multi_fn(void * data,int num_gid_entries,int num_lid_ent
     for(i=0;i<N;i++) {
       rv=(*A->getrow->func_ptr)(A,1,&i,A->max_nz_per_row,indices,values,&rowlength);
       if(rv==0) {printf("ML: Out of space in getrow i=%d/%d",i,N);fflush(stdout);*ierr=ZOLTAN_FATAL;}
-      sizes[i]=rowlength*(sizeof(double)+sizeof(int)); // add its cost here
+      sizes[i]=rowlength*(sizeof(double)+sizeof(int)); /* add its cost here */
     }
     ML_free(indices);
     ML_free(values);
