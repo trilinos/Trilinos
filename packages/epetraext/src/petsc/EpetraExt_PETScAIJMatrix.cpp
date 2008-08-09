@@ -157,7 +157,6 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
   // PETSc assumes the row number is global, whereas Trilinos assumes it's local.
   int globalRow = PetscRowStart_ + Row;
   assert(globalRow < PetscRowEnd_);
-  //printf("pid %d: getting global row %d (local row %d, range: [%d-%d]\n",Comm_->MyPID(),globalRow,Row, PetscRowStart_,PetscRowEnd_); fflush(stdout);
   ierr=MatGetRow(Amat_, globalRow, &nz, (const PetscInt**) &gcols, (const PetscScalar **) &vals);CHKERRQ(ierr);
 
   // I ripped this bit of code from PETSc's MatSetValues_MPIAIJ() in mpiaij.c.  The PETSc getrow returns everything in
@@ -186,21 +185,9 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
     */
     int offset = Amat_->cmap.n-1; //offset for non-local column indices
 
-    //printf("cmap.rstart = %d, cmap.rend = %d, cmap.n = %d, cmap.N = %d\n",
-    //        Amat_->cmap.rstart,Amat_->cmap.rend, Amat_->cmap.n,Amat_->cmap.N);
-
     for (int i=0; i<nz; i++) {
-/*
-      ierr = PetscTableFind(aij->colmap,gcols[i]+1,lcols+i);CHKERRQ(ierr);
-      if (lcols[i] != 0) {lcols[i]--; printf("lcols[%d] = %d\n",i,lcols[i]);}
-      else               {lcols[i] = gcols[i] - Amat_->cmap.rstart;
-                          printf("lcols[%d] = %d (%d - %d)\n",i,lcols[i],gcols[i],Amat_->cmap.rstart);
-      }
-      printf("       %d -> %d\n",gcols[i],lcols[i]);
-*/
       if (gcols[i] >= Amat_->cmap.rstart && gcols[i] < Amat_->cmap.rend) {
         lcols[i] = gcols[i] - Amat_->cmap.rstart;
-        //printf("       %d -> %d (local)\n",gcols[i],lcols[i]);
       } else {
 #       ifdef PETSC_USE_CTABLE
         ierr = PetscTableFind(aij->colmap,gcols[i]+1,lcols+i);CHKERRQ(ierr);
@@ -208,7 +195,6 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
 #       else
         lcols[i] = aij->colmap[gcols[i]] + offset;
 #       endif
-        //printf("       %d -> %d (ghost)\n",gcols[i],lcols[i]);
       }
 
     } //for i=0; i<nz; i++)
@@ -330,6 +316,8 @@ int Epetra_PETScAIJMatrix::Multiply(bool TransA,
     for (int j=0; j<length; j++) yptrs[i][j] = vals[j];
     ierr = VecRestoreArray(petscY,&vals);CHKERRQ(ierr);
   }
+
+  VecDestroy(petscX); VecDestroy(petscY);
   
   double flops = NumGlobalNonzeros();
   flops *= 2.0;
@@ -410,7 +398,6 @@ int Epetra_PETScAIJMatrix::InvRowSums(Epetra_Vector& x) const {
 }
 
 //=============================================================================
-//=============================================================================
 int Epetra_PETScAIJMatrix::InvColSums(Epetra_Vector& x) const {
 //
 // Put inverse of the sum of absolute values of the jth column of A in x[j].
@@ -461,86 +448,44 @@ int Epetra_PETScAIJMatrix::InvColSums(Epetra_Vector& x) const {
 }
 
 //=============================================================================
-int Epetra_PETScAIJMatrix::LeftScale(const Epetra_Vector& x) {
+int Epetra_PETScAIJMatrix::LeftScale(const Epetra_Vector& X) {
 //
 // This function scales the ith row of A by x[i].
 //
-//TODO Does PETSc have an ApplyPermutation method for matrices?!
+  double *xptr;
+  X.ExtractView(&xptr);
+  Vec petscX;
+# ifdef HAVE_MPI
+  int ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+# else //FIXME  I suspect this will bomb in serial (i.e., w/o MPI)
+  int ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+# endif
 
-  return(-1); //FIXME
+  MatDiagonalScale(Amat_, petscX, PETSC_NULL);
 
-  if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if (!OperatorRangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
-
-  int i, j;
-  int * bindx;
-  double * val;
-/*
-  FIXME
-  int * bindx = Amat_->bindx;
-  double * val = Amat_->val;
-*/
-
-
-  for (i=0; i < NumMyRows_; i++) {
-    
-    int NumEntries = bindx[i+1] - bindx[i];
-    double scale = x[i];
-    val[i] *= scale;
-    double * Values = val + bindx[i];
-    for (j=0; j < NumEntries; j++)  Values[j] *= scale;
-  }
-  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
-  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
-  UpdateFlops(NumGlobalNonzeros());
+  ierr=VecDestroy(petscX); CHKERRQ(ierr);
   return(0);
-}
+} //LeftScale()
 
 //=============================================================================
-int Epetra_PETScAIJMatrix::RightScale(const Epetra_Vector& x) {
+int Epetra_PETScAIJMatrix::RightScale(const Epetra_Vector& X) {
 //
 // This function scales the jth row of A by x[j].
 //
-//TODO Does PETSc have an ApplyPermutation method for matrices?!
+  double *xptr;
+  X.ExtractView(&xptr);
+  Vec petscX;
+# ifdef HAVE_MPI
+  int ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+# else //FIXME  I suspect this will bomb in serial (i.e., w/o MPI)
+  int ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
+# endif
 
-  return(-1); //FIXME
+  MatDiagonalScale(Amat_, PETSC_NULL, petscX);
 
-  if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if (!OperatorDomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
-
-  int * bindx;
-  double * val;
-/*
-  FIXME
-  int * bindx = Amat_->bindx;
-  double * val = Amat_->val;
-*/
-  Epetra_Vector * xp = 0;
-  Epetra_Vector * x_tmp = 0;
-
-  // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
-  if (RowMatrixImporter()!=0) {
-    x_tmp = new Epetra_Vector(RowMatrixColMap()); // Create import vector if needed
-    x_tmp->Import(x,*RowMatrixImporter(), Insert); // x_tmp will have all the values we need
-    xp = x_tmp;
-  }
-
-  int i, j;
-
-  for (i=0; i < NumMyRows_; i++) {
-    int NumEntries = bindx[i+1] - bindx[i];
-    double scale = (*xp)[i];
-    val[i] *= scale;
-    double * Values = val + bindx[i];
-    int * Indices = bindx + bindx[i];
-    for (j=0; j < NumEntries; j++)  Values[j] *=  (*xp)[Indices[j]];
-  }
-  if (x_tmp!=0) delete x_tmp;
-  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
-  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
-  UpdateFlops(NumGlobalNonzeros());
+  ierr=VecDestroy(petscX); CHKERRQ(ierr);
   return(0);
-}
+} //RightScale()
 
 //=============================================================================
 

@@ -101,7 +101,7 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
     \param Out
 	   Values - Extracted values for this row.
     \param Out
-	   Indices - Extracted global column indices for the corresponding values.
+	   Indices - Extracted local column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful.
   */
@@ -212,7 +212,7 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
 
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
     //! Returns a pointer to the PETSc matrix used to create this object.
