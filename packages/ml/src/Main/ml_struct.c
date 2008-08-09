@@ -6297,6 +6297,33 @@ int ML_Gen_Smoother_SubdomainOverlap(ML *ml, int level, int overlap) {
   return 0;
 }
 
+#ifdef HAVE_PETSC
+int ML_Gen_Smoother_Petsc(ML *ml, int level, int pre_or_post, int ntimes, ML_PetscKSP petscKSP)
+{
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
+   char str[80];
+   int status=0;
+
+   fun = ML_Smoother_Petsc;
+
+   if (pre_or_post == ML_PRESMOOTHER || pre_or_post == ML_BOTH) {
+       sprintf(str,"Petsc_pre%d",level);
+       status = ML_Smoother_Set(&(ml->pre_smoother[level]), (void*)petscKSP,
+                                fun, ntimes, 1.0, str);
+   }
+   if (pre_or_post == ML_POSTSMOOTHER || pre_or_post == ML_BOTH) {
+       sprintf(str,"Petsc_post%d",level);
+       status = ML_Smoother_Set(&(ml->post_smoother[level]), (void*)petscKSP,
+                               fun, ntimes,1.0, str);
+   }
+   if (pre_or_post != ML_PRESMOOTHER
+       && pre_or_post != ML_POSTSMOOTHER
+       && pre_or_post != ML_BOTH)
+     pr_error("ML_Gen_Smoother_Petsc: unknown pre_or_post choice\n");
+
+   return(status);
+} /*ML_Gen_Smoother_Petsc*/
+#endif /*ifdef HAVE_PETSC*/
 
 #include "ml_amesos.h"
 #define newrap       /* Should always be defined for better performance */

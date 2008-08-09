@@ -460,6 +460,7 @@ $(srcdir)/Utils/ml_Preconditioner.h                      \
 $(srcdir)/Utils/Epetra_Operator_With_MatMat.h            \
 $(srcdir)/Utils/Epetra_Multi_CrsMatrix.h                 \
 $(srcdir)/Utils/ml_ValidateParameters.h                  \
+$(srcdir)/Utils/ml_petsc.h                               \
 $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.h   \
 $(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.h         \
 $(srcdir)/RefMaxwell/ml_RefMaxwell.h                     \

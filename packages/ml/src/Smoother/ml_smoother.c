@@ -1685,7 +1685,7 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
     if (ierr != 0 && ML_Get_PrintLevel() > 0
         && Amat->comm->ML_mypid == 0 && firstTime)
     {
-      printf("ML_Smoother_NewGS: can't get Crs data pointers (return code %d, mat_type = %d\n",ierr,Amat->type);
+      printf("ML_Smoother_NewGS: can't get Crs data pointers (return code %d, mat_type = %d)\n",ierr,Amat->type);
       firstTime = 0;
     }
   }
@@ -8096,6 +8096,67 @@ void ML_Smoother_DestroySubdomainOverlap(void *data)
   ML_Destroy(&sub_ml);
 }
 
+/* *************************************************************************  */
+
+#include "ml_petsc.h"
+
+#ifdef HAVE_PETSC
+int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen, 
+                      double rhs[])
+{
+  int ierr, i;
+  double *x2;
+  Vec petscX, petscB;
+  ML_PetscKSP petscKSP;
+  ML_Comm *comm = sm->my_level->comm;
+  ML_Operator *Amat = sm->my_level->Amat;
+  ML_CommInfoOP *getrow_comm;
+
+  /*Exchange data.*/
+  getrow_comm= Amat->getrow->pre_comm;
+  if (getrow_comm != NULL) {
+     x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
+                                 *sizeof(double));
+     if (x2 == NULL) {
+       if (comm->ML_mypid == 0) {
+         fprintf(stderr,"Not enough space in ML_Smoother_Petsc()\n");
+#        ifdef HAVE_MPI
+         MPI_Finalize();
+#        endif
+         exit(EXIT_FAILURE);
+       }
+     }
+     for (i = 0; i < inlen; i++) x2[i] = x[i];
+  }
+  else x2 = x;
+
+  /* Set up the necessary PETSc data structures.*/
+# ifdef HAVE_MPI
+  ierr=VecCreateMPIWithArray(comm->USR_comm,inlen,PETSC_DECIDE,x2,&petscX); CHKERRQ(ierr);
+  ierr=VecCreateMPIWithArray(comm->USR_comm,outlen,PETSC_DECIDE,rhs,&petscB); CHKERRQ(ierr);
+# else /*FIXME  I suspect this will bomb in serial (i.e., w/o MPI) */
+  ierr=VecCreateSeqWithArray(comm->USR_comm,inlen,inlen,x2,&petscX); CHKERRQ(ierr);
+  ierr=VecCreateSeqWithArray(comm->USR_comm,outlen,outlen,rhs,&petscB); CHKERRQ(ierr);
+# endif
+
+  petscKSP = (ML_PetscKSP) sm->smoother->data;
+  for (i = 0; i < sm->ntimes; i++) {
+    if (getrow_comm != NULL)
+      ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
+    ierr = KSPSolve(petscKSP,petscB,petscX);CHKERRQ(ierr);
+  }
+
+  /* Clean up. */
+  ierr=VecDestroy(petscX);CHKERRQ(ierr);
+  ierr=VecDestroy(petscB);CHKERRQ(ierr);
+
+  if (getrow_comm != NULL) {
+    for (i = 0; i < inlen; i++) x[i] = x2[i];
+    ML_free(x2);
+  }
+  return 0;
+} /*ML_Smoother_Petsc*/
+#endif
 
 
 #ifdef WKC

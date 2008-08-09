@@ -303,6 +303,10 @@ extern int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *,int nl,int pre_or_post,
                      int ntimes, int length, int *blkinfo);
 extern int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *,int nl,
                      int pre_or_post, int ntimes, int length, int *blkinfo);
+#include "ml_petsc.h"
+#ifdef HAVE_PETSC
+extern int ML_Gen_Smoother_Petsc(ML *ml, int level, int pre_or_post, int ntimes, ML_PetscKSP petscKSP);
+#endif
 
 extern int ML_Gen_Smoother_GSextra( ML *ml , int nl, int pre_or_post,
 		     int ntimes, double omega, int Nextra, int extra[]);

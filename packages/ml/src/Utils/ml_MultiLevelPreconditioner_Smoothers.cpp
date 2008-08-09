@@ -39,6 +39,7 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Chebyshev.h"
 #endif
+#include "ml_petsc.h"
 extern "C" {
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
                                                ML_Smoother* Smoother,
@@ -1000,6 +1001,52 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
            ML_Gen_Smoother_Cheby(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
         }
       }
+
+    } else if( MySmoother == "petsc" ) {
+
+      // ======================================== //
+      // PETSc smoother (for PETSc matrices only) //
+      // ======================================== //
+
+      // We assume the PETSc application has set up the KSP object entirely.
+      // ML just applies it.
+
+#     ifdef HAVE_PETSC
+
+      
+/*
+      void *voidPC = 0;
+      ML_PetscPC petscPC = 0;
+      petscPC = (ML_PetscPC) smList.get("smoother: petsc pc", voidPC);
+*/
+      void *voidKSP = 0;
+      ML_PetscKSP petscKSP = 0;
+      petscKSP = (ML_PetscKSP) smList.get("smoother: petsc pc", voidKSP);
+      if (petscKSP == 0) {
+        if (Comm().MyPID() == 0)
+          cerr << ErrorMsg_
+               << "You must provide a fully-constructed KSP context to use a PETSc smoother."
+               << endl;
+        exit(EXIT_FAILURE);
+      }
+      const char* pcName;
+      ML_PetscPC petscPC;
+      int ierr = KSPGetPC(petscKSP,&petscPC);CHKERRQ(ierr);
+      ierr = PCGetType(petscPC,&pcName);
+      if( verbose_ ) cout << msg << "PETSc smoother (type="
+              << pcName
+			  << ",sweeps=" << Mynum_smoother_steps << ","
+			  << MyPreOrPostSmoother << ")" << endl;
+
+      ML_Gen_Smoother_Petsc(ml_, currentLevel, pre_or_post, Mynum_smoother_steps, petscKSP);
+
+#     else
+      if (Comm().MyPID() == 0)
+       cerr << ErrorMsg_
+            << "You must configure ML with PETSc support enabled."
+            << endl;
+      exit(EXIT_FAILURE);
+#     endif /*ifdef HAVE_PETSC*/
 
     } else if( MySmoother == "user-defined" || MySmoother == "user defined" ) {
 

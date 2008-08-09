@@ -255,7 +255,7 @@ extern int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double r
 
 #ifdef WKC
 /* WKC -- double * are actually Epetra_MultiVectors */
-//extern int ML_Cheby_WKC(ML_Smoother *sm, int inlen, double *x, int outlen, double *rhs);
+/*extern int ML_Cheby_WKC(ML_Smoother *sm, int inlen, double *x, int outlen, double *rhs);*/
 extern int ML_Cheby_WKC(void *sm, int inlen, double *x, int outlen, double *rhs);
 #endif
 
@@ -277,6 +277,10 @@ extern  int ML_Smoother_Hiptmair(ML_Smoother *, int, double *, int, double *);
 extern  int ML_Smoother_BlockHiptmair(ML_Smoother *, int, double *, int, double *);
 extern int ML_Smoother_ApplySubdomainOverlap(ML_Smoother *sm, int inlen,
 					    double x[],int outlen, double b[]);
+#ifdef HAVE_PETSC
+extern int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen, 
+                      double rhs[]);
+#endif
 
 extern void ML_Smoother_DestroySubdomainOverlap(void *data);
 
