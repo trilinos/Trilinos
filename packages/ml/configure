@@ -1615,6 +1615,7 @@ Optional Packages:
                           is no)
   --with-ml_zoltan3       Enable Zoltan 3.0 support. This option requires that
                           MPI and --enable-zoltan. (default is no)
+  --with-petsc            Enable PETSc support. (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -8906,6 +8907,34 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
+#
+
+
+# Check whether --with-petsc was given.
+if test "${with_petsc+set}" = set; then
+  withval=$with_petsc; ac_cv_use_petsc=$withval
+else
+  ac_cv_use_petsc=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use petsc" >&5
+echo $ECHO_N "checking whether to use petsc... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_petsc" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PETSC
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+#
 
 #
 # ------------------------------------------------------------------------

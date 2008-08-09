@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
   MLList.set("smoother: type","symmetric Gauss-Seidel");
   MLList.set("smoother: pre or post", "both");
   MLList.set("low memory usage", true);
+  MLList.set("ML debug mode", true);
 
 #ifdef HAVE_ML_AMESOS
   MLList.set("coarse: type","Amesos-KLU");
