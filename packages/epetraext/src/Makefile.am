@@ -456,19 +456,11 @@ endif
 ### Only build PETSc interfaces if both the PETSc and experimental
 ### configure flags are set
 if BUILD_PETSC
-if BUILD_EXPERIMENTAL
 PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
 PETSC   = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
 else
 PETSC_H =
 PETSC   =
-endif
-
-else
-
-PETSC_H =
-PETSC =
-
 endif
 
 # ------------------------------------------------------------------------

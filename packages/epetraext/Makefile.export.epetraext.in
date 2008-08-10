@@ -18,6 +18,7 @@ _EPETRAEXT_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
                      -I@abs_top_srcdir@/src/model_evaluator \
                      -I@abs_top_srcdir@/src/transform \
                      -I@abs_top_srcdir@/src/zoltan \
+                     -I@abs_top_srcdir@/src/petsc \
                      $(EPETRA_INCLUDES) \
                      $(TRIUTILS_INCLUDES) \
                      $(TEUCHOS_INCLUDES)

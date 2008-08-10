@@ -273,7 +273,7 @@ am__objects_20 = EpetraExt_MultiMpiComm.$(OBJEXT)
 am__objects_23 = EpetraExt_ModelEvaluator.$(OBJEXT) \
 	EpetraExt_ModelEvaluatorScalingTools.$(OBJEXT)
 @BUILD_MODEL_EVALUATOR_TRUE@am__objects_24 = $(am__objects_23)
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@am__objects_25 = EpetraExt_PETScAIJMatrix.$(OBJEXT)
+@BUILD_PETSC_TRUE@am__objects_25 = EpetraExt_PETScAIJMatrix.$(OBJEXT)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_9) $(am__objects_11) \
 	$(am__objects_14) $(am__objects_16) $(am__objects_18) \
@@ -823,15 +823,13 @@ EXTRA_RESTRICT = \
 @BUILD_RESTRICT_TRUE@RESTRICT = \
 @BUILD_RESTRICT_TRUE@    $(EXTRA_RESTRICT)
 
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_PETSC_TRUE@PETSC_H = 
+@BUILD_PETSC_FALSE@PETSC_H = 
 
 ### Only build PETSc interfaces if both the PETSc and experimental
 ### configure flags are set
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
-@BUILD_PETSC_FALSE@PETSC_H = 
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_PETSC_TRUE@PETSC = 
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_PETSC_TRUE@PETSC = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+@BUILD_PETSC_TRUE@PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
 @BUILD_PETSC_FALSE@PETSC = 
+@BUILD_PETSC_TRUE@PETSC = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications

@@ -41,6 +41,9 @@
 /* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
 
+/* Define if want to build epetraext-coloring */
+#undef HAVE_COLORING
+
 /* Define to 1 if you have the <cstdio> header file. */
 #undef HAVE_CSTDIO
 
@@ -80,7 +83,7 @@
 /* Define if want to build epetraext-graphreorderings */
 #undef HAVE_GRAPH_REORDERINGS
 
-/* Define if want to build epetraext-coloring */
+/* Define if want to build epetraext-inout */
 #undef HAVE_INOUT
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -143,8 +146,11 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
-/* Define if want to build epetraext-petsc */
+/* Define if want to build petsc */
 #undef HAVE_PETSC
+
+/* Define if want to build epetraext-restrict */
+#undef HAVE_RESTRICT
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

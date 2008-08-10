@@ -34,7 +34,6 @@
 #############################################################################*/
 
 #include "EpetraExt_ConfigDefs.h"
-#ifdef HAVE_EXPERIMENTAL
 #ifdef HAVE_PETSC
 
 #include "Epetra_Import.h"
@@ -519,4 +518,3 @@ void Epetra_PETScAIJMatrix::Print(ostream& os) const {
 }
 
 #endif /*HAVE_PETSC*/
-#endif /*HAVE_EXPERIMENTAL*/
