@@ -52,6 +52,12 @@ class FEDataFilter : public Filter {
                    const double *const *beta,  
                    const double *const *gamma);
 
+   int loadNodeBCs(int numNodes,
+                   const GlobalID *nodeIDs,
+                   int fieldID,
+                   const int* offsetsIntoField,
+                   const double* prescribedValues);
+
    int loadElemBCs(int numElems,
                    const GlobalID *elemIDs,
                    int fieldID,
