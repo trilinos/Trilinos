@@ -326,8 +326,11 @@ int AztecOO::SetAztecDefaults() {
 
   // If not in constructor, then we need to make sure any allocated memory is
   // deleted before we zero out pointers.
-  if (!inConstructor_) DeleteMemory();
-  
+  if (inConstructor_) 
+    Label_ = 0;
+  else
+    DeleteMemory();
+
   SetLabel("AztecOO Object");
   AZ_defaults(options_, params_);
   options_[AZ_poly_ord] = 1; // Redefine default value to be 1 (instead of 3).
