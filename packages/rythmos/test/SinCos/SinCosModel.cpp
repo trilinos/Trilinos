@@ -32,6 +32,7 @@
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
+#include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 
 #ifdef SINCOSMODEL_DEBUG
 #include <iostream>
@@ -142,6 +143,14 @@ SinCosModel::create_W_op() const
   return(matrix);
 }
 
+RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > 
+SinCosModel::get_W_factory() const
+{
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = 
+    Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
+  return W_factory;
+}
+
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::createInArgs() const
 {
@@ -177,7 +186,7 @@ void SinCosModel::evalModelImpl(
   const RCP<const VectorBase<double> > x_in = inArgs.get_x().assert_not_null();
   Thyra::ConstDetachedVectorView<double> x_in_view( *x_in ); 
 
-  double t = inArgs.get_t();
+  //double t = inArgs.get_t();
 
   RCP<const VectorBase<double> > x_dot_in;
   double beta = inArgs.get_beta();

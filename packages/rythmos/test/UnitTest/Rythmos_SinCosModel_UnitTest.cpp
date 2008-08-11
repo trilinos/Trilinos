@@ -32,6 +32,7 @@
 
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
+#include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 
 namespace Rythmos {
 
@@ -121,12 +122,20 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, spaces ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, create_W_op ) {
-    RCP<SinCosModel> explicit_model = sinCosModel(false);
-    RCP<Thyra::LinearOpBase<double> > W_op = explicit_model->create_W_op();
-    RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op,false);
-    TEST_EQUALITY_CONST( Teuchos::is_null(matrix), false );
-    TEST_EQUALITY_CONST( matrix->domain()->dim(), 2 );
-    TEST_EQUALITY_CONST( matrix->range()->dim(), 2 );
+  RCP<SinCosModel> explicit_model = sinCosModel(false);
+  RCP<Thyra::LinearOpBase<double> > W_op = explicit_model->create_W_op();
+  RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op,false);
+  TEST_EQUALITY_CONST( Teuchos::is_null(matrix), false );
+  TEST_EQUALITY_CONST( matrix->domain()->dim(), 2 );
+  TEST_EQUALITY_CONST( matrix->range()->dim(), 2 );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, get_W_factory ) {
+  RCP<SinCosModel> explicit_model = sinCosModel(false);
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = explicit_model->get_W_factory();
+  RCP<const Thyra::DefaultSerialDenseLinearOpWithSolveFactory<double> > myFactory =
+    Teuchos::rcp_dynamic_cast<const Thyra::DefaultSerialDenseLinearOpWithSolveFactory<double> >(W_factory,false);
+  TEST_EQUALITY_CONST( Teuchos::is_null(myFactory), false );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, createInArgs ) {

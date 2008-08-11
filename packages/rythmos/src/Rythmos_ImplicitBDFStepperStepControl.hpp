@@ -477,6 +477,11 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
         }
       }
     }
+    if (currentOrder_ < minOrder_) {
+      action = ACTION_RAISE;
+    } else if ( (currentOrder_ == minOrder_) && (action == ACTION_LOWER) ) {
+      action = ACTION_MAINTAIN;
+    }
     if (action == ACTION_RAISE) {
       currentOrder_++;
       Est_ = Ekp1_;
@@ -601,11 +606,14 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
         newTimeStep = rr * hh_;
       }
     }
+    if (newOrder_ >= minOrder_) {
+      currentOrder_ = newOrder_;
+    }
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
       *out << "rr = " << rr << std::endl;
       *out << "newOrder_ = " << newOrder_ << std::endl;
+      *out << "currentOrder_ = " << currentOrder_ << std::endl;
     }
-    currentOrder_ = newOrder_;
     if (numberOfSteps_ == 0) { // still first step
       psi_[0] = newTimeStep;
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -614,9 +622,11 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
       }
     }
   } else if (!adjustStep) {
-    *out << "Rythmos_ImplicitBDFStepperStepControl::rejectStep(...):  "
-         << "Warning:  Local error test failed with constant step-size."
-         << std::endl;
+    if ( as<int>(verbLevel) != as<int>(Teuchos::VERB_NONE) ) {
+      *out << "Rythmos_ImplicitBDFStepperStepControl::rejectStep(...):  "
+          << "Warning:  Local error test failed with constant step-size."
+          << std::endl;
+    }
   }
 
   AttemptedStepStatusFlag return_status = PREDICT_AGAIN;
@@ -810,6 +820,11 @@ void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
   parameterList_ = paramList;
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 
+  minOrder_ = parameterList_->get("minOrder",int(1)); // minimum order
+  TEST_FOR_EXCEPTION(
+      !((1 <= minOrder_) && (minOrder_ <= 5)), std::logic_error,
+      "Error, minOrder_ = " << minOrder_ << " is not in range [1,5]!\n"
+      );
   maxOrder_ = parameterList_->get("maxOrder",int(5)); // maximum order
   TEST_FOR_EXCEPTION(
       !((1 <= maxOrder_) && (maxOrder_ <= 5)), std::logic_error,
@@ -835,6 +850,7 @@ void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
   setDefaultMagicNumbers_(parameterList_->sublist("magicNumbers"));
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "minOrder_ = " << minOrder_ << std::endl;
     *out << "maxOrder_ = " << maxOrder_ << std::endl;
     *out << "relErrTol  = " << relErrTol_  << std::endl;
     *out << "absErrTol  = " << absErrTol_  << std::endl;
@@ -905,6 +921,7 @@ ImplicitBDFStepperStepControl<Scalar>::getValidParameters() const
     RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
 
+    pl->set<int>   ( "minOrder",         1              );
     pl->set<int>   ( "maxOrder",         5              );
     pl->set<Scalar>( "relErrTol",        Scalar(1.0e-4) );
     pl->set<Scalar>( "absErrTol",        Scalar(1.0e-6) );
@@ -1039,6 +1056,7 @@ void ImplicitBDFStepperStepControl<Scalar>::defaultInitializeAllData_()
   numberOfSteps_ = 0;
   stepSizeType_ = STEP_TYPE_VARIABLE;
 
+  minOrder_ = -1;
   maxOrder_ = -1;
   nef_ = 0;
   midStep_ = false;
@@ -1086,6 +1104,16 @@ void ImplicitBDFStepperStepControl<Scalar>::defaultInitializeAllData_()
   minTimeStep_ = mone;
   maxTimeStep_ = mone;
   newtonConvergenceStatus_ = -1;
+}
+
+template<class Scalar>
+int ImplicitBDFStepperStepControl<Scalar>::getMinOrder() const
+{
+  TEST_FOR_EXCEPTION(
+      stepControlState_ == UNINITIALIZED, std::logic_error,
+      "Error, attempting to call getMinOrder before intiialization!\n"
+      );
+  return(minOrder_);
 }
 
 template<class Scalar>

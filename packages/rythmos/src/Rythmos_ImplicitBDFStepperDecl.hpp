@@ -136,7 +136,7 @@ public:
   /** \brief Creates copies of all internal data (including the parameter
    * list) except the model which is assumed to stateless.
    *
-   * If a shallow copy of the model is not appropirate for some reasone, then
+   * If a shallow copy of the model is not appropirate for some reason, then
    * the client can simply reset the model using
    * <tt>returnVal->setModel()</tt>.
    */

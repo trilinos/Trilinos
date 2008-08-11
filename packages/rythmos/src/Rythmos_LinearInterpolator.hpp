@@ -90,6 +90,13 @@ private:
 
 };
 
+// non-member constructor
+template<class Scalar>
+RCP<LinearInterpolator<Scalar> > linearInterpolator()
+{
+  RCP<LinearInterpolator<Scalar> > li = rcp(new LinearInterpolator<Scalar>() );
+  return li;
+}
 
 template<class Scalar>
 LinearInterpolator<Scalar>::LinearInterpolator()
@@ -304,6 +311,7 @@ LinearInterpolator<Scalar>::unsetParameterList()
   std::swap( temp_param_list, parameterList_ );
   return(temp_param_list);
 }
+
 
 
 } // namespace Rythmos

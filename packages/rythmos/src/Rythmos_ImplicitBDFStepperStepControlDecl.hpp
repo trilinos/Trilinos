@@ -88,6 +88,9 @@ class ImplicitBDFStepperStepControl
     StepControlStrategyState getCurrentState();
 
     /** \brief . */
+    int getMinOrder() const;
+
+    /** \brief . */
     int getMaxOrder() const;
 
     /** \brief . */
@@ -156,6 +159,7 @@ class ImplicitBDFStepperStepControl
     Scalar hh_;
     int numberOfSteps_;
     StepSizeType stepSizeType_;
+    int minOrder_;
     int maxOrder_;
     int  nef_;
     bool midStep_; // true after setStepSize and nextStepSize and nextStepOrder and setCorrection and acceptStep

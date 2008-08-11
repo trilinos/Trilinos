@@ -430,6 +430,9 @@ TimeStepNonlinearSolver<Scalar>::solve(
 
   // Initialize storage for algorithm
   if(!J_.get()) J_ = model_->create_W();
+  TEST_FOR_EXCEPTION( Teuchos::is_null(J_), std::logic_error,
+      "Error!  model->create_W() returned a null pointer!\n"
+      );
   RCP<Thyra::VectorBase<Scalar> > f = createMember(model_->get_f_space());
   RCP<Thyra::VectorBase<Scalar> > dx = createMember(model_->get_x_space());
   RCP<Thyra::VectorBase<Scalar> > dx_last = createMember(model_->get_x_space());

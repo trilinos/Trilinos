@@ -67,6 +67,8 @@ class SinCosModel : public Thyra::StateFuncModelEvaluatorBase<double>
   /** \brief . */
   RCP<Thyra::LinearOpBase<double> > create_W_op() const;
   /** \brief . */
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
+  /** \brief . */
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
 
   //@}
