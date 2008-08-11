@@ -1,0 +1,31 @@
+<ParameterList>
+  <ParameterList name="Direction">
+    <Parameter name="Method" type="string" value="Newton"/>
+    <ParameterList name="Newton">
+      <ParameterList name="Linear Solver">
+        <Parameter name="Tol" type="double" value="1e-005"/>
+        <Parameter name="Tolerance" type="double" value="1e-010"/>
+      </ParameterList>
+      <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Line Search">
+    <Parameter name="Method" type="string" value="Polynomial"/>
+    <ParameterList name="Polynomial">
+      <Parameter name="Allowed Relative Increase" type="int" value="100"/>
+      <Parameter name="Alpha Factor" type="double" value="0.0001"/>
+      <Parameter name="Default Step" type="int" value="1"/>
+      <Parameter name="Force Interpolation" type="bool" value="0"/>
+      <Parameter name="Interpolation Type" type="string" value="Cubic"/>
+      <Parameter name="Max Bounds Factor" type="double" value="0.5"/>
+      <Parameter name="Max Iters" type="int" value="3"/>
+      <Parameter name="Maximum Iteration for Increase" type="int" value="0"/>
+      <Parameter name="Min Bounds Factor" type="double" value="0.1"/>
+      <Parameter name="Recovery Step" type="int" value="1"/>
+      <Parameter name="Recovery Step Type" type="string" value="Constant"/>
+      <Parameter name="Sufficient Decrease Condition" type="string" value="Armijo-Goldstein"/>
+      <Parameter name="Use Counters" type="bool" value="1"/>
+    </ParameterList>
+  </ParameterList>
+  <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+</ParameterList>

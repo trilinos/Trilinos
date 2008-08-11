@@ -1,0 +1,8 @@
+<ParameterList>
+  <Parameter name="Matrix File" type="string" value="FourByFour.mtx"/>
+  <ParameterList name="Linear Solver Builder">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+  </ParameterList>
+  <ParameterList name="LinearOpWithSolveTester"/>
+</ParameterList>

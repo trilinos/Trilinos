@@ -1,0 +1,2 @@
+#!/bin/sh
+find . -type f -exec fix-dos-text-file.pl '{}' '{}' ';'

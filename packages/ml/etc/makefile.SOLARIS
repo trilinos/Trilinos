@@ -1,0 +1,14 @@
+OPT_FLAGS=-xO4
+ARCH_FLAGS=$(OPT_FLAGS) -DCATCH_FPE -xarch=generic
+CC=cc 
+FC=f77
+CXX=CC
+RANLIB=ranlib
+LINKER=$(CC)
+ARCH_LIBS=-lmalloc -lM77 -lF77 -lsunmath -lnsl -lsocket -lm
+AR=ar
+##LAPACK PATH   Note: I use '-L/opt/SUNWspro/lib -lnsl -xlic_lib=sunperf -lsunmath'
+##LAPACK LIB    Note: I use 'NA'
+##BLAS PATH     Note: I use 'NA'
+##BLAS LIB      Note: I use 'NA'
+#compile_check SOLARIS yes x "/opt/SUNWspro/lib:::nsl -xlic_lib=sunperf -lsunmath"

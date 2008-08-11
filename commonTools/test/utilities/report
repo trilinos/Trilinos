@@ -1,0 +1,384 @@
+#!/usr/bin/perl -w
+# /Trilinos/commonTools/test/utilities/report
+
+################################################################################
+# The Trilinos Project - report
+# 
+# Mike Phenow, Jim Willenbring
+#
+# This is a utility for reporting the results of runconfigure, runmake, and
+# runtests (though they may have been called by runbuild, runharness, or some
+# other higher-level program).
+#
+# Note that you will need to have a checked out copy of TrilinosTestResults.
+# For your own sanity, DO NOT run a standard checkout of this directory.
+# Instead, check use the -l flag to prevent cvs from recursively checking out
+# the entire contents:  
+#
+# cvs checkout -l TrilinosTestResults
+#
+# Also, you'll probably never want to run a standard cvs update command on the
+# TrilinosTestResults directory.
+#
+################################################################################
+
+use strict;
+
+# Variable Declarations ========================================================
+
+# Command line arguments:
+
+my $ttrDir;             # TrilinosTestResults directory     (required argument) 
+my $resultsDir;         # results directory                 (required argument) 
+my $ssgUsername;        # software.sandia.gov username      (required argument) 
+
+my $verbosity;          # verbosity level                   (default: 1)
+
+my $runStartTime;
+my $runStartTimeForFilename;
+
+# Constants
+my $v0 = "0";           # quiet
+my $v1 = "1";           # normal verbosity
+my $v2 = "2";           # level 2 verbosity
+my $v3 = "4";           # level 3 verbosity
+        
+################################################################################
+# Execution ####################################################################
+################################################################################
+
+getArgs();
+init();
+
+my $exitStatus = run();
+cleanUp();
+exit $exitStatus;
+
+################################################################################
+# Subroutines ##################################################################
+################################################################################
+
+    ############################################################################
+    # getArgs()
+    #
+    # Parse command line arguments.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub getArgs {
+        
+        # Argument variables that don't need to be global.
+        my $quiet;
+        my $help;
+
+        # Gather command line arguments.
+        use Getopt::Long;
+        GetOptions( "ttr-dir=s" => \$ttrDir,
+                    "results-dir=s" => \$resultsDir,
+                    "ssg-username=s" => \$ssgUsername,
+                    "verbosity=i" => \$verbosity,
+                    "quiet" => \$quiet,
+                    "help" => \$help );
+        
+        # Print help and exit.
+        if ($help) { 
+            printHelp();
+            exit;
+        }
+        
+        # Enforce and/or prepare arguments.
+        
+        # check for existance of ttr-dir argument and actual directory
+        if (!$ttrDir) {
+            die "ttr-dir value required, see --help for more information\n"; 
+        } else {
+            if (!stat($ttrDir)) {
+                die "cannot stat ttr-dir: $ttrDir\n";
+            }
+        }
+        
+        # check for existance of results-dir argument and actual directory
+        if (!$resultsDir) {
+            die "results-dir value required, see --help for more information\n"; 
+        } else {
+            if (!stat($resultsDir)) {
+                die "cannot stat results-dir: $resultsDir\n";
+            }
+        }
+        
+        # check for existance of ssg-username argument
+        if (!$ssgUsername) {
+            die "ssg-username value required, see --help for more information\n"; 
+        } 
+        
+        # Set verbosity level to corresponding constant.  0, 1, 2, and 3 are
+        # used for the levels the user may specify, but they are stored as 0,
+        # 1, 2, and 4 so they can be combined and processed with bitwise
+        # operations.
+        if ($verbosity) {
+            if      ($verbosity == 0) { $verbosity = $v0; }
+            elsif   ($verbosity == 1) { $verbosity = $v1; }
+            elsif   ($verbosity == 2) { $verbosity = $v2; }
+            elsif   ($verbosity == 3) { $verbosity = $v3; }
+        } else {
+            $verbosity = $v1; 
+        }
+        
+        # Set quiet mode--same as passing --verbosity=0.
+        if ($quiet) {
+            $verbosity = $v0; 
+        }
+        
+    } # getArgs()
+
+    ############################################################################
+    # init()
+    #
+    # Prepares varibles.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub init {
+    
+        # Capture and format make start time.
+        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+        $yr = sprintf("%02d", $yr % 100);
+        $mo = sprintf("%02d", $mo+1);
+        $da = sprintf("%02d", $da);
+        $hr = sprintf("%02d", $hr);
+        $mn = sprintf("%02d", $mn);
+        $se = sprintf("%02d", $se);
+        $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+        $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        
+        # Print list of variables for debugging.
+        my $message = "";
+        $message .= "init():\n";
+        $message .= "  \$ttrDir = $ttrDir\n";
+        $message .= "  \$resultsDir = $resultsDir\n";     
+        $message .= "  \$verbosity = $verbosity\n";
+        $message .= "  \n";
+        printMessage($message, $v3);
+        
+    } # init()
+    
+    ############################################################################
+    # run()
+    #
+    # Reports given results to TrilinosTestResults
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub run {
+            
+        my $resultsDirNameOrig = $resultsDir;
+        $resultsDirNameOrig =~ s/\/$//;
+        $resultsDirNameOrig =~ s/^.*\///;
+        my $resultsDirNameNew = $resultsDirNameOrig;
+        
+        my $machine = "";
+        my $badCmd = 0;          
+        $badCmd = system('hostname -s > /dev/null 2>&1');
+        if (!$badCmd) {
+            chomp($machine=`hostname -s`);
+        } else {
+            $machine=getOptionalOutput("uname -n");
+        }
+        chomp($machine);
+        $resultsDirNameNew =~ s/build/$machine/;
+        
+        my $output = "";
+        my $result = "";
+        
+        $output = `cp -rf $resultsDir $ttrDir`;
+        $result = $?;
+        
+        chdir "$ttrDir" or die "cannot cd to $ttrDir, died";
+
+        $output = `mv $resultsDirNameOrig $resultsDirNameNew`;
+        $result = $?;
+        
+        $output = `cvs add $resultsDirNameNew 2>&1`;
+        $result = $?;
+        
+        chdir "$resultsDirNameNew" or die "cannot cd to $resultsDirNameNew, died";
+        
+        my @dirs = ();      
+        opendir(DIR, ".");   
+                             
+        while (defined (my $file = readdir(DIR))) {
+        
+            $file =~ s/^\.\///;     # remove initial "./"
+            $file =~ s/\n//;        # remove any newlines
+            if ($file eq "." || $file eq ".." || $file eq "CVS") { next; }
+            print "$file\n";
+            
+            $output = `cvs add $file 2>&1`;
+            $result = $?;
+            if ($result) { print "\n\n$output\n\n"; }
+            
+            my $filename = "$ttrDir/$resultsDirNameNew/$file";
+            if (-d $filename) {
+                push(@dirs, $filename);
+            }
+            
+        } # while ($file)
+        
+        closedir(DIR);
+        
+        foreach my $dir (@dirs) {        
+        
+            chdir "$dir";
+            opendir(DIR, $dir);    
+                                
+            while (defined (my $file = readdir(DIR))) {
+        
+                $file =~ s/^\.\///;     # remove initial "./"
+                $file =~ s/\n//;        # remove any newlines
+                if ($file eq "." || $file eq ".." || $file eq "CVS") { next; }
+                print "$file\n";
+            
+                $output = `cvs add $file 2>&1`;
+                $result = $?;
+                
+            } # while ($file)
+            
+            closedir(DIR);  
+                      
+        } # foreach ($dir)
+                
+        chdir "$ttrDir/$resultsDirNameNew";
+        $output = `cvs commit -m 'automatic reporting of results' 2>&1`;
+        $result = $?;
+        if ($result) { print "\n\n$output\n\n"; }
+        
+        sleep(60);
+        
+        my $cmd = "";
+        $cmd .= "ssh $ssgUsername\@software.sandia.gov ";
+        $cmd .= "'/space/TrilinosWebHome/insert_results.pl --results-dir=$resultsDirNameNew 2>&1' 2>&1";
+        $output = `$cmd`;
+        $result = $?;
+        print "\n\$output: $output\n";
+        print "\n\$result: $result\n\n";
+        
+        return 0;
+        
+    } # run()
+
+    ############################################################################
+    # cleanUp()
+    #
+    # Clean up environment variables, temp files, etc.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub cleanUp {
+    
+        # Currently, there is nothing to clean up, but I will leave this
+        # subroutine here for potential future use.
+           
+    } # cleanUp()
+    
+    ############################################################################
+    # printMessage()
+    #
+    # Prints an event if the verbosity is set.
+    #
+    #   - args:     $message        (message to be printed)
+    #               $level          (verbosity level of message)
+    #
+    #   - returns:  NONE
+    #
+
+    sub printMessage {
+        my $message = $_[0];
+        my $level = $_[1];
+        
+        if ($verbosity & $level) {
+            print $message;
+        }        
+    } # printMessage()
+
+    ############################################################################
+    # printHelp()
+    #
+    # Prints help output.
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub printHelp {
+        print "report - The Trilinos Build Utility\n";
+        print "\n";
+        print "Usage:  perl report --ttr-dir=/home/user/TrilinosTestResults\n";
+        print "        --results-dir=/home/user/results\n";
+        print "\n";
+        print "Options:\n";
+        print "\n";
+        print "  --ttr-dir=DIR              Specify the absolute path to the top-level\n";
+        print "                             TrilinosTestResults directory.\n";
+        print "                             Example: /home/user/TrilinosTestResults\n";
+        print "                             REQUIRED.\n";
+        print "\n";
+        print "  --results-dir=DIR          Specify the absolute path to the top-level\n";
+        print "                             results directory.  This should be the directory\n";
+        print "                             generated by runbuild.\n";
+        print "                             Example: /home/user/01-01-06_12.00.00-build\n";
+        print "                             REQUIRED.\n";
+        print "\n";
+        print "  --ssg-username=NAME        Specify the username on software.sandia.gov\n";
+        print "                             that has unchallenged ssh access.\n";
+        print "                             Example: user\n";
+        print "                             REQUIRED.\n";
+        print "\n";
+        print "  --verbosity=LEVEL          0 = no non-fatal ouput (same as --quiet)\n";
+        print "                             1 = normal output (default)\n";
+        print "                             2 = level 2 verbosity\n";
+        print "                             3 = level 3 verbosity\n";
+        print "\n";
+        print "  --quiet                    Produce no non-fatal output.\n";
+        print "\n";
+        print "  --help                     Print this help output and exit.\n";
+        print "\n";
+        print "Notes:\n";
+        print "  - For more information, see README-report in\n";
+        print "    Trilinos/commonTools/test/utilities/\n";
+        print "    or visit http://software.sandia.gov/trilinos/developer/\n";
+        print "\n";
+    } # printHelp()
+    
+    ############################################################################
+    # getOptionalOutput()
+    #
+    # Runs a system command and gets its output if it succeeds then returns
+    # its output.  The program suppress output to stderr of the program does
+    # not run correctly.
+    #
+    #   - args:     the shell command
+    #
+    #   - returns:  the optional output string
+    #
+
+    sub getOptionalOutput {
+      my $cmnd_in = shift;
+      my $cmnd = "$cmnd_in > /dev/null 2>&1";
+      my $returnVal = system($cmnd);
+      my $outputStr="";
+      chomp($outputStr = `$cmnd_in`) if($returnVal == 0);
+      return $outputStr;
+    } # getOptionalOutput()

@@ -1,0 +1,5 @@
+@INCLUDE=teuchos/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/RTOpInterfaces.tag=$(TRILINOS_HOME)/packages/rtop/src/interfaces/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/RTOpSupport.tag=$(TRILINOS_HOME)/packages/rtop/src/support/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/RTOpOpsLib.tag=$(TRILINOS_HOME)/packages/rtop/src/ops_lib/doc/html

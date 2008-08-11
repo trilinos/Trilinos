@@ -1,0 +1,25 @@
+TARGET=Aztec21
+
+$(TARGET).dvi: $(TARGET).tex data_formats.tex functions.tex overview.tex \
+               advanced.tex data_interface.tex high_level.tex unadvertised.tex \
+               az_sandia_only_guide.tex  examples.tex matrix_free.tex
+	latex $(TARGET)
+	bibtex $(TARGET)
+	latex $(TARGET)
+	latex $(TARGET)
+
+view: $(TARGET).dvi
+	xdvi $(TARGET) &
+
+ps: $(TARGET).dvi
+	dvips -o $(TARGET).ps $(TARGET)
+
+pdf: ps
+	ps2pdf $(TARGET).ps $(TARGET).pdf
+
+print: $(TARGET).dvi
+	dvips $(TARGET)
+
+clean:
+	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
+           *.bbl *.blg *.lof *.lot *~

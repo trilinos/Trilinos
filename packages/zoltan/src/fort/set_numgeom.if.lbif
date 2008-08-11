@@ -1,0 +1,11 @@
+interface LB_Set_Num_Geom_Fn
+   module procedure LBf90_Set_Num_Geom_Fn0f
+   module procedure LBf90_Set_Num_Geom_Fn1f
+   module procedure LBf90_Set_Num_Geom_Fn2f
+   module procedure LBf90_Set_Num_Geom_Fn3f
+   module procedure LBf90_Set_Num_Geom_Fn8f
+   module procedure LBf90_Set_Num_Geom_Fn9f
+   module procedure LBf90_Set_Num_Geom_FnAf
+   module procedure LBf90_Set_Num_Geom_FnBf
+end interface
+

@@ -1,0 +1,45 @@
+# =========================================================================== #
+# Installing configure line for MAC OS 10.4, G4 processor, Xcode 2.1
+# for all the linear algebra packages with a Python interface and 
+# LAM/MPI support.
+#
+# vecLib is used for LAPACK and BLAS, f2c is the FORTRAN library,
+# /usr/local/bin/fc is the FORTRAN77 compiler.
+#
+# Marzio Sala, ETH Zurich
+# Last updated on 20-Aug-06
+# =========================================================================== #
+#
+$HOME/Trilinos/$1/configure \
+  --enable-mpi \
+  --with-mpi-compilers \
+  --prefix=$HOME/Trilinos/G4_MPI \
+  --with-install="/usr/bin/install -p" \
+  --with-gnumake \
+  --disable-default-packages \
+  --enable-teuchos \
+  --enable-teuchos-extended \
+  --enable-teuchos-complex \
+  --enable-teuchos-expat \
+  --enable-epetra \
+  --enable-epetraext \
+  --enable-epetraext-hdf5 \
+  --enable-triutils \
+  --enable-ifpack \
+  --enable-aztecoo \
+  --enable-amesos \
+  --enable-amesos-klu \
+  --enable-amesos-paraklete \
+  --enable-amesos-umfpack \
+  --enable-amesos-dscpack \
+  --enable-amesos-mc64 \
+  --enable-didasko \
+  --enable-galeri \
+  --enable-ml \
+  --enable-webtrilinos \
+  --with-incdirs="-I$HOME/include -I/usr/X11R6/include/" \
+  --with-ldflags="-L$HOME/lib -L/usr/X11R6/lib/" \
+  --with-libs="-lparmetis -lmetis -framework vecLib -lumfpack-4.4 -lamd-4.4 -ldscpack-1.0 -lmc64 -lf2c -lhdf5 -lz -lexpat" \
+  --with-cxxflags="-DLAM_BUILDING" \
+  --disable-examples \
+  --disable-tests

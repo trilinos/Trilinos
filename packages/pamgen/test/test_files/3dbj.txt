@@ -1,0 +1,18 @@
+  mesh
+   brick 
+    numx 1 
+      xblock 1 200. interval 200
+    numy 1
+      yblock 1 200. interval 200
+    numz 1
+      zblock 1 5. interval 5
+    end
+    set assign
+       sideset,ilo,30
+       sideset,ihi,20
+       nodeset,klo,1000
+       sideset,klo,3000
+       $ nodeset,khi,2000
+    end
+  end
+

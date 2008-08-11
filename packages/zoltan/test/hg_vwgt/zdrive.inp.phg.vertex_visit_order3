@@ -1,0 +1,11 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters	= ADD_OBJ_WEIGHT=none
+Zoltan Parameters       = PHG_VERTEX_VISIT_ORDER = 3
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+Zoltan Parameters       = lb_approach=partition
+File Type		= matrixmarket+
+File Name		= vwgt
+Parallel Disk Info	= number=0
+zoltan parameters       = obj_weight_dim=1
+

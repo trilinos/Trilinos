@@ -1,0 +1,30 @@
+#
+# Note: all relative paths are relative to package/doc!
+#
+@INCLUDE = Doxyfile.options
+@INCLUDE = thyra/src/interfaces/operator_solve/ana/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+#
+# Package options
+#
+PROJECT_NAME           = "Thyra ANA Nonlinear Model Evaluator Interfaces"
+OUTPUT_DIRECTORY       = ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/index.doc \
+                         ../src/interfaces/nonlinear/model_evaluator/ana/fundamental \
+                         ./dirs.doc
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       =
+IMAGE_PATH             =
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+GENERATE_TAGFILE       = ../../common/tag_files/ThyraInterfacesNonlinearModelEvaluatorANAFundamental.tag

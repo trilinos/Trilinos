@@ -1,0 +1,40 @@
+#
+# Note: all relative paths are relative to package/doc!
+#
+@INCLUDE = Doxyfile.options
+#
+# Override some options from Doxyfile.options
+#
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+#
+# Package options
+#
+PROJECT_NAME           = "Teuchos Package Browser (Single Doxygen Collection)"
+OUTPUT_DIRECTORY       = ../browser/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../browser/doc/index.doc ../browser/doc/groups.doc \
+                         ../src \
+                         ../example \
+                         ../test
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       =
+IMAGE_PATH             =
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
+GENERATE_TAGFILE       = ../../common/tag_files/teuchosBrowser.tag
+#

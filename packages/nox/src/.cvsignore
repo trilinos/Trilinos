@@ -1,0 +1,10 @@
+.cvsignore
+.deps
+Makefile
+NOX_Config.h
+stamp-h
+stamp-h1
+*.C-Tammy
+*.H-Tammy
+*.C-hold
+*.H-hold

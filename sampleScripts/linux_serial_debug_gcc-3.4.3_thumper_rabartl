@@ -1,0 +1,39 @@
+#!/bin/sh
+# Used on thumper.mp.sandia.gov with gcc 3.4.3
+rm config.cache
+$HOME/PROJECTS/Trilinos.base/Trilinos/configure \
+--cache-file=config.cache \
+--with-install="/usr/bin/install -p" \
+CXX=/usr/local/gcc-3.4.3/bin/g++ \
+CCC=/usr/local/gcc-3.4.3/bin/gcc \
+F77=/usr/local/gcc-3.4.3/bin/g77 \
+CXXFLAGS="-g -O0 -ansi -pedantic -Wall" \
+CFLAGS="-g -O0  -ansi -pedantic -Wall -fexceptions" \
+FFLAGS="-g -O0 " \
+FLIBS="-lg2c" \
+--with-libs="-L`pwd`/MoochoExtern/HSL -lHSL -lexpat" \
+--with-incdirs=-I/home/rabartl/PROJECTS/install-dir/gcc-3.4.3/boost-1.32.0/include/boost-1_32 \
+--enable-export-makefiles \
+--with-gnumake \
+--disable-default-packages \
+--enable-teuchos --enable-teuchos-extended --enable-teuchos-expat --enable-teuchos-debug --enable-teuchos-abc --enable-teuchos-boost \
+--enable-thyra \
+--enable-tpetra \
+--enable-epetra \
+--enable-triutils \
+--enable-epetraext \
+--enable-amesos \
+--enable-ifpack \
+--enable-aztecoo \
+--enable-ml --disable-ml-anasazi \
+--enable-belos \
+--enable-anasazi \
+--enable-rythmos --disable-rythmos-nox \
+--enable-stratimikos \
+--enable-moocho --enable-moocho-ma28 \
+--enable-new_package \
+--prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.3/serial/debug
+
+# 2006/04/28: RAB: Note that I had to add -lexpat to --with-libs because the ML tests will not build otherwise.
+
+# --enable-nox --enable-nox-epetra --enable-nox-epetraext \

@@ -1,0 +1,12 @@
+Decomposition Method 	= rib
+Zoltan Parameters	= tflops_special = 1
+Zoltan Parameters       = comm_weight_dim=1
+Zoltan Parameters	= num_global_partitions=7
+File Type		= Chaco
+File Name		= ewgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1	0	-1	-1
+2	0	-1	-1
+3	0	-1	-1

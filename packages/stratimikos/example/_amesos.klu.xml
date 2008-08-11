@@ -1,0 +1,10 @@
+<ParameterList>
+  <Parameter isUsed="true" name="Linear Solver Type" type="string" value="Amesos"/>
+  <ParameterList name="Linear Solver Types">
+    <ParameterList name="Amesos">
+      <ParameterList name="Amesos Settings"/>
+      <Parameter name="Solver Type" type="string" value="Klu"/>
+    </ParameterList>
+  </ParameterList>
+  <Parameter name="Preconditioner Type" type="string" value="None"/>
+</ParameterList>

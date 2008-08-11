@@ -1,0 +1,8 @@
+Decomposition Method 	= hypergraph
+zoltan parameters	= hypergraph_package=phg
+zoltan parameters	= phg_method=partition
+zoltan parameters	= phg_coarsening_method=agg-ipm
+zoltan parameters	= final_output=1
+File Type		= Chaco
+File Name		= hammond
+Parallel Disk Info	= number=0

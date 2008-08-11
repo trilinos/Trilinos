@@ -1,0 +1,6 @@
+Decomposition Method 	= jostle
+Zoltan Parameters	= jostle_reduction=off
+Zoltan Parameters	= debug_level=3, timer=cpu
+File Type		= Chaco
+File Name		= grid20x19
+Parallel Disk Info	= number=0

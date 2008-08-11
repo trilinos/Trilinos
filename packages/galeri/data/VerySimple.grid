@@ -1,0 +1,33 @@
+NumDimensions: 2
+NumVerticesPerElement: 4
+NumVerticesPerFace: 2
+NumFacesPerElement: 4
+NumMyElements: 4
+NumMyVertices: 9
+NumMyBoundaryFaces: 8
+ElementType: GALERI_QUAD
+VertexCoord:
+0.0 0.0
+1.0 0.0
+2.0 0.0
+0.0 1.0
+1.0 1.0
+2.0 1.0
+0.0 2.0
+1.0 2.0
+2.0 2.0
+ElementVertices:
+0 1 4 3
+1 2 5 4
+3 4 7 6
+4 5 8 7
+FaceVertices:
+0 1
+1 2
+2 5
+5 8
+8 7
+7 6
+6 3
+3 0
+End

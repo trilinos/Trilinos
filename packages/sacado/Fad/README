@@ -1,0 +1,6 @@
+This directory contains a portion of the source from the original Fad 
+package by Nicolas Di Cesare.  Most of the original source is here, with the
+makefiles and examples removed.  This source has also been modified slightly
+to make it portable to modern C++ compilers, a few bugs have been fixed, and
+a namespace was added.
+

@@ -1,0 +1,63 @@
+#sasg1099 (or tesla?)
+#IRIX64: /bin
+#   cd /pr/alegra/TPL/trilinos/5.0/build/irix74_opt && /pr/alegra/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
+../configure \
+        --prefix=/home/jmwille/TrilinosTestHarness/install/sasg1099 \
+        --enable-nox-epetra \
+        --disable-aztecoo-azlu \
+        --enable-amesos \
+        --without-ml_superlu \
+        --with-ml_zoltan \
+        --enable-teuchos \
+        --enable-triutils \
+        --enable-anasazi \
+        --enable-epetraext-transform \
+        --disable-ml_enrich \
+        --disable-dependency-tracking \
+        --with-blas="-lscs -lscs" \
+        --with-lapack="-lscs -lscs" \
+        --with-incdirs="-I/pr/alegra/TPL/trilinos/5.0/DSuperLU/SRC" \
+        --with-ldflags="-L/pr/alegra/TPL/trilinos/5.0/y12m -L/pr/alegra/TPL/trilinos/5.0/DSuperLU" \
+        --with-libs="-L/dev/null" \
+        --enable-mpi \
+        --with-mpi-incdir="" \
+        --with-mpi-libdir="" \
+        --with-mpi-libs="" \
+        CC="cc -64 -common -mips4 -r12000 -G0 -O3 -OPT:Olimit=60000" \
+        CXX="CC -64 -common -mips4 -r12000 -G0 -O3 -OPT:Olimit=60000" \
+        F77="f77 -64 -mips4 -r12000 -O2" \
+        CPPFLAGS="-DCODE_MP -DMPI_NO_CPPBIND -DLC_FLINK -DNDEBUG -I/pr/alegra/TPL/zoltan/1.54/include -I/pr/alegra/TPL/trilinos/5.0/DSuperLU/SRC" \
+        CFLAGS="" \
+        CXXFLAGS="" \
+        FFLAGS="" \
+        LDFLAGS="-woff 84 -Wl,-LD_MSG:off=171 " \
+        --with-ar="CC -ar -WR,-v -o" \
+--enable-aztecoo \
+--enable-belos \
+--enable-claps \
+--enable-didasko \
+--enable-epetra \
+--enable-epetraext \
+--enable-galeri \
+--enable-ifpack \
+--enable-isorropia \
+--enable-kokkos \
+--enable-komplex \
+--enable-loca \
+--enable-meros \
+--enable-ml \
+--enable-moertel \
+--enable-moocho \
+--enable-new-package \
+--enable-nox \
+--enable-pliris \
+--enable-rtop \
+--enable-rythmos \
+--enable-thyra \
+--enable-tpetra \
+--enable-teuchos-complex \
+--enable-sacado \
+--enable-sacado-alltests \
+--enable-stratimikos \
+--disable-default-packages
+

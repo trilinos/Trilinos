@@ -1,0 +1,1750 @@
+% Many of these will not be required for the Developer's Guide, clean this out when draft of document is finished.
+
+
+@string{JOCP = "Journal of Computational Physics"}
+@string{laa="Linear Alg. Appl."}
+@string{nlaa="Num. Lin. Alg. Appl."}
+@string{sisc="SIAM J. Sci. Comput."}
+@string{sirev="SIAM Rev."}
+@string{nm="Numer. Math."}
+@string{mc="Math. Comp."}
+@string{bit="BIT"}
+@string{imajna="IMA J. Numer. Anal."}
+@string{cas="Comput. and Struct."}
+@string{ijnme="Internat. J. Numer. Meths. Engrg."}
+@string{cse="Comput. Sys. Engrg."}
+@string{CPC     = "Computer Physics Communications"}
+@string{sissc = "{SIAM} J. Sci. Stat. Comput."}
+@string{sinum = "{SIAM} J. Numer. Anal."}
+@string{simax = "{SIAM} J. Mat. Anal."}
+@string{toms = "ACM Transactions on Mathematical Software"}
+@string{siopt = "{SIAM} J. Opt."}
+@string{toms = "ACM Transactions on Mathematical Software"}
+@string{snl = "Sandia National Laboratories"}
+
+@article{BLAS1,
+     title = "Basic Linear Algebra Subprograms for Fortran Usage",
+     author = "C. Lawson and R. Hanson and D. Kincaid and F. Krogh",
+     journal = toms,
+     volume = 5,
+     year = 1979}
+
+@article{BLAS1a,
+     title = "Algorithm 539:  Basic Linear Algebra Subprograms for 
+              Fortran Usage",
+     author = "C. Lawson and R. Hanson and D. Kincaid and F. Krogh",
+     journal = toms,
+     volume = 5,
+     year = 1979}
+
+@article{BLAS2,
+     title = "An Extended Set of Fortran Basic Linear Algebra
+              Subprograms",
+     author = "J.J. Dongarra and J. DuCroz and S. Hammarling and R.
+               Hanson",
+     journal = toms,
+     volume = 14,
+     year = 1988}
+
+@article{BLAS3,
+     title = {A Set of Level 3 Basic Linear Algebra Subprograms},
+     author = {Jack J. Dongarra and Du Croz, Jeremy and Sven Hammarling and
+               Iain Duff},
+     journal = toms,
+     volume = 16,
+     number = 1,
+     pages = {1-17},
+     month = "March",
+     year = 1990 }
+
+@article{BLAS3-test,
+     title = {A Set of Level 3 Basic Linear Algebra Subprograms: Model
+              Implementation and Test Programs},
+     author = {Jack J. Dongarra and Du Croz, Jeremy and Sven Hammarling and
+               Iain Duff},
+     journal = toms,
+     volume = 16,
+     number = 1,
+     pages = {18-28},
+     month = "March",
+     year = 1990 }
+
+@techreport{lapackorig,
+     title = "{LAPACK} Working Note \#5:  Provisional Contents",
+     author = "Chris Bischof and James Demmel and Jack Dongarra 
+                and Jeremy DuCroz and Anne GreenBaum and 
+               Sven Hammarling and Danny Sorenson",
+     institution = "Argonne National Laboratory",
+     number = "ANL-MCS-TM-122",
+     month = "July",
+     year = 1988}
+
+@incollection{lapackproceedings,
+      title = { {LAPACK:}  {A} Portable Linear Algebra Library for
+                High-Performance Computers},
+      author ={E. Anderson and Z. Bai and C. Bischof and J. Demmel and
+               J. Dongarra and Du Croz, J. and A. Greenbaum and S. 
+               Hammarling and A. McKenney and D. Sorensen},
+      booktitle = {Proceedings Supercomputing '90},
+      publisher = {IEEE Computer Society Press},
+      address = {Los Alamitos, California},
+      pages = {2--11},
+      year = 1990,
+      note = {(also LAPACK Working Note 20)} }
+
+@book{lapackv1,
+     title = "{LAPACK} Users' Guide",
+     author = "E. Anderson and Z. Bai and C. Bischof and J. Demmel and
+               J. Dongarra and J. Du Croz and A. Greenbaum and 
+               S. Hammarling and A.  McKenney and S. Ostrouchov and 
+               D. Sorensen",
+     publisher = "{SIAM} Pub.",
+     year = 1992}
+
+@book{lapackv2,
+     title = "{LAPACK} Users' Guide",
+     author = "E. Anderson and Z. Bai and C. Bischof and J. Demmel and
+               J. Dongarra and J. Du Croz and A. Greenbaum and 
+               S. Hammarling and A.  McKenney and S. Ostrouchov and 
+               D. Sorensen",
+     edition = "Second",
+     publisher = "{SIAM} Pub.",
+     year = 1995}
+
+@book{lapack,
+     title = "{LAPACK} Users' Guide",
+     author = "E. Anderson and Z. Bai and C. Bischof and J. Demmel and
+               J. Dongarra and J. Du Croz and A. Greenbaum and 
+               S. Hammarling and A.  McKenney and S. Ostrouchov and 
+               D. Sorensen",
+     edition = "Third",
+     publisher = "{SIAM} Pub.",
+     year = 1999}
+
+
+@book{eispack,
+     title = "Matrix Eigensystem Routines -- {EISPACK} Guide",
+     author = "B. T. Smith and J. M. Boyle and J. J. Dongarra and
+               B. S. Garbow and Y. Ikebe and V. C. Klema and C. B.
+               Moler",
+     address = "New York",
+     publisher = "Springer--Verlag",
+     series = "Lecture Notes in Computer Science",
+     volume = "6",
+     edition = "Second",
+     year = 1976}
+
+@book{eispackext,
+     title = "Matrix Eigensystem Routines -- {EISPACK} Guide Extension",
+     author = "B. S. Garbow and J. M. Boyle and J. J. Dongarra and
+               C. B.  Moler",
+     address = "New York",
+     publisher = "Springer--Verlag",
+     series = "Lecture Notes in Computer Science",
+     volume = "51",
+     year = 1977}
+
+@inproceedings{KharNikiYereHeroShei92,
+     title = "Iterative Solution Methods on the {Cray YMP/C90}.  
+              {P}art {I}.",
+     author = "Serge Kharchenko and Andy Nikishin and Alex Yeremin and
+               Michael Heroux and Qasim Sheikh",
+     booktitle = "Proceedings of 5th Australian Supercomputing
+                  Conference",
+     pages = "159--168",
+     year = 1992}
+
+@inproceedings{KharKoleNikiYereHeroShei93,
+     title = "Iterative Solution Methods on the {Cray YMP/C90}.  
+              {P}art {II}:  Dense Linear Systems.",
+     author = "Serge Kharchenko and Paul Kolesnikov and Andy Nikishin 
+               and Alex Yeremin and Michael Heroux and Qasim Sheikh",
+     booktitle = "Proceedings of the 1993 Simulation Multiconference",
+     year = 1993}
+
+@book{linpack,
+     title = "{LINPACK} Users' Guide",
+     author = "J. J. Dongarra and J. Bunch and C. Moler and G.
+               Stewart",
+     publisher = "{SIAM} Pub.",
+     year = 1979}
+@manual{NASTRAN67,
+     title = "{MSC/NASTRAN} User Manual",
+     organization = "MacNeal-Schwendler Corporation",
+     edition = "Version 67",
+     year = 1992}
+
+@manual{LIBSCI60,
+     title = "Volume 3:  {UNICOS} Math and Scientific Library Reference
+              Manual ({SR}-2081)",
+     author = "John Madsen",
+     organization = "Cray Research, Inc.",
+     edition = "Version 6.0",
+     year = 1990}
+
+@manual{LIBSCI80,
+     title = "Volume 3:  {UNICOS} Math and Scientific Library Reference
+              Manual ({SR}-2081)",
+     author = "David Prigge",
+     organization = "Cray Research, Inc.",
+     edition = "Version 8.0",
+     year = 1992}
+
+@inproceedings{BarrLaCrRein91,
+     title  = "Exploiting Fine-Grain Parallelism in a Multiprogramming
+               Environment on {CRAY} {Y-MP} Computer Systems",
+     author = "Frank Barriuso and Suzanne LaCroix and Steve
+               Reinhardt",
+     booktitle = "Proceedings of 1991 Cray Technical Symposium",
+     month = "June",
+     year = 1991}
+
+@techreport{Domi90,
+     title = "The Almond Test Body",
+     author = "A. Dominek",
+     institution = "ElectroScience Laboratory, The Ohio State
+                    University",
+     number = "721929-9",
+     month = "February",
+     year = 1990}
+
+@misc{Guis93,
+      note = "Personal communication",
+      author = "Pierre Guisset",
+      month = "May",
+      year = 1993}
+
+@book{High93,
+     title = "{Handbook of Writing for the Mathematical Sciences}",
+     author = "Nicholas J. Higham",
+     publisher = "SIAM",
+     year = 1993}
+
+@book{KnotShaefferTuley,
+     title = "{Radar Cross Section}",
+     author = "E. F. Knott and J. F. Shaeffer and M. T. Tuley",
+     publisher = "Artech House, Inc.",
+     year = 1985}
+
+@book{Lamp86,
+     title = "{LaTeX User's Guide and Reference Manual}",
+     author = "Leslie Lamport",
+     publisher = "Addison-Wesley",
+     year = 1986}
+
+@article{PolyKuck87,
+     title = "Guided Self-Scheduling:  A Practical Scheduling Scheme
+              for Parallel Supercomputers",
+     author = "Constantine D. Polychronopoulos and David J. Kuck",
+     journal = "{IEEE} Transactions on Computers",
+     volume = "C-36",
+     number = 12,
+     pages = "1425--1439",
+     month = "December",
+     year = 1987}
+
+@techreport{MPSalsa-Theory,
+     title = "{MPSalsa}: A FINITE ELEMENT COMPUTER PROGRAM FOR REACTING 
+              FLOW PROBLEMS PART 1 - THEORETICAL DEVELOPMENT",
+     author = "John N. Shadid and Harry K. Moffat and Scott A.
+               Hutchinson and Gary L.  Hennigan and Karen D. Devine 
+               and Andrew G. Salinger",
+     institution = "Sandia National Laboratories",
+     number = "SAND95--2752",
+     year = 1995}
+
+@techreport{MPSalsa-User-Guide,
+     title = "{MPSalsa}: A FINITE ELEMENT COMPUTER PROGRAM FOR REACTING 
+              FLOW PROBLEMS PART 2 - USER'S GUIDE",
+     author = "A. Salinger and K. Devine and G. Hennigan and H. Moffat
+               and S. Hutchinson and J. Shadid",
+     institution = "Sandia National Laboratories",
+     number = "SAND96--2331",
+     year = 1996}
+
+@article{BrowSaad90,
+title = "Hybrid Krylov Methods for Nonlinear sytems of equations",
+author = "P.~N. Brown and Y.~Saad",
+journal=sissc,
+volume = 11, 
+pages = "450--81", 
+year=1990}
+
+@article{BrowSaad94,
+title = "Hybrid Krylov Methods for Nonlinear sytems of equations",
+author = "P.~N. Brown and Y.~Saad",
+journal=siopt,
+volume = 4, 
+pages = "297--330", 
+year=1994}
+
+@article{DayHero2001,
+     title = "Solving Complex-Valued Linear Systems via Equivalent
+              Real Formulations",
+     author = "David Day and Michael A. Heroux",
+     journal = sisc,
+     volume = "23",
+     number = "2",
+     pages = "480--498",
+     year = 2001}
+
+@techreport{FEI-manual,
+      title = "An Annoated Reference Guide to the Finite-Element Interface (FEI) Specification 
+               Version 1.0",
+     author = "Robert L.~Clay and Kyran D.~Mish and Ivan J.~ Otero and Lee M.~Taylor and Alan B.~Williams",
+institution = snl,
+     number = "SAND99-8229",
+       year = 1999}
+
+@inproceedings{GockSyme96,
+     author = "M.~S.~Gockenbach and W.~W.~Symes",
+     year = 1996,
+     title = "The {H}ilbert class library: a library of abstract c++ classes for optimization 
+              and inversion",
+     booktitle = "Fourth Object Oriented Numerics Conference: OON-SCI'96 Proceedings"}
+
+@misc{matlab-arpack,
+     title = "Matlab documentation for {\bf eigs}: Computes eigenvalue and
+eigenvectors.",
+     note = "http://www.mathworks.com/access/helpdesk/help/techdoc/ref/eigs.shtml"}
+
+@misc{Trilinos-home-page,
+     title = "Trilinos Home Page.",
+     note = "http://www.cs.sandia.gov/Trilinos"}
+
+@misc{Automake,
+     title = "Automake Home Page.",
+     note = "http://www.gnu.org/software/automake"}
+
+@misc{Libtool,
+     title = "Libtool Home Page.",
+     note = "http://www.gnu.org/software/libtool"}
+
+@misc{Autoconf,
+     title = "Autoconf Home Page.",
+     note = "http://www.gnu.org/software/autoconf"}
+
+@misc{M4,
+     title = "Gnu M4 Home Page.",
+     note = "http://www.gnu.org/software/m4"}
+
+@misc{CVS,
+     title = "Gnu CVS Home Page.",
+     note = "http://www.gnu.org/software/cvs"}
+
+@misc{Bonsai,
+     title = "Mozilla Bonsai Home Page.",
+     note = "http://www.mozilla.org/bonsai.html"}
+
+@misc{Bugzilla,
+     title = "Mozilla Bugzilla Home Page.",
+     note = "http://www.mozilla.org/projects/bugzilla"}
+
+@book{Goatbook,
+     author = "G.~Vaughan and B.~Elliston and T.~Tromey and I.~Taylor",
+     title = "Gnu Autoconf, Automake, and Libtool",
+     publisher = "New Riders",
+     year = 2000}
+
+@misc{gnu-license-site,
+     title = "Gnu License Home Page",
+     note = "http://www.gnu.org/licenses/licenses.html"}
+
+@misc{BCSLIB-site,
+     title = "{BCSLIB-EXT} Home Page",
+     note = "http://www.boeing.com/assocproducts/bcslib-ext/"}
+
+@misc{rdmag-site,
+     title = "{R\&D} Magazine Home Page",
+     note = "http://www.rdmag.com"}
+
+@misc{NAG-site,
+     title = "Numerical Algorithms Group Home Page",
+     note = "http://www.nag.co.uk"}
+
+@misc{TNT-site,
+     author = "R.~Pozo",
+     title = "Template Numerical Toolkit (TNT) for Linear Algebra.", 
+     note = "http://math.nist.gov/tnt"}
+
+@misc{ESI-site,
+     author = "R.~L.~Clay and et. al.",
+     title = "Equation Solver Interface Working Group Web page", 
+     note = "http://z.ca.sandia.gov/esi"}
+
+@misc{NIMROD-site,
+     author = "C.~Sovinec and et. al.",
+     title = "NIMROD Web page", 
+     note = "http://nimrodteam.org"}
+
+@manual{LOCA,
+     title = "{LOCA} 1.0 Library of Continuation Algorithms: Theory and Implemetation Manual",
+     author = "A.~G.~Salinger and R.~P.~Pawlowski and L.~A.~Romero and E.~D.~Wilkes",
+     organization = snl,
+     year = 2001,
+     edition = "1.0"}
+
+
+@book{Stroustrup,
+     author = "Bjarne Stroustrup",
+     title = "The {C++} Programming Language",
+     publisher = "Addison-Wesley",
+     year = 2000}
+
+@TechReport{Schunk:etal:1997,
+  author =      "P. R. Schunk and P. A. Sackinger and R. R. Rao and
+            K. S. Chen and R. A. Cairncross and T. A. Baer and
+            D. A. Labreche",
+  title =       "GOMA 2.0: A Full-Newton Finite Element Program for
+            Free and Moving Boundary Problems with Coupled
+            Fluid/Solid Momentum, Energy, Mass, and Chemical
+            Species Transport: User's Guide",
+  institution = snl,
+  year =   1997,
+  number =      "SAND97-2404",
+  address =     "Albuquerque, New Mexico"
+}
+
+@inproceedings{SiekLums98,
+     title = "The matrix template library: A generic programming approach to high performance 
+              numerical linear algebra",
+     author = "J.~G.~Siek and A.~Lumsdaine",
+     booktitle = "International Symposium on Computing in Object-Oriented Parallel Environments",
+     year = 1998}
+
+@article{MoreMidkGuptArtiWuAlma2001,
+  title = "The {NINJA} Project",
+  author = "J.~E.~Moreira and S.~P.~Midkiff and M.~Gupta and P.~V.~Artigas and P.~Wu and G.~Almasi",
+  journal = "Communications of the {ACM}",
+  volume = 44,
+  number = 10,
+  month = "October",
+  year = 2001} 
+
+@article{CarpGetoJuddSkjeFox2000,
+     title = "{MPJ:} {MPI}-like message passing for Java",
+     author = "B.~Carpenter and V.~Getov and G.~Judd and A.~Skjellum and G.~Fox",
+     journal = "Concurrency:  Pract. Exper.",
+     volume = 12,
+     number = 11,
+     month = "September",
+     year = 2000,
+     pages = "1019--1038"}
+
+
+@book{MPI,
+     title = "{MPI}-The Complete Reference, Volume 1, The {MPI} core",
+     author = "M.~Snir and S.~Otto and S.~Huss-Lederman and D.~Walker and J.~Dongarra",
+     publisher = "The {MIT} Press",
+     year = 1998}
+
+@misc{JNI-site,
+     author = "Sun Microsystems",
+     title = "Java Native Interface",
+     note = "http://java.sun.com/products/jdk/1.2/docs/guide/jni"}
+
+@misc{SCIMARK-site,
+     author = "R.~Pozo and B.~Miller",
+     title = "{SciMark} 2.0",
+     note = "http://math.nist.gov/scimark2/"}
+
+@book{arpack,
+title = "{ARPACK} Users' Guide",
+author = "R.~B.~Lehoucq and D.~C.~Sorenson and C.~Yang",
+publisher = "{SIAM}",
+year = 1998}
+
+@techreport{zoltan-ug,
+title = "Zoltan: A dynamic load-balancing library for parallel applications -- user's
+        guide",
+author = "K.~D.~Devine and B.~A.~Hendrickson and E.~G.~Boman and M.~M.~St. John and
+         C.~Vaughan",
+institution = snl,
+year = 1999,
+number = "SAND99-1377",
+address = "Albuquerque, NM"}
+
+@article{AxelKapo2001,
+title = "Error norm estimation and stopping criteria in preconditioned conjugate
+         gradient iterations",
+author = "O.~Axelsson and I.~Kaporin",
+journal = nlaa,
+volume = 8,
+pages = "265--286",
+year = 2001}
+
+@article{leso:96,
+   author = "R. B. Lehoucq and D. C. Sorensen",
+   year = "1996",
+   title = "Deflation techniques for an Implicitly Restarted
+            {A}rnoldi Iteration",
+   journal = SIMAX,
+   pages = "789--821",
+   volume = "17",
+   number = "4",
+   month = "October",
+}
+
+@article{lgzl:98,
+   year="1998",
+   author = "R. B. Lehoucq and S. K. Gray and D. H. Zhang and
+             J. C. Light",
+   title = "Vibrational Eigenstates of Four-Atom Molecules:
+            A Parallel Strategy Employing the Implicitly
+            Restarted {L}anczos Method",
+   journal = CPC,
+   volume = "109",
+   pages = "15--26",
+}
+
+@TECHREPORT{bele:01,
+  author =       {J. K. Bennighof and R. B. Lehoucq},
+  title =        {An Automated Multilevel Substructuring Method for
+Eigenspace
+Computation in Linear Elastodynamics},
+  institution =  {Sandia National Laboratories},
+  year =         {2001},
+  number =       {2001-3279J},
+  address =      {Albuquerque, NM},
+  note  =        {Submitted to SISC},
+}
+
+
+
+@manual{libsci,
+     title = "Scientific Libraries Reference Manual",
+     organization = "Cray Research, Inc.",
+     number = "SR-2081",
+     year = 1995}
+
+@manual{Aztec2.1,
+     title = "Official Aztec User's Guide, Version 2.1",
+     author = "Ray S. Tuminaro and Michael A. Heroux and 
+               Scott. A. Hutchinson and J. N. Shadid",
+     organization = "Sandia National Laboratories",
+     address = "Albuquerque, NM 87185",
+     year = 1999}
+
+@manual{Komplex1.0,
+     title = "The Komplex Solver Package Reference Manual 1.0",
+     author = "Michael A. Heroux",
+     organization = "Sandia National Laboratories",
+     address = "Albuquerque, NM 87185",
+     year = 2000}
+
+@article{BlastTOMS,
+     title = "An Updated Set of Basic Linear Algebra Subprograms {(BLAS)}",
+     author = "S. Blackford and J. Demmel and J. Dongarra and I. Duff
+              and S.  Hammarling and G. Henry and M. Heroux and 
+              L. Kaufman and A. Lumsdaine and A. Petitet and R. Pozo and
+              K. Remington and R. C. Whaley",
+     journal = toms,
+     volume  = "28",
+     number  = 2,
+     month   = "June",
+     pages   = "135--151",
+     year    = 2002}
+
+@article{BlastTOMSsparse,
+     title = "An overview of the {Sparse} {Basic} {Linear} {Algebra} {Subprograms:}
+              {The} new standard from the {BLAS} {Technical} {Forum}",
+     author = "I. Duff and M. Heroux and R. Pozo",
+     journal = toms,
+     volume  = "28",
+     number  = 2,
+     month   = "June",
+     pages   = "239--267",
+     year    = 2002}
+
+@article{SandiaParCo,
+     title = "An Overview of {MP} Computing and Applications",
+     author = "David E. Womble and Bruce A. Hendrickson 
+               and David S. Greenberg and James L. Tomkins 
+               and Sudip S. Dosanjh and 
+               Steve J. Plimpton and Michael A. Heroux",
+     journal = "Parallel Computing",
+     month = "March",
+     year = 2000}
+ 
+@article{DayHero2000,
+     title = "Solving Complex-Valued Linear Systems via Equivalent
+              Real Formulations",
+     author = "David Day and Michael A. Heroux",
+     journal = sisc,
+     volume = "23",
+     number = "2",
+     pages = "480--498",
+     year = 2001}
+     
+@article{ChowHero98,
+     title = "An Object-oriented Framework for Block Preconditioning",
+     author = "Edmond Chow and Michael A. Heroux",
+     journal = "ACM Transactions on Mathematical Software",
+     volume = "24",
+     number = "2",
+     month = "June",
+     year = 1998,
+     pages = "159--183"}
+
+@article{PoolHeroVaidJosh95,
+author =      "Eugene L. Poole and Michael A. Heroux and Pravin Vaidya
+               and Anil Joshi",
+title =       "Performance of Iterative Methods in {ANSYS} on Cray
+               Parallel/Vector Supercomputers",
+journal =     "Computing Systems in Engineering",
+volume =      "6",
+year =        "1995",
+pages =       "251--259"}
+
+@techreport{BlelHeroZagh93,
+     title = "Segmented Operations for Sparse Matrix Computations on
+              Vector Multiprocessors",
+     author = "Guy E. Blelloch and Michael A. Heroux  and Marco Zagha",
+     institution = "School of Computer Science, Carnegie Mellon
+                    University, Pittsburgh, PA.",
+     month = "August",
+     year = 1993}
+
+@techreport{CarnHeroGliWu94,
+     title = "A Revised Proposal for a Sparse {BLAS} Toolkit",
+     author = "Sandra Carney and Michael A. Heroux and Guangye Li and
+               Kesheng Wu",
+     institution = "Army High Performance Computing Research Center ",
+    number = "94-034",
+     month = "June",
+     year = 1994}
+
+@article{DougHeroSlisSmit94,
+author =      "C. C. Douglas and M. Heroux and  G. Slishman and R.  M.
+Smith",
+title =       "GEMMW:  A portable Level~3 BLAS Winograd variant of Strassen's
+               matrix--matrix multiply algorithm",
+journal =     "J. Comput. Phys.",
+volume =      "110",
+year =        "1994",
+pages =       "1--10"}
+
+@phdthesis{Hero89,
+     title = "The Fast Adaptive Composite Grid Method for Time
+              Dependent Problems",
+     author = "Michael A. Heroux",
+     school = "Colorado State University",
+     year = 1989}
+
+
+@incollection{HeroMcCoMcKaThom88,
+     title = "Applications of the fast adaptive composite grid method",
+     author = "M. Heroux and S. McCormick and S. McKay and J.~W. Thomas",
+     booktitle = "Lecture Notes in Pure and Applied Mathematics",
+     publisher = "Marcel--Decker",
+     year = 1988}
+
+@inproceedings{HeroThom89,
+     title = "{TDFAC}: A composite grid method for time dependent 
+             problems",
+     author = "M. Heroux and J.~W.~Thomas",
+     booktitle = "Proceedings of the Fourth Copper Mountain Conference 
+                  on Multigrid Methods",
+     editor = "Jan Mandel, et.~al.", 
+     publisher = "{SIAM}", 
+     address = "Philadelphia", 
+     year = 1989, 
+     pages = "273--285"}
+
+@article{HeroThom92,
+     title = "A comparison of {FAC} and {PCG} methods for solving
+              composite grid problems",
+     author = "Michael A. Heroux and J.~W.~Thomas",
+     journal = "Communications in Applied Numerical Methods",
+     volume = 8,
+     year = 1992}
+
+@inproceedings{Hero91,
+     title = "A Reverse Communication Interface for ``Matrix-free''
+              Preconditioned Iterative Solvers",
+     author = "Michael A. Heroux",
+     booktitle = "Applications of Supercomputers in Engineering {II}",
+     editor = "C.A. Brebbia and D. Howard and A. Peters",
+     pages = "207--213",
+     publisher = "Computational Mechanics Publications",
+     address = "Boston",
+     year = 1991}
+
+@techreport{Hero92a,
+     title = "A Proposal for a Sparse BLAS Toolkit",
+     author = "Michael A. Heroux",
+     institution = "{CERFACS}",
+     number = "TR/PA/92/90",
+     month = "December",
+     year = 1992}
+
+@article{HeroVuYang91,
+     title = "A Parallel Preconditioned Conjugate Gradient Package for
+              Solving Sparse Linear Systems on a {Cray} {Y-MP}",
+     author = "Michael A. Heroux and Phuong Vu and Chao Wu Yang",
+     journal = "Applied Numerical Mathematics",
+     volume = 8,
+     year = 1991}
+
+@inproceedings{KharNikiYereHeroShei92,
+     title = "Iterative Solution Methods on the {Cray YMP/C90}.  
+              {P}art {I}.",
+     author = "Serge Kharchenko and Andy Nikishin and Alex Yeremin and
+              Michael Heroux and Qasim Sheikh",
+     booktitle = "Proceedings of 5th Australian Supercomputing
+                  Conference",
+     pages = "159--168",
+     year = 1992}
+
+@inproceedings{KharKoleNikiYereHeroShei93,
+     title = "Iterative Solution Methods on the {Cray YMP/C90}.
+              {P}art {II}:  Dense Linear Systems.",
+     author = "Serge Kharchenko and Paul Kolesnikov and Andy Nikishin
+              and Alex Yeremin and Michael Heroux and Qasim Sheikh",
+     booktitle = "Proceedings of the 1993 Simulation Multiconference",
+     year = 1993}
+
+@inproceedings{SchuHero01,
+     title = "Iterative solver preconditioners for finite element formulations of
+               multiphysics problems including incompressible fluid and solid mechanics",
+     author = "P. R. Schunk and M. A. Heroux",
+     booktitle = "Proceedings of the International Conference on Computational Engineering
+                  and Sciences, ICES'01",
+     year = 2001}
+
+@techreport{SchuHeroRaoBaerSubiSun2001,
+     title = "Preconditioned Iterative Solvers Applied to Mixed V-P Finite element Formulations 
+              of Incompressible Flows and coupled transport Processes",
+     author = "P.~R.~Schunk and M.~A.~Heroux and R.~R.~Rao and T.~A.~Baer and S.~R.~Subia and A.~C.~Sun",
+     number = "SAND2001-3512J",
+     institution = snl,
+     year = 2001}
+
+@techreport{HeroHutcHoekDay2002,
+     title = "Parallel Preconditioned Krylov Methods for circuit models in Xyce",
+     author = "M.~A.~Heroux and S.~A.~Hutchinson and R.~J.~Hoekstra and D.~M.~Day",
+     institution = snl,
+     note = "In preparation",
+     year = 2002}
+
+@techreport{Hero2002,
+     title = "Expressing basic parallel algorithms using import/export methods",
+     author = "M.~.A.~Heroux",
+     institution = snl,
+     note = "In preparation",
+     year = 2002}
+
+@techreport{HeroHoek2002,
+     title = "An object oriented library for parallel data redistribution",
+     author = "M.~A.~Heroux and R.~J.~Hoekstra",
+     institution = snl,
+     note  = "In preparation",
+     year = 2002}
+
+@techreport{HeroHoekWill2002,
+     title = "An object model for parallel numerical linear algebra computations",
+     author = "M.~A.~Heroux and R.~J.~Hoekstra and A.~B.~Williams",
+     institution = snl,
+     note  = "In preparation",
+     year = 2002}
+
+@techreport{Hero2002b,
+     title = "An Overview of the {Trilinos Project}",
+     author = "M.~A.~Heroux",
+     institution = snl,
+     note  = "In preparation",
+     year = 2002}
+
+@manual{TSF-User-Guide,
+     title = "TSF User Guide",
+     author = "K.~R.~Long and M.~A.~Heroux",
+     institution = snl,
+     edition  = "2.0",
+     year = 2002}
+
+@manual{Epetra-User-Guide,
+     title = "Epetra User Guide",
+     author = "M.~A.~Heroux",
+     institution = snl,
+     edition  = "2.0",
+     year = 2002}
+
+@manual{Ifpack-User-Guide,
+     title = "{IFPACK} User Guide",
+     author = "M.~A.~Heroux",
+     institution = snl,
+     edition  = "1.0",
+     year = 2001}
+
+@manual{Komplex-User-Guide,
+     title = "{Komplex} User Guide",
+     author = "M.~A.~Heroux",
+     institution = snl,
+     edition  = "1.0",
+     year = 2000}
+
+@TechReport{NISTsparseblas,
+   author      =  "K. A. Remington and R. Pozo",
+   title       =  "{NIST} {S}parse {BLAS} {U}ser's {G}uide",
+   type        =  "Internal Report",
+   number      =  "NISTIR 6744",
+   institution =  "National Institute of Standards and Technology",
+   address     =  "Gaithersburg, MD, USA",
+   month       =  "May",
+   year        =  "2001",
+   keywords    =  "sparse BLAS, sparse data structures, sparse matrices,
+                   BLAS libraries"
+}
+
+@article{sparseblas,
+   author = "I.~S.~Duff and M.~A.~Heroux and R.~Pozo",
+   title = "The Sparse {BLAS}",
+   journal = toms,
+   note = "To Appear",
+   year = 2002}
+
+@inproceedings{BartBloeHero2002,
+   title = "A Linear Algebra Interface for Efficient Development of Complex Abstract
+            Numerical Algorithms Independent of Computer Architecture and Data Mapping",
+    author = "R.~A.~Bartlett and B.~G.~van Bloemen Waanders and M.~A.~Heroux",
+    booktitle = "SC2002 Proceedings",
+    note = "submitted",
+    year = 2002}
+
+@incollection{KoniEderHero2000,
+    author = "A.~E.~Koniges and D.~C.~Eder and M.~A.~Heroux",
+    booktitle = "Industrial Strength Parallel Computing",
+    editor = "A.~E.~Koniges",
+    title = "Designing Industrial parallel applications",
+    chapter = 24,
+    publisher = "Morgan Kaufman",
+    year = 2000}
+
+@incollection{HeroSimoKoni2000,
+    author = "M.~A.~Heroux and H.~Simon and A.~E.~Koniges",
+    booktitle = "Industrial Strength Parallel Computing",
+    editor = "A.~E.~Koniges",
+    title = "The Future of Industrial parallel Computing",
+    chapter = 25,
+    publisher = "Morgan Kaufman",
+    year = 2000}
+
+@inproceedings{AgarGustZuba92,
+     title = "A High Performance Algorithm Using Pre-Processing for
+              the Sparse Matrix-Vector Multiplication",
+     author = "R. C. Agarwal and F. G. Gustavson and M. Zubair",
+     booktitle = "Proceedings of Supercomputing '92",
+     pages = "32--41",
+     publisher = "{IEEE} Computer Society Press",
+     address = "Los Alomitos, CA",
+     year = 1992}
+
+@mastersthesis{Ande88,
+     title = "Parallel Implementation of Preconditioned Conjugate
+              Gradient Methods for Solving Sparse Systems of 
+              Linear Equations",
+     author = "Edward Charles Anderson",
+     school = "Center for Supercomputing Research and Development,
+               University of Illinois",
+     month = "August",
+     year = 1988}
+
+@article{AndeSaad89,
+     title = "Solving Sparse Triangular Systems on Parallel
+              Computers",
+     author = "Edward Anderson and Youcef Saad",
+     journal = "International Journal of High Speed Computing",
+     volume = 1,
+     number = 1,
+     pages = "73--95",
+     year = 1989}
+
+@techreport{AshbSeag90,
+     title  = "A Proposed Standard for Iterative Linear Solvers",
+     author = "Steven F. Ashby and Mark K. Seager",
+     institution = "Lawrence Livermore National Laboratory",
+     month = "January",
+     year = 1990}
+
+@techreport{Ashc87,
+     title  = "A Vector Implementation of the Multifrontal Method for
+               Large Sparse, Symmetric Positive Definite Linear Systems",
+     author = "Cleve Ashcraft",
+     institution = "Boeing Computer Services",
+     number  = "ETA-TR-51",
+     year = 1987}
+
+@article{AshcGrim88,
+     title = "On vectorizing incomplete factorization and {SSOR}
+              preconditioners",
+     author = "Cleve Ashcraft and Roger G. Grimes",
+     journal = sissc,
+     volume = 9,
+     pages = "122--151",
+     year = 1988}
+
+@article{AxelEijk89,
+     title = "Vectorizable preconditioners for elliptic difference
+              equations in three space dimensions",
+     author = "O. Axelsson and V. Eijkhout",
+     journal = "Journal of Computational and Applied Mathematics",
+     volume = 27,
+     pages = "299--321",
+     year = 1989}
+
+@article{BankDoug93,
+     title = "Sparse Matrix Multiplication Package ({SMMP})",
+     author = "Randolph E. Bank and Craig C. Douglas",
+     journal = "Advances in Computational Mathematics",
+     volume = 1,
+     year = 1993}
+
+@book{BarrBerrChanDemmDonaDongEijkPozoRomiVors93,
+      title = "Templates for the Solution of Linear Systems: Building
+               Blocks for Iterative Methods",
+      author = "Richard Barrett and Michael Berry and Tony F. Cahn and
+                James Demmel and June Donato and Jack Dongarra and 
+                Victor Eijkhout and Roldan Pozo and Rharles Romine and 
+                Henk van der Vorst",
+       publisher = "{SIAM}",
+       year = 1993}
+
+@techreport{ChroGear87,
+     title  = "s-step iterative methods for symmetric linear systems",
+     author = "A. T. Chronopoulos and C. W. Gear",
+     institution = "Dept of Computer Science, University of Illinois
+                    at Urbana-Champaign",
+     number = "UIUCDCS-R-87-1345",
+     year = 1987}
+
+@article{DodsGrimLewi91,
+     title = "Sparse Extensions to the {FORTRAN} Basic linear Algebra
+              Subprograms",
+     author = "David S. Dodson and Roger G. Grimes and John G. Lewis",
+     journal = toms,
+     volume = 17,
+     number = 2,
+     pages = "253--263",
+     month = "June",
+     year = 1991}
+
+@manual{EM93a,
+     title = "The EM Symmetric Sparse Supernodal Format",
+     organization = "Elegant Mathematics, Inc.",
+     address = "Bothell, Washington",
+     year = 1993}
+
+@manual{EM93b,
+     title = "The EM Unsymmetric Sparse Supernodal Format",
+     organization = "Elegant Mathematics, Inc.",
+     address = "Bothell, Washington",
+     year = 1993}
+
+@book{DuffErisReid86,
+     title = "Direct Methods for Sparse Matrices",
+     author = "I. S. Duff and A. M. Erisman and J. K. Reid",
+     publisher = "Oxford University Press",
+     series = "Monographs on Numerical Analysis",
+     address = "New York",
+     year = 1986}
+
+@article{DuffGrimLewi89,
+     title = "Sparse Matrix Test Problems",
+     author = "Iain S. Duff and Roger G. Grimes and John G. Lewis",
+     journal = toms,
+     volume = 15,
+     number = 1,
+     pages = "1--14",
+     month = "March",
+     year = 1989}
+
+@techreport{DuffMarrRadi92,
+     title = "A Proposal for User Level Sparse {BLAS}",
+     author = "Iain Duff and Michele Marrone and Giuseppe Radicati",
+     institution = "{CERFACS}",
+     number = "TR/PA/92/85",
+     month = "December",
+     year = 1992}
+
+@article{Erhe90,
+     title = "Sparse Matrix Multiplication on Vector Computers",
+     author = "Jocelyne Erhel",
+     journal = "International Journal of High Speed Computing",
+     volume = 2,
+     number  = 2,
+     pages = "101--116",
+     year = 1990}
+
+@techreport{ErhePhil88,
+     title = "Multiplication of a Vector by a Sparse Matrix on
+              Supercomputers",
+     author = "Jocelyne Erhel and Bernard Philippe",
+     institution = "INRIA/IRISA",
+     year = 1988}
+
+@article{FernGird89,
+     title = "A New Storage Scheme for an Efficient Implementation
+              of the Sparse Matrix-vector product",
+     author = "P. Fernandes and P. Girdinio",
+     journal = "Parallel Computing",
+     volume = 12,
+     pages = "327--333",
+     year = 1989}
+
+@article {Freu92,
+author = "Freund, R.W.",
+title = "Conjugate Gradient-type methods for Linear Systems 
+		with Complex Symmetric Coefficient Matrices",
+journal = sisc,
+volume = 13,
+year = 1992,
+pages = "425--448",
+}
+
+@techreport{FreuNach90,
+     title = "{QMR}: a Quasi-Minimal Residual Method for Non-Hermitian
+              Linear Systems",
+     author = "Roland W. Freund and {No\"{e}l} M. Nachtigal",
+     institution = "Research Institute for Advanced Computer Science
+                    ({RIACS}), {NASA} Ames Research Center",
+     number = "90.51",
+     month = "December",
+     year = 1990}
+
+@article {FreuNach96,
+author = "R. Freund and N. Nachtigal",
+title = "{QMRPACK}: a package of {QMR} algorithms", 
+journal = toms,
+volume = 22,
+number = 1,
+month = "March",
+year = 1996,
+pages = "46--77",
+}
+
+@book{GeorLiu81,
+     title = "Computer Solution of Large Sparse Positive Definite
+              Systems",
+     author = "Alan George and Joseph {W-H} Liu",
+     publisher = "Prentice-Hall, Inc.",
+     series = "Prentice-Hall Series in Computational Mathematics",
+     address = "Englewood Cliffs, NJ",
+     year = 1981}
+
+@article{GilbMoleSchr92,
+     title = "Sparse Matrices in {Matlab}:  Design and
+              Implementation",
+     author = "John R. Gilbert and Cleve Moler and Robert Schreiber",
+     journal = simax,
+     volume = 13,
+     number  = 1,
+     pages = "333--356",
+     month = "January",
+     year = 1992}
+
+@book{GoluOrte93,
+     title = "Scientific Computing:  An Introduction with Parallel
+              Computing",
+     author = "Gene Golub and James M. Ortega",
+     publisher = "Academic Press",
+     year = 1993,
+     address = "Boston"}
+
+@book{GoluVanL89,
+     title = "Matrix Computations",
+     author = "Gene H. Golub and Charles F. Van Loan",
+     publisher = "Johns Hopkins University Press",
+     edition = "Second",
+     address = "Baltimore, Maryland",
+     year = 1989}
+
+@book{GoluVanL96,
+     title = "Matrix Computations",
+     author = "Gene H. Golub and Charles F. Van Loan",
+     publisher = "Johns Hopkins University Press",
+     edition = "Third",
+     address = "Baltimore, Maryland",
+     year = 1996}
+
+@techreport{GrotSimo92,
+     title = "Parallel Preconditioning and Approximate Inverses on the
+              Connection Machine",
+     author = "Marcus Grote and Horst D. Simon",
+     institution = "{NASA} Ames Research Center",
+     number = "RNR-92-020",
+     month = "May",
+     year = 1992}
+
+@article{Gust78,
+     title = "Two Fast Algorithms for Sparse Matrices:
+              {M}ultiplication and Permuted transposition",
+     author = "Fred G. Gustavson",
+     journal = toms,
+     volume = 4,
+     number  = 3,
+     pages = "250--269",
+     year = 1978}
+
+@book{HageYoun81,
+     title = "Applied Iterative Methods",
+     author = "Louis A. Hageman and David M. Young",
+     publisher = "Academic Press",
+     year = 1981,
+     series = "Computer Science and Applied Mathematics",
+     address = "New York and London"}
+
+@phdthesis{Hamm92,
+     title = "Mapping Unstructured Grid Computations to Massively
+              Parallel Computers",
+     author = "Steven Warren Hammond",
+     school = "Rensselaer Polytechnic Institute",
+     address = "Troy, New York",
+     month = "February",
+     year = 1992}
+
+@techreport{HammSchr89,
+     title = "Efficient {ICCG} on a Shared Memory Multiprocessor",
+     author = "Steven W. Hammond and Robert Schreiber",
+     institution = "Research Institute for Advanced Computer Science
+                    {(RIACS)}",
+     month = "May",
+     year = 1989}
+
+@unpublished{Hero92b,
+     title = "The Cray Sparse Toolkit",
+     author = "Michael A. Heroux",
+     note = "In preparation"}
+
+@unpublished{Hero92c,
+     title = "A Three-level Hierarchy of Interfaces for Sparse
+              Iterative Solvers",
+     author = "Michael A. Heroux",
+     note = "In preparation"}
+
+@unpublished{Hero92d,
+     title = "Sparse Matrix-Dense Matrix Product on MPP0",
+     author = "Michael A. Heroux",
+     note = "In preparation"}
+
+@article{HeroThom92,
+     title = "A comparison of {FAC} and {PCG} methods for solving
+              composite grid problems",
+     author = "Michael A. Heroux and J.~W.~Thomas",
+     journal = "Communications in Applied Numerical Methods",
+     volume = 8,
+     year = 1992}
+
+@article{HestStie52,
+     title = "Methods of conjugate gradients for solving linear
+              systems",
+     author = "M. R. Hestenes and E. Stiefel",
+     journal = "J. Res. National Bureau of Standards",
+     volume = 49,
+     pages = "409--436",
+     year = 1952}
+     
+@article{Hind84,
+     title = "Reverse Communication in General--Purpose Fortran Math
+              Software",
+     author = "Alan Hindmarsh",
+     journal = "Tentacle",
+     volume = 4,
+     number = 11,
+     pages = "2--7",
+     month = "November",
+     year = 1984}
+
+@techreport{JalbMeieSame87,
+     title = "The Behaviour of Conjugate Gradient Based Algorithms on a
+              Multi-vector Processor with a Memory Hierarchy",
+     author = "William Jalby and Ulrike Meier and Ahmed Sameh",
+     institution = "Center for Supercomputing Research and Development
+                    {(CSRD)}",
+     month = "February",
+     year = 1987}
+
+@article{JohnMiccPaul83,
+     title = "Polynomial preconditioners for conjugate-gradient
+              calculations",
+     author = "Olin G. Johnson and Charles A. Micchelli and George  Paul",
+     journal = sinum,
+     volume = 20,
+     number = 2,
+     month = "April",
+     pages = "362--376",
+     year = 1983}
+
+@techreport{JonePlas91a,
+     title = "An Improved Incomplete Cholesky Factorization",
+     author = "Mark T. Jones and Paul E. Plassmann",
+     institution = "Mathematics and Computer Science Division, Argonne
+                    National Laboratory",
+     number = "MCS-P206-0191",
+     month = "April",
+     year = 1991}
+
+@techreport{JonePlas91b,
+     title = "Parallel Iterative Solution of Sparse Linear Systems
+              Using Orderings from Graph Coloring Heuristics",
+     author = "Mark T. Jones and Paul E. Plassmann",
+     institution = "Mathematics and Computer Science Division, Argonne
+                    National Laboratory",
+     number = "MCS-P198-1290",
+     month = "April",
+     year = 1991}
+
+@techreport{JonePlas92,
+     title = "{BlockSolve} v1.1: Scalable Library Software for the
+Parallel solution of sparse linear systems",
+     author = "Mark T. Jones and Paul E. Plassmann",
+     institution = "Mathematics and Computer Science Division, Argonne
+                    National Laboratory",
+     number = "ANL-92/46",
+     month = "December",
+     year = 1992}
+
+@article{KapoKoloYere91,
+     title = "Block {SSOR} Preconditionings for High-order {3D} {FE}
+              system. {II}. {Incomplete} {BSSOR} preconditionings.",
+     author = "I. E. Kaporin and L. Yu. Kolotilina and A. Yu.
+               Yeremin",
+     journal = laa,
+     volume = "154--156",
+     pages = "647--674",
+     year = 1991}
+
+@techreport{KharYere92,
+     title = "Eigenvalue Translation Based Preconditioners for the
+              {GMRES(k)} Method",
+     author = "S. A. Kharchenko and A. Yu. Yeremin",
+     institution = "Elegant Mathematics, Inc.",
+     number = "EM-RR 2/92",
+     month = "February",
+     note  = "Preliminary Version",
+     year = 1992}
+
+@techreport{KincOppe89,
+     title = "Recent Vectorization and Parallelization of ITPACKV",
+     author = "David R. Kincaid and Thomas C. Oppe",
+     institution = "Center for Numerical Analysis, The University of
+                    Texas at Austin",
+     month = "November",
+     year = 1989}
+
+@techreport{KincOppeRespYoun84,
+     title = "{ITPACKV} {2C} User's Guide",
+     author = "David R. Kincaid and Thomas C. Oppe and John R. Respess
+               and David M. Young",
+     institution = "Center for Numerical Analysis, The University of
+                    Texas at Austin",
+     number = "CNA-191",
+     month = "November",
+     year = 1984}
+
+@article{Li97,
+     title = "A block variant of the {GMRES} method on massively
+              parallel processors",
+     author = "Guangye Li",
+     journal = "Parallel Computing",
+     volume = 23,
+     pages = "1005--1019",
+     year = 1997}
+
+@article{Mant80,
+     title = "An incomplete factorization technique for positive
+              definite linear systems",
+     author = "T. A. Manteuffel",
+     journal = "Math. Comp.",
+     volume = 34,
+     pages = "473--497",
+     year = 1980}
+
+@inproceedings{Mask92,
+     title = "Prediction of nonlinear wave/hull interactions on
+              complex vessels",
+     author = "Brian Maskew",
+     booktitle = "Proceedings of the 19th Symposium on Naval
+                  Hydrodynamics",
+     address = "Seoul, Korea",
+     month = "August",
+     year = 1992}
+
+@article{Meijvand77,
+     title = "An iterative solution method for linear systems of which
+              the coefficient matrix is a symmetric {M}-matrix",
+     author = "J.A. Meijerink and H. A. {van der Vorst}",
+     journal = "Math. Comp.",
+     volume = 31,
+     pages = "149--162",
+     year = 1977}
+
+@article{Meijvand81,
+     title = "Guidelines for the Usage of Incomplete Decompositions in
+              Solving Sets of Linear Equations as They Occur in Practical
+              Problems",
+     author = "J.A. Meijerink and H. A. {van der Vorst}",
+     journal = "Journal of Computational Physics",
+     volume = 44,
+     pages = "134--155",
+     year = 1981}
+
+@article{Melh88,
+     title = "Parallel solution of linear systems with striped sparse
+             matrices",
+     author = "Rami Melhem",
+     journal = "Parallel Computing",
+     volume = 6,
+     pages = "165--184",
+     year = 1988}
+
+@article{Melh87,
+     title = "Toward efficient implementation of preconditioned
+              conjugate gradient methods on vector supercomputers",
+     author = "Rami Melhem",
+     journal = "Int. J. Supercomputer Applications",
+     volume = 1,
+     pages = "70--98",
+     year = 1987}
+
+@techreport{Meur89a,
+     title = "The Conjugate Gradient method on vector and parallel
+              supercomputers",
+     author = "Gerard Meurant",
+     institution = "CEA, Centre d'Etudes de Limeil-Valenton",
+     month = "July",
+     year = 1989}
+
+@article{Meur89b,
+     title = "Iterative methods for multiprocessor vector computers",
+     author = "Gerard Meurant",
+     journal = "Computer Physics Reports",
+     volume = 11,
+     pages = "51--80",
+     month = "November",
+     year = 1989}
+
+@article{OLea80,
+     title = "The Block Conjugate Gradient Algorithm and Related
+              Methods",
+     author = "Dianne P. O'Leary",
+     journal = "Linear Algebra and Its Applications",
+     volume = 29,
+     pages = "293--322",
+     year = 1980}
+
+@article{OLea87,
+     title = "Parallel Implementations of the Block Conjugate Gradient 
+              Algorithm",
+     author = "Dianne P. O'Leary",
+     journal = "Parallel Computing",
+     volume = 5,
+     pages = "127--139",
+     year = 1987}
+
+@manual{OppeJoubKinc88,
+     title = "{NSPCG} {User's} Guide",
+     author = "Thomas C. Oppe and Wayne D. Joubert and David R.
+               Kincaid",
+     organization = "Center for Numerical Analysis, The University of
+                     Texas at Austin",
+     month = "December",
+     year = 1988}
+
+@techreport{OppeKinc90,
+     title = "Are There Iterative {BLAS}?",
+     author = "Thomas C. Oppe and David R. Kincaid",
+     institution = "Center for Numerical Analysis, The University of
+                    Texas at Austin",
+     month = "February",
+     year = 1990}
+
+@book{Orte88,
+     title = "Introduction to Parallel and Vector Solution of Linear
+              Systems",
+     author = "James M. Ortega",
+     publisher = "Plenum Press",
+     year = 1988,
+     series = "Frontiers of Computer Science",
+     address = "New York and London"}
+
+@article{PaolBroz89,
+     title = "Data Structures to Vectorize {CG} Algorithms for General
+              Sparsity Patterns",
+     author = "Gaia Valeria Paolini and Giuseppe Radicati Di Brozolo",
+     journal = "BIT",
+     volume = 29,
+     pages = "703--718",
+     year = 1989}
+
+@article{Pete91,
+     title = "Sparse matrix vector multiplication techniques on the
+              {IBM} 3090 {VF}",
+     author = "Alexander Peters",
+     journal = "Parallel Computing",
+     volume = 17,
+     pages = "1409--1424",
+     year = 1991}
+
+@Unpublished{petsc-home-page,
+    Author = "S. Balay and W. Gropp and L. McInnes and B. Smith",
+   Title   = "{PETSc} home page",
+   Note    = "http://www.mcs.anl.gov/petsc",
+   Year    = "1998"}
+
+@TechReport{petsc-manual,
+    Author     = "S. Balay and W. Gropp and L. McInnes and B. Smith",
+   Title             = "{PETSc} 2.0 Users Manual",
+   Number      = "ANL-95/11 - Revision 2.0.22",
+   Institution = "Argonne National Laboratory",
+   Year             = "1998"}
+
+@InProceedings{petsc-efficient,
+    Author     = "S. Balay and W. Gropp and L. McInnes and B. Smith",
+   Title       = "Efficient Management of Parallelism
+                  in Object Oriented Numerical Software Libraries",
+    Booktitle  = "Modern Software Tools in Scientific Computing",
+    Editor     = "E. Arge and A. M. Bruaset and H. P. Langtangen",
+    Pages      = "163--202",
+    Publisher  = "Birkhauser Press",
+    Year       = "1997"}
+@unpublished{PoolHeroSouk92,
+     title = "The Impact of Cray Direct and Iterative Equation Solvers in 
+              Industrial Applications Codes.",
+     author = "Eugene Poole and Michael A. Heroux and Omar Souka et.~al.",
+     note = "Preprint",
+     month = "April",
+     year = 1992}
+
+@techreport{PothSimoWang92,
+     title = "Spectral Nested Dissection",
+     author = "Alex Pothen Horst D. Simon and Lie Wang",
+     institution = "{NASA} Ames Research Center",
+     number = "RNR-92-004",
+     month = "January",
+     year = 1992}
+
+@inbook{Reid71,
+     chapter = "On the Method of Conjugate Gradients for the Solution
+                of Large Sparse Systems of Linear Equations",
+     title = "Large Sparse Sets of Linear Equations",
+     editor = "J. K. Reid",
+     publisher = "Academic Press",
+     year = 1971}
+
+@article{Saad85,
+     title = "Practical Use of Polynomial Preconditionings for the 
+              Conjugate Gradient Method",
+     author = "Youcef Saad",
+     journal = sissc,
+     volume = 6,
+     number = 4,
+     pages = "865--881",
+     month = "October",
+     year = 1985}
+
+@article{Saad89,
+     title = "Krylov Subspace Methods on Supercomputers",
+     author = "Youcef Saad",
+     journal = sissc,
+     volume = 10,
+     number = 6,
+     pages = "1200--1232",
+     month = "November",
+     year = 1989}
+
+@unpublished{Saad90,
+     title = "{SPARSKIT:} A Basic Tool Kit for Sparse Matrix
+              Computations",
+     author = "Youcef Saad",
+     note = "Preliminary Version"}
+
+@book { saad96,
+author = "Y. Saad",
+title = "Iterative methods for sparse linear systems",
+edition = {1st},
+publisher = "PWS Publishing Company",
+year = 1996,
+}
+
+@article{SaadSchu85a,
+     title = "Conjugate gradient-like algorithms for solving
+              nonsymmetric linear systems",
+     author = "Youcef Saad and Martin H. Schultz",
+     journal = "Math. Comp.",
+     volume = 44,
+     number = 170,
+     pages = "417--424",
+     month = "April",
+     year = 1985}
+
+@techreport{SaadSchu85b,
+     title = "Parallel Implementations of Preconditioned Conjugate
+              Gradient Methods",
+     author = "Youcef Saad and Martin H. Schultz",
+     institution = "Yale University",
+     month = "October",
+     year = 1985}
+
+@article{SaadSchu86,
+     title = "{GMRES}:  A Generalized Minimal Residual Algorithm for
+              Solving Nonsymmetric Linear Systems",
+     author = "Youcef Saad and Martin H. Schultz",
+     journal = sissc,
+     volume = 7,
+     number = 3,
+     pages = "856--869",
+     month = "July",
+     year = 1986}
+
+@article{Saad-ILUT,
+     title = "{ILUT}:  A dual threshold incomplete LU preconditioner",
+     author = "Y. Saad",
+     journal = "Numer. Linear Algebra Appl.",
+     volume = 1,
+     number = 4,
+     pages = "387--402",
+     year = 1994}
+
+@techreport{Seag88,
+     title  = "A {SLAP} for the Masses",
+     author = "Mark K. Seager",
+     institution = "Lawrence Livermore National Laboratory",
+     month = "December",
+     year = 1988}
+
+@techreport{ShadTumi91a,
+     title = "Iterative methods for nonsymmetric systems on {MIMD}
+              machines",
+     author = "John N. Shadid and Ray S. Tuminaro",
+     institution = "Sandia National Laboratories",
+     note = "To Appear in the Proceedings of the Fifth {SIAM}
+             Conference on Parallel Processing for Scientific 
+             Applications, March 25--27, 1991",
+     year = 1991}
+
+@techreport{ShadTumi91b,
+     title = "Sparse Iterative Algorithm Software for Large--Scale
+              {MIMD} machines:  An Initial Discussion and Implementation",
+     author = "John N. Shadid and Ray S. Tuminaro",
+     institution = "Sandia National Laboratories",
+     number = "SAND91--0059",
+     year = 1991}
+
+@techreport{ShadTumi91c,
+     title = "A Comparison of Preconditioned Nonsymmetric {K}rylov
+              Methods on a Large--scale {MIMD} Machine",
+     author = "John N. Shadid and Ray S. Tuminaro",
+     institution = "Sandia National Laboratories",
+     number = "SAND91--0059",
+     year = 1991}
+
+@misc{SmitGrop93,
+     author = "Barry F. Smith and William D. Gropp",
+     title = "The Design of Data-structure-neutral libraries for the
+              iterative solution of sparse linear systems",
+     note = "Submitted to {SIAM J. Sci Comput.}",
+     year = 1993}
+
+@article{Simo91,
+     title = "Partitioning of Unstructured Problems for Parallel
+              Processing",
+     author = "Horst D. Simon",
+     journal = "Computing Systems in Engineering",
+     volume = 2,
+     number = "2/3",
+     pages = "135--148",
+     year = 1991}
+
+@techreport{SimoVanDDagu92,
+     title = "Parallel Computational Fluid Dynamics: Current Status
+              and Future Requirements",
+     author = "Horst D. Simon and William R. Van Dalsem and Leonardo
+               Dagum",
+     institution = "{NASA} Ames Research Center",
+     number = "RNR-92-004",
+     month = "June",
+     note  = "To appear in ``Parallel Computational Fluid Dynamics -
+           Implementations and Results.''",
+     year = 1992}
+
+@article{Sonn89,
+     title = "{CGS}, A fast Lanczos-type Solver for Nonsymmetric Linear
+              Systems",
+     author = "Peter Sonneveld",
+     journal = sissc,
+     volume = 10,
+     number = 1,
+     pages = "36--52",
+     month = "January",
+     year = 1989}
+
+@book { temp94,
+author = "Barrett, R. and Berry, M. and Chan, T. and 
+		Demmel, J. and Donato, J. and Dongarra, J. and 
+		Eijkhout, V. and Pozo, R. and Romine, C. and van der Vorst, H.",
+title = "Templates for the solution of linear systems~: 
+		building blocks for iterative methods",
+publisher = "SIAM",
+address = "Philadelphia, PA, USA",
+year = 1994,
+}
+
+@techreport{vand90,
+     title = "Bi-{CGSTAB}: A fast and smoothly converging variant of
+              Bi-{CG} for the solution of nonsymmetric linear systems",
+     author = "Henk A. {van der Vorst}",
+     institution = "Dept of Mathematics, University of Utrecht",
+     number = "633",
+     month = "December",
+     year = 1990}
+
+@techreport{VenkSimoBart91,
+     title = "A {MIMD} Implementation of a Parallel Euler Solver for
+              Unstructured Grids",
+     author = "V. Venkatakrishnan and H. D. Simon and T. J. Barth",
+     institution = "{NASA} Ames Research Center",
+     number = "RNR-91-024",
+     month = "September",
+     note  = "To appear in ``The Journal of Supercomputing.''",
+     year = 1991}
+
+@inproceedings{Yang92,
+     title = "A Parallel Multifrontal Method for Sparse Symmetric
+              Definite Linear Systems on the {Cray} {YMP}.",
+     author = "Chao W. Yang",
+     booktitle = "Proceedings of the Fifth {SIAM} Conference on
+                  Parallel Processing for Scientific Computing",
+     address = "Houston, Texas",
+     month = "April",
+     year = 1992}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  New 2001  %%%%%%%%%%%%%%%%%%%%%%%%%%%
+@article{FaberManteuffel:84,
+  author =     "V. Faber and T. Manteuffel",
+    year =      1984,
+   title =     "Necessary and sufficient conditions for the existence
+                of a conjugate gradient method",
+ journal =     sinum,
+  volume =     21,
+   pages =     "352--362"
+}
+@article{ BenziTuma:98,
+    author = "M. Benzi and M. Tuma",
+    title = "A Sparse Approximate Inverse Preconditioner for Nonsymmetric Linear Systems",
+    journal = sisc,
+    volume = "19",
+    number = "3",
+    pages = "968--994",
+    year = "1998"
+}
+@article{ Chow:00,
+    author = "E. Chow",
+    title = "A priori sparsity patterns for parallel sparse 
+             inverse preconditioners",
+     journal = sisc,
+     volumne = "21", 
+    pages = "1804-1822",
+    year = "2000"
+}
+@article{ KolotilinaYeremin:93,
+    author = "L. Yu. Kolotilina and A. Yu. Yeremin",
+    title = "Factorized sparse approximate inverse preconditionings.
+             {I}. {Theory}",
+    journal = "SIAM Journal on Matrix Analysis and Applications",
+    volume = "14",
+    number = "1",
+    pages = "45--58",
+    year = "1993"
+}
+@techreport{ Silvesteretal:99,
+    author = "D. Silvester and H. Elman and D. Kay and A. Wathen",
+    title = "Efficient Preconditioning of the Linearized 
+             {Navier-Stokes} Equations",
+    number = "352",
+    address = "Manchester, England",
+    year = "1999"
+}
+
+@InProceedings{TuminaroTong:00, 
+  author =   {Tuminaro, R. and Tong, C.}, 
+  title =   {Parallel Smoothed Aggregation Multigrid: Aggregation Strategies 
+             on Massively Parallel Machines},
+  booktitle =   {SuperComputing 2000 Proceedings}, 
+  editor = {J. Donnelley},
+  year =   {2000}
+}
+
+@TechReport{TuminaroTong:00a,
+                AUTHOR = {Tong, C. and Tuminaro, R.},
+                TITLE = "{ML}2.0 {S}moothed {A}ggregation {U}ser's {G}uide",
+		institution =  "Sandia National Laboratories",
+                number = "SAND2001-8028",
+                address = "Albq, NM",
+                YEAR = "2000"}
+
+@article{Saad:94,
+     title = "{ILUT}:  A dual threshold incomplete LU preconditioner",
+     author = "Y. Saad",
+     journal = "Numer. Linear Algebra Appl.",
+     volume = 1,
+     number = 4,
+     pages = "387--402",
+     year = 1994}
+
+@article{ChowHeroux:98,
+     title = "An Object-oriented Framework for Block Preconditioning",
+     author = "Edmond Chow and Michael A. Heroux",
+     journal = "ACM Transactions on Mathematical Software",
+     volume = "24",
+     number = "2",
+     month = "June",
+     year = 1998,
+     pages = "159--183"}
+
+@TechReport{Heroux:01,
+     AUTHOR = {M.~Heroux},
+     TITLE = "{IFPACK} 2.0: An Object-Oriented Parallel 
+              Scaled Incomplete Factorization Package",
+     institution =  "Sandia National Laboratories",
+     number = "SAND2001-XXXX",
+     address = "Albq, NM",
+     YEAR = "2001"}
+
+@article{Manteuffel:80,
+     title = "An incomplete factorization technique for positive
+              definite linear systems",
+     author = "T. A. Manteuffel",
+     journal = "Math. Comp.",
+     volume = 34,
+     pages = "473--497",
+     year = 1980}
+
+@article{vanderVorst:92,
+         author = "H. van der Vorst",
+         title = "BI-CGSTAB: A fast and smoothly converging variant of
+                  BI-CG for the solution of nonsymmetric linear systems",
+         journal = sissc,
+         volume = 13,
+         number = 2,
+         pages = "631--644",
+         year = "1992"
+}
+@phdthesis{Chow:97,
+    author = "E.~Chow",
+    title = "Robust Preconditioning for Sparse Linear Systems",
+    department = "Department of Computer Science",
+    school = "University of Minnesota",
+    address = "Minneapolis, MN",
+    year = "1997"
+}
+@TechReport{Sand98-0730,
+  author=       {Tamara K. Locke},
+  title=        {Guide to Preparing {SAND} Reports},
+  institution=  {Sandia National Laboratories},
+  year=         {1998},
+  month=        may,
+  type=         {Technical report},
+  number=       {SAND98-0730},
+  address=      {Albuquerque, New Mexico 87185 and Livermore,
+California 94550},
+}

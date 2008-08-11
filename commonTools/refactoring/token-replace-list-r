@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# Warning!  Do not make a symbolic link to this script or you will break it!
+
+# Get the directory this is in to find other scirpts to call
+_SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*token-replace-list-r/\1/g"`
+
+find . -type f -exec $_SCRIPT_DIR/token-replace-list.pl $1 {} {} \;

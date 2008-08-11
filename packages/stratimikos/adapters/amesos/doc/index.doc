@@ -1,0 +1,84 @@
+/*! \mainpage Amesos to %Thyra Linear Solver Adapters
+
+This doxygen collection documents a small amount of code that wraps
+<tt>Amesos_BaseSolver</tt> objects to implement the
+<tt>Thyra::LinearOpWithSolveBase</tt> and
+<tt>Thyra::LinearOpWithSolveFactoryBase</tt> interfaces.  The subclass
+<tt>Thyra::AmesosLinearOpWithSolveFactory</tt> should be used by clients to
+manage the creation of <tt>Thyra::LinearOpWithSolveBase</tt> objects from
+<tt>Thyra::EpetraLinearOpBase</tt> objects.
+
+See \ref single_amesos_thyra_adapters_testing_prg_grp "this testing program"
+for how these adapters are used to take an <tt>Epetra_CrsMatrix</tt> and us it
+to create these linear solver objects.
+
+<ul>
+
+<li> \ref Amesos_Thyra_adapters_grp : Documents the basic wrapper code
+for turning Epetra objects into %Thyra objects.
+
+<li> \ref Amesos_Thyra_examples_grp : Gives some examples of the use of
+the Epetra to Thyra adapter code.
+
+</ul>
+
+*/
+
+/** \defgroup Amesos_Thyra_adapters_grp Amesos to Thyra Linear Solver Adapter Code
+
+\section Amesos_Thyra_adapters_classes_sec Classes
+
+<ul>
+
+<li><tt>Thyra::AmesosLinearOpWithSolveFactory</tt> : A general concrete
+implementation of the <tt>Thyra::LinearOpWithSolveFactoryBase</tt> interface
+that creates <tt>Thyra::AmesosLinearOpWithSolve</tt> objects.
+
+<li><tt>Thyra::AmesosLinearOpWithSolve</tt> : A very general concrete
+implementation of the <tt>Thyra::LinearOpWithSolveBase</tt> interface.
+Clients should not create these objects directly but instead should use
+<tt>Thyra::AmesosLinearOpWithSolveFactory</tt> for that purpose.
+
+</ul>
+
+\section Amesos_Thyra_examples_sec Examples
+
+<ul>
+<li> \ref Amesos_Thyra_examples_grp
+</ul>
+
+*/
+
+/** \defgroup Amesos_Thyra_examples_grp Assorted Amesos to Thyra Linear Solver Adapter Example Code
+
+\brief Below are links to example code that demonstrate various use cases for
+the %Amesos to %Thyra linear solver adapters:
+
+<ol>
+
+<li>\ref single_amesos_thyra_adapters_testing_prg_grp
+
+</ol>
+
+*/
+
+/** \defgroup single_amesos_thyra_adapters_testing_prg_grp Testing Program for the Amesos/Thyra Linear Solver Adapters.
+
+\ingroup Amesos_Thyra_examples_grp
+
+\brief Here we show a testing program that takes the %Amesos/%Thyra adatpers
+through the paces.
+
+Below is a complete listing of the testing function with line numbers:
+
+\includelineno ../thyra/test/test_single_amesos_thyra_solver.cpp
+
+*/
+
+/** \example test_single_amesos_thyra_solver.cpp
+
+Click \ref single_amesos_thyra_adapters_testing_prg_grp "here" for a more
+detailed discusion of this example/test program along with a listing which
+includes line numbers.
+
+*/

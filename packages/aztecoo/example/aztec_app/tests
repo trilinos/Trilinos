@@ -1,0 +1,38 @@
+all:
+	@cd ../lib ;                              \
+	$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"
+	@$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"
+	@mv sample main
+	@$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)"  "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)" "OBJ= az_tutorial.o"
+	@mv sample tutorialc
+	@$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)"  "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"\
+	        "OBJ= az_mat_free_main.o az_mat_free_example.o az_mat_free_com.o"
+	@mv sample  mat_free
+	@rm -f sample
+	$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "VPATH= . ../../az "  "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"\
+	       "OBJ = az_msrp_test.o az_examples.o az_app_utils.o"
+	@mv sample msrp
+	$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "VPATH= . ../../az "  "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"\
+	       "OBJ = az_vbrp_test.o az_examples.o az_app_utils.o"
+	@mv sample vbrp
+	$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "VPATH= . ../../az "  "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"\
+	       "OBJ = az_msra_test.o az_examples.o az_app_utils.o"
+	@mv sample msra
+	$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "VPATH= . ../../az "  "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"\
+	       "OBJ = az_vbra_test.o az_examples.o az_app_utils.o"
+	@mv sample vbra
+	@echo "On the execution machine (in directory '../..') type:"
+	@echo " "
+	@echo '   run_tests ext/app "command to execute exe.file on  1 node"  \'
+	@echo '                     "command to execute exe.file on  8 nodes" \'
+	@echo '                     "command to execute exe.file on 64 nodes" '
+	@echo " "
+	@echo "Note: the 8 and 64 node commands are optional"
+fort_exes:
+	@$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "LD_COMPILER=$(LD_COMPILER)" "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"\
+	        "OBJ= az_tutorial_without_MPI.o"
+	@mv sample  tutorialf_noMPI
+fort_exes2:
+	@$(MAKE) "MACHINE=$(MACHINE)" "COMM=$(COMM)" "MPI_INCLUDE_DIR=$(MPI_INC_PATH)" "MPI_LIB=$(MPI_LIB_PATH)"\
+	        "OBJ= az_tutorial_without_MPI.o"
+	@mv sample  tutorialf_noMPI

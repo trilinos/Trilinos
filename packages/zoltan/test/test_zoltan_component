@@ -1,0 +1,213 @@
+#!/bin/csh
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+#
+# This C-shell script runs all the test examples with the *CCA component* version
+# of Zoltan and compares the results against pre-computed results.
+# As of Sept 5th, 2003, only linux and chaco meshes are supported, as a only 
+# a few of the test problems.
+#
+# Usage: test_zoltan_component -arch arch-type -ccafe ccafe_bin_dir -mpi mpi_bin_dir  
+#
+# where arch-type is one of {linux}. Other architectures will be forthcoming. On
+# patches.sandia.gov, the following will work
+#
+# [jairay@patches ] test_zoltan_component -arch linux -ccafe /Net/local/homes/jairay/cca/dccafe/bin -mpi /Net/local/homes/jairay/general_support_software/mpich/bin 
+#
+#
+
+# Chaco problems to run
+set ch_name = (simple nograph vwgt ewgt grid20x19 film hammond drake)
+set ch_nproc = (4 4 3 4 5 6 8 3) # no. of procs
+
+# Set default options
+set out_tag = out
+set logfile = test_zoltan_component.log
+set answers = answers
+set outdir = output_zc
+unset run
+unset arch
+unset mpidir
+unset ccafe_bin_dir
+
+# Parse command-line options. 
+  while ( $#argv )
+
+    if ( ("$1" == "-h") || ("$1" == "-help") ) then
+	goto usage
+
+    else if ( "$1" == "-arch" ) then
+  
+	if ( $#argv < 2 ) then
+	echo "Error: No argument for -arch"
+	goto usage
+	endif
+    
+	shift argv
+	set arch = "$1"
+
+   else if ( "$1" == "-ccafe" ) then
+    
+        if ( $#argv < 2 ) then
+        echo "Error: No argument for -ccafe"
+        go to usage
+        endif
+
+	shift argv
+	set ccafe_bin_dir = "$1"
+
+   else if ( "$1" == "-mpi" ) then
+
+        if ( $#argv < 2 ) then
+	echo "Error: No argument to -mpi"
+	go to usage
+	endif
+
+	shift argv
+	set mpi_bin_dir = "$1"
+
+   endif
+	
+   shift argv 
+
+  end # while ( $#argv )
+
+# Determine what command to use to launch a parallel program based on $arch
+  if ( $?arch ) then
+    switch ( $arch )
+    case generic:
+    case linux:
+      set run = "${mpi_bin_dir}/mpirun -all-local -np"
+      breaksw
+    default:
+      echo "Unknown arch type. Can only support linux as of 2003/09/05 "
+      exit -2
+      breaksw
+    endsw
+  else # !$?arch
+    echo "Error: -arch must be specified."
+    goto usage
+  endif
+
+
+# Set up log file
+  if ( -e $logfile ) /bin/mv $logfile ${logfile}.old
+  echo "Test date  = `date`" > $logfile
+  echo "System     = `uname -a`" >> $logfile
+  echo "Arch       = ${arch}" >> $logfile
+  echo "Run cmd    = $run" >> $logfile
+  echo "Run dir    = $cwd" >> $logfile
+  echo " " >> $logfile
+
+# Loop over Chaco problems
+  @ nprob = $#ch_name
+  @ nfailed = 0
+  while ( $#ch_name )
+
+    # Go to the next test directory, initialize
+    cd ch_${ch_name[1]}
+    @ np = $ch_nproc[1]
+    echo "Running test case ${ch_name[1]} on ${ch_nproc[1]} procs" | tee -a ../$logfile
+
+    # Check output directories 
+    if (! -d $outdir ) mkdir $outdir
+    if (! -d $answers ) then
+      echo "Warning: Answer directory missing in ch_${ch_name[1]}" | tee -a ../$logfile
+    endif
+
+    # Which partitioning methods should I test ?  
+    set methods = `ls -1 ccaffeine_input.*.in | awk -F . '{print $2}'`
+
+    # Loop over all methods
+    foreach mtd ( $methods )
+      # Clear fail flag
+      @ fail = 0
+
+      # Check input file
+      if (-e zdrive.inp.${mtd} ) then
+
+          # Save the ccaffeine and zdrive input files
+          /bin/cp zdrive.inp.${mtd} ${outdir}/
+	  /bin/cp ccaffeine_input.${mtd} ${outdir}/
+
+	  # Delete old output files 
+          if (-e ${outdir}/${ch_name[1]}.$mtd.$np.0 ) then
+            /bin/rm ${outdir}/${ch_name[1]}.$mtd.$np.*
+          endif
+
+          # Run the driver
+          $run $np ${ccafe_bin_dir}/ccafe-batch --ccafe-rc `pwd`/ccaffeine_input.${mtd}
+          sleep 1 # Make sure all processes have time to write to disk
+    
+          # Save and compare output files 
+          @ i = 0
+          while ( $i < $np )
+            /bin/rm ${ch_name[1]}.Before.$np.$i  # remove the initial condition file
+            /bin/mv ${ch_name[1]}.After.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
+            if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$arch ) then
+       	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$arch
+            else
+              set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
+            endif
+            diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+            if ( $status ) then 
+              @ fail = 1
+            endif
+
+            @ i = $i + 1
+          end
+    
+        else
+          echo "Warning: No input file ${ch_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
+        endif
+  
+  
+        # Report success or failure 
+        if ( $fail ) then
+          @ nfailed = $nfailed + 1
+          echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+        else
+          echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
+        endif
+
+    end # foreach method
+
+    # Shift arguments and return to original directory
+    shift ch_name
+    shift ch_nproc
+    cd ..
+
+  end # while there are still elements in ch_name
+  
+  # Print failure summary
+  echo " " | tee -a $logfile
+  if ( $nfailed == 0 ) then
+    echo "Success: all Chaco problems passed." | tee -a $logfile
+  else
+    echo "Failure: $nfailed Chaco problems failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
+
+# Exit successfully
+echo "Test final = `date`" >> $logfile
+exit 0
+
+# Print usage and exit with error
+usage:
+  echo "Usage: $0 -arch arch-type -ccafe ccafe_bin_dir -mpi mpi_bin_dir"
+  echo "where arch-type is one of {linux}"
+  echo "      ccafe_bin_dir is the full path to the directory where ccafe-batch is "
+  echo "      mpi_bin_dir is the full path to where mpirun is"
+  echo "(If you have set ZOLTAN_ARCH you still have to use -arch.)"
+  exit -1
+

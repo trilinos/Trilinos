@@ -1,0 +1,167 @@
+Testing
+=======
+
+There are two directories in the PyTrilinos package that provide
+python scripts for testing PyTrilinos, ``example`` and ``test``.
+Generally speaking, unit tests go in the ``test`` directory and
+descriptive or demonstrative example scripts go in ``example``.
+
+Naming Conventions
+------------------
+
+Unit tests scripts shall begin with ``test``, followed by the package
+name and an underscore, followed by a short description of the test,
+typically the class name being tested.  For example::
+
+    testTeuchos_ParameterList
+    testEpetra_MultiVector
+
+are the base names of the unit tests for ``Teuchos.ParameterList`` and
+``Epetra.MultiVector``, respectively.  In certain situations, the
+underscore and test description can be omitted.
+
+Example scripts shall begin with ``ex``, followed by the name of the
+primary package being demonstrated, followed by an underscore and a
+short description of the test.  For example::
+
+  exEpetra_Comm
+  exAztecOO_Operator
+
+are the base names for example scripts demonstrating the Epetra.Comm
+class and an AztecOO solver that uses an Epetra.Operator,
+respectively.  In certain situations, the underscore and test
+description can be omitted.
+
+Build System
+------------
+
+Running ``make`` in either the ``example`` or ``test`` directories
+simply copies the test scripts from the source directory to the build
+directory.  Autotools requires that the source and build names be
+different, to support building in the source directory.  To meet this
+requirement, the source files have the suffix ``.src`` and the build
+files have the suffix ``.py``.
+
+The ``Makefile`` in the test directories control which scripts get
+copied to the build directory, via the ``PACKAGE_TESTS`` and
+``PACKAGE_EXAMPLES`` variables defined in ``test/Makefile.am`` and
+``example/Makefile.am``, respectively, where ``PACKAGE`` is replaced
+by the names of all the packages with python wrappers.  The values of
+these variables should be conditional based on what packages are
+enabled.  If a test imports a given PyTrilinos package, then it should
+be conditionally enabled based on the value of
+``HAVE_PYTRILINOS_PACKAGE``, where ``PACKAGE`` is replaced by the name
+of the package.
+
+Running All Tests
+-----------------
+
+To run all of the enabled tests, first make sure they are all
+up-to-date::
+
+    $ cd BUILD/packages/PyTrilinos
+    $ make tests examples
+
+Then you can use the test harness ``make`` target to run all of the
+tests::
+
+    $ make runtests-serial
+
+or::
+
+    $ make runtests-mpi
+
+The results of all of the tests can be found in
+``test/runtests-results`` directory.
+
+Test Script Conventions
+-----------------------
+
+All test scripts shall use the ``optparse`` module to parse command
+line options and support the following options::
+
+  -t, --testharness     test local build modules; prevent loading
+                        system-installed modules
+  -v VERBOSITY, --verbosity=VERBOSITY
+                        set the verbosity level [default 2]
+
+The ``-t`` option is to force use of the locally-built PyTrilinos,
+preventing the importing of any installed PyTrilinos modules.  The
+verbosity option is used in all ``test`` scripts and optionally in any
+``example`` scripts where it makes sense.
+
+Tests scripts use the ``setpath`` module, local to both ``test`` and
+``example`` directories, to set the python search path to find the
+local PyTrilinos modules.  Locally built modules are imported
+directly::
+
+    import Teuchos
+    import Epetra
+
+while system-installed modules are imported like this::
+
+    from PyTrilinos import Teuchos
+    from PyTrilinos import Epetra
+
+See any test script for examples and how the ``-t`` option is
+enforced.
+
+Test scripts shall run in both serial or parallel.  You may use
+either::
+
+    comm = Teuchos.DefaultComm.getComm()
+
+or::
+
+    comm = Epetra.PyComm()
+
+to obtain an appropriate communicator object for the test scripts.  By
+convention, set the variable ``iAmRoot`` to either ``True`` or
+``False`` depending on whether the communicator's rank is 0.
+
+The test script shall output ``End Result: TEST PASSED`` if the test
+passes correctly.  This helps the Trilinos test harness determine
+which tests pass and which do not, especially in parallel.
+
+Unit Tests
+----------
+
+Unit tests are based on the ``unittest`` python library module.  Test
+case classes inherit from ``unittest.TestCase``.  Individual tests are
+implemented as methods of these classes that begin with ``test``.  See
+the python documentation (http://www.python.org) for details.
+
+Each unit test script can have one or more ``TestCase`` classes.  In
+``main()``, each test case class should be added to a
+``unittest.TestSuite`` object named ``suite``.
+
+Unit tests shall print, from processor 0, a header with a message such
+as "Testing Epetra.Object" with a line of asterisks above and below
+the message::
+
+    *********************
+    Testing Epetra.Object
+    *********************
+
+The suite of tests should be run with::
+
+    verbosity = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+and the success should be determined and output via (for the case of
+an Epetra communicator)::
+
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(errsPlusFails)
+
+If there are no errors and no failures on any processors, then the
+test will pass.
+
+Example Scripts
+---------------
+
+Example scripts are more free-form and should be written for
+readability, to make for clear demonstrations of PyTrilinos usage.
+However, it is encouraged that example script output be consistent
+with unit test output whenever possible.

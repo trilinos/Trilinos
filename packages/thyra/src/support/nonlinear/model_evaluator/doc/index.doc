@@ -1,0 +1,77 @@
+/*! \mainpage Thyra Nonlinear Model Evaluator Support Software and Examples
+
+\section thyra_src_support_nonlinear_model_evaluator_outline_sec Outline
+
+<ul>
+<li> \ref thyra_src_support_nonlinear_model_evaluator_into_sec
+<li> \ref thyra_src_support_nonlinear_model_evaluator_software_sec
+<li> \ref thyra_src_support_nonlinear_model_evaluator_examples_sec
+<li> \ref thyra_src_support_nonlinear_model_evaluator_links_sec
+</ul>
+
+\section thyra_src_support_nonlinear_model_evaluator_into_sec Introduction
+
+This doxygen collection contains support software related to the <a
+href="../../../../../nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">Fundamental
+Thyra Nonlinear Model Evaluator Interfaces</a>.
+
+\section thyra_src_support_nonlinear_model_evaluator_software_sec Software
+
+<ul>
+
+<li> ???
+
+</ul>
+ 
+\section thyra_src_support_nonlinear_model_evaluator_examples_sec Examples
+
+<ul>
+
+<li> <a href="../../../../../../../epetraext/thyra/doc/html/index.html">EpetraExt/Thyra Examples</a>
+
+</ul>
+  
+\section thyra_src_support_nonlinear_model_evaluator_links_sec Links
+
+<ul>
+
+<li> <a href="../../../../../../doc/html/index.html">Main Thyra Package Documentation Page</a>
+<li> ToDo: Add more links ...
+
+</ul>
+
+*/
+
+
+//
+// FFT examples
+//
+
+/** \example ComplexFFTLinearOp.hpp
+
+Click \ref Thyra_Op_Vec_examples_fft_grp "here" for an example program that
+use this example class.
+
+*/
+
+/** \example RealComplexFFTLinearOp.hpp
+
+Click \ref Thyra_Op_Vec_examples_fft_grp "here" for an example program that
+use this example class.
+
+*/
+
+/** \defgroup Thyra_Op_Vec_examples_fft_grp Templated FFT examples
+
+\ingroup Thyra_Op_Vec_examples_grp
+
+To see the full listing of this example program click: <a
+href="silly1DFFT__serial_8cpp-example.html">
+silly1DFFT_serial.cpp </a>
+
+*/
+
+/** \example silly1DFFT_serial.cpp
+
+*/
+

@@ -1,0 +1,15 @@
+## Optional dependency on epetra
+@HAVE_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+_PLIRIS_INCLUDES= \
+  -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
+  $(EPETRA_INCLUDES)
+
+_PLIRIS_LIBS= \
+  -L@abs_top_builddir@/src/ -ldpliris \
+  $(EPETRA_LIBS) \
+
+@USING_GNUMAKE_TRUE@PLIRIS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_PLIRIS_INCLUDES))
+@USING_GNUMAKE_TRUE@PLIRIS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_PLIRIS_LIBS))
+@USING_GNUMAKE_FALSE@PLIRIS_INCLUDES = $(_PLIRIS_INCLUDES)
+@USING_GNUMAKE_FALSE@PLIRIS_LIBS     = $(_PLIRIS_LIBS)

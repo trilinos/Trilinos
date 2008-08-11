@@ -1,0 +1,10 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= tflops_special = 1
+Zoltan Parameters	= keep_cuts=1
+Zoltan Parameters	= debug_level=3, timer=cpu
+File Type		= Chaco
+File Name		= grid20x19
+Parallel Disk Info	= number=0
+Test local partitions   = 2
+Test Drops		= 1
+Test RCB Box		= 1

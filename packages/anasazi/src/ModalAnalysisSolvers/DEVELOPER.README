@@ -1,0 +1,33 @@
+Last Update: 02/11/04
+
+The code is written in C++. It uses the Epetra, AztecOO, Ifpack, and ML libraries
+from the Trilinos framework.
+
+A series of eigensolvers have been defined as derived classes of 
+the class ModalAnalysisSolver. Each eigensolver has its own class.
+Each class uses Epetra_Operator objects to represent the stiffness, 
+the mass, and a possible preconditioner.
+
+The main file `driver.cpp' illustrates how to solve
+a generalized eigenproblem.
+
+A series of eigenproblems have been created to generate the stiffness and
+mass matrices. Each eigenproblem has its own class, like ModeLaplace2DQ2.{h, cpp}.
+The first number indicates the space dimension and the second the polynomial degree
+for the shape functions. Each class is self-contained in the sense that it
+generates the mesh, the resulting matrices, the exact discrete eigenpairs,
+and the continuous eigenpairs.
+
+The main file `driver.cpp' illustrates how to use this self-contained classes.
+
+The class BlockPCGSolver is an Epetra_Operator object, which calls 
+the Preconditioned Conjugate Gradient for solving a linear system. 
+The preconditioner is specified by the user.
+
+Several ARPACK routines have been customized to allow the user to define
+the convergence criterion.
+
+-----------------------------------------------------------------------------------------
+
+Questions ? Contact U. Hetmaniuk (ulhetma@sandia.gov) or R. Lehoucq (rblehou@sandia.gov)
+

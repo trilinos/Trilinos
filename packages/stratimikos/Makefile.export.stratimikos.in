@@ -1,0 +1,90 @@
+
+# Required dependence on thyra
+include @abs_top_builddir@/../thyra/Makefile.export.thyra
+
+# Optional dependence on amesos
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@STRATIMIKOS_AMESOS_INCLUDES = \
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@  -I@abs_top_srcdir@/adapters/amesos/src \
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@  $(AMESOS_INCLUDES)
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@STRATIMIKOS_AMESOS_LIBS = \
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@  -L@abs_top_builddir@/adapters/amesos/src -lstratimikosamesos $(AMESOS_LIBS)
+
+# Optional dependence on aztecoo
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@STRATIMIKOS_AZTECOO_INCLUDES = \
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@  -I@abs_top_srcdir@/adapters/aztecoo/src \
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@  $(AZTECOO_INCLUDES)
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@STRATIMIKOS_AZTECOO_LIBS = \
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@  -L@abs_top_builddir@/adapters/aztecoo/src -lstratimikosaztecoo $(AZTECOO_LIBS)
+
+# Optional dependence on belos
+@ENABLE_STRATIMIKOS_BELOS_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
+@ENABLE_STRATIMIKOS_BELOS_TRUE@STRATIMIKOS_BELOS_INCLUDES = \
+@ENABLE_STRATIMIKOS_BELOS_TRUE@  -I@abs_top_srcdir@/adapters/belos/src \
+@ENABLE_STRATIMIKOS_BELOS_TRUE@  $(BELOS_INCLUDES)
+@ENABLE_STRATIMIKOS_BELOS_TRUE@STRATIMIKOS_BELOS_LIBS = \
+@ENABLE_STRATIMIKOS_BELOS_TRUE@  -L@abs_top_builddir@/adapters/belos/src $(BELOS_LIBS)
+
+# Optional dependence on ifpack
+@ENABLE_STRATIMIKOS_IFPACK_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
+@ENABLE_STRATIMIKOS_IFPACK_TRUE@STRATIMIKOS_IFPACK_INCLUDES = \
+@ENABLE_STRATIMIKOS_IFPACK_TRUE@  -I@abs_top_srcdir@/adapters/ifpack/src \
+@ENABLE_STRATIMIKOS_IFPACK_TRUE@  $(IFPACK_INCLUDES)
+@ENABLE_STRATIMIKOS_IFPACK_TRUE@STRATIMIKOS_IFPACK_LIBS = \
+@ENABLE_STRATIMIKOS_IFPACK_TRUE@  -L@abs_top_builddir@/adapters/ifpack/src -lstratimikosifpack $(IFPACK_LIBS)
+
+# Optional dependence on ml
+@ENABLE_STRATIMIKOS_ML_TRUE@include @abs_top_builddir@/../ml/Makefile.export.ml
+@ENABLE_STRATIMIKOS_ML_TRUE@STRATIMIKOS_ML_INCLUDES = \
+@ENABLE_STRATIMIKOS_ML_TRUE@  -I@abs_top_srcdir@/adapters/ml/src \
+@ENABLE_STRATIMIKOS_ML_TRUE@  $(ML_INCLUDES)
+@ENABLE_STRATIMIKOS_ML_TRUE@STRATIMIKOS_ML_LIBS = \
+@ENABLE_STRATIMIKOS_ML_TRUE@  -L@abs_top_builddir@/adapters/ml/src -lstratimikosml $(ML_LIBS)
+
+_STRATIMIKOS_INCLUDES = \
+  -I@abs_top_builddir@/src \
+  -I@abs_top_srcdir@/src \
+  $(STRATIMIKOS_AMESOS_INCLUDES) \
+  $(STRATIMIKOS_AZTECOO_INCLUDES) \
+  $(STRATIMIKOS_BELOS_INCLUDES) \
+  $(STRATIMIKOS_IFPACK_INCLUDES) \
+  $(STRATIMIKOS_ML_INCLUDES) \
+  $(BELOS_INCLUDES) \
+  $(THYRA_INCLUDES)
+
+_STRATIMIKOS_LIBS = \
+  @LDFLAGS@ -L@abs_top_builddir@/src -lstratimikos \
+  $(STRATIMIKOS_AMESOS_LIBS) \
+  $(STRATIMIKOS_AZTECOO_LIBS) \
+  $(STRATIMIKOS_BELOS_LIBS) \
+  $(STRATIMIKOS_IFPACK_LIBS) \
+  $(STRATIMIKOS_ML_LIBS) \
+  $(BELOS_LIBS) \
+  $(THYRA_LIBS) \
+  @LIBS@
+
+@USING_GNUMAKE_TRUE@STRATIMIKOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_STRATIMIKOS_INCLUDES))
+@USING_GNUMAKE_TRUE@STRATIMIKOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_STRATIMIKOS_LIBS))
+@USING_GNUMAKE_FALSE@STRATIMIKOS_INCLUDES = $(_STRATIMIKOS_INCLUDES)
+@USING_GNUMAKE_FALSE@STRATIMIKOS_LIBS     = $(_STRATIMIKOS_LIBS)
+
+
+#
+# Dependencies for tests and examples
+#
+
+@ENABLE_STRATIMIKOS_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
+
+_STRATIMIKOS_TEST_INCLUDES = \
+  $(STRATIMIKOS_INCLUDES) \
+  $(TRIUTILS_INCLUDES)
+
+_STRATIMIKOS_TEST_LIBS = \
+  $(STRATIMIKOS_LIBS) \
+  $(TRIUTILS_LIBS)
+
+@USING_GNUMAKE_TRUE@STRATIMIKOS_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_STRATIMIKOS_TEST_INCLUDES))
+@USING_GNUMAKE_TRUE@STRATIMIKOS_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_STRATIMIKOS_TEST_LIBS))
+@USING_GNUMAKE_FALSE@STRATIMIKOS_TEST_INCLUDES = $(_STRATIMIKOS_TEST_INCLUDES)
+@USING_GNUMAKE_FALSE@STRATIMIKOS_TEST_LIBS     = $(_STRATIMIKOS_TEST_LIBS)

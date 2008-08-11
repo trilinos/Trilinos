@@ -1,0 +1,154 @@
+# Doxyfile 1.4.2
+
+@INCLUDE               = ../../../packages/common/Doxyfile
+
+############################################################################
+# TRILINOS PACKAGE DEVELOPERS:
+#
+# Use this Doxyfile in Trilinos/packages/YOUR_PACKAGE/doc to control the
+# way in which your documentation is generated. Do not modify the @INCLUDE
+# line above--that provides you with default behavior. To modify the
+# default behavior, simply include (below) the option you would like to
+# overwrite (or use += to append more to the default). 
+#
+# There are essentially two types of configuration options: 
+#
+#   1) those that you can overwrite completely, and
+#   2) those that you can overwrite for local generation, but that are 
+#      automatically overwritten by TrilinosWeb before being posted online
+#
+# Both are present in Trilinos/packages/common/Doxyfile. The first type are 
+# simply present without note, while the second type are noted as such.
+#
+# - IN ORDER FOR TrilinosWeb TO FIND YOUR RESOURCES, you must give all paths 
+#   up to Trilinos' parent and back down to your resource (see the @INCLUDE
+#   above for an example). This should ALWAYS be:
+#
+#       ../../../YOUR_RESOURCE...
+#
+#   and will usually be:
+#
+#       ../../../packages/YOUR_PACKAGE/YOUR_RESOURCE...
+#
+#   IF YOU DON'T DO THIS, DOXYGEN WILL NOT BE ABLE TO LOCATE YOUR RESOURCES!
+#
+# - To view the explanation of an option, run 
+#
+#     doxygen -g COMMENTED_DOXYFILE_NAME
+#     (open COMMENTED_DOXYFILE_NAME)
+#
+#   or visit http://www.stack.nl/~dimitri/doxygen/config.html
+#
+# - To use this Doxyfile locally to generate your documentation and 
+#   iteratively develop it:
+#
+#     cd Trilinos/packages/YOUR_PACKAGE/doc
+#     (modify this Doxyfile accordingly)
+#     doxygen
+#     (open Trilinos/packages/YOUR_PACKAGE/doc/html/index.html)
+#     rinse, repeat.
+#
+# - At the very least, you will need to overwrite the INPUT option.
+#
+############################################################################
+
+#
+# Package options
+#
+PROJECT_NAME           = "Belos"
+PROJECT_NUMBER         = "Version of the Day"
+OUTPUT_DIRECTORY       = .
+OUTPUT_LANGUAGE        = English
+#
+# What and how documentation is extracted
+#
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+ALWAYS_DETAILED_SEC    = YES
+FULL_PATH_NAMES        = NO
+STRIP_FROM_PATH        = 
+INTERNAL_DOCS          = NO
+CLASS_DIAGRAMS         = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = NO
+REFERENCES_RELATION    = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+VERBATIM_HEADERS       = YES
+SHOW_INCLUDE_FILES     = YES
+JAVADOC_AUTOBRIEF      = YES
+INHERIT_DOCS           = YES
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = NO
+TAB_SIZE               = 2
+ENABLED_SECTIONS       = 
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = YES
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_FORMAT            = "$file:$line: $text"
+INPUT                  = ../../../packages/belos/src \
+                         ../../../packages/belos/doc/index.doc
+FILE_PATTERNS          = *.h *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       = *.cpp *.hpp
+IMAGE_PATH             =
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 5
+IGNORE_PREFIX          = 
+#
+# What diagrams are created
+#
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+GRAPHICAL_HIERARCHY    = YES
+#
+# Preprocessing
+#
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+SEARCH_INCLUDES        = YES
+INCLUDE_FILE_PATTERNS  = 
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI
+INCLUDE_PATH           = ../../teuchos/src
+EXPAND_AS_DEFINED      = STANDARD_COMPOSITION_MEMBERS STANDARD_NONCONST_COMPOSITION_MEMBERS \
+                         STANDARD_CONST_COMPOSITION_MEMBERS STANDARD_MEMBER_COMPOSITION_MEMBERS
+#
+# Links to other packages
+#
+TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html 
+GENERATE_TAGFILE       = ../../common/tag_files/belos.tag
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
+#
+# Environment
+#
+PERL_PATH              = /usr/bin/perl
+HAVE_DOT               = YES
+DOT_PATH               = 
+MAX_DOT_GRAPH_WIDTH    = 1024
+MAX_DOT_GRAPH_HEIGHT   = 1024
+#
+# What kind of documentation is generated
+#
+GENERATE_HTMLHELP      = NO
+DISABLE_INDEX          = NO
+GENERATE_LATEX         = NO
+GENERATE_RTF           = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO

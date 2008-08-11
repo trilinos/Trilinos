@@ -1,0 +1,28 @@
+
+Finite Element Interface to linear solvers (FEI)
+
+Questions may be sent to fei-developers@software.sandia.gov
+
+FEI is a library for assembling sparse linear systems arising from finite
+element applications, and other applications which use unstructured mesh
+data.
+
+FEI forms an abstraction layer, allowing applications to be insulated from
+library-specific APIs and data structures related to linear system assembly.
+The motivation for this is to allow applications to easily switch from one
+linear-solver library to another. (For example, to switch from Aztec to PETSc.)
+
+FEI has traditionally been built and used outside of Trilinos, with the
+assumption that Trilinos may or may not be available.  Now that FEI is a
+Trilinos package, some FEI objects will no longer be needed. Examples include
+fei::ParameterSet (will be replaced by Teuchos::ParameterList) and
+fei::SharedPtr (will be replaced by Teuchos::RefCountPtr). At the current
+time (September 2007) these fei objects are still in place and being used.
+They will be phased out and replaced with the appropriate Teuchos objects
+as time permits.
+
+The best starting point for learning how FEI is used, is to read through
+the example programs in example/beam and example/poisson.
+
+Additionally, there is some documentation in the doc directory.
+

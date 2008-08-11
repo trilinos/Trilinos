@@ -1,0 +1,53 @@
+\noindent {\bf Remarks:}
+
+\begin{itemize}
+  \item To compile this code, you must tell the compiler where to find
+the header files that are included at the top.  In one machine that we
+use, the \tri\ header files are located in \$TRILINOS\_HOME/include, so
+the command 
+\bdcode
+cpp ...
+\edcode
+will work.
+  \item This is still a very simple version of the conjugate gradient
+method, but is more efficient than the elementary version shown in the
+introduction.
+  \item In the \lcode{run} method we have put in a \lcode{double}
+variable for the convergence tolerance (\lcode{tol}) and an
+\lcode{int} variable for the maximum number of iterations allowed.
+  \item The \lcode{run} method returns an \lcode{enum} value.  This is
+a common practice in \cpp\ to make the return values easier to read.
+%thing to do, and so there are tools in \teuchos\ that make
+%this easier.  We'll show how to do this later.
+  \item Note that in setting up the vector \lcode{p} we used the
+\lcode{copy()} function to ensure that we get a real copy of \lcode{r}
+and not just another pointer to \lcode{r} that we would get from the
+statement \lcode{Vector<double> p = r;}\ .
+  \item As we mentioned in the introduction, we compute \lcode{A*p}
+just once and use it in several places.  We also compute \lcode{p *
+  Ap} once and use it in two places as well.  Both of these improve
+the efficiency of the code.
+%  \item The convergence criterion, 
+%\bdcode
+%if (r.norm2() <= tol) return CONVERGENCE;
+%\edcode 
+%is not a very good choice.  Experts in numerical
+%linear algebra often use a scaled norm, e.g., 
+%\bdcode
+%if(r.norm2()/b.norm2() <= tol) return CONVERGENCE; 
+%\edcode 
+%which is the
+%relative error with respect to the norm of the right hand side.
+  \item Note that we have used \lcode{norm2()}, which is the standard
+Euclidean norm, i.e., the square root of the sum of the squares of the
+components of the vector. \thyra\ has other choices for the norm,
+e.g., \lcode{norm1()} is the sum of the absolute values of the
+elements of the vector and \lcode{normInf()} is the ``infinity'' norm
+which is the maximum of the absolute values of the elements.  These
+are all useful and standard in linear algebra.
+\end{itemize}
+
+
+%more sophisticated codes:
+% derive this from solver so that we can attach it to A
+ 

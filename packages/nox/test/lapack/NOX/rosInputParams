@@ -1,0 +1,19 @@
+# comment
+
+"Nonlinear Solver" string 
+"Line Search Based"
+
+@ "Line Search"
+"Method"  string VAR 3
+# comment
+"More'-Thuente"
+"Backtrack"
+"Polynomial"
+@@
+
+@ "Printing"
+"Output Precision" int 
+10
+"Output Information" int 
+85
+@@

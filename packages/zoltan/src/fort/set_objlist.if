@@ -1,0 +1,11 @@
+interface Zoltan_Set_Obj_List_Fn
+   module procedure Zf90_Set_Obj_List_Fn0s
+   module procedure Zf90_Set_Obj_List_Fn1s
+   module procedure Zf90_Set_Obj_List_Fn2s
+   module procedure Zf90_Set_Obj_List_Fn3s
+   module procedure Zf90_Set_Obj_List_Fn4s
+   module procedure Zf90_Set_Obj_List_Fn5s
+   module procedure Zf90_Set_Obj_List_Fn6s
+   module procedure Zf90_Set_Obj_List_Fn7s
+end interface
+

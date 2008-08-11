@@ -1,0 +1,248 @@
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+OCT DIRECTORY -- RPI's Octree and SFC partitioning algorithms.
+-------------------------------------------------------------
+
+README:
+   Text giving a brief description of the files located in this directory
+
+costs.c:
+   Routines to do a DFS on an octree, calculating the costs for all subtrees.
+   costs_init(): given a root octant, it will recursively traverse down the
+	subtree and initialize the "cost" data field of each octant traversed.
+   costs_free(): given a root octant, it will recursively traverse down the
+	subtree and remove any data stored in the "cost" data field of each 
+	octant traversed.
+   costs_subtree_compute(): does a DFS on the octree, calculating the
+	costs for any given subtree.
+   costs_value(): returns the cost for an octant.
+   cost_global_compute(): computes the costs of all the subtrees local to
+	a processor.
+   costs_weight(): calculates the cost of a sigle octant but summing
+	the weights of each node associated with that octant.
+   
+costs.h:
+   Headder file that contians function declarations that are only used by
+   the routines in costs.c
+
+costs_const.h:
+   Headder files that containts function declarations to be used by any
+   routine.
+
+dfs.c:
+   Routines that does a DFS on an octree and partitions the local subtrees
+   based on the costs of each subtree.
+   dfs_set_visit_criterion(): sets criterion for visiting subtree. default is 
+	use dfs ordering
+   dfs_partition(): this function calls the different subfunctions to 
+	partition the octree. It also initializes all the variables
+	that the partitioning is based on.
+   dfs_SetIds(): sets the ids of all the octants so that there is a global 
+	numbering
+   visit_all_subtrees(): visits each of the subtrees that are on the local
+	processor
+   visit(): "visits" an octant and determines whether or not that octant,
+	and any subtree below, should be placed in the current partition
+	or the next.
+   tag_subtree(): marks all the octants within the subtree to be in the 
+	current partition
+   dfs_migrate():  sets up information so the migrate octant routines can
+	create the proper export_tags and import_tags arrays
+   visit_by_dist(): tries to find the closest child to add to the partition
+
+dfs.h:
+   Headder file that contians function declarations and global variables that 
+   are only used by the routines in dfs.c
+   int partition -- Partition number we are working on
+   float total -- Cost of all complete partitions so far
+   float pcost -- Current partition cost
+   float optcost -- Optimal partition cost
+   float pmass -- octant volume for partition
+   double pcoord[3] -- Sum of octant position-volume products
+
+dfs_const.h:
+   Headder files that containts function declarations to be used by any
+   routine.
+
+hilbert.c:
+   Routines used to create the Hilbert Curve ordering used by octree.
+   Written by H. Carter Edwards. See description at the head of hilbert.c
+
+hilber_const.h: 
+   Headder file that containts function declarations to be used by any
+   routine.
+
+migoct.c:
+   Routines used to set up arrays to to inform the load balancer where to
+   migrate objects for to balace the load.
+   Migrate_Objects(): sets up the export_tags, and import_tags for the
+	application that called this load balancing routine 
+   tag_regions(): Iterates through the list of octants on the processor and
+	finds which are to be migrated. It then looks at the region list for
+	those octants and stores the migrating regions into the export_tags
+	array.
+   malloc_new_objects(): gets the tags being imported into this processor, and 
+	sets up the import_tags array, and the nrectags array.
+   fix_tags(): fixes the import tags so that region tags that were previously
+	exported aren't counted when imported back.
+
+migoct_const.h:
+   Headder file that containts function declarations to be used by any
+   routine.
+
+migreg.c:
+   Routines that move objects from one processor to another.
+   migreg_migrate_regions(): migrate objects to the processor that have the 
+	octant owning their centroid, receive regions from other processors
+	and tries to insert them into one of the local subtree.
+   insert_orphan(): Insert orphan regions migrated from off processors, or to
+	insert regions that lie on the boundary.
+   migreg_migrate_orphans(): Migrate regions that are not attached to an 
+	octant to the processor owning the octant where their centroid is.
+   copy_info(): Copies region information from the source to the destination
+
+migreg.h:
+   Headder file that contians function declarations and structurs that are 
+   only used by the routines in migreg.c.
+   struct Message -- structure used to send region messages from one processor
+	to another.
+
+migreg_const.h:
+   Headder file that containts function declarations to be used by any
+   routine.
+
+msg.c:
+   Routines for messgae passing between processors.
+   msg_int_scan(): perform "exclusive" scan
+	in    v0   v1   v2     v3       ...
+	out    0   v0   v0+v1  v0+v1+v2 ...
+   msg_float_scan(): same as msg_int_scan, except for floats.
+   msg_abort(): aborts all tasks
+
+msg_const.h:
+  Headder file that containts function declarations to be used by any
+  routine.
+
+octant.c:
+   Routines for octree manipulation. See octree documentation for more info.
+
+octant_const.h:
+   Headder file that containts function declarations, structures, and global
+   variables to be used by any routine.
+   struct Region -- Coordinate, weight, and ID information of objects 
+	being balanced.
+   struct pRegion -- pointer to a Region structure
+   struct Octant -- structure for each node in the octree
+   struct pOctant -- pointer to an Octant structure
+   struct RList -- structure used to point to a root of a local subtree.
+	RList stands for Root List
+   struct pRList -- pointer to an RList structure
+   struct Map -- mapping used in generating the inital tree for repartitioning
+   pRList OCT_rootlist -- list of all the local roots
+   int OCT_localpid -- the processor id
+   COORD OCT_gmin -- global minimum coordinates
+   COORD OCT_gmax -- global maximum coordinates
+   int OCT_dimension -- either 2 for a 2D problem or 3 for a 3D problem
+   int GRAY -- flag used to know which ordering scheme to use
+   int HILBERT -- flag used to know which ordering scheme to use
+
+octupdate.c:
+   Routines used to do the octree load balancing scheme.
+   oct_init(): initialize the calls needed to start the octree load balancing 
+	rounties
+   oct_gen_tree_from_input_data(): This function will create a root node on
+	 each processor which will then be used to create an octree with 
+	regions associated with it. The tree will then be distributed and the 
+	output is used to balance "mesh regions" on several processors.
+	See octree documentation for more information.
+   get_bounds(): gets the maximum and minimum boundary coordinates of the
+	entire region being balanced.
+   initialize_region(): Function that initializes the region data structure.
+	It uses the global ID, coordinates and weight provided by the
+	application.  
+   oct_fix(): Clear all region pointers from the octree, reinserts all mesh 
+	regions, and coarsen or refine the octree as needed. Returns the 
+	number of regions that could not be inserted.
+   oct_global_insert_object(): Tries to insert all regions in the mesh into 
+	the existing local octree. Returns the number of insertion failures.
+   oct_global_insert(): tries to insert the region into any of the 
+	local-rooted subtrees. Returns the octant pointer if successful, or 
+	NULL if region's centroid does not lie within the local octree. This
+	could be due to centroid not lying within any local root, or also
+	if some local root's subtree is off-processor.
+	During insertion, refinement may be performed. In that case, the 
+	returned octant is an ancestor of the octant to which the region is
+	attached.
+   oct_subtree_insert(): Insert region in oct, carrying out multiple 
+	refinement if necessary
+   oct_global_find(): Returns the octant in the local octree that contains the
+	given point, if it exists.  Otherwise, return NULL.
+   oct_findOctant(): finds the octant in a subtree containing coord (if coord
+	is not in the subtree, returns the closest octant in the subtree).
+	NOTE: return NULL if we hit an off-processor link
+   oct_terminal_refine(): subdivides a terminal octant and divvy up its 
+	regions to the 8 children; recurse if necessary to satisfy
+	 MAXOCTREGIONS
+   oct_global_dref(): refine and derefine octree as necessary by number of
+	regions in each octant
+   oct_subtree_dref(): Coarsen octree so that leaf octants do not have less 
+	than MINOCTREGIONS regions. Refinement takes precedence, so coarsening 
+	will not take place unless all subtrees agree on it.
+   oct_terminal_coarsen():  remove octant's children, accumulating regions
+	to octant
+   oct_set_maxregions(): sets MAXOCTREGIONS
+
+octupdate.h:
+   Headder file that containts function declarations that can only be used 
+   by octupdate.c
+
+octupdate_const.h:
+   Headder file that containts function declarations to be used by any
+   routine.
+
+output.c:
+   Routine used to print out statisics on the octree load balancing partitioner
+
+util.c:
+   Utilities for using the octree
+   set_method(): sets the ordering used by the octree
+   my_malloc(): mallocs space in memory. checks for bad input and results
+   in_box(): Returns true if pt lies withing the rectangular region
+	bounded by coordinate minimums "lower" and coordinate maximums "upper"
+   bounds_to_origin_size(): convert octant bounds to an origin and size
+   bounds_to_origin():convert octant bounds to an origin
+   child_bounds_wrapper(): used to get the correct child bounds dependin
+	on which ordering used by the octree
+   compare(): comparison function used to sort hilbert bounds
+   hilbert2d_bounds(): gets the bounds using the 2D hilbert order
+   hilbert_bounds(): gets the bounds using the 3D hilbert order
+   child_bounds(): given bounds and origin of a parent, compute a child's
+	bounds
+	NOTE: relies on child octant numbering. Assumes in z-curve ordering,
+	so needs conversion if using Gray code
+   child_which_wrapper(): figures out which child an object belongs to, 
+	correcting for the different ordering.
+   child_which(): Tells which child of octant having bounds will contain
+	the point.  (If point lies outside the octant, will return
+	the child number of the closest child.)
+	Note: Finds number in z-curve ordering. Needs to be converted if using
+	Gray code.
+   dist_point_box(): 
+   convert_from_gray(): takes a Gray code number and converts it into Binary
+   convert_to_gray(): takes in a (binary) number and returns the Gray code
+	of that number
+   change_to_hilbert2d(): takes in an octant number in Morton ordering and 
+	returns the correspoding number in the 2D Hilbert ordering.
+   change_to_hilbert(): takes in an octant number in Morton ordering and 
+	returns the correspoding number in the 3D Hilbert ordering.
+
+util_const.h:
+   Header files that containts function declarations to be used by any
+   routine.

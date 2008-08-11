@@ -1,0 +1,19 @@
+#!/bin/bash
+/bin/rm -f PlotMlData.m
+#
+# Take output from a series of files of the form 'outfile.number' 
+# and put them in a plotable form via the matlab file PlotMlData.m.
+# After running this file, try issuing PlotMlData from matlab and 
+# hope for the best.
+#
+# Note: 'number' indicates the number of processors used in the simulation.
+#
+COUNT=1
+for i in outfile.*
+do
+echo $i
+NPROCS=`echo $i | sed "s/.*\.//"`
+GrepTimings $COUNT $NPROCS outfile.${NPROCS} >> PlotMlData.m
+COUNT=`expr $COUNT + 1`
+done
+echo PlotTimings >> PlotMlData.m

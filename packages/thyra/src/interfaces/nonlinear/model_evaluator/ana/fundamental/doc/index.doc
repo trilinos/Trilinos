@@ -1,0 +1,51 @@
+/*! \mainpage Fundamental Thyra Nonlinear Model Evaluator Interfaces for Abstract Numerical Algorithms
+
+\section thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_outline_sec Outline
+
+<ul>
+<li> \ref thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_into_sec
+<li> \ref thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_software_sec
+<li> \ref thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_links_sec
+</ul>
+
+\section thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_into_sec Introduction
+
+This doxygen collection contains a minimal set of interfaces for nonlinear
+models that are derived from or extend the <a
+href="../../../../../operator_vector/ana/fundamental/doc/html/index.html">Fundamental
+Thyra ANA Operator/Vector Interfaces</a> and the <a
+href="../../../../../operator_solve/ana/fundamental/doc/html/index.html">Fundamental
+Thyra ANA Operator Solve Interfaces</a>.
+
+\section thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_software_sec Software
+
+<ul>
+
+<li><tt>Thyra::ModelEvaluator</tt> defines a very general interface for
+representing a number of different types of nonlinear problems.
+
+<li><tt>Thyra::ModelEvaluatorBase::InArgs</tt> defines the input arguments
+that a <tt>Thyra::ModelEvaluator</tt> object will accept and is used to pass
+input arguments to an evaluation.
+
+<li><tt>Thyra::ModelEvaluatorBase::OutArgs</tt> defines the output
+function/objects that a <tt>Thyra::ModelEvaluator</tt> object can compute and
+is used to pass the output functions/objects from an evaluation.
+  
+</ul>
+  
+\section thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_links_sec Links
+
+<ul>
+
+<li> <a href="../../../../../../operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator/Vector Interfaces</a>
+
+<li> <a href="../../../../../../operator_solve/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator Solve Interfaces</a>
+
+<li> <a href="../../../../../../../support/nonlinear/model_evaluator/doc/html/index.html">Nonlinear Model Evaluator Support Software and Examples</a>
+
+<li> <a href="../../../../../../../../doc/html/index.html">Main Thyra Package Documentation Page</A>
+
+</ul>
+
+*/

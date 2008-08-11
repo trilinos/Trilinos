@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+fi
+
+echo
+echo "Generating main ifpack doxygen documentation ..."
+echo
+
+doxygen DoxyfileWeb
+
+echo
+echo "Generating doxygen browser documentation for all of ifpack ..."
+echo
+
+doxygen ../browser/doc/Doxyfile

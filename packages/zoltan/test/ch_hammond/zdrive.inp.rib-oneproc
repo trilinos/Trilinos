@@ -1,0 +1,6 @@
+Decomposition Method 	= rib
+Zoltan Parameters	= 
+File Type		= Chaco, initial procs = 1
+File Name		= hammond
+Parallel Disk Info	= number=0
+Test null export lists  = 1

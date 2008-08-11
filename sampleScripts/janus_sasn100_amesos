@@ -1,0 +1,21 @@
+../configure --host=i686-intel-linux \
+--disable-default-packages \
+--enable-amesos \
+--enable-amesos-dscpack \
+--enable-amesos-umfpack \
+--enable-amesos-superlu \
+--enable-amesos-superludist \
+--enable-amesos-scalapack \
+--with-amesos-blacslib=" -L/intel/tflop/R4.4.0/tflops/lib/scalapack -lblacs" \
+--with-amesos-blacsclib=" " \
+--with-amesos-scalapacklib=" -L/intel/tflop/R4.4.0/tflops/lib/scalapack -lscalapack -lpblas -ltools  -lredist " \
+--with-trilinos3pldir=/home/ksstanl/Trilinos3PL \
+	--with-amesos-superludir=/home/ksstanl/Trilinos3PL/SuperLU_3.0 \
+	--with-blas=/usr/local/intel/tflop/current/tflops/lib/libcsmath.a \
+	--with-lapack=/usr/local/intel/tflop/current/tflops/lib/scalapack/liblapack.a \
+	CXX=ciCC CC=cicc F77=cif77 \
+	--with-cxxflags="-g -rwstl -Wc,-tlocal" \
+	--enable-mpi \
+     --with-mpi-incdir=. --with-mpi-libdir=. --with-mpi-libs=-lmpi \
+     CPPFLAGS="-DTFLOP -D__USE_STD_IOSTREAM"
+

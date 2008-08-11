@@ -1,0 +1,10 @@
+#mkdir lib/DSuperLU/$1
+#cd lib/DSuperLU/$1
+#ln -s ../Obj_default/Makefile Makefile
+#cd ../../..
+
+mkdir $1
+cd $1
+ln -s ../etc/flat_Makefile classicMakefile
+#ln -s ../lib/DSuperLU/$1 Obj_superlu
+cd ..

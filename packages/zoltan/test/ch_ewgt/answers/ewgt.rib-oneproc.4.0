@@ -1,0 +1,14 @@
+Decomposition Method 	= rib
+Zoltan Parameters	= comm_weight_dim=1
+File Type		= Chaco, initial procs = 1
+File Name		= ewgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+13	0	-1	-1
+16	0	-1	-1
+17	0	-1	-1
+18	0	-1	-1
+21	0	-1	-1
+22	0	-1	-1
+23	0	-1	-1

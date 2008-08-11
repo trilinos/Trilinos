@@ -1,0 +1,141 @@
+Exception Handling in PyTrilinos
+================================
+
+**All** C++ exceptions raised by Trilinos should be caught by
+PyTrilinos and converted to python exceptions.  Fortunately, there is
+a relatively straightforward SWIG facility for doing this.  Each SWIG
+interface file shall include an ``%exception`` directive prior to any
+Trilinos header file ``%include`` directives::
+
+    %include "exception.i"
+    %exception
+    {
+      try
+      {
+        $action
+      }
+      catch(...)
+      {
+        SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+      }
+    }
+
+It is possible to implement an ``%exception`` directive that includes
+a symbol name, prior to the first "``{``", that is specific to a
+function or method.  By omitting this symbol name, we are applying
+this ``%exception`` to *all* functions and methods that get wrapped.
+Here, ``$action`` is a SWIG macro that is replaced by the generated
+code for calling the wrapped function or method.  The ``catch(...)``
+syntax ensures that *every* exception that might be thrown gets
+caught.
+
+``SWIG_exception`` is a C macro ``#define``-ed at the top of the
+generated source file.  ``SWIG_UnknownError`` is also a macro that
+evaluates to an integer.  See the SWIG documentation for valid SWIG
+error macro names.
+
+The directive given above is useful, but all exceptions will get
+converted to type ``UnknownError`` with a nearly meaningless error
+message.  Realistically, we need to convert a wider range of
+exceptions to more meaningful python exception types, and produce more
+useful error messages.  SWIG also provides a macro for treating most
+standard C++ exceptions, converting them to appropriate python
+exceptions and extracting their error message from their ``what()``
+method.  Simply change the ``%exception`` directive to::
+
+    %exception
+    {
+      try
+      {
+        $action
+      }
+      SWIG_CATCH_STDEXCEPT
+      catch(...)
+      {
+        SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+      }
+    }
+
+and this will convert the vast majority of standard exceptions to
+appropriate python exceptions with useful error messages.
+
+There are Trilnios packages that throw exceptions other than those
+found in the standard library.  These can be caught anywhere prior to
+the ``catch(...)`` syntax, although in general, it is best to put them
+before the ``SWIG_CATCH_STDEXCEPT`` macro, especially if the package
+exceptions inherit from the standard exceptions.  Here is the current
+Teuchos exception handler::
+
+    %exception
+    {
+      try
+      {
+        $action
+        if (PyErr_Occurred()) SWIG_fail;
+      }
+      catch(Teuchos::Exceptions::InvalidParameterType & e)
+      {
+        SWIG_exception(SWIG_TypeError, e.what());
+      }
+      catch(Teuchos::Exceptions::InvalidParameter & e)
+      {
+        PyErr_SetString(PyExc_KeyError, e.what());
+        SWIG_fail;
+      }
+      SWIG_CATCH_STDEXCEPT
+      catch(...)
+      {
+        SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+      }
+    }
+
+A few notes: (1) After the ``$action`` macro, there is a call to
+``PyErr_Occurred()``.  This is because the Teuchos wrappers
+``%extend`` certain classes and those new methods can set python
+errors.  Alternatively, you could raise C++ exceptions in all of these
+extensions, and then skip the ``PyErr_Occurred()`` check.  (2)
+``SWIG_fail`` is a C macro provided by SWIG that evaluates to ``goto
+fail``, where ``fail`` is a label that exists within all wrapper
+functions.  (3) The ``Teuchos::Exceptions::InvalidParameter``
+exception is most closely related to the python ``KeyError``
+exception, but SWIG does not have a corresponding SWIG error for this.
+Therefore, I use the ``PyErr_SetString()`` function and ``SWIG_fail``
+macro.
+
+Practical Considerations
+------------------------
+
+Most PyTrilinos packages will need to ``%import "Teuchos.i"`` and/or
+``%import "Epetra.i"``.  Both of these interface files implement their
+own ``%exception`` directive, but both of them "turn off" exception
+handling by including a::
+
+    %exception;
+
+at the end of the file.  This is considered good practice and should
+be followed in *all* PyTrilinos SWIG interface files.
+
+Nevertheless, experience shows that the following represents
+the best order for ``%include``-s and ``%import``-s when dealing with
+exceptions in PyTrilinos::
+
+    %include "exception.i"
+    %import "Teuchos.i"
+    %import "Epetra.i"
+    %exception
+    {
+      ...
+    }
+
+Putting the ``%include "exception.i"`` after the ``%import``
+directives can result in undefined symbols when you compile the
+generated wrapper code.
+
+Finally, every effort should be made to prevent users from getting an
+``Unknown C++ exception`` error message.  Study the package to
+determine as many of the possible exceptions that might be thrown as
+you can, and explicitly include them in the ``%exception`` directive.
+Whenever testing or use of PyTrilinos results in an ``Unknown C++
+exception`` error message, track it down and then explicitly allow for
+it within the appropriate SWIG interface file.  There is no excuse for
+a meaningless error message.

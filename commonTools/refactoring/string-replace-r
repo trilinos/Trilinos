@@ -1,0 +1,2 @@
+#!/bin/sh
+find . -type f -exec string-replace.pl $1 $2 '{}' '{}' ';'

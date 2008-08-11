@@ -1,0 +1,96 @@
+#!/bin/csh -f
+# schake@sandia.gov
+#
+# This checks each directory and creates files for exact
+# It creates the zoltan.tests file from all the zdrive.inp.*
+# It creates the checksums file from answers/*
+#
+# It depends on an existing test.study.xml in the top directory
+# to create the study files in each subdirectory.  It only does
+# this if there's a compiled zdrive in the parent directory, by
+# searching for any existing ../src/Obj_$ZOLTAN_ARCH
+# If a particular test doesn't use 4 processors, it checks for
+# a file called "NUMPROC" and uses that for the study file.
+#
+# It also creates a file for smoke tests, which is just the first
+# zdrive.inp.* file it finds (alphabetically) so that it can run
+# a single problem in each directory instead of the whole battery.
+
+
+setenv PATH /bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb:
+
+set zdrive="$1"
+set rundir=`/bin/pwd`
+set arch=`(cd ../src ; /bin/ls -1 | grep '^Obj_' | sed -e 's/Obj_//g')`
+set tname="zoltan.tests"
+
+foreach d (*)
+  if (! -d $d) continue
+
+  echo -n "${d}: "
+  set last=""
+
+  if (! -e $d/$tname) then
+    echo $zdrive
+    if ($zdrive != "zfdrive") then 
+      set fileset = (`ls -1 $d | grep 'zdrive\.inp\.'`)
+    else
+      # KDD  Exclude some tests that zfdrive cannot handle.
+      set fileset = (`ls -1 $d | grep 'zdrive\.inp\.' | egrep -v 'oneproc|cyclic|rcb-lock|rcb-reuse|partlocal6|partlocal7'`)
+    endif
+    foreach f ($fileset)
+      set suf=`echo $f | sed 's/.*zdrive\.inp\.//g'`
+      if ("$last" != "$d") then
+	echo -n "$tname"
+	echo "zinp=../$d/$f _level_name=$suf" > $d/$tname.smoke
+	set last="$d"
+      endif
+      echo "zinp=../$d/$f _level_name=$suf" >> $d/$tname
+    end
+  endif
+
+  if (-d $d/answers) then
+    echo -n " checksums"
+    set last="$d"
+    cp /dev/null $d/checksums
+    pushd $d/answers >& /dev/null
+    foreach f (`ls -1 | grep '[0-9]$'`)
+	#set sum=`cat $f | sed -e 's/^[	 ]*//g' -e 's/[	 ]*$//g' -e 's/[	 ][	 ]*/ /g' | cksum`
+	csh $rundir/bin/cksum-w $f >> ../checksums
+    end
+    popd >& /dev/null
+#    (cd $d/answers ; cksum *[0-9] > ../checksums)
+  endif
+
+  if (-e $d/NUMPROC) then
+    set np=`cat $d/NUMPROC`
+  else
+    set np=4
+  endif
+
+  foreach a ($arch)
+#   KDD:  zdrive is now passed as an argument to mktests.
+#   set zdrive=`(cd ../src/Obj_$a; /bin/ls -1 | grep 'drive$' | head -1)`
+    if (! -e $d/$a-$d-nightly.study.xml && -e $d/$tname) then
+      set last="$d"
+      echo -n " $a-$d-nightly.study.xml"
+      sed -e "s/EXPNAME/$a-$d-nightly/g" \
+	  -e "s/TAG/nightly/g" \
+	  -e "s/NPROC/$np/g" \
+	  -e "s/ZDRIVE/$zdrive/g" \
+	  -e "s/ARCH/$a/g" < test.study.xml > $d/$a-$d-nightly.study.xml
+    endif
+    if (! -e $d/$a-$d-smoke.study.xml && -e $d/$tname.smoke) then
+      set last="$d"
+      echo -n " $a-$d-smoke.study.xml"
+      sed -e "s/EXPNAME/$a-$d-smoke/g" \
+	  -e "s/TAG/smoke/g" \
+	  -e "s/NPROC/$np/g" \
+	  -e "s/ZDRIVE/$zdrive/g" \
+	  -e "s/$tname/$tname.smoke/g" \
+	  -e "s/ARCH/$a/g" < test.study.xml > $d/$a-$d-smoke.study.xml
+    endif
+  end
+
+  echo ""
+end

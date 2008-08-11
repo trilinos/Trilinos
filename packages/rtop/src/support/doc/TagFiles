@@ -1,0 +1,2 @@
+@INCLUDE = rtop/src/interfaces/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+TAGFILES += $(TRILINOS_HOME)/packages/common/tag_files/RTOpSupport.tag=$(TRILINOS_HOME)/packages/rtop/src/support/doc/html

@@ -1,0 +1,32 @@
+#
+# Phalanx Test Definitions File
+#
+
+(FRAMEWORK,INSTALL,CHECKIN,ALL) {
+    DIRS = Allocators,
+	   DataContainer,
+	   DataLayout,
+           EvaluatorManager,
+           FieldTag,
+           Field,
+	   Utilities;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,CHECKIN,ALL) {
+    DIRS = ../example/EnergyFlux;
+    EXIT-STATUS = STRING-COMPARISON(Run has completed successfully!);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(INSTALL,PERFORMANCE,ALL) {
+    DIRS = Performance/Allocators,
+           Performance/AlgebraicTypes,
+           Performance/BracketOperator;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}

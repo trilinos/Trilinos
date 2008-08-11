@@ -1,0 +1,1515 @@
+#!/usr/bin/env python
+
+"""
+This file defines the compareTestOutput class and an executable that uses it.
+The class may be used as code in a python program or the executable can be used
+as a standalone program.
+"""
+
+import re
+import sys
+import os
+import copy
+import getopt
+
+version = sys.version_info[0] + sys.version_info[1]/10.0
+if version < 2.3:
+    True = 1
+    False = 0
+
+
+class CompareRule:
+    """
+    This class provides an easy to use rule object from a compareTestOutput
+    rule line. All parsing of the line is performed within the object to 
+    keep the rule syntax transparent to all other program elements. Each
+    object represents a single rule line. If the line cannot be parsed 
+    correctly the is_valid test will fail and the reason for failure can be 
+    obtained by get_error. The is valid test should be performed immediately
+    after object creation to determine if it should be used.
+    """
+    def __init__(self, rule_line_text, include_depth, parent_test_object):
+        """
+        Create the object from the text of a single rule line. Special rules
+        apply to lines which come from an include file as does precedence by
+        the levels of include with lower over higher.
+        """
+        self.rule_line_text = ""
+        if (rule_line_text):
+            #protect from an empty arg 
+            self.rule_line_text = rule_line_text.strip()
+        self.include_depth = include_depth
+        #the reference list is used to validate keywords
+        self.parent = parent_test_object
+        #the rule line could be parsed into a usable rule
+        self.has_required_number_of_columns = False
+        self.empty = True
+        #The rule line had bad syntax or values. Empty lines and comments
+        #are legal; bad is always false for these lines.
+        self.bad = False
+        self.error = ""
+        #the text used to build the search regular expression
+        self.search_text = ""
+        #columns are represented by the tuple (value, type)
+        self.first_column = ["", ""]
+        #The second and third columns might be empty
+        #Fill them with useful values to ease later use
+        self.second_column = ["default", "control keyword"]
+        self.third_column = ["default", "modifier keyword"]
+        self.parse_rule()
+    
+    def parse_rule(self):
+        """
+        The core action for this class. This splits the rule into its
+        constituent parts.
+        """
+        #Comments and empty lines should be ignored. The default object values
+        #can be left, they represent such a line.
+        if ((len(self.rule_line_text) > 1) and \
+            not self.rule_line_text.startswith('#')):
+            self.empty = False
+            remainder = self.parse_first_column()
+            if (remainder and not self.bad):
+                remainder = self.parse_second_column(remainder)
+                if (remainder and not self.bad):
+                    self.parse_third_column(remainder)
+        if (not (self.has_required_number_of_columns or self.bad)):
+            self.mark_bad("Rule arguments missing.")
+            
+    def parse_first_column(self):
+        """
+        Determine if the first column is a rule or a search expression.
+        If a rule, the value is the text of the rule; if a search 
+        expression, the value is a compiled re that can be used in the search.
+        Return the remainder of the expression.
+        """
+        remainder = ""
+        #first check for a search expression. This will be surrounded by single
+        #or double quotes. The quote pair should match, so try one and then,
+        #if necessary, the other
+        match_obj = re.match(r'(".*?")\s*(.*)', \
+                             self.rule_line_text)
+        if (not match_obj):
+            match_obj = re.match(r"('.*?')\s*(.*)", \
+                                 self.rule_line_text)  
+        if (match_obj):
+            self.search_text, remainder = match_obj.groups()
+            #The search text will contain a pair of qoutes and at least
+            #one other character. Thus the length of the search text string
+            #must be at least three
+            if (len(self.search_text) > 2):
+                self.first_column[0] = self.build_search_re(self.search_text)
+                self.first_column[1] = "search re"
+                #a search rule is legal with only one column so we can 
+                #claim now that it is valid
+                self.has_required_number_of_columns = True
+            else:
+                self.mark_bad("Error in match text expression")
+        else:
+            #check for an unclosed or unmatched quote expression. Good matches
+            #have already been taken so anything that begine with a quote is bad 
+            match_obj = re.match(r"(['\"])", self.rule_line_text)
+            if (match_obj):
+                self.mark_bad("End quote missing")               
+            else: 
+                #it wasn't a search 
+                match_obj = re.match(r'(\S+)\s*(.*)', self.rule_line_text) 
+                if (match_obj):
+                    value, remainder = match_obj.groups()
+                    self.first_column[0] = self.normalize_keyword(value)
+                    self.first_column[1] = "command keyword"
+                    #test for valid word
+                    if (not self.parent.legal_command_keyword( \
+                        self.first_column[0])):
+                        #use "value" so that the keyword is identical to
+                        #the rule file's text. The first keyword might
+                        # be expanded
+                        self.mark_bad("Unknown command keyword : " + \
+                                      value)                   
+                else:
+                    self.mark_bad("Could not parse")
+        return remainder
+                
+    def parse_second_column(self, remainder):
+        """
+        Get the value and determine the type of the second column.
+        The values here can be single words for an action keyword,
+        a extended numeric expression for numerical comparison or
+        argument for a rule. In all cases it has no quotes or
+        spaces.
+        """
+        #get this column and the remainder
+        match_obj = re.match(r'([\+\-\%\.\S\d]+)\s*(.*)', remainder)
+        if (match_obj):
+            value, remainder = match_obj.groups()
+            #now determine the type of the second column
+            if (self.first_column[1] == "command keyword"):
+                self.second_column[1] = "rule argument"
+                #use exact value of text
+                self.second_column[0] = value
+                self.has_required_number_of_columns = True
+            else:
+                #test for a numeric expression
+                match_obj = re.match(r'([\+\-\%\.eE\d]+)\s*(.*)', value)
+                if (match_obj):
+                    self.second_column[1] = "numeric comparison"
+                    self.second_column[0] = value
+                    self.has_required_number_of_columns = True
+                else:
+                    #It must be a control keyword. Test validity against 
+                    #the reference list control keyword dictionary.
+                    self.second_column[0] = self.normalize_keyword(value)
+                    if (not self.parent.legal_control_keyword( \
+                        self.second_column[0])):
+                        self.mark_bad("Unknown control keyword : " + \
+                                  value)              
+                    else:
+                        self.second_column[1] = "control keyword"
+                        self.has_required_number_of_columns = True
+                        #Now limit the actions from an include file
+                        if (self.include_depth > 0):
+                            legal_keywords = {"required":0, "prohibited":0}
+                            if (not legal_keywords.has_key(self.second_column[0])):
+                                self.mark_bad("Illegal value for include file: " + \
+                                    value)
+            return remainder
+        else:
+            #There should have been a match, but if there was not set the
+            #remainder to none to prevent processing it as a third column
+            return None
+            
+    def parse_third_column(self, remainder):
+        """
+        Get the value and determine type of information in the third column.
+        This column will quite often be empty so the preset "default" 
+        value will be used. The third column may contain a positive or 
+        negative integer value to indicate the direction of search and the 
+        number of matches or it may contain a modifier keyword that resolves
+        the action directed in the second column.
+        """
+        #first determine if this is a numeric argument
+        match_obj = re.match(r'([\+\-]?\d+)', remainder)
+        if (match_obj):
+            self.third_column[0] = match_obj.group(1)
+            self.third_column[1] = "match_count"
+        else:
+            self.third_column[0] = self.normalize_keyword(remainder)
+            if (not self.parent.legal_modifier_keyword( \
+                self.third_column[0])):
+                self.mark_bad("Unknown modifier keyword : " + \
+                              remainder)                   
+            else:
+                self.third_column[1] = "modifier keyword"
+                    
+    def mark_bad(self, reason):
+        """
+        Set flags to show that the rule is faulty and should not be used.
+        Store the text for the reason of error.
+        """
+        self.bad = True
+        self.error = reason
+        
+    def build_search_re(self, compare_expression):
+        """ Build and return a compiled regular expression. If the expression
+        is already a regular expression, just compile it. If is is purely a
+        text comparison string build a regular expression that will match from
+        the front of the line ignoring whitespace and return a second match
+        part that will contain the value to be evaluated, then compile """
+        #create a regular expression that should match no line that can be used
+        #if a real one cannot be created
+        nomatch_reg_exp = "r'(^\S$)(\S+)'"
+        try:
+            #determine if it is a user defined regexp of the form "r'regexp'"
+            user_reg_exp_match = re.match(r'"re\((.+)\)"', \
+                                          compare_expression, re.IGNORECASE)
+            if (user_reg_exp_match):
+                #if a match, strip the surrounding double quotes and use it 
+                #directly
+                user_re = user_reg_exp_match.group(1)
+                reg_exp = "(" + user_re + ")(.*)"
+            else:
+                full_user_reg_exp_match = re.match(r'"full.?re\((.+)\)"', \
+                                              compare_expression, re.IGNORECASE)
+                if (full_user_reg_exp_match):
+                    #if a match, strip the surrounding double quotes and use it 
+                    #directly
+                    full_user_re = full_user_reg_exp_match.group(1)
+                    reg_exp = full_user_re
+                else:
+                    #determine if this is a keyword or whole phrase match
+                    #if in double quotes it is a keyword, if in single
+                    #quotes it is an exact phrase
+                    single_quote_match = re.match("\'(.*)\'", compare_expression)
+                    if (single_quote_match != None):
+                        compare_expression = single_quote_match.group(1)
+                        #everything in the compare expression is to be 
+                        #considered text to be matched, not reg exp information
+                        #escape all non alphanumerics to assure this
+                        escaped_expression = re.escape(compare_expression)
+                        reg_exp = "^\s*(" + escaped_expression + ")(.*)"
+                    else:
+                        double_quote_match = re.match('\"(.*)\"', \
+                                                      compare_expression)
+                        compare_expression = double_quote_match.group(1)
+                        escaped_expression = re.escape(compare_expression)
+                        reg_exp = "(" + escaped_expression + ")(.*)"
+        except IndexError:
+            #this should never occur since this has been filtered earlier...
+            self.mark_bad(\
+                "The rule file line with '%s' was not understood.\n" \
+                %compare_expression)
+            reg_exp = nomatch_reg_exp
+        try:
+            compiled_re = re.compile(reg_exp)
+        except re.error, error_string:
+            self.mark_bad( \
+                "The regular expression string \"%s\" is unusable:\n\t%s" \
+                %(reg_exp, error_string))
+            compiled_re = re.compile(nomatch_reg_exp)
+        return compiled_re
+    
+    def normalize_keyword(self, keyword):
+        """
+        Convert keywords to lowercase with all except letters removed.
+        This allows a great deal of flexibility for the author of a rule
+        file.
+        """
+        lower_case = keyword.lower()
+        clean_word, count = re.subn("[^a-z]", "", lower_case)
+        return clean_word
+    
+    def is_empty(self):
+        """
+        Return value of is_empty flag for caller to determine if the rule
+        should be processed further.
+        """
+        return self.empty
+    
+    def is_bad(self):
+        """
+        Return value of is_bad flag.
+        """
+        return self.bad
+    
+    def get_error_string(self):
+        """
+        Return the string that describes the parse error. It will be the empty
+        string if there has been no error.
+        """
+        return self.error
+    
+    def stop_on_error(self):
+        """
+        The "stop" argument may be applied to any rule to end processing if
+        the rule finds an error. This function provides a simple way to 
+        determine if this rule of that type
+        """
+        return (self.third_column[0] == "stop")
+        
+    def get_include_depth(self):
+        """
+        Return the value of include_depth
+        """
+        return self.include_depth
+    
+    def get_value_of_type(self, column, type_name):
+        """
+        Check the tuple of the column argument for a name value == type_name.
+        Return the value if so, None if not. This is the basis for all of the
+        "get" rules. It meant only for internal use.
+        """       
+        if (column[1] == type_name):
+            return column[0]
+        else:
+            return None
+        
+    def get_command_keyword(self):
+        """
+        Return the rule if the first argument is of that type. Return
+        none otherwise.
+        """
+        return self.get_value_of_type(self.first_column, "command keyword")
+    
+    def get_full_text(self):
+        """
+        Return the entire text of the rule line.
+        """
+        return self.rule_line_text
+    
+    def get_search_text(self):
+        """
+        Return the text that was in the first column that was used to
+        build the search if it is a search. Because this will only be used
+        in user messages return an empty string if the first column was
+        not a search.
+        """
+        #this is slightly different from the others because the value
+        #itself is not in the column array.
+        if (self.first_column[1] == "search re"):
+            return self.search_text
+        else:
+            return ""
+        
+    def get_search_re(self):
+        """
+        Return the search regular expression if the first argument is of that 
+        type. Return None otherwise.
+        """
+        return self.get_value_of_type(self.first_column, "search re")
+
+    def get_control_keyword(self):
+        """
+        Return control keyword if the second column is of that type. Return
+        none otherwise. Note: if second column is empty the value "default"
+        will be returned.
+        """
+        return self.get_value_of_type(self.second_column, "control keyword")
+    
+    def get_rule_argument(self):
+        """
+        If the first column is a rule, the second column should be an
+        argument for the rule. Return it if so, return null otherwise.
+        """
+        return self.get_value_of_type(self.second_column, "rule argument")
+    
+    def get_numerical_test_expression(self):
+        """
+        Return the numerical value for the comparison if the second column
+        is of that type. Return None otherwise.
+        """
+        return self.get_value_of_type(self.second_column, "numeric comparison")
+       
+    def get_modifier_keyword(self):
+        """
+        Return modifier keyword if the third column is of that type. Return
+        None otherwise. Note: if third column is empty the value "default"
+        will be returned.
+        """
+        return self.get_value_of_type(self.third_column, "modifier keyword")
+
+    def get_match_count(self):
+        """
+        Return match_count if the third column is of that type. Return
+        None otherwise.
+        """
+        return self.get_value_of_type(self.third_column, "match_count")
+    
+class SearchableList:
+    """ This class provides a list that can be searched for matching text from
+    direction. The range of the list to be searched can be controlled by
+    "marks" that define the start and end point of the list portion to be
+    searched. Two marks define the beginning and end points of search portion
+    (a python "slice"). Each mark may be nested to provide successively
+    tighter constraints that can then be removed in sequence. The test for
+    match uses a compiled regular expression provided as an argument to the
+    function find_line By default the first match from the top is returned. A
+    search index argument is used with each search to indicate the direction
+    of the search and the number of matches required. An index with a negative
+    value performs the search from the bottom. If an index value greater than
+    1 is input then the matching will proceed until that number of matches
+    have been made. An index value of 0 is ignored. An object of this class
+    will retain the stacks of marks as well as the list. The list is
+    initialized as a deep copy of the source list set in the input and is
+    immutable outside of this class object. The search will return the regular
+    expression match object. If no match is found, None is returned value. All
+    list elements are assumed to be strings. """
+
+    def __init__(self, source_list):
+        """
+        Create the initial object with a deep copy of the source list, 
+        empty stacks for the top and bottom markers, and a forward search
+        direction.
+        """
+        self.list = copy.deepcopy(source_list)
+        self.last_index = len(self.list) -1
+        self.top_marker_stack = []
+        self.current_top_index = 0
+        self.bottom_marker_stack = []
+        self.current_bottom_index = 0
+        self.search_forward = True
+    
+    def index_in_range(self, list_index, use_markers):
+        """
+        Confirm that the list index is with the portion of the list to 
+        be searched.
+        """
+        min_index = self.get_top_index(use_markers)
+        max_index = self.get_bottom_index(use_markers)
+        return ((list_index >= min_index) and (list_index <= max_index))
+        
+    def match_value(self, list_index, use_markers, compiled_re):
+        """
+        Perform a test for a match between the text in list at list
+        index with the search_value text with the match type either
+        "strict" (True) or "loose" (False). The list_index is checked 
+        for bounds to prevent ListIndex errors.
+        """
+        if (self.index_in_range(list_index, use_markers)):
+            #list position is valid, get value
+            list_value = self.list[list_index]
+            #perform compare with the compiled_re
+            match_obj = compiled_re.search(list_value)
+            return (match_obj)
+        else:
+            #list index is out of range. Return a string rather than a match
+            #object
+            return "Out of Bounds"
+    
+    def get_top_index(self, use_markers):
+        """
+        Return the starting index for the list search. If use_markers
+        this will be the the inmost top mark, if not it will be 0
+        """
+        top_stack_depth = len(self.top_marker_stack)
+        if (use_markers and top_stack_depth):
+            return self.top_marker_stack[top_stack_depth - 1]
+        else:
+            return 0
+        
+    def get_bottom_index(self, use_markers):
+        """
+        Return the starting index for the list search. If use_markers
+        this will be the the inmost bottom mark, if not it will be the
+        end of the list
+        """  
+        bottom_stack_depth = len(self.bottom_marker_stack)
+        if (use_markers and bottom_stack_depth):
+            return self.bottom_marker_stack[bottom_stack_depth - 1]
+        else:
+            return self.last_index
+    
+    def set_top_mark(self, from_top, compiled_re, match_count, \
+                     default_modify_set):
+        """
+        Search in the same manner as a normal search using the currently set
+        markers and the match count in the standard manner. If the third column 
+        is empty, search from the top marker for the next instance. Set the 
+        marker at the find point. If no instance found do not set anything. 
+        Return true upon success.
+        """
+        if (default_modify_set):
+            #if no match_count search from the top for a single instance
+            match_count = 1        
+            from_top = True         
+        result = self.find_line(from_top, True, abs(match_count), compiled_re)
+        if (result):
+            new_index, match_object = result
+            #Searches are performed within exclusive bounds. To exclude the mark 
+            #location from the search, increment the index by 1
+            new_index += 1
+            #confirm that it is at least one less than the bottom mark 
+            #index
+            if (new_index < (self.get_bottom_index(True) - 1)):
+                self.top_marker_stack.append(new_index)
+                return True
+        return False
+
+    def set_bottom_mark(self, from_top, compiled_re, match_count, \
+                        default_modify_set):
+        """
+        Search in the same manner as a normal search using the currently set
+        markers and the match count in the standard manner. If the third column 
+        is empty, search from the bottom marker for the next instance. Set the 
+        marker at the find point. If no instance found do not set anything. 
+        Return true upon success.
+        """
+        if (default_modify_set):
+            #if no match_count search from the top for a single instance
+            match_count = 1      
+            from_top = False
+        result = self.find_line(from_top, True, match_count, compiled_re)
+        if (result):
+            new_index, match_object = result                       
+            #Searches are performed within inclusive bounds. To exclude the mark 
+            #location from the search, increment the index by 1
+            new_index -= 1
+            #Confirm that it is greater than the top mark index
+            if (new_index > self.get_top_index(True) + 1):
+                self.bottom_marker_stack.append(new_index)
+                return True
+        return False
+    
+    def remove_top_mark(self, all):
+        """
+        If all, clear the entire mark list, otherwise just pop the last element 
+        on the top marker list.
+        """
+        if (all):
+            self.top_marker_stack = []
+        elif (len(self.top_marker_stack)):
+            self.top_marker_stack.pop()
+    
+    def remove_bottom_mark(self, all):
+        """
+        If all, clear the entire mark list, otherwise just pop the last element 
+        on the top marker list.
+        """
+        if (all):
+            self.bottom_marker_stack = []
+        elif (len(self.bottom_marker_stack)):
+            self.bottom_marker_stack.pop()
+            
+    def get_line_at_index(self, index):
+        """
+        This is meant as a function to be used externally, Confirm that the
+        index is in range and then return a copy of the text of the line.
+        """
+        if ((index > -1) and (index <= self.last_index)):
+            line_text = self.list[index]
+            return line_text
+        else:
+            return None
+        
+    def find_line(self, from_top, use_markers, match_count, compiled_re):
+        """
+        This is the primary external function.
+        Move through the list searching for a appropriate match.
+        "from_top" controls the direction of the search. True searches forward
+        from the start of the list, False searches backward from the end of
+        the list.
+        "use_markers" controls the range of the search. True limits the search
+        between and not including the mark limits. If a mark is not set the 
+        search will either start from or finish at the start or finish of the 
+        list and includes the limit entry.
+        "match_count" determines the number of matches that must be made to 
+        find the appropriate line. This is never zero and is almost always
+        1 to return the first match found.
+        "compiled_re" is the regular expression object that will be used with
+        re "search" function. If the compiled_re.search(line) function returns 
+        a match object the line is said to have matched.
+        The function returns the line index and match_object if a match was
+        found. Test for the value of the match_object to determine if the
+        search was successful. If the second value of the tuple is "None" the
+        search was unsuccessful.
+        """
+        search_index = 0
+        #offset by 1 opposite to the direction of search so that 
+        #we can increment prior to testing
+        if (from_top):
+            search_index = self.get_top_index(use_markers) - 1
+            increment = 1
+        else:
+            search_index = self.get_bottom_index(use_markers) + 1
+            increment = -1
+        #iterate until the result has been found match_count number of times
+        match_obj = None
+        while ((not match_obj) or (match_count > 0)):
+            search_index += increment
+            if (not self.index_in_range(search_index, use_markers)):
+                match_obj = None
+                break
+            match_obj = self.match_value(search_index, use_markers, compiled_re)
+            if (match_obj):
+                match_count -= 1
+        if (match_obj):
+            return (search_index, match_obj)
+        else:
+            return None
+        
+class CompareTestOutput:
+    """
+    This class performs a complex test to determine if the "result file"
+    is close enough to the "reference file". This can be used to compare an
+    output from a test with a reference file that has known correct information.
+    
+    The checks to be performed are defined in a third file, the "rule file".
+    Each entry in this file contains two columns. The first column has the text
+    that is used to identify the lines to compare and must always
+    be surrounded by single or double quotes. The second entry will be used for
+    numerical comparison and defines a relative range between the reference and
+    the test value that is considered acceptable. If the second entry has no digits
+    or does not exist a text comparison is performed. The text comparison requires
+    full match between the reference and test text after the initial line match text.
+    The second column value is not used within the text match; it is assumed to 
+    be something like "text". 
+    
+    A line in the rule file which has a "#" in the first column is considered
+    a comment and is ignored. Blank lines are also ignored.
+    
+    A line in the rule file which begins with the unquoted phrase "option:"
+    will be processed to set an option that determines special processing.
+    
+    A single object of this type should be created for the entire test action.
+    After creation all action is initiated with the command "perform_test". 
+    This returns true for a test that has found no errors.
+    The text describing any errors is returned by the command "get_error_strings"
+    """
+    
+    def __init__ (self, rule_filename, reference_filename, \
+                  results_filename, return_code = None):
+        """
+        Perform only basic initialization of variables. Nothing should fail here.
+        """
+        self.rule_filename = rule_filename
+        self.reference_filename = reference_filename
+        self.results_filename = results_filename
+        self.return_code = return_code
+        #a list of all lines in the rule file after includes
+        self.rule_lines = []
+        self.rule_lines_index_map = {}
+        #a list of all lines in the reference compare file
+        self.reference_lines = []
+        self.reference_lines_index_map = {}
+        #a list of all lines in the test result file
+        self.results_lines = []
+        self.results_lines_index_map = {}
+        self.legal_return_codes = []
+        self.include_depth = 0
+        self.rules = []
+        self.current_rule_line = ""
+        self.current_rule = None
+        self.current_re = None
+        self.numerical_test_expression = "0%"
+        self.match_index = -1
+        self.use_markers = False
+        self.from_top = True
+        self.match_count = 1
+        self.result_line_index = 0
+        self.result_match_obj = None
+        self.reference_line_index = 0
+        self.reference_match_obj = None
+        self.default_keyword_action = False
+        self.default_modify_set = False
+        self.parse_error_occurred = False
+        self.rule_parse_error_text = \
+"""
+------------------------------------------------------
+---------- Error in rule line(s) ----------
+------------------------------------------------------\n
+"""
+        self.file_read_error_occurred = False
+        self.file_read_error_text = \
+"""
+-------------------------------------------------
+---------- Unable to perform any test. ----------
+-------------------------------------------------\n
+"""
+        self.include_file_error_occurred = False
+        self.include_file_error_text = \
+"""
+---------------------------------------------------
+---------- Error in loading include file. ----------
+---------------------------------------------------\n
+"""
+        self.test_failure_occurred = False
+        self.test_failure_text = \
+"""
+--------------------------------------------------------------
+---------- Comparison test found test failure(s) -------------
+--------------------------------------------------------------\n
+"""
+        self.stop_on_error = False
+        self.stop_on_return_code_error = False
+        self.stop_now = False
+        #some match failure found in the test
+        self.test_result_error = False
+        self.control_keyword_actions_table = {}
+        self.command_keyword_actions_table = {}
+        self.modifier_keyword_actions_table = {}
+        self.build_command_keyword_action_table()
+        self.build_control_keyword_action_table()
+        self.build_modifier_keyword_action_table()        
+        self.result_list = SearchableList(self.results_lines)
+        self.reference_list = SearchableList(self.reference_lines)
+        self.files_visited_table = {}
+        
+    def build_command_keyword_action_table(self):
+        """
+        Build a dictionary keyed by command keywords (first column) of functions
+        associated with the name.  Keywords that are in the first column direct 
+        unique actions that are not involved with the search and compare actions.
+        """
+        self.command_keyword_actions_table["include"] = \
+            self.include_file
+        self.command_keyword_actions_table["legalreturncode"] = \
+            self.add_legal_return_code
+        
+    def build_control_keyword_action_table(self):
+        """
+        Build a dictionary keyed by control keywords of functions
+        associated with the keyword. Each function should report its own error
+        case.
+        """
+        self.control_keyword_actions_table["required"] = \
+            self.required
+        self.control_keyword_actions_table["prohibited"] = \
+            self.prohibited
+        self.control_keyword_actions_table["inboth"] = \
+            self.exists
+        self.control_keyword_actions_table["matches"] = \
+            self.matches
+        self.control_keyword_actions_table["valueinrange"] = \
+            self.value_in_range
+        self.control_keyword_actions_table["settopmark"] = \
+            self.set_top_mark
+        self.control_keyword_actions_table["setbottommark"] = \
+            self.set_bottom_mark
+        self.control_keyword_actions_table["cleartopmark"] = \
+            self.remove_top_mark
+        self.control_keyword_actions_table["clearbottommark"] = \
+            self.remove_bottom_mark
+        self.control_keyword_actions_table["clearalltopmarks"] = \
+            self.remove_all_top_marks
+        self.control_keyword_actions_table["clearallbottommarks"] = \
+            self.remove_all_bottom_marks
+        self.control_keyword_actions_table["default"] = \
+            self.default_action
+    
+    def build_modifier_keyword_action_table(self):
+        """
+        Build a dictionary keyed by modifier keywords of functions
+        associated with the keyword.
+        """
+        self.modifier_keyword_actions_table["first"] = \
+            self.use_first_match
+        self.modifier_keyword_actions_table["last"] = \
+            self.use_last_match
+        self.modifier_keyword_actions_table["stop"] = \
+            self.set_stop_on_error
+        self.modifier_keyword_actions_table["continue"] = \
+            self.set_continue_on_error
+        self.modifier_keyword_actions_table["setmatchcount"] = \
+            self.set_match_count
+        self.modifier_keyword_actions_table["default"] = \
+            self.set_default_modify_values
+        
+    #---------------------- command keyword functions ------------------------
+    def include_file(self):
+        """
+        Load an additional rule file at this point in the current rule
+        file. The rules in the file will be checked for conflict with
+        the main file. The include file name may be expressed with a directory
+        path relative to the rule file.
+        """
+        filename = self.current_rule.get_rule_argument()
+        if (not os.path.isabs(filename)):
+            relative_path = os.path.dirname(self.rule_filename)
+            joined_name = os.path.join(relative_path, filename)
+            filename = os.path.normpath(joined_name)
+        rule_lines = []
+        self.include_depth += 1
+        #the index map for the include file is never used so it is 
+        #created only for the use of the read_file function
+        index_map = {}
+        self.read_file(filename, rule_lines, index_map)
+        self.load_rules(rule_lines)
+        self.include_depth -= 1
+
+    def add_legal_return_code(self):
+        """
+        Add the return code value to a list of acceptable values. At least one 
+        value must be set to initiate return code checking. If "stop" has been
+        set in an instance of this call this program will stop further checking
+        """
+        return_code = self.current_rule.get_rule_argument()
+        self.legal_return_codes.append(return_code)
+        self.stop_on_return_code_error = self.current_rule.stop_on_error()
+        
+    #---------------------- actions keyword functions ------------------------
+    def required(self):
+        """
+        A line which matches the search_re must unconditionally exist without
+        regard to the reference file. Thus only the result list need be searched.
+        If not found call report_test_failure with descriptive string.
+        """
+        search_result = self.result_list.find_line(self.from_top, \
+                            self.use_markers, self.match_count, self.current_re)
+        if (not search_result) :
+            #report error 
+            error_string = \
+                "The required text %s could not be found in the result file.\n" \
+                        %self.current_rule.get_search_text()
+            self.report_test_failure(error_string)
+
+    def prohibited(self):
+        """
+        A line which matches the search_re must unconditionally not exist. If it
+        does call report_test_failure with descriptive string.
+        """
+        search_result = self.result_list.find_line(self.from_top, \
+                            self.use_markers, self.match_count, self.current_re)
+        if (search_result) :
+            list_index, match_object = search_result
+            #convert to actual file line numbers
+            line_number = list_index
+            if (self.results_lines_index_map.has_key(list_index)):
+                line_number = self.results_lines_index_map[list_index]
+            #report error 
+            error_string = \
+                "The prohibited text %s was found in the results file " \
+                        %self.current_rule.get_search_text() + \
+                        " line %d:\n    %s\n" \
+                        %(line_number, \
+                          self.result_list.get_line_at_index(list_index))
+            self.report_test_failure(error_string)
+                
+    def exists(self):
+        """
+        A line which matches the search_re must exist if such a line is also in
+        the reference file. Return True if found in both. If it found in the
+        reference file but not in the result file call report_test_failure with
+        descriptive string.
+        """
+        #Search first in the reference list. If not there we need do nothing 
+        #further.
+        search_result = self.reference_list.find_line(self.from_top, \
+                        self.use_markers, self.match_count, self.current_re)
+        if (search_result):
+            self.reference_line_index, self.reference_match_obj = search_result
+            search_result = self.result_list.find_line(self.from_top, \
+                        self.use_markers, self.match_count, self.current_re)
+            if (not search_result):
+                #the matching line was not found so report the error
+                error_string = "The rule:\n    %s\n%s %d:\n    %s\n%s\n" \
+                    %(self.current_rule.get_full_text(), \
+                    "Found the line in the reference file, line",
+                      self.reference_line_index, \
+                      self.reference_list.get_line_at_index(\
+                          self.reference_line_index), \
+                      "but no line could be found in the result file."
+                      )
+
+                self.report_test_failure(error_string)
+                return False
+            else:
+                self.result_line_index, self.result_match_obj = search_result
+                return True
+        else:
+            return False
+        
+    def matches(self):
+        """
+        If a line exists in the reference then not only must it also exist in
+        the test results but the antecedent portion of the lines must match.
+        All error reporting actions in called functions.
+        """
+        if (self.exists()):
+            #The lines exist in each, so test the remaining portions. If 
+            #the match fails the error will be reported in the called function
+            reference_remaining_text = self.reference_match_obj.group(2)
+            result_remaining_text = self.result_match_obj.group(2)
+            self.compare_text(reference_remaining_text, result_remaining_text)
+            
+    def value_in_range(self):
+        """
+        If a line exists in the reference it must also exist in the test results 
+        and the numeric value at the end of the lines must be within the 
+        range defined by the second column value.  All error reporting actions 
+        in called functions.
+        """
+        if (self.exists()):
+            #The lines exist in each, so test the remaining portions. If 
+            #the match fails the error will be reported in the called function
+            reference_remaining_text = self.reference_match_obj.group(2)
+            result_remaining_text = self.result_match_obj.group(2)
+            numerical_test = \
+                           self.current_rule.get_numerical_test_expression()
+            self.compare_values(numerical_test, reference_remaining_text, \
+                                result_remaining_text)
+
+    def set_top_mark(self):
+        """
+        Set the top mark in both the reference and results list. If the match 
+        values are not found nothing will be done; it is not an error.
+        """
+        self.reference_list.set_top_mark(self.from_top, self.current_re, \
+                                    self.match_count, self.default_modify_set)
+        self.result_list.set_top_mark(self.from_top, self.current_re, \
+                                    self.match_count, self.default_modify_set)
+        
+    def set_bottom_mark(self):
+        """
+        Set the bottom mark in both the reference and results list. If the match 
+        values are not found nothing will be done; it is not an error.
+        """
+        self.reference_list.set_bottom_mark(self.from_top, self.current_re, \
+                                    self.match_count, self.default_modify_set)
+        self.result_list.set_bottom_mark(self.from_top, self.current_re, \
+                                    self.match_count, self.default_modify_set)
+    
+    def remove_top_mark(self):
+        """
+        Remove the last top mark from both lists. There is no error if there is
+        no top mark.
+        """
+        self.reference_list.remove_top_mark(False)
+        self.result_list.remove_top_mark(False)
+        
+    def remove_bottom_mark(self):
+        """
+        Remove the last top mark from both lists. There is no error if there is
+        no top mark.
+        """
+        self.reference_list.remove_bottom_mark(False)
+        self.result_list.remove_bottom_mark(False)
+        
+    def remove_all_top_marks(self):
+        """
+        Remove the last top mark from both lists. There is no error if there is
+        no top mark.
+        """
+        self.reference_list.remove_top_mark(True)
+        self.result_list.remove_top_mark(True)
+        
+    def remove_all_bottom_marks(self):
+        """
+        Remove the last top mark from both lists. There is no error if there is
+        no top mark.
+        """
+        self.reference_list.remove_bottom_mark(True)
+        self.result_list.remove_bottom_mark(True)
+    
+    def default_action(self):
+        """
+        Perform the default keyword action. This is done when no action keyword
+        is explicitly set.
+        """
+        self.default_keyword_action = True
+        self.matches()
+        
+    #---------------- modifier keywords action functions ------------------  
+    def use_first_match(self):
+        """
+        Set flags to use the first match from the top of the file or, if a top 
+        mark is set, from the top mark. This is the default.
+        """
+        self.match_count = 1
+        self.from_top = True
+        self.use_markers = True
+        self.set_continue_on_error()
+        
+    def use_last_match(self):
+        """
+        Set flags to use the first match up from the bottom of the file or, if
+        a bottom mark is set, from the bottom mark.
+        """
+        self.match_count = 1
+        self.from_top = False
+        self.use_markers = True
+        self.set_continue_on_error()
+        
+    def set_stop_on_error(self):
+        """
+        Set the stop_on_error so that further checks will not be performed
+        if this one fails.
+        """
+        self.stop_on_error = True
+        
+    def set_continue_on_error(self):
+        """
+        Clear the stop_on_error flag to allow further checks if this one
+        fails. This is the default action.
+        """
+        self.stop_on_error = False
+    
+    def set_match_count(self):
+        """
+        Set the match_count to be used in the search.
+        """
+        count = int(self.current_rule.get_match_count())
+        #the count should never be 0. If it is, use the default action for 
+        #search
+        if (count == 0):
+            self.use_first_match()
+        else:
+            self.use_markers = True
+            if (count < 0):
+                self.match_count = -count
+                #a negative value implies search from bottom
+                self.from_top = False
+            else:
+                self.match_count = count
+                self.from_top = True
+        self.set_continue_on_error()
+        
+    def set_default_modify_values(self):
+        """
+        Set the default parameters for the rule. This will be called when
+        there is no modifier value in the third column.
+        """
+        self.default_modify_set = True
+        self.match_count = 1
+        self.use_markers = True
+        self.from_top = True
+        self.set_continue_on_error()
+        
+    #---------------- general functions -------------------------
+    
+    def legal_command_keyword(self, word):
+        """
+        Check the command keyword actions dictionary to see if the argument
+        string is in the dictionary
+        """
+        return self.command_keyword_actions_table.has_key(word)
+    
+    def legal_control_keyword(self, word):
+        """
+        Check the command keyword actions dictionary to see if the argument
+        string is in the dictionary
+        """
+        return self.control_keyword_actions_table.has_key(word)
+
+    def legal_modifier_keyword(self, word):
+        """
+        Check the rule keyword actions dictionary to see if the argument
+        string is in the dictionary
+        """
+        return self.modifier_keyword_actions_table.has_key(word)
+    
+    
+    def read_file(self, filename, data_list, line_index_map, \
+                  reread_ok = False):
+        """
+        Read the file into a list. This first confirms the files existence
+        and then attempts the read. It also generates dictionary to map the
+        list index to the absolute line number. These may be different because
+        empty lines are not inserted in the data list and because the first line
+        number is 1.
+        It will return true if successful.
+        """
+        #prevent multiple reads of the same file (circular or multiple includes)
+        full_filename = os.path.abspath(filename)
+        if (self.files_visited_table.has_key(full_filename) and \
+            not reread_ok):
+            #there were no errors on the read and the information is there...
+            #Call it successful.
+            return True
+        #mark it visited
+        self.files_visited_table[full_filename] = 1
+        try:
+            file_obj = open(filename,"r")
+            list_index = -1
+            line_index = 0
+            for line in file_obj.readlines():
+                line_index += 1
+                #remove empty lines
+                cleaned_line = line.strip()
+                if (cleaned_line):
+                    data_list.append(cleaned_line)
+                    list_index += 1
+                    line_index_map[list_index] = line_index
+            file_obj.close()
+            return True
+        except IOError, error:
+            if (self.include_depth > 0):
+                self.report_include_file_error( \
+                    "The include file '%s' could not be read:\n\t%s" \
+                              %(filename ,error))
+            else:
+                self.report_rule_file_error("File '%s' could not be read:\n\t%s" \
+                              %(filename ,error))
+        return False    
+            
+    def find_value(self, line):
+        """
+        Scan the line for numeric values which may be in scientific notation.
+        Return a floating point value from the last number found. If no
+        number can be found return 0
+        """
+        number = 0.0
+        number_strings_list = re.findall(r'(\d+\.?\d*[eE]?[+-]?\d*)', line)
+        if (len(number_strings_list) > 0):
+            #At least one numeric value has been found. Use the last one.
+            number_string = number_strings_list.pop()
+            number = float(number_string)
+            return number
+        else:
+            return None
+        
+    def close_enough(self, numerical_test, references_value, tests_value):
+        """
+        Parse the numerical test string to determine how to compare.
+        Apply this rule to the two values to determine if the second is 
+        "close enough" to the first.
+        """
+        numerical_test = numerical_test.strip()
+        relative = numerical_test.endswith("%")
+        #clean this out just in case
+        numerical_test = numerical_test.replace("%","")
+        legal_range = abs(float(numerical_test))
+        if (relative):
+            legal_range = legal_range * 0.01 * references_value
+        diff = references_value - tests_value
+        result_text = ""
+        #By default both upper and lower boundaries are checked.
+        #a + sign inidicates a "ceiling", an upper boundary
+        #so we can ignore the test if + is there
+        if (not numerical_test.startswith("+")):
+            if (diff > legal_range):
+                result_text = "too small"
+        #symmtrical action here. A - indicates a floor, so it
+        #can be ignored for this test
+        if (not numerical_test.startswith("-")):
+            if (-diff > legal_range):
+                result_text = "too large"
+        return result_text 
+    
+    
+    def compare_values(self, numerical_test, references_text, results_text):
+        """
+        Search the text from the reference and result lines for the last numeric
+        value in each then determine if they are numerically close enough.
+        lines to determine if the values are adequately similar.
+        """
+        failureheader1 = \
+            "The numeric value compare rule:\n    %s\n  found lines:\n" \
+                       %self.current_rule.get_full_text()
+        failureheader2 = \
+            self.generate_matching_lines_text(self.reference_line_index, \
+                                              self.result_line_index, "    ")             
+        references_value = self.find_value(references_text)
+        if (references_value):
+            #If there is no reference numeric value the only test is "exists"
+            #which has already been tested positive. Neither compare nor complain.
+            results_value = self.find_value(results_text)
+            if (results_value):
+                compare_result = self.close_enough(numerical_test, \
+                                                references_value, results_value)
+                if (compare_result != ""):
+                    self.report_test_failure(failureheader1 + failureheader2 + \
+                    "\n  Numerical comparison determined that the test program's value was " \
+                    + compare_result + ":\n\tReference: " + str(references_value) + \
+                    "\n\tResult: " + str(results_value) + "\n")
+            else:
+                self.report_test_failure(failureheader1 + failureheader2 + \
+                        "\n  No numeric value could be found in the result\n")
+                
+                    
+            
+    def compare_text(self, references_text, results_text):
+        """
+        Compare the two strings to confirm that they are equal. If they are not
+        call report_test_failure with a descriptive string.
+        """
+        if (references_text != results_text):
+            failureheader1 = \
+                "The text compare rule:\n    %s\n  found lines:\n" \
+                            %self.current_rule.get_full_text()
+            failureheader2 = \
+                self.generate_matching_lines_text(self.reference_line_index, \
+                            self.result_line_index, "    ")             
+            self.report_test_failure( failureheader1 + failureheader2 + \
+                        "\n  These lines do not match closely enough.")
+
+    def generate_matching_lines_text(self, reference_list_index, \
+                                     result_list_index, indent_string):
+        """
+        Return a string with two lines identified with labels and line numbers.
+        These lines have the text of the lines in the reference and return files
+        at their respective index. Precede each string with the indent text.
+        """
+        #Map the list index to the file line number. There should never
+        #be a failure in the has_key test -- its just there for safety
+        reference_line = reference_list_index
+        if (self.reference_lines_index_map.has_key(reference_list_index)):
+            reference_line = self.reference_lines_index_map[reference_list_index]
+        result_line = result_list_index
+        if (self.results_lines_index_map.has_key(result_list_index)):
+            result_line = self.results_lines_index_map[result_list_index]
+        reference_str = "%sReference(%3d): %s" \
+                    %(indent_string, reference_line, \
+                    self.reference_list.get_line_at_index(reference_list_index))                          
+        result_str = "%sResult(%3d): %s" %(indent_string, result_line, \
+                    self.result_list.get_line_at_index(result_list_index)) 
+        return reference_str + "\n" + result_str
+    
+    def rule_is_usable(self, parsed_rule):
+        """
+        Confirm that the rule line has been parsed into a usable rule.
+        Empty lines and comments will, quite obviously, not be. If the
+        parsing has failed because of some error in the rule, append
+        the error string to a list of rule parse errors.
+        """
+        if (parsed_rule.is_empty()):
+            return False
+        elif (parsed_rule.is_bad()):
+            self.report_rule_parse_error(parsed_rule)
+            return False
+        else:
+            return True
+    
+    def load_rules(self, rule_lines):
+        """ 
+        Process each line in the rule file. Comments and empty lines
+        are ignored. Option lines are used to set options but are not added to
+        the list of tests. True test rules are parsed and stored in
+        individual dictionaries keyed by parameter name. 
+        """
+        for line in rule_lines:
+            self.current_rule = CompareRule( \
+                line, self.include_depth, self)
+            #Determine if the rule is valid and should be processed further.
+            #Normally an invalid rule is simply a comment or an empty line
+            if (self.rule_is_usable(self.current_rule)):
+                command_keyword = self.current_rule.get_command_keyword()
+                if (command_keyword):
+                    # Perform actions associated with a command keyword 
+                    # immediately. They affect basic actions prior to the 
+                    # normal test sequence.
+                    
+                    self.command_keyword_actions_table[command_keyword]()
+                else:
+                    # This is a normal compare action rule. Add to the list
+                    # to tested
+                    self.rules.append(self.current_rule)
+    
+    def load_all_rules(self):
+        """
+        This is the top level load rule function. It works with the main
+        rule line file's rules and tests that some rules or 
+        return codes have been set at the end.
+        """
+        self.load_rules(self.rule_lines)
+        if ((len(self.rules) == 0) and (len(self.legal_return_codes) == 0)):
+            self.parse_error_occurred = True
+            self.stop_now = True
+            self.rule_parse_error_text = "No test values are defined.\n" + \
+                "No tests performed.\n" + \
+                "====================================================="
+
+            
+    def perform_current_rule(self):
+        """
+        The core of the testing. This performs the match test based upon a 
+        single line from the rule file.
+        """
+        self.current_re = self.current_rule.get_search_re()
+        #There should always be a current_re but confirm for safety
+        if (self.current_re):
+            #reset flags that are to be reevaluated for each rule
+            self.default_keyword_action = False
+            self.default_modify_set = False
+            #set flags from modifier keyword
+            modifier_keyword = self.current_rule.get_modifier_keyword()
+            if (not modifier_keyword):
+                modifier_keyword = "setmatchcount"
+            self.modifier_keyword_actions_table[modifier_keyword]()
+            #now get the control keyword and perform the action
+            control_keyword = self.current_rule.get_control_keyword()
+            if (not control_keyword):
+                control_keyword = "valueinrange"
+                self.numerical_test_expression = \
+                    self.current_rule.get_numerical_test_expression()
+            self.control_keyword_actions_table[control_keyword]()
+
+    def check_return_code(self):
+        """
+        If a return code value has been given to this object and there is
+        at least one legal return coded that has been set then confirm
+        that the return code is one of the legal values.
+        """
+        if (self.return_code and len(self.legal_return_codes) > 0):
+            legal_value = False
+            for code_value in self.legal_return_codes:
+                if (self.return_code == code_value):
+                    legal_value = True
+                    break
+            if (not legal_value):
+                self.stop_on_error = self.stop_on_return_code_error
+                error_string = \
+                             "The test program return code '%s' is not legal." \
+                             %self.return_code
+                self.report_test_failure(error_string)
+    
+    def report_rule_file_error(self, error_string):
+        """
+        Flag that an error occurred while reading the rule file that
+        precludes further action. These errors include a rule file with
+        no effective rule and one or more missing rule, include,
+        or test files.
+        """
+        self.file_read_error_occurred = True
+        self.file_read_error_text = \
+            self.file_read_error_text + \
+            "\n    " + error_string
+        
+    def report_include_file_error(self, error_string):
+        """
+        Flag that an error occurred while reading the rule file that
+        precludes further action. These errors include a rule file with
+        no effective rule and one or more missing rule, include,
+        or test files.
+        """
+        self.include_file_error_occurred = True
+        self.include_file_error_text = \
+            self.include_file_error_text + \
+            "    " + error_string
+    def report_rule_parse_error(self, parsed_rule):
+        """
+        Flag that an error occurred and add the indented error text to the
+        error string. Errors are problems with the test itself, not match
+        failures detected by the test comparison. If the stop_on_error flag
+        is set set the stop_now flag to indicate that the error requires
+        an immediate stop.
+        """
+        self.parse_error_occurred = True
+        self.stop_now = self.stop_on_error
+        error_text = "    Rule: '" + parsed_rule.get_full_text() + \
+                   "'\n    Reason: " + parsed_rule.get_error_string()
+        self.rule_parse_error_text = self.rule_parse_error_text + \
+            error_text + \
+            "\n\n=====================================================\n\n"
+                    
+    def report_test_failure(self, failure_text):
+        """
+        Flag that the a match failure occurred and add the indented failure 
+        description text to the test failure string.
+        """
+        self.test_result_error = True
+        self.test_failure_occurred = True
+        self. test_failure_text = self.test_failure_text + failure_text + "\n"
+        if (self.stop_on_error):
+            self.test_failure_text = self.test_failure_text + \
+                "\n====Further comparisons stopped upon this failure====\n\n"
+        else:
+            self.test_failure_text = self.test_failure_text + \
+                "=====================================================\n\n"
+        
+    def exit_with_fatal_file_error(self): 
+        """
+        Print the file read error string on both sdtout and stderr and 
+        exit program with a return code of SIGIO (23)
+        """
+        print self.file_read_error_text
+        print >> sys.stderr, self.file_read_error_text
+        sys.exit(23)
+        
+    def get_error_strings(self):
+        """
+        Return an error string that contains the text of errors and test
+        failures. This will be called externally to get the text of all errors.
+        """
+        error_str = ""
+        suffix = ""
+        if (self.include_file_error_occurred):
+            error_str = self.include_file_error_text + "\n"
+            suffix = \
+                "compareTestOutput could not load an include file.\n"
+        if (self.parse_error_occurred):
+            error_str = error_str + self.rule_parse_error_text + "\n"
+            suffix = suffix + \
+                "compareTestOutput found rule file parse errors.\n"
+        if (self.test_failure_occurred):
+            error_str = error_str + self.test_failure_text
+            suffix = suffix + "compareTestOutput found test program failure.\n"
+        return error_str + suffix
+
+    def perform_test(self):  
+        """ 
+        This is primary function for this class. It is called externally to
+        run the entire test. It will True for a successful test completion. It
+        will be false for either an error in performing the comparison or for
+        one or more failed matches. 
+        """
+        #Perform each read outside the boolean test to assure that
+        #the read is tried on all of them. This catches multiple read errors
+        rule_read_successful = self.read_file(self.rule_filename, \
+                    self.rule_lines, self.rule_lines_index_map, True)
+        reference_read_successful = self.read_file(self.reference_filename, \
+                    self.reference_lines, self.reference_lines_index_map, True)
+        result_read_successful = self.read_file(self.results_filename, \
+                    self.results_lines, self.results_lines_index_map, True)
+        if (rule_read_successful and reference_read_successful and \
+             result_read_successful):
+            self.reference_list = SearchableList(self.reference_lines)
+            self.result_list = SearchableList(self.results_lines)
+            self.load_all_rules()
+            #proceed in order of failure priority
+            self.check_return_code()
+            if (self.test_failure_occurred and self.stop_on_return_code_error):
+                return False
+            for self.current_rule in self.rules:
+                self.perform_current_rule()
+                #if there has been an error found by the current_rule
+                #and this rule is flagged 'stop on error' stop rule 
+                #testing
+                if (self.test_result_error and self.stop_on_error):
+                    break
+                else:
+                    #reset test_result_error to insure that the error state 
+                    #is local to just this rule
+                    self.test_result_error = False
+            return (not (self.test_failure_occurred or \
+                         self.parse_error_occurred or\
+                         self.include_file_error_occurred or \
+                         self.file_read_error_occurred))
+        else:
+            self.exit_with_fatal_file_error()
+            
+def print_usage(error_string):
+    """
+    Print the command line help. If an error has occurred in the program call
+    the "error_string" will have the description of the error. If so, print 
+    error string first and exit with a return code of 1. Exit with 0 if this
+    function was called by the help option.
+    """
+    if (error_string):
+        print "Command error:\n%s\n" %error_string
+    print "usage: compareTestOutput args result_file_name"
+    print \
+    """
+arguments:
+    -h, --help:          Print this infomation.
+    -r, --rules-file : File that contains the comparison rules (required)
+    -m, --reference-file :  File that contains the reference copy of the test 
+                         results (required)
+    -c, --return-code :  The test program return code (optional)
+    """
+    if (error_string):
+        sys.exit(1)
+    else:
+        sys.exit(0)
+    
+if __name__ == "__main__":
+    rule_file_name = ""
+    reference_file_name = ""
+    result_file_name = ""
+    test_result_code = ""
+    try:
+        all_args = sys.argv[1:]
+        options, other_args = \
+            getopt.getopt(all_args, "c:r:m:h", ["help", "return-code=", \
+                                    "rules-file=", "reference-file="]) 
+        #check for an empty command then just print usage
+        if (len(all_args) == 0):
+            print_usage("")
+        if ((len(options) == 0) and len(other_args) == 3):
+            #the older, deprecated form that only uses positional arguments
+            rule_file_name = other_args[0]
+            reference_file_name = other_args[1]
+            result_file_name = other_args[2]
+        else:
+            #the correct form with flags
+            for opt in options:
+                if (opt[0] == "-h" or opt[0] == "--help"):
+                    print_usage("")
+                elif (opt[0] == "-c" or opt[0] == "--return-code"):
+                    test_result_code = opt[1]
+                elif (opt[0] == "-r" or opt[0] == "--rules-file"):
+                    rule_file_name = opt[1]
+                elif (opt[0] == "-m" or opt[0] == "--reference-file"):
+                    reference_file_name = opt[1]
+            if (len(other_args) > 0):
+                result_file_name = other_args[0]
+    except getopt.error, cmd_line_error:
+        print_usage(cmd_line_error)
+    errorstr = ""
+    if (not rule_file_name):
+        errorstr = "Rule file name not specified.\n"
+    if (not reference_file_name):
+        errorstr = errorstr + "Reference file name not specified.\n"
+    if (not result_file_name):
+        errorstr = errorstr + "Result file name not specified.\n"
+    if (errorstr):
+        print_usage(errorstr)
+    rule_file_name = os.path.abspath(rule_file_name)
+    reference_file_name = os.path.abspath(reference_file_name)
+    result_file_name = os.path.abspath(result_file_name)
+    tester = CompareTestOutput(rule_file_name, reference_file_name, \
+                             result_file_name, test_result_code)   
+    if (tester.perform_test()):
+        print "Test passed."
+    else:
+        print tester.get_error_strings()
+        #exit with SIGUSR1
+        sys.exit(30)

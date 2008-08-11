@@ -1,0 +1,11 @@
+interface Zoltan_Set_Obj_Size_Fn
+   module procedure Zf90_Set_Obj_Size_Fn0f
+   module procedure Zf90_Set_Obj_Size_Fn1f
+   module procedure Zf90_Set_Obj_Size_Fn2f
+   module procedure Zf90_Set_Obj_Size_Fn3f
+   module procedure Zf90_Set_Obj_Size_Fn4f
+   module procedure Zf90_Set_Obj_Size_Fn5f
+   module procedure Zf90_Set_Obj_Size_Fn6f
+   module procedure Zf90_Set_Obj_Size_Fn7f
+end interface
+

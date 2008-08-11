@@ -1,0 +1,25 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+PAR DIRECTORY -- Parallel computing utilities
+---------------------------------------------
+
+par_median.c        -- Code for Zoltan_RB_find_median.
+par_median_const.h  -- Prototypes for functions in par_median.c.
+
+par_sync.c          -- Code for Zoltan_Print_Sync_Start, Zoltan_Print_Sync_End
+par_stats.c         -- Code for Zoltan_Print_Stats.
+par_const.h         -- Prototypes for functions in par_sync.c and par_stats.c.
+                        
+

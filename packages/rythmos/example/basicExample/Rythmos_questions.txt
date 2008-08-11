@@ -1,0 +1,22 @@
+05/26/05
+
+General Rythmos questions that are coming up as I'm coding:
+
+How do I template my code on Scalar?
+
+How do I want the Stepper class to interact with the vectors?
+  By that I mean, should the Stepper class create its own data storage for
+  solution vectors and intermediate data, or should it be stateless?
+  For the BDF case its definitely not going to be stateless, so it will have
+  to clone vectors and store them.  I guess the real question is whether the
+  Stepper should take a vector pointer as input where it can store its current
+  solution, or should it provide a member function for extracting the solution
+  at the current time?
+
+  This brings up an important issue.  Maybe I could write helper functions
+  which could access individual integration methods (derived from Stepper) and
+  extract solution data for use in step-size and order selection classes.
+  Maybe this is what's meant by the mediator class.
+
+  
+  

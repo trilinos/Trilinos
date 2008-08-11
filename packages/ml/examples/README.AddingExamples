@@ -1,0 +1,11 @@
+Instructions on adding a new example foo
+========================================
+   - if new subdirectory:
+        - mkdir XX.
+        - copy ml/examples/Advanced/Makefile.am to XX.
+   - Add the source file foo.
+   - In XX/Makefile.am, add file name to definition of noinst_PROGRAMS.
+     (Don't include the extension!)
+   - In examples/Makefile-common.include, add source file locations and
+     link line information for foo.
+   - Bootstrap.

@@ -1,0 +1,24 @@
+TARGET=TrilinosUserGuide
+
+$(TARGET).dvi: $(TARGET).tex ../CommonFiles/TrilinosBibliography.bib \
+         ../CommonFiles/TrilinosPackagesDiagram.eps
+	latex $(TARGET)
+	bibtex $(TARGET)
+	latex $(TARGET)
+	latex $(TARGET)
+
+view: $(TARGET).dvi
+	xdvi $(TARGET) &
+
+ps: $(TARGET).dvi
+	dvips -o $(TARGET).ps $(TARGET)
+
+pdf: ps
+	ps2pdf $(TARGET).ps $(TARGET).pdf
+
+print: $(TARGET).dvi
+	dvips $(TARGET)
+
+clean:
+	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
+           *.bbl *.blg *.lof *.lot *.tex~

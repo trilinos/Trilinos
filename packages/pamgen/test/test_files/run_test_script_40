@@ -1,0 +1,14 @@
+#!/bin/csh
+./pamgen_test_driver.exe -f report15.txt -r 0 -n 1 -d 2 >! temp_file_40
+
+diff temp_file_40 run_test_script_40.res >! difresults
+
+set tmp = ( `wc -c difresults` )
+if ( $tmp[1] > 0 ) then
+head difresults
+exit 1
+else
+echo Test passed!
+endif
+exit 0
+

@@ -1,0 +1,557 @@
+#!/usr/bin/perl
+#==========================================================================
+# gcovmerge
+#
+# A script for automatically extracting and merging coverage information
+# from C++ programs compiled using 'gcc -fprofile-arcs -ftest-coverage'.
+# This script requires gcc 3.4.3 or above.
+#
+# Usage: 
+#
+#        gcovmerge [--with-files=min-max]           \
+#                  [--with-directories]             \
+#                  [--without-files]                \
+#                  [--with-total]                   \
+#                  [--exclude=word]                 \
+#                  [--source-dir=path]              \
+#                  [--with-gcov=GCOV]               \
+#                  [--old-school]                   \
+#                  [--with-count]                   \
+#                  [--with-percent]                 \
+#                  [--with-report=REP]              \
+#                  [--with-full-paths]              \
+#                  [--help]                         \
+#                  build-dir
+#
+# Arguments:
+#
+#        build-dir
+#            The path to search for .gcda files (which are the
+#            markers for programs compiled with the appropriate
+#            arguments and later executed).
+#
+#        --with-files=min-max [0-100]
+#            When specified, no coverage information is displayed for
+#            any individual files with a coverage percent outside of 
+#            the range given.
+#
+#        --with-directories
+#            When specified, coverage percentages are displayed for
+#            each directory examined.
+#
+#        --without-files
+#            No coverage information will be given for individual files.
+#
+#        --exclude=word []
+#            No files with word in their name or path will be examined.
+#            This option may be specified more than once, in order to
+#            exclude a variety of files.
+#
+#        --with-total   
+#            The total coverage for all files examined will be displayed.
+#
+#        --source-dir=path
+#            The path to look for source files if the source and build
+#            directories are seperate.  This directory should have an identical
+#            hierarchy to that of build_dir, or else this script will not be
+#            able to reconcile the data in source_dir with that in build_dir.
+#            If not specified, the script will assume that the source files
+#            are in build-dir.
+#
+#        --with-gcov=GCOV
+#            Execute GCOV instead of "gcov". This is useful for using a
+#            different version of gcov than is located in the user path,
+#            or one with a different name (e.g., gcov-4.0)
+#
+#        --old-school
+#            Revert to previous (ver 1.5) behavior of gcovmerge. Coverage
+#            information will be generated from a single executable per 
+#            source file. This methodology results in lower and less accurate
+#            coverage numbers.
+#
+#        --with-count
+#            Specifies that coverage should be reported as "n of t", instead of
+#            the percentage.
+#
+#        --with-percent
+#            Specifies that coverage should be reported as a percentage.
+#            If neither --with-count nor --with-percent are specified,
+#            then --with-percent is the default.
+#
+#        --with-report
+#        --with-report=REP
+#            Specifies that a report should be generated.
+#            This report will produce a listing of the
+#            all source files whose coverage was analyzed,
+#            wherein the lines of code are displayed as either
+#            covered, not-covered, or not compiled.
+#            If --with-report is given without the REP
+#            option, then the filename for the report
+#            will be coverage.html.
+#
+#        --with-full-paths
+#            Outputs full pathnames instead of abbrieviated file names. 
+#
+#
+# Written by Joe Outzen, for the Trilinos project.
+# Modified by Chris Baker (cgbaker@sandia.gov)   2005-07-31
+#
+#==========================================================================
+
+# base options
+use Cwd;
+chomp($base = cwd);
+$maximum_per_file = 100;
+$minimum_per_file = 0;
+$directories = 0;
+$total = 0;
+@exclude_list = ();
+@file_types = ("cpp", "c++", "c", "hpp", "h++", "h");
+%source_files = ();
+%file_exec = ();
+%file_comp = ();
+%path_exec = ();
+%path_comp = ();
+$total_exec = 0;
+$total_comp = 0;
+$show_count = 0;
+$show_percent = 0;
+@not_executed = ();
+$gen_report = 0;
+$full_paths = 0;
+
+# parse command-line options
+if (@ARGV == 0){
+    die "Incorrect syntax. Run 'gcovmerge --help' for help.\n";
+}
+$build_directory = pop @ARGV;
+if ($build_directory =~ /--/){
+    # it was a command line argument. go ahead and process them, before
+    # failing. this gives "gcovmerge --help" a chance to do its thing.
+    push @ARGV, $build_directory;
+    undef $build_directory;
+}
+$source_directory = $build_directory;
+$which_gcov = "gcov";
+$oldschool = 0;
+foreach (@ARGV){
+    if(/--with-files=(\d+)-(\d+)/){
+        $minimum_per_file = $1;
+        $maximum_per_file = $2;
+    }
+    elsif(/--with-directories/){
+        $directories = 1;
+    }
+    elsif(/--without-files/){
+        $minimum_per_file = 100;
+        $maximum_per_file = 0;
+    }
+    elsif(/--with-count/){
+        $with_count = 1;
+    }
+    elsif(/--with-percent/){
+        $with_percent = 1;
+    }
+    elsif(/--exclude=(.*)/){
+        push @exclude_list, $1;
+    }
+    elsif(/--with-total/){
+        $total = 1;
+    }
+    elsif(/--with-gcov=(.*)/){
+        $which_gcov = $1;
+    }
+    elsif(/--old-school/){
+        $oldschool = 1;
+    }
+    elsif(/--source-dir=(.*)/){
+        $source_directory = $1;
+    }
+    elsif(/--with-report=(.*)/){
+        $gen_report = 1;
+        $report_fn = $1;
+    }
+    elsif(/--with-report/){
+        $gen_report = 1;        
+        $report_fn = "coverage.html";
+    }
+    elsif(/--with-full-paths/){
+	$full_paths = 1;
+    }
+    elsif(/--help/){
+        print "gcovmerge\n";
+        print "\n";
+        print "A script for automatically extracting and merging coverage information\n";
+        print "from C++ programs compiled using 'gcc -fprofile-arcs -ftest-coverage'.\n";
+        print "This script requires gcc 3.4.3 or above.\n";
+        print "\n";
+        print "Usage: \n";
+        print "\n";
+        print "       gcovmerge [--with-files=min-max]           \\\n";
+        print "                 [--with-directories]             \\\n";
+        print "                 [--without-files]                \\\n";
+        print "                 [--with-total]                   \\\n";
+        print "                 [--exclude=word]                 \\\n";
+        print "                 [--source-dir=path]              \\\n";
+        print "                 [--with-gcov=GCOV]               \\\n";
+        print "                 [--old-school]                   \\\n";
+        print "                 [--with-count]                   \\\n";
+        print "                 [--with-percent]                 \\\n";
+        print "                 [--with-report=REP]              \\\n";
+        print "                 [--help]                         \\\n";
+        print "                 build-dir\n";
+        print "\n";
+        print "Arguments:\n";
+        print "\n";
+        print "       build-dir\n";
+        print "           The path to search for .gcda files (which are the\n";
+        print "           markers for programs compiled with the appropriate\n";
+        print "           arguments and later executed).\n";
+        print "\n";
+        print "       --with-files=min-max [0-100]\n";
+        print "           When specified, no coverage information is displayed for\n";
+        print "           any individual files with a coverage percent outside of \n";
+        print "           the range given.\n";
+        print "\n";
+        print "       --with-directories\n";
+        print "           When specified, coverage percentages are displayed for\n";
+        print "           each directory examined.\n";
+        print "\n";
+        print "       --without-files\n";
+        print "           No coverage information will be given for individual files.\n";
+        print "\n";
+        print "       --exclude=word []\n";
+        print "           No files with word in their name or path will be examined.\n";
+        print "           This option may be specified more than once, in order to\n";
+        print "           exclude a variety of files.\n";
+        print "\n";
+        print "       --with-total   \n";
+        print "           The total coverage for all files examined will be displayed.\n";
+        print "\n";
+        print "       --source-dir=path\n";
+        print "           The path to look for source files if the source and build\n";
+        print "           directories are seperate.  This directory should have an identical\n";
+        print "           hierarchy to that of build_dir, or else this script will not be\n";
+        print "           able to reconcile the data in source_dir with that in build_dir.\n";
+        print "           If not specified, the script will assume that the source files\n";
+        print "           are in build-dir.\n";
+        print "\n";
+        print "       --with-gcov=GCOV\n";
+        print "           Execute GCOV instead of \"gcov\". This is useful for using a\n";
+        print "           different version of gcov than is located in the user path,\n";
+        print "           or one with a different name (e.g., gcov-4.0)\n";
+        print "\n";
+        print "       --old-school\n";
+        print "           Revert to previous (ver 1.5) behavior of gcovmerge. Coverage\n";
+        print "           information will be generated from a single executable per \n";
+        print "           source file. This methodology results in lower and less accurate\n";
+        print "           coverage numbers.\n";
+        print "\n";
+        print "       --with-count\n";
+        print "           Specifies that coverage should be reported as \"n of t\", instead of\n";
+        print "           the percentage.\n";
+        print "\n";
+        print "       --with-percent\n";
+        print "           Specifies that coverage should be reported as a percentage.\n";
+        print "           If neither --with-count nor --with-percent are specified,\n";
+        print "           then --with-percent is the default.\n";
+        print "\n";
+        print "       --with-report\n";
+        print "       --with-report=REP\n";
+        print "           Specifies that a report should be generated.\n";
+        print "           This report will produce a listing of the\n";
+        print "           all source files whose coverage was analyzed,\n";
+        print "           wherein the lines of code are displayed as either\n";
+        print "           covered, not-covered, or not compiled.\n";
+        print "           If --with-report is given without the REP\n";
+        print "           option, then the filename for the report\n";
+        print "           will be coverage.html.\n";
+	print "\n";
+	print "       --with-full-paths\n";
+	print "           Outputs full pathnames instead of abbrieviated file names.\n";
+        print "\n";
+        print "       --help\n";
+        print "           Print this help output and exit.\n";
+        print "\n";
+        print "       See README for more help.\n";
+        print "\n";
+
+        exit;
+    }
+    else{ 
+        die "96: Invalid paramater: $_"; 
+    }
+}
+
+if (!defined($build_directory)) {
+    die "Incorrect syntax. Run 'gcovmerge --help' for help.\n";
+}
+
+if ($with_percent==0 && $with_count==0) {
+    $with_percent = 1;
+}
+
+# find all source files of a type listed in @filetypes
+$find_string = "find $source_directory";
+foreach(@file_types){
+    $find_string .= " -name \"*.$_\" -or";
+}
+chop $find_string;
+chop $find_string;
+chop $find_string;
+chop $find_string;
+
+foreach(`$find_string`){
+    chomp;
+    $current_file = $_;
+    # skip files that match names in @exclude_list
+    $skip = 0;
+    foreach (@exclude_list){
+        if($current_file =~ /$_/){
+            $skip = 1;
+            last;
+        }
+    }
+    if($skip){
+        next;
+    }
+    
+    # add this source file and its path to %source_files
+    s/^((.*\/)*)[^\/]+$/$1/ or die "128: Path-only regex failed for $_\n";
+    $current_file =~ s/^(.*\/)*([^\/]+)$/$2/ or die "Name-only regex failed for $_\n";
+    $source_files{$current_file} = $_;
+    
+    # if we are keeping track of directory-based coverage, then put 0s into
+    # %path_exec and %path_comp
+    if($directories){
+        $path_exec{$_} = 0;
+        $path_comp{$_} = 0;
+    }
+}
+
+# find all .gcda files (which indicate a successful execution of code)
+$last = "!";
+foreach(`find $build_directory -name \"*.gcda\"`){
+    chomp;
+    s/^((.*\/)*)[^\/]+$/$1/ or die "145: Path-only regex failed for $_\n";
+    
+    #skip this directory if we've already seen it
+    if($_ eq $last){
+        next;
+    }
+    $last = $_;
+
+    # run gcov on all the .gcda files in this directory
+    chdir $_ or die "could not cd to $_\n";
+    foreach(<*.gcda>){
+        system "$which_gcov $_ > /dev/null" and die "156: $which_gcov failed for $_\n";
+    }
+    chdir $base or die "158: could not cd to $base\n"
+}
+
+# start the report
+if ($gen_report) {
+    open RPORT, "> $report_fn";
+    print RPORT "<html>\n";
+    print RPORT "<head>\n";
+    print RPORT "<style type=\"text/css\">\n";
+    print RPORT ".notcomp {color: grey; font-style: italic;}\n";
+    print RPORT ".cov     {color: blue;  font-style: normal;}\n";
+    print RPORT ".notcov  {color: red;   font-style: normal;}\n";
+    print RPORT ".file_header {background: gray; align: left; font-weight: bold;}\n";
+    print RPORT "</style>\n";
+    print RPORT "</head>\n";
+    print RPORT "<body>\n";
+    print RPORT "<h3>Source files:</h3>\n";
+    print RPORT "<ul>\n";
+    # list the source files
+    foreach(keys(%source_files)){
+        print RPORT "<li><a href=\"#$_\">$_</a>\n";
+    }
+    print RPORT "</ul>\n";
+    print RPORT "\n";
+    print RPORT "<strong>Color key:</strong>\n";
+    print RPORT "<ul>\n";
+    print RPORT "<li><span class=cov>Code was covered</span>\n";
+    print RPORT "<li><span class=notcov>Code was not covered</span>\n";
+    print RPORT "<li><span class=notcomp>Code was not compiled</span>\n";
+    print RPORT "</ul>\n";
+    print RPORT "\n";
+    print RPORT "<table align=center width=\"80%\">\n";
+}
+
+# for every source file, find all of the gcov files for the source file.
+# then determine, for each executable line, whether it was executed or not.
+foreach(keys(%source_files)){
+    undef %lines_exec;
+    undef %lines_comp;
+    $found = 0;
+    $compest = 0;
+    # find .gcov files for this source file
+    foreach(`find $build_dir -name \"$_.gcov\"`){
+        chomp;
+        open GCOV, "< $_";
+        foreach(<GCOV>){
+            # if a line in the .gcov file starts with either numbers or #s,
+            # then that line was compiled into executable form.
+            if(/^\s*([\d\#]+):\s*([\d]+):/){
+                $lineno = $2;
+                # if a line in the .gcov file starts with numbers, then that
+                # line was executed.
+                $lines_comp{$lineno} = 1;
+                if (!defined($lines_exec{$lineno})) {
+                    $lines_exec{$lineno} = 0;
+                    $compest++;
+                }
+                if($1 =~ /\d+/){
+                    # mark the line as executed
+                    $lines_exec{$lineno} = 1;
+                }
+            }
+            elsif(/^\s*-:\s*([\d]+):/){
+                $lines_comp{$1} = 0;
+            }
+            # we shouldn't need to look at more than one .gcov file per source
+            # file, so we can skip all the rest of the find. 
+            $found = 1;
+        }
+        close GCOV;        
+        if ($oldschool==1 && $found==1){
+            last;
+        }
+    }
+    if(!$found){
+        # deal with an unexecuted source file?
+        push @not_executed, $_;
+    }
+    else{
+        $exec = 0;
+        $comp = 0;
+        foreach (keys(%lines_exec)) {
+            $comp++;
+            $exec += $lines_exec{$_};
+        }
+        if ($comp != $compest){
+            print "Logic error in mygovmerge: coverage estimate may be incorrect.\n";
+        }
+        # record the results for this source file
+        $cov = $comp ? 100 * $exec / $comp : 0;
+        if($cov >= $minimum_per_file && $cov <= $maximum_per_file){
+            $file_exec{$source_files{$_}.$_} = $exec;
+            $file_comp{$source_files{$_}.$_} = $comp;
+        }
+        if($directories){
+            $path_exec{$source_files{$_}} += $exec;
+            $path_comp{$source_files{$_}} += $comp;
+        }
+        if($total){
+            $total_exec += $exec;
+            $total_comp += $comp;
+        }
+
+        # print the coverage report, if appropriate
+        if ($gen_report){
+            $cursrc = $source_files{$_}.$_;
+            print RPORT "<tr class=file_header><td class=file_header><a name=\"$_\"><span class=file_header>$cursrc</span></th></tr></span>\n";
+            print RPORT "<tr align=left><td><pre>\n";
+            open SRC, "< $cursrc";
+            $curln=0;
+            foreach(<SRC>){
+                chomp;
+                $_ =~ s/</&lt;/g;
+                $_ =~ s/>/&gt;/g;
+                $_ =~ s/\r//g;
+                $curln += 1;
+                if ($lines_comp{$curln}){
+                    if ($lines_exec{$curln}){
+                        print RPORT "<span class=\"cov\">$_</span>\n";
+                    }
+                    else {
+                        print RPORT "<span class=\"notcov\">$_</span>\n";
+                    }
+                }
+                else {
+                    print RPORT "<span class=\"notcomp\">$_</span>\n";
+                }
+            } 
+            close SRC;
+            print RPORT "</pre>\n";
+            print RPORT "</td></tr>\n\n";
+            print RPORT "<tr height=40><td>&nbsp;</td></tr>\n\n";
+        }
+    }
+}
+    
+# output the results for files
+foreach(sort(keys(%source_files))){
+    $fn = $_;
+    if($full_paths){
+	$fn = $source_files{$fn}.$fn;
+    }
+    $exec = $file_exec{$source_files{$_}.$_};
+    $comp = $file_comp{$source_files{$_}.$_};
+    if ($exec ne undef){
+        $perc = $comp ? 100 * $exec / $comp : 0;
+        if ($with_percent==1 && $with_count==0) {
+            printf "%-50s   %8.4f%%\n", $fn, $perc;
+        }
+        elsif ($with_percent==0 && $with_count==1) {
+            printf "%-50s   %5d / %5d\n", $fn, $exec, $comp;
+        }
+        else {
+            printf "%-50s   %5d / %5d (%8.4f%%)\n", $fn, $exec, $comp, $perc;
+        }
+    }
+}
+
+if ($gen_report){
+    print RPORT "</table>\n";
+    if (@not_executed != 0) {
+        print RPORT "<h3>Files not executed:</h3>\n";
+        print RPORT "<ul>\n";
+        foreach(sort(@not_executed)){
+            $cursrc = $source_files{$_}.$_;
+            print RPORT "<li><a name=\"$_\">$cursrc\n";
+        }
+        print RPORT "</ul>\n";
+    }
+}
+
+# output the results for directories
+foreach(sort(keys(%path_exec))){
+    $fn  = $_;
+    $exec = $path_exec{$_};
+    $comp = $path_comp{$_};
+    $perc = $comp ? 100 * $exec / $comp : 0;
+    if ($with_percent==1 && $with_count==0) {
+        printf "%50s   %8.4f%%\n", $fn, $perc;
+    }
+    elsif ($with_percent==0 && $with_count==1) {
+        printf "%50s   %5d / %5d\n", $fn, $exec, $comp;
+    }
+    else {
+        printf "%50s   %5d / %5d (%8.4f%%)\n", $fn, $exec, $comp, $perc;
+    }
+}
+
+# output the total results
+if($total){
+    $exec = $total_exec{$_};
+    $comp = $total_comp{$_};
+    $perc = $comp ? 100 * $exec / $comp : 0;
+    if ($with_percent==1 && $with_count==0) {
+        printf "%50s   %8.4f%%\n", $fn, $perc;
+    }
+    elsif ($with_percent==0 && $with_count==1) {
+        printf "%50s   %5d / %5d\n", $fn, $exec, $comp;
+    }
+    else {
+        printf "%50s   %5d / %5d (%8.4f%%)\n", $fn, $exec, $comp, $perc;
+    }
+}
+
+# finish the report
+if ($gen_report) {
+    print RPORT "</body></html>\n";
+    close RPORT;
+}

@@ -1,0 +1,26 @@
+#!/bin/bash
+../Trilinos/configure \
+--with-mpi-compilers="/ws/software/lam-mpi/7.1.4-cc-32b/bin" \
+CXXFLAGS="-pto -O3 -library=stlport4" \
+CFLAGS=-O3 \
+FFLAGS=-O3 \
+LDFLAGS="-xlic_lib=sunperf" \
+--prefix=${PWD} \
+--cache-file=config.cache \
+--disable-default-packages \
+--enable-examples \
+--enable-tests \
+--enable-amesos \
+--enable-aztecoo \
+--enable-epetra \
+--enable-kokkos \
+--enable-epetraext \
+--enable-galeri \
+--enable-ifpack \
+--enable-ml \
+--enable-teuchos \
+--enable-ifpack-ml \
+--enable-epetra-prerelease \
+--with-oski \
+--with-ldflags="/home/jhu/usr/lib/oski/liboski.a" \
+--with-incdirs="-I/home/jhu/usr/include"

@@ -1,0 +1,18 @@
+
+DEFINES= -DHAVE_CONFIG_H 
+
+CXXFLAGS = -I../include
+CXX=icc
+LINKER=icc
+
+#LIB_PATHS= -L../lib -laztecoo -lepetra -ltriutils -lteuchos -llapack -lcblas -lf77blas -latlas -lg2c -lm
+LIB_PATHS= -L../lib -laztecoo -lepetra -ltriutils -lteuchos -L/opt/modules/cmplrs/intel_8.0/lib -L/opt/intel/mkl70/lib/64 -lmkl_solver -lmkl_lapack -lmkl_ipf -lguide -lifport -lifcoremt -limf -lm -lcxa -lunwind -lpthread -lirc -ldl -lmpi++ -lmpi
+
+ex1.exe: ex1.o
+	$(LINKER) ex1.o $(LIB_PATHS) -o ex1.exe
+	@echo " "
+	@echo " "
+	@echo "Example 1 test driver is built"
+
+clean:
+	rm -rf ex1.o ex1.exe

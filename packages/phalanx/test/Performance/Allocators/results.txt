@@ -1,0 +1,98 @@
+
+4 X 1 X 5000000 = 20000000
+================================================================================
+
+                              TimeMonitor Results
+
+Timer Name                                  Local time (num calls)    
+--------------------------------------------------------------------------------
+Total Run Time                              23.02 (1)                 
+NEW: Post Registration Setup Time           0.4701 (1)                
+CONTIGUOUS: Post Registration Setup Time    0.4556 (1)                
+NEW: Evaluation Time                        9.09 (1)                  
+CONTIGUOUS: Evaluation Time                 9.414 (1)                 
+================================================================================
+
+4 X 50 X 100000 = 20000000
+================================================================================
+
+                              TimeMonitor Results
+
+Timer Name                                  Local time (num calls)    
+--------------------------------------------------------------------------------
+Total Run Time                              16.32 (1)                 
+NEW: Post Registration Setup Time           0.009169 (1)              
+CONTIGUOUS: Post Registration Setup Time    0.008975 (1)              
+NEW: Evaluation Time                        8.262 (1)                 
+CONTIGUOUS: Evaluation Time                 7.873 (1)                 
+================================================================================
+
+4 X 500 X 10000 = 20000000
+================================================================================
+
+                              TimeMonitor Results
+
+Timer Name                                  Local time (num calls)    
+--------------------------------------------------------------------------------
+Total Run Time                              16.23 (1)                 
+NEW: Post Registration Setup Time           0.001312 (1)              
+CONTIGUOUS: Post Registration Setup Time    0.001185 (1)              
+NEW: Evaluation Time                        8.419 (1)                 
+CONTIGUOUS: Evaluation Time                 7.803 (1)                 
+================================================================================
+
+4 X 5000 X 1000 = 20000000
+================================================================================
+
+                              TimeMonitor Results
+
+Timer Name                                  Local time (num calls)    
+--------------------------------------------------------------------------------
+Total Run Time                              9.51 (1)                  
+NEW: Post Registration Setup Time           0.000465 (1)              
+CONTIGUOUS: Post Registration Setup Time    0.00037 (1)               
+NEW: Evaluation Time                        4.722 (1)                 
+CONTIGUOUS: Evaluation Time                 4.786 (1)                 
+================================================================================
+
+4 X 50000 X 100 = 20000000
+================================================================================
+
+                              TimeMonitor Results
+
+Timer Name                                  Local time (num calls)    
+--------------------------------------------------------------------------------
+Total Run Time                              8.435 (1)                 
+NEW: Post Registration Setup Time           0.000355 (1)              
+CONTIGUOUS: Post Registration Setup Time    0.000317 (1)              
+NEW: Evaluation Time                        4.176 (1)                 
+CONTIGUOUS: Evaluation Time                 4.257 (1)                 
+================================================================================
+
+4 X 500000 X 10 = 20000000
+================================================================================
+
+                              TimeMonitor Results
+
+Timer Name                                  Local time (num calls)    
+--------------------------------------------------------------------------------
+Total Run Time                              8.798 (1)                 
+NEW: Post Registration Setup Time           0.000359 (1)              
+CONTIGUOUS: Post Registration Setup Time    0.000301 (1)              
+NEW: Evaluation Time                        4.334 (1)                 
+CONTIGUOUS: Evaluation Time                 4.462 (1)                 
+================================================================================
+
+4 X 5000000 X 1 = 20000000
+================================================================================
+
+                              TimeMonitor Results
+
+Timer Name                                  Local time (num calls)    
+--------------------------------------------------------------------------------
+Total Run Time                              14.7 (1)                  
+NEW: Post Registration Setup Time           0.000324 (1)              
+CONTIGUOUS: Post Registration Setup Time    0.000258 (1)              
+NEW: Evaluation Time                        7.082 (1)                 
+CONTIGUOUS: Evaluation Time                 7.612 (1)                 
+================================================================================

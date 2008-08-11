@@ -1,0 +1,19 @@
+
+/** \defgroup teuchos_outputting_grp Teuchos Outputting Utilities */
+
+/** \defgroup teuchos_language_support_grp Teuchos Language Support Utilities */
+
+/** \defgroup teuchos_mem_mng_grp Teuchos Memory Management Utilities */
+
+/** \defgroup teuchos_testing_grp Teuchos Testing Utilities */
+
+/** \example FancyOutputting_test.cpp */
+
+/** \example ArrayRefCountPtr_test.cpp */
+
+/** \example ArrayRefCountPtr_test.cpp */
+
+/** \namespace Teuchos
+    \brief The Teuchos namespace contains all of the classes, structs and enums used by Teuchos, 
+           as well as a number of utility routines.
+ */

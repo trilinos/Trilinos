@@ -1,0 +1,1269 @@
+ \documentclass[12pt,relax]{AztecOOUserGuide}
+ \usepackage{fancyvrb}
+\SANDsubtitle{}
+\title{\AztecOOTM{} User Guide\footnote{For \AztecOOTM{} Version 3.6 in \TrilinosTM{} Release
+8.0}}
+
+\author{Michael A. Heroux}
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{} % Remove ``\today'' in final version
+
+
+\SANDnum{SAND2004-3796} \SANDprintDate{Updated August 2007}
+\SANDauthor{Michael A. Heroux \\
+    Computational Mathematics and Algorithms Department \\
+     Sandia National Laboratories \\
+    P.~O.~Box 5800 \\
+    Albuquerque, NM 87185-1110}
+
+
+\SANDreleaseType{Unlimited Release}
+
+
+% New commands
+\newcommand{\Az}  {{\bf Aztec}}
+\newcommand\R     {{\rm \bf R}}
+\newcommand\I     {{\rm \bf I}}
+\newcommand\C     {{\rm \bf C}}
+\newcommand{\sign}{{\it sign}}
+\newcommand{\diag}{{\it diag}}
+%
+% define boxes for describing variables, etc
+%
+
+\def\optionbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it #1}}{\parbox[t]{3.9in}{#2}} \\[1.1em]}
+
+\def\choicebox#1#2{\noindent$\hphantom{hixthere}$\parbox[t]{2.10in}{\sf #1}\parbox[t]{3.5in}{#2}\\[0.8em]}
+
+\def\structbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it #1}}{\parbox[t]{3.9in}{#2}} \\[.02cm]}
+
+\def\in{\hskip .2in \=}
+\def\hsp{\hskip .4in \=}
+\def\sp{\hskip .18in \=}
+\def\sh{\hskip .18in }
+\def\bb{\hskip .034in }
+\def\lil{\hskip .1in }
+
+
+\def\protobox#1{\vspace{2em}{\flushleft{\bf Prototype}
+\hrulefill}\flushleft{\fbox{\parbox[t]{6in}{\vspace{1em}{\sf #1}\vspace{1em}}}}}
+
+\newcommand{\comm}{Epetra\_Comm}
+\newcommand{\serialcomm}{Epetra\_SerialComm}
+\newcommand{\mpicomm}{Epetra\_MpiComm}
+\newcommand{\mpismpcomm}{Epetra\_MpiSmpComm}
+\newcommand{\lbcomm}{Epetra\_LbComm}
+\newcommand{\map}{Epetra\_Map}
+\newcommand{\blockmap}{Epetra\_BlockMap}
+\newcommand{\serialdensevector}{Epetra\_SerialDenseVector}
+\newcommand{\intserialdensevector}{Epetra\_IntSerialDenseVector}
+\renewcommand{\vector}{Epetra\_Vector}
+\newcommand{\multivector}{Epetra\_MultiVector}
+\newcommand{\crsgraph}{Epetra\_CrsGraph}
+\newcommand{\crsmatrix}{Epetra\_CrsMatrix}
+\newcommand{\vbrmatrix}{Epetra\_VbrMatrix}
+\newcommand{\rowmatrix}{Epetra\_RowMatrix}
+\newcommand{\distobject}{Epetra\_DistObject}
+\newcommand{\linearproblem}{Epetra\_LinearProblem}
+\newcommand{\operator}{Epetra\_Operator}
+\newcommand{\fecrsmatrix}{Epetra\_FE\-Crs\-Matrix}
+\newcommand{\fevbrmatrix}{Epetra\_FE\-Vbr\-Matrix}
+\newcommand{\msrmatrix}{Epetra\_MsrMatrix}
+\newcommand{\statustest}{AztecOO\_StatusTest}
+\newcommand{\oooperator}{AztecOO\_Operator}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+
+The \TrilinosTM{} Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+\AztecOOTM{} is a package within Trilinos that enables the use of the Aztec solver
+library~\cite{Aztec2.1} with \EpetraTM{}~\cite{Epetra-home-page} objects.
+AztecOO provides access to Aztec preconditioners and solvers by
+implementing the Aztec ``matrix-free'' interface using Epetra.
+While Aztec is written in C and procedure-oriented,
+AztecOO is written in C++ and is object-oriented.
+
+In addition to providing access to Aztec capabilities, AztecOO also
+provides some signficant new functionality.  In particular it provides
+an extensible status testing capability that allows expression of
+sophisticated stopping criteria as is needed in production use of
+iterative solvers.  AztecOO also provides mechanisms for using
+Ifpack~\cite{Ifpack-home-page}, ML~\cite{ML-home-page} and AztecOO
+itself as preconditioners.
+\end{abstract}
+
+
+\section*{Acknowledgement}
+The authors would like to acknowledge the support of the ASCI and LDRD
+programs that funded development of AztecOO and the authors of Aztec
+2.1 upon which AztecOO is built: Ray Tuminaro, Mike Heroux, Scott
+Hutchinson and John Shadid.
+
+\clearpage
+\tableofcontents
+\listoffigures
+%\listoftables
+
+\clearpage
+
+\section{Introduction}
+\label{Section:Introduction}
+
+AztecOO is a collection of C++ classes that support the construction
+and use of objects for solving linear systems of equations of the form
+\begin{equation}
+\label{e:axb}
+Ax = b
+\end{equation}
+via
+preconditioned Krylov methods, as provided in Aztec.
+
+This user guide is intended to introduce a new user to the basic features of AztecOO.
+%(i) introduce a new user to the basic features of AztecOO,
+%(ii) discuss the details of AztecOO constructors, and
+%(iii) illustrate the use of AztecOO's advanced uses.
+This document is not intended as a reference
+manual.  Detailed descriptions of AztecOO classes and methods can be
+found online at the Trilinos Project home page~\cite{Trilinos-home-page}.
+
+
+\subsection{Overview of Major AztecOO Classes and Features}
+
+AztecOO contains a variety of classes to support the solution of
+linear systems of equations of the form $Ax=b$ using preconditioned
+iterative methods.  AztecOO also fully contains Aztec, so any application
+that is using Aztec can use the AztecOO library in place of Aztec.
+
+The primary AztecOO class is of the same name, AztecOO.  An AztecOO
+class instance acts as a manager of Aztec, accepting user data as
+Epetra objects.  If an AztecOO object is instantiated using Epetra
+objects, all of Aztec's preconditioners and Krylov methods can be
+applied to the Epetra-defined problem.  However, AztecOO provides a
+variety of mechanisms to override default Aztec capabilities.  Users
+can construct and use preconditioners from Ifpack or ML, or can use
+another instance of the AztecOO class as a preconditioner.  Users can
+also override the default convergence tests in Aztec and use any
+combination of available status tests in \statustest{} classes,
+or define their own.
+
+\subsection{A Special Note for Aztec Users}
+
+AztecOO completely contains the full functionality and interface of
+Aztec 2.1~\cite{Aztec2.1}.  Therefore, any code that calls Aztec 2.1 functions
+can use AztecOO include files and library in place of Aztec 2.1.   Any file
+that includes Aztec header files must be recompiled and the executable file must
+be re-linked with the AztecOO library, and the Aztec library must not be linked.
+In addition, the Epetra~\cite{Epetra-home-page},
+LAPACK~\cite{lapack} and BLAS~\cite{BLAS1, BLAS2, BLAS3}
+libraries must also be available to the linker.
+If \InlineCommand{--enable-aztecoo-azlu} is
+provided to the \InlineCommand{configure} command,
+the Y12M~\cite{y12m} library must also be provided.
+Finally, it is likely that you
+will need the linker to be aware of C++ libraries.  Often the C++ compiler itself
+is the best program to use for linking, since it is aware of what system libraries
+are needed for linking.
+
+Trilinos (and AztecOO as part of Trilinos) use a much different build
+process than Aztec 2.1.  Trilinos uses
+Autoconf~\cite{Autoconf} and Automake~\cite{Automake} to support a configure/make
+process.  If you are familar
+with configure/make procedures, you should find Trilinos  fairly easy install.
+A Trilinos Installation Guide is available from
+the Trilinos website~\cite{Trilinos-home-page}.  If you are familiar with the ad hoc
+build process of Aztec 2.1 and are unfamiliar with configure/make, you may find
+building Trilinos and AztecOO challenging.  We encourage you to carefully read the
+Trilinos Installation Guide, since it will help you with understanding configure/make
+procedures in general, and the use of the processes in Trilinos specifically.
+
+Unlike Aztec, AztecOO does not provide its own copies of BLAS, LAPACK or Y12M libraries.
+This change is part of a general policy in Trilinos to provide interfaces to third-party
+libraries but not code.  This change is generally considered good practice from a software
+engineering perspective for a number of reasons, but can be a hindrance to Aztec users
+making a transition to AztecOO.  Optimized BLAS libraries are available for most computer
+systems.  We recommend you obtain one of these libraries from the Internet, if it is not
+already installed on your computer system.  LAPACK is also available in an optimized form
+for some systems, but this is less critical.  LAPACK can also be obtained from the Internet,
+or may already be installed on your system.  Y12M is an old sparse direct solver also available
+from the Internet.  It is used by Aztec's domain decomposition preconditioners as a local
+subdomain solver.  Most Aztec users do not require it.  By default, it is not required for
+building the AztecOO library.  You may enable it by passing the argument
+\InlineCommand{--enable-aztecoo-azlu} to the configure command.
+
+\subsection{Use of Epetra}
+
+AztecOO relies on Epetra for both concrete and abstract classes that
+describe matrix, vector and linear operator objects.
+Although  concrete classes are needed to construct matrices, AztecOO
+itself uses these matrices via two Epetra abstract classes.  By using
+abstract interfaces, we can support any of the predefined classes that
+implement the abstract interfaces and allow users to define
+new implementations.  This allows AztecOO
+to be easily extended.
+
+\subsubsection{Epetra Abstract Classes}
+
+The two primary abstract Epetra classes used by AztecOO are:
+\begin{enumerate}
+\item {\bf \rowmatrix{}: } Supports the use of any class that is
+conceptually a linear operator with access to coefficient data.
+Although row-orientation is assumed, this class works equally well
+with column oriented data, since transpose operations are supported.
+This class provides an interface to access matrix data.  In addition,
+it extends the \operator{} interface, so any class that implements
+\rowmatrix{} also implmenents \operator{}, described next.  There are
+four primary classes in Epetra that implement \rowmatrix{}, namely
+the \crsmatrix{}, \vbrmatrix{}, \fecrsmatrix{} and \fevbrmatrix{}
+classes.  AztecOO also provides an implementation of \crsmatrix{}
+called \msrmatrix{}.  \msrmatrix{} allows users whose application is
+already forming Aztec DMSR matrix structs to encapsulate the DMSR
+matrix in a class that implements \rowmatrix.  The encapsulation does
+not copy the data in the DMSR matrix struct.  This feature is
+important for people making a transition from Aztec to AztecOO.
+\item {\bf \operator{}: } Supports the use of any class that is
+conceptually a linear operator.  There are only a handful of methods
+in this class, the most important of which are the Apply() and
+ApplyInverse() (ApplyInverse() can be defined as nonexistent).
+A large number of Epetra classes implement the
+\operator{} interface, including the \crsmatrix{}, \vbrmatrix{},
+\fecrsmatrix{} and \fevbrmatrix{} since these classes implement
+\rowmatrix{} and \rowmatrix{} extends \operator{}.  In addition, ML
+and IFPACK both implement the \operator{} interface, so they can be
+used as preconditioners for AztecOO.  A class called \oooperator{}
+also implements the \operator{} interface using an existing AztecOO
+class instance.  This allows AztecOO to be used as a preconditioner
+for itself.
+
+\end{enumerate}
+
+\subsubsection{Epetra Concrete Classes}
+
+Given the above abstract classes, we need some concrete classes in
+order to construct explicit objects.  Specifically,
+the following concrete Epetra classes are used:
+\begin{enumerate}
+\item {\bf \vector{}: } Supports construction and use of distributed
+vectors of double-precision numbers.  Once constructed, \vector{}
+objects can be used in multiple ways.  Common operations such as
+norms, dot products and vector updates are supported by methods in
+this class.  Additional functionality is available via several
+extension techniques discussed later.
+\item{\bf \multivector{}: } An \multivector{} object is a collection
+of \vector{} objects (although \vector{} is actually implemented as a
+specialization of \multivector{}).  Specifically, an \multivector{}
+object is a collection of vectors with the same size and
+distribution.  This kind of object is useful for block algorithms and
+applications that manage multiple vectors simultaneously.  \vector{}
+and \multivector{} objects are understood by all Trilinos packages.
+\item{\bf \crsgraph{}:} Supports the construction and use of adjacency
+graphs.  These graphs are used to describe the pattern of Epetra
+sparse matrix classes and provide pattern-based information to
+load-balancing interfaces.  The graphs are also used to implement
+overlapping subdomain algorithms and a variety of other parallel
+algorithms.
+\item{\bf \crsmatrix{}:} Supports construction and use of distributed
+sparse matrix objects.  Once constructed, an \crsmatrix{} object can
+be used with any Trilinos solvers or preconditioners.  This class also
+supports common matrix and matrix-vector operations such as matrix
+scaling, matrix norms and matrix-vector multiplication.
+\item{\bf \fecrsmatrix{}:} This class inherits from \crsmatrix,
+providing an interface to construct the matrix from element stiffness
+matrices.  Once constructed, this matrix can be used as an \crsmatrix{}.
+\item{\bf \vbrmatrix{}:} Although less frequently used than the
+\crsmatrix{} class, this class supports the construction of sparse
+matrices whose entries are dense matrices.  This type of matrix is
+frequently found in applications where multiple degrees of freedom are
+tracked at each mesh point.  When properly used, the \vbrmatrix{}
+class can offer substantial machine performance and algorithmic
+robustness improvements.
+\item{\bf \fevbrmatrix{}:} This class inherits from \vbrmatrix,
+providing an interface to construct the block matrix from element stiffness
+matrices.  Once constructed, this matrix can be used as an \vbrmatrix{}.
+\item{\bf \msrmatrix{}:} Although not part of Epetra, we list this
+class here because it is a viable option for existing Aztec users.
+An \msrmatrix{} object is constructed by passing in an existing
+AZ\_MATRIX struct defining a DMSR matrix as described in the Aztec 2.1
+User's Guide~\cite{Aztec2.1}. Given the matrix data in this form, the
+\msrmatrix{} class implements the \rowmatrix{} interface using the
+DMSR matrix with little extra storage required.  This class is useful
+if an existing Aztec user has already constructed a DMSR matrix.
+\item{\bf \linearproblem{}:} An \linearproblem{} object is an
+aggregate object that encapsulates the problem $Ax=b$.  It contains a
+pointer to an \rowmatrix{} or \operator{} representing $A$, and an
+\multivector{} for $x$ and another for $b$.  (NOTE:  Although the
+interface supports multiple right-hand-sides and solution vectors,
+AztecOO presently supports the solution of only one right-hand-side.)
+Although use of the \linearproblem{} is not required for passing $A$,
+$x$ and $b$ to AztecOO, it is highly recommended.  Use of
+\linearproblem{} guarantees that the matrix, left-hand-side and
+right-hand-side are compatible.  Also, the \linearproblem{} class
+provides methods for scaling the linear problem using any of a variety
+of diagonal scaling methods.
+\end{enumerate}
+
+
+
+
+\section{A First Example}
+\label{Section:FirstExample}
+Before proceeding with additional descriptive information, we
+introduce a simple example in this section in order to explicitly
+illustrate a straight-forward use of AztecOO.  This specific example
+constructs a tridiagonal matrix and a random RHS vector.  Then it
+constructs an AztecOO object, sets a few parameters for the solver and
+then solves the problem.
+
+The example code is listed in Figure~\ref{Figure:FirstExample}.
+In the remainder of this section we proceed with a
+description of the code.
+\begin{figure}
+\begin{center}
+\input{Ex1}
+\end{center}
+\caption{\label{Figure:FirstExample} Simple AztecOO/Epetra Example}
+\end{figure}
+
+\subsection{Explanation of Figure~\ref{Figure:FirstExample}}
+
+\paragraph{Line 1}
+Include the AztecOO\_config.h file.  This file contains macros
+definitions that were defined during the configuration process.  In
+particular, the macro HAVE\_MPI will be defined or undefined in this
+file, depending on whether AztecOO was built in MPI mode or not.  We
+will use HAVE\_MPI below to determine if our example code should be
+compiled with MPI support or not.
+\paragraph{Lines 2--7}
+Include the appropriate implementation of the \comm{} class.  If
+AztecOO was built in MPI mode, the macro ``HAVE\_MPI'' will be defined
+and this example will be built with MPI support.  If not, then the
+example will be built in serial mode.  Note that these lines of code,
+lines 15--20 and lines 60--62 are the only difference between a serial
+and distributed memory version of the example.
+\paragraph{Lines 8--11}
+Include the other necessary Epetra and AztecOO header files.
+It is a good practice to explicitly include header files for all
+classes you explicitly use, and only those header files.
+\paragraph{Line 13}
+Start of main program.
+\paragraph{Lines 15--21}
+Depending on whether or not AztecOO was built in MPI
+mode\footnote{Whether or not Trilinos, and AztecOO as a Trilinos package, is built
+in MPI mode is determined by how the Trilinos (or AztecOO) {\tt
+configure} script in invoked.  If no MPI-related arguments are passed
+to the configure script, then packages are built in serial mode only.
+If one or more MPI options are invoked, then packages are built with
+MPI support (in addition to serial support).}, MPI will be initialized
+and an \mpicomm{} object will be constructed, or an \serialcomm{}
+object will be constructed.  Please note that, in principle, the serial
+version of this example would work, even if AztecOO were built in MPI
+mode.  Serial mode is always available.  Line 21 prints the \comm{}
+object to cout.
+\paragraph{Line 23}
+Define the local problem dimension.  NumMyElements will be used to
+define an \map{} that has 100 elements on each processor.  In turn the
+map will be used to construct vectors with 100 entries on each
+processor and matrices with 100 rows on each processor.
+\paragraph{Lines 24--25}
+Constructs an \map{} object that has NumMyElements elements spread
+across the parallel (or serial) machine.  The first argument indicates
+that we are not specifying the global number of elements, but allowing
+the \map{} constructor to compute it as the sum of
+NumMyElements defined on each calling processor.  The second argument
+is the number of elements assigned to the calling processors.  The
+third argument (a
+``0'') indicates that our global indices are zero-based.  Fortran
+users would typically pass in a ``1'' here.  The fourth argument is the
+Comm object we just built.
+\paragraph{Line 26}
+Once an \map{} object is constructed, we can query it for how many total
+elements are in the map\footnote{For readers
+who are not familiar with a single-program, multiple data (SPMD)
+programming model, it may be useful to read a bit about it.  Typing
+``SPMD tutorial'' into a web search engine should be a sufficient
+starting point.}.  In this way, the remainder of our code can operate
+independent of how data is distributed.
+\paragraph{Line 29}
+Instantiates (creates) an \crsmatrix{}.  The first argument tells the
+constructor whether or not data passed in to this object should be
+copied (user values and indices will be copied to internal storage) or
+viewed (user values and indices will be pointed to by this object and
+the user {\it must} guarantee the integrity of that data).  View mode
+is available across many Epetra classes.  In general, this is a very
+dangerous practice.  However, in certain very important situations, it
+is essential to have this mode.  This is especially true when using
+Epetra with Fortran, or when accepting matrix data from other parts of
+application where it is too expensive to replicate the data storage.
+
+The second argument is the \map{} object we just constructed.  The
+third argument is an advisory value telling the constructor
+approximately how many nonzero values will be defined for each row of
+the matrix\footnote{getting this value wrong does not
+affect the correctness of results, but may affect performance and
+efficient use of memory}.  We are constructing a tridiagonal matrix,
+so the value ``3'' is appropriate.
+
+At this point the matrix is an empty ``bucket'' ready to receive
+matrix values and indices.  Also, at this point, most of the methods
+in the \crsmatrix{} cannot be called successfully for this object.
+\paragraph{Lines 31--43}
+These lines insert values and indices into the matrix we just
+instantiated.  Our matrix is tridiagonal with a value of 2 at each
+diagonal and -1 on the immediate off-diagonals.  We do not go into
+detail about the methods called here.  The reader should look at the
+Epetra User Guide~\cite{Epetra-User-Guide} or the online reference
+material at the Trilinos home page~\cite{Trilinos-home-page}.
+\paragraph{Lines 45--48}
+Once the matrix is constructed, we create our vectors b and x using
+the same map that determined the layout of the matrix rows.  We also
+fill b with random values (line 48).
+\paragraph{Lines 50--53}
+Now that A, x and b are formed, we can define a linear problem
+instance.  This object will in turn be used to define an AztecOO
+instance.  Note that it is possible to construct AztecOO objects in
+other ways, but we strongly recommend use of the constructor shown in
+line 53.  Note that when the AztecOO object is constructed, the
+parameter and option values listed in
+Section~\ref{Section:OptionsAndParams} will be set to their default
+values.  These defaults can be changed by calling the SetAztecOption(),
+SetAztecParam() and SetParameters() methods (see section \ref{Section:OptionsAndParams}).
+\paragraph{Lines 55--56}
+Once the solver object is instantiated, we change the value of
+AZ\_precond to AZ\_Jacobi.  Note that the key/value pairs passed in to
+this method can be any valid pair as defined in
+Section~\ref{Section:OptionsAndParams}.  Next we call the Iterate()
+method, passing in the maximum number of iterations that can be
+performed and a tolerance that should be used to test for
+convergence.  Depending on the values of the Aztec parameters and
+options, this method will attempt to solve the problem using the
+prescribed preconditioner (if any) and the specified iterative
+method.  It will also print intermediate results if the user has
+requested them.  Upon exit from this method, the problem will
+hopefully be solved and the solution will be in x which in turn is
+part of the linear problem instance.  Also upon exit, a number of
+methods can be called to determine the results of the iterations.
+\paragraph{Lines 58--59}
+Print results from calling the solver.
+\paragraph{Lines 60--62}
+If our code was compile in MPI mode, we need to call MPI\_Finalize()
+for proper clean up.
+\paragraph{Line 64} Program exit.
+
+\section{Aztec Options and Parameters\label{Section:OptionsAndParams}}
+
+Because AztecOO is partly a wrapper around Aztec, much of the
+control and selection of solver options and parameters is done via three
+method calls that set Aztec options and parameters, namely
+SetAztecOption(), SetAztecParam() and SetParameters()
+ (see \ref{parameterlist}).  Most of the
+options and parameters are identical to those found in Aztec 2.1.
+However, there are a few new options and parameters.  Below we
+list all options and parameters, including the default value and
+description of each.
+
+\subsection{Aztec Options\label{optionI}}
+
+The following list of key/value pairs can be used with the
+SetAztecOption() method to change the behavior of the Iterate() method:
+\vspace{2em}
+{\flushleft{\bf Specifications} \hrulefill}
+\nopagebreak \\[0.5em]
+%
+\optionbox{options[{\sf AZ\_solver}]}{Specifies solution
+  algorithm. DEFAULT: \sf AZ\_gmres.}
+\choicebox{AZ\_cg}{Conjugate gradient (Applicable to symmetric
+positive definite matrices, sometimes usable with mildly
+non-symmetric matrices).}
+
+\choicebox{AZ\_cg\_condnum}{Conjugate gradient with condition number
+estimation. (Similar to AZ\_cg. Additionally computes extreme
+eigenvalue estimates using the generated Lanczos matrix).}
+
+\choicebox{AZ\_gmres}{Restarted generalized minimal residual.}
+\choicebox{AZ\_gmres\_condnum}{Restarted GMRES with condition number
+estimation. (Similar to AZ\_gmres. Additionally computes extreme
+eigenvalues using the generated Hessenberg matrix.)}
+\choicebox{AZ\_cgs}{Conjugate gradient squared.}
+\choicebox{AZ\_tfqmr}{Transpose-free quasi-minimal residual.}
+\choicebox{AZ\_bicgstab}{Bi-conjugate gradient with
+  stabilization.}
+\choicebox{AZ\_lu}{Sparse direct solver (single processor only).
+{\bf Note: This option is available only when --enable-aztecoo-azlu is
+specified on the AztecOO configure script invocation command}}
+%
+%\optionbox{options[{\sf AZ\_scaling}]}{Specifies scaling algorithm.
+%  The entire matrix is scaled (overwriting the old
+%  matrix). Additionally, the right hand side, the initial guess and
+%  the final computed solution are scaled if necessary. For
+%  symmetric scaling, this transforms $ A x = b$ into
+%  $ S A S y = S b $ as opposed to $ S A x = S b $ when symmetric
+%  scaling is not used. NOTE: The residual within \Az{} is now
+%  given by $ S (b - A x) $. Thus, residual printing and convergence
+%  checking are effected by scaling.  DEFAULT: \sf
+%  AZ\_none.}
+%%
+%\choicebox{AZ\_none}{No scaling.}
+%\choicebox{AZ\_Jacobi}{Point Jacobi scaling.}
+%\choicebox{AZ\_BJacobi}{Block Jacobi scaling where the block
+%  size corresponds to the VBR blocks.  Point Jacobi scaling is
+%  performed when using the MSR format.}
+%\choicebox{AZ\_row\_sum}{Scale each row so the magnitude of its
+%  elements sum to 1.}
+%\choicebox{AZ\_sym\_diag}{Symmetric scaling so diagonal elements
+%  are 1.}
+%\choicebox{AZ\_sym\_row\_sum}{Symmetric scaling using the matrix
+%  row sums.}
+%
+\optionbox{options[{\sf AZ\_precond}]}{Specifies preconditioner.
+  DEFAULT: \sf AZ\_none.}
+\choicebox{AZ\_none}{No preconditioning.}
+\choicebox{AZ\_Jacobi}{$k$ step Jacobi (block Jacobi for DVBR matrices
+  where each block corresponds to a VBR block). The number of
+  Jacobi steps, $k$, is set via {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_Neumann}{Neumann series polynomial
+  where the polynomial order is set via
+  {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_ls}{Least-squares polynomial
+  where the polynomial order is set via
+  {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_sym\_GS}{Non-overlapping domain decomposition
+  (additive Schwarz)
+  $k$ step symmetric Gauss-Siedel.
+  In particular, a symmetric Gauss-Siedel domain decomposition
+  procedure is used where each processor independently
+  performs one step of
+  symmetric Gauss-Siedel on its local matrix, followed by communication
+  to update boundary values before the next local symmetric
+  Gauss-Siedel step. The number of steps, $k$, is set via
+  {\it options}[{\sf AZ\_poly\_ord}].}
+\choicebox{AZ\_dom\_decomp}{Domain decomposition preconditioner
+  (additive Schwarz). That is, each processor augments
+  its submatrix according to {\it options}[{\sf AZ\_overlap}]
+  and approximately ``solves'' the resulting subsystem
+  using the solver specified by \\
+  $\hphantom{using the solr}$
+  {\it options}[{\sf AZ\_subdomain\_solve}].\\
+  Note: {\it options}[{\sf AZ\_reorder}] determines whether
+  matrix equations are reordered (RCM) before ``solving'' submatrix problem.}
+\optionbox{options[{\sf\small AZ\_subdomain\_solve}]}{Specifies the solver
+  to use on each subdomain when {\it options}[{\sf AZ\_precond}] is set
+  to {\sf AZ\_dom\_decomp} DEFAULT: \sf AZ\_ilut.}
+\choicebox{AZ\_lu}{Approximately solve processor's submatrix via
+  a sparse LU factorization in conjunction with a drop tolerance
+  {\it params}[{\sf AZ\_drop}]. The current sparse
+  lu factorization is provided by the package Y12M~\cite{y12m}.
+  {\bf Note: This option is available only when --enable-aztecoo-azlu is
+specified on the AztecOO configure script invocation command}}
+\choicebox{AZ\_ilut}{Similar to {\sf AZ\_lu} using
+  Saad's {\sf ILUT} instead of LU \cite{ilut}. The drop
+  tolerance is given by {\it params}[{\sf AZ\_drop}]
+  while the fill-in is given by {\it params}[{\sf AZ\_ilut\_fill}]. }
+\choicebox{AZ\_ilu}{Similar to {\sf AZ\_lu} using
+  {\sf ilu(k)} instead of LU with k determined by
+  {\it options}[{\sf AZ\_graph\_fill}]}
+\choicebox{AZ\_rilu}{Similar to {\sf AZ\_ilu} using
+  {\sf rilu(k,$\omega$)} instead of {\sf ilu(k)}
+  with $\omega$ ($0 \ge \omega \ge 1$) given by {\it params}[{\sf AZ\_omega}]
+  \cite{milu}.}
+\choicebox{AZ\_bilu}{Similar to {\sf AZ\_ilu} using block
+  {\sf ilu(k)} instead of {\sf ilu(k)} where each block corresponds
+  to a VBR block.}
+\choicebox{AZ\_icc}{Similar to {\sf AZ\_ilu} using
+  {\sf icc(k)} instead of {\sf ilu(k)} \cite{icc}.}
+%
+\optionbox{options[{\sf AZ\_conv}]}{Determines the residual expression used
+  in convergence checks and printing.  DEFAULT: {\sf AZ\_r0}. Note
+that this feature is overridden if the user registers an
+AztecOO\_StatusTest object with the AztecOO solver instance.
+  The iterative solver terminates if the corresponding residual expression
+  is less than {\it params}[{\sf AZ\_tol}]:}
+\choicebox{AZ\_r0}{$\|r\|_2 / \|r^{(0)}\|_2 $}
+\choicebox{AZ\_rhs}{$\|r\|_2 / \|b\|_2 $}
+\choicebox{AZ\_Anorm}{$\|r\|_2 / \|A\|_{\infty} $}
+\choicebox{AZ\_noscaled}{$\|r\|_2$}
+\choicebox{AZ\_sol}{$\|r\|_{\infty}
+  /(\|A\|_{\infty} * \|x\|_1 + \|b\|_{\infty}) $}
+\choicebox{AZ\_weighted}{$\|r\|_{WRMS} $\\
+  where $\| \cdot \|_{WRMS} = \sqrt{(1/n) \sum_{i=1}^n (r_i/w_i)^2}$,
+  $n$ is the total number of unknowns, $w$ is a weight
+  vector provided by the
+  user  via {\it params}[{\sf AZ\_weights}] and
+  $r^{(0)}$ is the initial residual. {\bf Note:  AZ\_weighted is not
+available in AztecOO.}}
+%
+\optionbox{options[{\sf AZ\_diagnostics}]}{Similar to AZ\_output.
+ Specifies diagnostic information that can be used to tune solver performance.
+ In particular, condition estimates for preconditioners, performance ratings and preconditioner memory use.
+  DEFAULT: {\sf AZ\_all}.}
+\choicebox{AZ\_all}{Print all possible diagnostics.}
+\choicebox{AZ\_none}{Print no diagnostics.  Note that if AZ\_output
+is set to AZ\_none, diagnostics will not be printed either.}
+%
+\optionbox{options[{\sf AZ\_output}]}{Specifies information (residual
+  expressions - see {\it options}[{\sf AZ\_conv}]) to be printed.
+  DEFAULT: \sf 1.}
+\choicebox{AZ\_all}{Print out the matrix and indexing vectors for
+  each processor. Print out all intermediate residual expressions.}
+\choicebox{AZ\_none}{No intermediate results are printed.}
+\choicebox{AZ\_warnings}{Only Aztec warnings are printed.}
+\choicebox{AZ\_last}{Print out only the final residual expression.}
+\choicebox{AZ\_summary}{Print header containing problem description,
+iterative method and preconditioner description.}
+\choicebox{$>$0}{Print residual expression every {\it
+    options[{\sf AZ\_output}]\/} iterations.}
+%
+\optionbox{options[{\sf AZ\_pre\_calc}]} {Indicates whether to use
+  factorization information from previous calls to Iterate().
+  DEFAULT: {\sf AZ\_calc} if the user is using the native Aztec
+preconditioners selected via options[{\sf AZ\_precond}].  If the user has
+registered an \operator{} object using the SetPrecOperator()
+method, then this operator will be used as the preconditioner and it
+is assumed that the preconditioner is already constructed.}
+\choicebox{AZ\_calc}{Use no information from previous Iterate() calls.}
+\choicebox{AZ\_recalc}{Use preprocessing information from a
+  previous call but recalculate preconditioning factors. This is
+  primarily intended for factorization software which performs a
+  symbolic stage.}
+\choicebox{AZ\_reuse}{Use preconditioner from a previous
+  Iterate() call, do not recalculate preconditioning factors.
+  Also, use scaling factors from previous call to scale the
+  right hand side, initial guess and the final solution.}
+%
+%
+\optionbox{options[{\sf AZ\_graph\_fill}]}{The level of graph fill-in (k)
+  for incomplete factorizations: ilu(k), icc(k), bilu(k).
+  DEFAULT: 0}
+%
+\optionbox{options[{\sf AZ\_max\_iter}]}{Maximum number of iterations. DEFAULT:
+  500, unless an statustest{} object has been registered using the
+SetStatusTest() method in which case this option is ignored.}
+%
+\optionbox{options[{\sf AZ\_poly\_ord}]}{The polynomial order when using
+  polynomial preconditioning.  Also, the number of steps when using Jacobi or
+  symmetric Gauss-Seidel preconditioning.  DEFAULT: 3 for polynomial
+preconditioners, 1 for Jacobi and Gauss-Seidel preconditioners.}
+%
+\optionbox{options[{\sf AZ\_overlap}]}{Determines the submatrices factored with
+  the domain decomposition algorithms (see {\it options}[{\sf AZ\_precond}]).
+  DEFAULT: 0.}
+%
+%\choicebox{AZ\_none}{Factor the local submatrix defined on this processor
+%  by discarding column entries that correspond to external elements.}
+%
+\choicebox{AZ\_diag}{Factor the local submatrix defined on this processor
+  augmented by a diagonal (block diagonal for VBR format) matrix. This diagonal
+  matrix corresponds to the diagonal entries of the matrix rows (found on other
+  processors) associated with external elements.  This can be viewed as taking
+  one Jacobi step to update the external elements and then performing domain
+  decomposition with {\sf AZ\_none} on the residual equations.}
+%
+\choicebox{k}{Augment each processor's local submatrix with
+  rows from other processors. The new rows are obtained in k
+  steps (k $\ge$ 0). Specifically at each augmentation step,
+  rows corresponding to external unknowns are obtained. These
+  external unknowns are defined by nonzero columns in the
+  current augmented matrix not containing a corresponding
+  row on this processor. After the k steps, all columns
+  associated with external
+  unknowns are discarded to obtain a square matrix.
+  The resulting procedure is an overlapped additive Schwarz
+  procedure.}
+%
+\optionbox{options[{\sf AZ\_type\_overlap}]}{Determines how overlapping
+    subdomain results are combined when different processors
+    have computed different values for the same unknown.
+    DEFAULT: \sf AZ\_standard.}
+\choicebox{AZ\_standard}{The resulting value of an unknown is
+    determined by the processor owning that unknown. Information
+    from other processors about that unknown is discarded.}
+\choicebox{AZ\_symmetric}{Add together the results obtained from different
+    processors corresponding to the same unknown. This keeps the
+    preconditioner symmetric if a symmetric technique was used on
+    each subdomain.}
+%
+\optionbox{options[{\sf AZ\_kspace}]}{Krylov subspace size for
+  restarted GMRES.\\
+  DEFAULT: 30.}
+%
+\optionbox{options[{\sf AZ\_reorder}]}{Determines whether RCM reordering
+  will be done in conjunction with domain decomposition incomplete
+  factorizations. 1 indicates RCM reordering is used. 0 indicates that
+  equations are not reordered.  DEFAULT:~1.}
+%
+\optionbox{options[{\sf AZ\_keep\_info}]}{Determines whether matrix
+  factorization information will be kept after this solve (for example
+  to solve the same system with another right hand side, see
+  {\it options}[{\sf AZ\_pre\_calc}]).  1 indicates factorization
+  information is kept.  0 indicates that factorization information is
+  discarded.  DEFAULT: 0.}
+%
+\optionbox{options[{\sf AZ\_orthog}]}{GMRES orthogonalization scheme.\\
+  DEFAULT: {\sf AZ\_classic}.}
+\choicebox{AZ\_classic}{2 steps of classical Gram-Schmidt
+orthogonalization.}
+
+\choicebox{AZ\_modified}{A single step of Modified Gram-Schmidt
+orthogonalization.}
+%
+\optionbox{options[{\sf AZ\_aux\_vec}]}{Determines $\tilde r$ (a required
+  vector within some iterative methods). The convergence behavior varies
+  slightly depending on how this is set.  DEFAULT: \sf AZ\_resid.}
+\choicebox{AZ\_resid}{$\tilde r$ is set to the initial residual vector.}
+\choicebox{AZ\_rand}{$\tilde r$ is set to random numbers between -1 and 1.
+  NOTE: When using this option, the convergence depends on the number of
+  processors (i.e. the iterates obtained with x processors differ from the
+  iterates obtained with y processors if x $\ne$ y).}  $\hphantom{h}$
+\subsection{\Az{} parameters\label{optionD}}
+
+The double precision array {\it params\/} is set up by the AztecOO
+solver instance and is of
+length {\sf AZ\_PARAMS\_SIZE}. Because of this, we do not support
+{\it options}[{\sf AZ\_conv}] = {\sf AZ\_weighted}).  This type of
+functionality is still possible by defining an implementation of the
+AztecOO\_StatusTest abstract class.
+
+Below we list the key/value pairs that can be used with the
+SetAztecParam() method: \vspace{2em}
+{\flushleft{\bf Specifications} \hrulefill} \nopagebreak \\[0.5em]
+%
+\optionbox{params[{\sf AZ\_tol}]}{Specifies tolerance value used in
+   conjunction with convergence tests. DEFAULT: $10^{-6}$.}
+\optionbox{params[{\sf AZ\_drop}]}{Specifies drop tolerance used in
+   conjunction with LU  or ILUT preconditioners (see description
+   below for ILUT). \\ DEFAULT: 0.0.}
+\optionbox{params[{\sf AZ\_ilut\_fill}]}{ ILUT uses two criteria for
+   determining the number of nonzeros in the resulting approximate
+   factorizations. For examples, setting {\it params}[{\sf AZ\_ilut\_fill}]
+   $ = 1.3 $, requires that the ILUT factors contain no more than
+   approximately 1.3 times the number of nonzeros of the original matrix.
+   Additionally, ILUT drops all elements in the resulting factors that are
+   less than {\it params}[{\sf AZ\_drop}]. Thus, when
+   {\it params}[{\sf AZ\_drop}] is set to zero, nothing is dropped and the
+   size of the matrix factors is governed only by {\it params}[{\sf AZ\_ilut\_fill}].
+   However, positive values of {\it params}[{\sf AZ\_drop}] may result in
+   matrix factors containing significantly fewer nonzeros. \cite{ilut} \\
+   DEFAULT: 1.}
+\optionbox{params[{\sf AZ\_omega}]}{Damping or relaxation parameter used
+   for RILU. When {\it params}[{\sf AZ\_omega}] is set to zero, RILU
+   corresponds to ILU(k). When it is set to one, RILU corresponds to
+   MILU(k) where k is given by {\it options}[{\sf AZ\_graph\_fill}].
+   \cite{milu}\\ DEFAULT: 1.}
+\optionbox{params[{\sf AZ\_weights}]}{
+   When {\it options}[{\sf AZ\_conv}] = AZ\_weighted, the {\it i\/}'th local
+   component of the weight vector is stored in the location
+   {\it params}[{\sf AZ\_weights}+i].}
+\optionbox{params[{\sf AZ\_rthresh}]}{Parameter used to modify the
+relative magnitude of the diagonal entries of the matrix that is
+used to compute any of the incomplete factorization preconditioners.
+When {\it params}[{\sf AZ\_rthresh}] is set to zero, no relative perturbation is performed.
+See Section~\ref{Sect:DiagonalPerturbations} and the discussion of
+{\it params}[{\sf AZ\_athresh}] for more information.\\
+DEFAULT: 0.0}
+\optionbox{params[{\sf AZ\_athresh}]}{Parameter used
+to modify the absolute magnitude of the diagonal entries of the
+matrix that is used to compute any of the incomplete factorization
+preconditioners. When {\it params}[{\sf AZ\_athresh}] is set to
+zero, no absolute perturbation is performed. See
+Section~\ref{Sect:DiagonalPerturbations} and the discussion of
+{\it params}[{\sf AZ\_rthresh}] for more information.\\
+DEFAULT: 0.0}
+
+\subsection{ParameterList Interface\label{parameterlist}}
+The AztecOO method SetParameters() allows options and parameters to be set
+using values held in a Teuchos::ParameterList container. The SetParameters()
+method is available only if the option \InlineCommand{--enable-aztecoo-teuchos}
+is provided to the \InlineCommand{configure} command.
+
+This method extracts any mixture of options and parameters from a
+Teuchos::\-Para\-meterList object and uses them to set values in AztecOO's
+internal
+options and params arrays. SetParameters() may be called repeatedly, and does
+not reset default values or previously-set values unless those values are
+contained in the current Teuchos::ParameterList argument. (Of course, if the
+method SetAztecDefaults() is called after SetParameters() has been called,
+any parameters that were set by SetParameters() will be lost.)
+
+A Teuchos::ParameterList is a collection of named Teuchos::ParameterEntry
+objects. (Please refer to documentation for the Teuchos package for information
+on using the Teuchos::ParameterList.) AztecOO recognizes names which mirror the
+macros defined in az\_aztec\_defs.h and described above in subsections
+\ref{optionI} and \ref{optionD}.
+In addition, it recognizes case insensitive versions of those names, with or
+without the prepended `AZ\_'. As an example, the following are equivalent and
+valid: ``AZ\_solver", ``SOLVER", ``Solver". To set an entry in the Aztec options
+array, the type of the ParameterEntry value may be either a string or an int
+in some cases. For example, if selecting the solver, the following are equivalent
+and valid: AZ\_gmres (which is an int), ``AZ\_gmres" (which is a string) or
+``GMRES" (case-insensitive, 'AZ\_' is optional).
+
+To set an entry in the Aztec params array, the type of the
+ParameterEntry value must be double.
+
+By default, the SetParameters() method will silently ignore parameters which have
+unrecognized names or invalid types. Users may provide an optional argument
+specifying that warnings be printed for unused parameters. Alternatively,
+users may iterate the ParameterList afterwards and check the isUsed
+attribute on the ParameterEntry objects.
+
+Here is a brief example of setting parameters using the ParameterList interface:
+\begin{verbatim}
+  Teuchos::ParameterList parameterlist;
+  parameterlist.set("solver", AZ_gmres); //AZ_gmres stored as int
+  parameterlist.set("precond", "Jacobi"); //"Jacobi" -> AZ_Jacobi
+  parameterlist.set("AZ_tol", 1.e-10);
+
+  AztecOO azoo;
+  azoo.SetParameters(parameterlist);
+\end{verbatim}
+
+\subsection{Return status\label{status}}
+
+The double precision array {\it status} of length {\sf AZ\_STATUS\_SIZE}
+returned from Iterate()\footnote{ All integer information returned from
+  Iterate() is cast into double precision and stored in {\it status}.}.
+The contents of {\it status} are described below.  \vspace{2em}
+{\flushleft{\bf Specifications} \hrulefill} \nopagebreak \\[0.5em]
+%
+\optionbox{status[{\sf AZ\_its}]}{Number of iterations taken by the
+   iterative method.}
+\optionbox{status[{\sf AZ\_why}]}{Reason why Iterate() terminated.}
+      \choicebox{AZ\_normal}{User requested convergence criteria is
+                 satisfied.}
+      \choicebox{AZ\_param}{User requested option is not available.}
+      \choicebox{AZ\_breakdown}{Numerical breakdown occurred.}
+      \choicebox{AZ\_loss}{Numerical loss of precision occurred.}
+      \choicebox{AZ\_ill\_cond}{The Hessenberg matrix within GMRES is
+        ill-conditioned. This could be caused by a number of reasons.
+        For example, the preconditioning matrix could be nearly singular
+        due to an unstable factorization (note: pivoting is not implemented
+        in any of the incomplete factorizations). Ill-conditioned Hessenberg
+        matrices could also arise from a singular application
+        matrix. In this case, GMRES tries to compute a least-squares solution.}
+      \choicebox{AZ\_maxits}{Maximum iterations taken without convergence.}
+\optionbox{status[{\sf AZ\_r}]}{The true residual norm corresponding to
+   the choice {\it options}[{\sf AZ\_conv}] (this norm is calculated
+   using the computed solution).}
+\optionbox{status[{\sf AZ\_scaled\_r}]}{The true residual ratio expression
+   as defined by  {\it options}[{\sf AZ\_conv}].}
+\optionbox{status[{\sf AZ\_rec\_r}]}{Norm corresponding to
+   {\it options}[{\sf AZ\_conv}] of final residual or estimated final
+   residual (recursively computed by iterative method). Note: When using
+   the 2-norm, {\bf tfqmr} computes an estimate of the residual norm
+   instead of computing the residual.}
+\optionbox{status[{\sf AZ\_solve\_time}]}{Utilization time in Aztec to solve system.}
+\optionbox{status[{\sf AZ\_Aztec\_version}]}{Version number of Aztec.}
+%
+ When AztecOO returns abnormally, the user may elect to restart using
+ the current computed solution as an initial guess.
+
+\section{Choosing a Krylov Method}
+\label{Sect:KrylovMethods}
+
+Choosing a Krylov method is determined by many factors, some of
+which are very problem-specific.  However, there are some general
+guidelines worth mentioning.  Selection of a Krylov solver is done
+by setting the value of options[{\sf AZ\_solver}] as described in
+Section~\ref{Section:OptionsAndParams}.
+
+\subsection{Symmetric (Positive Definite) Problems}
+
+AztecOO provides two choices for solving symmetric positive definite
+(SPD) problems, both of which are conjugate gradient (CG) methods. A
+third option exists for some rare situations.
+\begin{enumerate}
+\item (AZ\_cg) The first is CG (AZ\_cg), which is the standard preconditioned CG
+method.  Note that, strictly speaking, CG assume the matrix is
+symmetric and positive semi-definite.  It does sometimes work for
+mildly non-symmetric problems.  Preconditioners for CG must also be
+symmetric.  Thus, it is usually ineffective to use incomplete LU
+type of preconditioners with CG.
+
+\item (AZ\_cg\_condnum) The second solver for symmetric problems is
+also a preconditioned CG solver, but in addition to computing the
+solution, this solver will construct the tridiagonal Lanczos matrix
+that provides good estimates of the extreme eigenvalues of the
+preconditioned\footnote{If you want to use AZ\_cg\_condnum to
+estimate the extreme eigenvalues of your original matrix, you should
+not use a preconditioner or scaling method when calling this solver.
+ In general, changing the preconditioner will also change the extreme eigenvalue estimates}
+ matrix.  This solver is more expensive than AZ\_cg, so it should
+ only be used when this information is needed.
+
+\item (AZ\_gmres and AZ\_gmres\_condnum)  Although there are
+specialized Krylov methods for symmetric indefinite problems,
+AztecOO does not implement them.  However, if such a solver is
+needed, AZ\_gmres can be very effective.  Note that, if a problem
+has many eigenvalues on either side of the imaginary access in the
+complex plane, then the size of the restart value (options[{\sf
+AZ\_kspace}] should be large.  For very difficult problems, it is
+best to set this value equal to the number of iterations performed.
+
+\end{enumerate}
+
+\subsection{Non-symmetric Problems}
+
+For SPD problems, CG is both optimal algorithmically and has fixed
+cost per iteration.  For non-symmetric problems there is no such
+solver.  It is well-known that GMRES without restart is an optimal
+solver.  In practice it is very robust, especially with a good
+preconditioner.  However, its cost can be prohibitive, both in
+memory and computation time.  As a result, literally dozens of
+non-optimal, but lower cost iterative methods have been developed
+for non-symmetric problems.  AztecOO has two implementations of
+GMRES and several lower cost sub-optimal methods.
+
+Of these options, only two are commonly used, and a third
+occasionally:
+\begin{enumerate}
+  \item (AZ\_gmres) Because AztecOO and its predecessor Aztec have
+  often been applied to very difficult non-symmetric systems, and
+  because GMRES is such an effective parallel Krylov method, GMRES is by far
+  the most common non-symmetric solver used in AztecOO.  The
+  effectiveness of GMRES can be strongly affected by the choice of
+  restart value and orthogonalization method.  We discuss these
+  issues below.
+  \item (AZ\_gmres\_condnum) This version of GMRES retains an
+  unfactored copy of the generated Hessenberg matrix and computes
+  its eigenvalues using LAPACK.  The extreme eigenvalues of this
+  Hessenberg
+  matrix are often a good approximation to the extreme eigenvalues
+  of the preconditioned matrix.
+  \item (AZ\_bicgstab) Among the many sub-optimal non-symmetric
+  Krylov methods, BiCGSTAB has proven to be the most robust for a
+  reasonable cost.  For problems that are well-conditioned, BiCGSTAB
+  can often be a much cheaper alternative to GMRES.  However, it is
+  still ineffective for difficult problems.  Furthermore, unlike
+  GMRES where the restart value can be increased, there are
+  no parameters that can be used to make it more robust.
+\end{enumerate}
+
+\subsection{More about GMRES}
+
+As mentioned above, GMRES is by far the most robust general-purpose
+Krylov method available.  Part of its robustness comes from the
+ability to tune two parameters, namely options[{\sf AZ\_kspace}] and
+options[{\sf AZ\_orthog}]. options[{\sf AZ\_kspace}] determines the
+number of Krylov vectors that will be used as part of the
+least-squares problem to generate the next approximate solution.
+Generally setting this value larger improves the robustness,
+decreases iteration count, but increases costs. This value is set to
+30 by default, but for challenging problems one should set it (much)
+higher, especially if memory is available on the computer.  For very
+difficult problems, we recommend setting options[{\sf AZ\_kspace}]
+equal to the maximum number of iterations.
+
+The parameter options[{\sf AZ\_orthog}] can be used to select the
+type of Gram-Schmidt algorithm to used.  We provide two options:
+\begin{enumerate}
+  \item Two steps of classical Gram-Schmidt (Double CGS).
+
+  \item One step of modified Gram-Schmidt. (Single MGS).
+\end{enumerate}
+
+For many years, (single) MGS was the preferred option for GMRES
+because of its superior numerical accuracy over single CGS. However,
+in the past several years it has been recognized that double CGS is
+more effective than single MGS, as effective as double MGS and has
+superior parallel performance.  As a result, AztecOO uses double CGS
+by default.  However, there may be instances where single MGS would
+be sufficient for robustness and it can have a lower cost in some
+situations.
+
+\section{Diagonal Perturbations and Incomplete Factorizations}
+\label{Sect:DiagonalPerturbations}
+ One of the new features in AztecOO
+that was not part of Aztec 2.1 is the ability compute incomplete
+factorizations of perturbed systems. One attribute of coupled
+multi-physics problems is that incomplete factorizations can be
+difficult to compute, even if the original matrix $A$ is
+well-conditioned.  A few sources of difficulty are:
+\begin{enumerate}
+\item Zero diagonal entries.  In this case, unless fill-in occurs prior
+to dividing by the zero diagonal, or we perform some type of pivoting, the
+factorization will fail or produce unusable factors.  In some
+instances even when fill-in does occur, the diagonal value may be
+too small to produce a usable factorization.
+\item Singular principle sub-matrices.  In this case, boundary
+conditions are missing or insufficient to determine a nonsingular
+upper left sub-matrix.
+\item Singularity due to domain partitioning.  When executing in
+parallel using additive Schwarz methods, we observe situations where
+an incomplete factorization for the entire domain exists but one or
+more factorizations for the subdomains do not.
+\end{enumerate}
+
+One straightforward technique to address poorly conditioned factors
+is to introduce diagonal perturbations.  In this
+situation, the incomplete factorization is performed on a matrix that
+is identical to $A$ except that diagonal entries
+are perturbed, usually to increase diagonal dominance.
+This idea was introduced by
+Manteuffel~\cite{Manteuffel:80} as a means for computing incomplete
+Cholesky decompositions for symmetric positive definite systems
+and extended to nonsymmetric matrices by van der
+Vorst~\cite{vanderVorst:81},
+Saad~\cite{Saad:94a} and Chow~\cite{Chow:97}.  It is used for
+block entry matrices in a package called BPKIT~\cite{ChowHeroux:98}.
+
+The incomplete factorization preconditioners in AztecOO (and in
+IFPACK~\cite{Ifpack-home-page}) are sensitive to two parameters:
+\begin{itemize}
+  \item {\it params}[{\sf AZ\_athresh}]: Absolute threshold $\alpha$.
+  \item {\it params}[{\sf AZ\_rthresh}]: Relative threshold $\rho$.
+\end{itemize}
+
+Given these two values, the preconditioner is computed for a matrix
+$B$ such that off-diagonal entries of $B$ are the same as the
+original matrix $A$ but the diagonals are replaced with:
+
+\begin{equation}\label{diagaonalperturbations}
+    b_{ii} \leftarrow \textrm{sign$(a_{ii})$}\alpha + (1+\rho)a_{ii}
+\end{equation}
+
+where sign() is the sign of the value, either $+1$ or $-1$.
+
+Since Krylov methods such as GMRES are invariant under scaling, and
+a very large diagonal
+perturbation essentially makes the off-diagonal elements irrelevant,
+one way to view diagonal perturbation is as establishing a continuum
+between an accurate but poorly conditioned incomplete factorization
+and less accurate but perfectly conditioned Jacobi diagonal scaling.
+Given this continuum, the strategy is then to choose a minimal perturbation
+that sufficiently stabilizes the factorization.
+
+
+\subsection{Perturbation Strategies}
+
+As mentioned above, we often have difficulty computing usable incomplete
+factorizations for our problems.  The most common source of problems
+is that the factorization may encounter a small or zero pivot,
+in which case the factorization can fail, or even if the factorization
+succeeds, the factors may be so poorly conditioned that use of them in
+the iterative phase produces meaningless results.  Before we can fix
+this problem, we must be able to detect it.  To this end, we use a
+simple but effective condition number estimate for $(LU)^{-1}$.
+
+\subsubsection{Estimating Preconditioner Condition Numbers}
+
+The condition of a matrix $B$, called $cond_p(B)$, is defined as
+$cond_p(B)
+= \|B\|_p\|B^{-1}\|_p$ in some appropriate norm $p$.  $cond_p(B)$
+gives some indication of how many accurate floating point
+digits can be expected from operations involving the matrix and its
+inverse.  A condition number approaching the accuracy of a given
+floating point number system, about 15 decimal digits in IEEE double
+precision, means that any results involving $B$ or $B^{-1}$ may be
+meaningless.
+
+The $\infty$-norm of a vector $y$ is defined as the maximum of the
+absolute values of the vector entries, and the $\infty$-norm of a
+matrix C is defined as
+$\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty$.
+A crude lower bound for the $cond_\infty(C)$ is
+$\|C^{-1}e\|_\infty$ where $e = (1, 1, \ldots, 1)^T$.  It is a
+lower bound because $cond_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
+\ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty$.
+
+For our purposes, we want to estimate $cond_\infty(LU)$, where $L$ and
+$U$ are our incomplete factors.  Chow~\cite{Chow:97} demonstrates that
+$\|(LU)^{-1}e\|_\infty$ provides an effective estimate for
+$cond_\infty(LU)$.  Furthermore, since finding $z$ such that $LUz = y$
+is a basic kernel for applying the preconditioner, computing this
+estimate of $cond_\infty(LU)$ is performed by setting $y = e$, calling
+the solve kernel to compute $z$ and then
+computing $\|z\|_\infty$.
+
+AztecOO provides the ability to query the condition number of the
+preconditioner, if one is available.  This value is obtained by
+calling the Condest() method on an AztecOO object instance.
+
+
+\subsubsection{{\it A priori} Diagonal Perturbations}
+
+Given the above method to estimate the conditioning of the incomplete factors,
+if we detect that our factorization is too ill-conditioned
+we can improve the conditioning by perturbing the matrix diagonal and
+restarting the factorization using
+this more diagonally dominant matrix.  In order to apply perturbation,
+prior to starting
+the factorization, we compute a diagonal perturbation of our matrix
+$A$ in Eq.~\ref{e:axb} and perform the factorization on this perturbed
+matrix.  The overhead cost of perturbing the diagonal is minimal since
+the first step in computing the incomplete factors is to copy the
+matrix $A$ into the memory space for the incomplete factors.  We
+simply compute the perturbed diagonal at this point.  The actual
+perturbation values we use are discussed below.
+
+
+\subsection{Strategies for Managing Condition Numbers}
+
+Without any prior knowledge of a problem, the first step to take when
+computing a preconditioner is to compute the original factors without
+any diagonal perturbation.  This usually gives the most accurate
+factorization and, if the condition estimate of the factors is not too
+big, will lead to the best convergence.  If the condition estimate of
+the original factors is larger than machine precision, say greater
+than 1.0e15, then it is possible that the factorization will destroy
+convergence of the iterative solver.  This will be evident if the
+iterative solver starts to diverge, stagnates, or aborts because
+it detects ill-conditioning.  In these cases, diagonal perturbations
+may be effective.  If the condition estimate of the preconditioner is
+well below machine precision (less than 1.0e13) and one is not achieving
+convergence, then diagonal perturbation will probably not be useful.
+Instead, one should try to construct a more accurate factorization by
+increasing fill.
+
+\subsubsection{Strategies for {\bf\it a priori} Diagonal Perturbations}
+
+The goal when applying {\it a priori} perturbations is to find a close to minimal
+perturbation that reduces the condition estimate below machine
+precision (roughly 1.0e16).  In some practical settings,
+we use the strategy outlined in
+Figure~\ref{f:aprioristrategy}.
+{\small
+\begin{figure}
+\vspace{.05in}
+\hrule
+\vspace{.1in}
+\begin{enumerate}
+\item Set the absolute threshold $\alpha = 0.0$ and the relative
+threshold $\rho = 0.0$ (equivalent to no perturbation).
+\item Define perturbed diagonal entries as $d_{i} = \sign(d_i)\alpha +
+d_i(1+\rho)$ and compute the incomplete factors $L$ and $U$.
+\item Compute $condest = \|(LU)^{-1}e\|_\infty$ where $e = (1, 1,
+\ldots, 1)^T$.
+\item If failure ($condest > 10^{15}$ or convergence is poor), set $\alpha =
+10^{-5}$, $\rho = 0.0$.  Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-5}$, $\rho = 0.01$. Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-2}$, $\rho = 0.0$. Repeat Steps 2 and 3.
+\item If failure, set $\alpha =
+10^{-2}$, $\rho = 0.01$. Repeat Steps 2 and 3.
+\item If still failing, continue alternate increases in
+   the two threshold values.
+\end{enumerate}
+\vspace{.1in}
+\hrule
+\caption{Simple {\it a priori} Threshold Strategy}
+\label{f:aprioristrategy}
+\end{figure}
+} Essentially, we replace the diagonal values $(d_1, d_2, \ldots,
+d_n)$ with $d_i = \sign(d_i)\alpha + d_i(1+\rho)$, $i=1, 2, \ldots,
+n$, where $n$ is the matrix dimension and $\sign(d_i)$ returns the
+sign of the diagonal entry.  This has the effect of forcing the
+diagonal values to have minimal magnitude of $\alpha$ and to
+increase each by an amount proportional to $\rho$, and still keep
+the sign of the original diagonal entry.
+
+
+\section {Optimal reuse of AztecOO for Repeated Solves}
+
+In many practical situations, a linear solver is being called
+repeatedly to solve problems that have similar numeric properties and
+similar or identical nonzero structure.  In these cases, it is often
+beneficial to reuse in later solves some or all of the work performed
+in formulating the preconditioner for an earlier solve.  The Aztec
+option options[{\sf AZ\_pre\_calc}] allows the user to specify that the
+preconditioner from the previous solve should be retained for
+subsequent solves.
+
+\subsection{Reuse and the SetPrecOperator() Method}
+
+A user can overrides the Aztec preconditioner options by
+forming their own preconditioner that conforms to the \operator{}
+interface.  In particular, users may construct ML and Ifpack
+preconditioners for use with AztecOO.  Once an \operator{}-compliant
+preconditioner is constructed, it can be registered with an AztecOO
+object as the preconditioner.  In this situation, the preconditioner
+will never be reset by AztecOO.  Instead, the user has this responsibility.
+
+Here are the rules for what preconditioner gets used:
+\begin{itemize}
+\item If you instantiate an AztecOO instance with "A" as an
+\operator{}, no internal Aztec preconditioners are available to you
+unless you later register (before calling the Iterate() method) an
+\rowmatrix{} using the SetPrecMatrix() method, in which case the
+internal Aztec preconditioner will be used according to the settings
+of the options and params vectors.  Instead of calling
+SetPrecMatrix(), you can instead set use of a user-provided
+preconditioner by registering an \operator{}, which should already
+be fully constructed, using the SetPrecOperator() method.
+
+\item If you instantiate an AztecOO instance with "A" as a matrix,
+the internal Aztec preconditioners will automatically be used in
+accord with the associated options and params lists.
+
+\item If, subsequently you call SetPrecOperator() with an
+\operator{} that is ready to use, then the internal preconditioner
+will be deleted and your operator will be used.
+
+\item It is possible to alternate back and forth between an internal
+Aztec preconditioner and a user-provided preconditioner by calling
+SetPrecMatrix() to get the internal preconditioner and calling
+SetPrecOperator() to get a user-provided preconditioner.
+
+\item It is also possible to call SetPrecOperator() after a previous
+call to SetPrecOperator() in order to change to a new user-defined
+preconditioner. Also, it is possible to call SetPrecMatrix() after a
+previous call to SetPrecMatrix(), or after Iterate() has been
+called, in order to change which internal preconditioner will be
+used.  Of course some change in the options or params vectors must
+be changed in order to actually obtain a different preconditioner.
+\end{itemize}
+
+\section{Accessing AztecOO from Thyra and Python}
+
+In addition to accessing AztecOO via its C++ interfaces, bindings
+exist that allow use via the Trilinos abstract interfaces in Thyra.
+Thyra is a package of abstract C++ interfaces for accessing one or
+more concrete solver capabilities via a single solver interface.
+
+AztecOO also is accessible via the PyTrilinos package using Python.
+Python provides an excellent interactive prototyping environment, as
+well as a flexible application development environment.  AztecOO,
+Epetra, ML, IFPACK and several other Trilinos packages are available
+to Python users via the PyTrilinos package.
+
+Detailed discussions of Thyra and PyTrilinos can be found by going
+to the Trilinos home page~\cite{Trilinos-home-page}.
+
+\clearpage
+\bibliographystyle{plain}
+%\bibliography{../../../../doc/CommonFiles/TrilinosBibliography}
+\bibliography{AztecOOUserGuide}
+\addcontentsline{toc}{section}{References}
+
+\appendix
+\section{AztecOO \InlineCommand{configure} Options}
+
+Most often AztecOO's \InlineCommand{configure} command will be invoked automatically as
+part of the Trilinos-level \InlineCommand{configure} command.  Regardless of how
+AztecOO's \InlineCommand{configure} command is invoked, the following options can be
+used to customize the configure process.  These options can also be listed  by executing
+\DisplayCommand{./configure --help}
+in the main AztecOO directory.  In fact, obtaining the options this way is preferred, since
+option may have changed since the publiction of this document.  However, for convenience, we
+list the configuration options presently available:
+
+\input{ConfigureOptions}
+%\section{Troubleshooting}
+%\label{Section:Troubleshooting}
+%\subsection{Conditional Code, Incorrect Results and Stalled Programs}
+%Many methods in AztecOO distributed classes (those derive from the
+%\distobject{} class) require all processors to
+%participate in the method call.  For example, to compute the update of
+%an \vector{}, all processors that own a portion of the vector must
+%call the Update() method.  When calling a Norm2() method or something
+%similar, all processors, regardless of whether they own any portion of
+%a vector, must participate in the Norm2() call.
+%Figure~\ref{Figure:HungCode} illustrates
+%several versions of a code segment that computes the 2-norm of a residual
+%and prints it from processor 0.  Only the final version is correct.
+
+\end{document}

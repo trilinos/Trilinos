@@ -1,0 +1,12 @@
+module load PrgEnv-pgi
+module load mpich
+../configure --enable-mpi \
+CXX=mpicxx CC=mpicc F77=mpif77 \
+CPPFLAGS="-tp k8-64 -lacml -lpgmp -lpgthread" \
+--with-blas="-L/usr/pgi-6.0/linux86-64/6.0/lib -lacml -lpgmp -lpgthread" \
+--with-lapack="-L/usr/pgi-6.0/linux86-64/6.0/lib -lacml" \
+--enable-epetraext --enable-triutils \
+--enable-aztecoo --enable-anasazi \
+--enable-ifpack --enable-nox \
+--disable-default-packages
+#The lines before ../configure load the proper environment

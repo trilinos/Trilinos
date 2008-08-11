@@ -1,0 +1,5 @@
+../configure \
+--prefix=/fs04/users/hawsj/local/trilinos-4.0/SGI_LINUX_MPI \
+--with-lapack="-L/opt/modules/cmplrs/intel_8.0/lib -L/opt/intel/mkl70/lib/64 -lmkl_solver -lmkl_lapack -lmkl_ipf -lguide -lifport -lifcoremt -limf -lm -lcxa -lunwind -lpthread -lirc -ldl" \
+--enable-mpi --with-mpi-libs="-lmpi++ -lmpi" \
+CXX=icc CC=icc F77=ifort

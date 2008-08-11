@@ -1,0 +1,11 @@
+interface Zoltan_Set_First_Obj_Fn
+   module procedure Zf90_Set_First_Obj_Fn0f
+   module procedure Zf90_Set_First_Obj_Fn1f
+   module procedure Zf90_Set_First_Obj_Fn2f
+   module procedure Zf90_Set_First_Obj_Fn3f
+   module procedure Zf90_Set_First_Obj_Fn4f
+   module procedure Zf90_Set_First_Obj_Fn5f
+   module procedure Zf90_Set_First_Obj_Fn6f
+   module procedure Zf90_Set_First_Obj_Fn7f
+end interface
+

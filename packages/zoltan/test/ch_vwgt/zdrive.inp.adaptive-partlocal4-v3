@@ -1,0 +1,8 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= remap=0
+Zoltan Parameters       = obj_weight_dim=1
+Zoltan Parameters       = parmetis_method=adaptiverepart
+File Type		= Chaco
+File Name		= vwgt
+Parallel Disk Info	= number=0
+test local partitions   = 4

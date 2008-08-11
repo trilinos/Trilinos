@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+#  This file is meant to move a bunch of '.a' files all into
+#  one subdirectory. The intent is for cross-compiling where
+#  we want the object files for different machines in different
+#  directories
+#
+MYHOME=$PWD
+TEMP=`echo $1x`
+if test `expr $TEMP ` = 'x' 
+   then
+   echo "Usage: move_obj arch"
+   else
+   cd etc
+   flatten ${1}
+   cd ..
+#
+#  move superlu .a file
+#
+   dir=`cat make_PCLINUX.variables | grep LIBRARIES | sed "s,^.*[ =]\(/[^ ]*/\)superlu.*,\1,g"`
+   FILE=`echo superlu${1}.a`
+   cd ${dir}
+   if test -f $FILE
+   then
+      cp $FILE ${MYHOME}/Obj_${1}
+   fi
+   cd $MYHOME
+#
+#  move metis .a file
+#
+   dir=`cat make_PCLINUX.variables | grep LIBRARIES | sed "s,^.*[ =]\(/[^ ]*/\)libmetis.*,\1,g"`
+   FILE=`echo libmetis.a`
+   cd ${dir}
+   if test -f $FILE
+   then
+      cp $FILE ${MYHOME}/Obj_${1}
+   fi
+   cd $MYHOME
+#
+#  move aztec .a file
+#
+   FILE=`echo libaztec.a`
+   dir=`cat make_PCLINUX.variables | grep LIBRARIES | sed "s,^.*[ =]\(/[^ ]*/\)libaztec.*,\1,g"`
+   cd ${dir}
+   if test -f $FILE
+   then
+      cp $FILE ${MYHOME}/Obj_${1}
+   fi
+   cd $MYHOME
+#
+#  move parasails .a file
+#
+   FILE=`echo libParaSails.a`
+   cd lib/ParaSails
+   if test -f $FILE
+   then
+      cp $FILE ${MYHOME}/Obj_${1}
+   fi
+   cd $MYHOME
+#
+#  move ml .a file
+#
+   FILE=`echo libml.a`
+   cd Obj
+   if test -f $FILE
+   then
+      cp $FILE *.o ${MYHOME}/Obj_${1}
+   fi
+   cd $MYHOME
+   cat make_${1}.variables | grep -v LIBRARIES > t1
+   cat make_${1}.variables | grep LIBRARIES | sed "s,/[^ ]*/libmetis,libmetis,g" | \
+                                              sed "s,/[^ ]*/libParaSails,libParaSails,g" | \
+                                              sed "s,/[^ ]*/superlu,superlu,g" | \
+                                              sed "s,/[^ ]*/libaztec,libaztec,g" >> t1
+   mv t1 make_${1}.variables
+fi

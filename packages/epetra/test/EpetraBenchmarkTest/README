@@ -1,0 +1,53 @@
+
+SUMMARY
+
+This test driver builds a sparse matrix with 25 non-zeros per row (on average) with the specified local grid dimensions.
+It then tests the performance of:
+- sparse matrix-vector multiplication, 
+- sparse matrix-multivector multiplication for 2, 4, 8 RHS,
+- vector 2-norm (for a vector of the same global dimension as the sparse matrix)
+- vector dot product
+- vector axpy (y = alpha*x + y)
+
+Run the command without any arguments to see the usage of the executable.
+
+HOW TO BUILD
+
+1) Download Trilinos from http://trilinos.sandia.gov
+
+2) Install Trilinos as follows:
+
+- Untar the source code.
+- Create a directory called EPETRA_MPI_OPT under the main trilinos directory
+- Create a file called "invoke-configure" in the EPETRA_MPI_OPT directory and insert the following 
+  configure invocation command (or something very similar, depending on compilers, etc.):
+
+../configure -C \
+CXXFLAGS=-O3 \
+CFLAGS=-O3 \
+FFLAGS="-O5 -funroll-all-loops" \
+--prefix=/home/mheroux/trilinos-7.0.9/EPETRA_OPT \
+--enable-mpi \
+--with-mpi-compilers \
+--disable-default-packages \
+--disable-tests \
+--disable-examples \
+--enable-epetra \
+--with-gnumake
+
+- Invoke this command (by sourcing the file invoke-configure).
+  NOTE:  You will need a valid installation of BLAS and LAPACK.  See the Trilinos installation guide for details
+         (at the Trilinos website).
+
+- Once you successfully configure Trilinos, type "make; make install"
+
+
+3) While in the EPETRA_MPI_OPT directory, untar the gzipped tar file that contains this README file.
+   This should create a directory called epetratest.
+
+4) Type "make" in the epetratest directory.  This should build an executable called cxx_main.exe.
+
+5) Run the executable.  The file "go" in the epetratest directory gives an example of how to run the executable
+   multiple times to get a series of timing information.
+
+Questions?  Contact Mike Heroux (maherou@sandia.gov, 320-845-7695).

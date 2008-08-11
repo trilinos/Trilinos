@@ -1,0 +1,158 @@
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+HIER DIRECTORY -- Hierarchical partitioning and rebalancing support
+-------------------------------------------------------------
+
+README:
+   Text giving a brief description of the files located in this directory
+
+hier.c:
+   Main implementation of hierarchical balancing
+
+hier.h:
+   Structure, constant, macros, prototype definitions for hierarchical
+   balancing
+
+hier_free_structure.c:
+   callback to free memory allocated for hierarchical balancing
+
+
+Description of hierarchical balancing intermediate structure
+------------------------------------------------------------
+
+The intermediate structure allows hierarchical balancing to pass
+around a small representation of the input during the stages of
+balancing to avoid application migration until the end of the
+process.  
+
+The following members of the struct HierPartParamsStruct are
+involved in the storage of the intermediate structure:
+
+  int init_num_obj;                  /* number of local objects at start */
+  int hier_num_obj;                  /* number of local objects during
+					hierarchical balancing */
+  ZOLTAN_ID_PTR local_ids;           /* / lists of local ids and global ids */
+  ZOLTAN_ID_PTR global_ids;          /* \ for initial partitioning */
+  float *vwgt;                       /* vector of vertex weights */
+  int *input_parts;                  /* Initial partitions for objects. */
+  char *migrated;                    /* array of flags indicating whether
+					each gid in global_ids has been
+					migrated somewhere else */
+  int obj_wgt_dim, edge_wgt_dim;     /* object and edge weight dimensions */
+  idxtype *vtxdist, *xadj;           /* intermediate graph structure storage */
+  ZOLTAN_ID_PTR adjncy;              /*    see Zoltan_Build_Graph */
+  float *ewgts;                      /* edge weights for intermediate struct */
+  int ndims;                         /* number of dimensions for geom data */
+  int num_edges;                     /* number of edges in graph rep */
+  double *geom_vec;                  /* geometry of objects in intermediate */
+
+  char *migrated;                    /* array of flags indicating whether
+					each gid in global_ids has been
+					migrated somewhere else */
+  int num_migrated_in_gids;          /* number of gids migrated to this proc */
+  int alloc_migrated_in_gids;        /* size of allocated array of migrated
+					in gids */
+  ZOLTAN_ID_PTR migrated_in_gids;    /* ordered array of gids migrated in */
+  void **migrated_in_data;           /* data migrated in, parallel array to
+					migrated_in_gids */
+  struct Zoltan_DD_Struct *dd;       /* distributed data to track migrated 
+					gids during hierarchical balancing */
+
+obj_wgt_dim and edge_wgt_dim are inherited from the main Zoltan_Struct
+used by the application.
+
+The structure is initially constructed by populating the init_num_obj,
+global_ids, local_ids, vwgt, and input_parts members by a call to
+Zoltan_Get_Obj_List.  hier_num_obj is initialized to init_num_obj.
+
+local_ids and global_ids contain the LIDs and GIDs of the objects that
+are starting on the local process.
+
+vwgt contains an array of weights for the objects on the local
+process.  vwgt[i*obj_wgt_dim]...vwgt[(i+1)*obj_wgt_dim-1] are the
+weights for local object i.
+
+input_parts is an array of the starting partition assignment of each
+object that starts on the local process.
+
+The members vtxdist, xadj, adjncy, and ewgts are filled by a call to
+Zoltan_Build_Graph.  If graph callbacks are not being used, only
+vtxdist is populated.  This builds what is usually used as input to
+Parmetis or Jostle routines.
+
+vtxdist is a globally-replicated array of size equal to the number of
+processes+1, containing essentially a prefix sum of the number of
+objects per process.  If process 0 has 10 objects, process 1 has 7
+objects, and process 2 has 8 objects, each process will have a vtxdist
+array with the values {0,10,17,25}.  These can be thought of as
+starting indices on each process into a distributed global_ids array.
+
+xadj is an array with one entry for each local object that indicates
+the starting index into the adjncy array for the graph edges are
+incident on that object.
+
+adjncy is an array of graph edges.  Local object i's incident edges
+are listed in positions xadj[i] to xadj[i+1].  The values listed are
+from the global numbering of objects as defined by adding the object's
+position in a global_ids array and the vtxdist value for that process.
+
+ewgts is the array of edge weights corresponding to the adjncy array,
+with edge_wgt_dim entries per edge.
+
+If geometric information is to be used, a call to
+Zoltan_Get_Coordinates populates the ndims and geom_vec members.
+
+ndims is the number of values in each coordinate and geom_vec contains
+the actual coordinates for each object in global_ids.
+
+Objects that have been migrated from their original locations are
+represented in some additional members.  The members described above
+that describe the original object locations and information do not
+change during the hierarchical balancing process.
+
+Objects that have migrated from their original location are marked by
+placing a 1 at the corresponding position in the "migrated" array on
+their starting process.
+
+Objects that have migrated to a process are maintained in the arrays
+migrated_in_gids and migrated_in_data.  The number of objects in these
+arrays is stored in num_migrated_in_gids and the allocated size of
+these arrays is stored in alloc_migrated_in_gids.  A distributed data
+directory that maintains current process assignments is stored in dd.
+This allows all processes to know the location of an object when one
+if its objects' edges needs this information.
+
+migrated_in_gids does not contain the original application global ids,
+but rather the integer that specifies its position in the original
+global id arrays, computed by its position in its process's local
+array and the offset specified in vtxdist.
+
+migrated_in_gids is maintained in order to allow a binary search to be
+used to locate a gid or to determine that it is not in the array
+quickly.
+
+The migrated_in_data array is maintained in the same order.  Each
+entry in migrated_in_data is a pointer to a struct HierGIDInfo,
+defined as:
+
+struct HierGIDInfo {
+  float *wgts;
+  double *coords;
+  int num_adj;
+  ZOLTAN_ID_PTR adj;
+};
+
+This structure stores an object's weights (object and edge),
+coordinates, and edges.  The wgts array has obj_wgt_dim entries for
+object weights followed by edge_wgt_dim edge weights for each adjacent
+edge. The coords array has ndims entries for geometric coordinates.
+The adj array has gid numbers for the other object for each of the
+num_adj edges.
+

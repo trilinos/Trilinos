@@ -1,0 +1,38 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+Include files for the Zoltan interface.
+Only interface functions and definitions that are application-visible
+should be in this directory.
+
+zoltan.h       --  Main include file for all Zoltan functionality.
+
+zoltan_mem.h   --  Interface for Zoltan Memory package.
+                   (Copied from Utilities/Memory/zoltan_mem.h.)
+
+zoltan_comm.h  --  Interface for Zoltan Communication package.
+                   (Copied from Utilities/Communication/zoltan_comm.h.)
+
+zoltan_dd.h    --  Interface for Zoltan Distributed Directory package.
+                   (Copied from Utilities/DDirectory/zoltan_dd.h.)
+
+zoltan_types.h --  Data types for Zoltan IDs and error codes.
+ 
+zoltan_align.h --  Prototype for data alignment functions used by Zoltan.
+
+lbi_const.h    --  Backward compatible interface using Zoltan's old LB_* 
+                   naming convention.  Former Zoltan users can continue to 
+                   include lbi_const.h; new users should include zoltan.h.
+
+

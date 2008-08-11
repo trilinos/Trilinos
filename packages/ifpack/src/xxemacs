@@ -1,0 +1,2 @@
+#!/bin/csh
+xemacs Ifpack_$1.h Ifpack_$1.cpp

@@ -1,0 +1,20 @@
+\section{Runtime Compiler Functionality}
+\label{sec:runtime-compiler-functionality}
+
+The runtime compiler allows inclusion of double quoted (`` ``) 'C'
+language style
+functions within unformatted input files.  The functions are
+evaluated during program setup or execution to calculate independent
+solution variables. 
+
+This provides the user with an endlessly flexible method for
+describing boundary conditions, initial conditions, source terms,
+material properties, or any other independent variable.
+
+The specific variable names expected within runtime compiled functions
+depends on the host code and the context of the function use. In
+general it should be remembered that the runtime functions return
+quantities by modifying variables that are passed in by reference.
+
+%%% NOTE: the following file is copied directly from alegra/toolkit/rtcmopiler
+\input{rtclang}

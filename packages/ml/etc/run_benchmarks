@@ -1,0 +1,403 @@
+#!/bin/sh
+#
+# DESCRIPTION:
+#
+# This script is used for running a series of benchmark tests.
+# It is normally used in conjunction with the benchmarks located
+# in mlbench. 
+# 
+# HOW TO USE THIS SCRIPT:
+#
+#   1) If you don't have mlbench, try cvs checkout mlbench
+#
+#   2) Do a 'make clean' in the ml/Obj directory.
+#      This will ensure that any executables requiring
+#      compilation with a -DBENCHMARK will get automatically made by
+#      run_benchmarks.
+#
+#      Note: the script automatically removes the executable and associated
+#      object file and remakes them.  Thus, you only need to do a make clean
+#      if some other ML src file uses the BENCHMARK macro.
+#
+#   3) If you are running in parallel and need something other than mpirun, 
+#      edit the 'PARALLEL_CMD' variable below.
+#
+PARALLEL_CMD=`echo /usr/local/mpich-1.2.5/bin/mpirun -machinefile ./machines -np `
+#
+#      Note:
+#      a) Some systems may require that you use a batch queue system to run
+#         parallel jobs.  See (b) and item (4).
+#
+#      b) If a batch queue system is being used, you may need to edit
+#         the script etc/mpibench.pbs, which assumes that mpirun is being used.
+#
+#   4) Run run_benchmarks. If you run it without arguments, it will
+#      tell you what the defaults are. If these are not correct, add
+#      arguments to run_benchmarks.
+#
+#       Usage: run_benchmarks [bench_root_directory executable_directory 
+#                              scratch_root_directory parallel={TRUE,FALSE}
+#                              batch={TRUE,FALSE}]
+#       where
+#
+#           bench_root_directory      Directory path to mlbench test problems.
+# 
+#           executable_directory Path to directory where ml should be 
+#                                compiled.
+#
+#           scratch_root_directory    Directory where output will be left.
+#
+#           parallel             Either TRUE or FALSE to indicate whether
+#                                parallel benchmarks should be run.
+#
+#           batch                Either TRUE or FALSE to indicate whether
+#                                batch system should be used.
+#
+#           cvs_update           Either TRUE or FALSE to indicate whether
+#                                the ml & mlbench directories should be
+#                                updated before running the benchmarks.
+#
+#           arch                 One of CPLANT DEC HP PCLINUX SGI SMOS SOLARIS
+#                                SP2 SUN XTFLOP or TFLOP.  This is the same
+#                                variable that is used in the ML build.
+#
+BENCH_ROOT_DIRECTORY=${HOME}/mlbench
+EXECUTABLE_DIRECTORY=${PWD}/../../../sandbox/packages/ml/examples
+SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
+PARALLEL=TRUE
+BATCH=TRUE
+CVS_UPDATE=FALSE
+ARCH=PCLINUX
+SUMMARY_FILE=${SCRATCH_ROOT_DIRECTORY}/summary
+#
+# CREATING NEW BENCHMARKS
+# 
+#    1) Create a new subdirectory under mlbench for the new problem and
+#       cd into this directory. run_benchmarks automatically descends each 
+#       subdirectory (under mlbench) and runs the appropriate executable 
+#       within the subdirectory. 
+#
+#       Alternatively, create a new subdirectory under mlbench, cd into this
+#       directory, and create subdirectories.  Now proceed to step 2 for each
+#       of the subdirectories.  For example, I did the following for the
+#       maxwell benchmark:
+#
+#               cd ${BENCH_ROOT_DIRECTORY}
+#               mkdir maxwell
+#               cd maxwell
+#               mkdir 2dcube; mkdir 3dcube; mkdir aslot
+#
+#               
+#
+#    2) Create a file called 'exe.name' containing the name of the executable
+#       that is to be run within this subdirectory (e.g. ml_example2d, 
+#       ml_read_maxwell, ml_readfile, etc.). If this executable does not
+#       exist in EXECUTABLE_DIRECTORY, run_benchmarks will create it by
+#       invoking make.
+#
+#   2a) (optional) Create a files called 'exe.makeflags' that contains any
+#       necessary defines (-Dxxxxxx) that make needs.
+#
+#    3) Put any data files that you need to run this example.
+#
+#    4) Create files 'ml_inputfile*' where '*' can not be empty. 
+#       run_benchmarks will run one benchmark for each of these input files
+#       (copying the data in ml_inputfile* to ml_inputfile). The input files 
+#       can contain data that is used by your program. ML contains utilities 
+#       for reading certain types of input files (see ML_Reader_ReadInput in 
+#       the file ml_read_utils.c) for more details or look at some of the 
+#       sample inputfiles in mlbench. 
+#       NOTE: If certain data needs to be read and is VERY specific to your 
+#       problem and NOT IN ml_read_utils.c, you can do the following:
+#          a) use ML_Reader_ReadInput() to read the standard input.
+#          b) reopen the inputfile with your application and read the 
+#             application specific stuff using utilities like 
+#             ML_Reader_LookFor(). See ml_example2d.c for a sample of this.
+#       THE ONLY DATA that the script 'run_benchmarks' will read in the 
+#       inputfile is a line of the form:
+#            Number of processors = x
+#       where 'x' is the number of processors to execute the job on.
+#       If this line is not present in the input file, run_benchmarks will
+#       assume that it is a serial job.
+#    5) Create files 'output*' where '*' takes on the same values as 
+#       the ml_inputfile* files created in step 4). Each output file
+#       should contain the proper output for each run. The easiest way
+#       to do this is to 'run_benchmark' on the directory without the
+#       output files and then copy the output files created by the script
+#       (in ${SCRATCH_DIRECTORY}) into the appropriate location in mlbench.
+#
+# OUTPUT:
+#    run_benchmarks will create one output file for each run in 
+#    ${SCRATCH_DIRECTORY}. This output will have all lines with 'ime'
+#    grepped out. This is to avoid timing data.  All lines with
+#    "[Rr]eading" will also be grepped out.  A dif file will also
+#    be created by doing a 'diff -w' with the output file in the directory
+#    structure. It will also create summary information which is essentially
+#    a 'wc' on the dif file and grepping the dif file for the printed 
+#    components of the solution vector and the total number of iterations.
+#    This output is also printed on the screen.
+#
+# DEPENDENCIES:
+#   run_benchmarks depends on the following scripts:
+#
+#       run_one             script for running one benchmark
+#       qbench              script for submitting a job to pbs batch scheduler
+#       mpibench.pbs        script that is submitted to pbs batch scheduler
+#
+# RELATED SCRIPTS:
+#       ml_bench_cronscript     specifies the schedule & script for running
+#                               the benchmarks on a regular basis via the
+#                               cron daemon
+#
+################################################################################
+TEMP=`echo ${PWD} | sed "s,.*/ml/etc,tuvwxyz,"`
+if test `expr ${TEMP}` != 'tuvwxyz'
+then
+   echo "Must execute run_benchmarks from 'ml/etc' directory!!!"
+   exit
+fi
+SCRIPT_DIRECTORY=${PWD}
+PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${PATH}
+
+#echo "Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE}batch={TRUE,FALSE}]
+
+#echo $* $#
+#
+# Take command line arguments and replace defaults
+#
+if test $# -ge 8
+then
+  echo "Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE} cvs_update={TRUE,FALSE} arch={CPLANT DEC HP PCLINUX SGI SMOS SOLARIS SP2 SUN XTFLOP TFLOP}]"
+  exit
+fi
+if test $# -eq 0
+then
+  echo "Taking defaults for everything:"
+  echo "      BENCHMARK DIRECTORY  = " $BENCH_ROOT_DIRECTORY
+  echo "      EXECUTABLE DIRECTORY = " $EXECUTABLE_DIRECTORY
+  echo "      SCRATCH DIRECTORY    = " $SCRATCH_ROOT_DIRECTORY
+  echo "      PARALLEL             = " $PARALLEL
+  echo "      BATCH                = " $BATCH
+  echo "      CVS_UPDATE           = " $CVS_UPDATE
+  echo "      ARCH                 = " $ARCH
+  echo 
+  echo "If defaults not wanted, overwrite using ..."
+  echo "    Usage: run_benchmarks [bench_root_directory executable_directory"
+  echo "           scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE}"
+  echo "           cvs_update={TRUE,FALSE} arch={CPLANT DEC HP PCLINUX SGI SMOS SOLARIS"
+  echo "           SP2 SUN XTFLOP TFLOP}]"
+  echo
+  sleep 5
+fi
+if test $# -ge 1
+then
+  BENCH_ROOT_DIRECTORY=$1
+fi
+if test $# -ge 2
+then
+  EXECUTABLE_DIRECTORY=$2
+fi
+if test $# -ge 3
+then
+  SCRATCH_ROOT_DIRECTORY=$3
+fi
+if test $# -ge 4
+then
+  PARALLEL=$4
+fi
+if test $# -ge 5
+then
+  BATCH=$5
+fi
+if test $# -ge 6
+then
+  CVS_UPDATE=$6
+fi
+if test $# -ge 7
+then
+  ARCH=$7
+fi
+
+export SCRIPT_DIRECTORY
+export BENCH_ROOT_DIRECTORY
+export EXECUTABLE_DIRECTORY
+export SCRATCH_ROOT_DIRECTORY
+export PARALLEL
+export BATCH
+export PARALLEL_CMD
+export BENCH_SUBDIR
+export SCRATCH_SUBDIR
+export ARCH
+export SUMMARY_FILE
+
+#
+# Blow away the old summary file
+#
+rm -f ${SUMMARY_FILE}
+
+#
+# If necessary, update the ml & mlbench directories via cvs.
+#
+if test `expr ${CVS_UPDATE}` = 'TRUE'
+then
+  MYNAME=`whoami`
+  CVSROOT=:ext:${MYNAME}@skip.sandia.gov:/space/CVS
+  CVS_RSH=/usr/bin/ssh
+  export CVSROOT
+  export CVS_RSH
+
+  /home/jhu/keychain-2.0.3/keychain -q
+  source ~/.keychain/`hostname`-csh
+
+  temp=`/usr/bin/ssh-add -l`
+  temp=`echo "xx${temp}xx" | sed "s/The agent has no identities\.//g"`
+  temp=`echo $temp | sed "s/ //g"`
+  if test `expr "${temp}"` = 'xxxx'
+  then
+     echo "Cannot do a cvs checkout without ssh key!" >> ${SUMMARY_FILE}
+     exit
+  fi
+#
+# First verify that there are no conflicts
+#
+  CVSCONFLICTS=FALSE
+  cd ${SCRIPT_DIRECTORY}/../..
+  cvs -n update ml >& ttttt
+  uuu=`cat ttttt | egrep -c "^C "`
+  if test `expr ${uuu}` \> 0
+  then
+     CVSCONFLICTS=TRUE
+  fi
+  rm -f ttttt
+  cd ${BENCH_ROOT_DIRECTORY}/..
+  cvs -n update mlbench >& ttttt
+  uuu=`cat ttttt | egrep -c "^C "`
+  if test `expr ${uuu}` \> 0
+  then
+     CVSCONFLICTS=TRUE
+  fi
+  rm -f ttttt
+#
+# If no conflicts, do the checkout
+#
+  if test `expr ${CVSCONFLICTS}` = 'FALSE'
+  then
+    cd ${SCRIPT_DIRECTORY}/../..
+    echo "Doing a cvs update of `pwd`/ml..."
+    echo
+    cvs update ml
+    # Make sure the ml/Obj directory is up to date.
+    cd ${SCRIPT_DIRECTORY}
+    ./flatten >& /dev/null
+    cd ${BENCH_ROOT_DIRECTORY}/..
+    echo
+    echo "Doing a cvs update of `pwd`/mlbench..."
+    echo
+    cvs update mlbench
+    cd ${SCRIPT_DIRECTORY}
+  else
+    echo >> ${SUMMARY_FILE}
+    echo "**********************************************" >> ${SUMMARY_FILE}
+    echo "WARNING: Conflicts detected during cvs update" >> ${SUMMARY_FILE}
+    echo "         of either ml or mlbench. Benchmarks " >> ${SUMMARY_FILE}
+    echo "         cancelled!                          " >> ${SUMMARY_FILE}
+    echo "*********************************************"  >> ${SUMMARY_FILE}
+    echo >> ${SUMMARY_FILE}; echo >> ${SUMMARY_FILE};
+    exit
+  fi
+fi
+#
+#  Check for the benchmark directory containing the 
+#  valid input/output data.
+#
+
+if test -d ${BENCH_ROOT_DIRECTORY}
+then
+  touch ${BENCH_ROOT_DIRECTORY}
+else
+  echo "The directory ${BENCH_ROOT_DIRECTORY} does not exist?"
+  exit
+fi
+
+#
+#  Check for the executable directory
+#
+temp=`echo ${EXECUTABLE} | sed "s/ .*//"`
+if test -d ${EXECUTABLE_DIRECTORY}
+then
+  touch ${EXECUTABLE_DIRECTORY}
+else
+  echo "The directory ${EXECUTABLE_DIRECTORY} does not exist?"
+  exit
+fi
+
+
+#
+#  Check for the work space directory where current run output 
+#  will be stored.
+# 
+if test -d ${SCRATCH_ROOT_DIRECTORY}
+then
+  touch ${SCRATCH_ROOT_DIRECTORY}
+else
+  echo "Creating the directory ${SCRATCH_ROOT_DIRECTORY}"
+  mkdir ${SCRATCH_ROOT_DIRECTORY}
+fi
+
+
+#
+# Run program within each subdirectory and compare output
+# with that contained in the corresponding ${BENCH_ROOT_DIRECTORY}.
+#
+echo " *********** Summary ***************" >> ${SUMMARY_FILE}
+echo >> ${SUMMARY_FILE}
+echo >> ${SUMMARY_FILE}
+echo >> ${SUMMARY_FILE}
+tail -3 ${SUMMARY_FILE}
+
+
+cd ${BENCH_ROOT_DIRECTORY}
+for i in *
+do 
+   if test `expr ${i}` != 'CVS' -a \
+           `expr ${i}` != '*' -a \
+           `expr ${i}` != 'README'
+   then
+      cd ${i}
+#      echo -n $i "  "
+      if test -d ${SCRATCH_ROOT_DIRECTORY}/${i}
+      then
+         touch ${SCRATCH_ROOT_DIRECTORY}/${i}
+      else
+         mkdir ${SCRATCH_ROOT_DIRECTORY}/${i}
+      fi
+
+      for j in *
+      do
+         if test -d ${j} -a \
+            `expr ${j}`  != 'CVS'
+         then
+            cd ${j}
+            SCRATCH_SUBDIR=`echo ${SCRATCH_ROOT_DIRECTORY}/${i}/${j}`
+            BENCH_SUBDIR=`echo ${BENCH_ROOT_DIRECTORY}/${i}/${j}`
+            if test -d ${SCRATCH_SUBDIR}
+            then
+               touch ${SCRATCH_SUBDIR}
+            else
+               mkdir ${SCRATCH_SUBDIR}
+            fi
+            ${SCRIPT_DIRECTORY}/run_one
+            cd ..
+         fi
+      done
+
+      SCRATCH_SUBDIR=`echo ${SCRATCH_ROOT_DIRECTORY}/${i}`
+      BENCH_SUBDIR=`echo ${BENCH_ROOT_DIRECTORY}/${i}`
+
+      ${SCRIPT_DIRECTORY}/run_one
+      cd ..
+
+   fi
+done
+echo "Done running benchmarks."
+sleep 10

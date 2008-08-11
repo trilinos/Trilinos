@@ -1,0 +1,113 @@
+Coverage Test
+Sets of test programs are often used to verify the correctness of the code in 
+object libraries. Much of the code in the library may never be used by any of 
+the tests so its correctness cannot be determined. Several different programs 
+may just use the same portions of the code so running all of them may add 
+little or no further value. The 'coverage_test' program will aid in the design 
+of a suite of tests that is both complete and efficient.
+
+'coverage_test' runs the "analyze_coverage" program each time after a 
+combination of test program runs. This produces a .csv formatted file to be 
+imported into a spreadsheet for analysis. Each line contains summary coverage 
+information and then file by file information for all object files compiled 
+with appropriate flags in the directories listed on the command line. The first
+line of the spreadsheet is computed after all test programs have been run; this
+shows the code coverage of the entire test suite and provides a measure of the 
+test quality of all the test programs. The next set of lines reports the 
+coverage of each test program individually. The final set of lines reports the 
+coverage when all test programs  but one have been run for each of the 
+programs. This shows how much further coverage the particular test program 
+adds; if it adds little or none the test program may be a candidate for removal
+from the test suite.
+
+Example spreadsheet with tests A, B, C, and D.
+A + B + C + D:  results...  
+A: results...
+B: results...
+C: results...
+D: results...
+B + C + D: results...
+A + C + D: results...
+A + B + D: results...
+A + B + C: results...
+
+'coverage_test' requires only a few command line arguments and a simple text 
+file to define the test suite. All directory path definitions may be either 
+absolute (starting from '/") or relative from your current directory.
+The command line arguments are:
+
+-d --test_base_directory : The directory that is the top level for the test 
+	programs that are to be performed. This is defined for convenience.
+	All tests defined in the test file will use this as the starting point
+	 for their path so this portion need not be repeated for each line in 
+	the test definition file. Default: "./test"
+
+-t --test_file: The name of the file that describes the tests to be run 
+	(the "test definition file"). Default: "/tmp/coverage_test"
+
+-o --output_file: The name of the results file written by this program. This 
+   	filename should have a ".csv" extension to be read correctly by your 
+   	spreadsheet program. Default: /"tmp/coverage_results.csv"
+
+--analyze_coverage_directory: The directory path for the program
+   'analyze_coverage' that is used by 'coverage _test'. This is required 
+   only if  'analyze coverage' is not on your normal executable path.
+
+code_directories: one or more directories that contain the object files 
+		  for the libraries used by the test programs.
+
+The test definition file format is very simple. It consists of rows with 
+two entries separated by spaces. The first entry is the directory where 
+the test program may be found. This is relative to the "test_base_directory"
+defined in the command line. The second entry is the name of the program 
+along with any arguments needed by the program. 'coverage_test' will 
+perform a cd to the directory in the defined by the first column prior 
+to executing the program . This allows a test program which has some 
+executable directory dependencies to be run cleanly.  The test definition 
+file may have lines which include a "#" anywhere within the line. 
+That line will be completely ignored.
+
+Now for a complete example:
+Conditions:
+1. Your top level directory is "/test/the_package/my_test/". 
+2. You are executing 'coverage test' from this directory so all file paths 
+   will be relative to this directory. 
+3. The object files that you wish to analyze are in "./src/lib_one" and 
+   "./src/lib_two"
+4. The files that you will run for the test are "./tests/group1/A.exe", 
+   "./tests/group1/B.exe", and "./test/group2/C.exe". "C.exe" is to be run 
+   twice with different arguments.
+5. The test definition file is "./analysis/coverage_def"
+6. Your output will go to "./analysis_results/Dec10_analysis.csv"
+7. The programs 'coverage_test' and 'analyze_coverage' are in directory 
+   "/test/the_package/utils" which is not in your executable path.
+
+The command line will be:
+/test/the_package/utils/test_coverage -analyze_coverage_directory 
+		/test/the_package/utils/  --test_base_directory tests  
+		-test_file  analysis/coverage_def -output_file  
+		analysis_results/Dec10_analysis.csv  ./src/lib_one ./src/lib_two
+
+The test definition file " analysis/coverage_def" would be:
+"
+#This is an example test file 
+tests/group1		A.exe
+tests/group1		B.exe
+tests/group2		C.exe -c -z
+tests/group2		C.exe -a
+#This is the end of the example test files
+"
+
+The spreadsheet result would be the same as in the example spreadsheet.
+A.exe maps to spreadsheet A
+B.exe maps to spreadsheet B
+C.exe -c -z maps to spreadsheet C
+C.exe -a maps to spreadsheet D
+
+For further information read "README.analyze_coverage" 
+    in this directory and the man page for "gcov".
+
+Note: coverage_test is a python program; the python interpreter should already 
+      be in your path. If you have problems running the coverage test program
+      confirm that you can execute python.
+

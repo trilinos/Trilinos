@@ -1,0 +1,8 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL, TCExamples) {
+    DIRS = ../examples/ml/NonlinML;
+    COMM = SERIAL, MPI;
+}

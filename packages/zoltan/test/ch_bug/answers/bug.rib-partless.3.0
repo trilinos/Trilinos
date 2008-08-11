@@ -1,0 +1,24 @@
+Decomposition Method 	= rib
+Zoltan Parameters       = obj_weight_dim=1
+Zoltan Parameters       = comm_weight_dim=1
+Zoltan Parameters	= num_global_partitions=2
+File Type		= Chaco
+File Name		= bug
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+41	0	-1	-1
+42	0	-1	-1
+43	0	-1	-1
+44	0	-1	-1
+45	0	-1	-1
+46	0	-1	-1
+47	0	-1	-1
+48	0	-1	-1
+49	0	-1	-1
+50	0	-1	-1
+51	0	-1	-1
+52	0	-1	-1
+53	0	-1	-1
+54	0	-1	-1
+55	0	-1	-1

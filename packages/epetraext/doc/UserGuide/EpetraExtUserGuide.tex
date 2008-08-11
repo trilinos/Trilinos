@@ -1,0 +1,165 @@
+%%-------------------------------------------------------------------------
+%% Copyright Notice
+%%
+%% Copyright (c) 2002, Sandia Corporation, Albuquerque, NM.
+%%-------------------------------------------------------------------------
+
+%%-------------------------------------------------------------------------
+%% Purpose        : User Guide for the Epetra Extension Classes.
+%% Creator        : Michael A. Heroux, Sandia National Labs
+%% Creation Date  : {03/12/2003}
+%%
+%% Revision Information:
+%% ---------------------
+%%
+%%-------------------------------------------------------------------------
+
+\documentclass[11pt,twoside,titlepage]{EpetraDoc}
+\usepackage{makeidx,ltxtable, multirow}
+\usepackage{alg}
+
+
+%\usepackage[hyperindex=true, colorlinks=false]{hyperref}
+%\usepackage{hyperref}
+
+%\includeonly{
+% List root name of files (usually chapters) to include if any (remove '%' character)
+%}
+
+%\draft
+
+% ---------------------------------------------------------------------------- %
+%
+% Header style
+%
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
+\lhead[\fancyplain{}{Epetra{} Extensions User Guide}]%
+{\fancyplain{}{\rightmark}}
+\rhead[\fancyplain{}{\leftmark}]
+{\fancyplain{}{Epetra{} Extensions User Guide}}
+
+
+
+\makeindex
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+\title{\Epetra{} Extensions}
+
+\SANDsubtitle{User's Guide, Version 1.0}
+
+\author{Michael A. Heroux and Robert J. Hoekstra}
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2003-XXXX}
+\SANDprintDate{Printed April 2003}
+\SANDauthor{Michael A. Heroux
+  Numerical and Applied Mathematics\\[1ex]
+  Robert J. Hoekstra
+  Computational Sciences}
+
+
+\begin{document}
+
+% Set to roman page numbers for front matter
+%\pagenumbering{roman}
+
+\maketitle
+
+% Reset the margins for the remainder of the document
+%\setlength{\oddsidemargin}{0.25in}
+%\setlength{\evensidemargin}{0.25in}
+
+\begin{abstract}
+%\abstract*{Abstract}
+%\HeadingC{Abstract}
+
+This manual describes the use of the \Epetra{} Extensions classes.  These classes
+are useful for a variety of purposes but are not considered part of the Epetra core.
+To minimize the size of the core Epetra and reduce the learning curve for new users,
+we have placed the extension classes in a different library.
+
+Most of the classes in this library are associated with "transformations" of 
+Epetra objects such as permutations a redistributions of vectors and matrices.
+
+Classes described in this document are:
+\begin{EpetraItemize}
+
+\item Singleton Filtering:  A class that generates an Epetra\_LinearProblem instance
+from an existing instance, where the new problem has all singleton rows and columns
+removed.
+\item More to come.
+
+\end{EpetraItemize}
+
+\end{abstract}
+
+\clearpage
+\HeadingC{Acknowledgements}
+%\section*{Acknowledgement}
+The authors would like to acknowledge ...
+
+\HeadingC{Trademarks}
+%\section*{Trademarks}
+The information herein is subject to change without notice.\\[1em]
+Copyright \copyright{} 2002 Sandia Corporation.  All rights reserved.\\[1em]
+\EpetraTM{} Solver Framework and \EpetraTM{} trademarks of Sandia
+Corporation.\\[1em]
+
+\HeadingC{Contacts}
+\label{Contacts}
+%\section*{Contacts}
+Bug Reports \hfill \texttt{http://software.sandia.gov/bugzilla} \\
+Email \hfill \texttt{epetra-support@software.sandia.gov} \\
+World Wide Web \hfill \texttt{http://trilinos.sandia.gov}
+
+\vspace*{\fill}
+\includegraphics[height=0.5in]{trilinos.eps}
+%\epsfig{file=TrilinosLogo.ps,width=2in}
+\hfill
+%\includegraphics[height=0.5in]{snllineblubrd}
+%\includegraphics[height=0.5in]{snllineblk.eps}
+%\epsfig{file=snllineblubrd.ps,clip,height=1in}
+
+\cleardoublepage
+%\pdfbookmark[1]{Table of Contents}{TOC}
+\tableofcontents
+
+\cleardoublepage
+%\pdfbookmark[1]{List of Figures}{LOF}
+\listoffigures
+
+\cleardoublepage
+%\pdfbookmark[1]{List of Tables}{LOT}
+\listoftables
+
+\clearpage
+% Set page numbering back to arabic
+%\pagenumbering{arabic}
+
+% Include chapter files (if any) here
+\include{SingletonFilters}
+
+%%%
+%%% End of Text
+%%%
+%\addcontentsline{toc}{chapter}{Bibliography}
+\cleardoublepage
+%\pdfbookmark[0]{Bibliography}{Bib}
+%\bibliographystyle{unsrt}
+%\bibliography{bibfile}
+
+%%
+%% Index
+%%
+\cleardoublepage
+%\pdfbookmark[0]{Index}{Index}
+\printindex
+%\include{EpetraDocTemplate_dist}
+
+\end{document}

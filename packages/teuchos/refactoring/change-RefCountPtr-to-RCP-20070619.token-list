@@ -1,0 +1,4 @@
+Teuchos_RefCountPtrDecl    Teuchos_RCPDecl
+Teuchos_RefCountPtr        Teuchos_RCP
+Teuchos::RefCountPtr       Teuchos::RCP
+RefCountPtr                RCP

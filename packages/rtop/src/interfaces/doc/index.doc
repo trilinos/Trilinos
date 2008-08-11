@@ -1,0 +1,56 @@
+/*! \mainpage Fundamental Vector Reduction/Transformation Operator (RTOp) Interfaces
+
+This doxygen collection contains documentation for the fundamental RTOp
+(reduction/transformation operators) interfaces which provides the basic
+mechanism for implementing vector operations in a flexible and efficient
+manner.
+
+There is very little code that makes up these fundamental RTOp interfaces:
+
+\section RTOp_interface_software_sec Software
+
+<ul>
+
+<li> Simple types:
+
+  <ul>
+
+  <li> Strided contiguous chunks for vector and multi-vector data
+
+    <ul>
+    <li> <tt>RTOpPack::ConstSubVectorView</tt>
+    <li> <tt>RTOpPack::SubVectorView</tt>
+    <li> <tt>RTOpPack::ConstSubMultiVectorView</tt>
+    <li> <tt>RTOpPack::SubMultiVectorView</tt>
+    </ul>
+
+  <li> Exception types:
+
+    <ul>
+    <li> <tt>RTOpPack::IncompatibleVecs</tt>
+    <li> <tt>RTOpPack::InvalidNumTargVecs</tt>
+    <li> <tt>RTOpPack::InvalidNumVecs</tt>
+    <li> <tt>RTOpPack::InvalidUsage</tt>
+    <li> <tt>RTOpPack::UnknownError</tt>
+    </ul>
+
+  </ul>
+
+<li> Abstract interface classes:
+
+  <ul>
+
+  <li> <tt>RTOpPack::RTOpT</tt>: Interface for a reduction/transformation operator
+  <li> <tt>RTOpPack::ReductTarget</tt>: Opaque base class for reduction target objects
+
+</ul>
+
+\section RTOp_interface_links_sec Links
+
+<ul>
+
+<li> <a href="../../../../doc/html/index.html">Main RTOp package documentation page</a>
+
+</ul>
+
+*/

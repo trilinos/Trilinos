@@ -1,0 +1,6 @@
+
+if SUB_EXAMPLE 
+EXAMPLE_SUBDIR=example
+endif
+
+SUBDIRS = src $(EXAMPLE_SUBDIR)

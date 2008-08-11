@@ -1,0 +1,9 @@
+/*! \mainpage ML to %Thyra Preconditioner Adapters
+
+This doxygen collection documents a small amount of code that wraps ML
+objects to create adapter objects which implement the 
+Thrya PreconditionerFactoryBase interface.
+
+
+*/
+

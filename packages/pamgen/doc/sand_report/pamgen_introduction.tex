@@ -1,0 +1,28 @@
+\section{Introduction}
+To overcome the challenge of producing multi{}-million finite element
+meshes for simulations using more than 1000 processors a library has been 
+developed (\textsc{pamgen}) that for several simple geometries produces each processor's mesh as an early step of the analysis execution. The specification for these meshes is provided by a block of terse instructions that may be placed in an input file. These instructions are passed to the library as a {}''C{}''-programming language character array. \textsc{pamgen} is also referred to as an ``in line'' mesh generator because the meshing instructions may be included in one of the analysis input decks.
+
+The simple input format allows analysts to change the resolution of 
+a simulation by altering a few parameters. It also allows them to execute their simulations on
+different numbers of processors without requiring any pre-processing.
+
+The mesh generation proceeds through steps of decomposition, local
+element creation, and communication information generation. The final
+product of the library is a data structure that can be queried using an API (Application Programming Interface) that is based on the NEMESIS and EXODUS APIs. Currently the library
+is limited to generating meshes of domains with cylindrical, tubular,
+and block shapes. Substantial control is allowed over the element
+density within these shapes. Boundary condition application  
+regions can be specified on the surfaces and interior of the mesh .
+
+Development of this capability revealed that the parallel mesh
+generation process can be reduced to answering a series of questions:
+What elements are on this processor? What nodes are on this processor?
+What is the connectivity of this element? What elements border this
+element? What processor does this element reside on?... Resolving these
+questions inductively, without resolution to communication, is
+essential for preserving scalability. Once a framework
+for posing and answering these questions for a particular geometry is
+established, expanding the capability to support additional geometries
+is straightforward.
+

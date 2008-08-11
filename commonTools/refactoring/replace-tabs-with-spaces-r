@@ -1,0 +1,2 @@
+#!/bin/sh
+find . -type f -exec replace-tabs-with-spaces.pl $1 '{}' '{}' ';'

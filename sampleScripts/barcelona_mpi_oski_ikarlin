@@ -1,0 +1,28 @@
+#!/bin/sh
+../Trilinos/configure \
+FLIBS="-lrt /opt/pgi/linux86-64/7.2-1/lib/libpgftnrtl.a" \
+CC=/opt/openmpi-1.2.4/gnu/bin/mpicc \
+CXX=/opt/openmpi-1.2.4/gnu/bin/mpiCC \
+--prefix=${PWD} \
+--cache-file=config.cache \
+--with-gnumake \
+--disable-default-packages \
+--enable-examples \
+--enable-tests \
+--enable-amesos \
+--enable-amesos-klu \
+--enable-aztecoo \
+--enable-epetra \
+--enable-kokkos \
+--enable-epetraext \
+--enable-galeri \
+--enable-ifpack \
+--enable-ml \
+--enable-teuchos \
+--enable-ifpack-ml \
+--enable-epetra-prerelease \
+--with-libs="/home/ikarlin/Oski/install-blas/lib/oski/liboski.a" \
+--with-incdirs="-I/home/ikarlin/Oski/install-blas/include" \
+--with-oski \
+--with-blas="/opt/pgi/linux86-64/7.2-1/lib/libacml.a" \
+--with-lapack="/opt/pgi/linux86-64/7.2-1/lib/libacml.a"

@@ -1,0 +1,31 @@
+\documentclass[letterpaper]{book}
+\usepackage{makeidx}
+\usepackage{fancyheadings}
+\usepackage{epsfig}
+\usepackage{graphics,color}
+\usepackage{float}
+\usepackage{doxygen}
+\makeindex
+\setcounter{tocdepth}{1}
+\setlength{\footrulewidth}{0.4pt}
+\begin{document}
+\begin{titlepage}
+%\setlength{\epsfxsize}{\textwidth}
+%\epsffile{../petra.eps}
+\includegraphics{../epetra.eps}
+\begin{center}
+{\Huge Trilinos/DSSLV: Direct Sparse Solver Package\\[1ex]\large }\\
+\vspace*{1cm}\\
+\vspace*{0.5cm}
+{\small November 2002}\\
+\copyright Sandia National Laboratories 2002
+\end{center}
+\end{titlepage}
+\clearemptydoublepage
+\pagenumbering{roman}
+\tableofcontents
+\clearemptydoublepage
+\pagenumbering{arabic}
+\chapter{Overview of the Trilinos/DSSLV Package}
+\input{index}
+

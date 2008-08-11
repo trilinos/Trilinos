@@ -1,0 +1,20 @@
+#
+# Here is my basic square geometry description of a 2-D square
+# that is the basic input for the Trinalge program.
+#
+# num_nodes dim num_attr num_bndy_markers
+4 2 0 0
+# node_idx, x_corr, y_coor
+1 0.00 0.00
+2 1.00 0.00
+3 1.00 1.00
+4 0.00 1.00
+# num_edges, num_bndy_markers
+4 1
+# edge_idx, node_1_idx, node_2_idx, bndy_marker (1=Dir,2=New)
+1 1 2 2
+2 2 3 2
+3 3 4 2
+4 4 1 2
+# num_holes
+0

@@ -1,0 +1,13 @@
+cmake \
+-D Teuchos_ENABLE_COMPLEX:BOOL=ON \
+-D Teuchos_ENABLE_EXAMPLES:BOOL=ON \
+-D Teuchos_ENABLE_EXTENDED:BOOL=ON \
+-D Teuchos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_Epetra:BOOL=ON \
+-D Trilinos_ENABLE_RBGen:BOOL=ON \
+-D Trilinos_ENABLE_Teuchos:BOOL=ON \
+-D Epetra_ENABLE_EXAMPLES:BOOL=ON \
+-D Epetra_ENABLE_FORTRAN:BOOL=OFF \
+-D Epetra_ENABLE_TESTS:BOOL=ON \
+-D RBGen_ENABLE_EPETRA:BOOL=ON \
+../../../Trilinos

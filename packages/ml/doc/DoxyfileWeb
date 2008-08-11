@@ -1,0 +1,102 @@
+# Doxyfile 1.3.9.1
+
+@INCLUDE               = ../../common/Doxyfile
+
+############################################################################
+# TRILINOS PACKAGE DEVELOPERS:
+#
+# Use this Doxyfile in Trilinos/packages/YOUR_PACKAGE/doc to control the
+# way in which your documentation is generated.  If you would like to be
+# provided with reasonable default behavior, leave intact the above
+# @INCLUDE. To modify the default behavior, simply include below the
+# option you would like to overwrite (or use += to append more to the
+# default). 
+#
+# To reference the documentation of another package with a doxygen tag
+# file, include something like the following:
+#
+# TAGFILES  = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
+#
+# (Note that the first path must be the relative path from your Doxyfile
+# to the tag file in question and the second path must be the relative
+# path from your Doxyfile to the "html/" directory corresponding to that
+# tag file.)
+#
+# - To view the explanation of an option, run 
+#
+#     doxygen -g COMMENTED_DOXYFILE_NAME
+#     (open COMMENTED_DOXYFILE_NAME)
+#
+#   or visit http://www.stack.nl/~dimitri/doxygen/config.html
+#
+# - To use this Doxyfile locally to generate your documentation and 
+#   iteratively develop it:
+#
+#     (document your source)
+#     cd Trilinos/packages/YOUR_PACKAGE/doc
+#     (modify this Doxyfile as needed)
+#     doxygen DoxyfileWeb 
+#     (open Trilinos/packages/YOUR_PACKAGE/doc/html/index.html)
+#
+############################################################################
+
+PROJECT_NAME           = ML
+
+PROJECT_NUMBER         = "Version of the Day"
+
+INPUT                  = mainpage.doxygen 
+INPUT                 += ../src/Operator 
+INPUT                 += ../src/Utils 
+INPUT                 += ../src/Coarsen 
+INPUT                 += ../src/Main
+INPUT                 += ../src/MLAPI
+INPUT                 += ../src/MatrixFree
+INPUT                 += ../src/RefMaxwell
+
+FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
+FILE_PATTERNS         += ml_epetra_utils.h 
+FILE_PATTERNS         += ml_MultiLevelPreconditioner.h 
+FILE_PATTERNS         += ml_MultiLevelOperator.h 
+FILE_PATTERNS         += ml_amesos_wrap.h 
+FILE_PATTERNS         += ml_anasazi.h 
+FILE_PATTERNS         += ml_ifpack_wrap.h
+FILE_PATTERNS         += ml_operator.h 
+FILE_PATTERNS         += ml_struct.h 
+FILE_PATTERNS         += ml_aggregate.h
+FILE_PATTERNS         += ml_RowMatrix.h
+FILE_PATTERNS         += ml_Ifpack_ML.h
+FILE_PATTERNS         += MLAPI*.h
+FILE_PATTERNS         += ml_Epetra_wrap_CrsGraph_as_RowMatrix.H
+FILE_PATTERNS         += ml_Abstract*.h 
+FILE_PATTERNS         += ml_*Grid*.h 
+FILE_PATTERNS         += ml_*Quadrature*.h
+FILE_PATTERNS         += ml_*Problem*.h
+FILE_PATTERNS         += ml_*Variational*.h
+FILE_PATTERNS         += ml_Workspace.h
+FILE_PATTERNS         += ml_MatrixFreePreconditioner.h
+FILE_PATTERNS         += ml_RefMaxwell*.h
+FILE_PATTERNS         += ml_EdgeMatrixFreePreconditioner.h
+
+EXAMPLE_PATH           = ../examples/BasicExamples 
+EXAMPLE_PATH          += ../examples/Advanced 
+EXAMPLE_PATH          += ../examples/TwoLevelDD 
+EXAMPLE_PATH          += ../examples/Visualization 
+EXAMPLE_PATH          += ../examples/Maxwell 
+EXAMPLE_PATH          += ../examples/MatrixReading 
+EXAMPLE_PATH          += ../examples/StandAlone
+EXAMPLE_PATH          += ../examples/MLAPI
+EXAMPLE_PATH          += ../
+
+IMAGE_PATH             = .
+
+PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_IFPACK
+PREDEFINED            += HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS 
+PREDEFINED            += HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X 
+PREDEFINED            += HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
+PREDEFINED            += HAVE_ML_MLAPI
+PREDEFINED            += HAVE_ML_NOX HAVE_ML_EPETRAEXT
+
+TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
+TAGFILES              += ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
+
+GENERATE_TAGFILE       = ../../common/tag_files/ml.tag

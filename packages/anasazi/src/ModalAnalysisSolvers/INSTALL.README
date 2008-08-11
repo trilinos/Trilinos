@@ -1,0 +1,17 @@
+
+* Install Trilinos libraries (Epetra, AztecOO, Ifpack, ML).
+
+* Edit the Makefile
+      Set the directories, the linker flags, and the compilers according to
+      the target system.
+
+* IF NEEDED, edit the class FortranRoutines
+      This class defines a wrapper for the Fortran 77 routines.
+      It follows "Epetra_BLAS" and "Epetra_LAPACK" conventions.
+
+* Build the executable by typing `gmake -f Makefile'
+
+-----------------------------------------------------------------------------------------
+
+Questions ? Contact U. Hetmaniuk (ulhetma@sandia.gov) or R. Lehoucq (rblehou@sandia.gov)
+

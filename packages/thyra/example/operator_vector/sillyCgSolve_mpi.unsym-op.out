@@ -1,0 +1,8 @@
+
+Echoing the command-line:
+
+../example/operator_vector/sillyCgSolve_mpi.exe --echo-command-line --unsym-op 
+
+
+../example/operator_vector/sillyCgSolve_mpi.exe : Error, the 2nd option '--unsym-op' was not recognized (use --help)!
+Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name sahp6556.sandia.gov and rank 0!

@@ -1,0 +1,37 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+HA DIRECTORY -- Routines to support heterogeneous architectures 
+                (under development)
+----------------------------------------------------------------
+
+Files compiled into Zoltan:
+
+ha_const.h             -- Prototypes for routines in many source files.
+                          Definitions used in build_machine_desc.c.
+
+build_machine_desc.c   -- Routines to build a description of the machine
+                          defined by the processes in the MPI communicator
+                          and the machine description file.
+
+get_processor_name.c   -- Routine to get the name of the physical processor
+                          that an MPI process is running on.
+
+divide_machine.c       -- Routine to divide the current machine 
+                          (defined by the communicator) into two pieces.
+
+ha_drum.h              -- Header files for RPI/Williams DRUM heterogeneous
+                          load balancing support
+
+ha_drum.c              -- Interface to RPI/Williams DRUM library

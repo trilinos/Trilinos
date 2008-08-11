@@ -1,0 +1,6 @@
+Decomposition Method 	= graph
+Zoltan parameter 	= lb_approach = partition
+Zoltan parameter 	= graph_package=parmetis
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0

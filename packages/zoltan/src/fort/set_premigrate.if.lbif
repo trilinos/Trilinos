@@ -1,0 +1,11 @@
+interface LB_Set_Pre_Migrate_Fn
+   module procedure LBf90_Set_Pre_Migrate_Fn0s
+   module procedure LBf90_Set_Pre_Migrate_Fn1s
+   module procedure LBf90_Set_Pre_Migrate_Fn2s
+   module procedure LBf90_Set_Pre_Migrate_Fn3s
+   module procedure LBf90_Set_Pre_Migrate_Fn8s
+   module procedure LBf90_Set_Pre_Migrate_Fn9s
+   module procedure LBf90_Set_Pre_Migrate_FnAs
+   module procedure LBf90_Set_Pre_Migrate_FnBs
+end interface
+

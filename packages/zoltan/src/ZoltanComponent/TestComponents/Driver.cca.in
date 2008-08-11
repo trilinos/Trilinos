@@ -1,0 +1,22 @@
+# generated CCAFFEINE dynamic library index.
+# The ! lines should not contain whitespace before the =
+# unless they begin with something other than date,builder,location.
+# There may be more than 1 library in a .cca file, in which case
+# last ! meta data seen wins for following library and component info.
+# Note that if you want to change the user's "apparent" class name
+# seen in the UI, you can change the name following the constructor function
+# name in this file.
+# N.B.:
+# This is the exceedingly-poor-mans version of some of the info
+# we'd want from a repository. We'd also want a list of ports
+# that must be known (dependencies), a list of ports provided or
+# at least potentially provided, parallel fabric expectations,
+# version knowledge, and the usual ton of other metadata.
+#  Finally, we'd like to get all this info directly from the
+# library itself (perhaps by filtering the source or by running
+# 'strings' over the libraries.
+!date=Monday April 2 13:30:12 PDT 2001
+!builder=jaray@julius.ca.sandia.gov
+!location=@ZOLTAN_COMPONENT_TESTS@
+Driver.so
+create_Driver Driver

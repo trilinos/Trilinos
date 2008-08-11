@@ -1,0 +1,100 @@
+#
+# FRAMEWORK group
+#
+# NOTE:  To pass an input file through the command-line, one may have
+# to use this convention:
+#
+# --filename=$ABS_TOP_SRCDIR/packages/belos/test/MVOPTester/mhd1280b.cua;
+#
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockCG/bl_cg_hb.exe,
+            BlockCG/bl_pcg_hb.exe,
+            BlockCG/resolve_cg_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/bcsstk14.hb";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_hb.exe,
+            BlockGmres/bl_pgmres_hb.exe,
+            BlockGmres/bl_fgmres_hb.exe,
+	    BlockGmres/resolve_gmres_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/pseudo_gmres_hb.exe,
+            BlockGmres/pseudo_pgmres_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_hb.exe,
+            BlockGmres/bl_pgmres_hb.exe,
+            BlockGmres/resolve_gmres_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb" --pseudo;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_diag.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockCG/bl_cg_complex_hb.exe,
+            BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua" --pseudo;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/mhd1280a.cua" --subspace-length=200 --tol=1e-4;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = GCRODR/gcrodr_hb.exe,
+            GCRODR/prec_gcrodr_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = GCRODR/prec_gcrodr_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-10 --num-rhs=2 --max-subspace=10 --recycle=2;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = MVOPTester/MVOPTester_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = MVOPTester/MVOPComplexTester_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./MVOPTester/mhd1280b.cua";
+    COMM = SERIAL, MPI;
+}

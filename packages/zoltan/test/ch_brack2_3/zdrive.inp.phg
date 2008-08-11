@@ -1,0 +1,7 @@
+Decomposition Method	= hypergraph
+Zoltan Parameters	= obj_weight_dim=1
+Zoltan Parameters	= edge_weight_dim=1
+Zoltan Parameters	= phg_from_graph_method=neighbors
+File Type		= Chaco
+File Name		= brack2_3
+Parallel Disk Info	= number=0

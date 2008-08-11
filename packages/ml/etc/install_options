@@ -1,0 +1,78 @@
+#############################################################
+#
+#                    ML Installation Settings
+#
+#############################################################
+#
+ARCHITECTURE                     PCLINUX
+#                                [CPLANT, DEC, HP, PCLINUX, 
+#                                SGI, SMOS, SOLARIS, SP2,
+#                                SUN, TFLOP]
+#
+#                                To support other machines, create
+#                                an etc/makefile.ARCHITECTURE
+#
+#############################################################
+#                 General Libraries: mpi, blas, lapack, ...
+#############################################################
+USE MPI                          no  # [yes, no]
+LOCATION OF MPICC                default   # (e.g. /usr/local/mpi/mpicc)
+                                           #############################
+                                           # LEAVE BLANK IF YOU DO NOT #
+                                           # WANT TO USE mpicc, default#
+                                           # USES `which mpicc`        #
+                                           #############################
+USE LAPACK                       no  # [yes, no]
+USE BLAS                         no  # [yes, no]
+BINARY INPUT DATA                no  # [yes, no]
+                                     # whether ML/Aztec read ascii or binary
+                                     # see file ../util/README
+USE EPETRA                       no  # [yes, no]
+LIBRARY INCLUDE PATH                 # (e.g. /usr/local/mpi/include)
+                                     ####################################
+LIBRARY INCLUDE PATH                 # PUT AS MANY INCLUDE, DIRECTORIES,#
+                                     # AND LIBRARY NAMES AS YOU NEED!!  #
+                                     ####################################
+LIBRARY DIRECTORY LOCATION           # (e.g. /usr/local/mpi/lib)
+LIBRARY DIRECTORY LOCATION
+#*** NOTE: LIBRARIES MUST BE GIVEN IN CORRECT ORDER!!!!******
+LIBRARY NAME                         # (e.g. mpich)
+LIBRARY NAME
+#
+#
+#############################################################
+#                    AZTEC
+#############################################################
+AZTEC INCLUDE DIRECTORY          default   # [default, ...]
+                                           #############################
+                                           # LEAVE BLANK IF NOT USING  #
+                                           # AZTEC, default TAKES FROM #
+                                           # STANDARD LOCATION         #
+                                           #############################
+NEED TO BUILD AZTEC              yes       # [yes, no]
+AZTEC INTERNAL DEVELOPER         no        # [yes, no]
+#
+#############################################################
+#                    SUPERLU
+#############################################################
+SERIAL SUPERLU DIRECTORY         default  # [default, ...]
+DISTRIBUTED SUPERLU DIRECTORY             # [default, ...]
+                                           ##############################
+                                           # LEAVE BLANK IF NOT USING,  #
+                                           # default TAKES FROM STANDARD#
+                                           # LOCATION                   #
+                                           ##############################
+NEED TO BUILD SUPERLU            yes      # [yes, no]
+#
+#############################################################
+#                    PARASAILS/METIS
+#############################################################
+PARASAILS DIRECTORY                       # [default, ...]
+METIS DIRECTORY                           # [default, ...]
+                                           ##############################
+                                           # LEAVE BLANK IF NOT USING,  #
+                                           # default TAKES FROM STANDARD#
+                                           # LOCATION                   #
+                                           ##############################
+
+

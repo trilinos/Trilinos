@@ -1,0 +1,21 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Zoltan Library for Parallel Applications                                   !
+! For more info, see the README file in the top-level Zoltan directory.      !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  CVS File Information :
+!     $RCSfile$
+!     $Author$
+!     $Date$
+!     $Revision$
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!  Include this section for backward compatibility with old Zoltan interface.
+integer, parameter :: &
+   LB_INT = Zoltan_INT, &
+   LB_INT_PTR = Zoltan_INT_PTR, &
+   LB_FLOAT = Zoltan_FLOAT, &
+   LB_DOUBLE = Zoltan_DOUBLE
+
+

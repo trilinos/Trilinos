@@ -1,0 +1,538 @@
+#--------------------------------------------------------------------
+#       Disable caching since it seems to get in the way
+#       more times than it helps us.
+#--------------------------------------------------------------------
+define([AC_CACHE_LOAD], )dnl
+define([AC_CACHE_SAVE], )dnl
+
+## make sure we are in the correct dir
+AC_INIT(CCA_Wrapper/PartitionerFactory.h)
+
+## There are some configs etc in ./config
+AC_CONFIG_AUX_DIR(config)
+
+## Set what kind of a host and system this is
+AC_CANONICAL_HOST
+AC_CANONICAL_SYSTEM
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h strings.h sys/file.h sys/time.h unistd.h)
+
+## -----------------------------------------------------------------------------
+## Things I have to look for
+# 1 ZOLTAN_HOME      <input; else probably the dir above me>
+# 2 ZOLTAN_ARCH      <input; else search>
+# 3 CCA_MAKEINCL_DIR where MakeIncl.CCA_Component is
+# 4 DCCAFE_LIB       where dccafe libs are ; this is the directory with libccafeCore.so
+# 5 DCCAFE_LIBNAME   the name of the DCCAFE_LIB
+# 6 DCCAFE_INCLUDE   where parameter/IntParameter.h is
+# 7 MPI_HOME         where mpich is; this is the directory where include/mpi.h and 
+#                   lib/libmpich.a are
+#  4-7 will be obtained from ccafe-config, which is in DCCAFE_DIR/bin/   
+# 8 ZOLTAN_PORTS_DIR the dir with LoadBalancer.h
+# 9 PARMETIS_LIBPATH obtained from Utilities/Config/Config.$zoltan_arch
+# 10 JOSTLE_LIBPATH from the same place
+# 11 NEMESIS_LIBPATH from the same place
+# 12 ZOLTAN_COMPONENT_HOME < Hardcode `pwd`/CCA_Wrapper/ >
+# 13 ZOLTAN_COMPONENT_TESTS < Hardcode `pwd`/TestComponents/ >
+#
+## 1-10 will go into MakeIncl.ZoltanComponent. Also, the install dir
+#  for the .so file will go into <component_name>.cca, which is kept in 
+#  ./ccaComponent as !location=<istall_dir_name>/ <--- do not forget this /
+#
+## ------------------------------------------------------------------------------
+
+## 1. Determine where Zoltan is installed.
+##########################################
+
+AC_ARG_WITH(ZoltanHome,
+   [ Location of the Zoltan directory with include/, Utilities/ under it:
+          --with-ZoltanHome=Directory_Name, Full path name to where include/zoltan.h is;
+                                          --with-ZoltanHome=/Net/local/packages/Zoltan/],
+   [with_ZoltanHome="$withval"], [with_ZoltanHome=yes])
+
+
+case "$with_ZoltanHome" in
+
+  no)
+     # The user says he doesn't want to specify where Zoltan is. Can't work this way - crap
+     # out.
+     AC_MSG_ERROR([ Option --without-ZoltanHome will not work; this component needs it])
+     ;;
+  yes)
+     # The user did not specify where Zoltan is, so find it.
+     AC_MSG_CHECKING( [ for include/zoltan.h ] )
+     with_ZoltanHome=_need_to_find
+     ;;
+    *)
+     # The user gave me a real path. Will check if it's correct.
+     AC_MSG_CHECKING( [for include/zoltan.h] )
+     if test -r "$with_ZoltanHome"/include/zoltan.h; then
+         ZOLTAN_HOME="$with_ZoltanHome"
+	 AC_MSG_RESULT( [ found "$with_ZoltanHome"/include/zoltan.h ] )
+	 with_ZoltanHome=_found
+     else	
+         AC_MSG_ERROR( [ Could not find "$with_ZoltanHome"/include/zoltan.h ] )
+     fi
+     ;;
+esac
+
+## If the directory needs to be found
+if test "$with_ZoltanHome" = _need_to_find ; then
+
+   # Where should I search for this file by default ?
+   curr_dir=`pwd`;
+   hdir=$HOME
+   hdirs=" $curr_dir/../ $hdir/Zoltan $hdir/packages/Zoltan "
+   sys_dirs="/usr/local/Zoltan /usr/local/packages/Zoltan"
+   search_path=" $hdirs $sys_dirs "
+   AC_FIND_FILE_STRICT_JR(include/zoltan.h, "$search_path ")
+
+   #AC_FIND_FILE_STRICT_JR will not return if the file is not found
+   ZOLTAN_HOME="$ac_find_file_strict_dir"
+   with_ZoltanHome=_found
+fi
+
+##------------------------------------------------------------------------------------
+
+## 2. Determine which architecture this is being built for. Currently (09/01/03) only
+## linux is supported
+##################################################################################
+
+AC_ARG_WITH(ZoltanArch,
+   [ The computer architecture targeted. As of 09/01/03, only linux is supported.
+             --with-ZoltanArch=architecture name, like linux, ibm , osf1, sun
+                                    --with-ZoltanArch=linux],
+   [with_ZoltanArch="$withval"], [with_ZoltanArch=yes])
+
+
+case "$with_ZoltanArch" in
+
+  no)
+     # The user says he doesn't want to specify the ZOLTAN_ARCH. Can't work this way;
+     # crap out.
+     AC_MSG_ERROR([ Option --without-ZoltanArch specified; will not work ])
+     ;;
+  yes)
+     # The user did not specify what architecture. Use generic
+     AC_MSG_WARN( [no architecture specified - assuming generic] )
+     ZOLTAN_ARCH=generic
+     ;;
+    *)
+     # The user gave me a real architecture. Check if I support it ?
+     AC_MSG_CHECKING( [if architecture IS linux] )
+     if test "$with_ZoltanArch" = linux ; then 
+         ZOLTAN_ARCH="$with_ZoltanArch"
+	 AC_MSG_RESULT( [ architecture $ZOLTAN_ARCH accepted ] ) 
+	 with_ZoltanArch=_found
+     else	
+         AC_MSG_ERROR( [ Architecture "$with_ZoltanArch" not supported. Stopping. ] )
+     fi
+     ;;
+esac
+
+## -------------------------------------------------------------------------------------
+
+## 3. Determine where the MakeIncl.CCA_Component file is located. This is done by finding out
+##    where cca-spec-classic-config is and query-ing it for CLASSIC_MAKEINCL
+#############################################################################################
+
+AC_ARG_WITH(cca_spec_dir, 
+    [ Location of the cca-spec-classic/ package; should have bin/cca-spec-classic-config
+      --with-cca_spec_dir=Directory_Name, Full dir name where cca-spec-classic is kept;
+			    --with-cca_spec_dir=/usr/local/],
+    [with_cca_spec_dir="$withval"], [with_cca_spec_dir=yes])
+
+case "$with_cca_spec_dir" in
+  no)
+     # The user specified he doesn't want to specify where the CCA spec is
+     # Crap out - can't work without it.
+     AC_MSG_ERROR([ Option --without-cca_spec_dir will not work; the component needs it])
+     ;;
+  yes) 
+     # The user did not give the location so search for this. See if it is defined in the
+     # config file
+     filename=Config."$ZOLTAN_ARCH"
+     AC_MSG_CHECKING( [for CCA_SPEC_DIR in $filename] )
+     config_file="$ZOLTAN_HOME"/Utilities/Config/Config."$ZOLTAN_ARCH"
+     string=`cat  $config_file | grep CCA_SPEC_DIR | awk -F = '$0 !~ "#" {print $2}' `
+     if test -z $string  || test $string = ""; then
+          with_cca_spec_dir=_need_to_find
+          AC_MSG_WARN( [no CCA_SPEC_DIR defined in $filename; will search canonical places] )
+     else
+          CCA_SPEC_DIR=$string
+	  if test -x $CCA_SPEC_DIR/bin/cca-spec-classic-config ; then
+	      with_cca_spec_dir=_found
+              AC_MSG_RESULT( [ $CCA_SPEC_DIR/bin/cca-spec-classic-config is usable] )
+	  else
+	      AC_MSG_WARN( [ $CCA_SPEC_DIR/bin/cca-spec-classic-config not executable. Will search in canonical places])
+	      with_cca_spec_dir=_need_to_find
+          fi
+     fi
+     ;;
+  *)
+     # The user gave me a real path. Check for the file anyway.
+     if test -x $with_cca_spec_dir/bin/cca-spec-classic-config ; then
+          CCA_SPEC_DIR=$with_cca_spec_dir
+          AC_MSG_RESULT( [ found $with_cca_spec_dir/bin/cca-spec-classic-config ] )
+          with_cca_spec_dir=_found
+     else
+          AC_MSG_ERROR( [ Could not find $with_cca_spec_dir/bin/cca-spec-classic-config ] )
+     fi
+     ;;
+esac
+
+## See if this file needs to be searched
+if test "$with_cca_spec_dir" = _need_to_find ; then
+
+   AC_MSG_CHECKING( [for bin/cca-spec-classic-config in canonical places] )
+   # Where should I search this file by default ? Start with the Zoltan config file.
+   system_dir_search="/usr/local/ /usr/local/cca/"
+   home_dir_search=" $HOME/cca-spec-classic/ $HOME/cca/cca-spec-classic/ "
+   search_path=" $system_dir_search $home_dir_search"
+   AC_FIND_FILE_STRICT_JR(bin/cca-spec-classic-config,  "$search_path")
+
+   # AC_FIND_FILE_STRICT_JR will not return if it does not find the file.
+   CCA_SPEC_DIR="$ac_find_file_strict_dir"
+   with_cca_spec_dir=_found
+fi
+CCA_MAKEINCL_DIR=`$CCA_SPEC_DIR/bin/cca-spec-classic-config --var CLASSIC_MAKEINCL | sed s/MakeIncl.CCA_Component//`
+## -----------------------------------------------------------------------------------
+
+## 4. Need to find where bin/ccafe-config is. From this I can get where dccafe_libs are
+## kept, what the library name is and which directory to include to get 
+## parameters/IntParameter.h
+#######################################################################################
+
+AC_ARG_WITH(dccafe_dir,
+   [ Location of bin/ccafe-config:
+     --with-dccafe_dir=Directory_Name, Full path to where bin/ccafe-config is ;
+                                  --with-dccafe_dir=/usr/local/ ],
+   [with_dccafe_dir="$withval"], [with_dccafe_dir=yes] )
+
+case "$with_dccafe_dir" in
+  no)
+     # The user specified he doesn't want to specify where ccafe_config is
+     # Crap out - can't work without it.
+     AC_MSG_ERROR([ Option --without-dccafe_dir will not work; the component needs it])
+     ;;
+  yes)
+     # The user did not give the location so search for this. See if this is defined
+     # in the Utilities/Config/Config.* file
+     filename=Config."$ZOLTAN_ARCH"
+     AC_MSG_CHECKING( [for DCCAFE_DIR in $filename] ) 
+     config_file="$ZOLTAN_HOME"/Utilities/Config/Config."$ZOLTAN_ARCH"
+     string=`cat  $config_file | grep DCCAFE_DIR | awk -F = ' $0 !~ "#" {print $2}'`
+     if test -z $string || test $string = ""; then
+	 AC_MSG_WARN( [ no DCCAFE_DIR defined in $filename; will search in canonical places] )
+         with_dccafe_dir=_need_to_find
+     else
+          DCCAFE_DIR="$string"
+	  if test -x $DCCAFE_DIR/bin/ccafe-config; then
+	      AC_MSG_RESULT( [ found $DCCAFE_DIR/bin/ccafe-config ] )
+	      with_dccafe_dir=_found
+	  else
+	      AC_MSG_WARN( [ $DCCAFE_DIR/bin/ccafe-config does not exist or is not executable. Will search is canonical places] )
+	      with_dccafe_dir=_need_to_find
+          fi
+     fi
+     ;;
+  *)
+     # The user gave me a real path. Check for the file anyway.
+     if test -x $with_dccafe_dir/bin/ccafe-config; then
+          DCCAFE_DIR="$with_dccafe_dir"
+          AC_MSG_RESULT( [ found $with_dccafe_dir/bin/ccafe-config ] )
+          with_dccafe_dir=_found
+     else
+          AC_MSG_ERROR( [ Could not find $with_dccafe_dir/bin/ccafe-config ] )
+     fi
+     ;;
+esac
+
+## See if this file needs to be searched
+if test "$with_dccafe_dir" = _need_to_find ; then
+
+   AC_MSG_CHECKING( [for bin/ccafe-config in canonical places] ) 
+
+   # Where should I search this file by default ?
+   system_dir_search="/usr/local/ /usr/local/cca/ "
+   home_dir_search=" $HOME/ccafe/ $HOME/cca/ccafe/ "
+   search_path=" $system_dir_search $home_dir_search"
+   AC_FIND_FILE_STRICT_JR(bin/ccafe-config,  "$search_path")
+
+   # AC_FIND_FILE_STRICT_JR will not return if it does not find the file.
+   DCCAFE_DIR="$ac_find_file_strict_dir"
+   with_dccafe_dir=_found
+fi
+
+config_command="$DCCAFE_DIR"/bin/ccafe-config
+DCCAFE_LIB=`$config_command --var CCAFE_LIB_L_DIR_SHORT`
+DCCAFE_LIBNAME=`$config_command --var CCAFE_LIB_L_SHORT | sed s/-l//`
+DCCAFE_INCLUDE=`$config_command --var CCAFE_pkgincludedir`
+
+## ----------------------------------------------------------------------------------
+
+## 5. Need to find where mpi is.
+################################
+
+AC_ARG_WITH(mpi,
+   [ Location of include/mpi.h :
+     --with-mpi=Directory_Name, Full path to where include/mpi.h is ;
+                                  --with-mpi=/usr/local/mpich ],
+   [with_mpi="$withval"], [with_mpi=yes] )
+
+case "$with_mpi" in
+  no)
+     # The user specified he doesn't want to specify where MakeIncl.CCA_Component is
+     # Crap out - can't work without it.
+     AC_MSG_ERROR([ Option --without-mpi will not work; the component needs it])
+     ;;
+  yes)
+     # The user did not give the location so search for this.
+     AC_MSG_CHECKING( [for MPI_HOME from ccafe-config] ) 
+     with_mpi=_need_to_find
+     ;;
+  *)
+     # The user gave me a real path. Check for the file anyway.
+     if test -r "$with_mpi"/include/mpi.h; then
+          MPI_HOME="$with_mpi"
+          AC_MSG_RESULT( [ found "$with_mpi"/include/mpi.h ] )
+          with_mpi=_found
+     else
+          AC_MSG_ERROR( [ Could not find "$with_mpi"/include/mpi.h ] )
+     fi
+     ;;
+esac
+
+## See if this file needs to be searched
+if test "$with_mpi" = _need_to_find ; then
+   mpi_home=`$DCCAFE_DIR/bin/ccafe-config --var CCAFE_MPI_HOME`
+
+   if test "$mpi_home" != "" ; then
+      MPI_HOME=$mpi_home
+      with_mpi=_found
+      AC_MSG_RESULT( [found in $MPI_HOME] )
+   else
+      AC_MSG_WARN( [ not found, looking for include/mpi.h in canonical places] )
+   fi
+   
+  if test "$with_mpi" = _need_to_find ; then
+     # Where should I search this file by default ?
+      system_dir_search="/usr/local/cca /usr/local/mpich /usr/local/mpi /usr"
+      hdir=$HOME
+      home_dir_search=" $hdir/mpich $hdir/mpi "
+      search_path=" $system_dir_search $home_dir_search"
+      AC_FIND_FILE_STRICT_JR(include/mpi.h,  "$search_path")
+
+      # AC_FIND_FILE_STRICT_JR will not return if it does not find the file.
+      MPI_HOME="$ac_find_file_strict_dir"
+      with_mpi=_found
+   fi
+fi
+
+##------------------------------------------------------------------------------------------
+
+## 8. Need to find the directory where the LoadBalancer ports are.
+##################################################################
+
+AC_ARG_WITH(ZoltanPorts, 
+    [ Location of the LoadBalancer.h file:
+      --with-ZoltanPorts=Directory_Name, Full dir name where LoadBalancer.h is kept;
+				    --with-ZoltanPorts='/usr/local/cca/include/ZoltanPorts],
+    [with_ZoltanPorts="$withval"], [with_ZoltanPorts=yes])
+
+case "$with_ZoltanPorts" in
+  no)
+     # The user specified he doesn't want to specify where AMRPort.h is
+     # Crap out - can't work without it.
+     AC_MSG_ERROR([ Option --without-ZoltanPorts will not work; the component needs it])
+     ;;
+  yes) 
+     # The user did not give the location so search for this
+     AC_MSG_CHECKING( [for ZoltanPorts/; i.e where LoadBalancer.h is] )
+     with_ZoltanPorts=_need_to_find
+     ;;
+  *)
+     # The user gave me a real path. Check for the file anyway.
+     if test -r "$with_ZoltanPorts"/LoadBalancer.h; then
+          ZOLTAN_PORTS_DIR="$with_ZoltanPorts"
+          AC_MSG_RESULT( [ found "$with_ZoltanPorts"/LoadBalancerPort.h ] )
+          with_ZoltanPorts=_found
+     else
+          AC_MSG_ERROR( [ Could not find "$with_ZoltanPorts"/LoadBalancer.h ] )
+     fi
+     ;;
+esac
+
+## See if this file needs to be searched
+if test "$with_ZoltanPorts" = _need_to_find ; then
+
+   # Where should I search this file by default ?
+   system_dir_search="/usr/local/include/ZoltanPorts /usr/local/cca/include/ZoltanPorts"
+   hdir=$HOME
+   currdir=`pwd`
+   home_dir_search1=" $currdir/ZoltanPorts $hdir/ZoltanPorts $hdir/cca/ZoltanPorts "
+   search_path=" $home_dir_search1 $system_dir_search "
+   AC_FIND_FILE_STRICT_JR(LoadBalancer.h,  "$search_path")
+
+   # AC_FIND_FILE_STRICT_JR will not return if it does not find the file.
+   ZOLTAN_PORTS_DIR="$ac_find_file_strict_dir"
+   with_ZoltanPorts=_found
+fi
+
+##-------------------------------------------------------------------------------------------
+
+## 9. & 10 Strip out PARMETIS_LIBPATH, JOSTLE_LIBPATH & NEMESIS_LIBPATH from 
+## $(ZOLTAN_HOME)/Utilities/Config/Config.$(ZOLTAN_ARCH) filename
+############################################################################
+
+   filename=Config."$ZOLTAN_ARCH"
+   AC_MSG_CHECKING( [for PARMETIS_LIBPATH in $filename] )
+   config_file="$ZOLTAN_HOME"/Utilities/Config/Config."$ZOLTAN_ARCH"
+   string=`cat  $config_file | grep "PARMETIS_LIBPATH" | awk '$0 !~ "#" {print $0}' | awk -F = '{print $2}' ` 
+   PARMETIS_LIBPATH=""
+   if test -z $string  ; then
+       AC_MSG_WARN( [no PARMETIS_LIBPATH defined in $filename; will ignore PARMETIS] )
+   else
+	PARMETIS_LIBPATH=$string
+        AC_MSG_RESULT( [ found $PARMETIS_LIBPATH ])
+   fi
+
+   AC_MSG_CHECKING( [for JOSTLE_LIBPATH in $filename] )
+   string=`cat  $config_file | grep "JOSTLE_LIBPATH" | awk '$0 !~ "#" {print $0}' | awk -F = '{print $2}' ` 
+   JOSTLE_LIBPATH=""
+   if test -z $string ; then
+       AC_MSG_WARN( [no JOSTLE_LIBPATH defined in $filename; will ignore JOSTLE] )
+   else
+	JOSTLE_LIBPATH=$string
+        AC_MSG_RESULT( [ found $JOSTLE_LIBPATH ] )
+   fi
+
+   AC_MSG_CHECKING( [for NEMESIS_LIBPATH in $filename] )
+   string=`cat  $config_file | grep "NEMESIS_LIBPATH" | awk '$0 !~ "#" {print $0}' | awk -F = '{print $2}' ` 
+   NEMESIS_LIBPATH=""
+   if test -z $string ; then
+       AC_MSG_WARN( [no NEMESIS_LIBPATH defined in $filename; will ignore NEMESIS] )
+   else
+	NEMESIS_LIBPATH=$string
+        AC_MSG_RESULT( [ found $NEMESIS_LIBPATH ] )
+   fi
+
+#----------------------------------------------------------------------------------------
+
+## In case the component needs to be installed somewhere else, get the prefix of this
+## somewhere else directory
+####################################################################################
+
+## Check for the prefix
+if test "${prefix}" = "NONE"; then
+   prefix=.
+   FINAL_INSTALL_DIR="${prefix}"
+   ZOLTAN_COMPONENT_HOME=`pwd`/CCA_Wrapper
+   ZOLTAN_COMPONENT_TESTS=`pwd`/TestComponents
+else
+   FINAL_INSTALL_DIR="${prefix}"
+   ZOLTAN_COMPONENT_HOME="$prefix"
+   ZOLTAN_COMPONENT_TESTS="$prefix"
+fi
+
+if test "${exec_prefix}" = "NONE"; then
+    exec_prefix=$prefix
+fi
+
+VERSION_MAJOR=0.1
+VERSION_MINOR=0.2
+
+## -----------------------------------------------------------------
+#  Final step. Substitute these definitions and form a 
+#  MakeIncl.<Component> file
+#
+
+AC_SUBST(ZOLTAN_HOME)
+AC_SUBST(ZOLTAN_ARCH)
+AC_SUBST(CCA_MAKEINCL_DIR)
+AC_SUBST(DCCAFE_LIB)
+AC_SUBST(DCCAFE_LIBNAME)
+AC_SUBST(DCCAFE_INCLUDE)
+AC_SUBST(MPI_HOME)
+AC_SUBST(ZOLTAN_PORTS_DIR)
+AC_SUBST(FINAL_INSTALL_DIR)
+AC_SUBST(ZOLTAN_COMPONENT_HOME)
+AC_SUBST(ZOLTAN_COMPONENT_TESTS)
+AC_SUBST(PARMETIS_LIBPATH)
+AC_SUBST(JOSTLE_LIBPATH)
+AC_SUBST(NEMESIS_LIBPATH)
+
+testdir="$ZOLTAN_HOME"/test/
+AC_OUTPUT(MakeIncl.ZoltanComponent CCA_Wrapper/ZoltanLB.cca \
+          TestComponents/Driver.cca TestComponents/Mesh.cca \
+          "$testdir"/ch_drake/ccaffeine_input.hsfc \
+          "$testdir"/ch_drake/ccaffeine_input.rcb \
+          "$testdir"/ch_drake/ccaffeine_input.rib \
+	  "$testdir"/ch_ewgt/ccaffeine_input.diffusion-v3\
+	  "$testdir"/ch_ewgt/ccaffeine_input.hsfc \
+	  "$testdir"/ch_ewgt/ccaffeine_input.oct0 \
+	  "$testdir"/ch_ewgt/ccaffeine_input.partgeom-v3 \
+	  "$testdir"/ch_ewgt/ccaffeine_input.partkway-cyclic-v3 \
+	  "$testdir"/ch_ewgt/ccaffeine_input.partkway-v3 \
+	  "$testdir"/ch_ewgt/ccaffeine_input.rcb \
+	  "$testdir"/ch_ewgt/ccaffeine_input.rib \
+	  "$testdir"/ch_film/ccaffeine_input.diffusion-v3 \
+	  "$testdir"/ch_film/ccaffeine_input.hsfc \
+	  "$testdir"/ch_film/ccaffeine_input.oct0 \
+	  "$testdir"/ch_film/ccaffeine_input.oct1 \
+	  "$testdir"/ch_film/ccaffeine_input.oct2 \
+	  "$testdir"/ch_film/ccaffeine_input.partgeom-v3 \
+	  "$testdir"/ch_film/ccaffeine_input.partkway-cyclic-v3 \
+	  "$testdir"/ch_film/ccaffeine_input.partkway-v3 \
+	  "$testdir"/ch_film/ccaffeine_input.rcb \
+	  "$testdir"/ch_film/ccaffeine_input.rib \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.diffusion-v3 \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.hsfc \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.oct0 \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.oct1 \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.oct2 \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.partgeom-v3 \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.partkway-cyclic-v3 \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.partkway-v3 \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.rcb \
+	  "$testdir"/ch_grid20x19/ccaffeine_input.rib \
+	  "$testdir"/ch_hammond/ccaffeine_input.diffusion-v3 \
+	  "$testdir"/ch_hammond/ccaffeine_input.hsfc \
+	  "$testdir"/ch_hammond/ccaffeine_input.oct0 \
+	  "$testdir"/ch_hammond/ccaffeine_input.oct1 \
+	  "$testdir"/ch_hammond/ccaffeine_input.oct2 \
+	  "$testdir"/ch_hammond/ccaffeine_input.partgeom-v3 \
+	  "$testdir"/ch_hammond/ccaffeine_input.partkway-cyclic-v3 \
+	  "$testdir"/ch_hammond/ccaffeine_input.partkway-v3 \
+	  "$testdir"/ch_hammond/ccaffeine_input.rcb \
+	  "$testdir"/ch_hammond/ccaffeine_input.rib \
+	  "$testdir"/ch_nograph/ccaffeine_input.hsfc \
+	  "$testdir"/ch_nograph/ccaffeine_input.oct0 \
+	  "$testdir"/ch_nograph/ccaffeine_input.oct1 \
+	  "$testdir"/ch_nograph/ccaffeine_input.oct2 \
+	  "$testdir"/ch_nograph/ccaffeine_input.partgeom-v3 \
+	  "$testdir"/ch_nograph/ccaffeine_input.rcb \
+	  "$testdir"/ch_nograph/ccaffeine_input.rib \
+	  "$testdir"/ch_simple/ccaffeine_input.diffusion-v3 \
+	  "$testdir"/ch_simple/ccaffeine_input.hsfc \
+	  "$testdir"/ch_simple/ccaffeine_input.oct0 \
+	  "$testdir"/ch_simple/ccaffeine_input.oct1 \
+	  "$testdir"/ch_simple/ccaffeine_input.oct2 \
+	  "$testdir"/ch_simple/ccaffeine_input.partgeom-v3 \
+	  "$testdir"/ch_simple/ccaffeine_input.partkway-cyclic-v3 \
+	  "$testdir"/ch_simple/ccaffeine_input.partkway-v3 \
+	  "$testdir"/ch_simple/ccaffeine_input.rcb \
+	  "$testdir"/ch_simple/ccaffeine_input.rib \
+	  "$testdir"/ch_vwgt/ccaffeine_input.diffusion-v3 \
+	  "$testdir"/ch_vwgt/ccaffeine_input.hsfc \
+	  "$testdir"/ch_vwgt/ccaffeine_input.oct0 \
+	  "$testdir"/ch_vwgt/ccaffeine_input.oct1 \
+	  "$testdir"/ch_vwgt/ccaffeine_input.oct2 \
+	  "$testdir"/ch_vwgt/ccaffeine_input.partgeom-v3 \
+	  "$testdir"/ch_vwgt/ccaffeine_input.partkway-cyclic-v3 \
+	  "$testdir"/ch_vwgt/ccaffeine_input.partkway-v3 \
+	  "$testdir"/ch_vwgt/ccaffeine_input.rcb \
+	  "$testdir"/ch_vwgt/ccaffeine_input.rib, \
+	  [], []) 
+
+

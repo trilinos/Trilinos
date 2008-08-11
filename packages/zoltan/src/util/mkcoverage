@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+# This script works for SunOS
+# It should be run on paunchy.
+# Karen's purecov excludes (in ~/.purecov) assume coverage test is run in
+# ~/pub/coverage on paunchy.
+#
+TIME="`date +%H%M`"
+DATE="`date +%d%h%y`"
+CURDIR="`pwd`"
+#
+echo "Checking out Bugfix branch"
+rm -rf Zoltan 
+cvs checkout -r Zoltan_v3_Release -P Zoltan
+#
+# Remove HG code that will not be released. Do not define ZOLTAN_HG in Makefile.
+echo "Removing hg"
+cd Zoltan; sed -e 's/ZOLTAN_HG=1/#ZOLTAN_HG=1/' Makefile > tmp; /bin/mv tmp Makefile; cd $CURDIR
+cd Zoltan/hg; mkdir tmp; /bin/mv hg_hypergraph.h hg_util.h hg_util.c tmp; /bin/rm *; /bin/mv tmp/* .; rmdir tmp; cd $CURDIR
+cd Zoltan/test; /bin/rm -r hg_test; cd $CURDIR
+cd Zoltan/docs; /bin/rm -r internal; cd $CURDIR
+#
+# Move include files to correct locations.
+echo "Moving include files"
+cd Zoltan; /bin/mv Utilities/Memory/zoltan_mem.h include; cd $CURDIR
+cd Zoltan; /bin/mv Utilities/Communication/zoltan_comm.h include; cd $CURDIR
+cd Zoltan; /bin/mv Utilities/DDirectory/zoltan_dd.h include; cd $CURDIR
+#
+chmod -R ogu+r *
+cd Zoltan; gmake clean; cd $CURDIR
+#
+# PHAML tests
+#
+echo "Checking out PHAML-0.9.9"
+rm -rf PHAML
+cvs checkout -P PHAML/phaml-0.9.9
+#
+chmod -R ogu+r PHAML
+#
+# Compile for PHAML.
+echo "Compiling Zoltan for PHAML"
+cd Zoltan; gmake ZOLTAN_ARCH=mpi125 YES_FORTRAN=1 zoltan; cd $CURDIR
+#
+# Building PHAML library
+echo "Building PHAML library"
+cd PHAML/phaml-0.9.9; chmod +x COMPILE.* mkmkfile.sh */mkmkfile.sh */*/mkmkfile.sh; cd $CURDIR
+cd PHAML/phaml-0.9.9; mkdir lib; mkdir modules; cd $CURDIR
+cd PHAML/phaml-0.9.9; COMPILE.pure; cd $CURDIR
+#
+# Building PHAML executables
+echo "Building PHAML executables"
+cd PHAML/phaml-0.9.9/examples/simple; chmod +x COMPILE.*; cd $CURDIR
+cd PHAML/phaml-0.9.9/examples/simple; COMPILE.purecov; cd $CURDIR
+#
+# Running PHAML examples
+echo "Running PHAML examples:  TRI AUTO"
+rm -f phaml.tri_auto.out
+cd PHAML/phaml-0.9.9/examples/simple; mpirun -np 4 phaml_tri_auto > $CURDIR/phaml.tri_auto.out; cd $CURDIR
+#
+echo "Running PHAML examples:  TRI GIVEN"
+rm -f phaml.tri_given.out
+cd PHAML/phaml-0.9.9/examples/simple; mpirun -np 4 phaml_tri_given > $CURDIR/phaml.tri_given.out; cd $CURDIR
+#
+echo "Running PHAML examples:  OTHER AUTO"
+rm -f phaml.other_auto.out
+cd PHAML/phaml-0.9.9/examples/simple; mpirun -np 4 phaml_other_auto > $CURDIR/phaml.other_auto.out; cd $CURDIR
+#
+echo "Running PHAML examples:  OTHER GIVEN"
+rm -f phaml.other_given.out
+cd PHAML/phaml-0.9.9/examples/simple; mpirun -np 4 phaml_other_given > $CURDIR/phaml.other_given.out; cd $CURDIR
+#
+# Move *.pcv to current location.
+/bin/mv PHAML/phaml-0.9.9/examples/simple/*.pcv $CURDIR
+#
+# Communication Unit Test
+echo "Communication Test"
+cd Zoltan/Utilities; gmake ZOLTAN_ARCH=purecov zdrive_comm; cd $CURDIR
+cd Zoltan/Utilities/Communication/test; mpirun -np 4 ../../Obj_purecov/zdrive_comm > $CURDIR/zdrive_comm.out; cd $CURDIR
+/bin/mv Zoltan/Utilities/Obj_purecov/zdrive_comm.pcv $CURDIR
+#
+# DDirectory Unit Test
+echo "DDirectory test"
+cd Zoltan/Utilities; gmake ZOLTAN_ARCH=purecov zdrive_dd; cd $CURDIR
+cd Zoltan/Utilities/DDirectory; mpirun -np 4 ../Obj_purecov/zdrive_dd > $CURDIR/zdrive_dd.out; cd $CURDIR
+/bin/mv Zoltan/Utilities/Obj_purecov/zdrive_dd.pcv $CURDIR
+#
+# Zdrive test
+echo "zdrive test"
+cd Zoltan; gmake ZOLTAN_ARCH=purecov zdrive; cd $CURDIR
+cd Zoltan/test; chmod +x test_zoltan; rm -f $CURDIR/zdrive.out; test_zoltan -arch purecov -yes_jostle -logfile zdrive.log > $CURDIR/zdrive.out ; cd $CURDIR
+/bin/mv -f Zoltan/Obj_purecov/zdrive.pcv $CURDIR/zdrive.pcv
+/bin/mv -f Zoltan/test/zdrive.log $CURDIR/zdrive.log
+#
+# Zdrive test with ParMETIS2
+echo "zdrive test with ParMETIS2"
+cd Zoltan; gmake clean; cd $CURDIR
+cd Zoltan; gmake ZOLTAN_ARCH=purecov2 zdrive; cd $CURDIR
+cd Zoltan; /bin/rm -r Obj_purecov; /bin/mv Obj_purecov2 Obj_purecov; cd $CURDIR
+cd Zoltan/test; chmod +x test_zoltan; rm -f $CURDIR/zdrive2.out; test_zoltan -arch purecov -no_rcb -no_rib -no_hsfc -no_reftree -no_oct -logfile zdrive2.log > $CURDIR/zdrive2.out ; cd $CURDIR
+/bin/mv Zoltan/Obj_purecov/zdrive.pcv $CURDIR/zdrive2.pcv
+/bin/mv -f Zoltan/test/zdrive2.log $CURDIR/zdrive2.log
+#
+# Zdrive test with old interface 
+echo "zdrive test with old interface"
+cd Zoltan; gmake clean; cd $CURDIR
+cd Zoltan; gmake ZOLTAN_ARCH=purecov ZOLTAN_OLD_INTERFACE=1 zdrive; cd $CURDIR
+cd Zoltan/test; chmod +x test_zoltan; rm -f $CURDIR/zdrive_old.out; test_zoltan -arch purecov -logfile zdrive_old.log > $CURDIR/zdrive_old.out ; cd $CURDIR
+/bin/mv Zoltan/Obj_purecov/zdrive.pcv $CURDIR/zdrive_old.pcv
+/bin/mv -f Zoltan/test/zdrive_old.log $CURDIR/zdrive_old.log
+#
+# Zfdrive test
+echo "zfdrive test"
+cd Zoltan; /bin/mv fort/zoltan_user_data.f90 fort/zoltan_user_data.f90.zoltan; /bin/cp fdriver/zoltan_user_data.f90 fort; gmake ZOLTAN_ARCH=purecov zfdrive; /bin/mv fort/zoltan_user_data.f90.zoltan fort/zoltan_user_data.f90; cd $CURDIR
+cd Zoltan/test; rm -f $CURDIR/zfdrive.*; test_zoltan -arch purecov -yes_fortran -logfile zfdrive.log > $CURDIR/zfdrive.out ; cd $CURDIR
+/bin/mv Zoltan/Obj_purecov/zfdrive.pcv $CURDIR/zfdrive.pcv
+/bin/mv -f Zoltan/test/zfdrive.log $CURDIR/zfdrive.log
+#
+# Display purecoverage output.
+purecov -view -force_merge *.pcv &
+#
+exit 0

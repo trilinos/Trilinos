@@ -1,0 +1,10 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 0
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters	= ADD_OBJ_WEIGHT=none
+Zoltan Parameters       = PHG_NPROC_VERTEX = 1
+Zoltan Parameters       = phg_coarsening_method=ipm
+Zoltan Parameters       = lb_approach=partition
+File Type		= matrixmarket
+File Name		= cage10
+Parallel Disk Info	= number=0

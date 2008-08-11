@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# Benchmarking script.  Called by run_benchmarks.
+#
+      /bin/rm -f ml_inputfile
+#     check that the executable file name is there
+      if test -f exe.name
+      then
+#         check if the executable exists
+#       
+          temp1=`cat exe.name`
+          temp2=${temp1}ttt
+          temp=`echo ${temp2} | sed "s/t//"`
+      if test `expr ${temp}` != 'tt'
+      then
+          temp=${temp1}
+          /bin/rm -f $temp
+          if test -f exe.makeflags
+          then
+            makeflags=-D`cat exe.makeflags`
+
+          fi
+
+          echo "trying to make ${temp}"
+          #sleep 30
+          EXE=`echo ${EXECUTABLE_DIRECTORY}/$temp`
+          #if test -f $EXE
+          #then
+          #   touch $EXE
+          #else
+             cd ${EXECUTABLE_DIRECTORY}
+             rm -f ${temp} ${temp}.o
+             make APPLICATION_C=${temp}.c TESTING=-DBENCHMARK TESTING2=${makeflags}
+             cd ${BENCH_SUBDIR}
+          #fi
+          ln -s $EXE $temp
+          EXE=./$temp
+#
+#     execute any file that starts with ml_inputfile ...
+#
+      for j in ml_inputfile*
+      do
+        #echo ${j}
+        ttt=`echo $j | sed "s/ml_inputfile//"`
+        /bin/rm -f ${SCRATCH_SUBDIR}/output${ttt} ${SCRATCH_SUBDIR}/difs${ttt}
+        /bin/rm -f ml_inputfile
+        cp $j ml_inputfile
+        Nprocs=`grep -i "^Number of processors" ml_inputfile | sed s"/.*=//"`
+#
+#       run only if parallel=TRUE or nprocs = 1 or []
+#
+        temp=`echo xx${Nprocs}xx | sed "s/ *//g"`
+        if test `expr ${temp}` = 'xxxx'
+        then
+            Nprocs=1
+        fi
+        if test `expr ${PARALLEL}` = 'TRUE' -o \
+           `expr ${Nprocs}` = '1' 
+        then
+          EXE_MOD=$EXE
+          if test `expr ${PARALLEL}` = 'TRUE' 
+          then
+            EXE_MOD=`echo ${PARALLEL_CMD} $Nprocs $EXE`
+          fi
+          rm -f ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+          if test `expr ${BATCH}` = 'TRUE'
+          then
+            rm -f parallel_cmd
+            echo ${PARALLEL_CMD} > parallel_cmd
+            echo ${SCRATCH_SUBDIR} > scratch_subdirectory
+            export ttt
+            ${SCRIPT_DIRECTORY}/qbench ${Nprocs} ${1} ${2}
+            rm -f parallel_cmd
+            rm -f scratch_subdirectory
+          else
+            rm -f machines
+            echo "localhost" > machines
+            ${EXE_MOD} | grep -vi Reading > ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+            rm -f machines
+          fi
+          cat ${SCRATCH_SUBDIR}/xxxxxx${ttt} | grep -v ime > ${SCRATCH_SUBDIR}/output${ttt}
+          rm -f ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+          diff -w output${ttt} ${SCRATCH_SUBDIR}/output${ttt} > \
+                                    ${SCRATCH_SUBDIR}/difs${ttt}
+          wc ${SCRATCH_SUBDIR}/difs${ttt} >> ${SUMMARY_FILE}
+          tail -1 ${SUMMARY_FILE}
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "complexity"
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "complexity" >> ${SUMMARY_FILE}
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations"
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations" >> ${SUMMARY_FILE}
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = "
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = " >> ${SUMMARY_FILE}
+        fi
+      done
+      /bin/rm -f ml_inputfile
+      /bin/rm -f $EXE
+      fi
+      else 
+         echo "The file does not exist ${BENCH_SUBDIR}/exe.name?"
+      fi

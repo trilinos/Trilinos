@@ -1,0 +1,115 @@
+#!/bin/csh
+
+if ($#argv < 1) then
+
+  echo "Usage: installdox <package name > [install location] [package directory]";
+  exit(1);
+
+endif
+
+set PACKAGE = $1;
+
+if ($#argv < 2) then
+
+  set INSTALLDIR = /var/www/html/$1
+
+else
+
+  set INSTALLDIR = $2;
+
+endif
+
+if ($#argv < 3) then
+
+  set PKGDIR = $HOME/$1
+
+else
+
+  set PKGDIR = $3;
+
+endif
+
+echo "*** Installing $1 documentation from $PKGDIR to $INSTALLDIR ***";
+
+# ************************************************************
+
+echo "CVS update for $1"
+
+if (! -d $PKGDIR) then
+  echo "Error: package directory ($PKGDIR) does not exist";
+  exit(1);
+endif
+
+cd $PKGDIR
+cvs -q update -d -P > /dev/null
+
+# ************************************************************
+
+echo "Creating distribution"
+configure > /dev/null
+make dist > /dev/null
+
+# ************************************************************
+
+echo "Copying distribution to install directory"
+
+if (! -d $INSTALLDIR/downloads) then
+  mkdir $INSTALLDIR/downloads
+endif
+
+if (! -d $INSTALLDIR/downloads) then
+  echo "Error: Cannot create install subdirectory ($INSTALLDIR/downloads)";
+  exit(1);
+endif
+
+cp -pu $PKGDIR/*.tar.gz $INSTALLDIR/downloads
+
+
+# ************************************************************
+
+echo "Running doxygen on $1"
+
+if (! -d $PKGDIR/doc) then
+  echo "Error: package documentation directory ($PKGDIR/doc) does not exist";
+  exit(1);
+endif
+
+cd doc
+doxygen > /dev/null
+#doxygen | grep -i error
+
+# ************************************************************
+
+echo "Checking for install directory"
+
+if (! -d $INSTALLDIR) then
+  echo "Error: Install directory ($INSTALLDIR) does not exist";
+  exit(1);
+endif
+
+# ************************************************************
+
+echo "Copying $1 graphics"
+
+if (! -d $INSTALLDIR/images) then
+  mkdir $INSTALLDIR/images
+endif
+
+if (! -d $INSTALLDIR/images) then
+  echo "Error: Cannot create install subdirectory ($INSTALLDIR/images)";
+  exit(1);
+endif
+
+cp -pu $PKGDIR/doc/images/*.gif $INSTALLDIR/images
+
+# ************************************************************
+
+echo "Processing HTML files"
+
+find $PKGDIR/doc/html -type f -exec $PKGDIR/maintenance/seddox $INSTALLDIR $PKGDIR {} \;
+
+# ************************************************************
+
+echo "Updating permissions in install directory ($INSTALLDIR)";
+
+chmod -R a+rX $INSTALLDIR

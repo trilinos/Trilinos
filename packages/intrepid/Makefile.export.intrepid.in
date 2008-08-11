@@ -1,0 +1,38 @@
+# Required dependence on teuchos
+include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+
+# Intrepid include path
+_INTREPID_INCLUDES = \
+        -I@abs_top_srcdir@/src \
+        -I@abs_top_srcdir@/src/common \
+        -I@abs_top_srcdir@/src/local \
+        -I@abs_top_srcdir@/src/local/basis \
+        -I@abs_top_srcdir@/src/local/basis/FIAT \
+        -I@abs_top_builddir@/src \
+        $(TEUCHOS_INCLUDES)
+
+# Intrepid library path
+_INTREPID_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lintrepid $(TEUCHOS_LIBS)
+
+@USING_GNUMAKE_TRUE@INTREPID_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_INTREPID_INCLUDES))
+@USING_GNUMAKE_TRUE@INTREPID_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_INTREPID_LIBS))
+@USING_GNUMAKE_FALSE@INTREPID_INCLUDES = $(_INTREPID_INCLUDES)
+@USING_GNUMAKE_FALSE@INTREPID_LIBS     = $(_INTREPID_LIBS)
+
+#Test, example, etc. include path (can be different from above)
+_INTREPID_TEST_INCLUDES = \
+        -I@abs_top_srcdir@/src \
+        -I@abs_top_srcdir@/src/common \
+        -I@abs_top_srcdir@/src/local \
+        -I@abs_top_srcdir@/src/local/basis \
+        -I@abs_top_srcdir@/src/local/basis/FIAT \
+        -I@abs_top_builddir@/src \
+        $(TEUCHOS_INCLUDES)
+
+# Test, example, etc. library path
+_INTREPID_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lintrepid $(TEUCHOS_LIBS)
+
+@USING_GNUMAKE_TRUE@INTREPID_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_INTREPID_INCLUDES))
+@USING_GNUMAKE_TRUE@INTREPID_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_INTREPID_LIBS))
+@USING_GNUMAKE_FALSE@INTREPID_TEST_INCLUDES = $(_INTREPID_TEST_INCLUDES)
+@USING_GNUMAKE_FALSE@INTREPID_TEST_LIBS     = $(_INTREPID_TEST_LIBS)

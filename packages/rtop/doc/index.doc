@@ -1,0 +1,32 @@
+? Doxyfile
+? html
+/*! \mainpage RTOp: Interfaces, Support Software, and Concrete Implementations of Vector Reduction/Transformation Operators
+
+The documentation for the RTOp package is broken up into the following three
+separate doxygen documentation collections:
+
+<ul>
+
+<li> <a href="../../src/interfaces/doc/html/index.html">Fundamental Vector
+Reduction/Transformation Operator Interfaces</a>: This minimal amount of code
+defines the basic interoperability mechanism for RTOp.
+
+<li> <a href="../../src/support/doc/html/index.html">Support Software for
+Vector Reduction/Transformation Operators</a>: This software makes it easier
+to provide concrete RTOp implementations and to perform global reduction
+operations using MPI.
+
+<li> <a href="../../src/ops_lib/doc/html/index.html">Collection of Concrete
+Vector Reduction/Transformation Operator Implementations</a>: This is a collection of
+concrete reduction and/or transformation operators.
+
+</ul>
+
+You can browse all of RTOp as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about RTOp software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of rtop</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
+*/
+

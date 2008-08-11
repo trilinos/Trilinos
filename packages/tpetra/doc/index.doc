@@ -1,0 +1,99 @@
+/*! \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package.
+\htmlonly
+\endhtmlonly
+
+\section intro Introduction
+Tpetra is an attempt at applying generic algorithm techniques to the
+serial and parallel linear algebra libraries of Epetra.  It is hoped that
+Tpetra will complement Epetra by providing an alternative foundation 
+for future Trilinos solvers.  The lessons learned and discoveries made 
+while creating Tpetra are also being applied to improving their Epetra cousins.
+
+Tpetra provides the same functionality as Epetra: the fundamental construction routines 
+and services functions that are required for serial and parallel linear algebra libraries. 
+Unlike Epetra, Tpetra makes extensive use of templates and the Standard Template Library (STL). 
+This provides numerous benefits, including the ability to template the Ordinal and Scalar fields 
+on any well-defined types, and automatic resource allocation. 
+
+\section startup Overview of Tpetra.
+
+\subsection types Templated Types in Tpetra
+
+All classes in Tpetra utilize templates, which allows the user to specify any type they want.
+
+<ol>
+<li> PacketType: The most generic type. A PacketType is any built-in type, struct, or class
+     that can be communicated between nodes. Generally this is the same as the ScalarType.
+
+<li> OrdinalType: The next-most generic type. An OrdinalType is primarily used for ordering,
+     such as labeling the indices in a matrix or vector. This is typically int or long int.
+
+<li> ScalarType: The least generic type. A ScalarType is the data structure used for storing values.
+     This is typically double, float, complex<double> or complex<float>.
+</ol>
+
+The flexibility of Tpetra comes from the fact that the above-mentioned examples are not the only
+possibilities. As long as they implement a few basic operations and traits, any class can be used 
+as a PacketType, OrdinalType, or ScalarType. You could, for example, use radians as an OrdinalType, 
+or use 3x3 matrices as a ScalarType.
+
+More information can be found in the documentation for Tpetra::PacketTraits, Teuchos::OrdinalTraits, 
+and Teuchos::ScalarTraits.
+
+\subsection formulations Tpetra Classes
+
+Tpetra contains a number of classes.  They can be categorized as follows:
+
+<ul> 
+
+<li> Primary parallel user classes.  These are typically the most important classes for most users.
+
+<ol>
+
+<li> Communication classes: Tpetra::Platform, Tpetra::Comm, and Tpetra::Distributor - 
+     Platform contains specific information about the parallel machine we are using. 
+     Comm provides collective operations, and Distributor provides point-to-point communication. 
+     Currently only supports serial operation, but an MPI version is in development.
+
+<li> Mapping classes: Tpetra::ElementSpace, Tpetra::BlockElementSpace and Tpetra::VectorSpace - 
+     Contain information used to distribute vectors, matrices and other objects.
+
+<li> Vector class: Tpetra::Vector - Provides vector services such as 
+     scaling, norms, and dot products. Is also used in conjunction with Tpetra::CisMatrix
+     for matrix-vector computations.
+
+<li> Sparse matrix class: Tpetra::CisMatrix - Compressed Index Space Matrix. Can be either
+     row-oriented or column-oriented. 
+
+<li> Import/Export classes:  Tpetra::Import and Tpetra::Export - Constructed from two
+     ElementSpace objects.  Allows efficient transfer of objects built using one mapping 
+     to a new object with a new mapping.  Supports local and global permutations,
+     overlapping Schwarz operations and many other data movement algorithms.
+
+</ol>
+
+<li> Utility classes. 
+
+<ol>
+
+<li> Distributed directory class:  Tpetra::Directory - Allows construction of a distributed directory.
+     Once constructed, a directory allows one to access randomly distributed objects in an efficient, scalable
+     manner.  This class is intended for support of general ElementSpace and BlockElementSpace objects, but is 
+     useful in other settings as well.
+
+<li> Traits class:  Tpetra::PacketTraits - Much like Teuchos's ScalarTraits and OrdinalTraits. It provides
+     information needed to transfer data on a parallel machine, such as the amount of memory needed to represent
+     a variable of a given type.
+     
+
+</ol>
+</ul>
+     
+
+\subsection trilinos Trilinos and Tpetra
+
+Tpetra can be used as a stand-alone package.  However, in the future it will also provides the foundation for
+Trilinos.  Trilinos is a collection of solver packages, such as AztecOO and TSF.  But as Tpetra is not yet completed, 
+it is suggested that for the time being, Epetra be used in conjunction with other Trilinos packages instead.
+
+*/

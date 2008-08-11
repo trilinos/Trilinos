@@ -1,0 +1,8 @@
+Decomposition Method 	= hypergraph
+zoltan parameters       = lb_approach=refine
+zoltan parameters	= hypergraph_package=phg
+zoltan parameters	= phg_coarsening_limit=1
+zoltan parameters	= final_output=1
+File Type		= matrixmarket
+File Name		= simple
+Parallel Disk Info	= number=0

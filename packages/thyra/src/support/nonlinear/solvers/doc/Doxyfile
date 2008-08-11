@@ -1,0 +1,33 @@
+#
+# Note: all relative paths are relative to package/doc!
+#
+@INCLUDE = Doxyfile.options
+@INCLUDE = thyra/src/support/operator_vector/doc/TagFiles
+@INCLUDE = thyra/src/interfaces/nonlinear/solvers/ana/fundamental/doc/TagFiles
+#
+# Package options
+#
+PROJECT_NAME           = "Thyra Nonlinear Solver Support "
+OUTPUT_DIRECTORY       = ../src/support/nonlinear/solvers/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src/support/nonlinear/solvers/doc/index.doc \
+                         ../src/support/nonlinear/solvers/client_support \
+                         ./dirs.doc
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       =
+IMAGE_PATH             =
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+GENERATE_TAGFILE       = ../../common/tag_files/ThyraSupportNonlinearSolvers.tag
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO

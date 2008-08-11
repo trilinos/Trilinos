@@ -1,0 +1,2 @@
+@INCLUDE = thyra/src/interfaces/operator_solve/ana/fundamental/doc/TagFiles
+TAGFILES += $(TRILINOS_HOME)/packages/common/tag_files/ThyraSupportOperatorSolve.tag=$(TRILINOS_HOME)/packages/thyra/src/support/operator_solve/doc/html

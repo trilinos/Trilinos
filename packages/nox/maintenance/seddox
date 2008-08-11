@@ -1,0 +1,10 @@
+#!/bin/csh
+
+set INSTALLDIR = $1
+set PKGDIR = $2
+set FILENAME = `echo "$3" | sed "s|$PKGDIR/doc/html/||"`
+
+#echo $FILENAME
+
+sed 's/\.\.\/images/images/g' $3 >! $INSTALLDIR/$FILENAME 
+

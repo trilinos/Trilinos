@@ -1,0 +1,11 @@
+interface LB_Set_Unpack_Obj_Fn
+   module procedure LBf90_Set_Unpack_Obj_Fn0s
+   module procedure LBf90_Set_Unpack_Obj_Fn1s
+   module procedure LBf90_Set_Unpack_Obj_Fn2s
+   module procedure LBf90_Set_Unpack_Obj_Fn3s
+   module procedure LBf90_Set_Unpack_Obj_Fn8s
+   module procedure LBf90_Set_Unpack_Obj_Fn9s
+   module procedure LBf90_Set_Unpack_Obj_FnAs
+   module procedure LBf90_Set_Unpack_Obj_FnBs
+end interface
+

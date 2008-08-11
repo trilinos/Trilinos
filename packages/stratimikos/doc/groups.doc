@@ -1,0 +1,76 @@
+
+/** \example simple_stratimikos_example.cpp
+
+Simple example program for how the
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt> class is used to take a
+parameter list (e.g. read from a file) and use it so solve a linear system
+read in as Epetra objects from a file.
+
+<b>Outline</b>
+
+<ul>
+<li><a href="simple__stratimikos__example_8cpp-example.html#simple_stratimikos_example_source_with_line_numbers">
+  Example program source (with line numbers)</a>
+<li><a href="simple__stratimikos__example_8cpp-example.html#simple_stratimikos_example_cmndline_options">
+  Command-line options for the driver program</a>
+<li><a href="simple__stratimikos__example_8cpp-example.html#simple_stratimikos_example_example_input">
+  Example input XML file</a>
+<li><a href="simple__stratimikos__example_8cpp-example.html#simple_stratimikos_example_example_output">
+  Example program output</a>
+</ul>
+
+<b><a name="simple_stratimikos_example_source_with_line_numbers">Example program source (with line numbers)</a></b>
+
+\includelineno simple_stratimikos_example.cpp
+
+<b><a name="simple_stratimikos_example_cmndline_options">Command-line options for the driver program</a></b>
+
+\verbinclude simple_stratimikos_example.help.out
+
+<b><a name="simple_stratimikos_example_example_input">Example input XML file</a></b>
+
+Here is an example input XML file, called <tt>amesos.klu.xml</tt>, that
+specifies that the KLU solver from Amesos be used to solve the linear system:
+
+\verbinclude _amesos.klu.xml
+
+<b><a name="simple_stratimikos_example_example_output">Example program output</a></b>
+
+Sample output looks like when using the above <tt>amesos.klu.xml</tt> file as
+input with a test system:
+
+\verbinclude simple_stratimikos_example.amesos.klu.out
+
+<b><a name="simple_stratimikos_example_source_without_line_numbers">Example program source (without line numbers)</a></b>
+
+Here is the main driver program itself without line numbers:
+
+*/
+
+/** \example test_single_stratimikos_solver.cpp
+
+The bottom of this page shows a simple test program for how the
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt> class is used to take a
+parameter list (e.g. read from a file) and use it to build
+<tt>Thyra::LinearOpWithSolveFactory</tt> and
+<tt>Thyra::PreconditionerFactoryBase</tt> objects.
+
+The arguments that the testing program driver that calls this example are:
+
+\verbinclude test_single_stratimikos_solver_driver.help.out
+
+Sample output looks like:
+
+\verbinclude test_single_stratimikos_solver_driver.FourByFour.belos.ifpack.out
+
+Here is the main driver itself:
+
+*/
+
+/** \example MixedOrderPhysicsBasedPreconditioner.cpp
+
+*/
+
+/** \defgroup stratimikos_testing_grp Stratimikos testing code.
+
+*/

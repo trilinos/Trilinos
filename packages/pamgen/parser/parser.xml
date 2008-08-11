@@ -1,0 +1,19 @@
+
+<product name="Nevada" version="HEAD">
+
+  <component name="parser" type="library">
+
+    <requires product="Nevada|top_include"/>
+    <requires product="Nevada|snltools"/>
+    <requires product="Nevada|EventHandler"/>
+    <requires product="Nevada|units"/>
+    <requires product="Nevada|Comm"/>
+
+    <include/>
+    <libs/>
+    
+    <files glob="*.[CcFf]"/>
+    
+  </component>
+  
+</product>
