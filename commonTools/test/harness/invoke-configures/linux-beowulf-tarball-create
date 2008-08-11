@@ -16,11 +16,9 @@ FFLAGS=-O3 \
 --enable-amesos-umfpack \
 --enable-amesos-superlu \
 --enable-anasazi \
---enable-aristos \
 --enable-aztecoo \
 --enable-belos \
 --enable-claps \
---enable-ctrilinos \
 --enable-didasko \
 --enable-epetra \
 --enable-epetra-abc \
@@ -30,7 +28,6 @@ FFLAGS=-O3 \
 --enable-epetraext-transform \
 --enable-external \
 --enable-fei \
---enable-fortrilinos \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
@@ -59,7 +56,6 @@ FFLAGS=-O3 \
 --enable-pytrilinos \
 --enable-pliris \
 --enable-rythmos \
---enable-stokhos \
 --enable-sundance \
 --enable-teuchos \
 --enable-teuchos-abc \
@@ -69,7 +65,6 @@ FFLAGS=-O3 \
 --enable-threadpool \
 --enable-thyra \
 --enable-tpetra \
---enable-trikota \
 --enable-trilinoscouplings \
 --enable-triutils \
 --enable-moocho \
