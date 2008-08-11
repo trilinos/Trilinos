@@ -489,39 +489,20 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
          readData(instr, nn);
          bcSet.numNodes_ = nn;
 
-         bcSet.nodeIDs_ = new GlobalID[nn];
-         bcSet.alpha_ = new double*[nn];
-         bcSet.beta_ = new double*[nn];
-         bcSet.gamma_ = new double*[nn];
-
-         for(j=0; j<nn; j++) {
-            int tmp;
-            readData(instr, tmp);
-            bcSet.nodeIDs_[j] = (GlobalID)tmp;
-         }
-
          readData(instr, bcSet.fieldID_);
-         int size = getFieldSize(bcSet.fieldID_);
+
+         int field_offset;
+         readData(instr, field_offset);
+         
+         bcSet.nodeIDs_ = new GlobalID[nn];
+         bcSet.offsetsIntoField_ = new int[nn];
+         bcSet.prescribed_values_ = new double[nn];
+
+         for(j=0; j<nn; ++j) bcSet.offsetsIntoField_[j] = field_offset;
 
          for(j=0; j<nn; j++) {
-            bcSet.alpha_[j] = new double[size];
-            for(int k=0; k<size; k++) {
-               readData(instr, bcSet.alpha_[j][k]);
-            }
-         }
-
-         for(j=0; j<nn; j++) {
-            bcSet.beta_[j] = new double[size];
-            for(int k=0; k<size; k++) {
-               readData(instr, bcSet.beta_[j][k]);
-            }
-         }
-
-         for(j=0; j<nn; j++) {
-            bcSet.gamma_[j] = new double[size];
-            for(int k=0; k<size; k++) {
-               readData(instr, bcSet.gamma_[j][k]);
-            }
+            readData(instr, bcSet.nodeIDs_[j]);
+            readData(instr, bcSet.prescribed_values_[j]);
          }
       }
 

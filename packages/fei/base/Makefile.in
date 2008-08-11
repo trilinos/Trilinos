@@ -89,7 +89,8 @@ ARFLAGS = cru
 libfei_base_a_DEPENDENCIES =
 am__objects_1 = fei_BCManager.$(OBJEXT) fei_BCRecord.$(OBJEXT) \
 	fei_BlockDescriptor.$(OBJEXT) fei_CSRMat.$(OBJEXT) \
-	fei_CSVec.$(OBJEXT) cfei.$(OBJEXT) fei_EqnBuffer.$(OBJEXT) \
+	fei_CSVec.$(OBJEXT) fei_DirichletBCManager.$(OBJEXT) \
+	cfei.$(OBJEXT) fei_EqnBuffer.$(OBJEXT) \
 	fei_EqnCommMgr.$(OBJEXT) fei_FEDataFilter.$(OBJEXT) \
 	FEI_Implementation.$(OBJEXT) fei_ostream_ops.$(OBJEXT) \
 	fei_EqnComm.$(OBJEXT) fei_Exception.$(OBJEXT) \
@@ -243,6 +244,8 @@ DEFAULT_INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/base -I$(top_builddir)
 CORE_H = \
 	$(top_srcdir)/base/fei_Data.hpp \
 	$(top_srcdir)/base/fei_defs.h \
+	$(top_srcdir)/base/fei_DirichletBCRecord.hpp \
+	$(top_srcdir)/base/fei_DirichletBCManager.hpp \
 	$(top_srcdir)/base/fei_FiniteElementData.hpp \
 	$(top_srcdir)/base/fei_LinearSystemCore.hpp \
 	$(top_srcdir)/base/fei_LinSysCore_flexible.hpp \
@@ -379,6 +382,7 @@ CORE = \
 	$(srcdir)/fei_BlockDescriptor.cpp \
 	$(srcdir)/fei_CSRMat.cpp \
 	$(srcdir)/fei_CSVec.cpp \
+	$(srcdir)/fei_DirichletBCManager.cpp \
 	$(srcdir)/cfei.cpp \
 	$(srcdir)/fei_EqnBuffer.cpp \
 	$(srcdir)/fei_EqnCommMgr.cpp \
@@ -572,6 +576,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CommCore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CommUtilsBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ConnectivityBlock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_DirichletBCManager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_EqnBuffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_EqnComm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_EqnCommMgr.Po@am__quote@
@@ -714,6 +719,20 @@ fei_CSVec.obj: $(srcdir)/fei_CSVec.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_CSVec.cpp' object='fei_CSVec.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_CSVec.obj `if test -f '$(srcdir)/fei_CSVec.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_CSVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_CSVec.cpp'; fi`
+
+fei_DirichletBCManager.o: $(srcdir)/fei_DirichletBCManager.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_DirichletBCManager.o -MD -MP -MF $(DEPDIR)/fei_DirichletBCManager.Tpo -c -o fei_DirichletBCManager.o `test -f '$(srcdir)/fei_DirichletBCManager.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_DirichletBCManager.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_DirichletBCManager.Tpo $(DEPDIR)/fei_DirichletBCManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_DirichletBCManager.cpp' object='fei_DirichletBCManager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_DirichletBCManager.o `test -f '$(srcdir)/fei_DirichletBCManager.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_DirichletBCManager.cpp
+
+fei_DirichletBCManager.obj: $(srcdir)/fei_DirichletBCManager.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_DirichletBCManager.obj -MD -MP -MF $(DEPDIR)/fei_DirichletBCManager.Tpo -c -o fei_DirichletBCManager.obj `if test -f '$(srcdir)/fei_DirichletBCManager.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_DirichletBCManager.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_DirichletBCManager.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_DirichletBCManager.Tpo $(DEPDIR)/fei_DirichletBCManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_DirichletBCManager.cpp' object='fei_DirichletBCManager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_DirichletBCManager.obj `if test -f '$(srcdir)/fei_DirichletBCManager.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_DirichletBCManager.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_DirichletBCManager.cpp'; fi`
 
 cfei.o: $(srcdir)/cfei.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cfei.o -MD -MP -MF $(DEPDIR)/cfei.Tpo -c -o cfei.o `test -f '$(srcdir)/cfei.cpp' || echo '$(srcdir)/'`$(srcdir)/cfei.cpp

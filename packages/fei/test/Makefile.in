@@ -238,7 +238,7 @@ fei_test_plugins_SOURCES = $(srcdir)/fei_test_plugins.cpp
 # One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 # exe depends on.  (This primary is not absolutely essential.)
 fei_test_DEPENDENCIES = \
-	$(FEI_LIBS) \
+	$(top_builddir)/base/libfei_base.a $(FEI_LIBS) \
 	$(top_builddir)/test_utils/libfei_test_utils.a $(FEI_PETSC_LIB)
 
 fei_test_plugins_DEPENDENCIES = \

@@ -529,15 +529,22 @@ int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
   feiArray<SSVec*>& bcEqns  = bcEqnBuf.getRows();
   int numBCEqns = bcEqns.size();
 
-  essEqns.clear();
-  values.clear();
-
   for(int i=0; i<numBCEqns; i++){
     feiArray<double>& bcCoefs = bcEqns[i]->coefs();
 
-    essEqns.push_back(bcEqnNumbers[i]);
-
-    values.push_back(bcCoefs[0]);
+    std::vector<int>::iterator
+      iter = std::lower_bound(essEqns.begin(), essEqns.end(), bcEqnNumbers[i]);
+    if (iter == essEqns.end() || *iter != bcEqnNumbers[i]) {
+      size_t offset = iter - essEqns.begin();
+      essEqns.insert(iter, bcEqnNumbers[i]);
+      std::vector<double>::iterator viter = values.begin();
+      viter += offset;
+      values.insert(viter,bcCoefs[0]);
+    }
+    else {
+      size_t offset = iter - essEqns.begin();
+      values[offset] = bcCoefs[0];
+    }
   }
 
   return(0);
@@ -652,34 +659,36 @@ int snl_fei::gatherRemoteEssBCs(SSVec& essBCs,
   std::vector<int>& rrowOffs = remoteGraph->rowOffsets;
   std::vector<int>& rcols = remoteGraph->packedColumnIndices;
 
-  int* essEqns = &(essBCs.indices()[0]);
   int numEssEqns = essBCs.size();
-  double* coefs = &(essBCs.coefs()[0]);
+  if (numEssEqns > 0) {
+    int* essEqns = &(essBCs.indices()[0]);
+    double* coefs = &(essBCs.coefs()[0]);
 
-  if (rrowOffs.size() > 0 && rcols.size() > 0) {
+    if (rrowOffs.size() > 0 && rcols.size() > 0) {
 
-    int* rowOffsPtr = &(rrowOffs[0]);
-    int* rcolsPtr = &(rcols[0]);
+      int* rowOffsPtr = &(rrowOffs[0]);
+      int* rcolsPtr = &(rcols[0]);
 
-    for(int j=0; j<numEssEqns; ++j) {
+      for(int j=0; j<numEssEqns; ++j) {
 
-      int eqn = essEqns[j];
+        int eqn = essEqns[j];
 
-      for(unsigned i=0; i<rrowOffs.size()-1; ++i) {
-	int len = rowOffsPtr[i+1]-rowOffsPtr[i];
-	int* colsPtr = &(rcolsPtr[rowOffsPtr[i]]);
+        for(unsigned i=0; i<rrowOffs.size()-1; ++i) {
+          int len = rowOffsPtr[i+1]-rowOffsPtr[i];
+          int* colsPtr = &(rcolsPtr[rowOffsPtr[i]]);
 
-	feiArray<int> cols(len, len, colsPtr);
+          feiArray<int> cols(len, len, colsPtr);
 
-	if (snl_fei::binarySearch(eqn, cols) > -1) {
-	  double coef = coefs[j];
-	  double* coefPtr = &coef;
+          if (snl_fei::binarySearch(eqn, cols) > -1) {
+            double coef = coefs[j];
+            double* coefPtr = &coef;
 
-	  for(int k=0; k<len; ++k) {
-	    CHK_ERR( matrix.copyIn(1, &(colsPtr[k]),
-				   1, &(eqn), &coefPtr) );
-	  }
-	}
+            for(int k=0; k<len; ++k) {
+              CHK_ERR( matrix.copyIn(1, &(colsPtr[k]),
+                       1, &(eqn), &coefPtr) );
+            }
+          }
+        }
       }
     }
   }

@@ -73,7 +73,7 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
    deleteCommUtils_(false),
    problemStructure_(probStruct),
    penCRIDs_(0, 1000),
-   rowIndices_(0, 256),
+   rowIndices_(),
    rowColOffsets_(0, 256),
    colIndices_(0, 256),
    putRHSVec_(NULL),
@@ -169,7 +169,7 @@ FEDataFilter::FEDataFilter(const FEDataFilter& src)
    deleteCommUtils_(false),
    problemStructure_(NULL),
    penCRIDs_(0, 1000),
-   rowIndices_(0, 256),
+   rowIndices_(),
    rowColOffsets_(0, 256),
    colIndices_(0, 256),
    putRHSVec_(NULL),
@@ -998,7 +998,8 @@ int FEDataFilter::getFromMatrix(int patternID,
 			    const GlobalID* colIDs,
 			    double** matrixEntries)
 {
-   feiArray<int> rowIndices, rowColOffsets, colIndices;
+   feiArray<int> rowIndices;
+   feiArray<int> rowColOffsets, colIndices;
    int numColsPerRow;
 
    //We're going to supply a little non-standard behavior here that is
@@ -1026,11 +1027,11 @@ int FEDataFilter::getFromMatrix(int patternID,
 
    int err = 0;
    if (colIDs == NULL) {
-     err = getFromMatrix(rowIndices.length(), rowIndices.dataPtr(),
+     err = getFromMatrix(rowIndices.size(), &rowIndices[0],
 			 NULL, NULL, 0, matrixEntries);
    }
    else {
-     err = getFromMatrix(rowIndices.length(), rowIndices.dataPtr(),
+     err = getFromMatrix(rowIndices.size(), &rowIndices[0],
 			 rowColOffsets.dataPtr(), colIndices.dataPtr(),
 			 numColsPerRow, matrixEntries);
    }
@@ -1066,18 +1067,18 @@ int FEDataFilter::putIntoRHS(int IDType,
 
   CHK_ERR( problemStructure_->getEqnNumbers(numIDs, IDs, IDType, fieldID,
 					    checkNumEqns,
-					    rowIndices_.dataPtr()));
+					    &rowIndices_[0]));
   if (checkNumEqns != numIDs*fieldSize) {
     ERReturn(-1);
   }
 
   if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.length(),
-			   rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_ = new SSVec(rowIndices_.size(),
+			   &rowIndices_[0], rhsEntries);
   }
   else {
-    putRHSVec_->setInternalData(rowIndices_.length(),
-				rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_->setInternalData(rowIndices_.size(),
+				&rowIndices_[0], rhsEntries);
   }
 
   CHK_ERR( exchangeRemoteEquations() );
@@ -1101,18 +1102,18 @@ int FEDataFilter::sumIntoRHS(int IDType,
 
   CHK_ERR( problemStructure_->getEqnNumbers(numIDs, IDs, IDType, fieldID,
 					    checkNumEqns,
-					    rowIndices_.dataPtr()));
+					    &rowIndices_[0]));
   if (checkNumEqns != numIDs*fieldSize) {
     ERReturn(-1);
   }
 
   if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.length(),
-			   rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_ = new SSVec(rowIndices_.size(),
+			   &rowIndices_[0], rhsEntries);
   }
   else {
-    putRHSVec_->setInternalData(rowIndices_.length(),
-				rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_->setInternalData(rowIndices_.size(),
+				&rowIndices_[0], rhsEntries);
   }
 
   CHK_ERR( assembleRHS(*putRHSVec_, ASSEMBLE_SUM) );
@@ -1126,12 +1127,12 @@ int FEDataFilter::getFromRHS(int patternID,
                          const GlobalID* rowIDs,
                          double* vectorEntries)
 {
-  feiArray<int> rowIndices(0, 8);
+  feiArray<int> rowIndices;
 
   CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
 						       rowIDs, rowIndices) );
 
-  CHK_ERR( getFromRHS(rowIndices.length(), vectorEntries, rowIndices.dataPtr()))
+  CHK_ERR( getFromRHS(rowIndices.size(), vectorEntries, &rowIndices[0]))
 
   return(FEI_SUCCESS);
 }
@@ -1197,7 +1198,7 @@ int FEDataFilter::generalCoefInput(int patternID,
    //Recall that for a pattern, the list of column-entities is packed, we have
    //a list of column-entities for each row-entities. Thus, we now have a list
    //of column-indices for each row index...
-   int numRows = rowIndices_.length();
+   int numRows = rowIndices_.size();
    int numCols = colIndices_.length();
 
    if (Filter::logStream() != NULL) {
@@ -1225,7 +1226,7 @@ int FEDataFilter::generalCoefInput(int patternID,
 
    if (coefs != NULL) {
      //wrap a super-sparse-matrix object around the coefs data
-     SSMat mat(numRows, rowIndices_.dataPtr(),
+     SSMat mat(numRows, &rowIndices_[0],
 	       numColsPerRow, rowColOffsets_.dataPtr(),
 	       colIndices_.dataPtr(), coefs);
 
@@ -1234,12 +1235,12 @@ int FEDataFilter::generalCoefInput(int patternID,
 
    if (rhsCoefs != NULL) {
      if (putRHSVec_ == NULL) {
-       putRHSVec_ = new SSVec(rowIndices_.length(),
-			      rowIndices_.dataPtr(), rhsCoefs);
+       putRHSVec_ = new SSVec(rowIndices_.size(),
+			      &rowIndices_[0], rhsCoefs);
      }
      else {
-       putRHSVec_->setInternalData(rowIndices_.length(),
-				   rowIndices_.dataPtr(), rhsCoefs);
+       putRHSVec_->setInternalData(rowIndices_.size(),
+				   &rowIndices_[0], rhsCoefs);
      }
 
      CHK_ERR( assembleRHS(*putRHSVec_, assemblyMode) );

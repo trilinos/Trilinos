@@ -125,6 +125,51 @@ namespace fei {
 				 const double *const *gammaValues,
 				 const double *const *alphaValues) = 0;
 
+    /** Essential boundary-condition function that simply accepts a list
+        of prescribed values, rather than the 'old' FEI's confusing approach
+        of accepting arrays of alpha, beta and gamma values that nobody every
+        really understood.
+
+        For each specified ID, a value is being prescribed for a specified
+        fieldID and a specified offset into that field.
+
+        @param numIDs
+        @param IDs
+        @param idType
+        @param fieldID
+        @param offsetIntoField
+        @param prescribedValues Input. List of values. Has length numIDs.
+    */
+    virtual int loadEssentialBCs(int numIDs,
+                                 const int* IDs,
+                                 int idType,
+                                 int fieldID,
+                                 int offsetIntoField,
+                                 const double* prescribedValues) = 0;
+
+    /** Essential boundary-condition function that simply accepts a list
+        of prescribed values, rather than the 'old' FEI's confusing approach
+        of accepting arrays of alpha, beta and gamma values that nobody every
+        really understood.
+
+        For each specified ID, a value is being prescribed for a specified
+        fieldID and a specified offset into that field. The offset into the
+        field can be different for each prescribed value.
+
+        @param numIDs
+        @param IDs
+        @param idType
+        @param fieldID
+        @param offsetsIntoField Input. List of values, length numIDs.
+        @param prescribedValues Input. List of values. Has length numIDs.
+    */
+    virtual int loadEssentialBCs(int numIDs,
+                                 const int* IDs,
+                                 int idType,
+                                 int fieldID,
+                                 const int* offsetsIntoField,
+                                 const double* prescribedValues) = 0;
+
     /** Lagrange constraint coefficient loading function.
 	@param constraintID Input. Must be an identifier of a lagrange 
 	constraint that was initialized on the fei::MatrixGraph object which

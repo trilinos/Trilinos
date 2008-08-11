@@ -17,6 +17,10 @@
 #include <fei_fwd.hpp>
 #include <fei_Logger.hpp>
 
+namespace fei {
+  class DirichletBCManager;
+}
+
 namespace snl_fei {
   /** implementation of fei::LinearSystem interface */
   class LinearSystem_General : public fei::LinearSystem,
@@ -38,6 +42,24 @@ namespace snl_fei {
 			 int fieldSize,
 			 const double *const *gammaValues,
 			 const double *const *alphaValues);
+
+    /** Essential (dirichlet) boundary-condition function.
+    */
+    int loadEssentialBCs(int numIDs,
+                         const int* IDs,
+                         int idType,
+                         int fieldID,
+                         int offsetIntoField,
+                         const double* prescribedValues);
+
+    /** Essential (dirichlet) boundary-condition function.
+    */
+    int loadEssentialBCs(int numIDs,
+                         const int* IDs,
+                         int idType,
+                         int fieldID,
+                         const int* offsetIntoField,
+                         const double* prescribedValues);
 
     /** load lagrange-multiplier constraint coefficients */
     int loadLagrangeConstraint(int constraintID,
@@ -107,6 +129,7 @@ namespace snl_fei {
 
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
     BCManager* bcManager_;
+    fei::DirichletBCManager* dbcManager_;
     SSVec* essBCvalues_;
     SSVec* allEssBCs_;
 

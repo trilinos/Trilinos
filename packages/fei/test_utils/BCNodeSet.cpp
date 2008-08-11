@@ -16,9 +16,8 @@ BCNodeSet::BCNodeSet()
  : numNodes_(0),
    nodeIDs_(NULL),
    fieldID_(-1),
-   alpha_(NULL),
-   beta_(NULL),
-   gamma_(NULL)
+   offsetsIntoField_(NULL),
+   prescribed_values_(NULL)
 {
 }
 
@@ -29,14 +28,8 @@ BCNodeSet::~BCNodeSet() {
 
 //==============================================================================
 void BCNodeSet::deleteMemory() {
-   for(int i=0; i<numNodes_; i++) {
-      delete [] alpha_[i];
-      delete [] beta_[i];
-      delete [] gamma_[i];
-   }
-   delete [] alpha_;
-   delete [] beta_;
-   delete [] gamma_;
+   delete [] offsetsIntoField_;
+   delete [] prescribed_values_;
 
    delete [] nodeIDs_;
 

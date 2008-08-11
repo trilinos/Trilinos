@@ -53,6 +53,12 @@ class LinSysCoreFilter : public Filter {
                    const double *const *beta,  
                    const double *const *gamma);
 
+   virtual int loadNodeBCs(int numNodes,
+                   const GlobalID *nodeIDs,
+                   int fieldID,
+                   const int* offsetsIntoField,
+                   const double* prescribedValues);
+
    virtual int loadElemBCs(int numElems,
                    const GlobalID *elemIDs,
                    int fieldID,
@@ -476,7 +482,8 @@ class LinSysCoreFilter : public Filter {
 
     SSMat *workStiff_;
     SSVec *workLoad_;
-    feiArray<int> rowIndices_, rowColOffsets_, colIndices_;
+    feiArray<int> rowIndices_;
+    feiArray<int> rowColOffsets_, colIndices_;
     SSVec *putRHSVec_;
 
     SSMat *Kid_, *Kdi_, *Kdd_, *tmpMat1_, *tmpMat2_;

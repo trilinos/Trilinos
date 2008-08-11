@@ -176,9 +176,8 @@ int FEI_loadNodeBCs(CFEI* cfei,
                     int numNodes,
                     GlobalID *BCNodes,
                     int fieldID,
-                    double **alpha,
-                    double **beta,
-                    double **gamma);
+                    int* offsetsIntoField,
+                    double* prescribed_values);
 
 int FEI_loadElemBCs( CFEI* cfei,
                      int numElems,

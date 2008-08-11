@@ -176,8 +176,8 @@ int snl_fei_tester::testLoading()
 				       bcSet.nodeIDs_,
 				       idTypes_[nodeTypeOffset_],
 				       bcSet.fieldID_,
-				       fieldSize,
-				       bcSet.gamma_, bcSet.alpha_) );
+				       bcSet.offsetsIntoField_,
+				       bcSet.prescribed_values_) );
   }
 
   CHK_ERR( linSys_->loadComplete() );

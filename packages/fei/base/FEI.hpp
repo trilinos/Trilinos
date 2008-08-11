@@ -522,6 +522,30 @@ class FEI {
                             const double *const *beta,  
                             const double *const *gamma ) = 0;
 
+    /** Load nodal boundary condition data. This allows the application to
+       specify a boundary condition (dirichlet) on a list of nodes.
+
+       The boundary condition specified via this function applies to the same
+       solution field on all nodes in the nodeIDs list.
+
+       The i-th entry in the offsetsIntoField array specifies which component
+       of the specified field will be prescribed by the i-th entry in the
+       prescribedValues array.
+
+       @param numNodes Length of the nodeIDs list.
+       @param nodeIDs List of nodes upon which a boundary condition is to be
+               imposed.
+       @param fieldID The solution field that will receive the boundary
+                   condition.
+       @param offsetsIntoField Array, length numNodes.
+       @param prescribedValues Array, length numNodes.
+    */
+    virtual int loadNodeBCs(int numNodes,
+                            const GlobalID *nodeIDs,
+                            int fieldID,
+                            const int* offsetsIntoField,
+                            const double* prescribedValues) = 0;
+
     /** Load boundary condition data for element-dof.
         Similar to the function 'loadNodeBCs', as far as the definition of the
         coefficients alpha, beta and gamma.

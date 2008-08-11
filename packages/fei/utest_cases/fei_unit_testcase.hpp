@@ -11,10 +11,10 @@ class testcase {
   testcase();
   virtual ~testcase(){}
 
-  virtual void setup(MPI_Comm comm){}
+  virtual void setup(MPI_Comm /*comm*/){}
 
   //return true if successful, false otherwise
-  virtual bool run(MPI_Comm comm) = 0;
+  virtual bool run(MPI_Comm /*comm*/) = 0;
 
   virtual void teardown(){}
 };//class testcase

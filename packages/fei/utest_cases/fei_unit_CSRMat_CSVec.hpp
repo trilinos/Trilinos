@@ -4,6 +4,10 @@
 #include "fei_unit_testcase.hpp"
 
 class test_csvec : public fei::unit::testcase {
+ public:
+  test_csvec(){}
+  ~test_csvec(){}
+
   bool run(MPI_Comm comm);
 };
 

@@ -25,6 +25,8 @@ DEFAULT_INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/base -I$(top_builddir)
 CORE_H = \
 	$(top_srcdir)/base/fei_Data.hpp \
 	$(top_srcdir)/base/fei_defs.h \
+	$(top_srcdir)/base/fei_DirichletBCRecord.hpp \
+	$(top_srcdir)/base/fei_DirichletBCManager.hpp \
 	$(top_srcdir)/base/fei_FiniteElementData.hpp \
 	$(top_srcdir)/base/fei_LinearSystemCore.hpp \
 	$(top_srcdir)/base/fei_LinSysCore_flexible.hpp \
@@ -161,6 +163,7 @@ CORE = \
 	$(srcdir)/fei_BlockDescriptor.cpp \
 	$(srcdir)/fei_CSRMat.cpp \
 	$(srcdir)/fei_CSVec.cpp \
+	$(srcdir)/fei_DirichletBCManager.cpp \
 	$(srcdir)/cfei.cpp \
 	$(srcdir)/fei_EqnBuffer.cpp \
 	$(srcdir)/fei_EqnCommMgr.cpp \

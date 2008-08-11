@@ -82,7 +82,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/SolnCheck.hpp \
 	$(top_srcdir)/test_utils/test_Algebraic.hpp \
 	$(top_srcdir)/test_utils/test_AztecWrappers.hpp \
-	$(top_srcdir)/test_utils/test_CommUtils.hpp \
 	$(top_srcdir)/test_utils/test_Database.hpp \
 	$(top_srcdir)/test_utils/testData.hpp \
 	$(top_srcdir)/test_utils/test_EqnBuffer.hpp \
@@ -97,7 +96,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/test_Matrix.hpp \
 	$(top_srcdir)/test_utils/test_misc.hpp \
 	$(top_srcdir)/test_utils/test_PointBlockMap.hpp \
-	$(top_srcdir)/test_utils/test_Reducer.hpp \
 	$(top_srcdir)/test_utils/test_Set.hpp \
 	$(top_srcdir)/test_utils/test_SNL_FEI_Structure.hpp \
 	$(top_srcdir)/test_utils/test_SSMat.hpp \
@@ -135,7 +133,6 @@ CORE = \
 	$(srcdir)/tester.cpp \
 	$(srcdir)/test_Algebraic.cpp \
 	$(srcdir)/test_AztecWrappers.cpp \
-	$(srcdir)/test_CommUtils.cpp \
 	$(srcdir)/test_Database.cpp \
 	$(srcdir)/test_EqnBuffer.cpp \
 	$(srcdir)/test_EqnCommMgr.cpp \
@@ -148,7 +145,6 @@ CORE = \
 	$(srcdir)/test_MatrixGraph.cpp \
 	$(srcdir)/test_misc.cpp \
 	$(srcdir)/test_PointBlockMap.cpp \
-	$(srcdir)/test_Reducer.cpp \
 	$(srcdir)/test_Set.cpp \
 	$(srcdir)/test_SNL_FEI_Structure.cpp \
 	$(srcdir)/test_SSMat.cpp \

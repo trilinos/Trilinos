@@ -51,7 +51,7 @@ class HexBeam {
 
   virtual int getBCNodes(int numNodes, int* nodeIDs);
 
-  virtual int getBCGammaValues(int numBCDofs, double* gamma);
+  virtual int getBCValues(int numBCNodes, int* offsetsIntoField, double* vals);
 
   virtual int getNumSharedNodes();
 

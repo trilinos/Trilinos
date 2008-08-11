@@ -68,7 +68,10 @@ CORE = \
 	$(srcdir)/fei_unit_register_tests.cpp \
 	$(srcdir)/fei_unit_test_runner.cpp \
 	$(srcdir)/fei_unit_CSRMat_CSVec.cpp \
-	$(srcdir)/fei_unit_utils.cpp
+	$(srcdir)/fei_unit_utils.cpp \
+	$(srcdir)/fei_unit_CommUtils.cpp \
+	$(srcdir)/fei_unit_DirBC.cpp \
+	$(srcdir)/fei_unit_Reducer.cpp
 
 # ------------------------------------------------------------------------
 # FEI library specifications

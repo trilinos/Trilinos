@@ -703,6 +703,21 @@ int fei::FEI_Impl::loadNodeBCs(int numNodes,
   return(0);
 }
 
+int fei::FEI_Impl::loadNodeBCs(int numNodes,
+                                const GlobalID *nodeIDs,
+                                int fieldID,
+                                const int* offsetsIntoField,
+                                const double* prescribedValues)
+{
+  CHK_ERR( linSys_->loadEssentialBCs(numNodes, nodeIDs,
+                                     nodeIDType_, fieldID,
+                                     offsetsIntoField, prescribedValues) );
+
+  newData_ = true;
+
+  return(0);
+}
+
 int fei::FEI_Impl::loadElemBCs(int numElems,
                     const GlobalID* elemIDs,  
                     int fieldID,

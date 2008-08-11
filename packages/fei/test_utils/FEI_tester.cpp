@@ -383,9 +383,8 @@ int FEI_tester::normalLoadPhase()
     CHK_ERR(fei_->loadNodeBCs(bcSet.numNodes_,
 			     bcSet.nodeIDs_,
 			     bcSet.fieldID_,
-			     bcSet.alpha_,
-			     bcSet.beta_,
-			     bcSet.gamma_));
+			     bcSet.offsetsIntoField_,
+			     bcSet.prescribed_values_));
   }
 
    for(i=0; i<data_->numElemBlocks_; i++) {
@@ -518,9 +517,8 @@ int FEI_tester::aggregateLoadPhase()
       CHK_ERR(fei_->loadNodeBCs(bcSet.numNodes_,
                      bcSet.nodeIDs_,
                      bcSet.fieldID_,
-                     bcSet.alpha_,
-                     bcSet.beta_,
-                     bcSet.gamma_))
+                     bcSet.offsetsIntoField_,
+                     bcSet.prescribed_values_))
    }
 
    double* matScalars = new double[numMatrices];

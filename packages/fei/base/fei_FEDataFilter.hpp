@@ -431,7 +431,8 @@ class FEDataFilter : public Filter {
 
     feiArray<GlobalID> penCRIDs_;
 
-    feiArray<int> rowIndices_, rowColOffsets_, colIndices_;
+    feiArray<int> rowIndices_;
+    feiArray<int> rowColOffsets_, colIndices_;
     SSVec *putRHSVec_;
 
     EqnCommMgr* eqnCommMgr_; //equation communication manager

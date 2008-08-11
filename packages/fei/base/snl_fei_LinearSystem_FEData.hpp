@@ -18,6 +18,10 @@
 #include <fei_Matrix.hpp>
 #include <fei_fwd.hpp>
 
+namespace fei {
+  class DirichletBCManager;
+}
+
 namespace snl_fei {
   /** implementation of fei::LinearSystem specialized for
      FiniteElementData */
@@ -40,6 +44,26 @@ namespace snl_fei {
 			 int fieldSize,
 			 const double *const *gammaValues,
 			 const double *const *alphaValues);
+
+    /** Essential (dirichlet) boundary-condition function that accepts a table
+        of prescribed values.
+    */
+    int loadEssentialBCs(int numIDs,
+                         const int* IDs,
+                         int idType,
+                         int fieldID,
+                         int offsetIntoField,
+                         const double* prescribedValues);
+
+    /** Essential (dirichlet) boundary-condition function that accepts a table
+        of prescribed values.
+    */
+    int loadEssentialBCs(int numIDs,
+                         const int* IDs,
+                         int idType,
+                         int fieldID,
+                         const int* offsetsIntoField,
+                         const double* prescribedValues);
 
     /** implementation of loadLagrangeConstraint */
     int loadLagrangeConstraint(int constraintID,
@@ -115,6 +139,7 @@ namespace snl_fei {
     fei::SharedPtr<fei::Vector> rhs_;
     fei::SharedPtr<FiniteElementData> feData_;
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
+    fei::DirichletBCManager* dbcManager_;
     BCManager* bcManager_;
     Lookup* lookup_;
 

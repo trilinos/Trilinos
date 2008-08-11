@@ -17,7 +17,6 @@
 //execute_unit_tests below in this file.
 
 #include <test_utils/test_Set.hpp>
-#include <test_utils/test_CommUtils.hpp>
 #include <test_utils/test_Database.hpp>
 #include <test_utils/test_EqnBuffer.hpp>
 #include <test_utils/test_EqnCommMgr.hpp>
@@ -32,7 +31,6 @@
 #include <test_utils/test_Tables.hpp>
 #include <test_utils/test_PointBlockMap.hpp>
 #include <test_utils/test_VectorSpace.hpp>
-#include <test_utils/test_Reducer.hpp>
 #include <test_utils/test_MatrixGraph.hpp>
 #include <test_utils/test_Vector.hpp>
 #include <test_utils/test_Utils.hpp>
@@ -384,10 +382,8 @@ void execute_unit_tests(const std::string& path,
   //the array running the tests on each class instance.
 
   testers.push_back(fei::SharedPtr<tester>(new test_misc(comm)));
-  testers.push_back(fei::SharedPtr<tester>(new test_CommUtils(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Utils(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Set(comm)));
-  testers.push_back(fei::SharedPtr<tester>(new test_Reducer(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Database(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_EqnBuffer(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_EqnCommMgr(comm)));

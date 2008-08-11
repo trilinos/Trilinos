@@ -43,7 +43,6 @@
 
 #include <test_utils/ElemBlock.hpp>
 #include <test_utils/CRSet.hpp>
-#include <test_utils/BCNodeSet.hpp>
 #include <test_utils/CommNodeSet.hpp>
 #include <test_utils/DataReader.hpp>
 

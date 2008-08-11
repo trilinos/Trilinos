@@ -372,15 +372,14 @@ extern "C" int FEI_loadNodeBCs(CFEI* cfei,
                                int numNodes,
                                GlobalID *BCNodes,
                                int fieldID,
-                               double **alpha,
-                               double **beta,
-                               double **gamma)
+                               int* offsetsIntoField,
+                               double* prescribed_values)
 {
   CHK_CFEI_NULL(cfei);
 
   return(((FEI_Implementation*)(cfei->cfei_))->loadNodeBCs(numNodes,
-                                             BCNodes, fieldID, alpha, 
-                                             beta, gamma));
+                                             BCNodes, fieldID,
+                                        offsetsIntoField, prescribed_values));
 }
 
 /*============================================================================*/

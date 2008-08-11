@@ -21,9 +21,8 @@ class BCNodeSet {
    int numNodes_;
    GlobalID* nodeIDs_;
    int fieldID_;
-   double** alpha_;
-   double** beta_;
-   double** gamma_;
+   int* offsetsIntoField_;
+   double* prescribed_values_;
 
  private:
    void deleteMemory();

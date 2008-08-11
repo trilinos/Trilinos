@@ -23,6 +23,8 @@
 #include <fei_utils.hpp>
 #include <fei_LogManager.hpp>
 
+#include <fei_DirichletBCRecord.hpp>
+#include <fei_DirichletBCManager.hpp>
 #include <fei_BCRecord.hpp>
 #include <fei_BCManager.hpp>
 #include <fei_EqnBuffer.hpp>
@@ -37,6 +39,7 @@ snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGr
   : commUtilsInt_(),
     matrixGraph_(matrixGraph),
     bcManager_(NULL),
+    dbcManager_(NULL),
     essBCvalues_(NULL),
     resolveConflictRequested_(false),
     bcs_trump_slaves_(false),
@@ -75,6 +78,7 @@ snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGr
 snl_fei::LinearSystem_General::~LinearSystem_General()
 {
   delete bcManager_;
+  delete dbcManager_;
 
   delete essBCvalues_;
 
@@ -201,6 +205,66 @@ int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
 }
 
 //----------------------------------------------------------------------------
+int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
+                         const int* IDs,
+                         int idType,
+                         int fieldID,
+                         int offsetIntoField,
+                         const double* prescribedValues)
+{
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != 0) {
+    FEI_OSTREAM& os = *output_stream_;
+    os << "loadEssentialBCs, numIDs: "<<numIDs<<", idType: " <<idType
+    <<", fieldID: "<<fieldID<<", offsetIntoField: "<<offsetIntoField<<FEI_ENDL;
+  }
+
+  if (dbcManager_ == NULL) {
+    dbcManager_ = new fei::DirichletBCManager;
+  }
+
+  try {
+    dbcManager_->addBCRecords(numIDs, idType, fieldID, offsetIntoField,
+                              IDs, prescribedValues);
+  }
+  catch(fei::Exception& exc) {
+    FEI_CERR << exc.what()<<FEI_ENDL;
+    return(-1);
+  }
+  return(0);
+}
+
+//----------------------------------------------------------------------------
+int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
+                         const int* IDs,
+                         int idType,
+                         int fieldID,
+                         const int* offsetsIntoField,
+                         const double* prescribedValues)
+{
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != 0) {
+    FEI_OSTREAM& os = *output_stream_;
+    for(int i=0; i<numIDs; ++i) {
+      os << "loadEssentialBCs idType: " <<idType
+        <<", fieldID: "<<fieldID<<", ID: " << IDs[i]<<", offsetIntoField: "<<offsetsIntoField[i]<<", val: " << prescribedValues[i] << FEI_ENDL;
+    }
+  }
+
+  if (dbcManager_ == NULL) {
+    dbcManager_ = new fei::DirichletBCManager;
+  }
+
+  try {
+    dbcManager_->addBCRecords(numIDs, idType, fieldID, IDs, offsetsIntoField,
+                              prescribedValues);
+  }
+  catch(fei::Exception& exc) {
+    FEI_CERR << exc.what()<<FEI_ENDL;
+    return(-1);
+  }
+  return(0);
+}
+
+//----------------------------------------------------------------------------
 int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
                                                 bool globalAssemble)
 {
@@ -211,6 +275,10 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
 
   if (bcManager_ == NULL) {
     bcManager_ = new BCManager;
+  }
+
+  if (dbcManager_ == NULL) {
+    dbcManager_ = new fei::DirichletBCManager;
   }
 
   if (globalAssemble) {
@@ -371,11 +439,13 @@ void snl_fei::LinearSystem_General::getConstrainedEqns(std::vector<int>& crEqns)
 }
 
 //----------------------------------------------------------------------------
-int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
+int extractBCs(BCManager* bcManager, fei::SharedPtr<fei::MatrixGraph> matrixGraph,
+               SSVec* essBCvalues, bool resolveConflictRequested,
+               bool bcs_trump_slaves)
 {
-  int numLocalBCs = bcManager_->getNumBCs();
+  int numLocalBCs = bcManager->getNumBCs();
   int globalNumBCs = 0;
-  matrixGraph_->getRowSpace()->getCommUtils()->GlobalSum(numLocalBCs, globalNumBCs);
+  matrixGraph->getRowSpace()->getCommUtils()->GlobalSum(numLocalBCs, globalNumBCs);
   if (globalNumBCs == 0) {
     return(0);
   }
@@ -386,15 +456,15 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
 
   fei::SharedPtr<SSMat> localBCeqns(new SSMat);
   fei::SharedPtr<fei::Matrix_Impl<SSMat> > bcEqns;
-  matrixGraph_->getRowSpace()->initComplete();
-  int numSlaves = matrixGraph_->getGlobalNumSlaveConstraints();
-  fei::SharedPtr<fei::Reducer> reducer = matrixGraph_->getReducer();
+  matrixGraph->getRowSpace()->initComplete();
+  int numSlaves = matrixGraph->getGlobalNumSlaveConstraints();
+  fei::SharedPtr<fei::Reducer> reducer = matrixGraph->getReducer();
 
   int numIndices = numSlaves>0 ?
     reducer->getLocalReducedEqns().size() :
-    matrixGraph_->getRowSpace()->getNumIndices_Owned();
+    matrixGraph->getRowSpace()->getNumIndices_Owned();
 
-  bcEqns.reset(new fei::Matrix_Impl<SSMat>(localBCeqns, matrixGraph_, numIndices));
+  bcEqns.reset(new fei::Matrix_Impl<SSMat>(localBCeqns, matrixGraph, numIndices));
   fei::SharedPtr<fei::Matrix> bcEqns_reducer;
   if (numSlaves > 0) {
     bcEqns_reducer.reset(new fei::MatrixReducer(reducer, bcEqns));
@@ -403,14 +473,12 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
   fei::Matrix& bcEqns_mat = bcEqns_reducer.get()==NULL ?
       *bcEqns : *bcEqns_reducer;
 
-  fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph_->getRowSpace();
+  CHK_ERR( bcManager->finalizeBCEqns(bcEqns_mat, bcs_trump_slaves) );
 
-  CHK_ERR( bcManager_->finalizeBCEqns(*vecSpace, bcEqns_mat, bcs_trump_slaves_) );
-
-  if (resolveConflictRequested_) {
+  if (resolveConflictRequested) {
     fei::SharedPtr<SSMat> ssmat = bcEqns->getMatrix();
     feiArray<int>& bcEqnNumbers = ssmat->getRowNumbers();
-    CHK_ERR( snl_fei::resolveConflictingCRs(*matrixGraph_, bcEqns_mat,
+    CHK_ERR( snl_fei::resolveConflictingCRs(*matrixGraph, bcEqns_mat,
                                             bcEqnNumbers) );
   }
 
@@ -424,21 +492,15 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
   CHK_ERR( bcEqns->gatherFromOverlap(false) );
 
   CHK_ERR( snl_fei::separateBCEqns( *(bcEqns->getMatrix()),
-				    essEqns, essAlpha, essGamma,
-				    otherEqns, otherAlpha, otherBeta, otherGamma) );
+                              essEqns, essAlpha, essGamma,
+                              otherEqns, otherAlpha, otherBeta, otherGamma) );
 
   if (otherEqns.length() > 0) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "snl_fei::LinearSystem_General::implementBCs: ERROR, unexpected "
-	  << "'otherEqns', (meaning non-dirichlet or non-essential BCs).";
+          << "'otherEqns', (meaning non-dirichlet or non-essential BCs).";
     throw fei::Exception(osstr.str());
   }
-
-  if (essBCvalues_ != NULL) {
-    delete essBCvalues_;
-  }
-
-  essBCvalues_ = new SSVec;
 
   int* essEqnsPtr = essEqns.dataPtr();
   double* gammaPtr = essGamma.dataPtr();
@@ -447,8 +509,97 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
   for(int i=0; i<essEqns.length(); ++i) {
     int eqn = essEqnsPtr[i];
     double value = gammaPtr[i]/alphaPtr[i];
-    CHK_ERR( essBCvalues_->putEntry(eqn, value) );
+    CHK_ERR( essBCvalues->putEntry(eqn, value) );
   }
+
+  return(0);
+}
+
+//----------------------------------------------------------------------------
+int extractDBCs(fei::DirichletBCManager* bcManager,
+                fei::SharedPtr<fei::MatrixGraph> matrixGraph,
+                SSVec* essBCvalues,
+                bool resolveConflictRequested,
+                bool bcs_trump_slaves)
+{
+  int numLocalBCs = bcManager->getNumBCRecords();
+  int globalNumBCs = 0;
+  matrixGraph->getRowSpace()->getCommUtils()->GlobalSum(numLocalBCs, globalNumBCs);
+  if (globalNumBCs == 0) {
+    return(0);
+  }
+
+  fei::SharedPtr<SSMat> localBCeqns(new SSMat);
+  fei::SharedPtr<fei::Matrix_Impl<SSMat> > bcEqns;
+  matrixGraph->getRowSpace()->initComplete();
+  int numSlaves = matrixGraph->getGlobalNumSlaveConstraints();
+  fei::SharedPtr<fei::Reducer> reducer = matrixGraph->getReducer();
+
+  int numIndices = numSlaves>0 ?
+    reducer->getLocalReducedEqns().size() :
+    matrixGraph->getRowSpace()->getNumIndices_Owned();
+
+  bcEqns.reset(new fei::Matrix_Impl<SSMat>(localBCeqns, matrixGraph, numIndices));
+  fei::SharedPtr<fei::Matrix> bcEqns_reducer;
+  if (numSlaves > 0) {
+    bcEqns_reducer.reset(new fei::MatrixReducer(reducer, bcEqns));
+  }
+
+  fei::Matrix& bcEqns_mat = bcEqns_reducer.get()==NULL ?
+      *bcEqns : *bcEqns_reducer;
+
+  CHK_ERR( bcManager->finalizeBCEqns(bcEqns_mat, bcs_trump_slaves) );
+
+  if (resolveConflictRequested) {
+    fei::SharedPtr<SSMat> ssmat = bcEqns->getMatrix();
+    feiArray<int>& bcEqnNumbers = ssmat->getRowNumbers();
+    CHK_ERR( snl_fei::resolveConflictingCRs(*matrixGraph, bcEqns_mat,
+                                            bcEqnNumbers) );
+  }
+
+  std::vector<int> essEqns;
+  std::vector<double> values;
+
+  std::vector<SSMat*>& remote = bcEqns->getRemotelyOwnedMatrix();
+  for(unsigned p=0; p<remote.size(); ++p) {
+    CHK_ERR( snl_fei::separateBCEqns( *(remote[p]), essEqns, values) );
+  }
+
+  CHK_ERR( bcEqns->gatherFromOverlap(false) );
+
+  CHK_ERR( snl_fei::separateBCEqns( *(bcEqns->getMatrix()),
+                              essEqns, values) );
+
+  if (essEqns.size() > 0) {
+    int* essEqnsPtr = &essEqns[0];
+    double* valuesPtr = &values[0];
+
+    for(unsigned i=0; i<essEqns.size(); ++i) {
+      int eqn = essEqnsPtr[i];
+      double value = valuesPtr[i];
+      CHK_ERR( essBCvalues->putEntry(eqn, value) );
+    }
+  }
+
+  return(0);
+}
+
+//----------------------------------------------------------------------------
+int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
+{
+  if (essBCvalues_ != NULL) {
+    delete essBCvalues_;
+  }
+
+  essBCvalues_ = new SSVec;
+
+  CHK_ERR( extractBCs(bcManager_, matrixGraph_,
+                      essBCvalues_, resolveConflictRequested_,
+                      bcs_trump_slaves_) );
+
+  CHK_ERR( extractDBCs(dbcManager_, matrixGraph_,
+                       essBCvalues_,  resolveConflictRequested_,
+                      bcs_trump_slaves_) );
 
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -475,7 +626,7 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
 
     if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
       FEI_OSTREAM& os = *output_stream_;
-      os << "  implementBCs, essEqns.length(): "<<essEqns.length()
+      os << "  implementBCs, essBCvalues_.length(): "<<essBCvalues_->length()
          << ", allEssBCs.length(): " << allEssBCs.length()<<FEI_ENDL;
     }
   }

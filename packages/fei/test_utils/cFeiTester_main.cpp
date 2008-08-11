@@ -661,23 +661,9 @@ void cfei_print_data(DataReader& data) {
       FEI_COUT << "set " << i << ", numNodes: " << bcSet.numNodes_ << FEI_ENDL;
       for(int j=0; j<bcSet.numNodes_; j++) {
          FEI_COUT << " nodeID " << (int)bcSet.nodeIDs_[j] << ", fieldID "
-              << bcSet.fieldID_ << FEI_ENDL;
-         int k, size = data.getFieldSize(bcSet.fieldID_);
-         FEI_COUT << " alpha: " << FEI_ENDL;
-         for(k=0; k<size; k++) {
-            FEI_COUT << bcSet.alpha_[j][k] << " ";
-         }
-         FEI_COUT << FEI_ENDL;
-         FEI_COUT << " beta: " << FEI_ENDL;
-         for(k=0; k<size; k++) {
-            FEI_COUT << bcSet.beta_[j][k] << " ";
-         }
-         FEI_COUT << FEI_ENDL;
-         FEI_COUT << " gamma: " << FEI_ENDL;
-         for(k=0; k<size; k++) {
-            FEI_COUT << bcSet.gamma_[j][k] << " ";
-         }
-         FEI_COUT << FEI_ENDL;
+              << bcSet.fieldID_
+              << ", offsetIntoField " << bcSet.offsetsIntoField_[j]
+              << ", value " << bcSet.prescribed_values_[j] << FEI_ENDL;
       }
    }
 
@@ -761,9 +747,8 @@ int cfei_normalLoadPhase(DataReader& data, CFEI* cfei) {
       CHK_ERR(FEI_loadNodeBCs(cfei, bcSet.numNodes_,
                      bcSet.nodeIDs_,
                      bcSet.fieldID_,
-                     bcSet.alpha_,
-                     bcSet.beta_,
-                     bcSet.gamma_))
+                     bcSet.offsetsIntoField_,
+                     bcSet.prescribed_values_))
    }
 
    for(i=0; i<data.numElemBlocks_; i++) {
@@ -886,9 +871,8 @@ int cfei_aggregateLoadPhase(DataReader& data, CFEI* cfei,
       CHK_ERR(FEI_loadNodeBCs(cfei, bcSet.numNodes_,
                      bcSet.nodeIDs_,
                      bcSet.fieldID_,
-                     bcSet.alpha_,
-                     bcSet.beta_,
-                     bcSet.gamma_))
+                     bcSet.offsetsIntoField_,
+                     bcSet.prescribed_values_))
    }
 
    double* matScalars = new double[numMatrices];

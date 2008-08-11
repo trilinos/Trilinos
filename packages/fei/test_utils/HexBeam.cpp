@@ -180,14 +180,15 @@ int HexBeam::getBCNodes(int numNodes, int* nodeIDs)
   return(0);
 }
 
-int HexBeam::getBCGammaValues(int numBCDofs, double* gamma)
+int HexBeam::getBCValues(int numBCNodes, int* offsetsIntoField, double* vals)
 {
-  if (numBCDofs != getNumBCNodes()*dofPerNode_) {
+  if (numBCNodes != getNumBCNodes()) {
     return(-1);
   }
 
-  for(int i=0; i<numBCDofs; ++i) {
-    gamma[i] = 2.0;
+  for(int i=0; i<numBCNodes; ++i) {
+    offsetsIntoField[i] = 0;
+    vals[i] = 2.0;
   }
 
   return(0);
@@ -488,49 +489,22 @@ int load_BC_data(FEI* fei, HexBeam& hexcube)
   }
 
   int* nodeIDs = new int[numBCNodes];
-  if (nodeIDs == NULL) {
-    return(0);
-  }
 
-  int fieldSize = hexcube.numDofPerNode();
   int fieldID = 0;
 
-  double* alphavals = new double[numBCNodes*fieldSize];
-  double* gammavals = new double[numBCNodes*fieldSize];
-  double* betavals  = new double[numBCNodes*fieldSize];
-  double** alpha = new double*[numBCNodes];
-  double** gamma = new double*[numBCNodes];
-  double** beta  = new double*[numBCNodes];
-  if (alphavals == NULL || gammavals == NULL || betavals == NULL ||
-      alpha == NULL || gamma == NULL || beta == NULL) {
-    return(-1);
-  }
+  int* offsetsIntoField = new int[numBCNodes];
+  double* prescribed_vals = new double[numBCNodes];
 
   CHK_ERR( hexcube.getBCNodes(numBCNodes, nodeIDs) );
 
-  CHK_ERR( hexcube.getBCGammaValues(numBCNodes*fieldSize, gammavals) );
-
-  for(int j=0; j<numBCNodes*fieldSize; ++j) {
-    alphavals[j] = 1.0;
-    betavals[j] = 0.0;
-  }
-
-  for(int i=0; i<numBCNodes; ++i) {
-    gamma[i] = &(gammavals[i*fieldSize]);
-    alpha[i] = &(alphavals[i*fieldSize]);
-    beta[i] = &(betavals[i*fieldSize]);
-  }
+  CHK_ERR( hexcube.getBCValues(numBCNodes, offsetsIntoField, prescribed_vals) );
 
   CHK_ERR( fei->loadNodeBCs(numBCNodes, nodeIDs,
-			    fieldID, alpha, beta, gamma) );
+			    fieldID, offsetsIntoField, prescribed_vals) );
 
   delete [] nodeIDs;
-  delete [] alphavals;
-  delete [] gammavals;
-  delete [] betavals;
-  delete [] alpha;
-  delete [] gamma;
-  delete [] beta;
+  delete [] offsetsIntoField;
+  delete [] prescribed_vals;
 
   return(0);
 }
@@ -807,42 +781,23 @@ int load_BC_data(fei::LinearSystem* linSys, HexBeam& hexcube)
   }
 
   int* nodeIDs = new int[numBCNodes];
-  if (nodeIDs == NULL) {
-    return(0);
-  }
 
-  int fieldSize = hexcube.numDofPerNode();
   int fieldID = 0;
   int nodeIDType = 0;
 
-  double* alphavals = new double[numBCNodes*fieldSize];
-  double* gammavals = new double[numBCNodes*fieldSize];
-  double** alpha = new double*[numBCNodes];
-  double** gamma = new double*[numBCNodes];
-  if (alphavals == NULL || gammavals == NULL ||
-      alpha == NULL || gamma == NULL) {
-    return(-1);
-  }
+  int* offsetsIntoField = new int[numBCNodes];
+  double* prescribed_vals = new double[numBCNodes];
 
   CHK_ERR( hexcube.getBCNodes(numBCNodes, nodeIDs) );
 
-  CHK_ERR( hexcube.getBCGammaValues(numBCNodes*fieldSize, gammavals) );
-
-  for(int j=0; j<numBCNodes*fieldSize; ++j) alphavals[j] = 1.0;
-
-  for(int i=0; i<numBCNodes; ++i) {
-    gamma[i] = &(gammavals[i*fieldSize]);
-    alpha[i] = &(alphavals[i*fieldSize]);
-  }
+  CHK_ERR( hexcube.getBCValues(numBCNodes, offsetsIntoField, prescribed_vals) );
 
   CHK_ERR( linSys->loadEssentialBCs(numBCNodes, nodeIDs,
-				    nodeIDType, fieldID, fieldSize,
-				    gamma, alpha) );
+				    nodeIDType, fieldID,
+				    offsetsIntoField, prescribed_vals) );
 
-  delete [] alphavals;
-  delete [] gammavals;
-  delete [] alpha;
-  delete [] gamma;
+  delete [] offsetsIntoField;
+  delete [] prescribed_vals;
   delete [] nodeIDs;
 
   return(0);

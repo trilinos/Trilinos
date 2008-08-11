@@ -15,7 +15,6 @@
 #include <vector>
 
 namespace fei {
-  class VectorSpace;
   class Matrix;
 }
 
@@ -54,8 +53,17 @@ class BCManager {
                     const double*const * gamma,
                     const double*const * alpha);
 
-   int finalizeBCEqns(fei::VectorSpace& vecSpace,
-                      fei::Matrix& matrix,
+   void addBCRecords(int idType, int numNodes, const GlobalID* nodeIDs,
+                    int fieldID, int fieldSize,
+                    const double*const * prescribedValues);
+
+   void addBCRecords(int numNodes,
+                    const GlobalID* nodeIDs,
+                    int fieldID, int fieldSize,
+                    const int* offsetsIntoField,
+                    const double* prescribedValues);
+
+   int finalizeBCEqns(fei::Matrix& matrix,
                       bool throw_if_bc_slave_conflict=false);
 
    int finalizeBCEqns(NodeDatabase& nodeDB,

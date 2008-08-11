@@ -110,8 +110,94 @@ void BCManager::addBCRecords(int idType, int numNodes, const GlobalID* nodeIDs,
 }
 
 //==============================================================================
-int BCManager::finalizeBCEqns(fei::VectorSpace& vecSpace,
-			      fei::Matrix& matrix,
+void BCManager::addBCRecords(int idType, int numNodes, const GlobalID* nodeIDs,
+                              int fieldID, int fieldSize,
+                              const double*const * prescribedValues)
+{
+  if (numNodes < 1) {
+    return;
+  }
+
+  double* alpha = new double[fieldSize*2];
+  double* beta = alpha+fieldSize;
+
+  for(int ii=0; ii<fieldSize; ++ii) {
+    alpha[ii] = 1.0;
+    beta[ii] = 0.0;
+  }
+
+  size_t oldLength = bcList_.size();
+  bcList_.resize(oldLength+numNodes);
+  const BCRecord** bcListPtr = &bcList_[0];
+
+  int len = fieldSize*3;
+  for(int i=0; i<numNodes; i++) {
+    BCRecord* bc = bcAlloc_->alloc();
+    double* coefs = coefAlloc_->alloc(len);
+    bc->init(nodeIDs[i], fieldID, fieldSize, coefs);
+    bc->setIDType(idType);
+    //fill the new BCRecord with data.
+    bc->setAlpha(alpha);
+    bc->setBeta(beta);
+    bc->setGamma(prescribedValues[i]);
+    bcListPtr[oldLength+i] = bc;
+  }
+
+  delete [] alpha;
+}
+
+//==============================================================================
+void BCManager::addBCRecords(int numNodes,
+                             const GlobalID* nodeIDs,
+                             int fieldID, int fieldSize,
+                             const int* offsetsIntoField,
+                             const double* prescribedValues)
+{
+  if (numNodes < 1) {
+    return;
+  }
+
+  double* alpha = new double[fieldSize*3];
+  double* beta = alpha+fieldSize;
+  double* gamma = beta+fieldSize;
+
+  for(int ii=0; ii<fieldSize; ++ii) {
+    beta[ii] = 0.0;
+  }
+
+  size_t oldLength = bcList_.size();
+  bcList_.resize(oldLength+numNodes);
+  const BCRecord** bcListPtr = &bcList_[0];
+
+  int len = fieldSize*3;
+  for(int i=0; i<numNodes; i++) {
+    for(int j=0; j<offsetsIntoField[i]; ++j) {
+      alpha[j] = 0.0;
+      gamma[j] = 0.0;
+    }
+    gamma[offsetsIntoField[i]] = prescribedValues[i];
+    alpha[offsetsIntoField[i]] = 1.0;
+    for(int j=offsetsIntoField[i]+1; j<fieldSize; ++j) {
+      alpha[j] = 0.0;
+      gamma[j] = 0.0;
+    }
+
+    BCRecord* bc = bcAlloc_->alloc();
+    double* coefs = coefAlloc_->alloc(len);
+    bc->init(nodeIDs[i], fieldID, fieldSize, coefs);
+    //bc->setIDType(idType);
+    //fill the new BCRecord with data.
+    bc->setAlpha(alpha);
+    bc->setBeta(beta);
+    bc->setGamma(gamma);
+    bcListPtr[oldLength+i] = bc;
+  }
+
+  delete [] alpha;
+}
+
+//==============================================================================
+int BCManager::finalizeBCEqns(fei::Matrix& matrix,
                               bool throw_if_bc_slave_conflict)
 {
   try {
@@ -125,6 +211,7 @@ int BCManager::finalizeBCEqns(fei::VectorSpace& vecSpace,
   size_t numBCs = getNumBCs();
   std::vector<const BCRecord*>& BCs = getBCRecords();
 
+  fei::VectorSpace& vecSpace = *(matrix.getMatrixGraph()->getRowSpace());
   fei::SharedPtr<fei::Reducer> reducer = matrix.getMatrixGraph()->getReducer();
   bool haveSlaves = reducer.get()!=NULL;
 

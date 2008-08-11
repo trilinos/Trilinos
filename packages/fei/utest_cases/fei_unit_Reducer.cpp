@@ -1,15 +1,8 @@
-/*--------------------------------------------------------------------*/
-/*    Copyright 2005 Sandia Corporation.                              */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
-/*    non-exclusive license for use of this work by or on behalf      */
-/*    of the U.S. Government.  Export of this program may require     */
-/*    a license from the United States Government.                    */
-/*--------------------------------------------------------------------*/
 
-#include <fei_macros.hpp>
+#include <fei_iostream.hpp>
+#include <fei_Exception.hpp>
 #include <fei_mpi.h>
 #include <test_utils/LibraryFactory.hpp>
-#include <test_utils/test_Reducer.hpp>
 #include <test_utils/test_VectorSpace.hpp>
 #include <test_utils/test_MatrixGraph.hpp>
 #include <fei_MatrixGraph_Impl2.hpp>
@@ -29,8 +22,13 @@
 #endif
 
 #undef fei_file
-#define fei_file "test_Matrix.cpp"
+#define fei_file "fei_unit_Reducer.cpp"
 #include <fei_ErrMacros.hpp>
+
+#include <fei_unit_Reducer.hpp>
+
+#include <vector>
+#include <cmath>
 
 int test_reducer_unit1()
 {
@@ -79,103 +77,6 @@ int test_reducer_unit1()
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
-
-  return(0);
-}
-
-int test_Reducer_test5(MPI_Comm comm_, int numProcs_)
-{
-  if (numProcs_>1) return(0);
-
-  FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 4...";
-
-  fei::SharedPtr<SSMat> D(new SSMat);
-//  D.putCoef(28, 0, 1.0);
-//  D.putCoef(30, 1, 1.0);
-//  D.putCoef(34, 2, 1.0);
-//  D.putCoef(37, 3, 1.0);
-//  D.putCoef(57, 4, 1.0);
-//  D.putCoef(60, 5, 1.0);
-//  D.putCoef(63, 6, 1.0);
-//  D.putCoef(66, 7, 1.0);
-//  D.putCoef(68, 8, 1.0);
-//  D.putCoef(71, 9, 1.0);
-//  D.putCoef(72, 10, 1.0);
-//  D.putCoef(74, 11, 1.0);
-//  D.putCoef(76, 12, 1.0);
-//  D.putCoef(79, 13, 1.0);
-//  D.putCoef(81, 14, 1.0);
-//  D.putCoef(83, 15, 1.0);
-  D->putCoef(1, 0, 1.0);
-  D->putCoef(3, 2, 1.0);
-  D->putCoef(4, 5, 1.0);
-  D->putCoef(6, 7, 1.0);
-
-  fei::SharedPtr<SSVec> g;
-  fei::Reducer reducer(D, g, comm_);
-
-  int num = 8;
-  std::vector<int> eqns1(num), eqns2(num);
-  for(int i=0; i<num; ++i) {
-    eqns1[i] = i;
-    eqns2[i] = i;
-  }
-
-  for(int i=0; i<num; ++i) {
-    if (!reducer.isSlaveEqn(eqns2[i])) {
-      eqns1[i] = reducer.translateToReducedEqn(eqns1[i]);
-    }
-  }
-
-  for(int i=0; i<num; ++i) {
-    if (!reducer.isSlaveEqn(eqns2[i])) {
-      eqns1[i] = reducer.translateFromReducedEqn(eqns1[i]);
-    }
-  }
-
-  if (eqns1 != eqns2) {
-    FEI_COUT << "failed."<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  FEI_COUT << "ok" <<FEI_ENDL;
-  return(0);
-}
-
-test_Reducer::test_Reducer(MPI_Comm comm)
-  : tester(comm)
-{
-}
-
-test_Reducer::~test_Reducer()
-{
-}
-
-int test_Reducer::runtests()
-{
-  if (test_reducer_unit1() != 0) {
-    throw fei::Exception("test_reducer_unit1 failed.");
-  }
-
-  if (test1() != 0) {
-    throw fei::Exception("test1 failed.");
-  }
-
-  if (test2() != 0) {
-    throw fei::Exception("test2 failed.");
-  }
-
-  if (test3() != 0) {
-    throw fei::Exception("test3 failed.");
-  }
-
-  if (test4() != 0) {
-    throw fei::Exception("test4 failed.");
-  }
-
-  if (test_Reducer_test5(comm_, numProcs_) != 0) {
-    throw fei::Exception("test_Reducer_test5 failed.");
-  }
 
   return(0);
 }
@@ -230,9 +131,13 @@ void addSSMatToReducer(SSMat& mat, fei::Reducer& reducer)
   }
 }
 
-int test_Reducer::test1()
+int test_Reducer_test1(MPI_Comm comm)
 {
-  if (numProcs_ > 1) return(0);
+  int numProcs = 1, localProc = 0;
+  MPI_Comm_size(comm, &numProcs);
+  MPI_Comm_rank(comm, &localProc);
+
+  if (numProcs > 1) return(0);
 
   FEI_COUT << "testing fei::Reducer matrix assembly...";
 
@@ -244,7 +149,7 @@ int test_Reducer::test1()
   D->putCoef(4, 3, 0.5);
 
   fei::SharedPtr<SSVec> g;
-  fei::Reducer reducer(D, g, comm_);
+  fei::Reducer reducer(D, g, comm);
 
   //define equation-space to be 0 .. 4
   std::vector<int> eqns(5);
@@ -284,7 +189,7 @@ int test_Reducer::test1()
 
   fei::SharedPtr<fei::Factory> factory;
   try {
-    factory = fei::create_fei_Factory(comm_, "Trilinos");
+    factory = fei::create_fei_Factory(comm, "Trilinos");
   }
   catch(fei::Exception& exc) {
     FEI_COUT << "couldn't create Trilinos factory."<<FEI_ENDL;
@@ -292,7 +197,7 @@ int test_Reducer::test1()
   }
 
   fei::SharedPtr<fei::VectorSpace> vspace =
-    factory->createVectorSpace(comm_, "reducer_test");
+    factory->createVectorSpace(comm, "reducer_test");
   fei::SharedPtr<fei::MatrixGraph> mgraph =
     factory->createMatrixGraph(vspace, vspace, "reducer_test");
 
@@ -308,7 +213,7 @@ int test_Reducer::test1()
 
   fei::SharedPtr<SSMat> target(new SSMat);
   fei::Matrix_Impl<SSMat> feimat(target, mgraph, Kr.getRowNumbers().length());
-  
+
   reducer.assembleReducedMatrix(feimat);
 
   if (Kr != *target) {
@@ -320,9 +225,13 @@ int test_Reducer::test1()
   return(0);
 }
 
-int test_Reducer::test2()
+int test_Reducer_test2(MPI_Comm comm)
 {
-  if (numProcs_>1) return(0);
+  int numProcs = 1, localProc = 0;
+  MPI_Comm_size(comm, &numProcs);
+  MPI_Comm_rank(comm, &localProc);
+
+  if (numProcs>1) return(0);
 
   FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 1...";
 
@@ -331,7 +240,7 @@ int test_Reducer::test2()
   D->putCoef(3, 1, 0.5); D->putCoef(3, 2, 0.5);
 
   fei::SharedPtr<SSVec> g;
-  fei::Reducer reducer(D, g, comm_);
+  fei::Reducer reducer(D, g, comm);
 
   int num = 4;
   std::vector<int> eqns1(num), eqns2(num);
@@ -361,9 +270,13 @@ int test_Reducer::test2()
   return(0);
 }
 
-int test_Reducer::test3()
+int test_Reducer_test3(MPI_Comm comm)
 {
-  if (numProcs_>1) return(0);
+  int numProcs = 1, localProc = 0;
+  MPI_Comm_size(comm, &numProcs);
+  MPI_Comm_rank(comm, &localProc);
+
+  if (numProcs>1) return(0);
 
   FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 2...";
 
@@ -373,7 +286,7 @@ int test_Reducer::test3()
   D->putCoef(5, 6, 0.5); D->putCoef(5, 4, 0.5);
 
   fei::SharedPtr<SSVec> g;
-  fei::Reducer reducer(D, g, comm_);
+  fei::Reducer reducer(D, g, comm);
 
   int num = 7;
   std::vector<int> eqns1(num), eqns2(num);
@@ -403,9 +316,13 @@ int test_Reducer::test3()
   return(0);
 }
 
-int test_Reducer::test4()
+int test_Reducer_test4(MPI_Comm comm)
 {
-  if (numProcs_>1) return(0);
+  int numProcs = 1, localProc = 0;
+  MPI_Comm_size(comm, &numProcs);
+  MPI_Comm_rank(comm, &localProc);
+
+  if (numProcs>1) return(0);
 
   FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 3...";
 
@@ -415,7 +332,7 @@ int test_Reducer::test4()
   D->putCoef(5, 6, 0.5); D->putCoef(5, 7, 0.5);
 
   fei::SharedPtr<SSVec> g;
-  fei::Reducer reducer(D, g, comm_);
+  fei::Reducer reducer(D, g, comm);
 
   int num = 9;
   std::vector<int> eqns1(num), eqns2(num);
@@ -443,5 +360,95 @@ int test_Reducer::test4()
 
   FEI_COUT << "ok" <<FEI_ENDL;
   return(0);
+}
+
+int test_Reducer_test5(MPI_Comm comm)
+{
+  int numProcs = 1, localProc = 0;
+  MPI_Comm_size(comm, &numProcs);
+  MPI_Comm_rank(comm, &localProc);
+
+  if (numProcs>1) return(0);
+
+  FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 4...";
+
+  fei::SharedPtr<SSMat> D(new SSMat);
+//  D.putCoef(28, 0, 1.0);
+//  D.putCoef(30, 1, 1.0);
+//  D.putCoef(34, 2, 1.0);
+//  D.putCoef(37, 3, 1.0);
+//  D.putCoef(57, 4, 1.0);
+//  D.putCoef(60, 5, 1.0);
+//  D.putCoef(63, 6, 1.0);
+//  D.putCoef(66, 7, 1.0);
+//  D.putCoef(68, 8, 1.0);
+//  D.putCoef(71, 9, 1.0);
+//  D.putCoef(72, 10, 1.0);
+//  D.putCoef(74, 11, 1.0);
+//  D.putCoef(76, 12, 1.0);
+//  D.putCoef(79, 13, 1.0);
+//  D.putCoef(81, 14, 1.0);
+//  D.putCoef(83, 15, 1.0);
+  D->putCoef(1, 0, 1.0);
+  D->putCoef(3, 2, 1.0);
+  D->putCoef(4, 5, 1.0);
+  D->putCoef(6, 7, 1.0);
+
+  fei::SharedPtr<SSVec> g;
+  fei::Reducer reducer(D, g, comm);
+
+  int num = 8;
+  std::vector<int> eqns1(num), eqns2(num);
+  for(int i=0; i<num; ++i) {
+    eqns1[i] = i;
+    eqns2[i] = i;
+  }
+
+  for(int i=0; i<num; ++i) {
+    if (!reducer.isSlaveEqn(eqns2[i])) {
+      eqns1[i] = reducer.translateToReducedEqn(eqns1[i]);
+    }
+  }
+
+  for(int i=0; i<num; ++i) {
+    if (!reducer.isSlaveEqn(eqns2[i])) {
+      eqns1[i] = reducer.translateFromReducedEqn(eqns1[i]);
+    }
+  }
+
+  if (eqns1 != eqns2) {
+    FEI_COUT << "failed."<<FEI_ENDL;
+    ERReturn(-1);
+  }
+
+  FEI_COUT << "ok" <<FEI_ENDL;
+  return(0);
+}
+
+bool test_Reducer::run(MPI_Comm comm)
+{
+  test_reducer_unit1();
+
+  if (test_Reducer_test1(comm) != 0) {
+    throw fei::Exception("test_Reducer_test1 failed.");
+  }
+
+  if (test_Reducer_test2(comm) != 0) {
+    throw fei::Exception("test_Reducer_test2 failed.");
+  }
+
+  if (test_Reducer_test3(comm) != 0) {
+    throw fei::Exception("test_Reducer_test3 failed.");
+  }
+
+  if (test_Reducer_test4(comm) != 0) {
+    throw fei::Exception("test_Reducer_test4 failed.");
+  }
+
+  if (test_Reducer_test5(comm) != 0) {
+    throw fei::Exception("test_Reducer_test5 failed.");
+  }
+
+  return true;
 }
 

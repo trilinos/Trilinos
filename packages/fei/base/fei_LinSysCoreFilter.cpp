@@ -91,7 +91,7 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    matrixAllocated_(false),
    workStiff_(NULL),
    workLoad_(NULL),
-   rowIndices_(0, 256),
+   rowIndices_(),
    rowColOffsets_(0, 256),
    colIndices_(0, 256),
    putRHSVec_(NULL),
@@ -1021,6 +1021,46 @@ int LinSysCoreFilter::loadNodeBCs(int numNodes,
 }
 
 //------------------------------------------------------------------------------
+int LinSysCoreFilter::loadNodeBCs(int numNodes,
+                                  const GlobalID *nodeIDs,
+                                  int fieldID,
+                                  const int* offsetsIntoField,
+                                  const double* prescribedValues)
+{
+  //
+  //  load boundary condition information for a given set of nodes
+  //
+  int size = problemStructure_->getFieldSize(fieldID);
+  if (size < 1) {
+    FEI_CERR << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
+         <<", which was defined with size "<<size<<" (should be positive)."<<FEI_ENDL;
+    return(0);
+  }
+
+  if (Filter::logStream() != NULL) {
+    (*logStream())<<"FEI: loadNodeBCs"<<FEI_ENDL
+                     <<"#num-nodes"<<FEI_ENDL<<numNodes<<FEI_ENDL
+                     <<"#fieldID"<<FEI_ENDL<<fieldID<<FEI_ENDL
+                     <<"#field-size"<<FEI_ENDL<<size<<FEI_ENDL;
+    (*logStream())<<"#following lines: nodeID offsetIntoField value "<<FEI_ENDL;
+
+    for(int j=0; j<numNodes; j++) {
+      GlobalID nodeID = nodeIDs[j];
+      (*logStream())<<static_cast<int>(nodeID)<<"  ";
+      (*logStream())<<offsetsIntoField[j]<<"  "<<prescribedValues[j];
+      (*logStream())<<FEI_ENDL;
+    }
+  }
+
+  if (numNodes > 0) newBCData_ = true;
+
+  bcManager_->addBCRecords(numNodes, nodeIDs, fieldID, size,
+                           offsetsIntoField, prescribedValues);
+
+  return(FEI_SUCCESS);
+}
+
+//------------------------------------------------------------------------------
 int LinSysCoreFilter::loadElemBCs(int numElems,
 				  const GlobalID *elemIDs,
 				  int fieldID,
@@ -1372,7 +1412,8 @@ int LinSysCoreFilter::getFromMatrix(int patternID,
 			    const GlobalID* colIDs,
 			    double** matrixEntries)
 {
-   feiArray<int> rowIndices, rowColOffsets, colIndices;
+   feiArray<int> rowIndices;
+   feiArray<int> rowColOffsets, colIndices;
    int numColsPerRow;
 
    //We're going to supply a little non-standard behavior here that is
@@ -1399,11 +1440,11 @@ int LinSysCoreFilter::getFromMatrix(int patternID,
    }
 
    if (colIDs == NULL) {
-     CHK_ERR( getFromMatrix(rowIndices.length(), rowIndices.dataPtr(),
+     CHK_ERR( getFromMatrix(rowIndices.size(), &rowIndices[0],
 			    NULL, NULL, 0, matrixEntries) );
    }
    else {
-     CHK_ERR( getFromMatrix(rowIndices.length(), rowIndices.dataPtr(),
+     CHK_ERR( getFromMatrix(rowIndices.size(), &rowIndices[0],
 			  rowColOffsets.dataPtr(), colIndices.dataPtr(),
 			  numColsPerRow, matrixEntries) );
    }
@@ -1439,18 +1480,18 @@ int LinSysCoreFilter::putIntoRHS(int IDType,
 
   CHK_ERR( problemStructure_->getEqnNumbers(numIDs, IDs, IDType, fieldID,
 					    checkNumEqns,
-					    rowIndices_.dataPtr()));
+					    &rowIndices_[0]));
   if (checkNumEqns != numIDs*fieldSize) {
     ERReturn(-1);
   }
 
   if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.length(),
-			   rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_ = new SSVec(rowIndices_.size(),
+			   &rowIndices_[0], rhsEntries);
   }
   else {
-    putRHSVec_->setInternalData(rowIndices_.length(),
-				rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_->setInternalData(rowIndices_.size(),
+				&rowIndices_[0], rhsEntries);
   }
 
   CHK_ERR( exchangeRemoteEquations() );
@@ -1474,18 +1515,18 @@ int LinSysCoreFilter::sumIntoRHS(int IDType,
 
   CHK_ERR( problemStructure_->getEqnNumbers(numIDs, IDs, IDType, fieldID,
 					    checkNumEqns,
-					    rowIndices_.dataPtr()));
+					    &rowIndices_[0]));
   if (checkNumEqns != numIDs*fieldSize) {
     ERReturn(-1);
   }
 
   if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.length(),
-			   rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_ = new SSVec(rowIndices_.size(),
+			   &rowIndices_[0], rhsEntries);
   }
   else {
-    putRHSVec_->setInternalData(rowIndices_.length(),
-				rowIndices_.dataPtr(), rhsEntries);
+    putRHSVec_->setInternalData(rowIndices_.size(),
+				&rowIndices_[0], rhsEntries);
   }
 
   CHK_ERR( assembleRHS(*putRHSVec_, ASSEMBLE_SUM) );
@@ -1499,12 +1540,12 @@ int LinSysCoreFilter::getFromRHS(int patternID,
                          const GlobalID* rowIDs,
                          double* vectorEntries)
 {
-  feiArray<int> rowIndices(0, 8);
+  feiArray<int> rowIndices;
 
   CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
 						       rowIDs, rowIndices) );
 
-  CHK_ERR( getFromRHS(rowIndices.length(), vectorEntries, rowIndices.dataPtr()))
+  CHK_ERR( getFromRHS(rowIndices.size(), vectorEntries, &rowIndices[0]))
 
   return(FEI_SUCCESS);
 }
@@ -1573,7 +1614,7 @@ int LinSysCoreFilter::generalCoefInput(int patternID,
    //Recall that for a pattern, the list of column-entities is packed, we have
    //a list of column-entities for each row-entities. Thus, we now have a list
    //of column-indices for each row index...
-   int numRows = rowIndices_.length();
+   int numRows = rowIndices_.size();
    int numCols = colIndices_.length();
 
    if (Filter::logStream() != NULL) {
@@ -1601,7 +1642,7 @@ int LinSysCoreFilter::generalCoefInput(int patternID,
 
    if (coefs != NULL) {
      //wrap a super-sparse-matrix object around the coefs data
-     SSMat mat(numRows, rowIndices_.dataPtr(),
+     SSMat mat(numRows, &rowIndices_[0],
 	       numColsPerRow, rowColOffsets_.dataPtr(),
 	       colIndices_.dataPtr(), coefs);
 
@@ -1610,12 +1651,12 @@ int LinSysCoreFilter::generalCoefInput(int patternID,
       
    if (rhsCoefs != NULL) {
      if (putRHSVec_ == NULL) {
-       putRHSVec_ = new SSVec(rowIndices_.length(),
-			      rowIndices_.dataPtr(), rhsCoefs);
+       putRHSVec_ = new SSVec(rowIndices_.size(),
+			      &rowIndices_[0], rhsCoefs);
      }
      else {
-       putRHSVec_->setInternalData(rowIndices_.length(),
-				   rowIndices_.dataPtr(), rhsCoefs);
+       putRHSVec_->setInternalData(rowIndices_.size(),
+				   &rowIndices_[0], rhsCoefs);
      }
 
      CHK_ERR( assembleRHS(*putRHSVec_, assemblyMode) );

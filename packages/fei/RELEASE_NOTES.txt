@@ -458,4 +458,9 @@ July 7 2005: version 2.14.00
     input (1 row index, 1 col index, row == col) caused an array-bounds-read.
 
  ???? ?? ???? minor version 2.22.07
-
+  - Add simplified API functions for dirichlet boundary condition
+    specifications. Rather than the confusing previous scheme that took
+    alpha/beta/gamma arguments, the new functions simply take lists of
+    prescribed values along with the ids and field-ids which specify where
+    the prescribed value is to be imposed. This allows the underlying
+    implementation code to be greatly simplified also.

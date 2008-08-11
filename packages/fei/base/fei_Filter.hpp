@@ -12,6 +12,7 @@
 #include <fei_fwd.hpp>
 #include <fei_defs.h>
 #include <fei_macros.hpp>
+#include <fei_iostream.hpp>
 
 /**
 FEI_Implementation manages one or several instances of this class in the process
@@ -48,6 +49,16 @@ class Filter {
                    const double *const *alpha,  
                    const double *const *beta,  
                    const double *const *gamma) = 0;
+
+   virtual int loadNodeBCs(int numNodes,
+                   const GlobalID *nodeIDs,
+                   int fieldID,
+                   const int* offsetsIntoField,
+                   const double* prescribedValues)
+   {
+      FEI_CERR << "fei ERROR, Filter::loadNodeBCs not overridden."<<FEI_ENDL;
+      return -1;
+   }
 
    virtual int loadElemBCs(int numElems,
                    const GlobalID *elemIDs,

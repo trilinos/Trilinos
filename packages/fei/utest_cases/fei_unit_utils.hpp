@@ -4,6 +4,10 @@
 #include "fei_unit_testcase.hpp"
 
 class test_utils : public fei::unit::testcase {
+ public:
+  test_utils(){}
+  ~test_utils(){}
+
   bool run(MPI_Comm comm);
 };
 
