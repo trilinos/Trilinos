@@ -909,15 +909,16 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   int NumVectors = X.NumVectors();
   int GlobalLength = X.GlobalLength();
 
-  // Create the dataspace for the dataset.
-  if (writeTranspose) {
-    hsize_t q_dimsf[] = {GlobalLength, NumVectors};
-    filespace_id = H5Screate_simple(2, q_dimsf, NULL);
-  }
-  else {
-    hsize_t q_dimsf[] = {NumVectors, GlobalLength};
-    filespace_id = H5Screate_simple(2, q_dimsf, NULL);
-  }
+  // Whether or not we do writeTranspose or not is
+  // handled by one of the components of q_dimsf, offset and count. 
+  // They are determined by indexT
+  int indexT(0);
+  if (writeTranspose) indexT = 1;
+
+  hsize_t q_dimsf[] = {GlobalLength, GlobalLength};
+  q_dimsf[indexT] = NumVectors;
+
+  filespace_id = H5Screate_simple(2, q_dimsf, NULL);
 
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
@@ -933,30 +934,25 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
 #endif
 
-  // write vectors one by one
 
+  // Select hyperslab in the file.
+  hsize_t offset[] = {LinearX->Map().GID(0)-X.Map().IndexBase(),
+		      LinearX->Map().GID(0)-X.Map().IndexBase()};
+  hsize_t stride[] = {1, 1};
+  hsize_t count[] = {LinearX->MyLength(),
+		     LinearX->MyLength()};
+  hsize_t block[] = {1, 1};
+    
+  // write vectors one by one
   for (int n(0); n < NumVectors; ++n)
     {
       // Select hyperslab in the file.
+      offset[indexT] = n;
+      count [indexT] = 1;
 
-      if (writeTranspose) {
-	hsize_t offset[] = {LinearX->Map().GID(0)-X.Map().IndexBase(),n};
-	hsize_t stride[] = {1, 1};
-	hsize_t count[] = {LinearX->MyLength(),1};
-	hsize_t block[] = {1, 1};
-	filespace_id = H5Dget_space(dset_id);
-	H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
-			    count, block);
-      }
-      else {
-	hsize_t offset[] = {n,LinearX->Map().GID(0)-X.Map().IndexBase()};
-	hsize_t stride[] = {1, 1};
-	hsize_t count[] = {1,LinearX->MyLength()};
-	hsize_t block[] = {1, 1};
-	filespace_id = H5Dget_space(dset_id);
-	H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
-			    count, block);
-      }
+      filespace_id = H5Dget_space(dset_id);
+      H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
+			  count, block);
 
       // Each process defines dataset in memory and writes it to the hyperslab in the file.
       hsize_t dimsm[] = {LinearX->MyLength()};
