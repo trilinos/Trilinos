@@ -1415,8 +1415,6 @@ Optional Features:
   --enable-epetraext-modelevaluator
                           Enable EpetraExt Model Evaluator subpkg (default is
                           yes)
-  --enable-petsc          Enable EpetraExt interface support for PETSc.
-                          (default is no)
   --enable-epetraext-graphreorderings
                           Enable experimental RCM and AMD graph reorderings.
                           This also requires --enable-epetraext-experimental.
@@ -1495,6 +1493,8 @@ Optional Packages:
                           --with-perl=<perl executable>. Configure will check
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
+  --with-petsc            Enable EpetraExt interface support for PETSc.
+                          (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -8947,9 +8947,10 @@ fi
 
 
 
-# Check whether --enable-petsc was given.
-if test "${enable_petsc+set}" = set; then
-  enableval=$enable_petsc; ac_cv_use_petsc=$enableval
+
+# Check whether --with-petsc was given.
+if test "${with_petsc+set}" = set; then
+  withval=$with_petsc; ac_cv_use_petsc=$withval
 else
   ac_cv_use_petsc=no
 fi

@@ -341,7 +341,7 @@ AM_CONDITIONAL(BUILD_BLOCK, [test "X$ac_cv_use_epetraext_block" != "Xno"])
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, modelevaluator, [Enable EpetraExt Model Evaluator subpkg], MODEL_EVALUATOR, yes)
 AM_CONDITIONAL(BUILD_MODEL_EVALUATOR, [test "X$ac_cv_use_epetraext_modelevaluator" != "Xno"])
 
-TAC_ARG_ENABLE_FEATURE(petsc, [Enable EpetraExt interface support for PETSc.], PETSC,no)
+TAC_ARG_WITH_PACKAGE(petsc, [Enable EpetraExt interface support for PETSc.], PETSC,no)
 AM_CONDITIONAL(BUILD_PETSC, [test "X$ac_cv_use_petsc" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE_SUB(epetraext, graphreorderings, [Enable experimental RCM and AMD graph reorderings.  This also requires --enable-epetraext-experimental.], GRAPH_REORDERINGS,no)

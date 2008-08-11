@@ -90,6 +90,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_package.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -825,8 +826,7 @@ EXTRA_RESTRICT = \
 
 @BUILD_PETSC_FALSE@PETSC_H = 
 
-### Only build PETSc interfaces if both the PETSc and experimental
-### configure flags are set
+### Only build PETSc interfaces if the PETSc configure flag is set.
 @BUILD_PETSC_TRUE@PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
 @BUILD_PETSC_FALSE@PETSC = 
 @BUILD_PETSC_TRUE@PETSC = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp

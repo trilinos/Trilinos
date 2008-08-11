@@ -146,7 +146,7 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
-/* Define if want to build petsc */
+/* Define if want to build with petsc enabled */
 #undef HAVE_PETSC
 
 /* Define if want to build epetraext-restrict */

@@ -453,8 +453,7 @@ RESTRICT =
 endif
 
 
-### Only build PETSc interfaces if both the PETSc and experimental
-### configure flags are set
+### Only build PETSc interfaces if the PETSc configure flag is set.
 if BUILD_PETSC
 PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
 PETSC   = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
