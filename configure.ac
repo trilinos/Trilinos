@@ -7,7 +7,7 @@
 #
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Trilinos, 9.0d, maherou@sandia.gov)
+AC_INIT(Trilinos, 9.0, maherou@sandia.gov)
 AC_CONFIG_SRCDIR([packages/epetra/src/Epetra_Object.h])
 AM_CONFIG_HEADER([Trilinos_config.h:Trilinos_config.h.in])
 
@@ -47,8 +47,6 @@ TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos, a direct sparse solver package], A
 
 TAC_ARG_ENABLE_FEATURE(anasazi, [Build anasazi, an eigenvalue solver package], ANASAZI, no)
 
-TAC_ARG_ENABLE_FEATURE(aristos, [Build aristos, an optimization package], ARISTOS, no)
-
 TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo, a linear solver and preconditioner package], AZTECOO)
 
 TAC_ARG_ENABLE_FEATURE(belos, [Build belos, a linear solver package], BELOS, no)
@@ -68,10 +66,6 @@ TAC_ARG_ENABLE_FEATURE(external, [Build external package in packages/external], 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack, an algebraic preconditioner package], IFPACK)
 
 TAC_ARG_ENABLE_FEATURE(fei, [Build fei, a sparse linear-system assembly package], FEI, no)
-
-TAC_ARG_ENABLE_FEATURE(ctrilinos, [Build CTrilinos, a package providing C wrappers for other Trilinos packages], CTRILINOS, no)
-
-TAC_ARG_ENABLE_FEATURE(fortrilinos, [Build ForTrilinos, a package providing Fortran wrappers for other Trilinos packages], FORTRILINOS, no)
 
 TAC_ARG_ENABLE_FEATURE(intrepid, [Build intrepid, a discretization package], INTREPID, no)
 
@@ -109,8 +103,6 @@ TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos, a transient integration package]
 
 TAC_ARG_ENABLE_FEATURE(sacado, [Build sacado, an automatic differentation package], SACADO, no)
 
-TAC_ARG_ENABLE_FEATURE(stokhos, [Build stokhos, an intrusive stochastic Galerkin package], STOKHOS, no)
-
 TAC_ARG_ENABLE_FEATURE(sundance, [Build Sundance, a system for development of parallel finite-element solutions of PDEs], SUNDANCE, no)
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos, a tools package], TEUCHOS, no)
@@ -128,8 +120,6 @@ TAC_ARG_ENABLE_FEATURE(stratimikos, [Build stratimikos, a linear solver strategy
 TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho, an optimization package], MOOCHO, no)
 
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra, a templated linear algebra package], TPETRA, no)
-
-TAC_ARG_ENABLE_FEATURE(trikota, [Build TriKota, a package providing Trilinos/Dakota interoperability], TRIKOTA, no)
 
 TAC_ARG_ENABLE_FEATURE(trilinoscouplings, [Build trilinoscouplings, a package of interfaces between Trilinos packages], TRILINOSCOUPLINGS, no)
 
@@ -155,7 +145,6 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_galeri" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
- 	test "X$ac_cv_use_aristos" != "Xno" ||
 	test "X$ac_cv_use_intrepid" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_epetraext" != "Xno" ||
@@ -167,7 +156,6 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_sacado" != "Xno" ||
-	test "X$ac_cv_use_stokhos" != "Xno" ||
 	test "X$ac_cv_use_sundance" != "Xno" ||
 	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
@@ -277,7 +265,6 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_aristos" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
@@ -455,17 +442,6 @@ else
 fi
 AM_CONDITIONAL(BUILD_RBGEN, test "X$BUILD_RBGEN" != "Xno")
 
-if test "X$ac_cv_use_aristos" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/aristos])
-  BUILD_ARISTOS=yes
-  if test "X$ac_cv_use_aristos_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-aristos"
-  fi
-else
-  BUILD_ARISTOS=no
-fi
-AM_CONDITIONAL(BUILD_ARISTOS, test "X$BUILD_ARISTOS" != "Xno")
-
 if test "X$ac_cv_use_intrepid" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/intrepid])
   BUILD_INTREPID=yes
@@ -502,17 +478,6 @@ else
   BUILD_ML=no
 fi
 AM_CONDITIONAL(BUILD_ML, test "X$BUILD_ML" != "Xno")
-
-if test "X$ac_cv_use_stokhos" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/stokhos])
-  BUILD_STOKHOS=yes
-  if test "X$ac_cv_use_stokhos_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-stokhos"
-  fi
-else
-  BUILD_STOKHOS=no
-fi
-AM_CONDITIONAL(BUILD_STOKHOS, test "X$BUILD_STOKHOS" != "Xno")
 
 if test "X$ac_cv_use_sacado" != "Xno" ||
    test "X$ac_cv_use_phalanx" != "Xno"; then
@@ -650,17 +615,6 @@ else
 fi
 AM_CONDITIONAL(BUILD_TPETRA, test "X$BUILD_TPETRA" != "Xno")
 
-if test "X$ac_cv_use_trikota" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/TriKota])
-  BUILD_TRIKOTA=yes
-  if test "X$ac_cv_use_trikota_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-trikota"
-  fi
-else
-  BUILD_TRIKOTA=no
-fi
-AM_CONDITIONAL(BUILD_TRIKOTA, test "X$BUILD_TRIKOTA" != "Xno")
-
 if test "X$ac_cv_use_trilinoscouplings" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/trilinoscouplings])
   BUILD_TRILINOSCOUPLINGS=yes
@@ -694,17 +648,6 @@ else
 fi
 AM_CONDITIONAL(BUILD_WEBTRILINOS, test "X$BUILD_WEBTRILINOS" != "Xno")
 
-if test "X$ac_cv_use_ctrilinos" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/CTrilinos])
-  BUILD_CTRILINOS=yes
-  if test "X$ac_cv_use_ctrilinos_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-ctrilinos"
-  fi
-else
-  BUILD_CTRILINOS=no
-fi
-AM_CONDITIONAL(BUILD_CTRILINOS, test "X$BUILD_CTRILINOS" != "Xno")
-
 if test "X$ac_cv_use_zoltan" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/zoltan])
   BUILD_ZOLTAN=yes
@@ -715,17 +658,6 @@ else
   BUILD_ZOLTAN=no
 fi
 AM_CONDITIONAL(BUILD_ZOLTAN, test "X$BUILD_ZOLTAN" != "Xno")
-
-if test "X$ac_cv_use_fortrilinos" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/ForTrilinos])
-  BUILD_FORTRILINOS=yes
-  if test "X$ac_cv_use_fortrilinos_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-fortrilinos"
-  fi
-else
-  BUILD_FORTRILINOS=no
-fi
-AM_CONDITIONAL(BUILD_FORTRILINOS, test "X$BUILD_FORTRILINOS" != "Xno")
 
 if test "X$ac_cv_use_external" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/external])

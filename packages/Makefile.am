@@ -74,10 +74,6 @@ if BUILD_ANASAZI
 ANASAZI_SUBDIR = anasazi
 endif
 
-if BUILD_ARISTOS
-ARISTOS_SUBDIR = aristos
-endif
-
 if BUILD_AZTECOO
 AZTECOO_SUBDIR = aztecoo
 endif
@@ -108,14 +104,6 @@ endif
 
 if BUILD_FEI
 FEI_SUBDIR = fei
-endif
-
-if BUILD_CTRILINOS
-CTRILINOS_SUBDIR = CTrilinos
-endif
-
-if BUILD_FORTRILINOS
-FORTRILINOS_SUBDIR = ForTrilinos
 endif
 
 if BUILD_IFPACK
@@ -198,10 +186,6 @@ if BUILD_SACADO
 SACADO_SUBDIR = sacado
 endif
 
-if BUILD_STOKHOS
-STOKHOS_SUBDIR = stokhos
-endif
-
 if BUILD_TEUCHOS
 TEUCHOS_SUBDIR = teuchos
 endif
@@ -228,10 +212,6 @@ endif
 
 if BUILD_TPETRA
 TPETRA_SUBDIR = tpetra
-endif
-
-if BUILD_TRIKOTA
-TRIKOTA_SUBDIR = TriKota
 endif
 
 if BUILD_TRILINOSCOUPLINGS
@@ -287,13 +267,11 @@ PACKAGE_NAMES = \
 	$(RBGEN_SUBDIR)        \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
-	$(ARISTOS_SUBDIR)      \
 	$(INTREPID_SUBDIR)     \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(FEI_SUBDIR)        \
-	$(STOKHOS_SUBDIR)       \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(PHALANX_SUBDIR)      \
@@ -306,9 +284,6 @@ PACKAGE_NAMES = \
 	$(PHDMESH_SUBDIR) \
 	$(SUNDANCE_SUBDIR)     \
 	$(PYTRILINOS_SUBDIR)   \
-	$(CTRILINOS_SUBDIR)  \
-	$(FORTRILINOS_SUBDIR)  \
-	$(TRIKOTA_SUBDIR)  \
 	$(DIDASKO_SUBDIR) \
 	$(WEBTRILINOS_SUBDIR) \
 	$(EXTERNAL_SUBDIR)

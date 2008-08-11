@@ -6,9 +6,6 @@
 /* Define if want to build anasazi */
 #undef HAVE_ANASAZI
 
-/* Define if want to build aristos */
-#undef HAVE_ARISTOS
-
 /* Define if want to build aztecoo */
 #undef HAVE_AZTECOO
 
@@ -17,9 +14,6 @@
 
 /* Define if want to build claps */
 #undef HAVE_CLAPS
-
-/* Define if want to build ctrilinos */
-#undef HAVE_CTRILINOS
 
 /* Define if want to build default-packages */
 #undef HAVE_DEFAULT_PACKAGES
@@ -38,9 +32,6 @@
 
 /* Define if want to build fei */
 #undef HAVE_FEI
-
-/* Define if want to build fortrilinos */
-#undef HAVE_FORTRILINOS
 
 /* Define if want to build galeri */
 #undef HAVE_GALERI
@@ -111,9 +102,6 @@
 /* Define if want to build shared */
 #undef HAVE_SHARED
 
-/* Define if want to build stokhos */
-#undef HAVE_STOKHOS
-
 /* Define if want to build stratimikos */
 #undef HAVE_STRATIMIKOS
 
@@ -131,9 +119,6 @@
 
 /* Define if want to build tpetra */
 #undef HAVE_TPETRA
-
-/* Define if want to build trikota */
-#undef HAVE_TRIKOTA
 
 /* Define if want to build trilinoscouplings */
 #undef HAVE_TRILINOSCOUPLINGS

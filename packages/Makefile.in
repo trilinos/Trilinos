@@ -89,11 +89,10 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop kokkos zoltan epetra triutils tpetra \
 	epetraext thyra isorropia aztecoo galeri amesos ifpack komplex \
-	claps belos anasazi rbgen pliris ml aristos intrepid moertel \
-	stratimikos meros fei stokhos sacado nox phalanx rythmos \
+	claps belos anasazi rbgen pliris ml intrepid moertel \
+	stratimikos meros fei sacado nox phalanx rythmos \
 	trilinoscouplings new_package moocho pamgen ThreadPool phdmesh \
-	Sundance PyTrilinos CTrilinos ForTrilinos TriKota didasko \
-	WebTrilinos external
+	Sundance PyTrilinos didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -184,7 +183,6 @@ common/styles.css common/tag_files/keepme.txt CMakeLists.txt
 # changing three lines!
 @BUILD_AMESOS_TRUE@AMESOS_SUBDIR = amesos
 @BUILD_ANASAZI_TRUE@ANASAZI_SUBDIR = anasazi
-@BUILD_ARISTOS_TRUE@ARISTOS_SUBDIR = aristos
 @BUILD_AZTECOO_TRUE@AZTECOO_SUBDIR = aztecoo
 @BUILD_BELOS_TRUE@BELOS_SUBDIR = belos
 @BUILD_CLAPS_TRUE@CLAPS_SUBDIR = claps
@@ -193,8 +191,6 @@ common/styles.css common/tag_files/keepme.txt CMakeLists.txt
 @BUILD_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
 @BUILD_EXTERNAL_TRUE@EXTERNAL_SUBDIR = external
 @BUILD_FEI_TRUE@FEI_SUBDIR = fei
-@BUILD_CTRILINOS_TRUE@CTRILINOS_SUBDIR = CTrilinos
-@BUILD_FORTRILINOS_TRUE@FORTRILINOS_SUBDIR = ForTrilinos
 @BUILD_IFPACK_TRUE@IFPACK_SUBDIR = ifpack
 @BUILD_INTREPID_TRUE@INTREPID_SUBDIR = intrepid
 @BUILD_GALERI_TRUE@GALERI_SUBDIR = galeri 
@@ -215,7 +211,6 @@ common/styles.css common/tag_files/keepme.txt CMakeLists.txt
 @BUILD_RBGEN_TRUE@RBGEN_SUBDIR = rbgen
 @BUILD_RYTHMOS_TRUE@RYTHMOS_SUBDIR = rythmos
 @BUILD_SACADO_TRUE@SACADO_SUBDIR = sacado
-@BUILD_STOKHOS_TRUE@STOKHOS_SUBDIR = stokhos
 @BUILD_TEUCHOS_TRUE@TEUCHOS_SUBDIR = teuchos
 @BUILD_RTOP_TRUE@RTOP_SUBDIR = rtop
 @BUILD_THREADPOOL_TRUE@THREADPOOL_SUBDIR = ThreadPool
@@ -223,7 +218,6 @@ common/styles.css common/tag_files/keepme.txt CMakeLists.txt
 @BUILD_STRATIMIKOS_TRUE@STRATIMIKOS_SUBDIR = stratimikos
 @BUILD_SUNDANCE_TRUE@SUNDANCE_SUBDIR = Sundance
 @BUILD_TPETRA_TRUE@TPETRA_SUBDIR = tpetra
-@BUILD_TRIKOTA_TRUE@TRIKOTA_SUBDIR = TriKota
 @BUILD_TRILINOSCOUPLINGS_TRUE@TRILINOSCOUPLINGS_SUBDIR = trilinoscouplings
 @BUILD_TRIUTILS_TRUE@TRIUTILS_SUBDIR = triutils
 @BUILD_WEBTRILINOS_TRUE@WEBTRILINOS_SUBDIR = WebTrilinos
@@ -261,13 +255,11 @@ PACKAGE_NAMES = \
 	$(RBGEN_SUBDIR)        \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
-	$(ARISTOS_SUBDIR)      \
 	$(INTREPID_SUBDIR)     \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(FEI_SUBDIR)        \
-	$(STOKHOS_SUBDIR)       \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(PHALANX_SUBDIR)      \
@@ -280,9 +272,6 @@ PACKAGE_NAMES = \
 	$(PHDMESH_SUBDIR) \
 	$(SUNDANCE_SUBDIR)     \
 	$(PYTRILINOS_SUBDIR)   \
-	$(CTRILINOS_SUBDIR)  \
-	$(FORTRILINOS_SUBDIR)  \
-	$(TRIKOTA_SUBDIR)  \
 	$(DIDASKO_SUBDIR) \
 	$(WEBTRILINOS_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
