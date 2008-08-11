@@ -53,14 +53,14 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, newDataStore2 ) {
   TEST_EQUALITY( xdot, ds.xdot );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, constructor ) {
   double time = 0.025;
   double accuracy = .0000025;
   DataStore<double> ds(time,Teuchos::null,Teuchos::null,accuracy);
   DataStore<double> ds2(ds);
   TEST_EQUALITY( ds2.time, time );
   TEST_EQUALITY( ds2.accuracy, accuracy );
-  // What does the clone do with the RCPs for x and xdot?
+  // This is a shallow copy constructor, use clone for a deep copy.
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_DataStore, lessthan ) {
@@ -220,6 +220,23 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, vectorToDataStoreListNoAccuracy ) {
     ++i;
   }
 }
+
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
+  double t = 2.0;
+  RCP<VectorBase<double> > v = createDefaultVector(2,3.0);
+  RCP<VectorBase<double> > v_dot = createDefaultVector(2,4.0);
+  double accuracy = 0.5;
+  const DataStore<double> ds(t,v,v_dot,accuracy);
+
+  RCP<DataStore<double> > ds_clone_ptr = ds.clone();
+  DataStore<double>& ds_clone = *ds_clone_ptr;
+
+  Thyra::V_S(&*v,5.0);
+  Thyra::V_S(&*v_dot,6.0);
+  TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.x),0), 3.0);
+  TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.xdot),0), 4.0);
+}
+
 
 } // namespace Rythmos
 
