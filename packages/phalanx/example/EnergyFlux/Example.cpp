@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 	evaluators_to_build["FE Interpolation"] = p;
       }
 
-      // Build Field Evaluators
+      // Build Field Evaluators for each evaluation type
       EvaluatorFactory<MyTraits,MyFactoryTraits<MyTraits> > factory;
       RCP< vector< RCP<Evaluator_TemplateManager<MyTraits> > > > 
 	evaluators;
