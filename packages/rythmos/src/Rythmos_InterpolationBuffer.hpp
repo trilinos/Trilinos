@@ -246,17 +246,17 @@ void InterpolationBuffer<Scalar>::addPoints(
 #ifdef TEUCHOS_DEBUG
   // Check preconditions
   assertTimePointsAreSorted(time_vec);
-  int tsize = time_vec.size();
+  int tsize = Teuchos::as<int>(time_vec.size());
   TEST_FOR_EXCEPTION(
     tsize == 0, std::logic_error,
     "Error, time_vec is empty!"
     );
   TEST_FOR_EXCEPTION(
-    Teuchos::as<int>(x_vec.size()) == tsize, std::logic_error,
+    Teuchos::as<int>(x_vec.size()) != tsize, std::logic_error,
     "Error, size of x_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
     );
   TEST_FOR_EXCEPTION(
-    Teuchos::as<int>(xdot_vec.size()) == tsize, std::logic_error,
+    Teuchos::as<int>(xdot_vec.size()) != tsize, std::logic_error,
     "Error, size of xdot_vec = " << x_vec.size() << " != " << tsize << " = size of time_vec!\n"
     );
   for (int i=0; i<tsize ; ++i) {
@@ -272,7 +272,7 @@ void InterpolationBuffer<Scalar>::addPoints(
   assertNoTimePointsInsideCurrentTimeRange(*this,time_vec);
 #endif // TEUCHOS_DEBUG
   RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IB::setPoints");
+  Teuchos::OSTab ostab(out,1,"IB::addPoints");
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
     for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
@@ -342,12 +342,19 @@ void InterpolationBuffer<Scalar>::addPoints(
         );
     }
   }
+  // Clone the vectors in input_data_list
+  std::list<DataStore<Scalar> > internal_input_data_list;
+  typename DataStore<Scalar>::DataStoreList_t::iterator it_list;
+  for (it_list = input_data_list.begin() ; it_list != input_data_list.end() ; it_list++) {
+    RCP<DataStore<Scalar> > ds_clone = it_list->clone();
+    internal_input_data_list.push_back(*ds_clone);
+  }
   // Now add all the remaining points to data_vec
-  data_vec_.insert(data_vec_.end(),input_data_list.begin(),input_data_list.end());
+  data_vec_.insert(data_vec_.end(),internal_input_data_list.begin(),internal_input_data_list.end());
   // And sort data_vec:
   std::sort(data_vec_.begin(),data_vec_.end());
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "data_vec at end of setPoints:" << std::endl;
+    *out << "data_vec at end of addPoints:" << std::endl;
     for (unsigned int i=0 ; i<data_vec_.size() ; ++i) {
       *out << "data_vec[" << i << "] = " << std::endl;
       data_vec_[i].describe(*out,Teuchos::VERB_EXTREME);
