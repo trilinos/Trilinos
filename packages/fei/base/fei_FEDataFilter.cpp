@@ -684,6 +684,67 @@ int FEDataFilter::loadNodeBCs(int numNodes,
 }
 
 //------------------------------------------------------------------------------
+int FEDataFilter::loadNodeBCs(int numNodes,
+                              const GlobalID *nodeIDs,
+                              int fieldID,
+                              const int* offsetsIntoField,
+                              const double* prescribedValues)
+{
+  //
+  //  load boundary condition information for a given set of nodes
+  //
+  int size = problemStructure_->getFieldSize(fieldID);
+  if (size < 1) {
+    FEI_CERR << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
+         <<", which was defined with size "<<size<<" (should be positive)."<<FEI_ENDL;
+    return(0);
+  }
+
+   if (Filter::logStream() != NULL) {
+    (*logStream())<<"FEI: loadNodeBCs"<<FEI_ENDL
+                     <<"#num-nodes"<<FEI_ENDL<<numNodes<<FEI_ENDL
+                     <<"#fieldID"<<FEI_ENDL<<fieldID<<FEI_ENDL
+                     <<"#field-size"<<FEI_ENDL<<size<<FEI_ENDL;
+    (*logStream())<<"#following lines: nodeID offsetIntoField value "<<FEI_ENDL;
+
+    for(int j=0; j<numNodes; j++) {
+      int nodeID = nodeIDs[j];
+      (*logStream())<<nodeID<<"  ";
+      (*logStream())<< offsetsIntoField[j]<<" ";
+      (*logStream())<< prescribedValues[j]<<FEI_ENDL;
+    }
+   }
+
+   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
+
+   double fei_eps = std::numeric_limits<double>::epsilon();
+
+   std::vector<int> essEqns(numNodes);
+   std::vector<double> alpha(numNodes);
+   std::vector<double> gamma(numNodes);
+
+   for(int i=0; i<numNodes; ++i) {
+     NodeDescriptor* node = 0;
+     nodeDB.getNodeWithID(nodeIDs[i], node);
+     int eqn = -1;
+     if (!node->getFieldEqnNumber(fieldID, eqn)) {
+       ERReturn(-1);
+     }
+
+     essEqns[i] = eqn + offsetsIntoField[i];
+     gamma[i] = prescribedValues[i];
+     alpha[i] = 1.0;
+   }
+
+   if (essEqns.size() > 0) {
+      CHK_ERR( enforceEssentialBCs(&essEqns[0], &alpha[0],
+                                   &gamma[0], essEqns.size()) );
+   }
+
+   return(FEI_SUCCESS);
+}
+
+//------------------------------------------------------------------------------
 int FEDataFilter::loadElemBCs(int numElems,
 			      const GlobalID *elemIDs,
 			      int fieldID,
