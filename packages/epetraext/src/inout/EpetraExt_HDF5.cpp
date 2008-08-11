@@ -930,7 +930,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 
   // Create property list for collective dataset write.
   plist_id_ = H5Pcreate(H5P_DATASET_XFER);
-#ifdef HAVE_MPMI
+#ifdef HAVE_MPI
   H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
 #endif
 
