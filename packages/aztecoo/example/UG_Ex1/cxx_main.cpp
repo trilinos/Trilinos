@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-  cout << Comm <<endl;
+  cout << " Testing on " << Comm <<endl;
 
   int NumMyElements = 100;
   // Construct a Map that puts same number of equations on each processor
@@ -51,9 +51,13 @@ int main(int argc, char *argv[]) {
   Epetra_LinearProblem problem(&A, &x, &b);
   // Create AztecOO instance
   AztecOO solver(problem);
+  
+  cout << "Starting iterations for: " << endl;
+  solver.SetLabel("AztecOO User Guide Example 1");
+  cout << solver.GetLabel() << endl;
 
   solver.SetAztecOption(AZ_precond, AZ_Jacobi);
-  solver.Iterate(100, 1.0E-8);
+  solver.Iterate(1000, 1.0E-4);
 
   cout << "Solver performed " << solver.NumIters() << " iterations." << endl
        << "Norm of true residual = " << solver.TrueResidual() << endl;

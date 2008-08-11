@@ -210,6 +210,12 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
   ostream& Print(ostream& stream, int indent = 0) const;
   //@}
 
+  //@{ \name Method to reset status so that this status test object can be used with another AztecOO instance.
+
+  //! Reset state of status test object.
+  void ResetStatus() {convergedOnce_ = false; status_ = Unchecked;};
+  //@}
+
   //@{ \name Methods to access data members.
 
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.

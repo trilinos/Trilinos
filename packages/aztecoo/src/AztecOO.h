@@ -281,6 +281,16 @@ class AztecOO {
     to different matrices.
   */
   int  SetMatrixName(int label);
+
+  //! Set Label this AztecOO object.
+  /*! Defines the label used to describe the \e this object.  
+  */
+  void SetLabel(const char * const Label);
+
+  //! Get the label describing this AztecOO object.
+  /*! Returns the string used to define this object.  
+  */
+  const char * GetLabel() const;
   //@}
 
   /** \name Explicit preconditioner construction/assessment/destruction methods. */ //@{
@@ -598,7 +608,7 @@ class AztecOO {
 
   void DeleteMemory();
 
-
+  char * Label_;
   Epetra_LinearProblem * Problem_;
   Epetra_MultiVector * X_;
   Epetra_MultiVector * B_;

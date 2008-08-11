@@ -194,6 +194,10 @@ void AztecOO::DeleteMemory() {
     AZ_scaling_destroy(&Scaling_);
     Scaling_ = 0;
   }
+  if (Label_!=0) {
+    delete [] Label_;
+    Label_ = 0;
+  }
 }
 
 //=============================================================================
@@ -324,6 +328,7 @@ int AztecOO::SetAztecDefaults() {
   // deleted before we zero out pointers.
   if (!inConstructor_) DeleteMemory();
   
+  SetLabel("AztecOO Object");
   AZ_defaults(options_, params_);
   options_[AZ_poly_ord] = 1; // Redefine default value to be 1 (instead of 3).
   UserOperatorData_ = 0;
@@ -1346,7 +1351,22 @@ void AztecOO::PrintLinearSystem(const char* name)
   }
 }
 
-
+//=============================================================================
+const char * AztecOO::GetLabel() const {
+  return(Label_);
+}
+//=============================================================================
+void AztecOO::SetLabel(const char * const Label_in)
+{ 
+  if (Label_!=0) {
+    delete [] Label_;
+    Label_ = 0;
+  }
+  if (Label_in==0) return;
+  Label_ = new char[strlen(Label_in)+1];
+  strcpy(Label_,Label_in);
+  return;
+}
 //=============================================================================
 double Epetra_Aztec_matnorminf(AZ_MATRIX* Amat)
 {
