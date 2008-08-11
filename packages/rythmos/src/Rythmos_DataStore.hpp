@@ -51,13 +51,19 @@ class DataStore : virtual public Teuchos::Describable
     DataStore();
 
     /** \brief. */
+    // This is a shallow copy constructor, use clone for a deep copy
     DataStore(Scalar& time_
       ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_
       ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot_
       ,ScalarMag& accuracy_);
 
     /** \brief. */
+    // This is a shallow copy constructor, use clone for a deep copy
     DataStore(const DataStore<Scalar>& ds_in);
+    
+    /** \brief. */
+    // This is a deep clone and copies the underlying vectors
+    RCP<DataStore<Scalar> > clone() const;
 
     /// Time value of data:
     Scalar time;
@@ -189,6 +195,17 @@ DataStore<Scalar>::DataStore(
   x = ds_in.x;
   xdot = ds_in.xdot;
   accuracy = ds_in.accuracy;
+}
+
+template<class Scalar>
+RCP<DataStore<Scalar> > DataStore<Scalar>::clone() const
+{
+  Scalar t_out = time;
+  RCP<VectorBase<Scalar> > x_out = x->clone_v();
+  RCP<VectorBase<Scalar> > xdot_out = xdot->clone_v();
+  ScalarMag accuracy_out = accuracy;
+  RCP<DataStore<Scalar> > ds_out = rcp(new DataStore<Scalar>(t_out,x_out,xdot_out,accuracy_out));
+  return ds_out;
 }
 
 template<class Scalar>
@@ -378,7 +395,6 @@ void vectorToDataStoreList(
   }
   vectorToDataStoreList(time_vec,x_vec,xdot_vec,accuracy_vec,ds);
 }
-
 
 } // namespace Rythmos
 
