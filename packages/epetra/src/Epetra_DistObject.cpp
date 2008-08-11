@@ -234,7 +234,10 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
   
   int SizeOfPacket; 
   bool VarSizes = false;
-  if( !Sizes_ && NumExportIDs ) Sizes_ = new int[NumExportIDs];
+  if( NumExportIDs > 0) {
+    delete [] Sizes_;
+    Sizes_ = new int[NumExportIDs];
+  }
   EPETRA_CHK_ERR(PackAndPrepare(A, NumExportIDs, ExportLIDs,
                  LenExports, Exports, SizeOfPacket, Sizes_, VarSizes, Distor));
 
