@@ -19,7 +19,8 @@ if test -s /home/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-u
 cd /home/jmwille/contInt/Trilinos/commonTools/test/harness
 
 echo "Starting continuous integration build now."
-perl runharness --trilinos-dir=/home/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont --short-circuit >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
+perl runharness --trilinos-dir=/home/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
+#perl runharness --trilinos-dir=/home/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont --short-circuit >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
 more /home/jmwille/cronOutput/harness-contInt-mpi.txt |grep FAILED > /home/jmwille/cronOutput/failedContBuildCheck.txt
 if test -s /home/jmwille/cronOutput/failedContBuildCheck.txt ; then
 echo "Pausing for failure."
