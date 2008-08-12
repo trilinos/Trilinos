@@ -44,38 +44,13 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = test_01 test_02 test_03 Dummy
+noinst_PROGRAMS = test_01
 
 # Dependencies used when rebuilding tests without building everything from scratch.
 test_01_DEPENDENCIES = \
-	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-test_02_DEPENDENCIES = \
-	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-test_03_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 test_01_SOURCES = test_01.cpp
 test_01_LDADD = $(EXPORT_LIBS)
 test_01_CXXFLAGS = -I$(srcdir)
-
-test_02_SOURCES = test_02.cpp
-test_02_LDADD = $(EXPORT_LIBS)
-test_02_CXXFLAGS = -I$(srcdir)
-
-test_03_SOURCES = test_03.cpp
-test_03_LDADD = $(EXPORT_LIBS)
-test_03_CXXFLAGS = -I$(srcdir)
-
-Dummy_SOURCES = Dummy
-Dummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then mkdir data; cp -r $(srcdir)/./data/*.dat data; fi
-
-EXTRA_DIST = \
-data/mass_TRI_FEM_P1_01.dat data/mass_TRI_FEM_P1_02.dat \
-data/mass_TRI_FEM_P1_03.dat data/mass_TRI_FEM_P1_04.dat \
-data/stiff_TRI_FEM_P1_01.dat data/stiff_TRI_FEM_P1_02.dat \
-data/stiff_TRI_FEM_P1_03.dat data/stiff_TRI_FEM_P1_04.dat
-

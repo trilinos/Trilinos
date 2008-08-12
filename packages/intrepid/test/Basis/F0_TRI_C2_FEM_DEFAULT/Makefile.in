@@ -64,7 +64,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = test_01$(EXEEXT) test_02$(EXEEXT) Dummy$(EXEEXT)
+noinst_PROGRAMS = test_01$(EXEEXT)
 subdir = test/Basis/F0_TRI_C2_FEM_DEFAULT
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,9 +93,6 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Intrepid_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_Dummy_OBJECTS =
-Dummy_OBJECTS = $(am_Dummy_OBJECTS)
-Dummy_LDADD = $(LDADD)
 am_test_01_OBJECTS = test_01-test_01.$(OBJEXT)
 test_01_OBJECTS = $(am_test_01_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -103,10 +100,6 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(INTREPID_TEST_LIBS))
 test_01_LINK = $(CXXLD) $(test_01_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_test_02_OBJECTS = test_02-test_02.$(OBJEXT)
-test_02_OBJECTS = $(am_test_02_OBJECTS)
-test_02_LINK = $(CXXLD) $(test_02_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -116,12 +109,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(Dummy_SOURCES) $(test_01_SOURCES) $(test_02_SOURCES)
-DIST_SOURCES = $(Dummy_SOURCES) $(test_01_SOURCES) $(test_02_SOURCES)
+SOURCES = $(test_01_SOURCES)
+DIST_SOURCES = $(test_01_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -247,21 +236,9 @@ test_01_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-test_02_DEPENDENCIES = \
-	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
 test_01_SOURCES = test_01.cpp
 test_01_LDADD = $(EXPORT_LIBS)
 test_01_CXXFLAGS = -I$(srcdir)
-test_02_SOURCES = test_02.cpp
-test_02_LDADD = $(EXPORT_LIBS)
-test_02_CXXFLAGS = -I$(srcdir)
-Dummy_SOURCES = Dummy
-EXTRA_DIST = \
-data/mass_TRI_FEM_P2_01.dat  data/mass_TRI_FEM_P2_02.dat  \
-data/mass_TRI_FEM_P2_03.dat  data/mass_TRI_FEM_P2_04.dat
-
 all: all-am
 
 .SUFFIXES:
@@ -301,9 +278,6 @@ clean-noinstPROGRAMS:
 test_01$(EXEEXT): $(test_01_OBJECTS) $(test_01_DEPENDENCIES) 
 	@rm -f test_01$(EXEEXT)
 	$(test_01_LINK) $(test_01_OBJECTS) $(test_01_LDADD) $(LIBS)
-test_02$(EXEEXT): $(test_02_OBJECTS) $(test_02_DEPENDENCIES) 
-	@rm -f test_02$(EXEEXT)
-	$(test_02_LINK) $(test_02_OBJECTS) $(test_02_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -312,7 +286,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_01-test_01.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_02-test_02.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -341,20 +314,6 @@ test_01-test_01.obj: test_01.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_01.cpp' object='test_01-test_01.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_01_CXXFLAGS) $(CXXFLAGS) -c -o test_01-test_01.obj `if test -f 'test_01.cpp'; then $(CYGPATH_W) 'test_01.cpp'; else $(CYGPATH_W) '$(srcdir)/test_01.cpp'; fi`
-
-test_02-test_02.o: test_02.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_02_CXXFLAGS) $(CXXFLAGS) -MT test_02-test_02.o -MD -MP -MF $(DEPDIR)/test_02-test_02.Tpo -c -o test_02-test_02.o `test -f 'test_02.cpp' || echo '$(srcdir)/'`test_02.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_02-test_02.Tpo $(DEPDIR)/test_02-test_02.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_02.cpp' object='test_02-test_02.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_02_CXXFLAGS) $(CXXFLAGS) -c -o test_02-test_02.o `test -f 'test_02.cpp' || echo '$(srcdir)/'`test_02.cpp
-
-test_02-test_02.obj: test_02.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_02_CXXFLAGS) $(CXXFLAGS) -MT test_02-test_02.obj -MD -MP -MF $(DEPDIR)/test_02-test_02.Tpo -c -o test_02-test_02.obj `if test -f 'test_02.cpp'; then $(CYGPATH_W) 'test_02.cpp'; else $(CYGPATH_W) '$(srcdir)/test_02.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_02-test_02.Tpo $(DEPDIR)/test_02-test_02.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_02.cpp' object='test_02-test_02.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_02_CXXFLAGS) $(CXXFLAGS) -c -o test_02-test_02.obj `if test -f 'test_02.cpp'; then $(CYGPATH_W) 'test_02.cpp'; else $(CYGPATH_W) '$(srcdir)/test_02.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -532,8 +491,6 @@ uninstall-am:
 
 
 include $(top_builddir)/Makefile.export.intrepid
-Dummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then mkdir data; cp -r $(srcdir)/./data/*.dat data; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
