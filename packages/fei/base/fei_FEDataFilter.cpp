@@ -717,8 +717,6 @@ int FEDataFilter::loadNodeBCs(int numNodes,
 
    NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
 
-   double fei_eps = std::numeric_limits<double>::epsilon();
-
    std::vector<int> essEqns(numNodes);
    std::vector<double> alpha(numNodes);
    std::vector<double> gamma(numNodes);
