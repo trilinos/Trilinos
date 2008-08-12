@@ -70,11 +70,11 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, minOrder ) {
         const StepStatus<double> status = stepper->getStepStatus();
         TEST_EQUALITY_CONST( status.order, order );
       }
-      for (int steps=0 ; steps<10 ; ++steps) {
+      for (int steps=0 ; steps<4 ; ++steps) {
         step = stepper->takeStep(1.0,stepType);
         const StepStatus<double> status = stepper->getStepStatus();
-        TEST_COMPARE( status.order, <=, maxOrder );
         TEST_COMPARE( status.order, >=, minOrder );
+        TEST_COMPARE( status.order, <=, maxOrder );
       }
     }
   }

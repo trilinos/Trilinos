@@ -118,16 +118,20 @@ private:
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
   RKButcherTableau<Scalar> irkButcherTableau_;
 
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
+
   RCP<const Thyra::ProductVectorSpaceBase<Scalar> > x_bar_space_;
   RCP<const Thyra::ProductVectorSpaceBase<Scalar> > f_bar_space_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_bar_factory_;
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
   bool setTimeStepPointCalled_;
   RCP<const Thyra::VectorBase<Scalar> > x_old_;
   Scalar t_old_;
   Scalar delta_t_;
+
+  bool isInitialized_;
 
 };
 
@@ -163,6 +167,7 @@ template<class Scalar>
 ImplicitRKModelEvaluator<Scalar>::ImplicitRKModelEvaluator()
 {
   setTimeStepPointCalled_ = false;
+  isInitialized_ = false;
 }
 
 
@@ -213,6 +218,27 @@ void ImplicitRKModelEvaluator<Scalar>::initializeIRKModel(
   // ToDo: create the block diagonal preconditioner factory and set this on
   // irk_W_factory_!
   
+  // Set up prototypical InArgs
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::InArgsSetup<Scalar> inArgs;
+    inArgs.setModelEvalDescription(this->description());
+    inArgs.setSupports(MEB::IN_ARG_x);
+    inArgs_ = inArgs;
+  }
+  // Set up prototypical OutArgs
+  {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::OutArgsSetup<Scalar> outArgs;
+    outArgs.setModelEvalDescription(this->description());
+    outArgs.setSupports(MEB::OUT_ARG_f);
+    outArgs.setSupports(MEB::OUT_ARG_W_op);
+    outArgs_ = outArgs;
+  }
+  // Set up nominal values
+  nominalValues_ = inArgs_;
+
+  isInitialized_ = true;
 }
 
 
@@ -243,6 +269,9 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::get_x_space() const
 {
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeIRKModel must be called first!\n"
+      );
   return x_bar_space_;
 }
 
@@ -251,6 +280,9 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::get_f_space() const
 {
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeIRKModel must be called first!\n"
+      );
   return f_bar_space_;
 }
 
@@ -259,6 +291,9 @@ template<class Scalar>
 RCP<Thyra::LinearOpBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::create_W_op() const
 {
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeIRKModel must be called first!\n"
+      );
   // Create the block structure for W_op_bar right away!
   const int numStages = irkButcherTableau_.numStages();
   RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
@@ -276,6 +311,9 @@ template<class Scalar>
 RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 ImplicitRKModelEvaluator<Scalar>::get_W_factory() const
 {
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeIRKModel must be called first!\n"
+      );
   return irk_W_factory_;
 }  
 
@@ -284,6 +322,9 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 ImplicitRKModelEvaluator<Scalar>::getNominalValues() const
 {
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeIRKModel must be called first!\n"
+      );
   return nominalValues_;
 }
 
@@ -292,11 +333,10 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 ImplicitRKModelEvaluator<Scalar>::createInArgs() const
 {
-  typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::InArgsSetup<Scalar> inArgs;
-  inArgs.setModelEvalDescription(this->description());
-  inArgs.setSupports(MEB::IN_ARG_x);
-  return inArgs;
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeIRKModel must be called first!\n"
+      );
+  return inArgs_;
 }
 
 
@@ -307,12 +347,10 @@ template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 ImplicitRKModelEvaluator<Scalar>::createOutArgsImpl() const
 {
-  typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::OutArgsSetup<Scalar> outArgs;
-  outArgs.setModelEvalDescription(this->description());
-  outArgs.setSupports(MEB::OUT_ARG_f);
-  outArgs.setSupports(MEB::OUT_ARG_W_op);
-  return outArgs;
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error, initializeIRKModel must be called first!\n"
+      );
+  return outArgs_;
 }
 
 
@@ -330,8 +368,12 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   typedef Thyra::ProductVectorBase<Scalar> PVB;
   typedef Thyra::BlockedLinearOpBase<Scalar> BLWB;
 
+  TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
+      "Error!  initializeIRKModel must be called before evalModel\n"
+      );
+
   TEST_FOR_EXCEPTION( !setTimeStepPointCalled_, std::logic_error,
-      "Error! setTimeStepPoint must be called before evalModel"
+      "Error!  setTimeStepPoint must be called before evalModel"
       );
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
@@ -364,7 +406,11 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
     daeInArgs.set_x( x_i );
     daeInArgs.set_x_dot( x_bar->getVectorBlock(i) );
     daeInArgs.set_t( t_old_ + irkButcherTableau_.c()(i) * delta_t_ );
-    daeInArgs.set_alpha(ST::one());
+    if (i == 0) {
+      daeInArgs.set_alpha(ST::one());
+    } else {
+      daeInArgs.set_alpha(ST::zero());
+    }
     daeInArgs.set_beta( delta_t_ * irkButcherTableau_.A()(i,0) );
 
     // B.2) Setup the DAE's outArgs for stage f(i) ...
@@ -381,6 +427,11 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
     // B.4) Evaluate the rest of the W_op_bar(i,j=1...numStages-1) ...
     if (!is_null(W_op_bar)) {
       for ( int j = 1; j < numStages; ++j ) {
+        if (i == j) {
+          daeInArgs.set_alpha(ST::one());
+        } else {
+          daeInArgs.set_alpha(ST::zero());
+        }
         daeInArgs.set_beta( delta_t_ * irkButcherTableau_.A()(i,j) );
         daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,j));
         daeModel_->evalModel( daeInArgs, daeOutArgs );

@@ -146,7 +146,7 @@ SinCosModel::create_W_op() const
 RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > 
 SinCosModel::get_W_factory() const
 {
-  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = 
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = 
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
   return W_factory;
 }
