@@ -189,14 +189,18 @@ bool Epetra_MapColoring::InItemList(int ColorValue) const {
 //=========================================================================
 int Epetra_MapColoring::NumElementsWithColor(int Color) const  {
   if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
+  int arrayIndex = -1;
+  if( ColorIDs_ )
+    arrayIndex = ColorIDs_->Get(Color);
   if (arrayIndex>-1) return(ColorCount_[arrayIndex]);
   else return(0);
 }
 //=========================================================================
 int * Epetra_MapColoring::ColorLIDList(int Color) const  {
   if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
+  int arrayIndex = -1;
+  if( ColorIDs_ )
+    arrayIndex = ColorIDs_->Get(Color);
   if (arrayIndex>-1) return(ColorLists_[arrayIndex]);
   else return(0);
 }
@@ -204,7 +208,9 @@ int * Epetra_MapColoring::ColorLIDList(int Color) const  {
 Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
 
   if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
+  int arrayIndex = -1;
+  if( ColorIDs_ )
+    arrayIndex = ColorIDs_->Get(Color);
   int NumElements = 0;
   int * ColorElementLIDs = 0;
   int * ColorElementGIDs =0;
@@ -223,7 +229,9 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
 Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
 
   if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
+  int arrayIndex = -1;
+  if( ColorIDs_ )
+    arrayIndex = ColorIDs_->Get(Color);
   int NumElements = 0;
   int * ColorElementLIDs = 0;
   int * ColorElementSizes = 0;
