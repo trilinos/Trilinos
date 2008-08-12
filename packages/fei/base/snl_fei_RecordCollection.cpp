@@ -23,9 +23,7 @@ snl_fei::RecordCollection::RecordCollection(int localProc)
     localProc_(localProc),
     recordPool_(30000),
     debugOutput_(false),
-    dbgOut_(NULL),
-    firstLocallyOwnedGlobalIndex_(-1),
-    lastLocallyOwnedGlobalIndex_(-1)
+    dbgOut_(NULL)
 {
 }
 
@@ -35,9 +33,7 @@ snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
     localProc_(src.localProc_),
     recordPool_(30000),
     debugOutput_(src.debugOutput_),
-    dbgOut_(src.dbgOut_),
-    firstLocallyOwnedGlobalIndex_(-1),
-    lastLocallyOwnedGlobalIndex_(-1)
+    dbgOut_(src.dbgOut_)
 {
   map_type& srcRecords =
     const_cast<map_type&>(src.records_);

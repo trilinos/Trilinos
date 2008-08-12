@@ -20,12 +20,11 @@ enum { SS_Constr_Default, SS_Constr_EqnBuf,
 (e.g., with non-contiguous indices, etc.) and can be used in operations
 with the SSMat class.
 
-A couple of constructors are provided for wrapping an SSVec around existing
-data that is either in the form of feiArrays or raw arrays. These constructors
-are intended to be as light-weight as possible, so they simply keep pointers
-to the data being wrapped. There is an inherent danger here, that the data may
-be destroyed before the SSVec is destroyed, leaving the SSVec holding bad
-pointers. USER BEWARE.
+A constructor is provided for wrapping an SSVec around existing
+data in the form of raw arrays. These constructors are intended to be as
+light-weight as possible, so they simply keep pointers to the data being wrapped.
+There is an inherent danger here, that the data may be destroyed before the SSVec
+is destroyed, leaving the SSVec holding bad pointers. USER BEWARE.
  */
 
 class SSVec {

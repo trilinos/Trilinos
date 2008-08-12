@@ -1,4 +1,6 @@
 
+#include "fei_macros.hpp"
+#include "fei_mpi.h"
 #include "fei_iostream.hpp"
 #include "fei_Exception.hpp"
 
@@ -49,8 +51,12 @@ int test_runner::run_tests(int numProcs, int localProc, MPI_Comm comm)
   }
 
   int global_tests_failed = 0;
+#ifdef FEI_SER
+  global_tests_failed = tests_failed;
+#else
   MPI_Allreduce(&tests_failed, &global_tests_failed, 1,
                 MPI_INT, MPI_MAX, comm);
+#endif
 
   if (localProc == 0) {
     if (global_tests_failed == 0) {

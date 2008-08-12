@@ -984,21 +984,6 @@ int fei::VectorSpace::getNumFields()
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getFields(int len,
-                                int* fields,
-                                int& numFields)
-{
-  numFields = fieldDatabase_.size();
-
-  int num = len;
-  if (len > numFields) num = numFields;
-
-  fei::copyKeysToArray<std::map<int,unsigned> >(fieldDatabase_, num, fields);
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
 void fei::VectorSpace::getFields(std::vector<int>& fieldIDs)
 {
   unsigned numFields = fieldDatabase_.size();
@@ -1100,26 +1085,23 @@ unsigned fei::VectorSpace::getFieldSize(int fieldID)
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getFieldList(int idType,
-				       int ID,
-				       int lenFieldIDs,
-				       int* fieldIDs,
-				       int& numFields)
+void fei::VectorSpace::getFields(int idType, int ID, std::vector<int>& fieldIDs)
 {
   int idindex = snl_fei::binarySearch(idType, idTypes_);
-  if (idindex < 0) return(-1);
+  if (idindex < 0) {
+    fieldIDs.resize(0);
+    return;
+  }
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
 
   fei::FieldMask* fieldMask = record->getFieldMask();
   std::vector<int>& maskFieldIDs = fieldMask->getFieldIDs();
-  numFields = maskFieldIDs.size();
-  int len = numFields > lenFieldIDs ? lenFieldIDs : numFields;
-  for(int i=0; i<len; ++i) {
+  int numFields = maskFieldIDs.size();
+  fieldIDs.resize(numFields);
+  for(int i=0; i<numFields; ++i) {
     fieldIDs[i] = maskFieldIDs[i];
   }
-
-  return(0);
 }
 
 //----------------------------------------------------------------------------
@@ -1822,8 +1804,6 @@ int fei::VectorSpace::setLocalEqnNumbers()
   for(int rec=0; rec<recordCollections_.length(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
 
-    records->setFirstLocallyOwnedGlobalIndex(eqnNumber);
-
     snl_fei::RecordCollection::map_type& rmap = records->getRecords();
 
     snl_fei::RecordCollection::map_type::iterator
@@ -1893,7 +1873,6 @@ int fei::VectorSpace::setLocalEqnNumbers()
       }
     }
 
-    records->setLastLocallyOwnedGlobalIndex(eqnNumber-1);
   }
 
   ptBlkMap_->setMaxBlkEqnSize(maxNumDOF);

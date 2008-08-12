@@ -105,15 +105,6 @@ int snl_fei::getDoubleParamValue(const char* key,
 }
 
 //----------------------------------------------------------------------------
-bool snl_fei::charptr_to_int(const char* str, int& intval)
-{
-  std::string strg(str);
-  FEI_ISTRINGSTREAM isstr(strg);
-  isstr >> intval;
-  return( isstr.fail() ? false : true);
-}
-
-//----------------------------------------------------------------------------
 const char* snl_fei::getParam(const char* key,
 			      int numParams,
 			      const char* const* paramStrings,
@@ -605,48 +596,6 @@ int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
     }
     ++cr_iter;
   }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
-int snl_fei::gatherRemoteEssBCs(feiArray<int>& essEqns,
-				feiArray<double>& essAlpha,
-				feiArray<double>& essGamma,
-				fei::SparseRowGraph* remoteGraph,
-				fei::Matrix& matrix)
-{
-  std::vector<int>& rrowOffs = remoteGraph->rowOffsets;
-  std::vector<int>& rcols = remoteGraph->packedColumnIndices;
-
-  if (rrowOffs.empty() || rcols.empty()) {
-    return(0);
-  }
-
-  int* rowOffsPtr = &(rrowOffs[0]);
-  int* rcolsPtr = &(rcols[0]);
-
-  for(int j=0; j<essEqns.size(); ++j) {
-
-    int eqn = essEqns[j];
-
-    for(unsigned i=0; i<rrowOffs.size()-1; ++i) {
-      int len = rowOffsPtr[i+1]-rowOffsPtr[i];
-      int* colsPtr = &(rcolsPtr[rowOffsPtr[i]]);
-
-      if (snl_fei::binarySearch(eqn, colsPtr, len) > -1) {
-	double coef = essGamma[j]/essAlpha[j];
-	double* coefPtr = &coef;
-
-	for(int k=0; k<len; ++k) {
-	  CHK_ERR( matrix.copyIn(1, &(colsPtr[k]),
-				 1, &(eqn), &coefPtr) );
-	}
-      }
-    }
-  }
-
-  CHK_ERR( matrix.gatherFromOverlap(false) );
 
   return(0);
 }

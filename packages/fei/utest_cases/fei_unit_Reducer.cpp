@@ -133,9 +133,10 @@ void addSSMatToReducer(SSMat& mat, fei::Reducer& reducer)
 
 int test_Reducer_test1(MPI_Comm comm)
 {
-  int numProcs = 1, localProc = 0;
+  int numProcs = 1;
+#ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
-  MPI_Comm_rank(comm, &localProc);
+#endif
 
   if (numProcs > 1) return(0);
 
@@ -227,9 +228,10 @@ int test_Reducer_test1(MPI_Comm comm)
 
 int test_Reducer_test2(MPI_Comm comm)
 {
-  int numProcs = 1, localProc = 0;
+  int numProcs = 1;
+#ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
-  MPI_Comm_rank(comm, &localProc);
+#endif
 
   if (numProcs>1) return(0);
 
@@ -272,9 +274,10 @@ int test_Reducer_test2(MPI_Comm comm)
 
 int test_Reducer_test3(MPI_Comm comm)
 {
-  int numProcs = 1, localProc = 0;
+  int numProcs = 1;
+#ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
-  MPI_Comm_rank(comm, &localProc);
+#endif
 
   if (numProcs>1) return(0);
 
@@ -318,9 +321,10 @@ int test_Reducer_test3(MPI_Comm comm)
 
 int test_Reducer_test4(MPI_Comm comm)
 {
-  int numProcs = 1, localProc = 0;
+  int numProcs = 1;
+#ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
-  MPI_Comm_rank(comm, &localProc);
+#endif
 
   if (numProcs>1) return(0);
 
@@ -364,9 +368,10 @@ int test_Reducer_test4(MPI_Comm comm)
 
 int test_Reducer_test5(MPI_Comm comm)
 {
-  int numProcs = 1, localProc = 0;
+  int numProcs = 1;
+#ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
-  MPI_Comm_rank(comm, &localProc);
+#endif
 
   if (numProcs>1) return(0);
 

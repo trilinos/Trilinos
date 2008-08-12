@@ -104,22 +104,6 @@ namespace snl_fei {
 	debugOutput_ = true;
       }
 
-    /** power-users only */
-    void setFirstLocallyOwnedGlobalIndex(int idx)
-      { firstLocallyOwnedGlobalIndex_ = idx; }
-
-    /** power-users only */
-    void setLastLocallyOwnedGlobalIndex(int idx)
-      { lastLocallyOwnedGlobalIndex_ = idx; }
-
-    /** power-users only */
-    int getFirstLocallyOwnedGlobalIndex()
-      { return(firstLocallyOwnedGlobalIndex_); }
-
-    /** power-users only */
-    int getLastLocallyOwnedGlobalIndex()
-      { return(lastLocallyOwnedGlobalIndex_); }
-
   private:
 
     map_type records_;
@@ -130,9 +114,6 @@ namespace snl_fei {
 
     bool debugOutput_;
     FEI_OSTREAM* dbgOut_;
-
-    int firstLocallyOwnedGlobalIndex_;
-    int lastLocallyOwnedGlobalIndex_;
   };
 
 } //namespace snl_fei

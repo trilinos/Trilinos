@@ -1405,6 +1405,7 @@ int fei::FEI_Impl::getNodalSolution(int numNodes,
 {
   int j;
   int offset = 0;
+  std::vector<int> fieldIDs;
   for(int i=0; i<numNodes; ++i) {
     offsets[i] = offset;
 
@@ -1412,14 +1413,8 @@ int fei::FEI_Impl::getNodalSolution(int numNodes,
 
     int numFields = rowSpace_->getNumFields(nodeIDType_, nodeID);
     iwork_.resize( numFields*2 );
-    int* fieldIDs = &iwork_[0];
-    int* fieldSizes = fieldIDs+numFields;
-    int chkNumFields = 0;
-    CHK_ERR( rowSpace_->getFieldList(nodeIDType_, nodeID,
-				     numFields, fieldIDs, chkNumFields));
-    if (chkNumFields != numFields) {
-      ERReturn(-1);
-    }
+    int* fieldSizes = &iwork_[0];
+    rowSpace_->getFields(nodeIDType_, nodeID, fieldIDs);
 
     int numDOF = 0;
     for(j=0; j<numFields; ++j) {

@@ -531,7 +531,7 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
   }
 
   feiArray<double> solnData;
-  feiArray<int> fieldList;
+  std::vector<int> fieldList;
 
   for(int i=0; i<numLocalNodes; i++) {
     int idType = idTypes_[nodeTypeOffset_];
@@ -540,13 +540,7 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
     int numDOF = vecSpace_->getNumDegreesOfFreedom(idType, ID);
     int numFields = vecSpace_->getNumFields(idType, ID);
     solnData.resize(numDOF);
-    fieldList.resize(numFields);
-    int chkNumFields = 0;
-    CHK_ERR( vecSpace_->getFieldList(idType, ID, numFields,
-				     fieldList.dataPtr(), chkNumFields) );
-    if (chkNumFields != numFields) {
-      ERReturn(-1);
-    }
+    vecSpace_->getFields(idType, ID, fieldList);
 
     outfile << ID << " " << numDOF << FEI_ENDL;
     for(int j=0; j<numFields; ++j) {
@@ -596,7 +590,7 @@ int snl_fei_tester::save_block_elem_soln(DataReader& data, fei::Vector* vec,
   }
 
   feiArray<double> solnData;
-  feiArray<int> fieldList;
+  std::vector<int> fieldList;
 
   for(int i=0; i<numLocalElems; i++) {
     int idType = idTypes_[elemTypeOffset_];
@@ -605,10 +599,7 @@ int snl_fei_tester::save_block_elem_soln(DataReader& data, fei::Vector* vec,
     int numDOF = vecSpace_->getNumDegreesOfFreedom(idType, ID);
     int numFields = vecSpace_->getNumFields(idType, ID);
     solnData.resize(numDOF);
-    fieldList.resize(numFields);
-    int chkNumFields = 0;
-    CHK_ERR( vecSpace_->getFieldList(idType, ID, numFields,
-				     fieldList.dataPtr(), chkNumFields) );
+    vecSpace_->getFields(idType, ID, fieldList);
 
     outfile << ID << " " << numDOF << FEI_ENDL;
     for(int j=0; j<numFields; ++j) {

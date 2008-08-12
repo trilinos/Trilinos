@@ -126,11 +126,6 @@ namespace snl_fei {
 			  std::vector<std::string>& params,
 			  double& paramValue);
 
-  /** Given a raw character-string, attempt to parse it into an int.
-      Return true if successful, false if not.
-  */
-  bool charptr_to_int(const char* str, int& intval);
-
   /** Given a search key, and a list of strings, search the list of strings
       looking for a string that starts with the search key. i.e., a string
       such that key is a leading substring. If found, return a pointer to
@@ -259,15 +254,6 @@ namespace snl_fei {
   int resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
 			    fei::Matrix& bcEqns,
                             feiArray<int>& bcEqnNumbers);
-
-  /** Do appropriate communications to gather column-portions of remotely-held
-      essential BCs onto local processor.
-  */
-  int gatherRemoteEssBCs(feiArray<int>& essEqns,
-			 feiArray<double>& essAlpha,
-			 feiArray<double>& essGamma,
-			 fei::SparseRowGraph* remoteGraph,
-			 fei::Matrix& matrix);
 
   /** Do appropriate communications to gather column-portions of remotely-held
       essential BCs onto local processor.

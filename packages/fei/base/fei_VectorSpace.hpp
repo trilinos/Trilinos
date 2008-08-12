@@ -403,16 +403,6 @@ namespace fei {
 		       int ID,
 		       int& globalIndex);
 
-    /** Given an identifier-type, return the first locally-owned global index
-	that corresponds to an identifier with that identifier-type.
-    */
-    int getFirstLocallyOwnedGlobalIndex(int idType);
-
-    /** Given an identifier-type, return the last locally-owned global index
-	that corresponds to an identifier with that identifier-type.
-    */
-    int getLastLocallyOwnedGlobalIndex(int idType);
-
     /** Given a particular identifier, request the number of scalar degrees-of-
 	freedom that are associated with that identifier.
     */
@@ -422,19 +412,6 @@ namespace fei {
     /** Query the number of fields defined for this vector-space.
      */
     int getNumFields();
-
-    /** Query for the list of fields defined for this vector-space.
-
-        @param len Input, length of the user-allocated list 'fields'.
-        @param fields Input/Output, user-allocated list, on exit contents will
-        contain fields that are defined for this vector-space.
-        @param numFields Output, number of fields that are defined for this
-        vector-space. If numFields is less than user-provided 'len', then only
-        'numFields' positions in 'fields' are referenced. If numFields is
-        greater than user-provided len, then 'fields' is filled with the first
-        'len' field-ids that are defined for this vector-space.
-     */
-    int getFields(int len, int* fields, int& numFields);
 
     /** Fill a std::vector with fieldIDs defined for this vector-space.
 
@@ -459,11 +436,7 @@ namespace fei {
 	@param numFields Output. Number of fields. If numFields > lenFieldIDs,
 	then fieldIDs will contain the first 'lenFieldIDs' field identifiers.
     */
-    int getFieldList(int idType,
-		     int ID,
-		     int lenFieldIDs,
-		     int* fieldIDs,
-		     int& numFields);
+    void getFields(int idType, int ID, std::vector<int>& fieldIDs);
 
     /** Query for the number of identifier-types defined for this vector-space.
      */
