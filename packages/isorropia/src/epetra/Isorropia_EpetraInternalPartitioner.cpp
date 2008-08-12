@@ -179,7 +179,7 @@ order(Teuchos::ParameterList& paramList,
 }
 
 
-int InternalPartitioner::postcompute() {};
+int InternalPartitioner::postcompute() {}
 
 
 
