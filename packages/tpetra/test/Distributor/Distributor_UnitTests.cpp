@@ -34,15 +34,12 @@ namespace {
     return(((x*x + y*y + x+x+x + y) / two) + (x*y));
   }
 
-  // puts the generated values for (x, 0) ... (x, length-1) into vector
-  template <typename T>
-  void generateColumn(std::vector<T>& vector, const int x, const int length) {
-    vector.resize(length);
-    for(int y = 0; y < length; y++) {
-      vector[y] = generateValue(as<T>(x), as<T>(y));
-    }
-  }
-
+#define PRINT_VECTOR(v) \
+   { \
+     out << "#v: "; \
+     copy(v.begin(), v.end(), ostream_iterator<Ordinal>(out," ")); \
+     out << endl; \
+   }
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -131,6 +128,63 @@ namespace {
   }
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromSendsNonContig, Ordinal )
+  {
+    typedef Teuchos::OrdinalTraits<Ordinal> OT;
+
+    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
+    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    const Ordinal numImages = comm->getSize();
+    const Ordinal ZERO = OT::zero();
+
+    if (numImages == 1) return;
+
+    // send data to each image, including myself
+    // the consequence is that each image will send to every other images
+    Ordinal numRemoteIDs = ZERO;
+    // fill exportImageIDs with {0, 1, 2, ... numImages-1}
+    vector<Ordinal> exportImageIDs; 
+    exportImageIDs.reserve(2*numImages);
+    for(Ordinal i = ZERO; i < numImages; ++i) {
+      exportImageIDs.push_back(i);
+    }
+    for(Ordinal i = ZERO; i < numImages; ++i) {
+      exportImageIDs.push_back(i);
+    }
+
+    Distributor<Ordinal> distributor(comm);
+    distributor.createFromSends(exportImageIDs, numRemoteIDs);
+    TEST_EQUALITY(numRemoteIDs, 2*numImages);
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), 2*numImages);
+    TEST_EQUALITY(distributor.getNumReceives(), 2*numImages-2);
+    TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
+    TEST_EQUALITY(distributor.getNumSends(), 2*numImages-2);
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(2));
+    {
+      vector<Ordinal> imgFrom(distributor.getImagesFrom());
+      vector<Ordinal> imgTo(distributor.getImagesTo());
+      TEST_COMPARE_ARRAYS(imgFrom, imgTo);
+    }
+    {
+      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
+      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
+      TEST_EQUALITY(as<Ordinal>(lenFrom.size()),2*numImages);
+      TEST_EQUALITY(as<Ordinal>(lenTo.size())  ,2*numImages);
+      for (int i=0; i<numImages; ++i) {
+        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(1) );
+        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(1) );
+      }
+    }
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(),as<Ordinal>(2));
+    TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<unsigned int>(2*numImages));
+
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Distributor, doPosts1, Ordinal, Packet )
   {
     typedef Teuchos::OrdinalTraits<Ordinal> OT;
@@ -199,40 +253,37 @@ namespace {
     RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
     RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
     const int numImages = comm->getSize();
-    const int myImageID = comm->getSize();
+    const int myImageID = comm->getRank();
     const Ordinal ZERO = OT::zero();
     const Ordinal length = as<Ordinal>(numImages);
-    const Ordinal invalid = as<Ordinal>(-2);
-
-    Ordinal numRemoteIDs = length;
-
-    // fill remoteGIDs with row from generator
-    std::vector<Ordinal> remoteGIDs;
-    remoteGIDs.reserve(numRemoteIDs);
-    for(Ordinal i = ZERO; i < length; i++) {
-      remoteGIDs.push_back( generateValue(i, as<Ordinal>(myImageID)) );
-    }
 
     // fill remoteImageIDs with {0, 1, 2, ... length-1}
-    vector<Ordinal> remoteImageIDs;
-    remoteImageIDs.reserve(numRemoteIDs);
-    for(Ordinal i = ZERO; i < numRemoteIDs; ++i) {
-      remoteImageIDs.push_back(i);
+    // we'll receive one GID from every image
+    // 
+    // fill remoteGIDs with row from generator
+    // we'll receive generateValue(i,myImageID) from proc "i"
+    // "i" sends us generateValue(i,myImageID)
+    // similarly, we send generateValue(myImageID,i) to proc "i"
+    vector<Ordinal> importImageIDs, importGIDs;
+    importImageIDs.reserve(length);
+    importGIDs.reserve(length);
+    for(Ordinal i = ZERO; i < length; ++i) {
+      importImageIDs.push_back(i);
+      importGIDs.push_back( generateValue(i, as<Ordinal>(myImageID)) );
     }
 
-    Ordinal numExportIDs = ZERO;
-    vector<Ordinal> exportGIDs(length,invalid),
-                exportImageIDs(length,invalid);
-
     Distributor<Ordinal> distributor(comm);
-    distributor.createFromRecvs(remoteGIDs, remoteImageIDs, exportGIDs, exportImageIDs);
+    vector<Ordinal> exportGIDs, exportImageIDs;
+    distributor.createFromRecvs(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
+    
+    TEST_EQUALITY(exportGIDs.size(), exportImageIDs.size());  // should *always* be the case
 
     std::vector<Ordinal> expectedGIDs;
-    generateColumn(expectedGIDs, myImageID, length);
-
-    TEST_EQUALITY(numExportIDs, numRemoteIDs);
-    TEST_COMPARE_ARRAYS(exportGIDs, expectedGIDs);
-    TEST_COMPARE_ARRAYS(exportImageIDs, remoteImageIDs);
+    for (Ordinal i = ZERO; i < length; ++i) {
+      expectedGIDs.push_back( generateValue(myImageID,i) );
+    }
+    TEST_COMPARE_ARRAYS(importImageIDs, exportImageIDs);             
+    TEST_COMPARE_ARRAYS(expectedGIDs, exportGIDs);
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -254,8 +305,9 @@ namespace {
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, basic, ORDINAL ) \
-      /* TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, * ORDINAL ) */ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSends, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsNonContig, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, double )
 
     UNIT_TEST_GROUP_ORDINAL(int)
@@ -264,8 +316,13 @@ namespace {
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, basic, ORDINAL ) \
-      /* TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, * ORDINAL ) */ \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSends, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSends, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsNonContig, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, char ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, int ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, double ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, float )
 
     UNIT_TEST_GROUP_ORDINAL(char)
     typedef short int ShortInt;

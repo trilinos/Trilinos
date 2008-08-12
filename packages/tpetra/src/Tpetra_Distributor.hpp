@@ -40,7 +40,7 @@
 // FINISH: some of the get accessors may not be necessary anymore. clean up.
 
 namespace Tpetra {
-  
+
   //! Tpetra::Distributor:  The Tpetra Gather/Scatter Setup Class.
   /*! The Distributor class is an interface that encapsulates the general
         information and services needed for other Tpetra classes to perform gather/scatter
@@ -101,46 +101,46 @@ namespace Tpetra {
 
     //@{ \name Attribute Accessor Methods
 
-    //! getTotalReceiveLength
-    const Ordinal & getTotalReceiveLength() const;
-
     //! getNumReceives
     const Ordinal & getNumReceives() const;
+
+    //! getNumSends
+    const Ordinal & getNumSends() const;
 
     //! getSelfMessage - flag for if we're sending to ourself
     /*! If we are sending any elements to ourself, returns true. If we aren't, returns false. */
     bool getSelfMessage() const;
 
-    //! getNumSends
-    const Ordinal & getNumSends() const;
-
     //! getMaxSendLength - maximum number of elements we're sending to a remote image
     const Ordinal & getMaxSendLength() const;
 
+    //! getTotalReceiveLength
+    const Ordinal & getTotalReceiveLength() const;
+
     //! getImagesFrom - list of images sending elements to us
     const std::vector<Ordinal> & getImagesFrom() const;
+
+    //! getImagesTo - list of images we're sending elements to
+    const std::vector<Ordinal> & getImagesTo() const;
 
     //! getLengthsFrom - number of elements we're receiving from each image
     /*! We will receive lengthsFrom[i] elements from image imagesFrom[i] */
     const std::vector<Ordinal> & getLengthsFrom() const;
 
-    //! getImagesTo - list of images we're sending elements to
-    const std::vector<Ordinal> & getImagesTo() const;
-
-    //! getIndicesTo
-    /*! (Used only if exportImageIDs was not blocked by image.)
-        Gives the order to the export buffer, in order to get
-      a version that is sorted by imageID. */
-    const std::vector<Ordinal> & getIndicesTo() const;
+    //! getLengthsTo - number of elements we're sending to each image
+    /*! We will send lengthsTo[i] elements to image imagesTo[i] */
+    const std::vector<Ordinal> & getLengthsTo() const;
 
     //! getStartsTo - list of offsets into export buffer
     /*! Given an export buffer that contains all of the elements we're sending out, 
         image i's block of elements will start at position startsTo[i] */
     const std::vector<Ordinal> & getStartsTo() const;
 
-    //! getLengthsTo - number of elements we're sending to each image
-    /*! We will send lengthsTo[i] elements to image imagesTo[i] */
-    const std::vector<Ordinal> & getLengthsTo() const;
+    //! getIndicesTo
+    /*! (Used only if exportImageIDs was not blocked by image.)
+        Gives the order to the export buffer, in order to get
+      a version that is sorted by imageID. */
+    const std::vector<Ordinal> & getIndicesTo() const;
 
     //@}
 
@@ -197,10 +197,10 @@ namespace Tpetra {
     void doReversePosts(const std::vector<Packet>& exports,
                         const Ordinal numPackets,
                               std::vector<Packet>& imports);
-    
+
     //! doReverseWaits
     void doReverseWaits();
-    
+
     //@}
 
     //@{ \name I/O Methods
@@ -946,7 +946,6 @@ namespace Tpetra {
     comm_->barrier();
   }
 
-  // FINISH: walkthrough
   template <typename Ordinal>
   void Distributor<Ordinal>::computeSends(
       const std::vector<Ordinal> & importIDs,
