@@ -74,11 +74,11 @@ namespace Tpetra {
              List of images that will get the exported data. Image IDs less than zero
              are ignored; their placement corresponds to null sends in any
              future exports.
-      \param numRemoteIDs Out
+      \param numImports Out
              Number of imports this image will be receiving.
     */
     void createFromSends(const std::vector<Ordinal> & exportImageIDs,
-                         Ordinal & numRemoteIDs);
+                         Ordinal & numImports);
 
     //! Create Distributor object using list of Image IDs to receive from
     /*! Take a list of global IDs and construct a plan for efficiently scattering to these images.
@@ -306,7 +306,7 @@ namespace Tpetra {
   template <typename Ordinal>
   void Distributor<Ordinal>::createFromSends(
       const std::vector<Ordinal> & exportImageIDs,
-      Ordinal & numRemoteIDs) 
+      Ordinal & numImports) 
   {
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal one  = Teuchos::OrdinalTraits<Ordinal>::one();
@@ -345,7 +345,7 @@ namespace Tpetra {
     //   this tests contiguity, but not sortedness.
     // both of these tests require O(n), where n is the number of 
     // exports. however, the latter will positively identify a greater
-    // portion of contiguous patterns. we will go with it.
+    // portion of contiguous patterns. we will use the latter method.
     // 
     // Check to see if items are grouped by images without gaps
     // If so, indices_to -> 0
@@ -401,6 +401,10 @@ namespace Tpetra {
     }
 
 
+#ifdef TEUCHOS_DEBUG
+    bool index_neq_numActive = false;
+    bool send_neq_numSends = false;
+#endif
     if (!needSendBuff) {
       // grouped by image, no send buffer or indicesTo_ needed
       numSends_ = ZERO;
@@ -430,8 +434,9 @@ namespace Tpetra {
           index += starts[imageID];
         }
 #ifdef TEUCHOS_DEBUG
-        SHARED_TEST_FOR_EXCEPTION(index != numActive, std::logic_error,
-            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+        if (index != numActive) {
+          index_neq_numActive = true;
+        }
 #endif
       }
 
@@ -451,7 +456,7 @@ namespace Tpetra {
         }
       }
     }
-    else { 
+    else {
       // not grouped by image, need send buffer and indicesTo_
 
       // starts[i] is the number of sends to node i
@@ -464,7 +469,7 @@ namespace Tpetra {
       else {
         numSends_ = one;
       }
-      for (int i = 1; i < numImages; --i) {
+      for (int i = 1; i < numImages; ++i) {
         if (starts[i] != ZERO) {
           ++numSends_;
         }
@@ -472,8 +477,13 @@ namespace Tpetra {
       }
       // starts[i] now contains the number of exports to nodes 0 through i
 
-      for (int i = numImages-1; i != 0; --i) {
-        starts[i] = starts[i-1];
+      for (typename std::vector<Ordinal>::iterator ip1=starts.end(),
+                                                     i=starts.end()-1;
+           ip1 != starts.begin(); ) 
+      {
+        *ip1 = *i;
+        ip1 = i;
+        i--;
       }
       starts[0] = ZERO;
       // starts[i] now contains the number of exports to nodes 0 through
@@ -531,17 +541,24 @@ namespace Tpetra {
         }
       }
 #ifdef TEUCHOS_DEBUG
-      SHARED_TEST_FOR_EXCEPTION(snd != numSends_, std::logic_error, 
-          "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.", *comm_);
+      if (snd != numSends_) {
+        send_neq_numSends = true;
+      }
 #endif
     }
+#ifdef TEUCHOS_DEBUG
+        SHARED_TEST_FOR_EXCEPTION(index_neq_numActive, std::logic_error,
+            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+        SHARED_TEST_FOR_EXCEPTION(send_neq_numSends, std::logic_error,
+            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+#endif
 
     if (selfMessage_) --numSends_;
 
     // Invert map to see what msgs are received and what length
     computeReceives();
 
-    numRemoteIDs = totalReceiveLength_;
+    numImports = totalReceiveLength_;
   }
 
   template <typename Ordinal>
@@ -881,13 +898,19 @@ namespace Tpetra {
     // therefore, each node will be listed in imagesTo_ at most once
     {
       std::vector<Ordinal> to_nodes_from_me(numImages, ZERO);
+#     ifdef TEUCHOS_DEBUG 
+        bool counting_error = false;
+#     endif
       for (int i = ZERO; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
 #       ifdef TEUCHOS_DEBUG
-          SHARED_TEST_FOR_EXCEPTION(to_nodes_from_me[imagesTo_[i]] != 0, std::logic_error,
-              "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+          if (to_nodes_from_me[imagesTo_[i]] != 0) counting_error = true;
 #       endif
         to_nodes_from_me[imagesTo_[i]] = ONE;
       }
+#     ifdef TEUCHOS_DEBUG
+        SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
+            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+#     endif
       // each proc will get back only one item (hence, counts = ones) from the array of globals sums, 
       // namely that entry corresponding to the node, and detailing how many receives it has.
       // this total includes self sends
