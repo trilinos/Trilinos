@@ -71,11 +71,6 @@ INTREPID_LOCAL_H =  \
   $(srcdir)/local/Intrepid_CubatureTensor.hpp \
   $(srcdir)/local/Intrepid_DefaultCubatureFactory.hpp \
   $(srcdir)/local/Intrepid_DefaultCubatureFactoryDef.hpp \
-  $(srcdir)/local/Intrepid_DefaultFieldFactory.hpp \
-  $(srcdir)/local/Intrepid_DefaultFieldFactoryDef.hpp \
-  $(srcdir)/local/Intrepid_LocalField.hpp \
-  $(srcdir)/local/Intrepid_LocalForm0Def.hpp \
-  $(srcdir)/local/Intrepid_LocalForm0.hpp \
   $(srcdir)/local/Intrepid_MultiCellDef.hpp \
   $(srcdir)/local/Intrepid_MultiCell.hpp \
   $(srcdir)/local/Intrepid_MultiCell.icpp \
