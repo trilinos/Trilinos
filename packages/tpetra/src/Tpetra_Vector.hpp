@@ -34,11 +34,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 
-#ifdef HAVE_TPETRA_TBB
-#include "Tpetra_TBB_TaskScheduler.hpp"
-#include "Tpetra_TBB_Vec_Kernels.hpp"
-#endif
-
 #include <Teuchos_Object.hpp>
 
 namespace Tpetra {
@@ -132,14 +127,8 @@ namespace Tpetra {
     OrdinalType length = getNumMyEntries();
     OrdinalType ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 
-#ifdef HAVE_TPETRA_TBB
-    ScalarType localDP = task_scheduler_is_alive() ?
-      threaded_vector_dot(length, scalarPointer(), x.scalarPointer()) :
-      BLAS().DOT(length, scalarPointer(), ordinalOne, x.scalarPointer(), ordinalOne);
-#else 
     // call BLAS routine to calculate local dot product
     ScalarType localDP = BLAS().DOT(length, scalarPointer(), ordinalOne, x.scalarPointer(), ordinalOne);
-#endif
 
     // use Comm call to sum all local dot products
     ScalarType globalDP;
@@ -208,29 +197,12 @@ namespace Tpetra {
 
     OrdinalType const length = getNumMyEntries();
 
-    //If we have Intel TBB thread support enabled, call the threaded_vector_update
-    //otherwise, use a combination of BLAS.SCAL and BLAS.AXPY.
-
-#     ifdef HAVE_TPETRA_TBB
-    if (task_scheduler_is_alive()) {
-      threaded_vector_update(length, scalarThis, scalarPointer(), scalarX, x.scalarPointer());
-    }
-    else {
-      OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
-      // calculate this *= scalarThis
-      BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
-
-      // calculate this += scalarX * x
-      BLAS().AXPY(length, scalarX, x.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
-    }
-#     else
     OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
     // calculate this *= scalarThis
     BLAS().SCAL(length, scalarThis, scalarPointer(), ordinalOne);
 
     // calculate this += scalarX * x
     BLAS().AXPY(length, scalarX, x.scalarPointer(), ordinalOne, scalarPointer(), ordinalOne);
-#     endif
 
     // update flops counter: 3n
     updateFlops(length + length + length);

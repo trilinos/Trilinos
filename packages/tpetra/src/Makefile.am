@@ -52,12 +52,10 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_Version.hpp \
-	$(srcdir)/Tpetra_Util.hpp \
-	$(srcdir)/Tpetra_TBB_TaskScheduler.hpp
+	$(srcdir)/Tpetra_Util.hpp
 
 UTIL = \
-	$(srcdir)/Tpetra_Version.cpp \
-	$(srcdir)/Tpetra_TBB_TaskScheduler.cpp
+	$(srcdir)/Tpetra_Version.cpp
 
 ENUM_H = \
 	$(srcdir)/Tpetra_CombineMode.hpp

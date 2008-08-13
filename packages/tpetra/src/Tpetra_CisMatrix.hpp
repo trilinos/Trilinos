@@ -38,11 +38,6 @@
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
 
-#ifdef HAVE_TPETRA_TBB
-#include "Tpetra_TBB_TaskScheduler.hpp"
-#include "Tpetra_TBB_MatVec_Kernel.hpp"
-#endif
-
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -775,27 +770,10 @@ namespace Tpetra {
       if(errorcode) 
         throw this->reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
-#ifdef HAVE_TPETRA_TBB
-      OrdinalType numrows = data().pntr_.size()-1;
-      const OrdinalType* rptr = &(data().pntr_[0]);
-      const OrdinalType* colinds = &(data().indx_[0]);
-      const ScalarType* coefs = &(data().values_[0]);
-
-      if (task_scheduler_is_alive()) {
-        threaded_crsmv(numrows, rptr, colinds, coefs, kx_values, ky_values);
-      }
-      else {
-        // do Kokkos apply operation
-        errorcode = data().axy_.apply(data().kx_, data().ky_, false);
-        if(errorcode) 
-          throw this->reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
-      }
-#else
       // do Kokkos apply operation
       errorcode = data().axy_.apply(data().kx_, data().ky_, false);
       if(errorcode) 
         throw this->reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
-#endif
 
       // do export if needed
       if(data().haveExporter_)
