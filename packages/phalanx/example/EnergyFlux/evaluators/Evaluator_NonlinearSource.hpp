@@ -46,8 +46,6 @@ public:
   
   NonlinearSource(const Teuchos::ParameterList& p);
   
-  ~NonlinearSource();
-
   void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData d);

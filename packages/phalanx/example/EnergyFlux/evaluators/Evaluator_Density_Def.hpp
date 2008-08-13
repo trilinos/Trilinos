@@ -42,11 +42,6 @@ Density(const Teuchos::ParameterList& p) :
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
-Density<EvalT, Traits>::~Density()
-{ }
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {

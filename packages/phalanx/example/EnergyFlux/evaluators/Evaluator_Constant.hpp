@@ -35,7 +35,6 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
 template<typename EvalT, typename Traits>
@@ -47,15 +46,9 @@ public:
   
   Constant(Teuchos::ParameterList& p);
   
-  ~Constant();
-  
   void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData ud);
-  
-  void preEvaluate() {}
-  
-  void postEvaluate() {}
   
 private:
   

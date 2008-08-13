@@ -47,15 +47,9 @@ public:
   
   Fourier(const Teuchos::ParameterList& p);
   
-  ~Fourier();
-  
   void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData d);
-  
-  void preEvaluate() {}
-  
-  void postEvaluate() {}
   
 private:
   

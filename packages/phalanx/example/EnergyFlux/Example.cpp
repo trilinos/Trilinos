@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
     {
       cout << "\nStarting EnergyFlux Example!" << endl;
 
-      RCP<DataLayout> qp = rcp(new Generic("Q1_QP", 4));
-      RCP<DataLayout> node = rcp(new Generic("Q1_NODE", 4));
+      RCP<DataLayout> qp = rcp(new Generic("QP", 4));
+      RCP<DataLayout> node = rcp(new Generic("NODE", 4));
 
       // Parser will build parameter list that determines the field
       // evaluators to build
@@ -180,74 +180,76 @@ int main(int argc, char *argv[])
       evaluators = factory.buildEvaluators(evaluators_to_build);
  
       // Create a FieldManager
-      FieldManager<MyTraits> vm;
+      FieldManager<MyTraits> fm;
+
+      // Register all Evaluators 
+      registerEvaluators(evaluators, fm);
 
       // Request quantities to assemble RESIDUAL PDE operators
       {
 	typedef MyTraits::Residual::ScalarT ResScalarT;
 	Tag< MyVector<ResScalarT> > energy_flux("Energy_Flux", qp);
-	vm.requireField<MyTraits::Residual>(energy_flux);
+	fm.requireField<MyTraits::Residual>(energy_flux);
 	Tag<ResScalarT> source("Nonlinear Source", qp);
-	vm.requireField<MyTraits::Residual>(source);
+	fm.requireField<MyTraits::Residual>(source);
       }
 
       // Request quantities to assemble JACOBIAN PDE operators
       {
 	typedef MyTraits::Jacobian::ScalarT JacScalarT;
 	Tag< MyVector<JacScalarT> > energy_flux("Energy_Flux", qp);
-	vm.requireField<MyTraits::Jacobian>(energy_flux);
+	fm.requireField<MyTraits::Jacobian>(energy_flux);
 	Tag<JacScalarT> source("Nonlinear Source", qp);
-	vm.requireField<MyTraits::Jacobian>(source);
+	fm.requireField<MyTraits::Jacobian>(source);
       }
 
-      // Register all Evaluators 
-      registerEvaluators(evaluators, vm);
-
-      const std::size_t num_cells = 10;
-      const std::size_t num_eval_loops = 1;
+      const std::size_t max_num_cells = 100;
 
       RCP<Time> registration_time = 
 	TimeMonitor::getNewTimer("Post Registration Setup Time");
       {
 	TimeMonitor t(*registration_time);
-	vm.postRegistrationSetup(num_cells);
+	fm.postRegistrationSetup(max_num_cells);
       }
 
-      cout << vm << endl;
+      cout << fm << endl;
       
-      std::vector<CellData> cells(num_cells);
+      std::vector<CellData> cells(max_num_cells);
 
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time");
 
-      vm.preEvaluate<MyTraits::Residual>(NULL);
+      fm.preEvaluate<MyTraits::Residual>(NULL);
       {
 	TimeMonitor t(*eval_time);
-	for (std::size_t i=0; i < num_eval_loops; ++i)
-	  vm.evaluateFields<MyTraits::Residual>(cells);
+	fm.evaluateFields<MyTraits::Residual>(cells);
       }
-      vm.postEvaluate<MyTraits::Residual>(NULL);
+      fm.postEvaluate<MyTraits::Residual>(NULL);
 
       // Test data retrieval
       cout << "Testing data members" << endl;
       Tag<double> d_var("Density", qp);
       Field<double> den(d_var); 
-      vm.getFieldData<double,MyTraits::Residual>(den);
+      fm.getFieldData<double,MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
-	   << num_cells * d_var.dataLayout().size() << "." << endl;
-      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(num_cells * d_var.dataLayout().size()),
+	   << max_num_cells * d_var.dataLayout().size() << "." << endl;
+      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(max_num_cells * d_var.dataLayout().size()),
 			 std::runtime_error, 
 			 "Returned arrays are not sized correctly!");
       
       
       cout << endl;
 
+      // ************************************************************
+      // * Tests to make sure solution is correct
+      // ************************************************************
+
       // Compare temperature fields, should be 2.0
       Field<double> temp("Temperature", node);
-      vm.getFieldData<double,MyTraits::Residual>(temp);
+      fm.getFieldData<double,MyTraits::Residual>(temp);
       
       Field<double> temp_base("Temperature Baseline", node);
       ArrayRCP<double> temp_base_data = 
-	arcp<double>(num_cells * node->size());
+	arcp<double>(max_num_cells * node->size());
       temp_base.setFieldData(temp_base_data);
       for (int i=0; i<temp_base.size(); ++i)
 	temp_base[i] = 2.0;
@@ -258,12 +260,12 @@ int main(int argc, char *argv[])
 
       // Compare temperature gradient fields, should be 2.0
       Field< MyVector<double> > tg("Temperature Gradient", qp);
-      vm.getFieldData<MyVector<double>,MyTraits::Residual>(tg);
+      fm.getFieldData<MyVector<double>,MyTraits::Residual>(tg);
 
       Field< MyVector<double> > 
 	tg_base("Temperature Gradient Baseline", qp);
       ArrayRCP< MyVector<double> > tg_base_data = 
-	arcp< MyVector<double> >(num_cells * qp->size());
+	arcp< MyVector<double> >(max_num_cells * qp->size());
       tg_base.setFieldData(tg_base_data);
       for (int i=0; i<tg_base.size(); ++i)
 	tg_base[i] = 2.0;
@@ -274,11 +276,11 @@ int main(int argc, char *argv[])
 
       // Compare energy flux fields, should be -16.0
       Field< MyVector<double> > ef("Energy_Flux", qp);
-      vm.getFieldData<MyVector<double>,MyTraits::Residual>(ef);
+      fm.getFieldData<MyVector<double>,MyTraits::Residual>(ef);
 
       Field< MyVector<double> > ef_base("Energy_Flux Baseline", qp);
       ArrayRCP< MyVector<double> > ef_base_data = 
-	arcp< MyVector<double> >(num_cells * qp->size());
+	arcp< MyVector<double> >(max_num_cells * qp->size());
       ef_base.setFieldData(ef_base_data);
       for (int i=0; i<ef_base.size(); ++i)
 	ef_base[i] = -16.0;
