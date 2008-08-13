@@ -79,6 +79,34 @@ else
 FEI_CHECK_COMM=serial
 endif
 
+if BUILD_TESTS
+tests:
+	@echo ""
+	@echo "Building fei tests."
+	@echo ""
+	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building fei tests."
+	@echo ""
+else
+tests:
+	@echo "fei tests were disabled at configure time"
+endif
+
+if BUILD_EXAMPLES
+examples:
+	@echo ""
+	@echo "Building fei examples."
+	@echo ""
+	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building fei examples."
+	@echo ""
+else
+examples:
+	@echo "fei examples were disabled at configure time"
+endif
+
 dist-hook:
 	for file in $(DONT_DISTRIBUTE) ; do \
 		rm -f $(distdir)/$$file ; \
