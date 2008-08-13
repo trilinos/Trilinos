@@ -35,11 +35,11 @@
 
 namespace Tpetra {
 
-  template<typename OrdinalType> class MapData;
+  template<typename Ordinal> class MapData;
 
   //! Tpetra::Map
 
-  template<typename OrdinalType>
+  template<typename Ordinal>
   class Map : public Teuchos::Object {
 
   public:
@@ -51,7 +51,7 @@ namespace Tpetra {
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    Map (OrdinalType numGlobalEntries, OrdinalType indexBase, const Platform<OrdinalType> &platform);
+    Map (Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform);
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
      *  The entries are distributed among the nodes so that the subsets of global entries
@@ -62,16 +62,16 @@ namespace Tpetra {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, OrdinalType indexBase, 
-         const Platform<OrdinalType> &platform);
+    Map (Ordinal numGlobalEntries, Ordinal numMyEntries, Ordinal indexBase, 
+         const Platform<Ordinal> &platform);
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
-    Map (OrdinalType numGlobalEntries, OrdinalType numMyEntries, 
-         const std::vector<OrdinalType> &entryList, OrdinalType indexBase, 
-         const Platform<OrdinalType> &platform);
+    Map (Ordinal numGlobalEntries, Ordinal numMyEntries, 
+         const std::vector<Ordinal> &entryList, Ordinal indexBase, 
+         const Platform<Ordinal> &platform);
 
     //! Map copy constructor.
-    Map (const Map<OrdinalType> &Map);
+    Map (const Map<Ordinal> &Map);
 
     //! Map destructor. 
     ~Map ();
@@ -82,55 +82,55 @@ namespace Tpetra {
     //@{ \name Map Attribute Methods
 
     //! Returns the number of entries in this Map.
-    OrdinalType getNumGlobalEntries() const;
+    Ordinal getNumGlobalEntries() const;
 
     //! Returns the number of entries belonging to the calling image.
-    OrdinalType getNumMyEntries() const;
+    Ordinal getNumMyEntries() const;
 
     //! Returns the index base for this Map.
-    OrdinalType getIndexBase() const;
+    Ordinal getIndexBase() const;
 
     //! Returns minimum local index
-    OrdinalType getMinLocalIndex() const;
+    Ordinal getMinLocalIndex() const;
 
     //! Returns maximum local index
-    OrdinalType getMaxLocalIndex() const;
+    Ordinal getMaxLocalIndex() const;
 
     //! Returns minimum global index owned by this image
-    OrdinalType getMinGlobalIndex() const;
+    Ordinal getMinGlobalIndex() const;
 
     //! Returns maximum global index owned by this image
-    OrdinalType getMaxGlobalIndex() const;
+    Ordinal getMaxGlobalIndex() const;
 
     //! Return the minimum global index over all images
-    OrdinalType getMinAllGlobalIndex() const;
+    Ordinal getMinAllGlobalIndex() const;
 
     //! Return the maximum global index over all images
-    OrdinalType getMaxAllGlobalIndex() const;
+    Ordinal getMaxAllGlobalIndex() const;
 
     //! Return the local index for a given global index
-    OrdinalType getLocalIndex(OrdinalType globalIndex) const;
+    Ordinal getLocalIndex(Ordinal globalIndex) const;
 
     //! Return the global index for a given local index
-    OrdinalType getGlobalIndex(OrdinalType localIndex) const;
+    Ordinal getGlobalIndex(Ordinal localIndex) const;
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    void getRemoteIndexList(const std::vector<OrdinalType> & GIDList, 
-                                  std::vector<OrdinalType> & imageIDList, 
-                                  std::vector<OrdinalType> & LIDList) const;
+    void getRemoteIndexList(const std::vector<Ordinal> & GIDList, 
+                                  std::vector<Ordinal> & imageIDList, 
+                                  std::vector<Ordinal> & LIDList) const;
 
     //! Returns the node IDs for a given list of global indices.
-    void getRemoteIndexList(const std::vector<OrdinalType> & GIDList, 
-                                  std::vector<OrdinalType> & imageIDList) const;
+    void getRemoteIndexList(const std::vector<Ordinal> & GIDList, 
+                                  std::vector<Ordinal> & imageIDList) const;
 
     //! Return a list of the global entries owned by this image
-    const std::vector<OrdinalType> & getMyGlobalEntries() const;
+    const std::vector<Ordinal> & getMyGlobalEntries() const;
 
     //! Returns true if the local index value passed in is found on the calling image, returns false if it doesn't.
-    bool isMyLocalIndex(OrdinalType localIndex) const;
+    bool isMyLocalIndex(Ordinal localIndex) const;
 
     //! Returns true if the global index value passed in is found the calling image, returns false if it doesn't.
-    bool isMyGlobalIndex(OrdinalType globalIndex) const;
+    bool isMyGlobalIndex(Ordinal globalIndex) const;
 
     //! Returns true if this Map is distributed contiguously, returns false otherwise.
     bool isContiguous() const;
@@ -143,29 +143,29 @@ namespace Tpetra {
     //@{ \name Boolean Tests
 
     //! Returns true if \c map is compatible with this Map.
-    bool isCompatible (const Map< OrdinalType> &map) const;
+    bool isCompatible (const Map< Ordinal> &map) const;
 
     //! Returns true if \c map is identical to this Map.
-    bool isSameAs (const Map<OrdinalType> &map) const;
+    bool isSameAs (const Map<Ordinal> &map) const;
 
     //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
-    bool operator== (const Map< OrdinalType > &map) const;
+    bool operator== (const Map< Ordinal > &map) const;
 
     //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
-    bool operator!= (const Map< OrdinalType > &map) const;
+    bool operator!= (const Map< Ordinal > &map) const;
 
     //@}
 
     //@{ Misc. 
 
     //! Assignment operator
-    Map<OrdinalType>& operator = (const Map<OrdinalType> & Source);
+    Map<Ordinal>& operator = (const Map<Ordinal> & Source);
 
     //! Get the Platform object for this Map
-    Teuchos::RCP< const Platform<OrdinalType> > getPlatform() const;
+    Teuchos::RCP< const Platform<Ordinal> > getPlatform() const;
 
     //! Get the Comm object for this Map
-    Teuchos::RCP< Teuchos::Comm<OrdinalType> > getComm() const;
+    Teuchos::RCP< Teuchos::Comm<Ordinal> > getComm() const;
 
     //@}
 
@@ -180,7 +180,7 @@ namespace Tpetra {
 
   private:
 
-    Teuchos::RCP< MapData<OrdinalType> > MapData_;
+    Teuchos::RCP< MapData<Ordinal> > MapData_;
 
     // setup the directory
     void directorySetup();

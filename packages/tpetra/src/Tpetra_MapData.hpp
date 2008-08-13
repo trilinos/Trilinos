@@ -34,20 +34,20 @@
 
 namespace Tpetra {
 
-  template<typename OrdinalType>
-  MapData<OrdinalType>::MapData(
-            OrdinalType indexBase, 
-            OrdinalType numGlobalEntries,
-            OrdinalType numMyEntries,
-            OrdinalType minAllGID,
-            OrdinalType maxAllGID,
-            OrdinalType minMyGID,
-            OrdinalType maxMyGID,
-            const std::vector<OrdinalType>& lgMap,
-            const std::map<OrdinalType, OrdinalType>& glMap,
+  template<typename Ordinal>
+  MapData<Ordinal>::MapData(
+            Ordinal indexBase, 
+            Ordinal numGlobalEntries,
+            Ordinal numMyEntries,
+            Ordinal minAllGID,
+            Ordinal maxAllGID,
+            Ordinal minMyGID,
+            Ordinal maxMyGID,
+            const std::vector<Ordinal>& lgMap,
+            const std::map<Ordinal, Ordinal>& glMap,
             bool contiguous,
-            Teuchos::RCP< Platform<OrdinalType> > platform,
-            Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm)
+            Teuchos::RCP< Platform<Ordinal> > platform,
+            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm)
       : Teuchos::Object("Tpetra::MapData")
       , platform_(platform)
       , comm_(comm)
@@ -66,11 +66,11 @@ namespace Tpetra {
         , Directory_() */
     {}
 
-  template<typename OrdinalType>
-  MapData<OrdinalType>::~MapData() {}
+  template<typename Ordinal>
+  MapData<Ordinal>::~MapData() {}
 
-  template<typename OrdinalType>
-  bool MapData<OrdinalType>::checkIsDist() {
+  template<typename Ordinal>
+  bool MapData<Ordinal>::checkIsDist() {
     bool global = false;
     if(comm_->getSize() > 1) {
       int localRep = 0;

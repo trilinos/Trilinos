@@ -33,6 +33,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include "Tpetra_MapDecl.hpp"
 #include "Tpetra_MapData.hpp"
+#include "Tpetra_Directory.hpp"
 
 //
 // compute isDistributed. it will be global.
@@ -51,8 +52,8 @@
 
 namespace Tpetra {
 
-  template<typename OrdinalType>
-  Map<OrdinalType>::Map(OrdinalType numGlobalEntries, OrdinalType indexBase, const Platform<OrdinalType> &platform) 
+  template<typename Ordinal>
+  Map<Ordinal>::Map(Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform) 
     : Teuchos::Object("Tpetra::Map")
     , MapData_()
   {
@@ -60,25 +61,25 @@ namespace Tpetra {
     // - non-overlapping
     // - contiguous
     // - as evenly distributed as possible
-    const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
-    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    const OrdinalType negOne = zero - one;
+    const Ordinal one = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal negOne = zero - one;
 
     std::string errPrefix;
-    errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<OrdinalType>::name() 
+    errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
               + ">::constructor(numGlobal,indexBase,platform): ";
 
     // get a internodal communicator from the Platform
-    Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm = platform.createComm();
-    OrdinalType numImages = comm->getSize();
-    OrdinalType myImageID = comm->getRank();
+    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = platform.createComm();
+    Ordinal numImages = comm->getSize();
+    Ordinal myImageID = comm->getRank();
 
     // check that numGlobalEntries,indexBase is equivalent across images
-    std::vector<OrdinalType> root_entries(2);
+    std::vector<Ordinal> root_entries(2);
     root_entries[0] = numGlobalEntries;
     root_entries[1] = indexBase;
-    Teuchos::broadcast(*comm,(OrdinalType)0,(OrdinalType)2,&root_entries[0]);   // broadcast 2 ordinals from node 0
-    std::vector<OrdinalType> localChecks(2);
+    Teuchos::broadcast(*comm,(Ordinal)0,(Ordinal)2,&root_entries[0]);   // broadcast 2 ordinals from node 0
+    std::vector<Ordinal> localChecks(2);
     localChecks[0] = negOne;  // fail or pass
     localChecks[1] = zero;    // fail reason
     if (numGlobalEntries != root_entries[0]) {
@@ -93,8 +94,8 @@ namespace Tpetra {
     // otherwise, checkPassed == myImageID signifies it did not pass
     // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass, as well as the reason
     // this will be negOne and zero if all procs passed
-    OrdinalType globalChecks[2];
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(OrdinalType)2,&localChecks[0],&globalChecks[0]);
+    Ordinal globalChecks[2];
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
     if (globalChecks[0] != negOne) {
       if (globalChecks[1] == one) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
@@ -134,9 +135,9 @@ namespace Tpetra {
          - numImages == 1         -> remainder == 0 && numGlobalEntries == numLocalEntries
          - numEntries < numImages -> remainder == numGlobalEntries && numLocalEntries \in [0,1]
      */
-    OrdinalType numLocalEntries = numGlobalEntries / numImages;    // the above code assumes truncation. is that safe? FINISH
-    OrdinalType remainder = numGlobalEntries % numImages;
-    OrdinalType start_index;
+    Ordinal numLocalEntries = numGlobalEntries / numImages;    // the above code assumes truncation. is that safe? FINISH
+    Ordinal remainder = numGlobalEntries % numImages;
+    Ordinal start_index;
     if (myImageID < remainder) {
       ++numLocalEntries;
       /* the myImageID images before were each allocated 
@@ -163,19 +164,19 @@ namespace Tpetra {
     }
 
     // create empty maps between local and global entries: let the MapData constructor fill them
-    std::vector<OrdinalType> lgMap;
-    std::map<OrdinalType,OrdinalType> glMap;
+    std::vector<Ordinal> lgMap;
+    std::map<Ordinal,Ordinal> glMap;
 
     // compute the min/max global IDs
-    OrdinalType minAllGID = indexBase;
-    OrdinalType maxAllGID = indexBase + numGlobalEntries - one;
-    OrdinalType minMyGID  = start_index + indexBase;
-    OrdinalType maxMyGID  = minMyGID + numLocalEntries - one;
+    Ordinal minAllGID = indexBase;
+    Ordinal maxAllGID = indexBase + numGlobalEntries - one;
+    Ordinal minMyGID  = start_index + indexBase;
+    Ordinal maxMyGID  = minMyGID + numLocalEntries - one;
 
-    Teuchos::RCP< Platform<OrdinalType> > platform_clone = platform.clone();
+    Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
 
     // create a MapData structure 
-    MapData_ = Teuchos::rcp( new MapData<OrdinalType>(indexBase,numGlobalEntries,numLocalEntries,
+    MapData_ = Teuchos::rcp( new MapData<Ordinal>(indexBase,numGlobalEntries,numLocalEntries,
                                                       minAllGID,maxAllGID,minMyGID,maxMyGID,
                                                       lgMap,glMap,true,  // we are contiguous
                                                       platform_clone, comm) );
@@ -184,9 +185,9 @@ namespace Tpetra {
     directorySetup();
   }
 
-  template<typename OrdinalType>
-  Map<OrdinalType>::Map (OrdinalType numGlobalEntries, OrdinalType numLocalEntries, OrdinalType indexBase, 
-                         const Platform<OrdinalType> &platform)
+  template<typename Ordinal>
+  Map<Ordinal>::Map (Ordinal numGlobalEntries, Ordinal numLocalEntries, Ordinal indexBase, 
+                         const Platform<Ordinal> &platform)
     : Teuchos::Object("Tpetra::Map")
     , MapData_()
   {
@@ -196,19 +197,19 @@ namespace Tpetra {
     // This differs from Map(Ord,Ord,Plat) in that the user has specified the number of entries 
     // per node, so that they are not (necessarily) evenly distributed
 
-    const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
-    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    const OrdinalType negOne = zero - one;
+    const Ordinal one = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal negOne = zero - one;
 
     std::string errPrefix;
-    errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<OrdinalType>::name() 
+    errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
               + ">::constructor(numGlobal,numLocal,indexBase,platform): ";
 
     // get a internodal communicator from the Platform
-    Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm = platform.createComm();
-    OrdinalType myImageID = comm->getRank();
+    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = platform.createComm();
+    Ordinal myImageID = comm->getRank();
     // for communicating failures 
-    std::vector<OrdinalType> localChecks(2), globalChecks(2);
+    std::vector<Ordinal> localChecks(2), globalChecks(2);
 
     /* compute the global size 
        we are computing the number of global entries because exactly ONE of the following is true:
@@ -217,7 +218,7 @@ namespace Tpetra {
          + validate it against the sum of the local sizes, and
          + ensure that it is the same on all nodes
      */
-    OrdinalType global_sum;
+    Ordinal global_sum;
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,numLocalEntries,&global_sum);
     /* there are three errors we should be detecting:
        - numGlobalEntries != -1 and it is incorrect/invalid
@@ -237,7 +238,7 @@ namespace Tpetra {
       localChecks[1] = one+one+one;
     }
     // now check that indexBase is equivalent across images
-    OrdinalType root_indexbase = indexBase;
+    Ordinal root_indexbase = indexBase;
     Teuchos::broadcast(*comm,0,&root_indexbase);   // broadcast one ordinal from node 0
     if (indexBase != root_indexbase) {
       localChecks[0] = myImageID;
@@ -247,7 +248,7 @@ namespace Tpetra {
     // otherwise, checkPassed == myImageID signifies it did not pass
     // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass
     // this will be negOne if all procs passed
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(OrdinalType)2,&localChecks[0],&globalChecks[0]);
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
     if (globalChecks[0] != negOne) {
       if (globalChecks[1] == one) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
@@ -282,24 +283,24 @@ namespace Tpetra {
     }
 
     // compute my local offset
-    OrdinalType start_index;
+    Ordinal start_index;
     Teuchos::scan(*comm,Teuchos::REDUCE_SUM,numLocalEntries,&start_index);
     start_index -= numLocalEntries;
 
     // create empty maps between local and global entries: let the MapData constructor fill them
-    std::vector<OrdinalType> lgMap;
-    std::map<OrdinalType,OrdinalType> glMap;
+    std::vector<Ordinal> lgMap;
+    std::map<Ordinal,Ordinal> glMap;
 
     // compute the min/max global IDs
-    OrdinalType minAllGID = indexBase;
-    OrdinalType maxAllGID = indexBase + numGlobalEntries - one;
-    OrdinalType minMyGID = start_index + indexBase;
-    OrdinalType maxMyGID = minMyGID + numLocalEntries - one;
+    Ordinal minAllGID = indexBase;
+    Ordinal maxAllGID = indexBase + numGlobalEntries - one;
+    Ordinal minMyGID = start_index + indexBase;
+    Ordinal maxMyGID = minMyGID + numLocalEntries - one;
 
-    Teuchos::RCP< Platform<OrdinalType> > platform_clone = platform.clone();
+    Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
 
     // create a MapData structure 
-    MapData_ = Teuchos::rcp( new MapData<OrdinalType>(indexBase,numGlobalEntries,numLocalEntries,
+    MapData_ = Teuchos::rcp( new MapData<Ordinal>(indexBase,numGlobalEntries,numLocalEntries,
                                                       minAllGID,maxAllGID,minMyGID,maxMyGID,
                                                       lgMap,glMap,true,  // we are contiguous
                                                       platform_clone, comm) );
@@ -308,27 +309,27 @@ namespace Tpetra {
     directorySetup();
   }
 
-  template<typename OrdinalType>
-  Map<OrdinalType>::Map (OrdinalType numGlobalEntries, OrdinalType numLocalEntries, const std::vector<OrdinalType> &entryList, OrdinalType indexBase, 
-                         const Platform<OrdinalType> &platform) 
+  template<typename Ordinal>
+  Map<Ordinal>::Map (Ordinal numGlobalEntries, Ordinal numLocalEntries, const std::vector<Ordinal> &entryList, Ordinal indexBase, 
+                         const Platform<Ordinal> &platform) 
     : Teuchos::Object("Tpetra::Map")
     , MapData_()
   {
     // Distribute the entries across the nodes in an arbitrary user-specified manner
     // They are not necessarily contiguous or evenly distributed
-    const OrdinalType one = Teuchos::OrdinalTraits<OrdinalType>::one();
-    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    const OrdinalType negOne = zero - one;
+    const Ordinal one = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal negOne = zero - one;
 
     std::string errPrefix;
-    errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<OrdinalType>::name() 
+    errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
               + ">::constructor(numGlobal,numLocalEntries,entryList,indexBase,platform): ";
 
     // platform & comm setup
-    Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm = platform.createComm();
-    OrdinalType myImageID = comm->getRank();
+    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = platform.createComm();
+    Ordinal myImageID = comm->getRank();
     // for communicating failures 
-    std::vector<OrdinalType> localChecks(2), globalChecks(2);
+    std::vector<Ordinal> localChecks(2), globalChecks(2);
 
     /* compute the global size 
        we are computing the number of global entries because exactly ONE of the following is true:
@@ -337,10 +338,10 @@ namespace Tpetra {
          + validate it against the sum of the local sizes, and
          + ensure that it is the same on all nodes
      */
-    OrdinalType global_sum;
+    Ordinal global_sum;
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,numLocalEntries,&global_sum);
     localChecks[0] = negOne;
-    if (numLocalEntries < zero || numLocalEntries > (OrdinalType)entryList.size()) {
+    if (numLocalEntries < zero || numLocalEntries > (Ordinal)entryList.size()) {
       localChecks[0] = myImageID;
       localChecks[1] = one;
     }
@@ -353,7 +354,7 @@ namespace Tpetra {
       localChecks[1] = one + one + one;
     }
     // now check that indexBase is equivalent across images
-    OrdinalType root_indexbase = indexBase;
+    Ordinal root_indexbase = indexBase;
     Teuchos::broadcast(*comm,0,&root_indexbase);   // broadcast one ordinal from node 0
     if (indexBase != root_indexbase) {
       localChecks[0] = myImageID;
@@ -363,7 +364,7 @@ namespace Tpetra {
     // otherwise, checkPassed == myImageID signifies it did not pass
     // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass
     // this will be negOne if all procs passed
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(OrdinalType)2,&localChecks[0],&globalChecks[0]);
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
     if (globalChecks[0] != negOne) {
       if (globalChecks[1] == one) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
@@ -398,18 +399,18 @@ namespace Tpetra {
     }
 
     // setup lgmap and glmap, and min/maxMyGIDs
-    std::map<OrdinalType,OrdinalType> glMap;
-    std::vector<OrdinalType> lgMap;
-    OrdinalType minMyGID = indexBase;
-    OrdinalType maxMyGID = indexBase;
+    std::map<Ordinal,Ordinal> glMap;
+    std::vector<Ordinal> lgMap;
+    Ordinal minMyGID = indexBase;
+    Ordinal maxMyGID = indexBase;
     // create the GID to LID map; do not assume GID in entryList are distinct.
     // in the case that a GID is duplicated, keep the previous LID
     // this is necessary so that LIDs are in [0,numLocal)
     // FINISH: make sure this is legal
     {
-      OrdinalType numLIDs = zero;
+      Ordinal numLIDs = zero;
       if (numLocalEntries > zero) {
-        for(OrdinalType i = zero; i < numLocalEntries; i++) {
+        for(Ordinal i = zero; i < numLocalEntries; i++) {
           if (glMap.find(entryList[i]) == glMap.end()) {
             lgMap.push_back(entryList[i]);   // lgMap: LID to GID
             glMap[entryList[i]] = numLIDs;   // glMap: GID to LID
@@ -423,22 +424,22 @@ namespace Tpetra {
     } 
 
     // set min/maxAllGIDs
-    OrdinalType minAllGID, maxAllGID;
+    Ordinal minAllGID, maxAllGID;
     {
-      OrdinalType minmaxAllGIDlcl[2], minmaxAllGIDgbl[2];
+      Ordinal minmaxAllGIDlcl[2], minmaxAllGIDgbl[2];
       minmaxAllGIDlcl[0] = -minMyGID;  // negative allows us to do a single
       minmaxAllGIDlcl[1] =  maxMyGID;  // reduction below
-      Teuchos::reduceAll<OrdinalType>(*comm,Teuchos::REDUCE_MAX,2,minmaxAllGIDlcl,minmaxAllGIDgbl);
+      Teuchos::reduceAll<Ordinal>(*comm,Teuchos::REDUCE_MAX,2,minmaxAllGIDlcl,minmaxAllGIDgbl);
       minAllGID = -minmaxAllGIDgbl[0];
       maxAllGID =  minmaxAllGIDgbl[1];
     }
     TEST_FOR_EXCEPTION(minAllGID < indexBase, std::invalid_argument,
         errPrefix << "minimum GID == " << minAllGID << " is less than indexBase == " << indexBase);
 
-    Teuchos::RCP< Platform<OrdinalType> > platform_clone = platform.clone();
+    Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
 
     // call ESData constructor
-    MapData_ = Teuchos::rcp(new MapData<OrdinalType>(indexBase, numGlobalEntries, 
+    MapData_ = Teuchos::rcp(new MapData<Ordinal>(indexBase, numGlobalEntries, 
           numLocalEntries, minAllGID, maxAllGID, 
           minMyGID, maxMyGID, lgMap, glMap, 
           false, platform_clone, comm));
@@ -447,90 +448,90 @@ namespace Tpetra {
     directorySetup();
   }
 
-  template<typename OrdinalType>
-  Map<OrdinalType>::Map (const Map<OrdinalType> &map) 
+  template<typename Ordinal>
+  Map<Ordinal>::Map (const Map<Ordinal> &map) 
     : Teuchos::Object(map.label())
     , MapData_(map.MapData_)
   {}
 
-  template<typename OrdinalType>
-  Map<OrdinalType>::~Map () 
+  template<typename Ordinal>
+  Map<Ordinal>::~Map () 
   { }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getNumGlobalEntries() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getNumGlobalEntries() const {
     return MapData_->numGlobalEntries_;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getNumMyEntries() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getNumMyEntries() const {
     return MapData_->numMyEntries_;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getIndexBase() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getIndexBase() const {
     return MapData_->indexBase_;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getMinLocalIndex() const {
-    return Teuchos::OrdinalTraits<OrdinalType>::zero();
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getMinLocalIndex() const {
+    return Teuchos::OrdinalTraits<Ordinal>::zero();
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getMaxLocalIndex() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getMaxLocalIndex() const {
     return MapData_->numMyEntries_-1;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getMinGlobalIndex() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getMinGlobalIndex() const {
     return MapData_->minMyGID_;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getMaxGlobalIndex() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getMaxGlobalIndex() const {
     return MapData_->maxMyGID_;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getMinAllGlobalIndex() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getMinAllGlobalIndex() const {
     return MapData_->minAllGID_;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getMaxAllGlobalIndex() const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getMaxAllGlobalIndex() const {
     return MapData_->maxAllGID_;
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getLocalIndex(OrdinalType globalIndex) const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getLocalIndex(Ordinal globalIndex) const {
     if (MapData_->contiguous_) {
       TEST_FOR_EXCEPTION(
         globalIndex < getMinGlobalIndex() || globalIndex > getMaxGlobalIndex(), 
         std::invalid_argument,
-        "Tpetra::Map<" << Teuchos::OrdinalTraits<OrdinalType>::name() 
+        "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
                        << ">::getLocalIndex(gid): gid does not belong to this map."
       );
       return globalIndex - getMinGlobalIndex();
     }
     else {
-      typename std::map<OrdinalType,OrdinalType>::const_iterator i;
+      typename std::map<Ordinal,Ordinal>::const_iterator i;
       i = MapData_->glMap_.find(globalIndex);
       TEST_FOR_EXCEPTION(
         i == MapData_->glMap_.end(), std::invalid_argument,
-        "Tpetra::Map<" << Teuchos::OrdinalTraits<OrdinalType>::name() 
+        "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
                        << ">::getLocalIndex(gid): gid does not belong to this map."
       );
       return i->second;
     }
   }
 
-  template<typename OrdinalType>
-  OrdinalType Map<OrdinalType>::getGlobalIndex(OrdinalType localIndex) const {
+  template<typename Ordinal>
+  Ordinal Map<Ordinal>::getGlobalIndex(Ordinal localIndex) const {
     TEST_FOR_EXCEPTION(
         localIndex < 0 || localIndex > MapData_->numMyEntries_-1,
         std::invalid_argument,
-        "Tpetra::Map<" << Teuchos::OrdinalTraits<OrdinalType>::name() 
+        "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
            << ">::getGlobalIndex(lid): lid invalid.");
     if (MapData_->contiguous_) {
       return localIndex + getMinGlobalIndex();
@@ -540,8 +541,8 @@ namespace Tpetra {
     }
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::isMyLocalIndex(OrdinalType localIndex) const {
+  template<typename Ordinal>
+  bool Map<Ordinal>::isMyLocalIndex(Ordinal localIndex) const {
     // we have local indices in [0,numLocalEntries)
     if (localIndex >= 0 && localIndex < MapData_->numMyEntries_) {
       return true;
@@ -549,20 +550,20 @@ namespace Tpetra {
     return false;
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::isMyGlobalIndex(OrdinalType globalIndex) const {
-    typename std::map<OrdinalType,OrdinalType>::iterator i;
+  template<typename Ordinal>
+  bool Map<Ordinal>::isMyGlobalIndex(Ordinal globalIndex) const {
+    typename std::map<Ordinal,Ordinal>::iterator i;
     i = MapData_->glMap_.find(globalIndex);
     return (i != MapData_->glMap_.end());
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::isContiguous() const {
+  template<typename Ordinal>
+  bool Map<Ordinal>::isContiguous() const {
     return MapData_->contiguous_;
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::isCompatible (const Map< OrdinalType> &map) const {
+  template<typename Ordinal>
+  bool Map<Ordinal>::isCompatible (const Map< Ordinal> &map) const {
     // this is wrong: the non-compat procs will return false, then the compat 
     // procs will stall on this communication. this is demonstrated by tpetra/test/Map/Map_test.exe
     /*
@@ -588,8 +589,8 @@ namespace Tpetra {
     return(iscompat_gbl == Teuchos::ScalarTraits<char>::one());
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::isSameAs (const Map<OrdinalType> &map) const {
+  template<typename Ordinal>
+  bool Map<Ordinal>::isSameAs (const Map<Ordinal> &map) const {
     if (MapData_ == map.MapData_) {
       // we should assume that this is globally coherent
       // if they share the same underlying MapData, then they must be equivalent maps
@@ -642,37 +643,37 @@ namespace Tpetra {
     return(isSame_gbl == Teuchos::ScalarTraits<char>::one());
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::operator== (const Map< OrdinalType > &map) const {
+  template<typename Ordinal>
+  bool Map<Ordinal>::operator== (const Map< Ordinal > &map) const {
     return isSameAs(map);
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::operator!= (const Map< OrdinalType > &map) const {
+  template<typename Ordinal>
+  bool Map<Ordinal>::operator!= (const Map< Ordinal > &map) const {
     return !isSameAs(map);
   }
 
-  template<typename OrdinalType>
-  Map<OrdinalType>& Map<OrdinalType>::operator = (const Map<OrdinalType> & Source) {
+  template<typename Ordinal>
+  Map<Ordinal>& Map<Ordinal>::operator = (const Map<Ordinal> & Source) {
     MapData_ = Source.MapData_;
     return *this;
   }
 
-  template<typename OrdinalType>
-  const std::vector<OrdinalType> & 
-  Map<OrdinalType>::getMyGlobalEntries() const {
+  template<typename Ordinal>
+  const std::vector<Ordinal> & 
+  Map<Ordinal>::getMyGlobalEntries() const {
     return MapData_->lgMap_;
   }
 
-  template<typename OrdinalType>
-  bool Map<OrdinalType>::isDistributed() const {
+  template<typename Ordinal>
+  bool Map<Ordinal>::isDistributed() const {
     return MapData_->distributed_;
   }
 
-  template<typename OrdinalType>
-  void Map<OrdinalType>::print(ostream& os) const {
-    const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
-    const OrdinalType nME = getNumMyEntries();
+  template<typename Ordinal>
+  void Map<Ordinal>::print(ostream& os) const {
+    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal nME = getNumMyEntries();
     
     using std::endl;
 
@@ -698,8 +699,8 @@ namespace Tpetra {
            << std::setw(16) << "Local Index"
            << std::setw(16) << "Global Index"
            << endl;
-        std::vector<OrdinalType> myEntries = getMyGlobalEntries();
-        for(OrdinalType i = zero; i < nME; i++) {
+        std::vector<Ordinal> myEntries = getMyGlobalEntries();
+        for(Ordinal i = zero; i < nME; i++) {
           os << std::setw(16) << myImageID 
              << std::setw(16) << i
              << std::setw(16) << MapData_->lgMap_[i]
@@ -714,50 +715,50 @@ namespace Tpetra {
     }
   }
 
-  template<typename OrdinalType>
-  void Map<OrdinalType>::directorySetup() {
-    if (getNumGlobalEntries() != Teuchos::OrdinalTraits<OrdinalType>::zero()) {
+  template<typename Ordinal>
+  void Map<Ordinal>::directorySetup() {
+    if (getNumGlobalEntries() != Teuchos::OrdinalTraits<Ordinal>::zero()) {
       if (MapData_->directory_ == Teuchos::null) {
-        MapData_->directory_ = Teuchos::rcp( new Directory<OrdinalType>(*this) );
+        MapData_->directory_ = Teuchos::rcp( new Directory<Ordinal>(*this) );
       }
     }
   }
 
-  template<typename OrdinalType>
-  void Map<OrdinalType>::getRemoteIndexList(
-      const std::vector<OrdinalType> & GIDList, 
-            std::vector<OrdinalType> & imageIDList, 
-            std::vector<OrdinalType> & LIDList) const 
+  template<typename Ordinal>
+  void Map<Ordinal>::getRemoteIndexList(
+      const std::vector<Ordinal> & GIDList, 
+            std::vector<Ordinal> & imageIDList, 
+            std::vector<Ordinal> & LIDList) const 
   {
     if (GIDList.size() == 0) return;
     TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
-        "Tpetra::Map<" + Teuchos::OrdinalTraits<OrdinalType>::name() 
+        "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
         + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called.");
     MapData_->directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
   }
 
-  template<typename OrdinalType>
-  void Map<OrdinalType>::getRemoteIndexList(
-      std::vector<OrdinalType> const& GIDList, 
-      std::vector<OrdinalType>& imageIDList) const 
+  template<typename Ordinal>
+  void Map<Ordinal>::getRemoteIndexList(
+      std::vector<Ordinal> const& GIDList, 
+      std::vector<Ordinal>& imageIDList) const 
   {
     if (GIDList.size() == 0) return;
     TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
-        "Tpetra::Map<" + Teuchos::OrdinalTraits<OrdinalType>::name() 
+        "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
         + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called.");
     MapData_->directory_->getDirectoryEntries(GIDList, imageIDList);
   }
 
 
-  template<typename OrdinalType>
-  Teuchos::RCP<const Platform<OrdinalType> >
-  Map<OrdinalType>::getPlatform() const {
+  template<typename Ordinal>
+  Teuchos::RCP<const Platform<Ordinal> >
+  Map<Ordinal>::getPlatform() const {
     return MapData_->platform_;
   }
 
-  template<typename OrdinalType>
-  Teuchos::RCP< Teuchos::Comm<OrdinalType> >
-  Map<OrdinalType>::getComm() const {
+  template<typename Ordinal>
+  Teuchos::RCP< Teuchos::Comm<Ordinal> >
+  Map<Ordinal>::getComm() const {
     return MapData_->comm_;
   }
 

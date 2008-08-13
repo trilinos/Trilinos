@@ -3,13 +3,8 @@
 #
 
 # (FRAMEWORK, INSTALL) {
-#     DIRS = Platform,
-#            Distributor,
-#            Directory,
-#            DistObject,
-#            ElementSpace,
+#     DIRS = DistObject,
 #            ImportExport,
-#            VectorSpace,
 #            Vector,
 #            CisMatrix;
 #     ARGS = -v;
@@ -23,7 +18,7 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Distributor;
+    DIRS = Distributor, Map, Directory;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }

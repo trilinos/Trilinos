@@ -27,7 +27,6 @@
 // @HEADER
 
 #include "../tpetra_test_util.hpp"
-#include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Directory.hpp"
 #ifdef TPETRA_MPI
 #include "Tpetra_MpiPlatform.hpp"
@@ -108,9 +107,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   
 	// create platform needed for directory construction
 #ifdef TPETRA_MPI
-	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
+	Tpetra::MpiPlatform<OrdinalType> platform(MPI_COMM_WORLD);
 #else
-	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
+	Tpetra::SerialPlatform<OrdinalType> platform;
 #endif
   
 	// ======================================================================
