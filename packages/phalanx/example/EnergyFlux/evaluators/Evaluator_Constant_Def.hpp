@@ -44,11 +44,6 @@ Constant<EvalT, Traits>::Constant(Teuchos::ParameterList& p) :
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
-Constant<EvalT, Traits>::~Constant()
-{ }
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
 void Constant<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {

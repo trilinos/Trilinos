@@ -50,11 +50,6 @@ Fourier(const Teuchos::ParameterList& p) :
 
 //**********************************************************************
 template<typename EvalT, typename Traits> 
-Fourier<EvalT, Traits>::~Fourier()
-{ }
-
-//**********************************************************************
-template<typename EvalT, typename Traits> 
 void Fourier<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& fm)
 {

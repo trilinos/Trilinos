@@ -51,8 +51,6 @@ public:
   
   FEInterpolation(const Teuchos::ParameterList& p);
   
-  ~FEInterpolation();
-  
   void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData d);
