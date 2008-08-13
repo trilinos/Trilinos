@@ -17,9 +17,6 @@
 /* Enable use of PROMETHEUS library */
 #undef FEI_HAVE_PROMETHEUS
 
-/* define if std::ios_base::fmtflags is not supported type */
-#undef FEI_NO_STD_IOS_FMTFLAGS
-
 /* Define to build with fei-amesos support enabled */
 #undef HAVE_AMESOS
 
@@ -91,6 +88,9 @@
 
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM
+
+/* define if std::ios_base::fmtflags is supported type */
+#undef HAVE_STD_IOS_BASE_FMTFLAGS
 
 /* Define if want to build tests */
 #undef HAVE_TESTS

@@ -4455,7 +4455,7 @@ fi
 
 { echo "$as_me:$LINENO: checking whether the compiler recognizes std::ios_base::fmtflags as supported IO type" >&5
 echo $ECHO_N "checking whether the compiler recognizes std::ios_base::fmtflags as supported IO type... $ECHO_C" >&6; }
-if test "${ac_cv_cxx_io_base+set}" = set; then
+if test "${ac_cv_cxx_ios_base+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
@@ -4472,14 +4472,16 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+#ifdef HAVE_IOSTREAM
 #include <iostream>
+#elif HAVE_IOSTREAM_H
+#include <iostream.h>
+#endif
 using namespace std;
 void dummy(ostream& os) {
-const std::ios_base::fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
+const ios_base::fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
 double val = 1.0;
-os << val << endl;
-return;};
-
+os << val << endl;}
 int
 main ()
 {
@@ -4505,16 +4507,15 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test -z "$ac_cxx_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
-  ac_cv_cxx_io_base=yes
+  ac_cv_cxx_ios_base=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_cxx_io_base=no
+	ac_cv_cxx_ios_base=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4523,12 +4524,12 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_cxx_io_base" >&5
-echo "${ECHO_T}$ac_cv_cxx_io_base" >&6; }
-if test "$ac_cv_cxx_io_base" = no; then
+{ echo "$as_me:$LINENO: result: $ac_cv_cxx_ios_base" >&5
+echo "${ECHO_T}$ac_cv_cxx_ios_base" >&6; }
+if test "$ac_cv_cxx_ios_base" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define FEI_NO_STD_IOS_FMTFLAGS
+#define HAVE_STD_IOS_BASE_FMTFLAGS
 _ACEOF
 
 fi
