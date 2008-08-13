@@ -131,14 +131,14 @@ int main(int argc, char *argv[])
 	evaluators_to_build["Density"] = p;
       }
 
-      { // Constant Diffusion Coefficient
+      { // Constant Heat Capacity
 	RCP<ParameterList> p = rcp(new ParameterList);
 	int type = MyFactoryTraits<MyTraits>::id_constant;
 	p->set<int>("Type", type);
-	p->set<string>("Name", "Diffusion Coefficient");
+	p->set<string>("Name", "Heat Capacity");
 	p->set<double>("Value", 2.0);
 	p->set< RCP<DataLayout> >("Data Layout", qp);
-	evaluators_to_build["Diffusion Coefficient"] = p;
+	evaluators_to_build["Heat Capacity"] = p;
       }
       
       { // Nonlinear Source
