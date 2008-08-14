@@ -282,10 +282,22 @@ Constructor. ";
 Constructor. ";
 
 %feature("docstring")  EpetraExt::CrsMatrix_SubCopy::fwd "bool
-EpetraExt::CrsMatrix_SubCopy::fwd() ";
+EpetraExt::CrsMatrix_SubCopy::fwd()
+
+Forward transfer of data from orig object input in the operator()
+method call to the new object created in this same call. Returns true
+is operation is successful.
+
+Preconditions: ";
 
 %feature("docstring")  EpetraExt::CrsMatrix_SubCopy::rvs "bool
-EpetraExt::CrsMatrix_SubCopy::rvs() ";
+EpetraExt::CrsMatrix_SubCopy::rvs()
+
+Reverse transfer of data from new object created in the operator()
+method call to the orig object input to this same method. Returns true
+if operation is successful.
+
+Preconditions: ";
 
 
 // File: classEpetraExt_1_1CrsMatrix__View.xml
@@ -780,15 +792,32 @@ orig) ";
 
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::construct "LinearProblem_CrsSingletonFilter::NewTypeRef
-EpetraExt::LinearProblem_CrsSingletonFilter::construct() ";
+EpetraExt::LinearProblem_CrsSingletonFilter::construct()
+
+Construction of new object as a result of the transform.
+
+Preconditions: default implementation returns internal attribute
+newObj_. ";
 
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::fwd "bool
-EpetraExt::LinearProblem_CrsSingletonFilter::fwd() ";
+EpetraExt::LinearProblem_CrsSingletonFilter::fwd()
+
+Forward transfer of data from orig object input in the operator()
+method call to the new object created in this same call. Returns true
+is operation is successful.
+
+Preconditions: ";
 
 %feature("docstring")
 EpetraExt::LinearProblem_CrsSingletonFilter::rvs "bool
-EpetraExt::LinearProblem_CrsSingletonFilter::rvs() ";
+EpetraExt::LinearProblem_CrsSingletonFilter::rvs()
+
+Reverse transfer of data from new object created in the operator()
+method call to the orig object input to this same method. Returns true
+if operation is successful.
+
+Preconditions: ";
 
 
 // File: classEpetraExt_1_1LinearProblem__GraphTrans.xml
@@ -1155,11 +1184,11 @@ Likewise, the inverse can also be applied (if all of the constituent
 operators support the inverse operation) as:
 
 Forward Inverse Mat-vec: Y = inv(M) * X     T[k] = inv(M[k])*T[k-1]
-for k = 0...num_Op-1       for k = 0...num_Op-1         where: T[-1] =
-X (input vector)        where: T[num_Op-1] = Y (output vector) Adjoint
-Inverse Mat-vec: Y = inv(M') * X     T[k] = inv(M[k]')*T[k-1] for k =
-num_Op-1...0         where: T[num_Op-1] = X (input vector) where:
-T[-1]       = Y (output vector)
+for k = 0...num_Op-1       for k = 0...num_Op-1 where: T[-1]       = X
+(input vector)        where: T[num_Op-1] = Y (output vector)   Adjoint
+Inverse Mat-vec: Y = inv(M') * X     T[k] = inv(M[k]')*T[k-1]
+for k = num_Op-1...0         where: T[num_Op-1] = X (input vector)
+where: T[-1]       = Y (output vector)
 
 Note that maps for the result of the inverse of an operator is the
 same as the result of the adjoint of the operator and the map for the
@@ -1179,7 +1208,11 @@ C++ includes: EpetraExt_ProductOperator.h ";
 
 /*  Public types  */
 
+/* */
+
 /*  Constructors / initializers / accessors  */
+
+/* */
 
 %feature("docstring")  EpetraExt::ProductOperator::ProductOperator "EpetraExt::ProductOperator::ProductOperator()
 
@@ -1233,14 +1266,14 @@ this->Op_inverse(k)==Op_inverse[k], for k=0...num_Op-1
 The forward constituent operator T[k-1] = M[k]*T[k] described in the
 main documenatation above is defined as follows:
 
-Op[k]->SetUseTranspose( Op_trans[k]!=Teuchos::NO_TRANS );    if(
+Op[k]->SetUseTranspose( Op_trans[k]!=Teuchos::NO_TRANS ); if(
 Op_inverse[k]==APPLY_MODE_APPLY )      Op[k]->Apply( T[k], T[k-1] );
 else         Op[k]->ApplyInverse( T[k], T[k-1] );
 
 The inverse constituent operator T[k] = inv(M[k])*T[k-1] described in
 the main documenatation above is defined as follows:
 
-Op[k]->SetUseTranspose( Op_trans[k]!=Teuchos::NO_TRANS );    if(
+Op[k]->SetUseTranspose( Op_trans[k]!=Teuchos::NO_TRANS ); if(
 Op_inverse[k]==APPLY_MODE_APPLY )      Op[k]->ApplyInverse( T[k-1],
 T[k] );          else         Op[k]->Apply( T[k-1], T[k] );
 
@@ -1318,6 +1351,8 @@ Access the inverse mode of the kth operator (zero-based).
 Preconditions:  0 <= k <= this-> num_Op()-1 ";
 
 /*  Overridden from Epetra_Operator  */
+
+/* */
 
 %feature("docstring")  EpetraExt::ProductOperator::SetUseTranspose "int EpetraExt::ProductOperator::SetUseTranspose(bool UseTranspose) ";
 
@@ -1440,7 +1475,11 @@ C++ includes: EpetraExt_Transform.h ";
 
 /*  Typedefs for templated classes  */
 
+/* */
+
 /*  Pure Virtual Methods which must be implemented by subclasses  */
+
+/* */
 
 %feature("docstring")  EpetraExt::Transform::fwd "virtual bool
 EpetraExt::Transform< T, U >::fwd()=0
@@ -1449,11 +1488,7 @@ Forward transfer of data from orig object input in the operator()
 method call to the new object created in this same call. Returns true
 is operation is successful.
 
-Preconditions:
-
-Invariants:
-
-Postconditions: ";
+Preconditions: ";
 
 %feature("docstring")  EpetraExt::Transform::rvs "virtual bool
 EpetraExt::Transform< T, U >::rvs()=0
@@ -1462,11 +1497,7 @@ Reverse transfer of data from new object created in the operator()
 method call to the orig object input to this same method. Returns true
 if operation is successful.
 
-Preconditions:
-
-Invariants:
-
-Postconditions: ";
+Preconditions: ";
 
 /*  Virtual functions with default implements allowing for optional
 */
@@ -1482,40 +1513,23 @@ Initial analysis phase of transform. Returns true if the transform is
 possible allowing methods  construct(),  fwd() and  rvs() to be
 successfully utilized.
 
-Preconditions:
-
-Invariants:
-
-Postconditions:
-
-The default implementation calls method operator() and stores the
-resulting object in an internal attribute newObj_. ";
+Preconditions: default implementation calls method operator() and
+stores the resulting object in an internal attribute newObj_. ";
 
 %feature("docstring")  EpetraExt::Transform::construct "Transform< T,
 U >::NewTypeRef EpetraExt::Transform< T, U >::construct()
 
 Construction of new object as a result of the transform.
 
-Preconditions:
-
-Invariants:
-
-Postconditions:
-
-The default implementation returns internal attribute newObj_. ";
+Preconditions: default implementation returns internal attribute
+newObj_. ";
 
 %feature("docstring")  EpetraExt::Transform::isConstructed "bool
 EpetraExt::Transform< T, U >::isConstructed()
 
 Check for whether transformed object has been constructed
 
-Preconditions:
-
-Invariants:
-
-Postconditions:
-
-The default implementation returns true if newObj_ != 0. ";
+Preconditions: default implementation returns true if newObj_ != 0. ";
 
 %feature("docstring")  EpetraExt::Transform::~Transform "virtual
 EpetraExt::Transform< T, U >::~Transform() ";
@@ -2006,9 +2020,22 @@ Returns 0 if no error, -1 if any problems with file system. ";
 EpetraExt::writeBlockMap(std::FILE *handle, int length, const int *v1,
 const int *v2, bool doSizes) ";
 
+%feature("docstring")  EpetraExt::sort_three "static void
+EpetraExt::sort_three(int *list, int *parlista, double *parlistb, int
+start, int end) ";
+
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
 EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
-Epetra_Comm &comm, Epetra_CrsMatrix *&A)
+Epetra_Comm &comm, Epetra_CrsMatrix *&A) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
+EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&A, const bool transpose) ";
+
+%feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
+EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&A, const bool transpose=0, const
+bool verbose=0)
 
 Constructs an Epetra_CrsMatrix object from a Matrix Market format
 file, simplest version: requires matrix to be square, distributes rows
@@ -2025,6 +2052,12 @@ be read should be in this file in Matrix Market coordinate format.
 
 comm:  (In) An Epetra_Comm object.
 
+transpose:  (In) A boolean value indicating whether the reader should
+transpose the matrix as it is read into matrix A. (default = 0).
+
+verbose:  (In) A boolean value indicating whether the reader should
+print diagnostic statements to stdout. (default = 0).
+
 A:  (Out) An Epetra_CrsMatrix object constructed from file contents.
 
 WARNING:  User must delete!!.
@@ -2036,7 +2069,8 @@ page for details.) ";
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
 EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
 Epetra_Map &rowMap, const Epetra_Map &rangeMap, const Epetra_Map
-&domainMap, Epetra_CrsMatrix *&A)
+&domainMap, Epetra_CrsMatrix *&A, const bool transpose=0, const bool
+verbose=0)
 
 Constructs an Epetra_CrsMatrix object from a Matrix Market format
 file, row, range and domain map specified; typically used for
@@ -2061,6 +2095,12 @@ range vectors that will be used with this matrix, must be 1-to-1.
 domainMap:  (In) An Epetra_Map object describing the distribution of
 domain vectors that will be used with this matrix, must be 1-to-1.
 
+transpose:  (In) A boolean value indicating whether the reader should
+transpose the matrix as it is read into matrix A. (default = 0).
+
+verbose:  (In) A boolean value indicating whether the reader should
+print diagnostic statements to stdout. (default = 0).
+
 A:  (Out) An Epetra_CrsMatrix object constructed from file contents.
 
 WARNING:  User must delete!!.
@@ -2071,7 +2111,8 @@ page for details.) ";
 
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
 EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
-Epetra_Map &rowMap, Epetra_CrsMatrix *&A)
+Epetra_Map &rowMap, Epetra_CrsMatrix *&A, const bool transpose=0,
+const bool verbose=0)
 
 Constructs an Epetra_CrsMatrix object from a Matrix Market format
 file, only row map specified; allows user defined distribution of
@@ -2089,6 +2130,12 @@ be read should be in this file in Matrix Market coordinate format.
 rowMap:  (In) An Epetra_Map object describing the desired row
 distribution of the matrix.
 
+transpose:  (In) A boolean value indicating whether the reader should
+transpose the matrix as it is read into matrix A. (default = 0).
+
+verbose:  (In) A boolean value indicating whether the reader should
+print diagnostic statements to stdout. (default = 0).
+
 A:  (Out) An Epetra_CrsMatrix object constructed from file contents.
 
 WARNING:  User must delete!!.
@@ -2099,7 +2146,8 @@ page for details.) ";
 
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
 EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
-Epetra_Map &rowMap, const Epetra_Map &colMap, Epetra_CrsMatrix *&A)
+Epetra_Map &rowMap, const Epetra_Map &colMap, Epetra_CrsMatrix *&A,
+const bool transpose=0, const bool verbose=0)
 
 Constructs an Epetra_CrsMatrix object from a Matrix Market format
 file, both row and column map specified; this version is seldom used
@@ -2120,6 +2168,12 @@ distribution of the matrix.
 colMap:  (In) An Epetra_Map object describing the desired column
 distribution of the matrix.
 
+transpose:  (In) A boolean value indicating whether the reader should
+transpose the matrix as it is read into matrix A. (default = 0).
+
+verbose:  (In) A boolean value indicating whether the reader should
+print diagnostic statements to stdout. (default = 0).
+
 A:  (Out) An Epetra_CrsMatrix object constructed from file contents.
 
 WARNING:  User must delete!!.
@@ -2131,7 +2185,8 @@ page for details.) ";
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrix "int
 EpetraExt::MatrixMarketFileToCrsMatrix(const char *filename, const
 Epetra_Map &rowMap, const Epetra_Map &colMap, const Epetra_Map
-&rangeMap, const Epetra_Map &domainMap, Epetra_CrsMatrix *&A)
+&rangeMap, const Epetra_Map &domainMap, Epetra_CrsMatrix *&A, const
+bool transpose=0, const bool verbose=0)
 
 Constructs an Epetra_CrsMatrix object from a Matrix Market format
 file, row, column, range and domain map specified; this version is
@@ -2159,6 +2214,12 @@ range vectors that will be used with this matrix, must be 1-to-1.
 domainMap:  (In) An Epetra_Map object describing the distribution of
 domain vectors that will be used with this matrix, must be 1-to-1.
 
+transpose:  (In) A boolean value indicating whether the reader should
+transpose the matrix as it is read into matrix A. (default = 0).
+
+verbose:  (In) A boolean value indicating whether the reader should
+print diagnostic statements to stdout. (default = 0).
+
 A:  (Out) An Epetra_CrsMatrix object constructed from file contents.
 
 WARNING:  User must delete!!.
@@ -2170,7 +2231,11 @@ page for details.) ";
 %feature("docstring")  EpetraExt::MatrixMarketFileToCrsMatrixHandle "int EpetraExt::MatrixMarketFileToCrsMatrixHandle(const char *filename,
 const Epetra_Comm &comm, Epetra_CrsMatrix *&A, const Epetra_Map
 *rowMap, const Epetra_Map *colMap, const Epetra_Map *rangeMap, const
-Epetra_Map *domainMap) ";
+Epetra_Map *domainMap, const bool transpose, const bool verbose) ";
+
+%feature("docstring")  EpetraExt::quickpart_list_inc_int "static void
+EpetraExt::quickpart_list_inc_int(int *list, int *parlista, double
+*parlistb, int start, int end, int *equal, int *larger) ";
 
 %feature("docstring")  EpetraExt::MatlabFileToCrsMatrix "int
 EpetraExt::MatlabFileToCrsMatrix(const char *filename, const
@@ -2214,7 +2279,7 @@ are stored:
 \\\\[ \\\\left[\\\\begin{array}{cccc} 5 & 7 & 0 & 0 \\\\\\\\ 3 & 2 & 0
 & 1 \\\\\\\\ 0 & 0 & 0 & 4 \\\\\\\\ \\\\end{array}\\\\right]. \\\\]
 
-A Matlab format file for this matrix would be:1 1 5.0 1 2 7.0 2 1 3.0
+A Matlab format file for this matrix would be: 1 1 5.0 1 2 7.0 2 1 3.0
 2 2 2.0 2 4 1.0 4 4 4.0
 
 Note that the entries can be listed in any order and that the matrix

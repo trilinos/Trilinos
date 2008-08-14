@@ -731,7 +731,7 @@ Returns a pointer to the internally stored ML_Operator. ";
 Black-box multilevel adaptive smoothed aggregation preconditioner.
 
 This class implements an adaptive smoothed aggregation preconditioner.
-An example of usage is reported in file ml_adaptivesa . We note that
+An example of usage is reported in file ml_adaptivesa. We note that
 the usage of this class is slightly different from that of
 MultiLevelSA.
 

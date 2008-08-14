@@ -160,7 +160,7 @@ reordered. At the present time, RCM and METIS can be used to reorder
 the local matrix.
 
 The complete list of supported parameters is reported in page
-ifp_params .
+ifp_params.
 
 Marzio Sala, SNL 9214.
 
@@ -461,7 +461,7 @@ Ifpack_AMDReordering::Compute(const Epetra_RowMatrix &Matrix)
 
 Computes all it is necessary to initialize the reordering object. ";
 
-%feature("docstring")  Ifpack_AMDReordering::IsComputed "virtual bool
+%feature("docstring")  Ifpack_AMDReordering::IsComputed "bool
 Ifpack_AMDReordering::IsComputed() const
 
 Returns true is the reordering object has been successfully
@@ -497,7 +497,7 @@ Ifpack_AMDReordering::Print(std::ostream &os) const
 Prints basic information on iostream. This function is used by
 operator<<. ";
 
-%feature("docstring")  Ifpack_AMDReordering::NumMyRows "virtual int
+%feature("docstring")  Ifpack_AMDReordering::NumMyRows "int
 Ifpack_AMDReordering::NumMyRows() const
 
 Returns the number of local rows. ";
@@ -785,8 +785,8 @@ Then, we declare the preconditioner. Note that this is done through
 the class Ifpack_AdditiveSchwarz (see note below in this section).
 
 The complete list of supported parameters is reported in page
-ifp_params . For a presentation of basic relaxation schemes, please
-refer to page Ifpack_PointRelaxation .
+ifp_params. For a presentation of basic relaxation schemes, please
+refer to page Ifpack_PointRelaxation.
 
 Marzio Sala, SNL 9214.
 
@@ -3915,7 +3915,7 @@ perturbation values are zero and one, respectively, the factorization
 will be compute for the original user matrix A. Otherwise, the
 factorization will computed for a matrix that differs from the
 original user matrix in the diagonal values only. Details can be found
-in ifp_diag_pert .
+in ifp_diag_pert.
 
 C++ includes: Ifpack_IC.h ";
 
@@ -4218,7 +4218,7 @@ perturbation values are zero and one, respectively, the factorization
 will be compute for the original user matrix A. Otherwise, the
 factorization will computed for a matrix that differs from the
 original user matrix in the diagonal values only. Details can be found
-in ifp_diag_pert .
+in ifp_diag_pert.
 
 C++ includes: Ifpack_ICT.h ";
 
@@ -4499,11 +4499,11 @@ factorization of a given Epetra_RowMatrix.
 The Ifpack_IKLU class computes a \"Relaxed\" IKLU factorization with
 level k fill of a given Epetra_RowMatrix.
 
-Please refer to ifp_ilu  for a general description of the ILU
+Please refer to ifp_ilu for a general description of the ILU
 algorithm.
 
 The complete list of supported parameters is reported in page
-ifp_params .
+ifp_params.
 
 Heidi Thornquist, Org. 1437
 
@@ -4768,11 +4768,11 @@ lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 The Ifpack_ILU class computes a \"Relaxed\" ILU factorization with
 level k fill of a given Epetra_RowMatrix.
 
-Please refer to ifp_ilu  for a general description of the ILU
+Please refer to ifp_ilu for a general description of the ILU
 algorithm.
 
 The complete list of supported parameters is reported in page
-ifp_params .
+ifp_params.
 
 Mike Heroux, Marzio Sala, SNL 9214.
 
@@ -5215,11 +5215,11 @@ factorization of a given Epetra_RowMatrix.
 The Ifpack_ILUT class computes a \"Relaxed\" ILUT factorization with
 level k fill of a given Epetra_RowMatrix.
 
-Please refer to ifp_ilu  for a general description of the ILU
+Please refer to ifp_ilu for a general description of the ILU
 algorithm.
 
 The complete list of supported parameters is reported in page
-ifp_params .
+ifp_params.
 
 Marzio Sala, SNL 9214.
 
@@ -6840,11 +6840,11 @@ preconditioner can be defined as \\\\[ P_{GS}^{-1} = (D - E)^{-1}.
 \\\\] Clearly, the role of E and F can be interchanged. However,
 Ifpack_GaussSeidel does not consider backward Gauss-Seidel methods.
 
-For a list of supported parameters, please refer to page ifp_params .
+For a list of supported parameters, please refer to page ifp_params.
 
 The complete list of supported parameters is reported in page
-ifp_params . For a presentation of basic relaxation schemes, please
-refer to page Ifpack_PointRelaxation .
+ifp_params. For a presentation of basic relaxation schemes, please
+refer to page Ifpack_PointRelaxation.
 
 Marzio Sala, SNL 9214.
 
@@ -8718,7 +8718,7 @@ two, T three, bool equal=true) ";
 %feature("docstring")  Ifpack_Analyze "int Ifpack_Analyze(const
 Epetra_RowMatrix &A, const bool Cheap, const int NumPDEEqns)
 
-Analyzes the basic properties of the input matrix A; see ifp_analyze .
+Analyzes the basic properties of the input matrix A; see ifp_analyze.
 ";
 
 %feature("docstring")  Ifpack_AnalyzeVectorElements "int
@@ -8737,7 +8737,7 @@ elements are defined as $ B_{i} = | D_{i}| $.
 
 steps:  - (In) number of intervals for the analysis.
 
-An example of output is reported ifp_vector . ";
+An example of output is reported ifp_vector. ";
 
 %feature("docstring")  Ifpack_AnalyzeMatrixElements "int
 Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix &A, const bool
@@ -8755,7 +8755,7 @@ elements are defined as $ B_{i,i} = | A_{i,i}| $.
 
 steps:  - (In) number of intervals for the analysis.
 
-An example of output is reported ifp_matrix . ";
+An example of output is reported ifp_matrix. ";
 
 %feature("docstring")  Ifpack_PrintSparsity "int
 Ifpack_PrintSparsity(const Epetra_RowMatrix &A, const char
@@ -8831,7 +8831,7 @@ Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix &A) ";
 %feature("docstring")  Ifpack_Analyze "int Ifpack_Analyze(const
 Epetra_RowMatrix &A, const bool Cheap=false, const int NumPDEEqns=1)
 
-Analyzes the basic properties of the input matrix A; see ifp_analyze .
+Analyzes the basic properties of the input matrix A; see ifp_analyze.
 ";
 
 %feature("docstring")  Ifpack_AnalyzeMatrixElements "int
@@ -8850,7 +8850,7 @@ elements are defined as $ B_{i,i} = | A_{i,i}| $.
 
 steps:  - (In) number of intervals for the analysis.
 
-An example of output is reported ifp_matrix . ";
+An example of output is reported ifp_matrix. ";
 
 %feature("docstring")  Ifpack_AnalyzeVectorElements "int
 Ifpack_AnalyzeVectorElements(const Epetra_Vector &Diagonal, const bool
@@ -8868,7 +8868,7 @@ elements are defined as $ B_{i} = | D_{i}| $.
 
 steps:  - (In) number of intervals for the analysis.
 
-An example of output is reported ifp_vector . ";
+An example of output is reported ifp_vector. ";
 
 
 // File: Ifpack__ValidParameters_8cpp.xml

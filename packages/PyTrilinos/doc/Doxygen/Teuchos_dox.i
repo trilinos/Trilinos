@@ -587,7 +587,7 @@ added while the list is being parsed either right away or later.
 
 Preconditions:  paramList.get() != NULL
 
-Postconditions:  this-> getParameterList().get() == paramList.get()
+Postconditions:  this-> getParameterList(). get() == paramList.get()
 
 This is parameter list is \"remembered\" by *this object until it is
 unset using  unsetParameterList().
@@ -622,7 +622,7 @@ This just means that the parameter list that was set using
 setParameterList() is detached from this object. This does not mean
 that the effect of the parameters is undone.
 
-Postconditions:  this-> getParameterList().get() == NULL ";
+Postconditions:  this-> getParameterList(). get() == NULL ";
 
 /*  Virtual functions with default implementation  */
 
@@ -665,6 +665,8 @@ C++ includes: Teuchos_ParameterListAcceptorDefaultBase.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
 
+/* */
+
 %feature("docstring")
 Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList "RCP< ParameterList >
 Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList()
@@ -682,6 +684,8 @@ Teuchos::ParameterListAcceptorDefaultBase::getParameterList() const ";
 
 /*  Protected accessors to actual parameter list object.  */
 
+/* */
+
 
 // File: classTeuchos_1_1ParameterListNonAcceptor.xml
 %feature("docstring") Teuchos::ParameterListNonAcceptor "
@@ -695,6 +699,8 @@ ToDo: Finish documention.
 C++ includes: Teuchos_ParameterListNonAcceptor.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
+
+/* */
 
 %feature("docstring")
 Teuchos::ParameterListNonAcceptor::setParameterList "void
@@ -1253,7 +1259,10 @@ XMLParser::parse()
 Consume the XMLInputStream to build an XMLObject. ";
 
 
-// File: namespace@0.xml
+// File: namespace@11.xml
+
+
+// File: namespace@2.xml
 
 
 // File: namespaceTeuchos.xml
@@ -1379,7 +1388,7 @@ XML version of the parameter list specification. ";
 
 // File: Teuchos__ParameterList_8cpp.xml
 %feature("docstring")  Teuchos::filterValueToString "std::string
-@0::filterValueToString(const Teuchos::ParameterEntry &entry) ";
+@2::filterValueToString(const Teuchos::ParameterEntry &entry) ";
 
 
 // File: Teuchos__ParameterList_8hpp.xml
@@ -1407,11 +1416,11 @@ XML version of the parameter list specification. ";
 
 
 // File: Teuchos__ScalarTraits_8cpp.xml
-%feature("docstring")  returnFloatZero "float @0::returnFloatZero()
+%feature("docstring")  returnFloatZero "float @11::returnFloatZero()
 ";
 
 %feature("docstring")  returnDoubleZero "double
-@0::returnDoubleZero() ";
+@11::returnDoubleZero() ";
 
 
 // File: Teuchos__ScalarTraits_8hpp.xml
