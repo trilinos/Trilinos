@@ -48,9 +48,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) std::cout  << __FILE__ << "::"  << __LINE__ 
       << " InternalParamList = " <<
-		     InternalParamList <<  endl ; 
+		     InternalParamList <<  std::endl ; 
       
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
@@ -67,8 +67,8 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 
       
     if ( Amat->Comm().MyPID() == 0 && Errors ) {
-      cout << __FILE__ << "::"  << __LINE__ 
-	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< std::endl ; 
       }
     if (Errors < 0 ) {
       NumErrors++;
@@ -81,16 +81,16 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  std::cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
-		       << endl ; 
+		       << std::endl ; 
     if ( Amat->Comm().MyPID() == 0 && Errors > 0 ) {
-      cout << "Amesos_Klu" 
+      std::cout << "Amesos_Klu" 
 	   << __FILE__ << "::"  << __LINE__ 
 	   << " Errors = " <<  Errors 
 	   << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 
@@ -103,9 +103,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       
     double relerror;
     double relresidual;
-    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) std::cout  << __FILE__ << "::"  << __LINE__ 
 			 << " InternalParamList = " <<
-		     InternalParamList <<  endl ; 
+		     InternalParamList <<  std::endl ; 
       
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
@@ -121,8 +121,8 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					ExpectedError ) ;
       
     if (  Amat->Comm().MyPID() == 0 && Errors ) {
-      cout << __FILE__ << "::"  << __LINE__ 
-	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< std::endl ; 
       }
     if ( Errors < 0 ) {
       NumErrors++;
@@ -135,16 +135,16 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  std::cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
-		       << endl ; 
+		       << std::endl ; 
     if (  Amat->Comm().MyPID() == 0 && Errors > 0 ) {
-      cout << "Amesos_Klu" 
+      std::cout << "Amesos_Klu" 
 	   << __FILE__ << "::"  << __LINE__ 
 	   << " Errors = " <<  Errors 
 	   << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+	(transpose?"true":"false") << std::endl ;  
     }
   }
   //
@@ -158,9 +158,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 
     InternalParamList.set( "TrustMe", true );
 
-    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) std::cout  << __FILE__ << "::"  << __LINE__ 
       << " InternalParamList = " <<
-		     InternalParamList <<  endl ; 
+		     InternalParamList <<  std::endl ; 
       
     double relerror;
     double relresidual;
@@ -180,8 +180,8 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
  
       
     if (  Amat->Comm().MyPID() == 0 && Errors ) {
-      cout << __FILE__ << "::"  << __LINE__ 
-	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< std::endl ; 
       }
     if ( Errors < 0 ) {
       NumErrors++;
@@ -194,16 +194,16 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  std::cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
-		       << endl ; 
+		       << std::endl ; 
     if (  Amat->Comm().MyPID() == 0 && Errors > 0 ) {
-      cout << "Amesos_Klu" 
+      std::cout << "Amesos_Klu" 
 	   << __FILE__ << "::"  << __LINE__ 
 	   << " Errors = " <<  Errors 
 	   << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+	(transpose?"true":"false") << std::endl ;  
     }
   }
   
@@ -220,9 +220,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       double relerror;
       double relresidual;
       
-      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) std::cout  << __FILE__ << "::"  << __LINE__ 
 			     << " InternalParamList = " <<
-			 InternalParamList <<  endl ; 
+			 InternalParamList <<  std::endl ; 
       
       int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					  EpetraMatrixType,
@@ -239,8 +239,8 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       
       
       if (  Amat->Comm().MyPID() == 0 && Errors ) {
-	cout << __FILE__ << "::"  << __LINE__ 
-	     << "Amesos_Klu failed with error code " << Errors<< endl ; 
+	std::cout << __FILE__ << "::"  << __LINE__ 
+	     << "Amesos_Klu failed with error code " << Errors<< std::endl ; 
       }
       if ( Errors < 0 ) {
 	NumErrors++;
@@ -253,16 +253,16 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	NumTests++ ; 
 	
       }
-      if (MyVerbose)  cout << " TestKlu NumErrors = " 
+      if (MyVerbose)  std::cout << " TestKlu NumErrors = " 
 			   << NumErrors << " "
 			   << __FILE__ << "::" << __LINE__ 
-			   << endl ; 
+			   << std::endl ; 
       if ( Comm.MyPID() == 0 && Errors > 0 ) {
-	cout << "Amesos_Klu" 
+	std::cout << "Amesos_Klu" 
 	     << __FILE__ << "::"  << __LINE__ 
 	     << " Errors = " <<  Errors 
 	     << " failed with transpose = " << 
-	  (transpose?"true":"false") << endl ;  
+	  (transpose?"true":"false") << std::endl ;  
       }
     }
 
@@ -277,9 +277,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       double relerror;
       double relresidual;
       
-      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) std::cout  << __FILE__ << "::"  << __LINE__ 
 			     << " InternalParamList = " <<
-			 InternalParamList <<  endl ; 
+			 InternalParamList <<  std::endl ; 
       
       int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					  EpetraMatrixType,
@@ -295,8 +295,8 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					  ExpectedError ) ;
       
       if (  Amat->Comm().MyPID() == 0 && Errors ) {
-	cout << __FILE__ << "::"  << __LINE__ 
-	     << "Amesos_Klu failed with error code " << Errors<< endl ; 
+	std::cout << __FILE__ << "::"  << __LINE__ 
+	     << "Amesos_Klu failed with error code " << Errors<< std::endl ; 
       }
       if ( Errors < 0 ) {
 	NumErrors++;
@@ -309,16 +309,16 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	NumTests++ ; 
 	
       }
-      if (MyVerbose)  cout << " TestKlu NumErrors = " 
+      if (MyVerbose)  std::cout << " TestKlu NumErrors = " 
 			   << NumErrors << " "
 			   << __FILE__ << "::" << __LINE__ 
-			   << endl ; 
+			   << std::endl ; 
       if ( Comm.MyPID() == 0 && Errors > 0 ) {
-	cout << "Amesos_Klu" 
+	std::cout << "Amesos_Klu" 
 	     << __FILE__ << "::"  << __LINE__ 
 	     << " Errors = " <<  Errors 
 	     << " failed with transpose = " << 
-	  (transpose?"true":"false") << endl ;  
+	  (transpose?"true":"false") << std::endl ;  
       }
     }
     
@@ -332,9 +332,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       double relerror;
       double relresidual;
       
-      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) std::cout  << __FILE__ << "::"  << __LINE__ 
 			     << " InternalParamList = " <<
-			 InternalParamList <<  endl ; 
+			 InternalParamList <<  std::endl ; 
       
       int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					  EpetraMatrixType,
@@ -350,8 +350,8 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					  ExpectedError ) ;
       
       if (  Amat->Comm().MyPID() == 0 && Errors ) {
-	cout << __FILE__ << "::"  << __LINE__ 
-	     << "Amesos_Klu failed with error code " << Errors<< endl ; 
+	std::cout << __FILE__ << "::"  << __LINE__ 
+	     << "Amesos_Klu failed with error code " << Errors<< std::endl ; 
       }
       if ( Errors < 0 ) {
 	NumErrors++;
@@ -364,16 +364,16 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	NumTests++ ; 
 	
       }
-      if (MyVerbose)  cout << " TestKlu NumErrors = " 
+      if (MyVerbose)  std::cout << " TestKlu NumErrors = " 
 			   << NumErrors << " "
 			   << __FILE__ << "::" << __LINE__ 
-			   << endl ; 
+			   << std::endl ; 
       if ( Comm.MyPID() == 0 && Errors > 0 ) {
-	cout << "Amesos_Klu" 
+	std::cout << "Amesos_Klu" 
 	     << __FILE__ << "::"  << __LINE__ 
 	     << " Errors = " <<  Errors 
 	     << " failed with transpose = " << 
-	  (transpose?"true":"false") << endl ;  
+	  (transpose?"true":"false") << std::endl ;  
       }
     }
     
@@ -398,7 +398,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
  
       
     if (Errors < 0 ) {
-      if (MyVerbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
+      if (MyVerbose ) std::cout << "Amesos_Klu" << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -408,13 +408,13 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  std::cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
-		       << endl ; 
+		       << std::endl ; 
     if ( MyVerbose && Errors > 0 ) {
-      cout << "Amesos_Klu" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Klu" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 #endif
@@ -447,7 +447,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 
       
     if (Errors < 0 ) {
-      if (MyVerbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
+      if (MyVerbose ) std::cout << "Amesos_Klu" << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -457,11 +457,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestKlu NumErrors = " << NumErrors 
-		       << " " << __FILE__ << "::" << __LINE__ << endl ; 
+    if (MyVerbose)  std::cout << " TestKlu NumErrors = " << NumErrors 
+		       << " " << __FILE__ << "::" << __LINE__ << std::endl ; 
     if ( MyVerbose && Errors > 0 ) {
-      cout << "Amesos_Klu" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Klu" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 #endif

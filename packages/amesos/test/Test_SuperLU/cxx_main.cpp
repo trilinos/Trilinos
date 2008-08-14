@@ -13,7 +13,6 @@
 #include "Amesos_Superlu.h"
 #include "Amesos_TestRowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include <vector>
 
 //=============================================================================
 bool CheckError(const Epetra_RowMatrix& A,
@@ -21,7 +20,7 @@ bool CheckError(const Epetra_RowMatrix& A,
 		const Epetra_MultiVector& b,
 		const Epetra_MultiVector& x_exact)
 {
-  vector<double> Norm;
+  std::vector<double> Norm;
   int NumVectors = x.NumVectors();
   Norm.resize(NumVectors);
   Epetra_MultiVector Ax(x);
@@ -34,7 +33,7 @@ bool CheckError(const Epetra_RowMatrix& A,
     TotalNorm += Norm[i];
   }
   if (A.Comm().MyPID() == 0)
-    cout << "||Ax - b||  = " << TotalNorm << endl;
+    std::cout << "||Ax - b||  = " << TotalNorm << std::endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
   else
@@ -46,7 +45,7 @@ bool CheckError(const Epetra_RowMatrix& A,
     TotalNorm += Norm[i];
   }
   if (A.Comm().MyPID() == 0)
-    cout << "||Ax - b||  = " << TotalNorm << endl;
+    std::cout << "||Ax - b||  = " << TotalNorm << std::endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
   else

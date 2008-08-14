@@ -123,7 +123,7 @@ Amesos_Scalapack::~Amesos_Scalapack(void) {
 //
 int Amesos_Scalapack::RedistributeA( ) {
 
-  if( debug_ == 1 ) cout << "Entering `RedistributeA()'" << endl;
+  if( debug_ == 1 ) std::cout << "Entering `RedistributeA()'" << std::endl;
 
   Time_->ResetStartTime();
   
@@ -149,17 +149,17 @@ int Amesos_Scalapack::RedistributeA( ) {
     NumberOfProcesses = EPETRA_MIN( NumberOfProcesses,  ProcessNumHeuristic );
   }
   
-  if ( debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:171" << endl;
+  if ( debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:171" << std::endl;
   //
   // Create the ScaLAPACK data distribution.
   // The TwoD data distribution is created in a completely different
   // manner and is not transposed (whereas the SaLAPACK 1D data
   // distribution was transposed) 
   //
-  if ( debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:163" << endl;
+  if ( debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:163" << std::endl;
   Comm().Barrier(); 
   if ( TwoD_distribution_ ) { 
-    if ( debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:166" << endl;
+    if ( debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:166" << std::endl;
     Comm().Barrier(); 
     npcol_ = EPETRA_MIN( NumberOfProcesses, 
 			 EPETRA_MAX ( 2, (int) sqrt( NumberOfProcesses * 0.5 ) ) ) ; 
@@ -169,16 +169,16 @@ int Amesos_Scalapack::RedistributeA( ) {
     //  Create the map for FatA - our first intermediate matrix
     //
     int NumMyElements = RowMatrixA->RowMatrixRowMap().NumMyElements() ;
-    vector<int> MyGlobalElements( NumMyElements );
+    std::vector<int> MyGlobalElements( NumMyElements );
     RowMatrixA->RowMatrixRowMap().MyGlobalElements( &MyGlobalElements[0] ) ;
 
     int NumMyColumns = RowMatrixA->RowMatrixColMap().NumMyElements() ;
-    vector<int> MyGlobalColumns( NumMyColumns );
+    std::vector<int> MyGlobalColumns( NumMyColumns );
     RowMatrixA->RowMatrixColMap().MyGlobalElements( &MyGlobalColumns[0] ) ;
 
-    if ( debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:194" << endl;
+    if ( debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:194" << std::endl;
 
-    vector<int> MyFatElements( NumMyElements * npcol_ ); 
+    std::vector<int> MyFatElements( NumMyElements * npcol_ ); 
     
     for( int LocalRow=0; LocalRow<NumMyElements; LocalRow++ ) {
       for (int i = 0 ; i < npcol_; i++ ){
@@ -195,12 +195,12 @@ int Amesos_Scalapack::RedistributeA( ) {
     Epetra_CrsMatrix FatIn( Copy, FatInMap, 0 );
     
     
-    vector<vector<int> > FatColumnIndices(npcol_,vector<int>(1));
-    vector<vector<double> > FatMatrixValues(npcol_,vector<double>(1));
-    vector<int> FatRowPtrs(npcol_);  // A FatRowPtrs[i] = the number 
+    std::vector<std::vector<int> > FatColumnIndices(npcol_,std::vector<int>(1));
+    std::vector<std::vector<double> > FatMatrixValues(npcol_,std::vector<double>(1));
+    std::vector<int> FatRowPtrs(npcol_);  // A FatRowPtrs[i] = the number 
     // of entries in local row LocalRow*npcol_ + i 
     
-    if ( debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:219" << endl;
+    if ( debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:219" << std::endl;
     //
     mypcol_ = iam_%npcol_;
     myprow_ = (iam_/npcol_)%nprow_;
@@ -214,12 +214,12 @@ int Amesos_Scalapack::RedistributeA( ) {
     //
     int MaxNumIndices = RowMatrixA->MaxNumEntries();
     int NumIndices;
-    vector<int> ColumnIndices(MaxNumIndices);
-    vector<double> MatrixValues(MaxNumIndices); 
+    std::vector<int> ColumnIndices(MaxNumIndices);
+    std::vector<double> MatrixValues(MaxNumIndices); 
     
-    if ( debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:232 NumMyElements = " 
+    if ( debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:232 NumMyElements = " 
 			    << NumMyElements 
-			    << endl;
+			    << std::endl;
     
     nb_ = grid_nb_;
     
@@ -262,13 +262,13 @@ int Amesos_Scalapack::RedistributeA( ) {
     }
     FatIn.FillComplete( false );
     
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:260" << endl;
-    if (  debug_ == 1) cout  << "Amesos_Scalapack.cpp:265B" 
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:260" << std::endl;
+    if (  debug_ == 1) std::cout  << "Amesos_Scalapack.cpp:265B" 
 			     << " iam_ = " << iam_ 
 			     << " nb_ = " << nb_ 
 			     << " nprow_ = " << nprow_ 
 			     << " npcol_ = " << npcol_ 
-			     << endl;
+			     << std::endl;
     
     //
     //  Compute the map for our second intermediate matrix, FatOut
@@ -280,11 +280,11 @@ int Amesos_Scalapack::RedistributeA( ) {
     OurExcessRows = EPETRA_MAX( 0, OurExcessRows );
     NumOurRows_ = UniformRows + OurExcessRows ; 
     
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:277" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:277" << std::endl;
     int UniformColumns =  ( NumColumns_ / ( npcol_ * nb_ ) ) * nb_ ; 
     int AllExcessColumns = NumColumns_ - UniformColumns * npcol_ ; 
     int OurExcessColumns = EPETRA_MIN( nb_, AllExcessColumns - ( mypcol_ * nb_ ) ) ; 
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:281" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:281" << std::endl;
     OurExcessColumns = EPETRA_MAX( 0, OurExcessColumns );
     NumOurColumns_ = UniformColumns + OurExcessColumns ; 
     
@@ -296,7 +296,7 @@ int Amesos_Scalapack::RedistributeA( ) {
     
     Comm().Barrier(); 
     
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:295" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:295" << std::endl;
 #if 0
     //  Compute using ScaLAPACK's numroc routine, assert agreement  
     int izero = 0; // All matrices start at process 0
@@ -307,7 +307,7 @@ int Amesos_Scalapack::RedistributeA( ) {
     //  Compute the rows which this process row owns in the ScaLAPACK 2D
     //  process grid.
     //
-    vector<int> AllOurRows(NumOurRows_);
+    std::vector<int> AllOurRows(NumOurRows_);
     
     int RowIndex = 0 ; 
     int BlockRow = 0 ;
@@ -317,7 +317,7 @@ int Amesos_Scalapack::RedistributeA( ) {
       } 
     }
     Comm().Barrier(); 
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:315" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:315" << std::endl;
     assert ( BlockRow == UniformRows / nb_ ) ; 
     for ( int RowOffset = 0; RowOffset < OurExcessRows ; RowOffset++ ) {
       AllOurRows[RowIndex++] = BlockRow*nb_*nprow_ + myprow_*nb_ + RowOffset ;
@@ -333,11 +333,11 @@ int Amesos_Scalapack::RedistributeA( ) {
     //
     
     Comm().Barrier(); 
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:312" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:312" << std::endl;
     //
     //  Compute MyRows directly
     //
-    vector<int>MyRows(NumOurRows_);
+    std::vector<int>MyRows(NumOurRows_);
     RowIndex = 0 ; 
     BlockRow = 0 ;
     for ( ; BlockRow < UniformRows / nb_ ; BlockRow++ ) {
@@ -348,7 +348,7 @@ int Amesos_Scalapack::RedistributeA( ) {
     }
     
     Comm().Barrier(); 
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:326" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:326" << std::endl;
     
     assert ( BlockRow == UniformRows / nb_ ) ; 
     for ( int RowOffset = 0; RowOffset < OurExcessRows ; RowOffset++ ) {
@@ -357,7 +357,7 @@ int Amesos_Scalapack::RedistributeA( ) {
     } 
     
     Comm().Barrier(); 
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:334" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:334" << std::endl;
     Comm().Barrier(); 
     
     for (int i=0; i < NumOurRows_; i++ ) { 
@@ -365,28 +365,28 @@ int Amesos_Scalapack::RedistributeA( ) {
     } 
     
     Comm().Barrier(); 
-    if (  debug_ == 1) cout  << "Amesos_Scalapack.cpp:340" 
+    if (  debug_ == 1) std::cout  << "Amesos_Scalapack.cpp:340" 
 			     << " iam_ = " << iam_ 
 			     << " myprow_ = " << myprow_ 
 			     << " mypcol_ = " << mypcol_ 
 			     << " NumRows_ = " << NumRows_ 
 			     << " NumOurRows_ = " << NumOurRows_ 
-			     << endl;
+			     << std::endl;
     
     Comm().Barrier(); 
     Epetra_Map FatOutMap( npcol_*NumRows_, NumOurRows_, &MyRows[0], 0, Comm() ); 
     
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:344" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:344" << std::endl;
     Comm().Barrier(); 
     
     if ( FatOut_ ) delete FatOut_ ; 
     FatOut_ = new Epetra_CrsMatrix( Copy, FatOutMap, 0 ) ;
     
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:348" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:348" << std::endl;
     
     Epetra_Export ExportToFatOut( FatInMap, FatOutMap ) ;
     
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:360" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:360" << std::endl;
     
     FatOut_->Export( FatIn, ExportToFatOut, Add );
     FatOut_->FillComplete( false );
@@ -402,7 +402,7 @@ int Amesos_Scalapack::RedistributeA( ) {
       NumMyVecElements = NumOurRows_;
     }
     
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:385" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:385" << std::endl;
     
     if (VectorMap_) { delete VectorMap_ ; VectorMap_ = 0 ; } 
     VectorMap_ = new Epetra_Map( NumGlobalElements_, 
@@ -410,8 +410,8 @@ int Amesos_Scalapack::RedistributeA( ) {
 				 &AllOurRows[0], 
 				 0, 
 				 Comm() );
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << " Amesos_Scalapack.cpp:393 debug_ = "
-			     << debug_ << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << " Amesos_Scalapack.cpp:393 debug_ = "
+			     << debug_ << std::endl;
     
   } else {
     nprow_ = 1 ;
@@ -434,30 +434,30 @@ int Amesos_Scalapack::RedistributeA( ) {
     
     ScaLAPACK1DMatrix_->FillComplete( false ) ; 
   }
-  if (  debug_ == 1) cout  << "iam_ = " << iam_  << " Amesos_Scalapack.cpp:417 debug_ = "
-			   << debug_ << endl;
-  if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:402"
+  if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << " Amesos_Scalapack.cpp:417 debug_ = "
+			   << debug_ << std::endl;
+  if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:402"
 			   << " nprow_ = " << nprow_
-			   << " npcol_ = " << npcol_ << endl ; 
+			   << " npcol_ = " << npcol_ << std::endl ; 
   int info; 
   const int zero = 0 ; 
   if ( ictxt_ == -1313 ) {
     ictxt_ = 0 ; 
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:408" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:408" << std::endl;
     SL_INIT_F77(&ictxt_, &nprow_, &npcol_) ; 
   }
-  if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:410A" << endl;
+  if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:410A" << std::endl;
   
   int nprow;
   int npcol;
   int myrow;
   int mycol;
   BLACS_GRIDINFO_F77(&ictxt_, &nprow, &npcol, &myrow, &mycol) ; 
-  if (  debug_ == 1) cout  << "iam_ = " << iam_  << "iam_ = " << iam_ << " Amesos_Scalapack.cpp:410" << endl;
+  if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "iam_ = " << iam_ << " Amesos_Scalapack.cpp:410" << std::endl;
   if ( iam_ < nprow_ * npcol_ ) { 
     assert( nprow == nprow_ ) ; 
-    if ( npcol != npcol_ ) cout << "Amesos_Scalapack.cpp:430 npcol = " << 
-      npcol << " npcol_ = " << npcol_ << endl ; 
+    if ( npcol != npcol_ ) std::cout << "Amesos_Scalapack.cpp:430 npcol = " << 
+      npcol << " npcol_ = " << npcol_ << std::endl ; 
     assert( npcol == npcol_ ) ; 
     if ( TwoD_distribution_ ) {
       assert( myrow == myprow_ ) ; 
@@ -469,7 +469,7 @@ int Amesos_Scalapack::RedistributeA( ) {
       nb_ = m_per_p_;
       lda_ = EPETRA_MAX(1,NumGlobalElements_);
     }
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  
 			     << "Amesos_Scalapack.cpp: " << __LINE__ 
 			     << " TwoD_distribution_ = "  << TwoD_distribution_ 
 			     << " NumGlobalElements_ = "  << NumGlobalElements_ 
@@ -480,7 +480,7 @@ int Amesos_Scalapack::RedistributeA( ) {
 			     << " npcol_ = "  << npcol_ 
 			     << " myprow_ = "  << myprow_ 
 			     << " mypcol_ = "  << mypcol_ 
-			     << " iam_ = "  << iam_ << endl ;
+			     << " iam_ = "  << iam_ << std::endl ;
     AMESOS_PRINT( myprow_ );
     DESCINIT_F77(DescA_, 
 		 &NumGlobalElements_, 
@@ -492,15 +492,15 @@ int Amesos_Scalapack::RedistributeA( ) {
 		 &ictxt_,
 		 &lda_,
 		 &info) ;
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:441" << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:441" << std::endl;
     assert( info == 0 ) ; 
   } else {
     DescA_[0] = -13;
-    if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:458 nprow = " << nprow << endl;
+    if (  debug_ == 1) std::cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:458 nprow = " << nprow << std::endl;
     assert( nprow == -1 ) ; 
   }
   
-  if (  debug_ == 1) cout  << "Amesos_Scalapack.cpp:446" << endl;
+  if (  debug_ == 1) std::cout  << "Amesos_Scalapack.cpp:446" << std::endl;
   MatTime_ += Time_->ElapsedTime();
   
   return 0;
@@ -539,7 +539,7 @@ int Amesos_Scalapack::ConvertToScalapack(){
   //  though ScaLAPACK treats them as distributed matrices. 
   //
   
-  if( debug_ == 1 ) cout << "Entering `ConvertToScalapack()'" << endl;
+  if( debug_ == 1 ) std::cout << "Entering `ConvertToScalapack()'" << std::endl;
   
   Time_->ResetStartTime();
   
@@ -558,8 +558,8 @@ int Amesos_Scalapack::ConvertToScalapack(){
       int *ColIndices;
       int MaxNumEntries = FatOut_->MaxNumEntries();
       
-      vector<int>ColIndicesV(MaxNumEntries);
-      vector<double>RowValuesV(MaxNumEntries);
+      std::vector<int>ColIndicesV(MaxNumEntries);
+      std::vector<double>RowValuesV(MaxNumEntries);
       
       int NumMyElements = FatOut_->NumMyRows() ; 
       for ( MyRow = 0; MyRow < NumMyElements ; MyRow++ ) {
@@ -577,13 +577,13 @@ int Amesos_Scalapack::ConvertToScalapack(){
 	int OurExcessRows =  AllExcessRows - ( myprow_ * nb_ ) ; 
 	
 	if (  MyRow != UniformRows + OurExcessRows ) {
-	  cout << " iam _ = " << iam_ 
+	  std::cout << " iam _ = " << iam_ 
 	       << " MyGlobalRow = " << MyGlobalRow 
 	       << " MyTrueRow = " << MyTrueRow 
 	       << " UniformRows = " << UniformRows 
 	       << " AllExcessRows = " << AllExcessRows 
 	       << " OurExcessRows = " << OurExcessRows 
-	       << " MyRow = " << MyRow  << endl ;  
+	       << " MyRow = " << MyRow  << std::endl ;  
 	}
 	
 	assert( OurExcessRows >= 0 &&  OurExcessRows < nb_ );
@@ -622,8 +622,8 @@ int Amesos_Scalapack::ConvertToScalapack(){
       int MaxNumEntries = ScaLAPACK1DMatrix_->MaxNumEntries();
       
       assert( DescA_[8] == lda_ ) ; //  Double check Lda
-      vector<int>ColIndicesV(MaxNumEntries);
-      vector<double>RowValuesV(MaxNumEntries);
+      std::vector<int>ColIndicesV(MaxNumEntries);
+      std::vector<double>RowValuesV(MaxNumEntries);
       
       for ( MyRow = 0; MyRow < NumMyElements ; MyRow++ ) {
 	EPETRA_CHK_ERR( ScaLAPACK1DMatrix_->
@@ -656,7 +656,7 @@ int Amesos_Scalapack::ConvertToScalapack(){
 
 int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   
-  if( debug_ == 1 ) cout << "Entering `SetParameters()'" << endl;
+  if( debug_ == 1 ) std::cout << "Entering `SetParameters()'" << std::endl;
   
   // retrive general parameters
   SetStatusParameters( ParameterList );
@@ -694,7 +694,7 @@ int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
 int Amesos_Scalapack::PerformNumericFactorization( ) {
   
-  if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
+  if( debug_ == 1 ) std::cout << "Entering `PerformNumericFactorization()'" << std::endl;
   
   Time_->ResetStartTime();  
   
@@ -702,7 +702,7 @@ int Amesos_Scalapack::PerformNumericFactorization( ) {
   for (int i=0; i <NumGlobalElements_ ; i++) 
     Ipiv_[i] = 0 ; // kludge - just to see if this makes valgrind happy
   
-  if ( false) cout  << " Amesos_Scalapack.cpp: 711 iam_ = " << iam_ << " DescA = " 
+  if ( false) std::cout  << " Amesos_Scalapack.cpp: 711 iam_ = " << iam_ << " DescA = " 
 		    << DescA_[0] << " " 
 		    << DescA_[1] << " " 
 		    << DescA_[2] << " " 
@@ -712,20 +712,20 @@ int Amesos_Scalapack::PerformNumericFactorization( ) {
 		    << DescA_[6] << " " 
 		    << DescA_[7] << " " 
 		    << DescA_[8] << " " 
-		    << endl ; 
+		    << std::endl ; 
   
 #if 1
   if( NumGlobalElements_ < 10 && nprow_ == 1 && npcol_ == 1 && debug_ == 1 ) {
     assert( lda_ == NumGlobalElements_ ) ; 
-    cout << " DenseA = " << endl ; 
+    std::cout << " DenseA = " << std::endl ; 
     for (int i=0 ; i < NumGlobalElements_; i++ ) {
       for (int j=0 ; j < NumGlobalElements_; j++ ) {
 	if ( DenseA_[ i+j*lda_ ] < 0 ) {
 	  DenseA_[ i+j*lda_ ] *= (1+1e-5) ;   // kludge fixme debugxx - just to let vaglrind check to be sure that DenseA is initialized
 	}
-	//	cout << DenseA_[ i+j*lda_ ] << "\t"; 
+	//	std::cout << DenseA_[ i+j*lda_ ] << "\t"; 
       }
-      //      cout << endl ; 
+      //      std::cout << std::endl ; 
     }
   }
 #endif
@@ -754,8 +754,8 @@ int Amesos_Scalapack::PerformNumericFactorization( ) {
   }
   
   if ( debug_ == 1  && Ierr[0] != 0 ) 
-    cout << " Amesos_Scalapack.cpp:738 iam_ = " << iam_ 
-	 << " Ierr = " << Ierr[0]  << endl ; 
+    std::cout << " Amesos_Scalapack.cpp:738 iam_ = " << iam_ 
+	 << " Ierr = " << Ierr[0]  << std::endl ; 
   
   //  All processes should return the same error code
   if ( nprow_ * npcol_ < Comm().NumProc() ) 
@@ -778,7 +778,7 @@ bool Amesos_Scalapack::MatrixShapeOK() const {
 
 int Amesos_Scalapack::SymbolicFactorization() {
   
-  if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
+  if( debug_ == 1 ) std::cout << "Entering `PerformSymbolicFactorization()'" << std::endl;
   
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
@@ -789,7 +789,7 @@ int Amesos_Scalapack::SymbolicFactorization() {
 
 int Amesos_Scalapack::NumericFactorization() {
   
-  if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
+  if( debug_ == 1 ) std::cout << "Entering `NumericFactorization()'" << std::endl;
   
   NumNumericFact_++;
   
@@ -810,7 +810,7 @@ int Amesos_Scalapack::NumericFactorization() {
 
 int Amesos_Scalapack::Solve() { 
   
-  if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
+  if( debug_ == 1 ) std::cout << "Entering `Solve()'" << std::endl;
   
   NumSolve_++;
   
@@ -881,13 +881,13 @@ int Amesos_Scalapack::Solve() {
   if ( iam_ < nprow_ * npcol_ ) {
     assert( ScalapackX->ExtractView( &ScalapackXvalues, &ScalapackXlda ) == 0 ) ; 
     
-    if ( false ) cout << "Amesos_Scalapack.cpp: " << __LINE__ << " ScalapackXlda = "  <<  ScalapackXlda 
+    if ( false ) std::cout << "Amesos_Scalapack.cpp: " << __LINE__ << " ScalapackXlda = "  <<  ScalapackXlda 
 		      << " lda_ = "  << lda_ 
 		      << " nprow_ = "  << nprow_ 
 		      << " npcol_ = "  << npcol_ 
 		      << " myprow_ = "  << myprow_ 
 		      << " mypcol_ = "  << mypcol_ 
-		      << " iam_ = "  << iam_ << endl ;
+		      << " iam_ = "  << iam_ << std::endl ;
     if (  TwoD_distribution_ )    assert( mypcol_ >0 || EPETRA_MAX(ScalapackXlda,1) == lda_ ) ; 
     
     DESCINIT_F77(DescX, 
@@ -965,8 +965,8 @@ int Amesos_Scalapack::Solve() {
       assert((*vecX)(i)->Norm2(&NormLHS)==0);
       assert((*vecB)(i)->Norm2(&NormRHS)==0);
       if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Scalapack : vector " << i << ", ||x|| = " << NormLHS
-	     << ", ||b|| = " << NormRHS << endl;
+	std::cout << "Amesos_Scalapack : vector " << i << ", ||x|| = " << NormLHS
+	     << ", ||b|| = " << NormRHS << std::endl;
       }
     }
   }
@@ -981,7 +981,7 @@ int Amesos_Scalapack::Solve() {
       (Ax.Norm2(&Norm));
       
       if( verbose_ && Comm().MyPID() == 0 ) {
-	cout << "Amesos_Scalapack : vector " << i << ", ||Ax - b|| = " << Norm << endl;
+	std::cout << "Amesos_Scalapack : vector " << i << ", ||Ax - b|| = " << Norm << std::endl;
       }
     }
   }
@@ -998,15 +998,15 @@ void Amesos_Scalapack::PrintStatus() const
   
   if( iam_ != 0  ) return;
   
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Scalapack : Matrix has " << NumGlobalElements_ << " rows"
-       << " and " << NumGlobalNonzeros_ << " nonzeros" << endl;
-  cout << "Amesos_Scalapack : Nonzero elements per row = "
-       << 1.0*NumGlobalNonzeros_/NumGlobalElements_ << endl;
-  cout << "Amesos_Scalapack : Percentage of nonzero elements = "
-       << 100.0*NumGlobalNonzeros_/(pow(NumGlobalElements_,2.0)) << endl;
-  cout << "Amesos_Scalapack : Use transpose = " << UseTranspose_ << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+  std::cout << "----------------------------------------------------------------------------" << std::endl;
+  std::cout << "Amesos_Scalapack : Matrix has " << NumGlobalElements_ << " rows"
+       << " and " << NumGlobalNonzeros_ << " nonzeros" << std::endl;
+  std::cout << "Amesos_Scalapack : Nonzero elements per row = "
+       << 1.0*NumGlobalNonzeros_/NumGlobalElements_ << std::endl;
+  std::cout << "Amesos_Scalapack : Percentage of nonzero elements = "
+       << 100.0*NumGlobalNonzeros_/(pow(NumGlobalElements_,2.0)) << std::endl;
+  std::cout << "Amesos_Scalapack : Use transpose = " << UseTranspose_ << std::endl;
+  std::cout << "----------------------------------------------------------------------------" << std::endl;
   
   return;
   
@@ -1018,29 +1018,29 @@ void Amesos_Scalapack::PrintTiming() const
 {
   if( iam_ ) return;
   
-  cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Scalapack : Time to convert matrix to ScaLAPACK format = "
-       << ConTime_ << " (s)" << endl;
-  cout << "Amesos_Scalapack : Time to redistribute matrix = "
-       << MatTime_ << " (s)" << endl;
-  cout << "Amesos_Scalapack : Time to redistribute vectors = "
-       << VecTime_ << " (s)" << endl;
-  cout << "Amesos_Scalapack : Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << "Amesos_Scalapack : Time for sym fact = "
+  std::cout << "----------------------------------------------------------------------------" << std::endl;
+  std::cout << "Amesos_Scalapack : Time to convert matrix to ScaLAPACK format = "
+       << ConTime_ << " (s)" << std::endl;
+  std::cout << "Amesos_Scalapack : Time to redistribute matrix = "
+       << MatTime_ << " (s)" << std::endl;
+  std::cout << "Amesos_Scalapack : Time to redistribute vectors = "
+       << VecTime_ << " (s)" << std::endl;
+  std::cout << "Amesos_Scalapack : Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << "Amesos_Scalapack : Time for sym fact = "
        << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
-       << " (s)" << endl;
-  cout << "Amesos_Scalapack : Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << "Amesos_Scalapack : Time for num fact = "
+       << " (s)" << std::endl;
+  std::cout << "Amesos_Scalapack : Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << "Amesos_Scalapack : Time for num fact = "
        << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-       << " (s)" << endl;
-  cout << "Amesos_Scalapack : Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << "Amesos_Scalapack : Time for solve = "
+       << " (s)" << std::endl;
+  std::cout << "Amesos_Scalapack : Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << "Amesos_Scalapack : Time for solve = "
        << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-       << " (s)" << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+       << " (s)" << std::endl;
+  std::cout << "----------------------------------------------------------------------------" << std::endl;
   
   return;
 }

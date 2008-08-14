@@ -69,11 +69,9 @@
   Amesos requires STL vector class
 #endif
 
-using namespace std;
-
 #define AMESOS_PRINT(variable) { { \
-                      if ( debug_ != 0) { cerr << "AMESOS_PRINT " << # variable << "= " << variable << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; }  }\
+                      if ( debug_ != 0) { std::cerr << "AMESOS_PRINT " << # variable << "= " << variable << ", " \
+                           << __FILE__ << ", line " << __LINE__ << std::endl; }  }\
                    }
 
 // prints out an error message if variable is not zero,
@@ -84,8 +82,8 @@ using namespace std;
 #define AMESOS_CHK_ERR(a) { { int amesos_err = a; \
                               if ((amesos_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
                                   (amesos_err > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
-                      cerr << "AMESOS ERROR " << amesos_err << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; }\
+                      std::cerr << "AMESOS ERROR " << amesos_err << ", " \
+                           << __FILE__ << ", line " << __LINE__ << std::endl; }\
                       if (amesos_err != 0) return(amesos_err);  }\
                    }
 //#define AMESOS_CHK_ERR(amesos_err) { EPETRA_CHK_ERR( amesos_err ) }

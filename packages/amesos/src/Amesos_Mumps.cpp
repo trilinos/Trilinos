@@ -150,8 +150,8 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
   Epetra_CrsMatrix* Eptr = dynamic_cast<Epetra_CrsMatrix*>( ptr );
   if ( ptr->NumGlobalNonzeros() < 300 ) SetICNTL(4,3 );  // Enable more debug info for small matrices
   if ( ptr->NumGlobalNonzeros() < 42 && Eptr ) { 
-      cout << " Matrix = " << endl ; 
-      Eptr->Print( cout ) ; 
+      std::cout << " Matrix = " << std::endl ; 
+      Eptr->Print( std::cout ) ; 
   } else {
       assert( Eptr );
   }
@@ -162,8 +162,8 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
   Val.resize(ptr->NumMyNonzeros());
 
   int MaxNumEntries = ptr->MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
+  std::vector<int> Indices;
+  std::vector<double> Values;
   Indices.resize(MaxNumEntries);
   Values.resize(MaxNumEntries);
 
@@ -219,7 +219,7 @@ void Amesos_Mumps::SetCNTL(int pos, double value)
 //=============================================================================
 void Amesos_Mumps::SetICNTLandCNTL()
 {
-  map<int,int>::iterator i_iter;
+  std::map<int,int>::iterator i_iter;
   for (i_iter = ICNTL.begin() ; i_iter != ICNTL.end() ; ++i_iter)
   {
     int pos = i_iter->first;
@@ -228,7 +228,7 @@ void Amesos_Mumps::SetICNTLandCNTL()
     MDS.ICNTL(pos) = val;
   }
 
-  map<int,double>::iterator d_iter;
+  std::map<int,double>::iterator d_iter;
   for (d_iter = CNTL.begin() ; d_iter != CNTL.end() ; ++d_iter)
   {
     int pos = d_iter->first;
@@ -399,7 +399,7 @@ int Amesos_Mumps::SymbolicFactorization()
     if(MUMPSComm_) 
       MPI_Comm_free(&MUMPSComm_);
 
-    vector<int> ProcsInGroup(MaxProcs_);
+    std::vector<int> ProcsInGroup(MaxProcs_);
     for (int i = 0 ; i < MaxProcs_ ; ++i) 
       ProcsInGroup[i] = i;
 
@@ -716,40 +716,40 @@ void Amesos_Mumps::PrintStatus() const
   //  The following lines are commented out to deal with bug #1887 - kss
 #ifndef IRIX64
   PrintLine();
-  cout << "Amesos_Mumps : Matrix has " << Matrix().NumGlobalRows() << " rows"
-       << " and " << Matrix().NumGlobalNonzeros() << " nonzeros" << endl;
-  cout << "Amesos_Mumps : Nonzero elements per row = "
-       << 1.0*Matrix().NumGlobalNonzeros()/Matrix().NumGlobalRows() << endl;
-  cout << "Amesos_Mumps : Percentage of nonzero elements = "
-       << 100.0*Matrix().NumGlobalNonzeros()/(pow(Matrix().NumGlobalRows(),2.0)) << endl;
-  cout << "Amesos_Mumps : Use transpose = " << UseTranspose_ << endl;
+  std::cout << "Amesos_Mumps : Matrix has " << Matrix().NumGlobalRows() << " rows"
+       << " and " << Matrix().NumGlobalNonzeros() << " nonzeros" << std::endl;
+  std::cout << "Amesos_Mumps : Nonzero elements per row = "
+       << 1.0*Matrix().NumGlobalNonzeros()/Matrix().NumGlobalRows() << std::endl;
+  std::cout << "Amesos_Mumps : Percentage of nonzero elements = "
+       << 100.0*Matrix().NumGlobalNonzeros()/(pow(Matrix().NumGlobalRows(),2.0)) << std::endl;
+  std::cout << "Amesos_Mumps : Use transpose = " << UseTranspose_ << std::endl;
 //  MatrixProperty_ is unused - see bug #2331 and bug #2332 in this file and bugzilla
-  if (MatrixProperty_ == 0) cout << "Amesos_Mumps : Matrix is general unsymmetric" << endl;
-  if (MatrixProperty_ == 2) cout << "Amesos_Mumps : Matrix is general symmetric" << endl;
-  if (MatrixProperty_ == 1) cout << "Amesos_Mumps : Matrix is SPD" << endl;
-  cout << "Amesos_Mumps : Available process(es) = " << Comm().NumProc() << endl;
-  cout << "Amesos_Mumps : Using " << MaxProcs_ << " process(es)" << endl;
+  if (MatrixProperty_ == 0) std::cout << "Amesos_Mumps : Matrix is general unsymmetric" << std::endl;
+  if (MatrixProperty_ == 2) std::cout << "Amesos_Mumps : Matrix is general symmetric" << std::endl;
+  if (MatrixProperty_ == 1) std::cout << "Amesos_Mumps : Matrix is SPD" << std::endl;
+  std::cout << "Amesos_Mumps : Available process(es) = " << Comm().NumProc() << std::endl;
+  std::cout << "Amesos_Mumps : Using " << MaxProcs_ << " process(es)" << std::endl;
   
-  cout << "Amesos_Mumps : Estimated FLOPS for elimination = "
-       << MDS.RINFOG(1) << endl;
-  cout << "Amesos_Mumps : Total FLOPS for assembly = "
-       << MDS.RINFOG(2) << endl;
-  cout << "Amesos_Mumps : Total FLOPS for elimination = "
-       << MDS.RINFOG(3) << endl;
+  std::cout << "Amesos_Mumps : Estimated FLOPS for elimination = "
+       << MDS.RINFOG(1) << std::endl;
+  std::cout << "Amesos_Mumps : Total FLOPS for assembly = "
+       << MDS.RINFOG(2) << std::endl;
+  std::cout << "Amesos_Mumps : Total FLOPS for elimination = "
+       << MDS.RINFOG(3) << std::endl;
   
-  cout << "Amesos_Mumps : Total real space to store the LU factors = "
-       << MDS.INFOG(9) << endl;
-  cout << "Amesos_Mumps : Total integer space to store the LU factors = "
-       << MDS.INFOG(10) << endl;
-  cout << "Amesos_Mumps : Total number of iterative steps refinement = "
-       << MDS.INFOG(15) << endl;
-  cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
+  std::cout << "Amesos_Mumps : Total real space to store the LU factors = "
+       << MDS.INFOG(9) << std::endl;
+  std::cout << "Amesos_Mumps : Total integer space to store the LU factors = "
+       << MDS.INFOG(10) << std::endl;
+  std::cout << "Amesos_Mumps : Total number of iterative steps refinement = "
+       << MDS.INFOG(15) << std::endl;
+  std::cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
        << "Amesos_Mumps : for running factorization = "
-       << MDS.INFOG(16) << " Mbytes" << endl;
-  cout << "Amesos_Mumps : for running factorization = "
-       << MDS.INFOG(17) << " Mbytes" << endl;
-  cout << "Amesos_Mumps : Allocated during factorization = "
-       << MDS.INFOG(19) << " Mbytes" << endl;
+       << MDS.INFOG(16) << " Mbytes" << std::endl;
+  std::cout << "Amesos_Mumps : for running factorization = "
+       << MDS.INFOG(17) << " Mbytes" << std::endl;
+  std::cout << "Amesos_Mumps : Allocated during factorization = "
+       << MDS.INFOG(19) << " Mbytes" << std::endl;
   PrintLine();
 #endif
 }
@@ -764,17 +764,17 @@ int Amesos_Mumps::CheckError()
 
   if (Comm().MyPID() == 0 && Wrong) 
   {
-    cerr << "Amesos_Mumps : ERROR" << endl;
-    cerr << "Amesos_Mumps : INFOG(1) = " << MDS.INFOG(1) << endl;
-    cerr << "Amesos_Mumps : INFOG(2) = " << MDS.INFOG(2) << endl;
+    std::cerr << "Amesos_Mumps : ERROR" << std::endl;
+    std::cerr << "Amesos_Mumps : INFOG(1) = " << MDS.INFOG(1) << std::endl;
+    std::cerr << "Amesos_Mumps : INFOG(2) = " << MDS.INFOG(2) << std::endl;
   }
   
   if (MDS.INFO(1) != 0 && Wrong) 
   {
-    cerr << "Amesos_Mumps : On process " << Comm().MyPID()
-	 << ", INFO(1) = " << MDS.INFO(1) << endl;
-    cerr << "Amesos_Mumps : On process " << Comm().MyPID()
-	 << ", INFO(2) = " << MDS.INFO(2) << endl;
+    std::cerr << "Amesos_Mumps : On process " << Comm().MyPID()
+	 << ", INFO(1) = " << MDS.INFO(1) << std::endl;
+    std::cerr << "Amesos_Mumps : On process " << Comm().MyPID()
+	 << ", INFO(2) = " << MDS.INFO(2) << std::endl;
   }
 
   if (Wrong) 
@@ -800,27 +800,27 @@ void Amesos_Mumps::PrintTiming() const
   if (NumNumericFact_)  NumTime /= NumNumericFact_;
   if (NumSolve_)        SolTime /= NumSolve_;
 
-  string p = "Amesos_Mumps : ";
+  std::string p = "Amesos_Mumps : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to MUMPS format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = "
-       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+  std::cout << p << "Time to convert matrix to MUMPS format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << std::endl;
 
   PrintLine();
 }

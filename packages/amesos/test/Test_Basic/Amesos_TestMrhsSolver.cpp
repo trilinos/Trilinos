@@ -60,9 +60,6 @@
 #ifdef HAVE_AMESOS_PARDISO
 #include "Amesos_Pardiso.h"
 #endif
-#ifdef HAVE_AMESOS_PASTIX
-#include "Amesos_Pastix.h"
-#endif
 #ifdef HAVE_AMESOS_PARAKLETE
 #include "Amesos_Paraklete.h"
 #endif
@@ -127,10 +124,10 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
 
-  string FileName = matrix_file ;
+  std::string FileName = matrix_file ;
   int FN_Size = FileName.size() ; 
-  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
-  string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  std::string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  std::string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
   bool NonContiguousMap = false; 
 
   if ( LastFiveBytes == ".triU" ) { 
@@ -179,7 +176,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     int NumGlobalElements =  readMap->NumGlobalElements();
     int NumMyElements = map.NumMyElements();
     int MyFirstElement = map.MinMyGID();
-    vector<int> MapMap_( NumGlobalElements );
+    std::vector<int> MapMap_( NumGlobalElements );
     readMap->MyGlobalElements( &MapMap_[0] ) ;
     Comm.Broadcast( &MapMap_[0], NumGlobalElements, 0 ) ; 
     map_ = new Epetra_Map( NumGlobalElements, NumMyElements, &MapMap_[MyFirstElement], 0, Comm);
@@ -587,35 +584,6 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 
       }
 #endif
-#ifdef HAVE_AMESOS_PASTIX
-    } else if ( SparseSolver == PASTIX ) { 
-      Teuchos::ParameterList ParamList ;
-      Amesos_Pastix pastix( Problem ) ; 
-      ParamList.set( "MaxProcs", -3 );
-      EPETRA_CHK_ERR( pastix.SetParameters( ParamList ) ); 
-      EPETRA_CHK_ERR( pastix.SetUseTranspose( transpose ) ); 
-      EPETRA_CHK_ERR( pastix.SymbolicFactorization( ) ); 
-      EPETRA_CHK_ERR( pastix.NumericFactorization( ) ); 
-
-      for ( int i= 0 ; i < numsolves ; i++ ) { 
-	//    set up to sovle A X[:,i] = B[:,i]
-	Epetra_Vector *passb_i = (*passb)(i) ;
-	Epetra_Vector *passx_i = (*passx)(i) ;
-	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
-	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-	EPETRA_CHK_ERR( pastix.Solve( ) ); 
-	//	factor = false; 
-	if ( i == 0 ) 
-	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
-	else { 
-	  if ( i < numsolves-1 ) 
-	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
-	  else
-	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
-	}
-
-      }
-#endif
 #ifdef HAVE_AMESOS_PARAKLETE
     } else if ( SparseSolver == PARAKLETE ) { 
       Teuchos::ParameterList ParamList ;
@@ -748,8 +716,8 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       spoolesserial.Solve() ;
 #endif 
     } else { 
-      SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
-      cerr << "\n\n####################  Requested solver not available (Or not tested with multiple RHS) on this platform #####################\n" << endl ;
+      SparseDirectTimingVars::log_file << "Solver not implemented yet" << std::endl ;
+      std::cerr << "\n\n####################  Requested solver not available (Or not tested with multiple RHS) on this platform #####################\n" << std::endl ;
     }
 
     SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
@@ -757,7 +725,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     //
     //  Compute the error = norm(xcomp - xexact )
     //
-    vector <double> error(numsolves) ; 
+    std::vector <double> error(numsolves) ; 
     double max_error = 0.0;
   
     passresid->Update(1.0, *passx, -1.0, *passxexact, 0.0);
@@ -773,7 +741,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     //
     //  Compute the residual = norm(Ax - b)
     //
-    vector <double> residual(numsolves) ; 
+    std::vector <double> residual(numsolves) ; 
   
     passtmp->PutScalar(0.0);
     passA->Multiply( transpose, *passx, *passtmp);
@@ -787,11 +755,11 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 
     SparseDirectTimingVars::SS_Result.Set_Residual(max_resid) ;
     
-    vector <double> bnorm(numsolves); 
+    std::vector <double> bnorm(numsolves); 
     passb->Norm2( &bnorm[0] ) ; 
     SparseDirectTimingVars::SS_Result.Set_Bnorm(bnorm[0]) ;
 
-    vector <double> xnorm(numsolves); 
+    std::vector <double> xnorm(numsolves); 
     passx->Norm2( &xnorm[0] ) ; 
     SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
 

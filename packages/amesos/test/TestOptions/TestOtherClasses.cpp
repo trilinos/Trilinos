@@ -30,7 +30,7 @@ int TestOtherClasses( const char* AmesosClass,
   const Epetra_Comm& Comm = Amat->Comm();
 
   bool MyVerbose = false ; // if set equal to verbose, we exceed the test harness 1 Megabyte limit
-  string StringAmesosClass = AmesosClass ; 
+  std::string StringAmesosClass = AmesosClass ; 
   if ( AmesosClass ) MyVerbose = verbose ;    // Turn this on temporarily to debug Mumps on atlantis
   {
     Teuchos::ParameterList ParamList ;
@@ -39,16 +39,16 @@ int TestOtherClasses( const char* AmesosClass,
     ParamList.set( "Redistribute", true );
     ParamList.set( "AddZeroToDiag", false );
     ParamList.set( "MaxProcs", 100000 );
-    //  ParamList.print( cerr, 10 ) ; 
+    //  ParamList.print( std::cerr, 10 ) ; 
 
     double relerror;
     double relresidual;
    
-    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+    if (MyVerbose) std::cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
 		      << " ParamList = " << ParamList 
 		      << " transpose = " << transpose 
 		      << " Levels = " << Levels 
-		      << endl ; 
+		      << std::endl ; 
 
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
@@ -62,16 +62,16 @@ int TestOtherClasses( const char* AmesosClass,
 					relerror, 
 					relresidual, ExpectedError ) ; 
 
-    if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+    if (MyVerbose  || ( Errors && iam==0 )  ) std::cout << __FILE__ << "::" << __LINE__ 
 				  << " AmesosClass= " << AmesosClass 
 				  << " Errors = " << Errors 
-				  << endl ; 
+				  << std::endl ; 
 
     if ( Errors < 0 ) {
       NumErrors++;
       NumTests++ ; 
       if ( MyVerbose ) {
-	cout << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
+	std::cout << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << std::endl ; 
       }
     } else { 
       NumErrors += Errors ; 
@@ -81,14 +81,14 @@ int TestOtherClasses( const char* AmesosClass,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (MyVerbose)  std::cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << std::endl ; 
     if ( MyVerbose && Errors ) {
-      cout << AmesosClass << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 
-  string AC = AmesosClass ; 
+  std::string AC = AmesosClass ; 
 
   bool taucs = ( AC ==  "Amesos_Taucs" );
   bool klu = ( AC ==  "Amesos_Klu" );
@@ -122,16 +122,16 @@ int TestOtherClasses( const char* AmesosClass,
     ParamList.set( "AddZeroToDiag", true );
     ParamList.set( "AddToDiag", 1.3e2 );
 
-    //  ParamList.print( cerr, 10 ) ; 
+    //  ParamList.print( std::cerr, 10 ) ; 
 
     double relerror;
     double relresidual;
    
-    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+    if (MyVerbose) std::cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
 		      << " ParamList = " << ParamList 
 		      << " transpose = " << transpose 
 		      << " Levels = " << Levels 
-		      << endl ; 
+		      << std::endl ; 
 
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
@@ -146,17 +146,17 @@ int TestOtherClasses( const char* AmesosClass,
 					relresidual, ExpectedError ) ; 
 
 
-    if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+    if (MyVerbose  || ( Errors && iam==0 )  ) std::cout << __FILE__ << "::" << __LINE__ 
 				  << " AmesosClass= " << AmesosClass 
 				  << " Errors = " << Errors 
-				  << endl ; 
+				  << std::endl ; 
 
     if ( Errors < 0 ) {
       NumErrors++;
       NumTests++ ; 
       if ( MyVerbose ) {
-	cout  << __FILE__ << "::" << __LINE__ 
-	  << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
+	std::cout  << __FILE__ << "::" << __LINE__ 
+	  << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << std::endl ; 
       }
     } else { 
       NumErrors += Errors ; 
@@ -166,10 +166,10 @@ int TestOtherClasses( const char* AmesosClass,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (MyVerbose)  std::cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << std::endl ; 
     if ( MyVerbose && Errors ) {
-      cout << AmesosClass << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
 
 
@@ -181,16 +181,16 @@ int TestOtherClasses( const char* AmesosClass,
     ParamList.set( "Redistribute", false );
     ParamList.set( "AddToDiag", 1e2 );
 
-    //  ParamList.print( cerr, 10 ) ; 
+    //  ParamList.print( std::cerr, 10 ) ; 
 
     double relerror;
     double relresidual;
    
-    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+    if (MyVerbose) std::cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
 		      << " ParamList = " << ParamList 
 		      << " transpose = " << transpose 
 		      << " Levels = " << Levels 
-		      << endl ; 
+		      << std::endl ; 
 
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
@@ -205,17 +205,17 @@ int TestOtherClasses( const char* AmesosClass,
 					relresidual, ExpectedError ) ; 
 
 
-    if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+    if (MyVerbose  || ( Errors && iam==0 )  ) std::cout << __FILE__ << "::" << __LINE__ 
 				  << " AmesosClass= " << AmesosClass 
 				  << " Errors = " << Errors 
-				  << endl ; 
+				  << std::endl ; 
 
     if ( Errors < 0 ) {
       NumErrors++;
       NumTests++ ; 
       if ( MyVerbose ) {
-	cout  << __FILE__ << "::" << __LINE__ 
-	  << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
+	std::cout  << __FILE__ << "::" << __LINE__ 
+	  << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << std::endl ; 
       }
     } else { 
       NumErrors += Errors ; 
@@ -225,10 +225,10 @@ int TestOtherClasses( const char* AmesosClass,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (MyVerbose)  std::cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << std::endl ; 
     if ( MyVerbose && Errors ) {
-      cout << AmesosClass << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
 
 
@@ -245,11 +245,11 @@ int TestOtherClasses( const char* AmesosClass,
     double relerror;
     double relresidual;
       
-    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+    if (MyVerbose) std::cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
 		      << " ParamList = " << ParamList 
 		      << " transpose = " << transpose 
 		      << " Levels = " << Levels 
-		      << endl ; 
+		      << std::endl ; 
 
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
@@ -263,13 +263,13 @@ int TestOtherClasses( const char* AmesosClass,
 					relerror, 
 					relresidual, ExpectedError ) ; 
       
-    if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+    if (MyVerbose  || ( Errors && iam==0 )  ) std::cout << __FILE__ << "::" << __LINE__ 
 				  << " AmesosClass= " << AmesosClass 
 				  << " Errors = " << Errors 
-				  << endl ; 
+				  << std::endl ; 
 
     if (Errors < 0 ) {
-      if (MyVerbose ) cout << AmesosClass << " not built in this executable " << endl ; 
+      if (MyVerbose ) std::cout << AmesosClass << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -279,10 +279,10 @@ int TestOtherClasses( const char* AmesosClass,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (MyVerbose)  std::cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << std::endl ; 
     if ( MyVerbose && Errors ) {
-      cout << AmesosClass << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 
@@ -296,11 +296,11 @@ int TestOtherClasses( const char* AmesosClass,
     double relerror;
     double relresidual;
       
-    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+    if (MyVerbose) std::cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
 		      << " ParamList = " << ParamList 
 		      << " transpose = " << transpose 
 		      << " Levels = " << Levels 
-		      << endl ; 
+		      << std::endl ; 
 
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
@@ -314,13 +314,13 @@ int TestOtherClasses( const char* AmesosClass,
 					relerror, 
 					relresidual, ExpectedError ) ; 
       
-    if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+    if (MyVerbose  || ( Errors && iam==0 )  ) std::cout << __FILE__ << "::" << __LINE__ 
 				  << " AmesosClass= " << AmesosClass 
 				  << " Errors = " << Errors 
-				  << endl ; 
+				  << std::endl ; 
 
     if (Errors < 0 ) {
-      if (MyVerbose ) cout << AmesosClass << " not built in this executable " << endl ; 
+      if (MyVerbose ) std::cout << AmesosClass << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -330,10 +330,10 @@ int TestOtherClasses( const char* AmesosClass,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (MyVerbose)  std::cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << std::endl ; 
     if ( MyVerbose && Errors ) {
-      cout << AmesosClass << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
   //
@@ -363,7 +363,7 @@ int TestOtherClasses( const char* AmesosClass,
 					relresidual, ExpectedError ) ;
 
     if (Errors < 0 ) {
-      if (MyVerbose ) cout << AmesosClass << " not built in this executable " << endl ; 
+      if (MyVerbose ) std::cout << AmesosClass << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -373,10 +373,10 @@ int TestOtherClasses( const char* AmesosClass,
       NumTests++ ; 
 
     }
-    if (MyVerbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if (MyVerbose)  std::cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << std::endl ; 
     if ( MyVerbose && Errors > 0 ) {
-      cout << AmesosClass << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 #endif

@@ -64,7 +64,6 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	 $(srcdir)/In_AmesosLapack.csh \
 	  $(srcdir)/In_AmesosTaucs.csh \
 	  $(srcdir)/In_AmesosPardiso.csh \
-	  $(srcdir)/In_AmesosPastix.csh \
 	  $(srcdir)/In_AmesosParaklete.csh \
 	  $(srcdir)/In_AmesosMumps.csh \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
@@ -79,7 +78,6 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	cp  $(srcdir)/In_AmesosLapack.csh AmesosLapack.csh 
 	cp  $(srcdir)/In_AmesosTaucs.csh AmesosTaucs.csh 
 	cp  $(srcdir)/In_AmesosPardiso.csh AmesosPardiso.csh 
-	cp  $(srcdir)/In_AmesosPastix.csh AmesosPastix.csh 
 	cp  $(amesos_paraklete_test) AmesosParaklete.csh 
 	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
 	cp  $(srcdir)/In_AmesosKluSerial.csh AmesosKluSerial.csh 
@@ -170,7 +168,6 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_AmesosLapack.csh \
 	$(srcdir)/In_AmesosTaucs.csh \
 	$(srcdir)/In_AmesosPardiso.csh \
-	$(srcdir)/In_AmesosPastix.csh \
 	$(srcdir)/In_AmesosParaklete.csh \
 	$(srcdir)/In_AmesosParaklete_Sans_EpetraExt.csh \
 	$(srcdir)/In_AmesosMumps.csh \
@@ -220,7 +217,6 @@ clean:  clean-am
 	AmesosLapack.csh \
 	AmesosTaucs.csh \
 	AmesosPardiso.csh \
-	AmesosPastix.csh \
 	AmesosParaklete.csh \
 	AmesosMumps.csh \
 	AmesosKluSerial.csh  AmesosSuperluSerial.csh \

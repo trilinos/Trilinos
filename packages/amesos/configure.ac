@@ -438,14 +438,11 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, pardiso, [Enable Amesos interface support fo
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, paraklete, [Enable Amesos interface support for the double-precision version of PARAKLETE], 
 		AMESOS_PARAKLETE, no)
 
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, pastix, [Enable Amesos interface support for the double-precision version of PASTIX], 
-		AMESOS_PASTIX, no)
+#TAC_ARG_ENABLE_FEATURE_SUB( amesos, pastix, [Enable Amesos interface support for the double-precision version of PASTIX], 
+#		AMESOS_PASTIX, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, taucs, [Enable Amesos interface support for the double-precision version of TAUCS], 
 		AMESOS_TAUCS, no)
-
-#TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
-#		AMESOS_KUNDERT, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB(amesos, mc64, [Enable Amesos interface support for reordering routine MC64], 
 		AMESOS_MC64, no)
@@ -695,13 +692,13 @@ fi
 #   Pastix    #
 #  =========  #
 
-if test "X$ac_cv_use_amesos_pastix" != "Xno"; then
+#if test "X$ac_cv_use_amesos_pastix" != "Xno"; then
 
-  AM_CONDITIONAL(HAVE_AMESOS_PASTIX, true ) 
-  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-else
-  AM_CONDITIONAL(HAVE_AMESOS_PASTIX, false ) 
-fi
+#  AM_CONDITIONAL(HAVE_AMESOS_PASTIX, true ) 
+#  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+#else
+#  AM_CONDITIONAL(HAVE_AMESOS_PASTIX, false ) 
+#fi
 
 #  =========  #
 #  PARAKLETE  #

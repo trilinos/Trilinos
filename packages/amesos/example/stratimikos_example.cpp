@@ -131,7 +131,7 @@ bool TestSingleStratimikosSolver(
 
     const Teuchos::ParameterList& LST_PL =  StratimikosList.sublist("Linear Solver Types"); 
     const Teuchos::ParameterList& Amesos_PL =  LST_PL.sublist("Amesos"); 
-    string SolverType = Amesos_PL.get<string>("Solver Type");
+    std::string SolverType = Amesos_PL.get<std::string>("Solver Type");
     assert( SolverType == "Lapack" ) ; // for now - remove later 
     const Teuchos::ParameterList& AmesosSettings_PL =  Amesos_PL.sublist("Amesos Settings"); 
     const Teuchos::ParameterList& SolverType_PL =  AmesosSettings_PL.sublist(SolverType); 
@@ -146,17 +146,17 @@ bool TestSingleStratimikosSolver(
       ResidualNorm > MinError ; 
 
 #if 0
-    cout << __FILE__ << "::" << __LINE__ 
+    std::cout << __FILE__ << "::" << __LINE__ 
 	 << " ResidualNorm = " << ResidualNorm  
 	 << " MinError = " << MinError 
-	 << " MaxError = " << MaxError << endl ; 
-    cout << " B = " ; 
-    B.Print( cout ) ; 
-    cout << " X = " ; 
-    X.Print( cout ) ; 
-    cout << " epetra_A = " ; 
-    epetra_A->Print( cout ) ; 
-    cout << " success = " << success << " ResidualNorm = " <<  ResidualNorm << endl ; 
+	 << " MaxError = " << MaxError << std::endl ; 
+    std::cout << " B = " ; 
+    B.Print( std::cout ) ; 
+    std::cout << " X = " ; 
+    X.Print( std::cout ) ; 
+    std::cout << " epetra_A = " ; 
+    epetra_A->Print( std::cout ) ; 
+    std::cout << " success = " << success << " ResidualNorm = " <<  ResidualNorm << std::endl ; 
 #endif
 
     if(false && out) {

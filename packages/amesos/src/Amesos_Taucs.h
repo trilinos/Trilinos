@@ -39,7 +39,6 @@
 #ifndef AMESOS_TAUCS_H
 #define AMESOS_TAUCS_H
 
-#include <vector>
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos_NoCopiable.h"

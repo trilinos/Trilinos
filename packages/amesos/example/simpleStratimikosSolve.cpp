@@ -82,8 +82,8 @@ int simpleStratimikosSolve(
 
 
 #if 0
-    cout << __FILE__ << "::" << __LINE__ << 
-      " paramlist  = " << *(linearSolverBuilder.getParameterList( ))   << endl ; 
+    std::cout << __FILE__ << "::" << __LINE__ << 
+      " paramlist  = " << *(linearSolverBuilder.getParameterList( ))   << std::endl ; 
 #endif
 
     return (status.solveStatus!=Thyra::SOLVE_STATUS_CONVERGED);

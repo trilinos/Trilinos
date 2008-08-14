@@ -276,8 +276,8 @@ int Amesos_Umfpack::PerformNumericFactorization( )
 
   RcondValidOnAllProcs_ = false ; 
   if (MyPID_ == 0) {
-    vector<double> Control(UMFPACK_CONTROL);
-    vector<double> Info(UMFPACK_INFO);
+    std::vector<double> Control(UMFPACK_CONTROL);
+    std::vector<double> Info(UMFPACK_INFO);
     umfpack_di_defaults( &Control[0] ) ; 
     if (Numeric) umfpack_di_free_numeric (&Numeric) ;
     int status = umfpack_di_numeric (&Ap[0], 
@@ -290,7 +290,7 @@ int Amesos_Umfpack::PerformNumericFactorization( )
     Rcond_ = Info[UMFPACK_RCOND]; 
 
 #if NOT_DEF
-    cout << " Rcond_ = " << Rcond_ << endl ; 
+    std::cout << " Rcond_ = " << Rcond_ << std::endl ; 
 
     int lnz1 = 1000 ;
     int unz1 = 1000 ;
@@ -561,13 +561,13 @@ void Amesos_Umfpack::PrintStatus() const
 
   PrintLine();
 
-  cout << "Amesos_Umfpack : Matrix has " << NumGlobalElements_ << " rows"
-       << " and " << numentries_ << " nonzeros" << endl;
-  cout << "Amesos_Umfpack : Nonzero elements per row = "
-       << 1.0*numentries_/NumGlobalElements_ << endl;
-  cout << "Amesos_Umfpack : Percentage of nonzero elements = "
-       << 100.0*numentries_/(pow(double(NumGlobalElements_),double(2.0))) << endl;
-  cout << "Amesos_Umfpack : Use transpose = " << UseTranspose_ << endl;
+  std::cout << "Amesos_Umfpack : Matrix has " << NumGlobalElements_ << " rows"
+	    << " and " << numentries_ << " nonzeros" << std::endl;
+  std::cout << "Amesos_Umfpack : Nonzero elements per row = "
+       << 1.0*numentries_/NumGlobalElements_ << std::endl;
+  std::cout << "Amesos_Umfpack : Percentage of nonzero elements = "
+       << 100.0*numentries_/(pow(double(NumGlobalElements_),double(2.0))) << std::endl;
+  std::cout << "Amesos_Umfpack : Use transpose = " << UseTranspose_ << std::endl;
 
   PrintLine();
 
@@ -597,36 +597,36 @@ void Amesos_Umfpack::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Umfpack : ";
+  std::string p = "Amesos_Umfpack : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Umfpack format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = "
+  std::cout << p << "Time to convert matrix to Umfpack format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = "
        << SymTime * NumSymbolicFact_ << " (s), avg = " 
-       << SymTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
+       << SymTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
        << NumTime * NumNumericFact_ << " (s), avg = " 
-       << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+       << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << std::endl;
   double tt = SymTime * NumSymbolicFact_ + NumTime * NumNumericFact_ + SolTime * NumSolve_;
   if (tt != 0)
   {
-    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
-    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
-    cout << p << "(the above time does not include UMFPACK time)" << endl;
-    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+    std::cout << p << "Total time spent in Amesos = " << tt << " (s) " << std::endl;
+    std::cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << std::endl;
+    std::cout << p << "(the above time does not include UMFPACK time)" << std::endl;
+    std::cout << p << "Amesos interface time / total time = " << OveTime / tt << std::endl;
   }
 
   PrintLine();

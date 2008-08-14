@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  string matrix_file;
-  string solver_type;
+  std::string matrix_file;
+  std::string solver_type;
 
   if (argc > 1)
     matrix_file = argv[1]; // read it from command line
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     solver_type = "Klu"; // default
 
   if (Comm.MyPID() == 0)
-    cout << "Reading matrix `" << matrix_file << "'";
+    std::cout << "Reading matrix `" << matrix_file << "'";
   
   // ================= //
   // reading HB matrix //
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
   }
   catch(...)
   {
-    cout << "Caught exception, maybe file name is incorrect" << endl;
+    std::cout << "Caught exception, maybe file name is incorrect" << std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #else
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   // ======================================================= //
 
   if (!Comm.MyPID()) 
-    cout << "Calling Amesos..." << endl;
+    std::cout << "Calling Amesos..." << std::endl;
 
   // For comments on the commands in this section, please
   // see file example_AmesosFactory.cpp.
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
   // Factory.Create() returns 0 if the requested solver
   // is not available
   if (Solver == 0) {
-    cerr << "Selected solver (" << solver_type << ") is not available" << endl;
+    std::cerr << "Selected solver (" << solver_type << ") is not available" << std::endl;
     // return ok not to break test harness even if
     // the solver is not available
 #ifdef HAVE_MPI
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
   Ax.Norm2(&residual);
 
   if (!Comm.MyPID()) 
-    cout << "After Amesos solution, ||b - A * x||_2 = " << residual << endl;
+    std::cout << "After Amesos solution, ||b - A * x||_2 = " << residual << std::endl;
 
   // delete Solver. Do this before calling MPI_Finalize() because
   // MPI calls can occur.

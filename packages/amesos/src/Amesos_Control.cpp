@@ -60,8 +60,8 @@ void Amesos_Control::SetControlParameters( const Teuchos::ParameterList &Paramet
   // - 1 : SPD;
   // - 2 : general symmetric matrix.
   if( ParameterList.isParameter("MatrixProperty") ) {
-    string MatrixProperty;
-    MatrixProperty = ParameterList.get<string>("MatrixProperty");
+    std::string MatrixProperty;
+    MatrixProperty = ParameterList.get<std::string>("MatrixProperty");
     if( MatrixProperty == "SPD" )
       MatrixProperty_ = 1;
     else if( MatrixProperty == "symmetric" ) 
@@ -70,9 +70,9 @@ void Amesos_Control::SetControlParameters( const Teuchos::ParameterList &Paramet
       MatrixProperty_ = 0;
     else {
       //      AMESOS_CHK_ERR( -1 ) ;
-      //      if ( verbose_ ) cerr << "Amesos : ERROR" << endl 
+      //      if ( verbose_ ) std::cerr << "Amesos : ERROR" << std::endl 
       //	     << "Amesos : MatrixProperty value not recognized ("
-      //	     << MatrixProperty << ")" << endl;
+      //	     << MatrixProperty << ")" << std::endl;
     }
   }
 

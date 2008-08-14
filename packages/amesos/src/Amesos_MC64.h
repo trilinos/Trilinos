@@ -43,7 +43,6 @@
 
 #include "Amesos_ConfigDefs.h"
 #if defined(HAVE_AMESOS_MC64)
-#include <vector>
 #include "Amesos_Scaling.h"
 #include "Amesos_Reordering.h"
 

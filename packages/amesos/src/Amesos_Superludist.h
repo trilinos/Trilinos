@@ -196,9 +196,9 @@ private:
   int NumGlobalRows_; 
 
   // Ap, Ai, Aval form the compressed row storage used by SuperLU_DIST
-  vector <int> Ap_;
-  vector <int> Ai_;
-  vector <double> Aval_;
+  std::vector <int> Ap_;
+  std::vector <int> Ai_;
+  std::vector <double> Aval_;
   //! Contains the global ID of local columns.
   int* Global_Columns_;
 
@@ -206,11 +206,11 @@ private:
   int npcol_;
 
   bool PrintNonzeros_;
-  string ColPerm_;
-  string RowPerm_;
+  std::string ColPerm_;
+  std::string RowPerm_;
   int* perm_c_;
   int* perm_r_;
-  string IterRefine_;
+  std::string IterRefine_;
   bool ReplaceTinyPivot_;
   bool Equil_;
 

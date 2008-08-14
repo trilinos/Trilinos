@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 
   double norm = ComputeNorm(Matrix, &x_exact, &b);
   if (Comm.MyPID() == 0)
-    cout << "norm = " << norm << endl;
+    std::cout << "norm = " << norm << std::endl;
 
   if (norm > 1e-5)
     exit(EXIT_FAILURE);

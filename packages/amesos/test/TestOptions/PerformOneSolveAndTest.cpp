@@ -3,8 +3,8 @@
 //
 
 #define OUR_CHK_ERR(a) { { int epetra_err = a; \
-                      if (epetra_err != 0) { cerr << "Amesos ERROR " << epetra_err << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; \
+                      if (epetra_err != 0) { std::cerr << "Amesos ERROR " << epetra_err << ", " \
+                           << __FILE__ << ", line " << __LINE__ << std::endl; \
 relerror = 1.3e15; relresidual=1e15; return(1);}  }\
                    }
 
@@ -128,13 +128,13 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   
   Epetra_CrsMatrix* MatPtr = &*MyMat ;
 
-  const string AC = AmesosClass ;
+  const std::string AC = AmesosClass ;
   if ( ExpectedError == 0 ) { 
     if ( AC != "Amesos_Pardiso" ) {
       OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, MyVerbose, 
 					  ParamList, MatPtr, Rcond ) );
     } else {
-      if (MyVerbose) cout << " AC = "  << AC << " not tested in Partial Factorization" <<endl ;   // bug #1915
+      if (MyVerbose) std::cout << " AC = "  << AC << " not tested in Partial Factorization" <<std::endl ;   // bug #1915
     }
   }
 
@@ -173,7 +173,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     MyMatWithDiag = rcp( new Epetra_CrsMatrix( *InMat ) ); 
   }
 
-  if ( MyVerbose ) cout << " Partial Factorization complete " << endl ; 
+  if ( MyVerbose ) std::cout << " Partial Factorization complete " << std::endl ; 
 
   relerror = 0 ; 
   relresidual = 0 ; 
@@ -261,8 +261,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
       // bug #2245 - Amesos fails to return error consistently across all 
       // processes.  When this bug is fixed, remove "iam == 0 &&" from the next line 
       if ( iam == 0 && SymbolicFactorizationReturn != ExpectedError ) {
-	cout << " SymbolicFactorization returned " << SymbolicFactorizationReturn 
-	     << " should be " << ExpectedError << endl ; 
+	std::cout << " SymbolicFactorization returned " << SymbolicFactorizationReturn 
+	     << " should be " << ExpectedError << std::endl ; 
 	OUR_CHK_ERR( 1 ) ; 
       } else { 
 	return 0;   //  Returned the correct error code for this matrix 
@@ -281,8 +281,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
       // bug #2245 - Amesos fails to return error consistently across all 
       // processes.  When this bug is fixed, remove "iam == 0 &&" from the next line 
       if ( iam == 0 && NumericFactorizationReturn != ExpectedError ) {
-	cout << " NumericFactorization returned " << NumericFactorizationReturn 
-	     << " should be " << ExpectedError << endl ; 
+	std::cout << " NumericFactorization returned " << NumericFactorizationReturn 
+	     << " should be " << ExpectedError << std::endl ; 
 	OUR_CHK_ERR( 1 ) ; 
       } else { 
 	return 0;   //  Returned the correct error code for this matrix 
@@ -337,7 +337,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	cAAx = cAx ;
       }
 
-    if ( MyVerbose ) cout << " Compute  b = A x2 = A A' A'' xexact  " << endl ; 
+    if ( MyVerbose ) std::cout << " Compute  b = A x2 = A A' A'' xexact  " << std::endl ; 
 
     MyMatWithDiag->Multiply( transpose, cAAx, b ) ;  //  b = A x2 = A A' A'' xexact
  
@@ -404,7 +404,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	val[0] =  -Value ; 
 	if ( MyMat->MyGRID( 0 ) ) {
 	  if ( MyMat->SumIntoMyValues( 0, 1, val, ind ) ) { 
-	    cout << " TestOptions requires a non-zero entry in A(1,1) " << endl ; 
+	    std::cout << " TestOptions requires a non-zero entry in A(1,1) " << std::endl ; 
 	  }
 	}
       }
@@ -452,9 +452,9 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     DomainDiff.Update( 1.0, sAAx, -1.0, cAAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ 
+    if (MyVerbose) std::cout << __FILE__ << "::" << __LINE__ 
 			<< " norm( sAAx - cAAx ) / norm(sAAx ) = " 
-			<< norm_diff /norm_one << endl ; 
+			<< norm_diff /norm_one << std::endl ; 
 
 
     
@@ -462,58 +462,58 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     DomainDiff.Update( 1.0, sAx, -1.0, cAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout 
+    if (MyVerbose) std::cout 
       << __FILE__ << "::" << __LINE__ 
       << " norm( sAx - cAx ) / norm(sAx ) = " 
-		      << norm_diff /norm_one << endl ; 
+		      << norm_diff /norm_one << std::endl ; 
 
 
     DomainDiff.Update( 1.0, x, -1.0, xexact, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     x.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout 
+    if (MyVerbose) std::cout 
       << __FILE__ << "::" << __LINE__ 
       << " norm( x - xexact ) / norm(x) = " 
-      << norm_diff /norm_one << endl ; 
+      << norm_diff /norm_one << std::endl ; 
 
     relerror = norm_diff / norm_one ; 
 
     DomainDiff.Update( 1.0, sAx, -1.0, kAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout 
+    if (MyVerbose) std::cout 
       << __FILE__ << "::" << __LINE__ 
       << " norm( sAx - kAx ) / norm(sAx ) = " 
-      << norm_diff /norm_one << endl ; 
+      << norm_diff /norm_one << std::endl ; 
 
 
     DomainDiff.Update( 1.0, sAAx, -1.0, kAAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout 
+    if (MyVerbose) std::cout 
       << __FILE__ << "::" << __LINE__ 
       << " norm( sAAx - kAAx ) / norm(sAAx ) = " 
-      << norm_diff /norm_one << endl ; 
+      << norm_diff /norm_one << std::endl ; 
 
 
     RangeDiff.Update( 1.0, bcheck, -1.0, b, 0.0 ) ;
     RangeDiff.Norm2( &norm_diff ) ; 
     bcheck.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout 
+    if (MyVerbose) std::cout 
       << __FILE__ << "::" << __LINE__ 
       << " norm( bcheck - b ) / norm(bcheck ) = " 
-      << norm_diff /norm_one << endl ; 
+      << norm_diff /norm_one << std::endl ; 
 
     relresidual = norm_diff / norm_one ; 
 
     if (iam == 0 ) {
       if ( relresidual * Rcond < 1e-16 ) {
-	if (MyVerbose) cout << " Test 1 Passed " << endl ;
+	if (MyVerbose) std::cout << " Test 1 Passed " << std::endl ;
       } else {
-      cout <<  __FILE__ << "::"  << __LINE__ << 
+      std::cout <<  __FILE__ << "::"  << __LINE__ << 
 	  " relresidual = " << relresidual <<
 	  " TEST FAILED " <<
-	  " ParamList = " << ParamList << endl ; 
+	  " ParamList = " << ParamList << std::endl ; 
 	errors += 1 ; 
       }
     }

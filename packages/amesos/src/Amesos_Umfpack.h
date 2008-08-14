@@ -226,9 +226,9 @@ private:
   void *Numeric;
 
   //!  Ap, Ai, Aval form the compressed row storage used by Umfpack
-  vector <int> Ap;
-  vector <int> Ai;
-  vector <double> Aval;
+  std::vector <int> Ap;
+  std::vector <int> Ai;
+  std::vector <double> Aval;
 
   //! 1 if Problem_->GetOperator() is stored entirely on process 0
   int IsLocal_;

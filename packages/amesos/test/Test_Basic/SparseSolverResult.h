@@ -68,8 +68,8 @@ class SparseSolverResult : public Epetra_Object {
   void Set_Anorm ( double anorm_in ) { Anorm = anorm_in; } ; 
   inline double Get_Anorm ( ) { return Anorm; } ; 
 
-  virtual void Print(ostream & os) const;
-  virtual void PrintSummary(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
+  virtual void PrintSummary(std::ostream & os) const;
 
 
  private:

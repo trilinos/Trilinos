@@ -136,8 +136,8 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
     int MaxNumEntries = RowMatrixA->MaxNumEntries();
     Graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, OriginalMap, MaxNumEntries));
 
-    vector<int>    Indices(MaxNumEntries);
-    vector<double> Values(MaxNumEntries);
+    std::vector<int>    Indices(MaxNumEntries);
+    std::vector<double> Values(MaxNumEntries);
 
     for (int i = 0 ; i < RowMatrixA->NumMyRows() ; ++i)
     {
@@ -158,7 +158,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   //
   //  Create a replicated map and graph 
   //
-  vector<int> AllIDs( numrows ) ; 
+  std::vector<int> AllIDs( numrows ) ; 
   for ( int i = 0; i < numrows ; i++ ) AllIDs[i] = i ; 
 
   Epetra_Map      ReplicatedMap( -1, numrows, &AllIDs[0], 0, Comm());
@@ -171,9 +171,9 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   //
   //  Convert the matrix to Ap, Ai
   //
-  vector <int> Replicates(numrows);
-  vector <int> Ap(numrows + 1);
-  vector <int> Ai(EPETRA_MAX(numrows, numentries));
+  std::vector <int> Replicates(numrows);
+  std::vector <int> Ap(numrows + 1);
+  std::vector <int> Ai(EPETRA_MAX(numrows, numentries));
 
   for( int i = 0 ; i < numrows; i++ ) Replicates[i] = 1; 
   
@@ -199,7 +199,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   //  Call Dscpack Symbolic Factorization
   //  
   int OrderCode = 2;
-  vector<double> MyANonZ;
+  std::vector<double> MyANonZ;
   
   NumLocalNonz = 0 ; 
   GlobalStructNewColNum = 0 ; 
@@ -308,7 +308,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
   //
   //  Call Dscpack to perform Numeric Factorization
   //  
-  vector<double> MyANonZ;
+  std::vector<double> MyANonZ;
 #if 0
     if ( IsNumericFactorizationOK_ ) { 
       DSC_ReFactorInitialize(PrivateDscpackData_->MyDSCObject);
@@ -339,17 +339,17 @@ int Amesos_Dscpack::PerformNumericFactorization()
   int NonZIndex = 0 ;
 
   int max_num_entries = DscMat.MaxNumEntries() ; 
-  vector<int> col_indices( max_num_entries ) ; 
-  vector<double> mat_values( max_num_entries ) ; 
+  std::vector<int> col_indices( max_num_entries ) ; 
+  std::vector<double> mat_values( max_num_entries ) ; 
   assert( NumLocalCols == DscRowMap().NumMyElements() ) ;
-  vector<int> my_global_elements( NumLocalCols ) ; 
+  std::vector<int> my_global_elements( NumLocalCols ) ; 
   AMESOS_CHK_ERR(DscRowMap().MyGlobalElements( &my_global_elements[0] ) ) ;
   
-  vector<int> GlobalStructOldColNum( NumGlobalCols ) ; 
+  std::vector<int> GlobalStructOldColNum( NumGlobalCols ) ; 
   
   typedef pair<int, double> Data; 
-  vector<Data> sort_array(max_num_entries); 
-  vector<int>  sort_indices(max_num_entries);
+  std::vector<Data> sort_array(max_num_entries); 
+  std::vector<int>  sort_indices(max_num_entries);
   
   for ( int i = 0; i < NumLocalCols ; i++ ) { 
     assert( my_global_elements[i] == LocalStructOldNum[i] ) ; 
@@ -507,7 +507,7 @@ int Amesos_Dscpack::Solve()
   
   // MS // now solve the problem
   
-  vector<double> ValuesInNewOrder( NumLocalCols ) ;
+  std::vector<double> ValuesInNewOrder( NumLocalCols ) ;
 
   OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
@@ -551,23 +551,23 @@ void Amesos_Dscpack::PrintStatus() const
 {
   if (Problem_->GetOperator() != 0 && MyPID_ != 0)
   {
-    string p = "Amesos_Dscpack : ";
+    std::string p = "Amesos_Dscpack : ";
     PrintLine();
 
     int n = GetProblem()->GetMatrix()->NumGlobalRows();
     int nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros();
 
-    cout << p << "Matrix has " << n << " rows"
-         << " and " << nnz << " nonzeros" << endl;
-    cout << p << "Nonzero elements per row = "
-         << 1.0 *  nnz / n << endl;
-    cout << p << "Percentage of nonzero elements = "
-         << 100.0 * nnz /(pow(n,2.0)) << endl;
-    cout << p << "Available process(es) = " << NumProcs_ << endl;
-    cout << p << "Process(es) used = " << DscNumProcs
-         << ", idle = " << NumProcs_ - DscNumProcs << endl;
-    cout << p << "Estimated total memory for factorization =  " 
-         << TotalMemory_ << " Mbytes" << endl; 
+    std::cout << p << "Matrix has " << n << " rows"
+         << " and " << nnz << " nonzeros" << std::endl;
+    std::cout << p << "Nonzero elements per row = "
+         << 1.0 *  nnz / n << std::endl;
+    std::cout << p << "Percentage of nonzero elements = "
+         << 100.0 * nnz /(pow(n,2.0)) << std::endl;
+    std::cout << p << "Available process(es) = " << NumProcs_ << std::endl;
+    std::cout << p << "Process(es) used = " << DscNumProcs
+         << ", idle = " << NumProcs_ - DscNumProcs << std::endl;
+    std::cout << p << "Estimated total memory for factorization =  " 
+         << TotalMemory_ << " Mbytes" << std::endl; 
   }
 
   if ( MyDscRank >= 0 ) 
@@ -602,35 +602,35 @@ void Amesos_Dscpack::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Dscpack : ";
+  std::string p = "Amesos_Dscpack : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to DSCPACK format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = "
-       << SymTime * NumSymbolicFact_ << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
-       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+  std::cout << p << "Time to convert matrix to DSCPACK format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = "
+       << SymTime * NumSymbolicFact_ << " (s), avg = " << SymTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
+       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << std::endl;
 
   double tt = SymTime * NumSymbolicFact_ + NumTime * NumNumericFact_ + SolTime * NumSolve_;
   if (tt != 0)
   {
-    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
-    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
-    cout << p << "(the above time does not include DSCPACK time)" << endl;
-    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+    std::cout << p << "Total time spent in Amesos = " << tt << " (s) " << std::endl;
+    std::cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << std::endl;
+    std::cout << p << "(the above time does not include DSCPACK time)" << std::endl;
+    std::cout << p << "Amesos interface time / total time = " << OveTime / tt << std::endl;
   }
 
   PrintLine();

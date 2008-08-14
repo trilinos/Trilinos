@@ -71,7 +71,7 @@
 
 #endif 
 
-vector<string> AmesosClasses;
+std::vector<std::string> AmesosClasses;
 
 int NumAmesosClasses;
 
@@ -101,11 +101,11 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
   }
 
   symmetric = false ; 
-  string FileName = filename ;
+  std::string FileName = filename ;
 
   int FN_Size = FileName.size() ; 
-  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
-  string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  std::string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  std::string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
 
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
@@ -126,12 +126,12 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
 	assert (in_file != NULL) ;  // Checked in Trilinos_Util_CountMatrixMarket() 
 	const int BUFSIZE = 800 ; 
 	char buffer[BUFSIZE] ; 
-	fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
-	string headerline1 = buffer;
+	fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this std::string 
+	std::string headerline1 = buffer;
 #ifdef TFLOP
 	if ( headerline1.find("symmetric") < BUFSIZE ) symmetric = true;
 #else
-	if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+	if ( headerline1.find("symmetric") != std::string::npos) symmetric = true; 
 
 #endif
 	fclose(in_file);
@@ -198,7 +198,7 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
   return 0;
 }
 
-int TestErrors( const vector<bool> AmesosClassesInstalled, 
+int TestErrors( const std::vector<bool> AmesosClassesInstalled, 
 		   char *filename, 
 #ifdef EPETRA_MPI
 		   Epetra_MpiComm& Comm,
@@ -224,7 +224,7 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
     const int iterDomainmap = 0 ;
     const int iterDiagonalOpts = 0 ; 
     bool printit = true ; 
-    if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
     const int EpetraMatrixType = 0 ;
     bool symmetric = true;
     const int iterDist = 0 ; 
@@ -233,7 +233,7 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
     Epetra_Map *readMap = 0 ;
     CreateCrsMatrix( filename, Comm, readMap, transpose, distribute, symmetric, Amat ) ;
     
-    if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << 
+    if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << 
 				" Creating matrix from " <<
 				" filename = " << filename <<
 				" symmetric = " << symmetric <<
@@ -245,11 +245,11 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
 				" EpetraMatrixType = " << EpetraMatrixType <<
 				" iterDiagonalOpts = " << iterDiagonalOpts <<
 				" transpose = "  << transpose 
-				   << " iterDist = " << iterDist << endl ; 
+				   << " iterDist = " << iterDist << std::endl ; 
     
     if ( iterDiagonalOpts )  Comm.SetTracebackMode(1);  // Turn off positive Epetra warnings (i.e. iniefficient code, such as memory re-allocation)
     
-    if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
     
     RCP<Epetra_CrsMatrix> Bmat = NewMatNewMap( *Amat, 
 						       iterDiagonalOpts, 
@@ -258,10 +258,10 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
 						       iterRangemap,
 						       iterDomainmap
 						       ) ; 
-    if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+    if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
     Comm.SetTracebackMode(2);
     
-    if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << 
+    if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << 
 				" filename = " << filename <<
 				" symmetric = " << symmetric <<
 				" distribute = " << distribute <<
@@ -271,7 +271,7 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
 				" iterDomainmap = " << iterDomainmap <<
 				" EpetraMatrixType = " << EpetraMatrixType <<
 				" iterDiagonalOpts = " << iterDiagonalOpts <<
-				" transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
+				" transpose = "  << transpose << " iterDist = " << iterDist << std::endl ; 
     
     //
     //  This causes a failure in Amesos_Superludist:
@@ -284,12 +284,12 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
     
     int NumTheseTests = 0 ; 
     if ( verbose ) {
-      cout << " About to test  " << filename 
+      std::cout << " About to test  " << filename 
 	   << __FILE__ << "::"  << __LINE__
 	   << " EpetraMatrixType = " <<  EpetraMatrixType 
 	   << (transpose?" transpose":"" ) 
 	   << (distribute?" distribute":"" )
-	   << endl ; 
+	   << std::endl ; 
     }
     int Error = TestAllClasses( AmesosClasses, EpetraMatrixType, 
 				AmesosClassesInstalled, 
@@ -316,12 +316,12 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
     if ( Amat ) delete Amat ; 
     if ( readMap ) delete readMap ; 
   }
-  if ( verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+  if ( verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 
   return NumErrors;
 } 
 
-int TestOneMatrix( const vector<bool> AmesosClassesInstalled, 
+int TestOneMatrix( const std::vector<bool> AmesosClassesInstalled, 
 		   char *filename, 
 #ifdef EPETRA_MPI
 		   Epetra_MpiComm& Comm,
@@ -357,7 +357,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   Amesos_BaseSolver* Abase ; 
   Abase = Afactory.Create( "Amesos_Umfpack", Problem ) ; 
   if ( Abase == 0 ) {
-    cerr << " AMESOS_UMFPACK is required for this test " << endl ;
+    std::cerr << " AMESOS_UMFPACK is required for this test " << std::endl ;
     exit(13);
   }  ;
 
@@ -375,11 +375,11 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   ind[0] = 0;
   val[0] = 1 ; 
   double AnormInf =  Amat->NormInf() ;
-  if (verbose) cout << " norm(Amat) = " << AnormInf << endl; 
+  if (verbose) std::cout << " norm(Amat) = " << AnormInf << std::endl; 
   if ( Amat->MyGRID( 0 ) )
     Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
   AnormInf =  Amat->NormInf() ;
-  if (verbose) cout << " norm(Amat) = " << AnormInf << endl; 
+  if (verbose) std::cout << " norm(Amat) = " << AnormInf << std::endl; 
 
 
   EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
@@ -389,13 +389,13 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   if ( Amat->MyGRID( 0 ) )
     Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
   AnormInf =  Amat->NormInf() ;
-  if (verbose) cout << " norm(Amat) = " << AnormInf << endl; 
+  if (verbose) std::cout << " norm(Amat) = " << AnormInf << std::endl; 
   EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
   EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
    double Rcond2 = UmfpackOperator->GetRcond();
 
-  if (verbose) cout << " Rcond1 = " << Rcond1 << endl; 
-  if (verbose) cout << " Rcond2 = " << Rcond2 << endl; 
+  if (verbose) std::cout << " Rcond1 = " << Rcond1 << std::endl; 
+  if (verbose) std::cout << " Rcond2 = " << Rcond2 << std::endl; 
 
   if ( readMap ) delete readMap ;
 #else
@@ -477,10 +477,10 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		//  If the row and column indices don't match, eliminating a column from the map is, typically, irrelevant
 
 		if ( ( iterColindex == 0 && distribute ) || iterDiagonalOpts == 0 ) { 
-		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+		  if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 		  for ( int EpetraMatrixType = 0 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
 
-		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+		  if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 		    //  These tests presently take over 7 hours on some platforms.  But, I don't want to eliminate any category of tests
 		    //  The following test will cull 90% of the tests and still cover every type of test and most combinations
 		    Epetra_Util EU;
@@ -496,7 +496,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    //  We test only one level for different indexing or different Range and Domain maps
 		    //  to avoid hassles of moving data from the domain space to the range space and back
 		    //
-		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+		  if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 		    int MaxLevel = 3 ; 
 		    if ( iterRowindex > 0 ) MaxLevel = 1 ; 
 		    if ( iterColindex > 0 ) MaxLevel = 1 ; 
@@ -510,7 +510,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    CreateCrsMatrix( filename, Comm, readMap, transpose, distribute, symmetric, Amat ) ;
 		    //		  assert( symmetric == false ) ; 
 		    
-		    if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << 
+		    if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << 
 				     " Creating matrix from " <<
 				     " filename = " << filename <<
 				     " symmetric = " << symmetric <<
@@ -521,12 +521,12 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 				     " iterDomainmap = " << iterDomainmap <<
 				     " EpetraMatrixType = " << EpetraMatrixType <<
 				     " iterDiagonalOpts = " << iterDiagonalOpts <<
-				     " transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
+				     " transpose = "  << transpose << " iterDist = " << iterDist << std::endl ; 
 
 
 		    if ( iterDiagonalOpts )  Comm.SetTracebackMode(1);  // Turn off positive Epetra warnings (i.e. iniefficient code, such as memory re-allocation)
 
-		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+		  if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 
 		    RCP<Epetra_CrsMatrix> Bmat = NewMatNewMap( *Amat, 
 								       iterDiagonalOpts, 
@@ -535,10 +535,10 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 								       iterRangemap,
 								       iterDomainmap
 								       ) ; 
-		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+		  if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 		    Comm.SetTracebackMode(2);
 
-		    if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << 
+		    if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << 
 				     " filename = " << filename <<
 				     " symmetric = " << symmetric <<
 				     " distribute = " << distribute <<
@@ -548,7 +548,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 				     " iterDomainmap = " << iterDomainmap <<
 				     " EpetraMatrixType = " << EpetraMatrixType <<
 				     " iterDiagonalOpts = " << iterDiagonalOpts <<
-				     " transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
+				     " transpose = "  << transpose << " iterDist = " << iterDist << std::endl ; 
 
 		    //
 		    //  This causes a failure in Amesos_Superludist:
@@ -571,12 +571,12 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 
 		    int NumTheseTests = 0 ; 
 		    if ( verbose ) {
-		      cout << " About to test  " << filename 
+		      std::cout << " About to test  " << filename 
 			   << __FILE__ << "::"  << __LINE__
 			   << " EpetraMatrixType = " <<  EpetraMatrixType 
 			   << (transpose?" transpose":"" ) 
 			   << (distribute?" distribute":"" )
-			   << endl ; 
+			   << std::endl ; 
 		    }
 		    if ( iterDiagonalOpts == 0 ) 
 		      Comm.SetTracebackMode(2);
@@ -604,7 +604,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    NumTests += NumTheseTests ;
 		    NumErrors += Error ;
 		    if ( Comm.MyPID() == 0  && ( ( verbose && NumTheseTests ) || Error ) ) {
-		      cout << " Tested  " << filename 
+		      std::cout << " Tested  " << filename 
 			   << __FILE__ << "::"  << __LINE__
 			   << " EpetraMatrixType = " <<  EpetraMatrixType 
 			   << (transpose?" transpose":"" ) 
@@ -612,7 +612,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 			   << error 
 			   << " residual = " 
 			   << residual 
-			   << endl ; 
+			   << std::endl ; 
 		    }
 		    //      BUG:  Memory leak 
 		    //      delete &(Amat->RowMap()) ; 
@@ -626,9 +626,9 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 #endif
 		    }
 		  }
-		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+		  if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 		}
-		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
+		  if ( printit && verbose ) std::cout << __FILE__ << "::" << __LINE__ << std::endl ; 
 	      }
 	    }
 	  }
@@ -642,13 +642,13 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 
 #if 0
 #define TEST_P(variable) { { \
-                      if ( true ) { cerr << "AMESOS_PRINT " << # variable << "= " << variable << endl; };  }\
+                      if ( true ) { std::cerr << "AMESOS_PRINT " << # variable << "= " << variable << std::endl; };  }\
                    }
 
 
 #define TEST_PRINT(variable) { { \
-                      if ( true ) { cerr << "AMESOS_PRINT " << # variable  << "= " << variable <<  ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; };  }\
+                      if ( true ) { std::cerr << "AMESOS_PRINT " << # variable  << "= " << variable <<  ", " \
+                           << __FILE__ << ", line " << __LINE__ << std::endl; };  }\
                    }
 
 #endif
@@ -697,10 +697,10 @@ int NextMain( int argc, char *argv[] ) {
 
 
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'h') ) {
-    cerr << "Usage TestOptions [-s] [-v] [-q] " << endl ; 
-    cerr << "-v:  verbose  " << endl ; 
-    cerr << "-s:  small  " << endl ; 
-    cerr << "-q:  quiet  " << endl ; 
+    std::cerr << "Usage TestOptions [-s] [-v] [-q] " << std::endl ; 
+    std::cerr << "-v:  verbose  " << std::endl ; 
+    std::cerr << "-s:  small  " << std::endl ; 
+    std::cerr << "-q:  quiet  " << std::endl ; 
     exit(-1);
   }
 
@@ -758,10 +758,6 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Mumps" );
 #endif
 
-#ifdef HAVE_AMESOS_PASTIX
-  AmesosClasses.push_back( "Amesos_Pastix" );
-#endif
-
 #ifdef HAVE_AMESOS_SCALAPACK
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
 #endif
@@ -771,7 +767,7 @@ int NextMain( int argc, char *argv[] ) {
 #endif
 
   NumAmesosClasses = AmesosClasses.size();
-  vector<bool> AmesosClassesInstalled( NumAmesosClasses );
+  std::vector<bool> AmesosClassesInstalled( NumAmesosClasses );
 
   assert( NumAmesosClasses > 0 ) ; 
 
@@ -784,11 +780,11 @@ int NextMain( int argc, char *argv[] ) {
   if ( Comm.MyPID() == 0 ) {
     char what = 'a'; 
     while ( what == 'a' )    // I don't know why we need this while loop  at least on bewoulf
-      cin >> what ; 
+      std::cin >> what ; 
   }
   Comm.Barrier();
 
-  cout << __FILE__ << "::" << __LINE__ << " Comm.MyPID() = "  << Comm.MyPID() << endl ; 
+  std::cout << __FILE__ << "::" << __LINE__ << " Comm.MyPID() = "  << Comm.MyPID() << std::endl ; 
 #endif
 
 
@@ -801,7 +797,7 @@ int NextMain( int argc, char *argv[] ) {
 
 #ifndef HAVE_AMESOS_EPETRAEXT
     if ( ! quiet && Comm.MyPID() == 0 ) 
-      cout << "Amesos has been built without epetraext, capabilites requiring epetraext, such as reindexing and Amesos_Paraklete non-transpose solves, will not be tested" << endl ; 
+      std::cout << "Amesos has been built without epetraext, capabilites requiring epetraext, such as reindexing and Amesos_Paraklete non-transpose solves, will not be tested" << std::endl ; 
 #endif
 
   for (int i=0; i < NumAmesosClasses; i++ ) {
@@ -809,10 +805,10 @@ int NextMain( int argc, char *argv[] ) {
 
     Abase = Afactory.Create( &AmesosClasses[i][0], Problem ) ; 
     if ( Abase == 0 ) {
-      if ( !quiet && Comm.MyPID() == 0  ) cout << AmesosClasses[i] << " not built in this configuration"  << endl ;
+      if ( !quiet && Comm.MyPID() == 0  ) std::cout << AmesosClasses[i] << " not built in this configuration"  << std::endl ;
       AmesosClassesInstalled[i] = false;
     } else {
-      if (  !quiet && Comm.MyPID() == 0  ) cout << " Testing " << AmesosClasses[i] << endl ;
+      if (  !quiet && Comm.MyPID() == 0  ) std::cout << " Testing " << AmesosClasses[i] << std::endl ;
       AmesosClassesInstalled[i] = true;
       Teuchos::ParameterList ParamList ;
       ParamList.set( "NoDestroy", true );    // Prevents Amesos_Mumps from deleting data
@@ -868,15 +864,15 @@ int NextMain( int argc, char *argv[] ) {
   result+=TestErrors( AmesosClassesInstalled, (char *) "../Test_Basic/NumericallySingular.mtx",
 		      Comm, verbose, numtests ) ;
  
-  if ( ! quiet && Comm.MyPID() == 0 ) cout << result << " Tests failed "  << numtests << " Tests performed " << endl ; 
+  if ( ! quiet && Comm.MyPID() == 0 ) std::cout << result << " Tests failed "  << numtests << " Tests performed " << std::endl ; 
 
   if ( result == 0 && numtests > 0 ) {
     if (! quiet && Comm.MyPID() == 0)
-      cout << endl << "TEST PASSED" << endl << endl;
+      std::cout << std::endl << "TEST PASSED" << std::endl << std::endl;
   }
   else {
     if (Comm.MyPID() == 0)
-      cout << endl << "TEST FAILED" << endl << endl;
+      std::cout << std::endl << "TEST FAILED" << std::endl << std::endl;
     AMESOS_CHK_ERR( 1 ) ; 
   }
 

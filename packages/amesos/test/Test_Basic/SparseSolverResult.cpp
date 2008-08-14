@@ -29,16 +29,16 @@
 #include "SparseSolverResult.h"
 #include <iomanip>
 
-void SparseSolverResult::Print(ostream & os) const {
+void SparseSolverResult::Print(std::ostream & os) const {
   if ( error != UnUsedDbl ) { os << "error=" << error << " " ; }
-  if ( residual != UnUsedDbl ) { os << "residual=" << residual << endl ; }
+  if ( residual != UnUsedDbl ) { os << "residual=" << residual << std::endl ; }
   if ( Anorm != UnUsedDbl ) { os << "Anorm=" << Anorm << " " ; }
-  if ( Bnorm != UnUsedDbl ) { os << "Bnorm=" << Bnorm << endl ; }
-  if ( Xnorm != UnUsedDbl ) { os << "Xnorm=" << Xnorm << endl ; }
+  if ( Bnorm != UnUsedDbl ) { os << "Bnorm=" << Bnorm << std::endl ; }
+  if ( Xnorm != UnUsedDbl ) { os << "Xnorm=" << Xnorm << std::endl ; }
 
 }
 
-void SparseSolverResult::PrintSummary(ostream & os) const {
+void SparseSolverResult::PrintSummary(std::ostream & os) const {
   os << std::setw(9) << std::setprecision(2) << Anorm ; 
   if ( error != UnUsedDbl && Xnorm != UnUsedDbl ) 
     { os << std::setw(9) << std::setprecision(2) << error/Xnorm << " " ; } else os << " error is unknown " ; 

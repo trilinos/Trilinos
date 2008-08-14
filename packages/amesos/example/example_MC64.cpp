@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
   
   if (Comm.NumProc() != 1)
   {
-    cerr << "This example can be run with one processor only!" << endl;
+    std::cerr << "This example can be run with one processor only!" << std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   Amesos_MC64 MC64(A, 5);
 
   // checks the return value
-  cout << "INFO(1) = " << MC64.GetINFO(1) << endl;
+  std::cout << "INFO(1) = " << MC64.GetINFO(1) << std::endl;
 
   // Gets the pointer to reordering (CPERM) and scaling (DW). Both
   // vectors are allocated and free'd within Amesos_MC64.
@@ -151,10 +151,10 @@ int main(int argc, char *argv[])
   double* DW    = MC64.GetDW();
 
   for (int i = 0 ; i < A.NumMyRows() ; ++i)
-    cout << "CPERM[" << i << "] = " << CPERM[i] << endl;
+    std::cout << "CPERM[" << i << "] = " << CPERM[i] << std::endl;
 
   for (int i = 0 ; i < A.NumMyRows() * 2 ; ++i)
-    cout << "DW[" << i << "] = " << DW[i] << endl;
+    std::cout << "DW[" << i << "] = " << DW[i] << std::endl;
 
 
   Ifpack_ReorderOperator RowPerm(4, MC64.GetRowPerm(), MC64.GetRowScaling());

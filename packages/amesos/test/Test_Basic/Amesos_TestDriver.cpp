@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 #if 0
   if (MyPID == 0 ) {
     char junk;
-    cin >> junk ;   // Wait for character input to give time to attach debuuger
+    std::cin >> junk ;   // Wait for character input to give time to attach debuuger
   }
 #endif
 
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 #endif
   char timebuffer[MAXNAMELENGTH];
 
-  string Sprogram ;
+  std::string Sprogram ;
   if ( argc >1 ) Sprogram = argv[1] ;
   const int NUM_PARAMS = 9 ; 
   const int NUM_SUPERLU_PARAMS = NUM_PARAMS + 1 ; 
@@ -161,18 +161,18 @@ int main(int argc, char **argv)
 //
   if ( ! argc_ok ) {
     if ( MyPID == 0 ) {
-      cerr << " argc = " << argc << " Sprogam= " << Sprogram << 
-	" SPOOLES? " << (int) (Sprogram=="SPOOLES") << endl ; 
-      cerr << "Usage: " << argv[0] <<" SolverName InputMatrix special numsolves transpose maxerror maxresid" << endl ; 
-      cerr << "    Solvername = UMFPACK, SUPERLUDIST, TAUCS, PARDISO, PASTIX, PARAKLETE, MUMPS, KLU, SUPERLU" << endl;
-      cerr << "    InputMatrix must be a file in Harwell Boeing format"<< endl;
-      cerr << "    special = number of repeats (0 means run just once) " << endl ; 
-      cerr << "    numsolves = number of right hand sidess (<0 means MRHS, >1 means BRHS) " << endl ; 
-      cerr << "    transpose = 1 means test A^T x = b instead of Ax = b" << endl ; 
-      cerr << "    maxerror = maximum allowed error  < 0 == no check " << endl ; 
-      cerr << "    maxresid = maximum allowed residual < 0 == no check" << endl ; 
-      cerr << "    if maxerror == -2 and maxresid == -2, failure (hang or abort) is expected" << endl ; 
-      cerr << "    if maxerror == 1e30 and maxresid == 1e30, the solver is expected to finish but produce incorrect results" << endl ; 
+      std::cerr << " argc = " << argc << " Sprogam= " << Sprogram << 
+	" SPOOLES? " << (int) (Sprogram=="SPOOLES") << std::endl ; 
+      std::cerr << "Usage: " << argv[0] <<" SolverName InputMatrix special numsolves transpose maxerror maxresid" << std::endl ; 
+      std::cerr << "    Solvername = UMFPACK, SUPERLUDIST, TAUCS, PARDISO, PARAKLETE, MUMPS, KLU, SUPERLU" << std::endl;
+      std::cerr << "    InputMatrix must be a file in Harwell Boeing format"<< std::endl;
+      std::cerr << "    special = number of repeats (0 means run just once) " << std::endl ; 
+      std::cerr << "    numsolves = number of right hand sidess (<0 means MRHS, >1 means BRHS) " << std::endl ; 
+      std::cerr << "    transpose = 1 means test A^T x = b instead of Ax = b" << std::endl ; 
+      std::cerr << "    maxerror = maximum allowed error  < 0 == no check " << std::endl ; 
+      std::cerr << "    maxresid = maximum allowed residual < 0 == no check" << std::endl ; 
+      std::cerr << "    if maxerror == -2 and maxresid == -2, failure (hang or abort) is expected" << std::endl ; 
+      std::cerr << "    if maxerror == 1e30 and maxresid == 1e30, the solver is expected to finish but produce incorrect results" << std::endl ; 
       
     }
 #ifdef EPETRA_MPI
@@ -218,7 +218,7 @@ int main(int argc, char **argv)
   if ( ( MyPID == 0 )  ) { 
     matrix_fd = fopen( argv[2], "r" ) ; 
     if ( matrix_fd == NULL ) {
-      cerr << "Unable to open " << argv[2] << " for reading" << endl ; 
+      std::cerr << "Unable to open " << argv[2] << " for reading" << std::endl ; 
       exit_value = - 1; 
     } else {
       fclose( matrix_fd ) ; 
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
     if ( log ) { 
       SparseDirectTimingVars::log_file.open( LongOutputFileName, std::ios::app ) ; 
       if ( SparseDirectTimingVars::log_file.fail() ) {
-	cerr << "Unable to open " << LongOutputFileName << " for writing" << endl ; 
+	std::cerr << "Unable to open " << LongOutputFileName << " for writing" << std::endl ; 
 	exit_value = - 1; 
       }
     }
@@ -235,7 +235,7 @@ int main(int argc, char **argv)
     if ( summary ) {
       summary_file.open( ShortOutputFileName, std::ios::app ) ; 
       if ( summary_file.fail() ) {
-	cerr << "Unable to open " << ShortOutputFileName << " for writing" << endl ; 
+	std::cerr << "Unable to open " << ShortOutputFileName << " for writing" << std::endl ; 
 	exit_value = - 1; 
       }
     }
@@ -269,8 +269,6 @@ int main(int argc, char **argv)
     SparseSolver = TAUCS ; 
   else if  ( Sprogram == "PARDISO" ) 
     SparseSolver = PARDISO ; 
-  else if  ( Sprogram == "PASTIX" ) 
-    SparseSolver = PASTIX ; 
   else if  ( Sprogram == "PARAKLETE" ) 
     SparseSolver = PARAKLETE ; 
   else if  ( Sprogram == "MUMPS" ) 
@@ -278,7 +276,7 @@ int main(int argc, char **argv)
   else if  ( Sprogram == "SCALAPACK" ) 
     SparseSolver = SCALAPACK ; 
   else {
-    if (( MyPID == 0 ) ) cerr << "Unknown program: " << Sprogram << endl ; 
+    if (( MyPID == 0 ) ) std::cerr << "Unknown program: " << Sprogram << std::endl ; 
     exit( -1 ) ; 
   }
 
@@ -286,67 +284,61 @@ int main(int argc, char **argv)
   // if the solver is not avaiable
 #ifndef HAVE_AMESOS_KLU
   if (SparseSolver == KLU) {
-    cerr << "KLU is not installed..." << endl;
+    std::cerr << "KLU is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_UMFPACK
   if (SparseSolver == UMFPACK) {
-    cerr << "UMFPACK is not installed..." << endl;
+    std::cerr << "UMFPACK is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_SUPERLU
   if (SparseSolver == SUPERLU) {
-    cerr << "SUPERLU is not installed..." << endl;
+    std::cerr << "SUPERLU is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_SUPERLUDIST
   if (SparseSolver == SUPERLUDIST) {
-    cerr << "SUPERLUDIST is not installed..." << endl;
+    std::cerr << "SUPERLUDIST is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_TAUCS
   if (SparseSolver == TAUCS) {
-    cerr << "TAUCS is not installed..." << endl;
+    std::cerr << "TAUCS is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_PARDISO
   if (SparseSolver == PARDISO) {
-    cerr << "PARDISO is not installed..." << endl;
-    exit(EXIT_SUCCESS);
-  }
-#endif
-#ifndef HAVE_AMESOS_PASTIX
-  if (SparseSolver == PASTIX) {
-    cerr << "PASTIX is not installed..." << endl;
+    std::cerr << "PARDISO is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_PARAKLETE
   if (SparseSolver == PARAKLETE) {
-    cerr << "PARAKLETE is not installed..." << endl;
+    std::cerr << "PARAKLETE is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_MUMPS
   if (SparseSolver == MUMPS) {
-    cerr << "MUMPS is not installed..." << endl;
+    std::cerr << "MUMPS is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_SCALAPACK
   if (SparseSolver == SCALAPACK) {
-    cerr << "SCALAPACK is not installed..." << endl;
+    std::cerr << "SCALAPACK is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
 #ifndef HAVE_AMESOS_DSCPACK
   if (SparseSolver == DSCPACK) {
-    cerr << "DSCPACK is not installed..." << endl;
+    std::cerr << "DSCPACK is not installed..." << std::endl;
     exit(EXIT_SUCCESS);
   }
 #endif
@@ -361,33 +353,33 @@ int main(int argc, char **argv)
   const int MaxNumSolves = 3200 ; 
   if ( MatType < 0 || MatType > 1  ) { 
     if ( ( MyPID == 0 )  ) 
-      cerr << " MatType must be 0 or 1, is: " 
-	<< MatType << endl ; 
+      std::cerr << " MatType must be 0 or 1, is: " 
+	<< MatType << std::endl ; 
     exit_value = -1 ; 
   }
   if ( special < 0 || special > 10000  ) { 
     if ( ( MyPID == 0 )  ) 
-      cerr << " No more than 10000 repeats allowed" 
-	<< special << endl ; 
+      std::cerr << " No more than 10000 repeats allowed" 
+	<< special << std::endl ; 
     exit_value = -1 ; 
   }
   if ( numsolves< -MaxNumSolves || numsolves > MaxNumSolves ) { 
     if ( ( MyPID == 0 )  ) 
-      cerr << "The number of solves must be between 0 and " << MaxNumSolves 
+      std::cerr << "The number of solves must be between 0 and " << MaxNumSolves 
 	<< " is: "
-	  << numsolves << endl ; 
+	  << numsolves << std::endl ; 
     exit_value = -1 ; 
   }
   if ( transpose< 0 ||  transpose > 1) { 
     if ( ( MyPID == 0 )  ) 
-      cerr << "transpose must be 0 (no trans) or 1" 
+      std::cerr << "transpose must be 0 (no trans) or 1" 
 	<< ", it is: "
-	  << transpose << endl ; 
+	  << transpose << std::endl ; 
     exit_value = -1 ; 
   }
   if ( transpose != 0 && SparseSolver == SUPERLUDIST ) { 
     if ( ( MyPID == 0 )  ) 
-      cerr << "Our use of SUPERLUDIST does not support transpose yet" << endl ;
+      std::cerr << "Our use of SUPERLUDIST does not support transpose yet" << std::endl ;
     exit_value = -1 ; 
   }
   if ( numsolves != 1 && 
@@ -398,13 +390,12 @@ int main(int argc, char **argv)
        SparseSolver != KLU && 
        SparseSolver != TAUCS  && 
        SparseSolver != PARDISO  && 
-       SparseSolver != PASTIX  && 
        SparseSolver != PARAKLETE  && 
        SparseSolver != MUMPS  && 
        SparseSolver != SCALAPACK  && 
        SparseSolver != SUPERLU ) {
     if ( ( MyPID == 0 )  ) 
-      cerr << "Only LAPACK, SUPERLUDIST, UMFPACK, TAUCS, PARDISO, PASTIX, PARAKLETE, MUMPS, SCALAPACK, KLU and DSCPACK support MRHS and BRHS" << endl ;
+      std::cerr << "Only LAPACK, SUPERLUDIST, UMFPACK, TAUCS, PARDISO, PARAKLETE, MUMPS, SCALAPACK, KLU and DSCPACK support MRHS and BRHS" << std::endl ;
     exit_value = -1 ; 
   }
     
@@ -430,17 +421,17 @@ int main(int argc, char **argv)
       //  Log time stamp and machine information 
       //
 
-      SparseDirectTimingVars::log_file << endl << "TIMESTAMP:" << hostname << " " 
+      SparseDirectTimingVars::log_file << std::endl << "TIMESTAMP:" << hostname << " " 
 				       << argv[1] << " " << timebuffer 
-				       << " BEGIN RUN" << endl ; 
+				       << " BEGIN RUN" << std::endl ; 
 #ifdef HAVE_SYS_UTSNAME_WORKS_H     
       SparseDirectTimingVars::log_file << uname_buf.sysname << 
 	hostname << releasenum << uname_buf.version << 
-	  uname_buf.machine << endl ;
+	  uname_buf.machine << std::endl ;
 #endif
     }
     if (summary ) { 
-      summary_file << endl << setw(12) << hostname << " " 
+      summary_file << std::endl << setw(12) << hostname << " " 
 		   << setw(12) <<  argv[1] 
 		   << " " << setw(-1) << timebuffer << " " 
 		   << setw(15) << argv[2] << setw(6) << " " 
@@ -453,7 +444,7 @@ int main(int argc, char **argv)
     }
     if (MyPID == 0 ) { 
       if ( verbose ) {
-	cerr << endl << setw(12) << hostname
+	std::cerr << std::endl << setw(12) << hostname
 	     << setw(12) <<  argv[1] 
 	     << " " << setw(-1) << timebuffer
 	     << setw(15) << argv[2] << setw(6)
@@ -461,14 +452,14 @@ int main(int argc, char **argv)
 	     << special << " " 
 	     << NumMpiProcs <<  setw(6) << " " 
 	     << numsolves << setw(3) << " " << transpose << setprecision(12) ;
-	if ( maxresid == -2 && maxerror == -2 ) cerr << "Failure OK" ; 
-	flush( cerr ) ; 
+	if ( maxresid == -2 && maxerror == -2 ) std::cerr << "Failure OK" ; 
+	flush( std::cerr ) ; 
       }
     }
     //
     //  Perform the test
     //    
-    SparseDirectTimingVars::log_file << SparseDirectTimingVars::SS_Result << endl ; 
+    SparseDirectTimingVars::log_file << SparseDirectTimingVars::SS_Result << std::endl ; 
 
     try { 
 
@@ -485,16 +476,16 @@ int main(int argc, char **argv)
       //  Log time and memory estimates
       //    
       if ( log ) {
-	SparseDirectTimingVars::log_file << SparseDirectTimingVars::SS_Result << endl ; 
+	SparseDirectTimingVars::log_file << SparseDirectTimingVars::SS_Result << std::endl ; 
 	
 	//
 	//  Print a single line to the summary file (and a copy of same to 
 	//  the log file (details_fd) then print a final line to the log 
 	//  file.  
 	//
-	SparseDirectTimingVars::log_file << endl << "TIMESTAMP:" << hostname 
+	SparseDirectTimingVars::log_file << std::endl << "TIMESTAMP:" << hostname 
 					 << argv[1] << timebuffer 
-					 << " END RUN" << endl ; 
+					 << " END RUN" << std::endl ; 
 	
 	SparseDirectTimingVars::log_file 
 	  << setw(12) << hostname << setw(9) <<  argv[1] 
@@ -506,24 +497,24 @@ int main(int argc, char **argv)
 	SparseDirectTimingVars::SS_Result.PrintSummary(SparseDirectTimingVars::log_file) ;
 	SparseDirectTimingVars::log_file << "SS_Result = " 
 					 << SparseDirectTimingVars::SS_Result 
-					 << endl ; 
+					 << std::endl ; 
 
       }
       if (summary ) { 
 	SparseDirectTimingVars::SS_Result.PrintSummary(summary_file) ;
 	if ( verbose ) 
-	  SparseDirectTimingVars::SS_Result.PrintSummary(cerr) ;
+	  SparseDirectTimingVars::SS_Result.PrintSummary(std::cerr) ;
 	bool ErrorOK = maxerror <= -1 ||  
 	  SparseDirectTimingVars::SS_Result.Get_Error() < maxerror ;
 	bool ResidualOK = maxresid <= -1 ||  
 	  SparseDirectTimingVars::SS_Result.Get_Residual() < maxresid ;
 	if ( ErrorOK && ResidualOK ) summary_file << " OK" ; 
-	if ( ErrorOK && ResidualOK && verbose ) cerr << " OK" ; 
+	if ( ErrorOK && ResidualOK && verbose ) std::cerr << " OK" ; 
 	if ( ! ErrorOK ) {
 	  summary_file << " Error too large is: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
 	    " should be < " << maxerror  ; 
-	  cerr << " Error too large is: " << 
+	  std::cerr << " Error too large is: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
 	    " should be < " << maxerror  ; 
 	}
@@ -543,7 +534,7 @@ int main(int argc, char **argv)
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
 	    " is allowed to be " << maxerror  ; 
 	  if ( verbose ) { 
-	    cerr << " Error TOLERANCE is too large: " << 
+	    std::cerr << " Error TOLERANCE is too large: " << 
 	      SparseDirectTimingVars::SS_Result.Get_Error() <<
 	      " is allowed to be " << maxerror  ; 
 	  }
@@ -552,7 +543,7 @@ int main(int argc, char **argv)
 	  summary_file << " Residual too large is:" <<
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " should be < " << maxresid  ; 
-	    cerr << " Residual too large is:" <<
+	    std::cerr << " Residual too large is:" <<
 	      SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	      " should be < " << maxresid  ; 
 	}
@@ -564,7 +555,7 @@ int main(int argc, char **argv)
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " is allowed to be " << maxresid  ; 
 	  if ( verbose ) { 
-	    cerr << " Residual TOLERANCE is too large: " << 
+	    std::cerr << " Residual TOLERANCE is too large: " << 
 	      SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	      " is allowed to be " << maxresid  ; 
 	  }
@@ -572,16 +563,16 @@ int main(int argc, char **argv)
 	
 	flush( summary_file ) ; 
 	if ( verbose ) { 
-	  cerr << endl ; // Atlantis won't print anything without this.
-	  flush( cerr ) ; 
+	  std::cerr << std::endl ; // Atlantis won't print anything without this.
+	  flush( std::cerr ) ; 
 	}
       }
     }
-    catch(string errormsg)
+    catch(std::string errormsg)
       {
 	if ( summary ) { summary_file << errormsg ; } 
 	if ( log ) SparseDirectTimingVars::log_file << errormsg ; 
-	if ( ( verbose )  || summary ) cerr << errormsg << endl;
+	if ( ( verbose )  || summary ) std::cerr << errormsg << std::endl;
       }
 
   }

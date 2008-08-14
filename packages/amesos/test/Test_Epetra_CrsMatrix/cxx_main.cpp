@@ -14,7 +14,6 @@
 #include "Epetra_CrsMatrix.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
-#include <vector>
 
 // ====================================================================== 
 // this function tests two things:
@@ -68,28 +67,28 @@ bool TestAmesos(char ProblemType[], Teuchos::ParameterList& AmesosList,
   A->Comm().SumAll(&d,&d_tot,1);
 
   // compute ||Ax - b||
-  vector<double> Norm(rhs->NumVectors());
+  std::vector<double> Norm(rhs->NumVectors());
 
   Epetra_MultiVector Ax(*rhs);
   A->Multiply(UseTranspose, *lhs, Ax);
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm[0]);
 
-  string msg = ProblemType;
+  std::string msg = ProblemType;
 
   if (!A->Comm().MyPID()) 
   {
-    cout << endl;
-    cout << msg << " : Using " << A->Comm().NumProc() << " processes, UseTranspose = " << UseTranspose << endl;
+    std::cout << std::endl;
+    std::cout << msg << " : Using " << A->Comm().NumProc() << " processes, UseTranspose = " << UseTranspose << std::endl;
     for (int j = 0 ; j < rhs->NumVectors() ; ++j)
-      cout << msg << " : eq " << j 
-	   << ", ||A x - b||_2 = " << Norm[j] << endl;
-    cout << msg << " : ||x_exact - x||_2 = " << sqrt(d_tot) << endl;
+      std::cout << msg << " : eq " << j 
+	   << ", ||A x - b||_2 = " << Norm[j] << std::endl;
+    std::cout << msg << " : ||x_exact - x||_2 = " << sqrt(d_tot) << std::endl;
   }
 
   if (Norm[0] > 1e-9)  
   {
-    cerr << endl << msg << " WARNING : TEST FAILED!" << endl;
+    std::cerr << std::endl << msg << " WARNING : TEST FAILED!" << std::endl;
     return(false);
   }
 
@@ -155,7 +154,7 @@ int main(int argc, char *argv[])
 
   Amesos Factory;  
   
-  vector<string> SolverType;
+  std::vector<std::string> SolverType;
   SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
@@ -173,7 +172,7 @@ int main(int argc, char *argv[])
   // statement.
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) 
   {
-    string Solver = SolverType[i];
+    std::string Solver = SolverType[i];
 
     if (Factory.Query((char*)Solver.c_str())) 
     {
@@ -197,9 +196,9 @@ int main(int argc, char *argv[])
     else
       if (!Comm.MyPID()) 
       {
-	cerr << endl;
-	cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << endl;
-	cerr << endl;
+	std::cerr << std::endl;
+	std::cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << std::endl;
+	std::cerr << std::endl;
       }
   }
 

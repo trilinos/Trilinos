@@ -65,7 +65,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
   {
     Teuchos::ParameterList ParamList ;
     ParamList.set( "MaxProcs", 100000 );
-    //  ParamList.print( cerr, 10 ) ; 
+    //  ParamList.print( std::cerr, 10 ) ; 
       
     double relerror;
     double relresidual;
@@ -87,7 +87,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       NumErrors++;
       NumTests++ ; 
       if ( verbose ) {
-	cout << "Amesos_Scalapack failed with error code " << Errors<< endl ; 
+	std::cout << "Amesos_Scalapack failed with error code " << Errors<< std::endl ; 
       }
     } else { 
       NumErrors += Errors ; 
@@ -97,12 +97,12 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors 
+    if (verbose)  std::cout << " TestScalapack NumErrors = " << NumErrors 
 		       << __FILE__ << "::" << __LINE__ 
-		       << endl ; 
+		       << std::endl ; 
     if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Scalapack" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Scalapack" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 
@@ -113,7 +113,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
     ParamList.set( "OutputLevel", 0 );
-    //  ParamList.print( cerr, 10 ) ; 
+    //  ParamList.print( std::cerr, 10 ) ; 
       
     double relerror;
     double relresidual;
@@ -131,7 +131,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
       
     if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Scalapack" << " not built in this executable " << endl ; 
+      if (verbose ) std::cout << "Amesos_Scalapack" << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -141,12 +141,12 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors 
+    if (verbose)  std::cout << " TestScalapack NumErrors = " << NumErrors 
 		       << __FILE__ << "::" << __LINE__ 
-		       << endl ; 
+		       << std::endl ; 
     if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Scalapack" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Scalapack" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 
@@ -161,7 +161,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
     ParamList.set( "MaxProcs", 2 );
     ParamList.set( "ComputeTrueResidual", true );
     ParamList.set( "OutputLevel", 0 );
-    //  ParamList.print( cerr, 10 ) ; 
+    //  ParamList.print( std::cerr, 10 ) ; 
     Teuchos::ParameterList& ScalapackParams = ParamList.sublist("Scalapack") ;
 //    ScalapackParams.set( "grid_mb", 2 );
     ScalapackParams.set( "grid_nb", 2 );
@@ -182,7 +182,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
       
     if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Scalapack" << " not built in this executable " << endl ; 
+      if (verbose ) std::cout << "Amesos_Scalapack" << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -192,12 +192,12 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestScalapack NumErrors = " << NumErrors << " "
+    if (verbose)  std::cout << " TestScalapack NumErrors = " << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
-		       << endl ; 
+		       << std::endl ; 
     if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Scalapack" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Scalapack" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
   //
@@ -227,7 +227,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
       
     if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Scalapack" << " not built in this executable " << endl ; 
+      if (verbose ) std::cout << "Amesos_Scalapack" << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -237,12 +237,12 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout 
+    if (verbose)  std::cout 
       << __FILE__ << "::" << __LINE__ 
-      << " TestScalapack NumErrors = " << NumErrors << endl ; 
+      << " TestScalapack NumErrors = " << NumErrors << std::endl ; 
     if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Scalapack" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Scalapack" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 
@@ -273,7 +273,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
       
     if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Scalapack" << " not built in this executable " << endl ; 
+      if (verbose ) std::cout << "Amesos_Scalapack" << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -283,12 +283,12 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout 
+    if (verbose)  std::cout 
       << __FILE__ << "::" << __LINE__ 
-      << " TestScalapack NumErrors = " << NumErrors << endl ; 
+      << " TestScalapack NumErrors = " << NumErrors << std::endl ; 
     if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Scalapack" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Scalapack" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 #endif
@@ -315,7 +315,7 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
       
     if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Scalapack" << " not built in this executable " << endl ; 
+      if (verbose ) std::cout << "Amesos_Scalapack" << " not built in this executable " << std::endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -325,12 +325,12 @@ int TestScalapack( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout 
+    if (verbose)  std::cout 
       << __FILE__ << "::" << __LINE__ 
-      << " TestScalapack NumErrors = " << NumErrors << endl ; 
+      << " TestScalapack NumErrors = " << NumErrors << std::endl ; 
     if ( verbose && Errors > 0 ) {
-      cout << "Amesos_Scalapack" << " failed with transpose = " << 
-	(transpose?"true":"false") << endl ;  
+      std::cout << "Amesos_Scalapack" << " failed with transpose = " << 
+	(transpose?"true":"false") << std::endl ;  
     }
   }
 #endif

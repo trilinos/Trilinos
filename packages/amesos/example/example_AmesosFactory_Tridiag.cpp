@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   // is not available
  
   if (Solver == 0) {
-    cerr << "Selected solver is not available" << endl;
+    std::cerr << "Selected solver is not available" << std::endl;
     // return ok not to break the test harness
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
   Ax.Norm2(&residual);
 
   if (!Comm.MyPID())
-    cout << "After AMESOS solution, ||b-Ax||_2 = " << residual << endl;
+    std::cout << "After AMESOS solution, ||b-Ax||_2 = " << residual << std::endl;
 
   // delete Solver. Do this before MPI_Finalize()
   // as MPI calls can occur in the destructor.

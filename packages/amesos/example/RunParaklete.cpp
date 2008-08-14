@@ -40,7 +40,6 @@
 #include "Epetra_CrsMatrix.h"
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
-#include <vector>
 #include "Teuchos_ParameterList.hpp"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
@@ -74,11 +73,11 @@ int MyCreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
   }
 
   symmetric = false ; 
-  string FileName = filename ;
+  std::string FileName = filename ;
 
   int FN_Size = FileName.size() ; 
-  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
-  string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  std::string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  std::string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
 
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
@@ -100,11 +99,11 @@ int MyCreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
 	const int BUFSIZE = 800 ; 
 	char buffer[BUFSIZE] ; 
 	fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
-	string headerline1 = buffer;
+	std::string headerline1 = buffer;
 #ifdef TFLOP
 	if ( headerline1.find("symmetric") < BUFSIZE ) symmetric = true;
 #else
-	if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+	if ( headerline1.find("symmetric") != std::string::npos) symmetric = true; 
 
 #endif
 	fclose(in_file);
@@ -250,7 +249,7 @@ int main(int argc, char *argv[])
   List.set("PrintStatus",true);
   List.set("MaxProcs",Comm.NumProc());
 
-  vector<string> SolverType;
+  std::vector<std::string> SolverType;
   SolverType.push_back("Amesos_Paraklete");
 
   Epetra_Time Time(Comm);

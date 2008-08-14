@@ -301,8 +301,8 @@ int Amesos_Lapack::SerialToDense()
 
   // allocate storage to extract matrix rows.
   int Length = SerialMatrix().MaxNumEntries();
-  vector<double> Values(Length);
-  vector<int>    Indices(Length);
+  std::vector<double> Values(Length);
+  std::vector<int>    Indices(Length);
 
   for (int j = 0 ; j < SerialMatrix().NumMyRows() ; ++j) 
   {
@@ -323,7 +323,7 @@ int Amesos_Lapack::SerialToDense()
 	//      advantage
 	DenseMatrix_(j,Indices[k]) = Values[k];
 
-	//	cout << __FILE__ << "::"<<__LINE__ << " j = " << j << " k = " << k << " Values[k = " << Values[k] << " AddToDiag_ = " << AddToDiag_  << endl ; 
+	//	std::cout << __FILE__ << "::"<<__LINE__ << " j = " << j << " k = " << k << " Values[k = " << Values[k] << " AddToDiag_ = " << AddToDiag_  << std::endl ; 
 	if (Indices[k] == j) {
 	  DenseMatrix_(j,j) = Values[k] + AddToDiag_;
 	}
@@ -396,7 +396,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
 
     Epetra_LAPACK LAPACK;
 
-    vector<double> work(1);
+    std::vector<double> work(1);
     int lwork = -1;
 
     LAPACK.GEEV(jobvl, jobvr, n, DenseMatrix_.A(), n, 
@@ -449,22 +449,22 @@ void Amesos_Lapack::PrintStatus() const
   if (MyPID_) return;
 
   PrintLine();
-  string p = "Amesos_Lapack : ";
+  std::string p = "Amesos_Lapack : ";
  
   int percentage = 0;
   if (NumGlobalRows_ != 0)
     percentage = NumGlobalNonzeros_ / (NumGlobalRows_ * NumGlobalRows_);
 
-  cout << p << "Matrix has " << NumGlobalRows_ << " rows"
-       << " and " << NumGlobalNonzeros_ << " nonzeros" << endl;
+  std::cout << p << "Matrix has " << NumGlobalRows_ << " rows"
+       << " and " << NumGlobalNonzeros_ << " nonzeros" << std::endl;
   if (NumGlobalRows_ != 0)
   {
-    cout << p << "Nonzero elements per row = "
-         << 1.0 * NumGlobalNonzeros_ / NumGlobalRows_ << endl;
-    cout << p << "Percentage of nonzero elements = "
-         << 100.0 * percentage  << endl;
+    std::cout << p << "Nonzero elements per row = "
+         << 1.0 * NumGlobalNonzeros_ / NumGlobalRows_ << std::endl;
+    std::cout << p << "Percentage of nonzero elements = "
+         << 100.0 * percentage  << std::endl;
   }
-  cout << p << "Use transpose = " << UseTranspose_ << endl;
+  std::cout << p << "Use transpose = " << UseTranspose_ << std::endl;
 
   PrintLine();
 
@@ -492,27 +492,27 @@ void Amesos_Lapack::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Lapack : ";
+  std::string p = "Amesos_Lapack : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Klu format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = "
-       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+  std::cout << p << "Time to convert matrix to Klu format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << std::endl;
 
   PrintLine();
 

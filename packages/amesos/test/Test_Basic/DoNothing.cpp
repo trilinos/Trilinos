@@ -30,9 +30,9 @@
 
 int main( int argc, char* argv[] ) { 
 #ifdef HAVE_AMESOS_TRIUTILS
-  cout << "Makefile failure"  << endl ; 
+  std::cout << "Makefile failure"  << std::endl ; 
 #endif
 
-  cout << "This test cannot be run without Triutils.  Please rebuild and compile with --enable-triutils in your configure line" << endl ; 
+  std::cout << "This test cannot be run without Triutils.  Please rebuild and compile with --enable-triutils in your configure line" << std::endl; 
   return -1; // No test 
 }

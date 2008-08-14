@@ -115,7 +115,7 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
 	$(srcdir)/Amesos_Control.cpp $(srcdir)/Amesos_Support.cpp \
 	$(srcdir)/Amesos_Dscpack.cpp $(srcdir)/Amesos_Umfpack.cpp \
 	$(srcdir)/Amesos_Mumps.cpp $(srcdir)/Amesos_Pardiso.cpp \
-	$(srcdir)/Amesos_Taucs.cpp $(srcdir)/Amesos_Pastix.cpp \
+	$(srcdir)/Amesos_Taucs.cpp \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_1.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_2.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_aat.c \
@@ -237,8 +237,7 @@ am__objects_1 = Amesos_Status.$(OBJEXT) Amesos_Control.$(OBJEXT) \
 @HAVE_AMESOS_MUMPS_TRUE@am__objects_4 = Amesos_Mumps.$(OBJEXT)
 @HAVE_AMESOS_PARDISO_TRUE@am__objects_5 = Amesos_Pardiso.$(OBJEXT)
 @HAVE_AMESOS_TAUCS_TRUE@am__objects_6 = Amesos_Taucs.$(OBJEXT)
-@HAVE_AMESOS_PASTIX_TRUE@am__objects_7 = Amesos_Pastix.$(OBJEXT)
-am__objects_8 = amesos_amd_1.$(OBJEXT) amesos_amd_2.$(OBJEXT) \
+am__objects_7 = amesos_amd_1.$(OBJEXT) amesos_amd_2.$(OBJEXT) \
 	amesos_amd_aat.$(OBJEXT) amesos_amd_control.$(OBJEXT) \
 	amesos_amd_defaults.$(OBJEXT) amesos_amd_dump.$(OBJEXT) \
 	amesos_amd_global.$(OBJEXT) amesos_amd_info.$(OBJEXT) \
@@ -251,9 +250,9 @@ am__objects_8 = amesos_amd_1.$(OBJEXT) amesos_amd_2.$(OBJEXT) \
 	amesos_cholmod_sparse.$(OBJEXT) \
 	amesos_cholmod_transpose.$(OBJEXT) amesos_camd_2.$(OBJEXT) \
 	amesos_camd_postorder.$(OBJEXT)
-@HAVE_AMESOS_KLU_TRUE@@HAVE_AMESOS_PARAKLETE_FALSE@am__objects_9 = $(am__objects_8)
-@HAVE_AMESOS_PARAKLETE_TRUE@am__objects_9 = $(am__objects_8)
-@HAVE_AMESOS_KLU_TRUE@am__objects_10 = Amesos_Klu.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@@HAVE_AMESOS_PARAKLETE_FALSE@am__objects_8 = $(am__objects_7)
+@HAVE_AMESOS_PARAKLETE_TRUE@am__objects_8 = $(am__objects_7)
+@HAVE_AMESOS_KLU_TRUE@am__objects_9 = Amesos_Klu.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_analyze.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_analyze_given.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_klu_impl.$(OBJEXT) \
@@ -274,7 +273,7 @@ am__objects_8 = amesos_amd_1.$(OBJEXT) amesos_amd_2.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_btf_order.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_btf_maxtrans.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	amesos_btf_strongcomp.$(OBJEXT)
-@HAVE_AMESOS_PARAKLETE_TRUE@am__objects_11 = amesos_paraklete_analyze.$(OBJEXT) \
+@HAVE_AMESOS_PARAKLETE_TRUE@am__objects_10 = amesos_paraklete_analyze.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_paraklete_btf.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_paraklete_error.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_paraklete_factorize.$(OBJEXT) \
@@ -341,21 +340,21 @@ am__objects_8 = amesos_amd_1.$(OBJEXT) amesos_amd_2.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_btf_l_maxtrans.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	amesos_btf_l_strongcomp.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	Amesos_Paraklete.$(OBJEXT)
-@HAVE_AMESOS_MC64_TRUE@am__objects_12 = Amesos_MC64.$(OBJEXT)
-@HAVE_AMESOS_SCALAPACK_TRUE@am__objects_13 =  \
+@HAVE_AMESOS_MC64_TRUE@am__objects_11 = Amesos_MC64.$(OBJEXT)
+@HAVE_AMESOS_SCALAPACK_TRUE@am__objects_12 =  \
 @HAVE_AMESOS_SCALAPACK_TRUE@	Amesos_Scalapack.$(OBJEXT)
-am__objects_14 = Amesos.$(OBJEXT)
-@HAVE_AMESOS_SUPERLU_TRUE@am__objects_15 = Amesos_Superlu.$(OBJEXT)
-@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_16 =  \
+am__objects_13 = Amesos.$(OBJEXT)
+@HAVE_AMESOS_SUPERLU_TRUE@am__objects_14 = Amesos_Superlu.$(OBJEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_15 =  \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
-@HAVE_AMESOS_LAPACK_TRUE@am__objects_17 = Amesos_Lapack.$(OBJEXT)
-am__objects_18 = CrsMatrixTranspose.$(OBJEXT)
+@HAVE_AMESOS_LAPACK_TRUE@am__objects_16 = Amesos_Lapack.$(OBJEXT)
+am__objects_17 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6) $(am__objects_7) $(am__objects_9) \
+	$(am__objects_6) $(am__objects_8) $(am__objects_9) \
 	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
 	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
-	$(am__objects_16) $(am__objects_17) $(am__objects_18)
+	$(am__objects_16) $(am__objects_17)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -375,7 +374,6 @@ DIST_SOURCES = $(am__libamesos_a_SOURCES_DIST) \
 am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_Umfpack.h $(srcdir)/Amesos_Mumps.h \
 	$(srcdir)/Amesos_Pardiso.h $(srcdir)/Amesos_Taucs.h \
-	$(srcdir)/Amesos_Pastix.h \
 	$(srcdir)/SuiteSparse/AMD/Include/amesos_amd.h \
 	$(srcdir)/SuiteSparse/AMD/Include/amesos_amd_internal.h \
 	$(srcdir)/SuiteSparse/COLAMD/Include/amesos_colamd.h \
@@ -694,14 +692,6 @@ SUPPORT = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp $(srcdir)/Am
 @HAVE_AMESOS_TAUCS_TRUE@TAUCS = \
 @HAVE_AMESOS_TAUCS_TRUE@	$(srcdir)/Amesos_Taucs.cpp
 
-@HAVE_AMESOS_PASTIX_FALSE@PASTIX_H = 
-@HAVE_AMESOS_PASTIX_TRUE@PASTIX_H = \
-@HAVE_AMESOS_PASTIX_TRUE@	$(srcdir)/Amesos_Pastix.h
-
-@HAVE_AMESOS_PASTIX_FALSE@PASTIX = 
-@HAVE_AMESOS_PASTIX_TRUE@PASTIX = \
-@HAVE_AMESOS_PASTIX_TRUE@	$(srcdir)/Amesos_Pastix.cpp
-
 PARAKLETE_KLU_COMMON = \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_1.c \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_2.c \
@@ -890,7 +880,6 @@ AMESOS_H = \
 	$(MUMPS_H) \
 	$(PARDISO_H) \
 	$(TAUCS_H) \
-	$(PASTIX_H) \
 	$(PARAKLETE_KLU_H) \
 	$(KLU_H) \
 	$(PARAKLETE_H) \
@@ -912,7 +901,6 @@ libamesos_a_SOURCES = \
 	$(MUMPS) \
 	$(PARDISO) \
 	$(TAUCS) \
-	$(PASTIX) \
 	$(PARAKLETE_KLU) \
 	$(KLU) \
 	$(PARAKLETE) \
@@ -1074,7 +1062,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Paraklete.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Pardiso.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Pastix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Scalapack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Status.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Superlu.Po@am__quote@
@@ -2858,20 +2845,6 @@ Amesos_Taucs.obj: $(srcdir)/Amesos_Taucs.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Taucs.cpp' object='Amesos_Taucs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Taucs.obj `if test -f '$(srcdir)/Amesos_Taucs.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Taucs.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Taucs.cpp'; fi`
-
-Amesos_Pastix.o: $(srcdir)/Amesos_Pastix.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Pastix.o -MD -MP -MF $(DEPDIR)/Amesos_Pastix.Tpo -c -o Amesos_Pastix.o `test -f '$(srcdir)/Amesos_Pastix.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Pastix.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Amesos_Pastix.Tpo $(DEPDIR)/Amesos_Pastix.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Pastix.cpp' object='Amesos_Pastix.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Pastix.o `test -f '$(srcdir)/Amesos_Pastix.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Pastix.cpp
-
-Amesos_Pastix.obj: $(srcdir)/Amesos_Pastix.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Pastix.obj -MD -MP -MF $(DEPDIR)/Amesos_Pastix.Tpo -c -o Amesos_Pastix.obj `if test -f '$(srcdir)/Amesos_Pastix.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Pastix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Pastix.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Amesos_Pastix.Tpo $(DEPDIR)/Amesos_Pastix.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Pastix.cpp' object='Amesos_Pastix.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Pastix.obj `if test -f '$(srcdir)/Amesos_Pastix.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Pastix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Pastix.cpp'; fi`
 
 Amesos_Klu.o: $(srcdir)/Amesos_Klu.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Klu.o -MD -MP -MF $(DEPDIR)/Amesos_Klu.Tpo -c -o Amesos_Klu.o `test -f '$(srcdir)/Amesos_Klu.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Klu.cpp

@@ -139,13 +139,13 @@ Amesos_Paraklete::~Amesos_Paraklete(void) {
 int Amesos_Paraklete::ExportToSerial() 
 {
   if (  AddZeroToDiag_==0 && numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
-    cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
+    std::cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
     AMESOS_CHK_ERR( -2 );
   }
   if ( UseDataInPlace_ == 0 ) {
     assert ( RowMatrixA_ != 0 ) ; 
     if (  AddZeroToDiag_==0 && numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
-      cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
+      std::cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
       AMESOS_CHK_ERR( -2 );
     }
 
@@ -178,15 +178,15 @@ int Amesos_Paraklete::ExportToSerial()
     //AMESOS_CHK_ERR(SerialCrsMatrixA_->OptimizeStorage());
 
     if( !AddZeroToDiag_ && numentries_ != SerialMatrix_->NumGlobalNonzeros()) {
-      cerr << " Amesos_Paraklete cannot handle this matrix.  " ;
+      std::cerr << " Amesos_Paraklete cannot handle this matrix.  " ;
       if ( Reindex_ ) {
-	cerr << "Unknown error" << endl ; 
+	std::cerr << "Unknown error" << std::endl ; 
 	AMESOS_CHK_ERR( -5 );
       } else {
-	cerr << " Try setting the Reindex parameter to true. " << endl ; 
+	std::cerr << " Try setting the Reindex parameter to true. " << std::endl ; 
 #ifndef HAVE_AMESOS_EPETRAEXT
-	cerr << " You will need to rebuild the Amesos library with the EpetraExt library to use the reindex feature" << endl ; 
-	cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << endl ;
+	std::cerr << " You will need to rebuild the Amesos library with the EpetraExt library to use the reindex feature" << std::endl ; 
+	std::cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << std::endl ;
 #endif
 	AMESOS_CHK_ERR( -3 );
       }
@@ -271,8 +271,8 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
     CcsMatrixA = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposer_)(*CrsMatrixA_))));
     CrsMatrixA_->SetTracebackMode( OriginalTracebackMode );
 #else
-    cerr << "Amesos_Paraklete requires the EpetraExt library to solve non-transposed problems. " << endl ; 
-    cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << endl ;
+    std::cerr << "Amesos_Paraklete requires the EpetraExt library to solve non-transposed problems. " << std::endl ; 
+    std::cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << std::endl ;
     AMESOS_CHK_ERR( -3 );
 #endif
   }
@@ -289,8 +289,8 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
     
     StdIndexMatrix_ = StdIndex_->StandardizeIndex( CcsMatrixA );
 #else
-    cerr << "Amesos_Paraklete requires EpetraExt to reindex matrices." << endl 
-	 <<  " Please rebuild with the EpetraExt library by adding --enable-epetraext to your configure invocation" << endl ;
+    std::cerr << "Amesos_Paraklete requires EpetraExt to reindex matrices." << std::endl 
+	 <<  " Please rebuild with the EpetraExt library by adding --enable-epetraext to your configure invocation" << std::endl ;
     AMESOS_CHK_ERR(-4);
 #endif
   } else { 
@@ -651,7 +651,7 @@ int Amesos_Paraklete::SymbolicFactorization()
       MPI_Comm_free(&ParakleteComm_);
       ParakleteComm_ = 0 ; 
     }
-    vector<int> ProcsInGroup(MaxProcesses_);
+    std::vector<int> ProcsInGroup(MaxProcesses_);
     IamInGroup_ = false; 
     for (int i = 0 ; i < MaxProcesses_ ; ++i) {
       ProcsInGroup[i] = i;
@@ -877,13 +877,13 @@ void Amesos_Paraklete::PrintStatus() const
 
   PrintLine();
 
-  cout << "Amesos_Paraklete : Matrix has " << NumGlobalElements_ << " rows"
-       << " and " << numentries_ << " nonzeros" << endl;
-  cout << "Amesos_Paraklete : Nonzero elements per row = "
-       << 1.0*numentries_/NumGlobalElements_ << endl;
-  cout << "Amesos_Paraklete : Percentage of nonzero elements = "
-       << 100.0*numentries_/(pow(double(NumGlobalElements_),double(2.0))) << endl;
-  cout << "Amesos_Paraklete : Use transpose = " << UseTranspose_ << endl;
+  std::cout << "Amesos_Paraklete : Matrix has " << NumGlobalElements_ << " rows"
+       << " and " << numentries_ << " nonzeros" << std::endl;
+  std::cout << "Amesos_Paraklete : Nonzero elements per row = "
+       << 1.0*numentries_/NumGlobalElements_ << std::endl;
+  std::cout << "Amesos_Paraklete : Percentage of nonzero elements = "
+       << 100.0*numentries_/(pow(double(NumGlobalElements_),double(2.0))) << std::endl;
+  std::cout << "Amesos_Paraklete : Use transpose = " << UseTranspose_ << std::endl;
 
   PrintLine();
 
@@ -914,35 +914,35 @@ void Amesos_Paraklete::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Paraklete : ";
+  std::string p = "Amesos_Paraklete : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Paraklete format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = "
-       << SymTime * NumSymbolicFact_ << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
-       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+  std::cout << p << "Time to convert matrix to Paraklete format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = "
+       << SymTime * NumSymbolicFact_ << " (s), avg = " << SymTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
+       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << std::endl;
 
   double tt = SymTime * NumSymbolicFact_ + NumTime * NumNumericFact_ + SolTime * NumSolve_;
   if (tt != 0)
   {
-    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
-    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
-    cout << p << "(the above time does not include PARAKLETE time)" << endl;
-    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+    std::cout << p << "Total time spent in Amesos = " << tt << " (s) " << std::endl;
+    std::cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << std::endl;
+    std::cout << p << "(the above time does not include PARAKLETE time)" << std::endl;
+    std::cout << p << "Amesos interface time / total time = " << OveTime / tt << std::endl;
   }
 
   PrintLine();
