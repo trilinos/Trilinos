@@ -52,9 +52,14 @@ template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
 postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 {
-  this->utils.setFieldData(source,vm);
-  this->utils.setFieldData(density,vm);
-  this->utils.setFieldData(temp,vm);
+  // The utilities hide template arguments.  We could directly get the
+  // data pointers from the field manager.  This is demonstrated below.
+  //this->utils.setFieldData(source,vm);
+  //this->utils.setFieldData(density,vm);
+  //this->utils.setFieldData(temp,vm);
+  vm.template getFieldData<ScalarT,EvalT>(source);
+  vm.template getFieldData<ScalarT,EvalT>(density);
+  vm.template getFieldData<ScalarT,EvalT>(temp);
 
   data_layout_size = source.fieldTag().dataLayout().size();
 }
