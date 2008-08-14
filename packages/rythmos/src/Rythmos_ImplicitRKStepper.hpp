@@ -71,8 +71,21 @@ public:
   void initialize(
     const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
     const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
-    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory
+    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
+    RKButcherTableau<Scalar> irkButcherTableau
     );
+
+  /** \brief . */
+  void set_W_factory( RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory);
+
+  /** \brief . */
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory();
+  
+  /** \brief . */
+  void setRKButcherTableau( RKButcherTableau<Scalar> rkButcherTableau );
+
+  /** \brief . */
+  RKButcherTableau<Scalar> getRKButcherTableau();
   
   /** \brief . */
   void setInterpolator(RCP<InterpolatorBase<Scalar> > interpolator);
@@ -204,8 +217,6 @@ private:
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
   RCP<ParameterList> paramList_;
 
-  int numStages_; // Temp hack to select between first and second order!
-
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::VectorBase<Scalar> > x_;
   RCP<Thyra::VectorBase<Scalar> > x_old_;
@@ -236,11 +247,14 @@ RCP<ImplicitRKStepper<Scalar> >
 implicitRKStepper(
   const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
+  RKButcherTableau<Scalar> irkbt
   )
 {
   RCP<ImplicitRKStepper<Scalar> > stepper(new ImplicitRKStepper<Scalar>());
-  stepper->initialize( model, solver, irk_W_factory );
+
+  validateIRKButcherTableau(irkbt);
+  stepper->initialize( model, solver, irk_W_factory, irkbt );
   return stepper;
 }
 
@@ -254,8 +268,7 @@ implicitRKStepper(
 
 template<class Scalar>
 ImplicitRKStepper<Scalar>::ImplicitRKStepper()
-  : isInitialized_(false),
-    numStages_(1)
+  : isInitialized_(false)
 {}
 
 
@@ -263,7 +276,8 @@ template<class Scalar>
 void ImplicitRKStepper<Scalar>::initialize(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
+  RKButcherTableau<Scalar> irkButcherTableau
   )
 {
 
@@ -272,6 +286,7 @@ void ImplicitRKStepper<Scalar>::initialize(
   model_ = model;
   solver_ = solver;
   irk_W_factory_ = irk_W_factory;
+  irkButcherTableau_ = irkButcherTableau;
 
 }
 
@@ -578,7 +593,6 @@ void ImplicitRKStepper<Scalar>::setParameterList(
   TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   paramList_ = paramList;
-  numStages_ = paramList_->get("Num Stages",numStages_); // Temp hack
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
@@ -656,8 +670,6 @@ void ImplicitRKStepper<Scalar>::initialize_()
 {
 
   typedef ScalarTraits<Scalar> ST;
-  const Scalar one = ST::one();
-  const Scalar zero = ST::zero();
   using Teuchos::rcp_dynamic_cast;
 
   TEST_FOR_EXCEPT(model_ == Teuchos::null);
@@ -678,44 +690,8 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   x_old_ = x_->clone_v();
 
-  // Set up the butcher tableau
-
-  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages_,numStages_);
-  Teuchos::SerialDenseVector<int,Scalar> b(numStages_);
-  Teuchos::SerialDenseVector<int,Scalar> c(numStages_);
-
-  // For now just two simple versions!
-  TEUCHOS_ASSERT( numStages_ == 1 || numStages_ == 2 );
-
-  if (numStages_ == 1) {
-
-    A(0,0) = one;
-
-    b(0) = one;
-    
-    c(0) = one;
-
-  }
-  else if (numStages_ == 2) {
-
-    const Scalar half = 0.5 * one;
-
-    A(0,0) = half;   A(0,1) = -half;
-    A(1,0) = half;   A(1,1) = half;
-
-    b(0) = half;
-    b(1) = half;
-    
-    c(0) = zero;
-    c(1) = one;
-
-
-  }
-  else {
-    TEST_FOR_EXCEPT(true); // Should never get here!
-  }
-  
-  irkButcherTableau_ = RKButcherTableau<Scalar>(A,b,c);
+  // Validate the Butcher Tableau
+  validateIRKButcherTableau(irkButcherTableau_);
 
   // Set up the IRK mdoel
 
@@ -733,6 +709,18 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
 }
 
+template <class Scalar>
+void ImplicitRKStepper<Scalar>::setRKButcherTableau( RKButcherTableau<Scalar> rkButcherTableau )
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+template <class Scalar>
+RKButcherTableau<Scalar> ImplicitRKStepper<Scalar>::getRKButcherTableau()
+{
+  TEST_FOR_EXCEPT(true);
+  return RKButcherTableau<Scalar>(); 
+}
 
 } // namespace Rythmos
 

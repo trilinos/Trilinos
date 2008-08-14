@@ -158,6 +158,55 @@ Tuple<T,10> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   const T& f, const T& g, const T& h, const T& i, const T& j);
 
 
+/** \brief Create a Tuple<T,11>.
+ *
+ * \relates Tuple
+ */
+template<typename T> inline
+Tuple<T,11> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k);
+
+
+/** \brief Create a Tuple<T,12>.
+ *
+ * \relates Tuple
+ */
+template<typename T> inline
+Tuple<T,12> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l);
+
+
+/** \brief Create a Tuple<T,13>.
+ *
+ * \relates Tuple
+ */
+template<typename T> inline
+Tuple<T,13> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l, const T& m);
+
+
+/** \brief Create a Tuple<T,14>.
+ *
+ * \relates Tuple
+ */
+template<typename T> inline
+Tuple<T,14> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l, const T& m, const T& n);
+
+
+/** \brief Create a Tuple<T,15>.
+ *
+ * \relates Tuple
+ */
+template<typename T> inline
+Tuple<T,15> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l, const T& m, const T& n, const T& o);
+
+
 //
 // Implementations
 //
@@ -345,6 +394,123 @@ Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
   rtn[7] = h;
   rtn[8] = i;
   rtn[9] = j;
+  return rtn;
+}
+
+
+template<typename T> inline
+Teuchos::Tuple<T,11>
+Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k)
+{
+  Tuple<T,11> rtn;
+  rtn[0] = a;
+  rtn[1] = b;
+  rtn[2] = c;
+  rtn[3] = d;
+  rtn[4] = e;
+  rtn[5] = f;
+  rtn[6] = g;
+  rtn[7] = h;
+  rtn[8] = i;
+  rtn[9] = j;
+  rtn[10] = k;
+  return rtn;
+}
+
+template<typename T> inline
+Teuchos::Tuple<T,12>
+Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l)
+{
+  Tuple<T,12> rtn;
+  rtn[0] = a;
+  rtn[1] = b;
+  rtn[2] = c;
+  rtn[3] = d;
+  rtn[4] = e;
+  rtn[5] = f;
+  rtn[6] = g;
+  rtn[7] = h;
+  rtn[8] = i;
+  rtn[9] = j;
+  rtn[10] = k;
+  rtn[11] = l;
+  return rtn;
+}
+
+template<typename T> inline
+Teuchos::Tuple<T,13>
+Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l, const T& m)
+{
+  Tuple<T,13> rtn;
+  rtn[0] = a;
+  rtn[1] = b;
+  rtn[2] = c;
+  rtn[3] = d;
+  rtn[4] = e;
+  rtn[5] = f;
+  rtn[6] = g;
+  rtn[7] = h;
+  rtn[8] = i;
+  rtn[9] = j;
+  rtn[10] = k;
+  rtn[11] = l;
+  rtn[12] = m;
+  return rtn;
+}
+
+
+template<typename T> inline
+Teuchos::Tuple<T,14>
+Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l, const T& m, const T& n)
+{
+  Tuple<T,14> rtn;
+  rtn[0] = a;
+  rtn[1] = b;
+  rtn[2] = c;
+  rtn[3] = d;
+  rtn[4] = e;
+  rtn[5] = f;
+  rtn[6] = g;
+  rtn[7] = h;
+  rtn[8] = i;
+  rtn[9] = j;
+  rtn[10] = k;
+  rtn[11] = l;
+  rtn[12] = m;
+  rtn[13] = n;
+  return rtn;
+}
+
+
+template<typename T> inline
+Teuchos::Tuple<T,15>
+Teuchos::tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
+  const T& f, const T& g, const T& h, const T& i, const T& j, const T& k,
+  const T& l, const T& m, const T& n, const T& o)
+{
+  Tuple<T,15> rtn;
+  rtn[0] = a;
+  rtn[1] = b;
+  rtn[2] = c;
+  rtn[3] = d;
+  rtn[4] = e;
+  rtn[5] = f;
+  rtn[6] = g;
+  rtn[7] = h;
+  rtn[8] = i;
+  rtn[9] = j;
+  rtn[10] = k;
+  rtn[11] = l;
+  rtn[12] = m;
+  rtn[13] = n;
+  rtn[14] = o;
   return rtn;
 }
 

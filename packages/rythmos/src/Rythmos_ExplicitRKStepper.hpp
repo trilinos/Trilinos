@@ -188,55 +188,6 @@ void ExplicitRKStepper<Scalar>::initialize_()
   //   -|---   b = s vector
   //      b'   c = s vector
   
-/*
-  // 3/8 Rule Runge-Kutta Method: (not implemented yet)
-  // c = [  0  1/3 2/3  1  ]'
-  // A = [  0              ]
-  //     [ 1/3  0          ]
-  //     [-1/3  1   0      ]
-  //     [  1  -1   1   0  ]
-  // b = [ 1/8 3/8 3/8 1/8 ]'
-  Scalar one = ST::one();
-  Scalar one_third    = Scalar(ST::one()/(3*ST::one()));
-  Scalar two_third    = Scalar(2*ST::one()/(3*ST::one()));
-  Scalar one_eighth   = Scalar(ST::one()/(8*ST::one()));
-  Scalar three_eighth = Scalar(3*ST::one()/(8*ST::one()));
-
-  // fill b_A_
-  b_A_[0][0] = zero;
-  b_A_[0][1] = zero;
-  b_A_[0][2] = zero;
-  b_A_[0][3] = zero;
-
-  b_A_[1][0] = one_third;
-  b_A_[1][1] = zero;
-  b_A_[1][2] = zero;
-  b_A_[1][3] = zero;
-
-  b_A_[2][0] = Scalar(-one_third);
-  b_A_[2][1] = one;
-  b_A_[2][2] = zero;
-  b_A_[2][3] = zero;
-
-  b_A_[3][0] = one;
-  b_A_[3][1] = Scalar(-one);
-  b_A_[3][2] = one;
-  b_A_[3][3] = zero;
-
-  // fill b_b_
-  b_b_[0] = one_eighth;
-  b_b_[1] = three_eighth;
-  b_b_[2] = three_eighth;
-  b_b_[3] = one_eighth;
-  
-  // fill b_c_
-  b_c_[0] = zero;
-  b_c_[1] = one_third;
-  b_c_[2] = two_third;
-  b_c_[3] = one;
-*/
-
-
   // "The" Runge-Kutta Method: (implemented below)
   // c = [  0  1/2 1/2  1  ]'
   // A = [  0              ] 

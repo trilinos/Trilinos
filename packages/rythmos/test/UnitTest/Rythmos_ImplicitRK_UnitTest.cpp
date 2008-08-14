@@ -46,220 +46,6 @@ using Thyra::ProductVectorBase;
 using Thyra::VectorSpaceBase;
 using Thyra::ProductVectorSpaceBase;
 
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validInitialize ) {
-  int numStages = 1;
-  SerialDenseMatrix<int,double> A(numStages, numStages);
-  SerialDenseVector<int,double> b(numStages);
-  SerialDenseVector<int,double> c(numStages);
-  RKButcherTableau<double> rkButcherTableau(A,b,c);
-
-  TEST_EQUALITY( rkButcherTableau.numStages(), numStages );
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, invalidInitialize ) {
-
-  RKButcherTableau<double> rkButcherTableau;
-
-  int numStages = 1;
-  {
-    SerialDenseMatrix<int,double> A(numStages+1, numStages);
-    SerialDenseVector<int,double> b(numStages);
-    SerialDenseVector<int,double> c(numStages);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
-  }
-  {
-    SerialDenseMatrix<int,double> A(numStages, numStages+1);
-    SerialDenseVector<int,double> b(numStages);
-    SerialDenseVector<int,double> c(numStages);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
-  }
-  {
-    SerialDenseMatrix<int,double> A(numStages, numStages);
-    SerialDenseVector<int,double> b(numStages+1);
-    SerialDenseVector<int,double> c(numStages);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
-  }
-  {
-    SerialDenseMatrix<int,double> A(numStages, numStages);
-    SerialDenseVector<int,double> b(numStages);
-    SerialDenseVector<int,double> c(numStages+1);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
-  }
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, invalidAssembleIRKState ) {
-  int N = 10;
-  int numStages = 1;
-
-  {
-    int stageIndex = 0;
-    SerialDenseMatrix<int,double> A(numStages,numStages);
-    double dt = 0.1;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,0.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,0.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,0.0);
-    
-    TEST_THROW( 
-        assembleIRKState(stageIndex+1, A, dt, *x_base, *x_stage_bar, outArg(*x)), 
-        std::logic_error 
-        );
-  }
-  {
-    int stageIndex = 0;
-    SerialDenseMatrix<int,double> A(numStages+1,numStages);
-    double dt = 0.1;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,0.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,0.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,0.0);
-    
-    TEST_THROW( 
-        assembleIRKState(stageIndex+1, A, dt, *x_base, *x_stage_bar, outArg(*x)), 
-        std::logic_error 
-        );
-  }
-  {
-    int stageIndex = 0;
-    SerialDenseMatrix<int,double> A(numStages,numStages+1);
-    double dt = 0.1;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,0.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,0.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,0.0);
-    
-    TEST_THROW( 
-        assembleIRKState(stageIndex+1, A, dt, *x_base, *x_stage_bar, outArg(*x)), 
-        std::logic_error 
-        );
-  }
-  {
-    int stageIndex = 0;
-    SerialDenseMatrix<int,double> A(numStages,numStages);
-    double dt = 0.1;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,0.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages+1,N,0.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,0.0);
-    
-    TEST_THROW( 
-        assembleIRKState(stageIndex+1, A, dt, *x_base, *x_stage_bar, outArg(*x)), 
-        std::logic_error 
-        );
-  }
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleIRKState ) {
-
-  {
-    int N = 1;
-    int numStages = 1;
-    int stageIndex = 0;
-    SerialDenseMatrix<int,double> A(numStages,numStages);
-    A(0,0) = 5.0;
-    double dt = 0.1;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,1.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,2.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,3.0);
-    assembleIRKState(stageIndex, A, dt, *x_base, *x_stage_bar, outArg(*x));
-    // What should x be?
-    // x = x_base == 1.0      
-    // x += dt*A(0,0)*x_stage_bar(0), so x = 1 + 0.1*5.0*2.0 = 2.0
-    TEST_EQUALITY_CONST( Thyra::get_ele(*x,0), 2.0 );
-  }
-  {
-    int N = 1;
-    int numStages = 2;
-    int stageIndex = 0;
-    SerialDenseMatrix<int,double> A(numStages,numStages);
-    A(0,0) = 1.0;
-    A(0,1) = 2.0;
-    A(1,0) = 3.0;
-    A(1,1) = 4.0;
-    double dt = 10.0;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,5.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,6.0);
-    V_S(&*(x_stage_bar->getNonconstVectorBlock(1)),7.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,8.0);
-    assembleIRKState(stageIndex, A, dt, *x_base, *x_stage_bar, outArg(*x));
-    // What should x be?
-    // x = x_base == 5.0               so x = 5
-    // x += dt*A(0,0)*x_stage_bar(0)   so x = 5 + 10.0*1.0*6.0 = 65
-    // x += dt*A(0,1)*x_stage_bar(1)   so x = 65 + 10.0*2.0*7.0 = 205
-    TEST_EQUALITY_CONST( Thyra::get_ele(*x,0), 205 );
-
-    assembleIRKState(stageIndex+1, A, dt, *x_base, *x_stage_bar, outArg(*x));
-    // What should x be?
-    // x = x_base == 5.0               so x = 5
-    // x += dt*A(1,0)*x_stage_bar(0)   so x = 5 + 10.0*3.0*6.0 = 185
-    // x += dt*A(1,1)*x_stage_bar(1)   so x = 185 + 10.0*4.0*7.0 = 465
-    TEST_EQUALITY_CONST( Thyra::get_ele(*x,0), 465 );
-  }
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, invalidAssembleIRKSolution ) {
-  int N = 10;
-  int numStages = 1;
-
-  {
-    SerialDenseVector<int,double> b(numStages+1);
-    double dt = 0.1;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,0.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,0.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,0.0);
-    
-    TEST_THROW( 
-        assembleIRKSolution(b, dt, *x_base, *x_stage_bar, outArg(*x)),
-        std::logic_error 
-        );
-  }
-  {
-    SerialDenseVector<int,double> b(numStages);
-    double dt = 0.1;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,0.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages+1,N,0.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,0.0);
-    
-    TEST_THROW( 
-        assembleIRKSolution(b, dt, *x_base, *x_stage_bar, outArg(*x)),
-        std::logic_error 
-        );
-  }
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleIRKSolution ) {
-
-  {
-    int N = 1;
-    int numStages = 1;
-    SerialDenseVector<int,double> b(numStages);
-    b(0) = 2.0;
-    double dt = 10.0;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,3.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,4.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,5.0);
-    assembleIRKSolution(b, dt, *x_base, *x_stage_bar, outArg(*x));
-    // What should x be?
-    // x = x_base == 3.0             so x = 3
-    // x += dt*b(0)*x_stage_bar(0)   so x = 3 + 10.0*2.0*4.0 = 83
-    TEST_EQUALITY_CONST( Thyra::get_ele(*x,0), 83 );
-  }
-  {
-    int N = 1;
-    int numStages = 2;
-    SerialDenseVector<int,double> b(numStages);
-    b(0) = 2.0;
-    b(1) = 3.0;
-    double dt = 10.0;
-    RCP<VectorBase<double> > x_base = createDefaultVector(N,4.0);
-    RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,5.0);
-    V_S(&*(x_stage_bar->getNonconstVectorBlock(1)),6.0);
-    RCP<VectorBase<double> > x = createDefaultVector(N,7.0);
-    assembleIRKSolution(b, dt, *x_base, *x_stage_bar, outArg(*x));
-    // What should x be?
-    // x = x_base == 4.0             so x = 4
-    // x += dt*b(0)*x_stage_bar(0)   so x = 4 + 10.0*2.0*5.0 = 104
-    // x += dt*b(1)*x_stage_bar(1)   so x = 104 + 10.0*3.0*6.0 = 284
-    TEST_EQUALITY_CONST( Thyra::get_ele(*x,0), 284 );
-  }
-}
-
 TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, emptyCreate ) {
   ImplicitRKModelEvaluator<double> irkME;
   TEST_THROW( irkME.get_x_space(), std::logic_error );
@@ -863,6 +649,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, create_W_op ) {
   TEST_EQUALITY( W_op_b->productRange()->numBlocks(), numStages );
   TEST_EQUALITY( W_op_b->productDomain()->numBlocks(), numStages );
 }
+
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, create ) {
+  RCP<ImplicitRKStepper<double> > irkStepper = rcp(new ImplicitRKStepper<double> );
+  TEST_EQUALITY_CONST( Teuchos::is_null(irkStepper), false );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, takeStep ) {
+
+}
+
 
 } // namespace Rythmos
 

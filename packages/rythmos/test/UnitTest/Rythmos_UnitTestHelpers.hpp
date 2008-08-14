@@ -31,6 +31,7 @@
 
 #include "Teuchos_DefaultComm.hpp"
 
+#include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
