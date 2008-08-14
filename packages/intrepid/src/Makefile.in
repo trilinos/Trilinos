@@ -258,6 +258,8 @@ INTREPID_COMMON_H = \
   $(srcdir)/common/Intrepid_FieldContainer.hpp \
   $(srcdir)/common/Intrepid_RealSpaceDef.hpp \
   $(srcdir)/common/Intrepid_RealSpace.hpp \
+  $(srcdir)/common/Intrepid_RealSpaceToolsDef.hpp \
+  $(srcdir)/common/Intrepid_RealSpaceTools.hpp \
   $(srcdir)/common/Intrepid_Types.hpp \
   $(srcdir)/common/Intrepid_Utils.hpp
 
