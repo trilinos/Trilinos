@@ -271,6 +271,76 @@ bool testTuple( Teuchos::FancyOStream &out )
   }
 
   {
+    const int n = 11;
+    out << "\nTest Tuple<T,"<<n<<"> = tuple(...)\n";
+    Tuple<T,n> tn = tuple<T>(0,1,2,3,4,5,6,7,8,9,10);
+    TEST_EQUALITY_CONST(tn.size(),n);
+    out << "Test that tn[i] == i ... ";
+    bool local_success = true;
+    for( int i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( tn, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const int n = 12;
+    out << "\nTest Tuple<T,"<<n<<"> = tuple(...)\n";
+    Tuple<T,n> tn = tuple<T>(0,1,2,3,4,5,6,7,8,9,10,11);
+    TEST_EQUALITY_CONST(tn.size(),n);
+    out << "Test that tn[i] == i ... ";
+    bool local_success = true;
+    for( int i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( tn, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const int n = 13;
+    out << "\nTest Tuple<T,"<<n<<"> = tuple(...)\n";
+    Tuple<T,n> tn = tuple<T>(0,1,2,3,4,5,6,7,8,9,10,11,12);
+    TEST_EQUALITY_CONST(tn.size(),n);
+    out << "Test that tn[i] == i ... ";
+    bool local_success = true;
+    for( int i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( tn, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const int n = 14;
+    out << "\nTest Tuple<T,"<<n<<"> = tuple(...)\n";
+    Tuple<T,n> tn = tuple<T>(0,1,2,3,4,5,6,7,8,9,10,11,12,13);
+    TEST_EQUALITY_CONST(tn.size(),n);
+    out << "Test that tn[i] == i ... ";
+    bool local_success = true;
+    for( int i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( tn, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
+    const int n = 15;
+    out << "\nTest Tuple<T,"<<n<<"> = tuple(...)\n";
+    Tuple<T,n> tn = tuple<T>(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14);
+    TEST_EQUALITY_CONST(tn.size(),n);
+    out << "Test that tn[i] == i ... ";
+    bool local_success = true;
+    for( int i = 0; i < n; ++i ) {
+      TEST_ARRAY_ELE_EQUALITY( tn, i, as<T>(i) );
+    }
+    if (local_success) out << "passed\n";
+    else success = false;
+  }
+
+  {
     out << "\nTest constructing Array<const T> from Tuple<T,N> ...\n";
     const ArrayView<const T> av2 = t;
     TEST_COMPARE_ARRAYS( av2, t );

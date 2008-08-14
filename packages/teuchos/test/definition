@@ -10,7 +10,8 @@
             MemoryManagement/ArrayRCP_test.exe,
             MemoryManagement/ArrayView_test.exe,
             MemoryManagement/RCP_test.exe,
-            MemoryManagement/Ptr_test.exe;
+            MemoryManagement/Ptr_test.exe,
+            MemoryManagement/Tuple_test.exe;
     ARGS = --teuchos-suppress-startup-banner;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1),SERIAL;
