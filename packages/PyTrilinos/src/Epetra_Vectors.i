@@ -750,6 +750,34 @@ class Vector(UserArray,NumPyVector):
         Initialize the underlying numpy array.
         """
         UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
+    def __getitem__(self,index):
+        """
+        x.__getitem__(y) <==> x[y]
+        """
+        result = UserArray.__getitem__(self,index)
+        # If we are in parallel and result is not a scalar, then the index is
+        # non-trivial and we need to create a new BlockMap for the returned
+        # MultiVector
+        if self.Comm().NumProc() > 1 and len(numpy.shape(result)) > 0:
+            # Obtain the new global IDs by getting a slice (based on index) from
+            # an array of the old global IDs.  Use the new global IDs to build a
+            # new BlockMap, upon which the new result will be based.
+            oldMap          = self.Map()
+            gids            = oldMap.MyGlobalElements()
+            gids.shape      = self.shape
+            elemSizes       = oldMap.ElementSizeList()
+            elemSizes.shape = self.shape
+            newMap          = BlockMap(-1, gids[index], elemSizes[index],
+                                       oldMap.IndexBase(), self.Comm())
+            newShape        = result.shape
+            result          = Vector(newMap, result.array)
+            result.shape    = newShape
+        return result
+    def __getslice__(self, i, j):
+        """
+        x.__getslice__(i,j) <==> x[i:j]
+        """
+        return self.__getitem__(slice(i,j))
     def __str__(self):
         """
         __str__(self) -> string
