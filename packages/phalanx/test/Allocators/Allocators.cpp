@@ -54,6 +54,18 @@ bool arrayCompare(Teuchos::ArrayRCP<T> a, Teuchos::ArrayRCP<T> b, double tol)
   return false;
 }
 
+class MyObject {
+public:
+  static bool destructor_called;
+  MyObject() {}
+  ~MyObject() 
+  {
+    destructor_called = true;
+    std::cout << "      In Destructor!" << std::endl;
+  }
+};
+
+bool MyObject::destructor_called = false;
 
 int main(int argc, char *argv[]) 
 {
@@ -170,6 +182,35 @@ int main(int argc, char *argv[])
       cout << "  Testing reset()...";
       ca.reset();
       cout << "passed!" << endl;
+
+      
+      {
+	cout << "  Testing that ArrayRCP embedded object is destroyed properly:" << endl;
+
+	cout << "    building objects...";
+	int size = 5;
+	ArrayRCP<MyObject> contiguous_block = arcp<MyObject>(size);
+	MyObject* ptr = &contiguous_block[3];
+	ArrayRCP<MyObject> subview = 
+	  arcpWithEmbeddedObjPostDestroy( ptr, 0, 2, contiguous_block, false);
+	cout << "finished" << endl;
+	
+	cout << "    deleting contiguous_block ptr...";
+	TEST_FOR_EXCEPTION(MyObject::destructor_called, std::logic_error,
+			   "MyObject is not initialized correctly!");
+	contiguous_block = null;
+	TEST_FOR_EXCEPTION(MyObject::destructor_called, std::logic_error,
+			   "MyObject array should not be destroyed yet!");
+	cout << "finished" << endl;
+
+	cout << "    deleting subview ptr (should print destructor message "
+	     << size << " times):" << endl;
+	subview = null;
+	TEST_FOR_EXCEPTION(!MyObject::destructor_called, std::logic_error,
+			   "Failed to destroy objects correctly!");
+
+	cout << "  Testing that ArrayRCP embedded object is destroyed properly...passed" << endl;
+      }
       
     }
 
