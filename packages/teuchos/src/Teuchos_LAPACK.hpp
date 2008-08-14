@@ -212,6 +212,8 @@ namespace Teuchos
     //! Solves a triangular linear system of the form \c A*X=B or \c A**T*X=B, where \c A is a triangular matrix.
     void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const; 
     
+    //! Computes the inverse of an upper or lower triangular matrix \c A.
+    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const ScalarType* A, const OrdinalType lda, OrdinalType* info) const; 
     //@}
 
     //! @name Symmetric Eigenproblem Routines
@@ -532,6 +534,12 @@ namespace Teuchos
   }
   
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const ScalarType* A, const OrdinalType lda, OrdinalType* info) const 
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+  
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::SPEV(const char JOBZ, const char UPLO, const OrdinalType n, ScalarType* AP, ScalarType* W, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -751,6 +759,7 @@ namespace Teuchos
     void SYTRD(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* D, float* E, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const float* A, const OrdinalType lda, OrdinalType* info) const; 
 
     // Symmetric eigenvalue routines.
     void SPEV(const char JOBZ, const char UPLO, const OrdinalType n, float* AP, float* W, float* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const;
@@ -952,6 +961,12 @@ namespace Teuchos
   void LAPACK<OrdinalType,float>::TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const 
   {
     STRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
+  }
+  
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,float>::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const float* A, const OrdinalType lda, OrdinalType* info) const 
+  {
+    STRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
   }
   
   template<typename OrdinalType>
@@ -1178,6 +1193,7 @@ namespace Teuchos
     void SYTRD(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* D, double* E, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const double* A, const OrdinalType lda, OrdinalType* info) const;
 
     // Symmetric eigenproblem routines.
     void SPEV(const char JOBZ, const char UPLO, const OrdinalType n, double* AP, double* W, double* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const;
@@ -1382,7 +1398,13 @@ namespace Teuchos
   {
     DTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
   }
-  
+ 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,double>::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const double* A, const OrdinalType lda, OrdinalType* info) const
+  {
+    DTRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
+  }
+ 
   template<typename OrdinalType>
   void LAPACK<OrdinalType,double>::SPEV(const char JOBZ, const char UPLO, const OrdinalType n, double* AP, double* W, double* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const
   {
@@ -1614,6 +1636,7 @@ namespace Teuchos
     void GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, float* R, float* C, std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
     void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<float>* A, const OrdinalType lda, std::complex<float>* TAU, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const;
 
     // Symmetric eigenvalue routines.
     void STEQR(const char COMPZ, const OrdinalType n, float* D, float* E, std::complex<float>* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const;
@@ -1801,7 +1824,13 @@ namespace Teuchos
   {
     CTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
   }
-  
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,std::complex<float> >::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const
+  {
+    CTRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
+  }
+ 
   template<typename OrdinalType>
   void LAPACK<OrdinalType,std::complex<float> >::STEQR(const char COMPZ, const OrdinalType n, float* D, float* E, std::complex<float>* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const
   {
@@ -1968,6 +1997,7 @@ namespace Teuchos
     void GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, double* R, double* C, std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
     void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<double>* A, const OrdinalType lda, std::complex<double>* TAU, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const;
 
     // Symmetric eigenvalue routines.
     void STEQR(const char COMPZ, const OrdinalType n, double* D, double* E, std::complex<double>* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const;
@@ -2155,7 +2185,13 @@ namespace Teuchos
   {
     ZTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
   }
-  
+ 
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,std::complex<double> >::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const
+  {
+    ZTRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
+  }
+ 
   template<typename OrdinalType>
   void LAPACK<OrdinalType,std::complex<double> >::STEQR(const char COMPZ, const OrdinalType n, double* D, double* E, std::complex<double>* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const
   {

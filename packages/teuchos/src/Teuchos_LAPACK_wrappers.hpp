@@ -67,6 +67,7 @@
 #define DPORFS_F77  F77_BLAS_MANGLE(sporfs,SPORFS)
 #define DPOSVX_F77  F77_BLAS_MANGLE(sposvx,SPOSVX)
 #define DLAMCH_F77  F77_BLAS_MANGLE(slamch,SLAMCH)
+#define DTRTRI_F77  F77_BLAS_MANGLE(strtri,STRTRI)
 #define DTRTRS_F77  F77_BLAS_MANGLE(strtrs,STRTRS)
 #define DGELS_F77   F77_BLAS_MANGLE(sgels,SGELS)
 #define DGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
@@ -124,6 +125,7 @@
 #define ZPORFS_F77  F77_BLAS_MANGLE(cporfs,CPORFS)
 #define ZPOSVX_F77  F77_BLAS_MANGLE(cposvx,CPOSVX)
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ctrtrs,CTRTRS)
+#define ZTRTRI_F77  F77_BLAS_MANGLE(ctrtri,CTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(cgels,CGELS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(cgeev,CGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(cgesvd,CGESVD)
@@ -179,6 +181,7 @@
 #define DPORFS_F77  F77_BLAS_MANGLE(dporfs,DPORFS)
 #define DPOSVX_F77  F77_BLAS_MANGLE(dposvx,DPOSVX)
 #define DTRTRS_F77  F77_BLAS_MANGLE(dtrtrs,DTRTRS)
+#define DTRTRI_F77  F77_BLAS_MANGLE(dtrtri,DTRTRI)
 #define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
@@ -235,6 +238,7 @@
 #define ZPORFS_F77  F77_BLAS_MANGLE(zporfs,ZPORFS)
 #define ZPOSVX_F77  F77_BLAS_MANGLE(zposvx,ZPOSVX)
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ztrtrs,ZTRTRS)
+#define ZTRTRI_F77  F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(zgels,ZGELS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
@@ -290,6 +294,7 @@
 #define DPORFS_F77  F77_BLAS_MANGLE(dporfs,DPORFS)
 #define DPOSVX_F77  F77_BLAS_MANGLE(dposvx,DPOSVX)
 #define DTRTRS_F77  F77_BLAS_MANGLE(dtrtrs,DTRTRS)
+#define DTRTRI_F77  F77_BLAS_MANGLE(dtrtri,DTRTRI)
 #define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
@@ -346,6 +351,7 @@
 #define ZPORFS_F77  F77_BLAS_MANGLE(zporfs,ZPORFS)
 #define ZPOSVX_F77  F77_BLAS_MANGLE(zposvx,ZPOSVX)
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ztrtrs,ZTRTRS)
+#define ZTRTRI_F77  F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(zgels,ZGELS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
@@ -439,6 +445,7 @@
 #define DPORFS_F77  F77_BLAS_MANGLE(dporfs,DPORFS)
 #define DPOSVX_F77  F77_BLAS_MANGLE(dposvx,DPOSVX)
 #define DTRTRS_F77  F77_BLAS_MANGLE(dtrtrs,DTRTRS)
+#define DTRTRI_F77  F77_BLAS_MANGLE(dtrtri,DTRTRI)
 #define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
@@ -495,6 +502,7 @@
 #define ZPORFS_F77  F77_BLAS_MANGLE(zporfs,ZPORFS)
 #define ZPOSVX_F77  F77_BLAS_MANGLE(zposvx,ZPOSVX)
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ztrtrs,ZTRTRS)
+#define ZTRTRI_F77  F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(zgels,ZGELS)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
@@ -547,6 +555,7 @@
 #define SPORFS_F77  F77_BLAS_MANGLE(sporfs,SPORFS)
 #define SPOSVX_F77  F77_BLAS_MANGLE(sposvx,SPOSVX)
 #define STRTRS_F77  F77_BLAS_MANGLE(strtrs,STRTRS)
+#define STRTRI_F77  F77_BLAS_MANGLE(strtri,STRTRI)
 #define SGELS_F77   F77_BLAS_MANGLE(sgels,SGELS)
 #define SGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
 #define SGESVD_F77   F77_BLAS_MANGLE(sgesvd,SGESVD)
@@ -602,6 +611,7 @@
 #define CPORFS_F77  F77_BLAS_MANGLE(cporfs,CPORFS)
 #define CPOSVX_F77  F77_BLAS_MANGLE(cposvx,CPOSVX)
 #define CTRTRS_F77  F77_BLAS_MANGLE(ctrtrs,CTRTRS)
+#define CTRTRI_F77  F77_BLAS_MANGLE(ctrtri,CTRTRI)
 #define CGELS_F77   F77_BLAS_MANGLE(cgels,CGELS)
 #define CGEEV_F77   F77_BLAS_MANGLE(cgeev,CGEEV)
 #define CGESVD_F77   F77_BLAS_MANGLE(cgesvd,CGESVD)
@@ -659,6 +669,7 @@ void PREFIX DPOEQU_F77(const int* n, const double* a, const int* lda, double* s,
 void PREFIX DPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, double* a, const int* lda, const double* af, const int* ldaf, const double* b, const int* ldb, double* x, const int* ldx, double* ferr, double* berr, double* work, int* iwork, int* info);
 void PREFIX DPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, double* a, const int* lda, double* af, const int* ldaf, Teuchos_fcd, double* s, double* b, const int* ldb, double* x, const int* ldx, double* rcond, double* ferr, double* berr, double* work, int* iwork, int* info);
 void PREFIX DTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, const double* a, const int* lda, double* b, const int* ldb, int* info);
+void PREFIX DTRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const double* a, const int* lda, int* info);
 
 // Single precision LAPACK linear solvers
 
@@ -689,6 +700,7 @@ void PREFIX SPOEQU_F77(const int* n, const float* a, const int* lda, float* s, f
 void PREFIX SPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, float* a, const int* lda, const float* af, const int* ldaf, const float* b, const int* ldb, float* x, const int* ldx, float* ferr, float* berr, float* work, int* iwork, int* info);
 void PREFIX SPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, float* a, const int* lda, float* af, const int* ldaf, Teuchos_fcd, float* s, float* b, const int* ldb, float* x, const int* ldx, float* rcond, float* ferr, float* berr, float* work, int* iwork, int* info);
 void PREFIX STRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, const float* a, const int* lda, float* b, const int* ldb, int* info);
+void PREFIX STRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const float* a, const int* lda, int* info);
 
 #endif // HAVE_TEUCHOS_BLASFLOAT
 
@@ -787,6 +799,7 @@ void PREFIX ZPOEQU_F77(const int* n, const std::complex<double>* a, const int* l
 void PREFIX ZPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, std::complex<double>* a, const int* lda, const std::complex<double>* af, const int* ldaf, const std::complex<double>* b, const int* ldb, std::complex<double>* x, const int* ldx, double* ferr, double* berr, std::complex<double>* work, double* rwork, int* info);
 void PREFIX ZPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, std::complex<double>* a, const int* lda, std::complex<double>* af, const int* ldaf, Teuchos_fcd, double* s, std::complex<double>* b, const int* ldb, std::complex<double>* x, const int* ldx, double* rcond, double* ferr, double* berr, std::complex<double>* work, double* rwork, int* info);
 void PREFIX ZTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, const std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, int* info);
+void PREFIX ZTRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const std::complex<double>* a, const int* lda, int* info);
 
 // Single precision std::complex LAPACK linear solvers
 
@@ -816,6 +829,7 @@ void PREFIX CPOEQU_F77(const int* n, const std::complex<float>* a, const int* ld
 void PREFIX CPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, std::complex<float>* a, const int* lda, const std::complex<float>* af, const int* ldaf, const std::complex<float>* b, const int* ldb, std::complex<float>* x, const int* ldx, float* ferr, float* berr, std::complex<float>* work, float* rwork, int* info);
 void PREFIX CPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, std::complex<float>* a, const int* lda, std::complex<float>* af, const int* ldaf, Teuchos_fcd, float* s, std::complex<float>* b, const int* ldb, std::complex<float>* x, const int* ldx, float* rcond, float* ferr, float* berr, std::complex<float>* work, float* rwork, int* info);
 void PREFIX CTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, const std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, int* info);
+void PREFIX CTRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const std::complex<float>* a, const int* lda, int* info);
 
 #endif // HAVE_TEUCHOS_BLASFLOAT
 
