@@ -107,9 +107,9 @@ namespace PHX {
       char* offset_data = &raw_data[offset_];
       DataT* data = reinterpret_cast<DataT*>(offset_data);
 
-      //! \todo Need to figure out how to set extra data in ARCP so that the bulk object is deleted when all references to it are gone.
-
-      Teuchos::ArrayRCP<DataT> array = Teuchos::arcp(data, 0, num_elements, false);
+      Teuchos::ArrayRCP<DataT> array = 
+	Teuchos::arcpWithEmbeddedObjPostDestroy(data, 0, num_elements, 
+						chunk_, false);
       offset_ += required_bytes;
 
       // call ctor on each element
