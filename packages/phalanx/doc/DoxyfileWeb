@@ -47,3 +47,5 @@ INPUT                  = ../src
 EXAMPLE_PATH           = ../example
 
 GENERATE_TAGFILE       = ../../common/tag_files/phalanx.tag
+
+EXCLUDE                = ../src/multidimensional_array

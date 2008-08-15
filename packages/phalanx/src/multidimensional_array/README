@@ -1,0 +1,10 @@
+The multidimensional array support is temporarily housed here until it
+is moved into either Teuchos or its own package.  This should happen
+before Trilinos release 10.0
+
+- version_1 is the original MDArray where the Array was templated on a
+DimNatural/DimFortran object that had all dimensioning.
+
+- version_2 is the current incarnation in phdmesh.  It removed the
+nested template by merging the DimNatural and DimFortran objects into
+the Array itself.
