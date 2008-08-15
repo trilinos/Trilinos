@@ -28,7 +28,7 @@
 
 if BUILD_EPETRA_THYRA
 if BUILD_ANASAZI_THYRA
-THYRA_TEST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur #IRTR
+THYRA_TEST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur IRTR
 endif
 endif
 

@@ -135,7 +135,7 @@ namespace Anasazi {
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
      */
     RTRBase(const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-            const Teuchos::RCP<SortManager<ScalarType> > &sorter,
+            const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
             const Teuchos::RCP<OutputManager<ScalarType> > &printer,
             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
             const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -390,7 +390,7 @@ namespace Anasazi {
     //@{
 
     //! This method requests that the solver print out its current status to screen.
-    virtual void currentStatus(ostream &os);
+    virtual void currentStatus(std::ostream &os);
 
     //@}
 
@@ -425,7 +425,7 @@ namespace Anasazi {
     //
     // Internal methods
     //
-    string accuracyCheck(const CheckList &chk, const string &where) const;
+    std::string accuracyCheck(const CheckList &chk, const std::string &where) const;
     // solves the model minimization
     virtual void solveTRSubproblem() = 0;
     // Riemannian metric
@@ -437,7 +437,7 @@ namespace Anasazi {
     // Classes input through constructor that define the eigenproblem to be solved.
     //
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RCP<SortManager<ScalarType> >            sm_;
+    const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> >             tester_;
     const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> >  orthman_;
@@ -481,6 +481,9 @@ namespace Anasazi {
     // 
     // are we implementing a skinny solver? (SkinnyIRTR)
     bool isSkinny_;
+    // 
+    // are we computing leftmost or rightmost eigenvalue?
+    bool leftMost_;
     //
     // State Multivecs
     //
@@ -556,7 +559,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   RTRBase<ScalarType,MV,OP>::RTRBase(
         const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RCP<SortManager<ScalarType> >        &sorter,
+        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
         const Teuchos::RCP<OutputManager<ScalarType> >      &printer,
         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >   &tester,
         const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -591,6 +594,7 @@ namespace Anasazi {
     initialized_(false),
     nevLocal_(0),
     isSkinny_(skinnySolver),
+    leftMost_(true),
     auxVecs_( Teuchos::Array<Teuchos::RCP<const MV> >(0) ), 
     numAuxVecs_(0),
     iter_(0),
@@ -631,6 +635,9 @@ namespace Anasazi {
     // set the block size and allocate data
     int bs = params.get("Block Size", problem_->getNEV());
     setBlockSize(bs);
+
+    // leftmost or rightmost?
+    leftMost_ = params.get("Leftmost",leftMost_);
 
     conv_kappa_ = params.get("Kappa Convergence",conv_kappa_);
     TEST_FOR_EXCEPTION(conv_kappa_ <= 0 || conv_kappa_ >= 1,std::invalid_argument,
@@ -1216,7 +1223,7 @@ namespace Anasazi {
       int ret;
       if (hasBOp_) {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
-        ret = Utils::directSolver(blockSize_,AA,Teuchos::rcp(&BB,false),S,theta_,nevLocal_,1);
+        ret = Utils::directSolver(blockSize_,AA,Teuchos::rcpFromRef(BB),S,theta_,nevLocal_,1);
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
@@ -1233,7 +1240,7 @@ namespace Anasazi {
         std::vector<int> order(blockSize_);
         // 
         // sort the first blockSize_ values in theta_
-        sm_->sort(theta_, Teuchos::rcp(&order,false), blockSize_);   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcpFromRef(order), blockSize_);   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
@@ -1408,11 +1415,12 @@ namespace Anasazi {
   //  add checkTheta 
   //
   template <class ScalarType, class MV, class OP>
-  std::string RTRBase<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const string &where ) const 
+  std::string RTRBase<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const std::string &where ) const 
   {
     using std::setprecision;
     using std::scientific;
     using std::setw;
+    using std::endl;
     std::stringstream os;
     MagnitudeType tmp;
 
@@ -1421,7 +1429,7 @@ namespace Anasazi {
     // X and friends
     if (chk.checkX && initialized_) {
       tmp = orthman_->orthonormError(*X_);
-      os << " >> Error in X^H B X == I : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B X == I :    " << scientific << setprecision(10) << tmp << endl;
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*X_,*auxVecs_[i]);
         os << " >> Error in X^H B Q[" << i << "] == 0 : " << scientific << setprecision(10) << tmp << endl;
@@ -1429,31 +1437,31 @@ namespace Anasazi {
     }
     if (chk.checkAX && !isSkinny_ && initialized_) {
       tmp = Utils::errorEquality(*X_, *AX_, AOp_);
-      os << " >> Error in AX == A*X    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in AX == A*X    :    " << scientific << setprecision(10) << tmp << endl;
     }
     if (chk.checkBX && hasBOp_ && initialized_) {
       Teuchos::RCP<MV> BX = MVT::Clone(*this->X_,this->blockSize_);
       OPT::Apply(*BOp_,*this->X_,*BX);
       tmp = Utils::errorEquality(*BX, *BX_);
-      os << " >> Error in BX == B*X    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in BX == B*X    :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // Eta and friends
     if (chk.checkEta && initialized_) {
       tmp = orthman_->orthogError(*X_,*eta_);
-      os << " >> Error in X^H B Eta == 0   : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B Eta == 0 :  " << scientific << setprecision(10) << tmp << endl;
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*eta_,*auxVecs_[i]);
-        os << " >> Error in Eta^H B Q[" << i << "] == 0 : " << scientific << setprecision(10) << tmp << endl;
+        os << " >> Error in Eta^H B Q[" << i << "]==0 : " << scientific << setprecision(10) << tmp << endl;
       }
     }
     if (chk.checkAEta && !isSkinny_ && initialized_) {
       tmp = Utils::errorEquality(*eta_, *Aeta_, AOp_);
-      os << " >> Error in AEta == A*Eta    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in AEta == A*Eta    :    " << scientific << setprecision(10) << tmp << endl;
     }
     if (chk.checkBEta && !isSkinny_ && hasBOp_ && initialized_) {
       tmp = Utils::errorEquality(*eta_, *Beta_, BOp_);
-      os << " >> Error in BEta == B*Eta    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in BEta == B*Eta    :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // R: this is not B-orthogonality, but standard euclidean orthogonality
@@ -1461,7 +1469,7 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*X_,*R_,xTx);
       tmp = xTx.normFrobenius();
-      os << " >> Error in X^H R == 0   : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H R == 0   :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // BR: this is B-orthogonality: this is only valid inside and immediately after solveTRSubproblem 
@@ -1470,7 +1478,7 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*BX_,*R_,xTx);
       tmp = xTx.normFrobenius();
-      os << " >> Error in X^H B R == 0 : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B R == 0 :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // Z: Z is preconditioned R, should be on tangent plane
@@ -1478,17 +1486,17 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*BX_,*Z_,xTx);
       tmp = xTx.normFrobenius();
-      os << " >> Error in X^H B Z == 0 : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B Z == 0 :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // Q
     if (chk.checkQ) {
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthonormError(*auxVecs_[i]);
-        os << " >> Error in Q[" << i << "]^H B Q[" << i << "] == I : " << scientific << setprecision(10) << tmp << endl;
+        os << " >> Error in Q[" << i << "]^H B Q[" << i << "]==I: " << scientific << setprecision(10) << tmp << endl;
         for (unsigned int j=i+1; j<auxVecs_.size(); j++) {
           tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
-          os << " >> Error in Q[" << i << "]^H B Q[" << j << "] == 0 : " << scientific << setprecision(10) << tmp << endl;
+          os << " >> Error in Q[" << i << "]^H B Q[" << j << "]==0: " << scientific << setprecision(10) << tmp << endl;
         }
       }
     }
@@ -1501,11 +1509,12 @@ namespace Anasazi {
   // Print the current status of the solver
   template <class ScalarType, class MV, class OP>
   void 
-  RTRBase<ScalarType,MV,OP>::currentStatus(ostream &os) 
+  RTRBase<ScalarType,MV,OP>::currentStatus(std::ostream &os) 
   {
     using std::setprecision;
     using std::scientific;
     using std::setw;
+    using std::endl;
 
     os <<endl;
     os <<"================================================================================" << endl;

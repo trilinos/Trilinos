@@ -456,6 +456,7 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/ARPACKExamples/Makefile
 		test/MVOPTester/Makefile
+ 		test/IRTR/Makefile
 		test/LOBPCG/Makefile
 		test/BlockDavidson/Makefile
 		test/BlockKrylovSchur/Makefile
@@ -490,6 +491,7 @@ AC_CONFIG_FILES([
 		thyra/test/Makefile
 		thyra/example/MVOPTester/Makefile
 		thyra/test/MVOPTester/Makefile
+ 		thyra/test/IRTR/Makefile
 		thyra/test/LOBPCG/Makefile
 		thyra/test/BlockKrylovSchur/Makefile
 		thyra/test/BlockDavidson/Makefile
@@ -499,8 +501,6 @@ AC_CONFIG_FILES([
 		tpetra/test/Makefile
 		tpetra/test/MVOPTester/Makefile
 		])
-#		test/IRTR/Makefile
-#		thyra/test/IRTR/Makefile
 
 AC_OUTPUT()
 

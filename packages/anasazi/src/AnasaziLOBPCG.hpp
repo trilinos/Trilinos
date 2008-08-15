@@ -1135,7 +1135,7 @@ namespace Anasazi {
       // solve the projected problem
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
-        Utils::directSolver(blockSize_, KK, Teuchos::rcp(&MM,false), S, theta_, nevLocal_, 1);
+        Utils::directSolver(blockSize_, KK, Teuchos::rcpFromRef(MM), S, theta_, nevLocal_, 1);
         TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Initial Ritz analysis did not produce enough Ritz pairs to initialize algorithm.");
       }
@@ -1148,7 +1148,7 @@ namespace Anasazi {
         std::vector<int> order(blockSize_);
         // 
         // sort the first blockSize_ values in theta_
-        sm_->sort(theta_, Teuchos::rcp(&order,false), blockSize_);   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcpFromRef(order), blockSize_);   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
@@ -1538,7 +1538,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         int localSize = nevLocal_;
-        Utils::directSolver(localSize, lclKK, Teuchos::rcp(&lclMM,false), lclS, theta_, nevLocal_, 0);
+        Utils::directSolver(localSize, lclKK, Teuchos::rcpFromRef(lclMM), lclS, theta_, nevLocal_, 0);
         // localSize tells directSolver() how big KK,MM are
         // however, directSolver() may choose to use only the principle submatrices of KK,MM 
         // because of loss of MM-orthogonality in the projected eigenvectors
@@ -1574,7 +1574,7 @@ namespace Anasazi {
         std::vector<int> order(nevLocal_);
         // 
         // Sort the first nevLocal_ values in theta_
-        sm_->sort(theta_, Teuchos::rcp(&order,false), nevLocal_);   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcpFromRef(order), nevLocal_);   // don't catch exception
         //
         // Sort the primitive ritz vectors
         Utils::permuteVectors(order,lclS);

@@ -379,7 +379,7 @@ namespace Anasazi {
 #ifdef TEUCHOS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::BasicOrthoManager::projectMat(...)\n";
 #endif
@@ -418,7 +418,7 @@ namespace Anasazi {
     }
     else {
       // Op == I  -->  MX = X (ignore it if the user passed it in)
-      MX = Teuchos::rcp( &X, false );
+      MX = Teuchos::rcpFromRef(X);
     }
     int mxc = MVT::GetNumberVecs( *MX );
     int mxr = MVT::GetVecLength( *MX );
@@ -610,7 +610,7 @@ namespace Anasazi {
 #ifdef TEUCHOS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::BasicOrthoManager::projectAndNormalizeMat(...)\n";
 #endif
@@ -641,7 +641,7 @@ namespace Anasazi {
     }
     else {
       // Op == I  -->  MX = X (ignore it if the user passed it in)
-      MX = Teuchos::rcp( &X, false );
+      MX = Teuchos::rcpFromRef(X);
     }
 
     int mxc = MVT::GetNumberVecs( *MX );
@@ -810,7 +810,7 @@ namespace Anasazi {
 #ifdef TEUCHOS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::BasicOrthoManager::findBasis(...)\n";
 #endif

@@ -30,8 +30,7 @@
 
 all-local:
 
-DISABLED = IRTR
-SUBDIRS = LOBPCG MVOPTester OrthoManager scripts BlockDavidson BlockKrylovSchur StatusTest SortManager ARPACKExamples
+SUBDIRS = LOBPCG MVOPTester OrthoManager scripts BlockDavidson BlockKrylovSchur StatusTest SortManager IRTR ARPACKExamples 
 
 EXTRA_DIST = definition
  

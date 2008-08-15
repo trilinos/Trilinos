@@ -560,7 +560,7 @@ namespace Anasazi {
 #ifdef TEUCHOS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::ICGSOrthoManager::projectGen(...)\n";
 #endif
@@ -749,7 +749,7 @@ namespace Anasazi {
     }
     else {
       // Op == I  -->  MS == S 
-      MS = Teuchos::rcp( &S, false );
+      MS = Teuchos::rcpFromRef(S);
       updateMS = 0;
     }
     TEST_FOR_EXCEPTION(updateMS == -1,std::logic_error,
@@ -906,7 +906,7 @@ namespace Anasazi {
 #ifdef TEUCHOS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::ICGSOrthoManager::projectAndNormalizeGen(...)\n";
 #endif
@@ -1092,7 +1092,7 @@ namespace Anasazi {
     }
     else {
       // Op == I  -->  MS == S 
-      MS = Teuchos::rcp( &S, false );
+      MS = Teuchos::rcpFromRef(S);
       updateMS = 0;
     }
     TEST_FOR_EXCEPTION(updateMS == -1,std::logic_error,
@@ -1251,7 +1251,7 @@ namespace Anasazi {
 #ifdef TEUCHOS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::ICGSOrthoManager::findBasis(...)\n";
 #endif

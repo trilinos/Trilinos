@@ -820,7 +820,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // KK = restart^H K restart
         MVT::MvTransMv(1.0,*restart,*Krestart,KK);
         rank = localsize;
-        msutils::directSolver(localsize,KK,Teuchos::rcp(&MM,false),S,theta,rank,1);
+        msutils::directSolver(localsize,KK,Teuchos::rcpFromRef(MM),S,theta,rank,1);
         if (rank < blockSize_) {
           printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
             << "Block size is " << blockSize_ << ".\n"
@@ -834,7 +834,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           Teuchos::BLAS<int,ScalarType> blas;
           std::vector<int> order(rank);
           // sort
-          sorter->sort( theta, Teuchos::rcp(&order,false),rank );   // don't catch exception
+          sorter->sort( theta, Teuchos::rcpFromRef(order),rank );   // don't catch exception
           // Sort the primitive ritz vectors
           Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,rank,rank);
           msutils::permuteVectors(order,curS);
@@ -854,7 +854,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // send X and theta into the solver
         newstate.X = newX;
         theta.resize(blockSize_);
-        newstate.T = Teuchos::rcp( &theta, false );
+        newstate.T = Teuchos::rcpFromRef(theta);
         // initialize
         lobpcg_solver->initialize(newstate);
       }
@@ -928,7 +928,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // sort the eigenvalues and permute the eigenvectors appropriately
       {
         std::vector<int> order(sol.numVecs);
-        sorter->sort( vals, Teuchos::rcp(&order,false), sol.numVecs);
+        sorter->sort( vals, Teuchos::rcpFromRef(order), sol.numVecs);
         // store the values in the Eigensolution
         for (int i=0; i<sol.numVecs; i++) {
           sol.Evals[i].realpart = vals[i];

@@ -26,16 +26,17 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for IRTR solving a generalized (Ax=Bxl) real Hermitian
-// eigenvalue problem, using the RTRSolMgr solver manager.
+//  This test is for the SIRTR/IRTR solvers using the Thyra interface
+//  The Thyra objects will be extracted from Epetra objects using the
+//  Epetra-Thyra interface.
+//  Therefore, this test should yield identical results compared against
+//  the Epetra-only IRTR solver test.
 //
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "AnasaziSVQBOrthoManager.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziRTRSolMgr.hpp"
@@ -48,6 +49,12 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#ifdef HAVE_EPETRA_THYRA
+#include "AnasaziThyraAdapter.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#endif
+
 #include "ModeLaplace1DQ1.h"
 
 using namespace Teuchos;
@@ -55,6 +62,7 @@ using namespace Teuchos;
 int main(int argc, char *argv[]) 
 {
 
+  using Teuchos::rcp_implicit_cast;
   using std::cout;
   using std::endl;
 
@@ -73,10 +81,9 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
-  bool shortrun = false;
+  std::string filename("mhd1280b.cua");
+  std::string which("LR");
   bool skinny = true;
-  std::string which("SR");
-  int numElements = 100;
 
   bool success = true;
   try {
@@ -85,22 +92,28 @@ int main(int argc, char *argv[])
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
     cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
-    cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
     cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
-    cmdp.setOption("numElements",&numElements,"Number of elements in discretization.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
       return -1;
     }
-    if (debug) verbose = true;
+
+#ifndef HAVE_EPETRA_THYRA
+    if (verbose && MyPid == 0) {
+      cout << "Please configure Anasazi with:" << endl;
+      cout << "--enable-epetra-thyra" << endl;
+      cout << "--enable-anasazi-thyra" << endl;
+    }
+    return 0;
+#endif
 
     typedef double ScalarType;
     typedef ScalarTraits<ScalarType>                   SCT;
     typedef SCT::magnitudeType               MagnitudeType;
-    typedef Epetra_MultiVector                          MV;
-    typedef Epetra_Operator                             OP;
+    typedef Thyra::MultiVectorBase<double>              MV;
+    typedef Thyra::LinearOpBase<double>                 OP;
     typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
     typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
     const ScalarType ONE  = SCT::one();
@@ -114,24 +127,44 @@ int main(int argc, char *argv[])
     std::vector<double> brick_dim( space_dim );
     brick_dim[0] = 1.0;
     std::vector<int> elements( space_dim );
-    elements[0] = numElements;
+    elements[0] = 100;
 
     // Create problem
     RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
     //
     // Get the stiffness and mass matrices
-    RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-    RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+    RCP<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+    RCP<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
     //
     // Create the initial vectors
     int blockSize = 5;
-    RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+    //
+    // Get a pointer to the Epetra_Map
+    RCP<const Epetra_Map> Map =  rcp( &K->OperatorDomainMap(), false );
+    //
+    // create an epetra multivector
+    RCP<Epetra_MultiVector> ivec = 
+      rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
     ivec->Random();
+
+    // create a Thyra::VectorSpaceBase
+    RCP<const Thyra::VectorSpaceBase<double> > epetra_vs = 
+      Thyra::create_VectorSpace(Map);
+
+    // create a MultiVectorBase (from the Epetra_MultiVector)
+    RCP<Thyra::MultiVectorBase<double> > thyra_ivec = 
+      Thyra::create_MultiVector(ivec, epetra_vs);
+
+    // Create Thyra LinearOpBase objects from the Epetra_Operator objects
+    RCP<const Thyra::LinearOpBase<double> > thyra_K = 
+      Thyra::epetraLinearOp(K);
+    RCP<const Thyra::LinearOpBase<double> > thyra_M = 
+      Thyra::epetraLinearOp(M);
 
     // Create eigenproblem
     const int nev = 5;
     RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
-      rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
+      rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(thyra_K,thyra_M,thyra_ivec) );
     //
     // Inform the eigenproblem that the operator K is symmetric
     problem->setHermitian(true);
@@ -164,23 +197,17 @@ int main(int argc, char *argv[])
 
 
     // Eigensolver parameters
-    int maxIters;
-    if (shortrun) {
-      maxIters = 50;
-    }
-    else {
-      maxIters = 450;
-    }
+    int maxIters = 450;
     MagnitudeType tol = 1.0e-6;
     //
     // Create parameter list to pass into the solver manager
     ParameterList MyPL;
-    MyPL.set( "Skinny Solver", skinny);
     MyPL.set( "Verbosity", verbosity );
     MyPL.set( "Which", which );
     MyPL.set( "Block Size", blockSize );
     MyPL.set( "Maximum Iterations", maxIters );
     MyPL.set( "Convergence Tolerance", tol );
+    MyPL.set( "Skinny Solver", skinny);
     //
     // Create the solver manager
     Anasazi::RTRSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
@@ -188,10 +215,10 @@ int main(int argc, char *argv[])
     // Check that the parameters were all consumed
     if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
         MyPL.getEntryPtr("Which")->isUsed() == false ||
-        MyPL.getEntryPtr("Skinny Solver")->isUsed() == false ||
         MyPL.getEntryPtr("Block Size")->isUsed() == false ||
         MyPL.getEntryPtr("Maximum Iterations")->isUsed() == false ||
-        MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false) {
+        MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false ||
+        MyPL.getEntryPtr("Skinny Solver")->isUsed() == false) {
       if (verbose && MyPID==0) {
         cout << "Failure! Unused parameters: " << endl;
         MyPL.unused(cout);
@@ -203,9 +230,7 @@ int main(int argc, char *argv[])
     Anasazi::ReturnType returnCode = MySolverMan.solve();
     testFailed = false;
     if (returnCode != Anasazi::Converged) {
-      if (shortrun==false) {
-        testFailed = true;
-      }
+      testFailed = true;
     }
 
     // Get the eigenvalues and eigenvectors from the eigenproblem
@@ -220,20 +245,6 @@ int main(int argc, char *argv[])
       os.setf(std::ios::scientific, std::ios::floatfield);
       os.precision(6);
 
-      // Check the problem against the analytical solutions
-      if (verbose) {
-        double *revals = new double[numev];
-        for (int i=0; i<numev; i++) {
-          revals[i] = evals[i].realpart;
-        }
-        bool smallest = false;
-        if (which == "SR") {
-          smallest = true;
-        }
-        testCase->eigenCheck( *evecs, revals, 0, smallest );
-        delete [] revals;
-      }
-
       // Compute the direct residual
       std::vector<ScalarType> normV( numev );
       SerialDenseMatrix<int,ScalarType> T(numev,numev);
@@ -242,15 +253,14 @@ int main(int argc, char *argv[])
       }
       RCP<MV> Mvecs = MVT::Clone( *evecs, numev ),
         Kvecs = MVT::Clone( *evecs, numev );
-      OPT::Apply( *K, *evecs, *Kvecs );
-      OPT::Apply( *M, *evecs, *Mvecs );
+      OPT::Apply( *thyra_K, *evecs, *Kvecs );
+      OPT::Apply( *thyra_M, *evecs, *Mvecs );
       MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
       // compute M-norm of residuals
-      OPT::Apply( *M, *Kvecs, *Mvecs );
+      OPT::Apply( *thyra_M, *Kvecs, *Mvecs );
       MVT::MvDot( *Mvecs, *Kvecs, normV );
 
-      os << "Number of iterations performed in RTR_test.exe: " << MySolverMan.getNumIters() << endl
-        << "Direct residual norms computed in RTR_test.exe" << endl
+      os << "Direct residual norms computed in LOBPCGThyra_test.exe" << endl
         << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
         << "----------------------------------------" << endl;
       for (int i=0; i<numev; i++) {

@@ -517,7 +517,7 @@ namespace Anasazi {
       }
     }
     else {
-      MX = Teuchos::rcp(&X,false);
+      MX = Teuchos::rcpFromRef(X);
     }
     std::vector<MagnitudeType> normX(xc), invnormX(xc);
     Teuchos::SerialDenseMatrix<int,ScalarType> XtMX(xc,xc), workU(1,1);

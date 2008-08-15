@@ -63,7 +63,7 @@ namespace Anasazi {
 
       //! Default constructor
       BasicOutputManager(int vb = Anasazi::Errors, 
-                         Teuchos::RCP<ostream> os = Teuchos::rcp(&std::cout,false),
+                         Teuchos::RCP<ostream> os = Teuchos::rcpFromRef(std::cout),
                          int printingRank = 0);
 
       //! Destructor.

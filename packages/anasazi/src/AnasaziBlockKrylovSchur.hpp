@@ -1516,7 +1516,7 @@ namespace Anasazi {
             if (problem_->isHermitian()) {
               //
               // Sort using just the real part of the Ritz values.
-              sm_->sort(tmp_rRitzValues, Teuchos::rcp(&ritzOrder_,false), curDim_); // don't catch exception
+              sm_->sort(tmp_rRitzValues, Teuchos::rcpFromRef(ritzOrder_), curDim_); // don't catch exception
               ritzIndex_.clear();
               while ( i < curDim_ ) {
                 // The Ritz value is not complex.
@@ -1528,7 +1528,7 @@ namespace Anasazi {
             else {
               //
               // Sort using both the real and imaginary parts of the Ritz values.
-              sm_->sort(tmp_rRitzValues, tmp_iRitzValues, Teuchos::rcp(&ritzOrder_,false) , curDim_);
+              sm_->sort(tmp_rRitzValues, tmp_iRitzValues, Teuchos::rcpFromRef(ritzOrder_) , curDim_);
               HelperTraits<ScalarType>::sortRitzValues( tmp_rRitzValues, tmp_iRitzValues, &ritzValues_, &ritzOrder_, &ritzIndex_ );
             }
             //

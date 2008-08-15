@@ -33,7 +33,6 @@
 */
 
 
-// FINISH: this class does not work with auxilliary vectors
 // FINISH: add randomization
 // FINISH: add expensive debug checking on Teuchos_Debug
 
@@ -54,7 +53,7 @@ namespace Anasazi {
      *   - "Inner Solver" - 
      */
     IRTR( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
-          const Teuchos::RCP<SortManager<ScalarType> >           &sorter,
+          const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
           const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
           const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
           const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -97,7 +96,7 @@ namespace Anasazi {
     //@{
 
     //! This method requests that the solver print out its current status to screen.
-    void currentStatus(ostream &os);
+    void currentStatus(std::ostream &os);
 
     //@}
 
@@ -120,7 +119,7 @@ namespace Anasazi {
       THETA_CONVERGENCE
     };
     // these correspond to above
-    std::vector<string> stopReasons_;
+    std::vector<std::string> stopReasons_;
     // 
     // Consts
     //
@@ -152,7 +151,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   IRTR<ScalarType,MV,OP>::IRTR(
         const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
-        const Teuchos::RCP<SortManager<ScalarType> >           &sorter,
+        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
         const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
         const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
         const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -199,6 +198,7 @@ namespace Anasazi {
     using Teuchos::tuple;
     using Teuchos::null;
     using Teuchos::TimeMonitor;
+    using std::endl;
     typedef Teuchos::RCP<const MV> PCMV;
     typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM;
 
@@ -238,15 +238,25 @@ namespace Anasazi {
     //
     // r0 = grad f(X) = 2 P_BX A X = 2 P_BX (A X - B X diag(theta_) = 2 proj(R_)
     // We will do this in place.
+    // For seeking the rightmost, we want to maximize f
+    // This is the same as minimizing -f
+    // Substitute all f with -f here. In particular, 
+    //    grad -f(X) = -grad f(X)
+    //    Hess -f(X) = -Hess f(X)
     //
     {
       TimeMonitor lcltimer( *this->timerOrtho_ );
       this->orthman_->projectGen(
           *this->R_,                                            // operating on R
-          tuple<PCMV>(this->BX_),tuple<PCMV>(this->X_),false,   // P_{BX,X}, and <BX,X>_B != I
+          tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
           tuple<PSDM>(null),                                    // don't care about coeffs
-          null,tuple<PCMV>(null), tuple<PCMV>(this->BX_));           // don't have B*BX, but do have B*X
-      MVT::MvScale(*this->R_,2.0);
+          null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));      // don't have B*BV, but do have B*V
+      if (this->leftMost_) {
+        MVT::MvScale(*this->R_,2.0);
+      }
+      else {
+        MVT::MvScale(*this->R_,-2.0);
+      }
     }
 
     r0_norm = MAT::squareroot( ginner(*this->R_) );
@@ -328,23 +338,35 @@ namespace Anasazi {
       MVT::MvAddMv(ONE,*this->Beta_,ZERO,*this->Beta_,*Heta);
       std::vector<ScalarType> theta_comp(this->theta_.begin(),this->theta_.end());
       MVT::MvScale(*Heta,theta_comp);
-      MVT::MvAddMv(2.0,*this->Aeta_,-2.0,*Heta,*Heta);
+      if (this->leftMost_) {
+        MVT::MvAddMv( 2.0,*this->Aeta_,-2.0,*Heta,*Heta); // Heta = 2*Aeta + (-2)*Beta*theta
+      }
+      else {
+        MVT::MvAddMv(-2.0,*this->Aeta_, 2.0,*Heta,*Heta); // Heta = (-2)*Aeta + 2*Beta*theta
+      }
       // apply projector
       {
         TimeMonitor lcltimer( *this->timerOrtho_ );
         this->orthman_->projectGen(
-            *Heta,                                                // operating on Heta
-            tuple<PCMV>(this->BX_),tuple<PCMV>(this->X_),false,   // P_{BX,X}, and <BX,X>_B != I
-            tuple<PSDM>(null),                                    // don't care about coeffs
-            null,tuple<PCMV>(null), tuple<PCMV>(this->BX_));      // don't have B*BX, but do have B*X
+            *Heta,                                                 // operating on Heta
+            tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,    // P_{BV,V}, and <BV,V>_B != I
+            tuple<PSDM>(null),                                     // don't care about coeffs
+            null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*BV, but do have B*V
       }
 
       std::vector<MagnitudeType> eg(this->blockSize_),
                                 eHe(this->blockSize_);
       ginnersep(*this->eta_,*this->AX_,eg);
       ginnersep(*this->eta_,*Heta,eHe);
-      for (int j=0; j<this->blockSize_; ++j) {
-        eg[j] = this->theta_[j] + 2*eg[j] + .5*eHe[j];
+      if (this->leftMost_) {
+        for (int j=0; j<this->blockSize_; ++j) {
+          eg[j] = this->theta_[j] + 2*eg[j] + .5*eHe[j];
+        }
+      }
+      else {
+        for (int j=0; j<this->blockSize_; ++j) {
+          eg[j] = -this->theta_[j] - 2*eg[j] + .5*eHe[j];
+        }
       }
       this->om_->stream(Debug) 
         << " Debugging checks: IRTR inner iteration " << innerIters_ << endl
@@ -375,6 +397,9 @@ namespace Anasazi {
         OPT::Apply(*this->BOp_,*this->delta_,*this->Bdelta_);
         this->counterBOp_ += this->blockSize_;
       }
+      else {
+        MVT::MvAddMv(ONE,*this->delta_,ZERO,*this->delta_,*this->Bdelta_);
+      }
       // compute <eta,B*delta> and <delta,B*delta>
       // these will be needed below
       ginnersep(*this->eta_  ,*this->Bdelta_,eBd);
@@ -385,15 +410,20 @@ namespace Anasazi {
         std::vector<ScalarType> theta_comp(this->theta_.begin(),this->theta_.end());
         MVT::MvScale(*this->Hdelta_,theta_comp);
       }
-      MVT::MvAddMv(2.0,*this->Adelta_,-2.0,*this->Hdelta_,*this->Hdelta_);
+      if (this->leftMost_) {
+        MVT::MvAddMv( 2.0,*this->Adelta_,-2.0,*this->Hdelta_,*this->Hdelta_);
+      }
+      else {
+        MVT::MvAddMv(-2.0,*this->Adelta_, 2.0,*this->Hdelta_,*this->Hdelta_);
+      }
       // apply projector
       {
         TimeMonitor lcltimer( *this->timerOrtho_ );
         this->orthman_->projectGen(
             *this->Hdelta_,                                       // operating on Hdelta
-            tuple<PCMV>(this->BX_),tuple<PCMV>(this->X_),false,   // P_{BX,X}, and <BX,X>_B != I
+            tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
             tuple<PSDM>(null),                                    // don't care about coeffs
-            null,tuple<PCMV>(null), tuple<PCMV>(this->BX_));      // don't have B*BX, but do have B*X
+            null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));      // don't have B*BV, but do have B*V
       }
       ginnersep(*this->delta_,*this->Hdelta_,d_Hd);
 
@@ -413,11 +443,11 @@ namespace Anasazi {
       if (this->om_->isVerbosity(Debug)) {
         for (unsigned int j=0; j<alpha.size(); j++) {
           this->om_->stream(Debug) 
-            << " >> z_r[" << j << "]  : " << z_r[j] 
+            << "     >> z_r[" << j << "]  : " << z_r[j] 
             << "    d_Hd[" << j << "]  : " << d_Hd[j] << endl
-            << " >> eBe[" << j << "]  : " << eBe[j] 
+            << "     >> eBe[" << j << "]  : " << eBe[j] 
             << "    neweBe[" << j << "]  : " << new_eBe[j] << endl
-            << " >> eBd[" << j << "]  : " << eBd[j] 
+            << "     >> eBd[" << j << "]  : " << eBd[j] 
             << "    dBd[" << j << "]  : " << dBd[j] << endl;
         }
       }
@@ -497,23 +527,35 @@ namespace Anasazi {
           std::vector<ScalarType> theta_comp(this->theta_.begin(),this->theta_.end());
           MVT::MvScale(*Heta,theta_comp);
         }
-        MVT::MvAddMv(2.0,*this->Aeta_,-2.0,*Heta,*Heta);
+        if (this->leftMost_) {
+          MVT::MvAddMv( 2.0,*this->Aeta_,-2.0,*Heta,*Heta);
+        }
+        else {
+          MVT::MvAddMv(-2.0,*this->Aeta_, 2.0,*Heta,*Heta);
+        }
         // apply projector
         {
           TimeMonitor lcltimer( *this->timerOrtho_ );
           this->orthman_->projectGen(
               *Heta,                                                // operating on Heta
-              tuple<PCMV>(this->BX_),tuple<PCMV>(this->X_),false,   // P_{BX,X}, and <BX,X>_B != I
+              tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
               tuple<PSDM>(null),                                    // don't care about coeffs
-              null,tuple<PCMV>(null), tuple<PCMV>(this->BX_));      // don't have B*BX, but do have B*X
+              null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));      // don't have B*BV, but do have B*V
         }
 
         std::vector<MagnitudeType> eg(this->blockSize_),
                                    eHe(this->blockSize_);
         ginnersep(*this->eta_,*this->AX_,eg);
         ginnersep(*this->eta_,*Heta,eHe);
-        for (int j=0; j<this->blockSize_; ++j) {
-          eg[j] = this->theta_[j] + 2*eg[j] + .5*eHe[j];
+        if (this->leftMost_) {
+          for (int j=0; j<this->blockSize_; ++j) {
+            eg[j] = this->theta_[j] + 2*eg[j] + .5*eHe[j];
+          }
+        }
+        else {
+          for (int j=0; j<this->blockSize_; ++j) {
+            eg[j] = -this->theta_[j] - 2*eg[j] + .5*eHe[j];
+          }
         }
         this->om_->stream(Debug) 
           << " Debugging checks: IRTR inner iteration " << innerIters_ << endl
@@ -540,9 +582,9 @@ namespace Anasazi {
         TimeMonitor lcltimer( *this->timerOrtho_ );
         this->orthman_->projectGen(
             *this->R_,                                            // operating on R
-            tuple<PCMV>(this->BX_),tuple<PCMV>(this->X_),false,   // P_{BX,X}, and <BX,X>_B != I
+            tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
             tuple<PSDM>(null),                                    // don't care about coeffs
-            null,tuple<PCMV>(null), tuple<PCMV>(this->BX_));           // don't have B*BX, but do have B*X
+            null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));      // don't have B*BV, but do have B*V
       }
 
       //
@@ -636,6 +678,7 @@ namespace Anasazi {
     using Teuchos::null;
     using Teuchos::tuple;
     using Teuchos::TimeMonitor;
+    using std::endl;
     typedef Teuchos::RCP<const MV> PCMV;
     typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM;
 
@@ -722,20 +765,17 @@ namespace Anasazi {
       int rank, ret;
       rank = this->blockSize_;
       {
-          TimeMonitor lcltimer( *this->timerLocalProj_ );
-          MVT::MvTransMv(ONE,*this->delta_,*this->Adelta_,AA);
-          if (this->hasBOp_) {
-            MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,BB);
-          }
+        TimeMonitor lcltimer( *this->timerLocalProj_ );
+        MVT::MvTransMv(ONE,*this->delta_,*this->Adelta_,AA);
+        MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,BB);
       }
-      if (this->hasBOp_) {
+      this->om_->stream(Debug) << "AA: " << std::endl << AA << std::endl;;
+      this->om_->stream(Debug) << "BB: " << std::endl << BB << std::endl;;
+      {
         TimeMonitor lcltimer( *this->timerDS_ );
-        ret = Utils::directSolver(this->blockSize_,AA,Teuchos::rcp(&BB,false),S,this->theta_,rank,1);
+        ret = Utils::directSolver(this->blockSize_,AA,Teuchos::rcpFromRef(BB),S,this->theta_,rank,1);
       }
-      else {
-        TimeMonitor lcltimer( *this->timerDS_ );
-        ret = Utils::directSolver(this->blockSize_,AA,Teuchos::null,S,this->theta_,rank,10);
-      }
+      this->om_->stream(Debug) << "S: " << std::endl << S << std::endl;;
       TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::IRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret);
       TEST_FOR_EXCEPTION(rank != this->blockSize_,RTRRitzFailure,"Anasazi::IRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
 
@@ -746,7 +786,7 @@ namespace Anasazi {
         TimeMonitor lcltimer( *this->timerSort_ );
         std::vector<int> order(this->blockSize_);
         // sort the first blockSize_ values in theta_
-        this->sm_->sort(this->theta_, Teuchos::rcp(&order,false), this->blockSize_);   // don't catch exception
+        this->sm_->sort(this->theta_, Teuchos::rcpFromRef(order), this->blockSize_);   // don't catch exception
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
       }
@@ -804,6 +844,7 @@ namespace Anasazi {
       {
         // release const views to X, BX
         this->X_  = Teuchos::null;
+        this->BX_ = Teuchos::null;
         // get non-const views
         std::vector<int> ind(this->blockSize_);
         for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
@@ -870,8 +911,9 @@ namespace Anasazi {
   // Print the current status of the solver
   template <class ScalarType, class MV, class OP>
   void 
-  IRTR<ScalarType,MV,OP>::currentStatus(ostream &os) 
+  IRTR<ScalarType,MV,OP>::currentStatus(std::ostream &os) 
   {
+    using std::endl;
     os.setf(std::ios::scientific, std::ios::floatfield);  
     os.precision(6);
     os <<endl;

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for LOBPCG solving a standard (Ax=xl) complex Hermitian
-// eigenvalue problem, using the LOBPCGSolMgr solver manager.
+// This test is for SIRTR/IRTR solving a standard (Ax=xl) complex Hermitian
+// eigenvalue problem, using the RTRSolMgr solver manager.
 //
 // The matrix used is from MatrixMarket:
 // Name: MHD1280B: Alfven Spectra in Magnetohydrodynamics
@@ -41,7 +41,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziRTRSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef HAVE_MPI
@@ -79,14 +79,16 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
+  bool skinny = true;
   std::string filename("mhd1280b.cua");
-  std::string which("LM");
+  std::string which("LR");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -204,17 +206,15 @@ int main(int argc, char *argv[])
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
+  MyPL.set( "Skinny Solver", skinny);
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", true );
-  MyPL.set( "Locking Tolerance", tol/10 );
-  MyPL.set( "Full Ortho", true );
   //
   // Create the solver manager
-  Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+  Anasazi::RTRSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMan.solve();
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
   
-os << "Direct residual norms computed in LOBPCGComplex_test.exe" << endl
+    os << "Direct residual norms computed in IRTRComplex_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {

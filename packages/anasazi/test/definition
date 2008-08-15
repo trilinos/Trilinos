@@ -2,6 +2,8 @@
 # FRAMEWORK group
 #
 
+
+    
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = ../epetra/test/ModalSolverUtils/ModalSolverUtils_test.exe,
             ../epetra/test/MVOPTester/MVOPTester_test.exe
@@ -15,8 +17,6 @@
             ../epetra/test/LOBPCG/LOBPCG_solvertest.exe,
             ../epetra/test/LOBPCG/LOBPCG_auxtest.exe,
             ../epetra/test/LOBPCG/LOBPCG_simple.exe,
-            ../epetra/test/IRTR/IRTR_test.exe,
-            # ../epetra/test/IRTR/IRTR_auxtest.exe,
             ../epetra/test/BlockDavidson/BlockDavidson_solvertest.exe,
             ../epetra/test/BlockDavidson/BlockDavidson_auxtest.exe,
             ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
@@ -29,13 +29,21 @@
 
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
+    TESTS = ../epetra/test/IRTR/IRTR_test.exe,
+            ../epetra/test/IRTR/IRTR_auxtest.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --sort=LR --verbose --skinny, --sort=LR --verbose --hefty, --sort=SR --verbose --skinny, --sort=SR --verbose --hefty;
+    COMM = SERIAL, MPI;
+}
+
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = ../epetra/test/OrthoManager/OrthoManager_gentest.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose,
            --verbose --noMass;
     COMM = SERIAL, MPI;
 }
-
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = ../epetra/test/OrthoManager/OrthoManager_test.exe,
@@ -48,14 +56,12 @@
     COMM = SERIAL, MPI;
 }
 
-# added --debug to one test below to help pinpoint a problem on beowulf
-# removed 12 proc run; this was causing the problem
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = ../epetra/src/BlockDavidson/BlockDavidson_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --exsitu --locking,
            --verbose --exsitu --nolocking;
-    COMM = SERIAL, MPI(1);
+    COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
@@ -131,6 +137,22 @@
     COMM = SERIAL;
 }
 
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = IRTR/IRTR_complex_lap_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --hefty --fakeM --sort=SR, --verbose --skinny --noM --sort=SR, --verbose --hefty --fakeM --sort=SR, --verbose --skinny --noM --sort=SR, 
+           --verbose --hefty --fakeM --sort=LR, --verbose --skinny --noM --sort=LR, --verbose --hefty --fakeM --sort=LR, --verbose --skinny --noM --sort=LR;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = IRTR/IRTR_complex_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --sort=LR --verbose --hefty --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua, --sort=LR --verbose --skinny --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+           
+    COMM = SERIAL, MPI;
+}
+
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests,COVERAGE) {
     TESTS = ../thyra/test/MVOPTester/MVOPTesterThyra_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
@@ -144,6 +166,13 @@
             ../thyra/test/LOBPCG/LOBPCGThyra_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests,COVERAGE) {
+    TESTS = ../thyra/test/IRTR/IRTRThyra_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --sort=LR --verbose --skinny, --sort=LR --verbose --hefty, --sort=SR --verbose --skinny, --sort=SR --verbose --hefty;
     COMM = SERIAL, MPI;
 }
 
