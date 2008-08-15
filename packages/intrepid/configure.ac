@@ -368,6 +368,7 @@ AC_CONFIG_FILES([
   example/MultiCell/Makefile
   example/RealSpace/Makefile
   example/FieldContainer/Makefile
+  example/Basis/Makefile
   test/Basis/F0_TRI_C1_FEM_FIAT/Makefile
   test/Basis/F0_TRI_C2_FEM_FIAT/Makefile
   test/Basis/F0_TRI_C3_FEM_FIAT/Makefile

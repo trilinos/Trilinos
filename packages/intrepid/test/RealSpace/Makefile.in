@@ -232,6 +232,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(INTREPID_TEST_LIBS)

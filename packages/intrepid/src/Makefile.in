@@ -242,6 +242,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
@@ -421,7 +422,9 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/basis/FIAT/FIAT_Line.hpp \
   $(srcdir)/local/basis/FIAT/FIAT_LineDef.hpp \
   $(srcdir)/local/basis/FIAT/FIAT_DefaultLine.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_DefaultLineDef.hpp  
+  $(srcdir)/local/basis/FIAT/FIAT_DefaultLineDef.hpp \
+  $(srcdir)/local/basis/FIAT/Lagrange1d.hpp \
+  $(srcdir)/local/basis/FIAT/Lagrange1dDef.hpp
 
 INTREPID_ALL_C = \
   $(srcdir)/Intrepid_Version.cpp

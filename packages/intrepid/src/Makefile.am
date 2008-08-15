@@ -210,7 +210,9 @@ INTREPID_LOCAL_H =  \
   $(srcdir)/local/basis/FIAT/FIAT_Line.hpp \
   $(srcdir)/local/basis/FIAT/FIAT_LineDef.hpp \
   $(srcdir)/local/basis/FIAT/FIAT_DefaultLine.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_DefaultLineDef.hpp  
+  $(srcdir)/local/basis/FIAT/FIAT_DefaultLineDef.hpp \
+  $(srcdir)/local/basis/FIAT/Lagrange1d.hpp \
+  $(srcdir)/local/basis/FIAT/Lagrange1dDef.hpp
 
 
 INTREPID_ALL_C = \
