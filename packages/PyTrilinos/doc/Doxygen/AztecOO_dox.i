@@ -27,6 +27,8 @@ C++ includes: AztecOO.h ";
 
 /*  Constructors/destructors.  */
 
+/* */
+
 %feature("docstring")  AztecOO::AztecOO "AztecOO::AztecOO(Epetra_Operator *A, Epetra_MultiVector *X,
 Epetra_MultiVector *B)
 
@@ -113,6 +115,8 @@ AztecOO Destructor.
 Completely deletes a AztecOO object. ";
 
 /*  Post-construction setup methods.  */
+
+/* */
 
 %feature("docstring")  AztecOO::SetProblem "int
 AztecOO::SetProblem(const Epetra_LinearProblem &prob, bool
@@ -255,6 +259,8 @@ stderr. ";
 /*  Explicit preconditioner construction/assessment/destruction
 methods.  */
 
+/* */
+
 %feature("docstring")  AztecOO::ConstructPreconditioner "int
 AztecOO::ConstructPreconditioner(double &condest)
 
@@ -294,6 +300,8 @@ Returns the condition number estimate for the current preconditioner,
 if one exists, returns -1.0 if no estimate. ";
 
 /*  Check/Attribute Access Methods.  */
+
+/* */
 
 %feature("docstring")  AztecOO::CheckInput "int AztecOO::CheckInput()
 const
@@ -351,6 +359,8 @@ only produce a matrix file if the run-time-type of the matrix is
 either Epetra_CrsMatrix or Epetra_VbrMatrix. ";
 
 /*  Standard AztecOO option and parameter setting methods.  */
+
+/* */
 
 %feature("docstring")  AztecOO::SetAztecDefaults "int
 AztecOO::SetAztecDefaults()
@@ -434,6 +444,8 @@ Set all Aztec parameter values using an existing Aztec params array.
 
 /*  Standard AztecOO solve methods.  */
 
+/* */
+
 %feature("docstring")  AztecOO::Iterate "int AztecOO::Iterate(int
 MaxIters, double Tolerance)
 
@@ -453,6 +465,8 @@ Tolerance is reached.. ";
 
 /*  Specialist AztecOO solve method.  */
 
+/* */
+
 %feature("docstring")  AztecOO::recursiveIterate "int
 AztecOO::recursiveIterate(int MaxIters, double Tolerance)
 
@@ -471,6 +485,8 @@ Returns pointer to the underlying Aztec Status array (of length
 AZ_STATUS_SIZE). See the Aztec documenation. ";
 
 /*  Adaptive Solve methods.  */
+
+/* */
 
 %feature("docstring")  AztecOO::SetUseAdaptiveDefaultsTrue "int
 AztecOO::SetUseAdaptiveDefaultsTrue()
@@ -525,6 +541,8 @@ Attempts to solve the given linear problem using an adaptive strategy.
 ";
 
 /*  Post-solve access functions  */
+
+/* */
 
 %feature("docstring")  AztecOO::NumIters "int AztecOO::NumIters()
 const
@@ -589,6 +607,20 @@ AztecOO Label Matrix for Aztec.
 This is used to label individual matrices within Aztec. This might be
 useful if several Aztec invocations are involved corresponding to
 different matrices. ";
+
+%feature("docstring")  AztecOO::SetLabel "void
+AztecOO::SetLabel(const char *const Label)
+
+Set Label this AztecOO object.
+
+Defines the label used to describe the this object. ";
+
+%feature("docstring")  AztecOO::GetLabel "const char *
+AztecOO::GetLabel() const
+
+Get the label describing this AztecOO object.
+
+Returns the string used to define this object. ";
 
 
 // File: structAztecOO_1_1MatrixData.xml
@@ -1249,6 +1281,11 @@ AztecOO_StatusTestResNorm::Print(ostream &stream, int indent=0) const
 
 Output formatted description of stopping test to output stream. ";
 
+%feature("docstring")  AztecOO_StatusTestResNorm::ResetStatus "void
+AztecOO_StatusTestResNorm::ResetStatus()
+
+Reset state of status test object. ";
+
 %feature("docstring")  AztecOO_StatusTestResNorm::GetTolerance "double AztecOO_StatusTestResNorm::GetTolerance() const
 
 Returns the value of the tolerance, $ \\\\tau $, set in the
@@ -1454,8 +1491,8 @@ Epetra matrices passed in by AztecOO. ";
 %feature("docstring")  AztecOO_Version "string AztecOO_Version() ";
 
 
-// File: dir_5873ba96ac92cfa2b63e4cf79a91a4e8.xml
+// File: dir_36932ca5b5e8a560fb9b5a4f6396c1ae.xml
 
 
-// File: dir_3993ee6e94f4b901baf1d9163a40c576.xml
+// File: dir_b1e1466d5345df6a7976eedbf0fe4b10.xml
 

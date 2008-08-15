@@ -5551,7 +5551,7 @@ will be received is returned by NumRecv().
 The following example illustrates the basic concepts.
 
 Assume we have 3 processors and 9 global elements with each processor
-owning 3 elements as follows PE 0 Elements |  PE 1 Elements  |  PE 2
+owning 3 elements as follows  PE 0 Elements |  PE 1 Elements  |  PE 2
 Elements     0  1  2 3  4  5           6  7  8
 
 The above layout essentially defines the target map argument of the
@@ -5572,7 +5572,7 @@ these contributions is to create a forcing vector with replicated
 entries for the shared contributions. Specifically the following
 SourceMap works for this scenario:
 
-PE 0 Elements    |  PE 1 Elements    |  PE 2 Elements      0  1  2 3
+PE 0 Elements    |  PE 1 Elements    |  PE 2 Elements      0  1 2  3
 2  3  4  5  6        5  6  7  8
 
 A vector constructed using this SourceMap can be used to collect each
@@ -5619,16 +5619,16 @@ documentation.
 In the above example, if x_integrate is constructed using the
 SourceMap and then filled with local contributions, and x_force is
 constructed using the target map, the following operation will fill
-x_force with the combined results of
-x_integrate:x_force.Export(x_integrate, exporter, Add); The third
-argument above tells the export operation to add results that come
-from multiple processors for the same GID.
+x_force with the combined results of x_integrate:
+x_force.Export(x_integrate, exporter, Add); The third argument above
+tells the export operation to add results that come from multiple
+processors for the same GID.
 
 Epetra_Export objects can also be used by Import operations to perform
 the reverse operation. For example, if x_force in the above example
 had boundary conditions that should be sent to processors that share a
 boundary element, the following operation would send replicated values
-to x_integrate:x_integrate.Import(x_force, exporter, Insert); At the
+to x_integrate: x_integrate.Import(x_force, exporter, Insert); At the
 end of this operation, x_integrate would have replicated values from
 x_force of entries 2 and 3 on PEs 0 and 1, and entries 5 and 6 on PEs
 1 and 2. ";
@@ -6482,6 +6482,92 @@ Epetra_VbrMatrix functionality is also available.
 
 C++ includes: Epetra_FEVbrMatrix.h ";
 
+/*  Insertion/Replace/SumInto methods  */
+
+%feature("docstring")  Epetra_FEVbrMatrix::PutScalar "int
+Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
+
+Initialize all values in graph of the matrix with constant value.
+
+Parameters:
+-----------
+
+In:  ScalarConstant - Value to use.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginInsertGlobalValues "int Epetra_FEVbrMatrix::BeginInsertGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate insertion of a list of elements in a given global row of the
+matrix, values are inserted via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  BlockRow - Block Row number (in global coordinates) to put
+elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginReplaceGlobalValues "int Epetra_FEVbrMatrix::BeginReplaceGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate replacement of current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginSumIntoGlobalValues "int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate summing into current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::SubmitBlockEntry "int
+Epetra_FEVbrMatrix::SubmitBlockEntry(double *Values, int LDA, int
+NumRows, int NumCols)
+
+Submit a block entry to the indicated block row and column specified
+in the Begin routine. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::EndSubmitEntries "int
+Epetra_FEVbrMatrix::EndSubmitEntries()
+
+Completes processing of all data passed in for the current block row.
+
+This function completes the processing of all block entries submitted
+via SubmitBlockEntry(). It also checks to make sure that
+SubmitBlockEntry was called the correct number of times as specified
+by the Begin routine that initiated the entry process. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::GlobalAssemble "int
+Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete=true) ";
+
 /*  Constructors/Destructor  */
 
 %feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV, const
@@ -6584,92 +6670,6 @@ Copy Constructor. ";
 %feature("docstring")  Epetra_FEVbrMatrix::~Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::~Epetra_FEVbrMatrix()
 
 Epetra_VbrMatrix Destructor. ";
-
-/*  Insertion/Replace/SumInto methods  */
-
-%feature("docstring")  Epetra_FEVbrMatrix::PutScalar "int
-Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
-
-Initialize all values in graph of the matrix with constant value.
-
-Parameters:
------------
-
-In:  ScalarConstant - Value to use.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::BeginInsertGlobalValues "int Epetra_FEVbrMatrix::BeginInsertGlobalValues(int BlockRow, int
-NumBlockEntries, int *BlockIndices)
-
-Initiate insertion of a list of elements in a given global row of the
-matrix, values are inserted via SubmitEntry().
-
-Parameters:
------------
-
-In:  BlockRow - Block Row number (in global coordinates) to put
-elements.
-
-In:  NumBlockEntries - Number of entries.
-
-In:  Indices - Global column indices corresponding to values.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::BeginReplaceGlobalValues "int Epetra_FEVbrMatrix::BeginReplaceGlobalValues(int BlockRow, int
-NumBlockEntries, int *BlockIndices)
-
-Initiate replacement of current values with this list of entries for a
-given global row of the matrix, values are replaced via SubmitEntry().
-
-Parameters:
------------
-
-In:  Row - Block Row number (in global coordinates) to put elements.
-
-In:  NumBlockEntries - Number of entries.
-
-In:  Indices - Global column indices corresponding to values.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::BeginSumIntoGlobalValues "int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow, int
-NumBlockEntries, int *BlockIndices)
-
-Initiate summing into current values with this list of entries for a
-given global row of the matrix, values are replaced via SubmitEntry().
-
-Parameters:
------------
-
-In:  Row - Block Row number (in global coordinates) to put elements.
-
-In:  NumBlockEntries - Number of entries.
-
-In:  Indices - Global column indices corresponding to values.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::SubmitBlockEntry "int
-Epetra_FEVbrMatrix::SubmitBlockEntry(double *Values, int LDA, int
-NumRows, int NumCols)
-
-Submit a block entry to the indicated block row and column specified
-in the Begin routine. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::EndSubmitEntries "int
-Epetra_FEVbrMatrix::EndSubmitEntries()
-
-Completes processing of all data passed in for the current block row.
-
-This function completes the processing of all block entries submitted
-via SubmitBlockEntry(). It also checks to make sure that
-SubmitBlockEntry was called the correct number of times as specified
-by the Begin routine that initiated the entry process. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::GlobalAssemble "int
-Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete=true) ";
 
 
 // File: classEpetra__FEVector.xml
@@ -6942,7 +6942,7 @@ will be received is returned by NumRecv().
 The following example illustrates the basic concepts.
 
 Assume we have 3 processors and 9 global elements with each processor
-owning 3 elements as follows PE 0 Elements |  PE 1 Elements  |  PE 2
+owning 3 elements as follows  PE 0 Elements |  PE 1 Elements  |  PE 2
 Elements     0  1  2 3  4  5           6  7  8
 
 The above layout essentially defines the source map argument of the
@@ -6961,7 +6961,7 @@ X
 To perform a matrix vector multiplication operation y = A*x (assuming
 that x has the same distribution as the rows of the matrix A) each
 processor will need to import elements of x that are not local. To do
-this, we build a target map on each processor as follows:    PE 0
+this, we build a target map on each processor as follows:     PE 0
 Elements    |  PE 1 Elements    |  PE 2 Elements     0  1  2 3  8
 2  3  4  5  6       0  5  6  7  8
 
@@ -11941,7 +11941,10 @@ constant stride using the ConstantStride() query function. If it does
 not have constant stride, a temporary copy is made and used for the
 computation. This activity is transparent to the user, except that
 there is memory and computation overhead. All temporary space is
-deleted prior to exit.} ";
+deleted prior to exit.}
+
+A.ConstantStride() || B.ConstantStride() ) EPETRA_CHK_ERR(-1); //
+Return error ";
 
 %feature("docstring")  Epetra_MultiVector::Multiply "int
 Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector
@@ -12397,16 +12400,48 @@ Sets the error handling routine to be used by OSKI to NewErrorHandler.
 %feature("docstring") Epetra_OskiMatrix "
 
 Epetra_OskiMatrix: A class for constructing and using OSKI Matrices
-within Epetra.
+within Epetra. For information on known issues with OSKI see the
+detailed description.
 
-The Epetra_OskiMatrix class is a utility for wrapping OSKI matrix
-calls into Epetra. It can convert Epetra matrices to OSKI matrices for
-use by OSKI functions. It also calls all OSKI functions that access
-OSKI data and perform calculations on OSKI matrices.
+OSKI is a high-performance sparse matrix kernel package written by the
+UC Berkeley Benchmarking and Optimization Group. The Epetra_OskiMatrix
+class is a lightweight interface to allow Epetra users access to OSKI
+functionality. This interface includes lightweight conversion of
+Epetra matrices to OSKI matrices, runtime tuning based on parameter
+list hints, and access to high-performance computational kernels to
+perform matrix-vector/matrix multi-vector calculations.
 
-The calculation kernels to perform matrix-vector and matrix multi-
-vector calculations are provided along with runtime tuning function
-calls.
+The Epetra_OskiMatrix class provides access to the entire OSKI
+interface. However, the following features are not fully implemented
+in OSKI version oski-1.0.1h, and therefore are unsupported in the
+Epetra_OskiMatrix class:
+
+OSKI does not provide stock composed kernels. Hence, the tune function
+must be called in order to see performance gains when using the
+MatTransMatMultiply and MultiplyAndMatTransMultiply kernels.
+
+The MatPowMultiply kernel does not work.
+
+Optimized multivector kernels are not created by default when
+installing OSKI.
+
+The tune function cannot transform a (nearly) symmetric matrix to be
+stored as such.
+
+In order to use the $A^TA$ OSKI kernel (MatTransMatMultiply), in
+oski/src/MBCSR/ata.c you must replace the lines with
+
+OSKI does not convert between CSR and CSC when it could be profitable,
+such as when performing $AA^T$ on a CSR matrix.
+
+OSKI may be incompatible with the following architectures: Barcelona
+(quad-core Opteron): errors during \"make install\" (confirmed with
+OSKI developers)
+
+single core Xeon: OSKI installs, but never transforms matrices. This
+includes cases where other machines will transform the same matrices,
+and where one would expect the matrix to be transformed, based on OSKI
+tuning data.
 
 C++ includes: Epetra_OskiMatrix.h ";
 
@@ -12428,12 +12463,32 @@ Source:  (In) An Epetra_CrsMatrix that is to be wrapped as an
 Epetra_OskiMatrix.
 
 List:  (In) Any options or data wanted or needed for the conversion.
-The actual values that can go here will be listed later depending on
-what can be gotten from Epetra and what is applicable to our
-implementation. Examples of parameters will be matrix storage format
-and whether the indices are zero or one based.
 
-Pointer to an Epetra_OskiMatrix. ";
+Pointer to an Epetra_OskiMatrix.  Options that can be passed to the
+List are presented below. They are: \"<type> <option name> <default
+value>: <description of purpose>\"
+
+bool autotune false: If true, Epetra tries to set as many hints as
+possible based on its knowledge of the matrix.
+
+string matrixtype general: Other types that can be taken are:
+uppertri, lowertri, uppersymm, lowersymm, fullsymm, upperherm,
+lowerherm and fullherm.
+
+bool diagstored false: If true, the diagonal entries are not stored in
+the matrix and are all assumed to be 1.
+
+bool zerobased false: If true, the array is zero based, as in C.
+Otherwise, it is 1 based, as in Fortran.
+
+bool sorted false: If true, all elements in the passed in array are
+sorted.
+
+bool unique false: If true, a value in a column only appears once in
+each row.
+
+bool deepcopy false: If true, when the OSKI matrix is created it will
+be a deepcopy of the data in the function. ";
 
 %feature("docstring")  Epetra_OskiMatrix::~Epetra_OskiMatrix "virtual
 Epetra_OskiMatrix::~Epetra_OskiMatrix()
@@ -12450,9 +12505,9 @@ Replace current values with this list of entries for a given local row
 of the matrix. Warning this could be expensive.
 
 The reason this function could be expensive is its underlying
-implementation. Both the OSKI and Epetra versions of the Matrix must
-be changed when the matrix has been permuted. When this is the case a
-call must be made to the Epetra ReplaceMyValues and NumEntries calls
+implementation. Both the OSKI and Epetra versions of the matrix must
+be changed when the matrix has been permuted. When this is the case, a
+call must be made to the Epetra ReplaceMyValues, and NumEntries calls
 must be made to a function that changes the OSKI matrix's values one
 at a time.
 
@@ -12468,9 +12523,9 @@ Values:  (In) Values to enter.
 Indices:  (In) Local column indices corresponding to the values.
 
 Integer error code, set to 0 if successful. Note that if the allocated
-length of the row has to be expanded, Oski will fail a positive
-warning code may be returned but this should be treated as a fatal
-error as part of the data will be changed and OSKI cannot support
+length of the row has to be expanded, Oski will fail. A positive
+warning code may be returned, but this should be treated as a fatal
+error; part of the data will be changed, and OSKI cannot support
 adding in new data values.
 
 IndicesAreLocal()==true
@@ -12483,12 +12538,12 @@ Epetra_OskiMatrix::SumIntoMyValues(int MyRow, int NumEntries, double
 *Values, int *Indices)
 
 Add this list of entries to existing values for a given local row of
-the matrix. Warning this could be expensive.
+the matrix. WARNING: this could be expensive.
 
 The reason this function could be expensive is its underlying
 implementation. Both the OSKI and Epetra versions of the Matrix must
-be changed when the matrix has been permuted. When this is the case a
-call must be made to the Epetra SumIntoMyValues and NumEntries calls
+be changed when the matrix has been permuted. When this is the case, a
+call must be made to the Epetra SumIntoMyValues, and NumEntries calls
 must be made to a function that changes the OSKI matrix's values one
 at a time.
 
@@ -12505,9 +12560,8 @@ Indices:  - (In) Local column indices corresponding to values.
 
 Integer error code, set to 0 if successful. Note that if the allocated
 length of the row has to be expanded, a positive warning code may be
-returned but this should be treated as a fatal error as part of the
-data will be changed and OSKI cannot support adding in new data
-values.
+returned. This should be treated as a fatal error, as part of the data
+will be changed, and OSKI cannot support adding in new data values.
 
 IndicesAreLocal()==true
 
@@ -12539,8 +12593,8 @@ vector.
 
 This routine is meant to allow replacement of { existing} diagonal
 values. If a diagonal value does not exist for a given row, the
-corresponding value in the input Epetra_OskiVector will be ignored and
-the return code will be set to 1.
+corresponding value in the input Epetra_OskiVector will be ignored,
+and the return code will be set to 1.
 
 Parameters:
 -----------
@@ -12549,7 +12603,7 @@ Diagonal:  - (In) New values to be placed in the main diagonal.
 
 Integer error code, set to 0 if successful, set to 1 on the calling
 processor if one or more diagonal entries not present in matrix. Other
-error codes can be returned as well indicating improperly constructed
+error codes can be returned as well, indicating improperly constructed
 matrices or vectors.
 
 Filled()==true
@@ -12675,13 +12729,13 @@ Performs a triangular solve of y = (this^TransA)^-1*x where this is a
 triangular matrix.
 
 The vector x can be either be an Epetra_Vector or Epetra_OskiVector.
-The OskiMatrix must already be triangular and the UnitDiagonal setting
-associated with it will be used.
+The OskiMatrix must already be triangular, and the UnitDiagonal
+setting associated with it will be used.
 
 Parameters:
 -----------
 
-Upper:  (In) This parameter is ignored only here to match the
+Upper:  (In) This parameter is ignored, and is here only to match the
 Epetra_CrsMatrix::Solve syntax.
 
 TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
@@ -12735,7 +12789,7 @@ Performs a triangular solve of Y = (this^TransA)^-1*X where this is a
 triangular matrix.
 
 The vector X can be either be an Epetra_MultiVector or
-Epetra_OskiMultiVector. The OskiMatrix must already be triangular and
+Epetra_OskiMultiVector. The OskiMatrix must already be triangular, and
 the UnitDiagonal setting associated with it will be used.
 
 Parameters:
@@ -12790,15 +12844,18 @@ Unchanged ";
 
 %feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
 Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_Vector
-&x, Epetra_Vector &y, Epetra_Vector &t, double Alpha=1.0, double
-Beta=1.0) const
+&x, Epetra_Vector &y, Epetra_Vector *t, double Alpha=1.0, double
+Beta=0.0) const
 
 Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x
 + Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
 
 The vectors x, y and t can be either Epetra_Vectors or
 Epetra_OskiVectors. This composed routine is most commonly used in
-linear least squares and bidiagonalization methods.
+linear least squares and bidiagonalization methods. The parallel
+version of y = Alpha*this*this^TransA*x + Beta*y uses calls to the
+Multiply routine under the hood, as it is not possible to perform both
+multiplies automatically.
 
 Parameters:
 -----------
@@ -12825,8 +12882,8 @@ Unchanged ";
 
 %feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
 Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const
-Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiVector &T,
-double Alpha=1.0, double Beta=1.0) const
+Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiVector *T,
+double Alpha=1.0, double Beta=0.0) const
 
 Performs two matrix multi-vector multiplies of Y =
 Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X +
@@ -12834,7 +12891,10 @@ Beta*Y.
 
 The multi-vectors X, Y and T can be either Epetra_MultiVectors or
 Epetra_OskiMultiVectors. This composed routine is most commonly used
-in linear least squares and bidiagonalization methods.
+in linear least squares and bidiagonalization methods. The parallel
+version of Y = Alpha*this*this^TransA*X + Beta*Y uses calls to the
+Multiply routine under the hood, as it is not possible to perform both
+multiplies automatically.
 
 Parameters:
 -----------
@@ -12848,70 +12908,6 @@ Y:  (In/Out) The vector where the calculation result is stored.
 
 T:  (Out) The multi-vector where the result of the this*X is stored if
 TransA = true and this^T*X is stored otherwise.
-
-Alpha:  (In) A scalar constant used to scale X.
-
-Beta:  (In) A scalar constant used to scale Y.
-
-Integer error code, set to 0 if successful.
-
-Filled()==true
-
-Unchanged ";
-
-%feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
-Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const Epetra_Vector
-&x, Epetra_Vector &y, double Alpha=1.0, double Beta=1.0) const
-
-Performs two matrix vector multiplies of y = Alpha*this^TransA*this*x
-+ Beta*y or y = Alpha*this*this^TransA*x + Beta*y.
-
-The vectors x, y and t can be either Epetra_Vectors or
-Epetra_OskiVectors. This composed routine is most commonly used in
-linear least squares and bidiagonalization methods.
-
-Parameters:
------------
-
-ATA:  (In) If TransA = TRUE then compute this^T*this*x otherwise
-compute this*this^T*x.
-
-x:  (In) The vector the matrix is multiplied by.
-
-y:  (In/Out) The vector where the calculation result is stored.
-
-Alpha:  (In) A scalar constant used to scale x.
-
-Beta:  (In) A scalar constant used to scale y.
-
-Integer error code, set to 0 if successful.
-
-Filled()==true
-
-Unchanged ";
-
-%feature("docstring")  Epetra_OskiMatrix::MatTransMatMultiply "int
-Epetra_OskiMatrix::MatTransMatMultiply(bool ATA, const
-Epetra_MultiVector &X, Epetra_MultiVector &Y, double Alpha=1.0, double
-Beta=1.0) const
-
-Performs two matrix multi-vector multiplies of Y =
-Alpha*this^TransA*this*X + Beta*Y or Y = Alpha*this*this^TransA*X +
-Beta*Y.
-
-The multi-vectors X, Y and T can be either Epetra_MultiVectors or
-Epetra_OskiMultiVectors. This composed routine is most commonly used
-in linear least squares and bidiagonalization methods.
-
-Parameters:
------------
-
-ATA:  (In) If TransA = TRUE then compute this^T*this*X otherwise
-compute this*this^T*X.
-
-X:  (In) The vector the matrix is multiplied by.
-
-Y:  (In/Out) The vector where the calculation result is stored.
 
 Alpha:  (In) A scalar constant used to scale X.
 
@@ -13015,12 +13011,14 @@ Epetra_Vector &y, Epetra_MultiVector &T, int Power=2, double
 Alpha=1.0, double Beta=0.0) const
 
 Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x +
-Beta*y.
+Beta*y. This is not implemented as described in the detailed
+description.
 
 The vectors x and y can be either Epetra_Vectors or
 Epetra_OskiVectors. The vector T can be either an Epetra_MultiVector
-or and Epetra_OskiMultiVector. This composed routine is used in power
-and S-step methods.
+or Epetra_OskiMultiVector. This composed routine is used in power and
+S-step methods. This routine is not implemented due a bug in the
+oski-1.01h kernel that makes testing of correctness impossible.
 
 Parameters:
 -----------
@@ -13048,53 +13046,18 @@ Filled()==true
 Unchanged ";
 
 %feature("docstring")  Epetra_OskiMatrix::MatPowMultiply "int
-Epetra_OskiMatrix::MatPowMultiply(bool TransA, const
-Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiVector &T,
-int Power=2, double Alpha=1.0, double Beta=0.0) const
-
-Performs a matrix multi-vector multiply of Y =
-Alpha*(this^TransA)^Power*X + Beta*Y.
-
-The multi-vectors X, Y and T can be either Epetra_MultiVectors or
-Epetra_OskiMultiVectors. This composed routine is used in power and
-S-step methods.
-
-Parameters:
------------
-
-TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
-computing the product.
-
-X:  (In) The multi-vector the matrix is multiplied by.
-
-Y:  (In/Out) The multi-vector where the calculation result is stored.
-
-T:  (Out) The multi-vector where the result of each subsequent
-multiplication this*X ... this^(Power-1)*X is stored.
-
-Power:  (In) The power to raise the matrix to in the calculation.
-
-Alpha:  (In) A scalar constant used to scale X.
-
-Beta:  (In) A scalar constant used to scale Y.
-
-Integer error code, set to 0 if successful.
-
-Filled()==true
-
-Unchanged ";
-
-%feature("docstring")  Epetra_OskiMatrix::MatPowMultiply "int
 Epetra_OskiMatrix::MatPowMultiply(bool TransA, const Epetra_Vector &x,
 Epetra_Vector &y, int Power=2, double Alpha=1.0, double Beta=0.0)
 const
 
 Performs a matrix vector multiply of y = Alpha*(this^TransA)^Power*x +
-Beta*y.
+Beta*y. This is not implemented as described in the detailed
+description.
 
 The vectors x and y can be either Epetra_Vectors or
 Epetra_OskiVectors. This composed routine is used in power and S-step
-methods.
+methods. This routine is not implemented due a bug in the oski-1.01h
+kernel that makes testing of correctness impossible.
 
 Parameters:
 -----------
@@ -13118,40 +13081,6 @@ Filled()==true
 
 Unchanged ";
 
-%feature("docstring")  Epetra_OskiMatrix::MatPowMultiply "int
-Epetra_OskiMatrix::MatPowMultiply(bool TransA, const
-Epetra_MultiVector &X, Epetra_MultiVector &Y, int Power=2, double
-Alpha=1.0, double Beta=0.0) const
-
-Performs a matrix multi-vector multiply of Y =
-Alpha*(this^TransA)^Power*X + Beta*Y.
-
-The multi-vectors X, Y and T can be either Epetra_MultiVectors or
-Epetra_OskiMultiVectors. This composed routine is used in power and
-S-step methods.
-
-Parameters:
------------
-
-TransA:  (In) If TransA = TRUE then use the transpose of the matrix in
-computing the product.
-
-X:  (In) The multi-vector the matrix is multiplied by.
-
-Y:  (In/Out) The multi-vector where the calculation result is stored.
-
-Power:  (In) The power to raise the matrix to in the calculation.
-
-Alpha:  (In) A scalar constant used to scale X.
-
-Beta:  (In) A scalar constant used to scale Y.
-
-Integer error code, set to 0 if successful.
-
-Filled()==true
-
-Unchanged ";
-
 /*  Tuning  */
 
 %feature("docstring")  Epetra_OskiMatrix::SetHint "int
@@ -13163,24 +13092,65 @@ Parameters:
 -----------
 
 List:  (In) A list of hints and options to register along with the
-matrix used for tuning purposes. The full list is below for now and
-will either stay there and/or be moved to the user guide in the
-future.
+matrix used for tuning purposes. The full list is given below. It may
+be moved to the user guide in the future.
 
 On successful storage of the hint 0 is returned. On failure an error
-code is returned.  The available hints are as follows within each
-section only one hint may be set at a time.
+code is returned.  Options that can be passed to the List are
+presented below. They are: \"<type> <option name>: <description of
+purpose>\". The available hints are grouped by section, and only one
+hint from each section can be true for a given matrix. For options
+where multiple arguments can be passed in at once the interface only
+supports up to 5. This means only 5 block sizes or 5 diaganols can be
+passed in at once. If you have more changing the code to support your
+needs should be simple, but every case you use must be enumerated. Of
+course you can just say there are diagonals and blocks and not pass in
+specific sizes as wells.
 
-NO_BLOCKS, SINGLE_BLOCKSIZE [int r, c], MULTIPLE_BLOCKSIZES [int k,
-r1, c1, ..., rk, ck]
+bool noblocks: If true, the matrix has no block structure
 
-ALIGNED_BLOCKS, UNALIGNED_BLOCKS
+bool singleblocksize: If true, the matrix structure is dominated by
+blocks of the size of the next two parameters. int row: The number of
+rows in each block.
 
-SYMM_PATTERN, NONSYMM_PATTERN
+int col: The number of columns in each block.
 
-RANDOM_PATTERN, CORRELATED_PATTERN
+bool multipleblocksize: If true, the matrix consists of multiple block
+sizes. The next 3 parameters describe these and are optional. int
+blocks: The number of block sizes in the matrix.
 
-NO_DIAGS, DIAGS ";
+int row<x>: Where x is the block number, and x goes from 1 to blocks.
+This is the number of rows in block x.
+
+int col<x>: Where x is the block number, and x goes from 1 to blocks.
+This is the number of cols in block x.
+
+bool alignedblocks: If true, all blocks are aligned to a grid.
+
+bool unalignedblocks: If true, blocks are not aligned to a grid.
+
+bool symmetricpattern: If true, the matrix is either symmetric or
+nearly symmetric.
+
+bool nonsymmetricpattern: If true, the matrix has a very unsymmetric
+pattern.
+
+bool randompattern: If true, the matrix's non-zeros are distributed in
+a random pattern.
+
+bool correlatedpattern: If true, the row and column indices for non-
+zeros are highly correlated.
+
+bool nodiags : If true, the matrix has little or no diagonal
+structure.
+
+bool diags: If true, the matrix consists of diagonal structure
+described the next two optional parameters. int numdiags: The number
+of diagonal sizes known to be present others not listed could be
+present.
+
+int diag<x>: Where x is the diagonal number, and x goes from 1 to
+numdiags. This is the size of the diagonal. ";
 
 %feature("docstring")  Epetra_OskiMatrix::SetHintMultiply "int
 Epetra_OskiMatrix::SetHintMultiply(bool TransA, double Alpha, const
@@ -13189,8 +13159,17 @@ Epetra_OskiMultiVector &OutVec, int NumCalls, const
 Teuchos::ParameterList &List)
 
 Workload hints for computing a matrix-vector multiply used by
-OskiTuneMat to optimize the data structure storage and the routine to
+OskiTuneMat to optimize the data structure storage, and the routine to
 compute the calculation.
+
+In parallel the routine uses symbolic vectors. This is done for two
+reasons. Doing this saves on data allocation and potentially
+communication overhead. For a matrix-vector routine there should be no
+advantage to having the actual vector, as its size must be the same as
+a matrix dimension. For a matrix-multivector routine there could be
+gains from knowing the number of vectors in the multi-vector. However,
+OSKI does not perform multi-vector optimizations, so there is no need
+to add the overhead.
 
 Parameters:
 -----------
@@ -13212,18 +13191,35 @@ NumCalls:  (In) The number of times the operation is called or the
 tuning level wanted.
 
 List:  (In) Used for denoting the use of symbolic vectors for both
-InVec and OutVec as well as for level of aggressive tuning if either
-NumCalls not known or to be overridden. Options are shown below it
+InVec and OutVec, as well as for level of aggressive tuning if either
+NumCalls not known or to be overridden. Options are shown below. It
 should be noted that by using these options the associated vector or
 NumCalls becomes invalid.
 
 Stores the workload hint in the matrix if the operation is valid. If
-the operation is not valid an error code is returned.
-SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+the operation is not valid an error code is returned.  Options that
+can be passed to the List are presented below. They are: \"<type>
+<option name>: <description of purpose>\". The available hints are
+grouped by section, and only one hint from each section can be true
+for a given matrix.
 
-SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+These replace InVec. bool symminvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
 
-ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+bool symminmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
+
+These replace OutVec. bool symmoutvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
+
+bool symmoutmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
+
+bool tune: If true, have OSKI tune moderately rather than using the
+number of calls passed in.
+
+bool tuneaggressive: If true, have OSKI tune aggressively rather than
+using the number of calls passed in. ";
 
 %feature("docstring")  Epetra_OskiMatrix::SetHintSolve "int
 Epetra_OskiMatrix::SetHintSolve(bool TransA, double Alpha, const
@@ -13231,8 +13227,17 @@ Epetra_OskiMultiVector &Vector, int NumCalls, const
 Teuchos::ParameterList &List)
 
 Workload hints for computing a triangular solve used by OskiTuneMat to
-optimize the data structure storage and the routine to compute the
+optimize the data structure storage, and the routine to compute the
 calculation.
+
+In parallel the routine uses symbolic vectors. This is done for two
+reasons. Doing this saves on data allocation and potentially
+communication overhead. For a matrix-vector routine there should be no
+advantage to having the actual vector, as its size must be the same as
+a matrix dimension. For a matrix-multivector routine there could be
+gains from knowing the number of vectors in the multi-vector. However,
+OSKI does not perform multi-vector optimizations, so there is no need
+to add the overhead.
 
 Parameters:
 -----------
@@ -13248,16 +13253,29 @@ solution.
 NumCalls:  (In) The number of times the operation is called or the
 tuning level wanted.
 
-List:  (In) Used for denoting the use of a symbolic vectors as well as
-for level of aggressive tuning if either NumCalls not known or to be
-overridden. Options are shown below it should be noted that by using
-these options the associated vector or NumCalls becomes invalid.
+List:  (In) Used for denoting the use of a symbolic vectors, as well
+as for level of aggressive tuning if either NumCalls not known or to
+be overridden. Options are shown below. It should be noted that by
+using these options the associated vector or NumCalls becomes invalid.
 
 Stores the workload hint in the matrix if the operation is valid. If
-the operation is not valid an error code is returned.
-SYMBOLIC_VECTOR, SYMBOLIC_MULTIVECTOR
+the operation is not valid an error code is returned.  Options that
+can be passed to the List are presented below. They are: \"<type>
+<option name>: <description of purpose>\". The available hints are
+grouped by section, and only one hint from each section can be true
+for a given matrix.
 
-ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+These replace Vector. bool symmvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
+
+bool symmmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
+
+bool tune: If true, have OSKI tune moderately rather than using the
+number of calls passed in.
+
+bool tuneaggressive: If true, have OSKI tune aggressively rather than
+using the number of calls passed in. ";
 
 %feature("docstring")  Epetra_OskiMatrix::SetHintMatTransMatMultiply "int Epetra_OskiMatrix::SetHintMatTransMatMultiply(bool ATA, double
 Alpha, const Epetra_OskiMultiVector &InVec, double Beta, const
@@ -13265,8 +13283,17 @@ Epetra_OskiMultiVector &OutVec, const Epetra_OskiMultiVector
 &Intermediate, int NumCalls, const Teuchos::ParameterList &List)
 
 Workload hints for computing a two matrix-vector multiplies that are
-composed used by OskiTuneMat to optimize the data structure storage
+composed used by OskiTuneMat to optimize the data structure storage,
 and the routine to compute the calculation.
+
+In parallel the routine uses symbolic vectors. This is done for two
+reasons. Doing this saves on data allocation and potentially
+communication overhead. For a matrix-vector routine there should be no
+advantage to having the actual vector, as its size must be the same as
+a matrix dimension. For a matrix-multivector routine there could be
+gains from knowing the number of vectors in the multi-vector. However,
+OSKI does not perform multi-vector optimizations, so there is no need
+to add the overhead.
 
 Parameters:
 -----------
@@ -13291,21 +13318,42 @@ quantity is NULL then the intermediate product is not stored.
 NumCalls:  (In) The number of times the operation is called or the
 tuning level wanted.
 
-List:  (In) Used for denoting the use of symbolic vectors for both
-InVec, OutVec and Intermediate along with the level of aggressive
-tuning if either NumCalls not known or to be overridden. Options are
-shown below it should be noted that by using these options the
-associated vector or NumCalls becomes invalid.
+List:  (In) Used for denoting the use of symbolic vectors for InVec,
+OutVec and Intermediate, along with the level of aggressive tuning if
+either NumCalls not known or to be overridden. Options are shown
+below. It should be noted that by using these options the associated
+vector or NumCalls becomes invalid.
 
 Stores the workload hint in the matrix if the operation is valid. If
-the operation is not valid an error code is returned.
-SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+the operation is not valid an error code is returned.  Options that
+can be passed to the List are presented below. They are: \"<type>
+<option name>: <description of purpose>\". The available hints are
+grouped by section, and only one hint from each section can be true
+for a given matrix.
 
-SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+These replace InVec. bool symminvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
 
-SYMBOLIC_INTER_VEC, SYMBOLIC_INTER_MULTIVEC, INVALID_INTER
+bool symminmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
 
-ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+These replace OutVec. bool symmoutvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
+
+bool symmoutmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
+
+These replace Intermediate. bool symmintervec: If true, use a symbolic
+vector rather than the vector passed in for tuning purposes.
+
+bool symmintermultivec: If true, use a symbolic multi-vector rather
+than the multi-vector passed in for tuning purposes.
+
+bool tune: If true, have OSKI tune moderately rather than using the
+number of calls passed in.
+
+bool tuneaggressive: If true, have OSKI tune aggressively rather than
+using the number of calls passed in. ";
 
 %feature("docstring")
 Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply "int
@@ -13317,8 +13365,17 @@ Epetra_OskiMultiVector &OutVec2, int NumCalls, const
 Teuchos::ParameterList &List)
 
 Workload hints for computing two matrix-vector multiplies used by
-OskiTuneMat to optimize the data structure storage and the routine to
+OskiTuneMat to optimize the data structure storage, and the routine to
 compute the calculation.
+
+In parallel the routine uses symbolic vectors. This is done for two
+reasons. Doing this saves on data allocation and potentially
+communication overhead. For a matrix-vector routine there should be no
+advantage to having the actual vector, as its size must be the same as
+a matrix dimension. For a matrix-multivector routine there could be
+gains from knowing the number of vectors in the multi-vector. However,
+OSKI does not perform multi-vector optimizations, so there is no need
+to add the overhead.
 
 Parameters:
 -----------
@@ -13350,22 +13407,47 @@ NumCalls:  (In) The number of times the operation is called or the
 tuning level wanted.
 
 List:  (In) Used for denoting the use of symbolic vectors for both
-InVec and OutVec as well as for level of aggressive tuning if either
-NumCalls not known or to be overridden. Options are shown below it
+InVec and OutVec, as well as for level of aggressive tuning if either
+NumCalls not known or to be overridden. Options are shown below. It
 should be noted that by using these options the associated vector or
 NumCalls becomes invalid.
 
 Stores the workload hint in the matrix if the operation is valid. If
-the operation is not valid an error code is returned.
-SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+the operation is not valid an error code is returned.  Options that
+can be passed to the List are presented below. They are: \"<type>
+<option name>: <description of purpose>\". The available hints are
+grouped by section, and only one hint from each section can be true
+for a given matrix.
 
-SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+These replace InVec. bool symminvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
 
-SYMBOLIC_IN_VEC2, SYMBOLIC_IN_MULTIVEC2
+bool symminmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
 
-SYMBOLIC_OUT_VEC2, SYMBOLIC_OUT_MULTIVEC2
+These replace OutVec. bool symmoutvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
 
-ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+bool symmoutmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
+
+These replace InVec2. bool symminvec2: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
+
+bool symminmultivec2: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
+
+These replace OutVec2. bool symmoutvec2: If true, use a symbolic
+vector rather than the vector passed in for tuning purposes.
+
+bool symmoutmultivec2: If true, use a symbolic multi-vector rather
+than the multi-vector passed in for tuning purposes.
+
+bool tune: If true, have OSKI tune moderately rather than using the
+number of calls passed in.
+
+bool tuneaggressive: If true, have OSKI tune aggressively rather than
+using the number of calls passed in. ";
 
 %feature("docstring")  Epetra_OskiMatrix::SetHintPowMultiply "int
 Epetra_OskiMatrix::SetHintPowMultiply(bool TransA, double Alpha, const
@@ -13377,6 +13459,15 @@ Epetra_OskiMultiVector &OutVec, const Epetra_OskiMultiVector
 Workload hints for computing a matrix-vector multiply performed Power
 times used by OskiTuneMat to optimize the data structure storage and
 the routine to compute the calculation.
+
+In parallel the routine uses symbolic vectors. This is done for two
+reasons. Doing this saves on data allocation and potentially
+communication overhead. For a matrix-vector routine there should be no
+advantage to having the actual vector, as its size must be the same as
+a matrix dimension. For a matrix-multivector routine there could be
+gains from knowing the number of vectors in the multi-vector. However,
+OSKI does not perform multi-vector optimizations, so there is no need
+to add the overhead.
 
 Parameters:
 -----------
@@ -13404,20 +13495,39 @@ NumCalls:  (In) The number of times the operation is called or the
 tuning level wanted.
 
 List:  (In) Used for denoting the use of symbolic vectors for both
-InVec and OutVec as well as for level of aggressive tuning if either
-NumCalls not known or to be overridden. Options are shown below it
+InVec and OutVec, as well as for level of aggressive tuning if either
+NumCalls not known or to be overridden. Options are shown below. It
 should be noted that by using these options the associated vector or
 NumCalls becomes invalid.
 
 Stores the workload hint in the matrix if the operation is valid. If
-the operation is not valid an error code is returned.
-SYMBOLIC_IN_VEC, SYMBOLIC_IN_MULTIVEC
+the operation is not valid an error code is returned.  Options that
+can be passed to the List are presented below. They are: \"<type>
+<option name>: <description of purpose>\". The available hints are
+grouped by section, and only one hint from each section can be true
+for a given matrix.
 
-SYMBOLIC_OUT_VEC, SYMBOLIC_OUT_MULTIVEC
+These replace InVec. bool symminvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
 
-SYMBOLIC_INTER_MULTIVEC, INVALID_INTER
+bool symminmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
 
-ALWAYS_TUNE, ALWAYS_TUNE_AGGRESSIVELY ";
+These replace OutVec. bool symmoutvec: If true, use a symbolic vector
+rather than the vector passed in for tuning purposes.
+
+bool symmoutmultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.
+
+This replaces Intermediate. bool symmintermultivec: If true, use a
+symbolic multi-vector rather than the multi-vector passed in for
+tuning purposes.
+
+bool tune: If true, have OSKI tune moderately rather than using the
+number of calls passed in.
+
+bool tuneaggressive: If true, have OSKI tune aggressively rather than
+using the number of calls passed in. ";
 
 %feature("docstring")  Epetra_OskiMatrix::TuneMatrix "int
 Epetra_OskiMatrix::TuneMatrix()
@@ -13435,7 +13545,7 @@ returned. ";
 %feature("docstring")  Epetra_OskiMatrix::IsMatrixTransformed "int
 Epetra_OskiMatrix::IsMatrixTransformed() const
 
-Returns 1 if the matrix has been reordered by tuning and 0 if it has
+Returns 1 if the matrix has been reordered by tuning, and 0 if it has
 not been. ";
 
 %feature("docstring")  Epetra_OskiMatrix::ViewTransformedMat "const
@@ -15713,12 +15823,19 @@ same dimensions. ";
 
 %feature("docstring")  Epetra_SerialDenseSVD::SolveWithTranspose "void Epetra_SerialDenseSVD::SolveWithTranspose(bool Flag)
 
-If Flag is true, causes all subsequent function calls to work with the
-transpose of this matrix, otherwise not.
+Causes equilibration to be called just before the matrix factorization
+as part of the call to Factor.
 
-This function must be called before the factorization is performed. ";
+This function must be called before the factorization is performed. If
+Flag is true, causes all subsequent function calls to work with the
+transpose of this matrix, otherwise not. ";
 
 /*  Factor/Solve/Invert Methods  */
+
+/* Causes all solves to compute solution to best ability using
+iterative refinement.
+
+*/
 
 %feature("docstring")  Epetra_SerialDenseSVD::Factor "int
 Epetra_SerialDenseSVD::Factor(void) ";
@@ -18270,6 +18387,9 @@ needed for implementing Epetra_RowMatrix. ";
 %feature("docstring")  Epetra_VbrMatrix::Comm "const Epetra_Comm&
 Epetra_VbrMatrix::Comm() const
 
+Fills a matrix with rows from a source matrix based on the specified
+importer.
+
 Returns a pointer to the Epetra_Comm communicator associated with this
 matrix. ";
 
@@ -20501,8 +20621,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_069fd9c22f965500f8b3c38048be015a.xml
+// File: dir_91e6c31313780713b81835c6933c2ef9.xml
 
 
-// File: dir_d2197c749d70a88047915b4da73e6244.xml
+// File: dir_7d63aa646d01478fb8f0f19fecc8ace4.xml
 

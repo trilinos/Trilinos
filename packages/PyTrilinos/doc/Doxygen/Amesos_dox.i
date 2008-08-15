@@ -7,6 +7,8 @@
 Amesos_BaseSolver: A pure virtual class for direct solution of real-
 valued double- precision operators.
 
+Pure virtual class for all Amesos concrete implementions.
+
 The Amesos_BaseSolver class is a pure virtual class (that is, it
 specifies interface only) that enables the use of real-valued double-
 precision direct sparse solvers. Every Amesos class named Amesos_
@@ -553,7 +555,7 @@ Solver(Problem);
 Solver.PartialFactorization() ;        ... Ancestor factorization
 Solver.Lsolve() ;        ... Ancestor solves     Solver.Usolve() ;
 
-Preconditions:  An ordering  Postconditions: Constructor requirements
+Preconditions:  An ordering  Postconditions:  Constructor requirements
 
 Every Amesos_SolverName class should accept an Epetra_LinearProblem
 
@@ -697,7 +699,7 @@ Solver(Problem);
 Solver.PartialFactorization() ;        ... Ancestor factorization
 Solver.Lsolve() ;        ... Ancestor solves     Solver.Usolve() ;
 
-Preconditions:  An ordering  Postconditions: Constructor requirements
+Preconditions:  An ordering  Postconditions:  Constructor requirements
 
 Every Amesos_SolverName class should accept an Epetra_LinearProblem
 
@@ -764,9 +766,9 @@ Integer error code, set to 0 if successful, -1 if unimplimented. ";
 %feature("docstring")  Amesos_ComponentBaseSolver::SetRowPermutation "virtual int Amesos_ComponentBaseSolver::SetRowPermutation(int
 *RowPermutation)=0
 
-SetRowPermutation.
+Solves U X = B (or UT x = B).
 
-Integer error code, set to 0 if successful. ";
+Integer error code, set to 0 if successful. SetRowPermutation ";
 
 %feature("docstring")
 Amesos_ComponentBaseSolver::SetColumnPermutation "virtual int
@@ -1070,6 +1072,8 @@ the parameter list. ";
 %feature("docstring") Amesos_Klu "
 
 Interface to KLU internal solver.
+
+Interface to UMFPACK.
 
 C++ includes: Amesos_Umfpack.h ";
 
@@ -2411,6 +2415,8 @@ the parameter list. ";
 
 Amesos_Reordering: base class for reordering procedures.
 
+Base class for reordering procedures.
+
 Marzio Sala, ETHZ.
 
 C++ includes: Amesos_Reordering.h ";
@@ -2700,6 +2706,8 @@ the parameter list. ";
 %feature("docstring") Amesos_Scaling "
 
 Amesos_Scaling: base class for scaling procedures.
+
+Base class for scaling procedures.
 
 Marzio Sala, ETHZ.
 
@@ -3985,7 +3993,10 @@ Epetra_RowMatrix &A) ";
 %feature("docstring") SLUData "";
 
 
-// File: namespace@0.xml
+// File: namespace@19.xml
+
+
+// File: namespace@9.xml
 
 
 // File: namespaceSLU.xml
@@ -4026,7 +4037,7 @@ Epetra_RowMatrix &A) ";
 
 // File: Amesos__Klu_8cpp.xml
 %feature("docstring")  deallocFunctorDeleteWithCommon "DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
-@0::deallocFunctorDeleteWithCommon(const RCP< klu_common > &common,
+@9::deallocFunctorDeleteWithCommon(const RCP< klu_common > &common,
 DeleteFunctor deleteFunctor) ";
 
 
@@ -4064,7 +4075,7 @@ MC64AD)(int * ";
 
 // File: Amesos__Paraklete_8cpp.xml
 %feature("docstring")  deallocFunctorDeleteWithCommon "DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
-@0::deallocFunctorDeleteWithCommon(const RCP< paraklete_common >
+@19::deallocFunctorDeleteWithCommon(const RCP< paraklete_common >
 &common, DeleteFunctor deleteFunctor) ";
 
 %feature("docstring")  my_handler "void my_handler(int status, char
@@ -4186,8 +4197,8 @@ taucs_supernodal_factor_free_ptr(taucs_ccs_matrix
 // File: Amesos__Utils_8h.xml
 
 
-// File: dir_8c64e8b49f9e6d0e8decbdbdc6b22651.xml
+// File: dir_9a32face10acae97c94b17c4df82c3c5.xml
 
 
-// File: dir_2492866b582b95bf045c53c319168da9.xml
+// File: dir_6306eb3c557a9f16944e82355854f6dc.xml
 
