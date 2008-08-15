@@ -10,13 +10,13 @@ namespace Lagrange
 			std::invalid_argument,
 			">>> ERROR (Lagrange::equispacedPoints): n must be at least 1" );
     
-    TEST_FOR_EXCEPTION( pts.size() != n+1 ,
+    TEST_FOR_EXCEPTION( pts.size() != (unsigned)(n+1) ,
 			std::invalid_argument,
 			">>> ERROR (Lagrange::equispacedPoints): pts array improperly sized" );
 
     const ScalarType h = (b - a) / n;
 
-    for (int i=0;i<=n;i++) {
+    for (unsigned i=0;i<= (unsigned) n;i++) {
       pts[i] = a + i * h;
     }
 
@@ -24,43 +24,42 @@ namespace Lagrange
   }
   
   template<typename ScalarType>
-  void dividedDifferences( const vector<ScalarType> &abscissa ,
-			   const vector<ScalarType> &ordinates ,
-			   vector<ScalarType> &coefficients )
+  void dividedDifferences( const vector<ScalarType> &x ,
+			   const vector<ScalarType> &f ,
+			   vector<ScalarType> &a )
   {
-    TEST_FOR_EXCEPTION( abscissa.size() != ordinates.size() 
-			|| abscissa.size() != coefficients.size() ,
+    TEST_FOR_EXCEPTION( x.size() != f.size() 
+			|| x.size() != a.size() ,
 			std::invalid_argument ,
 			">>> ERROR (Lagrange::dividedDifferences): arrays not properly sized" );
 
-    const int np = abscissa.size();
-    const int order = np - 1;
-    vector<ScalarType> work( abscissa.size() );
-    for (int i=0;i<np;i++) {
-      work[i] = ordinates[i];
-    }
-    for (int stage=0;stage<=order;stage++) {
-      for (int i=0;i<=order-stage;i++) {
-	work[i] = (work[i+stage]-work[i]) / (abscissa[i+stage] - abscissa[i]);
+    const int np = x.size();
+    const int n = np - 1;
+    vector<ScalarType> t( x.size() );
+    for (int i=0;i<=n;i++) {
+      t[i] = f[i];
+      for (int j=i-1;j>=0;j--) {
+	t[j] = ( t[j+1]-t[j])/(x[i]-x[j]);
       }
-      coefficients[stage] = work[0];
+      a[i]=t[0];
     }
     
     return;
-
   }
+  
 
-  template<typename ScalarType>
-  ScalarType evalDividedDifferencePoly( const vector<ScalarType> &abscissa ,
-					const vector<ScalarType> &coefficients ,
-					ScalarType x )
+  template<typename ScalarType1,
+	   typename ScalarType2>
+  ScalarType1 evaluateDividedDifferencePoly( const vector<ScalarType1> &abscissa ,
+					     const vector<ScalarType1> &coefficients ,
+					     ScalarType2 &x )
   {
     TEST_FOR_EXCEPTION( abscissa.size() != coefficients.size() ,
 			std::invalid_argument ,
 			">>>ERROR (Lagrange::evalDividedDifferencePoly) : input arrays not same size" );
-    const int np = coefficients.size();
-    ScalarType val = coefficients[np-1];
-    for (int i=np-2;i>=0;i--) {
+    const unsigned np = coefficients.size();
+    ScalarType1 val = coefficients[np-1];
+    for (int i=abscissa.size()-2;i>=0;--i) {
       val = val * ( x - abscissa[i] ) + coefficients[i];
     }
 
@@ -73,11 +72,11 @@ namespace Lagrange
   {
     vector<ScalarType> vals(pts.size());
 
-    for (int i=0;i<pts.size();i++) {
+    for (unsigned i=0;i<pts.size();i++) {
       vals[i] = 0.0;
     }
     
-    for (int i=0;i<pts.size();i++) {
+    for (unsigned i=0;i<pts.size();i++) {
       vals[i] = 1.0;
       coeffs_[i].resize(pts.size());
       dividedDifferences( pts , vals , coeffs_[i] );
@@ -85,11 +84,5 @@ namespace Lagrange
     }
   }
 
-  template<typename ScalarType>
-  template<typename ScalarType2>
-  Lagrange<ScalarType>::eval<ScalarType2>( int i , ScalarType2 &x )
-  {
-    return evaluateDividedDifferencePoly( pts_ , coeffs_[i] , x );
-  }
 
 }

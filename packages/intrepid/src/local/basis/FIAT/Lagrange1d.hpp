@@ -1,14 +1,22 @@
+#ifndef LAGRANGE1D_HPP
+#define LAGRANGE1D_HPP
+
+
 #include <vector>
+#include <iostream>
+#include "Teuchos_TestForException.hpp"
 
 using std::vector;
+using std::cout;
+using std::endl;
 
 namespace Lagrange
 {
   // function for equispaced points on [a,b]
   template<typename ScalarType>
-  void equispacedPoints( int n,
-			 ScalarType a,
-			 ScalarType b,
+  void equispacedPoints( const int &n,
+			 const ScalarType &a,
+			 const ScalarType &b,
 			 vector<ScalarType> &pts );
 
   // function for getting divided difference coefficients
@@ -22,10 +30,10 @@ namespace Lagrange
   // the coefficients/pts.
   template<typename ScalarType1,
 	   typename ScalarType2>
-  ScalarType evaluateDivideDifferencePoly( const vector<ScalarType> &abscissa ,
-					   const vector<ScalarType> &coefficients ,
-					   const ScalarType2 x );
-
+  ScalarType1 evaluateDividedDifferencePoly( const vector<ScalarType1> &abscissa ,
+					     const vector<ScalarType1> &coefficients ,
+					     ScalarType2 &x );
+  
 
   // need a class for getting all Lagrange polynomials
   template<typename ScalarType>
@@ -36,7 +44,9 @@ namespace Lagrange
     ~Lagrange() {}
     
     template<typename ScalarType2>
-    ScalarType2 eval( int i , ScalarType2 & x);
+    ScalarType2 eval( int i , ScalarType2 & x) {
+      return evaluateDividedDifferencePoly( pts_ , coeffs_[i] , x );
+    }
 
     int getDegree() const { return pts_.size() - 1; }
 
@@ -46,3 +56,7 @@ namespace Lagrange
   };
 
 }
+
+#include "Lagrange1dDef.hpp"
+
+#endif
