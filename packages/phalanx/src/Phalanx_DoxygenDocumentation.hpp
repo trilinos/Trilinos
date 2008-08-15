@@ -60,28 +60,27 @@ This will be updated for Trilinos release 9.0
 
 \section introduction Introduction
 
-Phalanx is a library to handle arbitrary function evaluation with complex nonlinear dependency chains for discretized partial differential equation systems.  It provides a flexible and efficient mechanism for switching dependencies and computing sensitivities either analytically or via automatic differentiation.  It can be used with any cell-based discretization technique including finite element, finite volume and finite difference.
-
-Phalanx is used to break down complex dependencies into manageable algorithmic blocks.  It was written to address a variety of difficulties encountered when writing a general PDE code that allows for flexible switching of dependencies at runtime.  
+Phalanx is an assembly kernel that provides fast and flexible evaluations of field values with complex dependency chains for partial differential equation systems.  It provides a flexible mechanism for automatically switching field evaluation routines at run-time (and thus the dependency chain).  A unique aspect of this library is that it was written to allow for arbitrary data field types so that embedded technology such as arbitrary precision, sensitivity analysis (via embedded automatic differentiation), and uncertainty quantification can be enabled by swapping teh scalar type and reusing the function evaluations.  It can be used with any cell-based discretization techniques including finite element and finite volume.
 
 \section overview Overview
 
-A simple example (found in phalanx/example/energyFlux) is the construction of a Fourier energy flux for the heat equation.  Suppose that we want to solve the heat equation using finite elements:
+The main concept of Phalanx is to evaluate fields for solving PDEs.  Let's start with a simple example (found in Trilinos/packages/phalanx/example/energyFlux) that evaluates the Fourier energy flux and source term for the heat equation.  Suppose that we want to solve the heat equation of the physical space \f$ \Omega \f$:
 
 \f[
   \nabla \cdot (\mathbf{q}) + s = 0
 \f] 
 
-where \f$\mathbf{q}\f$ is the heat flux, \f$ \mathbf{q} = -\rho C_p \nabla T \f$  and \f$s\f$ is a nonlinear source term.  Integrating by parts and using the test function \f$ \phi \f$ results in the following weak form equation:
+where \f$\mathbf{q}\f$ is the heat flux, \f$ \mathbf{q} = -\rho C_p \nabla T \f$  and \f$s\f$ is a nonlinear source term.  The specific discretization technique whether finite element (FE) of finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
+
+Using finite elements, we pose the problem in variational form:
+
+Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
 
 \f[
   - \int_{\Omega} \nabla \phi \cdot \mathbf{q} d\Omega 
   + \int_{\Gamma} \phi \mathbf{n} \cdot \mathbf{q} 
   + \int_{\Omega} \phi s d\Omega = 0 
 \f]
-
-
-
 
 \f[
   \mathbf{q} = -\rho C_p \nabla T
@@ -126,7 +125,7 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
 We plan to remove the Boost dependencies in a future release.  
 
-\section domain_design Domain Design Model
+\section domain_design Domain Model
 
 <h3>A. Concepts</h3>
 
