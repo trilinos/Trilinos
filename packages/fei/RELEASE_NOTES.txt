@@ -457,7 +457,7 @@ July 7 2005: version 2.14.00
   - Fix a bug in fei_AztecDMSR_Matrix::sumIntoRow where a certain case of
     input (1 row index, 1 col index, row == col) caused an array-bounds-read.
 
- ???? ?? ???? minor version 2.22.07
+ Aug 18 2008 minor version 2.22.07
   - Add simplified API functions for dirichlet boundary condition
     specifications. Rather than the confusing previous scheme that took
     alpha/beta/gamma arguments, the new functions simply take lists of
