@@ -519,7 +519,6 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
         self.fillGraphGlobal(crsg)
         for grid in self.rowMap.MyGlobalElements():
-            print >>sys.stderr, "type(grid) =", type(grid), " "
             self.assertEqual(crsg.NumAllocatedGlobalIndices(grid), 3)
 
     def testMaxNumIndices(self):
