@@ -6002,8 +6002,10 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile example/external/Makefile.external.stub test/Makefile test/operator_solve/Makefile test/operator_vector/Makefile adapters/Makefile adapters/epetra/Makefile adapters/epetra/src/Makefile adapters/epetra/example/Makefile adapters/epetra/example/generate-sample-output.pl.stub adapters/epetra/test/Makefile adapters/tpetra/Makefile adapters/tpetra/example/Makefile adapters/epetraext/Makefile adapters/epetraext/src/Makefile adapters/epetraext/example/Makefile adapters/epetraext/example/model_evaluator/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile example/external/Makefile.external.stub test/Makefile test/operator_solve/Makefile test/operator_vector/Makefile adapters/Makefile adapters/epetra/Makefile adapters/epetra/src/Makefile adapters/epetra/example/Makefile adapters/epetra/example/generate-sample-output.pl.stub adapters/epetra/test/Makefile adapters/tpetra/Makefile adapters/epetraext/Makefile adapters/epetraext/src/Makefile adapters/epetraext/example/Makefile adapters/epetraext/example/model_evaluator/Makefile"
 
+
+#    adapters/tpetra/example/Makefile
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6729,7 +6731,6 @@ do
     "adapters/epetra/example/generate-sample-output.pl.stub") CONFIG_FILES="$CONFIG_FILES adapters/epetra/example/generate-sample-output.pl.stub" ;;
     "adapters/epetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetra/test/Makefile" ;;
     "adapters/tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/tpetra/Makefile" ;;
-    "adapters/tpetra/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/tpetra/example/Makefile" ;;
     "adapters/epetraext/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/Makefile" ;;
     "adapters/epetraext/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/src/Makefile" ;;
     "adapters/epetraext/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/example/Makefile" ;;

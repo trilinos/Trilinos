@@ -331,12 +331,13 @@ AC_CONFIG_FILES([
     adapters/epetra/example/generate-sample-output.pl.stub
     adapters/epetra/test/Makefile
     adapters/tpetra/Makefile
-    adapters/tpetra/example/Makefile
     adapters/epetraext/Makefile
     adapters/epetraext/src/Makefile
     adapters/epetraext/example/Makefile
     adapters/epetraext/example/model_evaluator/Makefile
     ])
+
+#    adapters/tpetra/example/Makefile
 
 AC_OUTPUT()
 

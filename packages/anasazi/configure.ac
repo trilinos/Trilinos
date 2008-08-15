@@ -482,7 +482,6 @@ AC_CONFIG_FILES([
 		epetra/test/BlockDavidson/Makefile
 		epetra/test/BlockKrylovSchur/Makefile
 		epetra/test/LOBPCG/Makefile
-		epetra/test/IRTR/Makefile
 		epetra/test/OrthoManager/Makefile
 		thyra/Makefile
 		thyra/src/Makefile
@@ -500,6 +499,7 @@ AC_CONFIG_FILES([
 		tpetra/test/MVOPTester/Makefile
 		])
 #		test/IRTR/Makefile
+#                epetra/test/IRTR/Makefile
 #		thyra/test/IRTR/Makefile
 
 AC_OUTPUT()
