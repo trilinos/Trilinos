@@ -52,8 +52,11 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataContainer.hpp \
 	$(srcdir)/Phalanx_DataContainer_TemplateManager.hpp \
 	$(srcdir)/Phalanx_DataLayout_Generic.hpp \
+	$(srcdir)/Phalanx_DataLayout_MDALayout_Def.hpp \
+	$(srcdir)/Phalanx_DataLayout_MDALayout.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
 	$(srcdir)/Phalanx_DebugStrings.hpp \
+	$(srcdir)/Phalanx_DimTag.hpp \
 	$(srcdir)/Phalanx_DoxygenDocumentation.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base_Def.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base.hpp \
@@ -90,7 +93,8 @@ PHALANX_HPP = \
 
 PHALANX_CPP = \
 	$(srcdir)/Phalanx_DataLayout_Generic.cpp \
-	$(srcdir)/Phalanx_DataLayout.cpp
+	$(srcdir)/Phalanx_DataLayout.cpp \
+	$(srcdir)/Phalanx_DimTag.cpp
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies

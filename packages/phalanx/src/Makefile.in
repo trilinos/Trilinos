@@ -103,7 +103,7 @@ AR = ar
 ARFLAGS = cru
 libphalanx_a_DEPENDENCIES =
 am__objects_1 = Phalanx_DataLayout_Generic.$(OBJEXT) \
-	Phalanx_DataLayout.$(OBJEXT)
+	Phalanx_DataLayout.$(OBJEXT) Phalanx_DimTag.$(OBJEXT)
 am_libphalanx_a_OBJECTS = $(am__objects_1)
 libphalanx_a_OBJECTS = $(am_libphalanx_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -252,8 +252,11 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataContainer.hpp \
 	$(srcdir)/Phalanx_DataContainer_TemplateManager.hpp \
 	$(srcdir)/Phalanx_DataLayout_Generic.hpp \
+	$(srcdir)/Phalanx_DataLayout_MDALayout_Def.hpp \
+	$(srcdir)/Phalanx_DataLayout_MDALayout.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
 	$(srcdir)/Phalanx_DebugStrings.hpp \
+	$(srcdir)/Phalanx_DimTag.hpp \
 	$(srcdir)/Phalanx_DoxygenDocumentation.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base_Def.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base.hpp \
@@ -290,7 +293,8 @@ PHALANX_HPP = \
 
 PHALANX_CPP = \
 	$(srcdir)/Phalanx_DataLayout_Generic.cpp \
-	$(srcdir)/Phalanx_DataLayout.cpp
+	$(srcdir)/Phalanx_DataLayout.cpp \
+	$(srcdir)/Phalanx_DimTag.cpp
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(PHALANX_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
@@ -461,6 +465,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DataLayout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DataLayout_Generic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DimTag.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -503,6 +508,20 @@ Phalanx_DataLayout.obj: $(srcdir)/Phalanx_DataLayout.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DataLayout.cpp' object='Phalanx_DataLayout.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DataLayout.obj `if test -f '$(srcdir)/Phalanx_DataLayout.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DataLayout.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DataLayout.cpp'; fi`
+
+Phalanx_DimTag.o: $(srcdir)/Phalanx_DimTag.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_DimTag.o -MD -MP -MF $(DEPDIR)/Phalanx_DimTag.Tpo -c -o Phalanx_DimTag.o `test -f '$(srcdir)/Phalanx_DimTag.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_DimTag.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_DimTag.Tpo $(DEPDIR)/Phalanx_DimTag.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DimTag.cpp' object='Phalanx_DimTag.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DimTag.o `test -f '$(srcdir)/Phalanx_DimTag.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_DimTag.cpp
+
+Phalanx_DimTag.obj: $(srcdir)/Phalanx_DimTag.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_DimTag.obj -MD -MP -MF $(DEPDIR)/Phalanx_DimTag.Tpo -c -o Phalanx_DimTag.obj `if test -f '$(srcdir)/Phalanx_DimTag.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DimTag.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DimTag.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_DimTag.Tpo $(DEPDIR)/Phalanx_DimTag.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DimTag.cpp' object='Phalanx_DimTag.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DimTag.obj `if test -f '$(srcdir)/Phalanx_DimTag.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DimTag.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DimTag.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
