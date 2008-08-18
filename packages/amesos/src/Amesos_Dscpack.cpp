@@ -347,7 +347,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
   
   std::vector<int> GlobalStructOldColNum( NumGlobalCols ) ; 
   
-  typedef pair<int, double> Data; 
+  typedef std::pair<int, double> Data; 
   std::vector<Data> sort_array(max_num_entries); 
   std::vector<int>  sort_indices(max_num_entries);
   
