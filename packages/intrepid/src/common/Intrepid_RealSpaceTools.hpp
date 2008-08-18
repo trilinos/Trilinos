@@ -82,7 +82,7 @@ class RealSpaceTools {
     static void absval(ArrayScalar & absArray, const ArrayScalar & inArray);
 
 
-    /** \brief In-place absolute value of an array.
+    /** \brief Computes, in place, absolute value of an array.
 
         \param inoutAbsArray  [in/out]  - input/output array
     */
@@ -227,7 +227,7 @@ class RealSpaceTools {
     static void det(DetArray & detArray, const MatArray & inMats);
 
 
-    /** \brief Add contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
+    /** \brief Adds contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
                of size <b><var>size</var></b>:\n
                <b><var>sumArray</var></b> = <b><var>inArray1</var></b> + <b><var>inArray2</var></b>.
 
@@ -239,7 +239,7 @@ class RealSpaceTools {
     static void add(Scalar* sumArray, const Scalar* inArray1, const Scalar* inArray2, const int size);
 
 
-    /** \brief In-place add contiguous data <b><var>inArray</var></b> into
+    /** \brief Adds, in place, contiguous data <b><var>inArray</var></b> into
                <b><var>inoutSumArray</var></b> of size <b><var>size</var></b>:\n
                <b><var>inoutSumArray</var></b> = <b><var>inoutSumArray</var></b> + <b><var>inArray</var></b>.
 
@@ -250,7 +250,7 @@ class RealSpaceTools {
     static void add(Scalar* inoutSumArray, const Scalar* inArray, const int size);
 
 
-    /** \brief Add arrays:\n
+    /** \brief Adds arrays <b><var>inArray1</var></b> and <b><var>inArray2</var></b>:\n
                <b><var>sumArray</var></b> = <b><var>inArray1</var></b> + <b><var>inArray2</var></b>.
 
         \param sumArray  [out]  - sum
@@ -265,7 +265,7 @@ class RealSpaceTools {
     static void add(ArrayScalar & sumArray, const ArrayScalar & inArray1, const ArrayScalar & inArray2);
 
 
-    /** \brief In-place add an array into another array:\n
+    /** \brief Adds, in place, <b><var>inArray</var></b> into <b><var>inoutSumArray</var></b>:\n
                <b><var>inoutSumArray</var></b> = <b><var>inoutSumArray</var></b> + <b><var>inArray</var></b>.
 
         \param inoutSumArray  [in/out]  - sum/first summand
@@ -279,7 +279,7 @@ class RealSpaceTools {
     static void add(ArrayScalar & inoutSumArray, const ArrayScalar & inArray);
 
 
-    /** \brief Subtract contiguous data <b><var>inArray2</var></b> from <b><var>inArray1</var></b>
+    /** \brief Subtracts contiguous data <b><var>inArray2</var></b> from <b><var>inArray1</var></b>
                of size <b><var>size</var></b>:\n
                <b><var>diffArray</var></b> = <b><var>inArray1</var></b> - <b><var>inArray2</var></b>.
 
@@ -291,7 +291,7 @@ class RealSpaceTools {
     static void subtract(Scalar* diffArray, const Scalar* inArray1, const Scalar* inArray2, const int size);
 
 
-    /** \brief In-place subtract contiguous data <b><var>inArray</var></b> from
+    /** \brief Subtracts, in place, contiguous data <b><var>inArray</var></b> from
                <b><var>inoutDiffArray</var></b> of size <b><var>size</var></b>:\n
                <b><var>inoutDiffArray</var></b> = <b><var>inoutDiffArray</var></b> - <b><var>inArray</var></b>.
 
@@ -302,7 +302,7 @@ class RealSpaceTools {
     static void subtract(Scalar* inoutDiffArray, const Scalar* inArray, const int size);
 
 
-    /** \brief Subtract arrays:\n
+    /** \brief Subtracts <b><var>inArray2</var></b> from <b><var>inArray1</var></b>:\n
                <b><var>diffArray</var></b> = <b><var>inArray1</var></b> - <b><var>inArray2</var></b>.
 
         \param diffArray  [out]  - difference
@@ -317,7 +317,7 @@ class RealSpaceTools {
     static void subtract(ArrayScalar & diffArray, const ArrayScalar & inArray1, const ArrayScalar & inArray2);
 
 
-    /** \brief In-place subtract an array from another array:\n
+    /** \brief Subtracts, in place, <b><var>inArray</var></b> from <b><var>inoutDiffArray</var></b>:\n
                <b><var>inoutDiffArray</var></b> = <b><var>inoutDiffArray</var></b> - <b><var>inArray</var></b>.
 
         \param inoutDiffArray  [in/out]  - difference/minuend
@@ -331,7 +331,7 @@ class RealSpaceTools {
     static void subtract(ArrayScalar & inoutDiffArray, const ArrayScalar & inArray);
 
 
-    /** \brief Multiply contiguous data <b><var>inArray</var></b> of size
+    /** \brief Multiplies contiguous data <b><var>inArray</var></b> of size
                <b><var>size</var></b> by a scalar (componentwise):\n
                <b><var>scaledArray</var></b> = <b><var>scalar</var></b> * <b><var>inArray</var></b>.
 
@@ -343,7 +343,7 @@ class RealSpaceTools {
     static void scale(Scalar* scaledArray, const Scalar* inArray, const int size, const Scalar scalar);
 
 
-    /** \brief In-place multiply contiguous data <b><var>inoutScaledArray</var></b> of size
+    /** \brief Multiplies, in place, contiguous data <b><var>inoutScaledArray</var></b> of size
                <b><var>size</var></b> by a scalar (componentwise):\n
                <b><var>inoutScaledArray</var></b> = <b><var>scalar</var></b> * <b><var>inoutScaledArray</var></b>.
 
@@ -354,7 +354,7 @@ class RealSpaceTools {
     static void scale(Scalar* inoutScaledArray, const int size, const Scalar scalar);
 
 
-    /** \brief Multiply an array by a scalar (componentwise):\n
+    /** \brief Multiplies array <b><var>inArray</var></b> by the scalar <b><var>scalar</var></b> (componentwise):\n
                <b><var>scaledArray</var></b> = <b><var>scalar</var></b> * <b><var>inArray</var></b>.
 
         \param scaledArray  [out]  - scaled array
@@ -369,7 +369,7 @@ class RealSpaceTools {
     static void scale(ArrayScalar & scaledArray, const ArrayScalar & inArray, const Scalar scalar);
 
 
-    /** \brief In-place multiply an array by a scalar (componentwise):\n
+    /** \brief Multiplies, in place, array <b><var>inoutScaledArray</var></b> by the scalar <b><var>scalar</var></b> (componentwise):\n
                <b><var>inoutScaledArray</var></b> = <b><var>scalar</var></b> * <b><var>inoutScaledArray</var></b>.
 
         \param inoutScaledArray  [in/out]  - input/output array
@@ -379,7 +379,7 @@ class RealSpaceTools {
     static void scale(ArrayScalar & inoutScaledArray, const Scalar scalar);
 
 
-    /** \brief Dot-product contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
+    /** \brief Computes dot product of contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
                of size <b><var>size</var></b>.
 
         \param inArray1    [in]  - first array
