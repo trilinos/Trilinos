@@ -8,6 +8,13 @@
   COMM = SERIAL, MPI(1);
 }
 
+# Convergence Tests
+(FRAMEWORK, INSTALL) {
+  TESTS = ConvergenceTest/Rythmos_ConvergenceTest.exe;
+  COMM = SERIAL, MPI(1);
+}
+
+
 # GAASP Interface Unit Tests
 (FRAMEWORK, INSTALL) {
   TESTS = ../adapters/gaasp/test/test_gaasp_adapters.exe;
