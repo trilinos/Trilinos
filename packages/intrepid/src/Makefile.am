@@ -212,7 +212,9 @@ INTREPID_LOCAL_H =  \
   $(srcdir)/local/basis/FIAT/FIAT_DefaultLine.hpp \
   $(srcdir)/local/basis/FIAT/FIAT_DefaultLineDef.hpp \
   $(srcdir)/local/basis/FIAT/Lagrange1d.hpp \
-  $(srcdir)/local/basis/FIAT/Lagrange1dDef.hpp
+  $(srcdir)/local/basis/FIAT/Lagrange1dDef.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_QUAD_DD.hpp \
+  $(srcdir)/local/basis/Intrepid_F0_QUAD_DDDef.hpp
 
 
 INTREPID_ALL_C = \
