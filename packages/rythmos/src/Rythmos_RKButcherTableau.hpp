@@ -255,6 +255,33 @@ void assembleIRKSolution(
 
 }
 
+/* \brief . */
+template<class Scalar>
+void assembleERKState(
+  const int stageIndex,
+  const Teuchos::SerialDenseMatrix<int,Scalar> &A,
+  const Scalar dt,
+  const Thyra::VectorBase<Scalar> &x_base,
+  const Thyra::VectorBase<Scalar> &x_stage_bar,
+  Teuchos::Ptr<Thyra::VectorBase<Scalar> > x_out_ptr
+  )
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+/* \brief . */
+template<class Scalar>
+void assembleERKSolution(
+  const Teuchos::SerialDenseVector<int,Scalar> &b,
+  const Scalar dt,
+  const Thyra::VectorBase<Scalar> &x_base,
+  const Thyra::VectorBase<Scalar> &x_stage_bar,
+  Teuchos::Ptr<Thyra::VectorBase<Scalar> > x_out_ptr
+  )
+{
+  TEST_FOR_EXCEPT(true);
+}
+
 template<class Scalar>
 void assertNonEmptyRKButcherTableau( RKButcherTableau<Scalar> rkbt )
 {

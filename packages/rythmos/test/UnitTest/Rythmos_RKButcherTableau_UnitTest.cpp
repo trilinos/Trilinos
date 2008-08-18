@@ -253,6 +253,14 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleIRKSolution ) {
   }
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleERKState ) { 
+  // TODO:  Fill in tests
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleERKSolution ) { 
+  // TODO:  Fill in tests
+}
+
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assertNonEmptyRKButcherTableau ) {
   {
     // Check that an empty tableau is thrown
