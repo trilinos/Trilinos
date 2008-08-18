@@ -45,6 +45,10 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    void *Ifpack_Handle ;
    Teuchos::ParameterList List = *((Teuchos::ParameterList *) iList);
    Epetra_Comm *Comm = (Epetra_Comm *) iComm;
+#ifdef ML_TIMING
+   double         t0;
+   t0 = GetClock();
+#endif
 
    fun = ML_Smoother_Ifpack;
 
@@ -66,12 +70,20 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
      status = ML_Smoother_Set(&(ml->pre_smoother[nl]), (void*)Ifpack_Handle,
 			      fun, sweeps, 0.0, str);
      ml->pre_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
+#ifdef ML_TIMING
+     ml->pre_smoother[nl].build_time = GetClock() - t0;
+     ml->timing->total_build_time   += ml->pre_smoother[nl].build_time;
+#endif
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
      sprintf(str,"IFPACK_post%d",nl);
      status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
 			      (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
+#ifdef ML_TIMING
+     ml->post_smoother[nl].build_time = GetClock() - t0;
+     ml->timing->total_build_time   += ml->post_smoother[nl].build_time;
+#endif
    }
    else if (pre_or_post == ML_BOTH) {
      sprintf(str,"IFPACK_pre%d",nl);
@@ -82,6 +94,10 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
      status = ML_Smoother_Set(&(ml->post_smoother[nl]),
 			      (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
+#ifdef ML_TIMING
+     ml->pre_smoother[nl].build_time = GetClock() - t0;
+     ml->timing->total_build_time   += ml->pre_smoother[nl].build_time;
+#endif
    }
    else 
      pr_error("ML_Gen_Smoother_Ifpack: unknown pre_or_post choice\n");
