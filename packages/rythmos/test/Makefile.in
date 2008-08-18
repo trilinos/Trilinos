@@ -225,6 +225,7 @@ top_srcdir = @top_srcdir@
 SUBDIRS = ExplicitTaylorPolynomialStepper\
           complicatedExample\
           UnitTest \
+					ConvergenceTest \
           simpleAdjoint 
 
 EXTRA_DIST = definition

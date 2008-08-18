@@ -8891,7 +8891,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile adapters/Makefile adapters/gaasp/Makefile adapters/gaasp/src/Makefile adapters/gaasp/test/Makefile adapters/gaasp/example/Makefile adapters/gaasp/tpl_src/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile adapters/Makefile adapters/gaasp/Makefile adapters/gaasp/src/Makefile adapters/gaasp/test/Makefile adapters/gaasp/example/Makefile adapters/gaasp/tpl_src/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/ConvergenceTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9729,6 +9729,7 @@ do
     "test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile") CONFIG_FILES="$CONFIG_FILES test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/UnitTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/UnitTest/Makefile" ;;
+    "test/ConvergenceTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/ConvergenceTest/Makefile" ;;
     "test/complicatedExample/Makefile") CONFIG_FILES="$CONFIG_FILES test/complicatedExample/Makefile" ;;
     "test/simpleAdjoint/Makefile") CONFIG_FILES="$CONFIG_FILES test/simpleAdjoint/Makefile" ;;
 

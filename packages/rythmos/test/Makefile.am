@@ -40,6 +40,7 @@ all-local:
 SUBDIRS = ExplicitTaylorPolynomialStepper\
           complicatedExample\
           UnitTest \
+					ConvergenceTest \
           simpleAdjoint 
 
 EXTRA_DIST = definition

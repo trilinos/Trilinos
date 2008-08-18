@@ -36,6 +36,7 @@
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 namespace Rythmos {
 
@@ -655,9 +656,51 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, create ) {
   TEST_EQUALITY_CONST( Teuchos::is_null(irkStepper), false );
 }
 
+/*
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, takeStep ) {
+  // Create the model
+//  RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+//  sublist(pl,Stratimikos_name);
+//  sublist(pl,DiagonalTransientModel_name);
+//  RCP<Thyra::ModelEvaluator<double> > model = getDiagonalModel<double>(pl);
+  RCP<SinCosModel> model = sinCosModel(true); // implicit formulation
+  // create a valid base point
+  Thyra::ModelEvaluatorBase::InArgs<double> basePoint = model->createInArgs();
+  RCP<VectorBase<double> > base_x = Thyra::createMember(model->get_x_space());
+  V_S(&*base_x,0.0);
+  basePoint.set_x(base_x);
+  RCP<VectorBase<double> > base_x_dot = Thyra::createMember(model->get_x_space());
+  V_S(&*base_x_dot,1.0);
+  basePoint.set_x_dot(base_x_dot);
+  double base_t = 0.0;
+  basePoint.set_t(base_t);
+  // Create the nonlinear solver
+  RCP<Rythmos::TimeStepNonlinearSolver<double> >
+    nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+  // Create the IRK W factory
+//  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory =
+//    getWFactory<double>(pl);
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory = 
+    Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
 
+  // Create the IRK Butcher Tableau
+  RKButcherTableau<double> irkbt = createBackwardEulerRKBT<double>();
+  // Create the IRK Stepper
+  RCP<ImplicitRKStepper<double> > irkStepper = 
+    implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, irkbt );
+  //  08/14/08 tscoffe:  This test is failing in
+  //  DefaultSerialDenseLinearOpWithSolveFactory::initializeOp when it tries to
+  //  dyn_cast the LinearOpBase object to a MultiVectorBase object and it fails
+  //  because the LinearOpBase object that was passed in by the IRK ME is
+  //  actually a DefaultBlockedLinearOp object.  I'm not sure where to go from
+  //  here.
+  double stepTaken = irkStepper->takeStep(1.0, STEP_TYPE_FIXED);
+  TEST_EQUALITY_CONST( stepTaken, 1.0 );
+  // What should the answer be?
+  // TODO
 }
+*/
+
 
 
 } // namespace Rythmos

@@ -510,6 +510,7 @@ AC_CONFIG_FILES([
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
 		test/Makefile
 		test/UnitTest/Makefile
+		test/ConvergenceTest/Makefile
 		test/complicatedExample/Makefile
 		test/simpleAdjoint/Makefile
 		])

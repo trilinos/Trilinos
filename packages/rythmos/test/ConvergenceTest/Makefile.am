@@ -29,32 +29,22 @@
 EXEEXT = .exe
 
 
-bin_PROGRAMS = Rythmos_UnitTest
+bin_PROGRAMS = Rythmos_ConvergenceTest
 
 #
 # Actual programs
 #
 
-Rythmos_UnitTest_INCLUDES =\
-  $(srcdir)/Rythmos_UnitTestHelpers.hpp\
-	$(srcdir)/Rythmos_UnitTestModels.hpp
-Rythmos_UnitTest_SOURCES =\
+Rythmos_ConvergenceTest_INCLUDES =\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.hpp\
+	$(srcdir)/../UnitTest/Rythmos_UnitTestModels.hpp
+Rythmos_ConvergenceTest_SOURCES =\
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
-	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
-  $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
-  $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp\
-  $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\
-  $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
-  $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
-	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
-  $(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp\
   $(srcdir)/../SinCos/SinCosModel.cpp\
-  $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
-  $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
-	$(srcdir)/Rythmos_UnitTest.cpp\
-	$(srcdir)/Rythmos_UnitTestHelpers.cpp
-Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies)
-Rythmos_UnitTest_LDADD = $(common_ldadd)
+	$(srcdir)/Rythmos_ConvergenceTest.cpp\
+	$(srcdir)/Rythmos_ExplicitRK_ConvergenceTest.cpp
+Rythmos_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_ConvergenceTest_LDADD = $(common_ldadd)
 
 #
 # Common stuff

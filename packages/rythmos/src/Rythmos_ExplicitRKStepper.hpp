@@ -138,6 +138,14 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
 };
 
+// Non-member constructor
+template<class Scalar>
+RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model )
+{
+  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model));
+  return stepper;
+}
+
 template<class Scalar>
 ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {

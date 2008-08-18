@@ -33,6 +33,8 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
+#include "Thyra_DefaultLinearOpSource.hpp"
 
 #ifdef SINCOSMODEL_DEBUG
 #include <iostream>
@@ -121,19 +123,28 @@ SinCosModel::getNominalValues() const
 }
 
 
+
+
+RCP<Thyra::LinearOpWithSolveBase<double> >
+SinCosModel::create_W() const
+{
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = this->get_W_factory();
+  RCP<Thyra::LinearOpBase<double> > matrix = this->create_W_op();
+  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
+    Thyra::linearOpWithSolve<double>(
+      *W_factory,
+      matrix
+      );
+  return W;
+}
 //RCP<Thyra::LinearOpWithSolveBase<double> >
 //SinCosModel::create_W() const
 //{
-//  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = 
-//    Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
-//  RCP<Thyra::MultiVectorBase<double> > matrix = Thyra::createMembers(x_space_, dim_);
-//  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
-//    Thyra::linearOpWithSolve<double>(
-//      *W_factory,
-//      matrix
-//      );
-//  return W;
+//  return Thyra::multiVectorLinearOpWithSolve<double>();
 //}
+
+
+
 
 
 RCP<Thyra::LinearOpBase<double> >
@@ -143,6 +154,9 @@ SinCosModel::create_W_op() const
   return(matrix);
 }
 
+
+
+
 RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > 
 SinCosModel::get_W_factory() const
 {
@@ -150,6 +164,19 @@ SinCosModel::get_W_factory() const
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
   return W_factory;
 }
+//  RCP<const Thyra::LinearOpBase<double> > fwdOp = this->create_W_op();
+//  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
+//    Thyra::linearOpWithSolve<double>(
+//      *W_factory,
+//      fwdOp
+//      );
+//  W_factory->initializeOp(
+//      Thyra::defaultLinearOpSource<double>(fwdOp),
+//      &*W,
+//      Thyra::SUPPORT_SOLVE_UNSPECIFIED
+//      );
+
+
 
 ModelEvaluatorBase::InArgs<double>
 SinCosModel::createInArgs() const
