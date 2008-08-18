@@ -32,7 +32,7 @@
 
 #define ARRAY_BOUNDS_CHECKING
 
-#include <util/Array.hpp>
+#include <Array.hpp>
 
 namespace phdmesh {
 
