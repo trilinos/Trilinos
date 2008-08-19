@@ -26,14 +26,13 @@
 // ***********************************************************************
 //@HEADER
 
+
 #include "Teuchos_UnitTestHarness.hpp"
 
-#include "Rythmos_Types.hpp"
-#include "Rythmos_ConvergenceTestHelpers.hpp"
+#include "Rythmos_ExplicitRK_ConvergenceTest.hpp"
+#include "Rythmos_RKButcherTableau.hpp"
 
-#include "Rythmos_ExplicitRKStepper.hpp"
 
-#include "../SinCos/SinCosModel.hpp"
 
 namespace Rythmos {
 
@@ -41,109 +40,41 @@ using Thyra::VectorBase;
 using Thyra::VectorSpaceBase;
 using Teuchos::is_null;
 
+RCP<ExplicitRKStepper<double> > getERKStepperByOrder(int order) {
+  RCP<SinCosModel> model = sinCosModel(false);
+  DefaultRKButcherTableauFactory<double> rkbtFactory;
+  Teuchos::ParameterList pl;
+  pl.set("Selection Type", "Explicit method by order");
+  pl.set("Explicit method by order", order);
+  RKButcherTableau<double> rkbt = rkbtFactory.create(pl);
+  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
+  return stepper;
+}
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, GlobalErrorConvergenceStudy ) {
-  double tol = 1.0e-10;
 
-  RCP<SinCosModel> model = sinCosModel(false);
-  RCP<VectorBase<double> > tmp_vec = createMember(model->get_x_space());
+  SinCosModelERKStepperFactory erkFactory;
+  for (int order=1 ; order<=4 ; ++order) {
+    erkFactory.setOrder(order);
+    double slope = computeOrderByGlobalErrorConvergenceStudy(erkFactory);
 
-//  Array<double> stepSize;
-  Array<double> logStepSize;
-
-//  Array<double> errorNorm;
-  Array<double> logErrorNorm;
-
-  double t_final = 1.0;
-
-  // get exact solution 
-  RCP<const VectorBase<double> > x_exact = model->getExactSolution(t_final).get_x();
-
-  double h = 1.0;
-  int N = 10;
-  for (int i=0 ; i<N ; ++i) {
-    RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
-    int numSteps = int(round(t_final/h));
-    for (int s=0 ; s<numSteps ; ++s) {
-      double stepTaken = stepper->takeStep(h,STEP_TYPE_FIXED);
-      TEST_FLOATING_EQUALITY( stepTaken, h, tol );
-    }
-    // get solution 
-    RCP<const VectorBase<double> > x = stepper->getStepStatus().solution;
-    double t = stepper->getStepStatus().time;
-    TEST_FLOATING_EQUALITY( t, t_final, tol );
-    // take norm of difference
-    Thyra::V_StVpStV(&*tmp_vec,1.0,*x_exact,-1.0,*x);
-//    stepSize.push_back(h);
-    logStepSize.push_back(log(h));
-    double nrm = Thyra::norm_inf(*tmp_vec);
-//    errorNorm.push_back(nrm);
-    logErrorNorm.push_back(log(nrm));
-    h = h/2.0;
+    double tol = 1.0e-2;
+    TEST_FLOATING_EQUALITY( slope, 1.0*order, tol ); // is slope close to order?
   }
-
-//  using std::cout;
-//  using std::endl;
-//  cout << endl;
-//  cout << "stepSize = " << stepSize << endl;
-//  cout << "logStepSize = " << logStepSize << endl;
-//  cout << "errorNorm = " << errorNorm << endl;
-//  cout << "logErrorNorm = " << logErrorNorm << endl;
-
-  double slope = computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
-//  cout << "slope = " << slope << endl;
-
-  int order = 4;
-  tol = 1.0e-3;
-  TEST_FLOATING_EQUALITY( slope, 1.0*order, tol ); // is slope close to order?
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, LocalErrorConvergenceStudy ) {
-  double tol = 1.0e-10;
+  SinCosModelERKStepperFactory erkFactory;
+  for (int order=1 ; order<=4 ; ++order) {
+    erkFactory.setOrder(order);
+    double slope = computeOrderByLocalErrorConvergenceStudy(erkFactory);
 
-  RCP<SinCosModel> model = sinCosModel(false);
-  RCP<VectorBase<double> > tmp_vec = createMember(model->get_x_space());
-
-//  Array<double> stepSize;
-  Array<double> logStepSize;
-
-//  Array<double> errorNorm;
-  Array<double> logErrorNorm;
-
-  double h = 2.0;
-  int N = 11;
-  for (int i=0 ; i<N ; ++i) {
-    RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
-    double stepTaken = stepper->takeStep(h,STEP_TYPE_FIXED);
-    TEST_FLOATING_EQUALITY( stepTaken, h, tol );
-    // get solution 
-    RCP<const VectorBase<double> > x = stepper->getStepStatus().solution;
-    // get exact solution
-    RCP<const VectorBase<double> > x_exact = model->getExactSolution(h).get_x();
-    // take norm of difference
-    Thyra::V_StVpStV(&*tmp_vec,1.0,*x_exact,-1.0,*x);
-//    stepSize.push_back(h);
-    logStepSize.push_back(log(h));
-    double nrm = Thyra::norm_inf(*tmp_vec);
-//    errorNorm.push_back(nrm);
-    logErrorNorm.push_back(log(nrm));
-    h = h/2.0;
+    int localOrder = order+1; // I don't know why the order is coming out one higher than it should!?!
+    double tol = 1.0e-3;
+    if (order == 1) { tol = 1.0e-2; }
+    else if (order == 4) { tol = 1.0e-1; }
+    TEST_FLOATING_EQUALITY( slope, 1.0*localOrder, tol ); // is slope close to order?
   }
-
-//  using std::cout;
-//  using std::endl;
-//  cout << endl;
-//  cout << "stepSize = " << stepSize << endl;
-//  cout << "logStepSize = " << logStepSize << endl;
-//  cout << "errorNorm = " << errorNorm << endl;
-//  cout << "logErrorNorm = " << logErrorNorm << endl;
-
-  double slope = computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
-//  cout << "slope = " << slope << endl;
-
-  int order = 5; // I don't understand this yet, it should still be 4.
-  tol = 1.0e-2;
-  TEST_FLOATING_EQUALITY( slope, 1.0*order, tol ); // is slope close to order?
 }
 
 

@@ -30,6 +30,7 @@
 #define Rythmos_ExplicitRK_STEPPER_H
 
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_RKButcherTableau.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -47,7 +48,16 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     
     /** \brief . */
     ExplicitRKStepper();
-    ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model_);
+    ExplicitRKStepper(
+        const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+        RKButcherTableau<Scalar> rkbt
+        );
+
+    /** \brief. */
+    void setRKButcherTableau(RKButcherTableau<Scalar> rkbt);
+
+    /** \brief. */
+    RKButcherTableau<Scalar> getRKButcherTableau() const;
 
     /** \brief . */
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
@@ -121,10 +131,7 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
-    int stages_; // Number of stages of RK
-    Array<Array<Scalar> > b_A_; // Butcher tableau A matrix
-    Array<Scalar> b_b_; // Butcher b vector
-    Array<Scalar> b_c_; // Butcher c vector
+    RKButcherTableau<Scalar> erkButcherTableau_;
 
     Scalar t_;
     Scalar dt_;
@@ -140,20 +147,56 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
 // Non-member constructor
 template<class Scalar>
-RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model )
+RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model 
+    )
 {
-  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model));
+  RKButcherTableau<Scalar> rkbt = createExplicit4StageRKBT<Scalar>();
+  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model,rkbt));
   return stepper;
 }
 
 template<class Scalar>
-ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
+RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+    const RKButcherTableau<Scalar> rkbt 
+    )
+{
+  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model,rkbt));
+  return stepper;
+}
+
+template<class Scalar>
+ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model, RKButcherTableau<Scalar> rkbt)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
 
   this->setModel(model);
+  this->setRKButcherTableau(rkbt);
   initialize_();
+}
+
+template<class Scalar>
+void ExplicitRKStepper<Scalar>::setRKButcherTableau(RKButcherTableau<Scalar> rkbt)
+{
+  validateERKButcherTableau(rkbt);
+  int numStages_old = erkButcherTableau_.numStages();
+  int numStages_new = rkbt.numStages();
+  int numNewStages = numStages_new - numStages_old;
+  if ( numNewStages > 0 ) {
+    k_vector_.reserve(numStages_new);
+    for (int i=0 ; i<numNewStages ; ++i) {
+      k_vector_.push_back(Thyra::createMember(model_->get_f_space()));
+    }
+  }
+  erkButcherTableau_ = rkbt;
+}
+
+template<class Scalar>
+RKButcherTableau<Scalar> ExplicitRKStepper<Scalar>::getRKButcherTableau() const
+{
+  return erkButcherTableau_;
 }
 
 template<class Scalar>
@@ -161,85 +204,7 @@ void ExplicitRKStepper<Scalar>::initialize_()
 {
   t_ = ST::zero();
   solution_vector_ = model_->getNominalValues().get_x()->clone_v();
-  stages_ = 4; // 4 stage ERK
-  k_vector_.reserve(stages_);
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-    f_space = model_->get_f_space();
-  for (int i=0 ; i<stages_ ; ++i) {
-    k_vector_.push_back(Thyra::createMember(f_space));
-  }
-  ktemp_vector_ = Thyra::createMember(f_space);
-
-  // initialize the Butcher tableau and its vectors
-  Scalar zero = ST::zero();
-  b_A_.reserve(stages_);
-  b_b_.reserve(stages_);
-  b_c_.reserve(stages_);
-
-  // fill b with zeros
-  b_b_.push_back(zero); 
-  b_b_.push_back(zero); 
-  b_b_.push_back(zero);
-  b_b_.push_back(zero);
-  // fill c with zeros
-  b_c_.push_back(zero); 
-  b_c_.push_back(zero); 
-  b_c_.push_back(zero);
-  b_c_.push_back(zero);
-  // fill A with zeros
-  for (int i=0 ; i<stages_ ; ++i) {
-    b_A_.push_back(b_b_);
-  }
-
-  // Runge-Kutta methods in Butcher tableau form:
-  //  c | A    A = sxs matrix
-  //   -|---   b = s vector
-  //      b'   c = s vector
-  
-  // "The" Runge-Kutta Method: (implemented below)
-  // c = [  0  1/2 1/2  1  ]'
-  // A = [  0              ] 
-  //     [ 1/2  0          ]
-  //     [  0  1/2  0      ]
-  //     [  0   0   1   0  ]
-  // b = [ 1/6 1/3 1/3 1/6 ]'
-  Scalar one = ST::one();
-  Scalar onehalf = ST::one()/(2*ST::one());
-  Scalar onesixth = ST::one()/(6*ST::one());
-  Scalar onethird = ST::one()/(3*ST::one());
-
-  // fill b_A_
-  b_A_[0][0] = zero;
-  b_A_[0][1] = zero;
-  b_A_[0][2] = zero;
-  b_A_[0][3] = zero;
-
-  b_A_[1][0] = onehalf;
-  b_A_[1][1] = zero;
-  b_A_[1][2] = zero;
-  b_A_[1][3] = zero;
-
-  b_A_[2][0] = zero;
-  b_A_[2][1] = onehalf;
-  b_A_[2][2] = zero;
-  b_A_[2][3] = zero;
-
-  b_A_[3][0] = zero;
-  b_A_[3][1] = zero;
-  b_A_[3][2] = one;
-  b_A_[3][3] = zero;
-
-  // fill b_b_
-  b_b_[0] = onesixth;
-  b_b_[1] = onethird;
-  b_b_[2] = onethird;
-  b_b_[3] = onesixth;
-  
-  // fill b_c_
-  b_c_[0] = zero;
-  b_c_[1] = onehalf;
-  b_c_[2] = onehalf;
-  b_c_[3] = one;
+  ktemp_vector_ = Thyra::createMember(model_->get_f_space());
 
   isInitialized_ = true;
 }
@@ -271,21 +236,25 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   }
   dt_ = dt;
 
+  int stages = erkButcherTableau_.numStages();
+  Teuchos::SerialDenseMatrix<int,Scalar> A = erkButcherTableau_.A();
+  Teuchos::SerialDenseVector<int,Scalar> b = erkButcherTableau_.b();
+  Teuchos::SerialDenseVector<int,Scalar> c = erkButcherTableau_.c();
   // Compute stage solutions
-  for (int s=0 ; s < stages_ ; ++s) {
+  for (int s=0 ; s < stages ; ++s) {
     Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
     for (int j=0 ; j < s ; ++j) { // assuming Butcher matix is strictly lower triangular
-      if (b_A_[s][j] != ST::zero())
-        Thyra::Vp_StV(&*ktemp_vector_, b_A_[s][j], *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
+      if (A(s,j) != ST::zero())
+        Thyra::Vp_StV(&*ktemp_vector_, A(s,j), *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
     }
-    ScalarMag ts = t_ + b_c_[s]*dt;
+    ScalarMag ts = t_ + c(s)*dt;
     Thyra::eval_f<Scalar>(*model_,*ktemp_vector_,ts,&*k_vector_[s]);
     Thyra::Vt_S(&*k_vector_[s],dt); // k_s = k_s*dt
   } 
   // Sum for solution:
-  for (int s=0 ; s < stages_ ; ++s) {
-    if (b_b_[s] != ST::zero()) {
-      Thyra::Vp_StV(&*solution_vector_, b_b_[s], *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
+  for (int s=0 ; s < stages ; ++s) {
+    if (b(s) != ST::zero()) {
+      Thyra::Vp_StV(&*solution_vector_, b(s), *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
     }
   }
 
@@ -321,7 +290,7 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
      ) {
     out << this->description() << "::describe" << std::endl;
     out << "model = " << model_->description() << std::endl;
-    out << stages_ << " stage Explicit RK method" << std::endl;
+    out << erkButcherTableau_.numStages() << " stage Explicit RK method" << std::endl;
   } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) {
     out << "solution_vector = " << std::endl;
     solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer); 
@@ -329,23 +298,16 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
   } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH)) {
     out << "model = " << std::endl;
     model_->describe(out,verbLevel,leadingIndent,indentSpacer); 
-    for (int i=0 ; i<stages_ ; ++i) {
+    int stages = erkButcherTableau_.numStages();
+    for (int i=0 ; i<stages ; ++i) {
       out << "k_vector[" << i << "] = " << std::endl;
       out << k_vector_[i]->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
     }
     out << "ktemp_vector = " << std::endl;
     ktemp_vector_->describe(out,verbLevel,leadingIndent,indentSpacer); 
-    for (int i=0 ; i<stages_ ; ++i) {
-      for (int j=0 ; j<stages_ ; ++j) {
-        out << "b_A_[" << i << "][" << j << "] = " << b_A_[i][j] << std::endl;
-      }
-    }
-    for (int i=0 ; i<stages_ ; ++i) {
-      out << "b_b_[" << i << "] = " << b_b_[i] << std::endl;
-    }
-    for (int i=0 ; i<stages_ ; ++i) {
-      out << "b_c_[" << i << "] = " << b_c_[i] << std::endl;
-    }
+    out << "ERK Butcher Tableau A matrix: " << erkButcherTableau_.A() << std::endl;
+    out << "ERK Butcher Tableau b vector: " << erkButcherTableau_.b() << std::endl;
+    out << "ERK Butcher Tableau c vector: " << erkButcherTableau_.c() << std::endl;
     out << "t = " << t_ << std::endl;
   }
   return(out);
@@ -392,7 +354,7 @@ void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
 template<class Scalar>
 int ExplicitRKStepper<Scalar>::getOrder() const
 {
-  return(4);
+  return(erkButcherTableau_.order());
 }
 
 template <class Scalar>
@@ -421,7 +383,8 @@ Teuchos::RCP<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::unsetParameterLi
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-  TEST_FOR_EXCEPT(model == Teuchos::null)
+  TEST_FOR_EXCEPT(model == Teuchos::null);
+  TEST_FOR_EXCEPT( !Teuchos::is_null(model_) ); // For now you can only call this once.
   model_ = model;
 }
 

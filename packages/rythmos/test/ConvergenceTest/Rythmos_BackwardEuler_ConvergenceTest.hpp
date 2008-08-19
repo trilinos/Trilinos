@@ -25,36 +25,35 @@
 //
 // ***********************************************************************
 //@HEADER
-
-#include "Teuchos_UnitTestHarness.hpp"
+#ifndef Rythmos_BACKWARD_EULER_CONVERGENCETEST_H
+#define Rythmos_BACKWARD_EULER_CONVERGENCETEST_H
 
 #include "Rythmos_Types.hpp"
-#include "Rythmos_UnitTestHelpers.hpp"
-
-#include "Rythmos_ExplicitRKStepper.hpp"
-
+#include "Rythmos_ConvergenceTestHelpers.hpp"
 #include "../SinCos/SinCosModel.hpp"
+#include "Rythmos_BackwardEulerStepper.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 namespace Rythmos {
 
-using Thyra::VectorBase;
-using Thyra::VectorSpaceBase;
-using Teuchos::is_null;
+class SinCosModelBEStepperFactory : public virtual StepperFactoryBase<double>
+{
+  public:
+    SinCosModelBEStepperFactory() { }
+    RCP<StepperBase<double> > create() const 
+    { 
+      RCP<SinCosModel> model = sinCosModel(true);
+      RCP<Rythmos::TimeStepNonlinearSolver<double> >
+        nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+      RCP<ParameterList> nonlinearSolverPL = Teuchos::parameterList();
+      nonlinearSolverPL->get("Default Tol",1.0e-9); // Set default if not set
+      nonlinearSolver->setParameterList(nonlinearSolverPL);
+      RCP<BackwardEulerStepper<double> > stepper = rcp(new BackwardEulerStepper<double>(model,nonlinearSolver));
+      return stepper;
+    }
+};
 
-TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, create ) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
-  TEST_EQUALITY_CONST( is_null(stepper), false );
-}
+} // namespace Rythmos 
 
-TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  RKButcherTableau<double> rkbt = createExplicit4StageRKBT<double>();
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
-  TEST_EQUALITY_CONST( is_null(stepper), false );
-  RKButcherTableau<double> rkbt_out = stepper->getRKButcherTableau();
-  TEST_EQUALITY_CONST( rkbt == rkbt_out, true );
-}
-
-} // namespace Rythmos
+#endif // Rythmos_BACKWARD_EULER_CONVERGENCETEST_H
 

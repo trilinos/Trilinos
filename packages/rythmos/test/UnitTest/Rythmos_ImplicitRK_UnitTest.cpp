@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, validInitialize ) {
     SerialDenseMatrix<int,double> A(numStages, numStages);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
-    RKButcherTableau<double> irkButcherTableau(A,b,c);
+    RKButcherTableau<double> irkButcherTableau(A,b,c,numStages);
 
     // initialize irk model evaluator
     RCP<ImplicitRKModelEvaluator<double> > irkME = 
@@ -198,7 +198,7 @@ RCP<ImplicitRKModelEvaluator<double> > getImplicitRKModelEvaluator(int numStages
   SerialDenseMatrix<int,double> A(numStages, numStages);
   SerialDenseVector<int,double> b(numStages);
   SerialDenseVector<int,double> c(numStages);
-  RKButcherTableau<double> irkButcherTableau(A,b,c);
+  RKButcherTableau<double> irkButcherTableau(A,b,c,1);
 
   // Create an IRKModelEvaluator
   RCP<ImplicitRKModelEvaluator<double> > irkME = 
@@ -256,7 +256,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, evalModelOneStage ) {
   A(0,0) = 7.0;
   b(0) = 8.0;
   c(0) = 9.0;
-  RKButcherTableau<double> irkButcherTableau(A,b,c);
+  RKButcherTableau<double> irkButcherTableau(A,b,c,1);
 
   // Create an IRKModelEvaluator
   RCP<ImplicitRKModelEvaluator<double> > irkME = 
@@ -411,7 +411,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, evalModelTwoStage ) {
   b(1) = 8.1;
   c(0) = 9.0;
   c(1) = 9.1;
-  RKButcherTableau<double> irkButcherTableau(A,b,c);
+  RKButcherTableau<double> irkButcherTableau(A,b,c,2);
 
   // Create an IRKModelEvaluator
   RCP<ImplicitRKModelEvaluator<double> > irkME = 

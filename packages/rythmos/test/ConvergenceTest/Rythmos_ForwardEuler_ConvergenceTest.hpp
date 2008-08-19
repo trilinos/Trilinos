@@ -25,36 +25,29 @@
 //
 // ***********************************************************************
 //@HEADER
-
-#include "Teuchos_UnitTestHarness.hpp"
+#ifndef Rythmos_FORWARD_EULER_CONVERGENCETEST_H
+#define Rythmos_FORWARD_EULER_CONVERGENCETEST_H
 
 #include "Rythmos_Types.hpp"
-#include "Rythmos_UnitTestHelpers.hpp"
-
-#include "Rythmos_ExplicitRKStepper.hpp"
-
+#include "Rythmos_ConvergenceTestHelpers.hpp"
 #include "../SinCos/SinCosModel.hpp"
+#include "Rythmos_ForwardEulerStepper.hpp"
 
 namespace Rythmos {
 
-using Thyra::VectorBase;
-using Thyra::VectorSpaceBase;
-using Teuchos::is_null;
+class SinCosModelFEStepperFactory : public virtual StepperFactoryBase<double>
+{
+  public:
+    SinCosModelFEStepperFactory() { }
+    RCP<StepperBase<double> > create() const 
+    { 
+      RCP<SinCosModel> model = sinCosModel(false);
+      RCP<ForwardEulerStepper<double> > stepper = rcp(new ForwardEulerStepper<double>(model));
+      return stepper;
+    }
+};
 
-TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, create ) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
-  TEST_EQUALITY_CONST( is_null(stepper), false );
-}
+} // namespace Rythmos 
 
-TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  RKButcherTableau<double> rkbt = createExplicit4StageRKBT<double>();
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
-  TEST_EQUALITY_CONST( is_null(stepper), false );
-  RKButcherTableau<double> rkbt_out = stepper->getRKButcherTableau();
-  TEST_EQUALITY_CONST( rkbt == rkbt_out, true );
-}
-
-} // namespace Rythmos
+#endif // Rythmos_FORWARD_EULER_CONVERGENCETEST_H
 

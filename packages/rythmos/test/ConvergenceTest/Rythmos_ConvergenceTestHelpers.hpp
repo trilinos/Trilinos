@@ -29,6 +29,7 @@
 #define Rythmos_CONVERGENCETEST_HELPERS_H
 
 #include "Rythmos_Types.hpp"
+#include "Rythmos_StepperBase.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_as.hpp"
 
@@ -41,7 +42,6 @@ class LinearRegression
 {
   public:
     LinearRegression(); 
-    ~LinearRegression();
     void setData(Array<Scalar>& x, Array<Scalar>& y);
     Scalar getSlope() const; 
     Scalar getYIntercept() const;
@@ -64,11 +64,6 @@ template<class Scalar>
 LinearRegression<Scalar>::LinearRegression() 
 {
   isInitialized_ = false;
-}
-
-template<class Scalar>
-LinearRegression<Scalar>::~LinearRegression()
-{
 }
 
 template<class Scalar>
@@ -165,7 +160,18 @@ RCP<LinearRegression<Scalar> > linearRegression()
   return lr;
 }
 
-}
+template<class Scalar>
+class StepperFactoryBase
+{
+  public:
+    virtual RCP<StepperBase<Scalar> > create() const =0;
+};
+
+double computeOrderByLocalErrorConvergenceStudy(const StepperFactoryBase<double>& stepperFactory);
+
+double computeOrderByGlobalErrorConvergenceStudy(const StepperFactoryBase<double>& stepperFactory);
+
+} // namespace Rythmos
 
 #endif // Rythmos_CONVERGENCETEST_HELPERS_H
 

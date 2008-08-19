@@ -176,15 +176,17 @@ public:
   RKButcherTableau(
     const Teuchos::SerialDenseMatrix<int,Scalar>& A,
     const Teuchos::SerialDenseVector<int,Scalar>& b,
-    const Teuchos::SerialDenseVector<int,Scalar>& c
+    const Teuchos::SerialDenseVector<int,Scalar>& c,
+    int order
     )
-    : A_(A), b_(b), c_(c)
+    : A_(A), b_(b), c_(c), order_(order)
     {
       const int numStages = A.numRows();
       TEUCHOS_ASSERT_EQUALITY( A.numRows(), numStages );
       TEUCHOS_ASSERT_EQUALITY( A.numCols(), numStages );
       TEUCHOS_ASSERT_EQUALITY( b.length(), numStages );
       TEUCHOS_ASSERT_EQUALITY( c.length(), numStages );
+      TEUCHOS_ASSERT( order > 0 );
     }
   /** \brief . */
   int numStages() const { return A_.numRows(); }
@@ -194,11 +196,51 @@ public:
   const Teuchos::SerialDenseVector<int,Scalar> b() const { return b_; }
   /** \brief . */
   const Teuchos::SerialDenseVector<int,Scalar> c() const { return c_; }
+  /** \brief . */
+  int order() const { return order_; }
+  /** \brief . */
+  bool operator== (const RKButcherTableau<Scalar>& rkbt) const;
+
 private:
   Teuchos::SerialDenseMatrix<int,Scalar> A_;
   Teuchos::SerialDenseVector<int,Scalar> b_;
   Teuchos::SerialDenseVector<int,Scalar> c_;
+  int order_;
 };
+
+/* \brief . */
+template<class Scalar>
+bool RKButcherTableau<Scalar>::operator== (const RKButcherTableau<Scalar>& rkbt) const
+{ 
+  if (this->numStages() != rkbt.numStages()) {
+    return false;
+  }
+  if (this->order() != rkbt.order()) {
+    return false;
+  }
+  int N = rkbt.numStages();
+  // Check b and c first:
+  const Teuchos::SerialDenseVector<int,Scalar> other_b = rkbt.b();
+  const Teuchos::SerialDenseVector<int,Scalar> other_c = rkbt.c();
+  for (int i=0 ; i<N ; ++i) {
+    if (b_(i) != other_b(i)) {
+      return false;
+    }
+    if (c_(i) != other_c(i)) {
+      return false;
+    }
+  }
+  // Then check A:
+  const Teuchos::SerialDenseMatrix<int,Scalar>& other_A = rkbt.A();
+  for (int i=0 ; i<N ; ++i) {
+    for (int j=0 ; j<N ; ++j) {
+      if (A_(i,j) != other_A(i,j)) {
+        return false;
+      }
+    } 
+  }
+  return true;
+}
 
 
 /* \brief . */
@@ -406,16 +448,15 @@ template<class Scalar>
 class RKButcherTableauFactory 
 {
   public:
-    RKButcherTableau<Scalar> create(Teuchos::ParameterList& paramList) const = 0;
-    RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
+    virtual RKButcherTableau<Scalar> create(Teuchos::ParameterList& paramList) const = 0;
+    virtual RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 };
 
 template<class Scalar>
 class DefaultRKButcherTableauFactory : virtual public RKButcherTableauFactory<Scalar>
 {
   public:
-    DefaultRKButcherTableauFactory();
-    ~DefaultRKButcherTableauFactory();
+    DefaultRKButcherTableauFactory() {};
     RKButcherTableau<Scalar> create(Teuchos::ParameterList& paramList) const; 
     RCP<const Teuchos::ParameterList> getValidParameters() const;
 };
@@ -460,7 +501,7 @@ RKButcherTableau<Scalar> createBackwardEulerRKBT()
   b(0) = ST::one();
   Teuchos::SerialDenseVector<int,Scalar> c(1);
   c(0) = ST::one();
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,1);
 }
 
 template<class Scalar>
@@ -476,7 +517,7 @@ RKButcherTableau<Scalar> createForwardEulerRKBT()
   Teuchos::SerialDenseVector<int,Scalar> b(1);
   b(0) = ST::one();
   Teuchos::SerialDenseVector<int,Scalar> c(1);
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,1);
 }
 
 template<class Scalar>
@@ -538,7 +579,7 @@ RKButcherTableau<Scalar> createExplicit4StageRKBT()
   c(2) = onehalf;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,4);
 }
 
 template<class Scalar>
@@ -601,7 +642,7 @@ RKButcherTableau<Scalar> createExplicit3_8RuleRKBT()
   c(2) = two_third;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,4);
 }
 
 template<class Scalar>
@@ -663,7 +704,7 @@ RKButcherTableau<Scalar> createExplicit4Stage3rdOrderRungeRKBT()
   c(2) = one;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,3);
 }
 
 template<class Scalar>
@@ -712,7 +753,7 @@ RKButcherTableau<Scalar> createExplicit3Stage3rdOrderRKBT()
   c(1) = onehalf;
   c(2) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,3);
 }
 
 template<class Scalar>
@@ -764,7 +805,7 @@ RKButcherTableau<Scalar> createExplicit3Stage3rdOrderHeunRKBT()
   c(1) = onethird;
   c(2) = twothirds;
 
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,3);
 }
 
 template<class Scalar>
@@ -804,7 +845,7 @@ RKButcherTableau<Scalar> createExplicit2Stage2ndOrderRungeRKBT()
   c(0) = zero;
   c(1) = onehalf;
 
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,2);
 }
 
 template<class Scalar>
@@ -863,7 +904,7 @@ RKButcherTableau<Scalar> createExplicit4Stage3rdOrderRKBT()
   c(2) = one_half;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,3);
 }
 
 template<class Scalar>
@@ -886,7 +927,7 @@ RKButcherTableau<Scalar> createImplicit1Stage2ndOrderGaussRKBT()
   A(0,0) = onehalf;
   b(0) = one;
   c(0) = onehalf;
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,2);
 }
 
 template<class Scalar>
@@ -919,7 +960,7 @@ RKButcherTableau<Scalar> createImplicit2Stage4thOrderGaussRKBT()
   b(1) = onehalf;
   c(0) = onehalf-alpha;
   c(1) = onehalf+alpha;
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,4);
 }
 
 template<class Scalar>
@@ -963,7 +1004,7 @@ RKButcherTableau<Scalar> createImplicit3Stage6thOrderGaussRKBT()
   c(0) = Scalar(one/(2*one))-sqrt15over10;
   c(1) = Scalar(one/(2*one));
   c(2) = Scalar(one/(2*one))+sqrt15over10;
-  return RKButcherTableau<Scalar>(A,b,c);
+  return RKButcherTableau<Scalar>(A,b,c,6);
 }
 
 template<class Scalar>
@@ -1057,6 +1098,7 @@ RKButcherTableau<Scalar> DefaultRKButcherTableauFactory<Scalar>::create(Teuchos:
   
   return rkbt_out;
 }
+
 
 } // namespace Rythmos
 

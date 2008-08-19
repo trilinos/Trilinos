@@ -26,14 +26,10 @@
 // ***********************************************************************
 //@HEADER
 
+
 #include "Teuchos_UnitTestHarness.hpp"
 
-#include "Rythmos_Types.hpp"
-#include "Rythmos_UnitTestHelpers.hpp"
-
-#include "Rythmos_ExplicitRKStepper.hpp"
-
-#include "../SinCos/SinCosModel.hpp"
+#include "Rythmos_ExplicitTaylorPolynomial_ConvergenceTest.hpp"
 
 namespace Rythmos {
 
@@ -41,20 +37,26 @@ using Thyra::VectorBase;
 using Thyra::VectorSpaceBase;
 using Teuchos::is_null;
 
-TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, create ) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
-  TEST_EQUALITY_CONST( is_null(stepper), false );
+/*
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitTaylorPolynomialStepper, GlobalErrorConvergenceStudy ) {
+  int order = 1;
+  SinCosModelETPStepperFactory etpFactory;
+  double slope = computeOrderByGlobalErrorConvergenceStudy(etpFactory);
+  double tol = 1.0e-10;
+  TEST_FLOATING_EQUALITY( slope, 1.0*order, tol );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  RKButcherTableau<double> rkbt = createExplicit4StageRKBT<double>();
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
-  TEST_EQUALITY_CONST( is_null(stepper), false );
-  RKButcherTableau<double> rkbt_out = stepper->getRKButcherTableau();
-  TEST_EQUALITY_CONST( rkbt == rkbt_out, true );
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitTaylorPolynomialStepper, LocalErrorConvergenceStudy ) {
+  int order = 1;
+  SinCosModelETPStepperFactory etpFactory;
+  double slope = computeOrderByLocalErrorConvergenceStudy(etpFactory);
+  double tol = 1.0e-10;
+  int localOrder = order+1;
+  TEST_FLOATING_EQUALITY( slope, 1.0*localOrder, tol );
 }
+*/
+
+
 
 } // namespace Rythmos
 

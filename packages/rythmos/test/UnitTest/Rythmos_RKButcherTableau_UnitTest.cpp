@@ -44,7 +44,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validInitialize ) {
   SerialDenseMatrix<int,double> A(numStages, numStages);
   SerialDenseVector<int,double> b(numStages);
   SerialDenseVector<int,double> c(numStages);
-  RKButcherTableau<double> rkButcherTableau(A,b,c);
+  RKButcherTableau<double> rkButcherTableau(A,b,c,1);
 
   TEST_EQUALITY( rkButcherTableau.numStages(), numStages );
 }
@@ -58,25 +58,31 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, invalidInitialize ) {
     SerialDenseMatrix<int,double> A(numStages+1, numStages);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
+    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c,1), std::logic_error );
+  }
+  {
+    SerialDenseMatrix<int,double> A(numStages, numStages);
+    SerialDenseVector<int,double> b(numStages);
+    SerialDenseVector<int,double> c(numStages);
+    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c,0), std::logic_error );
   }
   {
     SerialDenseMatrix<int,double> A(numStages, numStages+1);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
+    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c,1), std::logic_error );
   }
   {
     SerialDenseMatrix<int,double> A(numStages, numStages);
     SerialDenseVector<int,double> b(numStages+1);
     SerialDenseVector<int,double> c(numStages);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
+    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c,1), std::logic_error );
   }
   {
     SerialDenseMatrix<int,double> A(numStages, numStages);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages+1);
-    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c), std::logic_error );
+    TEST_THROW( rkButcherTableau = RKButcherTableau<double>(A,b,c,1), std::logic_error );
   }
 }
 
@@ -253,13 +259,13 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleIRKSolution ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleERKState ) { 
-  // TODO:  Fill in tests
-}
+//TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleERKState ) { 
+//  // TODO:  Fill in tests
+//}
 
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleERKSolution ) { 
-  // TODO:  Fill in tests
-}
+//TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleERKSolution ) { 
+//  // TODO:  Fill in tests
+//}
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assertNonEmptyRKButcherTableau ) {
   {
@@ -268,7 +274,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assertNonEmptyRKButcherTableau ) {
     SerialDenseMatrix<int,double> A(numStages, numStages);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     TEST_THROW( assertNonEmptyRKButcherTableau(rkButcherTableau), std::logic_error );
   }
   {
@@ -277,7 +283,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assertNonEmptyRKButcherTableau ) {
     SerialDenseMatrix<int,double> A(numStages, numStages);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     TEST_THROW( assertNonEmptyRKButcherTableau(rkButcherTableau), std::logic_error );
   }
   {
@@ -288,7 +294,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assertNonEmptyRKButcherTableau ) {
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
     c(0) = 0.5;
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     TEST_THROW( assertNonEmptyRKButcherTableau(rkButcherTableau), std::logic_error );
   }
   {
@@ -300,7 +306,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assertNonEmptyRKButcherTableau ) {
     b(0) = 1.0;
     SerialDenseVector<int,double> c(numStages);
     c(0) = 1.0;
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     assertNonEmptyRKButcherTableau(rkButcherTableau);
   }
 
@@ -316,7 +322,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateERKButcherTableau ) {
     b(0) = 1.0;
     SerialDenseVector<int,double> c(numStages);
     c(0) = 1.0;
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     TEST_THROW( validateERKButcherTableau(rkButcherTableau), std::logic_error );
   }
   {
@@ -328,7 +334,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateERKButcherTableau ) {
     b(0) = 1.0;
     SerialDenseVector<int,double> c(numStages);
     c(0) = 0.0;
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     validateERKButcherTableau(rkButcherTableau);
   }
   {
@@ -340,7 +346,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateERKButcherTableau ) {
     b(0) = 1.0;
     SerialDenseVector<int,double> c(numStages);
     c(0) = 1.0;
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     TEST_THROW( validateERKButcherTableau(rkButcherTableau), std::logic_error );
   }
   {
@@ -352,7 +358,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateERKButcherTableau ) {
     b(0) = 1.0;
     SerialDenseVector<int,double> c(numStages);
     c(0) = 0.0;
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     TEST_THROW( validateERKButcherTableau(rkButcherTableau), std::logic_error );
   }
   {
@@ -364,7 +370,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateERKButcherTableau ) {
     b(0) = 1.0;
     SerialDenseVector<int,double> c(numStages);
     c(0) = 0.0;
-    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c);
+    RKButcherTableau<double> rkButcherTableau = RKButcherTableau<double>(A,b,c,1);
     TEST_THROW( validateERKButcherTableau(rkButcherTableau), std::logic_error );
   }
 }
@@ -375,6 +381,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createForwardEulerRKBT ) {
   TEST_EQUALITY_CONST( rkbt.A()(0,0), 0.0 );
   TEST_EQUALITY_CONST( rkbt.b()(0), 1.0 );
   TEST_EQUALITY_CONST( rkbt.c()(0), 0.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 1 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createBackwardEulerRKBT ) {
@@ -383,6 +390,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createBackwardEulerRKBT ) {
   TEST_EQUALITY_CONST( rkbt.A()(0,0), 1.0 );
   TEST_EQUALITY_CONST( rkbt.b()(0), 1.0 );
   TEST_EQUALITY_CONST( rkbt.c()(0), 1.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 1 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4StageRKBT ) {
@@ -407,6 +415,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4StageRKBT ) {
   TEST_EQUALITY_CONST( c(1), 0.5 );
   TEST_EQUALITY_CONST( c(2), 0.5 );
   TEST_EQUALITY_CONST( c(3), 1.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 4 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3_8RuleRKBT ) {
@@ -431,6 +440,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3_8RuleRKBT ) {
   TEST_EQUALITY_CONST( c(1), 1.0/3.0 );
   TEST_EQUALITY_CONST( c(2), 2.0/3.0 );
   TEST_EQUALITY_CONST( c(3), 1.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 4 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit2Stage2ndOrderRungeRKBT ) {
@@ -446,6 +456,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit2Stage2ndOrderRungeRK
   TEST_EQUALITY_CONST( b(1), 1.0 );
   TEST_EQUALITY_CONST( c(0), 0.0 );
   TEST_EQUALITY_CONST( c(1), 0.5 );
+  TEST_EQUALITY_CONST( rkbt.order(), 2 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage3rdOrderRungeRKBT ) {
@@ -470,6 +481,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage3rdOrderRungeRK
   TEST_EQUALITY_CONST( c(1), 0.5 );
   TEST_EQUALITY_CONST( c(2), 1.0 );
   TEST_EQUALITY_CONST( c(3), 1.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 3 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrderHeunRKBT ) {
@@ -489,6 +501,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrderHeunRKB
   TEST_EQUALITY_CONST( c(0), 0.0     );
   TEST_EQUALITY_CONST( c(1), 1.0/3.0 );
   TEST_EQUALITY_CONST( c(2), 2.0/3.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 3 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrderRKBT ) {
@@ -508,6 +521,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrderRKBT ) 
   TEST_EQUALITY_CONST( c(0), 0.0 );
   TEST_EQUALITY_CONST( c(1), 0.5 );
   TEST_EQUALITY_CONST( c(2), 1.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 3 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage3rdOrderRKBT ) {
@@ -532,6 +546,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage3rdOrderRKBT ) 
   TEST_EQUALITY_CONST( c(1), 0.5 );
   TEST_EQUALITY_CONST( c(2), 0.5 );
   TEST_EQUALITY_CONST( c(3), 1.0 );
+  TEST_EQUALITY_CONST( rkbt.order(), 3 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage2ndOrderGaussRKBT ) {
@@ -544,6 +559,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage2ndOrderGaussRK
   TEST_EQUALITY_CONST( A(0,0),  0.5 );
   TEST_EQUALITY_CONST( b(0), 1.0 );
   TEST_EQUALITY_CONST( c(0), 0.5 );
+  TEST_EQUALITY_CONST( rkbt.order(), 2 );
 }
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage4thOrderGaussRKBT ) {
   double tol = 1.0e-10;
@@ -561,6 +577,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage4thOrderGaussRK
   TEST_FLOATING_EQUALITY( b(1), 0.5, tol );
   TEST_FLOATING_EQUALITY( c(0), 0.5-sqrt(3.0)/6.0, tol );
   TEST_FLOATING_EQUALITY( c(1), 0.5+sqrt(3.0)/6.0, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 4 );
 }
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderGaussRKBT ) {
   double tol = 1.0e-10;
@@ -585,6 +602,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderGaussRK
   TEST_FLOATING_EQUALITY( c(0), 0.5-sqrt(15.0)/10.0, tol );
   TEST_FLOATING_EQUALITY( c(1), 0.5, tol );
   TEST_FLOATING_EQUALITY( c(2), 0.5+sqrt(15.0)/10.0, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 6 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateDIRKButcherTableau ) {
@@ -596,7 +614,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateDIRKButcherTableau ) {
     Teuchos::SerialDenseVector<int,double> b(numStages);
     b(2) = 1.0;
     Teuchos::SerialDenseVector<int,double> c(numStages);
-    RKButcherTableau<double> rkbt(A,b,c);
+    RKButcherTableau<double> rkbt(A,b,c,1);
     TEST_THROW(validateDIRKButcherTableau(rkbt),std::logic_error);
   }
   {
@@ -617,7 +635,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateDIRKButcherTableau ) {
     c(0) = 0.2;
     c(1) = 0.5;
     c(2) = 0.75;
-    RKButcherTableau<double> rkbt(A,b,c);
+    RKButcherTableau<double> rkbt(A,b,c,1);
     validateDIRKButcherTableau(rkbt);
   }
 }
@@ -631,7 +649,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateSDIRKButcherTableau ) {
     Teuchos::SerialDenseVector<int,double> b(numStages);
     b(2) = 1.0;
     Teuchos::SerialDenseVector<int,double> c(numStages);
-    RKButcherTableau<double> rkbt(A,b,c);
+    RKButcherTableau<double> rkbt(A,b,c,1);
     TEST_THROW(validateSDIRKButcherTableau(rkbt),std::logic_error);
   }
   {
@@ -652,7 +670,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateSDIRKButcherTableau ) {
     c(0) = 0.2;
     c(1) = 0.5;
     c(2) = 0.75;
-    RKButcherTableau<double> rkbt(A,b,c);
+    RKButcherTableau<double> rkbt(A,b,c,1);
     TEST_THROW(validateSDIRKButcherTableau(rkbt),std::logic_error);
   }
   {
@@ -673,17 +691,94 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateSDIRKButcherTableau ) {
     c(0) = 0.2;
     c(1) = 0.5;
     c(2) = 0.75;
-    RKButcherTableau<double> rkbt(A,b,c);
+    RKButcherTableau<double> rkbt(A,b,c,1);
     validateSDIRKButcherTableau(rkbt);
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableauFactory, validParameters ) {
+//TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableauFactory, validParameters ) {
 //  TEST_EQUALITY_CONST( true, false );
-}
+//}
 
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableauFactory, create ) {
+//TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableauFactory, create ) {
 //  TEST_EQUALITY_CONST( true, false );
+//}
+
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, operatorEqualEqual ) {
+  {
+    RKButcherTableau<double> rkbt_1 = createExplicit4StageRKBT<double>();
+    {
+      RKButcherTableau<double> rkbt_2 = createExplicit4StageRKBT<double>();
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, true ); // same tableau
+    }
+    {
+      RKButcherTableau<double> rkbt_2 = createExplicit3_8RuleRKBT<double>();
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, false ); // different values in A,b,c
+    }
+    {
+      RKButcherTableau<double> rkbt_2 = createBackwardEulerRKBT<double>();
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, false ); // different number of stages
+    }
+    {
+      RKButcherTableau<double> rkbt_2 = createImplicit3Stage6thOrderGaussRKBT<double>();
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, false ); // different number of stages
+    }
+  }
+
+  {
+    // differing values in A then b then c:
+    int numStages = 2;
+    Teuchos::SerialDenseMatrix<int,double> A(numStages,numStages);
+    Teuchos::SerialDenseVector<int,double> b(numStages);
+    Teuchos::SerialDenseVector<int,double> c(numStages);
+    A(0,0) = 2.0/3.0;
+    A(0,1) = 0.5;
+    A(1,0) = 0.5;
+    A(1,1) = 1.0;
+    b(0) = 0.0;
+    b(1) = 1.0;
+    c(0) = 0.0;
+    c(1) = 1.0;
+    int order = 2;
+    RKButcherTableau<double> rkbt_1(A,b,c,order);
+    {
+      Teuchos::SerialDenseMatrix<int,double> Aprime(numStages,numStages);
+      Aprime(0,0) = 1.0/1.5;
+      Aprime(0,1) = 0.5;
+      Aprime(1,0) = 0.5;
+      Aprime(1,1) = 1.0;
+      RKButcherTableau<double> rkbt_2(Aprime,b,c,order);
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, true ); // Same values in A
+    }
+    {
+      Teuchos::SerialDenseMatrix<int,double> Aprime(numStages,numStages);
+      Aprime(0,0) = 2.0/3.0;
+      Aprime(0,1) = 0.5;
+      Aprime(1,0) = 0.5;
+      Aprime(1,1) = 1.1;
+      RKButcherTableau<double> rkbt_2(Aprime,b,c,order);
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, false ); // differing values in A
+    }
+    {
+      Teuchos::SerialDenseVector<int,double> bprime(numStages);
+      bprime(0) = 0.0;
+      bprime(1) = 0.9;
+      RKButcherTableau<double> rkbt_2(A,bprime,c,order);
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, false ); // differing values in b
+    }
+    {
+      Teuchos::SerialDenseVector<int,double> cprime(numStages);
+      cprime(0) = 0.0;
+      cprime(1) = 0.9;
+      RKButcherTableau<double> rkbt_2(A,b,cprime,order);
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, false ); // differing values in c
+    }
+    {
+      int orderprime = 3;
+      RKButcherTableau<double> rkbt_2(A,b,c,orderprime);
+      TEST_EQUALITY_CONST( rkbt_1 == rkbt_2, false ); // differing values in order
+    }
+  }
 }
 
 } // namespace Rythmos
