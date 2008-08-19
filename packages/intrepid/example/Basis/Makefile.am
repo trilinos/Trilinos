@@ -47,19 +47,23 @@ EXEEXT = .exe
 noinst_PROGRAMS = example_01 example_02
 
 # Dependencies used when rebuilding examples without building everything from scratch.
+
+include $(top_builddir)/../sacado/Makefile.export.sacado
 example_01_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+    $(top_builddir)/../sacado/src/libsacado.a
 
 example_01_SOURCES = example_01.cpp
 example_01_LDADD = $(EXPORT_LIBS)
-example_01_CXXFLAGS = -I$(srcdir)
+example_01_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 
 example_02_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	#(top_builddir)/../sacado/src/libsacado.a
 
 example_02_SOURCES = example_02.cpp
 example_02_LDADD = $(EXPORT_LIBS)
-example_02_CXXFLAGS = -I$(srcdir)
+example_02_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 

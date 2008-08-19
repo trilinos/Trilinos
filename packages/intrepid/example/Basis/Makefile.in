@@ -234,22 +234,22 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(INTREPID_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(INTREPID_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-
-# Dependencies used when rebuilding examples without building everything from scratch.
 example_01_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+    $(top_builddir)/../sacado/src/libsacado.a
 
 example_01_SOURCES = example_01.cpp
 example_01_LDADD = $(EXPORT_LIBS)
-example_01_CXXFLAGS = -I$(srcdir)
+example_01_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 example_02_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	#(top_builddir)/../sacado/src/libsacado.a
 
 example_02_SOURCES = example_02.cpp
 example_02_LDADD = $(EXPORT_LIBS)
-example_02_CXXFLAGS = -I$(srcdir)
+example_02_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 all: all-am
 
 .SUFFIXES:
@@ -520,6 +520,10 @@ uninstall-am:
 
 
 include $(top_builddir)/Makefile.export.intrepid
+
+# Dependencies used when rebuilding examples without building everything from scratch.
+
+include $(top_builddir)/../sacado/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

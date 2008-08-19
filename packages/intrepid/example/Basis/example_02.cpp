@@ -22,21 +22,26 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov) or
+//                    Robert Kirby (robert.c.kirby@ttu.edu)
 //
 // ************************************************************************
 // @HEADER
 
 /** \file
-\brief  Illustrates use of the Point class.
-\author Created by P. Bochev and D. Ridzal
+\brief  Illustrates use of the new Lagrange class on quads.
+\author Created by R. Kirby
 */
 #include <iostream>
-#include "Sacado.hpp"
 
+#include "Intrepid_F0_QUAD_DD.hpp"
+#include "Intrepid_RealSpace.hpp"
+#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid_Types.hpp"
 #include "Lagrange1d.hpp"
 
 using namespace std;
+using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
   cout \
@@ -57,53 +62,40 @@ int main(int argc, char *argv[]) {
   
   cout.precision(16);
 
-  /* cubic Lagrange polynomials on [-1,1] */
-  const int n = 1;
-  vector<double> pts(n+1);
-  vector<double> ys(n+1);
-  vector<double> coeffs(n+1);
 
-  /* get the equispaced points */
-  Lagrange::equispacedPoints( n , -1.0 , 1.0 , pts );
+  Basis_F0_QUAD_DD<double> myBasis( 1 );
 
-  for (unsigned i=0;i<n+1;i++) {
-    ys[i] = 0.0;
-  }
-  ys[2] = 1.0;
+  // need to initialize before evaluation
+  myBasis.initialize();
 
-  Lagrange::dividedDifferences( pts , ys , coeffs );
+  vector<double> pts_vec(3);
+  double vec[2];
+  Lagrange::equispacedPoints<double>(2,-1.0,1.0,pts_vec);
 
-  for (unsigned i=0;i<n+1;i++) {
-    cout << coeffs[i] << " ";
-  }
-  cout << endl;
-
-  cout << Lagrange::evaluateDividedDifferencePoly( pts , coeffs , pts[2] ) << endl;
-
-
-  /* construct the divided difference table */
-  Lagrange::Lagrange<double> U(pts);
-
-  /* confirm the Kronecker delta */
-  for (int bf = 0;bf<U.getDegree()+1;bf++) {
-    cout << "Bf " << bf << endl;
-    for (unsigned pt =0;pt<pts.size();pt++) {
-      cout << "pt " << pt << " val = " << U.eval(bf,pts[pt]) << endl;
+  Teuchos::Array<Point<double> > pts;
+  for (unsigned i=0;i<pts_vec.size();i++) {
+    for (unsigned j=0;j<pts_vec.size();j++) {
+      vec[0] = pts_vec[i];
+      vec[1] = pts_vec[j];
+      Point<double> pt(vec,2,FRAME_REFERENCE);
+      pts.push_back( pt );
     }
   }
+  
+  FieldContainer<double> myContainer;
 
-  /* compute derivatives with Sacado */
-  int num_deriv = 1;
-  for (int bf =0; bf<U.getDegree()+1;bf++) {
-    cout << "Bf " << bf << endl;
-    for (unsigned pt=0;pt<pts.size();pt++) {
-      Sacado::Fad::SFad<double,1> xfad(num_deriv,0,pts[pt]);
-      Sacado::Fad::SFad<double,1> ufad;
-//      ufad = U.eval<Sacado::Fad::SFad<double,1> >(bf,xfad);
-      ufad = U.eval(bf,xfad);
-      cout << "pt " << pts[pt] << " val = "  << ufad.val() << " " << ufad.dx(0) << endl;
-    }
-  }
+
+  myBasis.getValues(myContainer,pts,OPERATOR_VALUE);
+  cout << "Values:" << endl;
+  cout << pts << endl;
+  cout << myContainer << endl;
+  
+  myBasis.getValues(myContainer,pts,OPERATOR_GRAD); 
+  cout << "Gradients" << endl;
+  cout << pts << endl;
+  cout << myContainer << endl;
+  
+
 
 
   return 0;
