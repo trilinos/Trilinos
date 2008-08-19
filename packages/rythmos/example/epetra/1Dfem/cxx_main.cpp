@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
     std::string method;
     Teuchos::RCP<Rythmos::StepperBase<double> > stepper_ptr;
     if ( method_val == METHOD_ERK ) {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
+      stepper_ptr = Rythmos::explicitRKStepper<double>(model);
       method = "Explicit Runge-Kutta of order 4";
     } else if (method_val == METHOD_FE) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));

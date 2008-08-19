@@ -1008,6 +1008,20 @@ RKButcherTableau<Scalar> createImplicit3Stage6thOrderGaussRKBT()
 }
 
 template<class Scalar>
+RKButcherTableau<Scalar> createSDIRK5Stage5thOrderGaussRKBT()
+{
+  // "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems", 2nd Revised Edition
+  // E. Hairer and G. Wanner
+  // pg101 
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 5;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  return RKButcherTableau<Scalar>(A,b,c,5);
+}
+
+template<class Scalar>
 RKButcherTableau<Scalar> DefaultRKButcherTableauFactory<Scalar>::create(Teuchos::ParameterList& paramList) const
 {
   paramList.validateParameters(*this->getValidParameters());

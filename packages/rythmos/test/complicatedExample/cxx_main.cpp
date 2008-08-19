@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
     RCP<Rythmos::StepperBase<double> > stepper_ptr;
     RCP<Rythmos::StepperBase<double> > stepperSlave_ptr;
     if ( method_val == METHOD_ERK ) {
-      stepper_ptr = rcp(new Rythmos::ExplicitRKStepper<double>(model));
+      stepper_ptr = Rythmos::explicitRKStepper<double>(model);
       RCP<Teuchos::ParameterList> ERKparams = rcp(new Teuchos::ParameterList);
       ERKparams->set( "outputLevel", as<int>(verbLevel) );
       stepper_ptr->setParameterList(ERKparams);

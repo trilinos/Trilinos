@@ -605,6 +605,59 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderGaussRK
   TEST_EQUALITY_CONST( rkbt.order(), 6 );
 }
 
+/*
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage5thOrderRKBT ) {
+  double tol = 1.0e-10;
+  RKButcherTableau<double> rkbt = createSDIRK5Stage5thOrderRKBT<double>();
+  validateSDIRKButcherTableau(rkbt);
+  TEST_EQUALITY_CONST( rkbt.numStages(), 5 );
+  const Teuchos::SerialDenseMatrix<int,double> A = rkbt.A();
+  const Teuchos::SerialDenseVector<int,double> b = rkbt.b();
+  const Teuchos::SerialDenseVector<int,double> c = rkbt.c();
+  TEST_FLOATING_EQUALITY( A(0,0),  (6.0-sqrt(6.0))/10.0, tol );
+  TEST_FLOATING_EQUALITY( A(0,1),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(0,2),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(0,3),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(0,4),  0.0, tol );
+
+  TEST_FLOATING_EQUALITY( A(1,0),  (-6.0+5.0*sqrt(6.0))/14.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,1),  (6.0-sqrt(6.0))/10.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,2),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,3),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,4),  0.0, tol );
+
+  TEST_FLOATING_EQUALITY( A(2,0),  (888.0+607.0*sqrt(6.0))/2850.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,1),  (126.0-161.0*sqrt(6.0))/1425.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,2),  (6.0-sqrt(6.0))/10.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,3),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,4),  0.0, tol );
+
+  TEST_FLOATING_EQUALITY( A(3,0),  (3153.0-3082.0*sqrt(6.0))/14250.0, tol );
+  TEST_FLOATING_EQUALITY( A(3,1),  (3213.0+1148.0*sqrt(6.0))/28500.0, tol );
+  TEST_FLOATING_EQUALITY( A(3,2),  (-267.0+88.0*sqrt(6.0))/500.0, tol );
+  TEST_FLOATING_EQUALITY( A(3,3),  (6.0-sqrt(6.0))/10.0, tol );
+  TEST_FLOATING_EQUALITY( A(3,4),  0.0, tol );
+
+  TEST_FLOATING_EQUALITY( A(4,0),  (-32583.0+14638.0*sqrt(6.0))/71250.0, tol );
+  TEST_FLOATING_EQUALITY( A(4,1),  (-17199.0+364.0*sqrt(6.0))/142500.0, tol );
+  TEST_FLOATING_EQUALITY( A(4,2),  (1329.0-544.0*sqrt(6.0))/2500.0, tol );
+  TEST_FLOATING_EQUALITY( A(4,3),  (-96.0+131.0*sqrt(6.0))/625.0, tol );
+  TEST_FLOATING_EQUALITY( A(4,4),  (6.0-sqrt(6.0))/10.0, tol );
+
+  TEST_FLOATING_EQUALITY( b(0), 0.0, tol );
+  TEST_FLOATING_EQUALITY( b(1), 0.0, tol );
+  TEST_FLOATING_EQUALITY( b(2), 1.0/9.0, tol );
+  TEST_FLOATING_EQUALITY( b(3), (16.0-sqrt(6.0))/36.0, tol );
+  TEST_FLOATING_EQUALITY( b(4), (16.0+sqrt(6.0))/36.0, tol );
+  TEST_FLOATING_EQUALITY( c(0), (6.0-sqrt(6.0))/10.0, tol );
+  TEST_FLOATING_EQUALITY( c(1), (6.0+9.0*sqrt(6.0))/35.0, tol );
+  TEST_FLOATING_EQUALITY( c(2), 1.0, tol );
+  TEST_FLOATING_EQUALITY( c(3), (4.0-sqrt(6.0))/10.0, tol );
+  TEST_FLOATING_EQUALITY( c(4), (4.0+sqrt(6.0))/10.0, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 5 );
+}
+*/
+
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateDIRKButcherTableau ) {
   {
     // Entries above the diagonal should throw
