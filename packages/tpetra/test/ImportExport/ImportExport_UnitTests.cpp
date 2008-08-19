@@ -1,8 +1,9 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_as.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Teuchos_as.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Import.hpp"
 
@@ -17,6 +18,9 @@ namespace {
   using std::sort;
   using Teuchos::arrayViewFromVector;
   using Teuchos::broadcast;
+  using Teuchos::OrdinalTraits;
+  using Tpetra::Map;
+  using Tpetra::Import;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -56,9 +60,25 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import, basic, Ordinal )
   {
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    // create a platform  
     RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    out << "platform = " << *platform << std::endl;
-    TEST_INEQUALITY_CONST( platform->createComm(), Teuchos::null );
+    // create a comm  
+    //RCP<Comm<Ordinal> > comm = platform.createComm();
+    //const int numImages = comm->getSize();
+    //const int myImageID = comm->getRank();
+    // create Maps
+    Map<Ordinal> source(as<Ordinal>(-1),as<Ordinal>(10),ZERO,*platform),
+                 target(as<Ordinal>(-1),as<Ordinal>(5) ,ZERO,*platform);
+    // create Import object
+    Import<Ordinal> importer(source, target);
+    
+    Ordinal same = importer.getNumSameIDs();
+    Ordinal permute = importer.getNumPermuteIDs();
+    Ordinal remote = importer.getNumRemoteIDs();
+    Ordinal sum = same + permute + remote;
+    Ordinal expectedSum = target.getNumMyEntries();
+    TEST_EQUALITY( sum, expectedSum );
   }
 
 

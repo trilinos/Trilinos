@@ -338,10 +338,10 @@ AC_CONFIG_FILES([
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile
 # example/TpetraOPs/Makefile
+# test/BasicPerfTest/Makefile
 # test/DistObject/Makefile
 # test/Vector/Makefile
 # test/CisMatrix/Makefile
-# test/BasicPerfTest/Makefile
 
 AC_OUTPUT()
 

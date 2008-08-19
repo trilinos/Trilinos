@@ -242,9 +242,9 @@ namespace Tpetra {
         }
       }
     }
-    SHARED_TEST_FOR_EXCEPTION(ierr, std::invalid_argument, 
+    TEST_FOR_EXCEPTION(ierr, std::invalid_argument, 
         "Tpetra::Directory<" << Teuchos::TypeNameTraits<Ordinal>::name() << 
-        ">::getEntries(): Invalid GIDs given.",*comm_);
+        ">::getEntries(): Invalid GIDs given.");
   }
 
 

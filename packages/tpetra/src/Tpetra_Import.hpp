@@ -29,21 +29,24 @@
 #ifndef TPETRA_IMPORT_HPP
 #define TPETRA_IMPORT_HPP
 
-#include <Teuchos_RCP.hpp>
+#include <Teuchos_Object.hpp>
+#include <Teuchos_as.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
-#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of ImportData, needed to prevent circular inclusions
   // actual #include statement at the end of this file
   template<typename Ordinal> class ImportData;
+#endif
 
-  //! Tpetra::Import: This class builds an import object for efficient importing of off-processor elements.
+  //! Tpetra::Import: This class builds an import object for efficient importing of off-processor entries.
 
   /*! Import is used to construct a communication plan that can be called repeatedly by computational
-      classes such the Tpetra CisMatrix and Vector classes to efficiently import elements from other
+      classes such the Tpetra CisMatrix and Vector classes to efficiently import entries from other
       images. An importer is used when we start out with a uniquely-owned distribution,
       and want to distribute that into a multiple-ownership distribution.
 
@@ -74,31 +77,31 @@ namespace Tpetra {
 
     //@{ \name Export Attribute Methods
 
-    //! Returns the number of elements that are identical between the source and target maps, up to the first different ID.
+    //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
     Ordinal getNumSameIDs() const;
 
-    //! Returns the number of elements that are local to the calling image, but not part of the first getNumSameIDs() elements.
+    //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
     Ordinal getNumPermuteIDs() const;
 
-    //! List of elements in the source map that are permuted.
+    //! List of entries in the source map that are permuted.
     const std::vector<Ordinal> & getPermuteFromLIDs() const;
 
-    //! List of elements in the target map that are permuted.
+    //! List of entries in the target map that are permuted.
     const std::vector<Ordinal> & getPermuteToLIDs() const;
 
-    //! Returns the number of elements that are not on the calling image.
+    //! Returns the number of entries that are not on the calling image.
     Ordinal getNumRemoteIDs() const;
 
-    //! List of elements in the target map that are coming from other images.
+    //! List of entries in the target map that are coming from other images.
     const std::vector<Ordinal> & getRemoteLIDs() const;
 
-    //! Returns the number of elements that must be sent by the calling image to other images.
+    //! Returns the number of entries that must be sent by the calling image to other images.
     Ordinal getNumExportIDs() const;
 
-    //! List of elements in the source map that will be sent to other images.
+    //! List of entries in the source map that will be sent to other images.
     const std::vector<Ordinal> & getExportLIDs() const;
 
-    //! List of images to which elements will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i].
+    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i].
     const std::vector<Ordinal> & getExportImageIDs() const;
 
     //! Returns the Source Map used to construct this importer.
@@ -130,89 +133,10 @@ namespace Tpetra {
     // sets up numSameIDs_, numPermuteIDs_, and numRemoteIDs_
     // these variables are already initialized to 0 by the ImportData ctr.
     // also sets up permuteToLIDs_, permuteFromLIDs_, and remoteLIDs_
-    void setupSamePermuteRemote() {
-      const Map<Ordinal> & source = getSourceMap();
-      const Map<Ordinal> & target = getTargetMap();
-      const std::vector<Ordinal> & sourceGIDs = source.getMyGlobalElements();
-      const std::vector<Ordinal> & targetGIDs = target.getMyGlobalElements();
-
-      // -- compute numSameIDs_ ---
-      // go through GID lists of source and target. if the ith GID on both is the same, 
-      // increment numSameIDs_ and try the next. as soon as you come to a pair that don't
-      // match, give up.
-      typename std::vector<Ordinal>::const_iterator sourceIter = sourceGIDs.begin();
-      typename std::vector<Ordinal>::const_iterator targetIter = targetGIDs.begin();
-      while((sourceIter != sourceGIDs.end()) && 
-          (targetIter != targetGIDs.end()) && 
-          (*sourceIter == *targetIter)) {
-        ImportData_->numSameIDs_++;
-        sourceIter++;
-        targetIter++;
-      }
-      // targetIter should now point to the GID of the first non-same entry
-
-      // -- compute numPermuteIDs and numRemoteIDs --
-      // -- fill permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and remoteLIDs_ --
-      // go through remaining entries in targetGIDs. if source owns that GID, 
-      // increment numPermuteIDs_, and add entries to permuteToLIDs_ and permuteFromLIDs_.
-      // otherwise increment numRemoteIDs_ and add entries to remoteLIDs_ and remoteGIDs_.
-      for(; targetIter != targetGIDs.end(); targetIter++) {
-        if(source.isMyGID(*targetIter)) {
-          ImportData_->numPermuteIDs_++;
-          ImportData_->permuteToLIDs_.push_back(target.getLID(*targetIter));
-          ImportData_->permuteFromLIDs_.push_back(source.getLID(*targetIter));
-        }
-        else {
-          ImportData_->numRemoteIDs_++;
-          ImportData_->remoteLIDs_.push_back(target.getLID(*targetIter));
-          ImportData_->remoteGIDs_.push_back(*targetIter);
-        }
-      }
-
-      if((ImportData_->numRemoteIDs_ > 0) && (!source.isGlobal()))
-        throw reportError("Target has remote LIDs but Source is not distributed globally.", 1); //*** what do we do here??? ***
-
-    };
+    void setupSamePermuteRemote();
 
     //==============================================================================
-    void setupExport() {
-      const Map<Ordinal> & source = getSourceMap();
-
-      // create remoteImageID list: for each entry remoteGIDs[i],
-      // remoteImageIDs[i] will contain the ImageID of the image that owns that GID.
-      std::vector<Ordinal> remoteImageIDs(ImportData_->remoteGIDs_.size());
-      source.getRemoteIDList(ImportData_->remoteGIDs_, remoteImageIDs);
-
-      // check for GIDs that exist in target but not in source
-      // getRemoteIDList will return -1 for the ImageID for any GIDs where this is the case
-      if(ImportData_->numRemoteIDs_ > Teuchos::OrdinalTraits<Ordinal>::zero()) {
-        const Ordinal negOne = Teuchos::OrdinalTraits<Ordinal>::zero() - Teuchos::OrdinalTraits<Ordinal>::one();
-#ifdef HAVE_STD_NEW_COUNT_SYNTAX
-        Ordinal count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne);
-#else
-        Ordinal count = 0;
-        std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne, count);
-#endif
-        if(count > Teuchos::OrdinalTraits<Ordinal>::zero()) {
-          throw reportError("Target has GIDs not found in Source.", 1);
-        }
-      }
-
-      // sort remoteImageIDs in ascending order
-      // apply same permutation to remoteGIDs_
-      sortArrays(remoteImageIDs, ImportData_->remoteGIDs_);
-
-      // call Distributor.createFromRecvs()
-      // takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
-      // returns numExportIDs_, exportLIDs_, and exportImageIDs_
-      ImportData_->distributor_.createFromRecvs(ImportData_->numRemoteIDs_, ImportData_->remoteGIDs_, 
-                        remoteImageIDs, true, ImportData_->numExportIDs_, 
-                        ImportData_->exportLIDs_, ImportData_->exportImageIDs_);
-
-      // convert exportLIDs_ from GIDs to their LIDs in target
-      for(typename std::vector<Ordinal>::iterator i = ImportData_->exportLIDs_.begin(); i != ImportData_->exportLIDs_.end(); i++)
-        *i = source.getLID(*i);
-    };
+    void setupExport();
 
     //==============================================================================
   };
@@ -225,7 +149,7 @@ namespace Tpetra {
     ImportData_ = Teuchos::rcp(new ImportData<Ordinal>(source, target));
     // call subfunctions
     setupSamePermuteRemote();
-    if(source.isGlobal()) {
+    if(source.isDistributed()) {
       setupExport();
     }
   }
@@ -322,6 +246,100 @@ namespace Tpetra {
     os << "\ntarget_: " << endl << getTargetMap();
   }
 
+
+  template <typename Ordinal>
+  void Import<Ordinal>::setupSamePermuteRemote() 
+  {
+    const Map<Ordinal> & source = getSourceMap();
+    const Map<Ordinal> & target = getTargetMap();
+    const std::vector<Ordinal> & sourceGIDs = source.getMyGlobalEntries();
+    const std::vector<Ordinal> & targetGIDs = target.getMyGlobalEntries();
+
+    // -- compute numSameIDs_ ---
+    // go through GID lists of source and target. if the ith GID on both is the same, 
+    // increment numSameIDs_ and try the next. as soon as you come to a pair that don't
+    // match, give up.
+    typename std::vector<Ordinal>::const_iterator sourceIter = sourceGIDs.begin(),
+                                                  targetIter = targetGIDs.begin();
+    while( sourceIter != sourceGIDs.end() && targetIter != targetGIDs.end() && 
+        *sourceIter == *targetIter )
+    {
+      ++ImportData_->numSameIDs_;
+      ++sourceIter;
+      ++targetIter;
+    }
+    // targetIter should now point to the GID of the first non-same entry or the end of targetGIDs
+
+    // -- compute numPermuteIDs and numRemoteIDs --
+    // -- fill permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and remoteLIDs_ --
+    // go through remaining entries in targetGIDs. if source owns that GID, 
+    // increment numPermuteIDs_, and add entries to permuteToLIDs_ and permuteFromLIDs_.
+    // otherwise increment numRemoteIDs_ and add entries to remoteLIDs_ and remoteGIDs_.
+    for (; targetIter != targetGIDs.end(); ++targetIter) {
+      if (source.isMyGlobalIndex(*targetIter)) {
+        // both source and target list this GID (*targetIter)
+        // determine the LIDs for this GID on both Maps and add them to the permutation lists
+        ImportData_->permuteToLIDs_.push_back(target.getLocalIndex(*targetIter));
+        ImportData_->permuteFromLIDs_.push_back(source.getLocalIndex(*targetIter));
+      }
+      else {
+        ++ImportData_->numRemoteIDs_;
+        ImportData_->remoteLIDs_.push_back(target.getLocalIndex(*targetIter));
+        ImportData_->remoteGIDs_.push_back(*targetIter);
+      }
+    }
+    ImportData_->numPermuteIDs_ = Teuchos::as<Ordinal>(ImportData_->permuteToLIDs_.size());
+    ImportData_->numRemoteIDs_  = Teuchos::as<Ordinal>(ImportData_->remoteLIDs_.size());
+
+    TEST_FOR_EXCEPTION( (ImportData_->numRemoteIDs_ > 0) && !source.isDistributed(), std::runtime_error, 
+        "Tpetra::Import<" << Teuchos::OrdinalTraits<Ordinal>::name() 
+        << ">::setupSamePermuteRemote(): Target has remote LIDs but Source is not distributed globally.");
+  }
+
+
+  template <typename Ordinal>
+  void Import<Ordinal>::setupExport()
+  {
+    const Map<Ordinal> & source = getSourceMap();
+
+    // create remoteImageID list: for each entry remoteGIDs[i],
+    // remoteImageIDs[i] will contain the ImageID of the image that owns that GID.
+    std::vector<Ordinal> remoteImageIDs(ImportData_->remoteGIDs_.size());
+    source.getRemoteIndexList(ImportData_->remoteGIDs_, remoteImageIDs);
+
+    // check for GIDs that exist in target but not in source
+    // getRemoteIndexList will return -1 for the ImageID for any GIDs where this is the case
+    if(ImportData_->numRemoteIDs_ > Teuchos::OrdinalTraits<Ordinal>::zero()) {
+      const Ordinal negOne = Teuchos::OrdinalTraits<Ordinal>::zero() - Teuchos::OrdinalTraits<Ordinal>::one();
+#ifdef HAVE_STD_NEW_COUNT_SYNTAX
+      Ordinal count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne);
+#else
+      Ordinal count = 0;
+      std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne, count);
+#endif
+      if(count > Teuchos::OrdinalTraits<Ordinal>::zero()) {
+        throw reportError("Target has GIDs not found in Source.", 1);
+      }
+    }
+
+    // sort remoteImageIDs in ascending order
+    // apply same permutation to remoteGIDs_
+    sortArrays(remoteImageIDs, ImportData_->remoteGIDs_);
+
+    // call Distributor.createFromRecvs()
+    // takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
+    // returns numExportIDs_, exportLIDs_, and exportImageIDs_
+    TEST_FOR_EXCEPT(ImportData_->remoteGIDs_.size() != (unsigned int)ImportData_->numRemoteIDs_); // FINISH: remove this
+    TEST_FOR_EXCEPT(ImportData_->exportLIDs_.size() != (unsigned int)ImportData_->numExportIDs_ ); // FINISH: remove this
+    ImportData_->distributor_.createFromRecvs(ImportData_->remoteGIDs_, remoteImageIDs, ImportData_->exportLIDs_, ImportData_->exportImageIDs_);
+
+    // convert exportLIDs_ from GIDs to their LIDs in target
+    for(typename std::vector<Ordinal>::iterator i = ImportData_->exportLIDs_.begin(); 
+        i != ImportData_->exportLIDs_.end(); ++i) 
+    {
+      *i = source.getLocalIndex(*i);
+    }
+  }
 
 } // namespace Tpetra
 

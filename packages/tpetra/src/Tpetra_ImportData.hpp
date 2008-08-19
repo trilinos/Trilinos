@@ -86,8 +86,8 @@ namespace Tpetra {
   , numExportIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
   , source_(source)
   , target_(target)
-  , platform_(source.platform().clone())
-  , distributor_(source.platform().createComm())
+  , platform_(source.getPlatform()->clone())
+  , distributor_(platform_->createComm())
   {}
 
   template <typename Ordinal>

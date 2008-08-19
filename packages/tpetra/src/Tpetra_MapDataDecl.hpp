@@ -34,8 +34,8 @@
 
 namespace Tpetra {
 
-	//! Tpetra::MapData:  The data class for Tpetra::Map
-  /*! 
+  /* Don't document this class
+   * 
    * Like all data classes, Tpetra::MapData provides no functionality. It's sole purpose is to store 
    * the data associated with a Tpetra::Map object.
    */

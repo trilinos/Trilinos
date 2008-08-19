@@ -512,23 +512,21 @@ namespace Tpetra {
   template<typename Ordinal>
   Ordinal Map<Ordinal>::getLocalIndex(Ordinal globalIndex) const {
     if (MapData_->contiguous_) {
-      SWITCHED_TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION(
         globalIndex < getMinGlobalIndex() || globalIndex > getMaxGlobalIndex(), 
         std::invalid_argument,
         "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
-                       << ">::getLocalIndex(gid): gid does not belong to the map.",
-        *MapData_->comm_
+                       << ">::getLocalIndex(gid): gid does not belong to the map."
       );
       return globalIndex - getMinGlobalIndex();
     }
     else {
       typename std::map<Ordinal,Ordinal>::const_iterator i;
       i = MapData_->glMap_.find(globalIndex);
-      SWITCHED_TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION(
         i == MapData_->glMap_.end(), std::invalid_argument,
         "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
-                       << ">::getLocalIndex(gid): gid does not belong to the map.",
-        *MapData_->comm_
+                       << ">::getLocalIndex(gid): gid does not belong to the map."
       );
       return i->second;
     }
@@ -536,12 +534,11 @@ namespace Tpetra {
 
   template<typename Ordinal>
   Ordinal Map<Ordinal>::getGlobalIndex(Ordinal localIndex) const {
-    SWITCHED_TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
         localIndex < 0 || localIndex > MapData_->numMyEntries_-1,
         std::invalid_argument,
         "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
-           << ">::getGlobalIndex(lid): lid not valid.",
-        *MapData_->comm_);
+           << ">::getGlobalIndex(lid): lid not valid.");
     if (MapData_->contiguous_) {
       return localIndex + getMinGlobalIndex();
     }
@@ -760,10 +757,9 @@ namespace Tpetra {
             std::vector<Ordinal> & LIDList) const 
   {
     if (GIDList.size() == 0) return;
-    SWITCHED_TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
+    TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
         "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
-        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.",
-        *MapData_->comm_);
+        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.");
     MapData_->directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
   }
 
@@ -773,10 +769,9 @@ namespace Tpetra {
       std::vector<Ordinal>& imageIDList) const 
   {
     if (GIDList.size() == 0) return;
-    SWITCHED_TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
+    TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
         "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
-        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.",
-        *MapData_->comm_);
+        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.");
     MapData_->directory_->getDirectoryEntries(GIDList, imageIDList);
   }
 

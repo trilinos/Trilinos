@@ -33,7 +33,7 @@
 
 namespace Tpetra {
 
-  /*! class CisMatrixData */
+  /* Don't document this class */
   template<typename OrdinalType, typename ScalarType>
   class CisMatrixData : public Teuchos::Object {
     friend class CisMatrix<OrdinalType, ScalarType>;

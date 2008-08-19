@@ -36,9 +36,11 @@
 
 namespace Tpetra {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of ExportData, needed to prevent circular inclusions
   // actual #include statement at the end of this file
   template<typename Ordinal> class ExportData;
+#endif
 
   //! Tpetra::Export: This class builds an export object for efficient exporting of off-processor elements.
 
