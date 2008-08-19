@@ -144,7 +144,6 @@ Library::~Library()
 
 int Library::precompute()
 {
-  int err = 0, numChanged = 0;
   std::string str1("Isorropia::Epetra::Operator::precompute ");
   std::string str2;
 

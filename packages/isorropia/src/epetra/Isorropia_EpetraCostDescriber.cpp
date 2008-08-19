@@ -45,13 +45,13 @@ namespace Epetra {
 CostDescriber::CostDescriber()
   : vertex_weights_(),
     graph_edge_weights_(),
+    paramlist_(),
     hg_edge_gids_(NULL),
     hg_edge_weights_(NULL),
     num_hg_edge_weights_(0),
     numGlobalVertexWeights_(0),
     numGlobalGraphEdgeWeights_(0),
-    numGlobalHypergraphEdgeWeights_(0),
-    paramlist_()
+    numGlobalHypergraphEdgeWeights_(0)
 {
 }
 

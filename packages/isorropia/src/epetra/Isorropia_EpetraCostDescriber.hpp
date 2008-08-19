@@ -310,14 +310,14 @@ private:
   void free_hg_edge_weights_();
 
   Teuchos::RefCountPtr<const Epetra_Vector> vertex_weights_;
-
   Teuchos::RefCountPtr<const Epetra_CrsMatrix> graph_edge_weights_;
   std::set<int> graph_self_edges_;
+
+  Teuchos::ParameterList paramlist_;
 
   int *hg_edge_gids_;
   float *hg_edge_weights_;
   int num_hg_edge_weights_;
-  Teuchos::ParameterList paramlist_;
 
   int numGlobalVertexWeights_;
   int numGlobalGraphEdgeWeights_;

@@ -55,11 +55,11 @@ QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
                                      bool isHypergraph) 
   : graph_(graph),
     matrix_(0),
-    costs_(costs),
     rowMap_(&(graph->RowMap())),
     colMap_(&(graph->ColMap())),
-    haveGraph_(true),
-    isHypergraph_(isHypergraph)
+    costs_(costs),
+    isHypergraph_(isHypergraph),
+    haveGraph_(true)
 {
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
@@ -99,11 +99,11 @@ QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
                                  bool isHypergraph) 
   : graph_(0),
     matrix_(matrix),
-    costs_(costs),
     rowMap_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
     colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
-    haveGraph_(false),
-    isHypergraph_(isHypergraph)
+    costs_(costs),
+    isHypergraph_(isHypergraph),
+    haveGraph_(false)
 {
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
@@ -398,7 +398,6 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
 {
   *ierr = ZOLTAN_OK;
 
-  int *indices;
   int num_indices, rc;
 
   if (!haveGraph_){
@@ -539,7 +538,7 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
     }
     for (int j=0; j < num_indices; j++){
 
-      if (self_edge && (gids[j] == global_ids[i])) continue;  // skip self edge
+      if (self_edge && (gids[j] == (int)global_ids[i])) continue;  // skip self edge
 
       *nborID++ = gids[j];                   // Global ID of neighbor
 
@@ -595,9 +594,6 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
 
 void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int * ierr )
 {
-  int *indices;
-  int num_indices, rc;
-
   *ierr = ZOLTAN_OK;
 
   *format = ZOLTAN_COMPRESSED_VERTEX;   // We will return row (vertex) lists
@@ -625,7 +621,6 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
             ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
                                      int * ierr )
 {
-  int *indices;
   int num_indices, rc, npins;
   double *tmp=NULL;
 

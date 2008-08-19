@@ -116,7 +116,7 @@ Colorer::generateMapColoring()
   color(false);
   colorMap = Teuchos::rcp(new Epetra_MapColoring(*input_map_));
 
-  for( int i = 0; i < myNewElements_.size(); i++ ) {
+  for(unsigned int i = 0; i < myNewElements_.size(); i++ ) {
     (*colorMap)[i] = myNewElements_[i];
   }
   return (colorMap);

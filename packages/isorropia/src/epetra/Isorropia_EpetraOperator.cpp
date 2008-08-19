@@ -220,7 +220,7 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
 
   // Change parameter names and values to upper case
   
-  for (int i=0; i < paramNames.size(); i++){
+  for (unsigned int i=0; i < paramNames.size(); i++){
 
     std::string origName(paramNames[i]);
     int paramNameChanged = 0;
