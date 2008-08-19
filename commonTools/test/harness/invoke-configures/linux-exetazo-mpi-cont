@@ -70,5 +70,6 @@ FFLAGS="-g -O3 -fPIC" \
 --enable-sacado \
 --enable-sacado-alltests \
 --enable-stratimikos \
+--enable-tpetra \
 --disable-webtrilinos \
 --with-gnumake
