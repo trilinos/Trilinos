@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   {
     int iGlobal = MyGlobalElements[i];
     const int MakeNotDense = 1;  // kludge  see bug #1142 - set to zero to demonstrate bug #1142 on atlantis
-    int Min_jGlobal = min(i,MakeNotDense );
+    int Min_jGlobal = std::min(i,MakeNotDense );
     for (int jGlobal = Min_jGlobal ; jGlobal < NumGlobalElements ; ++jGlobal) {
       if (iGlobal == jGlobal) 
 	Values[jGlobal-Min_jGlobal] = 1.0 * (NumGlobalElements + 1 ) *
