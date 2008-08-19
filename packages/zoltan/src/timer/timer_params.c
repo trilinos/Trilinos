@@ -23,6 +23,7 @@ extern "C" {
 #include "zoltan_timer.h"
 #include "params_const.h"
 #include "zoltan_util.h"
+#include "zz_const.h"
 
 /* Function to interpret and set timer parameters */
 

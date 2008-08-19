@@ -22,6 +22,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include "zoltan_mem.h"
+#include "zoltan_util.h"
 
 #ifdef __STDC__
 #include <stdarg.h>

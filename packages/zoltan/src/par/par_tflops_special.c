@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include "par_tflops_special_const.h"
 #include "zoltan_mem.h"
+#include "zz_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

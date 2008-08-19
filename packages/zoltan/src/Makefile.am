@@ -63,16 +63,16 @@ INCLUDE_H = \
 	$(srcdir)/include/zoltan_align.h \
 	$(srcdir)/include/zoltan_cpp.h \
 	$(srcdir)/include/zoltan.h \
-	$(srcdir)/include/zoltan_types.h
+	$(srcdir)/include/zoltan_types.h \
+	$(srcdir)/include/zoltan_comm.h \
+	$(srcdir)/include/zoltan_comm_cpp.h \
+	$(srcdir)/include/zoltan_timer_cpp.h \
+	$(srcdir)/include/zoltan_timer.h \
+	$(srcdir)/include/zoltan_dd.h \
+	$(srcdir)/include/zoltan_dd_cpp.h \
+	$(srcdir)/include/zoltan_mem.h  
 
 #       $(srcdir)/Zoltan_ConfigDefs.h
-
-MATRIX_H = \
-	$(srcdir)/matrix/matrix_partition.h
-
-MATRIX = \
-	$(srcdir)/matrix/matrix_partition.c \
-	$(srcdir)/matrix/random2d.c
 
 LB_H = \
 	$(srcdir)/lb/lb_const.h \
@@ -305,14 +305,7 @@ TIMER = \
 	$(srcdir)/timer/timer_params.c
 
 UTILITIES_H = \
-	$(srcdir)/Utilities/Communication/zoltan_comm.h \
-	$(srcdir)/Utilities/Communication/zoltan_comm_cpp.h \
-	$(srcdir)/Utilities/Timer/zoltan_timer_cpp.h \
-	$(srcdir)/Utilities/Timer/zoltan_timer.h \
 	$(srcdir)/Utilities/Timer/timer.h \
-	$(srcdir)/Utilities/DDirectory/zoltan_dd.h \
-	$(srcdir)/Utilities/DDirectory/zoltan_dd_cpp.h \
-	$(srcdir)/Utilities/Memory/zoltan_mem.h \
 	$(srcdir)/Utilities/shared/zoltan_util.h \
 	$(srcdir)/Utilities/shared/zoltan_id.h
 
@@ -384,7 +377,6 @@ ZOLTAN_H = \
 	$(HSFC_H) \
 	$(INCLUDE_H) \
 	$(LB_H) \
-	$(MATRIX_H) \
 	$(OCT_H) \
 	$(ORDER_H) \
 	$(PAR_H) \
@@ -406,7 +398,6 @@ libzoltan_a_SOURCES = \
 	$(HIER) \
 	$(HSFC) \
 	$(LB) \
-	$(MATRIX) \
 	$(OCT) \
 	$(ORDER) \
 	$(PAR) \
@@ -473,7 +464,8 @@ lib_LIBRARIES = $(ZOLTAN_LIB)
 # ------------------------------------------------------------------------
 
 # Eventually we will try to install fewer headers
-include_HEADERS = $(ZOLTAN_H) 
+include_HEADERS = $(INCLUDE_H) 
+EXTRA_DIST = $(ZOLTAN_H)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)

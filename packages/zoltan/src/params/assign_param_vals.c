@@ -24,6 +24,7 @@ extern "C" {
 #include "params_const.h"
 #include "zoltan_types.h"
 #include "zoltan_util.h"
+#include "zz_const.h"
 
 /*****************************************************************************/
 /***   Function prototypes:                                                ***/

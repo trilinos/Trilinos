@@ -111,7 +111,8 @@ am__objects_2 = zdrive-dr_err.$(OBJEXT) zdrive-dr_input.$(OBJEXT) \
 am_zdrive_OBJECTS = $(am__objects_2) zdrive-dr_main.$(OBJEXT) \
 	zdrive-dr_exoII_io.$(OBJEXT) zdrive-dr_loadbal.$(OBJEXT) \
 	zdrive-dr_migrate.$(OBJEXT) zdrive-dr_maps.$(OBJEXT) \
-	zdrive-dr_dd.$(OBJEXT) zdrive-dr_param_file.$(OBJEXT)
+	zdrive-dr_dd.$(OBJEXT) zdrive-dr_param_file.$(OBJEXT) \
+	zdrive-order_test.$(OBJEXT)
 zdrive_OBJECTS = $(am_zdrive_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -282,7 +283,7 @@ COMMON_DRIVER_HDRS = \
 zdrive_SOURCES = \
 	$(COMMON_DRIVER_SRC) $(srcdir)/dr_main.c $(srcdir)/dr_exoII_io.c \
 	$(srcdir)/dr_loadbal.c $(srcdir)/dr_migrate.c $(srcdir)/dr_maps.c \
-	$(srcdir)/dr_dd.c $(srcdir)/dr_param_file.c
+	$(srcdir)/dr_dd.c $(srcdir)/dr_param_file.c $(srcdir)/order_test.c
 
 
 # List headers here used for the C driver, but not the C++ driver.
@@ -418,6 +419,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_random_io.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_setfixed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-order_test.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -1146,6 +1148,20 @@ zdrive-dr_param_file.obj: $(srcdir)/dr_param_file.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/dr_param_file.c' object='zdrive-dr_param_file.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zdrive-dr_param_file.obj `if test -f '$(srcdir)/dr_param_file.c'; then $(CYGPATH_W) '$(srcdir)/dr_param_file.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dr_param_file.c'; fi`
+
+zdrive-order_test.o: $(srcdir)/order_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zdrive-order_test.o -MD -MP -MF $(DEPDIR)/zdrive-order_test.Tpo -c -o zdrive-order_test.o `test -f '$(srcdir)/order_test.c' || echo '$(srcdir)/'`$(srcdir)/order_test.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zdrive-order_test.Tpo $(DEPDIR)/zdrive-order_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/order_test.c' object='zdrive-order_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zdrive-order_test.o `test -f '$(srcdir)/order_test.c' || echo '$(srcdir)/'`$(srcdir)/order_test.c
+
+zdrive-order_test.obj: $(srcdir)/order_test.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zdrive-order_test.obj -MD -MP -MF $(DEPDIR)/zdrive-order_test.Tpo -c -o zdrive-order_test.obj `if test -f '$(srcdir)/order_test.c'; then $(CYGPATH_W) '$(srcdir)/order_test.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/order_test.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zdrive-order_test.Tpo $(DEPDIR)/zdrive-order_test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/order_test.c' object='zdrive-order_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zdrive-order_test.obj `if test -f '$(srcdir)/order_test.c'; then $(CYGPATH_W) '$(srcdir)/order_test.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/order_test.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

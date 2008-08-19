@@ -24,6 +24,7 @@ extern "C" {
 #include "zoltan_mem.h"
 #include "zoltan_types.h"
 #include "zz_util_const.h"
+#include "zz_const.h"
 
 
 void Zoltan_Free_Params(

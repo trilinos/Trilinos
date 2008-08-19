@@ -20,6 +20,8 @@ extern "C" {
 #include "zz_const.h"
 #include "order_const.h"
 
+#include <stdio.h>
+
 /* MPI tags */
 #define TAG1 32111
 #define TAG2 32112

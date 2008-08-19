@@ -25,6 +25,7 @@ extern "C" {
 #include "par_tflops_special_const.h"
 #include "par_average_const.h"
 #include "zoltan_timer.h"
+#include "zz_const.h"
 
 #define TINY   1.0e-6
 #define ABS(x) ( ((x)>0) ? (x) : (-(x)))

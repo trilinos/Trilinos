@@ -111,6 +111,9 @@ MPI_Comm  comm)			/* communicator */
 
     /* Note: these mallocs should never fail as prior frees are larger. */
 
+    /* TODO - should we do this with an alltoallv if we have many receives?,
+     *   spose all my receives arrive before I call MPI_Recv? 
+     */
 
     /* Send the lengths of all my real messages to their receivers. */
     for (i = 0; i < nsends + self_msg; i++) {

@@ -22,6 +22,7 @@ extern "C" {
 #include <stdlib.h>
 #include "zoltan_util.h"
 #include "par_const.h"
+#include "zz_const.h"
 
 
 #define PRINT_SYNC 5000   /* definition needed for print sync */

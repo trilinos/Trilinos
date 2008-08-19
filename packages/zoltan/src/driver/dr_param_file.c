@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include "zoltan.h"
 #include "dr_param_file.h"
+#include "dr_const.h"
 
 /*#define DEBUG 1*/
 

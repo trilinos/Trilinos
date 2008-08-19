@@ -350,7 +350,7 @@ Zoltan_Scotch_Construct_Offset(ZOS *order, indextype *children, int root,
   size[root] = offset; /* size[root] not used now, can be use to convert indices */
   if (childrensize == 0)  { /* Leaf */
     order->leaves[*leafnum] = offset;
-    (*leafnum++);
+    (*leafnum)++;
   }
   ++offset;
   return (offset);

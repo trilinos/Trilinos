@@ -92,6 +92,8 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
     int       self_msg;		/* do I have data for myself? */
     int       max_send_size;	/* size of longest message I send (w/o self) */
     int       total_recv_size;	/* total amount of data I'll recv (w/ self) */
+    int       maxed_recvs;      /* do I have to many receives to post all
+                                 * at once? if so use MPI_Alltoallv */
     MPI_Comm  comm;		/* communicator for operation */
     MPI_Request *request;       /* MPI requests for posted recvs */
     MPI_Status *status;		/* MPI status for those recvs */
@@ -100,6 +102,23 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
     char*     recv_buff;  /* To support POST & WAIT */    
 };
 
+/* Red Storm MPI permits a maximum of 2048 receives.  We set our
+ * limit of posted receives to 2000, leaving some for the application.
+ */
+#if 1
+
+#ifdef REDSTORM
+#define MAX_MPI_RECVS 2000
+#else
+#define MAX_MPI_RECVS 0
+#endif
+
+#else
+
+/* For testing this feature */
+#define MAX_MPI_RECVS 2
+
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

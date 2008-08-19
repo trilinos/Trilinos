@@ -25,45 +25,35 @@
 extern "C" {
 #endif
 
-/******************************************************************************/
-
-int Zoltan_Comm_Do_Reverse(
-ZOLTAN_COMM_OBJ *plan,		/* communication data structure */
-int       tag,			    /* message tag for communicating */
-char     *send_data,		/* array of data I currently own */
-int       nbytes,		    /* # bytes per data item */
-int      *sizes,		    /* variable size of objects (if not NULL) */
-char     *recv_data)		/* array of data I'll own after reverse comm */
+static void free_reverse_plan(ZOLTAN_COMM_OBJ *plan)
 {
-    int status;
-    
-    status = Zoltan_Comm_Do_Reverse_Post (plan, tag, send_data, nbytes, sizes,
-     recv_data);
-    if (status == ZOLTAN_OK)
-        status = Zoltan_Comm_Do_Reverse_Wait (plan, tag, send_data, nbytes,
-          sizes, recv_data);
-    return status;
-}    
+  if (plan && (plan->plan_reverse != NULL)) {
+    if (plan->plan_reverse->sizes != NULL) {
+        ZOLTAN_FREE(&plan->plan_reverse->sizes);
+        ZOLTAN_FREE(&plan->plan_reverse->sizes_to);
+        ZOLTAN_FREE(&plan->plan_reverse->sizes_from);
+        ZOLTAN_FREE(&plan->plan_reverse->starts_to_ptr);
+        ZOLTAN_FREE(&plan->plan_reverse->starts_from_ptr);
+        ZOLTAN_FREE(&plan->plan_reverse->indices_to_ptr);
+        ZOLTAN_FREE(&plan->plan_reverse->indices_from_ptr);
+    }
+    ZOLTAN_FREE(&(plan->plan_reverse->status));
+    ZOLTAN_FREE(&(plan->plan_reverse->request));
+    ZOLTAN_FREE(&plan->plan_reverse);
+  }
+}
 
-/******************************************************************************/
-/* Perform a reverse communication operation.  Communication object describes */
-/* an action, and this routine does the opposite.  Can be used to return */
-/* updated data to originating processor. */
-
-int       Zoltan_Comm_Do_Reverse_Post(
+static int create_reverse_plan( 
 ZOLTAN_COMM_OBJ *plan,		/* communication data structure */
-int       tag,			/* message tag for communicating */
-char     *send_data,		/* array of data I currently own */
-int       nbytes,		/* # bytes per data item */
-int      *sizes,		/* variable size of objects (if not NULL) */
-char     *recv_data)		/* array of data I'll own after reverse comm */
+int      tag,
+int      *sizes)		/* variable size of objects (if not NULL) */
 {
     int       total_send_length;/* total message length I send in plan */
     int       max_recv_length;	/* biggest message I recv in plan */
     int       sum_recv_sizes;	/* sum of the item sizes I receive */
     int       comm_flag;		/* status flag */
     int       i;		/* loop counter */
-    static char *yo = "Zoltan_Comm_Do_Reverse_Post";
+    static char *yo = "Zoltan_Comm_Reverse_Plan";
 
     /* Check input parameters */
     if (!plan){
@@ -109,76 +99,145 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
     plan->plan_reverse->starts_from_ptr = NULL;
     plan->plan_reverse->indices_to_ptr = NULL;
     plan->plan_reverse->indices_from_ptr = NULL;
+    plan->plan_reverse->maxed_recvs = 0;
 
-
-    plan->plan_reverse->request = (MPI_Request *)
-	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Request));
-    if (plan->plan_reverse->request == NULL && plan->plan_reverse->nrecvs != 0) {
-        ZOLTAN_FREE(&plan->plan_reverse);
-	return(ZOLTAN_MEMERR);
+    if (MAX_MPI_RECVS > 0){
+      /* If we have a limit to the number of posted receives we are allowed,
+      ** and our plan has exceeded that, then switch to an MPI_Alltoallv so
+      ** that we will have fewer receives posted when we do the communication.
+      */
+      MPI_Allreduce(&plan->nsends, &i, 1, MPI_INT, MPI_MAX, plan->comm);
+      if (i > MAX_MPI_RECVS){
+        plan->plan_reverse->maxed_recvs = 1;
+      }
     }
 
-    plan->plan_reverse->status = (MPI_Status *)
-	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Status));
-    if (plan->plan_reverse->status == NULL && plan->plan_reverse->nrecvs != 0) {
-        ZOLTAN_FREE(&(plan->plan_reverse->request));
-        ZOLTAN_FREE(&plan->plan_reverse);
-	return(ZOLTAN_MEMERR);
+    if (plan->plan_reverse->maxed_recvs){
+      plan->plan_reverse->request = NULL;
+      plan->plan_reverse->status = NULL;
+    }
+    else{
+      plan->plan_reverse->request = (MPI_Request *)
+  	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Request));
+      if (plan->plan_reverse->request == NULL && plan->plan_reverse->nrecvs != 0) {
+  	return(ZOLTAN_MEMERR);
+      }
+  
+      plan->plan_reverse->status = (MPI_Status *)
+  	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Status));
+      if (plan->plan_reverse->status == NULL && plan->plan_reverse->nrecvs != 0) {
+  	return(ZOLTAN_MEMERR);
+      }
     }
 
     comm_flag =Zoltan_Comm_Resize(plan->plan_reverse,sizes,tag,&sum_recv_sizes);
 
     if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN) {
-        ZOLTAN_FREE(&(plan->plan_reverse->status));
-        ZOLTAN_FREE(&(plan->plan_reverse->request));
-        ZOLTAN_FREE(&plan->plan_reverse);
 	return(comm_flag);
     }
 
     if (sum_recv_sizes != plan->plan_reverse->total_recv_size){
        /* Sanity check */
-       ZOLTAN_FREE(&(plan->plan_reverse->status));
-       ZOLTAN_FREE(&(plan->plan_reverse->request));
-       ZOLTAN_FREE(&plan->plan_reverse);
        return(ZOLTAN_FATAL);
     }
 
-    comm_flag = Zoltan_Comm_Do_Post(plan->plan_reverse, tag, send_data, nbytes,
-     recv_data);
-
-    return (comm_flag);
+    return ZOLTAN_OK;
 }
 
-
-    
 /******************************************************************************/
-int Zoltan_Comm_Do_Reverse_Wait(
+
+int Zoltan_Comm_Do_Reverse(
 ZOLTAN_COMM_OBJ *plan,		/* communication data structure */
-int       tag,			/* message tag for communicating */
+int       tag,			    /* message tag for communicating */
 char     *send_data,		/* array of data I currently own */
-int       nbytes,		/* # bytes per data item */
-int      *sizes,		/* variable size of objects (if not NULL) */
+int       nbytes,		    /* # bytes per data item */
+int      *sizes,		    /* variable size of objects (if not NULL) */
 char     *recv_data)		/* array of data I'll own after reverse comm */
 {
-    int       comm_flag;		/* status flag */
-    
-    comm_flag = Zoltan_Comm_Do_Wait(plan->plan_reverse, tag, send_data, nbytes, recv_data);
-        
-    if (sizes != NULL) {
-        ZOLTAN_FREE(&plan->plan_reverse->sizes);
-	ZOLTAN_FREE(&plan->plan_reverse->sizes_to);
-	ZOLTAN_FREE(&plan->plan_reverse->sizes_from);
-	ZOLTAN_FREE(&plan->plan_reverse->starts_to_ptr);
-	ZOLTAN_FREE(&plan->plan_reverse->starts_from_ptr);
-	ZOLTAN_FREE(&plan->plan_reverse->indices_to_ptr);
-	ZOLTAN_FREE(&plan->plan_reverse->indices_from_ptr);
+  int status;
+
+  /* create plan->plan_reverse
+   */
+  status = create_reverse_plan(plan, tag, sizes);
+
+  if (status == ZOLTAN_OK || status == ZOLTAN_WARN){
+
+    if (plan->plan_reverse->maxed_recvs){
+  
+      /* use MPI_Alltoallv to implement plan->plan_reverse, because comm_do_post
+       * would post more receives that allowed on this machine
+       */
+      
+      status = Zoltan_Comm_Do_AlltoAll(plan->plan_reverse, send_data, nbytes, recv_data);
     }
-    ZOLTAN_FREE(&(plan->plan_reverse->status));
-    ZOLTAN_FREE(&(plan->plan_reverse->request));
-    ZOLTAN_FREE(&plan->plan_reverse);
+    else{
+      /* use post/wait which is faster when each sends to few
+       */
+      status = Zoltan_Comm_Do_Post(plan->plan_reverse, tag, send_data, nbytes, recv_data);
+    
+      if (status == ZOLTAN_OK || status == ZOLTAN_WARN){
+        status = Zoltan_Comm_Do_Wait (plan->plan_reverse, tag, send_data, nbytes, recv_data);
+      }
+    }
+  }
+
+  free_reverse_plan(plan);
+
+  return status;
+}    
+/******************************************************************************/
+/* Perform a reverse communication operation.  Communication object describes */
+/* an action, and this routine does the opposite.  Can be used to return */
+/* updated data to originating processor. */
+
+int       Zoltan_Comm_Do_Reverse_Post(
+ZOLTAN_COMM_OBJ *plan,          /* communication data structure */
+int       tag,                  /* message tag for communicating */
+char     *send_data,            /* array of data I currently own */
+int       nbytes,               /* # bytes per data item */
+int      *sizes,                /* variable size of objects (if not NULL) */
+char     *recv_data)            /* array of data I'll own after reverse comm */
+{
+  int       comm_flag;                /* status flag */
+
+  /* create plan->plan_reverse
+   */
+  comm_flag = create_reverse_plan(plan, tag, sizes);
+
+  if (comm_flag == ZOLTAN_OK || comm_flag == ZOLTAN_WARN){
+
+    /* post the receives of plan->plan_reverse
+     */
+    comm_flag = Zoltan_Comm_Do_Post(plan->plan_reverse, tag, send_data, nbytes,
+                recv_data);
+  }
+
+  if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN){
+    free_reverse_plan(plan);
+  }
+
+  return (comm_flag);
+}
+
+/******************************************************************************/
+int Zoltan_Comm_Do_Reverse_Wait(
+ZOLTAN_COMM_OBJ *plan,          /* communication data structure */
+int       tag,                  /* message tag for communicating */
+char     *send_data,            /* array of data I currently own */
+int       nbytes,               /* # bytes per data item */
+int      *sizes,                /* variable size of objects (if not NULL) */
+char     *recv_data)            /* array of data I'll own after reverse comm */
+{
+    int       comm_flag;                /* status flag */
+
+    comm_flag = Zoltan_Comm_Do_Wait(plan->plan_reverse, tag, send_data, nbytes, recv_data);
+
+    free_reverse_plan(plan);
 
     return(comm_flag);
 }
+
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

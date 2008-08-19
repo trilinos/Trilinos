@@ -146,12 +146,36 @@ public:
                  int * rank,
                  int * iperm )
   {
-    //  Note:  Zoltan_Order_Struct set to NULL.
     return Zoltan_Order( ZZ_Ptr,
                          &num_gid_entries, &num_lid_entries,
                          num_objs, global_ids, local_ids,
                          rank, iperm);
   }
+
+  int Order_Get_Num_Blocks() {
+    return Zoltan_Order_Get_Num_Blocks(ZZ_Ptr);
+  }
+
+  int Order_Get_Block_Bounds(int block_num, int &first, int &last) {
+    return Zoltan_Order_Get_Block_Bounds(ZZ_Ptr, block_num, &first, &last);
+  }
+
+  int Order_Get_Block_Size(int block_num) {
+    return Zoltan_Order_Get_Block_Size(ZZ_Ptr, block_num);
+  }
+
+  int Order_Get_Block_Parent(int block_num) {
+    return Zoltan_Order_Get_Block_Parent(ZZ_Ptr, block_num);
+  }
+
+  int Order_Get_Nbr_Leaves() {
+    return Zoltan_Order_Get_Nbr_Leaves(ZZ_Ptr);
+  }
+
+  int Order_Get_GID_Order(ZOLTAN_ID_PTR global_ids,ZOLTAN_ID_PTR order_ids) {
+    return Zoltan_Order_Get_GID_Order(ZZ_Ptr, global_ids, order_ids);
+  }
+
   int Color (int &num_gid_entries,
              int &num_lid_entries,
              const int &num_objs,

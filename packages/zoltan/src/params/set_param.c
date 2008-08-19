@@ -42,6 +42,7 @@ extern "C" {
 #include "ha_drum.h"
 #endif
 #include "coloring_const.h"
+#include "zz_const.h"
 
 static int add_param(ZZ *, char **, char **, int);
 static int remove_param(ZZ *, char *, int);
@@ -65,7 +66,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
        Zoltan_PHG_Set_Param,
-       Zoltan_MP_Set_Param,
 #ifdef ZOLTAN_HIER
        Zoltan_Hier_Set_Param,
 #endif

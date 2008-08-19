@@ -24,6 +24,25 @@
 extern "C" {
 #endif
 
+#if 0
+static void show_int_buffers(int me, int procs, char *buf, int *bcounts, int *boffsets)
+{
+  int i,p;
+  int *ibuf = (int *)buf;
+
+  printf("%d  count offset (values)\n",me);
+
+  for (p=0; p < procs; p++){
+    printf("%d %d (",bcounts[p]/4, boffsets[p]/4);
+    for (i=0; i < bcounts[p]/4; i++){
+      printf("%d ",*ibuf);
+      ibuf++;
+    }
+    printf(")\n\n");
+    fflush(stdout);
+  }
+}
+#endif
 
 /* Given the communication object, perform a communication operation as
    efficiently as possible. */
@@ -55,14 +74,21 @@ char *send_data,		/* array of data I currently own */
 int nbytes,			/* multiplier for sizes */
 char *recv_data)		/* array of data I'll own after comm */
 {
-   int status;
-   
-   status = Zoltan_Comm_Do_Post (plan, tag, send_data, nbytes, recv_data);
-   if (status == ZOLTAN_OK)
-      status = Zoltan_Comm_Do_Wait (plan, tag, send_data, nbytes, recv_data);
-   return status;
+  int status;
+  
+  if (!plan->maxed_recvs){
+    status = Zoltan_Comm_Do_Post (plan, tag, send_data, nbytes, recv_data);
+    if (status == ZOLTAN_OK)
+       status = Zoltan_Comm_Do_Wait (plan, tag, send_data, nbytes, recv_data);
+  }
+  else{
+    status = Zoltan_Comm_Do_AlltoAll(plan, send_data, nbytes, recv_data);
+  }
+
+  return status;
 }
 
+/*****************************************************************************/
 
 int       Zoltan_Comm_Do_Post(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
@@ -401,6 +427,345 @@ char *recv_data)		/* array of data I'll own after comm */
     return (ZOLTAN_OK);
 }
 
+/*****************************************************************************/
+
+/* Do_Post would require posting more receives than allowed on this platform.
+*  We use MPI_AlltoAllv instead, which is probably implemented such that each
+*  process does one receive at a time.
+*/
+
+
+int       Zoltan_Comm_Do_AlltoAll(
+ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
+char *send_data,		/* array of data I currently own */
+int nbytes,			/* multiplier for sizes */
+char *recv_data)		/* array of data I'll own after comm */
+{
+  static char *yo = "Zoltan_Comm_Do_AlltoAll";
+  char *outbuf=NULL, *inbuf=NULL, *buf=NULL;
+  int *outbufCounts=NULL, *outbufOffsets=NULL; 
+  int *inbufCounts=NULL, *inbufOffsets=NULL;
+  int nprocs, me, rc, i, j, k, p, sorted;
+  int nSendMsgs, nSendItems, nRecvMsgs, nRecvItems;
+  int length, offset, itemSize, outbufLen;
+
+  int sm = (plan->self_msg > 0) ? 1 : 0;
+
+  nSendMsgs = plan->nsends + sm;
+  nRecvMsgs = plan->nrecvs + sm;
+
+  for (i=0, nSendItems=0; i <nSendMsgs; i++){
+    nSendItems += plan->lengths_to[i];
+  }
+  for (i=0, nRecvItems=0; i <nRecvMsgs; i++){
+    nRecvItems += plan->lengths_from[i];
+  }
+
+  MPI_Comm_size(plan->comm, &nprocs);
+  MPI_Comm_rank(plan->comm, &me);
+
+  outbufCounts = (int *) ZOLTAN_CALLOC(nprocs , sizeof(int));
+  outbufOffsets = (int *) ZOLTAN_CALLOC(nprocs , sizeof(int));
+  inbufCounts = (int *) ZOLTAN_CALLOC(nprocs , sizeof(int));
+  inbufOffsets = (int *) ZOLTAN_CALLOC(nprocs , sizeof(int));
+
+  if (!outbufCounts || !outbufOffsets || !inbufCounts || !inbufOffsets){
+    ZOLTAN_COMM_ERROR("memory error", yo, me);
+  }
+
+  /* The *_to fields of the plan refer to the items in the send_data buffer,
+   * and how to pull out the correct items for each receiver.  The
+   * *_from fields of the plan refer to the recv_data buffer.  Items 
+   * arrive in process rank order, and these fields tell us where to
+   * put them in the recv_data buffer.
+   */
+
+  /* CREATE SEND BUFFER */
+
+  sorted = 0;
+  if (plan->indices_to == NULL){
+    sorted = 1;
+    for (i=1; i< nSendMsgs; i++){
+      if (plan->starts_to[i] < plan->starts_to[i-1]){
+        sorted = 0;
+        break;
+      }
+    }
+  }
+
+  if (plan->sizes_to){
+    /*
+     * Each message contains items for a process, and each item may be
+     * a different size.
+     */
+
+    for (i=0, outbufLen=0; i < nSendMsgs; i++){
+      outbufLen += plan->sizes_to[i];
+    }
+
+    if (plan->indices_to){
+      /*
+       * items are not grouped by message
+       */
+      buf = outbuf = (char *)ZOLTAN_MALLOC(outbufLen * nbytes);
+      if (outbufLen && nbytes && !outbuf){
+        ZOLTAN_COMM_ERROR("memory error", yo, me);
+      }
+
+      for (p=0, i=0, k=0; p < nprocs; p++){
+
+        length = 0;
+
+        if (i < nSendMsgs){
+          if (plan->procs_to[i] == p){   /* procs_to is sorted */
+  
+            for (j=0; j < plan->lengths_to[i]; j++,k++){
+              itemSize = plan->sizes[plan->indices_to[k]] * nbytes;
+              offset = plan->indices_to_ptr[k] * nbytes;
+  
+              memcpy(buf, send_data + offset, itemSize);
+  
+              buf += itemSize;
+              length += itemSize;
+            }
+            i++;
+          }
+        }
+  
+        outbufCounts[p] = length;
+        if (p){
+          outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
+        }
+      }
+    }
+    else{
+      /*
+       * items are stored contiguously for each message
+       */
+
+      if (!sorted || (plan->nvals > nSendItems) ){
+        buf = outbuf = (char *)ZOLTAN_MALLOC(outbufLen * nbytes);
+        if (outbufLen && nbytes && !outbuf){
+          ZOLTAN_COMM_ERROR("memory error", yo, me);
+        }
+      }
+      else{
+        /* All items in send_data are being sent, and they are sorted
+         * in process rank order.
+         */
+        outbuf = send_data;
+      }
+
+      for (p=0, i=0; p < nprocs; p++){
+
+        length = 0;
+
+        if (i < nSendMsgs){
+          if (plan->procs_to[i] == p){   /* procs_to is sorted */
+            length = plan->sizes_to[i] * nbytes;
+            offset = plan->starts_to_ptr[i] * nbytes;
+  
+            if ((!sorted || (plan->nvals > nSendItems)) && length){
+              memcpy(buf, send_data + offset, length);
+              buf += length;
+            }
+            i++;
+          }
+        }
+  
+        outbufCounts[p] = length;
+        if (p){
+          outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
+        }
+      }
+    }
+  }
+  else if (plan->indices_to){
+    /*
+     * item sizes are constant, however the items belonging in a given
+     * message may not be contiguous in send_data
+     */
+
+    buf = outbuf = (char *)ZOLTAN_MALLOC(nSendItems * nbytes);
+    if (nSendMsgs && nbytes && !outbuf){
+      ZOLTAN_COMM_ERROR("memory error", yo, me);
+    }
+
+    for (p=0, i=0, k=0; p < nprocs; p++){
+
+      length = 0;
+     
+      if (i < nSendMsgs){
+        if (plan->procs_to[i] == p){   /* procs_to is sorted */
+          for (j=0; j < plan->lengths_to[i]; j++,k++){
+            offset = plan->indices_to[k] * nbytes;
+            memcpy(buf, send_data + offset, nbytes);
+            buf += nbytes;
+          }
+          length = plan->lengths_to[i] * nbytes;
+          i++;
+        }
+      }
+
+      outbufCounts[p] = length;
+      if (p){
+        outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
+      }
+    }
+  }
+  else{                          
+
+    /* item sizes are constant, and items belonging to a
+     * given message are always stored contiguously in send_data
+     */
+
+    if (!sorted || (plan->nvals > nSendItems)){
+      buf = outbuf = (char *)ZOLTAN_MALLOC(nSendItems * nbytes);
+      if (nSendItems && nbytes && !outbuf){
+        ZOLTAN_COMM_ERROR("memory error", yo, me);
+      }
+    }
+    else{
+      /* send_data is sorted by process, and we don't skip
+       * any of the data in the buffer, so we can use send_data 
+       * in the alltoall call
+       */
+      outbuf = send_data;
+    }
+
+    for (p=0,i=0; p < nprocs; p++){
+
+      length = 0;
+     
+      if (i < nSendMsgs){
+        if (plan->procs_to[i] == p){    /* procs_to is sorted */
+          offset = plan->starts_to[i] * nbytes;
+          length = plan->lengths_to[i] * nbytes;
+  
+          if ((!sorted || (plan->nvals > nSendItems)) && length){
+            memcpy(buf, send_data + offset, length);
+            buf += length;
+          }
+          i++;
+        }
+      }
+
+      outbufCounts[p] = length;
+      if (p){
+        outbufOffsets[p] = outbufOffsets[p-1] + outbufCounts[p-1];
+      }
+    }
+  }
+
+  /* CREATE RECEIVE BUFFER */
+
+  sorted = 0;
+  if (plan->indices_from == NULL){
+    sorted = 1;
+    for (i=1; i< nRecvMsgs; i++){
+      if (plan->starts_from[i] < plan->starts_from[i-1]){
+        sorted = 0;
+        break;
+      }
+    }
+  }
+
+  if (sorted){
+    /* Caller already expects received data to be ordered by
+     * the sending process rank.
+     */
+    inbuf = recv_data;
+  }
+  else{
+    inbuf = (char *)ZOLTAN_MALLOC(plan->total_recv_size * nbytes);
+    if (plan->total_recv_size && nbytes && !inbuf){
+      ZOLTAN_COMM_ERROR("memory error", yo, me);
+    }
+  }
+
+  for (p=0, i=0; p < nprocs; p++){
+    length = 0;
+
+    if (i < nRecvMsgs){
+      if (plan->procs_from[i] == p){
+  
+        if (plan->sizes == NULL){
+          length = plan->lengths_from[i] * nbytes;
+        }
+        else{
+          length = plan->sizes_from[i] * nbytes;
+        }  
+        i++;
+      }
+    }
+
+    inbufCounts[p] = length;
+    if (p){
+      inbufOffsets[p] = inbufOffsets[p-1] + inbufCounts[p-1];
+    }
+  }
+
+  /* EXCHANGE DATA */
+
+  rc = MPI_Alltoallv(outbuf, outbufCounts, outbufOffsets, MPI_BYTE,
+                     inbuf, inbufCounts, inbufOffsets, MPI_BYTE,
+                     plan->comm);
+
+  if (outbuf != send_data){
+    ZOLTAN_FREE(&outbuf);
+  }
+  ZOLTAN_FREE(&outbufCounts);
+  ZOLTAN_FREE(&outbufOffsets);
+
+  /* WRITE RECEIVED DATA INTO USER'S BUFFER WHERE IT'S EXPECTED */
+
+  if (!sorted){
+
+    buf = inbuf;
+
+    if (plan->sizes == NULL){
+
+      /* each item in each message is nbytes long */
+
+      if (plan->indices_from == NULL){
+        for (i=0; i < nRecvMsgs; i++){
+          offset = plan->starts_from[i] * nbytes;
+          length = plan->lengths_from[i] * nbytes;
+          memcpy(recv_data + offset, buf, length);
+          buf += length;
+        }
+      }
+      else{
+        for (i=0,k=0; i < nRecvMsgs; i++){
+
+          for (j=0; j < plan->lengths_from[i]; j++,k++){
+            offset = plan->indices_from[k] * nbytes;
+            memcpy(recv_data + offset, buf, nbytes);
+            buf += nbytes;
+          }
+        }
+      }
+    }
+    else{  /* (sizes!=NULL) && (indices_from!=NULL) not allowed by Zoltan_Comm_Resize */
+
+      /* items can be different sizes */
+
+      for (i=0; i < nRecvMsgs; i++){
+        offset = plan->starts_from_ptr[i] * nbytes;
+        length = plan->sizes_from[i] * nbytes;
+        memcpy(recv_data + offset, buf, length);
+        buf += length;
+      }
+    }
+
+    ZOLTAN_FREE(&inbuf);
+  }
+
+  ZOLTAN_FREE(&inbufCounts);
+  ZOLTAN_FREE(&inbufOffsets);
+
+  return ZOLTAN_OK;
+}
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdio.h>
 #include "params_const.h"
+#include "zz_const.h"
 
 
 void Zoltan_Print_Params(
