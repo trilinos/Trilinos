@@ -64,7 +64,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = example_01$(EXEEXT) example_02$(EXEEXT)
+noinst_PROGRAMS = example_01$(EXEEXT) example_02$(EXEEXT) \
+	example_03$(EXEEXT)
 subdir = example/Basis
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,6 +106,10 @@ am_example_02_OBJECTS = example_02-example_02.$(OBJEXT)
 example_02_OBJECTS = $(am_example_02_OBJECTS)
 example_02_LINK = $(CXXLD) $(example_02_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_example_03_OBJECTS = example_03-example_03.$(OBJEXT)
+example_03_OBJECTS = $(am_example_03_OBJECTS)
+example_03_LINK = $(CXXLD) $(example_03_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -113,8 +118,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(example_01_SOURCES) $(example_02_SOURCES)
-DIST_SOURCES = $(example_01_SOURCES) $(example_02_SOURCES)
+SOURCES = $(example_01_SOURCES) $(example_02_SOURCES) \
+	$(example_03_SOURCES)
+DIST_SOURCES = $(example_01_SOURCES) $(example_02_SOURCES) \
+	$(example_03_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -245,11 +252,19 @@ example_01_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 example_02_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
-	#(top_builddir)/../sacado/src/libsacado.a
+	$(top_builddir)/../sacado/src/libsacado.a
 
 example_02_SOURCES = example_02.cpp
 example_02_LDADD = $(EXPORT_LIBS)
 example_02_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
+example_03_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../sacado/src/libsacado.a
+
+example_03_SOURCES = example_03.cpp
+example_03_LDADD = $(EXPORT_LIBS)
+example_03_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 all: all-am
 
 .SUFFIXES:
@@ -292,6 +307,9 @@ example_01$(EXEEXT): $(example_01_OBJECTS) $(example_01_DEPENDENCIES)
 example_02$(EXEEXT): $(example_02_OBJECTS) $(example_02_DEPENDENCIES) 
 	@rm -f example_02$(EXEEXT)
 	$(example_02_LINK) $(example_02_OBJECTS) $(example_02_LDADD) $(LIBS)
+example_03$(EXEEXT): $(example_03_OBJECTS) $(example_03_DEPENDENCIES) 
+	@rm -f example_03$(EXEEXT)
+	$(example_03_LINK) $(example_03_OBJECTS) $(example_03_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -301,6 +319,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_01-example_01.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_02-example_02.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_03-example_03.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -343,6 +362,20 @@ example_02-example_02.obj: example_02.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='example_02.cpp' object='example_02-example_02.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_02_CXXFLAGS) $(CXXFLAGS) -c -o example_02-example_02.obj `if test -f 'example_02.cpp'; then $(CYGPATH_W) 'example_02.cpp'; else $(CYGPATH_W) '$(srcdir)/example_02.cpp'; fi`
+
+example_03-example_03.o: example_03.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_03_CXXFLAGS) $(CXXFLAGS) -MT example_03-example_03.o -MD -MP -MF $(DEPDIR)/example_03-example_03.Tpo -c -o example_03-example_03.o `test -f 'example_03.cpp' || echo '$(srcdir)/'`example_03.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/example_03-example_03.Tpo $(DEPDIR)/example_03-example_03.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='example_03.cpp' object='example_03-example_03.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_03_CXXFLAGS) $(CXXFLAGS) -c -o example_03-example_03.o `test -f 'example_03.cpp' || echo '$(srcdir)/'`example_03.cpp
+
+example_03-example_03.obj: example_03.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_03_CXXFLAGS) $(CXXFLAGS) -MT example_03-example_03.obj -MD -MP -MF $(DEPDIR)/example_03-example_03.Tpo -c -o example_03-example_03.obj `if test -f 'example_03.cpp'; then $(CYGPATH_W) 'example_03.cpp'; else $(CYGPATH_W) '$(srcdir)/example_03.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/example_03-example_03.Tpo $(DEPDIR)/example_03-example_03.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='example_03.cpp' object='example_03-example_03.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_03_CXXFLAGS) $(CXXFLAGS) -c -o example_03-example_03.obj `if test -f 'example_03.cpp'; then $(CYGPATH_W) 'example_03.cpp'; else $(CYGPATH_W) '$(srcdir)/example_03.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
