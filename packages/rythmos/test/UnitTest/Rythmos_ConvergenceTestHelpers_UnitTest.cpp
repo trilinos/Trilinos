@@ -120,7 +120,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ConvergenceTestHelpers, SineData ) {
     y.push_back( sin(xval) );
   }
   lr.setData(x,y);
-  double tol = 1.0e-14;
+  // 1.0e-14 works on rancilio but not on gabriel, exetazo, or s858352
+  double tol = 1.0e-13;
   TEST_FLOATING_EQUALITY( lr.getSlope(), 8.518189335013251e-01, tol ); // These came from matlab
   TEST_FLOATING_EQUALITY( lr.getYIntercept(), 2.989789515694744e-02, tol );
 }
@@ -135,7 +136,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ConvergenceTestHelpers, CoSineData ) {
     y.push_back( cos(xval) );
   }
   lr.setData(x,y);
-  double tol = 1.0e-14;
+  // 1.0e-14 works on rancilio but not on gabriel, exetazo, or s858352
+  double tol = 1.0e-13;
   TEST_FLOATING_EQUALITY( lr.getSlope(), -4.653508042678562e-01, tol ); // These came from matlab
   TEST_FLOATING_EQUALITY( lr.getYIntercept(), 1.067025181571952, tol );
 }
