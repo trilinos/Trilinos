@@ -312,7 +312,7 @@ namespace Tpetra {
       Ordinal currLID = directoryMap_->getLocalIndex(*ptr++); // Convert incoming GID to Directory LID
       assert(currLID != NEGONE); // Internal error
       TEST_FOR_EXCEPTION(currLID == NEGONE, std::logic_error,
-        "Tpetra::Directory<" << Teuchos::OrdinalTraits<Ordinal>::name() << ">::generateDirectory(): logic error. Contact Tpetra team.");
+        "Tpetra::Directory<" << Teuchos::OrdinalTraits<Ordinal>::name() << ">::generateDirectory(): logic error. Please notify the Tpetra team.");
       imageIDs_[currLID] = *ptr++;
       LIDs_[currLID] = *ptr++;
     }

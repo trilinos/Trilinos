@@ -28,7 +28,7 @@ namespace {
 
 #define PRINT_VECTOR(v) \
    { \
-     out << "#v: "; \
+     out << #v << ": "; \
      copy(v.begin(), v.end(), ostream_iterator<Ordinal>(out," ")); \
      out << endl; \
    }
@@ -74,21 +74,6 @@ namespace {
   //
   // UNIT TESTS
   // 
-
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Map, basic, Ordinal )
-  {
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    // create a platform  
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    out << "platform = " << *platform << std::endl;
-    // create a comm  
-    RCP<Comm<Ordinal> > comm = platform->createComm();
-    const int numImages = comm->getSize();
-    // create a uniform map, two local GIDs per node
-    const Ordinal numEntries = 2*numImages;
-    Map<Ordinal> map(numEntries,ZERO,*platform);
-  }
 
 
   ////
@@ -261,10 +246,15 @@ namespace {
     TEST_EQUALITY_CONST(map.getMaxGlobalIndex(), myGlobal[1]);
     TEST_EQUALITY_CONST(map.getMinAllGlobalIndex(), as<Ordinal>(indexBase));
     TEST_EQUALITY_CONST(map.getMaxAllGlobalIndex(), as<Ordinal>(numGlobalEntries-1));
-    TEST_EQUALITY( map.getLocalIndex(myLocal[0]), myGlobal[0] );
-    TEST_EQUALITY( map.getLocalIndex(myLocal[1]), myGlobal[1] );
-    TEST_EQUALITY( map.getGlobalIndex(myGlobal[0]), myLocal[0] );
-    TEST_EQUALITY( map.getGlobalIndex(myGlobal[1]), myLocal[1] );
+    TEST_EQUALITY( map.getLocalIndex(myGlobal[0]), myLocal[0] );
+    TEST_EQUALITY( map.getLocalIndex(myGlobal[1]), myLocal[1] );
+    TEST_EQUALITY( map.getGlobalIndex(myLocal[0]), myGlobal[0] );
+    TEST_EQUALITY( map.getGlobalIndex(myLocal[1]), myGlobal[1] );
+    TEST_THROW( map.getGlobalIndex(2), std::invalid_argument);
+    TEST_THROW( map.getLocalIndex(numGlobalEntries),  std::invalid_argument);  // all procs fail, all throw
+    if (numImages > 1) {
+      TEST_THROW( map.getLocalIndex(numGlobalEntries-1),std::invalid_argument);                   // all but one fail, all throw
+    }
     TEST_COMPARE_ARRAYS( map.getMyGlobalEntries(), myGlobal);
     TEST_EQUALITY_CONST( map.isMyLocalIndex(0), true );
     TEST_EQUALITY_CONST( map.isMyLocalIndex(1), true );
@@ -291,13 +281,12 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, basic, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, invalidConstructor1, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, invalidConstructor2, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, invalidConstructor3, ORDINAL ) \
@@ -310,7 +299,6 @@ namespace {
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, basic, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, invalidConstructor1, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, invalidConstructor2, ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, invalidConstructor3, ORDINAL ) \

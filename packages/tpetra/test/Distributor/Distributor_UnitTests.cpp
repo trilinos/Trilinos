@@ -32,7 +32,7 @@ namespace {
 
 #define PRINT_VECTOR(v) \
    { \
-     out << "#v: "; \
+     out << #v << ": "; \
      copy(v.begin(), v.end(), ostream_iterator<Ordinal>(out," ")); \
      out << endl; \
    }
@@ -594,7 +594,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-// # define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // # define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

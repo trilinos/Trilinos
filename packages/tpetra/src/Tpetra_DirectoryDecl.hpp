@@ -79,9 +79,7 @@ namespace Tpetra {
     //! getDirectoryEntries : Returns image and local id info for non-local Map entries
     /*! Given a list of Global Entry IDs, this function returns the list of
       image IDs and local IDs on the owning memory image that correspond
-      to the list of entries.  If LocalEntries is 0, then local IDs are 
-      not returned.  If EntrySizes is nonzero, it will contain a list of corresponding 
-      element sizes for the requested global entries.
+      to the list of entries.  
       \param In
       globalEntries - List of Global IDs being passed in.
       \param Out

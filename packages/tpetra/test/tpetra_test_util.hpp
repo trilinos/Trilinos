@@ -269,37 +269,4 @@ void generateYCoords(std::vector<T> const& values, std::vector<T>& yCoords) {
 	}
 }
 
-// generator tester function - kept around just in case
-// although some of the newer additions aren't tested in it yet
-/*
-template <typename T>
-void testGenerator() {
-	int length = 10;
-	int length2 = 4;
-  
-	cout << "\nTesting generateValue..." << endl;
-	T tlength = intToScalar<T>(length);
-	for(T y = Teuchos::ScalarTraits<T>::zero(); y < tlength; y++) {
-		for(T x = Teuchos::ScalarTraits<T>::zero(); x < tlength; x++)
-			cout << generateValue(x,y) << "\t";
-		cout << endl;
-	}
-  
-	cout << "\nTesting generateColumn..." << endl;
-	std::vector< std::vector<T> > columns(length);
-	for(int i = 0; i < length; i++) {
-		generateColumn(columns[i], i, length);
-		cout << "Column " << i << ": " << columns[i] << endl;
-	}
-
-	cout << "\nTesting generateMultipleColumns..." << endl;
-	std::vector<T> multColumns;
-	generateMultipleColumns(multColumns, 0, length2, length2);
-	cout << "array bounds = (0,0) to (" << length2 << "," << length2 << ")"  << endl;
-	cout << "array contents = " << multColumns << endl;
-  
-	cout << endl;
-}
-*/
-
 #endif // TPETRA_TEST_UTIL_HPP

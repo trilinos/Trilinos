@@ -333,15 +333,14 @@ AC_CONFIG_FILES([
 		test/Distributor/Makefile
         test/Map/Makefile
 		test/Directory/Makefile
+        test/ImportExport/Makefile
 		])
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile
 # example/TpetraOPs/Makefile
-# test/ImportExport/Makefile
-# test/BlockElementSpace/Makefile
+# test/DistObject/Makefile
 # test/Vector/Makefile
 # test/CisMatrix/Makefile
-# test/DistObject/Makefile
 # test/BasicPerfTest/Makefile
 
 AC_OUTPUT()

@@ -1,9 +1,5 @@
 CURRENT
-* add necessary support to Teuchos::Comm, Comm_Helpers
-  - MPI_Rsend   (ready send)
-  - MPI_Irecv   (non-block receive)
-  - MPI_WaitAll (wait all)
-* update Distributor,Directory,Import,Export to match new Tpetra::Map
+* finish epetra map, unit tests
 * write Anasazi/Tpetra adapter
 * write Belos/Tpetra adapter
 
@@ -21,10 +17,13 @@ CONSIDER
   all examples have been disabled
 * Thyra
   examples have been disabled.
-  the following interfaces have been disabled:
-  - 
 
 DONE   
+* add necessary support to Teuchos::Comm, Comm_Helpers
+  - MPI_Rsend   (ready send)
+  - MPI_Irecv   (non-block receive)
+  - MPI_WaitAll (wait all)
+* update Distributor,Directory,Import,Export to match new Tpetra::Map
 * kill Tpetra::Comm and replace with Teuchos::Comm, same with MpiComm and SerialComm
 * remove ScalarType template from Tpetra::Platform 
 * write Tpetra::Map, in the model of Epetra_Map, but without BlockMap

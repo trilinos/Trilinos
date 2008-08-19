@@ -18,7 +18,7 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Distributor, Map, Directory;
+    DIRS = Distributor, Map, Directory, ImportExport;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }

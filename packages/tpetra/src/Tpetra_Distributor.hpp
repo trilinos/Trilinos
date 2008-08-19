@@ -548,9 +548,9 @@ namespace Tpetra {
     }
 #ifdef TEUCHOS_DEBUG
         SHARED_TEST_FOR_EXCEPTION(index_neq_numActive, std::logic_error,
-            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+            "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
         SHARED_TEST_FOR_EXCEPTION(send_neq_numSends, std::logic_error,
-            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+            "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
 #endif
 
     if (selfMessage_) --numSends_;
@@ -909,7 +909,7 @@ namespace Tpetra {
       }
 #     ifdef TEUCHOS_DEBUG
         SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
-            "Tpetra::Distributor::createFromSends: logic error. please notify Tpetra team.",*comm_);
+            "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
 #     endif
       // each proc will get back only one item (hence, counts = ones) from the array of globals sums, 
       // namely that entry corresponding to the node, and detailing how many receives it has.

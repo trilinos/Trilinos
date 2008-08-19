@@ -135,8 +135,14 @@ namespace Tpetra {
          - numImages == 1         -> remainder == 0 && numGlobalEntries == numLocalEntries
          - numEntries < numImages -> remainder == numGlobalEntries && numLocalEntries \in [0,1]
      */
-    Ordinal numLocalEntries = numGlobalEntries / numImages;    // the above code assumes truncation. is that safe? FINISH
+    Ordinal numLocalEntries = numGlobalEntries / numImages;    
     Ordinal remainder = numGlobalEntries % numImages;
+#ifdef TEUCHOS_DEBUG
+    // the above code assumes truncation. is that safe?
+    SHARED_TEST_FOR_EXCEPTION(numLocalEntries * numImages + remainder != numGlobalEntries,
+        std::logic_error, "Tpetra::Map::constructor(numGlobal,indexBase,platform): Ordinal does not implement division with truncation."
+        << " Please contact Tpetra team.",*comm);
+#endif
     Ordinal start_index;
     if (myImageID < remainder) {
       ++numLocalEntries;
@@ -506,21 +512,23 @@ namespace Tpetra {
   template<typename Ordinal>
   Ordinal Map<Ordinal>::getLocalIndex(Ordinal globalIndex) const {
     if (MapData_->contiguous_) {
-      TEST_FOR_EXCEPTION(
+      SWITCHED_TEST_FOR_EXCEPTION(
         globalIndex < getMinGlobalIndex() || globalIndex > getMaxGlobalIndex(), 
         std::invalid_argument,
         "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
-                       << ">::getLocalIndex(gid): gid does not belong to this map."
+                       << ">::getLocalIndex(gid): gid does not belong to the map.",
+        *MapData_->comm_
       );
       return globalIndex - getMinGlobalIndex();
     }
     else {
       typename std::map<Ordinal,Ordinal>::const_iterator i;
       i = MapData_->glMap_.find(globalIndex);
-      TEST_FOR_EXCEPTION(
+      SWITCHED_TEST_FOR_EXCEPTION(
         i == MapData_->glMap_.end(), std::invalid_argument,
         "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
-                       << ">::getLocalIndex(gid): gid does not belong to this map."
+                       << ">::getLocalIndex(gid): gid does not belong to the map.",
+        *MapData_->comm_
       );
       return i->second;
     }
@@ -528,11 +536,12 @@ namespace Tpetra {
 
   template<typename Ordinal>
   Ordinal Map<Ordinal>::getGlobalIndex(Ordinal localIndex) const {
-    TEST_FOR_EXCEPTION(
+    SWITCHED_TEST_FOR_EXCEPTION(
         localIndex < 0 || localIndex > MapData_->numMyEntries_-1,
         std::invalid_argument,
         "Tpetra::Map<" << Teuchos::OrdinalTraits<Ordinal>::name() 
-           << ">::getGlobalIndex(lid): lid invalid.");
+           << ">::getGlobalIndex(lid): lid not valid.",
+        *MapData_->comm_);
     if (MapData_->contiguous_) {
       return localIndex + getMinGlobalIndex();
     }
@@ -552,9 +561,14 @@ namespace Tpetra {
 
   template<typename Ordinal>
   bool Map<Ordinal>::isMyGlobalIndex(Ordinal globalIndex) const {
-    typename std::map<Ordinal,Ordinal>::iterator i;
-    i = MapData_->glMap_.find(globalIndex);
-    return (i != MapData_->glMap_.end());
+    if (MapData_->contiguous_) {
+      return (MapData_->minMyGID_ <= globalIndex) && (globalIndex <= MapData_->maxMyGID_);
+    }
+    else {
+      typename std::map<Ordinal,Ordinal>::iterator i;
+      i = MapData_->glMap_.find(globalIndex);
+      return (i != MapData_->glMap_.end());
+    }
   }
 
   template<typename Ordinal>
@@ -662,6 +676,21 @@ namespace Tpetra {
   template<typename Ordinal>
   const std::vector<Ordinal> & 
   Map<Ordinal>::getMyGlobalEntries() const {
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
+    // check to see if lgMap is empty
+    // if so (and we have local entries), then fill it.
+    if (MapData_->lgMap_.empty() && MapData_->numMyEntries_ > ZERO) {
+      // this would have been set up for a non-contiguous map
+#ifdef TEUCHOS_DEBUG
+      SHARED_TEST_FOR_EXCEPTION(MapData_->contiguous_ != true, std::logic_error,
+          "Tpetra::Map::getMyGlobalEntries: logic error. Please notify the Tpetra team.",*MapData_->comm_);
+#endif
+      std::vector<Ordinal> & lgMap = MapData_->lgMap_;
+      lgMap.reserve(MapData_->numMyEntries_);
+      for (Ordinal lid=MapData_->minMyGID_; lid <= MapData_->maxMyGID_; ++lid) {
+        lgMap.push_back(lid);
+      }
+    }
     return MapData_->lgMap_;
   }
 
@@ -731,9 +760,10 @@ namespace Tpetra {
             std::vector<Ordinal> & LIDList) const 
   {
     if (GIDList.size() == 0) return;
-    TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
+    SWITCHED_TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
         "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
-        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called.");
+        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.",
+        *MapData_->comm_);
     MapData_->directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
   }
 
@@ -743,9 +773,10 @@ namespace Tpetra {
       std::vector<Ordinal>& imageIDList) const 
   {
     if (GIDList.size() == 0) return;
-    TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
+    SWITCHED_TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
         "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
-        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called.");
+        + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.",
+        *MapData_->comm_);
     MapData_->directory_->getDirectoryEntries(GIDList, imageIDList);
   }
 

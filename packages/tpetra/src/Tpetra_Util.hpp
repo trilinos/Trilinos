@@ -31,25 +31,41 @@
 
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #include <Teuchos_Utils.hpp>
+#include <Teuchos_TestForException.hpp>
+
+namespace Tpetra {
 
 // shared test for exception
 // just like Teuchos TEST_FOR_EXCEPTION, but with the assurance 
-// that all nodes throw the exception
+// that all nodes test and throw the exception together
 #define SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
-    const int lcl_throw_exception = (throw_exception_test) ? 1 : 0; \
-    int gbl_throw; \
+    const Ordinal lcl_throw_exception = (throw_exception_test) ? Teuchos::rank(comm)+1 : 0; \
+    Ordinal gbl_throw; \
     Teuchos::reduceAll(comm,Teuchos::REDUCE_MAX,lcl_throw_exception,&gbl_throw); \
-    TEST_FOR_EXCEPTION(gbl_throw,Exception,msg); \
+    TEST_FOR_EXCEPTION(gbl_throw,Exception,  \
+                       msg << " Failure on node " << gbl_throw-1 << "." << std::endl); \
 }
 
+// if TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION
+// otherwise, it calls TEST_FOR_EXCEPTION
+#ifdef TEUCHOS_DEBUG
+#define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
+{ \
+    SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm); \
+}
+#else 
+#define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
+{ \
+    TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
+}
+#endif
 
-namespace Tpetra {
 
   /*! 
     \file Tpetra_Util.hpp
     \brief Stand-alone utility functions.
-    
+
     Tpetra_Util contains utility functions that are used throughout
     Tpetra, by many classes and functions. They are placed here
     so that they can be updated and maintained in a single spot.
@@ -87,21 +103,6 @@ namespace Tpetra {
     }
   }
 
-  // type conversion functions
-  template<typename OrdinalType, typename ScalarType>
-  void ordinalToScalar(const OrdinalType & source, ScalarType& dest) {
-    dest = static_cast<ScalarType>(source);
-  }
-  template<typename OrdinalType, typename ScalarType>
-  void scalarToOrdinal(const ScalarType & source, OrdinalType& dest) {
-    dest = static_cast<OrdinalType>(source);
-  }
-
-  // functions for converting types to strings
-  // mainly used for doing output
-  template <typename T>
-  std::string toString(const T & x) {return(Teuchos::toString(x));}
-
   // this function works much the way Teuchos::Array::toString works.
   // it allows std::vector to be used with an ostream.
   // The contents of the vector are printed in the following format:
@@ -124,7 +125,7 @@ namespace Tpetra {
 
   template <typename T>
   std::string toString(const std::complex<T> & x) {
-    return("(" + toString(x.real()) + "," + toString(x.imag()) + ")");
+    return("(" + Teuchos::toString(x.real()) + "," + Teuchos::toString(x.imag()) + ")");
   }
  
   // sort function for multiple arrays

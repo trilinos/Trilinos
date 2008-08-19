@@ -633,7 +633,7 @@ template<typename T>
 class TypeNameTraits<RCP<T> > {
 public:
   static std::string name() { return "RCP<"+TypeNameTraits<T>::name()+">"; }
-  static std::string concreteName( const RCP<T>& t )
+  static std::string concreteName( const RCP<T>& /*t*/ )
     { return name(); }
 };
 

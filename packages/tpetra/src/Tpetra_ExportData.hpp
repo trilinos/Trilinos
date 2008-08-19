@@ -32,65 +32,71 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Array.hpp>
-#include "Tpetra_Export.hpp"
 #include <Teuchos_Object.hpp>
 
+#include "Tpetra_Export.hpp"
+
 namespace Tpetra {
-  
-	template<typename OrdinalType>
+
+	template<typename Ordinal>
 	class ExportData : public Teuchos::Object {
-		friend class Export<OrdinalType>;
+		friend class Export<Ordinal>;
 	public:
-		// default constructor
-		ExportData(ElementSpace<OrdinalType> const& source, ElementSpace<OrdinalType> const& target)
-			: Teuchos::Object("Tpetra::ExportData")
-			// permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, remoteGIDs_, exportLIDs_, exportGIDs_, 
-			// and exportImageIDs_ don't need/use a member initialization. (These are all STL vectors.)
-			, numSameIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, numPermuteIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, numRemoteIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, numExportIDs_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-			, source_(source)
-			, target_(target)
-			, platform_(source.platform().clone())
-			, distributor_(source.platform().createOrdinalComm())
-		{};
-    
-		// destructor. no heap-data, so no need to override
-		~ExportData() {};
-    
+
+		ExportData(const Map<Ordinal> & source, const Map<Ordinal> & target);
+
+		~ExportData();
+
 	protected:
-		// OT vectors
-		std::vector<OrdinalType> permuteToLIDs_;
-		std::vector<OrdinalType> permuteFromLIDs_;
-		std::vector<OrdinalType> remoteLIDs_;
-		std::vector<OrdinalType> remoteGIDs_;
-		std::vector<OrdinalType> exportLIDs_;
-		std::vector<OrdinalType> exportGIDs_;
-		std::vector<OrdinalType> exportImageIDs_;
-    
-		// OTs
-		OrdinalType numSameIDs_;
-		OrdinalType numPermuteIDs_;
-		OrdinalType numRemoteIDs_;
-		OrdinalType numExportIDs_;
-    
-		// ElementSpaces
-		ElementSpace<OrdinalType> const source_;
-		ElementSpace<OrdinalType> const target_;
-    
+		// Ordinal vectors
+		std::vector<Ordinal> permuteToLIDs_;
+		std::vector<Ordinal> permuteFromLIDs_;
+		std::vector<Ordinal> remoteLIDs_;
+		std::vector<Ordinal> remoteGIDs_;
+		std::vector<Ordinal> exportLIDs_;
+		std::vector<Ordinal> exportGIDs_;
+		std::vector<Ordinal> exportImageIDs_;
+
+		// Ordinals
+		Ordinal numSameIDs_;
+		Ordinal numPermuteIDs_;
+		Ordinal numRemoteIDs_;
+		Ordinal numExportIDs_;
+
+		// Maps
+		const Map<Ordinal> source_;
+		const Map<Ordinal> target_;
+
 		// Platform, Comm, Distributor, etc.
-		Teuchos::RCP< Platform<OrdinalType, OrdinalType> const > platform_;
-		Distributor<OrdinalType> distributor_;
-    
+		Teuchos::RCP<const Platform<Ordinal,Ordinal> > platform_;
+		Distributor<Ordinal> distributor_;
+
 	private:
 		//! Copy constructor (declared but not defined, do not use)
-		ExportData(ExportData<OrdinalType> const& rhs);
+		ExportData(ExportData<Ordinal> const& rhs);
 		//! Assignment operator (declared but not defined, do not use)
-		ExportData<OrdinalType>& operator = (ExportData<OrdinalType> const& rhs);
-    
+		ExportData<Ordinal>& operator = (ExportData<Ordinal> const& rhs);
 	}; // class ExportData
-  
+
+
+  template <typename Ordinal>
+    ExportData::ExportData(const Map<Ordinal> & source, const Map<Ordinal> & target)
+    : Teuchos::Object("Tpetra::ExportData")
+    , numSameIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+    , numPermuteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+    , numRemoteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+    , numExportIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+    , source_(source)
+    , target_(target)
+    , platform_(source.platform().clone())
+    , distributor_(source.platform().createComm())
+  {}
+
+  template <typename Ordinal>
+  ExportData::~ExportData() 
+  {}
+
+
 } // namespace Tpetra
 
 #endif // TPETRA_EXPORTDATA_HPP

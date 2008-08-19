@@ -76,9 +76,6 @@ namespace Tpetra {
     const Ordinal maxAllGID_;
     const bool contiguous_;
     const bool distributed_;
-    // FINISH: why is lgMap_ const but glMap_ non-const? let's make both const for now, see what breaks
-    // FINISH: it seems that lgMap_ requires only direct access, a std::vector should suffice
-    // const std::map<Ordinal, Ordinal> lgMap_;
     std::vector<Ordinal> lgMap_;
     std::map<Ordinal, Ordinal> glMap_;
     Teuchos::RCP< Directory<Ordinal> > directory_;
