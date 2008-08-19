@@ -605,10 +605,11 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderGaussRK
   TEST_EQUALITY_CONST( rkbt.order(), 6 );
 }
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage5thOrderRKBT ) {
-  double tol = 1.0e-10;
   RKButcherTableau<double> rkbt = createSDIRK5Stage5thOrderRKBT<double>();
+  TEST_THROW(validateSDIRKButcherTableau<double>(rkbt), std::logic_error );
+  /*
+  double tol = 1.0e-10;
   validateSDIRKButcherTableau(rkbt);
   TEST_EQUALITY_CONST( rkbt.numStages(), 5 );
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt.A();
@@ -655,8 +656,8 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage5thOrderRKBT ) {
   TEST_FLOATING_EQUALITY( c(3), (4.0-sqrt(6.0))/10.0, tol );
   TEST_FLOATING_EQUALITY( c(4), (4.0+sqrt(6.0))/10.0, tol );
   TEST_EQUALITY_CONST( rkbt.order(), 5 );
+  */
 }
-*/
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateDIRKButcherTableau ) {
   {

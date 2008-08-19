@@ -1008,7 +1008,7 @@ RKButcherTableau<Scalar> createImplicit3Stage6thOrderGaussRKBT()
 }
 
 template<class Scalar>
-RKButcherTableau<Scalar> createSDIRK5Stage5thOrderGaussRKBT()
+RKButcherTableau<Scalar> createSDIRK5Stage5thOrderRKBT()
 {
   // "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems", 2nd Revised Edition
   // E. Hairer and G. Wanner
