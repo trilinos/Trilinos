@@ -324,23 +324,23 @@ AC_SUBST(ac_aux_dir)
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
 AC_CONFIG_FILES([
-		Makefile 
-		Makefile.export.tpetra
-		src/Makefile
-		example/Makefile
-		test/Makefile
-		test/Platform/Makefile
-		test/Distributor/Makefile
+        Makefile 
+        Makefile.export.tpetra
+        src/Makefile
+        example/Makefile
+        test/Makefile
+        test/Platform/Makefile
+        test/Distributor/Makefile
         test/Map/Makefile
-		test/Directory/Makefile
+        test/Directory/Makefile
         test/ImportExport/Makefile
-		])
+        test/Vector/Makefile
+        ])
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile
 # example/TpetraOPs/Makefile
 # test/BasicPerfTest/Makefile
 # test/DistObject/Makefile
-# test/Vector/Makefile
 # test/CisMatrix/Makefile
 
 AC_OUTPUT()

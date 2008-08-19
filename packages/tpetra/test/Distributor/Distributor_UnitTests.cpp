@@ -613,6 +613,9 @@ namespace {
     UNIT_TEST_GROUP_ORDINAL(int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+    
+
+      // FINISH: add complex tests
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, basic, ORDINAL ) \

@@ -697,7 +697,7 @@ namespace Tpetra {
   }
 
   template<typename Ordinal>
-  void Map<Ordinal>::print(ostream& os) const {
+  void Map<Ordinal>::print(std::ostream& os) const {
     const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal nME = getNumMyEntries();
     
@@ -732,7 +732,7 @@ namespace Tpetra {
              << std::setw(16) << MapData_->lgMap_[i]
              << endl;
         }
-        os << flush;
+        os << std::flush;
       }
       // Do a few global ops to give I/O a chance to complete
       MapData_->comm_->barrier();

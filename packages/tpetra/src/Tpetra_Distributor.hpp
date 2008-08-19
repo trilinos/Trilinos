@@ -206,7 +206,7 @@ namespace Tpetra {
     //@{ \name I/O Methods
 
     //! Implements Teuchos::Object::print.
-    void print(ostream& os) const;
+    void print(std::ostream& os) const;
 
     //@}
 
@@ -859,8 +859,9 @@ namespace Tpetra {
 
   //! print method inherited from Teuchos::Object
   template <typename Ordinal>
-  void Distributor<Ordinal>::print(ostream& os) const 
+  void Distributor<Ordinal>::print(std::ostream& os) const 
   {
+    using std::endl;
     int const myImageID = comm_->getRank();
     int const numImages = comm_->getSize();
     for (int i = 0; i < numImages; ++i) {

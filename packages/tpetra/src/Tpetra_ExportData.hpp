@@ -68,7 +68,7 @@ namespace Tpetra {
 		const Map<Ordinal> target_;
 
 		// Platform, Comm, Distributor, etc.
-		Teuchos::RCP<const Platform<Ordinal,Ordinal> > platform_;
+		Teuchos::RCP<const Platform<Ordinal> > platform_;
 		Distributor<Ordinal> distributor_;
 
 	private:
@@ -80,20 +80,20 @@ namespace Tpetra {
 
 
   template <typename Ordinal>
-    ExportData::ExportData(const Map<Ordinal> & source, const Map<Ordinal> & target)
-    : Teuchos::Object("Tpetra::ExportData")
-    , numSameIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
-    , numPermuteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
-    , numRemoteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
-    , numExportIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
-    , source_(source)
-    , target_(target)
-    , platform_(source.platform().clone())
-    , distributor_(source.platform().createComm())
+  ExportData<Ordinal>::ExportData(const Map<Ordinal> & source, const Map<Ordinal> & target)
+  : Teuchos::Object("Tpetra::ExportData")
+  , numSameIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+  , numPermuteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+  , numRemoteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+  , numExportIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+  , source_(source)
+  , target_(target)
+  , platform_(source.platform().clone())
+  , distributor_(source.platform().createComm())
   {}
 
   template <typename Ordinal>
-  ExportData::~ExportData() 
+  ExportData<Ordinal>::~ExportData() 
   {}
 
 

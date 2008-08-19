@@ -27,17 +27,17 @@
 #@HEADER
 
 include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = Vector_test
+noinst_PROGRAMS = Vector_UnitTests
 
-Vector_test_SOURCES = $(srcdir)/cxx_main.cpp
-
-Vector_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+Vector_UnitTests_SOURCES = \
+  $(srcdir)/Vector_UnitTests.cpp \
+  $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+Vector_UnitTests_DEPENDENCIES = \
+	$(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
-
-Vector_test_CXXFLAGS = $(TPETRA_INCLUDES)
-
-Vector_test_LDADD = $(TPETRA_LIBS)
-
+Vector_UnitTests_LDADD = $(TPETRA_LIBS)
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)

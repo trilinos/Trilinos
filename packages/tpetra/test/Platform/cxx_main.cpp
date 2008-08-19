@@ -36,6 +36,12 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 
 using namespace Teuchos;
+using std::endl;
+using std::vector;
+using std::endl;
+using std::ostringstream;
+using std::cerr;
+using std::cout;
 
 template <typename OrdinalType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);

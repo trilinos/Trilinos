@@ -52,16 +52,16 @@
     </ol>
 */
 
-//! cin used as MPI breakpoint (used for debugging parallel code)
+//! std::cin used as MPI breakpoint (used for debugging parallel code)
 void mpiBreakpoint(int myImageID) {
 #ifdef HAVE_UNISTD_H
-	cout << "Image " << myImageID << " is alive, PID " << getpid() << endl;
+  std::cout << "Image " << myImageID << " is alive, PID " << getpid() << std::endl;
 #else
-	cout << "Image " << myImageID << " is alive, PID ???" << endl;
+  std::cout << "Image " << myImageID << " is alive, PID ???" << std::endl;
 #endif
 	if(myImageID == 0) {
-		cout << "[TPETRA-DEBUG mpiBreakpoint] ";
-		cin >> myImageID;
+    std::cout << "[TPETRA-DEBUG mpiBreakpoint] ";
+    std::cin >> myImageID;
 	}
 #ifdef TPETRA_MPI
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -109,33 +109,33 @@ T intToScalar(int n) {
 
 //! Message outputed at beginning of a test program
 void outputStartMessage(std::string const className) {
-	cout << "\n************************************************************" << endl;
-	cout << "Starting " << className << "Test..." << endl;
-	cout << Tpetra::Tpetra_Version() << endl;
-	cout << "************************************************************" << endl;
+  std::cout << "\n************************************************************" << std::endl;
+  std::cout << "Starting " << className << "Test..." << std::endl;
+  std::cout << Tpetra::Tpetra_Version() << std::endl;
+  std::cout << "************************************************************" << std::endl;
 }
 
 //! Message outputed at end of a test program
 void outputEndMessage(std::string const className, bool passed) {
-	cout << "************************************************************" << endl;
-	cout << className << " test ";
+  std::cout << "************************************************************" << std::endl;
+  std::cout << className << " test ";
 	if(passed)
-		cout << "passed." << endl;
+		std::cout << "passed." << std::endl;
 	else
-		cout << "failed." << endl;
-	cout << "************************************************************\n" << endl;
+		std::cout << "failed." << std::endl;
+  std::cout << "************************************************************\n" << std::endl;
 }
 
 //! Merssage outputed to seperate sections
 void outputHeading(std::string const message) {
-	cout << "**************************************************" << endl;
-	cout << message << endl;
-	cout << "**************************************************" << endl;
+  std::cout << "**************************************************" << std::endl;
+  std::cout << message << std::endl;
+  std::cout << "**************************************************" << std::endl;
 }
 
 //! Message outputed to seperate subsections
 void outputSubHeading(std::string const message) {
-	cout << message << endl;
+  std::cout << message << std::endl;
 }
 
 //! Outputs a message from all images in deterministic order
@@ -146,7 +146,7 @@ void outputData(int const myImageID, int const numImages, std::string const mess
 #endif
 	for(int i = 0; i < numImages; i++) {
 		if(myImageID == i)
-			cout << "[Image " << myImageID << "] " << message << endl;
+			std::cout << "[Image " << myImageID << "] " << message << std::endl;
 #ifdef TPETRA_MPI
 		MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -165,14 +165,14 @@ T generateValue(T const x, T const y) {
 	return(((x*x + y*y + x+x+x + y) / two) + (x*y));
 }
 
-// specialization for complex so that both real and imaginary portions get written to
+// specialization for std::complex so that both real and imaginary portions get written to
 // the real portion gets generateValue(x, 2y), and the imaginary portion gets generateValue(x, 2y+1)
 template <typename T>
-complex<T> generateValue(complex<T> const x, complex<T> const y) {
+std::complex<T> generateValue(std::complex<T> const x, std::complex<T> const y) {
 	T twoY = y.real() * intToScalar<T>(2);
 	T real = generateValue(x.real(), twoY);
 	T imag = generateValue(x.real(), (twoY + Teuchos::ScalarTraits<T>::one()));
-	return(complex<T>(real, imag));
+	return(std::complex<T>(real, imag));
 }
 
 // puts the generated values for (firstx, 0)...(firstx, length-1),(firstx+1, 0),(firstx+1, length-1)...(lastx, length-1) into vector

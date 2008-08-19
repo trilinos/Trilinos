@@ -120,7 +120,7 @@ namespace Tpetra {
     //@{ \name I/O Methods
 
     //! print method inherited from Teuchos::Object
-    virtual void print(ostream& os) const;
+    virtual void print(std::ostream& os) const;
 
     //@}
 
@@ -231,7 +231,8 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  void Import<Ordinal>::print(ostream& os) const {
+  void Import<Ordinal>::print(std::ostream& os) const {
+    using std::endl;
     os << "Import Data Members:" << endl;
     os << "permuteToLIDs_: " << toString(getPermuteToLIDs()) << endl;;
     os << "permuteFromLIDs_: " << toString(getPermuteFromLIDs()) << endl;

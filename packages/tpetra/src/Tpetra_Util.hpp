@@ -109,7 +109,7 @@ namespace Tpetra {
   // "{4, 7, 18, 23, 6, 2}"
   template <typename T>
   std::string toString(const std::vector<T> & x) {
-    ostringstream os;
+    std::ostringstream os;
     os << "{";
     typename std::vector<T>::const_iterator i = x.begin();
     if (i != x.end()) {
@@ -138,7 +138,7 @@ namespace Tpetra {
   void sortArrays(std::vector<T1>& sortVals, std::vector<T2>& otherVals) {
     // if sortVals and otherVals are not the same length, throw exception
     if(sortVals.size() != otherVals.size()) {
-      cerr << "Error in Tpetra_Util::sortArrays: sortVals and otherVals are not equally sized" << endl;
+      std::cerr << "Error in Tpetra_Util::sortArrays: sortVals and otherVals are not equally sized" << std::endl;
       throw (-99);
     }
     
@@ -168,7 +168,7 @@ namespace Tpetra {
   void sortArrays(std::vector<T1>& sortVals, std::vector<T2>& otherVals1, std::vector<T3>& otherVals2) {
     // if sortVals and otherVals are not the same length, throw exception
     if((sortVals.size() != otherVals1.size()) || (sortVals.size() != otherVals2.size())) {
-      cerr << "Error in Tpetra_Util::sortArrays: sortVals and otherVals are not equally sized" << endl;
+      std::cerr << "Error in Tpetra_Util::sortArrays: sortVals and otherVals are not equally sized" << std::endl;
       throw (-99);
     }
     

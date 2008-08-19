@@ -173,7 +173,7 @@ namespace Tpetra {
 
     //! Prints the Map object to the output stream.
     /*! An << operator is inherited from Teuchos::Object, which uses the print method.*/
-    void print(ostream& os) const;
+    void print(std::ostream& os) const;
 
     //@}
 

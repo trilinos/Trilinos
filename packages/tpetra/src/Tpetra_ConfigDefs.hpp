@@ -134,19 +134,9 @@
 #include <algorithm.h>
 #endif // ifdef HAVE_NUMERIC
 
-/* 
-this "using namespace" is a bad thing. (Not a Bad Thing, mind you, just a bad thing.) 
-replace real soon now.
-*/
-using namespace std;
-
 // other miscellaneous Tpetra configs:
 
 #define TPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
 #define TPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
-// The TPETRA_SGN macro is a Bad Thing, since it uses floating-point literals.
-//#define TPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)    /* sign function */
-
-const int Tpetra_DefaultTracebackMode = 1; // Default value for traceback behavior
 
 #endif // TPETRA_CONFIGDEFS_HPP
