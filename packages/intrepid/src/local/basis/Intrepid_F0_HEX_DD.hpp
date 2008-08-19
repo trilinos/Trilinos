@@ -28,13 +28,13 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_F0_QUAD_DD.hpp
-    \brief  Header file for the Intrepid::F0_QUAD_DD class.
+/** \file   Intrepid_F0_HEX_DD.hpp
+    \brief  Header file for the Intrepid::F0_HEX_DD class.
     \author Created by R. Kirby
 */
 
-#ifndef INTREPID_F0_QUAD_DD_HPP
-#define INTREPID_F0_QUAD_DD_HPP
+#ifndef INTREPID_F0_HEX_DD_HPP
+#define INTREPID_F0_HEX_DD_HPP
 
 #include "Intrepid_Basis.hpp"
 #include "Intrepid_RealSpace.hpp"
@@ -48,8 +48,8 @@
 
 namespace Intrepid {
   
-/** \class Intrepid::Basis_F0_QUAD_DD
-  \brief Implementation of default FEM basis functions of degree 1 for 0-forms on QUAD cells. 
+/** \class Intrepid::Basis_F0_HEX_DD
+  \brief Implementation of default FEM basis functions of degree 1 for 0-forms on HEX cells. 
   Reconstruction space type is INCOMPLETE, i.e., 2D bi-linear polynomials. Definition of the DoF set 
   for this basis, its enumeration and the associated local DoF tags are as follows,
                                                                                     
@@ -63,11 +63,11 @@ namespace Intrepid {
   \endverbatim
   
   \remarks
-  \li v_i is the ith vertex of the QUAD cell;
+  \li v_i is the ith vertex of the HEX cell;
 \endverbatim
 */
 template<class Scalar> 
-class Basis_F0_QUAD_DD: public Basis<Scalar> {
+class Basis_F0_HEX_DD: public Basis<Scalar> {
   private:
   
   /** \brief Dimension of the space spanned by the basis = number of degrees of freedom.
@@ -98,7 +98,7 @@ class Basis_F0_QUAD_DD: public Basis<Scalar> {
 
   /** \brief Constructor.
   */
-  Basis_F0_QUAD_DD( int degree ) : numDof_( (degree+1)*(degree+1)), degree_( degree ), isSet_(false) { };
+  Basis_F0_HEX_DD( int degree ) : numDof_( (degree+1)*(degree+1)*(degree+1)), degree_( degree ), isSet_(false) { };
   
   /** \brief Initializes static arrays needed for the lookup of the local enumeration (DoF Id) of a 
     degree-of-freedom by its local DoF tag and the reverse lookup of the DoF tag by DoF Id.
@@ -162,6 +162,6 @@ class Basis_F0_QUAD_DD: public Basis<Scalar> {
 
 }// namespace Intrepid
 
-#include "Intrepid_F0_QUAD_DDDef.hpp"
+#include "Intrepid_F0_HEX_DDDef.hpp"
 
 #endif

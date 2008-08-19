@@ -171,8 +171,6 @@ void Basis_F0_QUAD_DD<Scalar>::getValues(FieldContainer<Scalar>&               o
   
   // Temporaries: point counter and (x,y) coordinates of the evaluation point
   int countPt  = 0;                               
-  Scalar x(0);                                    
-  Scalar y(0);                                    
   
   switch (operatorType) {
     case OPERATOR_VALUE:
@@ -183,18 +181,17 @@ void Basis_F0_QUAD_DD<Scalar>::getValues(FieldContainer<Scalar>&               o
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_QUAD_DD): Evaluation point is outside the QUAD reference cell");
 #endif
-        x = (inputPoints[countPt])[0];
-        y = (inputPoints[countPt])[1];
+        Scalar x((inputPoints[countPt])[0]);
+        Scalar y((inputPoints[countPt])[1]);
         
         // Output container has rank 2. The indices are (P,F)
-	int bfCur = 0;
-	for (int i=0;i<degree_+1;i++) {
-	  for (int j=0;j<degree_+1;j++) {
-	    cout << poly_->eval(i,x) << " " << poly_->eval(j,y) << endl;
-	    outputValues(countPt, bfCur) = poly_->eval(i,x) * poly_->eval(j,y);
-	    bfCur++;
-	  }
-	}
+        int bfCur = 0;
+        for (int i=0;i<degree_+1;i++) {
+          for (int j=0;j<degree_+1;j++) {
+	          outputValues(countPt, bfCur) = poly_->eval(i,x) * poly_->eval(j,y);
+	          bfCur++;
+	      }
+	    }
       }
       break;
       
@@ -207,13 +204,26 @@ void Basis_F0_QUAD_DD<Scalar>::getValues(FieldContainer<Scalar>&               o
                             std::invalid_argument,
                             ">>> ERROR (Basis_F0_QUAD_DD): Evaluation point is outside the QUAD reference cell");
 #endif
-	// need to turn these into AD types as needed
-        x = (inputPoints[countPt])[0];
-        y = (inputPoints[countPt])[1];
+	    // need to turn these into AD types as needed
         
         // Output container has rank 3. The indices are (P,F,D)
-	// need a loop over basis functions 
+        int bfCur = 0;
+        for (int i=0;i<degree_+1;i++) {
+          for (int j=0;j<degree_+1;j++) {
+            Scalar x((inputPoints[countPt])[0]);
+            Scalar y((inputPoints[countPt])[1]);
 
+            Sacado::Fad::SFad<Scalar,1> xfad(1,0,x);
+            Sacado::Fad::SFad<Scalar,1> yfad(1,0,y);
+            Sacado::Fad::SFad<Scalar,1> f1_x;
+            Sacado::Fad::SFad<Scalar,1> f2_y;
+            f1_x = poly_->eval( i , xfad );
+            f2_y = poly_->eval( j , yfad );
+            outputValues(countPt,bfCur,0) = f1_x.dx(0) * f2_y.val(); 
+            outputValues(countPt,bfCur,1) = f1_x.val() * f2_y.dx(0);
+            bfCur++;
+          }
+        }
       }
       break;
       

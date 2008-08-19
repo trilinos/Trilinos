@@ -30,7 +30,7 @@ namespace Lagrange
   // the coefficients/pts.
   template<typename ScalarType1,
 	   typename ScalarType2>
-  ScalarType1 evaluateDividedDifferencePoly( const vector<ScalarType1> &abscissa ,
+  ScalarType2 evaluateDividedDifferencePoly( const vector<ScalarType1> &abscissa ,
 					     const vector<ScalarType1> &coefficients ,
 					     ScalarType2 &x );
   

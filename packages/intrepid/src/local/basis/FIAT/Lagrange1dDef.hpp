@@ -50,7 +50,7 @@ namespace Lagrange
 
   template<typename ScalarType1,
 	   typename ScalarType2>
-  ScalarType1 evaluateDividedDifferencePoly( const vector<ScalarType1> &abscissa ,
+  ScalarType2 evaluateDividedDifferencePoly( const vector<ScalarType1> &abscissa ,
 					     const vector<ScalarType1> &coefficients ,
 					     ScalarType2 &x )
   {
@@ -58,7 +58,7 @@ namespace Lagrange
 			std::invalid_argument ,
 			">>>ERROR (Lagrange::evalDividedDifferencePoly) : input arrays not same size" );
     const unsigned np = coefficients.size();
-    ScalarType1 val = coefficients[np-1];
+    ScalarType2 val = coefficients[np-1];
     for (int i=abscissa.size()-2;i>=0;--i) {
       val = val * ( x - abscissa[i] ) + coefficients[i];
     }
