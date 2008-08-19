@@ -55,8 +55,6 @@ void Basis_F0_HEX_DD<Scalar>::initialize() {
   int *tags = new int[tagSize*numDof_];
 
   int *tagsCur = tags;
-  int internalDofCount = 0;
-  int faceDofCount = 0;
 
   // indices: k runs along points on an edge
   //          j runs over edges in a face
@@ -203,7 +201,7 @@ void Basis_F0_HEX_DD<Scalar>::initialize() {
     // first node (k==0), lives on edge 7
     tagsCur[0] = 1;
     tagsCur[1] = 7;
-    tagsCur[2] = j-1;
+    tagsCur[2] = i-1;
     tagsCur[3] = (degree_-1);
     tagsCur += tagSize;
 
@@ -211,7 +209,7 @@ void Basis_F0_HEX_DD<Scalar>::initialize() {
     for (int k=1;k<degree_;k++) {
       tagsCur[0] = 2;
       tagsCur[1] = 2;
-      tagsCur[2] = (j-1)*(degree_-1) + (k-1);
+      tagsCur[2] = (i-1)*(degree_-1) + (k-1);
       tagsCur[3] = (degree_-1)*(degree_-1);
       tagsCur += tagSize;
     }
@@ -219,7 +217,7 @@ void Basis_F0_HEX_DD<Scalar>::initialize() {
     // last node (k==degree) lives on edge 6
     tagsCur[0] = 1;
     tagsCur[1] = 6;
-    tagsCur[2] = j-1;
+    tagsCur[2] = i-1;
     tagsCur[3] = (degree_-1);
     tagsCur += tagSize;
 
@@ -393,11 +391,12 @@ void Basis_F0_HEX_DD<Scalar>::getValues(FieldContainer<Scalar>&               ou
 	    f3_z = poly_->eval( k , zfad );
 	    outputValues(countPt,bfCur,0) = f1_x.dx(0) * f2_y.val() * f3_z.val(); 
 	    outputValues(countPt,bfCur,1) = f1_x.val() * f2_y.dx(0) * f3_z.val();
-	    outputValues(countPt,bfCur,2) = f2_x.val() * f2_y.val() * f3_z.dx(0);
+	    outputValues(countPt,bfCur,2) = f1_x.val() * f2_y.val() * f3_z.dx(0);
 	    bfCur++;
 	  }
 	}
       }
+    }
     break;
     
   case OPERATOR_CURL:

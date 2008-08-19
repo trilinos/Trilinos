@@ -61,7 +61,6 @@ void Basis_F0_QUAD_DD<Scalar>::initialize() {
   // bottom left is on vertex 0 (subcdim = 0, subcid = 0, dofid = 0)
 
   int *tagsCur = tags;
-  int internalDofCount = 0;
 
   tagsCur[0] = 0;
   tagsCur[1] = 0;
@@ -88,11 +87,10 @@ void Basis_F0_QUAD_DD<Scalar>::initialize() {
 
   // now loop over interior rows
   for (int i=1;i<degree_;i++) {
-    // first dof is on edge 3, but I'm ordering this edge
-    // from top to bottom
+    // first dof is on edge 3
     tagsCur[0] = 1;
     tagsCur[1] = 3;
-    tagsCur[2] = degree_ - i - 1;
+    tagsCur[2] = i - 1;
     tagsCur[3] = degree_ - 1;
     tagsCur += tagSize;
         
@@ -100,7 +98,7 @@ void Basis_F0_QUAD_DD<Scalar>::initialize() {
     for (int j=1;j<degree_;j++) {
       tagsCur[0] = 2;
       tagsCur[1] = 0;
-      tagsCur[2] = internalDofCount++;
+      tagsCur[2] = (i-1)*(degree_-1) + (j-1);
       tagsCur[3] = (degree_ - 1) * (degree_ - 1);
       tagsCur += tagSize;
     }
@@ -127,7 +125,7 @@ void Basis_F0_QUAD_DD<Scalar>::initialize() {
   for (int j=1;j<degree_;j++) {
     tagsCur[0] = 1;
     tagsCur[1] = 2;
-    tagsCur[2] = degree_ - j - 1;
+    tagsCur[2] = j - 1;
     tagsCur[3] = degree_ - 1;
     tagsCur += tagSize;
   }
