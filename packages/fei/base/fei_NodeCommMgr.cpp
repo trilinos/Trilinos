@@ -542,7 +542,7 @@ int NodeCommMgr::addSharedNodes( const GlobalID* nodeIDs,
   }
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }

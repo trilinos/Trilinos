@@ -111,7 +111,7 @@ snl_fei::Factory::parameters(const fei::ParameterSet& parameterset)
       FEI_OSTRINGSTREAM osstr;
       osstr << "snl_fei::Factory::parameters received err="<<err
             << " from either feiData_->parameters or lsc_->parameters.";
-      throw fei::Exception(osstr.str());
+      throw std::runtime_error(osstr.str());
     }
   }
 
@@ -265,7 +265,7 @@ snl_fei::Factory::createLinearSystem(fei::SharedPtr<fei::MatrixGraph>& matrixGra
 fei::SharedPtr<fei::Solver>
 snl_fei::Factory::createSolver(const char* name)
 {
-  fei::SharedPtr<fei::Solver> solver(new snl_fei::Solver);
+  fei::SharedPtr<fei::Solver> solver(new fei::Solver);
   return(solver);
 }
 

@@ -10,6 +10,7 @@
 
 #include <limits>
 #include <cmath>
+#include <stdexcept>
 
 #include <snl_fei_Utils.hpp>
 #include "fei_Record.hpp"
@@ -443,76 +444,6 @@ void snl_fei::unpackIntoSSMat(std::vector<int>& intdata,
 
 //----------------------------------------------------------------------------
 int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
-			    feiArray<int>& essEqns,
-			    feiArray<double>& essAlpha,
-			    feiArray<double>& essGamma,
-			    feiArray<int>& otherEqns,
-			    feiArray<double>& otherAlpha,
-			    feiArray<double>& otherBeta,
-			    feiArray<double>& otherGamma)
-{
-  feiArray<int>& bcEqnNumbers = bcEqnBuf.getRowNumbers();
-  feiArray<SSVec*>& bcEqns  = bcEqnBuf.getRows();
-  int numBCEqns = bcEqns.size();
-
-  double fei_eps = 1.e-49;
-
-  for(int i=0; i<numBCEqns; i++){
-    feiArray<double>& bcCoefs = bcEqns[i]->coefs();
-
-    int thisEqn = bcEqnNumbers[i];
-
-    double thisAlpha = bcCoefs[0];
-    double thisBeta  = bcCoefs[1];
-    double thisGamma = bcCoefs[2];
-
-    //is it an essential (dirichlet) bc, or an "other" bc?
-
-    if ((std::abs(thisAlpha) > fei_eps) && (std::abs(thisBeta) <= fei_eps)) {
-
-      int ind = -1, insert = 0;
-      ind = snl_fei::binarySearch(thisEqn, essEqns, insert);
-
-      if (ind < 0) {
-	essEqns.insert(thisEqn, insert);
-	essAlpha.insert(thisAlpha, insert);
-	essGamma.insert(thisGamma, insert);
-      }
-      else {
-	//this eqn was already present, so we'll replace its coefs
-	//with these ones (last one in wins, for Ess. BCs)
-	essAlpha[ind] = thisAlpha;
-	essGamma[ind] = thisGamma;
-      }
-    }
-    else {
-      //if we have a natural or mixed b.c. (beta != 0)...
-
-      if (std::abs(thisBeta) > fei_eps) {
-
-	int ind = -1, insert = 0;
-	ind = snl_fei::binarySearch(thisEqn, otherEqns, insert);
-
-	if (ind < 0) {
-	  otherEqns.insert(thisEqn, insert);
-	  otherAlpha.insert(thisAlpha, insert);
-	  otherBeta.insert(thisBeta, insert);
-	  otherGamma.insert(thisGamma, insert);
-	}
-	else {
-	  otherAlpha[ind] = thisAlpha;
-	  otherBeta[ind] = thisBeta;
-	  otherGamma[ind] = thisGamma;
-	}
-      }
-    }
-  }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
-int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
                             std::vector<int>& essEqns,
                             std::vector<double>& values)
 {
@@ -671,18 +602,18 @@ void snl_fei::globalUnion(MPI_Comm comm, SSVec& localVec, SSVec& globalUnionVec)
   std::vector<int> recvintdata;
   int err = fei::Allgatherv(comm, localintdata, recvintdatalengths, recvintdata);
   if (err != 0) {
-    throw fei::Exception("snl_fei::globalUnion vec: Allgatherv-int failed.");
+    throw std::runtime_error("snl_fei::globalUnion vec: Allgatherv-int failed.");
   }
 
   std::vector<int> recvdoubledatalengths;
   std::vector<double> recvdoubledata;
   err = fei::Allgatherv(comm, localdoubledata, recvdoubledatalengths, recvdoubledata);
   if (err != 0) {
-    throw fei::Exception("snl_fei::globalUnion vec: Allgatherv-double failed.");
+    throw std::runtime_error("snl_fei::globalUnion vec: Allgatherv-double failed.");
   }
 
   if (recvintdatalengths.size() != recvdoubledatalengths.size()) {
-    throw fei::Exception("snl_fei::globalUnion vec: inconsistent lengths from Allgatherv");
+    throw std::runtime_error("snl_fei::globalUnion vec: inconsistent lengths from Allgatherv");
   }
 
   //now unpack the received arrays into the globalUnionVec object.
@@ -722,18 +653,18 @@ void snl_fei::globalUnion(MPI_Comm comm, SSMat& localMatrix, SSMat& globalUnionM
   std::vector<int> recvintdata;
   int err = fei::Allgatherv(comm, localintdata, recvintdatalengths, recvintdata);
   if (err != 0) {
-    throw fei::Exception("snl_fei::globalUnion: Allgatherv-int failed.");
+    throw std::runtime_error("snl_fei::globalUnion: Allgatherv-int failed.");
   }
 
   std::vector<int> recvdoubledatalengths;
   std::vector<double> recvdoubledata;
   err = fei::Allgatherv(comm, localdoubledata, recvdoubledatalengths, recvdoubledata);
   if (err != 0) {
-    throw fei::Exception("snl_fei::globalUnion: Allgatherv-double failed.");
+    throw std::runtime_error("snl_fei::globalUnion: Allgatherv-double failed.");
   }
 
   if (recvintdatalengths.size() != recvdoubledatalengths.size()) {
-    throw fei::Exception("snl_fei::globalUnion: inconsistent lengths from Allgatherv");
+    throw std::runtime_error("snl_fei::globalUnion: inconsistent lengths from Allgatherv");
   }
 
   //finally unpack the received arrays into matrix objects and combine them
@@ -944,7 +875,7 @@ void snl_fei::copy2DBlockDiagToColumnContig(int numBlocks,
     FEI_OSTRINGSTREAM osstr;
     osstr << "copy2DBlockDiagToColumnContig ERROR, format="<<format
 	  << " not recognized.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 }
 
@@ -977,6 +908,6 @@ void snl_fei::copy2DToColumnContig(int numrows,
   default:
     FEI_OSTRINGSTREAM osstr;
     osstr << "copy2DToColumnContig ERROR, format="<<format<<" not recognized.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 }

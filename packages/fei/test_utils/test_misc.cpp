@@ -45,17 +45,17 @@ void test_misc_feiArray()
   }
 
   if (array.length() != 20) {
-    throw fei::Exception("basic feiArray test1 failed.");
+    throw std::runtime_error("basic feiArray test1 failed.");
   }
 
   int* arrayptr = array.dataPtr();
 
   if (arrayptr == 0) {
-    throw fei::Exception("basic feiArray test2 failed.");
+    throw std::runtime_error("basic feiArray test2 failed.");
   }
 
   if (arrayptr[array.length()-1] != 19) {
-    throw fei::Exception("basic feiArray test3 failed.");
+    throw std::runtime_error("basic feiArray test3 failed.");
   }
 
   FEI_COUT << "ok" << FEI_ENDL;
@@ -87,11 +87,11 @@ void test_misc_FieldMask()
   std::vector<int>& maskFieldSizes = fieldMask.getFieldSizes();
 
   if (maskFields != fieldIDs) {
-    throw fei::Exception("FieldMask test failed.");
+    throw std::runtime_error("FieldMask test failed.");
   }
 
   if (maskFieldSizes != fieldSizes) {
-    throw fei::Exception("FieldMask size test failed.");
+    throw std::runtime_error("FieldMask size test failed.");
   }
 
   int checkOffset = 0;
@@ -99,32 +99,32 @@ void test_misc_FieldMask()
     int offset = -1, numInstances = -1;
     fieldMask.getFieldEqnOffset(fieldIDs[j], offset, numInstances);
     if (offset != checkOffset) {
-      throw fei::Exception("FieldMask offset test failed.");
+      throw std::runtime_error("FieldMask offset test failed.");
     }
     checkOffset += j;
   }
 
   int numIndices = fieldMask.getNumIndices();
   if (numIndices != checkNumIndices) {
-    throw fei::Exception("FieldMask numIndices test failed.");
+    throw std::runtime_error("FieldMask numIndices test failed.");
   }
 
   bool exc_caught = false;
   try {
     fieldMask.addField(-1, 0, 1);
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     exc_caught = true;
   }
 
   if (!exc_caught) {
-    throw fei::Exception("FieldMask failed to throw on negative fieldID.");
+    throw std::runtime_error("FieldMask failed to throw on negative fieldID.");
   }
 
   fieldMask.addField(2, 2, 1);
 
   if (fieldMask.getNumFields() != numFields) {
-    throw fei::Exception("FieldMask getNumFields test failed.");
+    throw std::runtime_error("FieldMask getNumFields test failed.");
   }
 
   int fieldid1 = 0;
@@ -145,29 +145,29 @@ void test_misc_FieldMask()
   fm123.addField(fieldid3, fieldsize);
 
   if (fm1.getMaskID() == fm2.getMaskID()) {
-    throw fei::Exception("FieldMask getMaskID test failed.");
+    throw std::runtime_error("FieldMask getMaskID test failed.");
   }
 
   if (fm2.getMaskID() == fm12.getMaskID()) {
-    throw fei::Exception("FieldMask getMaskID2 test failed.");
+    throw std::runtime_error("FieldMask getMaskID2 test failed.");
   }
 
   if (fm12.getMaskID() !=
       fei::FieldMask::calculateMaskID(fm1, fieldid2, numinstances)){
-    throw fei::Exception("FieldMask getMaskID3 test failed.");
+    throw std::runtime_error("FieldMask getMaskID3 test failed.");
   }
 
   if (fm12.getMaskID() == fm3.getMaskID()) {
-    throw fei::Exception("FieldMask getMaskID4 test failed.");
+    throw std::runtime_error("FieldMask getMaskID4 test failed.");
   }
 
   if (fm123.getMaskID() != 
       fei::FieldMask::calculateMaskID(fm12, fieldid3, numinstances)){
-    throw fei::Exception("FieldMask getMaskID5 test failed.");
+    throw std::runtime_error("FieldMask getMaskID5 test failed.");
   }
 
   if (fm3.getMaskID() == fm123.getMaskID()) {
-    throw fei::Exception("FieldMask getMaskID6 test failed.");
+    throw std::runtime_error("FieldMask getMaskID6 test failed.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -209,7 +209,7 @@ void test_misc_RecordCollection()
 		      fieldMasks, records);
 
   if (fieldMasks.size() != 5) {
-    throw fei::Exception("RecordCollection fieldMasks.length test failed.");
+    throw std::runtime_error("RecordCollection fieldMasks.length test failed.");
   }
 
   snl_fei::RecordCollection::map_type& rmap = recColl.getRecords();
@@ -224,7 +224,7 @@ void test_misc_RecordCollection()
   }
 
   if (numIndices != 6) {
-    throw fei::Exception("RecordCollection numIndices test failed.");
+    throw std::runtime_error("RecordCollection numIndices test failed.");
   }
 
   delete [] records;
@@ -321,65 +321,55 @@ int test_misc::serialtest2()
   int lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 0) {
-    throw fei::Exception("failed test 1");
-  }
-
-  int* lwrbnd = snl_fei::lowerBound(&list[0], &list[0]+list.size(), item);
-  if (lwrbnd != &list[0]) {
-    throw fei::Exception("failed test 1.1");
+    throw std::runtime_error("failed test 1");
   }
 
   item = 1;
   lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 0) {
-    throw fei::Exception("failed test 2");
+    throw std::runtime_error("failed test 2");
   }
 
   item = 2;
   lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 1) {
-    throw fei::Exception("failed test 3");
+    throw std::runtime_error("failed test 3");
   }
 
   item = 7;
   lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 3) {
-    throw fei::Exception("failed test 4");
-  }
-
-  lwrbnd = snl_fei::lowerBound(&list[0], &list[0]+list.size(), item);
-  if (lwrbnd-&list[0] != 3) {
-    throw fei::Exception("failed test 4.1");
+    throw std::runtime_error("failed test 4");
   }
 
   item = 9;
   lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 4) {
-    throw fei::Exception("failed test 5");
+    throw std::runtime_error("failed test 5");
   }
 
   item = 11;
   lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 4) {
-    throw fei::Exception("failed test6");
+    throw std::runtime_error("failed test6");
   }
 
   item = 12;
   lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 5) {
-    throw fei::Exception("failed test 7");
+    throw std::runtime_error("failed test 7");
   }
 
   lowerbound = snl_fei::lowerBound<int>(item, (int*)0, (int)0);
 
   if (lowerbound != 0) {
-    throw fei::Exception("failed test 8");
+    throw std::runtime_error("failed test 8");
   }
 
   std::vector<int> list2;
@@ -389,14 +379,14 @@ int test_misc::serialtest2()
   lowerbound = snl_fei::lowerBound<int>(item, &list2[0], list2.size());
 
   if (lowerbound != 0) {
-    throw fei::Exception("failed test 9");
+    throw std::runtime_error("failed test 9");
   }
 
   item = 5;
   lowerbound = snl_fei::lowerBound<int>(item, &list2[0], list2.size());
 
   if (lowerbound != 1) {
-    throw fei::Exception("failed test 10");
+    throw std::runtime_error("failed test 10");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -409,10 +399,14 @@ int test_misc::serialtest3()
   FEI_COUT << "testing snl_fei::MapContig<fei::ctg_set<int>*>...";
 
   snl_fei::MapContig<fei::ctg_set<int>*> mc(1,5);
-  feiPoolAllocator<fei::ctg_set<int> > pool_alloc;
+  fei_Pool_alloc<fei::ctg_set<int> > pool_alloc;
+
+  static fei::ctg_set<int> dummy;
 
   for(int i=1; i<6; ++i) {
-    fei::ctg_set<int>* newset = pool_alloc.alloc();
+    fei::ctg_set<int>* newset = pool_alloc.allocate(1);
+    pool_alloc.construct(newset,dummy);
+  
 
     for(int j=0; j<3; ++j) {
       newset->insert2(j);
@@ -425,7 +419,7 @@ int test_misc::serialtest3()
   snl_fei::MapContig<fei::ctg_set<int>*> m_copy(mc);
 
   if (m_copy.size() != mc.size()) {
-    throw fei::Exception("failed test 1.");
+    throw std::runtime_error("failed test 1.");
   }
 
   snl_fei::MapContig<fei::ctg_set<int>*>::iterator
@@ -441,13 +435,18 @@ int test_misc::serialtest3()
     std::pair<int,fei::ctg_set<int>*> c_pair = *c_iter;
 
     if (mc_pair.first != c_pair.first) {
-      throw fei::Exception("failed test 2.");
+      throw std::runtime_error("failed test 2.");
     }
 
     if (*(mc_pair.second) != *(c_pair.second)) {
-      throw fei::Exception("failed test 3.");
+      throw std::runtime_error("failed test 3.");
     }
     ++c_iter;
+  }
+
+  mc_iter = mc.begin();
+  for(; mc_iter != mc_end; ++mc_iter) {
+    pool_alloc.destroy((*mc_iter).second);
   }
 
   FEI_COUT << "ok" << FEI_ENDL;

@@ -17,7 +17,7 @@
 
 namespace fei {
 
-  /** Create an instance of LibraryWrapper. Throws fei::Exception
+  /** Create an instance of LibraryWrapper. Throws std::runtime_error
       if the input libraryName is not recognized. (names are case-sensitive)
 
       @param libraryName Input name of the solver library that is to be used.
@@ -39,7 +39,7 @@ namespace fei {
   fei::SharedPtr<LibraryWrapper> create_LibraryWrapper(MPI_Comm comm,
 						       const char* libraryName);
 
-  /** Create an instance of the fei::Factory interface. Throws fei::Exception
+  /** Create an instance of the fei::Factory interface. Throws std::runtime_error
       if the input libraryName is not recognized. (names are case-sensitive)
 
       @param libraryName Input name of solver library, same valid values as for

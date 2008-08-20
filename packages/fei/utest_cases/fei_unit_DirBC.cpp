@@ -1,6 +1,5 @@
 
 #include <fei_iostream.hpp>
-#include <fei_Exception.hpp>
 #include <fei_DirichletBCRecord.hpp>
 #include <fei_DirichletBCManager.hpp>
 
@@ -27,30 +26,30 @@ void test_DirBCRecord()
   dbc2.whichComponent = 1;
 
   if (!(dbc1 != dbc2)) {
-    throw fei::Exception("DirBCRecord::operator!= test 1 failed.");
+    throw std::runtime_error("DirBCRecord::operator!= test 1 failed.");
   }
 
   fei::less_DirichletBCRecord lessdbc;
 
   if (!lessdbc(dbc1,dbc2)) {
-    throw fei::Exception("DirBCRecord less test 1 failed.");
+    throw std::runtime_error("DirBCRecord less test 1 failed.");
   }
 
   dbc2.ID = 19;
   dbc2.whichComponent = 2;
 
   if (!(dbc1 != dbc2)) {
-    throw fei::Exception("DirBCRecord::operator!= test 2 failed.");
+    throw std::runtime_error("DirBCRecord::operator!= test 2 failed.");
   }
 
   if (!lessdbc(dbc1,dbc2)) {
-    throw fei::Exception("DirBCRecord less test 2 failed.");
+    throw std::runtime_error("DirBCRecord less test 2 failed.");
   }
 
   dbc2.whichComponent = 1;
 
   if (dbc1 != dbc2) {
-    throw fei::Exception("DirBCRecord::operator!= test 3 failed.");
+    throw std::runtime_error("DirBCRecord::operator!= test 3 failed.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -78,7 +77,7 @@ void test_DirBCManager()
                      &ids[0], &vals[0]);
  
   if (bcmgr.getNumBCRecords() != 5) {
-    throw fei::Exception("test_DirBCManager test 1 failed.");
+    throw std::runtime_error("test_DirBCManager test 1 failed.");
   }
 
   std::vector<int> offsetsIntoField(5, 1);
@@ -87,7 +86,7 @@ void test_DirBCManager()
                      &offsetsIntoField[0], &vals[0]);
  
   if (bcmgr.getNumBCRecords() != 5) {
-    throw fei::Exception("test_DirBCManager test 2 failed.");
+    throw std::runtime_error("test_DirBCManager test 2 failed.");
   }
 
   offsetsIntoField[1] = 0;
@@ -98,7 +97,7 @@ void test_DirBCManager()
                      &offsetsIntoField[0], &vals[0]);
  
   if (bcmgr.getNumBCRecords() != 8) {
-    throw fei::Exception("test_DirBCManager test 3 failed.");
+    throw std::runtime_error("test_DirBCManager test 3 failed.");
   }
 
   FEI_COUT << "ok" << FEI_ENDL;

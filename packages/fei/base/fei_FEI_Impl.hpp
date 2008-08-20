@@ -138,13 +138,6 @@ namespace fei {
 
   int resetInitialGuess(double s=0.0);
 
-  int loadNodeBCs(int numNodes,
-		  const GlobalID *nodeIDs,  
-		  int fieldID,
-		  const double *const *alpha,  
-		  const double *const *beta,  
-		  const double *const *gamma);
-
     int loadNodeBCs(int numNodes,
                     const GlobalID *nodeIDs,
                     int fieldID,

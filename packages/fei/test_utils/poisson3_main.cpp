@@ -127,7 +127,7 @@ int poisson3_main(int argc, char** argv,
   try {
     factory = fei::create_fei_Factory(comm, solverName.c_str());
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_COUT << "library " << solverName << " not available."<<FEI_ENDL;
     return(-1);
   }
@@ -296,7 +296,7 @@ int poisson3_main(int argc, char** argv,
       file_value = fei_test_utils::get_file_benchmark("./poisson3_timings.txt",
 					       testname.str().c_str());
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       file_value_available = false;
     }
 

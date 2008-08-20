@@ -683,27 +683,6 @@ int fei::FEI_Impl::resetInitialGuess(double s)
 }
 
 int fei::FEI_Impl::loadNodeBCs(int numNodes,
-				const GlobalID *nodeIDs,  
-				int fieldID,
-				const double *const *alpha,  
-				const double *const *beta,  
-				const double *const *gamma)
-{
-  int fieldSize = rowSpace_->getFieldSize(fieldID);
-
-  CHK_ERR( linSys_->loadEssentialBCs(numNodes, nodeIDs,
-				     nodeIDType_, fieldID, fieldSize,
-				     gamma, alpha) );
-
-  newData_ = true;
-
-  //need to check the beta array here to see if any neumann/mixed bcs are
-  //being loaded...
-
-  return(0);
-}
-
-int fei::FEI_Impl::loadNodeBCs(int numNodes,
                                 const GlobalID *nodeIDs,
                                 int fieldID,
                                 const int* offsetsIntoField,
@@ -1469,7 +1448,7 @@ int fei::FEI_Impl::getBlockElemSolution(GlobalID elemBlockID,
     FEI_OSTRINGSTREAM osstr;
     osstr<< "fei::FEI_Impl::getBlockElemSolution ERROR, elemBlockID "
 	 << elemBlockID << " not valid.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   fei::Pattern* pattern = block->getRowPattern();
@@ -1604,7 +1583,7 @@ int fei::FEI_Impl::fillNodeset(int blockID) const
     FEI_OSTRINGSTREAM osstr;
     osstr<< "fei::FEI_Impl::fillNodeset ERROR, blockID "
 	 << blockID << " not valid.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   std::vector<fei::Record*>& nodes = block->getRowConnectivities();
@@ -1631,7 +1610,7 @@ int fei::FEI_Impl::getBlockElemIDList(GlobalID elemBlockID,
     FEI_OSTRINGSTREAM osstr;
     osstr<< "fei::FEI_Impl::getBlockElemIDList ERROR, elemBlockID "
 	 << elemBlockID << " not valid.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   std::map<int,int>& elemIDSet = block->getConnectivityIDs();
@@ -1775,7 +1754,7 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
       try {
 	fieldSize = rowSpace_->getFieldSize(fieldID);
       }
-      catch (fei::Exception& exc) {
+      catch (std::runtime_error& exc) {
 	FEI_CERR << "fei::FEI_Impl::putNodalFieldData ERROR: " <<exc.what()<<FEI_ENDL;
 	ERReturn(-1);
       }

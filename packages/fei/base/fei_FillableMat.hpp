@@ -30,7 +30,7 @@ class FillableMat {
 
   bool hasRow(int row) const;
 
-  /** If row is not present, throw fei::Exception. */
+  /** If row is not present, throw std::runtime_error. */
   FillableVec* getRow(int row);
 
   typedef std::map<int, FillableVec*, std::less<int>,

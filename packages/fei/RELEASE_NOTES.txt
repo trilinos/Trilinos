@@ -464,3 +464,15 @@ July 7 2005: version 2.14.00
     prescribed values along with the ids and field-ids which specify where
     the prescribed value is to be imposed. This allows the underlying
     implementation code to be greatly simplified also.
+
+ ??? ?? ???? version 2.23.00
+  - Removed API functions (and implementations) for the old boundary-condition
+    mechanism that involved the alpha/beta/gamma arguments. Replacement
+    functions accept lists of prescribed values along with offsets into the
+    field for which values are being specified. This is more intuitive, and
+    the implementation code is more robust. As part of this, removed the
+    fei_BCRecord.* and fei_BCManager.* files.
+  - Removed the fei::Exception class. Now use std::runtime_error instead.
+    Also removed feiPoolAllocator. Now use fei_Pool_alloc, which is more
+    similar to a standard allocator.
+

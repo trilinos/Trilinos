@@ -119,7 +119,7 @@ void fei::Graph_Impl::addDiagonals(int numIndices, int* indices)
     for(i=0; i<numIndices; ++i) {
       int ind = indices[i];
       if (ind < 0) {
-        throw fei::Exception("fei::Graph_Impl::addDiagonals given negative index");
+        throw std::runtime_error("fei::Graph_Impl::addDiagonals given negative index");
       }
 
       bool local = true;

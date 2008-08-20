@@ -30,7 +30,7 @@ MatrixReducer::MatrixReducer(fei::SharedPtr<fei::Reducer> reducer,
   fei::Matrix_core* target_core =
     dynamic_cast<fei::Matrix_core*>(target_.get());
     if (target_core == NULL) {
-    throw fei::Exception("fei::MatrixReducer ERROR, target matrix not dynamic_cast-able to fei::Matrix_core.");
+    throw std::runtime_error("fei::MatrixReducer ERROR, target matrix not dynamic_cast-able to fei::Matrix_core.");
   }
 
   target_core->setEqnComm(eqnComm);
@@ -79,7 +79,7 @@ MatrixReducer::getRowLength(int row, int& length) const
   if (reducer_->isSlaveEqn(row)) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixReducer::getRowLength ERROR, row="<<row<<" is a slave eqn. You can't get a slave row from the reduced matrix.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   int reducedrow = reducer_->translateToReducedEqn(row);
@@ -93,7 +93,7 @@ MatrixReducer::copyOutRow(int row, int len, double* coefs, int* indices) const
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixReducer::copyOutRow ERROR, requested row ("<<row
       <<") is a slave eqn. You can't get a slave row from the reduced matrix.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   int reducedrow = reducer_->translateToReducedEqn(row);
@@ -148,7 +148,7 @@ MatrixReducer::sumInFieldData(int fieldID,
   colSpace->getGlobalIndices(1, &colID, idType, fieldID, colIndices);
 
   if (format != FEI_DENSE_ROW) {
-    throw fei::Exception("MatrixReducer: bad format");
+    throw std::runtime_error("MatrixReducer: bad format");
   }
 
   int err = reducer_->addMatrixValues(fieldSize, rowIndices,

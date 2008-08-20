@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
     try {
       read_input_and_execute_fullsystem_tests(filename, argc, argv, intCommUtils);
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
       errcode = -1;
     }
@@ -169,7 +169,7 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
     try {
       execute_fullsystem_tests(intCommUtils, path, name_numproc_pairs);
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
       throw;
     }
@@ -290,7 +290,7 @@ int execute_named_test(const std::string& testname,
     try {
       execute_unit_tests(path, intCommUtils);
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       FEI_CERR << "caught unit-test error: "<<exc.what() << FEI_ENDL;
       return(-1);
     }
@@ -335,7 +335,7 @@ int execute_named_test(const std::string& testname,
       try {
         execute_benchmarks(intCommUtils);
       }
-      catch(fei::Exception& exc) {
+      catch(std::runtime_error& exc) {
         FEI_CERR <<"caught exception from benchmarks: "<<exc.what()<<FEI_ENDL;
         errcode = -1;
       }
@@ -368,7 +368,7 @@ void execute_benchmarks(const snl_fei::CommUtils<int>& intCommUtils)
   bool test_failed = false;
   if (tst.runtests() != 0) test_failed = false;
 
-  if (test_failed) throw fei::Exception("unit-test failed");
+  if (test_failed) throw std::runtime_error("unit-test failed");
 }
 
 void execute_unit_tests(const std::string& path,
@@ -421,7 +421,7 @@ void execute_unit_tests(const std::string& path,
 
   if (test_failed) {
     std::string str1("unit-test failed: ");
-    throw fei::Exception(str1+failed_test_name);
+    throw std::runtime_error(str1+failed_test_name);
   }
 }
 
@@ -464,7 +464,7 @@ void execute_fullsystem_tests(snl_fei::CommUtils<int>& intCommUtils,
 
     int resultCode = test_fei.runtests();
     if (resultCode < 0) {
-      throw fei::Exception("nonzero resultCode from test_fei.runtests()");
+      throw std::runtime_error("nonzero resultCode from test_fei.runtests()");
     }
   }
 }

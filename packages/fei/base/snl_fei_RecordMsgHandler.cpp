@@ -219,11 +219,11 @@ int snl_fei::RecordMsgHandler::packMaskIDs(int destProc, std::vector<int>& msg)
     try {
       rec = recordCollection_->getRecordWithID(*id_iter);
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       FEI_OSTRINGSTREAM osstr;
       osstr << "RecordMsgHandler::packMaskIDs: proc " << localProc_
 	   << " caught exception: " << exc.what();
-      throw fei::Exception(osstr.str());
+      throw std::runtime_error(osstr.str());
     }
 
     msgPtr[offset++] = rec->getFieldMask()->getMaskID();

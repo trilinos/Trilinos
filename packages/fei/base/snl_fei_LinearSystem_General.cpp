@@ -25,8 +25,6 @@
 
 #include <fei_DirichletBCRecord.hpp>
 #include <fei_DirichletBCManager.hpp>
-#include <fei_BCRecord.hpp>
-#include <fei_BCManager.hpp>
 #include <fei_EqnBuffer.hpp>
 #include <fei_LinSysCoreFilter.hpp>
 
@@ -38,7 +36,6 @@
 snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGraph>& matrixGraph)
   : commUtilsInt_(),
     matrixGraph_(matrixGraph),
-    bcManager_(NULL),
     dbcManager_(NULL),
     essBCvalues_(NULL),
     resolveConflictRequested_(false),
@@ -77,7 +74,6 @@ snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGr
 //----------------------------------------------------------------------------
 snl_fei::LinearSystem_General::~LinearSystem_General()
 {
-  delete bcManager_;
   delete dbcManager_;
 
   delete essBCvalues_;
@@ -176,36 +172,6 @@ void snl_fei::LinearSystem_General::setName(const char* name)
 
 //----------------------------------------------------------------------------
 int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
-			 const int* IDs,
-			 int idType,
-			 int fieldID,
-			 int fieldSize,
-			 const double *const *gammaValues,
-                         const double *const *alphaValues)
-{
-  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != 0) {
-    FEI_OSTREAM& os = *output_stream_;
-    os << "loadEssentialBCs, numIDs: "<<numIDs<<", idType: " <<idType
-       <<", fieldID: "<<fieldID<<", fieldSize: "<<fieldSize<<FEI_ENDL;
-  }
-
-  if (bcManager_ == NULL) {
-    bcManager_ = new BCManager;
-  }
-
-  try {
-    bcManager_->addBCRecords(idType, numIDs, IDs, fieldID, fieldSize,
-			     gammaValues, alphaValues);
-  }
-  catch(fei::Exception& exc) {
-    FEI_CERR << exc.what()<<FEI_ENDL;
-    return(-1);
-  }
-  return(0);
-}
-
-//----------------------------------------------------------------------------
-int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
                          const int* IDs,
                          int idType,
                          int fieldID,
@@ -226,7 +192,7 @@ int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
     dbcManager_->addBCRecords(numIDs, idType, fieldID, offsetIntoField,
                               IDs, prescribedValues);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what()<<FEI_ENDL;
     return(-1);
   }
@@ -257,7 +223,7 @@ int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
     dbcManager_->addBCRecords(numIDs, idType, fieldID, IDs, offsetsIntoField,
                               prescribedValues);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what()<<FEI_ENDL;
     return(-1);
   }
@@ -271,10 +237,6 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != 0) {
     FEI_OSTREAM& os = *output_stream_;
     os << dbgprefix_<<"loadComplete"<<FEI_ENDL;
-  }
-
-  if (bcManager_ == NULL) {
-    bcManager_ = new BCManager;
   }
 
   if (dbcManager_ == NULL) {
@@ -439,83 +401,6 @@ void snl_fei::LinearSystem_General::getConstrainedEqns(std::vector<int>& crEqns)
 }
 
 //----------------------------------------------------------------------------
-int extractBCs(BCManager* bcManager, fei::SharedPtr<fei::MatrixGraph> matrixGraph,
-               SSVec* essBCvalues, bool resolveConflictRequested,
-               bool bcs_trump_slaves)
-{
-  int numLocalBCs = bcManager->getNumBCs();
-  int globalNumBCs = 0;
-  matrixGraph->getRowSpace()->getCommUtils()->GlobalSum(numLocalBCs, globalNumBCs);
-  if (globalNumBCs == 0) {
-    return(0);
-  }
-
-  feiArray<int> essEqns(0, 512), otherEqns(0, 512);
-  feiArray<double> essAlpha(0, 512), essGamma(0, 512);
-  feiArray<double> otherAlpha(0, 512), otherBeta(0, 512), otherGamma(0, 512);
-
-  fei::SharedPtr<SSMat> localBCeqns(new SSMat);
-  fei::SharedPtr<fei::Matrix_Impl<SSMat> > bcEqns;
-  matrixGraph->getRowSpace()->initComplete();
-  int numSlaves = matrixGraph->getGlobalNumSlaveConstraints();
-  fei::SharedPtr<fei::Reducer> reducer = matrixGraph->getReducer();
-
-  int numIndices = numSlaves>0 ?
-    reducer->getLocalReducedEqns().size() :
-    matrixGraph->getRowSpace()->getNumIndices_Owned();
-
-  bcEqns.reset(new fei::Matrix_Impl<SSMat>(localBCeqns, matrixGraph, numIndices));
-  fei::SharedPtr<fei::Matrix> bcEqns_reducer;
-  if (numSlaves > 0) {
-    bcEqns_reducer.reset(new fei::MatrixReducer(reducer, bcEqns));
-  }
-
-  fei::Matrix& bcEqns_mat = bcEqns_reducer.get()==NULL ?
-      *bcEqns : *bcEqns_reducer;
-
-  CHK_ERR( bcManager->finalizeBCEqns(bcEqns_mat, bcs_trump_slaves) );
-
-  if (resolveConflictRequested) {
-    fei::SharedPtr<SSMat> ssmat = bcEqns->getMatrix();
-    feiArray<int>& bcEqnNumbers = ssmat->getRowNumbers();
-    CHK_ERR( snl_fei::resolveConflictingCRs(*matrixGraph, bcEqns_mat,
-                                            bcEqnNumbers) );
-  }
-
-  std::vector<SSMat*>& remote = bcEqns->getRemotelyOwnedMatrix();
-  for(unsigned p=0; p<remote.size(); ++p) {
-    CHK_ERR( snl_fei::separateBCEqns( *(remote[p]), essEqns, essAlpha,
-                                     essGamma, otherEqns, otherAlpha,
-                                     otherBeta, otherGamma) );
-  }
-
-  CHK_ERR( bcEqns->gatherFromOverlap(false) );
-
-  CHK_ERR( snl_fei::separateBCEqns( *(bcEqns->getMatrix()),
-                              essEqns, essAlpha, essGamma,
-                              otherEqns, otherAlpha, otherBeta, otherGamma) );
-
-  if (otherEqns.length() > 0) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "snl_fei::LinearSystem_General::implementBCs: ERROR, unexpected "
-          << "'otherEqns', (meaning non-dirichlet or non-essential BCs).";
-    throw fei::Exception(osstr.str());
-  }
-
-  int* essEqnsPtr = essEqns.dataPtr();
-  double* gammaPtr = essGamma.dataPtr();
-  double* alphaPtr = essAlpha.dataPtr();
-
-  for(int i=0; i<essEqns.length(); ++i) {
-    int eqn = essEqnsPtr[i];
-    double value = gammaPtr[i]/alphaPtr[i];
-    CHK_ERR( essBCvalues->putEntry(eqn, value) );
-  }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
 int extractDBCs(fei::DirichletBCManager* bcManager,
                 fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                 SSVec* essBCvalues,
@@ -592,10 +477,6 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
   }
 
   essBCvalues_ = new SSVec;
-
-  CHK_ERR( extractBCs(bcManager_, matrixGraph_,
-                      essBCvalues_, resolveConflictRequested_,
-                      bcs_trump_slaves_) );
 
   CHK_ERR( extractDBCs(dbcManager_, matrixGraph_,
                        essBCvalues_,  resolveConflictRequested_,
@@ -789,7 +670,7 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_1(SSVec& essBCs)
       FEI_OSTRINGSTREAM osstr;
       osstr <<"snl_fei::LinearSystem_General::enforceEssentialBC_step_1 ERROR: "
 	    << "err="<<err<<" returned from rhs_->copyIn row="<<eqn;
-      throw fei::Exception(osstr.str());
+      throw std::runtime_error(osstr.str());
     }
 
     err = getMatrixRow(matrix_.get(), eqn, coefs, indices);
@@ -813,15 +694,15 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_1(SSVec& essBCs)
       FEI_OSTRINGSTREAM osstr;
       osstr <<"snl_fei::LinearSystem_General::enforceEssentialBC_step_1 ERROR: "
 	    << "err="<<err<<" returned from matrix_->copyIn row="<<eqn;
-      throw fei::Exception(osstr.str());
+      throw std::runtime_error(osstr.str());
     }
   }//for i
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::LinearSystem::enforceEssentialBC: ERROR, caught exception: "
         << exc.what();
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 }
 
@@ -944,7 +825,7 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_2(SSVec& essBCs)
 	FEI_OSTRINGSTREAM osstr;
 	osstr <<"snl_fei::LinearSystem_General::enforceEssentialBC_step_2 ERROR: "
 	      << "err="<<err<<" returned from matrix_->copyIn, row="<<i;
-	throw fei::Exception(osstr.str());
+	throw std::runtime_error(osstr.str());
       }
     }
 

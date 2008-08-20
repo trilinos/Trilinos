@@ -189,7 +189,7 @@ namespace fei {
 	  try {
 	    node = collection->getRecordWithID(wkPtr[i]);
 	  }
-	  catch (fei::Exception& exc) {
+	  catch (std::runtime_error& exc) {
 	    return(NULL);
 	  }
 	  wkPtr[numShared+i] = node->getNumber();

@@ -318,7 +318,7 @@ int EqnBuffer::insertNewEqn(int eqn, int insertPoint)
     *newRhsCoefRow = 0.0;
     rhsCoefs_.insert(newRhsCoefRow, insertPoint);
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     return(-1);
   }

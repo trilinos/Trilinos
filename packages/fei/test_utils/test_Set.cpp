@@ -36,7 +36,7 @@ void set_test1(SET_TYPE& set_obj)
       s_end = set_obj.end();
 
     if (s_beg != s_end) {
-      throw fei::Exception("failed test 1");
+      throw std::runtime_error("failed test 1");
     }
   }
   else set_obj.clear();
@@ -44,37 +44,37 @@ void set_test1(SET_TYPE& set_obj)
   std::pair<typename SET_TYPE::const_iterator,bool> result = set_obj.insert(5);
 
   if (!result.second) {
-    throw fei::Exception("failed test 2");
+    throw std::runtime_error("failed test 2");
   }
 
   result = set_obj.insert(4);
 
   if (!result.second) {
-    throw fei::Exception("failed test 3");
+    throw std::runtime_error("failed test 3");
   }
 
   result = set_obj.insert(7);
 
   ++(result.first);
   if (result.first != set_obj.end()) {
-    throw fei::Exception("failed test 4");
+    throw std::runtime_error("failed test 4");
   }
 
   result = set_obj.insert(6);
 
   if (!result.second) {
-    throw fei::Exception("failed test 5");
+    throw std::runtime_error("failed test 5");
   }
 
   ++(result.first);
 
   if (*(result.first) != 7) {
-    throw fei::Exception("failed test 6");
+    throw std::runtime_error("failed test 6");
   }
 
   ++(result.first);
   if (result.first != set_obj.end()) {
-    throw fei::Exception("failed test 7");
+    throw std::runtime_error("failed test 7");
   }
 
   result = set_obj.insert(2);
@@ -82,13 +82,13 @@ void set_test1(SET_TYPE& set_obj)
 
   ++(result.first);
   if (*(result.first) != 4) {
-    throw fei::Exception("failed test 8");
+    throw std::runtime_error("failed test 8");
   }
 
   SET_TYPE set_copy(set_obj);
 
   if (set_copy.size() != set_obj.size()) {
-    throw fei::Exception("failed test 9");
+    throw std::runtime_error("failed test 9");
   }
 
   typename SET_TYPE::const_iterator
@@ -101,13 +101,13 @@ void set_test1(SET_TYPE& set_obj)
 
   for(; s_iter != s_end; ++s_iter) {
     if (*s_iter != *c_iter) {
-      throw fei::Exception("failed test 10");
+      throw std::runtime_error("failed test 10");
     }
     ++c_iter;
   }
 
   if (c_iter != c_end) {
-    throw fei::Exception("failed test 11");
+    throw std::runtime_error("failed test 11");
   }
 }
 
@@ -120,7 +120,7 @@ void set_test2(SET_TYPE& set_obj)
       s_end = set_obj.end();
 
     if (s_beg != s_end) {
-      throw fei::Exception("failed test2 1");
+      throw std::runtime_error("failed test2 1");
     }
   }
   else set_obj.clear();
@@ -135,7 +135,7 @@ void set_test2(SET_TYPE& set_obj)
   SET_TYPE set_copy(set_obj);
 
   if (set_copy.size() != set_obj.size()) {
-    throw fei::Exception("failed test2 2");
+    throw std::runtime_error("failed test2 2");
   }
 
   typename SET_TYPE::const_iterator
@@ -148,13 +148,13 @@ void set_test2(SET_TYPE& set_obj)
 
   for(; s_iter != s_end; ++s_iter) {
     if (*s_iter != *c_iter) {
-      throw fei::Exception("failed test2 3");
+      throw std::runtime_error("failed test2 3");
     }
     ++c_iter;
   }
 
   if (c_iter != c_end) {
-    throw fei::Exception("failed test2 4");
+    throw std::runtime_error("failed test2 4");
   }
 }
 

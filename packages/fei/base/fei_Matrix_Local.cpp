@@ -145,7 +145,7 @@ Matrix_Local::giveToMatrix(int numRows, const int* rows,
   for(int i=0; i<numRows; ++i) {
     int idx = getRowIndex(rows[i]);
     if (idx < 0) {
-      throw fei::Exception("fei::Matrix_Local::sumIn ERROR, row not found.");
+      throw std::runtime_error("fei::Matrix_Local::sumIn ERROR, row not found.");
     }
 
     int offset = sparseRowGraph_->rowOffsets[idx];
@@ -157,7 +157,7 @@ Matrix_Local::giveToMatrix(int numRows, const int* rows,
     for(int j=0; j<numCols; ++j) {
       int idx2 = snl_fei::binarySearch(cols[j], colInds, len);
       if (idx2 < 0) {
-        throw fei::Exception("fei::Matrix_Local::sumIn ERROR, col not found.");
+        throw std::runtime_error("fei::Matrix_Local::sumIn ERROR, col not found.");
       }
 
       if (sumInto) {

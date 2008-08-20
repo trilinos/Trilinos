@@ -363,39 +363,6 @@ class FEI_Implementation : public FEI {
   int resetInitialGuess(double s=0.0);
 
     /** Load nodal boundary condition data. This allows the application to
-       specify a
-       boundary condition (dirichlet, neumann or mixed) on a list of nodes.
-       The form of these boundary conditions is as follows for a given
-       node/field upon which the condition is to be imposed (description
-       courtesy of Kim Mish). If the primary
-       field solution unknown is denoted by u, and the dual of the solution
-       (e.g., force as opposed to displacement) is denoted by q, then a generic
-       boundary condition can be specified by alpha*u + beta*q = gamma. A
-       dirichlet boundary condition is given when alpha is non-zero but beta is
-       zero. A neumann boundary condition is given when alpha is zero but beta
-       is non-zero. A mixed boundary condition is given when alpha and beta are
-       both non-zero.
-       The boundary condition specified via this function applies to the same
-       solution field on all nodes in the nodeIDs list.
-       @param numNodes Length of the nodeIDs list.
-       @param nodeIDs List of nodes upon which a boundary condition is to be
-               imposed.
-       @param fieldID The solution field that will receive the boundary
-                   condition.
-       @param alpha Table, with 'numNodes' number-of-rows, and the length of
-               each row being the number of scalars that make up the solution
-               field 'fieldID'.
-       @param beta Table, same dimensions as alpha.
-       @param gamma Table, same dimensions as alpha.
-    */
-    int loadNodeBCs(int numNodes,
-                    const GlobalID *nodeIDs,  
-                    int fieldID,
-                    const double *const *alpha,  
-                    const double *const *beta,  
-                    const double *const *gamma);
-
-    /** Load nodal boundary condition data. This allows the application to
        specify a boundary condition (dirichlet) on a list of nodes.
 
        The boundary condition specified via this function applies to the same
@@ -420,8 +387,6 @@ class FEI_Implementation : public FEI {
                     const double* prescribedValues);
 
     /** Load boundary condition data for element-dof.
-        Similar to the function 'loadNodeBCs', as far as the definition of the
-        coefficients alpha, beta and gamma.
         @param numElems Length of the elemIDs list.
         @param elemIDs List of elements for which a boundary condition is to be
                specified.

@@ -32,7 +32,7 @@ VectorReducer::VectorReducer(fei::SharedPtr<fei::Reducer> reducer,
 
   fei::Vector_core* target_core = dynamic_cast<fei::Vector_core*>(target.get());
   if (target_core == NULL) {
-    throw fei::Exception("fei::VectorReducer ERROR, target vector not dynamic_cast-able to fei::Vector_core.");
+    throw std::runtime_error("fei::VectorReducer ERROR, target vector not dynamic_cast-able to fei::Vector_core.");
   }
 
   fei::SharedPtr<fei::VectorSpace> vecspace = target->getVectorSpace();
@@ -130,7 +130,7 @@ int VectorReducer::sumInFieldData(int fieldID,
   std::vector<int> indices(numIndices);
   int err = vspace->getGlobalIndices(numIDs, IDs, idType, fieldID, &indices[0]);
   if (err != 0) {
-    throw fei::Exception("fei::VectorReducer::sumInFieldData ERROR in vspace->getGlobalIndices.");
+    throw std::runtime_error("fei::VectorReducer::sumInFieldData ERROR in vspace->getGlobalIndices.");
   }
 
   return(sumIn(numIndices, &indices[0], data, vectorIndex));
@@ -150,7 +150,7 @@ int VectorReducer::copyInFieldData(int fieldID,
   std::vector<int> indices(numIndices);
   int err = vspace->getGlobalIndices(numIDs, IDs, idType, fieldID, &indices[0]);
   if (err != 0) {
-    throw fei::Exception("fei::VectorReducer::copyInFieldData ERROR in vspace->getGlobalIndices.");
+    throw std::runtime_error("fei::VectorReducer::copyInFieldData ERROR in vspace->getGlobalIndices.");
   }
 
   return(copyIn(numIndices, &indices[0], data, vectorIndex));
@@ -177,7 +177,7 @@ int VectorReducer::copyOutFieldData(int fieldID,
   std::vector<int> indices(numIndices);
   int err = vspace->getGlobalIndices(numIDs, IDs, idType, fieldID, &indices[0]);
   if (err != 0) {
-    throw fei::Exception("fei::VectorReducer::copyOutFieldData ERROR in vspace->getGlobalIndices.");
+    throw std::runtime_error("fei::VectorReducer::copyOutFieldData ERROR in vspace->getGlobalIndices.");
   }
 
   return(copyOut(numIndices, &indices[0], data, vectorIndex));

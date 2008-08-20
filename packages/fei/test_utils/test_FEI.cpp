@@ -55,37 +55,37 @@ int test_FEI::test1()
   std::string solverName;
   errcode = test_params->getStringParamValue("SOLVER_LIBRARY", solverName);
   if (errcode != 0) {
-    throw fei::Exception(".input file doesn't contain 'SOLVER_LIBRARY'");
+    throw std::runtime_error(".input file doesn't contain 'SOLVER_LIBRARY'");
   }
 
   std::string whichFEI;
   errcode = test_params->getStringParamValue("WHICH_FEI", whichFEI);
   if (errcode != 0) {
-    throw fei::Exception(".input file doesn't contain 'WHICH_FEI'");
+    throw std::runtime_error(".input file doesn't contain 'WHICH_FEI'");
   }
 
   std::string inputFileName;
   errcode = test_params->getStringParamValue("INPUT_FILE",inputFileName);
   if (errcode != 0) {
-    throw fei::Exception(".input file doesn't contain 'INPUT_FILE'");
+    throw std::runtime_error(".input file doesn't contain 'INPUT_FILE'");
   }
 
   std::string paramFile;
   errcode = test_params->getStringParamValue("PARAM_FILE", paramFile);
   if (errcode != 0) {
-    throw fei::Exception(".input file doesn't contain 'PARAM_FILE'");
+    throw std::runtime_error(".input file doesn't contain 'PARAM_FILE'");
   }
 
   std::string solnFile;
   errcode = test_params->getStringParamValue("SOLN_FILE", solnFile);
   if (errcode != 0) {
-    throw fei::Exception(".input file doesn't contain 'SOLN_FILE'");
+    throw std::runtime_error(".input file doesn't contain 'SOLN_FILE'");
   }
 
   std::string checkFile;
   errcode = test_params->getStringParamValue("CHECK_FILE", checkFile);
   if (errcode != 0) {
-    throw fei::Exception(".input file doesn't contain 'CHECK_FILE'");
+    throw std::runtime_error(".input file doesn't contain 'CHECK_FILE'");
   }
 
   std::string readerType;

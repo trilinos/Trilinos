@@ -31,8 +31,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_LinearSystemCore.hpp \
 	$(top_srcdir)/base/fei_LinSysCore_flexible.hpp \
 	$(top_srcdir)/base/fei_Lookup.hpp \
-	$(top_srcdir)/base/fei_BCManager.hpp \
-	$(top_srcdir)/base/fei_BCRecord.hpp \
 	$(top_srcdir)/base/fei_BlockDescriptor.hpp \
 	$(top_srcdir)/base/fei_CSRMat.hpp \
 	$(top_srcdir)/base/fei_CSVec.hpp \
@@ -48,7 +46,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_chk_mpi.hpp \
 	$(top_srcdir)/base/fei_ctg_set.hpp \
 	$(top_srcdir)/base/fei_EqnComm.hpp \
-	$(top_srcdir)/base/fei_Exception.hpp \
 	$(top_srcdir)/base/fei_Factory.hpp \
 	$(top_srcdir)/base/fei_FillableMat.hpp \
 	$(top_srcdir)/base/fei_FillableVec.hpp \
@@ -76,7 +73,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_Param.hpp \
 	$(top_srcdir)/base/fei_ParameterSet.hpp \
 	$(top_srcdir)/base/fei_ostream_ops.hpp \
-	$(top_srcdir)/base/feiPoolAllocator.hpp \
 	$(top_srcdir)/base/fei_Reducer.hpp \
 	$(top_srcdir)/base/fei_SharedPtr.hpp \
 	$(top_srcdir)/base/fei_Solver.hpp \
@@ -142,7 +138,6 @@ CORE_H = \
 	$(top_srcdir)/base/snl_fei_SetTraits.hpp \
 	$(top_srcdir)/base/snl_fei_SetTraits_specialize.hpp \
 	$(top_srcdir)/base/fei_SharedIDs.hpp \
-	$(top_srcdir)/base/snl_fei_Solver.hpp \
 	$(top_srcdir)/base/SNL_FEI_Structure.hpp \
 	$(top_srcdir)/base/snl_fei_SubdMsgHandler.hpp \
 	$(top_srcdir)/base/fei_FEI_Impl.hpp \
@@ -158,8 +153,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_SSVec.hpp
 
 CORE = \
-	$(srcdir)/fei_BCManager.cpp \
-	$(srcdir)/fei_BCRecord.cpp \
 	$(srcdir)/fei_BlockDescriptor.cpp \
 	$(srcdir)/fei_CSRMat.cpp \
 	$(srcdir)/fei_CSVec.cpp \
@@ -171,7 +164,6 @@ CORE = \
 	$(srcdir)/FEI_Implementation.cpp \
 	$(srcdir)/fei_ostream_ops.cpp \
 	$(srcdir)/fei_EqnComm.cpp \
-	$(srcdir)/fei_Exception.cpp \
 	$(srcdir)/fei_Factory.cpp \
 	$(srcdir)/fei_FillableMat.cpp \
 	$(srcdir)/fei_FillableVec.cpp \
@@ -201,6 +193,7 @@ CORE = \
 	$(srcdir)/fei_NodeDescriptor.cpp \
 	$(srcdir)/fei_PatternDescriptor.cpp \
 	$(srcdir)/fei_ProcEqns.cpp \
+	$(srcdir)/fei_Solver.cpp \
 	$(srcdir)/snl_fei_BlkSizeMsgHandler.cpp \
 	$(srcdir)/snl_fei_Broker_FEData.cpp \
 	$(srcdir)/snl_fei_Broker_LinSysCore.cpp \
@@ -220,7 +213,6 @@ CORE = \
 	$(srcdir)/fei_Record.cpp \
 	$(srcdir)/snl_fei_RecordCollection.cpp \
 	$(srcdir)/snl_fei_RecordMsgHandler.cpp \
-	$(srcdir)/snl_fei_Solver.cpp \
 	$(srcdir)/SNL_FEI_Structure.cpp \
 	$(srcdir)/snl_fei_SubdMsgHandler.cpp \
 	$(srcdir)/fei_FEI_Impl.cpp \

@@ -17,8 +17,6 @@
 
 #include <test_utils/PoissonData.hpp>
 
-#include <feiPoolAllocator.hpp>
-
 #include <cstdlib>
 #include <cmath>
 
@@ -62,21 +60,10 @@ PoissonData::PoissonData(int L,
   fieldArraysAllocated_ = false;
   elemIDsAllocated_ = false;
 
-  BCNodeIDsAllocated_ = false;
-  BCArraysAllocated_ = false;
-
   numFields_ = NULL;
   fieldIDs_ = NULL;
 
   elemIDs_ = NULL;
-
-  BCNodeIDs_ = NULL;
-  numBCNodes_ = 0;
-  alpha_ = NULL;
-  beta_ = NULL;
-  gamma_ = NULL;
-
-  doublePool_ = new feiPoolAllocator<double>;
 
   calculateDistribution();
 
@@ -103,8 +90,6 @@ PoissonData::~PoissonData() {
 
     elem_->deleteMemory();
     delete elem_;
-
-    deleteBCArrays();
 }
 
 //==============================================================================
@@ -751,87 +736,17 @@ void PoissonData::calculateBCs() {
 //==============================================================================
 void PoissonData::addBCNode(GlobalID nodeID, double x, double y){
 
-    if (appendBCNodeID(nodeID) == 1) {
-        BCNodeIDsAllocated_ = true;
+  std::vector<GlobalID>::iterator
+    iter = std::lower_bound(BCNodeIDs_.begin(), BCNodeIDs_.end(), nodeID);
 
-        appendBCRow(alpha_, 1.0);
-        appendBCRow(beta_, 0.0);
+  if (iter == BCNodeIDs_.end() || *iter != nodeID) {
+    unsigned offset = iter - BCNodeIDs_.begin();
+    BCNodeIDs_.insert(iter, nodeID);
 
-        double gammaValue = std::pow(x, 2.0) + std::pow(y, 2.0);
+    double bcValue = std::pow(x, 2.0) + std::pow(y, 2.0);
 
-        appendBCRow(gamma_, gammaValue);
-
-        BCArraysAllocated_ = true;
-
-        numBCNodes_++;
-    }
-}
-
-//==============================================================================
-int PoissonData::appendBCNodeID(GlobalID nodeID) {
-//
-//Returns 1 if nodeID is not already in BCNodeIDs_, 0 if it is.
-//nodeID is only appended to BCNodeIDs_ if it isn't already in there.
-
-    for(int j=0; j<numBCNodes_; j++)
-        if (BCNodeIDs_[j] == nodeID) return(0);
-
-    GlobalID* newNodeList = new GlobalID[numBCNodes_+1];
-    for(int i=0; i<numBCNodes_; i++) {
-        newNodeList[i] = BCNodeIDs_[i];
-    }
-    newNodeList[numBCNodes_] = nodeID;
-
-    delete [] BCNodeIDs_;
-    BCNodeIDs_ = newNodeList;
-
-    return(1);
-}
-
-//==============================================================================
-void PoissonData::appendBCRow(double**& valTable, double value)
-{
-  double** newTable = new double*[numBCNodes_+1];
-
-  for(int i=0; i<numBCNodes_; i++) {
-    newTable[i] = valTable[i];
+    BCValues_.insert(BCValues_.begin()+offset, bcValue);
   }
-
-  newTable[numBCNodes_] = doublePool_->alloc();
-  *(newTable[numBCNodes_]) = value;
-
-  delete [] valTable;
-  valTable = newTable;
-}
-
-//==============================================================================
-void PoissonData::printBCs() {
-    for(int i=0; i<numBCNodes_; i++) {
-        FEI_COUT << localProc_ << ", BC node: " << (int)BCNodeIDs_[i]
-             << ", gamma: " << gamma_[i][0] << FEI_ENDL;
-    }
-}
-
-//==============================================================================
-void PoissonData::deleteBCArrays() {
-
-    if (BCNodeIDsAllocated_) {
-        delete [] BCNodeIDs_;
-        BCNodeIDs_ = NULL;
-        BCNodeIDsAllocated_ = false;
-    }
-
-    if (BCArraysAllocated_) {
-      delete doublePool_;
-
-      delete [] alpha_;
-      alpha_ = NULL;
-      delete [] beta_;
-      beta_ = NULL;
-      delete [] gamma_;
-      gamma_ = NULL;
-    }
-    BCArraysAllocated_ = false;
 }
 
 //==============================================================================
@@ -991,14 +906,12 @@ int load_BC_data(FEI* fei, PoissonData& poissonData)
   int numBCNodes = poissonData.getNumBCNodes();
   GlobalID* nodeIDs = poissonData.getBCNodeIDs();
   int fieldID = poissonData.getBCFieldID();
-  double** alpha = poissonData.getBCalpha();
-  double** beta = poissonData.getBCbeta();
-  double** gamma = poissonData.getBCgamma();
+  double* values = poissonData.getBCValues();
+
+  std::vector<int> offsets(numBCNodes, 0);
 
   CHK_ERR( fei->loadNodeBCs(numBCNodes, nodeIDs, fieldID,
-			    alpha, beta, gamma) );
-
-  poissonData.deleteBCArrays();
+			    &offsets[0], values) );
 
   return(0);
 }
@@ -1140,13 +1053,9 @@ int load_BC_data(fei::LinearSystem* linSys, PoissonData& poissonData)
   int numBCNodes = poissonData.getNumBCNodes();
   GlobalID* nodeIDs = poissonData.getBCNodeIDs();
   int fieldID = poissonData.getBCFieldID();
-  double** gamma = poissonData.getBCgamma();
-  double** alpha = poissonData.getBCalpha();
+  double* values = poissonData.getBCValues();
 
-  CHK_ERR( linSys->loadEssentialBCs(numBCNodes, nodeIDs, 0, fieldID, 1,
-				    gamma, alpha) );
-
-  poissonData.deleteBCArrays();
+  CHK_ERR( linSys->loadEssentialBCs(numBCNodes, nodeIDs, 0, fieldID, 0, values) );
 
   return(0);
 }

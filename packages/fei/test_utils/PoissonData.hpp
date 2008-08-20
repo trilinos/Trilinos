@@ -27,8 +27,6 @@
 // Alan Williams 12-20-2000
 //
 
-template<class T> class feiPoolAllocator;
-
 class PoissonData {
   public:
     //constructor -- see PoissonData.cpp for descriptions of these
@@ -60,15 +58,14 @@ class PoissonData {
     double** getElemStiffness(GlobalID elemID);
     double* getElemLoad(GlobalID elemID);
 
-    void calculateBCs();
-    void deleteBCArrays();
+    void addBCNode(GlobalID nodeID, double x, double y);
 
-    int getNumBCNodes() { return( numBCNodes_ ); };
-    GlobalID* getBCNodeIDs() { return( BCNodeIDs_ ); };
-    int getBCFieldID() { return( fieldIDs_[0][0] ); };
-    double** getBCalpha() { return( alpha_ ); };
-    double** getBCbeta() { return( beta_ ); };
-    double** getBCgamma() { return( gamma_ ); };
+    void calculateBCs();
+
+    int getNumBCNodes() { return( BCNodeIDs_.size() ); }
+    GlobalID* getBCNodeIDs() { return( &BCNodeIDs_[0] ); }
+    int getBCFieldID() { return( fieldIDs_[0][0] ); }
+    double* getBCValues() { return( &BCValues_[0] ); }
     
 
     void getLeftSharedNodes(int& numShared, GlobalID* sharedNodeIDs,
@@ -98,11 +95,6 @@ class PoissonData {
 			  GlobalID* nodeIDs,
                           int** shareProcs,
 			  int* numShareProcs);
-
-    void addBCNode(GlobalID nodeID, double x, double y);
-    int appendBCNodeID(GlobalID nodeID);
-    void appendBCRow(double**& valTable, double value);
-    void printBCs();
 
     Poisson_Elem* elem_; //we're only going to have 1 element instance!!
     int numLocalElements_;
@@ -136,16 +128,8 @@ class PoissonData {
     bool elemIDsAllocated_;
 
     //************* boundary condition stuff **************
-    int numBCNodeSets_;
-    GlobalID* BCNodeIDs_;
-    bool BCNodeIDsAllocated_;
-    int numBCNodes_;
-    double** alpha_;
-    double** beta_;
-    double** gamma_;
-    bool BCArraysAllocated_;
-
-    feiPoolAllocator<double>* doublePool_;
+    std::vector<GlobalID> BCNodeIDs_;
+    std::vector<double> BCValues_;
 };
 
 int init_elem_connectivities(FEI* fei, PoissonData& poissonData);

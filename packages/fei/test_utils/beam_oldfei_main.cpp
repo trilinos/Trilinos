@@ -124,7 +124,7 @@ int beam_oldfei_main(int argc, char** argv,
     try {
       wrapper = fei::create_LibraryWrapper(comm, solverName.c_str());
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       FEI_CERR << exc.what() << FEI_ENDL;
       ERReturn(-1);
     }
@@ -134,7 +134,7 @@ int beam_oldfei_main(int argc, char** argv,
     try {
       factory = fei::create_fei_Factory(comm, solverName.c_str());
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       FEI_CERR << exc.what() << FEI_ENDL;
       ERReturn(-1);
     }
@@ -245,7 +245,7 @@ int beam_oldfei_main(int argc, char** argv,
       file_load = fei_test_utils::get_file_benchmark("./cube_timings.txt",
 					      testname_load.str().c_str());
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       file_benchmarks_available = false;
     }
 

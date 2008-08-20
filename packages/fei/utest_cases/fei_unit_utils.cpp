@@ -1,6 +1,5 @@
 
 #include <fei_iostream.hpp>
-#include <fei_Exception.hpp>
 #include <snl_fei_ArrayUtils.hpp>
 
 #include <fei_CommUtilsBase.hpp>
@@ -34,11 +33,11 @@ void test_insertion_sort_with_companions()
 
   for(int i=0; i<len; ++i) {
     if (array[i] != i) {
-      throw fei::Exception("insertion_sort test 1 failed.");
+      throw std::runtime_error("insertion_sort test 1 failed.");
     }
 
     if (std::abs(darray[i] - 1.0*i) > 1.e-49) {
-      throw fei::Exception("insertion_sort test 2 failed.");
+      throw std::runtime_error("insertion_sort test 2 failed.");
     }
   }
 

@@ -129,7 +129,7 @@ void Filter::copyStiffness(const double* const* elemStiff,
     break;
 
   default:
-    throw fei::Exception("copyStiffness ERROR, unrecognized elem-format");
+    throw std::runtime_error("copyStiffness ERROR, unrecognized elem-format");
   }
 }
 
@@ -148,23 +148,6 @@ NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
   }
 
   return( *node );
-}
-
-//------------------------------------------------------------------------------
-int Filter::separateBCEqns(EqnBuffer& bcEqnBuf,
-			   feiArray<int>& essEqns,
-			   feiArray<double>& essAlpha,
-			   feiArray<double>& essGamma,
-			   feiArray<int>& otherEqns,
-			   feiArray<double>& otherAlpha,
-			   feiArray<double>& otherBeta,
-			   feiArray<double>& otherGamma)
-{
-  SSMat bceqns_ssmat(bcEqnBuf);
-
-  return( snl_fei::separateBCEqns(bceqns_ssmat,
-				  essEqns, essAlpha, essGamma,
-				  otherEqns, otherAlpha, otherBeta, otherGamma) );
 }
 
 //------------------------------------------------------------------------------

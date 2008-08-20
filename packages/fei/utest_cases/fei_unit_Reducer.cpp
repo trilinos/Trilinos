@@ -1,6 +1,5 @@
 
 #include <fei_iostream.hpp>
-#include <fei_Exception.hpp>
 #include <fei_mpi.h>
 #include <test_utils/LibraryFactory.hpp>
 #include <test_utils/test_VectorSpace.hpp>
@@ -62,7 +61,7 @@ int test_reducer_unit1()
   try {
     reducer.translateToReducedEqn(1);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     exception_caught = true;
   }
 
@@ -192,7 +191,7 @@ int test_Reducer_test1(MPI_Comm comm)
   try {
     factory = fei::create_fei_Factory(comm, "Trilinos");
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_COUT << "couldn't create Trilinos factory."<<FEI_ENDL;
     return(0);
   }
@@ -435,23 +434,23 @@ bool test_Reducer::run(MPI_Comm comm)
   test_reducer_unit1();
 
   if (test_Reducer_test1(comm) != 0) {
-    throw fei::Exception("test_Reducer_test1 failed.");
+    throw std::runtime_error("test_Reducer_test1 failed.");
   }
 
   if (test_Reducer_test2(comm) != 0) {
-    throw fei::Exception("test_Reducer_test2 failed.");
+    throw std::runtime_error("test_Reducer_test2 failed.");
   }
 
   if (test_Reducer_test3(comm) != 0) {
-    throw fei::Exception("test_Reducer_test3 failed.");
+    throw std::runtime_error("test_Reducer_test3 failed.");
   }
 
   if (test_Reducer_test4(comm) != 0) {
-    throw fei::Exception("test_Reducer_test4 failed.");
+    throw std::runtime_error("test_Reducer_test4 failed.");
   }
 
   if (test_Reducer_test5(comm) != 0) {
-    throw fei::Exception("test_Reducer_test5 failed.");
+    throw std::runtime_error("test_Reducer_test5 failed.");
   }
 
   return true;

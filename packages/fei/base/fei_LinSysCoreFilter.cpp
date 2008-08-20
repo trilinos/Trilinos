@@ -22,8 +22,7 @@
 #include "snl_fei_Constraint.hpp"
 typedef snl_fei::Constraint<GlobalID> ConstraintType;
 
-#include "fei_BCRecord.hpp"
-#include "fei_BCManager.hpp"
+#include "fei_DirichletBCManager.hpp"
 #include "fei_SSMat.hpp"
 #include "fei_SSVec.hpp"
 #include "FEI_Implementation.hpp"
@@ -95,6 +94,7 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    rowColOffsets_(0, 256),
    colIndices_(0, 256),
    putRHSVec_(NULL),
+   nodeIDType_(0),
    eqnCommMgr_(NULL),
    eqnCommMgr_put_(NULL),
    maxElemRows_(0),
@@ -130,7 +130,7 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
     rhsIDs_.resize(numRHSs_);
     rhsIDs_[0] = 0;
 
-    bcManager_ = new BCManager();
+    bcManager_ = new fei::DirichletBCManager();
     eqnCommMgr_ = problemStructure_->getEqnCommMgr().deepCopy();
     int err = createEqnCommMgr_put();
 
@@ -971,57 +971,6 @@ int LinSysCoreFilter::resetInitialGuess(double s) {
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::loadNodeBCs(int numNodes,
-				  const GlobalID *nodeIDs,
-				  int fieldID,
-				  const double *const *alpha,
-				  const double *const *beta,
-				  const double *const *gamma)
-{
-  //
-  //  load boundary condition information for a given set of nodes
-  //
-  int size = problemStructure_->getFieldSize(fieldID);
-  if (size < 1) {
-    FEI_CERR << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
-	 <<", which was defined with size "<<size<<" (should be positive)."<<FEI_ENDL;
-    return(0);
-  }
-
-  if (Filter::logStream() != NULL) {
-    (*logStream())<<"FEI: loadNodeBCs"<<FEI_ENDL
-		     <<"#num-nodes"<<FEI_ENDL<<numNodes<<FEI_ENDL
-		     <<"#fieldID"<<FEI_ENDL<<fieldID<<FEI_ENDL
-		     <<"#field-size"<<FEI_ENDL<<size<<FEI_ENDL;
-    (*logStream())<<"#following lines: nodeID alpha beta gamma "<<FEI_ENDL;
-
-    for(int j=0; j<numNodes; j++) {
-      GlobalID nodeID = nodeIDs[j];
-      (*logStream())<<static_cast<int>(nodeID)<<"  ";
-      int k;
-      for(k=0; k<size; k++) {
-        (*logStream())<< alpha[j][k]<<" ";
-      }
-      (*logStream())<<"  ";
-      for(k=0; k<size; k++) {
-        (*logStream())<< beta[j][k]<<" ";
-      }
-      (*logStream())<<"  ";
-      for(k=0; k<size; k++) {
-        (*logStream())<<gamma[j][k]<<" ";
-      }
-      (*logStream())<<FEI_ENDL;
-    }
-  }
-
-  if (numNodes > 0) newBCData_ = true;
-
-  bcManager_->addBCRecords(numNodes, nodeIDs, fieldID, size, alpha, beta, gamma);
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::loadNodeBCs(int numNodes,
                                   const GlobalID *nodeIDs,
                                   int fieldID,
                                   const int* offsetsIntoField,
@@ -1054,7 +1003,7 @@ int LinSysCoreFilter::loadNodeBCs(int numNodes,
 
   if (numNodes > 0) newBCData_ = true;
 
-  bcManager_->addBCRecords(numNodes, nodeIDs, fieldID, size,
+  bcManager_->addBCRecords(numNodes, nodeIDType_, fieldID, nodeIDs,
                            offsetsIntoField, prescribedValues);
 
   return(FEI_SUCCESS);
@@ -1681,11 +1630,8 @@ int LinSysCoreFilter::implementAllBCs() {
 //
    debugOutput("# implementAllBCs");
 
-   feiArray<int> essEqns(0, 512);
-   feiArray<double> essAlpha(0, 512), essGamma(0, 512);
-
-   feiArray<int> otherEqns(0, 512);
-   feiArray<double> otherAlpha(0, 512), otherBeta(0, 512), otherGamma(0, 512);
+   std::vector<int> essEqns;
+   std::vector<double> essGamma;
 
    EqnBuffer bcEqns;
 
@@ -1698,25 +1644,18 @@ int LinSysCoreFilter::implementAllBCs() {
 
    CHK_ERR( eqnCommMgr_->gatherSharedBCs(bcEqns) );
 
-   //now separate the boundary-condition equations into essential (or dirichlet)
-   //BCs, and other (natural (neumann) or mixed) BCs.
-   CHK_ERR( Filter::separateBCEqns(bcEqns,
-			   essEqns, essAlpha, essGamma,
-			   otherEqns, otherAlpha, otherBeta, otherGamma) );
+   //now separate the boundary-condition equations into arrays
+   SSMat bcEqns_mat(bcEqns);
+   CHK_ERR( snl_fei::separateBCEqns(bcEqns_mat, essEqns, essGamma) );
+
+   std::vector<double> essAlpha(essEqns.size(), 1);
 
    exchangeRemoteBCs(essEqns, essAlpha, essGamma);
 
-   if (essEqns.length() > 0) {
-      CHK_ERR( enforceEssentialBCs(essEqns.dataPtr(),
-				   essAlpha.dataPtr(),
-				   essGamma.dataPtr(), essEqns.length()) );
-   }
-
-   if (otherEqns.length() > 0) {
-      CHK_ERR( enforceOtherBCs(otherEqns.dataPtr(),
-			       otherAlpha.dataPtr(),
-			       otherBeta.dataPtr(), otherGamma.dataPtr(),
-			       otherEqns.length()) );
+   if (essEqns.size() > 0) {
+      CHK_ERR( enforceEssentialBCs(&essEqns[0],
+				   &essAlpha[0],
+				   &essGamma[0], essEqns.size()) );
    }
 
    debugOutput("#LinSysCoreFilter leaving implementAllBCs");
@@ -1747,43 +1686,6 @@ int LinSysCoreFilter::enforceEssentialBCs(const int* eqns,
     CHK_ERR( lsc_->enforceEssentialBC(reducedEqns.dataPtr(),
 				      cc_alpha, cc_gamma, 
 				      numEqns) );
-  }
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::enforceOtherBCs(const int* eqns,
-				      const double* alpha,
-				      const double* beta,
-				      const double* gamma,
-				      int numEqns)
-{
-  //This function is for enforcing natural (Neumann) or mixed boundary 
-  //conditions. This is a simple operation:
-  //for i in 0 .. numEqns-1 {
-  //  A[eqns[i], eqns[i]] += alpha[i]/beta[i];
-  //  b[eqns[i]] += gamma[i]/beta[i]
-  //}
-
-  int* cc_eqns = const_cast<int*>(eqns);
-  double* cc_alpha = const_cast<double*>(alpha);
-  double* cc_beta  = const_cast<double*>(beta);
-  double* cc_gamma = const_cast<double*>(gamma);
-
-  if (problemStructure_->numSlaveEquations() == 0) {
-    CHK_ERR( lsc_->enforceOtherBC(cc_eqns, cc_alpha, cc_beta,
-				  cc_gamma, numEqns) );
-  }
-  else {
-    feiArray<int> reducedEqns(numEqns, numEqns);
-    for(int i=0; i<numEqns; i++) {
-      problemStructure_->translateToReducedEqn(eqns[i], reducedEqns[i]);
-    }
-
-    CHK_ERR( lsc_->enforceOtherBC(reducedEqns.dataPtr(),
-				  cc_alpha, cc_beta,
-				  cc_gamma, numEqns) );
   }
 
   return(FEI_SUCCESS);
@@ -1987,9 +1889,9 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
 }
 
 //------------------------------------------------------------------------------
-int LinSysCoreFilter::exchangeRemoteBCs(feiArray<int>& essEqns,
-					feiArray<double>& essAlpha,
-					feiArray<double>& essGamma)
+int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
+					std::vector<double>& essAlpha,
+					std::vector<double>& essGamma)
 {
   //we need to make sure that the right thing happens for essential
   //boundary conditions that get applied to nodes on elements that touch
@@ -2001,12 +1903,12 @@ int LinSysCoreFilter::exchangeRemoteBCs(feiArray<int>& essEqns,
   //That other processor must be notified and told to make the adjustments
   //necessary to enforce the boundary condition.
 
-  feiArray<int>* eqns = &essEqns;
+  std::vector<int>* eqns = &essEqns;
 
   if (problemStructure_->numSlaveEquations() > 0) {
-    int numEqns = essEqns.length();
-    eqns = new feiArray<int>(numEqns);
-    int* eqnsPtr = eqns->dataPtr();
+    int numEqns = essEqns.size();
+    eqns = new std::vector<int>(numEqns);
+    int* eqnsPtr = &(*eqns)[0];
 
     for(int ii=0; ii<numEqns; ++ii) {
       problemStructure_->translateToReducedEqn(essEqns[ii], eqnsPtr[ii]);
@@ -2018,8 +1920,8 @@ int LinSysCoreFilter::exchangeRemoteBCs(feiArray<int>& essEqns,
     dbgOut = logStream();
   }
 
-  eqnCommMgr_->exchangeRemEssBCs(eqns->dataPtr(), eqns->length(),
-				 essAlpha.dataPtr(), essGamma.dataPtr(),
+  eqnCommMgr_->exchangeRemEssBCs(&(*eqns)[0], eqns->size(),
+				 &essAlpha[0], &essGamma[0],
 				 comm_, dbgOut);
 
   int numRemoteEssBCEqns = eqnCommMgr_->getNumRemEssBCEqns();
@@ -2160,7 +2062,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
   }
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -2276,7 +2178,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
   }
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -2766,7 +2668,7 @@ int LinSysCoreFilter::giveToMatrix(int numPtRows, const int* ptRows,
   }
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }

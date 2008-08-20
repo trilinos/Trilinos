@@ -212,7 +212,7 @@ void SSMat::setInternalData(int numIndices, const int* indices,
 			   const double* const* coefs)
 {
   if (whichConstructor_ != SS_Constr_RawArraysSymm) {
-    throw fei::Exception("fei SSMat::setInternalData, not constructed with SS_Constr_RawArraysSymm.");
+    throw std::runtime_error("fei SSMat::setInternalData, not constructed with SS_Constr_RawArraysSymm.");
   }
 
   int i;
@@ -245,7 +245,7 @@ void SSMat::setInternalData(int numIndices, const int* indices,
 void SSMat::logicalClear()
 {
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSMat::logicalClear, not constructed with SS_Constr_Default.");
+    throw std::runtime_error("fei SSMat::logicalClear, not constructed with SS_Constr_Default.");
   }
 
   if (rows_->length() > highWaterMark_) { 
@@ -701,7 +701,7 @@ SSVec* SSMat::getRow(int row, bool create_if_necessary)
 void SSMat::createPosition(int row, int col, int& rowIndex, int& colIndex)
 {
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSMat::createPosition: not constructed with SS_Constr_Default.");
+    throw std::runtime_error("fei SSMat::createPosition: not constructed with SS_Constr_Default.");
   }
 
   int insertPoint = -1;
@@ -733,7 +733,7 @@ void SSMat::appendRow(int row)
   //If the default constructor wasn't used to create this SSMat instance, then
   //we can't alter the data.
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSMat::appendRow: not constructed with SS_Constr_Default.");
+    throw std::runtime_error("fei SSMat::appendRow: not constructed with SS_Constr_Default.");
   }
 
   //append the new row-number in the rowNumbers_ array.
@@ -763,7 +763,7 @@ SSVec* SSMat::insertRow(int row, int index)
   //If the default constructor wasn't used to create this SSMat instance, then
   //we can't alter the data.
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSMat::insertRow: not constructed with SS_Constr_Default.");
+    throw std::runtime_error("fei SSMat::insertRow: not constructed with SS_Constr_Default.");
   }
 
   //insert the new row-number in the rowNumbers_ array.

@@ -21,7 +21,7 @@
 snl_fei::RecordCollection::RecordCollection(int localProc)
   : records_(),
     localProc_(localProc),
-    recordPool_(30000),
+    recordPool_(),
     debugOutput_(false),
     dbgOut_(NULL)
 {
@@ -31,7 +31,7 @@ snl_fei::RecordCollection::RecordCollection(int localProc)
 snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
   : records_(),
     localProc_(src.localProc_),
-    recordPool_(30000),
+    recordPool_(),
     debugOutput_(src.debugOutput_),
     dbgOut_(src.dbgOut_)
 {
@@ -43,12 +43,15 @@ snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
 
   map_type::iterator records_end = records_.end();
 
+  static fei::Record dummyRecord;
+
   for(; iter != iter_end; ++iter) {
     map_type::value_type srcpair = *iter;
     int srcID = srcpair.first;
     fei::Record* srcRec = srcpair.second;
 
-    fei::Record* record = recordPool_.alloc();
+    fei::Record* record = recordPool_.allocate(1);
+    recordPool_.construct(record,dummyRecord);
     record->deepCopy(*srcRec);
     records_.insert(records_end, map_type::value_type(srcID, record));
   }
@@ -78,13 +81,16 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
     fieldMasks.push_back(mask);
   }
 
+  static fei::Record dummyRecord;
+
   for(int i=0; i<numIDs; ++i) {
     fei::Record* record = NULL;
 
     map_type::iterator riter = records_.lower_bound(IDs[i]);
     if (riter != records_.end()) {
       if ((*riter).first != IDs[i]) {
-	record = recordPool_.alloc();
+	record = recordPool_.allocate(1);
+        recordPool_.construct(record,dummyRecord);
 
 	record->setID(IDs[i]);
 	record->setFieldMask(mask);
@@ -99,7 +105,8 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
       }
     }
     else {
-      record = recordPool_.alloc();
+      record = recordPool_.allocate(1);
+      recordPool_.construct(record,dummyRecord);
 
       record->setID(IDs[i]);
       record->setFieldMask(mask);
@@ -138,6 +145,7 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 
   fei::FieldMask* lastMask = mask;
   int lastMaskID = maskID;
+  static fei::Record dummyRecord;
 
   for(int i=0; i<numIDs; ++i) {
     fei::Record* record = NULL;
@@ -146,7 +154,8 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 
     if (riter != records_.end()) {
       if ((*riter).first != IDs[i]) {
-	record = recordPool_.alloc();
+	record = recordPool_.allocate(1);
+        recordPool_.construct(record,dummyRecord);
 
 	record->setID(IDs[i]);
 	record->setFieldMask(mask);
@@ -199,7 +208,8 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
       }
     }
     else {
-      record = recordPool_.alloc();
+      record = recordPool_.allocate(1);
+      recordPool_.construct(record,dummyRecord);
       record->setID(IDs[i]);
       record->setFieldMask(mask);
       record->setOwnerProc(localProc_);
@@ -234,6 +244,7 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 
   fei::FieldMask* lastMask = mask;
   int lastMaskID = maskID;
+  static fei::Record dummyRecord;
 
   map_type::iterator rend = records_.end();
 
@@ -247,7 +258,8 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
       const map_type::value_type& rval = *riter;
 
       if (rval.first != ID) {
-	record = recordPool_.alloc();
+	record = recordPool_.allocate(1);
+        recordPool_.construct(record,dummyRecord);
 
 	record->setID(ID);
 	record->setFieldMask(mask);
@@ -304,7 +316,8 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
       }
     }
     else {
-      record = recordPool_.alloc();
+      record = recordPool_.allocate(1);
+      recordPool_.construct(record,dummyRecord);
       record->setID(ID);
       record->setFieldMask(mask);
       record->setOwnerProc(localProc_);
@@ -360,7 +373,7 @@ fei::Record* snl_fei::RecordCollection::getRecordWithID(int ID)
     FEI_OSTRINGSTREAM osstr;
     osstr << "snl_fei::RecordCollection::getRecordWithID("<<ID<<"): "
 	  << "record not found.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   return((*riter).second);
@@ -372,7 +385,7 @@ int snl_fei::RecordCollection::getGlobalBlkIndex(int ID, int& globalBlkIndex)
   try {
     record = getRecordWithID(ID);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     globalBlkIndex = -1;
     ERReturn(-1);
   }
@@ -397,18 +410,18 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
   try {
     mask->getFieldEqnOffset(fieldID, offset, numInstances);
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "failed to get eqn-offset for fieldID " << fieldID
 	  << " on record with ID " << ID << ".";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   if (fieldOffset >= numInstances) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "snl_fei::RecordCollection::getGlobalIndex: fieldOffset ("<<fieldOffset
 	  << ") should be less than numInstances ("<<numInstances<<").";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   const int* eqnNums = eqnNumbers + record->getOffsetIntoEqnNumbers();
@@ -416,7 +429,7 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "snl_fei::RecordCollection::getGlobalIndex ERROR: null pointer,"
 	 << " possibly because initComplete() hasn't been called yet?";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   int globalIndex = -1;

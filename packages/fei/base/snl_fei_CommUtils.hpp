@@ -263,7 +263,7 @@ int snl_fei::CommUtils<T>::GlobalMax(std::vector<T>& local, std::vector<T>& glob
   try {
   global.resize(local.size());
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what()<<FEI_ENDL;
     return(-1);
   }
@@ -430,7 +430,7 @@ int snl_fei::CommUtils<T>::exchangeData(std::vector<int>& sendProcs,
     }
   }
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }

@@ -230,18 +230,6 @@ namespace snl_fei {
 		       bool clearMatOnEntry=true,
 		       bool overwriteInsteadOfSumInto=true);
 
-  /** Separate boundary-conditions in an SSMat into essential (dirichlet) and
-      "other" (natural (neumann) and mixed).
-  */
-  int separateBCEqns(SSMat& bcEqnBuf,
-		     feiArray<int>& essEqns,
-		     feiArray<double>& essAlpha,
-		     feiArray<double>& essGamma,
-		     feiArray<int>& otherEqns,
-		     feiArray<double>& otherAlpha,
-		     feiArray<double>& otherBeta,
-		     feiArray<double>& otherGamma);
-
   /** Get boundary-conditions from an SSMat
   */
   int separateBCEqns(SSMat& bcEqnBuf,

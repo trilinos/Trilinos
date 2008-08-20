@@ -7,7 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_FillableMat.hpp"
-#include "fei_Exception.hpp"
 
 namespace fei {
 
@@ -124,7 +123,7 @@ FillableMat::getRow(int row)
   feipoolmat::iterator iter = matdata_.find(row);
 
   if (iter == matdata_.end()) {
-    throw fei::Exception("fei::FillableMat: row not found.");
+    throw std::runtime_error("fei::FillableMat: row not found.");
   }
 
   return iter->second;

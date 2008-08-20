@@ -8,7 +8,7 @@
 
 #include <fei_macros.hpp>
 
-#include <snl_fei_Solver.hpp>
+#include <fei_Solver.hpp>
 
 #include <fei_Matrix_Impl.hpp>
 #include <fei_MatrixReducer.hpp>
@@ -17,11 +17,11 @@
 #include <fei_utils.hpp>
 
 #undef fei_file
-#define fei_file "snl_fei_Solver.cpp"
+#define fei_file "fei_Solver.cpp"
 #include <fei_ErrMacros.hpp>
 
 //----------------------------------------------------------------------------
-int snl_fei::Solver::solve(fei::LinearSystem* linearSystem,
+int fei_Solver_solve(fei::LinearSystem* linearSystem,
 			   fei::Matrix* preconditioningMatrix,
 			   int numParams,
 			   const char* const* solverParams,
@@ -62,7 +62,7 @@ int snl_fei::Solver::solve(fei::LinearSystem* linearSystem,
 }
 
 //----------------------------------------------------------------------------
-int snl_fei::Solver::solve(fei::LinearSystem* linearSystem,
+int fei::Solver::solve(fei::LinearSystem* linearSystem,
 			   fei::Matrix* preconditioningMatrix,
 			   const fei::ParameterSet& parameterSet,
 			   int& iterationsTaken,
@@ -74,7 +74,7 @@ int snl_fei::Solver::solve(fei::LinearSystem* linearSystem,
   fei::utils::convert_ParameterSet_to_strings(&parameterSet, stdstrings);
   fei::utils::strings_to_char_ptrs(stdstrings, numParams, paramStrings);
 
-  int err = solve(linearSystem, preconditioningMatrix,
+  int err = fei_Solver_solve(linearSystem, preconditioningMatrix,
 		  numParams, paramStrings,
 		  iterationsTaken, status);
 

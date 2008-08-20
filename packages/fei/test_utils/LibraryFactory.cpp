@@ -63,7 +63,7 @@ fei::create_LibraryWrapper(MPI_Comm comm,
     lsc.reset(new Aztec_LinSysCore(comm));
 #else
     std::string msg("Aztec not available.");
-    throw fei::Exception(msg);
+    throw std::runtime_error(msg);
 #endif
   }
 
@@ -78,7 +78,7 @@ fei::create_LibraryWrapper(MPI_Comm comm,
     lsc.reset(new PETSc_LinSysCore(comm));
 #else
     std::string msg("PETSc not available.");
-    throw fei::Exception(msg);
+    throw std::runtime_error(msg);
 #endif
   }
 
@@ -87,7 +87,7 @@ fei::create_LibraryWrapper(MPI_Comm comm,
     lsc.reset(new Prometheus_LinSysCore(comm));
 #else
     std::string msg("Prometheus not available.");
-    throw fei::Exception(msg);
+    throw std::runtime_error(msg);
 #endif
   }
 
@@ -96,7 +96,7 @@ fei::create_LibraryWrapper(MPI_Comm comm,
     lsc.reset(new HYPRE_LinSysCore(comm));
 #else
     std::string msg("This factory doesn't provide Hypre instantiations.");
-    throw fei::Exception(msg);
+    throw std::runtime_error(msg);
 #endif
   }
 
@@ -109,7 +109,7 @@ fei::create_LibraryWrapper(MPI_Comm comm,
     std::string msg("create_LibraryWrapper: ");
     msg += libraryName;
     msg += " not a valid name.";
-    throw fei::Exception(msg);
+    throw std::runtime_error(msg);
   }
 
   if (lsc.get() != NULL) {
@@ -161,10 +161,10 @@ fei::create_fei_Factory(MPI_Comm comm,
   try {
     wrapper = fei::create_LibraryWrapper(comm, libraryName);
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     std::string msg("create_fei_Factory: ");
     msg += exc.what();
-    throw fei::Exception(msg);
+    throw std::runtime_error(msg);
   }
 
   if (wrapper.get() != NULL) {

@@ -38,7 +38,7 @@ create_Epetra_Map(MPI_Comm comm,
   EComm.SumAll(&localSize, &globalSize, 1);
 
   if (localSize < 0 || globalSize < 0) {
-    throw fei::Exception("Trilinos_Helpers::create_Epetra_Map: negative local or global size.");
+    throw std::runtime_error("Trilinos_Helpers::create_Epetra_Map: negative local or global size.");
   }
 
   Epetra_Map EMap(globalSize, localSize, 0, EComm);
@@ -49,7 +49,7 @@ Epetra_BlockMap
 create_Epetra_BlockMap(const fei::SharedPtr<fei::VectorSpace>& vecspace)
 {
   if (vecspace.get() == 0) {
-    throw fei::Exception("create_Epetra_Map needs non-null fei::VectorSpace");
+    throw std::runtime_error("create_Epetra_Map needs non-null fei::VectorSpace");
   }
 
 #ifndef FEI_SER
@@ -63,7 +63,7 @@ create_Epetra_BlockMap(const fei::SharedPtr<fei::VectorSpace>& vecspace)
   int globalSizeBlk = vecspace->getGlobalNumBlkIndices();
 
   if (localSizeBlk < 0 || globalSizeBlk < 0) {
-    throw fei::Exception("Trilinos_Helpers::create_Epetra_BlockMap: fei::VectorSpace has negative local or global size.");
+    throw std::runtime_error("Trilinos_Helpers::create_Epetra_BlockMap: fei::VectorSpace has negative local or global size.");
   }
 
   std::vector<int> blkEqns(localSizeBlk*2);
@@ -77,7 +77,7 @@ create_Epetra_BlockMap(const fei::SharedPtr<fei::VectorSpace>& vecspace)
     FEI_OSTRINGSTREAM osstr;
     osstr << "create_Epetra_BlockMap ERROR, nonzero errcode="<<errcode
 	  << " returned by vecspace->getBlkIndices_Owned.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   Epetra_BlockMap EBMap(globalSizeBlk, localSizeBlk,
@@ -94,7 +94,7 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
   fei::SharedPtr<fei::SparseRowGraph> localSRGraph =
     matgraph->createGraph(blockEntries);
   if (localSRGraph.get() == NULL) {
-    throw fei::Exception("create_Epetra_CrsGraph ERROR in fei::MatrixGraph::createGraph");
+    throw std::runtime_error("create_Epetra_CrsGraph ERROR in fei::MatrixGraph::createGraph");
   }
 
   int numLocallyOwnedRows = localSRGraph->rowNumbers.size();
@@ -166,7 +166,7 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
 	FEI_CERR << packedColumnIndices[offset+ii]<<",";
       }
       FEI_CERR << FEI_ENDL;
-      throw fei::Exception("... occurred in create_Epetra_CrsGraph");
+      throw std::runtime_error("... occurred in create_Epetra_CrsGraph");
     }
 
     offset += rowLengths[i];
@@ -217,7 +217,7 @@ create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                                           matrixGraph, localSize));
     }
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << "Trilinos_Helpers::create_from_Epetra_Matrix ERROR, "
            << "caught exception: '" << exc.what() << "', rethrowing..."
            << FEI_ENDL;
@@ -244,7 +244,7 @@ create_from_LPM_EpetraBasic(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
   fei::SharedPtr<fei::SparseRowGraph> srgraph =
     matrixGraph->createGraph(blockEntryMatrix);
   if (srgraph.get() == NULL) {
-    throw fei::Exception("create_LPM_EpetraBasic ERROR in fei::MatrixGraph::createGraph");
+    throw std::runtime_error("create_LPM_EpetraBasic ERROR in fei::MatrixGraph::createGraph");
   }
 
   fei::SharedPtr<fei::SparseRowGraph> sharedsrg(srgraph);
@@ -271,7 +271,7 @@ create_from_LPM_EpetraBasic(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
       err = vecSpace->getIndices_Owned(localSize, &indices[0], chkNum);
     }
     if (err != 0) {
-      throw fei::Exception("Factory_Trilinos: createMatrix: error in vecSpace->getIndices_Owned");
+      throw std::runtime_error("Factory_Trilinos: createMatrix: error in vecSpace->getIndices_Owned");
     }
 
     lpm_epetrabasic->setRowDistribution(indices);
@@ -334,7 +334,7 @@ get_Epetra_MultiVector(fei::Vector* feivec, bool soln_vec)
     dynamic_cast<fei::Vector_Impl<fei::LinearProblemManager>*>(vecptr);
 
   if (fei_epetra_vec == NULL && fei_lpm == NULL) {
-    throw fei::Exception("failed to obtain Epetra_MultiVector from fei::Vector.");
+    throw std::runtime_error("failed to obtain Epetra_MultiVector from fei::Vector.");
   }
 
   if (fei_epetra_vec != NULL) {
@@ -344,7 +344,7 @@ get_Epetra_MultiVector(fei::Vector* feivec, bool soln_vec)
   LinProbMgr_EpetraBasic* lpm_epetrabasic =
     dynamic_cast<LinProbMgr_EpetraBasic*>(fei_lpm->getUnderlyingVector());
   if (lpm_epetrabasic == 0) {
-    throw fei::Exception("fei Trilinos_Helpers: ERROR getting LinProbMgr_EpetraBasic");
+    throw std::runtime_error("fei Trilinos_Helpers: ERROR getting LinProbMgr_EpetraBasic");
   }
 
   if (soln_vec) {
@@ -368,7 +368,7 @@ Epetra_VbrMatrix* get_Epetra_VbrMatrix(fei::Matrix* feimat)
   }
 
   if (fei_epetra_vbr == NULL) {
-    throw fei::Exception("failed to obtain Epetra_VbrMatrix from fei::Matrix.");
+    throw std::runtime_error("failed to obtain Epetra_VbrMatrix from fei::Matrix.");
   }
 
   return(fei_epetra_vbr->getMatrix().get());
@@ -392,7 +392,7 @@ Epetra_CrsMatrix* get_Epetra_CrsMatrix(fei::Matrix* feimat)
   }
 
   if (fei_epetra_crs == NULL && fei_lpm == NULL) {
-    throw fei::Exception("failed to obtain Epetra_CrsMatrix from fei::Matrix.");
+    throw std::runtime_error("failed to obtain Epetra_CrsMatrix from fei::Matrix.");
   }
 
   if (fei_epetra_crs != NULL) {
@@ -402,7 +402,7 @@ Epetra_CrsMatrix* get_Epetra_CrsMatrix(fei::Matrix* feimat)
   LinProbMgr_EpetraBasic* lpm_epetrabasic =
     dynamic_cast<LinProbMgr_EpetraBasic*>(fei_lpm->getMatrix().get());
   if (lpm_epetrabasic == 0) {
-    throw fei::Exception("fei Trilinos_Helpers ERROR getting LinProbMgr_EpetraBasic");
+    throw std::runtime_error("fei Trilinos_Helpers ERROR getting LinProbMgr_EpetraBasic");
   }
 
   return(lpm_epetrabasic->get_A_matrix().get());

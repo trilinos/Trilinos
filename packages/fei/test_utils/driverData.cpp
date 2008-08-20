@@ -332,10 +332,8 @@ int driverData::call_fei_method(const char* method, FEI* fei)
       return(-1);
     }
 
-    nodeBC* nbc = loadNodeBCs_[loadNodeBCsCounter_++];
-
-    return( fei->loadNodeBCs(nbc->numNodes, nbc->nodeIDs, nbc->fieldID,
-				nbc->alpha, nbc->beta, nbc->gamma) );
+    FEI_CERR << "driverData: ERROR, loadNodeBCs needs to be re-examined..." << FEI_ENDL;
+    return( -1 );
   }
 
   if (!strcmp("loadComplete", method)) {

@@ -12,7 +12,6 @@
 #include <string.h> //include string.h so we can use memcpy
 #include "fei_fwd.hpp"
 #include "fei_iostream.hpp"
-#include "fei_Exception.hpp"
 
 template<class T>
 struct lessthan {
@@ -261,7 +260,7 @@ void feiArray<T,COMPARE>::resize(int newLength)
   }
 
   if (allocIncrement_ == 0) {
-    throw fei::Exception("feiArray::resize, can't resize, allocIncrement_==0");
+    throw std::runtime_error("feiArray::resize, can't resize, allocIncrement_==0");
   }
 
   if (allocIncrement_ == 1) {
@@ -300,7 +299,7 @@ template<typename T, class COMPARE>
 void feiArray<T,COMPARE>::insert(const T& item, int offset)
 {
   if (offset < 0 || offset > length_) {
-    throw fei::Exception("feiArray::insert called with invalid offset");
+    throw std::runtime_error("feiArray::insert called with invalid offset");
   }
 
   if (offset == length_) {
@@ -316,7 +315,7 @@ void feiArray<T,COMPARE>::insert(const T& item, int offset)
 
   if (length_ > allocatedLength_) {
     if (allocIncrement_ < 1) {
-      throw fei::Exception("feiArray::insert, can't resize, allocIncrement_==0");
+      throw std::runtime_error("feiArray::insert, can't resize, allocIncrement_==0");
     }
 
     while(allocatedLength_ < length_) {

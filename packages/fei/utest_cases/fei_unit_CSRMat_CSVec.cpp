@@ -3,7 +3,6 @@
 #include "fei_CSRMat.hpp"
 
 #include "fei_iostream.hpp"
-#include "fei_Exception.hpp"
 
 #include "fei_unit_CSRMat_CSVec.hpp"
 
@@ -16,7 +15,7 @@ void test_FillableVec_1()
   fei::FillableVec fv;
 
   if (fv.hasEntry(0)) {
-    throw fei::Exception("FillableVec failed 1");
+    throw std::runtime_error("FillableVec failed 1");
   }
 
   bool test_passed = true;
@@ -27,7 +26,7 @@ void test_FillableVec_1()
   catch(...) {}
 
   if (test_passed == false) {
-    throw fei::Exception("FillableVec failed 2");
+    throw std::runtime_error("FillableVec failed 2");
   }
 
   fv.addEntry(0, 0.0);
@@ -44,15 +43,15 @@ void test_FillableVec_1()
   catch(...) {test_passed = false;}
 
   if (test_passed == false) {
-    throw fei::Exception("FillableVec failed 3");
+    throw std::runtime_error("FillableVec failed 3");
   }
 
   if (!fv.hasEntry(1)) {
-    throw fei::Exception("FillableVec failed 4");
+    throw std::runtime_error("FillableVec failed 4");
   }
 
   if (fv.size() != 3) {
-    throw fei::Exception("FillableVec failed 5");
+    throw std::runtime_error("FillableVec failed 5");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -65,7 +64,7 @@ void test_FillableMat_1()
   fei::FillableMat fm;
 
   if (fm.hasRow(0)) {
-    throw fei::Exception("FillableMat failed 1");
+    throw std::runtime_error("FillableMat failed 1");
   }
 
   bool test_passed = true;
@@ -76,7 +75,7 @@ void test_FillableMat_1()
   catch(...) {}
 
   if (test_passed == false) {
-    throw fei::Exception("FillableMat failed 2");
+    throw std::runtime_error("FillableMat failed 2");
   }
 
   fm.sumInCoef(0, 0, 0.0);
@@ -92,15 +91,15 @@ void test_FillableMat_1()
   catch(...) {test_passed = false;}
 
   if (test_passed == false) {
-    throw fei::Exception("FillableMat failed 3");
+    throw std::runtime_error("FillableMat failed 3");
   }
 
   if (!fm.hasRow(1)) {
-    throw fei::Exception("FillableMat failed 4");
+    throw std::runtime_error("FillableMat failed 4");
   }
 
   if (fm.getNumRows() != 3) {
-    throw fei::Exception("FillableMat failed 5");
+    throw std::runtime_error("FillableMat failed 5");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -132,22 +131,22 @@ void test_multiply_CSRMat_CSVec()
   fei::multiply_CSRMat_CSVec(A, x, y);
 
   if (y.size() != 3) {
-    throw fei::Exception("CSRMat y=Ax test 1 failed.");
+    throw std::runtime_error("CSRMat y=Ax test 1 failed.");
   }
 
   std::vector<int>& y_ind = y.indices();
   std::vector<double>& y_coef = y.coefs();
 
   if (y_ind[1] != 1) {
-    throw fei::Exception("CSRMat y=Ax test 2 failed.");
+    throw std::runtime_error("CSRMat y=Ax test 2 failed.");
   }
 
   if (std::abs(y_coef[1] - 2.0) > 1.e-15) {
-    throw fei::Exception("CSRMat y=Ax test 3 failed.");
+    throw std::runtime_error("CSRMat y=Ax test 3 failed.");
   }
 
   if (std::abs(y_coef[2] - 3.0) > 1.e-15) {
-    throw fei::Exception("CSRMat y=Ax test 4 failed.");
+    throw std::runtime_error("CSRMat y=Ax test 4 failed.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -156,22 +155,22 @@ void test_multiply_CSRMat_CSVec()
   fei::multiply_trans_CSRMat_CSVec(A, x, y);
 
   if (y.size() != 3) {
-    throw fei::Exception("CSRMat y=A^Tx test 1 failed.");
+    throw std::runtime_error("CSRMat y=A^Tx test 1 failed.");
   }
 
   std::vector<int>& y_ind2 = y.indices();
   std::vector<double>& y_coef2 = y.coefs();
 
   if (y_ind2[1] != 1) {
-    throw fei::Exception("CSRMat y=A^Tx test 2 failed.");
+    throw std::runtime_error("CSRMat y=A^Tx test 2 failed.");
   }
 
   if (std::abs(y_coef2[1] - 3.0) > 1.e-15) {
-    throw fei::Exception("CSRMat y=A^Tx test 3 failed.");
+    throw std::runtime_error("CSRMat y=A^Tx test 3 failed.");
   }
 
   if (std::abs(y_coef2[2] - 1.0) > 1.e-15) {
-    throw fei::Exception("CSRMat y=A^Tx test 4 failed.");
+    throw std::runtime_error("CSRMat y=A^Tx test 4 failed.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -204,30 +203,30 @@ void test_multiply_CSRMat_CSRMat()
   fei::multiply_CSRMat_CSRMat(A, B, C);
 
   if (C.getNumRows() != 3) {
-    throw fei::Exception("CSRMAT C=AB test 1 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 1 failed.");
   }
 
   std::vector<int>& cols = C.getGraph().packedColumnIndices;
   std::vector<double>& coefs = C.getPackedCoefs();
 
   if (cols.size() != 7) {
-    throw fei::Exception("CSRMAT C=AB test 2 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 2 failed.");
   }
 
   if (cols[3] != 1) {
-    throw fei::Exception("CSRMAT C=AB test 3 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 3 failed.");
   }
 
   if (std::abs(coefs[3] - 2.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=AB test 4 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 4 failed.");
   }
 
   if (std::abs(coefs[4] - 3.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=AB test 5 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 5 failed.");
   }
 
   if (std::abs(coefs[6] - 1.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=AB test 6 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 6 failed.");
   }
 
   fei::FillableMat fa2, fb2;
@@ -253,36 +252,36 @@ void test_multiply_CSRMat_CSRMat()
   fei::multiply_CSRMat_CSRMat(A2, B2, C2);
 
   if (C.getNumRows() != 3) {
-    throw fei::Exception("CSRMAT C=AB test 7 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 7 failed.");
   }
 
   std::vector<int>& cols2 = C2.getGraph().packedColumnIndices;
   std::vector<double>& coefs2 = C2.getPackedCoefs();
 
   if (cols2.size() != 7) {
-    throw fei::Exception("CSRMAT C=AB test 8 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 8 failed.");
   }
 
   if (cols2[3] != 2) {
-    throw fei::Exception("CSRMAT C=AB test 9 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 9 failed.");
   }
 
   if (std::abs(coefs2[3] - 2.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=AB test 10 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 10 failed.");
   }
 
   if (std::abs(coefs2[4] - 3.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=AB test 11 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 11 failed.");
   }
 
   if (std::abs(coefs2[6] - 1.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=AB test 12 failed.");
+    throw std::runtime_error("CSRMAT C=AB test 12 failed.");
   }
 
   fa2.clear();
 
   if (fa2.getNumRows() != 0 || fa2.begin() != fa2.end()) {
-    throw fei::Exception("FillableMat::clear() test failed.");
+    throw std::runtime_error("FillableMat::clear() test failed.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -291,30 +290,30 @@ void test_multiply_CSRMat_CSRMat()
   fei::multiply_trans_CSRMat_CSRMat(A, B, C);
 
   if (C.getNumRows() != 3) {
-    throw fei::Exception("CSRMAT C=A^TB test 1 failed.");
+    throw std::runtime_error("CSRMAT C=A^TB test 1 failed.");
   }
 
   std::vector<int>& tcols = C.getGraph().packedColumnIndices;
   std::vector<double>& tcoefs = C.getPackedCoefs();
 
   if (tcols.size() != 9) {
-    throw fei::Exception("CSRMAT C=A^TB test 2 failed.");
+    throw std::runtime_error("CSRMAT C=A^TB test 2 failed.");
   }
 
   if (tcols[2] != 2) {
-    throw fei::Exception("CSRMAT C=A^TB test 3 failed.");
+    throw std::runtime_error("CSRMAT C=A^TB test 3 failed.");
   }
 
   if (std::abs(tcoefs[2] - 1.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=A^TB test 4 failed.");
+    throw std::runtime_error("CSRMAT C=A^TB test 4 failed.");
   }
 
   if (std::abs(tcoefs[3] - 3.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=A^TB test 5 failed.");
+    throw std::runtime_error("CSRMAT C=A^TB test 5 failed.");
   }
 
   if (std::abs(tcoefs[8] - 1.0) > 1.e-14) {
-    throw fei::Exception("CSRMAT C=A^TB test 6 failed.");
+    throw std::runtime_error("CSRMAT C=A^TB test 6 failed.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -336,17 +335,17 @@ bool test_csvec::run(MPI_Comm comm)
   std::vector<double>& coefs = csv.coefs();
 
   if (inds.size() != fv.size()) {
-    throw fei::Exception("CSVec ctor test failed.");
+    throw std::runtime_error("CSVec ctor test failed.");
   }
 
   fei::FillableVec::iterator iter = fv.begin(), iter_end = fv.end();
   unsigned i=0;
   for(; iter != iter_end; ++iter, ++i) {
     if (inds[i] != iter->first) {
-      throw fei::Exception("CSVec ctor test 2 failed.");
+      throw std::runtime_error("CSVec ctor test 2 failed.");
     }
     if (coefs[i] != iter->second) {
-      throw fei::Exception("CSVec ctor test 3 failed.");
+      throw std::runtime_error("CSVec ctor test 3 failed.");
     }
   }
 
@@ -361,15 +360,15 @@ bool test_csvec::run(MPI_Comm comm)
   fei::CSRMat csrm(fm);
 
   if (csrm.getNumRows() != 4) {
-    throw fei::Exception("CSRMat ctor test failed.");
+    throw std::runtime_error("CSRMat ctor test failed.");
   }
 
   if (csrm.getGraph().packedColumnIndices.size() != 4) {
-    throw fei::Exception("CSRMat ctor test 2 failed.");
+    throw std::runtime_error("CSRMat ctor test 2 failed.");
   }
 
   if (csrm.getPackedCoefs()[2] != 2.0) {
-    throw fei::Exception("CSRMat ctor test 3 failed.");
+    throw std::runtime_error("CSRMat ctor test 3 failed.");
   }
 
   FEI_COUT << "ok" << FEI_ENDL;

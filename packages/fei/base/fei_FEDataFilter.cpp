@@ -474,7 +474,7 @@ int FEDataFilter::initLinSysCore()
   }
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -583,104 +583,6 @@ int FEDataFilter::resetInitialGuess(double s)
   debugOutput("#FEDataFilter leaving resetInitialGuess");
 
   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::loadNodeBCs(int numNodes,
-			      const GlobalID *nodeIDs,
-			      int fieldID,
-			      const double *const *alpha,
-			      const double *const *beta,
-			      const double *const *gamma)
-{
-  //
-  //  load boundary condition information for a given set of nodes
-  //
-  int size = problemStructure_->getFieldSize(fieldID);
-  if (size < 1) {
-    FEI_CERR << "FEI Warning: loadNodeBCs called for fieldID "<<fieldID
-	 <<", which was defined with size "<<size<<" (should be positive)."<<FEI_ENDL;
-    return(0);
-  }
-
-   if (Filter::logStream() != NULL) {
-    (*logStream())<<"FEI: loadNodeBCs"<<FEI_ENDL
-		     <<"#num-nodes"<<FEI_ENDL<<numNodes<<FEI_ENDL
-		     <<"#fieldID"<<FEI_ENDL<<fieldID<<FEI_ENDL
-		     <<"#field-size"<<FEI_ENDL<<size<<FEI_ENDL;
-    (*logStream())<<"#following lines: nodeID alpha beta gamma "<<FEI_ENDL;
-
-    for(int j=0; j<numNodes; j++) {
-      int nodeID = nodeIDs[j];
-      (*logStream())<<nodeID<<"  ";
-      int k;
-      for(k=0; k<size; k++) {
-        (*logStream())<< alpha[j][k]<<" ";
-      }
-      (*logStream())<<"  ";
-      for(k=0; k<size; k++) {
-        (*logStream())<< beta[j][k]<<" ";
-      }
-      (*logStream())<<"  ";
-      for(k=0; k<size; k++) {
-        (*logStream())<<gamma[j][k]<<" ";
-      }
-      (*logStream())<<FEI_ENDL;
-    }
-   }
-
-   feiArray<int> essEqns(0, 256), otherEqns(0, 256);
-   feiArray<double> essAlpha(0, 256), essGamma(0, 256);
-   feiArray<double> otherAlpha(0, 256), otherBeta(0, 256), otherGamma(0, 256);
-   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
-
-   double fei_eps = std::numeric_limits<double>::epsilon();
-
-   for(int i=0; i<numNodes; ++i) {
-     NodeDescriptor* node = 0;
-     nodeDB.getNodeWithID(nodeIDs[i], node);
-     int eqn = -1;
-     if (!node->getFieldEqnNumber(fieldID, eqn)) {
-       ERReturn(-1);
-     }
-
-     for(int j=0; j<size; ++j) {
-       double thisAlpha = alpha[i][j];
-       double thisBeta = beta[i][j];
-       double thisGamma = gamma[i][j];
-
-       if (std::abs(thisAlpha) > fei_eps && std::abs(thisBeta) <= fei_eps) {
-	 //it's an essential (dirichlet) BC...
-	 essEqns.append(eqn+j);
-	 essAlpha.append(thisAlpha);
-	 essGamma.append(thisGamma);
-       }
-       else {
-	 if (std::abs(thisBeta) > fei_eps) {
-	   //it's a natural or mixed BC...
-	   otherEqns.append(eqn+j);
-	   otherAlpha.append(thisAlpha);
-	   otherBeta.append(thisBeta);
-	   otherGamma.append(thisGamma);
-	 }
-       }
-     }
-   }
-
-   if (essEqns.length() > 0) {
-      CHK_ERR( enforceEssentialBCs(essEqns.dataPtr(),
-				   essAlpha.dataPtr(),
-				   essGamma.dataPtr(), essEqns.length()) );
-   }
-
-   if (otherEqns.length() > 0) {
-      CHK_ERR( enforceOtherBCs(otherEqns.dataPtr(),
-			       otherAlpha.dataPtr(),
-			       otherBeta.dataPtr(), otherGamma.dataPtr(),
-			       otherEqns.length()) );
-   }
-
-   return(FEI_SUCCESS);
 }
 
 //------------------------------------------------------------------------------
@@ -1345,60 +1247,6 @@ int FEDataFilter::enforceEssentialBCs(const int* eqns,
 				    values.dataPtr()) );
 
   newData_ = true;
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::enforceOtherBCs(const int* eqns, const double* alpha,
-			      const double* beta, const double* gamma,
-			      int numEqns)
-{
-  //This function is for enforcing natural (Neumann) or mixed boundary 
-  //conditions. This is a simple operation:
-  //for i in 0 .. numEqns-1 {
-  //  A[eqns[i], eqns[i]] += alpha[i]/beta[i];
-  //  b[eqns[i]] += gamma[i]/beta[i]
-  //}
-
-  feiArray<double> matValues(0,256), rhsValues(0,256);
-  feiArray<int> nodeNumbers(0,256);
-  feiArray<int> dofOffsets(0,256);
-  int i;
-  for(i=0; i<numEqns; i++) {
-    int reducedEqn = -1;
-    bool isSlave = problemStructure_->
-      translateToReducedEqn(eqns[i], reducedEqn);
-    if (isSlave) continue;
-    int nodeNumber = problemStructure_->getAssociatedNodeNumber(reducedEqn);
-    nodeNumbers.append(nodeNumber);
-
-    NodeDescriptor* node = NULL;
-    CHK_ERR( problemStructure_->getNodeDatabase().
-	     getNodeWithNumber(nodeNumbers[i], node));
-
-    int firstEqn = node->getFieldEqnNumbers()[0];
-    dofOffsets.append(eqns[i] - firstEqn);
-
-    matValues.append(alpha[i]/beta[i]);
-    rhsValues.append(gamma[i]/beta[i]);
-  }
-
-  feiArray<int> numColsPerRow(nodeNumbers.length());
-  numColsPerRow = 1; //feiArray::operator=
-
-  CHK_ERR( feData_->sumIntoMatrix(nodeNumbers.length(),
-				  nodeNumbers.dataPtr(),
-				  dofOffsets.dataPtr(),
-				  numColsPerRow.dataPtr(),
-				  nodeNumbers.dataPtr(),
-				  dofOffsets.dataPtr(),
-				  matValues.dataPtr()) );
-
-  CHK_ERR( feData_->sumIntoRHSVector(nodeNumbers.length(),
-				     nodeNumbers.dataPtr(),
-				     dofOffsets.dataPtr(),
-				     rhsValues.dataPtr()) );
 
   return(FEI_SUCCESS);
 }
@@ -2719,7 +2567,7 @@ int FEDataFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
      numbers.resize(numNodes*fieldSize);
      data.resize(numNodes*fieldSize);
      }
-     catch(fei::Exception& exc) {
+     catch(std::runtime_error& exc) {
        FEI_CERR << exc.what()<<FEI_ENDL;
        ERReturn(-1);
      }

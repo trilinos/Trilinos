@@ -129,7 +129,7 @@ void test_MatrixGraph_test7(MPI_Comm comm, int numProcs, int localProc)
     FEI_COUT << "getNumIndices: " << pattern->getNumIndices()<<", colfieldsize: " << colfieldsize<<FEI_ENDL;
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_MatrixGraph_test7, line "<<__LINE__<<FEI_ENDL;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 }
 
@@ -157,7 +157,7 @@ void test_MatrixGraph_test8(MPI_Comm comm, int numProcs, int localProc)
   if (pattern->getNumIndices() != 4*rowfieldsize) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_MatrixGraph_test8, line "<<__LINE__<<FEI_ENDL;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   int blockID = 0;
@@ -180,14 +180,14 @@ void test_MatrixGraph_test8(MPI_Comm comm, int numProcs, int localProc)
   if ((int)localSRGraph->packedColumnIndices.size() != numIDs) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_MatrixGraph_test8, line "<<__LINE__<<FEI_ENDL;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_MatrixGraph_test8, caught exception: " << exc.what();
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   FEI_COUT << "ok" << FEI_ENDL;

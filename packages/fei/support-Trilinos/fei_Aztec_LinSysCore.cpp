@@ -12,7 +12,6 @@
 #include <stdio.h>
 
 #include "fei_defs.h"
-#include "fei_Exception.hpp"
 #include "fei_Data.hpp"
 #include "fei_Lookup.hpp"
 #include "fei_LinearSystemCore.hpp"
@@ -892,7 +891,7 @@ int Aztec_LinSysCore::sumIntoPointRow(int numPtRows, const int* ptRows,
       if (err != 0) {
 	FEI_OSTRINGSTREAM osstr;
 	osstr << "Aztec_LinSysCore::sumIntoPointRow ERROR calling A_ptr->sumIntoRow";
-	throw fei::Exception(osstr.str());
+	throw std::runtime_error(osstr.str());
       }
     }
 
@@ -1823,101 +1822,6 @@ int Aztec_LinSysCore::enforceBlkRemoteEssBCs(int numEqns, int* blkEqns,
 
    delete [] val;
    delete [] blkCols;
-   return(0);
-}
-
-//==============================================================================
-int Aztec_LinSysCore::enforceOtherBC(int* globalEqn,
-                                     double* alpha,
-                                     double* beta,
-                                     double* gamma,
-                                     int len) {
-//
-//This function must enforce a natural or mixed boundary condition on the
-//equations in 'globalEqn'. This means that the following modification should
-//be made to A and b:
-//
-//A[globalEqn,globalEqn] += alpha/beta;
-//b[globalEqn] += gamma/beta;
-//
-   bcsLoaded_ = true;
-   if (blockMatrix_) {
-      int* blkEqns = new int[len];
-      int* blkOffsets = new int[len];
-
-      getBlkEqnsAndOffsets(globalEqn, blkEqns, blkOffsets, len);
-
-      enforceBlkOtherBC(blkEqns, blkOffsets, alpha, beta, gamma, len);
-
-      delete [] blkEqns;
-      delete [] blkOffsets;
-
-      return(0);
-   }
-
-   int localEnd = localOffset_ + numLocalEqns_ - 1;
-   for(int i=0; i<len; i++) {
-      if ((globalEqn[i] < localOffset_) || (globalEqn[i] > localEnd))
-         break;
-
-      double coef = alpha[i]/beta[i];
-
-      A_ptr_->sumIntoRow(globalEqn[i], 1, &coef, &globalEqn[i]);
-
-      //now make the rhs modification.
-      if (rhsLoaded_) {
-         (*b_ptr_)[globalEqn[i]] += gamma[i]/beta[i];
-         (*bc_)[globalEqn[i]] += gamma[i]/beta[i];
-      }
-      else {
-         tmp_b_[currentRHS_][globalEqn[i]-localOffset_] += gamma[i]/beta[i];
-         tmp_bc_[globalEqn[i]-localOffset_] += gamma[i]/beta[i];
-      }
-   }
-   return(0);
-}
-
-//==============================================================================
-int Aztec_LinSysCore::enforceBlkOtherBC(int* blkEqn, int* blkOffset,
-                          double* alpha, double* beta,
-                          double* gamma, int len) {
-//
-//NOTE that the VBR matrix deals in 0-based indices/eqn numbers.
-//
-   for(int i=0; i<len; i++) {
-      int ptRowSize = 0, ptColSize = 0;
-      int err = blkA_ptr_->getBlockSize(blkEqn[i], blkEqn[i],
-                                        ptRowSize, ptColSize);
-      if (err) {
-         FEI_CERR << "Aztec_LSC::enforceBlkOtherBC: ERROR getting block size"
-            << FEI_ENDL;
-         return(-1);
-      }
-
-      int valLen = ptRowSize*ptColSize;
-      double* val = new double[valLen];
-      if (val==NULL) return(-1);
-      for(int j=0; j<valLen; j++) val[j] = 0.0;
-
-      int col = blkEqn[i];
-
-      int offset = blkOffset[i]*(ptRowSize + 1);
-      val[offset] = alpha[i]/beta[i];
- 
-      blkA_ptr_->sumIntoBlockRow(blkEqn[i], val, &col, 1);
-
-      int pointRow = blockRowToPointRow(blkEqn[i]);
-      if (rhsLoaded_) {
-      (*b_ptr_)[pointRow+blkOffset[i]] += gamma[i]/beta[i];
-      (*bc_)[pointRow+blkOffset[i]] += gamma[i]/beta[i];
-      }
-      else {
-         tmp_b_[currentRHS_][pointRow+blkOffset[i]-localOffset_] += gamma[i]/beta[i];
-         tmp_bc_[pointRow+blkOffset[i]-localOffset_] += gamma[i]/beta[i];
-      }
-
-      delete [] val;
-   }
    return(0);
 }
 

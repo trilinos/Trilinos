@@ -448,23 +448,6 @@ class LinearSystemCore {
                                           int** colIndices, int* colIndLen,
                                           double** coefs) = 0;
 
-   /** This function is called to inform LinearSystemCore that natural (or
-    Neumann) or mixed boundary conditions are to be enforce on some equations.
-    Basically, these can be enforced by performing this operation: 
-    A(globalEqn[i], globalEqn[i]) += alpha[i]/beta[i], and b(globalEqn[i]) += 
-    gamma[i]/beta[i], for all i in [0 .. len-1]. (Note that alpha[i]==0.0
-    implies a Natural or Neumann boundary condition, while gamma[i]==0.0 implies
-    a mixed boundary condition.
-    @param globalEqn List, length 'len', of equation on which to impose
-       boundary conditions.
-    @param alpha List, length 'len', of coefficients described above.
-    @param beta
-    @param gamma
-    @param len
-   */
-   virtual int enforceOtherBC(int* globalEqn, double* alpha,
-                               double* beta, double* gamma, int len) = 0;
-
    /** The FEI implementation calls this function to request a pointer to the
      internal 'A-matrix' data.
      @param data See Data class documentation.

@@ -37,7 +37,7 @@ void test_MapContig_1()
   snl_fei::MapContig<int>::iterator miter = mpair.first;
 
   if ((*miter).second != 2) {
-    throw fei::Exception("MapContig insert iter test 1 failed.");
+    throw std::runtime_error("MapContig insert iter test 1 failed.");
   }
 
   mc.insert(std::pair<int,int>(0,1));
@@ -47,21 +47,21 @@ void test_MapContig_1()
     m_end = mc.end();
 
   if ((*m_iter).first != 0) {
-    throw fei::Exception("MapContig iter test 1 failed.");
+    throw std::runtime_error("MapContig iter test 1 failed.");
   }
 
   if ((*m_iter).second != 1) {
-    throw fei::Exception("MapContig iter test 2 failed.");
+    throw std::runtime_error("MapContig iter test 2 failed.");
   }
 
   ++m_iter;
 
   if ((*m_iter).first != 1) {
-    throw fei::Exception("MapContig iter test 3 failed.");
+    throw std::runtime_error("MapContig iter test 3 failed.");
   }
 
   if ((*m_iter).second != 2) {
-    throw fei::Exception("MapContig iter test 4 failed.");
+    throw std::runtime_error("MapContig iter test 4 failed.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;

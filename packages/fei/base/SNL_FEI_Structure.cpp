@@ -1144,7 +1144,7 @@ int SNL_FEI_Structure::initComplete(bool generateGraph)
       try {
       CHK_ERR( slvCommMgr_->exchangeIndices() );
       }
-      catch (fei::Exception& exc) {
+      catch (std::runtime_error& exc) {
         FEI_CERR << exc.what() << FEI_ENDL;
         ERReturn(-1);
       }
@@ -1211,7 +1211,7 @@ int SNL_FEI_Structure::formMatrixStructure()
   try {
   CHK_ERR( eqnCommMgr_->exchangeIndices(&os) );
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -2033,7 +2033,7 @@ int SNL_FEI_Structure::createSymmEqnStructure(feiArray<int>& scatterIndices)
   if (reducedEqnCounter_ > 300) CHK_ERR( assembleReducedStructure() );
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -2147,7 +2147,7 @@ int SNL_FEI_Structure::createBlkSymmEqnStructure(feiArray<int>& scatterIndices)
   if (reducedEqnCounter_ > 300) CHK_ERR( assembleReducedStructure() );
 
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }

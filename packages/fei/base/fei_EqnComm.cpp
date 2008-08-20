@@ -7,7 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_EqnComm.hpp"
-#include "fei_Exception.hpp"
 #include "fei_sstream.hpp"
 
 namespace fei {
@@ -26,7 +25,7 @@ EqnComm::EqnComm(MPI_Comm comm, int numLocalEqns)
   int* global = &local[0] + numProcs;
 
   if (numLocalEqns < 0) {
-    throw fei::Exception("fei::EqnComm ERROR, negative numLocalEqns not allowed.");
+    throw std::runtime_error("fei::EqnComm ERROR, negative numLocalEqns not allowed.");
   }
 
   local[localProc] = numLocalEqns;
@@ -80,7 +79,7 @@ EqnComm::getOwnerProc(int eqn) const
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::EqnComm::getOwnerProc: input eqn="<<eqn<<", proc="<<proc
       << ", ERROR, proc should be in [0.."<<numProcs-1<<"].";
-    throw fei::Exception(std::string(osstr.str().c_str()));
+    throw std::runtime_error(std::string(osstr.str().c_str()));
   }
 #endif
 

@@ -46,13 +46,6 @@ class Filter {
    virtual int loadNodeBCs(int numNodes,
                    const GlobalID *nodeIDs,
                    int fieldID,
-                   const double *const *alpha,  
-                   const double *const *beta,  
-                   const double *const *gamma) = 0;
-
-   virtual int loadNodeBCs(int numNodes,
-                   const GlobalID *nodeIDs,
-                   int fieldID,
                    const int* offsetsIntoField,
                    const double* prescribedValues)
    {
@@ -262,19 +255,6 @@ class Filter {
 
    virtual int enforceEssentialBCs(const int* eqns, const double* alpha,
                                   const double* gamma, int numEqns) = 0;
-
-   virtual int enforceOtherBCs(const int* eqns, const double* alpha,
-			      const double* beta, const double* gamma,
-			      int numEqns) = 0;
-
-   static int separateBCEqns(EqnBuffer& bcEqns,
-			     feiArray<int>& essEqns,
-			     feiArray<double>& essAlpha,
-			     feiArray<double>& essGamma,
-			     feiArray<int>& otherEqns,
-			     feiArray<double>& otherAlpha,
-			     feiArray<double>& otherBeta,
-			     feiArray<double>& otherGamma);
 
    static void copyStiffness(const double* const* elemStiff, int numRows,
 			     int elemFormat, double** copy);

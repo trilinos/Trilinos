@@ -7,7 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_macros.hpp>
-#include <fei_Exception.hpp>
 #include <fei_SparseRowGraph.hpp>
 #include <fei_LinProbMgr_EpetraBasic.hpp>
 
@@ -46,7 +45,7 @@ void LinProbMgr_EpetraBasic
   }
 
   if (!ownedRows_.empty()) {
-    throw fei::Exception("setRowDistribution called multiple times with different distributions. not allowed.");
+    throw std::runtime_error("setRowDistribution called multiple times with different distributions. not allowed.");
   }
 
   int* rows = const_cast<int*>(&ownedGlobalRows[0]);
@@ -64,7 +63,7 @@ void LinProbMgr_EpetraBasic
 {
   if (fei_srgraph_.get() != NULL) {
     if (*fei_srgraph_ != *matrixGraph) {
-      throw fei::Exception("setMatrixGraph called multiple times with different graphs. not allowed.");
+      throw std::runtime_error("setMatrixGraph called multiple times with different graphs. not allowed.");
     }
     return;
   }
@@ -77,7 +76,7 @@ void LinProbMgr_EpetraBasic
   }
 
   if ((int)fei_srgraph_->rowNumbers.size() != epetra_rowmap_->NumMyElements()) {
-    throw fei::Exception("setMatrixGraph: num-rows not consistent with value from setRowDistribution");
+    throw std::runtime_error("setMatrixGraph: num-rows not consistent with value from setRowDistribution");
   }
 
   //We'll create and populate a Epetra_CrsGraph object.
@@ -107,13 +106,13 @@ void LinProbMgr_EpetraBasic
     err = crsgraph_->InsertGlobalIndices(rowNumbers[i], numIndicesPerRow[i],
                                         &colIndices[offset]);
     if (err != 0) {
-      throw fei::Exception("setMatrixGraph: err from Epetra_CrsGraph::InsertGlobalIndices.");
+      throw std::runtime_error("setMatrixGraph: err from Epetra_CrsGraph::InsertGlobalIndices.");
     }
   }
 
   err = crsgraph_->FillComplete();
   if (err != 0) {
-    throw fei::Exception("setMatrixGraph: err from Epetra_CrsGraph::FillComplete.");
+    throw std::runtime_error("setMatrixGraph: err from Epetra_CrsGraph::FillComplete.");
   }
  
   //and finally, create a matrix.
@@ -124,7 +123,7 @@ void LinProbMgr_EpetraBasic::setMatrixValues(double scalar)
 {
   int err = A_->PutScalar(scalar);
   if (err != 0) {
-    throw fei::Exception("error in Epetra_CrsMatrix->PutScalar");
+    throw std::runtime_error("error in Epetra_CrsMatrix->PutScalar");
   }
 }
 
@@ -134,7 +133,7 @@ void LinProbMgr_EpetraBasic::setVectorValues(double scalar,
   int err = soln_vector ?
     x_->PutScalar(scalar) : b_->PutScalar(scalar);
   if (err != 0) {
-    throw fei::Exception("error in Epetra_MultiVector->PutScalar");
+    throw std::runtime_error("error in Epetra_MultiVector->PutScalar");
   }
 }
 

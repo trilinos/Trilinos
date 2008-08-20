@@ -20,12 +20,9 @@
 //First, the "old" classes that aren't in a namespace.
 //
 
-template<class T> class feiPoolAllocator;
 template<class T> struct lessthan;
 template<typename T, class COMPARE=lessthan<T> > class feiArray;
 
-class BCRecord;
-class BCManager;
 class BlockDescriptor;
 class ConnectivityTable;
 class Data;
@@ -46,7 +43,6 @@ class SSGraph;
 class SSMat;
 class SSVec;
 class SlaveVariable;
-class Substructure;
 
 //
 //Now the symbols in the fei namespace.

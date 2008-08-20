@@ -13,6 +13,9 @@
 
 #include <vector>
 
+class NodeDatabase;
+class EqnBuffer;
+
 namespace fei {
 class Matrix;
 
@@ -38,7 +41,11 @@ class DirichletBCManager {
   int finalizeBCEqns(fei::Matrix& matrix,
                      bool throw_if_bc_slave_conflict=false);
 
+  int finalizeBCEqns(NodeDatabase& nodeDB, EqnBuffer& bcEqns);
+
   unsigned getNumBCRecords() const;
+
+  void clearAllBCs();
 
  private:
   std::vector<DirichletBCRecord> bcs_;

@@ -48,7 +48,7 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     lastLocalOffset_(0)
 {
   if (matrixGraph.get() == NULL) {
-    throw fei::Exception("fei::Matrix_core constructed with NULL fei::MatrixGraph");
+    throw std::runtime_error("fei::Matrix_core constructed with NULL fei::MatrixGraph");
   }
 
   intCommUtils_ = matrixGraph->getRowSpace()->getCommUtils();

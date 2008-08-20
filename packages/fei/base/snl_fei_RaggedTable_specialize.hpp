@@ -25,11 +25,19 @@ public:
 
   RaggedTable(const RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >& src);
 
-  virtual ~RaggedTable() {}
-
   typedef MapContig<fei::ctg_set<int>*> map_type;
   typedef fei::ctg_set<int> row_type;
   typedef map_type::iterator iterator;
+
+  virtual ~RaggedTable()
+  {
+    iterator it = begin();
+    iterator it_end = end();
+    for(; it!=it_end; ++it) {
+      poolAllocatorSet_.destroy( (*it).second );
+      poolAllocatorSet_.deallocate( (*it).second, 1 );
+    }
+  }
 
   void addDiagonals(int numIndices,
                     const int* indices);
@@ -58,7 +66,8 @@ public:
 
  private:
   map_type map_;
-  feiPoolAllocator<row_type> poolAllocatorSet_;
+  fei_Pool_alloc<row_type> poolAllocatorSet_;
+  row_type dummy;
 };//RaggedTable<MapContig<fei::ctg_set<int>*> >
 
 }//namespace snl_fei

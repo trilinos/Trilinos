@@ -14,6 +14,10 @@
 #include "fei_fwd.hpp"
 #include "fei_Filter.hpp"
 
+namespace fei {
+  class DirichletBCManager;
+}
+
 /**
 FEI_Implementation manages one or several instances of this class in the process
 of assembling and solving a linear-system. Many of the public FEI function calls
@@ -45,13 +49,6 @@ class LinSysCoreFilter : public Filter {
    virtual int resetInitialGuess(double s);
 
    virtual int deleteMultCRs();
-
-   virtual int loadNodeBCs(int numNodes,
-                   const GlobalID *nodeIDs,
-                   int fieldID,
-                   const double *const *alpha,  
-                   const double *const *beta,  
-                   const double *const *gamma);
 
    virtual int loadNodeBCs(int numNodes,
                    const GlobalID *nodeIDs,
@@ -257,17 +254,14 @@ class LinSysCoreFilter : public Filter {
    virtual int setCurrentRHS(int rhsID);
 
    virtual int exchangeRemoteEquations();
-   virtual int exchangeRemoteBCs(feiArray<int>& essEqns, feiArray<double>& essAlpha,
-                           feiArray<double>& essGamma);
+   virtual int exchangeRemoteBCs(std::vector<int>& essEqns,
+                                 std::vector<double>& essAlpha,
+                                 std::vector<double>& essGamma);
 
    virtual int implementAllBCs();
 
    virtual int enforceEssentialBCs(const int* eqns, const double* alpha,
                                   const double* gamma, int numEqns);
-
-   virtual int enforceOtherBCs(const int* eqns, const double* alpha,
-			      const double* beta, const double* gamma,
-			      int numEqns);
 
    virtual int enforceRemoteEssBCs(int numEqns, const int* eqns, 
 			   const int* const* colIndices, const int* colIndLens,
@@ -491,7 +485,8 @@ class LinSysCoreFilter : public Filter {
     int reducedEqnCounter_, reducedRHSCounter_;
     feiArray<bool> rSlave_, cSlave_;
 
-    BCManager* bcManager_; //Boundary condition manager
+    int nodeIDType_;
+    fei::DirichletBCManager* bcManager_; //Boundary condition manager
 
     EqnCommMgr* eqnCommMgr_; //equation communication manager
     EqnCommMgr* eqnCommMgr_put_; //only created if users call the 'put'

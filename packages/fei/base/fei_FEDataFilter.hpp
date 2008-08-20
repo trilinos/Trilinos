@@ -48,13 +48,6 @@ class FEDataFilter : public Filter {
    int loadNodeBCs(int numNodes,
                    const GlobalID *nodeIDs,
                    int fieldID,
-                   const double *const *alpha,  
-                   const double *const *beta,  
-                   const double *const *gamma);
-
-   int loadNodeBCs(int numNodes,
-                   const GlobalID *nodeIDs,
-                   int fieldID,
                    const int* offsetsIntoField,
                    const double* prescribedValues);
 
@@ -191,33 +184,6 @@ class FEDataFilter : public Filter {
 
    int getCRMultipliers(int numCRs, const int* CRIDs, double* multipliers);
 
-   //Substructure functions.
-   int getSubstructureIDList(int substructureID,
-			     int numIDs,
-			     int* IDTypes,
-			     GlobalID* IDs );
-
-   int getSubstructureFieldSolution(int substructureID,
-				    int fieldID,
-				    int numIDs, 
-				    const int* IDTypes,
-				    const GlobalID *IDs, 
-				    double *results);
-
-   int putSubstructureFieldSolution(int substructureID, 
-				    int fieldID, 
-				    int numNodes, 
-				    const int* IDTypes,
-				    const GlobalID *nodeIDs, 
-				    const double *estimates);
-
-   int putSubstructureFieldData(int substructureID, 
-				int fieldID, 
-				int numNodes,
-				const int* IDTypes,
-				const GlobalID *nodeIDs, 
-				const double *data);
-
 // associated "puts" paralleling the solution return services.
 // 
 // the int sizing parameters are passed for error-checking purposes, so
@@ -286,10 +252,6 @@ class FEDataFilter : public Filter {
 
    int enforceEssentialBCs(const int* eqns, const double* alpha,
                                   const double* gamma, int numEqns);
-
-   int enforceOtherBCs(const int* eqns, const double* alpha,
-			      const double* beta, const double* gamma,
-			      int numEqns);
 
    int initialize();
 

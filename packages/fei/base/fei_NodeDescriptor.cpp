@@ -30,16 +30,12 @@ NodeDescriptor::NodeDescriptor()
 
 //======Destructor==============================================================
 NodeDescriptor::~NodeDescriptor() {
-   if (numFields_ > 0) {
-      delete [] fieldIDList_;
-      delete [] fieldEqnNumbers_;
-      numFields_ = 0;
-   }
+  delete [] fieldIDList_;
+  delete [] fieldEqnNumbers_;
+  numFields_ = 0;
 
-   if (numBlocks_ > 0) {
-      delete [] blockList_;
-      numBlocks_ = 0;
-   }
+  delete [] blockList_;
+  numBlocks_ = 0;
 }
 
 //==============================================================================
@@ -53,9 +49,8 @@ void NodeDescriptor::addField(int fieldID) {
 
    int tmp = numFields_;
    int allocLen = numFields_;
-   int index = snl_fei::sortedListInsert(fieldID,
-						fieldIDList_, numFields_,
-						allocLen);
+   int index = snl_fei::sortedListInsert(fieldID, fieldIDList_, numFields_,
+                                         allocLen);
 
    //index is the position at which fieldID was inserted, or found
 

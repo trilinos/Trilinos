@@ -10,7 +10,6 @@
 
 #include <test_utils/test_SSMat.hpp>
 #include <feiArray.hpp>
-#include <fei_Exception.hpp>
 #include <snl_fei_CommUtils.hpp>
 #include <fei_defs.h>
 
@@ -72,7 +71,7 @@ int test_SSMat::test1()
   SSMat B(n, rows.dataPtr(),  m, rows.dataPtr(),  coefs);
 
   if (A != B) {
-    throw fei::Exception("SSMat(EqnBuffer) test failed");
+    throw std::runtime_error("SSMat(EqnBuffer) test failed");
   }
 
   SSVec x(n, rows.dataPtr(), coefs[0]);
@@ -127,7 +126,7 @@ int test_SSMat::test2()
   SSMat B(n, rows.dataPtr(), coefs);
 
   if (A != B) {
-    throw fei::Exception("SSMat(EqnBuffer) test 2 failed");
+    throw std::runtime_error("SSMat(EqnBuffer) test 2 failed");
   }
 
   B.setInternalData(n-2, rows.dataPtr(), coefs);
@@ -179,7 +178,7 @@ int test_SSMat::test3()
   }
 
   if (mat0 != mat1) {
-    throw fei::Exception("sumInRow causes different results than sumInCoef");
+    throw std::runtime_error("sumInRow causes different results than sumInCoef");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;

@@ -82,7 +82,7 @@ int feiDriver_main(int argc, char** argv,
   try {
     wrapper = fei::create_LibraryWrapper(comm, solverName.c_str());
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -112,7 +112,7 @@ int feiDriver_main(int argc, char** argv,
       try {
 	wrapper = fei::create_LibraryWrapper(comm, solverName.c_str());
       }
-      catch (fei::Exception& exc) {
+      catch (std::runtime_error& exc) {
 	FEI_CERR << exc.what()<<FEI_ENDL;
 	ERReturn(-1);
       }

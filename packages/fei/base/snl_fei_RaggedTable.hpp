@@ -15,7 +15,7 @@
 #include <snl_fei_MapTraits_specialize.hpp>
 
 #include <fei_IndexTable.hpp>
-#include <feiPoolAllocator.hpp>
+#include <fei_Pool_alloc.hpp>
 
 namespace snl_fei {
 
@@ -82,27 +82,35 @@ class RaggedTable : public fei::IndexTable {
 
  private:
   MAP_TYPE map_;
-  feiPoolAllocator<SET_TYPE> poolAllocatorSet_;
+  fei_Pool_alloc<SET_TYPE> poolAllocatorSet_;
+  SET_TYPE dummy;
 }; //class RaggedTable
 
 template<typename MAP_TYPE, typename SET_TYPE>
 inline RaggedTable<MAP_TYPE,SET_TYPE>::RaggedTable(int firstKey,
                                           int lastKey)
   : map_(),
-  poolAllocatorSet_(lastKey - firstKey + 1)
+  poolAllocatorSet_(),
+  dummy()
 {
 }
 
 template<typename MAP_TYPE, typename SET_TYPE>
 inline RaggedTable<MAP_TYPE,SET_TYPE>::RaggedTable(const RaggedTable<MAP_TYPE,SET_TYPE>& src)
   : map_(src.map_),
-    poolAllocatorSet_(src.map_.size())
+    poolAllocatorSet_()
 {
 }
 
 template<typename MAP_TYPE, typename SET_TYPE>
 RaggedTable<MAP_TYPE,SET_TYPE>::~RaggedTable()
 {
+  iterator it = begin();
+  iterator it_end = end();
+  for(; it!=it_end; ++it) {
+    poolAllocatorSet_.destroy( it->second );
+    poolAllocatorSet_.deallocate( it->second, 1 );
+  }
 }
 
 template<typename MAP_TYPE, typename SET_TYPE>
@@ -124,7 +132,8 @@ inline void RaggedTable<MAP_TYPE,SET_TYPE>::addIndices(int row,
   }
 
   if (!found_row) {
-    mapped_indices = poolAllocatorSet_.alloc();
+    mapped_indices = poolAllocatorSet_.allocate(1);
+    poolAllocatorSet_.construct(mapped_indices, dummy);
     typename MAP_TYPE::value_type val(row, mapped_indices);
     MapTraits<MAP_TYPE>::insert(map_, m_iter, val);
   }
@@ -158,7 +167,8 @@ inline void RaggedTable<MAP_TYPE,SET_TYPE>::addIndices(int numRows,
     }
 
     if (!found_row) {
-      mapped_indices = poolAllocatorSet_.alloc();
+      mapped_indices = poolAllocatorSet_.allocate(1);
+      poolAllocatorSet_.construct(mapped_indices, dummy);
       typename MAP_TYPE::value_type val(row, mapped_indices);
       MapTraits<MAP_TYPE>::insert(map_, m_iter, val);
     }

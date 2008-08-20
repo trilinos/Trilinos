@@ -88,7 +88,7 @@ namespace fei_test_utils {
       broadcasts those contents (strings) to all processors.
       All processors return the file contents in the file_contents argument.
 
-      If the file is not found, or can't be opened, an fei::Exception will be
+      If the file is not found, or can't be opened, an std::runtime_error will be
       thrown.
   */
   void read_input_file(const char* filename, MPI_Comm comm,
@@ -97,7 +97,7 @@ namespace fei_test_utils {
   /** Given a file-name and test-name, return the named benchmark value.
 
       If anything goes wrong, such as the file can't be read, or the specified
-      testname doesn't appear in the file, throw an fei::Exception.
+      testname doesn't appear in the file, throw an std::runtime_error.
   */
   double get_file_benchmark(const char* filename,
 			    const char* testname);

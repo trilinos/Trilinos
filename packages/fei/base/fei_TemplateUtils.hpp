@@ -10,7 +10,6 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_iosfwd.hpp>
-#include <fei_Exception.hpp>
 #include <fei_mpi.h>
 #include <fei_chk_mpi.hpp>
 #include <fei_mpiTraits.hpp>
@@ -78,7 +77,7 @@ namespace fei {
 				mpi_dtype, comm) );
 
       }
-      catch(fei::Exception& exc) {
+      catch(std::runtime_error& exc) {
 	FEI_CERR << exc.what() << FEI_ENDL;
 	return(-1);
       }

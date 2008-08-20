@@ -63,7 +63,7 @@ int snl_fei_tester::testInitialization()
     try {
       factory_ = fei::create_fei_Factory(comm_, data_->solverLibraryName_.c_str());
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       FEI_CERR << exc.what()<<FEI_ENDL;
       return(1);
     }

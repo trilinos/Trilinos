@@ -640,7 +640,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::Matrix_Impl::sumIn ERROR, unable to "
 	  << "look up connectivity-block with ID "<<blockID;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   bool symmetric = cblock->isSymmetric();
@@ -792,7 +792,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 	  FEI_OSTRINGSTREAM osstr;
 	  osstr<<"snl_fei::sumIn, format=FEI_BLOCK_DIAGONAL_ROW, block-sizes"
 	       << " not consistent with total num-indices."<<FEI_ENDL;
-	  throw fei::Exception(osstr.str());
+	  throw std::runtime_error(osstr.str());
 	}
 
 	CHK_ERR( sumIn(fieldsize, &(rowIndices[ioffset]),
@@ -805,7 +805,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
       FEI_OSTRINGSTREAM osstr;
       osstr << "fei::Matrix_Impl::sumIn, format="<<format<<" not supported."
 	    << FEI_ENDL;
-      throw fei::Exception(osstr.str());
+      throw std::runtime_error(osstr.str());
     }
   }
   else {
@@ -813,7 +813,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
       FEI_OSTRINGSTREAM osstr;
       osstr << "fei::Matrix_Impl::sumIn, format="<<format<<" not valid with"
 	    << " un-symmetric matrix contributions."<<FEI_ENDL;
-      throw fei::Exception(osstr.str());
+      throw std::runtime_error(osstr.str());
     }
 
     CHK_ERR( sumIn(numRowIndices, rowIndices, numColIndices, colIndices,
@@ -897,7 +897,7 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
       FEI_OSTRINGSTREAM osstr;
       osstr << "fei::Matrix_Impl::giveToMatrix ERROR: err="<<err
         << " returned from giveToUnderlyingMatrix.";
-      throw fei::Exception(osstr.str());
+      throw std::runtime_error(osstr.str());
     }
     return(0);
   }

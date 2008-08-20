@@ -32,17 +32,6 @@ namespace snl_fei {
     /** denstructor */
     virtual ~LinearSystem_General();
 
-    /** Essential boundary-condition function that's similar to the 'old'
-	FEI's boundary-condition-loading function.
-    */
-    int loadEssentialBCs(int numIDs,
-			 const int* IDs,
-			 int idType,
-			 int fieldID,
-			 int fieldSize,
-			 const double *const *gammaValues,
-			 const double *const *alphaValues);
-
     /** Essential (dirichlet) boundary-condition function.
     */
     int loadEssentialBCs(int numIDs,
@@ -90,11 +79,6 @@ namespace snl_fei {
     /** parameters implementation */
     int parameters(const fei::ParameterSet& params);
 
-    /** Retrieve the BCManager, which is an object containing
-      descriptions of the dirichlet BCs that have been loaded.
-    */
-    BCManager* get_BCManager();
-
     /** use stored BC values to modify specified vector */
     int setBCValuesOnVector(fei::Vector* vector);
 
@@ -128,7 +112,6 @@ namespace snl_fei {
     fei::SharedPtr<CommUtils<int> > commUtilsInt_;
 
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
-    BCManager* bcManager_;
     fei::DirichletBCManager* dbcManager_;
     SSVec* essBCvalues_;
     SSVec* allEssBCs_;

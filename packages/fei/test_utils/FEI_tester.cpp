@@ -214,7 +214,7 @@ int FEI_tester::createFEIinstance(const char* solverName)
   try {
     wrapper_ = fei::create_LibraryWrapper(comm_, solverName);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what()<<FEI_ENDL;
     return(1);
   }

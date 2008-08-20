@@ -36,6 +36,14 @@
 class NodeDescriptor {
  public:
    NodeDescriptor();
+
+   NodeDescriptor(const NodeDescriptor& src)
+    : nodeID_(src.nodeID_), nodeNumber_(src.nodeNumber_),
+      numNodalDOF_(0), fieldIDList_(NULL),
+      fieldEqnNumbers_(NULL), numFields_(0), blkEqnNumber_(0),
+      ownerProc_(src.ownerProc_), blockList_(NULL), numBlocks_(0)
+   {}
+
    virtual ~NodeDescriptor();
 
    GlobalID getGlobalNodeID() const {return(nodeID_);};
@@ -91,7 +99,6 @@ class NodeDescriptor {
    bool containedInBlock(GlobalID blk);
 
  private:
-   NodeDescriptor(const NodeDescriptor& src);
    NodeDescriptor& operator=(const NodeDescriptor& src);
 
    void allocFieldLists();

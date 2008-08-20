@@ -13,7 +13,6 @@
 #include <test_utils/test_MatrixGraph.hpp>
 
 #include <feiArray.hpp>
-#include <feiPoolAllocator.hpp>
 #include <fei_Factory.hpp>
 #include <snl_fei_Factory.hpp>
 #include <fei_Vector_Impl.hpp>
@@ -87,7 +86,7 @@ test_Vector::create_vector(fei::SharedPtr<fei::Factory> factory)
   int err = vspace->initComplete();
   if (err != 0) {
     FEI_COUT << "ERROR, failed to create valid fei::VectorSpace." << FEI_ENDL;
-    throw fei::Exception("test_Vector::create_vector: ERROR, failed to create valid fei::VectorSpace.");
+    throw std::runtime_error("test_Vector::create_vector: ERROR, failed to create valid fei::VectorSpace.");
   }
 
   if (localProc_==0) FEI_COUT << "  creating fei::Vector instance... ";
@@ -109,13 +108,13 @@ void test_Vector::vector_test1(fei::SharedPtr<fei::Vector> fei_vec)
 
   //if numProcs_ != getNumPartitions(), something's wrong...
   if (numProcs_ != vspace->getNumPartitions()) {
-    throw fei::Exception("numProcs_ != fei_vec->getVectorSpace()->getNumPartitions");
+    throw std::runtime_error("numProcs_ != fei_vec->getVectorSpace()->getNumPartitions");
   }
 
   std::vector<int> global_offsets(numProcs_+1);
   int errcode = vspace->getGlobalIndexOffsets(numProcs_+1, &global_offsets[0]);
   if (errcode != 0) {
-    throw fei::Exception("nonzero errcode from vspace->getGlobalIndexOffsets");
+    throw std::runtime_error("nonzero errcode from vspace->getGlobalIndexOffsets");
   }
 
   int i, my_first_offset = global_offsets[localProc_];
@@ -134,16 +133,16 @@ void test_Vector::vector_test1(fei::SharedPtr<fei::Vector> fei_vec)
 
   errcode = fei_vec->copyIn(num_local_indices, &indices[0], &coefs[0]);
   if (errcode != 0) {
-    throw fei::Exception("nonzero errcode from fei_vec->copyIn");
+    throw std::runtime_error("nonzero errcode from fei_vec->copyIn");
   }
 
   errcode = fei_vec->copyOut(num_local_indices, &indices[0], &check_coefs[0]);
   if (errcode != 0) {
-    throw fei::Exception("nonzero errcode from fei_vec->copyOut");
+    throw std::runtime_error("nonzero errcode from fei_vec->copyOut");
   }
 
   if (coefs != check_coefs) {
-    throw fei::Exception("fei_vec->copyOut didn't produce the right coefs");
+    throw std::runtime_error("fei_vec->copyOut didn't produce the right coefs");
   }
 
   if (localProc_==0)
@@ -152,17 +151,17 @@ void test_Vector::vector_test1(fei::SharedPtr<fei::Vector> fei_vec)
   errcode = fei_vec->putScalar(0.0);
 
   if (errcode != 0) {
-    throw fei::Exception("nonzero errcode from fei_vec->putScalar");
+    throw std::runtime_error("nonzero errcode from fei_vec->putScalar");
   }
 
   errcode = fei_vec->copyOut(num_local_indices, &indices[0], &check_coefs[0]);
   if (errcode != 0) {
-    throw fei::Exception("nonzero errcode from fei_vec->copyOut");
+    throw std::runtime_error("nonzero errcode from fei_vec->copyOut");
   }
 
   for(i=0; i<num_local_indices; ++i) {
     if (std::abs(check_coefs[i]) > 1.e-38) {
-      throw fei::Exception("fei_vec->putScalar(0.0) didn't zero the vector");
+      throw std::runtime_error("fei_vec->putScalar(0.0) didn't zero the vector");
     }
   }
 

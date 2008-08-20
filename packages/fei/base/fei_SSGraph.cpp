@@ -109,7 +109,7 @@ SSGraph::~SSGraph()
 void SSGraph::logicalClear()
 {
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSGraph::logicalClear: not constructed with SS_Constr_Default");
+    throw std::runtime_error("fei SSGraph::logicalClear: not constructed with SS_Constr_Default");
   }
 
   rows_->resize(0);
@@ -134,7 +134,7 @@ void SSGraph::createPosition(int row, int col)
 void SSGraph::createPosition(int row, int col, int& rowIndex, int& colIndex)
 {
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSGraph::createPosition: not constructed with SS_Constr_Default");
+    throw std::runtime_error("fei SSGraph::createPosition: not constructed with SS_Constr_Default");
   }
 
   int insertPoint = -1;
@@ -160,7 +160,7 @@ void SSGraph::appendRow(int row)
   //If the default constructor wasn't used to create this SSGraph instance, then
   //we can't alter the data.
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSGraph::createPosition: not constructed with SS_Constr_Default");
+    throw std::runtime_error("fei SSGraph::createPosition: not constructed with SS_Constr_Default");
   }
 
   //append the new row-number in the rows_ array.
@@ -191,7 +191,7 @@ void SSGraph::insertRow(int row, int index)
   //If the default constructor wasn't used to create this SSGraph instance, then
   //we can't alter the data.
   if (whichConstructor_ != SS_Constr_Default) {
-    throw fei::Exception("fei SSGraph::createPosition: not constructed with SS_Constr_Default");
+    throw std::runtime_error("fei SSGraph::createPosition: not constructed with SS_Constr_Default");
   }
 
   //insert the new row-number in the rows_ array.

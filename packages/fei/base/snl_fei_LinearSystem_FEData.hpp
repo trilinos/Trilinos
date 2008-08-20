@@ -34,17 +34,6 @@ namespace snl_fei {
     /** destructor */
     virtual ~LinearSystem_FEData();
 
-    /** Essential boundary-condition function that's similar to the 'old'
-	FEI's boundary-condition-loading function.
-    */
-    int loadEssentialBCs(int numIDs,
-			 const int* IDs,
-			 int idType,
-			 int fieldID,
-			 int fieldSize,
-			 const double *const *gammaValues,
-			 const double *const *alphaValues);
-
     /** Essential (dirichlet) boundary-condition function that accepts a table
         of prescribed values.
     */
@@ -140,7 +129,6 @@ namespace snl_fei {
     fei::SharedPtr<FiniteElementData> feData_;
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
     fei::DirichletBCManager* dbcManager_;
-    BCManager* bcManager_;
     Lookup* lookup_;
 
     std::vector<char*> attributeNames_;

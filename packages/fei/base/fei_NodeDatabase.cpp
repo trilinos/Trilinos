@@ -45,6 +45,11 @@ NodeDatabase::~NodeDatabase()
 //------------------------------------------------------------------------------
 void NodeDatabase::deleteMemory()
 {
+  for(int i=0; i<numNodePtrs_; ++i) {
+    nodePool_.destroy(nodePtrs_[i]);
+    nodePool_.deallocate(nodePtrs_[i], 1);
+  }
+
   delete [] nodePtrs_;
   nodePtrs_ = NULL;
   numNodePtrs_ = 0;
@@ -67,21 +72,6 @@ int NodeDatabase::getNodeWithID(GlobalID nodeID, NodeDescriptor*& node)
   node = nodePtrs_[index];
   return(0);
 }
-
-// //------------------------------------------------------------------------------
-// int NodeDatabase::getNodesWithIDs(int numNodes, const GlobalID* nodeIDs,
-// 				  NodeDescriptor** nodes)
-// {
-//   if (!allocated_) ERReturn(-1);
-
-//   for(int i=0; i<numNodes; i++) {
-//     int index = getIndexOfID(nodeIDs[i]);
-//     if (index < 0) return(-1);
-//     nodes[i] = nodePtrs_[index];
-//   }
-
-//   return(0);
-// }
 
 //------------------------------------------------------------------------------
 int NodeDatabase::getNodeWithNumber(int nodeNumber, NodeDescriptor*& node)
@@ -247,6 +237,9 @@ int NodeDatabase::allocateNodeDescriptors()
   //various look-ups...). For now, I'll store an array of
   //pointers-to-NodeDescriptor.
   //
+
+  static NodeDescriptor dummyNode;
+
   NodeDescriptor** newNodePtrs = nodePtrs_;
   int nodeIDs_size = nodeIDs_.size();
   if (numNodePtrs_ != nodeIDs_size) {
@@ -283,7 +276,8 @@ int NodeDatabase::allocateNodeDescriptors()
 
     NodeDescriptor*& nodePtr = newNodePtrs[i];
     if (nodePtr == NULL) {
-      newNodePtrs[i] = nodePool_.alloc();
+      nodePtr = nodePool_.allocate(1);
+      nodePool_.construct(nodePtr, dummyNode);
     }
     else {
       continue;

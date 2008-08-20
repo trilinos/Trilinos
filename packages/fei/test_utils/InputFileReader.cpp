@@ -10,7 +10,6 @@
 
 #include <fei_sstream.hpp>
 #include <fei_fstream.hpp>
-#include <fei_Exception.hpp>
 #include <fei_Pattern.hpp>
 #include <fei_utils.hpp>
 #include "fei_ConnectivityBlock.hpp"
@@ -85,7 +84,7 @@ fei::SharedPtr<fei::Matrix>& InputFileReader::getMatrix()
   }
 
   if (feiMatrixGraph_.get() == NULL) {
-    throw fei::Exception("InputFileReader::getMatrix: don't yet have MatrixGraph");
+    throw std::runtime_error("InputFileReader::getMatrix: don't yet have MatrixGraph");
   }
   else {
     if (!initCompleteCalled_) {
@@ -266,7 +265,7 @@ void InputFileReader::readData(FEI_ISTREAM* instr, const char* keyword)
 
   if (!keyword_recognized) {
     std::string msg(": keyword not recognized");
-    throw fei::Exception(keyword+msg);
+    throw std::runtime_error(keyword+msg);
   }
 }
 
@@ -320,7 +319,7 @@ void InputFileReader::readSymmElemBlock(FEI_ISTREAM* instr)
 
   int errcode = mgraph->initConnectivityBlock(blockID, numElems, patternID);
   if (errcode != 0) {
-    throw fei::Exception("err in mgraph->initConnectivityBlock");
+    throw std::runtime_error("err in mgraph->initConnectivityBlock");
   }
 }
 
@@ -353,7 +352,7 @@ void InputFileReader::readSharedIDs(FEI_ISTREAM* instr)
 					&ids[0], &numSharingProcs[0],
 					&sharingProcs[0]);
   if (errcode != 0) {
-    throw fei::Exception("err in vspace->initSharedIDs");
+    throw std::runtime_error("err in vspace->initSharedIDs");
   }
 }
 
@@ -371,7 +370,7 @@ void InputFileReader::readNonsymmConnBlock(FEI_ISTREAM* instr)
   int errcode = mgraph->initConnectivityBlock(blockID, numContributions,
 					      rowPatternID, colPatternID);
   if (errcode != 0) {
-    throw fei::Exception("err in mgraph->initConnectivityBlock");
+    throw std::runtime_error("err in mgraph->initConnectivityBlock");
   }
 }
 
@@ -386,7 +385,7 @@ void InputFileReader::readNonsymmConnectivity(FEI_ISTREAM* instr)
 
   fei::ConnectivityBlock* cblock = mgraph->getConnectivityBlock(blockID);
   if (cblock == NULL) {
-    throw fei::Exception("error getting connectivity block");
+    throw std::runtime_error("error getting connectivity block");
   }
 
   int numRowIDs = cblock->getRowPattern()->getNumIDs();
@@ -409,7 +408,7 @@ void InputFileReader::readNonsymmConnectivity(FEI_ISTREAM* instr)
   int errcode = mgraph->initConnectivity(blockID, connID,
 					 &rowIDs[0], &colIDs[0]);
   if (errcode != 0) {
-    throw fei::Exception("err in mgraph->initConnectivityBlock");
+    throw std::runtime_error("err in mgraph->initConnectivityBlock");
   }
 }
 
@@ -425,7 +424,7 @@ void InputFileReader::readNonsymmCoefficients(FEI_ISTREAM* instr)
 
   fei::ConnectivityBlock* cblock = mgraph->getConnectivityBlock(blockID);
   if (cblock == NULL) {
-    throw fei::Exception("error getting connectivity block");
+    throw std::runtime_error("error getting connectivity block");
   }
 
   int numRowIDs = cblock->getRowPattern()->getNumIDs();
@@ -448,7 +447,7 @@ void InputFileReader::readNonsymmCoefficients(FEI_ISTREAM* instr)
   int errcode = matrix->sumIn(blockID, connID,
 			      &coefs_2d[0]);
   if (errcode != 0) {
-    throw fei::Exception("err in matrix->sumIn(non-symm)");
+    throw std::runtime_error("err in matrix->sumIn(non-symm)");
   }
 }
 
@@ -470,7 +469,7 @@ void InputFileReader::readSymmConnectivity(FEI_ISTREAM* instr)
 
   int errcode = mgraph->initConnectivity(blockID, elemID, &nodeIDs[0]);
   if (errcode != 0) {
-    throw fei::Exception("err in mgraph->initConnectivity");
+    throw std::runtime_error("err in mgraph->initConnectivity");
   }
 }
 
@@ -520,7 +519,7 @@ void InputFileReader::readSlaveConstraint(FEI_ISTREAM* instr)
 					    0, slaveFieldOffset,
 					    &weights[0], rhsValue);
   if (errcode != 0) {
-    throw fei::Exception("err in mgraph->initSlaveConstraint");
+    throw std::runtime_error("err in mgraph->initSlaveConstraint");
   }
 }
 
@@ -558,7 +557,7 @@ void InputFileReader::readLagrangeConstraint(FEI_ISTREAM* instr)
 
   std::map<int,ConstraintType*>::iterator iter = lagrangeConstraints_.find(crID_);
   if (iter != lagrangeConstraints_.end()) {
-    throw fei::Exception("error, duplicate constraint");
+    throw std::runtime_error("error, duplicate constraint");
   }
 
   ConstraintType* newconstraint = 
@@ -576,7 +575,7 @@ void InputFileReader::readLagrangeConstraint(FEI_ISTREAM* instr)
   ++crID_;
 
   if (errcode != 0) {
-    throw fei::Exception("err in mgraph->initLagrangeConstraint");
+    throw std::runtime_error("err in mgraph->initLagrangeConstraint");
   }
 }
 
@@ -608,7 +607,7 @@ void InputFileReader::readElemStiffness(FEI_ISTREAM* instr)
 
   int errcode = matrix->sumIn(blockID, elemID, &coefs_2d[0]);
   if (errcode != 0) {
-    throw fei::Exception("err in matrix->sumIn");
+    throw std::runtime_error("err in matrix->sumIn");
   }
 }
 
@@ -637,7 +636,7 @@ void InputFileReader::readElemLoad(FEI_ISTREAM* instr)
                                  numIndices);
   int errcode = rhs->sumIn(numIndices, &indices[0], &coefs[0], 0);
   if (errcode != 0) {
-    throw fei::Exception("err in rhs->sumIn");
+    throw std::runtime_error("err in rhs->sumIn");
   }
 }
 
@@ -679,7 +678,7 @@ loadLagrangeConstraints(fei::SharedPtr<fei::LinearSystem> linsys)
 
     int errcode = linsys->loadLagrangeConstraint(crID, &weights[0], rhsValue);
     if (errcode != 0) {
-      throw fei::Exception("error in linsys->loadLagrangeConstraint");
+      throw std::runtime_error("error in linsys->loadLagrangeConstraint");
     }
   }
 }
@@ -741,7 +740,7 @@ void InputFileReader::save_soln(int idType, const char* fileName)
   FEI_COUT << "save_soln opening '"<<fileName<<"'"<<FEI_ENDL;
   FEI_OFSTREAM outfile(fileName);
   if (!outfile || outfile.bad()) {
-    throw fei::Exception("InputFileReader::save_soln ERROR opening outfile.");
+    throw std::runtime_error("InputFileReader::save_soln ERROR opening outfile.");
   }
 
   fei::SharedPtr<fei::VectorSpace> vspace = getRowSpace();
@@ -749,7 +748,7 @@ void InputFileReader::save_soln(int idType, const char* fileName)
   std::vector<int> ids(numIDs);
   int errcode = vspace->getOwnedAndSharedIDs(idType, numIDs, &ids[0], numIDs);
   if (errcode != 0) {
-    throw fei::Exception("error in getLocalIDs");
+    throw std::runtime_error("error in getLocalIDs");
   }
 
   fei::SharedPtr<fei::LinearSystem> linsys = getLinearSystem();
@@ -772,7 +771,7 @@ void InputFileReader::save_soln(int idType, const char* fileName)
       coefs.resize(fieldSize);
       errcode = x->copyOutFieldData(fields[j], idType, 1, &ids[i], &coefs[0]);
       if (errcode != 0) {
-	throw fei::Exception("error in copyOutFieldData");
+	throw std::runtime_error("error in copyOutFieldData");
       }
 
       for(int k=0; k<fieldSize; ++k) {

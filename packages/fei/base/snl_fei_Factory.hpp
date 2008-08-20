@@ -14,7 +14,7 @@
 #include <fei_VectorSpace.hpp>
 #include <snl_fei_Broker_FEData.hpp>
 #include <snl_fei_Broker_LinSysCore.hpp>
-#include <snl_fei_Solver.hpp>
+#include <fei_Solver.hpp>
 #include <fei_LinearSystemCore.hpp>
 #include <fei_LibraryWrapper.hpp>
 #include <fei_utils.hpp>

@@ -14,7 +14,7 @@
 #include "fei_defs.h"
 #include "feiArray.hpp"
 #include "fei_NodeDescriptor.hpp"
-#include "feiPoolAllocator.hpp"
+#include "fei_Pool_alloc.hpp"
 #include "fei_mpi.h"
 
 #include <map>
@@ -232,7 +232,7 @@ class NodeDatabase {
   int firstLocalNodeNumber_, lastLocalNodeNumber_;
   feiArray<GlobalID> temp_;
 
-  feiPoolAllocator<NodeDescriptor> nodePool_;
+  fei_Pool_alloc<NodeDescriptor> nodePool_;
 };
 
 #endif

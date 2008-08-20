@@ -11,7 +11,6 @@
 
 #include "fei_macros.hpp"
 #include "fei_mpi.h"
-#include "fei_Exception.hpp"
 #include "fei_CommCore.hpp"
 #include "fei_ctg_set.hpp"
 #include "snl_fei_RaggedTable.hpp"

@@ -21,8 +21,6 @@
 
 #include <fei_DirichletBCRecord.hpp>
 #include <fei_DirichletBCManager.hpp>
-#include <fei_BCRecord.hpp>
-#include <fei_BCManager.hpp>
 #include <fei_EqnBuffer.hpp>
 #include <fei_FEDataFilter.hpp>
 
@@ -39,7 +37,6 @@ snl_fei::LinearSystem_FEData::LinearSystem_FEData(fei::SharedPtr<FiniteElementDa
     feData_(feData),
     matrixGraph_(matrixGraph),
     dbcManager_(NULL),
-    bcManager_(NULL),
     lookup_(NULL)
 {
   commUtilsInt_ = matrixGraph->getRowSpace()->getCommUtils();
@@ -51,34 +48,10 @@ snl_fei::LinearSystem_FEData::LinearSystem_FEData(fei::SharedPtr<FiniteElementDa
 //----------------------------------------------------------------------------
 snl_fei::LinearSystem_FEData::~LinearSystem_FEData()
 {
-  delete bcManager_;
+  delete dbcManager_;
   for(unsigned i=0; i<attributeNames_.size(); ++i) {
     delete [] attributeNames_[i];
   }
-}
-
-//----------------------------------------------------------------------------
-int snl_fei::LinearSystem_FEData::loadEssentialBCs(int numIDs,
-			 const int* IDs,
-			 int idType,
-			 int fieldID,
-			 int fieldSize,
-			 const double *const *gammaValues,
-			 const double *const *alphaValues)
-{
-  if (bcManager_ == NULL) {
-    bcManager_ = new BCManager;
-  }
-
-  try {
-  bcManager_->addBCRecords(idType, numIDs, IDs, fieldID, fieldSize,
-				  gammaValues, alphaValues);
-  }
-  catch(fei::Exception& exc) {
-    FEI_CERR << exc.what()<<FEI_ENDL;
-    return(-1);
-  }
-  return(0);
 }
 
 //----------------------------------------------------------------------------
@@ -89,7 +62,7 @@ int snl_fei::LinearSystem_FEData::loadEssentialBCs(int numIDs,
                          int offsetIntoField,
                          const double* prescribedValues)
 {
-  if (bcManager_ == NULL) {
+  if (dbcManager_ == NULL) {
     dbcManager_ = new fei::DirichletBCManager;
   }
 
@@ -97,7 +70,7 @@ int snl_fei::LinearSystem_FEData::loadEssentialBCs(int numIDs,
     dbcManager_->addBCRecords(numIDs, idType, fieldID, offsetIntoField,
                               IDs, prescribedValues);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what()<<FEI_ENDL;
     return(-1);
   }
@@ -112,7 +85,7 @@ int snl_fei::LinearSystem_FEData::loadEssentialBCs(int numIDs,
                          const int* offsetsIntoField,
                          const double* prescribedValues)
 {
-  if (bcManager_ == NULL) {
+  if (dbcManager_ == NULL) {
     dbcManager_ = new fei::DirichletBCManager;
   }
 
@@ -120,7 +93,7 @@ int snl_fei::LinearSystem_FEData::loadEssentialBCs(int numIDs,
     dbcManager_->addBCRecords(numIDs, idType, fieldID, IDs, offsetsIntoField,
                               prescribedValues);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what()<<FEI_ENDL;
     return(-1);
   }
@@ -151,8 +124,8 @@ void snl_fei::LinearSystem_FEData::getConstrainedEqns(std::vector<int>& crEqns) 
 int snl_fei::LinearSystem_FEData::loadComplete(bool applyBCs,
                                                bool globalAssemble)
 {
-  if (bcManager_ == NULL) {
-    bcManager_ = new BCManager;
+  if (dbcManager_ == NULL) {
+    dbcManager_ = new fei::DirichletBCManager;
   }
 
   int err = 0;
@@ -190,56 +163,42 @@ int snl_fei::LinearSystem_FEData::setBCValuesOnVector(fei::Vector* vector)
 //----------------------------------------------------------------------------
 int snl_fei::LinearSystem_FEData::implementBCs(bool applyBCs)
 {
-  feiArray<int> essEqns(0, 512);
-  feiArray<double> essAlpha(0, 512), essGamma(0, 512);
-
-  feiArray<int> otherEqns(0, 512);
-  feiArray<double> otherAlpha(0, 512), otherBeta(0, 512), otherGamma(0, 512);
+  std::vector<int> essEqns;
+  std::vector<double> essGamma;
 
   fei::SharedPtr<SSMat> localBCeqns(new SSMat);
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph_->getRowSpace();
   int localsize = vecSpace->getNumIndices_Owned();
   fei::Matrix_Impl<SSMat> bcEqns(localBCeqns, matrixGraph_, localsize);
 
-  CHK_ERR( bcManager_->finalizeBCEqns(bcEqns) );
+  CHK_ERR( dbcManager_->finalizeBCEqns(bcEqns) );
 
   std::vector<SSMat*>& remote = bcEqns.getRemotelyOwnedMatrix();
   for(unsigned p=0; p<remote.size(); ++p) {
-  CHK_ERR( snl_fei::separateBCEqns( *(remote[p]),
-				    essEqns, essAlpha, essGamma,
-				    otherEqns, otherAlpha, otherBeta, otherGamma) );
+    CHK_ERR( snl_fei::separateBCEqns( *(remote[p]), essEqns, essGamma) );
   }
 
   CHK_ERR( bcEqns.gatherFromOverlap() );
 
-  CHK_ERR( snl_fei::separateBCEqns( *(bcEqns.getMatrix()),
-				    essEqns, essAlpha, essGamma,
-				    otherEqns, otherAlpha, otherBeta, otherGamma) );
+  CHK_ERR( snl_fei::separateBCEqns( *(bcEqns.getMatrix()), essEqns, essGamma) );
 
-  int len = essEqns.length();
+  int len = essEqns.size();
   essEqns.resize(len*3);
 
-  int* essEqnsPtr = essEqns.dataPtr();
-  double* gammaPtr = essGamma.dataPtr();
-  double* alphaPtr = essAlpha.dataPtr();
+  if (len > 0) {
+    int* essEqnsPtr = &essEqns[0];
+    double* gammaPtr = &essGamma[0];
 
-  for(int i=0; i<len; ++i) {
-    int eqn = essEqnsPtr[i];
-    essEqnsPtr[i+len] = lookup_->getAssociatedNodeNumber(eqn);
-    essEqnsPtr[i+2*len]=lookup_->getOffsetIntoBlkEqn(essEqnsPtr[i+len], eqn);
-    double value = gammaPtr[i]/alphaPtr[i];
-    gammaPtr[i] = value;
-  }
+    for(int i=0; i<len; ++i) {
+      int eqn = essEqnsPtr[i];
+      essEqnsPtr[i+len] = lookup_->getAssociatedNodeNumber(eqn);
+      essEqnsPtr[i+2*len]=lookup_->getOffsetIntoBlkEqn(essEqnsPtr[i+len], eqn);
+    }
 
-  if (essEqns.length() > 0 && applyBCs) {
-    CHK_ERR( feData_->setDirichletBCs(len,
-				      essEqnsPtr+len,
-				      essEqnsPtr+len*2,
-				      gammaPtr) );
-  }
-
-  if (otherEqns.length() > 0) {
-    ERReturn(-1);
+    if (applyBCs) {
+      CHK_ERR( feData_->setDirichletBCs(len, essEqnsPtr+len, essEqnsPtr+len*2,
+                                        gammaPtr) );
+    }
   }
 
   return(0);

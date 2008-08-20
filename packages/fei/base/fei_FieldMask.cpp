@@ -72,13 +72,13 @@ void fei::FieldMask::getFieldEqnOffset(int fieldID,
     }
 
     if (fieldIDs_[0] != fieldID) {
-      throw fei::Exception("fei::FieldMask::getFieldEqnOffset: fieldID not found");
+      throw std::runtime_error("fei::FieldMask::getFieldEqnOffset: fieldID not found");
     }
   }
   else idindex = snl_fei::binarySearch(fieldID, &fieldIDs_[0], fieldIDs_.size());
 
   if (idindex < 0) {
-     throw fei::Exception("fei::FieldMask::getFieldEqnOffset: fieldID not found");
+     throw std::runtime_error("fei::FieldMask::getFieldEqnOffset: fieldID not found");
   }
 
   offset = fieldEqnOffsets_[idindex];
@@ -88,7 +88,7 @@ void fei::FieldMask::getFieldEqnOffset(int fieldID,
 void fei::FieldMask::addField(int fieldID, int fieldSize, int numInstances)
 {
   if (fieldID < 0) {
-    throw fei::Exception("fei::FieldMask ERROR, fieldID should be >= 0.");
+    throw std::runtime_error("fei::FieldMask ERROR, fieldID should be >= 0.");
   }
 
   int insertPoint = -1;

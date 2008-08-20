@@ -155,7 +155,7 @@ void read_file_lines_into_strings(const char* filename,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei_test_utils::read_file_lines_into_strings ERROR, couldn't open file '"
          << filename << "'";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   file_contents.clear();
@@ -183,7 +183,7 @@ int get_filename_and_read_input(int argc, char** argv,
   try {
     read_input_file(filename.c_str(), comm, stdstrings);
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
     ERReturn(-1);
   }
@@ -251,7 +251,7 @@ double get_file_benchmark(const char* filename,
 					  file_contents,
 					  file_benchmark);
   if (err2 != 0) {
-    throw fei::Exception("fei_test_utils::get_file_benchmark failed to find named benchmark");
+    throw std::runtime_error("fei_test_utils::get_file_benchmark failed to find named benchmark");
   }
 
   return(file_benchmark);
@@ -329,7 +329,7 @@ int compare_with_file_benchmark(const char* name,
   try {
     file_benchmark = get_file_benchmark(filename, testname.str().c_str());
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     file_benchmark_available = false;
   }
 

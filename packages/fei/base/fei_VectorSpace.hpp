@@ -518,7 +518,7 @@ namespace fei {
     bool isLocallyOwned(int idType, int ID);
 
     /** Request the field-size for a specified field-identifier. If the specified
-	field-identifier is not found, fei::Exception is thrown.
+	field-identifier is not found, std::runtime_error is thrown.
 	@param fieldID Input. Specified field-identifier
     */
     unsigned getFieldSize(int fieldID);

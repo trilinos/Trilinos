@@ -10,6 +10,8 @@
 #include <fei_sstream.hpp>
 #include <fei_DirichletBCManager.hpp>
 #include <fei_DirichletBCRecord.hpp>
+#include <fei_NodeDatabase.hpp>
+#include <fei_EqnBuffer.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_Matrix.hpp>
@@ -104,7 +106,7 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
     try {
       CHK_ERR(vecSpace.getGlobalIndex(dbc.IDType, dbc.ID, dbc.fieldID, eqn));
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       FEI_OSTRINGSTREAM osstr;
       osstr << "fei::DirichletBCManager::finalizeBCEqns caught exception: "
         << exc.what() << " BC IDType="<<dbc.IDType<<", ID="<<dbc.ID
@@ -120,7 +122,7 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
           FEI_OSTRINGSTREAM osstr;
           osstr << "fei BCManager::finalizeBCeqns ERROR, eqn="<<eqn
             << " is both a BC eqn and slave-constraint eqn.";
-          throw fei::Exception(osstr.str());
+          throw std::runtime_error(osstr.str());
         }
         continue;
       }
@@ -135,10 +137,45 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
   return(0);
 }
 
+int
+DirichletBCManager::finalizeBCEqns(NodeDatabase& nodeDB,
+                                   EqnBuffer& bcEqns)
+{
+  //copy the boundary-condition prescribed values into bcEqns.
+  int col = 0;
+  double coef = 0.0;
+
+  for(unsigned i=0; i<bcs_.size(); ++i) {
+    DirichletBCRecord& dbc = bcs_[i];
+    NodeDescriptor* node = NULL;
+    nodeDB.getNodeWithID(dbc.ID, node);
+    int fieldID = dbc.fieldID;
+
+    int eqn = 0;
+    if (!node->getFieldEqnNumber(fieldID, eqn)) {
+      ERReturn(-1);
+    }
+
+    eqn += dbc.whichComponent;
+    coef = dbc.prescribedValue;
+
+    CHK_ERR( bcEqns.addEqn(eqn, &coef, &col, 1, false) );
+  }
+
+  bcs_.clear();
+  return(0);
+}
+
 unsigned
 DirichletBCManager::getNumBCRecords() const
 {
   return bcs_.size();
+}
+
+void
+DirichletBCManager::clearAllBCs()
+{
+  bcs_.clear();
 }
 
 }//namespace fei

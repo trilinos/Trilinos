@@ -82,6 +82,8 @@
 //available. Then, we'll attempt to use the .h version of the header.
 //
 
+#include <stdexcept>
+
 #ifdef HAVE_NO_IOMANIP
 #define FEI_HAVE_IOMANIP_H
 //allows #include <iomanip.h>

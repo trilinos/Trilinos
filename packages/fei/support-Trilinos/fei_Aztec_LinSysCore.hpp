@@ -155,14 +155,6 @@ class Aztec_LinSysCore: public LinearSystemCore {
                                int** blkColInds, int** blkColOffsets,
                                int* blkColLens, double** remEssBCCoefs);
 
-   int enforceOtherBC(int* globalEqn, double* alpha,
-                       double* beta, double* gamma,
-                       int len);
-
-   int enforceBlkOtherBC(int* blkEqn, int* blkOffset,
-                          double* alpha, double* beta,
-                          double* gamma, int len);
-
    //functions for getting/setting matrix or vector pointers.
 
    //getMatrixPtr:

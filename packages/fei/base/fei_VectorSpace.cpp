@@ -353,7 +353,7 @@ int fei::VectorSpace::initSolutionEntries(int fieldID,
     osstr << "fei::VectorSpace::initSolutionEntries: error, idType " << idType
 	  << " not recognized. (idTypes need to be initialized via the"
 	  << " method VectorSpace::defineIDTypes)";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   unsigned fieldSize = getFieldSize(fieldID);
@@ -468,7 +468,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
 	ERReturn(-1);
       }
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       CHK_ERR( initSolutionEntries(idType, 1, &(sharedIDs[i])) );
     }
   }
@@ -518,7 +518,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
 	ERReturn(-1);
       }
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       CHK_ERR( initSolutionEntries(idType, 1, &(sharedIDs[i])) );
     }
   }
@@ -657,7 +657,7 @@ int fei::VectorSpace::getGlobalIndex(int idType,
 							 whichComponentOfField,
 							 &eqnNumbers_[0]);
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "VectorSpace::getGlobalIndex caught exception: " << exc.what();
     FEI_CERR << osstr.str()<<FEI_ENDL;
@@ -717,7 +717,7 @@ int fei::VectorSpace::getGlobalIndices(int numIDs,
         }
       }
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       for(unsigned j=0; j<fieldSize; ++j) {
 	globalIndices[offset+j] = -1;
       }
@@ -1038,7 +1038,7 @@ bool fei::VectorSpace::isLocal(int idType, int ID)
       return(false);
     }
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     return(false);
   }
 
@@ -1058,7 +1058,7 @@ bool fei::VectorSpace::isLocallyOwned(int idType, int ID)
       return(true);
     }
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     return(false);
   }
 
@@ -1078,7 +1078,7 @@ unsigned fei::VectorSpace::getFieldSize(int fieldID)
       osstr << "(name: "<<name_<<")";
     }
     osstr << "::getFieldSize: fieldID " << fieldID << " not found.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   return((*f_iter).second);

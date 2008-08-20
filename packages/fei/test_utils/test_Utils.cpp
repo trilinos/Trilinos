@@ -15,10 +15,8 @@
 #include <fei_utils.hpp>
 #include <fei_CommUtilsBase.hpp>
 #include <snl_fei_Utils.hpp>
-#include <fei_BCRecord.hpp>
 #include <fei_Param.hpp>
 #include <fei_ParameterSet.hpp>
-#include <fei_Exception.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_SSVec.hpp>
 #include <fei_SSMat.hpp>
@@ -63,7 +61,7 @@ void test_Utils_packSSMat()
   }
 
   if (mat0 != mat01) {
-    throw fei::Exception("snl_fei::packSSMat test failed assembling mat...");
+    throw std::runtime_error("snl_fei::packSSMat test failed assembling mat...");
   }
 
   std::vector<int> intdata0;
@@ -72,14 +70,14 @@ void test_Utils_packSSMat()
   snl_fei::packSSMat(mat0, intdata0, doubledata0);
 
   if (nnz != doubledata0.size()) {
-    throw fei::Exception("snl_fei::packSSMat test failed");
+    throw std::runtime_error("snl_fei::packSSMat test failed");
   }
 
   SSMat mat1;
   snl_fei::unpackIntoSSMat(intdata0, doubledata0, mat1);
 
   if (mat1.getRowNumbers() != mat0.getRowNumbers()) {
-    throw fei::Exception("snl_fei::packSSMat test failed");
+    throw std::runtime_error("snl_fei::packSSMat test failed");
   }
 
   std::vector<int> intdata1;
@@ -87,7 +85,7 @@ void test_Utils_packSSMat()
   snl_fei::packSSMat(mat1, intdata1, doubledata1);
 
   if (intdata1 != intdata0 || doubledata1 != doubledata0) {
-    throw fei::Exception("snl_fei::packSSMat test failed");
+    throw std::runtime_error("snl_fei::packSSMat test failed");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -122,11 +120,11 @@ void test_Utils_globalUnionVec()
   snl_fei::globalUnion(commUtilsBase.getCommunicator(), localvec, globalvec);
 
   if (globalvec.indices() != globalvec0.indices()) {
-    throw fei::Exception("globalUnion vec int test failed");
+    throw std::runtime_error("globalUnion vec int test failed");
   }
 
   if (globalvec.coefs() != globalvec0.coefs()) {
-    throw fei::Exception("globalUnion vec double test failed");
+    throw std::runtime_error("globalUnion vec double test failed");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -174,11 +172,11 @@ void test_Utils_globalUnionMat()
   snl_fei::packSSMat(globalmat0, intdata0, doubledata0);
 
   if (intdata0 != intdata) {
-    throw fei::Exception("globalUnion test (int) failed");
+    throw std::runtime_error("globalUnion test (int) failed");
   }
 
   if (doubledata0 != doubledata) {
-    throw fei::Exception("globalUnion test (double) failed");
+    throw std::runtime_error("globalUnion test (double) failed");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -197,7 +195,7 @@ void test_Utils_removeCouplings()
 
   int levels = snl_fei::removeCouplings(mat);
   if (levels < 1) {
-    throw fei::Exception("removeCouplings test failed");
+    throw std::runtime_error("removeCouplings test failed");
   }
 
   //after remove-couplings, the matrix-row for 8 should have
@@ -205,23 +203,23 @@ void test_Utils_removeCouplings()
   //coefficients should be 0.25 and 0.75.
   SSVec* matrow = mat.getRow(8);
   if (matrow==NULL) {
-    throw fei::Exception("error getting matrix row 8");
+    throw std::runtime_error("error getting matrix row 8");
   }
 
   if (matrow->length() != 2) {
-    throw fei::Exception("matrow 8 has wrong length");
+    throw std::runtime_error("matrow 8 has wrong length");
   }
 
   feiArray<int>& indices = matrow->indices();
   feiArray<double>& coefs = matrow->coefs();
   if (indices[0] != 0 || indices[1] != 10 ||
       std::abs(coefs[0] -0.25) > 1.e-49 || std::abs(coefs[1] -0.75) > 1.e-49) {
-    throw fei::Exception("matrow 8 has wrong contents after removeCouplings");
+    throw std::runtime_error("matrow 8 has wrong contents after removeCouplings");
   }
 
   levels = snl_fei::removeCouplings(mat);
   if (levels > 0) {
-    throw fei::Exception("removeCouplings test2 failed");
+    throw std::runtime_error("removeCouplings test2 failed");
   }
 
   SSMat D;
@@ -247,7 +245,7 @@ void test_Utils_feiArray()
   feiArray<int> array;
   array.reAllocate(1000);
   if (array.allocatedLength() != 1000) {
-    throw fei::Exception("feiArray::reAllocate test failed.");
+    throw std::runtime_error("feiArray::reAllocate test failed.");
   }
   array.reAllocate(0);
   feiArray<int> array2;
@@ -261,27 +259,27 @@ void test_Utils_feiArray()
   }
 
   if (array.length() != 3*len-1) {
-    throw fei::Exception("feiArray::insert test failed.");
+    throw std::runtime_error("feiArray::insert test failed.");
   }
 
   if (array[0] != -(len-1)) {
-    throw fei::Exception("feiArray::insert test 2 failed.");
+    throw std::runtime_error("feiArray::insert test 2 failed.");
   }
 
   if (array[array.length()-1] != 2*len-1) {
-    throw fei::Exception("feiArray::insert test 3 failed.");
+    throw std::runtime_error("feiArray::insert test 3 failed.");
   }
 
   feiArray<int> arrayView;
   arrayView.setInternalData(array.length(), array.length(),
                                      array.dataPtr());
   if (arrayView != array) {
-    throw fei::Exception("feiArray::setInternalData test failed.");
+    throw std::runtime_error("feiArray::setInternalData test failed.");
   }
 
   int find_index = array.find(-999);
   if (find_index >= 0) {
-    throw fei::Exception("feiArray::find test failed.");
+    throw std::runtime_error("feiArray::find test failed.");
   }
   FEI_COUT << "ok"<<FEI_ENDL;
 }
@@ -303,43 +301,43 @@ void test_Utils_binarySearch()
   offset = snl_fei::binarySearch(0, intarray.dataPtr(), intarray.length(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 0) {
-    throw fei::Exception("snl_fei::binarySearch test failed 1.");
+    throw std::runtime_error("snl_fei::binarySearch test failed 1.");
   }
 
   offset = snl_fei::binarySearch(2, intarray.dataPtr(), intarray.length(),
 				 insertPoint);
   if (offset != 1) {
-    throw fei::Exception("snl_fei::binarySearch test failed 2.");
+    throw std::runtime_error("snl_fei::binarySearch test failed 2.");
   }
 
   offset = snl_fei::binarySearch(3, intarray.dataPtr(), intarray.length(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 2) {
-    throw fei::Exception("snl_fei::binarySearch test failed 3.");
+    throw std::runtime_error("snl_fei::binarySearch test failed 3.");
   }
 
   offset = snl_fei::binarySearch(4, intarray.dataPtr(), intarray.length(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 2) {
-    throw fei::Exception("snl_fei::binarySearch test failed 4.");
+    throw std::runtime_error("snl_fei::binarySearch test failed 4.");
   }
 
   offset = snl_fei::binarySearch(9, intarray.dataPtr(), intarray.length(),
 				 insertPoint);
   if (offset != 4) {
-    throw fei::Exception("snl_fei::binarySearch test failed 5.");
+    throw std::runtime_error("snl_fei::binarySearch test failed 5.");
   }
 
   offset = snl_fei::binarySearch(8, intarray.dataPtr(), intarray.length(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 4) {
-    throw fei::Exception("snl_fei::binarySearch test failed 6.");
+    throw std::runtime_error("snl_fei::binarySearch test failed 6.");
   }
 
   offset = snl_fei::binarySearch(10, intarray.dataPtr(), intarray.length(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 5) {
-    throw fei::Exception("snl_fei::binarySearch test failed 7.");
+    throw std::runtime_error("snl_fei::binarySearch test failed 7.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
@@ -353,7 +351,6 @@ int test_Utils::runtests()
     test_Utils_packSSMat();
     test_Utils_removeCouplings();
 
-    CHK_ERR( serialtest0() );
     CHK_ERR( serialtest1() );
     CHK_ERR( serialtest2() );
     CHK_ERR( serialtest3() );
@@ -366,88 +363,6 @@ int test_Utils::runtests()
   CHK_ERR( test2() );
   CHK_ERR( test3() );
   CHK_ERR( test4() );
-  return(0);
-}
-
-int test_Utils::serialtest0()
-{
-  FEI_COUT << "testing snl_fei::binarySearchPtr...";
-  int n = 10;
-  feiArray<const BCRecord*> bclist(0, n);
-
-  feiArray<double> coefs(3);
-  coefs = 1;
-
-  int fieldID = 1;
-  int fieldSize = 3;
-
-  BCRecord* bc0 = new BCRecord;
-  bc0->init(4, fieldID, fieldSize, coefs.dataPtr());
-
-  int insertPoint = -1;
-  int index = snl_fei::binarySearchPtr(bc0,
-				    bclist.dataPtr(), bclist.length(),
-				    insertPoint);
-
-  if (index != -1 || insertPoint != 0) {
-    ERReturn(-1);
-  }
-
-  bclist.insert(bc0, insertPoint);
-
-  BCRecord* bc1 = new BCRecord;
-  bc1->init(6, fieldID, fieldSize, coefs.dataPtr());
-
-  index = snl_fei::binarySearchPtr(bc1,
-				bclist.dataPtr(), bclist.length(),
-				insertPoint);
-
-  if (index != -1 || insertPoint != 1) {
-    ERReturn(-1);
-  }
-
-  bclist.insert(bc1, insertPoint);
-
-  BCRecord* bc2 = new BCRecord;
-  bc1->init(2, fieldID, fieldSize, coefs.dataPtr());
-
-  index = snl_fei::binarySearchPtr(bc2,
-				bclist.dataPtr(), bclist.length(),
-				insertPoint);
-
-  if (index != -1 || insertPoint != 0) {
-    ERReturn(-1);
-  }
-
-  bclist.insert(bc2, insertPoint);
-
-  index = snl_fei::binarySearchPtr(bc0,
-				bclist.dataPtr(), bclist.length(),
-				insertPoint);
-
-  if (index != 1) {
-    ERReturn(-1);
-  }
-
-  fieldID = 0;
-  BCRecord* bc3 = new BCRecord;
-  bc3->init(4, fieldID, fieldSize, coefs.dataPtr());
-
-  index = snl_fei::binarySearchPtr(bc3,
-				bclist.dataPtr(), bclist.length(),
-				insertPoint);
-
-  if (index != -1 || insertPoint != 1) {
-    ERReturn(-1);
-  }
-
-  delete bc0;
-  delete bc1;
-  delete bc2;
-  delete bc3;
-
-  FEI_COUT << "ok"<<FEI_ENDL;
-
   return(0);
 }
 
@@ -624,19 +539,19 @@ int test_Utils::serialtest3()
 
 void test_Utils_function_that_throws()
 {
-  throw fei::Exception("testing...");
+  throw std::runtime_error("testing...");
 }
 
 int test_Utils::test1()
 {
-  FEI_COUT << "testing fei::Exception...";
+  FEI_COUT << "testing std::runtime_error...";
 
   bool exc_thrown_and_caught = false;
 
   try {
     test_Utils_function_that_throws();
   }
-  catch(fei::Exception& exc) {
+  catch(std::runtime_error& exc) {
     std::string str(exc.what());
     if (str == "testing...") {
       exc_thrown_and_caught = true;
@@ -733,7 +648,7 @@ int test_Utils::test3()
 
   for(i=0; i<len1; ++i) {
     if (std::abs(cc1[i] - cc2[i]) > 1.e-49) {
-      throw fei::Exception("column-contig arrays not equal.");
+      throw std::runtime_error("column-contig arrays not equal.");
     }
   }
 
@@ -769,7 +684,7 @@ int test_Utils::test3()
 
   for(i=0; i<len1; ++i) {
     if (std::abs(1.0*i - cc1[i]) > 1.e-49) {
-      throw fei::Exception("copy2DBlockDiagToColumnContig row test failed.");
+      throw std::runtime_error("copy2DBlockDiagToColumnContig row test failed.");
     }
   }
 

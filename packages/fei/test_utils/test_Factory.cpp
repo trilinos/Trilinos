@@ -97,7 +97,7 @@ void test_Factory::factory_test1(fei::SharedPtr<fei::Factory> factory)
 
   if (vecspace.get() == 0) {
     FEI_COUT << "no"<<FEI_ENDL;
-    throw fei::Exception("factory failed to create a fei::VectorSpace");
+    throw std::runtime_error("factory failed to create a fei::VectorSpace");
   }
 
   //do an extremely simple test to make sure the vector-space
@@ -108,11 +108,11 @@ void test_Factory::factory_test1(fei::SharedPtr<fei::Factory> factory)
 
   if (vecspace->getNumFields() != 1) {
     FEI_COUT << "no"<<FEI_ENDL;
-    throw fei::Exception("vecspace->defineFields/getNumFields failed.");
+    throw std::runtime_error("vecspace->defineFields/getNumFields failed.");
   }
   if (vecspace->getNumPartitions() != numProcs_) {
     FEI_COUT << "no"<<FEI_ENDL;
-    throw fei::Exception("vecspace->getNumPartitions() failed.");
+    throw std::runtime_error("vecspace->getNumPartitions() failed.");
   }
 
   if (localProc_==0) FEI_COUT << "ok"<<FEI_ENDL;
@@ -126,14 +126,14 @@ void test_Factory::factory_test1(fei::SharedPtr<fei::Factory> factory)
   int err = fei->initFields(1, &fieldSize, &fieldID);
   if (err != 0) {
     FEI_COUT << "failed"<<FEI_ENDL;
-    throw fei::Exception("fei->initFields() failed.");
+    throw std::runtime_error("fei->initFields() failed.");
   }
 
   int testFieldSize = -1;
   err = fei->getFieldSize(fieldID, testFieldSize);
   if (err != 0 || testFieldSize != fieldSize) {
     FEI_COUT << "failed"<<FEI_ENDL;
-    throw fei::Exception("fei->getFieldSize() failed.");
+    throw std::runtime_error("fei->getFieldSize() failed.");
   }
 
   if (localProc_==0) FEI_COUT << "ok"<<FEI_ENDL;

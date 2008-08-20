@@ -7,7 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_FillableVec.hpp"
-#include "fei_Exception.hpp"
 
 namespace fei {
 
@@ -69,7 +68,7 @@ FillableVec::getEntry(int index) const
 {
   feipoolmap::const_iterator iter = vecdata_.find(index);
   if (iter == vecdata_.end()) {
-    throw fei::Exception("FillableVec::getEntry: index not found.");
+    throw std::runtime_error("FillableVec::getEntry: index not found.");
   }
 
   return iter->second;

@@ -51,7 +51,7 @@ int test_Tables::test1()
   snl_fei::RaggedTable<std::map<int,fei::ctg_set<int>*>,fei::ctg_set<int> > ordTable(0,1);
   snl_fei::RaggedTable<std::map<int,fei::ctg_set<int>*>,fei::ctg_set<int> > ordTable2(0,1);
 
-  feiArray<int> keys(len), values(len);
+  std::vector<int> keys(len), values(len);
   int i;
   for(i=0; i<len; ++i) {
     keys[i] = i;
@@ -60,12 +60,11 @@ int test_Tables::test1()
     ordTable.addIndices(i, 1, &i);
   }
 
-  keys.append(len);
-  values.append(len);
+  keys.push_back(len);
+  values.push_back(len);
   ++len;
 
-  ordTable.addIndices(len, keys.dataPtr(),
-			       len, values.dataPtr() );
+  ordTable.addIndices(len, &keys[0], len, &values[0] );
 
   bool same = ordTable.equal(ordTable2, true);
   if (same) {
@@ -81,8 +80,7 @@ int test_Tables::test1()
 
   same = ordTable.equal(ordTable2, true);
 
-  ordTable2.addIndices(len, keys.dataPtr(),
-			       len, values.dataPtr() );
+  ordTable2.addIndices(len, &keys[0], len, &values[0] );
 
   same = ordTable.equal(ordTable2, false);
   if (!same) {

@@ -56,7 +56,7 @@ static unsigned getFieldSize(int fieldID,
       fieldsize = space1->getFieldSize(fieldID);
       foundfield = true;
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       foundfield = false;
     }
   }
@@ -65,10 +65,10 @@ static unsigned getFieldSize(int fieldID,
     try {
       fieldsize = space2->getFieldSize(fieldID);
     }
-    catch (fei::Exception& exc) {
+    catch (std::runtime_error& exc) {
       std::string msg("snl_fei::getFieldSize: ");
       msg += exc.what();
-      throw fei::Exception(msg);
+      throw std::runtime_error(msg);
     }
   }
 
@@ -242,7 +242,7 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
         << " already used.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   fei::Pattern* pattern = new fei::Pattern(patternID, numIDs, idType);
@@ -263,7 +263,7 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
         << " already used.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   try {
@@ -275,10 +275,10 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
 
   patterns_.insert(std::pair<int,fei::Pattern*>(patternID, pattern));
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::definePattern caught error: "<<exc.what();
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 }
 
@@ -296,7 +296,7 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
         << " already used.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   try {
@@ -314,10 +314,10 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
 
   patterns_.insert(std::pair<int,fei::Pattern*>(patternID, pattern));
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::definePattern caught error: "<<exc.what();
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 }
 
@@ -335,7 +335,7 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
         << " already used.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   try {
@@ -353,10 +353,10 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
 
   patterns_.insert(std::pair<int,fei::Pattern*>(patternID, pattern));
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::definePattern caught error: "<<exc.what();
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 }
 
@@ -414,7 +414,7 @@ int fei::MatrixGraph_Impl2::initConnectivityBlock(int blockID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::initConnectivityBlock: blockID ("
 	  << blockID << ") must be non-negative." << FEI_ENDL;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   std::map<int,fei::Pattern*>::iterator
@@ -460,7 +460,7 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::initConnectivity ERROR, blockID " << blockID
 	  << " doesn't correspond to an existing ConnectivityBlock.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   fei::Pattern* pattern = connblk->getRowPattern();
@@ -587,7 +587,7 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::VectorSpace* vecSpace,
     try {
       records[i] = collection->getRecordWithID(IDs[i]);
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       CHK_ERR( vecSpace->initSolutionEntries(idType, 1, &(IDs[i])) );
       records[i] = collection->getRecordWithID(IDs[i]);
     }
@@ -611,7 +611,7 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::VectorSpace* vecSpace,
     try {
       records[i] = collection->getRecordWithID(IDs[i]);
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       CHK_ERR( vecSpace->initSolutionEntries(fieldID, 1, idType, 1, &(IDs[i])));
       records[i] = collection->getRecordWithID(IDs[i]);
     }
@@ -704,7 +704,7 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::initConnectivity ERROR, blockID " << blockID
 	  << " doesn't correspond to an existing ConnectivityBlock.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   fei::Pattern* pattern = connblk->getRowPattern();
@@ -973,7 +973,7 @@ bool fei::MatrixGraph_Impl2::hasSlaveDof(int ID, int idType)
   snl_fei::RecordCollection* collection = NULL;
   rowSpace_->getRecordCollection(idType, collection);
   if (collection == NULL) {
-    throw fei::Exception("fei::MatrixGraph_Impl2::hasSlaveDof: ERROR, unknown idType");
+    throw std::runtime_error("fei::MatrixGraph_Impl2::hasSlaveDof: ERROR, unknown idType");
   }
 
   fei::Record* rec = collection->getRecordWithID(ID);
@@ -982,7 +982,7 @@ bool fei::MatrixGraph_Impl2::hasSlaveDof(int ID, int idType)
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::hasSlaveDof: ERROR, specified ID ("
      << ID << ") not found.";
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   return( rec->hasSlaveDof() );
@@ -1042,7 +1042,7 @@ int fei::MatrixGraph_Impl2::initSlaveConstraint(int numIDs,
 	osstr << "fei::MatrixGraph_Impl2::initSlaveConstraint: slave ID "<<IDs[offsetOfSlave]
 	      << " is already constrained, with different connectivity. Changing the"
 	      << " the structure of an existing constraint is not allowed.";
-	throw fei::Exception(osstr.str());
+	throw std::runtime_error(osstr.str());
       }
       newSlaveData_ = true;
       delete constraint;
@@ -1251,7 +1251,7 @@ fei::MatrixGraph_Impl2::createGraph(bool blockEntryGraph,
 
   if (blockEntryGraph) {
     if (reducer_.get() != NULL) {
-      throw fei::Exception("fei::MatrixGraph_Impl2::createGraph ERROR, can't specify both block-entry assembly and slave-constraint reduction.");
+      throw std::runtime_error("fei::MatrixGraph_Impl2::createGraph ERROR, can't specify both block-entry assembly and slave-constraint reduction.");
     }
 
     if (rowSpace_->getGlobalBlkIndexOffsets(numProcs_+1, globalOffsets) != 0) {

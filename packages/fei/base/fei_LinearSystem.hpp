@@ -101,30 +101,6 @@ namespace fei {
     virtual int getAttribute(const char* name,
                              void*& attribute);
 
-    /** Essential boundary-condition function that's similar to the 'old'
-	FEI's boundary-condition-loading function. For each component of each
-	field, a gamma-value and an alpha-value is supplied. If alpha is
-	nonzero, then the boundary condition value is gamma/alpha. If alpha is
-	zero, then no boundary condition is applied for that component.
-
-	@param numIDs
-	@param IDs
-	@param idType
-	@param fieldID
-	@param fieldSize
-	@param gammaValues Input. C-style table of values, num-rows = numIDs,
-	num-cols = fieldSize.
-	@param alphaValues Input. C-style table of values, num-rows = numIDs,
-	num-cols = fieldSize.
-    */
-    virtual int loadEssentialBCs(int numIDs,
-				 const int* IDs,
-				 int idType,
-				 int fieldID,
-				 int fieldSize,
-				 const double *const *gammaValues,
-				 const double *const *alphaValues) = 0;
-
     /** Essential boundary-condition function that simply accepts a list
         of prescribed values, rather than the 'old' FEI's confusing approach
         of accepting arrays of alpha, beta and gamma values that nobody every

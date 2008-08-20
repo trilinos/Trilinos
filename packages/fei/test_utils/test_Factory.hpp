@@ -33,7 +33,7 @@
        try {
          factory_tester.factory_test1(factory);
        }
-       catch(fei::Exception& exc) {
+       catch(std::runtime_error& exc) {
          std::cout << "factory test failed, exception: " << exc.what()
                    <<std::endl;
        }

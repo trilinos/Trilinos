@@ -2,7 +2,6 @@
 #include "fei_macros.hpp"
 #include "fei_mpi.h"
 #include "fei_iostream.hpp"
-#include "fei_Exception.hpp"
 
 #include "fei_unit_test_runner.hpp"
 #include "fei_unit_register_tests.hpp"
@@ -44,7 +43,7 @@ int test_runner::run_tests(int numProcs, int localProc, MPI_Comm comm)
         FEI_COUT << "test FAILED" << FEI_ENDL;
       }
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       tests_failed = 1;
       FEI_COUT << "test failed with message: " << exc.what() << FEI_ENDL;
     }

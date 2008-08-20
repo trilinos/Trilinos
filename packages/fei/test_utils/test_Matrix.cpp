@@ -100,14 +100,14 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, initConnectivity returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = mgraph->initComplete();
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, initComplete returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   bool factory_created = false;
@@ -116,12 +116,12 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
     factory = fei::create_fei_Factory(comm, "HYPRE");
     factory_created = true;
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     try {
       factory = fei::create_fei_Factory(comm, "Trilinos");
       factory_created = true;
     }
-    catch(fei::Exception& exc) {}
+    catch(std::runtime_error& exc) {}
   }
 
   if (!factory_created) {
@@ -144,21 +144,21 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, feimat->sumIn returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = feimat->globalAssemble();
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, feimat->globalAssemble returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = feimat->writeToFile("feimat2.mtx", false);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, feimat->writeToFile returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   SSMat feimat_ss;
@@ -166,7 +166,7 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, copy_feiMatrix_to_SSMat returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   fei_test_utils::writeMatrix("feimat_ss2.mtx", feimat_ss);
@@ -212,14 +212,14 @@ void test_Matrix_unit3(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit3, initConnectivity returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = mgraph->initComplete();
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit3, initComplete returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   bool factory_created = false;
@@ -228,12 +228,12 @@ void test_Matrix_unit3(MPI_Comm comm, int numProcs, int localProc)
     factory = fei::create_fei_Factory(comm, "HYPRE");
     factory_created = true;
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
 //    try {
 //      factory = fei::create_fei_Factory(comm, "Trilinos");
 //      factory_created = true;
 //    }
-//    catch(fei::Exception& exc) {}
+//    catch(std::runtime_error& exc) {}
     FEI_COUT << "HYPRE not available."<<FEI_ENDL;
     return;
   }
@@ -259,14 +259,14 @@ void test_Matrix_unit3(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit3, feimat->sumIn returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = feimat->globalAssemble();
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit3, feimat->globalAssemble returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   feimat->writeToFile("feimat_fm3.mtx");
@@ -276,7 +276,7 @@ void test_Matrix_unit3(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit3, copy_feiMatrix_to_SSMat returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   fei_test_utils::writeMatrix("feimat_ss3.mtx", feimat_ss);
@@ -318,21 +318,21 @@ void test_Matrix_unit4(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, initConnectivity returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = mgraph->initComplete();
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, initComplete returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   fei::SharedPtr<fei::Factory> factory;
   try {
     factory = fei::create_fei_Factory(comm, "Trilinos");
   }
-  catch(fei::Exception& exc2) {
+  catch(std::runtime_error& exc2) {
     FEI_COUT << "Trilinos not available."<<FEI_ENDL;
     return;
   }
@@ -366,28 +366,28 @@ void test_Matrix_unit4(MPI_Comm comm, int numProcs, int localProc)
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, feimat->sumIn returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = feiblkmat->sumIn(0, 0, coefs_2D.dataPtr(), FEI_BLOCK_DIAGONAL_ROW);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, feiblkmat->sumIn returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = feimat->globalAssemble();
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, feimat->globalAssemble returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   err = feiblkmat->globalAssemble();
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, feimat->globalAssemble returned err="<<err;
-    throw fei::Exception(osstr.str());
+    throw std::runtime_error(osstr.str());
   }
 
   feimat->writeToFile("feimat_blkdiag.mtx");
@@ -465,7 +465,7 @@ test_Matrix::create_matrix(fei::SharedPtr<fei::Factory> factory)
   int err = vspace->initComplete();
   if (err != 0) {
     FEI_COUT << "ERROR, failed to create valid fei::VectorSpace." << FEI_ENDL;
-    throw fei::Exception("test_Vector::vector_test1: ERROR, failed to create valid fei::VectorSpace.");
+    throw std::runtime_error("test_Vector::vector_test1: ERROR, failed to create valid fei::VectorSpace.");
   }
 
   fei::SharedPtr<fei::MatrixGraph> mgraph =
@@ -509,7 +509,7 @@ void test_Matrix::matrix_test1(fei::SharedPtr<fei::Matrix> mat)
   int vglobaleqns = rspace->getGlobalNumIndices();
 
   if (mglobalrows != vglobaleqns) {
-    throw fei::Exception("mat reports different num rows than vector-space eqns");
+    throw std::runtime_error("mat reports different num rows than vector-space eqns");
   }
 
   int num_procs = rspace->getNumPartitions();
@@ -518,7 +518,7 @@ void test_Matrix::matrix_test1(fei::SharedPtr<fei::Matrix> mat)
 
   int my_num_rows = mat->getLocalNumRows();
   if (my_num_rows != global_offsets[localProc_+1]-global_offsets[localProc_]) {
-    throw fei::Exception("num-local-rows mis-match between mat and vector-space");
+    throw std::runtime_error("num-local-rows mis-match between mat and vector-space");
   }
 
   int i, my_first_row = global_offsets[localProc_];
@@ -527,7 +527,7 @@ void test_Matrix::matrix_test1(fei::SharedPtr<fei::Matrix> mat)
   for(i=0; i<my_num_rows; ++i) {
     errcode = mat->getRowLength(i+my_first_row, row_lengths[i]);
     if (errcode != 0) {
-      throw fei::Exception("nonzero errcode from mat->getRowLength");
+      throw std::runtime_error("nonzero errcode from mat->getRowLength");
     }
   }
 
@@ -1058,7 +1058,7 @@ int test_Matrix::test4()
   try {
     factory = fei::create_fei_Factory(MPI_COMM_WORLD, "HYPRE");
   }
-  catch (fei::Exception& exc) {
+  catch (std::runtime_error& exc) {
     //probably means fei was built without HYPRE support. So we'll simply
     //skip this test and move on...
     return(0);

@@ -14,15 +14,17 @@ namespace snl_fei {
 /** specialization for MapContig<fei::ctg_set<int>*> */
 RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::RaggedTable(int firstKey, int lastKey)
   : map_(firstKey, lastKey),
-    poolAllocatorSet_(lastKey-firstKey+1)
+    poolAllocatorSet_(),
+    dummy()
 {
   int len = lastKey-firstKey+1;
   if (len > 0) {
-    row_type* rows = poolAllocatorSet_.alloc(len);
     map_type::value_type val;
     for(int i=0; i<len; ++i) {
       val.first = firstKey+i;
-      val.second = &(rows[i]);
+      row_type* row = poolAllocatorSet_.allocate(1);
+      poolAllocatorSet_.construct(row,dummy);
+      val.second = row;
       map_.insert(val);
     }
   }
@@ -30,7 +32,7 @@ RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::RaggedTable(int f
 
 RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::RaggedTable(const RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >& src)
  : map_(src.map_),
-   poolAllocatorSet_(map_.size())
+   poolAllocatorSet_()
 {
 }
 
@@ -44,7 +46,7 @@ void RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::addIndices(i
   map_type::mapped_type mapped_indices = (*m_iter).second;
 
   if (mapped_indices == NULL) {
-    throw fei::Exception("RaggedTable<MapContig>, NULL row.");
+    throw std::runtime_error("RaggedTable<MapContig>, NULL row.");
   }
 
   for(int i=0; i<numIndices; ++i) {
@@ -67,7 +69,7 @@ void RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::addIndices(i
 
     mapped_indices = (*m_iter).second;
     if (mapped_indices == NULL) {
-      throw fei::Exception("RaggedTable<MapContig>, NULL row.");
+      throw std::runtime_error("RaggedTable<MapContig>, NULL row.");
     }
 
     for(int j=0; j<numIndices; ++j) {

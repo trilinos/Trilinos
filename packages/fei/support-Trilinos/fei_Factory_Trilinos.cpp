@@ -9,7 +9,6 @@
 #include "fei_trilinos_macros.hpp"
 #include <fei_Factory_Trilinos.hpp>
 
-#include <fei_Exception.hpp>
 #include <fei_VectorReducer.hpp>
 #include <fei_MatrixReducer.hpp>
 #include <fei_Matrix_Local.hpp>
@@ -142,7 +141,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::VectorSpace> vecSpace,
   }
 
 //  if (blockEntryMatrix_) {
-//    throw fei::Exception("Factory_Trilinos: fei ERROR, block-entry matrices/vectors not currently supported.");
+//    throw std::runtime_error("Factory_Trilinos: fei ERROR, block-entry matrices/vectors not currently supported.");
 //  }
 
   std::vector<int> indices;
@@ -164,7 +163,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::VectorSpace> vecSpace,
     }
   }
   if (err != 0) {
-    throw fei::Exception("error in vecSpace->getIndices_Owned");
+    throw std::runtime_error("error in vecSpace->getIndices_Owned");
   }
 
   fei::SharedPtr<fei::Vector> feivec, tmpvec;
@@ -180,7 +179,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::VectorSpace> vecSpace,
                                               emvec, localSize,
                                         isSolutionVector, true));
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       FEI_CERR << "Factory_Trilinos::createVector: caught exception '"
                << exc.what() << "', re-throwing..." << FEI_ENDL;
       throw exc;
@@ -230,7 +229,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
   }
 
 //  if (blockEntryMatrix_) {
-//    throw fei::Exception("Factory_Trilinos: fei ERROR, block-entry matrices/vectors not currently supported.");
+//    throw std::runtime_error("Factory_Trilinos: fei ERROR, block-entry matrices/vectors not currently supported.");
 //  }
 
   int globalNumSlaves = matrixGraph->getGlobalNumSlaveConstraints();
@@ -261,7 +260,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     }
   }
   if (err != 0) {
-    throw fei::Exception("error in vecSpace->getIndices_Owned");
+    throw std::runtime_error("error in vecSpace->getIndices_Owned");
   }
 
   if (!use_lpm_epetrabasic_) {
@@ -276,7 +275,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                                                   localSize,
                                                        isSolutionVector, true));
     }
-    catch(fei::Exception& exc) {
+    catch(std::runtime_error& exc) {
       FEI_CERR << "Factory_Trilinos::createVector: caught exception '"
                << exc.what() << "', re-throwing..." << FEI_ENDL;
       throw exc;

@@ -672,27 +672,6 @@ int FEI_Implementation::resetInitialGuess(double s)
 int FEI_Implementation::loadNodeBCs(int numNodes,
                                     const GlobalID *nodeIDs,
                                     int fieldID,
-                                    const double *const *alpha,
-                                    const double *const *beta,
-                                    const double *const *gamma)
-{
-   if (!internalFEIsAllocated_)
-      notAllocatedAbort("FEI_Implementation::loadNodeBCs");
-
-   int index = index_current_filter_;
-   if (solveType_ == 2) index = index_soln_filter_;
-
-   CHK_ERR( filter_[index]->loadNodeBCs(numNodes,
-                               nodeIDs, fieldID,
-                               alpha, beta, gamma));
-
-   return(0);
-}
-
-//------------------------------------------------------------------------------
-int FEI_Implementation::loadNodeBCs(int numNodes,
-                                    const GlobalID *nodeIDs,
-                                    int fieldID,
                                     const int* offsetsIntoField,
                                     const double* prescribedValues)
 {

@@ -11,77 +11,10 @@
 
 #include "fei_fwd.hpp"
 #include "feiArray.hpp"
-#include "fei_Exception.hpp"
 
 #include <algorithm>
 
 namespace snl_fei {
-
-  /** Binary search of a list of pointers-to-object that's assumed to be sorted
-      by the value of the objects' less-than operator.
-
-      @param item to be searched for.
-      @param list List to be searched.
-      @param len Length of list.
-      @param insertPoint If item is not found, this is the offset into list at
-      which item could be inserted while maintaining sortedness. Not referenced
-      if item is found.
-
-      @return offset Offset at which item was found, or -1 if not found.
-   */
-  template<class T>
-    int binarySearchPtr(const T* item, const T** list, int len, int& insertPoint)
-    {
-      if (len < 2) {
-	if (len < 1) {
-	  insertPoint = 0;
-	  return(-1);
-	}
-
-	if (*(list[0]) < *item) {
-	  insertPoint = 1;
-	  return(-1);
-	}
-	if (*item < *(list[0])) {
-	  insertPoint = 0;
-	  return(-1);
-	}
-	else {
-	  return(0);
-	}
-      }
-
-      unsigned start = 0, end = len - 1;
-
-      while(end - start > 1) {
-	unsigned mid = (start + end) >> 1;
-	if (*(list[mid]) < *item) start = mid;
-	else end = mid;
-      }
-
-      if (*(list[end]) < *item) {
-	insertPoint = end+1;
-	return(-1);
-      }
-
-      if (*item < *(list[end])) {
-	if (*(list[start]) < *item) {
-	  insertPoint = end;
-	  return(-1);
-	}
-
-	if (*item < *(list[start])) {
-	  insertPoint = start;
-	  return(-1);
-	}
-	else {
-	  return(start);
-	}
-      }
-
-      //list[end] == item
-      return(end);
-    }
 
   /** Binary search of a list that's assumed to be sorted.
 
@@ -179,36 +112,6 @@ namespace snl_fei {
     }
 
     return(start);
-  }
-
-  /** Lower bound finds the first entry in list that is not less than item.
-      A binary search is used, and list is assumed to be sorted.
-   */
-  template<typename T, class Ran>
-  Ran lowerBound(Ran list, Ran list_end, const T& item)
-  {
-    //The correctness of this function is tested in
-    // fei/test_utils/test_misc.cpp, in test_misc::serialtest2().
-
-    --list_end;
-
-    unsigned incr = (list_end-list)>>1;
-    while(incr > 0) {
-      Ran mid = list + incr;
-      if (*mid < item) list = mid;
-      else list_end = mid;
-      incr = (list_end-list)>>1;
-    }
-
-    if (*list_end < item) {
-      return(list_end+1);
-    }
-
-    if (*list < item) {
-      return(list_end);
-    }
-
-    return(list);
   }
 
   /** Binary search of a list that's assumed to be sorted.
@@ -524,7 +427,7 @@ namespace snl_fei {
     {
       int len = list.length();
       if (len <= index || index < 0) {
-        throw fei::Exception("snl_fei::removeValueAtIndex: invalid index");
+        throw std::runtime_error("snl_fei::removeValueAtIndex: invalid index");
       }
 
       T* listptr = list.dataPtr();

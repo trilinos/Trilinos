@@ -13,7 +13,6 @@
 #include <fei_fwd.hpp>
 #include <fei_VectorSpace.hpp>
 #include <snl_fei_RecordCollection.hpp>
-#include <fei_Exception.hpp>
 
 namespace snl_fei {
 

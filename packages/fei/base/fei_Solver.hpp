@@ -40,7 +40,7 @@ namespace fei {
 		      fei::Matrix* preconditioningMatrix,
 		      const fei::ParameterSet& parameterSet,
 		      int& iterationsTaken,
-		      int& status) = 0;
+		      int& status);
   };//class Solver
 }//namespace fei
 

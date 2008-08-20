@@ -401,7 +401,7 @@ test_VectorSpace::create_VectorSpace(MPI_Comm comm)
   int err = vspace->initComplete();
   if (err != 0) {
     FEI_COUT << "ERROR, failed to create valid fei::VectorSpace." << FEI_ENDL;
-    throw fei::Exception("test_Vector::vector_test1: ERROR, failed to create valid fei::VectorSpace.");
+    throw std::runtime_error("test_Vector::vector_test1: ERROR, failed to create valid fei::VectorSpace.");
   }
 
   return(vspace);

@@ -10,7 +10,7 @@
 #define _snl_fei_RecordCollection_hpp_
 
 #include <fei_iosfwd.hpp>
-#include <feiPoolAllocator.hpp>
+#include <fei_Pool_alloc.hpp>
 #include <fei_FieldMask.hpp>
 #include <fei_Record.hpp>
 
@@ -110,7 +110,7 @@ namespace snl_fei {
 
     int localProc_;
 
-    feiPoolAllocator<fei::Record > recordPool_;
+    fei_Pool_alloc<fei::Record > recordPool_;
 
     bool debugOutput_;
     FEI_OSTREAM* dbgOut_;

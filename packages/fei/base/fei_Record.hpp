@@ -21,6 +21,12 @@ namespace fei {
     /** Constructor */
     Record();
 
+    Record(const Record& src)
+     : isInLocalSubdomain_(src.isInLocalSubdomain_), ID_(src.ID_),
+       fieldMask_(NULL), offsetIntoEqnNumbers_(src.offsetIntoEqnNumbers_),
+       ownerProc_(src.ownerProc_), hasSlaveDof_(false)
+    {}
+
     /** Destructor */
     virtual ~Record();
 
@@ -129,7 +135,6 @@ namespace fei {
     bool isInLocalSubdomain_;
 
   private:
-    Record(const Record& src);
     Record& operator=(const Record& src);
 
     int ID_;

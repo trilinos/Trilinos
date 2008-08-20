@@ -206,35 +206,18 @@ int test_FEI_Impl::test1()
   int numBCNodes = 2;
   GlobalID* BCNodeIDs = &(testdata->ids[0]);
   int BCFieldID = testdata->fieldIDs[0];
-  double** alpha = new double*[numBCNodes];
-  double** beta = new double*[numBCNodes];
-  double** gamma = new double*[numBCNodes];
-  int BCFieldSize = 1;
+  double* values = new double[numBCNodes];
+  int* offsetsIntoField = new int[numBCNodes];
   for(ii=0; ii<numBCNodes; ++ii) {
-    alpha[ii] = new double[BCFieldSize];
-    beta[ii] = new double[BCFieldSize];
-    gamma[ii] = new double[BCFieldSize];
-    for(jj=0; jj<BCFieldSize; ++jj) {
-      alpha[ii][jj] = 1.0;
-      beta[ii][jj] = 1.0;
-      gamma[ii][jj] = 1.0;
-    }
+    values[ii] = 1.0;
+    offsetsIntoField[ii] = 0;
   }
-
-  for(jj=0; jj<BCFieldSize; ++jj) beta[1][jj] = 0.0;
 
   CHK_ERR( fei->loadNodeBCs(numBCNodes, BCNodeIDs, BCFieldID,
-			    alpha, beta, gamma) );
+			    offsetsIntoField, values) );
 
-  for(ii=0; ii<numBCNodes; ++ii) {
-    delete [] alpha[ii];
-    delete [] beta[ii];
-    delete [] gamma[ii];
-  }
-
-  delete [] alpha;
-  delete [] beta;
-  delete [] gamma;
+  delete [] offsetsIntoField;
+  delete [] values;
 
   CHK_ERR( fei->loadComplete() );
 
@@ -373,93 +356,23 @@ int test_FEI_Impl::test2()
   CHK_ERR( fei->setCurrentMatrix(testdata->ids[0]) );
   CHK_ERR( fei->setCurrentRHS(testdata->ids[0]) );
 
-  int ii, jj;
-
-  //following are some tests that we know will fail, so we'll ifdef them out
-  //for now. Future work includes plans to get FETI working better with the
-  //fei::FEI_Impl class...
-#if 0
-  CHK_ERR( fei->putIntoRHS(FEI_NODE, testdata->fieldIDs[0],
-			   testdata->ids.size(),
-			   &(testdata->ids[0]),
-			   rhsData.dataPtr()) );
-
-  double* matrixEntries = new double[16];
-  double** matrixEntriesPtr = new double*[4];
-  for(ii=0; ii<4; ++ii) matrixEntriesPtr[ii] = matrixEntries+ii*4;
-  for(jj=0; jj<16; ++jj) matrixEntries[jj] = 1.0;
-
-  int errorcode = fei->putIntoMatrix(patternID,
-				 &rowIDType, &(testdata->ids[0]),
-				 &rowIDType, &(testdata->ids[0]),
-				 matrixEntriesPtr);
-  FEI_COUT << "test_FEI_Impl: with fedata, errorcode for 'putIntoMatrix' is:"
-       << errorcode << FEI_ENDL;
-
-  errorcode = fei->sumIntoMatrix(patternID,
-				 &rowIDType, &(testdata->ids[0]),
-				 &rowIDType, &(testdata->ids[0]),
-				 matrixEntriesPtr);
-  FEI_COUT << "test_FEI_Impl: with fedata, errorcode for 'sumIntoMatrix' is:"
-       << errorcode << FEI_ENDL;
-
-  errorcode = fei->getFromMatrix(patternID,
-				     &rowIDType, &(testdata->ids[0]),
-				     &rowIDType, &(testdata->ids[0]),
-				     matrixEntriesPtr);
-  FEI_COUT << "test_FEI_Impl: with fedata, errorcode for 'getFromMatrix' is:"
-       << errorcode << FEI_ENDL;
-
-  errorcode = fei->putIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries);
-
-  FEI_COUT << "test_FEI_Impl: with fedata, errorcode for 'putIntoRHS' is:"
-       << errorcode << FEI_ENDL;
-
-  errorcode = fei->sumIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries);
-
-  FEI_COUT << "test_FEI_Impl: with fedata, errorcode for 'sumIntoRHS' is:"
-       << errorcode << FEI_ENDL;
-
-  delete [] matrixEntries;
-  delete [] matrixEntriesPtr;
-
-  //end of ifdef'd FETI tests.
-#endif
+  int ii;
 
   int numBCNodes = 2;
   GlobalID* BCNodeIDs = &(testdata->ids[0]);
   int BCFieldID = testdata->fieldIDs[0];
-  double** alpha = new double*[numBCNodes];
-  double** beta = new double*[numBCNodes];
-  double** gamma = new double*[numBCNodes];
-  int BCFieldSize = 1;
+  double* values = new double[numBCNodes];
+  int* offsetsIntoField = new int[numBCNodes];
   for(ii=0; ii<numBCNodes; ++ii) {
-    alpha[ii] = new double[BCFieldSize];
-    beta[ii] = new double[BCFieldSize];
-    gamma[ii] = new double[BCFieldSize];
-    for(jj=0; jj<BCFieldSize; ++jj) {
-      alpha[ii][jj] = 1.0;
-      beta[ii][jj] = 1.0;
-      gamma[ii][jj] = 1.0;
-    }
+    values[ii] = 1.0;
+    offsetsIntoField[ii] = 0;
   }
-
-  for(jj=0; jj<BCFieldSize; ++jj) beta[1][jj] = 0.0;
 
   CHK_ERR( fei->loadNodeBCs(numBCNodes, BCNodeIDs, BCFieldID,
-			    alpha, beta, gamma) );
+			    offsetsIntoField, values) );
 
-  for(ii=0; ii<numBCNodes; ++ii) {
-    delete [] alpha[ii];
-    delete [] beta[ii];
-    delete [] gamma[ii];
-  }
-
-  delete [] alpha;
-  delete [] beta;
-  delete [] gamma;
+  delete [] values;
+  delete [] offsetsIntoField;
 
   CHK_ERR( fei->loadComplete() );
 

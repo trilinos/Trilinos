@@ -39,7 +39,7 @@ HexBeam::HexBeam(int W, int D, int DofPerNode,
   switch(decomp) {
   case HexBeam::OneD:
     if (D < numProcs) {
-      throw fei::Exception("HexBeam: size D must be greater or equal num-procs.");
+      throw std::runtime_error("HexBeam: size D must be greater or equal num-procs.");
     }
     if (localProc < remainder) {
       ++numLocalSlices_;

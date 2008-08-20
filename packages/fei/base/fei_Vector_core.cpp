@@ -261,7 +261,7 @@ int fei::Vector_core::giveToVector(int numValues,
     double val = values[i];
 
     if (ind < 0) {
-//      throw fei::Exception("negative index not allowed");
+//      throw std::runtime_error("negative index not allowed");
       //preservation of existing behavior: certain Sierra scenarios
       //involve passing negative indices for positions that should be
       //ignored... so we'll continue rather than throwing.
