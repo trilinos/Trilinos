@@ -35,7 +35,7 @@ bin_PROGRAMS = Rythmos_UnitTest
 # Actual programs
 #
 
-Rythmos_UnitTest_INCLUDES =\
+EXTRA_DIST =\
   $(srcdir)/Rythmos_UnitTestHelpers.hpp\
 	$(srcdir)/Rythmos_UnitTestModels.hpp
 Rythmos_UnitTest_SOURCES =\

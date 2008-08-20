@@ -238,7 +238,7 @@ top_srcdir = @top_srcdir@
 #
 # Actual programs
 #
-Rythmos_UnitTest_INCLUDES = \
+EXTRA_DIST = \
   $(srcdir)/Rythmos_UnitTestHelpers.hpp\
 	$(srcdir)/Rythmos_UnitTestModels.hpp
 
