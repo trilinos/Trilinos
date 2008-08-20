@@ -246,6 +246,12 @@ ACLOCAL_AMFLAGS = -I config
 #np# because users should not have to bootstrap.  We distribute them with
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
+EXTRA_DIST = \
+config/generate-makeoptions.pl config/replace-install-prefix.pl \
+config/string-replace.pl       config/strip_dup_incl_paths.pl \
+config/strip_dup_libs.pl       config/token-replace.pl
+
+
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
