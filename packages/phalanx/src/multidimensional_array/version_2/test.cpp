@@ -55,10 +55,40 @@ int main(int argc, char *argv[])
       cout << "\nStarting MultiDimensionalArray Example!\n" << endl;
       
       ArrayDimension<Cell,Node,Spatial,Spatial> n_dim;
-      ArrayNatural<double*,Cell,Node,Spatial,Spatial> a;
 
-      //cout << n_dim << endl;
 
+      std::vector<double> memory(72);
+      ArrayNatural<double,Cell,Node,Spatial,Spatial> 
+	a(&memory[0], 3, 4, 2, 2);
+
+      std::vector<ArrayNatural<double,Cell,Node,Spatial,Spatial>::size_type> 
+	dimensions;
+
+      std::size_t cell_dim = a.dimension(0);
+      std::size_t node_dim = a.dimension(1);
+      std::size_t row_dim = a.dimension(2);
+      std::size_t col_dim = a.dimension(3);
+
+      for (std::size_t cell = 0; cell < cell_dim; ++cell)
+	for (std::size_t node = 0; node < node_dim; ++node)
+	  for (std::size_t row = 0; row < row_dim; ++row)
+	    for (std::size_t col = 0; col < col_dim; ++col)
+	      {
+		a(cell,node,row,col) = 2.0;
+		cout << "a[" << cell <<"," << node << "," 
+		     << row << "," << col << "] = " 
+		     << a(cell,node,row,col) << endl; 
+	      }
+      
+      cout << endl;
+
+      for (std::size_t i = 0; i < a.size(); ++i)
+	{
+	  a[i] = 3.0;
+	  cout << "a[" << i << "] = " << a[i] << endl;
+	}
+
+      
 
       cout << "\nFinished MultiDimensionalArray Example!\n" << endl;
     }

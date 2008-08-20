@@ -48,7 +48,7 @@ AM_CPPFLAGS = -I$(srcdir)/../Utilities $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_TESTS
-noinst_PROGRAMS = field
+noinst_PROGRAMS = field mdfield
 endif
 
 field_SOURCES = \
@@ -58,3 +58,11 @@ field_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 field_LDADD = $(TEST_LIBS)
+
+mdfield_SOURCES = \
+	$(srcdir)/MDField.cpp 
+
+mdfield_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+mdfield_LDADD = $(TEST_LIBS)

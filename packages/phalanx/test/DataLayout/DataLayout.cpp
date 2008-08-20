@@ -141,6 +141,28 @@ int main(int argc, char *argv[])
       }
       
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // rank()
+      {
+	cout << "Testing rank() accessor...";
+	TEST_FOR_EXCEPTION(node4->rank() != 1, 
+			   std::logic_error,
+			   "rank() accessor failed!");
+	cout << "passed!" << endl;
+      }
+      
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // dimensions()
+      {
+	cout << "Testing dimensions() accessor...";
+	std::vector<std::size_t> dims;
+	node4->dimensions(dims);
+	TEST_FOR_EXCEPTION(dims[0] != 4, 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	cout << "passed!" << endl;
+      }
+      
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // size()
       {
 	cout << "Testing size() accessor...";
@@ -194,14 +216,14 @@ int main(int argc, char *argv[])
       cout << "\nTesting constructor...";
       
       MDALayout<Cell,Cell,Cell,Cell,Cell,Cell,Cell,Cell> 
-	rank8(5,5,5,5,5,5,5,5);
-      MDALayout<Cell,Cell,Cell,Cell,Cell,Cell,Cell> rank7(5,5,5,5,5,5,5);
-      MDALayout<Cell,Cell,Cell,Cell,Cell,Cell> rank6(5,5,5,5,5,5);
-      MDALayout<Cell,Cell,Cell,Cell,Cell> rank5(5,5,5,5,5);
-      MDALayout<Cell,Cell,Cell,Cell> rank4(5,5,5,5);
-      MDALayout<Cell,Cell,Cell> rank3(5,5,5);
-      MDALayout<Cell,Cell> rank2(5,5);
-      MDALayout<Cell> rank1(5);
+	rank8(1,2,3,4,5,6,7,8);
+      MDALayout<Cell,Cell,Cell,Cell,Cell,Cell,Cell> rank7(1,2,3,4,5,6,7);
+      MDALayout<Cell,Cell,Cell,Cell,Cell,Cell> rank6(1,2,3,4,5,6);
+      MDALayout<Cell,Cell,Cell,Cell,Cell> rank5(1,2,3,4,5);
+      MDALayout<Cell,Cell,Cell,Cell> rank4(1,2,3,4);
+      MDALayout<Cell,Cell,Cell> rank3(1,2,3);
+      MDALayout<Cell,Cell> rank2(1,2);
+      MDALayout<Cell> rank1(1);
       MDALayout<Cell,Node,Spatial,Spatial> n_mat(100,4,2,2);
       cout << "passed!" << endl;
 
@@ -216,6 +238,37 @@ int main(int argc, char *argv[])
 	cout << "passed!" << endl;
       }
 
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // rank()
+      {
+	cout << "Testing rank() accessor...";
+	TEST_FOR_EXCEPTION(n_mat.rank() != 4, 
+			   std::logic_error,
+			   "rank() accessor failed!");
+	cout << "passed!" << endl;
+      }
+      
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // dimensions()
+      {
+	cout << "Testing dimensions() accessor...";
+	std::vector<std::size_t> dims;
+	n_mat.dimensions(dims);
+	TEST_FOR_EXCEPTION(dims[0] != 100, 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	TEST_FOR_EXCEPTION(dims[1] != 4, 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	TEST_FOR_EXCEPTION(dims[2] != 2, 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	TEST_FOR_EXCEPTION(dims[3] != 2, 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	cout << "passed!" << endl;
+      }
+      
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // size()
       {
@@ -256,6 +309,93 @@ int main(int argc, char *argv[])
 	TEST_FOR_EXCEPTION( (n_vec_a == qp_mat), 
 			    std::logic_error,
 			    "operator==() failed test 4!");
+
+	cout << "passed!" << endl;
+      }
+
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // dimension() 
+      {
+	cout << "Testing dimension()...";
+	TEST_FOR_EXCEPTION(rank1.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+
+	TEST_FOR_EXCEPTION(rank2.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank2.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+
+	TEST_FOR_EXCEPTION(rank3.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank3.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank3.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+
+	TEST_FOR_EXCEPTION(rank4.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank4.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank4.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank4.dimension(3) != 4, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+			   
+	TEST_FOR_EXCEPTION(rank5.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank5.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank5.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank5.dimension(3) != 4, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank5.dimension(4) != 5, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+
+	TEST_FOR_EXCEPTION(rank6.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank6.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank6.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank6.dimension(3) != 4, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank6.dimension(4) != 5, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank6.dimension(5) != 6, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+
+	TEST_FOR_EXCEPTION(rank7.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank7.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank7.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank7.dimension(3) != 4, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank7.dimension(4) != 5, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank7.dimension(5) != 6, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank7.dimension(6) != 7, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+
+	TEST_FOR_EXCEPTION(rank8.dimension(0) != 1, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank8.dimension(1) != 2, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank8.dimension(2) != 3, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank8.dimension(3) != 4, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank8.dimension(4) != 5, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank8.dimension(5) != 6, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank8.dimension(6) != 7, std::logic_error,
+			   "dimension() failed to return correct dimension!");
+	TEST_FOR_EXCEPTION(rank8.dimension(7) != 8, std::logic_error,
+			   "dimension() failed to return correct dimension!");
 
 	cout << "passed!" << endl;
       }

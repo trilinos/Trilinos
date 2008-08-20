@@ -29,53 +29,28 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_DATA_LAYOUT_GENERIC
-#define PHX_DATA_LAYOUT_GENERIC
+#ifndef PHX_PRINT_UTILITIES_HPP
+#define PHX_PRINT_UTILITIES_HPP
 
-#include "Phalanx_DataLayout.hpp"
-#include <string>
+#include <vector>
+#include "Phalanx_Array.hpp"
 
-namespace PHX{
+namespace PHX {
 
-
-  /*! \brief A concrete implementation of the DataLayout class that should cover most user requirements.
-
-      This concrete class should be used for DataLayouts unless the
-      user must pass specific external information via Data Layouts.
-
-  */
-  class Generic : public DataLayout {
-
-  public:
-
-    Generic(const std::string& unique_identifier, std::size_t i);
-
-    virtual ~Generic();
-
-    virtual bool operator==(const DataLayout& right) const;
-
-    virtual const std::string& name() const;
-
-    virtual std::size_t rank() const; 
-
-    virtual void dimensions(std::vector<std::size_t>& dim) const; 
-
-    virtual std::size_t size() const;
-
-    virtual const std::string identifier() const;
-
-    virtual void print(std::ostream& os, int indent = 0) const;
-
-  private:
-
-    const std::string m_name;
-
-    const std::size_t m_size;
-
+  template<typename Dimension, typename Array>
+  struct PrintDimension {
+    void addName(std::vector<const char*>& names)
+    { 
+      names.push_back(Dimension::descriptor().name());
+    }
   };
 
-  std::ostream& operator<<(std::ostream& os, const PHX::Generic& t);
+  // Specialization for "void" types - the default value for Array parameters
+  template<typename Array>
+  struct PrintDimension<void,Array> {
+    void addName(std::vector<const char*>& names) { }
+  };
 
-}
+} 
 
-#endif
+#endif 

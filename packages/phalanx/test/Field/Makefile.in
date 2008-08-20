@@ -64,7 +64,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BUILD_TESTS_TRUE@noinst_PROGRAMS = field$(EXEEXT)
+@BUILD_TESTS_TRUE@noinst_PROGRAMS = field$(EXEEXT) mdfield$(EXEEXT)
 subdir = test/Field
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,6 +93,8 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
+am_mdfield_OBJECTS = MDField.$(OBJEXT)
+mdfield_OBJECTS = $(am_mdfield_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -101,8 +103,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(field_SOURCES)
-DIST_SOURCES = $(field_SOURCES)
+SOURCES = $(field_SOURCES) $(mdfield_SOURCES)
+DIST_SOURCES = $(field_SOURCES) $(mdfield_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -233,6 +235,13 @@ field_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 field_LDADD = $(TEST_LIBS)
+mdfield_SOURCES = \
+	$(srcdir)/MDField.cpp 
+
+mdfield_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+mdfield_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -272,6 +281,9 @@ clean-noinstPROGRAMS:
 field$(EXEEXT): $(field_OBJECTS) $(field_DEPENDENCIES) 
 	@rm -f field$(EXEEXT)
 	$(CXXLINK) $(field_OBJECTS) $(field_LDADD) $(LIBS)
+mdfield$(EXEEXT): $(mdfield_OBJECTS) $(mdfield_DEPENDENCIES) 
+	@rm -f mdfield$(EXEEXT)
+	$(CXXLINK) $(mdfield_OBJECTS) $(mdfield_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -280,6 +292,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Field.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MDField.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -308,6 +321,20 @@ Field.obj: $(srcdir)/Field.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Field.cpp' object='Field.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Field.obj `if test -f '$(srcdir)/Field.cpp'; then $(CYGPATH_W) '$(srcdir)/Field.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Field.cpp'; fi`
+
+MDField.o: $(srcdir)/MDField.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MDField.o -MD -MP -MF $(DEPDIR)/MDField.Tpo -c -o MDField.o `test -f '$(srcdir)/MDField.cpp' || echo '$(srcdir)/'`$(srcdir)/MDField.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MDField.Tpo $(DEPDIR)/MDField.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MDField.cpp' object='MDField.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MDField.o `test -f '$(srcdir)/MDField.cpp' || echo '$(srcdir)/'`$(srcdir)/MDField.cpp
+
+MDField.obj: $(srcdir)/MDField.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MDField.obj -MD -MP -MF $(DEPDIR)/MDField.Tpo -c -o MDField.obj `if test -f '$(srcdir)/MDField.cpp'; then $(CYGPATH_W) '$(srcdir)/MDField.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MDField.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MDField.Tpo $(DEPDIR)/MDField.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MDField.cpp' object='MDField.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MDField.obj `if test -f '$(srcdir)/MDField.cpp'; then $(CYGPATH_W) '$(srcdir)/MDField.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MDField.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
