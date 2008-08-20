@@ -102,7 +102,7 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 Teuchos::RefCountPtr<Epetra_Map>
 create_target_map(const Epetra_Comm& comm, Partitioner& partitioner)
 {
-  if (!partitioner.partitioning_already_computed()) {
+  if (!partitioner.alreadyComputed()) {
     partitioner.compute_partitioning();
   }
 

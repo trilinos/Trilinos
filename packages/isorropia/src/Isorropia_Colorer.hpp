@@ -53,7 +53,7 @@ class Colorer : virtual public Operator {
 public:
 
   /** Destructor */
-  virtual ~Colorer() =0 ;
+  virtual ~Colorer() {}
 
   /** Method which does the work of computing a new partitioning.
      Implementations of this interface will typically be constructed

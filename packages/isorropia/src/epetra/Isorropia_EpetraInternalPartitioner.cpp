@@ -98,16 +98,13 @@ InternalPartitioner::~InternalPartitioner() {}
 
 int InternalPartitioner::precompute()
 {
-  int err = 0, numChanged = 0;
   std::string str1("Isorropia::InternalPartitioner::precompute ");
   std::string str2;
-#ifdef HAVE_MPI
-  MPI_Comm mpicomm;
-#endif
 
 
   Library::precompute();
 
+  return (0);
 }
 
 
@@ -160,6 +157,8 @@ repartition(Teuchos::ParameterList& paramList,
   if (err != 0) {
     throw Isorropia::Exception("error 2 in simple linear repartitioning");
   }
+
+  return (err);
 }
 
 int InternalPartitioner::
@@ -179,7 +178,10 @@ order(Teuchos::ParameterList& paramList,
 }
 
 
-int InternalPartitioner::postcompute() {}
+int InternalPartitioner::postcompute()
+{
+  return (0);
+};
 
 
 

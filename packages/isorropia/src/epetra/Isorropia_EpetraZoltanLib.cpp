@@ -105,7 +105,6 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_RowMatrix> inpu
 
 int ZoltanLibClass::precompute()
 {
-  int err = 0, numChanged = 0;
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
   std::string str2;
   MPI_Comm mpicomm;
@@ -260,26 +259,24 @@ int ZoltanLibClass::precompute()
     zz_->Set_Edge_List_Multi_Fn(ZoltanLib::QueryObject::Edge_List_Multi, (void *)queryObject_.get());
   }
 
+  return (ierr);
 }
 
 
 void ZoltanLibClass::computeCost()
 {
-  int err = 0, numChanged = 0;
   std::string str1("Isorropia::ZoltanLibClass::computeCost ");
   std::string str2;
 
 
   const Epetra_Comm &comm = input_map_->Comm();
-  int localProc = comm.MyPID();
-  int nprocs = comm.NumProc();
 
     // If vertex/edge costs have been set, do a global operation to find
     // out how many weights were given.  Some processes may provide no
     // weights - they need to be informed that weights are being provided
     // by the application.  Do some sanity checks.
 
-    err = 0;
+    int err = 0;
     int gerr = 0;
     int base = input_map_->IndexBase();
 
@@ -377,7 +374,6 @@ void ZoltanLibClass::computeCost()
 void ZoltanLibClass::preCheckPartition()
 {
 
-  int err = 0, numChanged = 0;
   std::string str1("Isorropia::ZoltanLibClass::precheckPartition ");
   std::string str2;
 
@@ -552,6 +548,8 @@ repartition(Teuchos::ParameterList& zoltanParamList,
                      &export_procs, &export_to_part);
 
   postcompute();
+
+  return (0);
 }
 
 int ZoltanLibClass::
@@ -563,7 +561,7 @@ color(Teuchos::ParameterList& zoltanParamList,
   precompute();
 
   //Generate Load Balance
-  int changes, num_gid_entries, num_lid_entries;
+  int  num_gid_entries, num_lid_entries;
   ZOLTAN_ID_PTR import_global_ids, import_local_ids;
   int *colors = new int(num_obj_);
 
@@ -579,6 +577,8 @@ color(Teuchos::ParameterList& zoltanParamList,
   }
 
   delete[] colors;
+
+  return (0);
 }
 
 int ZoltanLibClass::
@@ -590,7 +590,7 @@ order(Teuchos::ParameterList& zoltanParamList,
   precompute();
 
   //Generate Load Balance
-  int changes, num_gid_entries, num_lid_entries;
+  int num_gid_entries, num_lid_entries;
   ZOLTAN_ID_PTR import_global_ids, import_local_ids;
   int *rank = new int(num_obj_);
 
@@ -607,6 +607,7 @@ order(Teuchos::ParameterList& zoltanParamList,
 
   delete[] rank;
 
+  return (0);
 }
 
 
