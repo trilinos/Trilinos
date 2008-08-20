@@ -181,9 +181,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
     }
   }
 
-  if (status != ZOLTAN_OK && status != ZOLTAN_WARN){
-    free_reverse_plan(plan);
-  }
+  free_reverse_plan(plan);
 
   return status;
 }    

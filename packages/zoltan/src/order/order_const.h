@@ -41,6 +41,7 @@ struct Zoltan_Order_Struct {
   ZOLTAN_ID_PTR gidrank;
   int *iperm;
   char method[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
+  char order_type[MAX_PARAM_STRING_LEN+1];
 
   /* Elimination Tree */
   int nbr_blocks;               /* Out: number of ordering blocks */

@@ -665,12 +665,14 @@ int Zoltan_ParMetis_Order(
 
   /* Allocate space for separator sizes */
 
-  if (Zoltan_Order_Init_Tree (&zz->Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
-    /* Not enough memory */
-    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-    ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+  if (gr.graph_type == GLOBAL_GRAPH) {
+    if (Zoltan_Order_Init_Tree (&zz->Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
+      /* Not enough memory */
+      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    }
+    ord.sep_sizes = zz->Order.start; /* Trick : use the same table */
   }
-  ord.sep_sizes = zz->Order.start; /* Trick : use the same table */
 
   /* Allocate space for direct perm */
   ord.rank = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
@@ -737,19 +739,20 @@ int Zoltan_ParMetis_Order(
       start += ord.sep_sizes[numbloc]; /* Save save for next bloc */
       zz->Order.start[numbloc] = tmp;
     }
+    zz->Order.start[numbloc] = zz->Order.start[numbloc - 1];
 
-    for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc ; ++numbloc) { /* define ancestors */
+    for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc - 1 ; ++numbloc) { /* define ancestors */
       zz->Order.ancestor[2*numbloc] = zz->Num_Proc+numbloc;
       zz->Order.ancestor[2*numbloc+1] = zz->Num_Proc+numbloc;
     }
-    zz->Order.ancestor[2*zz->Num_Proc-1] = -1;
+    zz->Order.ancestor[2*(zz->Num_Proc-1)] = -1;
 
     for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc ; ++numbloc) { /* define leaves */
       zz->Order.leaves[numbloc] = numbloc;
     }
     zz->Order.leaves[zz->Num_Proc] = -1;
     zz->Order.nbr_leaves = zz->Num_Proc;
-    zz->Order.nbr_blocks = 2*zz->Num_Proc;
+    zz->Order.nbr_blocks = 2*zz->Num_Proc-1;
   }
   else { /* No tree */
     zz->Order.nbr_blocks = 0;

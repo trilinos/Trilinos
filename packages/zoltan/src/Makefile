@@ -303,7 +303,7 @@ DR_BOTH_SRC	= dr_err.c dr_input.c dr_par_util.c \
 		  dr_hg_io.c dr_hg_readfile.c dr_mm_readfile.c dr_mmio.c
 
 DR_C_SRC	= dr_main.c dr_exoII_io.c dr_loadbal.c \
-		  dr_migrate.c dr_maps.c dr_dd.c dr_param_file.c
+		  dr_migrate.c dr_maps.c dr_dd.c dr_param_file.c order_test.c
 
 DR_CPP_SRC	= dr_mainCPP.cpp dr_exoII_ioCPP.cpp dr_loadbalCPP.cpp \
 		  dr_migrateCPP.cpp dr_mapsCPP.cpp dr_ddCPP.cpp \

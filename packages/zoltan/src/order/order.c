@@ -101,9 +101,16 @@ int Zoltan_Order(
   zz->Num_GID = *num_gid_entries = gcomm[0];
   zz->Num_LID = *num_lid_entries = gcomm[1];
 
+  zz->Order.nbr_objects = num_obj;
+  zz->Order.rank = rank;
+  zz->Order.iperm = iperm;
+  zz->Order.gids = gids;
+  zz->Order.lids = lids;
   zz->Order.start = NULL;
   zz->Order.ancestor = NULL;
   zz->Order.leaves = NULL;
+  zz->Order.nbr_leaves = 0;
+  zz->Order.nbr_blocks = 0;
 
   /*
    *  Return if this processor is not in the Zoltan structure's
@@ -188,6 +195,8 @@ int Zoltan_Order(
     return (ZOLTAN_FATAL);
   }
 
+  strcpy(zz->Order.order_type, opt.order_type);
+
   /*
    *  Construct the heterogenous machine description.
    */
@@ -258,15 +267,10 @@ int Zoltan_Order(
       printf(", rank = %3d\n", rank[i]);
     }
     printf("\n");
-/*     printf("ZOLTAN: inverse permutation on Proc %d\n", zz->Proc); */
-/*     for (i = 0; i < nobjs; i++) { */
-/*       printf("iperm[%3d] = %3d\n", i, iperm[i]); */
-/*     } */
-/*     printf("\n"); */
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);
   }
 
-  
+
   /* Print timing info */
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ZTIME) {
     if (zz->Proc == zz->Debug_Proc) {
@@ -409,7 +413,10 @@ void Zoltan_Order_Get_Block_Leaves(
   int                        *leaves
 )
 {
-  memcpy (leaves, zz->Order.leaves, (zz->Order.nbr_leaves+1)*sizeof(int));
+  if (zz->Order.nbr_leaves > 0)
+    memcpy (leaves, zz->Order.leaves, (zz->Order.nbr_leaves+1)*sizeof(int));
+  else
+    *leaves = -1;
 }
 
 /*****************************************************************************/
@@ -432,36 +439,75 @@ int Zoltan_Order_Get_GID_Order(
   )
 {
   int * proctab;
+  ZOLTAN_ID_PTR sendgidtab;
+  int * sendtab, *recvtab;
   int i;
   int nrecv;
   struct Zoltan_Comm_Obj *plan;
   int ierr = ZOLTAN_OK;
   int *vtxdist;
   int tag = 24061986;
+  int offset;
 
+  zz->Order.gidrank = order_ids;
+
+  if (!strcmp(zz->Order.order_type, "LOCAL")) {
+    for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
+      order_ids[i] = global_ids[zz->Order.rank[i]];
+    }
+    return (ZOLTAN_OK);
+  }
 
   ierr = Zoltan_Get_Distribution(zz, &vtxdist);
   if (ierr != ZOLTAN_OK) return (ierr);
 
-  proctab = (int*) ZOLTAN_MALLOC(zz->Order.nbr_objects*sizeof(int));
-  if (proctab == NULL) {
+  proctab = (int*) ZOLTAN_MALLOC(3*zz->Order.nbr_objects*sizeof(int));
+  sendgidtab = ZOLTAN_MALLOC_GID_ARRAY(zz, 2*zz->Order.nbr_objects);
+  if (proctab == NULL)  {
     ZOLTAN_FREE(&vtxdist); return (ZOLTAN_MEMERR);
   }
+  if (sendgidtab == NULL) {
+    ZOLTAN_FREE(&proctab);
+    ZOLTAN_FREE(&vtxdist); return (ZOLTAN_MEMERR);
+  }
+  sendtab = proctab + zz->Order.nbr_objects;
+  recvtab = sendtab + zz->Order.nbr_objects;
 
   for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
     proctab[i] = Zoltan_Get_Processor_Graph(vtxdist, zz->Num_Proc, zz->Order.rank[i]);
+    sendtab[i] = zz->Order.rank[i];
   }
 
   ierr = Zoltan_Comm_Create(&plan, zz->Order.nbr_objects, proctab, zz->Communicator, tag++,
                      &nrecv);
   if (ierr != ZOLTAN_OK) {
+    ZOLTAN_FREE(&sendgidtab);
     ZOLTAN_FREE(&proctab);
     ZOLTAN_FREE(&vtxdist);
     return (ierr);
   }
 
-  ierr = Zoltan_Comm_Do(plan, tag++, (char *) global_ids, zz->Num_GID*sizeof(int), (char *) order_ids);
+  ierr = Zoltan_Comm_Do(plan, tag++, (char *) sendtab, sizeof(int), (char *) recvtab);
+
+  if (ierr != ZOLTAN_OK) {
+    ZOLTAN_FREE(&sendgidtab);
+    ZOLTAN_FREE(&proctab);
+    ZOLTAN_FREE(&vtxdist);
+    return (ierr);
+  }
+
+  offset = vtxdist[zz->Proc];
+  for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
+    int position;
+    position = recvtab[i]-offset;
+    ZOLTAN_SET_GID(zz, &sendgidtab[i], &global_ids[position]);
+  }
+
+  ierr = Zoltan_Comm_Do_Reverse(plan, tag++, (char *) sendgidtab, zz->Num_GID*sizeof(int), NULL,
+				(char *) order_ids);
+
   Zoltan_Comm_Destroy(&plan);
+  ZOLTAN_FREE(&sendgidtab);
   ZOLTAN_FREE(&proctab);
   ZOLTAN_FREE(&vtxdist);
 

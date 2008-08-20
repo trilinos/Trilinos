@@ -57,12 +57,11 @@ COMMON_DRIVER_HDRS = \
 zdrive_SOURCES = \
 	$(COMMON_DRIVER_SRC) $(srcdir)/dr_main.c $(srcdir)/dr_exoII_io.c \
 	$(srcdir)/dr_loadbal.c $(srcdir)/dr_migrate.c $(srcdir)/dr_maps.c \
-	$(srcdir)/dr_dd.c $(srcdir)/dr_param_file.c
+	$(srcdir)/dr_dd.c $(srcdir)/dr_param_file.c $(srcdir)/order_test.c
 
 # List headers here used for the C driver, but not the C++ driver.
 # Headers for both are listed under COMMON_DRIVER_HDRS.
 #zdrive_HDRS =
-	
 zCPPdrive_SOURCES = \
 	$(COMMON_DRIVER_SRC) $(srcdir)/dr_mainCPP.cpp \
 	$(srcdir)/dr_exoII_ioCPP.cpp $(srcdir)/dr_loadbalCPP.cpp \

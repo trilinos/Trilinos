@@ -51,6 +51,11 @@ static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 
 
+
+extern int Zoltan_Order_Test(struct Zoltan_Struct *zz, int *num_gid_entries,  int *num_lid_entries,
+  int num_obj,  ZOLTAN_ID_PTR global_ids,  ZOLTAN_ID_PTR local_ids,  int *rank,  int *iperm);
+
+
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
 /*          Contains all of the callback functions that Zoltan needs        */
@@ -817,6 +822,18 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* Not yet impl. */
     }
 
+    /* Verify coloring */
+    if (Debug_Driver > 0) {
+      if (Zoltan_Order_Test(zz, &num_gid_entries, &num_lid_entries,
+			    mesh->num_elems, order_gids, order_lids,
+			    order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
+	Gen_Error(0, "fatal:  error returned from Zoltan_Order_Test()\n");
+	safe_free((void **) &order);
+	safe_free((void **) &order_gids);
+	safe_free((void **) &order_lids);
+	return (0);
+      }
+    }
     /* Copy ordering permutation into mesh structure */
     for (i = 0; i < mesh->num_elems; i++){
       int lid = order_lids[num_lid_entries * i + (num_lid_entries - 1)];
