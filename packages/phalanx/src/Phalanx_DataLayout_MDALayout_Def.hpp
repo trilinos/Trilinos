@@ -35,6 +35,7 @@
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
+#include "Teuchos_TestForException.hpp"
 
 //**********************************************************************
 namespace PHX{
@@ -317,6 +318,24 @@ operator==(const PHX::DataLayout& right) const
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 std::size_t PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+rank() const
+{ return Rank; }
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+void PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+dimensions(std::vector<std::size_t>& dim) const
+{ 
+  dim.resize(Rank);
+  for(std::size_t i=0; i < dim.size(); ++i)
+    dim[i] = m_dim_size[i];
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+std::size_t PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 size() const
 { return m_size; }
 
@@ -327,6 +346,25 @@ const std::string PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 identifier() const
 { 
   return m_identifier; 
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+const std::size_t PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+dimension(std::size_t ordinal) const
+{ 
+  if (ordinal > Rank-1 || ordinal < 0) {
+    std::ostringstream os;
+    os << "Requested Ordinal " << ordinal 
+       << " is outside the valid range of 0 - " << Rank - 1
+       << " in DataLayout object:\n"
+       << m_identifier << std::endl;
+    TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
+		       std::logic_error, os.str());
+  }
+  
+  return m_dim_size[ordinal];
 }
 
 //**********************************************************************

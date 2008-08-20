@@ -109,7 +109,7 @@ template<typename DataT>
 void PHX::Tag<DataT>::print(std::ostream& os) const
 {
   DataT tmp;
-  os << "Tag:  " << m_name << ", " << typeid(tmp).name()
+  os << "Tag: " << m_name << ", " << typeid(tmp).name()
      << ", DataLayout: " << *m_data_layout;
 
 }

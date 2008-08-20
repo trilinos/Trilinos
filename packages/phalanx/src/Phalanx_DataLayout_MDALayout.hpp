@@ -100,9 +100,15 @@ namespace PHX {
 
     virtual bool operator==(const DataLayout& right) const;
 
+    virtual std::size_t rank() const; 
+
+    virtual void dimensions(std::vector<std::size_t>& dim) const; 
+
     virtual std::size_t size() const;
 
     virtual const std::string identifier() const;
+
+    virtual const std::size_t dimension(std::size_t ordinal) const;
 
     virtual void print(std::ostream& os, int offset) const;
 

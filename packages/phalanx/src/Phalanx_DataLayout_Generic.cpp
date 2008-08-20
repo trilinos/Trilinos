@@ -61,6 +61,17 @@ const std::string& PHX::Generic::name() const
 { return m_name; }
 
 //**********************************************************************
+std::size_t PHX::Generic::rank() const
+{ return 1; }
+
+//**********************************************************************
+void PHX::Generic::dimensions(std::vector<std::size_t>& dim) const
+{ 
+  dim.resize(1);
+  dim[0] = m_size;
+}
+
+//**********************************************************************
 std::size_t PHX::Generic::size() const
 { return m_size; }
 

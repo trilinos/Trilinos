@@ -33,6 +33,7 @@
 #define PHX_DATA_LAYOUT
 
 #include <iostream>
+#include <vector>
 
 namespace PHX{
 
@@ -57,6 +58,10 @@ namespace PHX{
     DataLayout() {}
 
     virtual ~DataLayout() {}
+
+    virtual std::size_t rank() const = 0; 
+
+    virtual void dimensions(std::vector<std::size_t>& dim) const = 0; 
 
     virtual std::size_t size() const = 0;
 
