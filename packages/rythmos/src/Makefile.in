@@ -254,6 +254,7 @@ CORE_H = \
   $(srcdir)/Rythmos_ConfigDefs.h\
   $(srcdir)/Rythmos_DataStore.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator.hpp\
+	$(srcdir)/Rythmos_DiagonalImplicitRKModelEvaluator.hpp\
 	$(srcdir)/Rythmos_ErrorEstimateBase.hpp\
 	$(srcdir)/Rythmos_ErrorEstimatorBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\

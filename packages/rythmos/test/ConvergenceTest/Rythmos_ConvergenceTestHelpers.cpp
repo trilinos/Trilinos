@@ -44,7 +44,7 @@ double computeOrderByLocalErrorConvergenceStudy(const StepperFactoryBase<double>
   Array<double> logErrorNorm;
 
   double h = 0.5;
-  int N = 10;
+  int N = 9;
   for (int i=0 ; i<N ; ++i) {
     RCP<StepperBase<double> > stepper = stepperFactory.create();
     double stepTaken = stepper->takeStep(h,STEP_TYPE_FIXED);
@@ -99,7 +99,7 @@ double computeOrderByGlobalErrorConvergenceStudy(const StepperFactoryBase<double
 
 
   double h = 0.5;
-  int N = 10;
+  int N = 9;
   for (int i=0 ; i<N ; ++i) {
     RCP<StepperBase<double> > stepper = stepperFactory.create();
     int numSteps = int(round(t_final/h));

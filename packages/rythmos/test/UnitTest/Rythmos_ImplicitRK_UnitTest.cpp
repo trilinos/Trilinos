@@ -702,6 +702,27 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, takeStep ) {
 */
 
 
+TEUCHOS_UNIT_TEST( Rythmos_DIRKModelEvaluator, emptyCreate ) {
+  DiagonalImplicitRKModelEvaluator<double> dirkME;
+  TEST_THROW( dirkME.get_x_space(), std::logic_error );
+  TEST_THROW( dirkME.get_f_space(), std::logic_error );
+  TEST_THROW( dirkME.create_W_op(), std::logic_error );
+  TEST_THROW( dirkME.get_W_factory(), std::logic_error );
+
+  RCP<VectorBase<double> > x_old;
+  double t_old = 0.1;
+  double delta_t = -0.1;
+  TEST_THROW(
+      dirkME.setTimeStepPoint( x_old, t_old, delta_t ),
+      std::logic_error
+      );
+  RCP<VectorBase<double> > valid_x_old = createDefaultVector<double>(10, 0.1);
+  TEST_THROW(
+      dirkME.setTimeStepPoint( valid_x_old, t_old, delta_t ),
+      std::logic_error
+      );
+}
+
 
 } // namespace Rythmos
 

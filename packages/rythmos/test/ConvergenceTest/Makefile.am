@@ -42,6 +42,7 @@ Rythmos_ConvergenceTest_INCLUDES =\
   $(srcdir)/Rythmos_ExplicitTaylorPolynomial_ConvergenceTest.hpp\
   $(srcdir)/Rythmos_ForwardEuler_ConvergenceTest.hpp\
   $(srcdir)/Rythmos_ImplicitBDF_ConvergenceTest.hpp\
+  $(srcdir)/Rythmos_ImplicitRK_ConvergenceTest.hpp\
   $(srcdir)/Rythmos_BackwardEuler_ConvergenceTest.hpp
 Rythmos_ConvergenceTest_SOURCES =\
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
@@ -52,6 +53,7 @@ Rythmos_ConvergenceTest_SOURCES =\
 	$(srcdir)/Rythmos_ExplicitTaylorPolynomial_ConvergenceTest.cpp\
 	$(srcdir)/Rythmos_ForwardEuler_ConvergenceTest.cpp\
 	$(srcdir)/Rythmos_ImplicitBDF_ConvergenceTest.cpp\
+	$(srcdir)/Rythmos_ImplicitRK_ConvergenceTest.cpp\
 	$(srcdir)/Rythmos_BackwardEuler_ConvergenceTest.cpp
 Rythmos_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
 Rythmos_ConvergenceTest_LDADD = $(common_ldadd)

@@ -38,6 +38,7 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_Describable.hpp"
 
 // 08/13/08 tscoffe:  These are namespaced so they are only availabe in this file.
 namespace {
@@ -58,6 +59,10 @@ namespace {
   const std::string Implicit1Stage2ndOrderGauss_name = "Implicit 1 Stage 2nd order Gauss";
   const std::string Implicit2Stage4thOrderGauss_name = "Implicit 2 Stage 4th order Gauss";
   const std::string Implicit3Stage6thOrderGauss_name = "Implicit 3 Stage 6th order Gauss";
+
+  const std::string SDIRK5Stage5thOrder_name = "SDIRK 5 Stage 5th order";
+  const std::string SDIRK5Stage4thOrder_name = "SDIRK 5 Stage 4th order";
+  const std::string SDIRK3Stage4thOrder_name = "SDIRK 3 Stage 4th order";
 
   const std::string SelectionTypeByName_name = "Method by name";
   const std::string SelectionTypeByName_default = BackwardEuler_name;
@@ -118,7 +123,10 @@ namespace {
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_EXPLICIT_4_STAGE_3_ORDER,
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_1_STAGE_2_ORDER_GAUSS,
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_4_ORDER_GAUSS,
-    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_GAUSS
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_GAUSS,
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_5_ORDER,
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_4_ORDER,
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_3_STAGE_4_ORDER
   };
 
   Teuchos::Array<std::string>
@@ -134,7 +142,10 @@ namespace {
       Explicit4Stage3rdOrder_name,
       Implicit1Stage2ndOrderGauss_name,
       Implicit2Stage4thOrderGauss_name,
-      Implicit3Stage6thOrderGauss_name
+      Implicit3Stage6thOrderGauss_name,
+      SDIRK5Stage5thOrder_name,
+      SDIRK5Stage4thOrder_name,
+      SDIRK3Stage4thOrder_name
       );
 
   const RCP<Teuchos::StringToIntegralParameterEntryValidator<E_RKButcherTableauSelectionMethodNames> >
@@ -153,7 +164,10 @@ namespace {
             RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_EXPLICIT_4_STAGE_3_ORDER,
             RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_1_STAGE_2_ORDER_GAUSS,
             RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_4_ORDER_GAUSS,
-            RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_GAUSS
+            RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_GAUSS,
+            RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_5_ORDER,
+            RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_4_ORDER,
+            RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_3_STAGE_4_ORDER
             ),
           SelectionTypeByName_name
           )
@@ -167,7 +181,8 @@ namespace Rythmos {
 
 /* \brief . */
 template<class Scalar>
-class RKButcherTableau {
+class RKButcherTableau : virtual public Teuchos::Describable
+{
 public:
   /** \brief. */
   RKButcherTableau()
@@ -200,12 +215,32 @@ public:
   int order() const { return order_; }
   /** \brief . */
   bool operator== (const RKButcherTableau<Scalar>& rkbt) const;
+  /** \brief . */
+  void setDescription(std::string longDescription) 
+  {
+    longDescription_ = longDescription;
+  }
+
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+  
+  /** \brief . */
+  std::string description() const { return "Rythmos::RKButcherTableau"; }
+  
+  /** \brief . */
+  void describe(
+    FancyOStream  &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
+
+  //@}
 
 private:
   Teuchos::SerialDenseMatrix<int,Scalar> A_;
   Teuchos::SerialDenseVector<int,Scalar> b_;
   Teuchos::SerialDenseVector<int,Scalar> c_;
   int order_;
+  std::string longDescription_;
 };
 
 /* \brief . */
@@ -240,6 +275,21 @@ bool RKButcherTableau<Scalar>::operator== (const RKButcherTableau<Scalar>& rkbt)
     } 
   }
   return true;
+}
+
+template<class Scalar>
+void RKButcherTableau<Scalar>::describe(
+    FancyOStream  &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const
+{
+  out << this->description() << std::endl;
+  out << longDescription_ << std::endl;
+  out << "number of Stages = " << this->numStages() << std::endl;
+  out << "A = " << A_ << std::endl;
+  out << "b = " << b_ << std::endl;
+  out << "c = " << c_ << std::endl;
+  out << "order = " << order_ << std::endl;
 }
 
 
@@ -489,11 +539,11 @@ RCP<const Teuchos::ParameterList> DefaultRKButcherTableauFactory<Scalar>::getVal
 template<class Scalar>
 RKButcherTableau<Scalar> createBackwardEulerRKBT() 
 {
-  // Backward Euler Method:
-  // c = [ 1 ]'
-  // A = [ 1 ]
-  // b = [ 1 ]'
-  // This method is 1st order
+  std::ostringstream description;
+  description << "Backward Euler Method:\n"
+              << "c = [ 1 ]'\n"
+              << "A = [ 1 ]\n"
+              << "b = [ 1 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   Teuchos::SerialDenseMatrix<int,Scalar> A(1,1);
   A(0,0) = ST::one();
@@ -501,39 +551,43 @@ RKButcherTableau<Scalar> createBackwardEulerRKBT()
   b(0) = ST::one();
   Teuchos::SerialDenseVector<int,Scalar> c(1);
   c(0) = ST::one();
-  return RKButcherTableau<Scalar>(A,b,c,1);
+  RKButcherTableau<Scalar> rkbt(A,b,c,1);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createForwardEulerRKBT() 
 {
-  // Forward Euler Method:
-  // c = [ 0 ]'
-  // A = [ 0 ]
-  // b = [ 1 ]'
-  // This method is 1st order
+  std::ostringstream description;
+  description << "Forward Euler Method:\n"
+              << "c = [ 0 ]'\n"
+              << "A = [ 0 ]\n"
+              << "b = [ 1 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   Teuchos::SerialDenseMatrix<int,Scalar> A(1,1);
   Teuchos::SerialDenseVector<int,Scalar> b(1);
   b(0) = ST::one();
   Teuchos::SerialDenseVector<int,Scalar> c(1);
-  return RKButcherTableau<Scalar>(A,b,c,1);
+  RKButcherTableau<Scalar> rkbt(A,b,c,1);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createExplicit4StageRKBT()
 {
-  // "The" Runge-Kutta Method: 
-  // "Solving Ordinary Differential Equations I:  Nonstiff Problems", 2nd Edition
-  // E. Hairer, S.P. Norsett, G. Wanner
-  // Table 1.2, pg 138
-  // c = [  0  1/2 1/2  1  ]'
-  // A = [  0              ] 
-  //     [ 1/2  0          ]
-  //     [  0  1/2  0      ]
-  //     [  0   0   1   0  ]
-  // b = [ 1/6 1/3 1/3 1/6 ]'
-  // This method is 4th order
+  std::ostringstream description;
+  description << "\"The\" Runge-Kutta Method (explicit):\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+              << "E. Hairer, S.P. Norsett, G. Wanner\n"
+              << "Table 1.2, pg 138\n"
+              << "c = [  0  1/2 1/2  1  ]'\n"
+              << "A = [  0              ] \n"
+              << "    [ 1/2  0          ]\n"
+              << "    [  0  1/2  0      ]\n"
+              << "    [  0   0   1   0  ]\n"
+              << "b = [ 1/6 1/3 1/3 1/6 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   Scalar one = ST::one();
   Scalar zero = ST::zero();
@@ -579,23 +633,25 @@ RKButcherTableau<Scalar> createExplicit4StageRKBT()
   c(2) = onehalf;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c,4);
+  RKButcherTableau<Scalar> rkbt(A,b,c,4);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createExplicit3_8RuleRKBT()
 {
-  // 3/8 Rule Runge-Kutta Method: 
-  // "Solving Ordinary Differential Equations I:  Nonstiff Problems", 2nd Edition
-  // E. Hairer, S.P. Norsett, G. Wanner
-  // Table 1.2, pg 138
-  // c = [  0  1/3 2/3  1  ]'
-  // A = [  0              ]
-  //     [ 1/3  0          ]
-  //     [-1/3  1   0      ]
-  //     [  1  -1   1   0  ]
-  // b = [ 1/8 3/8 3/8 1/8 ]'
-  // This method is 4th order
+  std::ostringstream description;
+  description << "Explicit 3/8 Rule Runge-Kutta Method:\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+              << "E. Hairer, S.P. Norsett, G. Wanner\n"
+              << "Table 1.2, pg 138\n"
+              << "c = [  0  1/3 2/3  1  ]'\n"
+              << "A = [  0              ]\n"
+              << "    [ 1/3  0          ]\n"
+              << "    [-1/3  1   0      ]\n"
+              << "    [  1  -1   1   0  ]\n"
+              << "b = [ 1/8 3/8 3/8 1/8 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   int numStages = 4;
   Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
@@ -642,23 +698,25 @@ RKButcherTableau<Scalar> createExplicit3_8RuleRKBT()
   c(2) = two_third;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c,4);
+  RKButcherTableau<Scalar> rkbt(A,b,c,4);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createExplicit4Stage3rdOrderRungeRKBT()
 {
-  // 4 Stage 3rd Order Explicit RK method, Runge
-  // "Solving Ordinary Differential Equations I:  Nonstiff Problems", 2nd Edition
-  // E. Hairer, S.P. Norsett, G. Wanner
-  // Table 1.1, pg 135
-  // c = [  0  1/2  1   1  ]'
-  // A = [  0              ]
-  //     [ 1/2  0          ]
-  //     [  0   1   0      ]
-  //     [  0   0   1   0  ]
-  // b = [ 1/6 2/3  0  1/6 ]'
-  // This method is 3rd order
+  std::ostringstream description;
+  description << "4 Stage 3rd Order Explicit RK method by Runge\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+              << "E. Hairer, S.P. Norsett, G. Wanner\n"
+              << "Table 1.1, pg 135\n"
+              << "c = [  0  1/2  1   1  ]'\n"
+              << "A = [  0              ]\n"
+              << "    [ 1/2  0          ]\n"
+              << "    [  0   1   0      ]\n"
+              << "    [  0   0   1   0  ]\n"
+              << "b = [ 1/6 2/3  0  1/6 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   int numStages = 4;
   Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
@@ -704,19 +762,21 @@ RKButcherTableau<Scalar> createExplicit4Stage3rdOrderRungeRKBT()
   c(2) = one;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c,3);
+  RKButcherTableau<Scalar> rkbt(A,b,c,3);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createExplicit3Stage3rdOrderRKBT()
 {
-  // 3 Stage 3rd Order Explicit RK Method
-  // c = [  0  1/2  1  ]'
-  // A = [  0          ] 
-  //     [ 1/2  0      ]
-  //     [ -1   2   0  ]
-  // b = [ 1/6 4/6 1/6 ]'
-  // This method is 3rd order
+  std::ostringstream description;
+  description << "3 Stage 3rd Order Explicit RK Method\n"
+              << "c = [  0  1/2  1  ]'\n"
+              << "A = [  0          ]\n"
+              << "    [ 1/2  0      ]\n"
+              << "    [ -1   2   0  ]\n"
+              << "b = [ 1/6 4/6 1/6 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   Scalar one = ST::one();
   Scalar two = Scalar(2*ST::one());
@@ -753,22 +813,24 @@ RKButcherTableau<Scalar> createExplicit3Stage3rdOrderRKBT()
   c(1) = onehalf;
   c(2) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c,3);
+  RKButcherTableau<Scalar> rkbt(A,b,c,3);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createExplicit3Stage3rdOrderHeunRKBT()
 {
-  // 3 Stage 3rd Order Explicit RK Method, Heun
-  // "Solving Ordinary Differential Equations I:  Nonstiff Problems", 2nd Edition
-  // E. Hairer, S.P. Norsett, G. Wanner
-  // Table 1.1, pg 135
-  // c = [  0  1/3 2/3 ]'
-  // A = [  0          ] 
-  //     [ 1/3  0      ]
-  //     [  0  2/3  0  ]
-  // b = [ 1/4  0  3/4 ]'
-  // This method is 3rd order
+  std::ostringstream description;
+  description << "3 Stage 3rd Order Explicit RK Method by Heun\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+              << "E. Hairer, S.P. Norsett, G. Wanner\n"
+              << "Table 1.1, pg 135\n"
+              << "c = [  0  1/3 2/3 ]'\n"
+              << "A = [  0          ] \n"
+              << "    [ 1/3  0      ]\n"
+              << "    [  0  2/3  0  ]\n"
+              << "b = [ 1/4  0  3/4 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   Scalar one = ST::one();
   Scalar zero = ST::zero();
@@ -805,21 +867,23 @@ RKButcherTableau<Scalar> createExplicit3Stage3rdOrderHeunRKBT()
   c(1) = onethird;
   c(2) = twothirds;
 
-  return RKButcherTableau<Scalar>(A,b,c,3);
+  RKButcherTableau<Scalar> rkbt(A,b,c,3);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createExplicit2Stage2ndOrderRungeRKBT()
 {
-  // 2 Stage 2nd Order Explicit RK Method, Runge
-  // "Solving Ordinary Differential Equations I:  Nonstiff Problems", 2nd Edition
-  // E. Hairer, S.P. Norsett, G. Wanner
-  // Table 1.1, pg 135
-  // c = [  0  1/2 ]'
-  // A = [  0      ] 
-  //     [ 1/2  0  ]
-  // b = [  0   1  ]'
-  // This method is 2nd order
+  std::ostringstream description;
+  description << "2 Stage 2nd Order Explicit RK Method by Runge\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
+              << "E. Hairer, S.P. Norsett, G. Wanner\n"
+              << "Table 1.1, pg 135\n"
+              << "c = [  0  1/2 ]'\n"
+              << "A = [  0      ]\n"
+              << "    [ 1/2  0  ]\n"
+              << "b = [  0   1  ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   Scalar one = ST::one();
   Scalar zero = ST::zero();
@@ -845,20 +909,22 @@ RKButcherTableau<Scalar> createExplicit2Stage2ndOrderRungeRKBT()
   c(0) = zero;
   c(1) = onehalf;
 
-  return RKButcherTableau<Scalar>(A,b,c,2);
+  RKButcherTableau<Scalar> rkbt(A,b,c,2);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createExplicit4Stage3rdOrderRKBT()
 {
-  // 4 Stage 3rd Order Explicit RK Method
-  // c = [  0  1/2 1/2  1  ]'
-  // A = [  0              ]
-  //     [ 1/2  0          ]
-  //     [  0  1/2  0      ]
-  //     [  0   0   1   0  ]
-  // b = [ 1/6 2/6 2/6 1/6 ]'
-  // This method is 3rd order
+  std::ostringstream description;
+  description << "4 Stage 3rd Order Explicit RK Method\n"
+              << "c = [  0  1/2 1/2  1  ]'\n"
+              << "A = [  0              ]\n"
+              << "    [ 1/2  0          ]\n"
+              << "    [  0  1/2  0      ]\n"
+              << "    [  0   0   1   0  ]\n"
+              << "b = [ 1/6 2/6 2/6 1/6 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   int numStages = 4;
   Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
@@ -904,19 +970,22 @@ RKButcherTableau<Scalar> createExplicit4Stage3rdOrderRKBT()
   c(2) = one_half;
   c(3) = one;
 
-  return RKButcherTableau<Scalar>(A,b,c,3);
+  RKButcherTableau<Scalar> rkbt(A,b,c,3);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createImplicit1Stage2ndOrderGaussRKBT()
 {
-  // 1 Stage 2nd order Gauss Implicit RK Method
-  // "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems", 2nd Revised Edition
-  // E. Hairer and G. Wanner
-  // Table 5.2, pg 72
-  // c = [ 1/2 ]'
-  // A = [ 1/2 ]
-  // b = [  1  ]'
+  std::ostringstream description;
+  description << "1 Stage 2nd order Gauss Implicit RK Method\n"
+              << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+              << "E. Hairer and G. Wanner\n"
+              << "Table 5.2, pg 72\n"
+              << "c = [ 1/2 ]'\n"
+              << "A = [ 1/2 ]\n"
+              << "b = [  1  ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   int numStages = 1;
   Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
@@ -927,19 +996,23 @@ RKButcherTableau<Scalar> createImplicit1Stage2ndOrderGaussRKBT()
   A(0,0) = onehalf;
   b(0) = one;
   c(0) = onehalf;
-  return RKButcherTableau<Scalar>(A,b,c,2);
+  RKButcherTableau<Scalar> rkbt(A,b,c,2);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage4thOrderGaussRKBT()
 {
-  // "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems", 2nd Revised Edition
-  // E. Hairer and G. Wanner
-  // Table 5.2, pg 72
-  // c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'
-  // A = [ 1/4            1/4-sqrt(3)/6 ]
-  //     [ 1/4+sqrt(3)/6  1/4           ]
-  // b = [ 1/2 1/2 ]'
+  std::ostringstream description;
+  description << "2 stage 4th order Guass Implicit RK Method\n"
+              << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+              << "E. Hairer and G. Wanner\n"
+              << "Table 5.2, pg 72\n"
+              << "c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'\n"
+              << "A = [ 1/4            1/4-sqrt(3)/6 ]\n"
+              << "    [ 1/4+sqrt(3)/6  1/4           ]\n"
+              << "b = [ 1/2            1/2 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   int numStages = 2;
   Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
@@ -960,20 +1033,24 @@ RKButcherTableau<Scalar> createImplicit2Stage4thOrderGaussRKBT()
   b(1) = onehalf;
   c(0) = onehalf-alpha;
   c(1) = onehalf+alpha;
-  return RKButcherTableau<Scalar>(A,b,c,4);
+  RKButcherTableau<Scalar> rkbt(A,b,c,4);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage6thOrderGaussRKBT()
 {
-  // "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems", 2nd Revised Edition
-  // E. Hairer and G. Wanner
-  // Table 5.2, pg 72
-  // c = [ 1/2-sqrt(15)/10   1/2              1/2+sqrt(15)/10  ]'
-  // A = [ 5/36              2/9-sqrt(15)/15  5/36-sqrt(15)/30 ]
-  //     [ 5/36+sqrt(15)/24  2/9              5/36-sqrt(15)/24 ]
-  //     [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]
-  // b = [ 5/18              4/9              5/18             ]'
+  std::ostringstream description;
+  description << "3 stage 6th order Gauss Implicit RK Method\n"
+              << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+              << "E. Hairer and G. Wanner\n"
+              << "Table 5.2, pg 72\n"
+              << "c = [ 1/2-sqrt(15)/10   1/2              1/2+sqrt(15)/10  ]'\n"
+              << "A = [ 5/36              2/9-sqrt(15)/15  5/36-sqrt(15)/30 ]\n"
+              << "    [ 5/36+sqrt(15)/24  2/9              5/36-sqrt(15)/24 ]\n"
+              << "    [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]\n"
+              << "b = [ 5/18              4/9              5/18             ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   int numStages = 3;
   Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
@@ -1004,21 +1081,209 @@ RKButcherTableau<Scalar> createImplicit3Stage6thOrderGaussRKBT()
   c(0) = Scalar(one/(2*one))-sqrt15over10;
   c(1) = Scalar(one/(2*one));
   c(2) = Scalar(one/(2*one))+sqrt15over10;
-  return RKButcherTableau<Scalar>(A,b,c,6);
+  RKButcherTableau<Scalar> rkbt(A,b,c,6);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
 RKButcherTableau<Scalar> createSDIRK5Stage5thOrderRKBT()
 {
-  // "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems", 2nd Revised Edition
-  // E. Hairer and G. Wanner
-  // pg101 
+  std::ostringstream description;
+  description << "Singly Diagonally Implicit 5 stage, 5th order, A-stable, but not L-stable\n"
+    << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+    << "E. Hairer and G. Wanner\n"
+    << "pg101 \n"
+    << "c = [ (6-sqrt(6))/10                (6+9*sqrt(6))/35             1                        (4-sqrt(6))/10         (4+sqrt(6))/10  ]'\n"
+    << "A = [ (6-sqrt(6))/10                                                                                                             ]\n"
+    << "    [ (-6+5*sqrt(6))/14             (6-sqrt(6))/10                                                                               ]\n"
+    << "    [ (888+607*sqrt(6))/2850        (126-161*sqrt(6))/1425       (6-sqrt(6))/10                                                  ]\n"
+    << "    [ (3153-3082*sqrt(6))/14250     (3213+1148*sqrt(6))/28500    (-267+88*sqrt(6))/500    (6-sqrt(6))/10                         ]\n"
+    << "    [ (-32583+14638*sqrt(6))/71250  (-17199+364*sqrt(6))/142500  (1329-544*sqrt(6))/2500  (-96+131*sqrt(6))/625  (6-sqrt(6))/10  ]\n"
+    << "b = [ 0                             0                            1/9                      (16-sqrt(6))/36        (16+sqrt(6))/36 ]'" << std::endl;
   typedef ScalarTraits<Scalar> ST;
   int numStages = 5;
   Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
   Teuchos::SerialDenseVector<int,Scalar> b(numStages);
   Teuchos::SerialDenseVector<int,Scalar> c(numStages);
-  return RKButcherTableau<Scalar>(A,b,c,5);
+  Scalar zero = ST::zero();
+  Scalar one = ST::one();
+  Scalar sqrt6 = sqrt(Scalar(6*one));
+  Scalar gamma = Scalar( (6*one - sqrt6) / (10*one) ); // diagonal
+  A(0,0) = gamma;
+  A(0,1) = zero;
+  A(0,2) = zero;
+  A(0,3) = zero;
+  A(0,4) = zero;
+
+  A(1,0) = Scalar( (-6*one+5*one*sqrt6)/(14*one) );
+  A(1,1) = gamma;
+  A(1,2) = zero;
+  A(1,3) = zero;
+  A(1,4) = zero;
+
+  A(2,0) = Scalar( (888*one+607*one*sqrt6)/(2850*one) );
+  A(2,1) = Scalar( (126*one-161*one*sqrt6)/(1425*one) );
+  A(2,2) = gamma;
+  A(2,3) = zero;
+  A(2,4) = zero;
+
+  A(3,0) = Scalar( (3153*one-3082*one*sqrt6)/(14250*one) );
+  A(3,1) = Scalar( (3213*one+1148*one*sqrt6)/(28500*one) );
+  A(3,2) = Scalar( (-267*one+88*one*sqrt6)/(500*one) );
+  A(3,3) = gamma;
+  A(3,4) = zero;
+
+  A(4,0) = Scalar( (-32583*one+14638*one*sqrt6)/(71250*one) );
+  A(4,1) = Scalar( (-17199*one+364*one*sqrt6)/(142500*one) );
+  A(4,2) = Scalar( (1329*one-544*one*sqrt6)/(2500*one) );
+  A(4,3) = Scalar( (-96*one+131*sqrt6)/(625*one) );
+  A(4,4) = gamma;
+
+  b(0) = zero;
+  b(1) = zero;
+  b(2) = Scalar( one/(9*one) );
+  b(3) = Scalar( (16*one-sqrt6)/(36*one) );
+  b(4) = Scalar( (16*one+sqrt6)/(36*one) );
+
+  c(0) = gamma;
+  c(1) = Scalar( (6*one+9*one*sqrt6)/(35*one) );
+  c(2) = one;
+  c(3) = Scalar( (4*one-sqrt6)/(10*one) );
+  c(4) = Scalar( (4*one+sqrt6)/(10*one) );
+
+  RKButcherTableau<Scalar> rkbt(A,b,c,5);
+  rkbt.setDescription(description.str());
+  return rkbt;
+}
+
+template<class Scalar>
+RKButcherTableau<Scalar> createSDIRK5Stage4thOrderRKBT()
+{
+  std::ostringstream description;
+  description << "Singly Diagonally Implicit 5 stage, 4th order, L-stable\n"
+    << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+    << "E. Hairer and G. Wanner\n"
+    << "pg100 \n"
+    << "c  = [ 1/4       3/4        11/20   1/2     1   ]'\n"
+    << "A  = [ 1/4                                      ]\n"
+    << "     [ 1/2       1/4                            ]\n"
+    << "     [ 17/50     -1/25      1/4                 ]\n"
+    << "     [ 371/1360  -137/2720  15/544  1/4         ]\n"
+    << "     [ 25/24     -49/48     125/16  -85/12  1/4 ]\n"
+    << "b  = [ 25/24     -49/48     125/16  -85/12  1/4 ]'\n"
+    << "b' = [ 59/48     -17/96     225/32  -85/12  0   ]'" << std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 5;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  Scalar zero = ST::zero();
+  Scalar one = ST::one();
+  Scalar onequarter = Scalar( one/(4*one) );
+  A(0,0) = onequarter;
+  A(0,1) = zero;
+  A(0,2) = zero;
+  A(0,3) = zero;
+  A(0,4) = zero;
+
+  A(1,0) = Scalar( one / (2*one) );
+  A(1,1) = onequarter;
+  A(1,2) = zero;
+  A(1,3) = zero;
+  A(1,4) = zero;
+
+  A(2,0) = Scalar( 17*one/(50*one) );
+  A(2,1) = Scalar( -one/(25*one) );
+  A(2,2) = onequarter;
+  A(2,3) = zero;
+  A(2,4) = zero;
+
+  A(3,0) = Scalar( 371*one/(1360*one) );
+  A(3,1) = Scalar( -137*one/(2720*one) );
+  A(3,2) = Scalar( 15*one/(544*one) );
+  A(3,3) = onequarter;
+  A(3,4) = zero;
+
+  A(4,0) = Scalar( 25*one/(24*one) );
+  A(4,1) = Scalar( -49*one/(48*one) );
+  A(4,2) = Scalar( 125*one/(16*one) );
+  A(4,3) = Scalar( -85*one/(12*one) );
+  A(4,4) = onequarter;
+
+  b(0) = Scalar( 25*one/(24*one) );
+  b(1) = Scalar( -49*one/(48*one) );
+  b(2) = Scalar( 125*one/(16*one) );
+  b(3) = Scalar( -85*one/(12*one) );
+  b(4) = onequarter;
+
+  /*
+  // Alternate version 
+  b(0) = Scalar( 59*one/(48*one) );
+  b(1) = Scalar( -17*one/(96*one) );
+  b(2) = Scalar( 225*one/(32*one) );
+  b(3) = Scalar( -85*one/(12*one) );
+  b(4) = zero;
+  */
+  c(0) = onequarter;
+  c(1) = Scalar( 3*one/(4*one) );
+  c(2) = Scalar( 11*one/(20*one) );
+  c(3) = Scalar( one/(2*one) );
+  c(4) = one;
+
+  RKButcherTableau<Scalar> rkbt(A,b,c,4);
+  rkbt.setDescription(description.str());
+  return rkbt;
+}
+
+template<class Scalar>
+RKButcherTableau<Scalar> createSDIRK3Stage4thOrderRKBT()
+{
+  std::ostringstream description;
+  description << "Singly Diagonally Implicit 3 stage, 4th order, A-stable\n"
+              << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
+              << "E. Hairer and G. Wanner\n"
+              << "pg100 \n"
+              << "gamma = (1/sqrt(3))*cos(pi/18)+1/2\n"
+              << "delta = 1/(6*(2*gamma-1)^2)\n"
+              << "c = [ gamma      1/2        1-gamma ]'\n"
+              << "A = [ gamma                         ]\n"
+              << "    [ 1/2-gamma  gamma              ]\n"
+              << "    [ 2*gamma    1-4*gamma  gamma   ]\n"
+              << "b = [ delta      1-2*delta  delta   ]'" << std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 3;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  Scalar zero = ST::zero();
+  Scalar one = ST::one();
+  Scalar pi = Scalar(4*one)*atan(one);
+  Scalar gamma = Scalar( one/sqrt(3*one)*cos(pi/(18*one))+one/(2*one) );
+  Scalar delta = Scalar( one/(6*one*pow(2*gamma-one,2*one)) );
+  A(0,0) = gamma;
+  A(0,1) = zero;
+  A(0,2) = zero;
+
+  A(1,0) = Scalar( one/(2*one) - gamma );
+  A(1,1) = gamma;
+  A(1,2) = zero;
+
+  A(2,0) = Scalar( 2*gamma );
+  A(2,1) = Scalar( one - 4*gamma );
+  A(2,2) = gamma;
+
+  b(0) = delta;
+  b(1) = Scalar( one-2*delta );
+  b(2) = delta;
+
+  c(0) = gamma;
+  c(1) = Scalar( one/(2*one) );
+  c(2) = Scalar( one - gamma );
+
+  RKButcherTableau<Scalar> rkbt(A,b,c,4);
+  rkbt.setDescription(description.str());
+  return rkbt;
 }
 
 template<class Scalar>
@@ -1053,6 +1318,18 @@ RKButcherTableau<Scalar> DefaultRKButcherTableauFactory<Scalar>::create(Teuchos:
       rkbt_out = createExplicit4Stage3rdOrderRungeRKBT<Scalar>();
     } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_EXPLICIT_4_STAGE_3_ORDER) {
       rkbt_out = createExplicit4Stage3rdOrderRKBT<Scalar>();
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_1_STAGE_2_ORDER_GAUSS) {
+      rkbt_out = createImplicit1Stage2ndOrderGaussRKBT<Scalar>();
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_4_ORDER_GAUSS) {
+      rkbt_out = createImplicit2Stage4thOrderGaussRKBT<Scalar>();
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_GAUSS) {
+      rkbt_out = createImplicit3Stage6thOrderGaussRKBT<Scalar>();
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_5_ORDER) {
+      rkbt_out = createSDIRK5Stage5thOrderRKBT<Scalar>();
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_4_ORDER) {
+      rkbt_out = createSDIRK5Stage4thOrderRKBT<Scalar>();
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_3_STAGE_4_ORDER) {
+      rkbt_out = createSDIRK3Stage4thOrderRKBT<Scalar>();
     } else {
       // Should never get here.
       TEST_FOR_EXCEPT(true);
@@ -1091,18 +1368,26 @@ RKButcherTableau<Scalar> DefaultRKButcherTableauFactory<Scalar>::create(Teuchos:
     int order = paramList.get<int>(SelectionTypeDIRKByOrder_name);
     if (order == 1) {
       rkbt_out = createBackwardEulerRKBT<Scalar>();
+    } else if (order == 4) {
+      rkbt_out = createSDIRK3Stage4thOrderRKBT<Scalar>();
+    } else if (order == 5) {
+      rkbt_out = createSDIRK5Stage5thOrderRKBT<Scalar>();
     } else {
-      TEST_FOR_EXCEPTION( order>1, std::logic_error,
-          "Error!  DIRK method by order is not implemented for order > 1\n"
+      TEST_FOR_EXCEPTION( ((order != 1) && (order != 4) && (order != 5)), std::logic_error,
+          "Error!  DIRK method by order is only implemented for orders 1, 4, and 5\n"
           );
     }
   } else if (selectionTypeEnum == RYTHMOS_RKBUTCHERTABLEAU_SELECTION_TYPE_SDIRK_BY_ORDER) {
     int order = paramList.get<int>(SelectionTypeSDIRKByOrder_name);
     if (order == 1) {
       rkbt_out = createBackwardEulerRKBT<Scalar>();
+    } else if (order == 4) {
+      rkbt_out = createSDIRK3Stage4thOrderRKBT<Scalar>();
+    } else if (order == 5) {
+      rkbt_out = createSDIRK5Stage5thOrderRKBT<Scalar>();
     } else {
-      TEST_FOR_EXCEPTION( order>1, std::logic_error,
-          "Error!  SDIRK method by order is not implemented for order > 1\n"
+      TEST_FOR_EXCEPTION( ((order != 1) && (order != 4) && (order != 5)),  std::logic_error,
+          "Error!  SDIRK method by order is only implemented for orders 1, 4, and 5\n"
           );
     }
   } else {
@@ -1112,6 +1397,49 @@ RKButcherTableau<Scalar> DefaultRKButcherTableauFactory<Scalar>::create(Teuchos:
   
   return rkbt_out;
 }
+
+enum E_RKButcherTableauTypes {
+  RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_INVALID,
+  RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK,
+  RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK,
+  RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK,
+  RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK
+};
+
+template<class Scalar>
+E_RKButcherTableauTypes determineRKBTType(RKButcherTableau<Scalar> rkbt) {
+  try {
+    assertNonEmptyRKButcherTableau(rkbt);
+  } catch (...) {
+    return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_INVALID;
+  }
+  try {
+    validateERKButcherTableau( rkbt );
+    return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK;
+  } catch (...) {
+  }
+  if (rkbt.numStages() == 1) { 
+    // In this case, its just an IRK method.
+    return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK;
+  }
+  try {
+    validateSDIRKButcherTableau( rkbt );
+    return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK;
+  } catch (...) {
+  }
+  try {
+    validateDIRKButcherTableau( rkbt );
+    return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK;
+  } catch (...) {
+  }
+  try {
+    validateIRKButcherTableau( rkbt );
+    return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK;
+  } catch (...) {
+  }
+  return RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_INVALID;
+}
+ 
 
 
 } // namespace Rythmos
