@@ -226,7 +226,7 @@ top_srcdir = @top_srcdir@
 @BUILD_ZOLTAN_FALSE@ZOLTAN_TEST = 
 @BUILD_ZOLTAN_TRUE@ZOLTAN_TEST = rebalance_zoltan.exe
 @BUILD_EPETRAEXT_TRUE@MTX_TEST_DIR = mtx
-@BUILD_EPETRAEXT_TRUE@MTX_TESTS = test_simple.exe
+@BUILD_EPETRAEXT_TRUE@MTX_TESTS = test_simple.exe test_colorer.exe
 
 #
 # Note: utils must be built first, before the other subdirs

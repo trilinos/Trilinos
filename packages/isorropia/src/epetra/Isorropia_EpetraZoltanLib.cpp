@@ -2,8 +2,8 @@
 /*
 ************************************************************************
 
-              Isorropia: Partitioning and Load Balancing Package
-                Copyright (2006) Sandia Corporation
+	      Isorropia: Partitioning and Load Balancing Package
+		Copyright (2006) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 license for use of this work by or on behalf of the U.S. Government.
@@ -23,7 +23,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
 Questions? Contact Alan Williams (william@sandia.gov)
-                or Erik Boman    (egboman@sandia.gov)
+		or Erik Boman    (egboman@sandia.gov)
 
 ************************************************************************
 */
@@ -115,7 +115,7 @@ int ZoltanLibClass::precompute()
     std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
     if (lb_meth == "GRAPH"){
       isHypergraph = false;
-      inputType_ = "GRAPH";
+      setInputType("GRAPH");
     }
   }
 
@@ -126,20 +126,20 @@ int ZoltanLibClass::precompute()
 //     bool symmetric = false;
 //     if (input_graph_.get() != 0){
 //       if (input_graph_->NumGlobalRows() == input_graph_->NumGlobalCols()){
-// 	square = true;
-// 	// TODO - is there a quick way to figure out if the graph is
-// 	// symmetric?  I can't see a way to do it.  For now we let
-// 	// Zoltan figure this out.
-// 	symmetric = true;
+//	square = true;
+//	// TODO - is there a quick way to figure out if the graph is
+//	// symmetric?  I can't see a way to do it.  For now we let
+//	// Zoltan figure this out.
+//	symmetric = true;
 //       }
 //     }
 //     else{
 //       if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
-// 	square = true;
-// 	// TODO - is there a quick way to figure out if the matrix is
-// 	// symmetric?  I can't see a way to do it.  For now we let
-// 	// Zoltan figure this out.
-// 	symmetric = true;
+//	square = true;
+//	// TODO - is there a quick way to figure out if the matrix is
+//	// symmetric?  I can't see a way to do it.  For now we let
+//	// Zoltan figure this out.
+//	symmetric = true;
 //       }
 //     }
 //     if (!square){
@@ -203,9 +203,8 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set(dbg_level_str, "0");
   }
 
-  std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
-
   if (!zoltanParamList_.isParameter(lb_method_str)) {
+    std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
     zoltanParamList_.set(lb_method_str, lb_meth);  // set to HYPERGRAPH
   }
 
@@ -247,7 +246,7 @@ int ZoltanLibClass::precompute()
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
 
-  if (lb_meth == "HYPERGRAPH"){
+  if (isHypergraph){
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
     zz_->Set_HG_Size_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Size_Edge_Weights,
@@ -312,22 +311,22 @@ void ZoltanLibClass::computeCost()
       numMyVWeights = costs_->getNumVertices();
 
       if (costs_->haveGraphEdgeWeights()){
-        for (int i=0; i<numMyVWeights; i++){
-          int gid = input_map_->GID(i);
-          if (gid >= base){
-            numMyGWeights += costs_->getNumGraphEdges(gid);
-          }
-        }
+	for (int i=0; i<numMyVWeights; i++){
+	  int gid = input_map_->GID(i);
+	  if (gid >= base){
+	    numMyGWeights += costs_->getNumGraphEdges(gid);
+	  }
+	}
       }
       numMyHGWeights = costs_->getNumHypergraphEdgeWeights();
 
       if ((numMyVWeights > 0) && (numMyVWeights != myRows)){
-        str2 = "Number of my vertex weights != number of my rows";
-        err = 1;
+	str2 = "Number of my vertex weights != number of my rows";
+	err = 1;
       }
       else if ((numMyGWeights > 0) && (numMyGWeights != (myNZ - mySelfEdges))){
-        str2 = "Number of my graph edge weights != number of my nonzeros";
-        err = 1;
+	str2 = "Number of my graph edge weights != number of my nonzeros";
+	err = 1;
       }
     }
     else{
@@ -433,35 +432,35 @@ void ZoltanLibClass::preCheckPartition()
     if (maxGparts != myGparts){
       fixGparts = maxGparts;    // all procs should have same NGP
     }
-  
+
     if (maxGparts > 0){
       if (maxGparts > numrows){
-        // This is an error because we can't split rows among partitions
-        str2 = "NUM_GLOBAL_PARTITIONS exceeds number of rows (objects to be partitioned)";
-        throw Isorropia::Exception(str1+str2);
+	// This is an error because we can't split rows among partitions
+	str2 = "NUM_GLOBAL_PARTITIONS exceeds number of rows (objects to be partitioned)";
+	throw Isorropia::Exception(str1+str2);
       }
-  
+
       if ((sumLparts > 0) && (sumLparts != maxGparts)){
-        // This is an error because local partitions must sum to number of global
-        str2 = "NUM_GLOBAL_PARTITIONS not equal to sum of NUM_LOCAL_PARTITIONS";
-        throw Isorropia::Exception(str1+str2);
+	// This is an error because local partitions must sum to number of global
+	str2 = "NUM_GLOBAL_PARTITIONS not equal to sum of NUM_LOCAL_PARTITIONS";
+	throw Isorropia::Exception(str1+str2);
       }
-  
+
       if ((sumLparts == 0) && (maxGparts < nprocs)){
-        // Set NUM_LOCAL_PARTITIONS to 1 or 0, because Zoltan will divide
-        // a partition across 2 or more processes when the number of
-        // partitions is less than the number of processes.  This doesn't
-        // work for Epetra matrices, where rows are not owned by more than
-        // one process.
-  
-        fixLparts = (localProc < maxGparts) ? 1 : 0;
+	// Set NUM_LOCAL_PARTITIONS to 1 or 0, because Zoltan will divide
+	// a partition across 2 or more processes when the number of
+	// partitions is less than the number of processes.  This doesn't
+	// work for Epetra matrices, where rows are not owned by more than
+	// one process.
+
+	fixLparts = (localProc < maxGparts) ? 1 : 0;
       }
     }
     else if (maxLparts > 0){
-  
+
       // Set NUM_GLOBAL_PARTITIONS to sum of local partitions.  It's possible
       // that Zoltan does this already, but just to be safe...
-  
+
       fixGparts = sumLparts;
     }
     if (fixGparts > 0){
@@ -543,9 +542,9 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
   //Free Zoltan Data
   zz_->LB_Free_Part(&import_global_ids, &import_local_ids,
-                     &import_procs, &import_to_part);
+		     &import_procs, &import_to_part);
   zz_->LB_Free_Part(&export_global_ids, &export_local_ids,
-                     &export_procs, &export_to_part);
+		     &export_procs, &export_to_part);
 
   postcompute();
 
@@ -557,26 +556,26 @@ color(Teuchos::ParameterList& zoltanParamList,
       std::vector<int>& myNewElements)
 {
   zoltanParamList_ = zoltanParamList;
-
   precompute();
 
   //Generate Load Balance
   int  num_gid_entries, num_lid_entries;
-  ZOLTAN_ID_PTR import_global_ids, import_local_ids;
-  int *colors = new int(num_obj_);
+  ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
+  int colors[num_obj_];
 
-  int err = zz_->Color(num_gid_entries, num_lid_entries, num_obj_, import_global_ids, import_local_ids, colors);
+  int err = zz_->Color(num_gid_entries, num_lid_entries, num_obj_,
+		       import_global_ids, import_local_ids, colors);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
     return -1;
   }
 
+
+  myNewElements.resize(num_obj_);
   for (int i = 0 ; i < num_obj_ ; ++i) {
     myNewElements[i] = colors[i];
   }
-
-  delete[] colors;
 
   return (0);
 }
@@ -591,21 +590,22 @@ order(Teuchos::ParameterList& zoltanParamList,
 
   //Generate Load Balance
   int num_gid_entries, num_lid_entries;
-  ZOLTAN_ID_PTR import_global_ids, import_local_ids;
-  int *rank = new int(num_obj_);
+  ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
+  int rank[num_obj_];
 
-  int err = zz_->Order(num_gid_entries, num_lid_entries, num_obj_, import_global_ids, import_local_ids, rank, NULL);
+  int err = zz_->Order(num_gid_entries, num_lid_entries, num_obj_,
+		       import_global_ids, import_local_ids, rank, NULL);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
     return -1;
   }
 
+  myNewElements.resize(num_obj_);
   for (int i = 0 ; i < num_obj_ ; ++i) {
     myNewElements[i] = rank[i];
   }
 
-  delete[] rank;
 
   return (0);
 }
@@ -629,4 +629,3 @@ int ZoltanLibClass::postcompute()
 #endif //HAVE_EPETRA
 
 }//namespace Isorropia
-
