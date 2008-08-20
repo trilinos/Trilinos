@@ -56,7 +56,7 @@ using Teuchos::ScalarTraits;
 #define SType1     float
 #endif
 #define SType2     double
-#define OType	   int
+#define OType	   int 
 
 // MVMIN/MAX define the minimum and maximum dimensions of generated matrices and vectors, respectively.
 #define MVMIN      2
@@ -97,19 +97,19 @@ template<>
 double GetRandom(double, double);
 
 template<typename TYPE>
-void PrintVector(TYPE* Vector, int Size, std::string Name, bool Matlab = 0);
+void PrintVector(TYPE* Vector, OType Size, std::string Name, bool Matlab = 0);
 
 template<typename TYPE>
-void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, std::string Name, bool Matlab = 0);
+void PrintMatrix(TYPE* Matrix, OType Rows, OType Columns, OType LDM, std::string Name, bool Matlab = 0);
 
 template<typename TYPE1, typename TYPE2>
 bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, TYPE2 Tolerance ); 
 
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, TYPE2 Tolerance ); 
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, OType Size, TYPE2 Tolerance ); 
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, TYPE2 Tolerance ); 
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, OType Rows, OType Columns, OType LDM, TYPE2 Tolerance ); 
 
 // For most types, this function is just a wrapper for static_cast(), but for mp_real/double, it calls mp::dble()
 // The second input parameter is not used; it is only needed to determine what type to convert *to*
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   bool debug = 0;
   bool matlab = 0;
   bool InvalidCmdLineArgs = 0;
-  int i, j, k;
+  OType i, j, k;
   for(i = 1; i < argc; i++)
     {
       if(argv[i][0] == '-')
@@ -193,8 +193,8 @@ int main(int argc, char *argv[])
 	   << "\t -m enables matlab-style output; only has an effect if debug mode is enabled" << std::endl;
       return 1;
     }
-  BLAS<int, SType1> SType1BLAS;
-  BLAS<int, SType2> SType2BLAS;
+  BLAS<OType, SType1> SType1BLAS;
+  BLAS<OType, SType2> SType2BLAS;
   SType1 SType1zero = ScalarTraits<SType1>::zero();
   SType1 SType1one = ScalarTraits<SType1>::one();
   SType2 SType2one = ScalarTraits<SType2>::one();
@@ -212,10 +212,10 @@ int main(int argc, char *argv[])
   SType2 SType2alpha, SType2beta;
   SType1 SType1ASUMresult, SType1DOTresult, SType1NRM2result, SType1SINresult, SType1COSresult;
   SType2 SType2ASUMresult, SType2DOTresult, SType2NRM2result, SType2SINresult, SType2COSresult;
-  int incx, incy;
-  int SType1IAMAXresult;
-  int SType2IAMAXresult;
-  int TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, LDC, Mx, My;
+  OType incx, incy;
+  OType SType1IAMAXresult;
+  OType SType2IAMAXresult;
+  OType TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, LDC, Mx, My;
   Teuchos::EUplo UPLO;
   Teuchos::ESide SIDE;
   Teuchos::ETransp TRANS, TRANSA, TRANSB;
@@ -1555,7 +1555,7 @@ int main(int argc, char *argv[])
 template<typename TYPE>
 TYPE GetRandom(TYPE Low, TYPE High)
 {
-  return ScalarTraits<TYPE>::random();
+  return ((TYPE)((double)((1.0 * ScalarTraits<int>::random()) / RAND_MAX) * (High - Low + 1)) + Low);
 }
 
 template<>
@@ -1571,10 +1571,10 @@ double GetRandom(double Low, double High)
 }
 
 template<typename TYPE>
-void PrintVector(TYPE* Vector, int Size, std::string Name, bool Matlab)
+void PrintVector(TYPE* Vector, OType Size, std::string Name, bool Matlab)
 {
   std::cout << Name << " =" << std::endl;
-  int i;
+  OType i;
   if(Matlab) std::cout << "[";
   for(i = 0; i < Size; i++)
     {
@@ -1592,12 +1592,12 @@ void PrintVector(TYPE* Vector, int Size, std::string Name, bool Matlab)
 }
 
 template<typename TYPE>
-void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, std::string Name, bool Matlab)
+void PrintMatrix(TYPE* Matrix, OType Rows, OType Columns, OType LDM, std::string Name, bool Matlab)
 {
   if(!Matlab)
     {
       std::cout << Name << " =" << std::endl;
-      int i, j;
+      OType i, j;
       for(i = 0; i < Rows; i++)
 	{
       	  for(j = 0; j < Columns; j++)
@@ -1611,7 +1611,7 @@ void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, std::string Name,
   else
     {
       std::cout << Name << " = ";
-      int i, j;
+      OType i, j;
       std::cout << "[";
       for(i = 0; i < Rows; i++)
         {
@@ -1643,14 +1643,14 @@ bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, TYPE2 Tolerance)
     Purpose:   Compares the difference between two vectors using relative euclidean-norms, i.e. ||v_1-v_2||_2/||v_2||_2
 */
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, TYPE2 Tolerance)
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, OType Size, TYPE2 Tolerance)
 {
   TYPE2 convertTo = ScalarTraits<SType2>::zero();
   TYPE2 temp = ScalarTraits<SType2>::zero();
   TYPE2 temp2 = ScalarTraits<SType2>::zero();
   TYPE2 sum = ScalarTraits<SType2>::zero();
   TYPE2 sum2 = ScalarTraits<SType2>::zero();
-  int i;
+  OType i;
   for(i = 0; i < Size; i++)
     {
       temp2 = ScalarTraits<TYPE2>::magnitude(Vector2[i]);
@@ -1673,14 +1673,14 @@ bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, TYPE2 Tolerance)
     Purpose:   Compares the difference between two matrices using relative frobenius-norms, i.e. ||M_1-M_2||_F/||M_2||_F
 */
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, TYPE2 Tolerance)
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, OType Rows, OType Columns, OType LDM, TYPE2 Tolerance)
 {
   TYPE2 convertTo = ScalarTraits<SType2>::zero();
   TYPE2 temp = ScalarTraits<SType2>::zero();
   TYPE2 temp2 = ScalarTraits<SType2>::zero();
   TYPE2 sum = ScalarTraits<SType2>::zero();
   TYPE2 sum2 = ScalarTraits<SType2>::zero();
-  int i,j;
+  OType i,j;
   for(j = 0; j < Columns; j++)
     {
       for(i = 0; i < Rows; i++)
