@@ -781,7 +781,7 @@ std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
     case ModelEvaluatorBase::IN_ARG_x_dot_poly:
       return "IN_ARG_x_dot_poly";
     case ModelEvaluatorBase::IN_ARG_x_poly:
-      return "IN_ARG_xt_poly";
+      return "IN_ARG_x_poly";
     case ModelEvaluatorBase::IN_ARG_t:
       return "IN_ARG_t";
     case ModelEvaluatorBase::IN_ARG_alpha:

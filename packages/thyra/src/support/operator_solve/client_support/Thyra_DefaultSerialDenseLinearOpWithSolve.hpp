@@ -66,6 +66,11 @@ void DefaultSerialDenseLinearOpWithSolve<Scalar>::initialize(
   M_ = M;
 }
 
+template<class Scalar>
+RCP<const LinearOpBase<Scalar> > DefaultSerialDenseLinearOpWithSolve<Scalar>::getFwdOp() const
+{
+  return M_;
+}
 
 // Overridden from LinearOpBase
 

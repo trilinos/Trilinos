@@ -160,7 +160,25 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   ESupportSolveUse *supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  using Teuchos::dyn_cast;
+  using Teuchos::is_null;
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(0==Op);
+#endif // TEUCHOS_DEBUG
+  typedef DefaultSerialDenseLinearOpWithSolve<Scalar> DSDLOWS;
+  DSDLOWS &dsdlows = dyn_cast<DSDLOWS>(*Op);
+  if (fwdOpSrc) {
+    // find a valid fwdOp
+    const RCP<const LinearOpBase<Scalar> > fwdOp = dsdlows.getFwdOp();
+    // pass out a valid fwsOpSrc
+    if (!is_null(fwdOp)) {
+      *fwdOpSrc = defaultLinearOpSource<Scalar>(fwdOp);
+    } else {
+      *fwdOpSrc = Teuchos::null;
+    }
+  }
+  if (prec) *prec = Teuchos::null;
+  if (approxFwdOpSrc) *approxFwdOpSrc = Teuchos::null;
 }
 
 

@@ -90,6 +90,9 @@ public:
   /** \brief . */
   void initialize( const RCP<const MultiVectorBase<Scalar> > &M );
 
+  /** \brief . */
+  RCP<const LinearOpBase<Scalar> > getFwdOp() const;
+
   //@}
 
   /** @name Overridden from LinearOpBase */
