@@ -41,6 +41,7 @@ all-local:
 # ------------------------------------------------------------------------
 
 CORE_H = \
+	$(srcdir)/Tpetra_DefaultPlatform.hpp \
 	$(srcdir)/Tpetra_DistObject.hpp \
 	$(srcdir)/Tpetra_Platform.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \

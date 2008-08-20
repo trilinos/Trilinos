@@ -127,8 +127,9 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
 DIST_SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/Tpetra_DistObject.hpp \
-	$(srcdir)/Tpetra_Platform.hpp $(srcdir)/Tpetra_Distributor.hpp \
+am__include_HEADERS_DIST = $(srcdir)/Tpetra_DefaultPlatform.hpp \
+	$(srcdir)/Tpetra_DistObject.hpp $(srcdir)/Tpetra_Platform.hpp \
+	$(srcdir)/Tpetra_Distributor.hpp \
 	$(srcdir)/Tpetra_DirectoryDecl.hpp \
 	$(srcdir)/Tpetra_Directory.hpp $(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_Version.hpp $(srcdir)/Tpetra_Util.hpp \
@@ -270,6 +271,7 @@ top_srcdir = @top_srcdir@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 CORE_H = \
+	$(srcdir)/Tpetra_DefaultPlatform.hpp \
 	$(srcdir)/Tpetra_DistObject.hpp \
 	$(srcdir)/Tpetra_Platform.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \
