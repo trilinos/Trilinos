@@ -121,41 +121,8 @@ int ZoltanLibClass::precompute()
 
 
   Library::precompute();
-//   if (!isHypergraph){
-//     bool square = false;
-//     bool symmetric = false;
-//     if (input_graph_.get() != 0){
-//       if (input_graph_->NumGlobalRows() == input_graph_->NumGlobalCols()){
-//	square = true;
-//	// TODO - is there a quick way to figure out if the graph is
-//	// symmetric?  I can't see a way to do it.  For now we let
-//	// Zoltan figure this out.
-//	symmetric = true;
-//       }
-//     }
-//     else{
-//       if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
-//	square = true;
-//	// TODO - is there a quick way to figure out if the matrix is
-//	// symmetric?  I can't see a way to do it.  For now we let
-//	// Zoltan figure this out.
-//	symmetric = true;
-//       }
-//     }
-//     if (!square){
-//       str2 = "LB_METHOD=GRAPH, matrix or graph must be square";
-//       throw Isorropia::Exception(str1+str2);
-//     }
-//     if (!symmetric){
-//       str2 = "LB_METHOD=GRAPH, matrix or graph must be symmetric";
-//       throw Isorropia::Exception(str1+str2);
-//     }
-//   }
 
   computeCost();
-
-//   preCheckPartition();
-
 
   if (input_matrix_.get() == 0) {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, isHypergraph));
@@ -516,7 +483,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   std::vector<int> elementList( numMyElements );
   queryObject_->RowMap().MyGlobalElements( &elementList[0] );
 
-  int newNumMyElements = numMyElements - num_export + num_import;
+  int newNumMyElements = numMyElements - num_export ; // no num_import because we do "insert" farther in the code
   myNewElements.resize( newNumMyElements );
 
   for( int i = 0; i < num_export; ++i ) {
@@ -536,9 +503,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   }
 
   //Add imports to end of list
-  for( int i = 0; i < num_import; ++i ) {
-    myNewElements[loc+i] = import_global_ids[i];
-  }
+  myNewElements.insert(myNewElements.begin()+loc, import_global_ids, import_global_ids + num_import);
 
   //Free Zoltan Data
   zz_->LB_Free_Part(&import_global_ids, &import_local_ids,
@@ -561,22 +526,22 @@ color(Teuchos::ParameterList& zoltanParamList,
   //Generate Load Balance
   int  num_gid_entries, num_lid_entries;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
-  int colors[num_obj_];
+  int *colors = new int[num_obj_];
 
   int err = zz_->Color(num_gid_entries, num_lid_entries, num_obj_,
 		       import_global_ids, import_local_ids, colors);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
+    delete[] colors;
     return -1;
   }
 
+  /* Convert array in vector */
+  myNewElements.assign(colors, colors + num_obj_);
 
-  myNewElements.resize(num_obj_);
-  for (int i = 0 ; i < num_obj_ ; ++i) {
-    myNewElements[i] = colors[i];
-  }
-
+  postcompute();
+  delete[] colors;
   return (0);
 }
 
@@ -591,22 +556,22 @@ order(Teuchos::ParameterList& zoltanParamList,
   //Generate Load Balance
   int num_gid_entries, num_lid_entries;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
-  int rank[num_obj_];
+  int *rank = new int[num_obj_];
 
   int err = zz_->Order(num_gid_entries, num_lid_entries, num_obj_,
 		       import_global_ids, import_local_ids, rank, NULL);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
+    delete[] rank;
     return -1;
   }
 
-  myNewElements.resize(num_obj_);
-  for (int i = 0 ; i < num_obj_ ; ++i) {
-    myNewElements[i] = rank[i];
-  }
+  /* Convert array in vector */
+  myNewElements.assign(rank, rank + num_obj_);
 
-
+  postcompute();
+  delete[] rank;
   return (0);
 }
 

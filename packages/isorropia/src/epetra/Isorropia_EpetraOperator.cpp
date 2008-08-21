@@ -163,6 +163,28 @@ Operator::elemsWithProperty(int property, int* elementList, int len) const
 }
 
 
+void
+Operator::computeNumberOfProperties()
+{
+  std::vector<int>::const_iterator elemsIter;
+  std::vector<int>::iterator numberIter;
+  const Epetra_Comm& input_comm = input_map_->Comm();
+
+  int max = 0;
+
+  numberElemsByProperties_.assign(myNewElements_.size(), 0);
+
+  numberIter = numberElemsByProperties_.begin();
+  for(elemsIter = myNewElements_.begin() ; elemsIter != myNewElements_.end() ; elemsIter ++) {
+    int property;
+    property = *elemsIter;
+    if (max < property) max = property;
+    (*(numberIter + property)) ++;
+  }
+
+  input_comm.MaxAll(&max, &numberOfProperties_, 1);
+}
+
 void Operator::stringToUpper(std::string &s, int &changed)
 {
   std::string::iterator siter;
@@ -243,32 +265,6 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
     }
   } // next parameter or sublist
 }
-
-void
-Operator::computeNumberOfProperties()
-{
-  std::vector<int>::const_iterator elemsIter;
-  std::vector<int>::iterator numberIter;
-  const Epetra_Comm& input_comm = input_map_->Comm();
-
-  int max = 0;
-
-  numberElemsByProperties_.resize(myNewElements_.size());
-  for (numberIter = numberElemsByProperties_.begin() ; numberIter != numberElemsByProperties_.end();
-       numberIter ++)
-    *numberIter = 0;
-
-  numberIter = numberElemsByProperties_.begin();
-  for(elemsIter = myNewElements_.begin() ; elemsIter != myNewElements_.end() ; elemsIter ++) {
-    int property;
-    property = *elemsIter;
-    if (max < property) max = property;
-    (*(numberIter + property)) ++;
-  }
-
-  input_comm.MaxAll(&max, &numberOfProperties_, 1);
-}
-
 } // namespace EPETRA
 
 #endif //HAVE_EPETRA

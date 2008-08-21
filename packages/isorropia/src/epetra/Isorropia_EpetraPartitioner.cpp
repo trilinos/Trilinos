@@ -345,10 +345,8 @@ Partitioner::elemsWithProperty(int partition, int* elementList, int len) const
   unsigned length = len;
   if (myNewElements_.size() < length) length = myNewElements_.size();
 
-
-  for(i=0, elemsIter = myNewElements_.begin(); i<length ; i++, elemsIter++) {
-    elementList[i] = *elemsIter;
-  }
+  // Copy from vector to array
+  std::copy(myNewElements_.begin(), myNewElements_.begin() + length, elementList);
 }
 
 const int&
