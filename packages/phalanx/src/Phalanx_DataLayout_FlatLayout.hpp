@@ -29,28 +29,21 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_DATA_LAYOUT_GENERIC
-#define PHX_DATA_LAYOUT_GENERIC
+#ifndef PHX_DATA_LAYOUT_FLAT_LAYOUT
+#define PHX_DATA_LAYOUT_FLAT_LAYOUT
 
 #include "Phalanx_DataLayout.hpp"
 #include <string>
 
 namespace PHX{
 
-
-  /*! \brief A concrete implementation of the DataLayout class that should cover most user requirements.
-
-      This concrete class should be used for DataLayouts unless the
-      user must pass specific external information via Data Layouts.
-
-  */
-  class Generic : public DataLayout {
+  class FlatLayout : public DataLayout {
 
   public:
 
-    Generic(const std::string& unique_identifier, std::size_t i);
+    FlatLayout(const std::string& unique_identifier, std::size_t i);
 
-    virtual ~Generic();
+    virtual ~FlatLayout();
 
     virtual bool operator==(const DataLayout& right) const;
 
@@ -74,7 +67,7 @@ namespace PHX{
 
   };
 
-  std::ostream& operator<<(std::ostream& os, const PHX::Generic& t);
+  std::ostream& operator<<(std::ostream& os, const PHX::FlatLayout& t);
 
 }
 

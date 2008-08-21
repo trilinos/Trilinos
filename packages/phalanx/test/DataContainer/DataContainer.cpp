@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
       cout << "Passed!" << endl;
 
       cout << "\nTesting allocateField()...";
-      RCP<DataLayout> nodes = rcp(new Generic("nodes",4));
+      RCP<DataLayout> nodes = rcp(new FlatLayout("nodes",4));
       RCP<FieldTag> d_tag = rcp(new Tag<MyVector<double> >("Density", nodes));
       MyTraits::Allocator allocator;
       dc_vector.allocateField(d_tag, 100, allocator);

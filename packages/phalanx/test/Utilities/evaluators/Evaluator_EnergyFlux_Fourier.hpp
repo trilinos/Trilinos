@@ -36,7 +36,6 @@
 #include "AlgebraicTypes.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_Field.hpp"
 
 template<typename EvalT, typename Traits>

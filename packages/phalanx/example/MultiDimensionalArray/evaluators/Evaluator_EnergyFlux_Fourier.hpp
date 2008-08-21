@@ -35,7 +35,6 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_DataLayout_Generic.hpp"
 #include "Phalanx_MDField.hpp"
 
 template<typename EvalT, typename Traits>

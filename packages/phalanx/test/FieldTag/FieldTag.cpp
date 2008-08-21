@@ -35,7 +35,7 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
-#include "Phalanx_DataLayout_Generic.hpp"
+#include "Phalanx_DataLayout_FlatLayout.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -62,9 +62,9 @@ int main(int argc, char *argv[])
 
       // Dummy data layouts (same size different name/type)
       RCP<DataLayout> node4 = 
-	rcp(new Generic("Q1_Nodes", 4));
+	rcp(new FlatLayout("Q1_Nodes", 4));
       RCP<DataLayout> quad4 = 
-	rcp(new Generic("Q1_QuadPoints", 4));
+	rcp(new FlatLayout("Q1_QuadPoints", 4));
       
       // Allocate tags with same name but different topology
       RCP<FieldTag> rcp_nodal_density = rcp(new Tag<double>("density", node4));

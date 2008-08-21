@@ -57,8 +57,8 @@ int main(int argc, char *argv[])
     {
 
       // Dummy data layouts
-      RCP<DataLayout> node4 = rcp(new Generic("Q1_Nodes", 4));
-      RCP<DataLayout> quad4 = rcp(new Generic("Q1_QuadPoints", 4));
+      RCP<DataLayout> node4 = rcp(new FlatLayout("Q1_Nodes", 4));
+      RCP<DataLayout> quad4 = rcp(new FlatLayout("Q1_QuadPoints", 4));
       
       // Tags with same name but different topology
       Tag<double> nodal_density("density", node4);

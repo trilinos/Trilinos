@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
     {
       cout << "\nStarting EnergyFlux Example!" << endl;
 
-      RCP<DataLayout> qp = rcp(new Generic("QP", 4));
-      RCP<DataLayout> node = rcp(new Generic("NODE", 4));
+      RCP<DataLayout> qp = rcp(new FlatLayout("QP", 4));
+      RCP<DataLayout> node = rcp(new FlatLayout("NODE", 4));
 
       // Parser will build parameter list that determines the field
       // evaluators to build
