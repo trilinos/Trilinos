@@ -30,7 +30,7 @@
 // @HEADER
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_DataLayout_Generic.hpp"
+#include "Phalanx_DataLayout_FlatLayout.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_Evaluator_Manager.hpp"
@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
       EvaluatorManager<MyTraits> em;
       cout << "Passed!" << endl;
 
-      RCP<DataLayout> nodes = rcp(new Generic("nodes",4));
-      RCP<DataLayout> qp = rcp(new Generic("QP",4));
+      RCP<DataLayout> nodes = rcp(new FlatLayout("nodes",4));
+      RCP<DataLayout> qp = rcp(new FlatLayout("QP",4));
 
       RCP<FieldTag> den_n = rcp(new Tag<double>("Density", nodes));
       RCP<FieldTag> den_qp = rcp(new Tag<double>("Density", qp));

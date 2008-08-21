@@ -31,52 +31,53 @@
 
 #include <sstream>
 #include <typeinfo>
-#include "Phalanx_DataLayout_Generic.hpp"
+#include "Phalanx_DataLayout_FlatLayout.hpp"
 
 //**********************************************************************
-PHX::Generic::Generic(const std::string& unique_identifier, std::size_t size) :
+PHX::FlatLayout::FlatLayout(const std::string& unique_identifier, 
+			    std::size_t size) :
   m_name(unique_identifier),
   m_size(size)
 { }
 
 //**********************************************************************
-PHX::Generic::~Generic()
+PHX::FlatLayout::~FlatLayout()
 { }
 
 //**********************************************************************
-bool PHX::Generic::operator==(const PHX::DataLayout& right) const
+bool PHX::FlatLayout::operator==(const PHX::DataLayout& right) const
 {
-  const PHX::Generic* tmp = 0;
-  tmp = dynamic_cast< const PHX::Generic* >(&right);
-
+  const PHX::FlatLayout* tmp = 0;
+  tmp = dynamic_cast< const PHX::FlatLayout* >(&right);
+  
   if (tmp == 0)
     return false;
-
+  
   return (  (this->name() == tmp->name()) &&
 	    (this->size() == tmp->size()) );
 }
 
 //**********************************************************************
-const std::string& PHX::Generic::name() const
+const std::string& PHX::FlatLayout::name() const
 { return m_name; }
 
 //**********************************************************************
-std::size_t PHX::Generic::rank() const
+std::size_t PHX::FlatLayout::rank() const
 { return 1; }
 
 //**********************************************************************
-void PHX::Generic::dimensions(std::vector<std::size_t>& dim) const
+void PHX::FlatLayout::dimensions(std::vector<std::size_t>& dim) const
 { 
   dim.resize(1);
   dim[0] = m_size;
 }
 
 //**********************************************************************
-std::size_t PHX::Generic::size() const
+std::size_t PHX::FlatLayout::size() const
 { return m_size; }
 
 //**********************************************************************
-const std::string PHX::Generic::identifier() const
+const std::string PHX::FlatLayout::identifier() const
 { 
   std::ostringstream ost;
   ost << this->name() << this->size();
@@ -84,7 +85,7 @@ const std::string PHX::Generic::identifier() const
 }
 
 //**********************************************************************
-void PHX::Generic::print(std::ostream& os, int indent) const
+void PHX::FlatLayout::print(std::ostream& os, int indent) const
 {
   std::ostringstream s;
   for (int i = 0; i < indent; i++)
@@ -94,7 +95,7 @@ void PHX::Generic::print(std::ostream& os, int indent) const
 }
 
 //**********************************************************************
-std::ostream& PHX::operator<<(std::ostream& os, const PHX::Generic& v)
+std::ostream& PHX::operator<<(std::ostream& os, const PHX::FlatLayout& v)
 {
   v.print(os);
   return os;

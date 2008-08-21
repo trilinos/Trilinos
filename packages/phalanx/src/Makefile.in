@@ -103,7 +103,7 @@ AR = ar
 ARFLAGS = cru
 libphalanx_a_DEPENDENCIES =
 am__objects_1 = Phalanx_Array.$(OBJEXT) \
-	Phalanx_DataLayout_Generic.$(OBJEXT) \
+	Phalanx_DataLayout_FlatLayout.$(OBJEXT) \
 	Phalanx_DataLayout.$(OBJEXT) Phalanx_DimTag.$(OBJEXT)
 am_libphalanx_a_OBJECTS = $(am__objects_1)
 libphalanx_a_OBJECTS = $(am_libphalanx_a_OBJECTS)
@@ -254,7 +254,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataContainer_Def.hpp \
 	$(srcdir)/Phalanx_DataContainer.hpp \
 	$(srcdir)/Phalanx_DataContainer_TemplateManager.hpp \
-	$(srcdir)/Phalanx_DataLayout_Generic.hpp \
+	$(srcdir)/Phalanx_DataLayout_FlatLayout.hpp \
 	$(srcdir)/Phalanx_DataLayout_MDALayout_Def.hpp \
 	$(srcdir)/Phalanx_DataLayout_MDALayout.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
@@ -299,7 +299,7 @@ PHALANX_HPP = \
 
 PHALANX_CPP = \
 	$(srcdir)/Phalanx_Array.cpp \
-	$(srcdir)/Phalanx_DataLayout_Generic.cpp \
+	$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp \
 	$(srcdir)/Phalanx_DataLayout.cpp \
 	$(srcdir)/Phalanx_DimTag.cpp
 
@@ -472,7 +472,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_Array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DataLayout.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DataLayout_Generic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DataLayout_FlatLayout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DimTag.Po@am__quote@
 
 .cpp.o:
@@ -503,19 +503,19 @@ Phalanx_Array.obj: $(srcdir)/Phalanx_Array.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_Array.obj `if test -f '$(srcdir)/Phalanx_Array.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_Array.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_Array.cpp'; fi`
 
-Phalanx_DataLayout_Generic.o: $(srcdir)/Phalanx_DataLayout_Generic.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_DataLayout_Generic.o -MD -MP -MF $(DEPDIR)/Phalanx_DataLayout_Generic.Tpo -c -o Phalanx_DataLayout_Generic.o `test -f '$(srcdir)/Phalanx_DataLayout_Generic.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_DataLayout_Generic.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_DataLayout_Generic.Tpo $(DEPDIR)/Phalanx_DataLayout_Generic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DataLayout_Generic.cpp' object='Phalanx_DataLayout_Generic.o' libtool=no @AMDEPBACKSLASH@
+Phalanx_DataLayout_FlatLayout.o: $(srcdir)/Phalanx_DataLayout_FlatLayout.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_DataLayout_FlatLayout.o -MD -MP -MF $(DEPDIR)/Phalanx_DataLayout_FlatLayout.Tpo -c -o Phalanx_DataLayout_FlatLayout.o `test -f '$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_DataLayout_FlatLayout.Tpo $(DEPDIR)/Phalanx_DataLayout_FlatLayout.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp' object='Phalanx_DataLayout_FlatLayout.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DataLayout_Generic.o `test -f '$(srcdir)/Phalanx_DataLayout_Generic.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_DataLayout_Generic.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DataLayout_FlatLayout.o `test -f '$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp
 
-Phalanx_DataLayout_Generic.obj: $(srcdir)/Phalanx_DataLayout_Generic.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_DataLayout_Generic.obj -MD -MP -MF $(DEPDIR)/Phalanx_DataLayout_Generic.Tpo -c -o Phalanx_DataLayout_Generic.obj `if test -f '$(srcdir)/Phalanx_DataLayout_Generic.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DataLayout_Generic.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DataLayout_Generic.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_DataLayout_Generic.Tpo $(DEPDIR)/Phalanx_DataLayout_Generic.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DataLayout_Generic.cpp' object='Phalanx_DataLayout_Generic.obj' libtool=no @AMDEPBACKSLASH@
+Phalanx_DataLayout_FlatLayout.obj: $(srcdir)/Phalanx_DataLayout_FlatLayout.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_DataLayout_FlatLayout.obj -MD -MP -MF $(DEPDIR)/Phalanx_DataLayout_FlatLayout.Tpo -c -o Phalanx_DataLayout_FlatLayout.obj `if test -f '$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_DataLayout_FlatLayout.Tpo $(DEPDIR)/Phalanx_DataLayout_FlatLayout.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp' object='Phalanx_DataLayout_FlatLayout.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DataLayout_Generic.obj `if test -f '$(srcdir)/Phalanx_DataLayout_Generic.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DataLayout_Generic.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DataLayout_Generic.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DataLayout_FlatLayout.obj `if test -f '$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp'; fi`
 
 Phalanx_DataLayout.o: $(srcdir)/Phalanx_DataLayout.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_DataLayout.o -MD -MP -MF $(DEPDIR)/Phalanx_DataLayout.Tpo -c -o Phalanx_DataLayout.o `test -f '$(srcdir)/Phalanx_DataLayout.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_DataLayout.cpp

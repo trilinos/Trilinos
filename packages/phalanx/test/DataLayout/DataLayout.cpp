@@ -39,7 +39,7 @@
 #include "Traits.hpp"
 
 #include "Phalanx_DataLayout.hpp"
-#include "Phalanx_DataLayout_Generic.hpp"
+#include "Phalanx_DataLayout_FlatLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,16 +102,16 @@ int main(int argc, char *argv[])
     // *********************************************************************
     {
 
-      cout << "\n************ Testing Generic *****************";
+      cout << "\n************ Testing FlatLayout *****************";
 
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // ctor
       cout << "\nTesting constructor...";
       
-      RCP<DataLayout> node4 = rcp(new Generic("Nodes", 4));
-      RCP<DataLayout> quad4 = rcp(new Generic("QuadPoints", 4));
-      RCP<DataLayout> quad9 = rcp(new Generic("QuadPoints", 9));
+      RCP<DataLayout> node4 = rcp(new FlatLayout("Nodes", 4));
+      RCP<DataLayout> quad4 = rcp(new FlatLayout("QuadPoints", 4));
+      RCP<DataLayout> quad9 = rcp(new FlatLayout("QuadPoints", 9));
       
       cout << "passed!" << endl;
 
@@ -129,10 +129,10 @@ int main(int argc, char *argv[])
       // name()
       {
 	cout << "Testing name() accessor...";
-	RCP<Generic> g_node4 = rcp_dynamic_cast<Generic>(node4);
+	RCP<FlatLayout> g_node4 = rcp_dynamic_cast<FlatLayout>(node4);
 	TEST_FOR_EXCEPTION(is_null(g_node4), 
 			   std::logic_error,
-			   "dynamic cast from DataLayout to Generic failed!");
+			   "dynamic cast from DataLayout to FlatLayout failed!");
 	
 	TEST_FOR_EXCEPTION(g_node4->name() != std::string("Nodes"), 
 			   std::logic_error,
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
       {
 	cout << "Testing operator==()...";
 	
-	RCP<DataLayout> unique_node4_copy = rcp(new Generic("Nodes", 4));
+	RCP<DataLayout> unique_node4_copy = rcp(new FlatLayout("Nodes", 4));
 	
 	// same data layout, different object
 	TEST_FOR_EXCEPTION( !(*node4 == *unique_node4_copy), 

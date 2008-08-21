@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
       
       double* raw_density = new double[size];
 
-      RCP<DataLayout> dl = rcp(new Generic("cell_quantitiy", 1));
+      RCP<DataLayout> dl = rcp(new FlatLayout("cell_quantitiy", 1));
       Field<double> density("density", dl);
       ArrayRCP<double> a_density = arcp<double>(size);
       density.setFieldData(a_density);

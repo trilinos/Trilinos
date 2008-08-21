@@ -53,7 +53,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataContainer_Def.hpp \
 	$(srcdir)/Phalanx_DataContainer.hpp \
 	$(srcdir)/Phalanx_DataContainer_TemplateManager.hpp \
-	$(srcdir)/Phalanx_DataLayout_Generic.hpp \
+	$(srcdir)/Phalanx_DataLayout_FlatLayout.hpp \
 	$(srcdir)/Phalanx_DataLayout_MDALayout_Def.hpp \
 	$(srcdir)/Phalanx_DataLayout_MDALayout.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
@@ -98,7 +98,7 @@ PHALANX_HPP = \
 
 PHALANX_CPP = \
 	$(srcdir)/Phalanx_Array.cpp \
-	$(srcdir)/Phalanx_DataLayout_Generic.cpp \
+	$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp \
 	$(srcdir)/Phalanx_DataLayout.cpp \
 	$(srcdir)/Phalanx_DimTag.cpp
 

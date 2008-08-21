@@ -53,8 +53,8 @@ using namespace PHX;
 template<typename Traits>
 RCP< FieldManager<Traits> > buildFieldManager()
 {
-  RCP<DataLayout> qp = rcp(new Generic("Q1_QP", 4));
-  RCP<DataLayout> node = rcp(new Generic("Q1_NODE", 4));
+  RCP<DataLayout> qp = rcp(new FlatLayout("Q1_QP", 4));
+  RCP<DataLayout> node = rcp(new FlatLayout("Q1_NODE", 4));
 
   // Parser will build parameter list that determines the field
   // evaluators to build
