@@ -9,7 +9,8 @@
 # (*) Support an optional POSTFIX argument for naming tests with different
 # ARGS keywords
 
-INCLUDE(Trilinos_Add_Executable)
+#INCLUDE(Trilinos_Add_Executable)
+INCLUDE(Parse_Variable_Arguments)
 
 FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
    
@@ -123,8 +124,7 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
         SET(COUNTER 0)
         FOREACH(PARSE_ARG ${PARSE_ARGS})
           
-          #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${MPI_EXECUTABLE}")
-          MESSAGE("PARSE_ARG: " ${PARSE_ARG})
+       
           
           #This is a little bit of a hack
           #If the argument string has multiple arguments then the white space will need 
@@ -176,7 +176,6 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
         SET(COUNTER 0)
         FOREACH(PARSE_ARG ${PARSE_ARGS})
        
-          #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${EXECUTABLE_PATH}")
           #This is a little bit of a hack
           #If the argument string has multiple arguments then the white space will need 
           #to replaced by a semicolin.  If this is not done the add_test command will
@@ -200,8 +199,7 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
 
       ELSE()
 
-        #MESSAGE("TRILINOS_ADD_TEST: ${EXE_NAME}: ADD_TEST: ${TEST_NAME}, ${EXECUTABLE_PATH}")
-        ADD_TEST(${TEST_NAME} ${EXECUTABLE_PATH} )
+       ADD_TEST(${TEST_NAME} ${EXECUTABLE_PATH} )
 
       ENDIF()
      
