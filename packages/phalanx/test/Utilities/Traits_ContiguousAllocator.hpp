@@ -102,6 +102,26 @@ namespace PHX {
 
   };
 
+  // ******************************************************************
+  // ******************************************************************
+  // Debug strings.  Specialize the Evaluation and Data types for the
+  // TypeString object in phalanx/src/Phalanx_TypeString.hpp.
+  // ******************************************************************
+  // ******************************************************************
+
+  // Evaluation Types
+  template<> struct TypeString<MyCTraits::Residual> 
+  { static const std::string value; };
+
+  template<> struct TypeString<MyCTraits::Jacobian> 
+  { static const std::string value; };
+
+  const std::string TypeString<MyCTraits::Residual>::value = 
+    "Residual";
+
+  const std::string TypeString<MyCTraits::Jacobian>::value = 
+    "Jacobian";
+
 }
 
 #endif

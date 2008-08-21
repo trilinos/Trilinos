@@ -33,6 +33,7 @@
 #define PHX_FIELDTAG_TAG_DEF_HPP
 
 #include <sstream>
+#include "Phalanx_TypeStrings.hpp"
 #include "Teuchos_TestForException.hpp"
 
 //**********************************************************************
@@ -108,8 +109,10 @@ const std::string PHX::Tag<DataT>::identifier() const
 template<typename DataT>
 void PHX::Tag<DataT>::print(std::ostream& os) const
 {
-  DataT tmp;
-  os << "Tag: " << m_name << ", " << typeid(tmp).name()
+//   DataT tmp;
+//   os << "Tag: " << m_name << ", " << typeid(tmp).name()
+//      << ", DataLayout: " << *m_data_layout;
+  os << "Tag: " << m_name << ", " << PHX::typeAsString<DataT>()
      << ", DataLayout: " << *m_data_layout;
 
 }

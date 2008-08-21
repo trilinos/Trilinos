@@ -55,19 +55,16 @@ int main(int argc, char *argv[])
     // *********************************************************************
     {
       cout << "\nTesting Debug naming scheme.\n";
-      // Default
-      cout << "Next line should be a WARNING for an undefined type:" << endl;
-      cout << getTypeString<int, MyTraits>() << endl;
-      // Scalar Types
-      cout << getTypeString<double, MyTraits>() << endl;
-      cout << getTypeString<MyTraits::FadType, MyTraits>() << endl;
+      // Evaluation Types
+      cout << typeAsString<MyTraits::Residual>() << endl;
+      cout << typeAsString<MyTraits::Jacobian>() << endl;
       // Data Types
-      cout << getTypeString<double, MyTraits>() << endl;
-      cout << getTypeString<MyTraits::FadType, MyTraits>() << endl;
-      cout << getTypeString<MyVector<double>, MyTraits>() << endl;
-      cout << getTypeString<MyVector<MyTraits::FadType>, MyTraits>() << endl;
-      cout << getTypeString<MyTensor<double>, MyTraits>() << endl;
-      cout << getTypeString<MyTensor<MyTraits::FadType>, MyTraits>() << endl;
+      cout << typeAsString<double>() << endl;
+      cout << typeAsString<MyTraits::FadType>() << endl;
+      cout << typeAsString< MyVector<double> >() << endl;
+      cout << typeAsString< MyVector<MyTraits::FadType> >() << endl;
+      cout << typeAsString< MyTensor<double> >() << endl;
+      cout << typeAsString< MyTensor<MyTraits::FadType> >() << endl;
     }
     
     // *********************************************************************

@@ -33,13 +33,13 @@
 #define PHX_SCALAR_CONTAINER_DEF_HPP
 
 #include "Phalanx_Evaluator.hpp"
-#include "Phalanx_DebugStrings.hpp"
+#include "Phalanx_TypeStrings.hpp"
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
 PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer()
 {
-  this->vp_manager_.setEvaluationTypeName( PHX::getTypeString<EvalT, Traits>() );
+  this->vp_manager_.setEvaluationTypeName( PHX::typeAsString<EvalT>() );
   this->data_container_template_manager_.buildObjects();
 }
 
@@ -156,7 +156,7 @@ PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
 {
-  std::string type = PHX::getTypeString<EvalT, Traits>();
+  std::string type = PHX::typeAsString<EvalT>();
 
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << "Starting PHX::EvaluationContainer Output" << std::endl;

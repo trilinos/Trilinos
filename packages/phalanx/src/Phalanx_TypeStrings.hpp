@@ -29,18 +29,21 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_DEBUG_STRINGS_HPP
-#define PHX_DEBUG_STRINGS_HPP
+#ifndef PHX_TYPE_STRINGS_HPP
+#define PHX_TYPE_STRINGS_HPP
 
 #include <string>
 
 namespace PHX {
   
-  template<typename ObjectT, typename Traits>
-  std::string getTypeString() 
-  { 
-    return Traits::template TypeString<ObjectT>::value;
-  }
+  //! User must specialize this class for each evaluation and data type!
+  template<typename ObjectT> 
+  struct TypeString
+  { static const std::string value; };
+
+  template<typename ObjectT>
+  std::string typeAsString() 
+  { return TypeString<ObjectT>::value; }
 
 }
    

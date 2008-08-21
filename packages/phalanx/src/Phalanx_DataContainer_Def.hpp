@@ -39,7 +39,7 @@
 #include <iterator>
 #include "boost/mpl/at.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_DebugStrings.hpp"
+#include "Phalanx_TypeStrings.hpp"
 
 // ************************************************************************
 template <typename DataT, typename Traits>
@@ -54,7 +54,7 @@ getFieldData(const PHX::FieldTag& t)
   it = m_data.find(Teuchos::rcp(&t, false));
 
   if (it == m_data.end()) {
-    std::string type = PHX::getTypeString<DataT, Traits>();
+    std::string type = PHX::typeAsString<DataT>();
     std::ostringstream msg;
     msg << "The field:\n\n" << t
 	<< "\n\ndoes not exist in DataContainer of type: " 
@@ -100,7 +100,7 @@ print(std::ostream& os) const
   using namespace std;
   using namespace Teuchos;
 
-  std::string type = PHX::getTypeString<DataT, Traits>();
+  std::string type = PHX::typeAsString<DataT>();
   
   os << "********************************************" << endl;
   os << "PHX::DataContainer Output" << endl;

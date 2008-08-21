@@ -34,7 +34,7 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_Evaluator_Manager.hpp"
-#include "Phalanx_DebugStrings.hpp"
+#include "Phalanx_TypeStrings.hpp"
 
 // Evaluators
 #include "evaluators/Evaluator_Constant.hpp"
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
       cout << "Passed!" << endl;
       
       cout << "\nTesting setEvaluationTypeName()...";
-      em.setEvaluationTypeName(PHX::getTypeString<MyTraits::Residual,MyTraits>());
+      em.setEvaluationTypeName(PHX::typeAsString<MyTraits::Residual>());
       cout << "Passed!" << endl;
 
 
