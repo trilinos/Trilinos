@@ -239,6 +239,14 @@ public:
   */
   void elemsInPartition(int partition, int* elementList, int len) const;
 
+  void elemsWithProperty(int property,
+			 int* elementList,
+			 int len) const;
+
+  const int& operator[](int myElem) const;
+
+  int numElemsWithProperty(int partition) const;
+
 };//class Partitioner
 
 }//namespace Epetra

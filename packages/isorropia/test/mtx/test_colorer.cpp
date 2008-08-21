@@ -52,31 +52,31 @@
 // This is what simple.mtx looks like.  25 rows, 25 cols, 105 non-zeroes.
 //
 //  0123456789012345678901234
-// 0xx   x                   0 
+// 0xx   x                   0
 // 1xxx   x                  1
-// 2 xxx   x                 2 
-// 3  xxx   x                3 
-// 4   xx    x               4 
-// 5x    xx   x              5 
+// 2 xxx   x                 2
+// 3  xxx   x                3
+// 4   xx    x               4
+// 5x    xx   x              5
 // 6 x   xxx   x             6
-// 7  x   xxx   x            7 
-// 8   x   xxx   x           8 
-// 9    x   xx    x          9 
-// 0     x    xx   x         0 
+// 7  x   xxx   x            7
+// 8   x   xxx   x           8
+// 9    x   xx    x          9
+// 0     x    xx   x         0
 // 1      x   xxx   x        1
-// 2       x   xxx   x       2 
-// 3        x   xxx   x      3 
-// 4         x   xx    x     4 
-// 5          x    xx   x    5 
+// 2       x   xxx   x       2
+// 3        x   xxx   x      3
+// 4         x   xx    x     4
+// 5          x    xx   x    5
 // 6           x   xxx   x   6
-// 7            x   xxx   x  7 
-// 8             x   xxx   x 8 
-// 9              x   xx    x9 
-// 0               x    xx   0 
+// 7            x   xxx   x  7
+// 8             x   xxx   x 8
+// 9              x   xx    x9
+// 0               x    xx   0
 // 1                x   xxx  1
-// 2                 x   xxx 2 
-// 3                  x   xxx3 
-// 4                   x   xx4 
+// 2                 x   xxx 2
+// 3                  x   xxx3
+// 4                   x   xx4
 //  0123456789012345678901234
 //
 // If run with --f={filename} a matrix market file other than simple.mtx
@@ -102,6 +102,7 @@
 #include <Epetra_Vector.h>
 #ifdef HAVE_EPETRAEXT
 #include <EpetraExt_CrsMatrixIn.h>
+#include <Epetra_MapColoring.h>
 #endif
 #endif
 
@@ -121,21 +122,21 @@
 #define EPETRA_CRSGRAPH               1
 #define EPETRA_CRSMATRIX              2
 
-#define FAILED() { failures++; if (!runAll) goto Report; fail = 0;}
+#define FAILED() do { failures++; if (!runAll) goto Report; fail = 0;} while (0)
 
 #define ERROREXIT(v, s) \
-  if (v){               \
+  do { if (v){               \
     test_type(objectType); \
     std::cout << s << std::endl << "FAIL" << std::endl; \
   }                     \
-  exit(1);
+  exit(1); } while (0)
 
 #define ERRORRETURN(v, s) \
-  if (v){                 \
+  do { if (v){                 \
     test_type(objectType); \
     std::cout << s << std::endl << "FAIL" << std::endl; \
   }                       \
-  return 1;
+  return 1; } while(0)
 
 static void test_type(int objectType)
 {
@@ -150,8 +151,8 @@ static void test_type(int objectType)
 }
 
 static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
-          bool verbose,           // display the graph before & after
-          int objectType)         // use isorropia's CrsMatrix or CrsGraph
+	  bool verbose,           // display the graph before & after
+	  int objectType)         // use isorropia's CrsMatrix or CrsGraph
 {
   int rc=0, fail = 0;
 #ifdef HAVE_EPETRAEXT
@@ -233,20 +234,36 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   }
 
   colorer->color();
+
+#ifdef HAVE_EPETRAEXT
+  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = colorer->generateMapColoring();
+  int numberColorsExt;
+
+  numberColorsExt = colorMap->MaxNumColors();
+  if (verbose && (localProc == 0)){
+    std::cout << "Max number of colors :" << numberColorsExt  << std::endl;
+  }
+
+  if (numberColorsExt >= 10)
+    ERRORRETURN(verbose, "Too many colors");
+
+#endif /* HAVE_EPETRAEXT */
+
+
 #endif /* HAVE_ISORROPIA_ZOLTAN */
 
 #else
   std::<< "test_simple : currently can only test "
-         << "with Epetra and EpetraExt enabled." << std::endl;
+	 << "with Epetra and EpetraExt enabled." << std::endl;
   fail =  1;
 #endif
 
-  return (fail);
+  return (0);
 }
 
 int main(int argc, char** argv) {
 
-  int rc=0, fail = 0;  
+  int rc=0, fail = 0;
 #ifdef HAVE_EPETRAEXT
   bool verbose = false;
   int numProcs = 1;
@@ -275,12 +292,12 @@ int main(int argc, char** argv) {
   std::string *inputFile = new std::string("simple.mtx");
   bool runAll = false;
 
-  clp.setOption( "f", inputFile, 
-                "Name of input matrix market file");
-  clp.setOption( "run-all", "abort", &runAll, 
-                "Don't abort if one test fails, run all of them.");
-  clp.setOption( "v", "q", &verbose, 
-                "Display matrix before and after partitioning.");
+  clp.setOption( "f", inputFile,
+		"Name of input matrix market file");
+  clp.setOption( "run-all", "abort", &runAll,
+		"Don't abort if one test fails, run all of them.");
+  clp.setOption( "v", "q", &verbose,
+		"Display matrix before and after partitioning.");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
     clp.parse(argc,argv);
@@ -297,7 +314,7 @@ int main(int argc, char** argv) {
 #endif
     return 1;
   }
-  
+
   const char *fname = inputFile->c_str();
 
   // Read in the matrix market file and distribute its rows across the
@@ -334,16 +351,16 @@ int main(int argc, char** argv) {
   if (square){
 #ifdef HAVE_ISORROPIA_ZOLTAN
     fail = run_test(testm,
-               verbose,            // draw graph before and after partitioning
-               EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
+	       verbose,            // draw graph before and after partitioning
+	       EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
 
     if (fail) FAILED();
 
 
 
   fail = run_test(testm,
-             verbose, 
-             EPETRA_CRSMATRIX);
+	     verbose,
+	     EPETRA_CRSMATRIX);
 
   if (fail) FAILED();
 #endif
@@ -366,12 +383,12 @@ Report:
   if (localProc == 0){
     if (failures){
       if (failures > 1)
-        std::cout << std::endl << failures << " FAILURES" << std::endl;
+	std::cout << std::endl << failures << " FAILURES" << std::endl;
       else
-        std::cout << std::endl << "1 FAILURE" << std::endl;
- 
+	std::cout << std::endl << "1 FAILURE" << std::endl;
+
       if (!runAll){
-        std::cout << 
+	std::cout <<
        "(Use option --run-all if you do not want this test to abort on failure)" << std::endl;
       }
 

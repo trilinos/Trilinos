@@ -108,6 +108,7 @@ Colorer::color(bool force_coloring)
 
   lib_->color(sublist, myNewElements_);
   operation_already_computed_ = true;
+  computeNumberOfProperties();
 }
 
 #ifdef HAVE_EPETRAEXT
