@@ -235,21 +235,60 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   colorer->color();
 
+  int numberColors;
+  numberColors = colorer->numColors();
+
+  if (verbose && (localProc == 0)){
+    std::cout << "Max number of colors :" << numberColors  << std::endl;
+  }
+
+  if ((numberColors < 0) || (numberColors > matrix->NumGlobalRows()))
+    ERRORRETURN(verbose, "Inconsistant number of colors : " + numberColors);
+
 #ifdef HAVE_EPETRAEXT
   Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = colorer->generateMapColoring();
   int numberColorsExt;
 
   numberColorsExt = colorMap->MaxNumColors();
-  if (verbose && (localProc == 0)){
-    std::cout << "Max number of colors :" << numberColorsExt  << std::endl;
-  }
 
   if (numberColorsExt >= 10)
     ERRORRETURN(verbose, "Too many colors");
 
+  if (numberColorsExt != numberColors)
+    ERRORRETURN(verbose, "Inconsistant number of colors");
 #endif /* HAVE_EPETRAEXT */
 
+  for (int i = 1 ; i <= numberColors ; i++ ) {
+    int numberElems;
 
+    numberElems = colorer->numElemsWithColor(i);
+    if (verbose && (localProc == 0)){
+      std::cout << "Elems with color " << i << " : " << numberElems  << std::endl;
+    }
+    if ((numberElems < 0) || (numberElems > matrix->NumMyRows()))
+      ERRORRETURN(verbose, "Inconsistant number of elements for color " + i);
+
+    int *currentColor = new int[numberElems];
+    colorer->elemsWithColor(i, currentColor, numberElems);
+    for (int j =0 ; j < numberElems ; j++) {
+      if ((currentColor[j]<0) || (currentColor[j]>= matrix->NumMyRows()) || 
+	  (*colorer)[currentColor[j]] != i) {
+	ERRORRETURN(verbose, "Inconsistant elements" << currentColor[j] << " for color " <<  i);
+	delete[] currentColor;
+      }
+    }
+    delete[] currentColor;
+  }
+
+  if (colorer->numElemsWithColor(numberColors + 1) != 0)
+      ERRORRETURN(verbose, "Inconsistant number of elements for non existant color ");
+
+
+  for (int i = 0 ; i < matrix->NumMyRows() ; i++ ) {
+    if (verbose && (localProc == 0)){
+      std::cout << " color[" << i << "] = " << (*colorer)[i]  << std::endl;
+    }
+  }
 #endif /* HAVE_ISORROPIA_ZOLTAN */
 
 #else
