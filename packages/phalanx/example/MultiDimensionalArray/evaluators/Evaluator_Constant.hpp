@@ -29,33 +29,39 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
+#define PHX_EXAMPLE_VP_CONSTANT_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_MDField.hpp"
 
-class CellData {
+#include "Dimension.hpp"
+
+template<typename EvalT, typename Traits>
+class Constant : 
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits> {
   
 public:
-
-  CellData();
   
-  virtual ~CellData() {}
+  Constant(Teuchos::ParameterList& p);
   
-  std::vector< MyVector<double> >& getNodeCoordinates();
+  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
+  void evaluateFields(typename Traits::EvalData ud);
   
 private:
   
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
+  typedef typename EvalT::ScalarT ScalarT;
+
+  ScalarT value;
+
+  PHX::MDField<ScalarT,Cell,Point> constant;
+
 };
+
+#include "Evaluator_Constant_Def.hpp"
 
 #endif

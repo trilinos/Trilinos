@@ -29,33 +29,35 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#ifndef PHX_DIMENSION_HPP
+#define PHX_DIMENSION_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Phalanx_Array.hpp"
+#include "Phalanx_DimTag.hpp"
 
-class CellData {
-  
-public:
+struct Dim : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const Dim& descriptor();
+};
 
-  CellData();
-  
-  virtual ~CellData() {}
-  
-  std::vector< MyVector<double> >& getNodeCoordinates();
-  
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
-  
-private:
-  
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
+struct QuadPoint : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const QuadPoint& descriptor();
+};
+
+struct Node : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const Node& descriptor();
+};
+
+struct Point : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const Point& descriptor();
+};
+
+struct Cell : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const Cell& descriptor();
 };
 
 #endif

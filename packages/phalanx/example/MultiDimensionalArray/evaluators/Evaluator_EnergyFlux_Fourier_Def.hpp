@@ -29,37 +29,52 @@
 // ************************************************************************
 // @HEADER
 
-#include "CellData.hpp"
-
 //**********************************************************************
-CellData::CellData() :
-  phi_(4),
-  grad_phi_(4)
+template<typename EvalT, typename Traits> 
+Fourier<EvalT, Traits>::
+Fourier(const Teuchos::ParameterList& p) :
+  flux("Energy_Flux", 
+       p.get< Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout")),
+  density("Density", 
+	  p.get< Teuchos::RCP<PHX::DataLayout> >("Scalar Data Layout")),
+  dc("Heat Capacity", 
+     p.get< Teuchos::RCP<PHX::DataLayout> >("Scalar Data Layout") ),
+  grad_temp("Temperature Gradient", 
+	    p.get< Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout") )
 { 
-  for (std::size_t i=0; i < phi_.size(); ++i)
-    phi_[i].resize(4,0.25);
+  this->addEvaluatedField(flux);
+  this->addDependentField(density);
+  this->addDependentField(dc);
+  this->addDependentField(grad_temp);
 
-  for (std::size_t i=0; i < grad_phi_.size(); ++i)
-    grad_phi_[i].resize(4,MyVector<double>(0.25,0.25,0.25));
+  this->setName("Fourier");
 }
 
 //**********************************************************************
-std::vector< MyVector<double> >& CellData::getNodeCoordinates()
+template<typename EvalT, typename Traits> 
+void Fourier<EvalT, Traits>::
+postRegistrationSetup(PHX::FieldManager<Traits>& fm)
 {
-  return coords_;
+  this->utils.setFieldData(flux,fm);
+  this->utils.setFieldData(density,fm);
+  this->utils.setFieldData(dc,fm);
+  this->utils.setFieldData(grad_temp,fm);
+
+  num_qp = flux.dimension(1);
+  num_dim = flux.dimension(2);
 }
 
 //**********************************************************************
-std::vector< std::vector<double> >& CellData::getBasisFunctions()
-{
-  return phi_;
-}
+template<typename EvalT, typename Traits>
+void Fourier<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
+{ 
+  std::size_t num_cells = d.size();
 
-//**********************************************************************
-std::vector< std::vector< MyVector<double> > >& 
-CellData::getBasisFunctionGradients()
-{
-  return grad_phi_;
+  for (std::size_t cell = 0; cell < num_cells; ++cell)
+    for (std::size_t qp = 0; qp < num_qp; ++qp)
+      for (std::size_t dim = 0; dim < num_dim; ++dim)
+	flux(cell,qp,dim) = 
+	  - density(cell,qp) * dc(cell,qp) * grad_temp(cell,qp,dim);
 }
 
 //**********************************************************************

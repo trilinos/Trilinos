@@ -43,19 +43,19 @@ public:
   
   virtual ~CellData() {}
   
-  std::vector<double>& getBasisFunctions();
-  
-  std::vector< MyVector<double> >& getBasisFunctionGradients();
-  
   std::vector< MyVector<double> >& getNodeCoordinates();
+  
+  std::vector< std::vector<double> >& getBasisFunctions();
+  
+  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
   
 private:
   
   std::vector< MyVector<double> > coords_;
   
-  std::vector<double> phi_;
+  std::vector< std::vector<double> > phi_;
   
-  std::vector< MyVector<double> > grad_phi_;
+  std::vector< std::vector< MyVector<double> > > grad_phi_;
 };
 
 #endif

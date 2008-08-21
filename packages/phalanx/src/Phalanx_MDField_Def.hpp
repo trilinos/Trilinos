@@ -32,6 +32,7 @@
 #ifndef PHX_MD_FIELD_DEF_H
 #define PHX_MD_FIELD_DEF_H
 
+#include <algorithm>
 #include <sstream>
 #include "Teuchos_TestForException.hpp"
 #include "Phalanx_Print_Utilities.hpp"
@@ -249,6 +250,37 @@ template<typename DataT,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
 typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+dimension(index_type ord) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data.dimension(ord);
+}
+
+//**********************************************************************
+template<typename DataT,
+	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+inline
+void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+dimensions(std::vector<size_type>& dims)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  m_field_data.dimensions(dims);
+}
+
+//**********************************************************************
+template<typename DataT,
+	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+inline
+typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size() const
 { 
 #ifdef PHX_DEBUG
@@ -320,13 +352,18 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
   // stride[0] = 3;
   // stride[1] = 12;
   // stride[2] = 120;
+
   size_type num_cells = d.size() / m_tag.dataLayout().size();
   std::vector<size_type> stride(data_layout_dim.size() + 1);
 
-  int stride_size = 1;
-  for (std::size_t i = 0; i < data_layout_dim.size(); ++i) {
-    stride_size *= data_layout_dim[i];
-    stride[i] = stride_size;
+  std::size_t stride_size = 1;
+  typename std::vector<size_type>::reverse_iterator i = 
+    data_layout_dim.rbegin();
+  typename std::vector<size_type>::reverse_iterator stop = 
+    data_layout_dim.rend();
+  for (std::size_t index=0; i != stop; ++i,++index) {
+    stride_size *= *i;
+    stride[index] = stride_size;
   }
   stride[stride.size()-1] = stride_size * num_cells;
 

@@ -29,33 +29,51 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#ifndef PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
+#define PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_MDField.hpp"
 
-class CellData {
+/** \brief Finite Element Interpolation Evaluator
+
+    This object evaluates a scalar field and it's gradient at the
+    quadrature points for a specific variable.
+
+*/
+template<typename EvalT, typename Traits>
+class FEInterpolation : public PHX::EvaluatorWithBaseImpl<Traits>,
+			public PHX::EvaluatorDerived<EvalT, Traits>  {
   
 public:
-
-  CellData();
   
-  virtual ~CellData() {}
+  FEInterpolation(const Teuchos::ParameterList& p);
   
-  std::vector< MyVector<double> >& getNodeCoordinates();
+  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
+  void evaluateFields(typename Traits::EvalData d);
   
 private:
+
+  typedef typename EvalT::ScalarT ScalarT;
+
+  //! Values at nodes
+  PHX::MDField<ScalarT,Cell,Node> val_node;
+
+  //! Values at quadrature points
+  PHX::MDField<ScalarT,Cell,QuadPoint> val_qp;
+
+  //! Gradient values at quadrature points
+  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> val_grad_qp;
   
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
+  std::size_t num_nodes;
+  std::size_t num_qp;
+  std::size_t num_dim;
+
 };
+
+#include "Evaluator_FEInterpolation_Def.hpp"
 
 #endif

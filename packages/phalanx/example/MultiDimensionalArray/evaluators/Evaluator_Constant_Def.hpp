@@ -29,33 +29,34 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+//**********************************************************************
+template<typename EvalT, typename Traits>
+Constant<EvalT, Traits>::Constant(Teuchos::ParameterList& p) :
+  value( p.get<double>("Value") ),
+  constant( p.get<std::string>("Name"), 
+	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{
+  this->addEvaluatedField(constant);
+  
+  std::string n = "Constant Provider: " + constant.fieldTag().name();
+  this->setName(n);
+}
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+//**********************************************************************
+template<typename EvalT, typename Traits>
+void Constant<EvalT, Traits>::
+postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+{
+  using namespace PHX;
+  this->utils.setFieldData(constant,vm);
 
-class CellData {
-  
-public:
+  for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
+    constant[i] = value;
+}
 
-  CellData();
-  
-  virtual ~CellData() {}
-  
-  std::vector< MyVector<double> >& getNodeCoordinates();
-  
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
-  
-private:
-  
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
-};
+//**********************************************************************
+template<typename EvalT, typename Traits>
+void Constant<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
+{ }
 
-#endif
+//**********************************************************************

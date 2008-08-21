@@ -29,33 +29,42 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#ifndef PHX_EXAMPLE_VP_NONLINEAR_SOURCE_HPP
+#define PHX_EXAMPLE_VP_NONLINEAR_SOURCE_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_DataLayout_Generic.hpp"
+#include "Phalanx_MDField.hpp"
 
-class CellData {
+template<typename EvalT, typename Traits>
+class NonlinearSource : public PHX::EvaluatorWithBaseImpl<Traits>,
+			public PHX::EvaluatorDerived<EvalT, Traits> {
   
 public:
-
-  CellData();
   
-  virtual ~CellData() {}
+  NonlinearSource(const Teuchos::ParameterList& p);
   
-  std::vector< MyVector<double> >& getNodeCoordinates();
+  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
-  std::vector< std::vector<double> >& getBasisFunctions();
+  void evaluateFields(typename Traits::EvalData d);
   
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
+  void preEvaluate(typename Traits::PreEvalData d);
+  
+  void postEvaluate(typename Traits::PostEvalData d);
   
 private:
   
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
+  typedef typename EvalT::ScalarT ScalarT;
+
+  PHX::MDField<ScalarT,Cell,Point> source;
+  PHX::MDField<ScalarT,Cell,Point> density;
+  PHX::MDField<ScalarT,Cell,Point> temp;
+
+  std::size_t data_layout_size;
 };
+
+#include "Evaluator_NonlinearSource_Def.hpp"
 
 #endif

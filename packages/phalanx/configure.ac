@@ -446,6 +446,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		example/Makefile
 		example/EnergyFlux/Makefile
+		example/MultiDimensionalArray/Makefile
 		test/Makefile
 		test/Utilities/Makefile
 		test/Allocators/Makefile

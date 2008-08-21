@@ -29,33 +29,35 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#include "CellData.hpp"
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+//**********************************************************************
+CellData::CellData() :
+  m_phi_mem(4*4, 0.25),
+  m_grad_phi_mem(4*4*3, 0.25),
+  m_phi(&m_phi_mem[0],4,4),
+  m_grad_phi(&m_grad_phi_mem[0],4,4,3)
+{ 
+  
+}
 
-class CellData {
-  
-public:
+//**********************************************************************
+phdmesh::ArrayNatural<double,Node,Dim>& CellData::getNodeCoordinates()
+{
+  return m_coords;
+}
 
-  CellData();
-  
-  virtual ~CellData() {}
-  
-  std::vector< MyVector<double> >& getNodeCoordinates();
-  
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
-  
-private:
-  
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
-};
+//**********************************************************************
+phdmesh::ArrayNatural<double,QuadPoint,Node>& CellData::getBasisFunctions()
+{
+  return m_phi;
+}
 
-#endif
+//**********************************************************************
+phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& CellData::
+getBasisFunctionGradients()
+{
+  return m_grad_phi;
+}
+
+//**********************************************************************

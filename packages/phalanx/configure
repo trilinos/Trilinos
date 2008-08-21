@@ -9144,7 +9144,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/EvaluatorManager/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile test/Performance/AlgebraicTypes/Makefile test/Performance/Allocators/Makefile test/Performance/BracketOperator/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile example/MultiDimensionalArray/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/EvaluatorManager/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile test/Performance/AlgebraicTypes/Makefile test/Performance/Allocators/Makefile test/Performance/BracketOperator/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9823,6 +9823,7 @@ do
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
     "example/EnergyFlux/Makefile") CONFIG_FILES="$CONFIG_FILES example/EnergyFlux/Makefile" ;;
+    "example/MultiDimensionalArray/Makefile") CONFIG_FILES="$CONFIG_FILES example/MultiDimensionalArray/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/Utilities/Makefile") CONFIG_FILES="$CONFIG_FILES test/Utilities/Makefile" ;;
     "test/Allocators/Makefile") CONFIG_FILES="$CONFIG_FILES test/Allocators/Makefile" ;;

@@ -56,14 +56,14 @@ PHX::EvaluatorWithBaseImpl<Traits>::~EvaluatorWithBaseImpl()
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addEvaluatedField(const PHX::FieldTag& v)
+addEvaluatedField(const PHX::FieldTag& ft)
 { 
-  PHX::FTPredRef pred(v);
+  PHX::FTPredRef pred(ft);
   std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
     std::find_if(evaluated_.begin(), evaluated_.end(), pred);
   
   if ( test == evaluated_.end() )
-    evaluated_.push_back(v.clone());
+    evaluated_.push_back(ft.clone());
 }
 
 //**********************************************************************
@@ -77,15 +77,27 @@ addEvaluatedField(const PHX::Field<DataT>& f)
 
 //**********************************************************************
 template<typename Traits>
+template<typename DataT,
+	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::FieldTag& v)
+addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
+		  Tag4,Tag5,Tag6,Tag7>& f)
+{ 
+  this->template addEvaluatedField(f.fieldTag());
+}
+
+//**********************************************************************
+template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addDependentField(const PHX::FieldTag& ft)
 {
-  PHX::FTPredRef pred(v);
+  PHX::FTPredRef pred(ft);
   std::vector< Teuchos::RCP<FieldTag> >::iterator test = 
     std::find_if(required_.begin(), required_.end(), pred);
   
   if ( test == required_.end() )
-    required_.push_back(v.clone());
+    required_.push_back(ft.clone());
 }
 
 //**********************************************************************
@@ -95,6 +107,18 @@ void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::Field<DataT>& v)
 {
   this->template addDependentField(v.fieldTag());
+}
+
+//**********************************************************************
+template<typename Traits>
+template<typename DataT,
+	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
+		  Tag4,Tag5,Tag6,Tag7>& f)
+{
+  this->template addDependentField(f.fieldTag());
 }
 
 //**********************************************************************

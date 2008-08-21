@@ -29,33 +29,36 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+//**********************************************************************
+template<typename EvalT, typename Traits> Density<EvalT, Traits>::
+Density(const Teuchos::ParameterList& p) :
+  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
+  temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{ 
+  this->addEvaluatedField(density);
+  this->addDependentField(temp);
+  this->setName("Density");
+}
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+//**********************************************************************
+template<typename EvalT, typename Traits>
+void Density<EvalT, Traits>::
+postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+{
+  this->utils.setFieldData(density,vm);
+  this->utils.setFieldData(temp,vm);
 
-class CellData {
-  
-public:
+  data_layout_size = density.fieldTag().dataLayout().size();
+}
 
-  CellData();
+//**********************************************************************
+template<typename EvalT, typename Traits>
+void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
+{ 
+  std::size_t size = d.size() * data_layout_size;
   
-  virtual ~CellData() {}
-  
-  std::vector< MyVector<double> >& getNodeCoordinates();
-  
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
-  
-private:
-  
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
-};
+  for (std::size_t i = 0; i < size; ++i)
+    density[i] =  temp[i] * temp[i];
+}
 
-#endif
+//**********************************************************************
