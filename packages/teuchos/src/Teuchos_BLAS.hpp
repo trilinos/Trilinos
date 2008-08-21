@@ -129,7 +129,7 @@ namespace Teuchos
     inline BLAS(void) {}
 
     //! Copy constructor.
-    inline BLAS(const BLAS<OrdinalType, ScalarType>& BLAS_source) {}
+    inline BLAS(const BLAS<OrdinalType, ScalarType>& /*BLAS_source*/) {}
 
     //! Destructor.
     inline virtual ~BLAS(void) {}
@@ -1494,7 +1494,7 @@ namespace Teuchos
   {    
   public:
     inline BLAS(void) {}
-    inline BLAS(const BLAS<int, float>& BLAS_source) {}
+    inline BLAS(const BLAS<int, float>& /*BLAS_source*/) {}
     inline virtual ~BLAS(void) {}
     void ROTG(float* da, float* db, float* c, float* s) const;
     void ROT(const int n, float* dx, const int incx, float* dy, const int incy, float* c, float* s) const;
@@ -1523,7 +1523,7 @@ namespace Teuchos
   {    
   public:
     inline BLAS(void) {}
-    inline BLAS(const BLAS<int, double>& BLAS_source) {}
+    inline BLAS(const BLAS<int, double>& /*BLAS_source*/) {}
     inline virtual ~BLAS(void) {}
     void ROTG(double* da, double* db, double* c, double* s) const;
     void ROT(const int n, double* dx, const int incx, double* dy, const int incy, double* c, double* s) const;
@@ -1552,7 +1552,7 @@ namespace Teuchos
   {    
   public:
     inline BLAS(void) {}
-    inline BLAS(const BLAS<int, std::complex<float> >& BLAS_source) {}
+    inline BLAS(const BLAS<int, std::complex<float> >& /*BLAS_source*/) {}
     inline virtual ~BLAS(void) {}
     void ROTG(std::complex<float>* da, std::complex<float>* db, float* c, std::complex<float>* s) const;
     void ROT(const int n, std::complex<float>* dx, const int incx, std::complex<float>* dy, const int incy, float* c, std::complex<float>* s) const;
@@ -1581,7 +1581,7 @@ namespace Teuchos
   {    
   public:
     inline BLAS(void) {}
-    inline BLAS(const BLAS<int, std::complex<double> >& BLAS_source) {}
+    inline BLAS(const BLAS<int, std::complex<double> >& /*BLAS_source*/) {}
     inline virtual ~BLAS(void) {}
     void ROTG(std::complex<double>* da, std::complex<double>* db, double* c, std::complex<double>* s) const;
     void ROT(const int n, std::complex<double>* dx, const int incx, std::complex<double>* dy, const int incy, double* c, std::complex<double>* s) const;

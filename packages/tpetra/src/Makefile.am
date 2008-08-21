@@ -116,7 +116,10 @@ COMP_H = \
 	$(srcdir)/Tpetra_CisMatrix.hpp \
 	$(srcdir)/Tpetra_CisMatrixData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
+	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
+	$(srcdir)/Tpetra_MultiVectorData.hpp \
 	$(srcdir)/Tpetra_Operator.hpp 
 
 COMP = 

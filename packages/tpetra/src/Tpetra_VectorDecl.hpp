@@ -31,6 +31,7 @@
 
 #include <Teuchos_CompObject.hpp>
 #include <Teuchos_Object.hpp>
+#include <Teuchos_ArrayView.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
@@ -206,9 +207,9 @@ namespace Tpetra {
     //@{ \name I/O methods
 
     //! Print method, used by overloaded << operator.
-    void print(std::ostream& os) const;
+    void print(std::ostream &os) const;
 
-    void printValues(std::ostream& os) const;
+    void printValues(std::ostream &os) const;
 
     //@}
 

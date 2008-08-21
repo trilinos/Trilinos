@@ -63,7 +63,7 @@ namespace Tpetra {
     DistObject error codes (positive for non-fatal, negative for fatal):
     <ol>
     <li> -1  importer's target Map does not match my Map
-    <li> -2  importer's source Map does not match sourceObj's Map
+    <li> -2  importer's source Map does not match source's Map
     <li> -99 Internal DistObject error. Contact developer.
     </ol>
     
@@ -82,10 +82,10 @@ namespace Tpetra {
     //! constructor, taking label
     DistObject(const Map<Ordinal>& map, 
            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm,
-           const std::string & label);
+           const std::string & Label);
 
     //! copy constructor
-    DistObject(const DistObject<Ordinal, Scalar>& DistObject);
+    DistObject(const DistObject<Ordinal, Scalar>& source);
 
     //! destructor
     virtual ~DistObject();
@@ -95,19 +95,19 @@ namespace Tpetra {
     //@{ \name Import/Export Methods
 
     //! Import
-    int doImport(const DistObject<Ordinal, Scalar> & sourceObj, 
+    int doImport(const DistObject<Ordinal, Scalar> & source, 
            const Import<Ordinal> & importer, CombineMode CM);
 
     //! Export
-    int doExport(const DistObject<Ordinal, Scalar> & sourceObj, 
+    int doExport(const DistObject<Ordinal, Scalar> & source, 
            const Export<Ordinal> & exporter, CombineMode CM);
 
     //! Import (using an Exporter)
-    int doImport(const DistObject<Ordinal, Scalar> & sourceObj,
+    int doImport(const DistObject<Ordinal, Scalar> & source,
            const Export<Ordinal> & exporter, CombineMode CM);
     
     //! Export (using an Importer)
-    int doExport(const DistObject<Ordinal, Scalar> & sourceObj,
+    int doExport(const DistObject<Ordinal, Scalar> & source,
            const Import<Ordinal> & importer, CombineMode CM);
     
     //@}
@@ -132,7 +132,7 @@ namespace Tpetra {
   protected:
  
     //! Perform actual transfer (redistribution) of data across memory images.
-    virtual int doTransfer(const DistObject<Ordinal, Scalar> & sourceObj,
+    virtual int doTransfer(const DistObject<Ordinal, Scalar> & source,
                  CombineMode CM,
                  Ordinal numSameIDs,
                  Ordinal numPermuteIDs,
@@ -151,11 +151,11 @@ namespace Tpetra {
 
     //! Allows the source and target (\e this) objects to be compared for compatibility.
     /*! Return true if they are compatible, return false if they aren't. */ 
-    virtual bool checkSizes(const DistObject<Ordinal, Scalar> & sourceObj) = 0;
+    virtual bool checkSizes(const DistObject<Ordinal, Scalar> & source) = 0;
 
     //! Perform copies and permutations that are local to this image.
     /*!
-      \param sourceObj In
+      \param source In
              On entry, the DistObject that we are importing from.
       \param numSameIDs In
              On entry, the number of elements that are the same on the source and dest objects.
@@ -170,7 +170,7 @@ namespace Tpetra {
              On entry, contains a list of the elements that are permuted. (Listed by their LID in the
          source DistObject.)
     */
-    virtual int copyAndPermute(const DistObject<Ordinal, Scalar> & sourceObj,
+    virtual int copyAndPermute(const DistObject<Ordinal, Scalar> & source,
                    Ordinal numSameIDs,
                    Ordinal numPermuteIDs,
                    const std::vector<Ordinal> & permuteToLIDs,
@@ -178,7 +178,7 @@ namespace Tpetra {
 
     //! Perform any packing or preparation required for communication.
     /*!
-      \param sourceObj In
+      \param source In
              On entry, the DistObject that we are importing from.
       \param numExportIDs In
              On entry, the number of elements we will be sending to other images.
@@ -193,7 +193,7 @@ namespace Tpetra {
       \param distor In
              On entry, contains the Distributor object we are using.         
     */
-    virtual int packAndPrepare(const DistObject<Ordinal, Scalar> & sourceObj,
+    virtual int packAndPrepare(const DistObject<Ordinal, Scalar> & source,
                    Ordinal numExportIDs,
                    const std::vector<Ordinal> & exportLIDs,
                    std::vector<Scalar>& exports,
@@ -243,8 +243,8 @@ namespace Tpetra {
 
   template <typename Ordinal, typename Scalar>
   DistObject<Ordinal,Scalar>::DistObject(const Map<Ordinal>& map, 
-      Teuchos::RCP< Teuchos::Comm<Ordinal> > comm, const std::string & label)
-  : Teuchos::Object(label.c_str())
+      Teuchos::RCP< Teuchos::Comm<Ordinal> > comm, const std::string & Label)
+  : Teuchos::Object(Label.c_str())
   , map_(map)
   , Comm_(comm)
   , imports_()
@@ -253,13 +253,13 @@ namespace Tpetra {
   {}
 
   template <typename Ordinal, typename Scalar>
-  DistObject<Ordinal,Scalar>::DistObject(const DistObject<Ordinal, Scalar>& DistObject)
-  : Teuchos::Object(DistObject.label())
-  , map_(DistObject.map_)
-  , Comm_(DistObject.Comm_)
-  , imports_(DistObject.imports_)
-  , exports_(DistObject.exports_)
-  , sizes_(DistObject.sizes_)
+  DistObject<Ordinal,Scalar>::DistObject(const DistObject<Ordinal, Scalar>& source)
+  : Teuchos::Object(source.label())
+  , map_(source.map_)
+  , Comm_(source.Comm_)
+  , imports_(source.imports_)
+  , exports_(source.exports_)
+  , sizes_(source.sizes_)
   {}
 
   template <typename Ordinal, typename Scalar>
@@ -267,12 +267,12 @@ namespace Tpetra {
   {}
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal, Scalar> & sourceObj, 
+  int DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal, Scalar> & source, 
                                            const Import<Ordinal> & importer, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error,
         "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( sourceObj.getMap() != importer.getSourceMap(), std::runtime_error,
+    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error,
         "Source Maps don't match.");
 
     // copy variables from importer
@@ -286,7 +286,7 @@ namespace Tpetra {
     const std::vector<Ordinal> & permuteFromLIDs = importer.getPermuteFromLIDs();
 
     // call doTransfer
-    doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         exports_, imports_, importer.getDistributor(), false);
 
@@ -294,12 +294,12 @@ namespace Tpetra {
   }
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & sourceObj, 
+  int DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & source, 
                                            const Export<Ordinal> & exporter, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error,
         "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( sourceObj.getMap() != exporter.getSourceMap(), std::runtime_error,
+    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error,
         "Source Maps don't match.");
 
     // copy variables from exporter
@@ -313,7 +313,7 @@ namespace Tpetra {
     const std::vector<Ordinal> & permuteFromLIDs = exporter.getPermuteFromLIDs();
 
     // call doTransfer
-    doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         exports_, imports_, exporter.getDistributor(), false);
 
@@ -321,12 +321,12 @@ namespace Tpetra {
   }
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & sourceObj,
+  int DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source,
                                            const Export<Ordinal> & exporter, CombineMode CM)
   {
     TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error,
         "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( sourceObj.getMap() != exporter.getSourceMap(), std::runtime_error,
+    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error,
         "Source Maps don't match.");
 
     // copy variables from exporter
@@ -341,7 +341,7 @@ namespace Tpetra {
     const std::vector<Ordinal> & permuteFromLIDs = exporter.getPermuteToLIDs();
 
     // call doTransfer
-    doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         imports_, exports_, exporter.getDistributor(), true);
 
@@ -349,12 +349,12 @@ namespace Tpetra {
   }
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & sourceObj,
+  int DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & source,
                                            const Import<Ordinal> & importer, CombineMode CM)
   {
     TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error,
         "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( sourceObj.getMap() != importer.getSourceMap(), std::runtime_error,
+    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error,
         "Source Maps don't match.");
 
     // copy variables from importer
@@ -369,7 +369,7 @@ namespace Tpetra {
     const std::vector<Ordinal> & permuteFromLIDs = importer.getPermuteToLIDs();
 
     // call doTransfer
-    doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
+    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         imports_, exports_, importer.getDistributor(), true);
 
@@ -396,7 +396,7 @@ namespace Tpetra {
 
   template <typename Ordinal, typename Scalar>
   int DistObject<Ordinal,Scalar>::doTransfer(
-      const DistObject<Ordinal, Scalar> & sourceObj,
+      const DistObject<Ordinal, Scalar> & source,
       CombineMode CM,
       Ordinal numSameIDs, Ordinal numPermuteIDs, Ordinal numRemoteIDs, Ordinal numExportIDs,
       const std::vector<Ordinal> & permuteToLIDs, const std::vector<Ordinal> & permuteFromLIDs,
@@ -406,10 +406,10 @@ namespace Tpetra {
   {
     const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
 
-    checkSizes(sourceObj);
+    checkSizes(source);
 
     if(numSameIDs + numPermuteIDs > zero)
-      copyAndPermute(sourceObj, numSameIDs, numPermuteIDs, permuteToLIDs, permuteFromLIDs);
+      copyAndPermute(source, numSameIDs, numPermuteIDs, permuteToLIDs, permuteFromLIDs);
 
     // we don't have a "Zero" CombineMode like Epetra does, so we don't have to check for that
 
@@ -417,9 +417,9 @@ namespace Tpetra {
     bool varSizes = false;
     if((!sizes_.empty()) && (numExportIDs > zero))
       sizes_.resize(numExportIDs);
-    packAndPrepare(sourceObj, numExportIDs, exportLIDs, exports, packetSize, distor);
+    packAndPrepare(source, numExportIDs, exportLIDs, exports, packetSize, distor);
 
-    if((isDistributed() && doReverse) || (sourceObj.getMap().isDistributed() && !doReverse)) {
+    if((isDistributed() && doReverse) || (source.getMap().isDistributed() && !doReverse)) {
       // call one of the doPostsAndWaits functions
       if(doReverse) {
         if(varSizes)

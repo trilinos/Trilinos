@@ -18,7 +18,13 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Distributor, Map, Directory, ImportExport, Vector;
+    DIRS = Distributor, Map, Directory, ImportExport;
+    #ARGS = ;
+    COMM = SERIAL, MPI;
+}
+
+(TpetraInProgress) {
+    DIRS = Vector, MultiVector;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }

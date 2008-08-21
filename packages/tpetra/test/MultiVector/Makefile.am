@@ -26,15 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 
-all-local:
+EXEEXT = .exe
 
-#if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport Vector MultiVector # CisMatrix DistObject BasicPerfTest
-#endif
+noinst_PROGRAMS = MultiVector_UnitTests
 
-SUBDIRS = $(STANDARD_SUBDIRS)
-
-EXTRA_DIST = tpetra_test_util.hpp
-
+MultiVector_UnitTests_SOURCES = \
+  $(srcdir)/MultiVector_UnitTests.cpp \
+  $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+MultiVector_UnitTests_DEPENDENCIES = \
+	$(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+MultiVector_UnitTests_LDADD = $(TPETRA_LIBS)
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)

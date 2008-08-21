@@ -144,8 +144,11 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_DefaultPlatform.hpp \
 	$(srcdir)/Tpetra_VectorData.hpp $(srcdir)/Tpetra_CisMatrix.hpp \
 	$(srcdir)/Tpetra_CisMatrixData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
-	$(srcdir)/Tpetra_MultiVector.hpp $(srcdir)/Tpetra_Operator.hpp \
-	$(srcdir)/Tpetra_MpiPlatform.hpp
+	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
+	$(srcdir)/Tpetra_MultiVector.hpp \
+	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
+	$(srcdir)/Tpetra_MultiVectorData.hpp \
+	$(srcdir)/Tpetra_Operator.hpp $(srcdir)/Tpetra_MpiPlatform.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -330,7 +333,10 @@ COMP_H = \
 	$(srcdir)/Tpetra_CisMatrix.hpp \
 	$(srcdir)/Tpetra_CisMatrixData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
+	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
+	$(srcdir)/Tpetra_MultiVectorData.hpp \
 	$(srcdir)/Tpetra_Operator.hpp 
 
 COMP = 
