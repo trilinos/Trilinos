@@ -54,6 +54,17 @@
     in runtimes between the field and the raw data.
 
 */
+
+struct Point : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const Point& descriptor();
+};
+
+const char * Point::name() const 
+{ static const char n[] = "Point" ; return n ; }
+const Point & Point::descriptor() 
+{ static const Point myself ; return myself ; }
+
 int main(int argc, char *argv[]) 
 {
   using namespace std;
@@ -63,7 +74,8 @@ int main(int argc, char *argv[])
   try {
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
-    RCP<Time> arcp_time = TimeMonitor::getNewTimer("ArrayRCP<double> Time");
+    RCP<Time> arcp_time = TimeMonitor::getNewTimer("Field<double> Time");
+    RCP<Time> mda_time = TimeMonitor::getNewTimer("MDField<double,Point> Time");
     RCP<Time> raw_time = TimeMonitor::getNewTimer("double* Time");
     
     TimeMonitor tm(*total_time);
@@ -76,17 +88,28 @@ int main(int argc, char *argv[])
       
       double* raw_density = new double[size];
       
-      RCP<DataLayout> dl = 
-	rcp(new Generic("cell_quantitiy", 1));
+      RCP<DataLayout> dl = rcp(new Generic("cell_quantitiy", 1));
       Field<double> density("density", dl);
       ArrayRCP<double> a_density = arcp<double>(size);
       density.setFieldData(a_density);
+      
+      ArrayRCP<double> mda_density = arcp<double>(size);
+      RCP<DataLayout> mddl = rcp(new MDALayout<Point>(size));
+      MDField<double,Point> mddensity("density", dl);
+      mddensity.setFieldData(mda_density);
       
       {
 	TimeMonitor tm(*arcp_time);
 	for (int i=0; i < num_loops; ++i)
 	  for (int j=0; j < size; ++j)
 	    density[j] = value;
+      }
+      
+      {
+	TimeMonitor tm(*mda_time);
+	for (int i=0; i < num_loops; ++i)
+	  for (int j=0; j < size; ++j)
+	    mddensity[j] = value;
       }
       
       {
