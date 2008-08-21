@@ -38,11 +38,34 @@
 // Inefficient vector/tensor objects
 #include "Special_AlgebraicTypes.hpp"
 
+#include "Phalanx_DimTag.hpp"
+#include "Phalanx_Array.hpp"
+
 // TVMET - efficient expression template vector/tensor objects
 #ifdef HAVE_PHALANX_TVMET
 #include "tvmet/Vector.h"
 #include "tvmet/Matrix.h"
 #endif
+
+struct Point : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const Point& descriptor();
+};
+
+struct Dim : public PHX::DimTag, public phdmesh::ArrayDimTag {
+  const char * name() const ;
+  static const Dim& descriptor();
+};
+
+const char * Point::name() const 
+{ static const char n[] = "Point" ; return n ; }
+const Point & Point::descriptor() 
+{ static const Point myself ; return myself ; }
+
+const char * Dim::name() const 
+{ static const char n[] = "Dim" ; return n ; }
+const Dim & Dim::descriptor() 
+{ static const Dim myself ; return myself ; }
 
 int main(int argc, char* argv[])
 {
@@ -60,6 +83,8 @@ int main(int argc, char* argv[])
 
   // Make all vectors in a contiguous block
 
+  
+  // 1. Dumb operator overloaded objects
   MyVector<double>* vector_array = new MyVector<double>[num_vectors * size];
   ArrayRCP< MyVector<double> > a = 
     arcp< MyVector<double> >(vector_array, 0, size, false);
@@ -68,6 +93,7 @@ int main(int argc, char* argv[])
   ArrayRCP< MyVector<double> > c = 
     arcp< MyVector<double> >(&vector_array[2*size], 0, size, false);
 
+  // 2. TVMET
 #ifdef HAVE_PHALANX_TVMET
   tvmet::Vector<double, 3>* tvmet_array = 
     new tvmet::Vector<double, 3>[num_vectors * size];
@@ -79,11 +105,18 @@ int main(int argc, char* argv[])
     arcp< tvmet::Vector<double, 3> >(&tvmet_array[2*size], 0, size, false);
 #endif
 
+  // 3. MultiDimensional Array Support
+  double* mda_array = new double[num_vectors * size * 3];
+  phdmesh::ArrayNatural<double,Point,Dim> mda_a(mda_array,size,3);
+  phdmesh::ArrayNatural<double,Point,Dim> mda_b(&mda_array[size*3],size,3);
+  phdmesh::ArrayNatural<double,Point,Dim> mda_c(&mda_array[2*size*3],size,3);
+
+  // 4. Raw vector support
   double* raw_array = new double[num_vectors * size * 3];
 
   double* raw_a = raw_array;
-  double* raw_b = &raw_array[size];
-  double* raw_c = &raw_array[2*size];
+  double* raw_b = &raw_array[size*3];
+  double* raw_c = &raw_array[2*size*3];
 
   for (int i=0; i < a.size(); ++i)
     a[i] = 1.0;
@@ -112,6 +145,7 @@ int main(int argc, char* argv[])
 #ifdef HAVE_PHALANX_TVMET
   RCP<Time> tvmet_time = TimeMonitor::getNewTimer("TVMET Time");
 #endif
+  RCP<Time> mda_time = TimeMonitor::getNewTimer("MultiDimensional Array");
   RCP<Time> raw_time = TimeMonitor::getNewTimer("Raw Time");
 
   for (int sample = 0; sample < num_samples; ++sample) {
@@ -134,6 +168,17 @@ int main(int argc, char* argv[])
     }
 #endif
     
+    cout << "MultiDimensionalArray" << endl;
+    {
+      TimeMonitor t(*mda_time);
+      for (int i=0; i < num_loops; ++i) {
+	for (int j=0; j < size; ++j) {
+	  for (int k=0; k < 3; ++k)
+	    mda_c(j,k) = -4.0 * mda_a(j,k) + mda_b(j,k) * mda_b(j,k);
+	}
+      }
+    }
+
     cout << "Raw" << endl;
     {
       TimeMonitor t(*raw_time);
@@ -155,18 +200,21 @@ int main(int argc, char* argv[])
 #ifdef HAVE_PHALANX_TVMET
   double f_tvmet = tvmet_time->totalElapsedTime() / raw_time->totalElapsedTime();
 #endif
+  double f_mda = mda_time->totalElapsedTime() / raw_time->totalElapsedTime();
   double f_raw = raw_time->totalElapsedTime() / raw_time->totalElapsedTime();
 
   std::cout << "vector = " << f_vector << std::endl;
 #ifdef HAVE_PHALANX_TVMET
   std::cout << "tvmet  = " << f_tvmet << std::endl;
 #endif
+  std::cout << "mda    = " << f_mda << std::endl;
   std::cout << "raw    = " << f_raw << std::endl;
 
   delete [] vector_array;
 #ifdef HAVE_PHALANX_TVMET
   delete [] tvmet_array;
 #endif
+  delete [] mda_array;
   delete [] raw_array;
 
   std::cout << "\nTest passed!\n" << std::endl; 
