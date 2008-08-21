@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
       double value = 2.0;
       
       double* raw_density = new double[size];
-      
+
       RCP<DataLayout> dl = rcp(new Generic("cell_quantitiy", 1));
       Field<double> density("density", dl);
       ArrayRCP<double> a_density = arcp<double>(size);
@@ -95,9 +95,16 @@ int main(int argc, char *argv[])
       
       ArrayRCP<double> mda_density = arcp<double>(size);
       RCP<DataLayout> mddl = rcp(new MDALayout<Point>(size));
-      MDField<double,Point> mddensity("density", dl);
+      MDField<double,Point,Point> mddensity("density", mddl);
       mddensity.setFieldData(mda_density);
       
+      for (int i=0; i < size; ++i) {
+	raw_density[i] = 1.0;
+	density[i] = 1.0;
+	mddensity[i] = 1.0;
+      }
+
+      cout << "Field" << endl;
       {
 	TimeMonitor tm(*arcp_time);
 	for (int i=0; i < num_loops; ++i)
@@ -105,6 +112,7 @@ int main(int argc, char *argv[])
 	    density[j] = value;
       }
       
+      cout << "MDField" << endl;
       {
 	TimeMonitor tm(*mda_time);
 	for (int i=0; i < num_loops; ++i)
@@ -112,6 +120,7 @@ int main(int argc, char *argv[])
 	    mddensity[j] = value;
       }
       
+      cout << "double*" << endl;
       {
 	TimeMonitor tm(*raw_time);
 	for (int i=0; i < num_loops; ++i)
