@@ -196,8 +196,8 @@ fini:
 /******************  DD_Find_Local()  ***************************/
 
 /* For a given gid, DD_Find_Local() provides its local ID, owner, optional
-// user data, and partition from the local distributed directory. An error
-// is returned if the gid is not found.
+ * user data, and partition from the local distributed directory. An error
+ * is returned if the gid is not found.
 */
 
 static int DD_Find_Local (Zoltan_DD_Directory *dd,

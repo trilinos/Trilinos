@@ -629,7 +629,6 @@ End:
   /* KDDKDD  End of printing section. */
   
   ZOLTAN_FREE(&parts);
-  //UGH
   if (zoltan_hg != NULL) {
     Zoltan_PHG_Free_Hypergraph_Data(zoltan_hg);
     ZOLTAN_FREE (&zoltan_hg);

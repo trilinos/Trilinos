@@ -96,7 +96,7 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   }
   fg->vindex[k] = 2*k; /* k = fg->nVtx */
 
-// #define DEBUG
+/* #define DEBUG */
 #ifdef DEBUG
   printf("Debug: fine hgraph (vertex-based). nvtx=%d, nedge=%d, nPins=%d\n", fg->nVtx, fg->nEdge, fg->nPins);
   printf("Debug: vindex: ");

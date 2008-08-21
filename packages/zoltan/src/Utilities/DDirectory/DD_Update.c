@@ -207,7 +207,7 @@ fini:
 /*****************  DD_Update_Local ()  **********************/
 
 /* DD_Update_Local() unconditionally updates the information associated
-// with a global ID. If the gid was not found, it is added to the directory.
+ * with a global ID. If the gid was not found, it is added to the directory.
 */
 
 static int DD_Update_Local (Zoltan_DD_Directory *dd,
