@@ -32,7 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_EpetraOperator.hpp>
 #ifdef HAVE_ISORROPIA_ZOLTAN
 #include <Isorropia_Zoltan_Repartition.hpp>
-#endif
+#endif /* HAVE_ISORROPIA_ZOLTAN */
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -49,8 +49,11 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
+#else /* HAVE_EPETRA */
+#error "This module needs Epetra"
+#endif /* HAVE_EPETRA */
 
-#endif
+
 
 #include <cstring>
 #include <iostream>
@@ -134,50 +137,52 @@ void Operator::setParameters(const Teuchos::ParameterList& paramlist)
   paramsToUpper(paramlist_, changed);
 }
 
-bool Operator::alreadyComputed() const
-{
-  return operation_already_computed_;
-}
-
 const int& Operator::operator[](int myElem) const
 {
-  std::map<int,int>::const_iterator iter = exports_.find(myElem);
-  if (iter != exports_.end()) {
-    return(iter->second);
-  }
-
-  return( input_graph_->RowMap().Comm().MyPID() );
+  return (myNewElements_[myElem]);
 }
 
-int Operator::numElemsWithProperty(int partition) const
+int Operator::numElemsWithProperty(int property) const
 {
-  int myPart = input_map_->Comm().MyPID();
-  if (partition != myPart) {
-    throw Isorropia::Exception("Partitioner::numElemsInPartition not implemented for non-local partitions.");
-  }
-
-  return(myNewElements_.size());
+  if ((unsigned int)property <= numberElemsByProperties_.size())
+    return numberElemsByProperties_[property];
+  return (0);
 }
 
 void
-Operator::elemsWithProperty(int partition, int* elementList, int len) const
+Operator::elemsWithProperty(int property, int* elementList, int len) const
 {
-  int myPart = input_map_->Comm().MyPID();
-  if (partition != myPart) {
-    throw Isorropia::Exception("error in Epetra_Map::MyGlobalElements");
-  }
+  int length = 0;
+  std::vector<int>::const_iterator elemsIter;
 
-  unsigned length = len;
-  if (myNewElements_.size() < length) length = myNewElements_.size();
-
-  for(unsigned i=0; i<length; ++i) {
-    elementList[i] = myNewElements_[i];
+  for (elemsIter = myNewElements_.begin() ; (length < len) && (elemsIter != myNewElements_.end()) ;
+       elemsIter ++) {
+    if (*elemsIter == property)
+      elementList[length++] = elemsIter - myNewElements_.begin();
   }
 }
 
-int
-Operator::numProperties() const {
-  return (numberOfProperties_);
+
+void
+Operator::computeNumberOfProperties()
+{
+  std::vector<int>::const_iterator elemsIter;
+  std::vector<int>::iterator numberIter;
+  const Epetra_Comm& input_comm = input_map_->Comm();
+
+  int max = 0;
+
+  numberElemsByProperties_.assign(myNewElements_.size(), 0);
+
+  numberIter = numberElemsByProperties_.begin();
+  for(elemsIter = myNewElements_.begin() ; elemsIter != myNewElements_.end() ; elemsIter ++) {
+    int property;
+    property = *elemsIter;
+    if (max < property) max = property;
+    (*(numberIter + property)) ++;
+  }
+
+  input_comm.MaxAll(&max, &numberOfProperties_, 1);
 }
 
 
@@ -219,7 +224,6 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
   }
 
   // Change parameter names and values to upper case
-  
   for (unsigned int i=0; i < paramNames.size(); i++){
 
     std::string origName(paramNames[i]);
@@ -261,7 +265,6 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
     }
   } // next parameter or sublist
 }
-
 } // namespace EPETRA
 
 #endif //HAVE_EPETRA

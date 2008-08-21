@@ -41,7 +41,7 @@ endif
 
 if BUILD_EPETRAEXT
 MTX_TEST_DIR = mtx
-MTX_TESTS = test_simple.exe
+MTX_TESTS = test_simple.exe test_colorer.exe
 endif
 
 #

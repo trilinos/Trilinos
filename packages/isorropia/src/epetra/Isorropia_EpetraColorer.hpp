@@ -94,9 +94,14 @@ public:
    */
   void color(bool force_coloring=false);
 
+  void compute(bool force_compute=false) {
+    color(force_compute);
+  }
+
 #ifdef HAVE_EPETRAEXT
   Teuchos::RefCountPtr<Epetra_MapColoring> generateMapColoring() ;
 #endif /* HAVE_EPETRAEXT */
+
 
 };//class Colorer
 

@@ -202,31 +202,36 @@ public:
 
   /** Query whether compute_partitioning() has already been called.
    */
-  bool alreadyComputed() const ;
+  bool alreadyComputed() const {
+    return operation_already_computed_;
+  }
 
-
-  int numProperties() const;
+  int numProperties() const {
+    return (numberOfProperties_);
+  }
 
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  const int& operator[](int myElem) const;
+  virtual const int& operator[](int myElem) const;
 
   /** Return the number of elements in a given partition.
   */
-  int numElemsWithProperty(int property) const;
+  virtual int numElemsWithProperty(int property) const;
 
   /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
   */
-  void elemsWithProperty(int property,
-			    int* elementList,
-			    int len) const;
+  virtual void elemsWithProperty(int property,
+			 int* elementList,
+			 int len) const;
 
 private:
 
   void paramsToUpper(Teuchos::ParameterList &, int &changed);
   void stringToUpper(std::string &s, int &changed);
+  int numberOfProperties_;
+  std::vector<int> numberElemsByProperties_;
 
 protected:
   Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
@@ -241,7 +246,6 @@ protected:
   std::vector<int> myNewElements_;
 
   bool operation_already_computed_;
-  int numberOfProperties_;
 
   int global_num_vertex_weights_;
   int global_num_graph_edge_weights_;
@@ -249,6 +253,7 @@ protected:
 
   Teuchos::RefCountPtr<Library> lib_;
 
+  void computeNumberOfProperties();
 };//class Operator
 
 }//namespace Epetra

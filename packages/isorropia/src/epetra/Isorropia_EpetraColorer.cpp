@@ -102,8 +102,13 @@ Colorer::color(bool force_coloring)
 {
   if (alreadyComputed() && !force_coloring)
     return;
-  lib_->color(paramlist_, myNewElements_);
+
+  std::string zoltan("ZOLTAN");
+  Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
+
+  lib_->color(sublist, myNewElements_);
   operation_already_computed_ = true;
+  computeNumberOfProperties();
 }
 
 #ifdef HAVE_EPETRAEXT

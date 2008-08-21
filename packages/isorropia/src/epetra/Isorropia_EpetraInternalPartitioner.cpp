@@ -183,6 +183,7 @@ int InternalPartitioner::postcompute()
   return (0);
 };
 
+
 } // namespace EPETRA
 
 #endif //HAVE_EPETRA

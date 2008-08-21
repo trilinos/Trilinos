@@ -325,6 +325,53 @@ void Partitioner::elemsInPartition(int partition, int* elementList, int len) con
   return (elemsWithProperty(partition, elementList, len));
 }
 
+
+  /** An internal method which fills caller-allocated list (of length len) with the
+      global element ids to be located in the given partition.
+
+      (Currently only implemented for the case where 'partition' is local.)
+  */
+void
+Partitioner::elemsWithProperty(int partition, int* elementList, int len) const
+{
+  int myPart = input_map_->Comm().MyPID();
+  std::vector<int>::const_iterator elemsIter;
+  unsigned int i;
+
+  if (partition != myPart) {
+    throw Isorropia::Exception("error in Epetra_Map::MyGlobalElements");
+  }
+
+  unsigned length = len;
+  if (myNewElements_.size() < length) length = myNewElements_.size();
+
+  // Copy from vector to array
+  std::copy(myNewElements_.begin(), myNewElements_.begin() + length, elementList);
+}
+
+const int&
+Partitioner::operator[](int myElem) const
+{
+  std::map<int,int>::const_iterator iter = exports_.find(myElem);
+  if (iter != exports_.end()) {
+    return(iter->second);
+  }
+
+  return( input_graph_->RowMap().Comm().MyPID() );
+}
+
+int
+Partitioner::numElemsWithProperty(int partition) const
+{
+  int myPart = input_map_->Comm().MyPID();
+  if (partition != myPart) {
+    throw Isorropia::Exception("Partitioner::numElemsInPartition not implemented for non-local partitions.");
+  }
+
+  return(myNewElements_.size());
+}
+
+
 } // namespace EPETRA
 
 #endif //HAVE_EPETRA

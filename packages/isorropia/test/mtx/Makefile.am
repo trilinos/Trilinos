@@ -37,8 +37,9 @@ LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
 test_simple_SOURCES = $(srcdir)/test_simple.cpp
 test_create_balanced_copy_SOURCES = $(srcdir)/test_create_balanced_copy.cpp
+test_colorer_SOURCES = $(srcdir)/test_colorer.cpp
 
-noinst_PROGRAMS = test_simple test_create_balanced_copy 
+noinst_PROGRAMS = test_simple test_create_balanced_copy test_colorer
 
 EXTRA_DIST = simple.mtx simple_25X50.mtx simple_50X25.mtx small.mtx felix.mtx
 
