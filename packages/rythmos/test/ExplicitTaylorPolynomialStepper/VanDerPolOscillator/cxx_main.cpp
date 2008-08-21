@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     std::string method;
     Teuchos::RCP<Rythmos::StepperBase<double> > stepper_ptr;
     if ( method_val == METHOD_ERK ) {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
+      stepper_ptr = Rythmos::explicitRKStepper<double>(model);
       Teuchos::RCP<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
       ERKparams->set( "outputLevel", outputLevel);
       stepper_ptr->setParameterList(ERKparams);
