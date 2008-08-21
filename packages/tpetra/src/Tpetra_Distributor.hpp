@@ -462,28 +462,29 @@ namespace Tpetra {
       // starts[i] is the number of sends to node i
       // numActive equals number of sends total, \sum_i starts[i]
 
-      // the loop starts at starts[1], so explicitly check starts[0]
+      // this loop starts at starts[1], so explicitly check starts[0]
       if (starts[0] == ZERO ) {
         numSends_ = ZERO;
       }
       else {
         numSends_ = one;
       }
-      for (int i = 1; i < numImages; ++i) {
-        if (starts[i] != ZERO) {
-          ++numSends_;
-        }
-        starts[i] += starts[i-1];
+      for (typename std::vector<Ordinal>::iterator i=starts.begin()+1,
+                                                 im1=starts.begin();
+           i != starts.end(); ++i) 
+      {
+        if (*i != ZERO) ++numSends_;
+        *i += *im1;
+        im1 = i;
       }
       // starts[i] now contains the number of exports to nodes 0 through i
 
-      for (typename std::vector<Ordinal>::iterator ip1=starts.end(),
-                                                     i=starts.end()-1;
-           ip1 != starts.begin(); ) 
+      for (typename std::vector<Ordinal>::reverse_iterator ip1=starts.rbegin(),
+                                                             i=starts.rbegin()+1;
+           i != starts.rend(); ++i)
       {
         *ip1 = *i;
         ip1 = i;
-        i--;
       }
       starts[0] = ZERO;
       // starts[i] now contains the number of exports to nodes 0 through

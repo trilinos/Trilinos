@@ -92,16 +92,16 @@ enum EShowTestDetails {
 
 bool strMatch( const std::string &fullMatchStr, const std::string &str )
 {
+  typedef std::string::size_type size_type;
+  const size_type npos = std::string::npos;
 
-  const std::string::size_type npos = std::string::npos;
+  const size_type strLen = str.length();
+  const size_type fullMatchStrLen = fullMatchStr.length();
 
-  const int strLen = str.length();
-  const int fullMatchStrLen = fullMatchStr.length();
+  const bool beginGlob = (fullMatchStrLen > 0) && (fullMatchStr[0] == '*');
+  const bool endGlob = (fullMatchStrLen > 0) && (fullMatchStr[fullMatchStrLen-1] == '*');
 
-  const bool beginGlob = fullMatchStr[0] == '*';
-  const bool endGlob = fullMatchStr[fullMatchStrLen-1] == '*';
-
-  const int matchStrLen = fullMatchStrLen + (beginGlob ? -1 : 0) + (endGlob ? -1 : 0);
+  const size_type matchStrLen = fullMatchStrLen + (beginGlob ? -1 : 0) + (endGlob ? -1 : 0);
 
   if (matchStrLen == 0) {
     return true;

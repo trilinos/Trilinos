@@ -65,8 +65,9 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, basic, Ordinal )
   {
+    out << "sizeof(Ordinal): " << sizeof(Ordinal) << std::endl;
+    out << "sizeof(std::size_t): " << sizeof(std::string::size_type) << std::endl;
     RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    out << "platform = " << *platform << std::endl;
     TEST_INEQUALITY_CONST( platform->createComm(), Teuchos::null );
   }
 
@@ -512,7 +513,7 @@ namespace {
     broadcast(*comm,0,arrayViewFromVector(exports));
 
     // pick a subset of entries to post
-    vector<Packet> myExports(&exports[myImageID*numImages],&exports[(myImageID+1)*numImages]);
+    vector<Packet> myExports(exports.begin()+myImageID*numImages,exports.begin()+(myImageID+1)*numImages);
     // do posts, one Packet to each image
     vector<Packet> imports;
     distributor.doPostsAndWaits(myExports, 1, imports);
@@ -524,10 +525,16 @@ namespace {
     {
       typename vector<Packet>::iterator eI = expectedImports.begin(), 
                                          E = exports.begin()+myImageID;
-      for (; eI != expectedImports.end();) {
+      int left = numImages;
+      while (true) {
         *eI = *E;
-        eI++;
-        E += numImages;
+        if (--left > 0) {
+          eI++;
+          E += numImages;
+        }
+        else {
+          break;
+        }
       }
     }
     // check the values 
@@ -594,7 +601,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // # define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
@@ -613,7 +620,6 @@ namespace {
     UNIT_TEST_GROUP_ORDINAL(int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-    
 
       // FINISH: add complex tests
 
@@ -631,6 +637,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, double ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, float )
 
+    UNIT_TEST_GROUP_ORDINAL(int)
     typedef short int ShortInt;
     UNIT_TEST_GROUP_ORDINAL(ShortInt)
     typedef long int LongInt;
