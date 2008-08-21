@@ -23,7 +23,7 @@
     COMM = SERIAL, MPI;
 }
 
-(INSTALL,PERFORMANCE,ALL) {
+(FRAMEWORK,INSTALL,PERFORMANCE,ALL) {
     DIRS = Performance/Allocators,
            Performance/AlgebraicTypes,
            Performance/BracketOperator;
