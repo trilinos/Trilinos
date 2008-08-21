@@ -197,6 +197,32 @@ int main(int argc, char *argv[])
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // dimension()
+      cout << "Testing dimension() method...";
+      TEST_FOR_EXCEPTION(b.dimension(0) != num_cells, std::logic_error,
+			 "Cell dimesion is wrong!");
+      TEST_FOR_EXCEPTION(b.dimension(1) != 4, std::logic_error,
+			 "Quadrature dimesion is wrong!");
+      TEST_FOR_EXCEPTION(b.dimension(2) != 3, std::logic_error,
+			 "Dim dimesion is wrong!");
+      cout << "passed!" << endl;
+      
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // dimensions()
+      cout << "Testing dimensions() method...";
+      std::vector<std::size_t> dims;
+      b.dimensions(dims);
+      TEST_FOR_EXCEPTION(dims.size() != 3, std::logic_error,
+			 "Number of dimesions is wrong!");
+      TEST_FOR_EXCEPTION(dims[0] != 100, std::logic_error,
+			 "Number of dimesions is wrong!");
+      TEST_FOR_EXCEPTION(dims[1] != 4, std::logic_error,
+			 "Number of dimesions is wrong!");
+      TEST_FOR_EXCEPTION(dims[2] != 3, std::logic_error,
+			 "Number of dimesions is wrong!");
+      cout << "passed!" << endl;
+
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // size()
       cout << "Testing size() method...";
       TEST_FOR_EXCEPTION(a.size() != num_cells * node_scalar->size(), 

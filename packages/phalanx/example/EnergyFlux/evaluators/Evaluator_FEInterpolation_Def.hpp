@@ -72,9 +72,11 @@ evaluateFields(typename Traits::EvalData cell_data)
   // Loop over number of cells
   for (std::size_t cell = 0; cell < cell_data.size(); ++cell) {
     
-    std::vector<double>& phi = cell_data[cell].getBasisFunctions();
-    std::vector< MyVector<double> >& grad_phi = 
+    std::vector< std::vector<double> >& phi = 
+      cell_data[cell].getBasisFunctions();
+    std::vector< std::vector< MyVector<double> > >& grad_phi = 
       cell_data[cell].getBasisFunctionGradients();
+
     int node_offset = cell * nodes_per_cell;
     int qp_offset = cell * qp_per_cell;
     
@@ -87,10 +89,10 @@ evaluateFields(typename Traits::EvalData cell_data)
       // Sum nodal contributions to qp
       for (int node = 0; node < nodes_per_cell; ++node) {
 	
-	val_qp[qp_offset + qp] += phi[node] * val_node[node_offset + node];
+	val_qp[qp_offset + qp] += phi[qp][node] * val_node[node_offset + node];
 
 	val_grad_qp[qp_offset + qp] += 
-	  grad_phi[node] * val_node[node_offset + node];
+	  grad_phi[qp][node] * val_node[node_offset + node];
       }      
     }
     

@@ -36,6 +36,7 @@
 
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 
 namespace PHX {
 
@@ -59,15 +60,27 @@ namespace PHX {
 
     virtual ~EvaluatorWithBaseImpl();
 
-    virtual void addEvaluatedField(const PHX::FieldTag& v);
+    virtual void addEvaluatedField(const PHX::FieldTag& ft);
 
     template<typename DataT>
-    void addEvaluatedField(const PHX::Field<DataT>& h);
+    void addEvaluatedField(const PHX::Field<DataT>& f);
 
-    virtual void addDependentField(const PHX::FieldTag& v);
+    template<typename DataT,
+	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+    void addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
+			   Tag4,Tag5,Tag6,Tag7>& f);
+
+    virtual void addDependentField(const PHX::FieldTag& ft);
 
     template<typename DataT>
-    void addDependentField(const PHX::Field<DataT>& h);
+    void addDependentField(const PHX::Field<DataT>& f);
+
+    template<typename DataT,
+	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	     typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+    void addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
+			   Tag4,Tag5,Tag6,Tag7>& f);
 
     virtual void setName(const std::string& name);
 

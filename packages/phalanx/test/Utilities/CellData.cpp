@@ -33,10 +33,15 @@
 
 //**********************************************************************
 CellData::CellData() :
-  phi_(4, 0.25),
-  grad_phi_(4, 0.25)
-{ }
+  phi_(4),
+  grad_phi_(4)
+{ 
+  for (std::size_t i=0; i < phi_.size(); ++i)
+    phi_[i].resize(4,0.25);
 
+  for (std::size_t i=0; i < grad_phi_.size(); ++i)
+    grad_phi_[i].resize(4,MyVector<double>(0.25,0.25,0.25));
+}
 //**********************************************************************
 std::vector< MyVector<double> >& CellData::getNodeCoordinates()
 {
@@ -44,13 +49,14 @@ std::vector< MyVector<double> >& CellData::getNodeCoordinates()
 }
 
 //**********************************************************************
-std::vector<double>& CellData::getBasisFunctions()
+std::vector< std::vector<double> >& CellData::getBasisFunctions()
 {
   return phi_;
 }
 
 //**********************************************************************
-std::vector< MyVector<double> >& CellData::getBasisFunctionGradients()
+std::vector< std::vector< MyVector<double> > >& 
+CellData::getBasisFunctionGradients()
 {
   return grad_phi_;
 }

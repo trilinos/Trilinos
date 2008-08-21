@@ -91,7 +91,9 @@ namespace PHX {
     
     DataT& operator[](index_type index);
 
-    //typename phdmesh::ArrayNatural<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type size() const;
+    size_type dimension(index_type ord) const;
+
+    void dimensions(std::vector<size_type>& dims);
 
     size_type size() const;
 

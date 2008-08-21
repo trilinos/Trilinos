@@ -29,39 +29,45 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EVALUATOR_UTILITIES_H
-#define PHX_EVALUATOR_UTILITIES_H
+#ifndef EXAMPLE_FACTORY_TRAITS_HPP
+#define EXAMPLE_FACTORY_TRAITS_HPP
 
-#include <vector>
+// mpl (Meta Programming Library) templates
+#include "Sacado_mpl_vector.hpp"
 
-#include "Phalanx_Field.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Phalanx_FieldManager.hpp"
+// User Defined Evaluator Types
+#include "Evaluator_Constant.hpp"
+#include "Evaluator_Density.hpp"
+#include "Evaluator_EnergyFlux_Fourier.hpp"
+#include "Evaluator_FEInterpolation.hpp"
+#include "Evaluator_NonlinearSource.hpp"
 
-namespace PHX {
 
-  /*! @brief Utilities to hide templating in concrete Evaluators.
-   
-  */
-  template<typename EvalT, typename Traits> 
-  struct EvaluatorUtilities {
+#include "boost/mpl/placeholders.hpp"
+using namespace boost::mpl::placeholders;
+
+/*! \brief Struct to define Evaluator objects for the EvaluatorFactory.
     
-    template <typename DataT>
-    void setFieldData(PHX::Field<DataT>& f, PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<DataT,EvalT>(f);
-    }
+    Preconditions:
+    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects that you wish the factory to build.  Do not confuse evaluator types (concrete instances of evaluator objects) with evaluation types (types of evaluations to perform, i.e., Residual, Jacobian). 
 
-    template <typename DataT,
-	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
-	      typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-    void setFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
-		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
-    {
-      fm.template getFieldData<DataT,EvalT>(f);
-    }
+*/
+template<typename Traits>
+struct MyFactoryTraits {
+  
+  static const int id_constant = 0;
+  static const int id_density = 1;
+  static const int id_fourier = 2;
+  static const int id_feinterpolation = 3;
+  static const int id_nonlinearsource = 4;
 
-  };
-}
+  typedef Sacado::mpl::vector< Constant<_,Traits>,             // 0
+ 			       Density<_,Traits>,              // 1
+ 			       Fourier<_,Traits>,              // 2
+ 			       FEInterpolation<_,Traits>,      // 3
+ 			       NonlinearSource<_,Traits>       // 4
+  > EvaluatorTypes;
+  
+};
 
 #endif

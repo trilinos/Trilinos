@@ -29,33 +29,41 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#ifndef PHX_EXAMPLE_VP_FOURIER_HPP
+#define PHX_EXAMPLE_VP_FOURIER_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_DataLayout_Generic.hpp"
+#include "Phalanx_MDField.hpp"
 
-class CellData {
+template<typename EvalT, typename Traits>
+class Fourier : public PHX::EvaluatorWithBaseImpl<Traits>,
+		public PHX::EvaluatorDerived<EvalT, Traits>  {
   
 public:
-
-  CellData();
   
-  virtual ~CellData() {}
+  Fourier(const Teuchos::ParameterList& p);
   
-  std::vector< MyVector<double> >& getNodeCoordinates();
+  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
   
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
+  void evaluateFields(typename Traits::EvalData d);
   
 private:
   
-  std::vector< MyVector<double> > coords_;
+  typedef typename EvalT::ScalarT ScalarT;
+
+  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> flux;
+  PHX::MDField<ScalarT,Cell,QuadPoint> density;
+  PHX::MDField<ScalarT,Cell,QuadPoint> dc;
+  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> grad_temp;
   
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
+  std::size_t num_qp;
+  std::size_t num_dim;
+
 };
+
+#include "Evaluator_EnergyFlux_Fourier_Def.hpp"
 
 #endif

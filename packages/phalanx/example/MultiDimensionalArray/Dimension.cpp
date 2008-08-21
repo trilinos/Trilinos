@@ -29,33 +29,32 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#include "Phalanx_Array.hpp"
+#include "Phalanx_DimTag.hpp"
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Dimension.hpp"
 
-class CellData {
-  
-public:
+const char * Dim::name() const 
+{ static const char n[] = "Dim" ; return n ; }
+const Dim & Dim::descriptor() 
+{ static const Dim myself ; return myself ; }
 
-  CellData();
-  
-  virtual ~CellData() {}
-  
-  std::vector< MyVector<double> >& getNodeCoordinates();
-  
-  std::vector< std::vector<double> >& getBasisFunctions();
-  
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
-  
-private:
-  
-  std::vector< MyVector<double> > coords_;
-  
-  std::vector< std::vector<double> > phi_;
-  
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
-};
+const char * QuadPoint::name() const 
+{ static const char n[] = "QuadPoint" ; return n ; }
+const QuadPoint & QuadPoint::descriptor() 
+{ static const QuadPoint myself ; return myself ; }
 
-#endif
+const char * Node::name() const 
+{ static const char n[] = "Node" ; return n ; }
+const Node & Node::descriptor() 
+{ static const Node myself ; return myself ; }
+
+const char * Point::name() const 
+{ static const char n[] = "Point" ; return n ; }
+const Point & Point::descriptor() 
+{ static const Point myself ; return myself ; }
+
+const char * Cell::name() const 
+{ static const char n[] = "Cell" ; return n ; }
+const Cell & Cell::descriptor() 
+{ static const Cell myself ; return myself ; }
