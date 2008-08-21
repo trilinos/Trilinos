@@ -102,35 +102,35 @@ namespace PHX {
   // ******************************************************************
   // ******************************************************************
   // Debug strings.  Specialize the Evaluation and Data types for the
-  // TypeString object in the PHX::TraitsBase class.
+  // TypeString object in phalanx/src/Phalanx_TypeString.hpp.
   // ******************************************************************
   // ******************************************************************
 
   // Evaluation Types
-  template<>
-  struct MyTraits::TypeString<MyTraits::Residual> 
+  template<> struct TypeString<MyTraits::Residual> 
   { static const std::string value; };
-  const std::string MyTraits::TypeString<MyTraits::Residual>::value = 
+
+  template<> struct TypeString<MyTraits::Jacobian> 
+  { static const std::string value; };
+
+  const std::string TypeString<MyTraits::Residual>::value = 
     "Residual";
 
-  template<>
-  struct MyTraits::TypeString<MyTraits::Jacobian> 
-  { static const std::string value; };
-  const std::string MyTraits::TypeString<MyTraits::Jacobian>::value = 
+  const std::string TypeString<MyTraits::Jacobian>::value = 
     "Jacobian";
 
   // Data Types
-  template<>
-  struct MyTraits::TypeString<MyTraits::RealType> 
+  template<> struct TypeString<double> 
   { static const std::string value; };
-  const std::string MyTraits::TypeString<MyTraits::RealType>::value = 
+
+  template<> struct TypeString< Sacado::Fad::DFad<double> > 
+  { static const std::string value; };
+
+  const std::string TypeString<double>::value = 
     "double";
 
-  template<>
-  struct MyTraits::TypeString<MyTraits::FadType> 
-  { static const std::string value; };
-  const std::string MyTraits::TypeString<MyTraits::FadType>::value = 
-    "Sacado::Fad::DFad<double>";
+  const std::string TypeString< Sacado::Fad::DFad<double> >::
+  value = "Sacado::Fad::DFad<double>";
 
 }
 

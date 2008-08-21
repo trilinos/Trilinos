@@ -258,7 +258,6 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataLayout_MDALayout_Def.hpp \
 	$(srcdir)/Phalanx_DataLayout_MDALayout.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
-	$(srcdir)/Phalanx_DebugStrings.hpp \
 	$(srcdir)/Phalanx_DimTag.hpp \
 	$(srcdir)/Phalanx_DoxygenDocumentation.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base_Def.hpp \
@@ -295,6 +294,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_TemplateManager_Def.hpp \
 	$(srcdir)/Phalanx_TemplateManager.hpp \
 	$(srcdir)/Phalanx_Traits_Base.hpp \
+	$(srcdir)/Phalanx_TypeStrings.hpp \
 	$(srcdir)/Phalanx_Version.hpp
 
 PHALANX_CPP = \
