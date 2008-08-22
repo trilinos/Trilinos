@@ -126,20 +126,19 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/phg/phg_build.c $(srcdir)/phg/phg_build_calls.c \
 	$(srcdir)/phg/phg.c $(srcdir)/phg/phg_coarse.c \
 	$(srcdir)/phg/phg_comm.c $(srcdir)/phg/phg_distrib.c \
-	$(srcdir)/phg/phg_finegrain.c $(srcdir)/phg/phg_gather.c \
-	$(srcdir)/phg/phg_hypergraph.c $(srcdir)/phg/phg_match.c \
-	$(srcdir)/phg/phg_order.c $(srcdir)/phg/phg_parkway.c \
-	$(srcdir)/phg/phg_patoh.c $(srcdir)/phg/phg_plot.c \
-	$(srcdir)/phg/phg_rdivide.c $(srcdir)/phg/phg_refinement.c \
-	$(srcdir)/phg/phg_scale.c $(srcdir)/phg/phg_serialpartition.c \
-	$(srcdir)/phg/phg_util.c $(srcdir)/phg/phg_Vcycle.c \
-	$(srcdir)/rcb/box_assign.c $(srcdir)/rcb/create_proc_list.c \
-	$(srcdir)/rcb/inertial1d.c $(srcdir)/rcb/inertial2d.c \
-	$(srcdir)/rcb/inertial3d.c $(srcdir)/rcb/point_assign.c \
-	$(srcdir)/rcb/rcb_box.c $(srcdir)/rcb/rcb.c \
-	$(srcdir)/rcb/rcb_util.c $(srcdir)/rcb/rib.c \
-	$(srcdir)/rcb/rib_util.c $(srcdir)/rcb/shared.c \
-	$(srcdir)/reftree/reftree_build.c \
+	$(srcdir)/phg/phg_gather.c $(srcdir)/phg/phg_hypergraph.c \
+	$(srcdir)/phg/phg_match.c $(srcdir)/phg/phg_order.c \
+	$(srcdir)/phg/phg_parkway.c $(srcdir)/phg/phg_patoh.c \
+	$(srcdir)/phg/phg_plot.c $(srcdir)/phg/phg_rdivide.c \
+	$(srcdir)/phg/phg_refinement.c $(srcdir)/phg/phg_scale.c \
+	$(srcdir)/phg/phg_serialpartition.c $(srcdir)/phg/phg_util.c \
+	$(srcdir)/phg/phg_Vcycle.c $(srcdir)/rcb/box_assign.c \
+	$(srcdir)/rcb/create_proc_list.c $(srcdir)/rcb/inertial1d.c \
+	$(srcdir)/rcb/inertial2d.c $(srcdir)/rcb/inertial3d.c \
+	$(srcdir)/rcb/point_assign.c $(srcdir)/rcb/rcb_box.c \
+	$(srcdir)/rcb/rcb.c $(srcdir)/rcb/rcb_util.c \
+	$(srcdir)/rcb/rib.c $(srcdir)/rcb/rib_util.c \
+	$(srcdir)/rcb/shared.c $(srcdir)/reftree/reftree_build.c \
 	$(srcdir)/reftree/reftree_coarse_path.c \
 	$(srcdir)/reftree/reftree_hash.c \
 	$(srcdir)/reftree/reftree_part.c \
@@ -214,10 +213,10 @@ am__objects_13 = parmetis_interface.$(OBJEXT)
 @BUILD_PARMETIS_TRUE@am__objects_14 = $(am__objects_13)
 am__objects_15 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg.$(OBJEXT) phg_coarse.$(OBJEXT) phg_comm.$(OBJEXT) \
-	phg_distrib.$(OBJEXT) phg_finegrain.$(OBJEXT) \
-	phg_gather.$(OBJEXT) phg_hypergraph.$(OBJEXT) \
-	phg_match.$(OBJEXT) phg_order.$(OBJEXT) phg_parkway.$(OBJEXT) \
-	phg_patoh.$(OBJEXT) phg_plot.$(OBJEXT) phg_rdivide.$(OBJEXT) \
+	phg_distrib.$(OBJEXT) phg_gather.$(OBJEXT) \
+	phg_hypergraph.$(OBJEXT) phg_match.$(OBJEXT) \
+	phg_order.$(OBJEXT) phg_parkway.$(OBJEXT) phg_patoh.$(OBJEXT) \
+	phg_plot.$(OBJEXT) phg_rdivide.$(OBJEXT) \
 	phg_refinement.$(OBJEXT) phg_scale.$(OBJEXT) \
 	phg_serialpartition.$(OBJEXT) phg_util.$(OBJEXT) \
 	phg_Vcycle.$(OBJEXT)
@@ -599,7 +598,6 @@ PHG = \
 	$(srcdir)/phg/phg_coarse.c \
 	$(srcdir)/phg/phg_comm.c \
 	$(srcdir)/phg/phg_distrib.c \
-	$(srcdir)/phg/phg_finegrain.c \
 	$(srcdir)/phg/phg_gather.c \
 	$(srcdir)/phg/phg_hypergraph.c \
 	$(srcdir)/phg/phg_match.c \
@@ -995,7 +993,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_coarse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_comm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_distrib.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_finegrain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_gather.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_hypergraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_match.Po@am__quote@
@@ -2067,20 +2064,6 @@ phg_distrib.obj: $(srcdir)/phg/phg_distrib.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/phg/phg_distrib.c' object='phg_distrib.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o phg_distrib.obj `if test -f '$(srcdir)/phg/phg_distrib.c'; then $(CYGPATH_W) '$(srcdir)/phg/phg_distrib.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phg/phg_distrib.c'; fi`
-
-phg_finegrain.o: $(srcdir)/phg/phg_finegrain.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_finegrain.o -MD -MP -MF $(DEPDIR)/phg_finegrain.Tpo -c -o phg_finegrain.o `test -f '$(srcdir)/phg/phg_finegrain.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_finegrain.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/phg_finegrain.Tpo $(DEPDIR)/phg_finegrain.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/phg/phg_finegrain.c' object='phg_finegrain.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o phg_finegrain.o `test -f '$(srcdir)/phg/phg_finegrain.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_finegrain.c
-
-phg_finegrain.obj: $(srcdir)/phg/phg_finegrain.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_finegrain.obj -MD -MP -MF $(DEPDIR)/phg_finegrain.Tpo -c -o phg_finegrain.obj `if test -f '$(srcdir)/phg/phg_finegrain.c'; then $(CYGPATH_W) '$(srcdir)/phg/phg_finegrain.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phg/phg_finegrain.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/phg_finegrain.Tpo $(DEPDIR)/phg_finegrain.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/phg/phg_finegrain.c' object='phg_finegrain.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o phg_finegrain.obj `if test -f '$(srcdir)/phg/phg_finegrain.c'; then $(CYGPATH_W) '$(srcdir)/phg/phg_finegrain.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phg/phg_finegrain.c'; fi`
 
 phg_gather.o: $(srcdir)/phg/phg_gather.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_gather.o -MD -MP -MF $(DEPDIR)/phg_gather.Tpo -c -o phg_gather.o `test -f '$(srcdir)/phg/phg_gather.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_gather.c

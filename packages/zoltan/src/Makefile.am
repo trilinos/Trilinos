@@ -247,7 +247,6 @@ PHG = \
 	$(srcdir)/phg/phg_coarse.c \
 	$(srcdir)/phg/phg_comm.c \
 	$(srcdir)/phg/phg_distrib.c \
-	$(srcdir)/phg/phg_finegrain.c \
 	$(srcdir)/phg/phg_gather.c \
 	$(srcdir)/phg/phg_hypergraph.c \
 	$(srcdir)/phg/phg_match.c \
