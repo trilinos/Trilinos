@@ -80,7 +80,7 @@ class QueryObject
   std::map<int,int> procmap_;
   std::set<int> graph_self_edges_;
 
-  const bool isHypergraph_;
+  const std::string &inputType_;
   const bool haveGraph_;
   int myProc_;
   int base_;
@@ -141,14 +141,14 @@ class QueryObject
    */
   QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
 	       Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
-               bool isHypergraph);
+               const std::string &inputType);
 
 
   /** Constructor
    */
   QueryObject( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
 	       Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
-               bool isHypergraph);
+               const std::string &inputType);
 
   /** Destructor
    */

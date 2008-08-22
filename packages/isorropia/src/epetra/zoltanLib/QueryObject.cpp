@@ -52,21 +52,21 @@ namespace ZoltanLib{
 
 QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
 	   Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
-                                     bool isHypergraph) 
+                                     const std::string &inputType) 
   : graph_(graph),
     matrix_(0),
     rowMap_(&(graph->RowMap())),
     colMap_(&(graph->ColMap())),
     costs_(costs),
-    isHypergraph_(isHypergraph),
+    inputType_(inputType),
     haveGraph_(true)
 {
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
   int rc = 0;
 
-  if (!isHypergraph){
-
+  if (inputType == "GRAPH" )
+  {
     // graph queries need to know processes owning my column entries
     fill_procmap();
 
@@ -96,20 +96,20 @@ QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
 
 QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
 	     Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
-                                 bool isHypergraph) 
+                                 const std::string &inputType) 
   : graph_(0),
     matrix_(matrix),
     rowMap_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
     colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
     costs_(costs),
-    isHypergraph_(isHypergraph),
+    inputType_(inputType),
     haveGraph_(false)
 {
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
-  if (!isHypergraph){
-
+  if (inputType == "GRAPH")
+  {
     // graph queries need to know processes owning my column entries
     fill_procmap();
 

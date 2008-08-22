@@ -109,12 +109,13 @@ int ZoltanLibClass::precompute()
   std::string str2;
   MPI_Comm mpicomm;
 
-  bool isHypergraph = true;
+  //MMW  bool isHypergraph = true;
   std::string lb_method_str("LB_METHOD");
   if (zoltanParamList_.isParameter(lb_method_str)){
     std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
-    if (lb_meth == "GRAPH"){
-      isHypergraph = false;
+    if (lb_meth == "GRAPH")
+    {
+      //MMW      isHypergraph = false;
       setInputType("GRAPH");
     }
   }
@@ -124,8 +125,9 @@ int ZoltanLibClass::precompute()
 
   computeCost();
 
-  if (input_matrix_.get() == 0) {
-    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, isHypergraph));
+  if (input_matrix_.get() == 0) 
+  {
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, inputType_));
     const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
 #ifdef HAVE_MPI
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
@@ -136,7 +138,7 @@ int ZoltanLibClass::precompute()
 #endif /* HAVE_MPI */
   }
   else {
-    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, isHypergraph));
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, inputType_));
     const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
 #ifdef HAVE_MPI
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
@@ -213,7 +215,8 @@ int ZoltanLibClass::precompute()
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
 
-  if (isHypergraph){
+  if (inputType_ == "HYPERGRAPH")
+  {
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
     zz_->Set_HG_Size_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Size_Edge_Weights,
