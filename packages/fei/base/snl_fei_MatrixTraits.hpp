@@ -55,19 +55,19 @@ namespace snl_fei {
 
     /** Set a specified scalar value throughout the matrix.
      */
-    static int setValues(T* mat, double scalar)
+    static int setValues(T* /*mat*/, double /*scalar*/)
       { return(-1); }
 
     /** Query the number of local rows. This is expected to be the number of
         point-entry rows on the local processor.
     */
-    static int getNumLocalRows(T* mat, int& numRows)
+    static int getNumLocalRows(T* /*mat*/, int& /*numRows*/)
       { return(-1); }
 
     /** Given a locally-owned global row number, query the length (number of
         nonzeros) of that row.
      */
-    static int getRowLength(T* mat, int row, int& length)
+    static int getRowLength(T* /*mat*/, int /*row*/, int& /*length*/)
       { return(-1); }
 
     /** Given a locally-owned global row number, pass out a copy of the
@@ -82,19 +82,19 @@ namespace snl_fei {
 	@return error-code 0 if successful. Non-zero return-value may indicate
 	that the specified row is not locally owned.
     */
-    static int copyOutRow(T* mat,
-		      int row, int len, double* coefs, int* indices)
+    static int copyOutRow(T* /*mat*/,
+		      int /*row*/, int /*len*/, double* /*coefs*/, int* /*indices*/)
       { return(-1); }
 
     /** Sum a C-style table of coefficient data into the underlying matrix.
 	This is a rectangular array of coefficients for rows/columns defined by
 	the 'rows' and 'cols' lists.
      */
-    static int putValuesIn(T* mat,
-                           int numRows, const int* rows,
-                           int numCols, const int* cols,
-                           const double* const* values,
-                           bool sum_into)
+    static int putValuesIn(T* /*mat*/,
+                           int /*numRows*/, const int* /*rows*/,
+                           int /*numCols*/, const int* /*cols*/,
+                           const double* const* /*values*/,
+                           bool /*sum_into*/)
       { return(-1); }
 
     /** Perform any necessary internal communications/synchronizations or other
@@ -103,13 +103,13 @@ namespace snl_fei {
         Trilinos/Epetra traits specialization calls A->FillComplete() at this
         point.)
     */
-    static int globalAssemble(T* A)
+    static int globalAssemble(T* /*A*/)
     { return(0); }
 
     /** Compute the matrix-vector product y = A*x. It is expected that the
      underlying matrix object will form the local portion of the result 'y'
      on the local processor. */
-    static int matvec(T* A, fei::Vector* x, fei::Vector* y)
+    static int matvec(T* /*A*/, fei::Vector* /*x*/, fei::Vector* /*y*/)
     { return(-1); }
   };//struct MatrixTraits
 

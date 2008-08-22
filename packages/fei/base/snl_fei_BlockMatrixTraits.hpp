@@ -27,18 +27,18 @@ namespace snl_fei {
 
     /** Set a specified scalar value throughout the matrix.
      */
-    static int putScalar(T* mat, double scalar)
+    static int putScalar(T* /*mat*/, double /*scalar*/)
       { return(-1); }
 
     /** Given a global (zero-based) row number, query the length of that row.
      */
-    static int getRowLength(T* mat, int row, int& length)
+    static int getRowLength(T* /*mat*/, int /*row*/, int& /*length*/)
     { return(-1); }
 
     /** Given a global (zero-based) point-row number, query the length
         of that row.
     */
-    static int getPointRowLength(T* mat, int row, int& length)
+    static int getPointRowLength(T* /*mat*/, int /*row*/, int& /*length*/)
     { return(-1); }
 
     /** Given a global (zero-based) row number, pass out a copy of the contents
@@ -64,15 +64,15 @@ namespace snl_fei {
 	@return error-code 0 if successful. Non-zero return-value may indicate
 	that the specified row is not locally owned.
     */
-    static int copyOutRow(T* mat,
-			  int row,
-			  int numBlkCols,
-			  int rowDim,
-			  int* blkCols,
-			  int* colDims,
-			  double* coefs,
-			  int coefsLen,
-			  int& blkRowLength)
+    static int copyOutRow(T* /*mat*/,
+			  int /*row*/,
+			  int /*numBlkCols*/,
+			  int /*rowDim*/,
+			  int* /*blkCols*/,
+			  int* /*colDims*/,
+			  double* /*coefs*/,
+			  int /*coefsLen*/,
+			  int& /*blkRowLength*/)
       { return(-1); }
 
     /** Given a global (zero-based) point-row number, pass out a copy of the
@@ -92,64 +92,64 @@ namespace snl_fei {
 	@return error-code 0 if successful. Non-zero return-value may indicate
 	that the specified row is not locally owned.
     */
-    static int copyOutPointRow(T* mat,
-			       int firstLocalOffset,
-			       int row, int len,
-			       double* coefs, int* indices,
-			       int& rowLength)
+    static int copyOutPointRow(T* /*mat*/,
+			       int /*firstLocalOffset*/,
+			       int /*row*/, int /*len*/,
+			       double* /*coefs*/, int* /*indices*/,
+			       int& /*rowLength*/)
     { return(-1); }
 
     /** Sum a flat Fortran-style array of coefficient data into the
 	underlying matrix.
     */
-    static int sumIn(T* mat,
-		     int blockRow,
-		     int rowDim,
-		     int numBlockCols,
-		     const int* blockCols,
-		     const int* colDims,
-		     int LDA,
-		     const double* values)
+    static int sumIn(T* /*mat*/,
+		     int /*blockRow*/,
+		     int /*rowDim*/,
+		     int /*numBlockCols*/,
+		     const int* /*blockCols*/,
+		     const int* /*colDims*/,
+		     int /*LDA*/,
+		     const double* /*values*/)
     { return(-1); }
 
     /** Copy a flat Fortran-style array of coefficient data into the
 	underlying matrix.
     */
-    static int copyIn(T* mat,
-		     int blockRow,
-		     int rowDim,
-		     int numBlockCols,
-		     const int* blockCols,
-		     const int* colDims,
-		     int LDA,
-		     const double* values)
+    static int copyIn(T* /*mat*/,
+		     int /*blockRow*/,
+		     int /*rowDim*/,
+		     int /*numBlockCols*/,
+		     const int* /*blockCols*/,
+		     const int* /*colDims*/,
+		     int /*LDA*/,
+		     const double* /*values*/)
     { return(-1); }
 
     /** Sum a C-style table of coefficient data into the underlying matrix.
      */
-    static int sumIn(T* mat,
-		     int row, int rowDim,
-		     int numCols, const int* cols,
-		     const int* LDAs,
-		     const int* colDims,
-		     const double* const* values)
+    static int sumIn(T* /*mat*/,
+		     int /*row*/, int /*rowDim*/,
+		     int /*numCols*/, const int* /*cols*/,
+		     const int* /*LDAs*/,
+		     const int* /*colDims*/,
+		     const double* const* /*values*/)
     { return(-1); }
 
     /** Copy (replacing any already-existing values at the specified locations)
 	a C-style table of coefficient data into the underlying matrix.
     */
-    static int copyIn(T* mat,
-		      int row, int rowDim,
-		      int numCols, const int* cols,
-		      const int* LDAs,
-		      const int* colDims,
-		      const double* const* values)
+    static int copyIn(T* /*mat*/,
+		      int /*row*/, int /*rowDim*/,
+		      int /*numCols*/, const int* /*cols*/,
+		      const int* /*LDAs*/,
+		      const int* /*colDims*/,
+		      const double* const* /*values*/)
       { return(-1); }
 
     /** Have the underlying matrix perform any global synchronization or
 	assembly that needs to be done after all data has been input.
     */
-    static int globalAssemble(T* mat)
+    static int globalAssemble(T* /*mat*/)
     { return(-1); }
 
   };//struct BlockMatrixTraits

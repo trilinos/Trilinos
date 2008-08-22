@@ -38,7 +38,7 @@ class DirichletBCManager {
   int finalizeBCEqns(fei::Matrix& matrix,
                      bool throw_if_bc_slave_conflict=false);
 
-  unsigned getNumBCRecords() const;
+  size_t getNumBCRecords() const;
 
  private:
   std::vector<DirichletBCRecord> bcs_;

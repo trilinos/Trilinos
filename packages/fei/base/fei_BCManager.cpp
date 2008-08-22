@@ -368,9 +368,8 @@ int BCManager::consolidateBCs()
 
     const BCRecord** listdata = &consolidatedList[0];
     int insertPoint = -1;
-    int index = snl_fei::binarySearchPtr<BCRecord>(lastBC,
-						   listdata,
-				      consolidatedList.size(), insertPoint);
+    int index = snl_fei::binarySearchPtr<BCRecord>(lastBC, listdata,
+				      (int)consolidatedList.size(), insertPoint);
 
     if (index >= 0) {
       //lastBC specifies the same nodeID/fieldID pair as a BCRecord that's

@@ -135,7 +135,7 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
   return(0);
 }
 
-unsigned
+size_t
 DirichletBCManager::getNumBCRecords() const
 {
   return bcs_.size();

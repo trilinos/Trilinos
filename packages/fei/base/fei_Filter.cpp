@@ -194,7 +194,7 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
 
   int DBFieldSize = 0;
 
-  int i, offset = 0;
+  int offset = 0;
   for(; db_iter != db_end; ++db_iter) {
     const std::pair<const int,int>& dbpair = *db_iter;
 
@@ -216,7 +216,7 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
 
   bool haveSlaves = problemStructure_->numSlaveEquations() > 0;
 
-  for(i=0; i<numNodes; i++) {
+  for(int i=0; i<numNodes; i++) {
     NodeDescriptor* node = NULL;
     CHK_ERR( nodeDB.getNodeAtIndex(i, node) );
 

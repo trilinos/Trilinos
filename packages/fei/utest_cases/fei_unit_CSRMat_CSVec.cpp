@@ -8,6 +8,7 @@
 #include "fei_unit_CSRMat_CSVec.hpp"
 
 #include <cmath>
+#include <limits>
 
 void test_FillableVec_1()
 {

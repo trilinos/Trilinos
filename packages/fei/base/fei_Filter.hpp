@@ -50,11 +50,11 @@ class Filter {
                    const double *const *beta,  
                    const double *const *gamma) = 0;
 
-   virtual int loadNodeBCs(int numNodes,
-                   const GlobalID *nodeIDs,
-                   int fieldID,
-                   const int* offsetsIntoField,
-                   const double* prescribedValues)
+   virtual int loadNodeBCs(int /*numNodes*/,
+                   const GlobalID */*nodeIDs*/,
+                   int /*fieldID*/,
+                   const int* /*offsetsIntoField*/,
+                   const double* /*prescribedValues*/)
    {
       FEI_CERR << "fei ERROR, Filter::loadNodeBCs not overridden."<<FEI_ENDL;
       return -1;
@@ -288,21 +288,21 @@ class Filter {
 #endif
 
  protected:
-   virtual int generalElemInput(GlobalID elemBlockID,
-				GlobalID elemID,
-				const GlobalID* elemConn,
-				const double* const* elemStiffness,
-				const double* elemLoad,
-				  int elemFormat) {return(-1);}
+   virtual int generalElemInput(GlobalID /*elemBlockID*/,
+				GlobalID /*elemID*/,
+				const GlobalID* /*elemConn*/,
+				const double* const* /*elemStiffness*/,
+				const double* /*elemLoad*/,
+				  int /*elemFormat*/) {return(-1);}
 
-   int generalCoefInput(int patternID,
-			const int* rowIDTypes,
-                        const GlobalID* rowIDs,
-			const int* colIDTypes,
-                        const GlobalID* colIDs,
-                        const double* const* matrixEntries,
-                        const double* vectorEntries,
-			  int numRows, int numCols) {return(-1);}
+   int generalCoefInput(int /*patternID*/,
+			const int* /*rowIDTypes*/,
+                        const GlobalID* /*rowIDs*/,
+			const int* /*colIDTypes*/,
+                        const GlobalID* /*colIDs*/,
+                        const double* const* /*matrixEntries*/,
+                        const double* /*vectorEntries*/,
+			  int /*numRows*/, int /*numCols*/) {return(-1);}
 
    int calculateResidualNorms(int whichNorm, int numFields,
 			      int* fieldIDs, double* norms,
@@ -325,12 +325,12 @@ class Filter {
    int localRank_;
 
  private:
-   Filter(const Filter& src)
+   Filter(const Filter& /*src*/)
      : problemStructure_(NULL), logInput_(false), logInputStream_(NULL),
      outputLevel_(0), numProcs_(0), localRank_(0)
      {}
 
-   Filter& operator=(const Filter& src)
+   Filter& operator=(const Filter& /*src*/)
      {
        return(*this);
      }
