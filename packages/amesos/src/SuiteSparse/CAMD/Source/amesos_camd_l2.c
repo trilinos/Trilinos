@@ -24,7 +24,7 @@
 /* True if i and j are in the same Constraint Set */
 #define InSameConstraintSet(C,i,j) ((C == NULL) ? 1 : (C [i] == C [j]))
 
-// This file should make the long int version of CAMD
+/* This file should make the long int version of CAMD */
 #define DLONG 1
 
 #include "amesos_camd_internal.h"

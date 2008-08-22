@@ -18,7 +18,7 @@
  * or any matrix (dense, sparse, triplet, or factor) with more space allocated
  * than is used.  You can safely ignore any of these complaints by valgrind. */
 
-// This file should make the long int version of CHOLMOD
+/* This file should make the long int version of CHOLMOD */
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"

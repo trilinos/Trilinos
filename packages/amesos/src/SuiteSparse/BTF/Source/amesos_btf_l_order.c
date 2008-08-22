@@ -26,7 +26,7 @@
  * with support from Sandia National Laboratories.  All Rights Reserved.
  */
 
-// This file should make the long int version of BTF
+/* This file should make the long int version of BTF */
 #define DLONG 1
 
 #include "amesos_btf_decl.h"

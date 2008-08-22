@@ -14,7 +14,7 @@
  * AMD_postorder routine.
  */
  
-// This file should make the long int version of AMD
+/* This file should make the long int version of AMD */
 #define DLONG 1
 
 #include "amesos_amd_internal.h"

@@ -663,7 +663,7 @@
 /* === Include files ======================================================== */
 /* ========================================================================== */
 
-// This file should make the long int version of COLAMD
+/* This file should make the long int version of COLAMD */
 #define DLONG 1
 
 #include "amesos_colamd.h"

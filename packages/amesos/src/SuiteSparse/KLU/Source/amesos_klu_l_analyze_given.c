@@ -6,7 +6,7 @@
  * be done to modify the user's P and Q (does not perform the max transversal;
  * just finds the strongly-connected components). */
 
-// This file should make the long int version of KLU
+/* This file should make the long int version of KLU */
 #define DLONG 1
 
 #include "amesos_klu_internal.h"

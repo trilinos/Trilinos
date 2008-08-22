@@ -6,7 +6,7 @@
  * ordering, or the user-provided-function on the blocks.  Does not support
  * using a given ordering (use klu_analyze_given for that case). */
 
-// This file should make the long int version of KLU 
+/* This file should make the long int version of KLU */
 #define DLONG 1
 
 #include "amesos_klu_internal.h"
