@@ -71,27 +71,27 @@ namespace Epetra {
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph):
   Library(input_graph)
  {
-   setInputType("HYPERGRAPH");
+   setInputType("LINEAR_ROW");
  }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 			  Teuchos::RefCountPtr<CostDescriber> costs):
   Library(input_graph, costs)
 {
-   setInputType("HYPERGRAPH");
+   setInputType("LINEAR_ROW");
 }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix):
   Library(input_matrix)
 {
-   setInputType("HYPERGRAPH");
+   setInputType("LINEAR_ROW");
 }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 			  Teuchos::RefCountPtr<CostDescriber> costs):
   Library(input_matrix, costs)
 {
-   setInputType("HYPERGRAPH");
+   setInputType("LINEAR_ROW");
 }
 
 InternalPartitioner::~InternalPartitioner() {}
