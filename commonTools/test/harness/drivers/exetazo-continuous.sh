@@ -1,6 +1,6 @@
 source ~/.keychain/regression.sandia.gov-sh > /dev/null
 export CVS_RSH=ssh
-export LD_LIBRARY_PATH=/usr/alt/lib:/common/jmwille/contInt/Trilinos/MPI/packages/PyTrilinos/shared
+export LD_LIBRARY_PATH=/usr/alt/lib:/space/jmwille/contInt/Trilinos/MPI/packages/PyTrilinos/shared
 
 if test -a /home/jmwille/cronOutput/contIntTestsRunning ; then
 
@@ -11,16 +11,16 @@ else
 #Make sure other tests don't start while these are running
 touch /home/jmwille/cronOutput/contIntTestsRunning
 
-cd /common/jmwille/contInt/Trilinos/
+cd /space/jmwille/contInt/Trilinos/
 cvs -q update -dP | grep -v "? " >& /home/jmwille/cronOutput/contIntCVS.out
-diff /home/jmwille/cronOutput/contIntCVS.out /common/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out.txt > /common/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out-diff.txt
-if test -s /common/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out-diff.txt ; then
+diff /home/jmwille/cronOutput/contIntCVS.out /space/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out.txt > /space/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out-diff.txt
+if test -s /space/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out-diff.txt ; then
 
-cd /common/jmwille/contInt/Trilinos/commonTools/test/harness
+cd /space/jmwille/contInt/Trilinos/commonTools/test/harness
 
 echo "Starting continuous integration build now."
-perl runharness --trilinos-dir=/common/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
-#perl runharness --trilinos-dir=/common/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont --short-circuit >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
+perl runharness --trilinos-dir=/space/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
+#perl runharness --trilinos-dir=/space/jmwille/contInt/Trilinos --build-name=exetazo-mpi-cont --short-circuit >& /home/jmwille/cronOutput/harness-contInt-mpi.txt
 more /home/jmwille/cronOutput/harness-contInt-mpi.txt |grep FAILED > /home/jmwille/cronOutput/failedContBuildCheck.txt
 if test -s /home/jmwille/cronOutput/failedContBuildCheck.txt ; then
 echo "Pausing for failure."
@@ -38,7 +38,7 @@ mail  -s "integration - no update" jmwille@sandia.gov < /home/jmwille/cronOutput
 
 fi # no update check
 
-rm -f /common/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out-diff.txt /home/jmwille/cronOutput/contIntCVS.out
+rm -f /space/jmwille/contInt/Trilinos/commonTools/test/harness/drivers/cvs-update-out-diff.txt /home/jmwille/cronOutput/contIntCVS.out
 
 # Wait a bit before starting a new test.  Eventually we should only wait if
 # there was an error.
