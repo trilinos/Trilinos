@@ -1171,10 +1171,10 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
   }
 
   feiArray<int> indices_owned(localNumRows);
-  int i, chkNum, localNNZ = 0;
+  int chkNum, localNNZ = 0;
   CHK_ERR( vspace->getIndices_Owned(localNumRows, indices_owned.dataPtr(), chkNum));
   int* rowsPtr = indices_owned.dataPtr();
-  for(i=0; i<localNumRows; ++i) {
+  for(int i=0; i<localNumRows; ++i) {
     int len;
     CHK_ERR( getRowLength(rowsPtr[i], len) );
     localNNZ += len;
@@ -1261,10 +1261,10 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
   int globalNNZ = 0;
   int localNumRows = vspace->getNumIndices_Owned();
   feiArray<int> indices_owned(localNumRows);
-  int i, chkNum, localNNZ = 0;
+  int chkNum, localNNZ = 0;
   CHK_ERR( vspace->getIndices_Owned(localNumRows, indices_owned.dataPtr(), chkNum));
   int* rowsPtr = indices_owned.dataPtr();
-  for(i=0; i<localNumRows; ++i) {
+  for(int i=0; i<localNumRows; ++i) {
     int len;
     CHK_ERR( getRowLength(rowsPtr[i], len) );
     localNNZ += len;

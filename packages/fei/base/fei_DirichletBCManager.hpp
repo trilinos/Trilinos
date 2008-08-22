@@ -43,7 +43,7 @@ class DirichletBCManager {
 
   int finalizeBCEqns(NodeDatabase& nodeDB, EqnBuffer& bcEqns);
 
-  unsigned getNumBCRecords() const;
+  size_t getNumBCRecords() const;
 
   void clearAllBCs();
 

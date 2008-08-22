@@ -28,7 +28,7 @@ class CSVec {
   std::vector<double>& coefs() {return coefs_;}
   const std::vector<double>& coefs() const {return coefs_;}
 
-  unsigned size() const {return indices_.size();}
+  size_t size() const {return indices_.size();}
 
  private:
   std::vector<int> indices_;

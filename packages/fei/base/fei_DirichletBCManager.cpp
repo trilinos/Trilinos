@@ -166,7 +166,7 @@ DirichletBCManager::finalizeBCEqns(NodeDatabase& nodeDB,
   return(0);
 }
 
-unsigned
+size_t
 DirichletBCManager::getNumBCRecords() const
 {
   return bcs_.size();
