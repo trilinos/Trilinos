@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   }
   catch(...)
   {
-    cout << "Caught exception, maybe file name is incorrect" << endl;
+    std::cout << "Caught exception, maybe file name is incorrect" << std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #else

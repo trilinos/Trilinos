@@ -53,7 +53,6 @@
 #  TestTaucs.exe runs Test_Basic/AmesosTaucs  
 #  TestParaklete.exe runs Test_Basic/AmesosParaklete  
 #  TestPardiso.exe runs Test_Basic/AmesosPardiso  
-#  TestPastix.exe runs Test_Basic/AmesosPastix  
 #  TestKluSerial.exe runs Test_Basic/AmesosKluSerial
 #  TestSuperluSerial.exe runs Test_Basic/AmesosSuperluSerial
 #  TestUmpfpackSerial.exe runs Test_Basic/AmesosUmpfpackSerial
@@ -167,16 +166,6 @@ else
 LAPACK_TEST = 
 endif
 
-if HAVE_AMESOS_PASTIX
-PASTIX_TEST = TestPastix
-TestPastix_SOURCES = $(srcdir)/TestPastix
-
-TestPastix$(EXEEXT): $(srcdir)/TestPastix
-	cp $(srcdir)/TestPastix TestPastix$(EXEEXT) 
-else
-PASTIX_TEST = 
-endif
-
 
 if HAVE_AMESOS_PARDISO
 PARDISO_TEST = TestPardiso
@@ -249,7 +238,7 @@ endif
 #
 noinst_PROGRAMS = TestAmesos TestQuietAmesos TestExamples $(DSCPACK_TEST) \
 	$(SCALAPACK_TEST) $(LAPACK_TEST) $(UMFPACK_TEST) \
-	$(TAUCS_TEST) $(PARDISO_TEST) $(PASTIX_TEST) \
+	$(TAUCS_TEST) $(PARDISO_TEST) \
 	$(MUMPS_TEST) $(PARAKLETE_TEST) $(KLU_TEST)  $(SUPERLU_TEST) \
 	$(SUPERLUDIST_TEST) \
 	$(VALGRIND_TEST)  $(COVERAGE_TEST)

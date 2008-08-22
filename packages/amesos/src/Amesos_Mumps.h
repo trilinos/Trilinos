@@ -67,7 +67,7 @@ using namespace Teuchos;
   -# Epetra_LinearProblem Problem; Amesos_BaseSolver *
   Solver; Amesos Amesos_Factory;
   -# Solver = Amesos_Factory.Create("Amesos_Mumps", Problem);
-  -# if( Solver == 0 ) cerr << "library not available" << endl;
+  -# if( Solver == 0 ) std::cerr << "library not available" << std::endl;
   -# Problem.SetMatrix(&A);
   -# Solver->SymbolicFactorization();
   -# Solver->NumericFactorization();
@@ -357,11 +357,11 @@ protected:
   bool NoDestroy_ ;  // Set true to prevent memory freeing
   
   //! row indices of nonzero elements
-  vector <int> Row;
+  std::vector <int> Row;
   //! column indices of nonzero elements
-  vector<int> Col;
+  std::vector<int> Col;
   //! values of nonzero elements
-  vector<double> Val;
+  std::vector<double> Val;
 
   //! Maximum number of processors in the MUMPS' communicator
   int MaxProcs_;
@@ -410,8 +410,8 @@ protected:
   
   DMUMPS_STRUC_C MDS;
 
-  map<int, int> ICNTL;
-  map<int, double> CNTL;
+  std::map<int, int> ICNTL;
+  std::map<int, double> CNTL;
 };  // class Amesos_Mumps
 
 #endif /* AMESOS_MUMPS_H */

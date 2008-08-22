@@ -206,9 +206,9 @@ int Amesos_Superlu::ConvertToSerial()
 	//  and as a result, we sum AddToDiag_ into this diagonal element
 	//  a second time.
         if (this_res=SerialCrsMatrixA_->InsertGlobalValues(i, 1, &AddToDiag, &i)) {
-	  cout << __FILE__ << "::" << __LINE__ 
+	  std::cout << __FILE__ << "::" << __LINE__ 
 	       << " this_res = " <<  this_res 
-	       << endl ; 
+	       << std::endl ; 
           SerialCrsMatrixA_->SumIntoGlobalValues(i, 1, &AddToDiag, &i);
 	}
       }
@@ -334,8 +334,8 @@ int Amesos_Superlu::ReFactor()
     int MyRow;
     double *RowValues;
     int *ColIndices;
-    vector<int> ColIndicesV_;
-    vector<double> RowValuesV_;
+    std::vector<int> ColIndicesV_;
+    std::vector<double> RowValuesV_;
     int MaxNumEntries_ = SerialMatrix_->MaxNumEntries();
 
     Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
@@ -430,15 +430,15 @@ int Amesos_Superlu::NumericFactorization()
 
     //    SLUopt.ColPerm  = COLAMD ;
 
-    cout << " SLUopt.ColPerm  = " << SLUopt.ColPerm  << endl ; 
-    cout << " SLUopt.Equil  = " << SLUopt.Equil  << endl ; 
-    cout << " SLUopt.Fact  = " << SLUopt.Fact  << endl ; 
-    cout << " SLUopt.IterRefine  = " << SLUopt.IterRefine  << endl ; 
-    cout << " data_->A.Stype  = " << data_->A.Stype  
+    std::cout << " SLUopt.ColPerm  = " << SLUopt.ColPerm  << std::endl ; 
+    std::cout << " SLUopt.Equil  = " << SLUopt.Equil  << std::endl ; 
+    std::cout << " SLUopt.Fact  = " << SLUopt.Fact  << std::endl ; 
+    std::cout << " SLUopt.IterRefine  = " << SLUopt.IterRefine  << std::endl ; 
+    std::cout << " data_->A.Stype  = " << data_->A.Stype  
 	 << " SLU_NC = " << SLU_NC 
 	 << " SLU_NR = " << SLU_NR 
-	 << endl ; 
-    cout << " SLUopt.ColPerm  = " << SLUopt.ColPerm  << endl ; 
+	 << std::endl ; 
+    std::cout << " SLUopt.ColPerm  = " << SLUopt.ColPerm  << std::endl ; 
 #endif
 
     data_->B.nrow = NumGlobalRows_; 
@@ -639,19 +639,19 @@ void Amesos_Superlu::PrintStatus() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
-  string p = "Amesos_Superlu : ";
+  std::string p = "Amesos_Superlu : ";
   PrintLine();
 
   int n = GetProblem()->GetMatrix()->NumGlobalRows();
   int nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros();
 
-  cout << p << "Matrix has " << n << " rows"
-       << " and " << nnz << " nonzeros" << endl;
-  cout << p << "Nonzero elements per row = "
-       << 1.0 *  nnz / n << endl;
-  cout << p << "Percentage of nonzero elements = "
-       << 100.0 * nnz /(pow(double(n),double(2.0))) << endl;
-  cout << p << "Use transpose = " << UseTranspose_ << endl;
+  std::cout << p << "Matrix has " << n << " rows"
+       << " and " << nnz << " nonzeros" << std::endl;
+  std::cout << p << "Nonzero elements per row = "
+       << 1.0 *  nnz / n << std::endl;
+  std::cout << p << "Percentage of nonzero elements = "
+       << 100.0 * nnz /(pow(double(n),double(2.0))) << std::endl;
+  std::cout << p << "Use transpose = " << UseTranspose_ << std::endl;
 
   PrintLine();
 
@@ -677,26 +677,26 @@ void Amesos_Superlu::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Superlu : ";
+  std::string p = "Amesos_Superlu : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to SuperLU format = " << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = " << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = " << VecTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = " << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
+  std::cout << p << "Time to convert matrix to SuperLU format = " << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = " << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = " << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = " << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
        << NumTime * NumNumericFact_ << " (s), avg = " 
-       << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = " << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+       << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = " << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << std::endl;
   double tt = NumTime * NumNumericFact_ + SolTime * NumSolve_;
   if (tt != 0)
   {
-    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
-    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
-    cout << p << "(the above time does not include SuperLU time)" << endl;
-    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+    std::cout << p << "Total time spent in Amesos = " << tt << " (s) " << std::endl;
+    std::cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << std::endl;
+    std::cout << p << "(the above time does not include SuperLU time)" << std::endl;
+    std::cout << p << "Amesos interface time / total time = " << OveTime / tt << std::endl;
   }
 
 

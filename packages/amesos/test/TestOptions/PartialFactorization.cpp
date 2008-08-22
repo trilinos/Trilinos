@@ -2,8 +2,8 @@
 //  OUR_CHK_ERR always returns 1 on error.
 //
 #define OUR_CHK_ERR(a) { { int epetra_err = a; \
-                      if (epetra_err != 0) { cerr << "Amesos ERROR " << epetra_err << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; \
+                      if (epetra_err != 0) { std::cerr << "Amesos ERROR " << epetra_err << ", " \
+                           << __FILE__ << ", line " << __LINE__ << std::endl; \
 relerror = 1.3e15; relresidual=1e15; return(1);}  }\
                    }
 
@@ -58,7 +58,7 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 
   Abase = Afactory.Create( AmesosClass, Problem ) ; 
 
-  string AC = AmesosClass ;
+  std::string AC = AmesosClass ;
   if ( AC == "Amesos_Mumps" ) { 
     ParamList.set( "NoDestroy", true );
    Abase->SetParameters( ParamList ) ; 
@@ -95,12 +95,12 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 	Amat->Multiply( transpose, xexact, b ) ;  //  b = A x2 = A A' A'' xexact
 
 #if 0 
-	cout << __FILE__ << "::"  << __LINE__ << "b = " << endl ; 
-	b.Print( cout ) ; 
-	cout << __FILE__ << "::"  << __LINE__ << "xexact = " << endl ; 
-	xexact.Print( cout ) ; 
-	cout << __FILE__ << "::"  << __LINE__ << "x = " << endl ; 
-	x.Print( cout ) ; 
+	std::cout << __FILE__ << "::"  << __LINE__ << "b = " << std::endl ; 
+	b.Print( std::cout ) ; 
+	std::cout << __FILE__ << "::"  << __LINE__ << "xexact = " << std::endl ; 
+	xexact.Print( std::cout ) ; 
+	std::cout << __FILE__ << "::"  << __LINE__ << "x = " << std::endl ; 
+	x.Print( std::cout ) ; 
 #endif
 	//
 	//  Phase 2:  Solve A' A' A x = b 
@@ -138,9 +138,9 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 		  
 		  if (iam == 0 ) {
 		    if ( relresidual * Rcond > 1e-16 ) {
-		      if (verbose) cout << __FILE__ << "::"<< __LINE__ 
+		      if (verbose) std::cout << __FILE__ << "::"<< __LINE__ 
 					<< " norm( x - xexact ) / norm(x) = " 
-					<< norm_diff /norm_one << endl ; 
+					<< norm_diff /norm_one << std::endl ; 
 		      errors += 1 ; 
 		    }
 		  }
@@ -171,7 +171,7 @@ int PartialFactorization( const char* AmesosClass,
   double relresidual = 0 ; 
 
   for( int i =0 ; i < MaxNumSteps ; i ++ ) {
-    string AC = AmesosClass ; 
+    std::string AC = AmesosClass ; 
 
     //
     //  I have turned this test back on because it no longer seems to fail.  Although Amesos_Dscpack

@@ -157,14 +157,14 @@ int main(int argc, char *argv[])
   // - Mumps
   // - Dscpack
   // 
-  string SolverType = "Klu";
+  std::string SolverType = "Klu";
   Solver = Factory.Create(SolverType, Problem);
 
   // Factory.Create() returns 0 if the requested solver
   // is not available
   //
   if (Solver == 0) {
-    cerr << "Specified solver is not available" << endl;
+    std::cerr << "Specified solver is not available" << std::endl;
     // return ok not to break test harness even if
     // the solver is not available
 #ifdef HAVE_MPI
@@ -200,17 +200,17 @@ int main(int argc, char *argv[])
   // - solution and rhs are *not* required before calling
   //   Solve().
   if (Comm.MyPID() == 0)
-    cout << "Starting symbolic factorization..." << endl;
+    std::cout << "Starting symbolic factorization..." << std::endl;
   Solver->SymbolicFactorization();
   
   // you can change the matrix values here
   if (Comm.MyPID() == 0)
-    cout << "Starting numeric factorization..." << endl;
+    std::cout << "Starting numeric factorization..." << std::endl;
   Solver->NumericFactorization();
   
   // you can change LHS and RHS here
   if (Comm.MyPID() == 0)
-    cout << "Starting solution phase..." << endl;
+    std::cout << "Starting solution phase..." << std::endl;
   Solver->Solve();
 	
   // you can get the timings here

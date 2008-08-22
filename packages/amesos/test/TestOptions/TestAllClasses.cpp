@@ -8,7 +8,7 @@
 #include "TestKlu.h"
 #include "Amesos.h"
  
-int TestAllClasses( const std::vector<string> AmesosClasses,
+int TestAllClasses( const std::vector<std::string> AmesosClasses,
 		    int EpetraMatrixType,
 		    const std::vector<bool> AmesosClassesInstalled,
 		    Epetra_CrsMatrix *& Amat, 
@@ -33,7 +33,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
   bool RowMapEqualsColMap = ( ReindexColMap == 0 ) ; 
 
 
-  string StringFilename = filename ; 
+  std::string StringFilename = filename ; 
   bool bcsstk04 = ( StringFilename.find("bcsstk04") < StringFilename.find("xdz_notaname_garbage") );
   bool Khead = ( StringFilename.find("Khead") < StringFilename.find("xdz_notaname_garbage") );
   bool Superlu_rua = ( StringFilename.find("Superlu") < StringFilename.find("xdz_notaname_garbage") );
@@ -70,7 +70,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
       if ( Amat->Comm().MyPID() == 0 ) {
 	if ( verbose  &&  ( ! ReIndex ) ) { 
 	
-	  cout << "TestAllClasses.cpp::"  << __LINE__
+	  std::cout << "TestAllClasses.cpp::"  << __LINE__
 	       << " Perhaps about to test " 
 	       << AmesosClasses[i] << " "  
 	       << " EMT=" <<  EpetraMatrixType 
@@ -84,7 +84,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	       << " RMT= " <<  RangeMapType 
 	       << " d=" <<  distribute 
 	       << " fn= " <<  filename 
-	       << endl ;  
+	       << std::endl ;  
 	}
       }
       if ( AmesosClasses[i] == "Amesos_Scalapack") { 
@@ -93,7 +93,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	if ( ReindexRowMap || ReindexColMap ) RunScalapackTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunScalapackTest = false ;   //  Bug #1403
-	if ( RunScalapackTest && verbose) cout << " Testing SCALAPACK " << endl ; 
+	if ( RunScalapackTest && verbose) std::cout << " Testing SCALAPACK " << std::endl ; 
 	if ( RunScalapackTest )	Errors = TestScalapack( Amat, 
 							 EpetraMatrixType,
 							 transpose, 
@@ -112,7 +112,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	  RunUmfpackTest = false ;   //  Bug #1403
 	if ( ExpectedError != 0 )  RunUmfpackTest = false ;   //  Bug #1227
 
-	if ( RunUmfpackTest && verbose) cout << " Testing UMFPACK " << endl ; 
+	if ( RunUmfpackTest && verbose) std::cout << " Testing UMFPACK " << std::endl ; 
 	
 	if ( RunUmfpackTest ) Errors = TestOtherClasses("Amesos_Umfpack",
 							 EpetraMatrixType,
@@ -136,7 +136,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	//  We only test reindexing on klu and paraklete
 	if ( ( verbose  &&  ( ReIndex ) ) { 
 	  
-	  cout << __FILE__ << "::"  << __LINE__
+	  std::cout << __FILE__ << "::"  << __LINE__
 	       << " Perhaps about to test " 
 	       << AmesosClasses[i] << " "  
 	       << " EpetraMatrixType = " <<  EpetraMatrixType 
@@ -150,7 +150,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	       << " RangeMapType = " <<  RangeMapType 
 	       << " distribute = " <<  distribute 
 	       << " filename = " <<  filename 
-	       << endl ;  
+	       << std::endl ;  
 	}
 	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
 	  RunKluTest = false ;   //  Bug #969
@@ -163,7 +163,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 
 
 
-	if ( RunKluTest && verbose) cout << " Testing KLU " << endl ; 
+	if ( RunKluTest && verbose) std::cout << " Testing KLU " << std::endl ; 
 	
 	if ( RunKluTest ) Errors = TestOtherClasses("Amesos_Klu",
 							 EpetraMatrixType,
@@ -187,7 +187,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunLapackTest = false ;   //  Bug #1403
 
-	if ( RunLapackTest && verbose) cout << " Testing LAPACK " << endl ; 
+	if ( RunLapackTest && verbose) std::cout << " Testing LAPACK " << std::endl ; 
 	
 	if ( RunLapackTest ) Errors = TestOtherClasses("Amesos_Lapack",
 						       EpetraMatrixType,
@@ -215,7 +215,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	if ( ! symmetric ) RunTaucsTest = false ; 
 	if ( Khead ) RunTaucsTest = false ;   // Bug #1449
 
-	if ( RunTaucsTest && verbose) cout << " Testing TAUCS " << endl ; 
+	if ( RunTaucsTest && verbose) std::cout << " Testing TAUCS " << std::endl ; 
 	
 	
 	if ( RunTaucsTest ) Errors = TestOtherClasses("Amesos_Taucs",
@@ -246,7 +246,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	if ( Khead ) RunPardisoTest = false ; // Bug #1916 
 	if ( EpetraMatrixType == 1 )  RunPardisoTest = false ; // Bug #1994 
 	if ( distribute )  RunPardisoTest = false ; // Bug #1995
-	if ( RunPardisoTest && verbose) cout << " Testing PARDISO " << endl ; 
+	if ( RunPardisoTest && verbose) std::cout << " Testing PARDISO " << std::endl ; 
 	if ( Amat->Comm().NumProc() > 1 ) RunPardisoTest = false ; 
 
 	if ( RunPardisoTest ) Errors = TestOtherClasses("Amesos_Pardiso",
@@ -271,7 +271,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunMumpsTest = false ;   //  Bug #1403
 	if ( MissingADiagonal ) RunMumpsTest = false ; // Bug #1435
 	if ( distribute )  RunMumpsTest = false ; // Bug #
-	if (  RunMumpsTest && verbose) cout << " Testing MUMPS " << endl ; 
+	if (  RunMumpsTest && verbose) std::cout << " Testing MUMPS " << std::endl ; 
 
 	if ( RunMumpsTest ) Errors = TestOtherClasses("Amesos_Mumps",
 							 EpetraMatrixType,
@@ -305,9 +305,9 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	if ( ImpcolB ) RunKluTest = false ;   // See bug #1928 
 	if ( ( RangeMapType ==2 && DomainMapType == 1 && distribute == 1 && EpetraMatrixType == 2 && transpose == 0 && Superlu_rua ) ) RunKluTest = false ;   //  Bug #2000
 
-	if ( RunKluTest && verbose) cout << " Testing KLU " << endl ; 
-	if ( RunKluTest && verbose) cout << " Testing KLU ExpectedError = " 
-					 << ExpectedError << endl ; 
+	if ( RunKluTest && verbose) std::cout << " Testing KLU " << std::endl ; 
+	if ( RunKluTest && verbose) std::cout << " Testing KLU ExpectedError = " 
+					 << ExpectedError << std::endl ; 
 
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
 					    EpetraMatrixType,
@@ -324,7 +324,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 					    NumTheseTests ) ;
   
 	if ( Amat->Comm().MyPID() == 0 && Errors ) 
-	  cout << " FAILURE in "  
+	  std::cout << " FAILURE in "  
 	       << __FILE__ << "::"  << __LINE__
 	       << " Amesos_Klu" 
 	       << " EpetraMatrixType = " <<  EpetraMatrixType 
@@ -339,7 +339,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	       << " distribute = " <<  distribute 
 	       << " filename = " <<  filename 
 	       << " NumTheseTests = " <<  NumTheseTests 
-	       << " Errors = " <<  Errors << endl ;  
+	       << " Errors = " <<  Errors << std::endl ;  
 
       } else if ( AmesosClasses[i] == "Amesos_Superlu" ) {
 	bool RunSuperluTest = true;
@@ -353,7 +353,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	if ( Khead ) RunSuperluTest= false ;  // Bug #1927 
 
 	if ( RunSuperluTest ) {
-	  if ( verbose) cout << " Testing SUPERLU " << endl ; 
+	  if ( verbose) std::cout << " Testing SUPERLU " << std::endl ; 
 	  Errors = TestOtherClasses("Amesos_Superlu",
 							 EpetraMatrixType,
 				     Amat, 
@@ -369,7 +369,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 				     NumTheseTests ) ;
 	}
 	if ( Amat->Comm().MyPID() == 0 && Errors ) 
-	  cout << " FAILURE in " 
+	  std::cout << " FAILURE in " 
 	       << __FILE__ << "::"  << __LINE__
 	       << " Amesos_Superlu" 
 	       << " EpetraMatrixType = " <<  EpetraMatrixType 
@@ -384,40 +384,14 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	       << " distribute = " <<  distribute 
 	       << " filename = " <<  filename 
 	       << " NumTheseTests = " <<  NumTheseTests 
-	       << " Errors = " <<  Errors << endl ;  
-      } else if ( AmesosClasses[i] == "Amesos_Pastix" ) {
-	bool RunPastixTest = true;
-	if ( ExpectedError != 0 )  RunPastixTest = false ;   //  Bug #1227
-
-	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
-	  RunPastixTest = false ;   //  Bug #969
-	if ( MissingADiagonal ) RunPastixTest = false ; // Bug #1404
-	//	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
-	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunPastixTest = false ;   //  Bug #1403
-
-	if ( RunPastixTest ) {
-	  if ( verbose) cout << " Testing Pastix " << endl ; 
-	  Errors = TestOtherClasses("Amesos_Pastix",
-							 EpetraMatrixType,
-				     Amat, 
-				     transpose, 
-				     verbose, 
-				     Levels, 
-				     Rcond, 
-				     RowMapEqualsColMap,
-				     false,
-						       ExpectedError,
-				     maxrelerror, 
-				     maxrelresidual, 
-				     NumTheseTests ) ;
-	}
+	       << " Errors = " <<  Errors << std::endl ;  
 
       } else if ( AmesosClasses[i] == "Amesos_Paraklete" ) {
 
 	//  We only test reindexing on klu and paraklete
 	if ( verbose  &&  ( ReIndex ) ) { 
 	  
-	  cout << __FILE__ << "::"  << __LINE__
+	  std::cout << __FILE__ << "::"  << __LINE__
 	       << " Perhaps about to test " 
 	       << AmesosClasses[i] << " "  
 	       << " EpetraMatrixType = " <<  EpetraMatrixType 
@@ -431,7 +405,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	       << " RangeMapType = " <<  RangeMapType 
 	       << " distribute = " <<  distribute 
 	       << " filename = " <<  filename 
-	       << endl ;  
+	       << std::endl ;  
 	}
 	bool RunParakleteTest = true;
 	if ( ExpectedError != 0 )  RunParakleteTest = false ;   //  Bug #1227
@@ -457,7 +431,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	//	if ( ImpcolB ) RunParakleteTest = false ;   // See bug #1928 
 
 	if ( RunParakleteTest ) {
-	  if ( verbose) cout << " Testing Paraklete " << endl ; 
+	  if ( verbose) std::cout << " Testing Paraklete " << std::endl ; 
 	  Errors = TestOtherClasses("Amesos_Paraklete",
 							 EpetraMatrixType,
 				     Amat, 
@@ -491,7 +465,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 
 
 	if ( RunDscpackTest ) { 
-	  if ( verbose) cout << " Testing DSCPACK " << endl ; 
+	  if ( verbose) std::cout << " Testing DSCPACK " << std::endl ; 
     
 	  Errors = TestOtherClasses("Amesos_Dscpack",
 				    EpetraMatrixType,
@@ -518,7 +492,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	//	if ( MissingADiagonal ) RunSuperludistTest = false ; // Bug #1404 NOT
 	if ( Khead ) RunSuperludistTest= false ;  // Bug #368
 	if ( RunSuperludistTest ) { 
-	  if ( verbose) cout << " Testing Superludist " << endl ; 
+	  if ( verbose) std::cout << " Testing Superludist " << std::endl ; 
   
 	  Errors = TestSuperludist(Amat, 
 				   EpetraMatrixType,
@@ -535,12 +509,12 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
       if ( Amat->Comm().MyPID() == 0 ) {
 	if ( Errors || ( verbose && NumTheseTests > 0 ) ) { 
 	  if ( Errors ) { 
-	    cout << " FAILURE in " ; 
+	    std::cout << " FAILURE in " ; 
 	  } else { 
-	    cout << " NO FAILURE in " ; 
+	    std::cout << " NO FAILURE in " ; 
 	  }
 	
-	  cout << "TestAllClasses.cpp::"  << __LINE__
+	  std::cout << "TestAllClasses.cpp::"  << __LINE__
 	       << AmesosClasses[i] << " "  
 	       << " EMT=" <<  EpetraMatrixType 
 	       << " tr=" <<  transpose 
@@ -553,7 +527,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
 	       << " RMT= " <<  RangeMapType 
 	       << " d=" <<  distribute 
 	       << " fn= " <<  filename 
-	       << endl ;  
+	       << std::endl ;  
 	}
       }
       errors += Errors ;
@@ -561,7 +535,7 @@ int TestAllClasses( const std::vector<string> AmesosClasses,
     }
   }
   
-  if ( verbose) cout << " TestAllClasses errors = " << errors << endl ; 
+  if ( verbose) std::cout << " TestAllClasses errors = " << errors << std::endl ; 
 
   return errors;
 }

@@ -14,7 +14,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
-#include <vector>
 
 using namespace Galeri;
 
@@ -78,7 +77,7 @@ bool TestAmesos(char ProblemType[],
   residual.Norm2( &norm_residual ) ; 
 
   if (A.Comm().MyPID() == 0) {
-    cout << "norm2(A^3 x-b) = " << norm_residual << endl ; 
+    std::cout << "norm2(A^3 x-b) = " << norm_residual << std::endl ; 
   }
 
   delete Abase;
@@ -112,7 +111,7 @@ int main(int argc, char *argv[]) {
 
   Amesos Factory;  
   
-  vector<string> SolverType;
+  std::vector<std::string> SolverType;
   //  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
@@ -126,22 +125,22 @@ int main(int argc, char *argv[]) {
   bool TestPassed = true;
 
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
-    string Solver = SolverType[i];
-        cout  << Solver << " next  " << endl;
+    std::string Solver = SolverType[i];
+        std::cout  << Solver << " next  " << std::endl;
     if (Factory.Query((char*)Solver.c_str())) {
       if (Comm.MyPID() == 0)
-        cout << "Testing " << Solver << endl;
+        std::cout << "Testing " << Solver << std::endl;
       if(TestAmesos((char*)Solver.c_str(), *A, NumVectors) == false) {
-        cout  << Solver << " Failed " << endl;
+        std::cout  << Solver << " Failed " << std::endl;
 	TestPassed = false;
       } else { 
-        cout  << Solver << " Passed " << endl;
+        std::cout  << Solver << " Passed " << std::endl;
       } 
     } else
       if (Comm.MyPID() == 0) {
-	cerr << endl;
-	cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << endl;
-	cerr << endl;
+	std::cerr << std::endl;
+	std::cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << std::endl;
+	std::cerr << std::endl;
       }
   }
    
@@ -154,12 +153,12 @@ int main(int argc, char *argv[]) {
 
   if (TestPassed) {
     if (Comm.MyPID() == 0) 
-      cout << "TESTS PASSED!" << endl;
+      std::cout << "TESTS PASSED!" << std::endl;
     return( EXIT_SUCCESS );
   } 
   else {
     if (Comm.MyPID() == 0) 
-      cout << "TESTS FAILED!" << endl;
+      std::cout << "TESTS FAILED!" << std::endl;
     return( EXIT_FAILURE );
   }
 

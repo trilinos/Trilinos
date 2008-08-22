@@ -78,9 +78,9 @@ int main(int argc, char* argv[])
   int procRank = -1;
   MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
   if ( procRank == 0 )
-    cout << Teuchos::Teuchos_Version() << endl << endl;
+    std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 #else
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 #endif
 
   // Creating an empty command line processor looks like:
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
   double Tolerance = 1e-10;    
   My_CLP.setOption("tolerance", &Tolerance, "Tolerance");
   // Set a string command line option.
-  string Solver = "GMRES";
+  std::string Solver = "GMRES";
   My_CLP.setOption("solver", &Solver, "Linear solver");
   // Set a boolean command line option.    
   bool Precondition;

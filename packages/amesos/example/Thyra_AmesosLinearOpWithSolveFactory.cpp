@@ -41,9 +41,6 @@
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
 #endif
-#ifdef HAVE_AMESOS_PASTIX
-#include "Amesos_Pastix.h"
-#endif
 #ifdef HAVE_AMESOS_LAPACK
 #include "Amesos_Lapack.h"
 #endif
@@ -215,11 +212,6 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
 #ifdef HAVE_AMESOS_KLU
         case Thyra::Amesos::KLU :
           amesosSolver = Teuchos::rcp(new Amesos_Klu(*epetraLP));
-          break;
-#endif
-#ifdef HAVE_AMESOS_PASTIX
-        case Thyra::Amesos::PASTIX :
-          amesosSolver = Teuchos::rcp(new Amesos_Pastix(*epetraLP));
           break;
 #endif
 #ifdef HAVE_AMESOS_MUMPS

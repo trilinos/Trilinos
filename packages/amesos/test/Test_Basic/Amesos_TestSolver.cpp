@@ -82,9 +82,6 @@
 #ifdef HAVE_AMESOS_PARDISO
 #include "Amesos_Pardiso.h"
 #endif
-#ifdef HAVE_AMESOS_PASTIX
-#include "Amesos_Pastix.h"
-#endif
 #ifdef HAVE_AMESOS_PARAKLETE
 #include "Amesos_Paraklete.h"
 #endif
@@ -96,7 +93,6 @@
 #include "CrsMatrixTranspose.h"
 #include "SparseDirectTimingVars.h" 
 
-#include <vector>
 //
 //  Amesos_TestSolver.cpp reads in a matrix in Harwell-Boeing format, 
 //  calls one of the sparse direct solvers and computes the error 
@@ -132,10 +128,10 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
    
-  string FileName = matrix_file ;
+  std::string FileName = matrix_file ;
   int FN_Size = FileName.size() ; 
-  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
-  string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  std::string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  std::string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
   bool NonContiguousMap = false; 
 
   if ( LastFiveBytes == ".triU" ) { 
@@ -189,7 +185,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     int NumGlobalElements =  readMap->NumGlobalElements();
     int NumMyElements = map.NumMyElements();
     int MyFirstElement = map.MinMyGID();
-    vector<int> MapMap_( NumGlobalElements );
+    std::vector<int> MapMap_( NumGlobalElements );
     readMap->MyGlobalElements( &MapMap_[0] ) ;
     Comm.Broadcast( &MapMap_[0], NumGlobalElements, 0 ) ; 
     map_ = new Epetra_Map( NumGlobalElements, NumMyElements, &MapMap_[MyFirstElement], 0, Comm);
@@ -335,19 +331,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( A_pardiso.Solve(  ) ); 
 
 #endif
-#ifdef HAVE_AMESOS_PASTIX
-    } else if ( SparseSolver == PASTIX ) {
-
-      Teuchos::ParameterList ParamList ;
-      Amesos_Pastix A_pastix( Problem ) ; 
-      ParamList.set( "MaxProcs", -3 );
-      EPETRA_CHK_ERR( A_pastix.SetParameters( ParamList ) ); 
-      EPETRA_CHK_ERR( A_pastix.SetUseTranspose( transpose ) ); 
-      EPETRA_CHK_ERR( A_pastix.SymbolicFactorization(  ) ); 
-      EPETRA_CHK_ERR( A_pastix.NumericFactorization(  ) ); 
-      EPETRA_CHK_ERR( A_pastix.Solve(  ) ); 
-
-#endif
 #ifdef HAVE_AMESOS_PARAKLETE
     } else if ( SparseSolver == PARAKLETE ) {
 
@@ -447,18 +430,18 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       double RefactorTime = AT.GetTime(refacTimePtr);
       double SolveTime = AT.GetTime(solveTimePtr);
 
-      cout << __FILE__ << "::"  << __LINE__ << " SetupTime = " << SetupTime << endl ; 
-      cout << __FILE__ << "::"  << __LINE__ << " SymbolicTime = " << SymbolicTime - SetupTime << endl ; 
-      cout << __FILE__ << "::"  << __LINE__ << " NumericTime = " << NumericTime - SymbolicTime<< endl ; 
-      cout << __FILE__ << "::"  << __LINE__ << " RefactorTime = " << RefactorTime - NumericTime << endl ; 
-      cout << __FILE__ << "::"  << __LINE__ << " SolveTime = " << SolveTime - RefactorTime << endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ << " SetupTime = " << SetupTime << std::endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ << " SymbolicTime = " << SymbolicTime - SetupTime << std::endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ << " NumericTime = " << NumericTime - SymbolicTime<< std::endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ << " RefactorTime = " << RefactorTime - NumericTime << std::endl ; 
+      std::cout << __FILE__ << "::"  << __LINE__ << " SolveTime = " << SolveTime - RefactorTime << std::endl ; 
 
 #endif
     } else { 
-      SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
-      cerr << "\n\n####################  Requested solver not available on this platform ##################### ATS\n" << endl ;
-      cout << " SparseSolver = " << SparseSolver << endl ; 
-      cerr << " SparseSolver = " << SparseSolver << endl ; 
+      SparseDirectTimingVars::log_file << "Solver not implemented yet" << std::endl ;
+      std::cerr << "\n\n####################  Requested solver not available on this platform ##################### ATS\n" << std::endl ;
+      std::cout << " SparseSolver = " << SparseSolver << std::endl ; 
+      std::cerr << " SparseSolver = " << SparseSolver << std::endl ; 
     }
     
     SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 

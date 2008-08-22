@@ -47,12 +47,12 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   //  If we are making no change, return the original matrix (which has a linear map) 
   //
 #if 0
-  cout << __FILE__ << "::" << __LINE__ << " " 
+  std::cout << __FILE__ << "::" << __LINE__ << " " 
        << Diagonal << " " 
        << ReindexRowMap << " " 
        << ReindexColMap << " " 
        << RangeMapType << " " 
-       << DomainMapType << " " << endl ; 
+       << DomainMapType << " " << std::endl ; 
 #endif
 
   if ( Diagonal + ReindexRowMap + ReindexColMap + RangeMapType + DomainMapType == 0 ) {
@@ -93,16 +93,16 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   int NumGlobalDomainElements = DomainMap.NumGlobalElements();
   assert( NumGlobalRangeElements == NumGlobalDomainElements ) ; 
 
-  vector<int> MyGlobalRowElements( NumMyRowElements ) ; 
-  vector<int> NumEntriesPerRow( NumMyRowElements ) ; 
-  vector<int> MyPermutedGlobalRowElements( NumMyRowElements ) ; 
-  vector<int> MyGlobalColElements( NumMyColElements ) ; 
-  vector<int> MyPermutedGlobalColElements( NumMyColElements ) ; // Used to create the column map
-  vector<int> MyPermutedGlobalColElementTable( NumMyColElements ) ; // To convert local indices to global
-  vector<int> MyGlobalRangeElements( NumMyRangeElements ) ; 
-  vector<int> MyPermutedGlobalRangeElements( NumMyRangeElements ) ; 
-  vector<int> MyGlobalDomainElements( NumMyDomainElements ) ; 
-  vector<int> MyPermutedGlobalDomainElements( NumMyDomainElements ) ; 
+  std::vector<int> MyGlobalRowElements( NumMyRowElements ) ; 
+  std::vector<int> NumEntriesPerRow( NumMyRowElements ) ; 
+  std::vector<int> MyPermutedGlobalRowElements( NumMyRowElements ) ; 
+  std::vector<int> MyGlobalColElements( NumMyColElements ) ; 
+  std::vector<int> MyPermutedGlobalColElements( NumMyColElements ) ; // Used to create the column map
+  std::vector<int> MyPermutedGlobalColElementTable( NumMyColElements ) ; // To convert local indices to global
+  std::vector<int> MyGlobalRangeElements( NumMyRangeElements ) ; 
+  std::vector<int> MyPermutedGlobalRangeElements( NumMyRangeElements ) ; 
+  std::vector<int> MyGlobalDomainElements( NumMyDomainElements ) ; 
+  std::vector<int> MyPermutedGlobalDomainElements( NumMyDomainElements ) ; 
   RowMap.MyGlobalElements(&MyGlobalRowElements[0]);
   ColMap.MyGlobalElements(&MyGlobalColElements[0]);
   RangeMap.MyGlobalElements(&MyGlobalRangeElements[0]);
@@ -133,10 +133,10 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   //
   int nlocal = 0;
   if (In.Comm().MyPID()==0) nlocal = NumGlobalRangeElements;
-  vector<int> AllIDs( NumGlobalRangeElements ) ; 
+  std::vector<int> AllIDs( NumGlobalRangeElements ) ; 
   for ( int i = 0; i < NumGlobalRangeElements ; i++ ) AllIDs[i] = (*RowPermute)( i ) ; 
   Epetra_Map SerialRangeMap( -1, nlocal, &AllIDs[0], 0, In.Comm()); 
-  vector<int> AllIDBs( NumGlobalRangeElements ) ; 
+  std::vector<int> AllIDBs( NumGlobalRangeElements ) ; 
   for ( int i = 0; i < NumGlobalRangeElements ; i++ ) AllIDBs[i] = (*ColPermute)( i ) ; 
   Epetra_Map SerialDomainMap( -1, nlocal, &AllIDBs[0], 0, In.Comm()); 
 
@@ -146,7 +146,7 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   //  The goal here is to make sure that we can use Domain and Range maps 
   //  that are neither serial, nor distributed in the normal manner.
   //
-  vector<int> AllIDCs( NumGlobalRangeElements ) ; 
+  std::vector<int> AllIDCs( NumGlobalRangeElements ) ; 
   for ( int i = 0; i < NumGlobalRangeElements ; i++ ) AllIDCs[i] = (*ColPermute)( i ) ; 
   if ( In.Comm().NumProc() > 1 ) { 
     if (In.Comm().MyPID()==0) nlocal = NumGlobalRangeElements-1;
@@ -158,7 +158,7 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   int iam = In.Comm().MyPID();
   Epetra_Map BizarreDomainMap( -1, nlocal, &AllIDCs[0], 0, In.Comm()); 
 
-  vector<int> AllIDDs( NumGlobalRangeElements ) ; 
+  std::vector<int> AllIDDs( NumGlobalRangeElements ) ; 
   for ( int i = 0; i < NumGlobalRangeElements ; i++ ) AllIDDs[i] = (*RowPermute)( i ) ; 
   if ( In.Comm().NumProc() > 1 ) { 
     if (In.Comm().MyPID()==0) nlocal = NumGlobalRangeElements-1;
@@ -254,11 +254,11 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   //
   //  These vectors are filled and then passed to InsertGlobalValues 
   //
-  vector<int> ThisRowIndices( In.MaxNumEntries() );
-  vector<double> ThisRowValues( In.MaxNumEntries() );
-  vector<int> PermutedGlobalColIndices( In.MaxNumEntries() );
+  std::vector<int> ThisRowIndices( In.MaxNumEntries() );
+  std::vector<double> ThisRowValues( In.MaxNumEntries() );
+  std::vector<int> PermutedGlobalColIndices( In.MaxNumEntries() );
 
-  //cout << __FILE__ << "::" <<__LINE__ << endl ; 
+  //std::cout << __FILE__ << "::" <<__LINE__ << std::endl ; 
   RCP<Epetra_CrsMatrix> Out = 
     rcp( new Epetra_CrsMatrix( Copy, *PermutedRowMap, *PermutedColMap, 0 ) );
 
@@ -286,10 +286,10 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 	  }
 	}
 #if 0
-	cout  << __FILE__ << "::" << __LINE__ 
+	std::cout  << __FILE__ << "::" << __LINE__ 
 	      << " i = " << i 
 	      << " MyPermutedGlobalRowElements[i]  = " << MyPermutedGlobalRowElements[i] 
-	      <<   " MissingDiagonal = " << MissingDiagonal << endl ; 
+	      <<   " MissingDiagonal = " << MissingDiagonal << std::endl ; 
 #endif
 
       }
@@ -300,12 +300,12 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 	PermutedGlobalColIndices[NumIndicesThisRow] = MyPermutedGlobalRowElements[i] ;
 	
 #if 0
-	cout  << __FILE__ << "::" << __LINE__ 
+	std::cout  << __FILE__ << "::" << __LINE__ 
 	      << " i = " << i 
 	      << "NumIndicesThisRow = " << NumIndicesThisRow 
 	      << "ThisRowValues[NumIndicesThisRow = " << ThisRowValues[NumIndicesThisRow] 
 	      << " PermutedGlobalColIndices[NumIndcesThisRow] = " << PermutedGlobalColIndices[NumIndicesThisRow] 
-	      << endl ; 
+	      << std::endl ; 
 #endif
 
 	NumIndicesThisRow++  ;
@@ -360,8 +360,8 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 #endif
 
 #if 0
-  cout << __FILE__ << "::" << __LINE__ << endl ;
-  Out->Print( cout ) ; 
+  std::cout << __FILE__ << "::" << __LINE__ << std::endl ;
+  Out->Print( std::cout ) ; 
 #endif
 
   return Out;

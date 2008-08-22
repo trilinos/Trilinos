@@ -29,9 +29,6 @@
 #include "Amesos_config.h"
 #include "Amesos.h"
 #include "Amesos_Klu.h"
-#ifdef HAVE_AMESOS_PASTIX
-#include "Amesos_Pastix.h"
-#endif
 #ifdef HAVE_AMESOS_LAPACK
 #include "Amesos_Lapack.h"
 #endif
@@ -69,11 +66,11 @@ static bool verbose = false;
 Amesos_BaseSolver* Amesos::Create(const char* ClassType, 
 				  const Epetra_LinearProblem& LinearProblem ) 
 { 
-  string CT = ClassType; 
+  std::string CT = ClassType; 
   return(Create(CT,LinearProblem));
 }
 
-Amesos_BaseSolver* Amesos::Create(const string CT,
+Amesos_BaseSolver* Amesos::Create(const std::string CT,
 				  const Epetra_LinearProblem& LinearProblem )
 {
 
@@ -81,7 +78,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_LAPACK
     return new Amesos_Lapack(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Lapack is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Lapack is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -90,16 +87,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_KLU
     return new Amesos_Klu(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Klu is not implemented" << endl ; 
-    return(0); 
-#endif
-  } 
-  
-  if ((CT == "Amesos_Pastix") || (CT == "Pastix")) { 
-#ifdef HAVE_AMESOS_PASTIX
-    return new Amesos_Pastix(LinearProblem); 
-#else
-    if (verbose) cerr << "Amesos_Pastix is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Klu is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -108,7 +96,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_UMFPACK
     return new Amesos_Umfpack(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Umfpack is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Umfpack is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -117,7 +105,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_SUPERLU
     return new Amesos_Superlu(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Superlu is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Superlu is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -126,7 +114,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_SUPERLUDIST
     return new Amesos_Superludist(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Superludist is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Superludist is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -135,7 +123,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_MUMPS
     return new Amesos_Mumps(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Mumps is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Mumps is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -144,7 +132,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_SCALAPACK
     return new Amesos_Scalapack(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Scalapack is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Scalapack is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -153,7 +141,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_DSCPACK
     return new Amesos_Dscpack(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Dscpack is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Dscpack is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -162,7 +150,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_PARDISO
     return new Amesos_Pardiso(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Pardiso is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Pardiso is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
@@ -171,7 +159,7 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_PARAKLETE
     return new Amesos_Paraklete(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Paraklete is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Paraklete is not implemented" << std::endl ; 
     return(0); 
 #endif
   }
@@ -180,37 +168,29 @@ Amesos_BaseSolver* Amesos::Create(const string CT,
 #ifdef HAVE_AMESOS_TAUCS
     return new Amesos_Taucs(LinearProblem); 
 #else
-    if (verbose) cerr << "Amesos_Taucs is not implemented" << endl ; 
+    if (verbose) std::cerr << "Amesos_Taucs is not implemented" << std::endl ; 
     return(0); 
 #endif
   } 
   
-  if (verbose) cerr << "Unknown class type:" << CT << endl ; 
+  if (verbose) std::cerr << "Unknown class type:" << CT << std::endl ; 
   return(0); 
 }
 
 // ====================================================================
 bool Amesos::Query(const char* ClassType)
 {
-  string CT = ClassType;
+  std::string CT = ClassType;
   return(Query(CT));
 }
 
 // ====================================================================
-bool Amesos::Query(const string CT) 
+bool Amesos::Query(const std::string CT) 
 { 
 
   if ((CT == "Amesos_Lapack") || (CT == "Lapack")) { 
 #ifdef HAVE_AMESOS_LAPACK
     return true;
-#else
-    return false;
-#endif
-  } 
-  
-  if ((CT == "Amesos_Pastix") || (CT == "Pastix")) { 
-#ifdef HAVE_AMESOS_PASTIX
-    return true; 
 #else
     return false;
 #endif
@@ -401,7 +381,6 @@ Teuchos::ParameterList Amesos::GetValidParameters(){
  
   }
   ParamList.set("Pardiso", PardisoParams ) ; 
-  //  Pastix Parameters - none 
 
   //  Scalapack Parameters
   Teuchos::ParameterList ScalapackParams;

@@ -15,7 +15,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
-#include <vector>
 
 #ifdef HAVE_VALGRIND_H
 #include <valgrind/valgrind.h>
@@ -70,7 +69,7 @@ bool TestTiming(const Amesos_BaseSolver* Solver,
   }
   catch( exception& e ) {
     if (Comm.MyPID() == 0)
-      cout << endl << "Exception caught in TestTiming() : " << e.what() << endl;
+      std::cout << std::endl << "Exception caught in TestTiming() : " << e.what() << std::endl;
     testPassed = false;
   }
   
@@ -79,17 +78,17 @@ bool TestTiming(const Amesos_BaseSolver* Solver,
 }
 
 //=============================================================================
-bool CheckError(const string SolverType,
-		const string Descriptor,
+bool CheckError(const std::string SolverType,
+		const std::string Descriptor,
 		const Epetra_RowMatrix& A,
 		const Epetra_MultiVector& x,
 		const Epetra_MultiVector& b,
 		const Epetra_MultiVector& x_exact)
 {
   if (A.Comm().MyPID() == 0)
-    cout << endl << "*** " << SolverType << " : " 
-         << Descriptor << " ***" << endl;
-  vector<double> Norm;
+    std::cout << std::endl << "*** " << SolverType << " : " 
+         << Descriptor << " ***" << std::endl;
+  std::vector<double> Norm;
   int NumVectors = x.NumVectors();
   Norm.resize(NumVectors);
   Epetra_MultiVector Ax(x);
@@ -102,7 +101,7 @@ bool CheckError(const string SolverType,
     TotalNorm += Norm[i];
   }
   if (A.Comm().MyPID() == 0)
-    cout << "||Ax - b||  = " << TotalNorm << endl;
+    std::cout << "||Ax - b||  = " << TotalNorm << std::endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
   else
@@ -114,7 +113,7 @@ bool CheckError(const string SolverType,
     TotalNorm += Norm[i];
   }
   if (A.Comm().MyPID() == 0)
-    cout << "||x - x_exact||  = " << TotalNorm << endl;
+    std::cout << "||x - x_exact||  = " << TotalNorm << std::endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
   else
@@ -155,7 +154,7 @@ bool Test(char* SolverType,
     ProblemA.SetLHS(&x_A);
     ProblemA.SetRHS(&b_A);
 
-    string ST = SolverType ;    
+    std::string ST = SolverType ;    
     if (! ( ST == "Amesos_Superludist" ) ) {    // Kludge see bug #1141 and bug #1138
       AMESOS_CHK_ERR(Solver->Solve());
 
@@ -288,7 +287,7 @@ bool Test(char* SolverType,
 
     ProblemA.SetOperator(&C);
 
-    string ST = SolverType ; 
+    std::string ST = SolverType ; 
     if (! ( ST == "Amesos_Superludist" ) ) { // Kludge see bug #1141 and bug #1138
 
       AMESOS_CHK_ERR(Solver->SymbolicFactorization());
@@ -318,7 +317,7 @@ bool Test(char* SolverType,
 
     Solver = Factory.Create(SolverType,ProblemA);
 
-    string ST = SolverType ; 
+    std::string ST = SolverType ; 
     if (! ( ST == "Amesos_Superludist" ) ) {   // bug #1141 and bug #1138
       AMESOS_CHK_ERR(Solver->Solve());
       
@@ -398,7 +397,7 @@ int SubMain( Epetra_Comm &Comm ) {
   x_exactC.Random();
   C.Multiply(false,x_exactC,b_C);
 
-  vector<string> SolverType;
+  std::vector<std::string> SolverType;
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Umfpack");
@@ -411,7 +410,7 @@ int SubMain( Epetra_Comm &Comm ) {
   bool TestPassed = true;
 
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
-    string Solver = SolverType[i];
+    std::string Solver = SolverType[i];
     if (Factory.Query((char*)Solver.c_str())) {
       bool ok = Test((char*)Solver.c_str(),
 		     A, x_A, b_A, x_exactA,
@@ -422,7 +421,7 @@ int SubMain( Epetra_Comm &Comm ) {
     else
     {
       if (Comm.MyPID() == 0)
-        cout << "Solver " << Solver << " not available" << endl;
+        std::cout << "Solver " << Solver << " not available" << std::endl;
     }
   }
 
@@ -434,12 +433,12 @@ int SubMain( Epetra_Comm &Comm ) {
 
   if (TestPassed) {
     if (Comm.MyPID() == 0)
-      cout << endl << "TEST PASSED" << endl << endl;
+      std::cout << std::endl << "TEST PASSED" << std::endl << std::endl;
     return(EXIT_SUCCESS);
   }
   else {
     if (Comm.MyPID() == 0)
-      cout << endl << "TEST FAILED" << endl << endl;
+      std::cout << std::endl << "TEST FAILED" << std::endl << std::endl;
     // exit without calling MPI_Finalize() to raise an error
     exit(EXIT_FAILURE);
   }
@@ -457,9 +456,9 @@ int main(int argc, char *argv[]) {
 
 #if 0
   if ( Comm.MyPID() == 0 ) {
-    cout << "Enter a char to continue" ;
+    std::cout << "Enter a char to continue" ;
     char any;
-    cin >> any ; 
+    std::cin >> any ; 
   }
   Comm.Barrier();
 #endif

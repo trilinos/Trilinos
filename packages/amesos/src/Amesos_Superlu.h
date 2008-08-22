@@ -191,23 +191,23 @@ private:
 
   //! Main structure for SuperLU.
   SLUData* data_;
-  vector<double> berr_;
-  vector<double> ferr_;
-  vector<int> perm_r_;
-  vector<int> perm_c_;
-  vector<int> etree_;
-  vector<double> R_;
-  vector<double> C_;
+  std::vector<double> berr_;
+  std::vector<double> ferr_;
+  std::vector<int> perm_r_;
+  std::vector<int> perm_c_;
+  std::vector<int> etree_;
+  std::vector<double> R_;
+  std::vector<double> C_;
   char equed_;
   // no idea of the following.
   double* DummyArray;
 
   //!< stores the matrix in SuperLU format.
-  vector <int> Ap_;
+  std::vector <int> Ap_;
   //!< stores the matrix in SuperLU format.
-  vector <int> Ai_;
+  std::vector <int> Ai_;
   //!< stores the matrix in SuperLU format.
-  vector <double> Aval_; 
+  std::vector <double> Aval_; 
   //! Global size of the matrix.
   int NumGlobalRows_; 
   //! Global number of nonzeros in the matrix.

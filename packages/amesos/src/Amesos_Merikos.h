@@ -379,8 +379,8 @@ public:
   Epetra_CrsMatrix *ScaLAPACK1DMatrix_ ; //  Points to a  ScaLAPACK 1D
                                          //  blocked (not block cyclic) distribution
   Epetra_Map *VectorMap_ ;               //  Points to a Map for vectors X and B
-  vector<double> DenseA_;                //  The data in a ScaLAPACK 1D blocked format
-  vector<int> Ipiv_ ;                    //  ScaLAPACK pivot information
+  std::vector<double> DenseA_;                //  The data in a ScaLAPACK 1D blocked format
+  std::vector<int> Ipiv_ ;                    //  ScaLAPACK pivot information
   int NumOurRows_ ;
   int NumOurColumns_ ;
 

@@ -30,7 +30,7 @@ public:
                            const Epetra_MultiVector& X,
                            const Epetra_MultiVector& B,
                            const bool UseTranspose,
-                           const string prefix) const
+                           const std::string prefix) const
   {
     double Norm;
     Epetra_Vector Ax(B.Map());
@@ -43,15 +43,15 @@ public:
       Ax.Norm2(&Norm);
 
       if (Matrix.Comm().MyPID() == 0) 
-        cout << prefix << " : vector " << i << ", ||Ax - b|| = " 
-          << Norm << endl;
+        std::cout << prefix << " : vector " << i << ", ||Ax - b|| = " 
+          << Norm << std::endl;
     }
   }
 
   //! Computes the norms of X and B and print the results.
   void ComputeVectorNorms(const Epetra_MultiVector& X,
                           const Epetra_MultiVector& B,
-                          const string prefix) const
+                          const std::string prefix) const
   {
     double NormLHS;
     double NormRHS;
@@ -62,16 +62,16 @@ public:
       X(i)->Norm2(&NormLHS);
       B(i)->Norm2(&NormRHS);
       if (X.Comm().MyPID() == 0) 
-        cout << prefix << " : vector " << i << ", ||x|| = " << NormLHS
-          << ", ||b|| = " << NormRHS << endl;
+        std::cout << prefix << " : vector " << i << ", ||x|| = " << NormLHS
+          << ", ||b|| = " << NormRHS << std::endl;
     }
   }
 
-  //! Prints line on cout.
+  //! Prints line on std::cout.
   void PrintLine() const
   {
-    cout << "--------------------------------------------";
-    cout << "--------------------------------" << endl;
+    std::cout << "--------------------------------------------";
+    std::cout << "--------------------------------" << std::endl;
   }
 
   void SetMaxProcesses(int& MaxProcesses, const Epetra_RowMatrix& A)

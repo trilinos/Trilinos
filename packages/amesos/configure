@@ -785,8 +785,6 @@ HAVE_AMESOS_MUMPS_TRUE
 HAVE_AMESOS_MUMPS_FALSE
 HAVE_AMESOS_PARDISO_TRUE
 HAVE_AMESOS_PARDISO_FALSE
-HAVE_AMESOS_PASTIX_TRUE
-HAVE_AMESOS_PASTIX_FALSE
 HAVE_AMESOS_PARAKLETE_TRUE
 HAVE_AMESOS_PARAKLETE_FALSE
 HAVE_AMESOS_TAUCS_TRUE
@@ -1493,8 +1491,6 @@ Optional Features:
                           Enable Amesos interface support for the
                           double-precision version of PARAKLETE (default is
                           no)
-  --enable-amesos-pastix  Enable Amesos interface support for the
-                          double-precision version of PASTIX (default is no)
   --enable-amesos-taucs   Enable Amesos interface support for the
                           double-precision version of TAUCS (default is no)
   --enable-amesos-mc64    Enable Amesos interface support for reordering
@@ -16102,31 +16098,8 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-
-# Check whether --enable-amesos-pastix was given.
-if test "${enable_amesos_pastix+set}" = set; then
-  enableval=$enable_amesos_pastix; ac_cv_use_amesos_pastix=$enableval
-else
-  ac_cv_use_amesos_pastix=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use amesos-pastix" >&5
-echo $ECHO_N "checking whether to use amesos-pastix... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_amesos_pastix" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS_PASTIX
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
+#TAC_ARG_ENABLE_FEATURE_SUB( amesos, pastix, [Enable Amesos interface support for the double-precision version of PASTIX],
+#		AMESOS_PASTIX, no)
 
 
 # Check whether --enable-amesos-taucs was given.
@@ -16153,9 +16126,6 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
-
-#TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert],
-#		AMESOS_KUNDERT, no)
 
 
 # Check whether --enable-amesos-mc64 was given.
@@ -18227,34 +18197,13 @@ fi
 #   Pastix    #
 #  =========  #
 
-if test "X$ac_cv_use_amesos_pastix" != "Xno"; then
+#if test "X$ac_cv_use_amesos_pastix" != "Xno"; then
 
-   if true ; then
-  HAVE_AMESOS_PASTIX_TRUE=
-  HAVE_AMESOS_PASTIX_FALSE='#'
-else
-  HAVE_AMESOS_PASTIX_TRUE='#'
-  HAVE_AMESOS_PASTIX_FALSE=
-fi
-
-   if true ; then
-  NEED_PARAMETER_LIST_TRUE=
-  NEED_PARAMETER_LIST_FALSE='#'
-else
-  NEED_PARAMETER_LIST_TRUE='#'
-  NEED_PARAMETER_LIST_FALSE=
-fi
-
-else
-   if false ; then
-  HAVE_AMESOS_PASTIX_TRUE=
-  HAVE_AMESOS_PASTIX_FALSE='#'
-else
-  HAVE_AMESOS_PASTIX_TRUE='#'
-  HAVE_AMESOS_PASTIX_FALSE=
-fi
-
-fi
+#  AM_CONDITIONAL(HAVE_AMESOS_PASTIX, true )
+#  AM_CONDITIONAL(NEED_PARAMETER_LIST, true )
+#else
+#  AM_CONDITIONAL(HAVE_AMESOS_PASTIX, false )
+#fi
 
 #  =========  #
 #  PARAKLETE  #
@@ -19436,27 +19385,6 @@ echo "$as_me: error: conditional \"HAVE_AMESOS_PARDISO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_AMESOS_PASTIX_TRUE}" && test -z "${HAVE_AMESOS_PASTIX_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_PASTIX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_PASTIX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_PASTIX_TRUE}" && test -z "${HAVE_AMESOS_PASTIX_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_PASTIX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_PASTIX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${HAVE_AMESOS_PARAKLETE_TRUE}" && test -z "${HAVE_AMESOS_PARAKLETE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_PARAKLETE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -20302,8 +20230,6 @@ HAVE_AMESOS_MUMPS_TRUE!$HAVE_AMESOS_MUMPS_TRUE$ac_delim
 HAVE_AMESOS_MUMPS_FALSE!$HAVE_AMESOS_MUMPS_FALSE$ac_delim
 HAVE_AMESOS_PARDISO_TRUE!$HAVE_AMESOS_PARDISO_TRUE$ac_delim
 HAVE_AMESOS_PARDISO_FALSE!$HAVE_AMESOS_PARDISO_FALSE$ac_delim
-HAVE_AMESOS_PASTIX_TRUE!$HAVE_AMESOS_PASTIX_TRUE$ac_delim
-HAVE_AMESOS_PASTIX_FALSE!$HAVE_AMESOS_PASTIX_FALSE$ac_delim
 HAVE_AMESOS_PARAKLETE_TRUE!$HAVE_AMESOS_PARAKLETE_TRUE$ac_delim
 HAVE_AMESOS_PARAKLETE_FALSE!$HAVE_AMESOS_PARAKLETE_FALSE$ac_delim
 HAVE_AMESOS_TAUCS_TRUE!$HAVE_AMESOS_TAUCS_TRUE$ac_delim
@@ -20319,7 +20245,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 86; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

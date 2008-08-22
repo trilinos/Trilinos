@@ -185,8 +185,8 @@ int Amesos_Taucs::ConvertToTaucs()
 
     int count = 0;
     int MaxNumEntries = SerialMatrix().MaxNumEntries();
-    vector<int>    Indices(MaxNumEntries);
-    vector<double> Values(MaxNumEntries);
+    std::vector<int>    Indices(MaxNumEntries);
+    std::vector<double> Values(MaxNumEntries);
 
     PrivateTaucsData_->A_->colptr[0] = 0;
 
@@ -279,8 +279,8 @@ int Amesos_Taucs::PerformNumericFactorization( )
 
     if (ierr != 0) 
     {
-      cerr << "Amesos_Taucs: error during numeric factorization ("
-        << ierr << ")" << endl;
+      std::cerr << "Amesos_Taucs: error during numeric factorization ("
+        << ierr << ")" << std::endl;
       AMESOS_CHK_ERR(-1);
     }
   }
@@ -306,7 +306,7 @@ bool Amesos_Taucs::MatrixShapeOK() const
 //=============================================================================
 int Amesos_Taucs::SymbolicFactorization() 
 {
-  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering SymbolicFactorization()" << endl ; 
+  if ( debug_ > 0 ) std::cout << __FILE__ << "::" << __LINE__ << " Entering SymbolicFactorization()" << std::endl ; 
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
@@ -343,14 +343,14 @@ int Amesos_Taucs::SymbolicFactorization()
 
   IsSymbolicFactorizationOK_ = true;
 
-  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__  << " Leaving SymbolicFactorization()" << endl ; 
+  if ( debug_ > 0 ) std::cout << __FILE__ << "::" << __LINE__  << " Leaving SymbolicFactorization()" << std::endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::NumericFactorization() 
 {
-  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << endl ; 
+  if ( debug_ > 0 ) std::cout << __FILE__ << "::" << __LINE__ << " Entering NumericFactorization()" << std::endl ; 
   IsNumericFactorizationOK_ = false;
 
   if (IsSymbolicFactorizationOK_ == false)
@@ -366,16 +366,16 @@ int Amesos_Taucs::NumericFactorization()
 
   IsNumericFactorizationOK_ = true;
 
-  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__
-			   << " Leaving NumericFactorization()" << endl ; 
+  if ( debug_ > 0 ) std::cout << __FILE__ << "::" << __LINE__
+			   << " Leaving NumericFactorization()" << std::endl ; 
   return(0);
 }
 
 //=============================================================================
 int Amesos_Taucs::Solve() 
 {
-  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__
-			   << " Entering Solve()" << endl ; 
+  if ( debug_ > 0 ) std::cout << __FILE__ << "::" << __LINE__
+			   << " Entering Solve()" << std::endl ; 
   if (IsNumericFactorizationOK_ == false)
     AMESOS_CHK_ERR(NumericFactorization());
 
@@ -433,7 +433,7 @@ int Amesos_Taucs::Solve()
 
       if (ierr != TAUCS_SUCCESS)
       {
-        cerr << "Error occurred in taucs_ccs_solve()" << endl;
+        std::cerr << "Error occurred in taucs_ccs_solve()" << std::endl;
         AMESOS_CHK_ERR(-1);
       }
     }
@@ -454,8 +454,8 @@ int Amesos_Taucs::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*X, *B, "Amesos_Taucs");
 
-  if ( debug_ > 0 ) cout << __FILE__ << "::" << __LINE__
-			   << " Leaving Solve()" << endl ; 
+  if ( debug_ > 0 ) std::cout << __FILE__ << "::" << __LINE__
+			   << " Leaving Solve()" << std::endl ; 
   return(0) ;
 }
 
@@ -465,7 +465,7 @@ void Amesos_Taucs::PrintStatus() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
-  string p = "Amesos_Taucs : ";
+  std::string p = "Amesos_Taucs : ";
 
   if (Matrix_ == 0) return;
 
@@ -474,14 +474,14 @@ void Amesos_Taucs::PrintStatus() const
   int n = Matrix().NumGlobalRows();
   int nnz = Matrix().NumGlobalNonzeros();
     
-  cout << p << "Matrix has " << n << " rows"
-       << " and " << nnz << " nonzeros" << endl;
+  std::cout << p << "Matrix has " << n << " rows"
+       << " and " << nnz << " nonzeros" << std::endl;
   if (n > 0) 
   { 
-    cout << p << "Nonzero elements per row = "
-         << 1.0 *  nnz / n << endl;
-    cout << p << "Percentage of nonzero elements = "
-         << 100.0 * nnz /(pow(n,2.0)) << endl;
+    std::cout << p << "Nonzero elements per row = "
+         << 1.0 *  nnz / n << std::endl;
+    std::cout << p << "Percentage of nonzero elements = "
+         << 100.0 * nnz /(pow(n,2.0)) << std::endl;
   }
   PrintLine();
 
@@ -510,27 +510,27 @@ void Amesos_Taucs::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Taucs : ";
+  std::string p = "Amesos_Taucs : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Taucs format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = "
-       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+  std::cout << p << "Time to convert matrix to Taucs format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << std::endl;
 
   PrintLine();
 

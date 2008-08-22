@@ -29,7 +29,6 @@
 #ifndef AMESOS_PARDISO_H
 #define AMESOS_PARDISO_H
 
-#include <vector>
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos_NoCopiable.h"
@@ -188,9 +187,9 @@ private:
   int SymFactTime_, NumFactTime_, SolveTime_;
 
   // Data for PARDISO
-  vector<double> aa_;
-  vector<int>    ia_;
-  vector<int>    ja_;
+  std::vector<double> aa_;
+  std::vector<int>    ia_;
+  std::vector<int>    ja_;
 
   bool pardiso_initialized_ ; 
   int mtype_;

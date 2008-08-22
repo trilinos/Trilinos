@@ -88,9 +88,9 @@ int SetNPRowAndCol(const int MaxProcesses, int& nprow, int& npcol)
   npcol = MaxProcesses / nprow;
   
   if( nprow <=0 || npcol <= 0 || MaxProcesses <=0 ) {
-    cerr << "Amesos_Superludist: wrong value for MaxProcs ("
+    std::cerr << "Amesos_Superludist: wrong value for MaxProcs ("
 	 << MaxProcesses << "), or nprow (" << nprow 
-	 << ") or npcol (" << npcol << ")" << endl;
+	 << ") or npcol (" << npcol << ")" << std::endl;
     AMESOS_CHK_ERR(-1);
   }
   return(0);
@@ -187,10 +187,10 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
 
     if( SuperludistParams.isParameter("ReuseSymbolic") )
       ReuseSymbolic_ = SuperludistParams.get<bool>("ReuseSymbolic");
-    string FactOption = "NotSet";
+    std::string FactOption = "NotSet";
 
     if( SuperludistParams.isParameter("Fact") )
-      FactOption = SuperludistParams.get<string>("Fact");
+      FactOption = SuperludistParams.get<std::string>("Fact");
 
     if( FactOption == "SamePattern_SameRowPerm" ) PrivateSuperluData_->FactOption_ = SamePattern_SameRowPerm;
     else if( FactOption == "SamePattern" ) PrivateSuperluData_->FactOption_ = SamePattern;
@@ -201,21 +201,21 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList )
       Equil_ = SuperludistParams.get<bool>("Equil");
 
     if (SuperludistParams.isParameter("ColPerm"))
-      ColPerm_ = SuperludistParams.get<string>("ColPerm");
+      ColPerm_ = SuperludistParams.get<std::string>("ColPerm");
 
     if (ColPerm_ == "MY_PERMC")
       if( SuperludistParams.isParameter("perm_c"))
         perm_c_ = SuperludistParams.get<int*>("perm_c");
 
     if (SuperludistParams.isParameter("RowPerm"))
-      RowPerm_ = SuperludistParams.get<string>("RowPerm");
+      RowPerm_ = SuperludistParams.get<std::string>("RowPerm");
     if( RowPerm_ == "MY_PERMR" ) {
       if (SuperludistParams.isParameter("perm_r"))
         perm_r_ = SuperludistParams.get<int*>("perm_r");
     }
 
     if (SuperludistParams.isParameter("IterRefine"))
-      IterRefine_ = SuperludistParams.get<string>("IterRefine");
+      IterRefine_ = SuperludistParams.get<std::string>("IterRefine");
 
     if (SuperludistParams.isParameter("ReplaceTinyPivot"))
       ReplaceTinyPivot_ = SuperludistParams.get<bool>("ReplaceTinyPivot");
@@ -352,8 +352,8 @@ int Amesos_Superludist::Factor()
   double *RowValues;
   int *ColIndices;
   int MaxNumEntries_ = UniformMatrix().MaxNumEntries();
-  vector<double> RowValuesV_(MaxNumEntries_);
-  vector<int>    ColIndicesV_(MaxNumEntries_);
+  std::vector<double> RowValuesV_(MaxNumEntries_);
+  std::vector<int>    ColIndicesV_(MaxNumEntries_);
 
   Global_Columns_ = UniformMatrix().RowMatrixColMap().MyGlobalElements();
 
@@ -558,8 +558,8 @@ int Amesos_Superludist::ReFactor( )
   int *ColIndices;
   int MaxNumEntries_ = UniformMatrix().MaxNumEntries();
   int NumMyElements  = UniformMatrix().NumMyRows() ; 
-  vector<int> ColIndicesV_(MaxNumEntries_);
-  vector<double> RowValuesV_(MaxNumEntries_);
+  std::vector<int> ColIndicesV_(MaxNumEntries_);
+  std::vector<double> RowValuesV_(MaxNumEntries_);
 
   int NzThisRow ;
   int Ai_index = 0 ; 
@@ -724,7 +724,7 @@ int Amesos_Superludist::Solve()
   if (Comm().MyPID() < nprow_ * npcol_) 
   {
     int info ;
-    vector<double>berr(nrhs);
+    std::vector<double>berr(nrhs);
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
     
@@ -771,29 +771,29 @@ void Amesos_Superludist::PrintStatus() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
   
-  string p = "Amesos_Superludist : ";
+  std::string p = "Amesos_Superludist : ";
   int NNZ = RowMatrixA_->NumGlobalNonzeros();
 
   PrintLine();
 
-  cout << p << "Matrix has " << NumGlobalRows_ << " rows"
-       << " and " << NNZ << " nonzeros" << endl;
-  cout << p << "Nonzero elements per row = "
-       << 1.0 * NNZ / NumGlobalRows_ << endl;
-  cout << p << "Percentage of nonzero elements = "
-       << 100.0 * NNZ /pow(NumGlobalRows_, 2.0) << endl;
-  cout << p << "Use transpose = " << UseTranspose() << endl;
-  cout << p << "Redistribute = " << Redistribute_ << endl;
-  cout << p << "# available processes = " << Comm().NumProc() << endl;
-  cout << p << "# processes used in computation = " << nprow_ * npcol_
-       << " ( = " << nprow_ << "x" << npcol_ << ")" << endl;
-  cout << p << "Equil = " << Equil_ << endl;
-  cout << p << "ColPerm = " << ColPerm_ << endl;
-  cout << p << "RowPerm = " << RowPerm_ << endl;
-  cout << p << "IterRefine = " << IterRefine_ << endl;
-  cout << p << "ReplaceTinyPivot = " << ReplaceTinyPivot_ << endl;
-  cout << p << "AddZeroToDiag = " << AddZeroToDiag_ << endl;
-  cout << p << "Redistribute = " << Redistribute_ << endl;
+  std::cout << p << "Matrix has " << NumGlobalRows_ << " rows"
+       << " and " << NNZ << " nonzeros" << std::endl;
+  std::cout << p << "Nonzero elements per row = "
+       << 1.0 * NNZ / NumGlobalRows_ << std::endl;
+  std::cout << p << "Percentage of nonzero elements = "
+       << 100.0 * NNZ /pow(NumGlobalRows_, 2.0) << std::endl;
+  std::cout << p << "Use transpose = " << UseTranspose() << std::endl;
+  std::cout << p << "Redistribute = " << Redistribute_ << std::endl;
+  std::cout << p << "# available processes = " << Comm().NumProc() << std::endl;
+  std::cout << p << "# processes used in computation = " << nprow_ * npcol_
+       << " ( = " << nprow_ << "x" << npcol_ << ")" << std::endl;
+  std::cout << p << "Equil = " << Equil_ << std::endl;
+  std::cout << p << "ColPerm = " << ColPerm_ << std::endl;
+  std::cout << p << "RowPerm = " << RowPerm_ << std::endl;
+  std::cout << p << "IterRefine = " << IterRefine_ << std::endl;
+  std::cout << p << "ReplaceTinyPivot = " << ReplaceTinyPivot_ << std::endl;
+  std::cout << p << "AddZeroToDiag = " << AddZeroToDiag_ << std::endl;
+  std::cout << p << "Redistribute = " << Redistribute_ << std::endl;
   
   PrintLine();
 
@@ -819,34 +819,34 @@ void Amesos_Superludist::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Superludist : ";
+  std::string p = "Amesos_Superludist : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Superludist format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = 0.0 (s), avg = 0.0 (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
-       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << endl;
+  std::cout << p << "Time to convert matrix to Superludist format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = 0.0 (s), avg = 0.0 (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
+       << NumTime * NumNumericFact_ << " (s), avg = " << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime * NumSolve_ << " (s), avg = " << SolTime << " (s)" << std::endl;
 
   double tt = NumTime * NumNumericFact_ + SolTime * NumSolve_;
   if (tt != 0)
   {
-    cout << p << "Total time spent in Amesos = " << tt << " (s) " << endl;
-    cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << endl;
-    cout << p << "(the above time does not include SuperLU_DIST time)" << endl;
-    cout << p << "Amesos interface time / total time = " << OveTime / tt << endl;
+    std::cout << p << "Total time spent in Amesos = " << tt << " (s) " << std::endl;
+    std::cout << p << "Total time spent in the Amesos interface = " << OveTime << " (s)" << std::endl;
+    std::cout << p << "(the above time does not include SuperLU_DIST time)" << std::endl;
+    std::cout << p << "Amesos interface time / total time = " << OveTime / tt << std::endl;
   }
 
   PrintLine();

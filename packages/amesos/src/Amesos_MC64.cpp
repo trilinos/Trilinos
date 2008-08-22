@@ -3,7 +3,6 @@
 #include "Epetra_Comm.h"
 #include "Epetra_RowMatrix.h"
 #include <map>
-using namespace std;
 
 extern "C" void F77_FUNC(mc64id, MC64ID)(int*);
 extern "C" void F77_FUNC(mc64ad, MC64AD)(int*, int*, int*, int*, int*, 
@@ -17,7 +16,7 @@ Amesos_MC64::Amesos_MC64(const Epetra_RowMatrix& A, int JOB,
 {
   if (A_.Comm().NumProc() != 1)
   {
-    cerr << "Class Amesos_MC64 can be used with one processor only!" << endl;
+    std::cerr << "Class Amesos_MC64 can be used with one processor only!" << std::endl;
     exit(EXIT_FAILURE);
   }
   F77_FUNC(mc64id, MC64ID)(ICNTL_);
@@ -33,12 +32,12 @@ int Amesos_MC64::Compute(int JOB, const bool StoreTranspose, const bool analyze)
   int MaxNumEntries = A_.MaxNumEntries();
   int N = A_.NumMyRows();
   int NE = A_.NumMyNonzeros();
-  vector<int> IP;
-  vector<int> IRN;
-  vector<double> VAL;
+  std::vector<int> IP;
+  std::vector<int> IRN;
+  std::vector<double> VAL;
 
-  vector<int> Indices(MaxNumEntries);
-  vector<double> Values(MaxNumEntries);
+  std::vector<int> Indices(MaxNumEntries);
+  std::vector<double> Values(MaxNumEntries);
 
   if (StoreTranspose)
   {
@@ -77,7 +76,7 @@ int Amesos_MC64::Compute(int JOB, const bool StoreTranspose, const bool analyze)
     IRN.resize(N * MaxNumEntries);
     VAL.resize(N * MaxNumEntries);
 
-    vector<int> count(N);
+    std::vector<int> count(N);
     for (int i = 0 ; i < N ; ++i) count[i] = 0;
 
     for (int i = 0 ; i < N ; ++i)
@@ -118,8 +117,8 @@ int Amesos_MC64::Compute(int JOB, const bool StoreTranspose, const bool analyze)
     for (int col = 0 ; col < N ; ++col)
       IP[col + 1] = IP[col] + count[col];
 #else
-    vector<vector<int> > cols(N);
-    vector<vector<double> > vals(N);
+    std::vector<std::vector<int> > cols(N);
+    std::vector<std::vector<double> > vals(N);
 
     for (int i = 1 ; i <= N ; ++i)
     {
@@ -157,7 +156,7 @@ int Amesos_MC64::Compute(int JOB, const bool StoreTranspose, const bool analyze)
   int NUM;
   CPERM_.resize(N);
   int LIW = 10 * N + NE;
-  vector<int> IW(LIW);
+  std::vector<int> IW(LIW);
   int LDW = 3 * N + NE;
   DW_.resize(LDW);
 
@@ -168,7 +167,7 @@ int Amesos_MC64::Compute(int JOB, const bool StoreTranspose, const bool analyze)
 
   if (analyze)
   {
-    map<double, int> table;
+    std::map<double, int> table;
     for (int col = 0 ; col < N ; ++col)
     {
       for (int j = IP[col] ; j < IP[col + 1] ; ++j)
@@ -187,14 +186,14 @@ int Amesos_MC64::Compute(int JOB, const bool StoreTranspose, const bool analyze)
       }
     }
 
-    cout << "# elements (total)    = " << NE << endl;
-    cout << "# elements > 0.1      = " << table[0.1] << endl;
-    cout << "# elements > 0.01     = " << table[0.01] << endl;
-    cout << "# elements > 0.001    = " << table[0.001] << endl;
-    cout << "# elements > 0.0001   = " << table[0.0001] << endl;
-    cout << "# elements > 0.00001  = " << table[0.00001] << endl;
-    cout << "# elements > 0.000001 = " << table[0.000001] << endl;
-    cout << "# elements <=0.000001 = " << table[0.0] << endl;
+    std::cout << "# elements (total)    = " << NE << std::endl;
+    std::cout << "# elements > 0.1      = " << table[0.1] << std::endl;
+    std::cout << "# elements > 0.01     = " << table[0.01] << std::endl;
+    std::cout << "# elements > 0.001    = " << table[0.001] << std::endl;
+    std::cout << "# elements > 0.0001   = " << table[0.0001] << std::endl;
+    std::cout << "# elements > 0.00001  = " << table[0.00001] << std::endl;
+    std::cout << "# elements > 0.000001 = " << table[0.000001] << std::endl;
+    std::cout << "# elements <=0.000001 = " << table[0.0] << std::endl;
   }
 
   AMESOS_RETURN(INFO_[0]);

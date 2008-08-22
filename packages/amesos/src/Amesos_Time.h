@@ -22,12 +22,12 @@ using Teuchos::Array;
 */
 struct Amesos_Time_Data {
   //! Character string identifying this timing data.
-  string timeName_;
+  std::string timeName_;
   //! Current timing data.
   double timeVal_;
   
   //! Constructor
-  Amesos_Time_Data( string timeName, double timeVal ) : 
+  Amesos_Time_Data( std::string timeName, double timeVal ) : 
     timeName_(timeName), 
     timeVal_(timeVal)
   {}
@@ -77,7 +77,7 @@ class Amesos_Time
   }
 
   //! Adds to field \c what the time elapsed since last call to ResetTimer().
-  inline int AddTime(const string what, int dataID, const int timerID = 0)
+  inline int AddTime(const std::string what, int dataID, const int timerID = 0)
   {
     // A valid data id is assumed to be > 0, if the id < 0, 
     // then a new entry in the array is created.
@@ -99,7 +99,7 @@ class Amesos_Time
   }
 
   //! Gets the cumulative time using the string.
-  inline double GetTime(const string what) const
+  inline double GetTime(const std::string what) const
   {
     int dataSize = (int)(data_.size());
     for (int i=0; i<dataSize; ++i) {

@@ -209,16 +209,6 @@ TAUCS_H =
 TAUCS =
 endif
 
-if HAVE_AMESOS_PASTIX
-PASTIX_H = \
-	$(srcdir)/Amesos_Pastix.h
-PASTIX = \
-	$(srcdir)/Amesos_Pastix.cpp
-else
-PASTIX_H =
-PASTIX =
-endif
-
 
 PARAKLETE_KLU_COMMON = \
 	$(srcdir)/SuiteSparse/AMD/Source/amesos_amd_1.c \
@@ -443,7 +433,6 @@ AMESOS_H = \
 	$(MUMPS_H) \
 	$(PARDISO_H) \
 	$(TAUCS_H) \
-	$(PASTIX_H) \
 	$(PARAKLETE_KLU_H) \
 	$(KLU_H) \
 	$(PARAKLETE_H) \
@@ -466,7 +455,6 @@ libamesos_a_SOURCES = \
 	$(MUMPS) \
 	$(PARDISO) \
 	$(TAUCS) \
-	$(PASTIX) \
 	$(PARAKLETE_KLU) \
 	$(KLU) \
 	$(PARAKLETE) \

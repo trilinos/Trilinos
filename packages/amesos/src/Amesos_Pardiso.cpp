@@ -151,8 +151,8 @@ int Amesos_Pardiso::ConvertToPardiso()
     aa_.resize(SerialMatrix().NumMyNonzeros());
 
     int MaxNumEntries = SerialMatrix().MaxNumEntries();
-    vector<int>    Indices(MaxNumEntries);
-    vector<double> Values(MaxNumEntries);
+    std::vector<int>    Indices(MaxNumEntries);
+    std::vector<double> Values(MaxNumEntries);
 
     // Requires FORTRAN numbering (from 1)
     ia_[0] = 1;
@@ -269,8 +269,8 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     if(var != NULL)
       sscanf( var, "%d", &num_procs );
     else {
-      cerr << "Please set the environment OMP_NUM_THREADS to either" << endl;
-      cerr << "1 or the number of OMP processes you want to use" << endl;
+      std::cerr << "Please set the environment OMP_NUM_THREADS to either" << std::endl;
+      std::cerr << "1 or the number of OMP processes you want to use" << std::endl;
       AMESOS_CHK_ERR(-1);
     }
 
@@ -497,28 +497,28 @@ void Amesos_Pardiso::PrintStatus() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
-  string p = "Amesos_Pardiso : ";
+  std::string p = "Amesos_Pardiso : ";
   PrintLine();
 
   int n = Matrix().NumGlobalRows();
   int nnz = Matrix().NumGlobalNonzeros();
 
-  cout << p << "Matrix has " << n << " rows"
-       << " and " << nnz << " nonzeros" << endl;
-  cout << p << "Nonzero elements per row       = "
-       << 1.0 *  nnz / n << endl;
-  cout << p << "Percentage of nonzero elements = "
-       << 100.0 * nnz /(pow(n,2.0)) << endl;
-  cout << p << "Use transpose                  = " << UseTranspose_ << endl;
-  cout << p << "Number of performed iterative ref. steps = " << IPARM(9) << endl;
-  cout << p << "Peak memory symbolic factorization       = " << IPARM(15) << endl;
-  cout << p << "Permanent memory symbolic factorization  = " << IPARM(16) << endl;
-  cout << p << "Memory numerical fact. and solution      = " << IPARM(17) << endl;
-  cout << p << "Number of nonzeros in factors            = " << IPARM(18) << endl;
-  cout << p << "MFlops of factorization                  = " << IPARM(19) << endl;
-  cout << p << "CG/CGS diagnostic                        = " << IPARM(20) << endl;
-  cout << p << "Inertia: Number of positive eigenvalues  = " << IPARM(22) << endl;
-  cout << p << "Inertia: Number of negative eigenvalues  = " << IPARM(23) << endl;
+  std::cout << p << "Matrix has " << n << " rows"
+       << " and " << nnz << " nonzeros" << std::endl;
+  std::cout << p << "Nonzero elements per row       = "
+       << 1.0 *  nnz / n << std::endl;
+  std::cout << p << "Percentage of nonzero elements = "
+       << 100.0 * nnz /(pow(n,2.0)) << std::endl;
+  std::cout << p << "Use transpose                  = " << UseTranspose_ << std::endl;
+  std::cout << p << "Number of performed iterative ref. steps = " << IPARM(9) << std::endl;
+  std::cout << p << "Peak memory symbolic factorization       = " << IPARM(15) << std::endl;
+  std::cout << p << "Permanent memory symbolic factorization  = " << IPARM(16) << std::endl;
+  std::cout << p << "Memory numerical fact. and solution      = " << IPARM(17) << std::endl;
+  std::cout << p << "Number of nonzeros in factors            = " << IPARM(18) << std::endl;
+  std::cout << p << "MFlops of factorization                  = " << IPARM(19) << std::endl;
+  std::cout << p << "CG/CGS diagnostic                        = " << IPARM(20) << std::endl;
+  std::cout << p << "Inertia: Number of positive eigenvalues  = " << IPARM(22) << std::endl;
+  std::cout << p << "Inertia: Number of negative eigenvalues  = " << IPARM(23) << std::endl;
 
   PrintLine();
 
@@ -547,27 +547,27 @@ void Amesos_Pardiso::PrintTiming() const
   if (NumSolve_)
     SolTime /= NumSolve_;
 
-  string p = "Amesos_Pardiso : ";
+  std::string p = "Amesos_Pardiso : ";
   PrintLine();
 
-  cout << p << "Time to convert matrix to Pardiso format = "
-       << ConTime << " (s)" << endl;
-  cout << p << "Time to redistribute matrix = "
-       << MatTime << " (s)" << endl;
-  cout << p << "Time to redistribute vectors = "
-       << VecTime << " (s)" << endl;
-  cout << p << "Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
-  cout << p << "Time for sym fact = "
-       << SymTime << " (s), avg = " << SymTime << " (s)" << endl;
-  cout << p << "Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
-  cout << p << "Time for num fact = "
-       << NumTime << " (s), avg = " << NumTime << " (s)" << endl;
-  cout << p << "Number of solve phases = "
-       << NumSolve_ << endl;
-  cout << p << "Time for solve = "
-       << SolTime << " (s), avg = " << SolTime << " (s)" << endl;
+  std::cout << p << "Time to convert matrix to Pardiso format = "
+       << ConTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute matrix = "
+       << MatTime << " (s)" << std::endl;
+  std::cout << p << "Time to redistribute vectors = "
+       << VecTime << " (s)" << std::endl;
+  std::cout << p << "Number of symbolic factorizations = "
+       << NumSymbolicFact_ << std::endl;
+  std::cout << p << "Time for sym fact = "
+       << SymTime << " (s), avg = " << SymTime << " (s)" << std::endl;
+  std::cout << p << "Number of numeric factorizations = "
+       << NumNumericFact_ << std::endl;
+  std::cout << p << "Time for num fact = "
+       << NumTime << " (s), avg = " << NumTime << " (s)" << std::endl;
+  std::cout << p << "Number of solve phases = "
+       << NumSolve_ << std::endl;
+  std::cout << p << "Time for solve = "
+       << SolTime << " (s), avg = " << SolTime << " (s)" << std::endl;
 
   PrintLine();
 
@@ -580,31 +580,31 @@ int Amesos_Pardiso::CheckError(const int error) const
   if (!error)
     return 0;
   
-  cerr << "Amesos: PARDISO returned error code " << error << endl;
-  cerr << "Amesos: Related message from manual is:" << endl;
+  std::cerr << "Amesos: PARDISO returned error code " << error << std::endl;
+  std::cerr << "Amesos: Related message from manual is:" << std::endl;
 
   switch(error)
   {
   case -1:
-    cerr << "Input inconsistent" << endl;
+    std::cerr << "Input inconsistent" << std::endl;
     break;
   case -2:
-    cerr << "Not enough memory" << endl;
+    std::cerr << "Not enough memory" << std::endl;
     break;
   case -3:
-    cerr << "Reordering problems" << endl;
+    std::cerr << "Reordering problems" << std::endl;
     break;
   case -4:
-    cerr << "Zero pivot, numerical fact. or iterative refinement problem. " << endl;
+    std::cerr << "Zero pivot, numerical fact. or iterative refinement problem. " << std::endl;
     break;
   case -5:
-    cerr << "Unclassified (internal) error" << endl;
+    std::cerr << "Unclassified (internal) error" << std::endl;
     break;
   case -6:
-    cerr << "Preordering failed (matrix types 11, 13 only)" << endl;
+    std::cerr << "Preordering failed (matrix types 11, 13 only)" << std::endl;
     break;
   case -7:
-    cerr << "Diagonal matrix problem." << endl;
+    std::cerr << "Diagonal matrix problem." << std::endl;
     break;
   }
 
