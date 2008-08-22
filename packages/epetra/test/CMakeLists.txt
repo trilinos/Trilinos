@@ -14,18 +14,18 @@ ENDIF(TRILINOS_ENABLE_MPI)
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockMap ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
 
 TRILINOS_ADD_EXECUTABLE(
-  BlockMap-test 
+  BlockMap_test 
   COMM mpi  
   SOURCES cxx_main.cpp checkmap.cpp
   DIRECTORY BlockMap
   )
 TRILINOS_ADD_TEST(
-  BlockMap-test
+  BlockMap_test
   DIRECTORY BlockMap
-  NAME BlockMap-test
+  NAME BlockMap_test
   ARGS -v
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
@@ -33,147 +33,147 @@ TRILINOS_ADD_TEST(
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(BasicPerfTest TEST INSTALL SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v)
 
 TRILINOS_ADD_EXECUTABLE(
-  BasicPerfTest-test 
+  BasicPerfTest_test 
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY BasicPerfTest
   )
 TRILINOS_ADD_TEST(
-  BasicPerfTest-test
+  BasicPerfTest_test
   DIRECTORY BasicPerfTest
-  NAME BasicPerfTest-test
+  NAME BasicPerfTest_test
   ARGS "16 12 1 1 25 -v"
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(Comm ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  Comm-test 
+  Comm_test 
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY Comm
   )
 TRILINOS_ADD_TEST(
-  Comm-test
+  Comm_test
   DIRECTORY Comm
-  NAME Comm-test
+  NAME Comm_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(CrsGraph ${TEST_ARGUMENTS}  SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  CrsGraph-test 
+  CrsGraph_test 
   COMM mpi  
   SOURCES cxx_main.cpp 
   DIRECTORY CrsGraph
   )
 TRILINOS_ADD_TEST(
-  CrsGraph-test
+  CrsGraph_test
   DIRECTORY CrsGraph
   KEYWORDS unit
-  NAME CrsGraph-test
+  NAME CrsGraph_test
   ARGS -v
   COMM mpi
   
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  CrsMatrix-test 
+  CrsMatrix_test 
   COMM serial mpi
   SOURCES cxx_main.cpp 
   DIRECTORY CrsMatrix
   )
 TRILINOS_ADD_TEST(
-  CrsMatrix-test
+  CrsMatrix_test
   DIRECTORY CrsMatrix
   COMM serial mpi
   NUM_MPI_PROCS 1-20
-  NAME CrsMatrix-test
+  NAME CrsMatrix_test
   ARGS -v
   PASS_REGULAR_EXPRESSION "tests PASSED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(RowMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  RowMatrix-test 
+  RowMatrix_test 
   COMM mpi   
   SOURCES cxx_main.cpp
   DIRECTORY RowMatrix
   )
 TRILINOS_ADD_TEST(
-  RowMatrix-test
+  RowMatrix_test
   DIRECTORY RowMatrix
-  NAME RowMatrix-test
+  NAME RowMatrix_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(CrsRectMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  CrsRectMatrix-test 
+  CrsRectMatrix_test 
   COMM mpi   
   SOURCES cxx_main.cpp
   DIRECTORY CrsRectMatrix
   )
 TRILINOS_ADD_TEST(
-  CrsRectMatrix-test
+  CrsRectMatrix_test
   DIRECTORY CrsRectMatrix
-  NAME CrsRectMatrix-test
+  NAME CrsRectMatrix_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(Directory ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  Directory-test 
+  Directory_test 
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY Directory
   )
 TRILINOS_ADD_TEST(
-  Directory-test
+  Directory_test
   DIRECTORY Directory
-  NAME Directory-test
+  NAME Directory_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(FECrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  FECrsGraph-test 
+  FECrsGraph_test 
   COMM mpi   
   SOURCES cxx_main.cpp ExecuteTestProblems.cpp
   DIRECTORY FECrsGraph
   )
 TRILINOS_ADD_TEST(
-  FECrsGraph-test
+  FECrsGraph_test
   DIRECTORY FECrsGraph
-  NAME FECrsGraph-test
+  NAME FECrsGraph_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
@@ -181,19 +181,19 @@ TRILINOS_ADD_TEST(
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(FECrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(FEVbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  FEVbrMatrix-test  
+  FEVbrMatrix_test  
   COMM mpi  
   SOURCES cxx_main.cpp ExecuteTestProblems.cpp
   DIRECTORY FEVbrMatrix
   )
 TRILINOS_ADD_TEST(
-  FEVbrMatrix-test
+  FEVbrMatrix_test
   DIRECTORY FEVbrMatrix
-  NAME FEVbrMatrix-test
+  NAME FEVbrMatrix_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 # Following test is not building on Windows
@@ -201,164 +201,164 @@ TRILINOS_ADD_TEST(
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(ImportExport ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  ImportExport-test  
+  ImportExport_test  
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY ImportExport
   )
 TRILINOS_ADD_TEST(
-  ImportExport-test
+  ImportExport_test
   DIRECTORY ImportExport
-  NAME ImportExport-test
+  NAME ImportExport_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(IntSerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  IntSerialDense-test  
+  IntSerialDense_test  
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY IntSerialDense
   )
 TRILINOS_ADD_TEST(
-  IntSerialDense-test
+  IntSerialDense_test
   DIRECTORY IntSerialDense
-  NAME IntSerialDense-test
+  NAME IntSerialDense_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(Map ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  Map-test  
+  Map_test  
   COMM mpi  
   SOURCES cxx_main.cpp checkmap.cpp
   DIRECTORY Map
   )
 TRILINOS_ADD_TEST(
-  Map-test
+  Map_test
   DIRECTORY Map
-  NAME Map-test
+  NAME Map_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 # This test was commented out in the AUTOTOOLS configuration:
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(MapColoring ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  MapColoring-test  
+  MapColoring_test  
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY MapColoring
   )
 TRILINOS_ADD_TEST(
-  MapColoring-test
+  MapColoring_test
   DIRECTORY MapColoring
-  NAME MapColoring-test
+  NAME MapColoring_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(MultiVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  MultiVector-test  
+  MultiVector_test  
   COMM mpi  
   SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp
   DIRECTORY MultiVector
   )
 TRILINOS_ADD_TEST(
-  MultiVector-test
+  MultiVector_test
   DIRECTORY MultiVector
-  NAME MultiVector-test
+  NAME MultiVector_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(Object ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  Object-test  
+  Object_test  
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY Object
   )
 TRILINOS_ADD_TEST(
-  Object-test
+  Object_test
   DIRECTORY Object
-  NAME Object-test
+  NAME Object_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
     
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(RowMatrixTransposer ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  RowMatrixTransposer-test  
+  RowMatrixTransposer_test  
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY RowMatrixTransposer
   )
 TRILINOS_ADD_TEST(
-  RowMatrixTransposer-test
+  RowMatrixTransposer_test
   DIRECTORY RowMatrixTransposer
-  NAME RowMatrixTransposer-test
+  NAME RowMatrixTransposer_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(SerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  SerialDense-test  
+  SerialDense_test  
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY SerialDense
   )
 TRILINOS_ADD_TEST(
-  SerialDense-test
+  SerialDense_test
   DIRECTORY SerialDense
-  NAME SerialDense-test
+  NAME SerialDense_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(SerialSpdDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  SerialSpdDense-test  
+  SerialSpdDense_test  
   COMM mpi  
   SOURCES cxx_main.cpp
   DIRECTORY SerialSpdDense
   )
 TRILINOS_ADD_TEST(
-  SerialSpdDense-test
+  SerialSpdDense_test
   DIRECTORY SerialSpdDense
-  NAME SerialSpdDense-test
+  NAME SerialSpdDense_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
@@ -367,18 +367,18 @@ TRILINOS_ADD_TEST(
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(Vector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
 TRILINOS_ADD_EXECUTABLE(
-  Vector-test  
+  Vector_test  
   COMM mpi  
   SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp
   DIRECTORY Vector
   )
 TRILINOS_ADD_TEST(
-  Vector-test
+  Vector_test
   DIRECTORY Vector
-  NAME Vector-test
+  NAME Vector_test
   ARGS -v
   NUM_MPI_PROCS 1
   COMM mpi
-  HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )

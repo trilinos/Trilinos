@@ -264,3 +264,7 @@ ADD_CUSTOM_TARGET(
   --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
   )
 
+ADD_CUSTOM_TARGET(
+  tests
+  DEPENDS
+)

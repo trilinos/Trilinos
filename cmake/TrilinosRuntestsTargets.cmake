@@ -3,6 +3,7 @@
 # Trilinos package to add the targets 'runtests-serial' and 'runtests-mpi'
 
 FUNCTION(TRILINOS_ADD_CUSTOM_TEST_TARGETS)
+
 ADD_CUSTOM_TARGET(
   runtests-serial-${PROJECT_DIR_NAME}
    ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
@@ -11,7 +12,7 @@ ADD_CUSTOM_TARGET(
   --build-dir=${TRILINOS_BUILD_DIR}
   --category=${TRILINOS_TEST_CATEGORY}
   --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-  --verbosity=1
+  --verbosity=3
   --packages=${PROJECT_DIR_NAME}
   )
 
@@ -26,7 +27,7 @@ ADD_CUSTOM_TARGET(
   --build-dir=${TRILINOS_BUILD_DIR}
   --category=${TRILINOS_TEST_CATEGORY}
   --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-  --verbosity=1
+  --verbosity=3
   --packages=${PROJECT_DIR_NAME}
   )
 ENDFUNCTION()

@@ -43,11 +43,11 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
   IF(MPI_EXECUTABLE)
     IF(${MPI_EXECUTABLE} MATCHES mpiexec)
       #The number of processors should not be hard coded
-      SET(MPI_EXECUTABLE_FLAGS 
-  	    -n 2
-	    CACHE STRING
-        "Flags for the MPI executable."
-      )
+      #SET(MPI_EXECUTABLE_FLAGS 
+  	    #-n 2
+	    #CACHE STRING
+        #"Flags for the MPI executable."
+      #)
       SET(MPI_NUMPROCS_FLAG 
   	    -n
 	    CACHE STRING
@@ -55,11 +55,11 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
       )
     ELSE()
       #The number of processors should not be hard coded
-      SET(MPI_EXECUTABLE_FLAGS 
-  	    -np 2
-	    CACHE STRING
-        "Flags for the MPI executable."
-      )
+      #SET(MPI_EXECUTABLE_FLAGS 
+  	    #-np 2
+	    #CACHE STRING
+        #"Flags for the MPI executable."
+      #)
       SET(MPI_NUMPROCS_FLAG 
   	    -np
 	    CACHE STRING
@@ -79,7 +79,7 @@ IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
     # parameters and significant terminal whitespace (e.g. 'mpiexec -np ' and
     # 'yod -sz')
 
-    SET(TRILINOS_MPI_GO ${MPI_EXECUTABLE} ${MPI_NUMPROCS_FLAG})
+    SET(TRILINOS_MPI_GO ${MPI_EXECUTABLE} ${MPI_NUMPROCS_FLAG} " ")
 
 
   ENDIF(MPI_EXECUTABLE)
