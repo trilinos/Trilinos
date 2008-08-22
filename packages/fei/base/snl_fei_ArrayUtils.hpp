@@ -186,6 +186,18 @@ namespace snl_fei {
       }
     }
 
+  /** Binary search of an std::vector that's assumed to be sorted.
+   */
+  template<typename T>
+    int binarySearch(const T& item, const std::vector<T>& list, int& insertPoint)
+    {
+      if (list.size() == 0) {
+        insertPoint = 0;
+        return(-1);
+      }
+      return( binarySearch(item, &list[0], list.size(), insertPoint) );
+    }
+
   /** Binary search of an feiArray that's assumed to be sorted.
    */
   template<typename T>
@@ -200,6 +212,15 @@ namespace snl_fei {
     int binarySearch(const T& item, const feiArray<T>& list)
     {
       return( binarySearch(item, list.dataPtr(), list.length()) );
+    }
+
+  /** Binary search of an std::vector that's assumed to be sorted.
+   */
+  template<typename T>
+    int binarySearch(const T& item, const std::vector<T>& list)
+    {
+      if (list.size() == 0) return(-1);
+      return( binarySearch(item, &list[0], list.size()) );
     }
 
   /** Perform a binary search but limit the search to a given range.

@@ -37,8 +37,8 @@ VectorReducer::VectorReducer(fei::SharedPtr<fei::Reducer> reducer,
 
   fei::SharedPtr<fei::VectorSpace> vecspace = target->getVectorSpace();
   int numEqns = vecspace->getNumIndices_SharedAndOwned();
-  std::vector<int> eqns(numEqns);
-  vecspace->getIndices_SharedAndOwned(numEqns, &eqns[0], numEqns);
+  std::vector<int> eqns;
+  vecspace->getIndices_SharedAndOwned(eqns);
 
   std::vector<int> overlap;
   for(int i=0; i<numEqns; ++i) {

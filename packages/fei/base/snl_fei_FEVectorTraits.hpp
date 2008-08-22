@@ -27,24 +27,24 @@ namespace snl_fei {
 
     /** Reset (zero) the vector.
      */
-    static int reset(T* vec)
+    static int reset(T* /*vec*/)
       { return(-1); }
 
     /** Sum an element-vector contribution into the vector object */
-    static int sumInElemVector(T* vec,
-			       int elemBlockID,
-			       int elemID,
-			       int numNodes,
-			       const int* nodeNumbers,
-			       const int* dofPerNode,
-			       const double* coefs)
+    static int sumInElemVector(T* /*vec*/,
+			       int /*elemBlockID*/,
+			       int /*elemID*/,
+			       int /*numNodes*/,
+			       const int* /*nodeNumbers*/,
+			       const int* /*dofPerNode*/,
+			       const double* /*coefs*/)
       { return(-1); }
 
     /** Copy data out of the vector object */
-    static int copyOut(T* vec,
-		       int nodeNumber,
-		       int dofOffset,
-		       double& value)
+    static int copyOut(T* /*vec*/,
+		       int /*nodeNumber*/,
+		       int /*dofOffset*/,
+		       double& /*value*/)
       { return( -1 ); }
 
   };//struct FEVectorTraits

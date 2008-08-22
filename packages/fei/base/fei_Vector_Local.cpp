@@ -23,8 +23,8 @@ Vector_Local::Vector_Local(fei::SharedPtr<fei::VectorSpace> vecSpace)
   int numCoefs = vecSpace_->getNumIndices_SharedAndOwned();
   coefs_.resize(numCoefs);
 
-  std::vector<int> indices(numCoefs);
-  vecSpace_->getIndices_SharedAndOwned(numCoefs, &indices[0], numCoefs);
+  std::vector<int> indices;
+  vecSpace_->getIndices_SharedAndOwned(indices);
 
   std::sort(indices.begin(), indices.end());
 
@@ -57,7 +57,7 @@ Vector_Local::gatherFromOverlap(bool accumulate)
 int
 Vector_Local::putScalar(double scalar)
 {
-  for(unsigned i=0; i<coefs_.size(); ++i) coefs_[i] = scalar;
+  for(size_t i=0; i<coefs_.size(); ++i) coefs_[i] = scalar;
   return(0);
 }
 

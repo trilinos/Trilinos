@@ -194,8 +194,8 @@ int fei::Lookup_Impl::buildDatabases()
     int idx = snl_fei::binarySearch(nodeIDType_, vspace_->sharedIDTypes_);
     if (idx < 0) ERReturn(-1);
 
-    if (vspace_->ownerPatterns_.length() > idx &&
-	vspace_->sharerPatterns_.length() > idx) {
+    if ((int)vspace_->ownerPatterns_.size() > idx &&
+	(int)vspace_->sharerPatterns_.size() > idx) {
       subdmsghndlr.setSendPattern(vspace_->ownerPatterns_[idx]);
       subdmsghndlr.setRecvPattern(vspace_->sharerPatterns_[idx]);
       CHK_ERR( commUtils->exchange(&subdmsghndlr) );
@@ -205,7 +205,7 @@ int fei::Lookup_Impl::buildDatabases()
     //list of processors that have that ID in their local subdomain.
     //So what we'll do next is run through the list of IDs in subdomainIDs and
     //for each ID, store the corresponding node-number in a database together
-    //with a pointer to a list (feiArray) of the subdomain-processors.
+    //with a pointer to a list (vector) of the subdomain-processors.
   }
   else {
     subdomainIDs = sharedIDs;

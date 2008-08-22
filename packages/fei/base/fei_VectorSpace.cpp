@@ -138,13 +138,13 @@ fei::VectorSpace::Factory::createVectorSpace(MPI_Comm comm,
 fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
   : fieldMasks_(),
     intCommUtils_(),
-    idTypes_(0, 1),
+    idTypes_(),
     fieldDatabase_(),
-    recordCollections_(0, 1),
-    sharedIDTypes_(0, 1),
-    sharedIDTables_(0, 1),
-    ownerPatterns_(0, 1),
-    sharerPatterns_(0, 1),
+    recordCollections_(),
+    sharedIDTypes_(),
+    sharedIDTables_(),
+    ownerPatterns_(),
+    sharerPatterns_(),
     sharedRecordsSynchronized_(false),
     ptBlkMap_(NULL),
     globalOffsets_(),
@@ -179,20 +179,20 @@ fei::VectorSpace::~VectorSpace()
   int i, len = fieldMasks_.size();
   for(i=0; i<len; ++i) delete fieldMasks_[i];
 
-  len = recordCollections_.length();
+  len = recordCollections_.size();
   for(i=0; i<len; ++i) delete recordCollections_[i];
 
-  len = sharedIDTypes_.length();
+  len = sharedIDTypes_.size();
   for(i=0; i<len; ++i) {
     delete sharedIDTables_[i];
   }
 
-  len = ownerPatterns_.length();
+  len = ownerPatterns_.size();
   for(i=0; i<len; ++i) {
     delete ownerPatterns_[i];
   }
 
-  len = sharerPatterns_.length();
+  len = sharerPatterns_.size();
   for(i=0; i<len; ++i) {
     delete sharerPatterns_[i];
   }
@@ -285,7 +285,7 @@ void fei::VectorSpace::defineIDTypes(int numIDTypes,
     int offset = snl_fei::sortedListInsert(idTypes[i], idTypes_);
 
     if (offset >= 0) {
-      recordCollections_.insert(new snl_fei::RecordCollection(localProc), offset);
+      recordCollections_.insert(recordCollections_.begin()+offset, new snl_fei::RecordCollection(localProc));
     }
   }
 }
@@ -550,7 +550,7 @@ int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
     fieldMasks_[i] = new fei::FieldMask(*(inputSpace->fieldMasks_[i]));
   }
 
-  len = inputSpace->recordCollections_.length();
+  len = inputSpace->recordCollections_.size();
   recordCollections_.resize(len);
   for(i=0; i<len; ++i) {
     recordCollections_[i] =
@@ -559,7 +559,7 @@ int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
 
   sharedIDTypes_ = inputSpace->sharedIDTypes_;
 
-  len = inputSpace->sharedIDTables_.length();
+  len = inputSpace->sharedIDTables_.size();
   sharedIDTables_.resize(len);
   for(i=0; i<len; ++i) {
     sharedIDTables_[i] = new fei::SharedIDs(*(inputSpace->sharedIDTables_[i]));
@@ -578,11 +578,11 @@ int fei::VectorSpace::getSharedIDs_private(int idType,
   int insertPoint = -1;
   int idx = snl_fei::binarySearch(idType, sharedIDTypes_, insertPoint);
   if (idx < 0) {
-    sharedIDTypes_.insert(idType, insertPoint);
+    sharedIDTypes_.insert(sharedIDTypes_.begin()+insertPoint, idType);
 
     shIDs = new fei::SharedIDs;
 
-    sharedIDTables_.insert(shIDs, insertPoint);
+    sharedIDTables_.insert(sharedIDTables_.begin()+insertPoint, shIDs);
   }
   else shIDs = sharedIDTables_[idx];
 
@@ -995,22 +995,16 @@ void fei::VectorSpace::getFields(std::vector<int>& fieldIDs)
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getNumIDTypes()
+size_t fei::VectorSpace::getNumIDTypes()
 {
-  return(idTypes_.length());
+  return(idTypes_.size());
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getIDTypes(int len, int* idTypes, int& numIDTypes)
+void fei::VectorSpace::getIDTypes(std::vector<int>& idTypes) const
 {
-  numIDTypes = idTypes_.length();
-  int num = len;
-  if (num > numIDTypes) num = numIDTypes;
-
-  int* idtPtr = idTypes_.dataPtr();
-  for(int i=0; i<num; ++i) idTypes[i] = idtPtr[i];
-
-  return(0);
+  size_t numIDTypes = idTypes_.size();
+  for(size_t i=0; i<numIDTypes; ++i) idTypes[i] = idTypes_[i];
 }
 
 //----------------------------------------------------------------------------
@@ -1270,20 +1264,18 @@ int fei::VectorSpace::getNumIndices_SharedAndOwned() const
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getIndices_SharedAndOwned(int lenIndices,
-						int* globalIndices,
-						int& numIndices) const
+int fei::VectorSpace::getIndices_SharedAndOwned(std::vector<int>& globalIndices) const
 {
   if (eqnNumbers_.size() == 0) {
-    numIndices = 0;
+    globalIndices.resize(0);
     return(0);
   }
 
-  numIndices = eqnNumbers_.size();
+  size_t numIndices = eqnNumbers_.size();
   const int* indicesPtr = &eqnNumbers_[0];
 
-  int len = numIndices > lenIndices ? lenIndices : numIndices;
-  for(int i=0; i<len; ++i) {
+  globalIndices.resize(numIndices);
+  for(size_t i=0; i<numIndices; ++i) {
     globalIndices[i] = indicesPtr[i];
   }
 
@@ -1294,7 +1286,7 @@ int fei::VectorSpace::getIndices_SharedAndOwned(int lenIndices,
 int fei::VectorSpace::getNumBlkIndices_SharedAndOwned(int& numBlkIndices) const
 {
   numBlkIndices = 0;
-  for(int i=0; i<recordCollections_.length(); ++i) {
+  for(size_t i=0; i<recordCollections_.size(); ++i) {
     numBlkIndices += recordCollections_[i]->getNumRecords();
   }
 
@@ -1426,9 +1418,9 @@ int fei::VectorSpace::setOwners_lowestSharing()
 {
   //first, add localProc to each of the sharing-proc lists, in case it wasn't
   //included via initSharedIDs().
-  int i, localProc = intCommUtils_->localProc();
+  int localProc = intCommUtils_->localProc();
 
-  for(i=0; i<sharedIDTables_.length(); ++i) {
+  for(size_t i=0; i<sharedIDTables_.size(); ++i) {
     fei::SharedIDs::table_type& shid_table = sharedIDTables_[i]->getSharedIDs();
 
     fei::SharedIDs::table_type::iterator
@@ -1444,7 +1436,7 @@ int fei::VectorSpace::setOwners_lowestSharing()
   //now set the owningProcs for the SharedIDs records, and the owning procs on
   //the appropriate records in the recordCollections. Set the owner to be the
   //lowest-numbered sharing proc in all cases.
-  for(i=0; i<sharedIDTypes_.length(); ++i) {
+  for(size_t i=0; i<sharedIDTypes_.size(); ++i) {
     fei::SharedIDs::table_type& shid_table = sharedIDTables_[i]->getSharedIDs();
 
     std::vector<int>& owningProcs = sharedIDTables_[i]->getOwningProcs();
@@ -1552,7 +1544,7 @@ int fei::VectorSpace::synchronizeSharedRecords()
 
   int numProcs = intCommUtils_->numProcs();
   int localProc = intCommUtils_->localProc();
-  int numShTables = sharedIDTypes_.length();
+  int numShTables = sharedIDTypes_.size();
 
   if (numProcs < 2) {
     sharedRecordsSynchronized_ = true;
@@ -1596,12 +1588,12 @@ int fei::VectorSpace::synchronizeSharedRecords()
     //processors to lists of ids that are owned locally.
     fei::comm_map* ownerPattern = new fei::comm_map(1, numProcs);
 
-    ownerPatterns_.append(ownerPattern);
+    ownerPatterns_.push_back(ownerPattern);
 
     fei::comm_map* sharerPattern = 
             new fei::comm_map(1, numProcs);
 
-    sharerPatterns_.append(sharerPattern);
+    sharerPatterns_.push_back(sharerPattern);
 
     std::vector<int>& owningProcs = shared->getOwningProcs();
 
@@ -1718,8 +1710,8 @@ int fei::VectorSpace::synchronizeSharedRecords()
 //----------------------------------------------------------------------------
 int fei::VectorSpace::exchangeGlobalIndices()
 {
-  int numShTables = sharedIDTypes_.length();
-  for(int i=0; i<numShTables; ++i) {
+  size_t numShTables = sharedIDTypes_.size();
+  for(size_t i=0; i<numShTables; ++i) {
     int idx = snl_fei::binarySearch(sharedIDTypes_[i], idTypes_);
     if (idx < 0) ERReturn(-1);
 
@@ -1739,7 +1731,7 @@ int fei::VectorSpace::exchangeGlobalIndices()
 //----------------------------------------------------------------------------
 int fei::VectorSpace::runRecords(fei::Record_Operator& record_op)
 {
-  for(int rec=0; rec<recordCollections_.length(); ++rec) {
+  for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
 
     snl_fei::RecordCollection::map_type& rmap = records->getRecords();
@@ -1801,7 +1793,7 @@ int fei::VectorSpace::setLocalEqnNumbers()
   int eqnNumberOffset = 0;
   int maxNumDOF = 0;
 
-  for(int rec=0; rec<recordCollections_.length(); ++rec) {
+  for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
 
     snl_fei::RecordCollection::map_type& rmap = records->getRecords();

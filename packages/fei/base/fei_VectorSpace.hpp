@@ -12,7 +12,6 @@
 #include <fei_macros.hpp>
 #include <fei_fwd.hpp>
 #include <snl_fei_CommUtils.hpp>
-#include <feiArray.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_Logger.hpp>
 #include <fei_utils.hpp>
@@ -422,8 +421,7 @@ namespace fei {
     /** Given a particular identifier, request the number of fields that are
 	associated with that identifier.
     */
-    int getNumFields(int idType,
-		     int ID);
+    int getNumFields(int idType, int ID);
 
     /** Given a particular identifier, request the list of fields that are
 	associated with that identifier.
@@ -440,20 +438,14 @@ namespace fei {
 
     /** Query for the number of identifier-types defined for this vector-space.
      */
-    int getNumIDTypes();
+    size_t getNumIDTypes();
 
     /** Query for the list of identifier-types defined for this vector-space.
 
-	@param len Input, length of the user-allocated list 'idTypes'.
-	@param idTypes Input/Output, user-allocated list, on exit contents will
-	contain id-types that are defined for this vector-space.
-	@param numIDTypes Output, number of id-types that are defined for this
-	vector-space. If numIDTypes is less than user-provided 'len', then only
-	'numIDTypes' positions in 'idTypes' are referenced. If numIDTypes is
-	greater than user-provided len, then 'idTypes' is filled with the first
-	'len' id-types that are defined for this vector-space.
+	@param idTypes Output, on exit contents will contain id-types that are
+         defined for this vector-space.
      */
-    int getIDTypes(int len, int* idTypes, int& numIDTypes);
+    void getIDTypes(std::vector<int>& idTypes) const;
 
     /** Request the number of partitions. (For MPI implementations, partitions
 	is a synonym for processes.) The main purpose of this function is to
@@ -553,16 +545,10 @@ namespace fei {
         are locally owned as well as shared-but-not-owned. Only available
         after initComplete has been called.
 
-	@param lenIndices Input. Length of user-allocated 'globalIndices' list.
-	@param globalIndices User-allocated list. On output, will contain all
+	@param globalIndices On output, will contain all
 	indices owned or shared by local processor.
-	@param numIndices Output. Number of indices. If 'numIndices' is
-            different than 'lenIndices', then globalIndices will contain
-	'min(lenIndices, numIndices)' of the local processor's indices.
     */
-    int getIndices_SharedAndOwned(int lenIndices,
-				  int* globalIndices,
-				  int& numIndices) const;
+    int getIndices_SharedAndOwned(std::vector<int>& globalIndices) const;
 
     /** Query number of block indices on local processor, including ones that
         are locally owned as well as shared-but-not-owned. Only available after
@@ -731,15 +717,15 @@ namespace fei {
   private:
     fei::SharedPtr<snl_fei::CommUtils<int> > intCommUtils_;
 
-    feiArray<int> idTypes_;
+    std::vector<int> idTypes_;
     std::map<int,unsigned> fieldDatabase_;
     int maxFieldSize_;
-    feiArray<snl_fei::RecordCollection*> recordCollections_;
+    std::vector<snl_fei::RecordCollection*> recordCollections_;
 
-    feiArray<int> sharedIDTypes_;
-    feiArray<fei::SharedIDs*> sharedIDTables_;
-    feiArray<fei::comm_map*> ownerPatterns_;
-    feiArray<fei::comm_map*> sharerPatterns_;
+    std::vector<int> sharedIDTypes_;
+    std::vector<fei::SharedIDs*> sharedIDTables_;
+    std::vector<fei::comm_map*> ownerPatterns_;
+    std::vector<fei::comm_map*> sharerPatterns_;
 
     bool sharedRecordsSynchronized_;
 

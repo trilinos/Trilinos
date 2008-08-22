@@ -55,14 +55,12 @@ namespace snl_fei {
 	debug-output logs, etc. Does not need to exactly correspond to the type,
 	but should be descriptive.
       */
-      static const char* typeName()
-      { return("unsupported"); }
+      static const char* typeName();
 
       /** Set a specified scalar value throughout the vector.
        */
       static int setValues(T* vec, int firstLocalOffset,
-			   double scalar, bool isSolnVector=false)
-      { return(-1); }
+			   double scalar, bool isSolnVector=false);
 
       /** Put values into the vector.
           If the 'sum_into' argument is true, then values are added to any
@@ -78,8 +76,7 @@ namespace snl_fei {
                              const double* values,
                              bool sum_into,
                              bool isSolnVector=false,
-                             int vectorIndex=0)
-      { return(-1); }
+                             int vectorIndex=0);
 
       /** Copy values for the specified indices out into the user-allocated
 	  array 'values'.
@@ -87,32 +84,28 @@ namespace snl_fei {
       static int copyOut(T* vec, int firstLocalOffset,
 			 int numValues, const int* indices, double* values,
 			 bool isSolnVector=false,
-			 int vectorIndex=0)
-      { return(-1); }
+			 int vectorIndex=0);
 
       /** Get a pointer to the vector object's local coefficients array.
           Vector objects that can't support this can return NULL.
       */
       static double* getLocalCoefsPtr(T* vec,
                                       bool isSolnVector=false,
-                                      int vectorIndex=0)
-      { return(NULL); }
+                                      int vectorIndex=0);
 
       /** Update vec = b*vec + a*x
        */
       static int update(T* vec,
 			double a,
 			T* x,
-			double b)
-      { return(-1); }
+			double b);
 
       /** Perform global communication or whatever operations may be
          necessary to complete the assembly of the vector. Most vector
          objects will do nothing here. Vectors such as the
          Epetra_FEVector object may do some operations here.
       */
-      static int globalAssemble(T* vec)
-      { return(0); }
+      static int globalAssemble(T* vec);
 
     };//struct VectorTraits
 }//namespace snl_fei

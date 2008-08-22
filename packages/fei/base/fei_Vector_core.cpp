@@ -88,11 +88,10 @@ void fei::Vector_core::setOverlap(int numRemoteEqns,
     }
   }
   else {
-    int numEqns = vecSpace_->getNumIndices_SharedAndOwned();
-    std::vector<int> eqns(numEqns);
-    vecSpace_->getIndices_SharedAndOwned(numEqns, &eqns[0], numEqns);
+    std::vector<int> eqns;
+    vecSpace_->getIndices_SharedAndOwned(eqns);
 
-    for(int i=0; i<numEqns; ++i) {
+    for(size_t i=0; i<eqns.size(); ++i) {
       int proc = eqnComm_->getOwnerProc(eqns[i]);
       if (proc == localProc) continue;
 
