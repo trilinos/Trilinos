@@ -44,7 +44,7 @@
  * only if mode <= 0 (in which case the numerical values are ignored).
  */
 
-// This file should make the long int version of CHOLMOD
+/* This file should make the long int version of CHOLMOD */
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"

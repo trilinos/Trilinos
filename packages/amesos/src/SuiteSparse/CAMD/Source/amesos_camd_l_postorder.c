@@ -11,7 +11,7 @@
 
 /* Perform a postordering (via depth-first search) of an assembly tree. */
 
-// This file should make the long int version of CAMD
+/* This file should make the long int version of CAMD */
 #define DLONG 1
 
 #include "amesos_camd_internal.h"

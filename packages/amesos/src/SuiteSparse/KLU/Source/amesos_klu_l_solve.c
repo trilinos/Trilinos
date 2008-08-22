@@ -9,7 +9,7 @@
  * Numeric->Iwork).
  */
 
-// This file should make the long int version of KLU
+/* This file should make the long int version of KLU */
 #define DLONG 1
 
 #include "amesos_klu_internal.h"

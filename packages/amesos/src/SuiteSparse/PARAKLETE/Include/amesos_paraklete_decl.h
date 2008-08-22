@@ -629,4 +629,4 @@ extern Int my_tries ;
 
 #endif
 
-#endif // AMESOS_PARAKLETE_DECL_H
+#endif /* AMESOS_PARAKLETE_DECL_H */

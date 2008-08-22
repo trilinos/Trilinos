@@ -38,7 +38,7 @@
  * can generate a pattern-only output sparse matrix.
  */
 
-// This file should make the long int version of CHOLMOD
+/* This file should make the long int version of CHOLMOD */
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"

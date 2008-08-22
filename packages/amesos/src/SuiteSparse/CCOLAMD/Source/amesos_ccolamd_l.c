@@ -607,7 +607,7 @@
 #define NDEBUG
 #endif
 
-// This file should make the long int version of CCOLAMD
+/* This file should make the long int version of CCOLAMD */
 #define DLONG 1
 
 /* turn on debugging by uncommenting the following line

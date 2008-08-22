@@ -113,7 +113,7 @@
  * not modified.  F can still be properly free'd with cholmod_free_sparse.
  */
 
-// This file should make the long int version of CHOLMOD
+/* This file should make the long int version of CHOLMOD */
 #define DLONG 1
 
 #include "amesos_cholmod_internal.h"
