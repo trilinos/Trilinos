@@ -260,8 +260,21 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     SerialBextract_ = rcp (new Epetra_MultiVector(*SerialMap_,NumVectors_));
 
     ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->RowMatrixRowMap() ) );
+
     if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-9);
 
+    // Build the vector data import/export once and only once
+    if(StdIndexMatrix_->RowMatrixRowMap().SameAs(StdIndexMatrix_->OperatorRangeMap()))
+      ImportRangeToSerial_=ImportToSerial_;
+    else
+      ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->OperatorRangeMap() ) );
+
+    if(StdIndexMatrix_->RowMatrixRowMap().SameAs(StdIndexMatrix_->OperatorDomainMap()))
+      ImportDomainToSerial_=ImportToSerial_;
+    else
+      ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->OperatorDomainMap() ) );
+
+    
     SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) ) ;
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
   }
@@ -737,7 +750,7 @@ int Amesos_Klu::Solve()
       if (NumVectors_ != vecB->NumVectors())
 	AMESOS_CHK_ERR(-1); // internal error 
       
-      ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecB->Map() ) );
+      //      ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecB->Map() ) );
       if ( SerialBextract_->Import(*vecB,*ImportRangeToSerial_,Insert) )
 	AMESOS_CHK_ERR( -1 ) ; // internal error
       
@@ -785,7 +798,7 @@ int Amesos_Klu::Solve()
     ResetTimer(1);
     
     if (UseDataInPlace_ == 0) {
-      ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
+      //      ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
       vecX->Export( *SerialX_, *ImportDomainToSerial_, Insert ) ;
       
     } // otherwise we are already in place.
