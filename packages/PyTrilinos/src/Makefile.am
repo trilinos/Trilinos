@@ -55,6 +55,8 @@ EXTRA_DIST = Amesos.i                             \
 	     Epetra_RowMatrix_Utils.i             \
 	     Epetra_SerialDense.i                 \
 	     Epetra_Vectors.i                     \
+             FILEstream.cpp                       \
+             FILEstream.h                         \
 	     Galeri.i                             \
 	     IFPACK.i                             \
 	     Komplex.i                            \

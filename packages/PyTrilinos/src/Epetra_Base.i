@@ -31,6 +31,7 @@
 %{
 // PyTrilinos includes
 #include "PythonException.h"
+#include "FILEstream.h"
 
 // Epetra includes
 #include "Epetra_Version.h"
@@ -46,9 +47,6 @@
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
 #include "Epetra_MapColoring.h"
-
-// Teuchos include
-#include "Teuchos_FILEstream.hpp"
 
 // Epetra python exception
 static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NULL);
@@ -332,9 +330,10 @@ or it will hang your code."
       else
       {
 	std::FILE * f = PyFile_AsFile(pf);
-	Teuchos::FILEstream buffer(f);
+	FILEstream buffer(f);
 	std::ostream os(&buffer);
 	self->Print(os);
+	os.flush();
       }
     }
   }
