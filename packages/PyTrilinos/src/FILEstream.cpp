@@ -87,8 +87,6 @@ std::streambuf::int_type FILEstream::sync()
   char   *end  = beg + buffer_.size();
   size_t count = pptr() - beg;
   size_t n     = std::fwrite(beg, 1, count, fptr_);
-  std::cerr << "  fwrite() called\n";
-  std::cerr << "  n = " << n << "\n";
   setp(beg, end-1);
   if (n != count)
     return -1;
