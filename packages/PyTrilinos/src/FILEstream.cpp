@@ -41,12 +41,8 @@ FILEstream::FILEstream(FILE   *fptr,
   put_back_(std::max(put_back, size_t(1))),
   buffer_(std::max(buff_sz, put_back_) + put_back_)
 {
-  std::cerr << "Inside FILEstream::FILEstream constructor\n";
-  //std::cerr << "buffer_ at " << (unsigned int) &buffer_ << "\n";
   char *beg = &buffer_.front();
-  //std::cerr << "  beg = " << (unsigned int) &(*beg) << "\n";
   char *end = beg + buffer_.size();
-  //std::cerr << "  end = " << (unsigned int) &(*end) << "\n";
   setg(end, end, end);    // Set the get buffer
   setp(beg, end-1);       // Set the put buffer
 }
@@ -76,7 +72,6 @@ std::streambuf::int_type FILEstream::underflow()
 
 std::streambuf::int_type FILEstream::overflow(std::streambuf::int_type ch)
 {
-  std::cerr << "Inside FILEstream::overflow()\n";
   sync();
   if (ch != traits_type::eof())
   {
@@ -88,13 +83,9 @@ std::streambuf::int_type FILEstream::overflow(std::streambuf::int_type ch)
 
 std::streambuf::int_type FILEstream::sync()
 {
-  std::cerr << "Inside FILEstream::sync()\n";
   char   *beg  = &buffer_.front();
-  //std::cerr << "  beg = " << (unsigned int) &(*beg) << "\n";
   char   *end  = beg + buffer_.size();
-  //std::cerr << "  end = " << (unsigned int) &(*end) << "\n";
   size_t count = pptr() - beg;
-  //std::cerr << "  count = " << count << "\n";
   size_t n     = std::fwrite(beg, 1, count, fptr_);
   std::cerr << "  fwrite() called\n";
   std::cerr << "  n = " << n << "\n";
