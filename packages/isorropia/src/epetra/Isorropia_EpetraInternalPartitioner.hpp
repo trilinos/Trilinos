@@ -75,8 +75,10 @@ public:
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
 	      std::vector<int>& myNewElements,
-	      std::map<int,int>& exports,
-	      std::map<int,int>& imports);
+	      int& exportsSize,
+	      std::vector<int>& imports);
+// 	      std::map<int,int>& exports,
+// 	      std::map<int,int>& imports);
 
   virtual int
   color(Teuchos::ParameterList& paramlist,

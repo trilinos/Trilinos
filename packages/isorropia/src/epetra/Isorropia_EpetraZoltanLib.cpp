@@ -448,8 +448,9 @@ void ZoltanLibClass::preCheckPartition()
 int ZoltanLibClass::
 repartition(Teuchos::ParameterList& zoltanParamList,
 	    std::vector<int>& myNewElements,
-	    std::map<int,int>& exports,
-	    std::map<int,int>& imports)
+// 	    std::map<int,int>& exports,
+	    int& exportsSize,
+	    std::vector<int>& imports)
 {
   zoltanParamList_ = zoltanParamList;
 
@@ -478,32 +479,45 @@ repartition(Teuchos::ParameterList& zoltanParamList,
     return -1;
   }
 
-  //Generate New Element List
-  int numMyElements = queryObject_->RowMap().NumMyElements();
-  std::vector<int> elementList( numMyElements );
-  queryObject_->RowMap().MyGlobalElements( &elementList[0] );
+//   //Generate New Element List
+//   int numMyElements = queryObject_->RowMap().NumMyElements();
+//   std::vector<int> elementList( numMyElements );
+//   queryObject_->RowMap().MyGlobalElements( &elementList[0] );
 
-  int newNumMyElements = numMyElements - num_export ; // no num_import because we do "insert" farther in the code
-  myNewElements.resize( newNumMyElements );
+//   int newNumMyElements = numMyElements - num_export ; // no num_import because we do "insert" farther in the code
+//   myNewElements.resize( newNumMyElements );
 
+//   for( int i = 0; i < num_export; ++i ) {
+//     exports[export_global_ids[i]] = export_procs[i];
+//   }
+
+//   for( int i = 0; i < num_import; ++i ) {
+//     imports[import_global_ids[i]] = import_procs[i];
+//   }
+  exportsSize = num_export;
+  imports.clear();
+  imports.assign(import_global_ids, import_global_ids + num_import);
+
+//   for( int i = 0; i < num_import; ++i ) {
+//     imports[import_global_ids[i]] = import_procs[i];
+//   }
+
+//   //Add unmoved indices to new list
+//   int loc = 0;
+//   for( int i = 0; i < numMyElements; ++i ) {
+//     if( !exports.count( elementList[i] ) ) {
+//       myNewElements[loc++] = elementList[i];
+//     }
+//   }
+
+  myNewElements.assign(queryObject_->RowMap().NumMyElements(), queryObject_->RowMap().Comm().MyPID());
   for( int i = 0; i < num_export; ++i ) {
-    exports[export_global_ids[i]] = export_procs[i];
+    myNewElements[export_local_ids[i]] = export_to_part[i];
   }
 
-  for( int i = 0; i < num_import; ++i ) {
-    imports[import_global_ids[i]] = import_procs[i];
-  }
-
-  //Add unmoved indices to new list
-  int loc = 0;
-  for( int i = 0; i < numMyElements; ++i ) {
-    if( !exports.count( elementList[i] ) ) {
-      myNewElements[loc++] = elementList[i];
-    }
-  }
 
   //Add imports to end of list
-  myNewElements.insert(myNewElements.begin()+loc, import_global_ids, import_global_ids + num_import);
+//   myNewElements.insert(myNewElements.begin()+loc, import_global_ids, import_global_ids + num_import);
 
   //Free Zoltan Data
   zz_->LB_Free_Part(&import_global_ids, &import_local_ids,

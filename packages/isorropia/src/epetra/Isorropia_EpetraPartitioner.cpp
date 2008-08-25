@@ -281,7 +281,9 @@ compute_partitioning(bool force_repartitioning)
       lib_ = Teuchos::rcp(new InternalPartitioner(input_graph_, costs_));
   }
 
-  lib_->repartition(sublist, myNewElements_, exports_, imports_);
+//   lib_->repartition(sublist, myNewElements_, exports_, imports_);
+  lib_->repartition(sublist, myNewElements_, exportsSize_, imports_);
+  computeNumberOfProperties();
   operation_already_computed_ = true;
 }
 
@@ -325,51 +327,90 @@ void Partitioner::elemsInPartition(int partition, int* elementList, int len) con
   return (elemsWithProperty(partition, elementList, len));
 }
 
-
-  /** An internal method which fills caller-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
-  */
-void
-Partitioner::elemsWithProperty(int partition, int* elementList, int len) const
+Teuchos::RefCountPtr<Epetra_Map>
+Partitioner::createNewMap()
 {
-  int myPart = input_map_->Comm().MyPID();
+  if (!alreadyComputed()) {
+    compute_partitioning();
+  }
+
+  //Generate New Element List
+  int myPID = input_map_->Comm().MyPID();
+  int numMyElements = input_map_->NumMyElements();
+  std::vector<int> elementList( numMyElements );
+  input_map_->MyGlobalElements( &elementList[0] );
+
+  std::vector<int> myNewGID (numMyElements - exportsSize_);
+  std::vector<int>::iterator newElemsIter;
   std::vector<int>::const_iterator elemsIter;
-  unsigned int i;
 
-  if (partition != myPart) {
-    throw Isorropia::Exception("error in Epetra_Map::MyGlobalElements");
+  for (elemsIter = myNewElements_.begin(), newElemsIter= myNewGID.begin() ;
+       elemsIter != myNewElements_.end() ; elemsIter ++) {
+//     std::cout << myPID << ":" << (elemsIter-myNewElements_.begin()) << " -->" << *elemsIter << std::endl;
+    if ((*elemsIter) == myPID) {
+      (*newElemsIter) = elementList[elemsIter - myNewElements_.begin()];
+      newElemsIter ++;
+    }
   }
+  //Add imports to end of list
+  myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
+//   std::cout << "Size of new GID : " << myNewGID.size() << std::endl;
 
-  unsigned length = len;
-  if (myNewElements_.size() < length) length = myNewElements_.size();
+//   for (elemsIter = myNewGID.begin() ; elemsIter != myNewGID.end() ; elemsIter ++) {
+//     std::cout << myPID << ":" << *elemsIter << std::endl;
+//   }
 
-  // Copy from vector to array
-  std::copy(myNewElements_.begin(), myNewElements_.begin() + length, elementList);
+  Teuchos::RefCountPtr<Epetra_Map> target_map =
+    Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), &myNewGID[0], 0, input_map_->Comm()));
+
+  return(target_map);
 }
 
-const int&
-Partitioner::operator[](int myElem) const
-{
-  std::map<int,int>::const_iterator iter = exports_.find(myElem);
-  if (iter != exports_.end()) {
-    return(iter->second);
-  }
 
-  return( input_graph_->RowMap().Comm().MyPID() );
-}
+//   /** An internal method which fills caller-allocated list (of length len) with the
+//       global element ids to be located in the given partition.
 
-int
-Partitioner::numElemsWithProperty(int partition) const
-{
-  int myPart = input_map_->Comm().MyPID();
-  if (partition != myPart) {
-    throw Isorropia::Exception("Partitioner::numElemsInPartition not implemented for non-local partitions.");
-  }
+//       (Currently only implemented for the case where 'partition' is local.)
+//   */
+// void
+// Partitioner::elemsWithProperty(int partition, int* elementList, int len) const
+// {
+//   int myPart = input_map_->Comm().MyPID();
+//   std::vector<int>::const_iterator elemsIter;
+//   unsigned int i;
 
-  return(myNewElements_.size());
-}
+//   if (partition != myPart) {
+//     throw Isorropia::Exception("error in Epetra_Map::MyGlobalElements");
+//   }
+
+//   unsigned length = len;
+//   if (myNewElements_.size() < length) length = myNewElements_.size();
+
+//   // Copy from vector to array
+//   std::copy(myNewElements_.begin(), myNewElements_.begin() + length, elementList);
+// }
+
+// const int&
+// Partitioner::operator[](int myElem) const
+// {
+//   std::map<int,int>::const_iterator iter = exports_.find(myElem);
+//   if (iter != exports_.end()) {
+//     return(iter->second);
+//   }
+
+//   return( input_graph_->RowMap().Comm().MyPID() );
+// }
+
+// int
+// Partitioner::numElemsWithProperty(int partition) const
+// {
+//   int myPart = input_map_->Comm().MyPID();
+//   if (partition != myPart) {
+//     throw Isorropia::Exception("Partitioner::numElemsInPartition not implemented for non-local partitions.");
+//   }
+
+//   return(myNewElements_.size());
+// }
 
 
 } // namespace EPETRA

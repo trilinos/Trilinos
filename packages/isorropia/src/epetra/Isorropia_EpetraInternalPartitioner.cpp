@@ -113,8 +113,10 @@ int InternalPartitioner::precompute()
 int InternalPartitioner::
 repartition(Teuchos::ParameterList& paramList,
 	    std::vector<int>& myNewElements,
-	    std::map<int,int>& exports,
-	    std::map<int,int>& imports)
+	      int& exportsSize,
+	      std::vector<int>& imports)
+// 	    std::map<int,int>& exports,
+// 	    std::map<int,int>& imports)
 {
   precompute();
 
@@ -150,10 +152,15 @@ repartition(Teuchos::ParameterList& paramList,
     }
   }
 
+//   int err = Isorropia::Epetra::repartition(*input_map_,
+// 					   *weights_,
+// 					   myNewElements,
+// 					   exports, imports);
   int err = Isorropia::Epetra::repartition(*input_map_,
 					   *weights_,
 					   myNewElements,
-					   exports, imports);
+					   exportsSize, imports);
+
   if (err != 0) {
     throw Isorropia::Exception("error 2 in simple linear repartitioning");
   }

@@ -167,8 +167,8 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
    This function calls partitioner.compute_partitioning() if it has not
    already been called.
 */
-Teuchos::RefCountPtr<Epetra_Map>
-create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
+// Teuchos::RefCountPtr<Epetra_Map>
+// create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
     create and return a balanced copy of an input Epetra_CrsMatrix.
@@ -746,9 +746,12 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
 int
 repartition(const Epetra_BlockMap& input_map,
 	    const Epetra_Vector& weights,
-            std::vector<int>& myNewElements,
-            std::map<int,int>& exports,
-            std::map<int,int>& imports);
+	    std::vector<int>& myNewElements,
+	    int& exportsSize,
+	    std::vector<int>& imports);
+//             std::vector<int>& myNewElements,
+//             std::map<int,int>& exports,
+//             std::map<int,int>& imports);
 
 /**  gather_all_proc_global_offsets() is an internal Isorropia function, not
      part of the API.

@@ -239,13 +239,16 @@ public:
   */
   void elemsInPartition(int partition, int* elementList, int len) const;
 
-  void elemsWithProperty(int property,
-			 int* elementList,
-			 int len) const;
+  Teuchos::RefCountPtr<Epetra_Map> createNewMap();
 
-  const int& operator[](int myElem) const;
 
-  int numElemsWithProperty(int partition) const;
+//   void elemsWithProperty(int property,
+// 			 int* elementList,
+// 			 int len) const;
+
+//   const int& operator[](int myElem) const;
+
+//   int numElemsWithProperty(int partition) const;
 
 };//class Partitioner
 

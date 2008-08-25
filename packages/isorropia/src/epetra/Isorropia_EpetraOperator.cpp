@@ -144,7 +144,7 @@ const int& Operator::operator[](int myElem) const
 
 int Operator::numElemsWithProperty(int property) const
 {
-  if (property <= numberElemsByProperties_.size())
+  if ((unsigned) property <= numberElemsByProperties_.size())
     return numberElemsByProperties_[property];
   return (0);
 }

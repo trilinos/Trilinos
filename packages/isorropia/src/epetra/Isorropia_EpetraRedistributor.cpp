@@ -318,8 +318,7 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
   if (created_importer_) return;
 
-  target_map_ = Isorropia::Epetra::create_target_map(src_map.Comm(),
-							   *partitioner_);
+  target_map_ = partitioner_->createNewMap();
 
   importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));
 
