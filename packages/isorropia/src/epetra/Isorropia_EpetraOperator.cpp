@@ -139,7 +139,7 @@ void Operator::setParameters(const Teuchos::ParameterList& paramlist)
 
 const int& Operator::operator[](int myElem) const
 {
-  return (myNewElements_[myElem]);
+  return (properties_[myElem]);
 }
 
 int Operator::numElemsWithProperty(int property) const
@@ -155,10 +155,10 @@ Operator::elemsWithProperty(int property, int* elementList, int len) const
   int length = 0;
   std::vector<int>::const_iterator elemsIter;
 
-  for (elemsIter = myNewElements_.begin() ; (length < len) && (elemsIter != myNewElements_.end()) ;
+  for (elemsIter = properties_.begin() ; (length < len) && (elemsIter != properties_.end()) ;
        elemsIter ++) {
     if (*elemsIter == property)
-      elementList[length++] = elemsIter - myNewElements_.begin();
+      elementList[length++] = elemsIter - properties_.begin();
   }
 }
 
@@ -172,10 +172,10 @@ Operator::computeNumberOfProperties()
 
   int max = 0;
 
-  numberElemsByProperties_.assign(myNewElements_.size(), 0);
+  numberElemsByProperties_.assign(properties_.size(), 0);
 
   numberIter = numberElemsByProperties_.begin();
-  for(elemsIter = myNewElements_.begin() ; elemsIter != myNewElements_.end() ; elemsIter ++) {
+  for(elemsIter = properties_.begin() ; elemsIter != properties_.end() ; elemsIter ++) {
     int property;
     property = *elemsIter;
     if (max < property) max = property;

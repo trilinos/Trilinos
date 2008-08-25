@@ -104,7 +104,7 @@ Orderer::order(bool force_ordering)
 {
   if (alreadyComputed() && !force_ordering)
     return;
-  lib_->order(paramlist_, myNewElements_);
+  lib_->order(paramlist_, properties_);
   operation_already_computed_ = true;
 }
 

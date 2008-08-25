@@ -106,7 +106,7 @@ Colorer::color(bool force_coloring)
   std::string zoltan("ZOLTAN");
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
 
-  lib_->color(sublist, myNewElements_);
+  lib_->color(sublist, properties_);
   operation_already_computed_ = true;
   computeNumberOfProperties();
 }
@@ -121,8 +121,8 @@ Colorer::generateMapColoring()
   color(false);
   colorMap = Teuchos::rcp(new Epetra_MapColoring(*input_map_));
 
-  for(unsigned int i = 0; i < myNewElements_.size(); i++ ) {
-    (*colorMap)[i] = myNewElements_[i];
+  for(unsigned int i = 0; i < properties_.size(); i++ ) {
+    (*colorMap)[i] = properties_[i];
   }
   return (colorMap);
 }
