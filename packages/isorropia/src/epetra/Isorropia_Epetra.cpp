@@ -99,23 +99,6 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
   return(partitioner);
 }
 
-Teuchos::RefCountPtr<Epetra_Map>
-create_target_map(const Epetra_Comm& comm, Partitioner& partitioner)
-{
-  if (!partitioner.alreadyComputed()) {
-    partitioner.compute_partitioning();
-  }
-
-  int myPID = comm.MyPID();
-  int numMyElements = partitioner.numElemsInPartition(myPID);
-  std::vector<int> myElements(numMyElements);
-  partitioner.elemsInPartition(myPID, &myElements[0], numMyElements);
-
-  Teuchos::RefCountPtr<Epetra_Map> target_map =
-    Teuchos::rcp(new Epetra_Map(-1, numMyElements, &myElements[0], 0, comm));
-
-  return(target_map);
-}
 
 Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix)
 {
@@ -184,8 +167,10 @@ int
 repartition(const Epetra_BlockMap& input_map,
 	    const Epetra_Vector& weights,
 	    std::vector<int>& myNewElements,
-            std::map<int,int>& exports,
-            std::map<int,int>& imports)
+	    int& exportsSize,
+	    std::vector<int>& imports)
+//             std::map<int,int>& exports,
+//             std::map<int,int>& imports)
 {
   if (!input_map.PointSameAs(weights.Map())) {
     std::string str1("Epetra::repartition ERROR, input_map not ");
@@ -195,7 +180,6 @@ repartition(const Epetra_BlockMap& input_map,
 
   const Epetra_Comm& input_comm = input_map.Comm();
 
-  exports.clear();
   imports.clear();
 
   //first we're going to collect weights onto proc 0.
@@ -274,12 +258,13 @@ repartition(const Epetra_BlockMap& input_map,
                                      send_info, recv_info);
 
   //Create the list to hold local elements for the new map.
-  int new_num_local = all_proc_new_offsets[myPID+1]-all_proc_new_offsets[myPID];
-  myNewElements.resize(new_num_local);
+  myNewElements.assign(all_proc_old_offsets[myPID+1]-all_proc_old_offsets[myPID], myPID);
+//   myNewElements.resize(new_num_local);
 
   const int* old_gids = input_map.MyGlobalElements();
 
 #ifdef HAVE_MPI
+
   int tag = 1212121;
   const Epetra_MpiComm* mpiComm =
     dynamic_cast<const Epetra_MpiComm*>(&input_comm);
@@ -287,23 +272,31 @@ repartition(const Epetra_BlockMap& input_map,
     throw Isorropia::Exception("dynamic_cast to MpiComm failed.");
   }
   int num_reqs = recv_info.size()/3;
+
   MPI_Comm mpicomm = mpiComm->GetMpiComm();
   MPI_Request* reqs = num_reqs > 0 ? new MPI_Request[num_reqs] : 0;
-  MPI_Status* sts = num_reqs > 0 ? new MPI_Status[num_reqs] : 0;
 
   unsigned i=0;
+  unsigned int base_offset = (num_reqs > 0)?(recv_info[1]):0;
+
+  int num_import = 0;
   while(i<recv_info.size()) {
+    num_import += recv_info[i+2];
+    i+=3;
+  }
+  imports.resize(num_import);
+
+  for (i = 0 ;  i<recv_info.size(); i+=3) {
     int proc = recv_info[i];
     int recv_offset = recv_info[i+1];
     int num_recv = recv_info[i+2];
-    
-    MPI_Irecv(&myNewElements[recv_offset], num_recv, MPI_INT, proc,
+
+    MPI_Irecv(&imports[recv_offset-base_offset], num_recv, MPI_INT, proc,
              tag, mpicomm, &reqs[i/3]);
-    i += 3;
   }
 
-  i=0;
-  while(i<send_info.size()) {
+  exportsSize = 0;
+  for (i = 0 ;  i<send_info.size(); i+=3) {
     int proc = send_info[i];
     int send_offset = send_info[i+1];
     int num_send = send_info[i+2];
@@ -311,53 +304,34 @@ repartition(const Epetra_BlockMap& input_map,
     MPI_Send((void*)&old_gids[send_offset], num_send, MPI_INT,
              proc, tag, mpicomm);
 
+    exportsSize += num_send;
     for(int j=0; j<num_send; ++j) {
-      exports[old_gids[send_offset+j]] = proc;
+      myNewElements[send_offset+j] = proc;
+    }
+  }
+  //make sure the recvs are finished...
+  if (recv_info.size() > 0) {
+    MPI_Waitall(recv_info.size()/3, reqs, MPI_STATUSES_IGNORE);
+  }
+  delete [] reqs;
+
+#else /* HAVE_MPI */
+
+  imports.clear();
+  unsigned int i=0;
+  while(i<send_info.size()) {
+    int proc = send_info[i];
+    int send_offset = send_info[i+1];
+    int num_send = send_info[i+2];
+
+    for(int j=0; j<num_send; ++j) {
+      myNewElements[send_offset+j] = proc;
     }
 
     i += 3;
   }
-#endif
 
-  //copy any overlapping elements from old_gids into myNewElements.
-  int old_start = all_proc_old_offsets[myPID];
-  int new_start = all_proc_new_offsets[myPID];
-  int old_end = all_proc_old_offsets[myPID+1]-1;
-  int new_end = all_proc_new_offsets[myPID+1]-1;
-
-  int overlap_start = new_start > old_start ? new_start : old_start;
-  int overlap_end = new_end < old_end ? new_end : old_end;
-
-  int copy_src_offset = overlap_start - old_start;
-  int copy_dest_offset = overlap_start - new_start;
-
-  int num_copy = overlap_end - overlap_start + 1;
-
-  for(int j=0; j<num_copy; ++j) {
-    myNewElements[copy_dest_offset++] = old_gids[copy_src_offset++];
-  }
-
-#ifdef HAVE_MPI
-  //make sure the recvs are finished...
-  if (recv_info.size() > 0) {
-    MPI_Waitall(recv_info.size()/3, reqs, sts);
-
-    unsigned i=0;
-    while(i<recv_info.size()) {
-      int proc = recv_info[i];
-      int recv_offset = recv_info[i+1];
-      int num_recv = recv_info[i+2];
-
-      for(int j=0; j<num_recv; ++j) {
-	imports[myNewElements[recv_offset+j]] = proc;
-      }
-
-      i += 3;
-    }
-  }
-  delete [] reqs;
-  delete [] sts;
-#endif
+#endif /* HAVE_MPI */
 
   return(0);
 }

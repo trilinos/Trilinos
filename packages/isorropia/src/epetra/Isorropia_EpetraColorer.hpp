@@ -102,7 +102,6 @@ public:
   Teuchos::RefCountPtr<Epetra_MapColoring> generateMapColoring() ;
 #endif /* HAVE_EPETRAEXT */
 
-
 };//class Colorer
 
 }//namespace Epetra

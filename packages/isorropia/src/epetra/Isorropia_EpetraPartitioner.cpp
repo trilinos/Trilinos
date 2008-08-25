@@ -96,7 +96,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph
   Operator (input_graph, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
   /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
@@ -132,7 +132,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph
   Operator (input_graph, costs, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
 
@@ -166,7 +166,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matr
   Operator (input_matrix, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
 
@@ -204,7 +204,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matr
   Operator (input_matrix, costs, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
 
@@ -240,7 +240,7 @@ Partitioner::~Partitioner(){}
          true will force a new partitioning to be computed.
    */
 void Partitioner::
-compute_partitioning(bool force_repartitioning)
+partition(bool force_repartitioning)
 {
 
   bool use_zoltan = false;
@@ -281,14 +281,16 @@ compute_partitioning(bool force_repartitioning)
       lib_ = Teuchos::rcp(new InternalPartitioner(input_graph_, costs_));
   }
 
-  lib_->repartition(sublist, myNewElements_, exports_, imports_);
+//   lib_->repartition(sublist, myNewElements_, exports_, imports_);
+  lib_->repartition(sublist, properties_, exportsSize_, imports_);
+  computeNumberOfProperties();
   operation_already_computed_ = true;
 }
 
 void Partitioner::
 compute(bool force_repartitioning)
 {
-  compute_partitioning(force_repartitioning);
+  partition(force_repartitioning);
 }
 
   /** An internal method which determines whether the 
@@ -325,52 +327,38 @@ void Partitioner::elemsInPartition(int partition, int* elementList, int len) con
   return (elemsWithProperty(partition, elementList, len));
 }
 
-
-  /** An internal method which fills caller-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
-  */
-void
-Partitioner::elemsWithProperty(int partition, int* elementList, int len) const
+Teuchos::RefCountPtr<Epetra_Map>
+Partitioner::createNewMap()
 {
-  int myPart = input_map_->Comm().MyPID();
+  if (!alreadyComputed()) {
+    partition();
+  }
+
+  //Generate New Element List
+  int myPID = input_map_->Comm().MyPID();
+  int numMyElements = input_map_->NumMyElements();
+  std::vector<int> elementList( numMyElements );
+  input_map_->MyGlobalElements( &elementList[0] );
+
+  std::vector<int> myNewGID (numMyElements - exportsSize_);
+  std::vector<int>::iterator newElemsIter;
   std::vector<int>::const_iterator elemsIter;
-  unsigned int i;
 
-  if (partition != myPart) {
-    throw Isorropia::Exception("error in Epetra_Map::MyGlobalElements");
+  for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
+       elemsIter != properties_.end() ; elemsIter ++) {
+    if ((*elemsIter) == myPID) {
+      (*newElemsIter) = elementList[elemsIter - properties_.begin()];
+      newElemsIter ++;
+    }
   }
+  //Add imports to end of list
+  myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
 
-  unsigned length = len;
-  if (myNewElements_.size() < length) length = myNewElements_.size();
+  Teuchos::RefCountPtr<Epetra_Map> target_map =
+    Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), &myNewGID[0], 0, input_map_->Comm()));
 
-  // Copy from vector to array
-  std::copy(myNewElements_.begin(), myNewElements_.begin() + length, elementList);
+  return(target_map);
 }
-
-const int&
-Partitioner::operator[](int myElem) const
-{
-  std::map<int,int>::const_iterator iter = exports_.find(myElem);
-  if (iter != exports_.end()) {
-    return(iter->second);
-  }
-
-  return( input_graph_->RowMap().Comm().MyPID() );
-}
-
-int
-Partitioner::numElemsWithProperty(int partition) const
-{
-  int myPart = input_map_->Comm().MyPID();
-  if (partition != myPart) {
-    throw Isorropia::Exception("Partitioner::numElemsInPartition not implemented for non-local partitions.");
-  }
-
-  return(myNewElements_.size());
-}
-
 
 } // namespace EPETRA
 

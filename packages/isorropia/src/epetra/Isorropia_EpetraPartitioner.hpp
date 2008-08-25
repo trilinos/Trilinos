@@ -38,6 +38,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_EpetraOperator.hpp>
+#include <Isorropia_Partitioner.hpp>
 
 #ifdef HAVE_EPETRA
 class Epetra_Map;
@@ -60,7 +61,7 @@ namespace Epetra {
 
 */
 
-class Partitioner : public Operator {
+class Partitioner : virtual public Isorropia::Partitioner, virtual public Isorropia::Epetra::Operator  {
 public:
   /** Constructor that accepts an Epetra_CrsGraph object, called by
         API function create_partitioner().
@@ -211,7 +212,7 @@ public:
          or other inputs have been changed), then setting this flag to
          true will force a new partitioning to be computed.
    */
-  void compute_partitioning(bool force_repartitioning=false);
+  void partition(bool force_repartitioning=false);
 
   virtual void compute(bool forceRecomputing=false);
 
@@ -239,13 +240,7 @@ public:
   */
   void elemsInPartition(int partition, int* elementList, int len) const;
 
-  void elemsWithProperty(int property,
-			 int* elementList,
-			 int len) const;
-
-  const int& operator[](int myElem) const;
-
-  int numElemsWithProperty(int partition) const;
+  Teuchos::RefCountPtr<Epetra_Map> createNewMap();
 
 };//class Partitioner
 

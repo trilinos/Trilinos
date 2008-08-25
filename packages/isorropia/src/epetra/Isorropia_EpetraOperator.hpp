@@ -242,8 +242,10 @@ protected:
 
   Teuchos::ParameterList paramlist_;
 
-  std::map<int,int> exports_, imports_;
-  std::vector<int> myNewElements_;
+//   std::map<int,int> exports_, imports_;
+  int exportsSize_;
+  std::vector<int> imports_;
+  std::vector<int> properties_;
 
   bool operation_already_computed_;
 
