@@ -94,6 +94,8 @@ libphalanx_utilities_a_SOURCES = $(UTILITIES_CPP)
 
 libphalanx_utilities_a_LIBADD = $(XTRALDADD)
 
+EXTRA_DIST = $(UTILITIES_HPP)
+
 MAINTAINERCLEANFILES = Makefile.in 
 
 ##################

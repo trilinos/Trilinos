@@ -256,6 +256,9 @@ example_multidimensional_array_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 example_multidimensional_array_LDADD = $(EXAMPLE_LIBS)
+EXTRA_DIST = \
+	$(srcdir)/Dimension.hpp
+
 all: all-am
 
 .SUFFIXES:
