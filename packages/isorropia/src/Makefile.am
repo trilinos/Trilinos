@@ -45,6 +45,7 @@ CORE_H = \
 	$(srcdir)/Isorropia_CostDescriber.hpp \
 	$(srcdir)/Isorropia_Operator.hpp \
 	$(srcdir)/Isorropia_Partitioner.hpp \
+	$(srcdir)/Isorropia_Partitioner2D.hpp \
 	$(srcdir)/Isorropia_Colorer.hpp \
 	$(srcdir)/Isorropia_Orderer.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
