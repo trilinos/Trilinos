@@ -54,12 +54,6 @@ public:
   /** Destructor */
   virtual ~Partitioner() {}
 
-  /** Set parameters for the Partitioner instance. The contents of the
-      input paramlist object are copied into an internal ParameterList
-      attribute. Instances of this interface should not retain a reference
-      to the input ParameterList after this method returns.
-  */
-  virtual void setParameters(const Teuchos::ParameterList& paramlist) = 0;
 
   /** Method which does the work of computing a new partitioning.
      Implementations of this interface will typically be constructed
@@ -75,7 +69,11 @@ public:
         inputs have been changed), then setting this flag to true
         will force a new partitioning to be computed.
    */
-  virtual void compute_partitioning(bool force_repartitioning=false) = 0;
+  virtual void compute_partitioning(bool force_repartitioning=false) __deprecated {
+    return (partition(force_repartitioning));
+  }
+
+  virtual void partition(bool force_repartitioning=false) = 0;
 
   /** Query whether compute_partitioning() has already been called.
    */

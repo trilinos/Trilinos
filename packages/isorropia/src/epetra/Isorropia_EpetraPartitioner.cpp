@@ -96,7 +96,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph
   Operator (input_graph, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
   /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
@@ -132,7 +132,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph
   Operator (input_graph, costs, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
 
@@ -166,7 +166,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matr
   Operator (input_matrix, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
 
@@ -204,7 +204,7 @@ Partitioner::Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matr
   Operator (input_matrix, costs, paramlist)
 {
   if (compute_partitioning_now)
-    compute_partitioning(true);
+    partition(true);
 }
 
 
@@ -240,7 +240,7 @@ Partitioner::~Partitioner(){}
          true will force a new partitioning to be computed.
    */
 void Partitioner::
-compute_partitioning(bool force_repartitioning)
+partition(bool force_repartitioning)
 {
 
   bool use_zoltan = false;
@@ -290,7 +290,7 @@ compute_partitioning(bool force_repartitioning)
 void Partitioner::
 compute(bool force_repartitioning)
 {
-  compute_partitioning(force_repartitioning);
+  partition(force_repartitioning);
 }
 
   /** An internal method which determines whether the 
@@ -331,7 +331,7 @@ Teuchos::RefCountPtr<Epetra_Map>
 Partitioner::createNewMap()
 {
   if (!alreadyComputed()) {
-    compute_partitioning();
+    partition();
   }
 
   //Generate New Element List
@@ -346,7 +346,6 @@ Partitioner::createNewMap()
 
   for (elemsIter = myNewElements_.begin(), newElemsIter= myNewGID.begin() ;
        elemsIter != myNewElements_.end() ; elemsIter ++) {
-//     std::cout << myPID << ":" << (elemsIter-myNewElements_.begin()) << " -->" << *elemsIter << std::endl;
     if ((*elemsIter) == myPID) {
       (*newElemsIter) = elementList[elemsIter - myNewElements_.begin()];
       newElemsIter ++;
@@ -354,11 +353,6 @@ Partitioner::createNewMap()
   }
   //Add imports to end of list
   myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
-//   std::cout << "Size of new GID : " << myNewGID.size() << std::endl;
-
-//   for (elemsIter = myNewGID.begin() ; elemsIter != myNewGID.end() ; elemsIter ++) {
-//     std::cout << myPID << ":" << *elemsIter << std::endl;
-//   }
 
   Teuchos::RefCountPtr<Epetra_Map> target_map =
     Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), &myNewGID[0], 0, input_map_->Comm()));
