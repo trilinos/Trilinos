@@ -124,11 +124,11 @@ public:
       does not support transpose use, this method should return a value of -1.
       
       \param
-       UseTranspose - (In) If true, multiply by the transpose of operator, otherwise just use operator.
+       UseTranspose_in - (In) If true, multiply by the transpose of operator, otherwise just use operator.
 
       \return Always returns 0.
   */
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
   // @}
 
   // @{ Mathematical functions.
@@ -162,7 +162,7 @@ public:
   double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
                  const int MaxIters = 1550,
                  const double Tol = 1e-9,
-		 Epetra_RowMatrix* Matrix = 0);
+		 Epetra_RowMatrix* Matrix_in = 0);
 
   //! Returns the computed estimated condition number, or -1.0 if not computed.
   double Condest() const
@@ -186,9 +186,9 @@ public:
   const char* Label() const {return(Label_);}
 
   //! Sets label for \c this object.
-  int SetLabel(const char* Label)
+  int SetLabel(const char* Label_in)
   {
-    strcpy(Label_,Label);
+    strcpy(Label_,Label_in);
     return(0);
   }
   

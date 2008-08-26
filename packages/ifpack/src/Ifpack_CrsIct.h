@@ -296,11 +296,11 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
 	does not support transpose use, this method should return a value of -1.
       
     \param In
-	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+	   UseTranspose_in -If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Always returns 0.
   */
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
 
     //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
     /*! Note that this implementation of Apply does NOT perform a forward back solve with

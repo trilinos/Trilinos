@@ -130,7 +130,7 @@ int& Ifpack_DenseContainer::ID(const int i)
 
 //==============================================================================
 // FIXME: optimize performances of this guy...
-int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix)
+int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix_in)
 {
 
   for (int j = 0 ; j < NumRows_ ; ++j) {
@@ -138,12 +138,12 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix)
     if (ID(j) == -1)
       IFPACK_CHK_ERR(-2);
     // be sure that all are local indices
-    if (ID(j) > Matrix.NumMyRows())
+    if (ID(j) > Matrix_in.NumMyRows())
       IFPACK_CHK_ERR(-2);
   }
 
   // allocate storage to extract matrix rows.
-  int Length = Matrix.MaxNumEntries();
+  int Length = Matrix_in.MaxNumEntries();
   vector<double> Values;
   Values.resize(Length);
   vector<int> Indices;
@@ -156,7 +156,7 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix)
     int NumEntries;
 
     int ierr = 
-      Matrix.ExtractMyRowCopy(LRID, Length, NumEntries, 
+      Matrix_in.ExtractMyRowCopy(LRID, Length, NumEntries, 
 			      &Values[0], &Indices[0]);
     IFPACK_CHK_ERR(ierr);
 
@@ -165,7 +165,7 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix)
       int LCID = Indices[k];
 
       // skip off-processor elements
-      if (LCID >= Matrix.NumMyRows()) 
+      if (LCID >= Matrix_in.NumMyRows()) 
 	continue;
 
       // for local column IDs, look for each ID in the list
@@ -186,7 +186,7 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix)
 }
 
 //==============================================================================
-int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
+int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix_in)
 {
   IsComputed_ = false;
   if (IsInitialized() == false) {
@@ -197,7 +197,7 @@ int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
     NonFactoredMatrix_ = Matrix_;
 
   // extract local rows and columns
-  IFPACK_CHK_ERR(Extract(Matrix));
+  IFPACK_CHK_ERR(Extract(Matrix_in));
 
   if (KeepNonFactoredMatrix_)
     NonFactoredMatrix_ = Matrix_;

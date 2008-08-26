@@ -138,9 +138,9 @@ public:
    * \return Integer error code, set to 0 if successful.  
    * Set to -1 if this implementation does not support transpose.
     */
-  virtual inline int SetUseTranspose(bool UseTranspose)
+  virtual inline int SetUseTranspose(bool UseTranspose_in)
   {
-    UseTranspose_ = UseTranspose;
+    UseTranspose_ = UseTranspose_in;
     return(0);
   }
 

@@ -35,25 +35,25 @@
 #include <ifp_parameters.h>
 
 //==============================================================================
-Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill, int LevelOverlap)
-  : Graph_(Graph),
-    DomainMap_(Graph.DomainMap()),
-    RangeMap_(Graph.RangeMap()),
-    Comm_(Graph.Comm()),
-    LevelFill_(LevelFill),
-    LevelOverlap_(LevelOverlap),
-    IndexBase_(Graph.IndexBase()),
-    NumGlobalRows_(Graph.NumGlobalRows()),
-    NumGlobalCols_(Graph.NumGlobalCols()),
-    NumGlobalBlockRows_(Graph.NumGlobalBlockRows()),
-    NumGlobalBlockCols_(Graph.NumGlobalBlockCols()),
+Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph_in, int LevelFill_in, int LevelOverlap_in)
+  : Graph_(Graph_in),
+    DomainMap_(Graph_in.DomainMap()),
+    RangeMap_(Graph_in.RangeMap()),
+    Comm_(Graph_in.Comm()),
+    LevelFill_(LevelFill_in),
+    LevelOverlap_(LevelOverlap_in),
+    IndexBase_(Graph_in.IndexBase()),
+    NumGlobalRows_(Graph_in.NumGlobalRows()),
+    NumGlobalCols_(Graph_in.NumGlobalCols()),
+    NumGlobalBlockRows_(Graph_in.NumGlobalBlockRows()),
+    NumGlobalBlockCols_(Graph_in.NumGlobalBlockCols()),
     NumGlobalBlockDiagonals_(0),
     NumGlobalNonzeros_(0),
     NumGlobalEntries_(0),
-    NumMyBlockRows_(Graph.NumMyBlockRows()),
-    NumMyBlockCols_(Graph.NumMyBlockCols()),
-    NumMyRows_(Graph.NumMyRows()),
-    NumMyCols_(Graph.NumMyCols()),
+    NumMyBlockRows_(Graph_in.NumMyBlockRows()),
+    NumMyBlockCols_(Graph_in.NumMyBlockCols()),
+    NumMyRows_(Graph_in.NumMyRows()),
+    NumMyCols_(Graph_in.NumMyCols()),
     NumMyBlockDiagonals_(0),
     NumMyNonzeros_(0),
     NumMyEntries_(0)
@@ -61,34 +61,34 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill,
 }
 
 //==============================================================================
-Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph) 
-  : Graph_(Graph.Graph_),
-    DomainMap_(Graph.DomainMap()),
-    RangeMap_(Graph.RangeMap()),
-    Comm_(Graph.Comm()),
-    OverlapGraph_(Graph.OverlapGraph_),
-    OverlapRowMap_(Graph.OverlapRowMap_),
-    OverlapImporter_(Graph.OverlapImporter_),
-    LevelFill_(Graph.LevelFill_),
-    LevelOverlap_(Graph.LevelOverlap_),
-    IndexBase_(Graph.IndexBase_),
-    NumGlobalRows_(Graph.NumGlobalRows_),
-    NumGlobalCols_(Graph.NumGlobalCols_),
-    NumGlobalBlockRows_(Graph.NumGlobalBlockRows_),
-    NumGlobalBlockCols_(Graph.NumGlobalBlockCols_),
-    NumGlobalBlockDiagonals_(Graph.NumGlobalBlockDiagonals_),
-    NumGlobalNonzeros_(Graph.NumGlobalNonzeros_),
-    NumGlobalEntries_(Graph.NumGlobalEntries_),
-    NumMyBlockRows_(Graph.NumMyBlockRows_),
-    NumMyBlockCols_(Graph.NumMyBlockCols_),
-    NumMyRows_(Graph.NumMyRows_),
-    NumMyCols_(Graph.NumMyCols_),
-    NumMyBlockDiagonals_(Graph.NumMyBlockDiagonals_),
-    NumMyNonzeros_(Graph.NumMyNonzeros_),
-    NumMyEntries_(Graph.NumMyEntries_)
+Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph_in) 
+  : Graph_(Graph_in.Graph_),
+    DomainMap_(Graph_in.DomainMap()),
+    RangeMap_(Graph_in.RangeMap()),
+    Comm_(Graph_in.Comm()),
+    OverlapGraph_(Graph_in.OverlapGraph_),
+    OverlapRowMap_(Graph_in.OverlapRowMap_),
+    OverlapImporter_(Graph_in.OverlapImporter_),
+    LevelFill_(Graph_in.LevelFill_),
+    LevelOverlap_(Graph_in.LevelOverlap_),
+    IndexBase_(Graph_in.IndexBase_),
+    NumGlobalRows_(Graph_in.NumGlobalRows_),
+    NumGlobalCols_(Graph_in.NumGlobalCols_),
+    NumGlobalBlockRows_(Graph_in.NumGlobalBlockRows_),
+    NumGlobalBlockCols_(Graph_in.NumGlobalBlockCols_),
+    NumGlobalBlockDiagonals_(Graph_in.NumGlobalBlockDiagonals_),
+    NumGlobalNonzeros_(Graph_in.NumGlobalNonzeros_),
+    NumGlobalEntries_(Graph_in.NumGlobalEntries_),
+    NumMyBlockRows_(Graph_in.NumMyBlockRows_),
+    NumMyBlockCols_(Graph_in.NumMyBlockCols_),
+    NumMyRows_(Graph_in.NumMyRows_),
+    NumMyCols_(Graph_in.NumMyCols_),
+    NumMyBlockDiagonals_(Graph_in.NumMyBlockDiagonals_),
+    NumMyNonzeros_(Graph_in.NumMyNonzeros_),
+    NumMyEntries_(Graph_in.NumMyEntries_)
 {
-  Epetra_CrsGraph & L_Graph_In = Graph.L_Graph();
-  Epetra_CrsGraph & U_Graph_In = Graph.U_Graph();
+  Epetra_CrsGraph & L_Graph_In = Graph_in.L_Graph();
+  Epetra_CrsGraph & U_Graph_In = Graph_in.U_Graph();
   L_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(L_Graph_In) );
   U_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(U_Graph_In) );
 }
@@ -123,8 +123,8 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> OldGraph;
   Teuchos::RefCountPtr<Epetra_BlockMap> OldRowMap;
-  Epetra_BlockMap * DomainMap = (Epetra_BlockMap *) &Graph_.DomainMap();
-  Epetra_BlockMap * RangeMap = (Epetra_BlockMap *) &Graph_.RangeMap();
+  Epetra_BlockMap * DomainMap_tmp = (Epetra_BlockMap *) &Graph_.DomainMap();
+  Epetra_BlockMap * RangeMap_tmp = (Epetra_BlockMap *) &Graph_.RangeMap();
   for (int level=1; level <= LevelOverlap_; level++) {
     OldGraph = OverlapGraph_; 
     OldRowMap = OverlapRowMap_;
@@ -142,12 +142,12 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
 
     EPETRA_CHK_ERR(OverlapGraph_->Import( Graph_, *OverlapImporter_, Insert));
     if (level<LevelOverlap_) {
-      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap_tmp, *RangeMap_tmp));
     }
     else {
       // Copy last OverlapImporter because we will use it later
-      OverlapImporter_ = Teuchos::rcp( new Epetra_Import(*OverlapRowMap_, *DomainMap) );
-      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
+      OverlapImporter_ = Teuchos::rcp( new Epetra_Import(*OverlapRowMap_, *DomainMap_tmp) );
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap_tmp, *RangeMap_tmp));
     }
   }
 
@@ -243,7 +243,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
     for (i=0; i<NumMyBlockRows_; i++)
     {
-      int First, Next, j;
+      int First, Next;
       
       // copy column indices of row into workspace and sort them
       

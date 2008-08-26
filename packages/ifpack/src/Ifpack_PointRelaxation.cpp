@@ -45,7 +45,7 @@ static const int IFPACK_SGS = 2;
 
 //==============================================================================
 Ifpack_PointRelaxation::
-Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
+Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix_in) :
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(0),
@@ -67,7 +67,7 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
-  Matrix_(Teuchos::rcp(Matrix,false)),
+  Matrix_(Teuchos::rcp(Matrix_in,false)),
   IsParallel_(false),
   ZeroStartingSolution_(true),
   DoBackwardGS_(false)
@@ -311,14 +311,14 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
 double Ifpack_PointRelaxation::
 Condest(const Ifpack_CondestType CT, 
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix)
+	Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   // always computes it. Call Condest() with no parameters to get
   // the previous estimate.
-  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
 
   return(Condest_);
 }

@@ -322,9 +322,9 @@ public:
   }
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool UseTranspose)
+  int SetUseTranspose(bool UseTranspose_in)
   {
-    UseTranspose_ = UseTranspose;
+    UseTranspose_ = UseTranspose_in;
     return(0);
   }
 

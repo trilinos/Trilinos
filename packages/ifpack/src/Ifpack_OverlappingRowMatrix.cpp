@@ -37,13 +37,13 @@
 
 // ====================================================================== 
 Ifpack_OverlappingRowMatrix::
-Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix,
-                            int OverlapLevel)  :
-  Matrix_(Matrix),
-  OverlapLevel_(OverlapLevel)
+Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
+                            int OverlapLevel_in)  :
+  Matrix_(Matrix_in),
+  OverlapLevel_(OverlapLevel_in)
 {
   // should not be here if no overlap
-  if (OverlapLevel == 0)
+  if (OverlapLevel_in == 0)
     IFPACK_CHK_ERRV(-1);
 
   // nothing to do as well with one process
@@ -64,7 +64,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   const Epetra_Map *RowMap; 
   const Epetra_Map *ColMap; 
 
-  for (int overlap = 0 ; overlap < OverlapLevel ; ++overlap) {
+  for (int overlap = 0 ; overlap < OverlapLevel_in ; ++overlap) {
     if (TmpMatrix != Teuchos::null) {
       RowMap = &(TmpMatrix->RowMatrixRowMap()); 
       ColMap = &(TmpMatrix->RowMatrixColMap()); 

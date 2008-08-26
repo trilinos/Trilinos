@@ -188,9 +188,9 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
     // graph). For each row, all columns will belong to the subgraph of
     // row `i'.
 
-    int MaxNumEntries = Graph_->MaxMyNumEntries();
+    int MaxNumEntries_tmp = Graph_->MaxMyNumEntries();
     vector<int> Indices;
-    Indices.resize(MaxNumEntries);
+    Indices.resize(MaxNumEntries_tmp);
 
     for (int part = 0 ; part < NumLocalParts_ ; ++part) {
 
@@ -198,7 +198,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 
 	int LRID = Parts_[part][i];
 	int NumIndices;
-	int ierr = Graph_->ExtractMyRowCopy(LRID, MaxNumEntries, 
+	int ierr = Graph_->ExtractMyRowCopy(LRID, MaxNumEntries_tmp, 
                                             NumIndices, &Indices[0]);
 	IFPACK_CHK_ERR(ierr);
 

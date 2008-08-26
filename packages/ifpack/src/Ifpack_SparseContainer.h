@@ -109,9 +109,9 @@ public:
   }
 
   //! Sets the number of vectors for LHS/RHS.
-  virtual int SetNumVectors(const int NumVectors)
+  virtual int SetNumVectors(const int NumVectors_in)
   {
-    if (NumVectors_ == NumVectors)
+    if (NumVectors_ == NumVectors_in)
       return(0);
     IFPACK_CHK_ERR(-99); // STILL TO DO
   }
@@ -207,7 +207,7 @@ public:
    */
   virtual int Initialize();
   //! Finalizes the linear system matrix and prepares for the application of the inverse.
-  virtual int Compute(const Epetra_RowMatrix& Matrix);
+  virtual int Compute(const Epetra_RowMatrix& Matrix_in);
   //! Apply the matrix to RHS, result is stored in LHS.
   virtual int Apply();
 
@@ -260,7 +260,7 @@ public:
 private:
   
   //! Extract the submatrices identified by the ID set int ID().
-  virtual int Extract(const Epetra_RowMatrix& Matrix);
+  virtual int Extract(const Epetra_RowMatrix& Matrix_in);
 
   //! Number of rows in the local matrix.
   int NumRows_; 
@@ -294,9 +294,9 @@ private:
 //==============================================================================
 template<typename T>
 Ifpack_SparseContainer<T>::
-Ifpack_SparseContainer(const int NumRows, const int NumVectors) :
-  NumRows_(NumRows),
-  NumVectors_(NumVectors),
+Ifpack_SparseContainer(const int NumRows_in, const int NumVectors_in) :
+  NumRows_(NumRows_in),
+  NumVectors_(NumVectors_in),
   IsInitialized_(false),
   IsComputed_(false),
   ApplyFlops_(0.0)
@@ -436,7 +436,7 @@ SetMatrixElement(const int row, const int col, const double value)
 
 //==============================================================================
 template<typename T>
-int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix)
+int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix_in)
 {
 
   IsComputed_ = false;
@@ -445,7 +445,7 @@ int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix)
   }
 
   // extract the submatrices
-  IFPACK_CHK_ERR(Extract(Matrix));
+  IFPACK_CHK_ERR(Extract(Matrix_in));
 
   // initialize the inverse operator
   IFPACK_CHK_ERR(Inverse_->Initialize());
@@ -515,7 +515,7 @@ SetParameters(Teuchos::ParameterList& List)
 //==============================================================================
 // FIXME: optimize performances of this guy...
 template<typename T>
-int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
+int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix_in)
 {
 
   for (int j = 0 ; j < NumRows_ ; ++j) {
@@ -523,11 +523,11 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
     if (ID(j) == -1)
       IFPACK_CHK_ERR(-1);
     // be sure that all are local indices
-    if (ID(j) > Matrix.NumMyRows())
+    if (ID(j) > Matrix_in.NumMyRows())
       IFPACK_CHK_ERR(-1);
   }
 
-  int Length = Matrix.MaxNumEntries();
+  int Length = Matrix_in.MaxNumEntries();
   std::vector<double> Values;
   Values.resize(Length);
   std::vector<int> Indices;
@@ -540,7 +540,7 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
     int NumEntries;
 
     int ierr = 
-      Matrix.ExtractMyRowCopy(LRID, Length, NumEntries, 
+      Matrix_in.ExtractMyRowCopy(LRID, Length, NumEntries, 
 			       &Values[0], &Indices[0]);
     IFPACK_CHK_ERR(ierr);
 
@@ -549,7 +549,7 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
       int LCID = Indices[k];
 
       // skip off-processor elements
-      if (LCID >= Matrix.NumMyRows()) 
+      if (LCID >= Matrix_in.NumMyRows()) 
 	continue;
 
       // for local column IDs, look for each ID in the list

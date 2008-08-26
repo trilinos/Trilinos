@@ -143,9 +143,9 @@ public:
 
   //@{ \name Atribute access functions
 
-  virtual int SetUseTranspose(bool UseTranspose)
+  virtual int SetUseTranspose(bool UseTranspose_in)
   {
-    if (UseTranspose)
+    if (UseTranspose_in)
       IFPACK_CHK_ERR(-98); // FIXME: can I work with the transpose?
     return(0);
   }
@@ -209,7 +209,7 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
-			 Epetra_RowMatrix* Matrix = 0)
+			 Epetra_RowMatrix* Matrix_in = 0)
   {
     return(-1.0);
   }
@@ -392,7 +392,7 @@ private:
 //==============================================================================
 template<typename T>
 Ifpack_BlockRelaxation<T>::
-Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
+Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix_in) :
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(0),
@@ -407,7 +407,7 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
   NumSweeps_(1),
   DampingFactor_(1.0),
   NumLocalBlocks_(1),
-  Matrix_(Teuchos::rcp(Matrix,false)),
+  Matrix_(Teuchos::rcp(Matrix_in,false)),
   PartitionerType_("greedy"),
   PrecType_(IFPACK_JACOBI),
   ZeroStartingSolution_(true),
@@ -415,7 +415,7 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
   Time_(Comm()),
   IsParallel_(false)
 {
-  if (Matrix->Comm().NumProc() != 1)
+  if (Matrix_in->Comm().NumProc() != 1)
     IsParallel_ = true;
 }
 

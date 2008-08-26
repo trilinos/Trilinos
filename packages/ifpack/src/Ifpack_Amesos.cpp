@@ -43,8 +43,8 @@
 static bool FirstTime = true;
 
 //==============================================================================
-Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
-  Matrix_(Teuchos::rcp( Matrix, false )),
+Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix_in) :
+  Matrix_(Teuchos::rcp( Matrix_in, false )),
   Label_("Amesos_Klu"),
   IsInitialized_(false),
   IsComputed_(false),
@@ -99,11 +99,11 @@ Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
 
 }
 //==============================================================================
-int Ifpack_Amesos::SetParameters(Teuchos::ParameterList& List)
+int Ifpack_Amesos::SetParameters(Teuchos::ParameterList& List_in)
 {
 
-  List_ = List;
-  Label_ = List.get("amesos: solver type", Label_);
+  List_ = List_in;
+  Label_ = List_in.get("amesos: solver type", Label_);
   return(0);
 }
 
@@ -203,13 +203,13 @@ int Ifpack_Amesos::Compute()
 }
 
 //==============================================================================
-int Ifpack_Amesos::SetUseTranspose(bool UseTranspose)
+int Ifpack_Amesos::SetUseTranspose(bool UseTranspose_in)
 {
   // store the value in UseTranspose_. If we have the solver, we pass to it
   // right away, otherwise we wait till when it is created.
-  UseTranspose_ = UseTranspose;
+  UseTranspose_ = UseTranspose_in;
   if (Solver_ != Teuchos::null)
-    IFPACK_CHK_ERR(Solver_->SetUseTranspose(UseTranspose));
+    IFPACK_CHK_ERR(Solver_->SetUseTranspose(UseTranspose_in));
 
   return(0);
 }
@@ -299,14 +299,14 @@ const Epetra_Map & Ifpack_Amesos::OperatorRangeMap() const
 //==============================================================================
 double Ifpack_Amesos::Condest(const Ifpack_CondestType CT,
                               const int MaxIters, const double Tol,
-			      Epetra_RowMatrix* Matrix)
+			      Epetra_RowMatrix* Matrix_in)
 {
 
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
 
   return(Condest_);
 }

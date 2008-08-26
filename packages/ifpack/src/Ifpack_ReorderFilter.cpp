@@ -38,12 +38,12 @@
 #include "Epetra_Vector.h"
 
 //==============================================================================
-Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
-                                           const Teuchos::RefCountPtr<Ifpack_Reordering>& Reordering) :
-  A_(Matrix),
-  Reordering_(Reordering),
-  NumMyRows_(Matrix->NumMyRows()),
-  MaxNumEntries_(Matrix->MaxNumEntries())
+Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix_in,
+                                           const Teuchos::RefCountPtr<Ifpack_Reordering>& Reordering_in) :
+  A_(Matrix_in),
+  Reordering_(Reordering_in),
+  NumMyRows_(Matrix_in->NumMyRows()),
+  MaxNumEntries_(Matrix_in->MaxNumEntries())
 {
 }
 

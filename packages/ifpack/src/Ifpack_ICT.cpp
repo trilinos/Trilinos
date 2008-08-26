@@ -266,7 +266,6 @@ int Ifpack_ICT::Compute()
     // index in row_i.
     for (int col_j = RowIndices[0] ; col_j < row_i ; ++col_j) {
 
-      short int flops = 0;
       double h_ij = 0.0, h_jj = 0.0;
       // note: get() returns 0.0 if col_j is not found
       h_ij = Hash.get(col_j);
@@ -287,7 +286,7 @@ int Ifpack_ICT::Compute()
           if (xxx != 0.0)
           {
             h_ij -= ColValues[k] * xxx;
-            flops += 2;
+            flops += 2.0;
           }
         }
       }
@@ -300,7 +299,7 @@ int Ifpack_ICT::Compute()
       }
     
       // only approx
-      ComputeFlops_ += 2.0 * flops + 1;
+      ComputeFlops_ += 2.0 * flops + 1.0;
     }
 
     int size = Hash.getNumEntries();
@@ -448,14 +447,14 @@ int Ifpack_ICT::Apply(const Epetra_MultiVector& X,
 //=============================================================================
 double Ifpack_ICT::Condest(const Ifpack_CondestType CT, 
                             const int MaxIters, const double Tol,
-			    Epetra_RowMatrix* Matrix)
+			    Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   // NOTE: this is computing the *local* condest
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
 
   return(Condest_);
 }

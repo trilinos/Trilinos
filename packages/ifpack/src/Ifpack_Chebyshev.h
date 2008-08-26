@@ -116,9 +116,9 @@ public:
    * \return Integer error code, set to 0 if successful.  
    * Set to -1 if this implementation does not support transpose.
     */
-  virtual inline int SetUseTranspose(bool UseTranspose)
+  virtual inline int SetUseTranspose(bool UseTranspose_in)
   {
-    UseTranspose_ = UseTranspose;
+    UseTranspose_ = UseTranspose_in;
     return(0);
   }
 
@@ -214,7 +214,7 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
-                         Epetra_RowMatrix* Matrix = 0);
+                         Epetra_RowMatrix* Matrix_in = 0);
 
   //! Returns the condition number estimate, or -1.0 if not computed.
   virtual double Condest() const

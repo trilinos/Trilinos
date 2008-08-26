@@ -70,7 +70,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 
   // filter singletons and empty rows, put all of them in partition 0
   for (int i = 0 ; i < NumMyRows() ; ++i) {
-    int NumEntries = 0;
+    NumEntries = 0;
     int ierr = Graph_->ExtractMyRowCopy(i, MaxNumEntries(),
                                         NumEntries, &Indices[0]);
     IFPACK_CHK_ERR(ierr);
