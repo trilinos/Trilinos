@@ -95,19 +95,19 @@ namespace Tpetra {
     //@{ \name Import/Export Methods
 
     //! Import
-    int doImport(const DistObject<Ordinal, Scalar> & source, 
+    void doImport(const DistObject<Ordinal, Scalar> & source, 
            const Import<Ordinal> & importer, CombineMode CM);
 
     //! Export
-    int doExport(const DistObject<Ordinal, Scalar> & source, 
+    void doExport(const DistObject<Ordinal, Scalar> & source, 
            const Export<Ordinal> & exporter, CombineMode CM);
 
     //! Import (using an Exporter)
-    int doImport(const DistObject<Ordinal, Scalar> & source,
+    void doImport(const DistObject<Ordinal, Scalar> & source,
            const Export<Ordinal> & exporter, CombineMode CM);
     
     //! Export (using an Importer)
-    int doExport(const DistObject<Ordinal, Scalar> & source,
+    void doExport(const DistObject<Ordinal, Scalar> & source,
            const Import<Ordinal> & importer, CombineMode CM);
     
     //@}
@@ -132,7 +132,7 @@ namespace Tpetra {
   protected:
  
     //! Perform actual transfer (redistribution) of data across memory images.
-    virtual int doTransfer(const DistObject<Ordinal, Scalar> & source,
+    virtual void doTransfer(const DistObject<Ordinal, Scalar> & source,
                  CombineMode CM,
                  Ordinal numSameIDs,
                  Ordinal numPermuteIDs,
@@ -170,7 +170,7 @@ namespace Tpetra {
              On entry, contains a list of the elements that are permuted. (Listed by their LID in the
          source DistObject.)
     */
-    virtual int copyAndPermute(const DistObject<Ordinal, Scalar> & source,
+    virtual void copyAndPermute(const DistObject<Ordinal, Scalar> & source,
                    Ordinal numSameIDs,
                    Ordinal numPermuteIDs,
                    const std::vector<Ordinal> & permuteToLIDs,
@@ -193,7 +193,7 @@ namespace Tpetra {
       \param distor In
              On entry, contains the Distributor object we are using.         
     */
-    virtual int packAndPrepare(const DistObject<Ordinal, Scalar> & source,
+    virtual void packAndPrepare(const DistObject<Ordinal, Scalar> & source,
                    Ordinal numExportIDs,
                    const std::vector<Ordinal> & exportLIDs,
                    std::vector<Scalar>& exports,
@@ -215,7 +215,7 @@ namespace Tpetra {
              The Tpetra::CombineMode to use when combining the imported
          entries with existing entries.
     */
-    virtual int unpackAndCombine(Ordinal numImportIDs,
+    virtual void unpackAndCombine(Ordinal numImportIDs,
                    const std::vector<Ordinal> & importLIDs,
                    const std::vector<Scalar> & imports,
                    Distributor<Ordinal> &distor,
@@ -267,7 +267,7 @@ namespace Tpetra {
   {}
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal, Scalar> & source, 
+  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal, Scalar> & source, 
                                            const Import<Ordinal> & importer, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error,
@@ -289,12 +289,10 @@ namespace Tpetra {
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         exports_, imports_, importer.getDistributor(), false);
-
-    return 0;
   }
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & source, 
+  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & source, 
                                            const Export<Ordinal> & exporter, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error,
@@ -316,12 +314,10 @@ namespace Tpetra {
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         exports_, imports_, exporter.getDistributor(), false);
-
-    return 0;
   }
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source,
+  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source,
                                            const Export<Ordinal> & exporter, CombineMode CM)
   {
     TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error,
@@ -344,12 +340,10 @@ namespace Tpetra {
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         imports_, exports_, exporter.getDistributor(), true);
-
-    return 0;
   }
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & source,
+  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & source,
                                            const Import<Ordinal> & importer, CombineMode CM)
   {
     TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error,
@@ -372,12 +366,10 @@ namespace Tpetra {
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
         permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
         imports_, exports_, importer.getDistributor(), true);
-
-    return 0;
   }
 
   template <typename Ordinal, typename Scalar>
-  void DistObject<Ordinal,Scalar>::print(std::ostream& os) const 
+  void DistObject<Ordinal,Scalar>::print(std::ostream& /*os*/) const 
   {
     TEST_FOR_EXCEPT(true); // FINISH
   }
@@ -395,7 +387,7 @@ namespace Tpetra {
   }
 
   template <typename Ordinal, typename Scalar>
-  int DistObject<Ordinal,Scalar>::doTransfer(
+  void DistObject<Ordinal,Scalar>::doTransfer(
       const DistObject<Ordinal, Scalar> & source,
       CombineMode CM,
       Ordinal numSameIDs, Ordinal numPermuteIDs, Ordinal numRemoteIDs, Ordinal numExportIDs,
@@ -435,7 +427,6 @@ namespace Tpetra {
       }
       unpackAndCombine(numRemoteIDs, remoteLIDs, imports, distor, CM);
     }
-    return 0;
   }
 
 } // namespace Tpetra

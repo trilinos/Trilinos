@@ -29,6 +29,8 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 #include <Teuchos_Object.hpp>
 
 namespace Tpetra {
@@ -60,5 +62,7 @@ namespace Tpetra {
 	};
 
 } // Tpetra namespace
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_OPERATOR_HPP

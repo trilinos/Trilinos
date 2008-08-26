@@ -372,7 +372,7 @@ namespace Tpetra {
   }
 
   template<typename Ordinal, typename Scalar>
-  int Vector<Ordinal,Scalar>::copyAndPermute(
+  void Vector<Ordinal,Scalar>::copyAndPermute(
       const DistObject<Ordinal,Scalar> &sourceObj,
       Ordinal numSameIDs, Ordinal numPermuteIDs,
       const std::vector<Ordinal> &permuteToLIDs, const std::vector<Ordinal> &permuteFromLIDs) 
@@ -395,11 +395,10 @@ namespace Tpetra {
 
      */
     TEST_FOR_EXCEPT(true);
-    return 0;
   }
 
   template<typename Ordinal, typename Scalar>
-  int Vector<Ordinal,Scalar>::packAndPrepare(
+  void Vector<Ordinal,Scalar>::packAndPrepare(
       const DistObject<Ordinal,Scalar> &sourceObj,
       Ordinal numExportIDs,
       const std::vector<Ordinal> &exportLIDs, std::vector<Scalar> &exports,
@@ -419,11 +418,10 @@ namespace Tpetra {
     packetSize = Teuchos::OrdinalTraits<Ordinal>::one();
     */
     TEST_FOR_EXCEPT(true);
-    return 0;
   }
 
   template<typename Ordinal, typename Scalar>
-  int Vector<Ordinal,Scalar>::unpackAndCombine(
+  void Vector<Ordinal,Scalar>::unpackAndCombine(
       Ordinal numImportIDs,
       const std::vector<Ordinal> &importLIDs,
       const std::vector<Scalar> &imports,
@@ -445,7 +443,6 @@ namespace Tpetra {
       */
 
     TEST_FOR_EXCEPT(true);
-    return 0;
   }
 
 } // namespace Tpetra

@@ -589,7 +589,7 @@ template<typename T>
 class TypeNameTraits<ArrayRCP<T> > {
 public:
   static std::string name() { return "ArrayRCP<"+TypeNameTraits<T>::name()+">"; }
-  static std::string concreteName( const ArrayRCP<T>& t2 )
+  static std::string concreteName( const ArrayRCP<T>& /*t2*/ )
     { return name(); }
 };
 

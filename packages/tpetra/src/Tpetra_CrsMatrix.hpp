@@ -29,6 +29,8 @@
 #ifndef TPETRA_CRSMATRIX_HPP
 #define TPETRA_CRSMATRIX_HPP
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 #ifndef TPETRA_CRSMATRIX_IS_BROKEN
 
 #include <Teuchos_Object.hpp>
@@ -935,5 +937,7 @@ namespace Tpetra
 } // namespace Tpetra
 
 #endif // broken
+
+#endif //doxygen skip
 
 #endif

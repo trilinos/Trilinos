@@ -42,6 +42,8 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 namespace Tpetra {
 
   // forward declaration of CisMatrixData, needed to prevent circular inclusions
@@ -829,5 +831,7 @@ namespace Tpetra {
 } // Tpetra namespace
 
 #include "Tpetra_CisMatrixData.hpp"
+
+#endif // doxygen ignore
 
 #endif // TPETRA_CISMATRIX_HPP

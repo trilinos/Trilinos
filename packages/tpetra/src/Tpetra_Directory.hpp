@@ -152,7 +152,7 @@ namespace Tpetra {
         }
         else {
           // Guess uniform distribution and start a little above it
-          Ordinal image1 = TPETRA_MIN((GID / TPETRA_MAX(nOverP, ONE)) + Teuchos::as<Ordinal>(2), numImages - ONE);
+          Ordinal image1 = TEUCHOS_MIN((GID / TEUCHOS_MAX(nOverP, ONE)) + Teuchos::as<Ordinal>(2), numImages - ONE);
           bool found = false;
           while (image1 >= ZERO && image1 < numImages) {
             if(allMinGIDs_[image1] <= GID) {

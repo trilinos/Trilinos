@@ -31,26 +31,37 @@
 #ifndef TPETRA_MULTIVECTOR_HPP
 #define TPETRA_MULTIVECTOR_HPP
 
-
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_as.hpp>
 #include "Tpetra_MultiVectorDecl.hpp"
 #include "Tpetra_MultiVectorData.hpp"
 
 namespace Tpetra {
 
-
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, Ordinal NumVectors, bool zeroOut) 
     : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
-    , MVData_()
   {
-    TEST_FOR_EXCEPT(true);
+    using Teuchos::as;
+    TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
+        "Tpetra::MultiVector::MultiVector(): NumVectors must be non-negative.");
+    const Ordinal myLen = this->getMap().getNumMyEntries();
+    MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    MVData_->constantStride_ = true;
+    MVData_->stride_ = myLen;
+    MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
+    if (zeroOut) {
+      std::fill(MVData_->values_.begin(),MVData_->values_.end(),Teuchos::ScalarTraits<Scalar>::zero());
+    }
+    MVData_->pointers_ = Teuchos::arcp<Teuchos::ArrayRCP<Scalar> >(NumVectors);
+    for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
+      MVData_->pointers_[i] = MVData_->values_.persistingView(i*myLen,myLen);
+    }
   }
 
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source) 
     : DistObject<Ordinal,Scalar>(source)
-    , MVData_(source.MVData_)
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -58,7 +69,6 @@ namespace Tpetra {
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Scalar> &A, Ordinal LDA, Ordinal NumVectors)
     : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
-    , MVData_()
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -66,7 +76,6 @@ namespace Tpetra {
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &arrayOfArrays, Ordinal NumVectors)
     : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
-    , MVData_()
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -74,7 +83,6 @@ namespace Tpetra {
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source, const Teuchos::ArrayView<const Ordinal> &indices)
     : DistObject<Ordinal,Scalar>(source)
-    , MVData_(source.MVData_)
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -82,7 +90,6 @@ namespace Tpetra {
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source, Ordinal startIndex, Ordinal NumVectors)
     : DistObject<Ordinal,Scalar>(source)
-    , MVData_(source.MVData_)
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -90,13 +97,54 @@ namespace Tpetra {
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::~MultiVector()
   {
-    TEST_FOR_EXCEPT(true);
+  }
+
+  template <typename Ordinal, typename Scalar> 
+  bool MultiVector<Ordinal,Scalar>::constantStride() const
+  {
+    return MVData_->constantStride_;
+  }
+
+  template <typename Ordinal, typename Scalar> 
+  Ordinal MultiVector<Ordinal,Scalar>::myLength() const
+  {
+    return this->getMap().getNumMyEntries();
+  }
+
+  template <typename Ordinal, typename Scalar> 
+  Ordinal MultiVector<Ordinal,Scalar>::globalLength() const
+  {
+    return this->getMap().getNumGlobalEntries();
+  }
+
+  template <typename Ordinal, typename Scalar> 
+  Ordinal MultiVector<Ordinal,Scalar>::stride() const
+  {
+    return MVData_->stride_;
   }
 
   template <typename Ordinal, typename Scalar> 
   void MultiVector<Ordinal,Scalar>::print(std::ostream &os) const
   {
-    TEST_FOR_EXCEPT(true);
+    using std::endl;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm = this->getMap().getComm();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    for(int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+      if (myImageID == imageCtr) {
+        if (myImageID == 0) {
+          os << "Number of vectors: " << numVectors() << endl;
+          os << "Global length: " << globalLength() << endl;
+        }
+        os << "Local length: " << myLength() << endl;
+        os << "Local stride: " << stride() << endl;
+        os << "Constant stride: " << (constantStride() ? "true" : "false") << endl;
+      }
+      // Do a few global ops to give I/O a chance to complete
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
+    }
   }
   
   template <typename Ordinal, typename Scalar> 
@@ -106,46 +154,49 @@ namespace Tpetra {
   }
 
   template<typename Ordinal, typename Scalar>
-  bool MultiVector<Ordinal,Scalar>::checkSizes(const DistObject<Ordinal,Scalar> &sourceObj) 
+  bool MultiVector<Ordinal,Scalar>::checkSizes(const DistObject<Ordinal,Scalar> &/*sourceObj*/) 
   {
     TEST_FOR_EXCEPT(true);
     return true;
   }
 
   template<typename Ordinal, typename Scalar>
-  int MultiVector<Ordinal,Scalar>::copyAndPermute(
-      const DistObject<Ordinal,Scalar> &sourceObj,
-      Ordinal numSameIDs, Ordinal numPermuteIDs,
-      const std::vector<Ordinal> &permuteToLIDs, const std::vector<Ordinal> &permuteFromLIDs)
+  void MultiVector<Ordinal,Scalar>::copyAndPermute(
+      const DistObject<Ordinal,Scalar> &/*sourceObj*/,
+      Ordinal /*numSameIDs*/, Ordinal /*numPermuteIDs*/,
+      const std::vector<Ordinal> &/*permuteToLIDs*/, const std::vector<Ordinal> &/*permuteFromLIDs*/)
   {
     TEST_FOR_EXCEPT(true);
-    return 0;
   }
 
   template<typename Ordinal, typename Scalar>
-  int MultiVector<Ordinal,Scalar>::packAndPrepare(
-      const DistObject<Ordinal,Scalar> &sourceObj,
-      Ordinal numExportIDs,
-      const std::vector<Ordinal> &exportLIDs, std::vector<Scalar> &exports,
-      Ordinal &packetSize,
-      Distributor<Ordinal> &distor) 
+  void MultiVector<Ordinal,Scalar>::packAndPrepare(
+      const DistObject<Ordinal,Scalar> &/*sourceObj*/,
+      Ordinal /*numExportIDs*/,
+      const std::vector<Ordinal> &/*exportLIDs*/, std::vector<Scalar> &/*exports*/,
+      Ordinal &/*packetSize*/,
+      Distributor<Ordinal> &/*distor*/) 
   {
     TEST_FOR_EXCEPT(true);
-    return 0;
   }
 
   template<typename Ordinal, typename Scalar>
-  int MultiVector<Ordinal,Scalar>::unpackAndCombine(
-      Ordinal numImportIDs,
-      const std::vector<Ordinal> &importLIDs,
-      const std::vector<Scalar> &imports,
-      Distributor<Ordinal> &distor,
-      CombineMode CM) 
+  void MultiVector<Ordinal,Scalar>::unpackAndCombine(
+      Ordinal /*numImportIDs*/,
+      const std::vector<Ordinal> &/*importLIDs*/,
+      const std::vector<Scalar> &/*imports*/,
+      Distributor<Ordinal> &/*distor*/,
+      CombineMode /*CM*/) 
   {
     TEST_FOR_EXCEPT(true);
-    return 0;
   }
-  
+
+  template<typename Ordinal, typename Scalar>
+  Ordinal MultiVector<Ordinal,Scalar>::numVectors() const 
+  {
+    return Teuchos::as<Ordinal>(MVData_->pointers_.size());
+  }
+
   /*
 
       // Basic constructor

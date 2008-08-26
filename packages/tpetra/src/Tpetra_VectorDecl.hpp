@@ -239,20 +239,20 @@ namespace Tpetra {
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Ordinal,Scalar> & sourceObj);
 
-    int copyAndPermute(const DistObject<Ordinal,Scalar> & sourceObj,
+    void copyAndPermute(const DistObject<Ordinal,Scalar> & sourceObj,
                Ordinal numSameIDs,
                Ordinal numPermuteIDs,
                const std::vector<Ordinal> & permuteToLIDs,
                const std::vector<Ordinal> & permuteFromLIDs);
 
-    int packAndPrepare(const DistObject<Ordinal,Scalar> & sourceObj,
+    void packAndPrepare(const DistObject<Ordinal,Scalar> & sourceObj,
                Ordinal numExportIDs,
                const std::vector<Ordinal> & exportLIDs,
                std::vector<Scalar>& exports,
                Ordinal &packetSize,
                Distributor<Ordinal> &distor);
   
-    int unpackAndCombine(Ordinal numImportIDs,
+    void unpackAndCombine(Ordinal numImportIDs,
                const std::vector<Ordinal> & importLIDs,
                const std::vector<Scalar> & imports,
                Distributor<Ordinal> &distor,

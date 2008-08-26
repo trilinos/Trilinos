@@ -594,7 +594,7 @@ template<>
 class TypeNameTraits<ParameterList> {
 public:
   static std::string name() { return "ParameterList"; }
-  static std::string concreteName( const ParameterList& t2 )
+  static std::string concreteName( const ParameterList& /*t2*/ )
     { return name(); }
 };
 
@@ -668,7 +668,7 @@ ParameterList& ParameterList::set(
 
 inline
 ParameterList& ParameterList::set(
-  std::string const& name_in, ParameterList const& value, std::string const& docString
+  std::string const& name_in, ParameterList const& value, std::string const& /*docString*/
   )
 {
   sublist(name_in) = value;
@@ -794,7 +794,7 @@ const std::string& ParameterList::name() const
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<typename T>
-bool ParameterList::isType(const std::string& name_in, T* ptr) const
+bool ParameterList::isType(const std::string& name_in, T* /*ptr*/) const
 {
   ConstIterator i = params_.find(name_in);
   // If parameter doesn't exist, return false.
@@ -821,7 +821,7 @@ bool ParameterList::isType(const std::string& name_in) const
 template<typename T>
 inline
 void ParameterList::validateEntryType(
-  const std::string &funcName, const std::string &name_in,
+  const std::string &/*funcName*/, const std::string &name_in,
   const ParameterEntry &entry_in
   ) const
 {

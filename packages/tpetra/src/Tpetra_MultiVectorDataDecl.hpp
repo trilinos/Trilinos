@@ -40,15 +40,13 @@ namespace Tpetra {
   friend class MultiVector<Ordinal, Scalar>;
 
   public:
-    MultiVectorData(const Map<Ordinal> & map, Scalar seed); 
+    MultiVectorData();
 
     ~MultiVectorData();
 
   protected:
-    Map<Ordinal> map_;
     Teuchos::ArrayRCP<Scalar> values_;
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > pointers_;
-    Scalar seed_;
     bool constantStride_;
     Ordinal stride_;
 

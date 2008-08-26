@@ -70,11 +70,17 @@ namespace {
     const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
     const Ordinal numVecs  = 5;
-    Map<Ordinal> map(NEGONE,indexBase,numLocal,platform);
+    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform);
     MultiVector<Ordinal,Scalar> mvec(map,numVecs);
+    TEST_EQUALITY( mvec.numVectors(), numVecs );
     out << mvec << endl;
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadConst, Ordinal, Scalar )
+  {
+    // bad NumVectors
+  }
 
 
   // 

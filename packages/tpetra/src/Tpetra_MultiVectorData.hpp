@@ -36,10 +36,8 @@
 namespace Tpetra {
 
   template<typename Ordinal, typename Scalar>
-  MultiVectorData<Ordinal,Scalar>::MultiVectorData(const Map<Ordinal> & map, Scalar seed) 
+  MultiVectorData<Ordinal,Scalar>::MultiVectorData()
     : Teuchos::Object("Tpetra::MultiVectorData")
-    , map_(map)
-    , seed_(seed)
   {}
 
   template<typename Ordinal, typename Scalar>

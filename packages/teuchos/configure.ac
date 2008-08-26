@@ -192,7 +192,7 @@ TAC_ARG_CHECK_MPI
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS(
- [cerrno climits cstdlib cassert cmath iomanip iostream string  cstring complex algorithm map list set vector sstream stdexcept cstdarg typeinfo memory utility],,
+ [cerrno climits cstdlib cassert cmath iomanip iostream string  cstring complex algorithm numeric map list set vector sstream stdexcept cstdarg typeinfo memory utility],,
   AC_MSG_ERROR([[Cannot find standard header (see above).]])
 )
 # 2007/06/28: rabartl: Note that above you can not have a newline in the [...] 

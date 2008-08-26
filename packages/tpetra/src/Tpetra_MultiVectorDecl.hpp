@@ -54,8 +54,8 @@ namespace Tpetra {
     public:
 
     /* FINISH: what with these?
-       int replaceMap (const Map<Ordinal> &map);
-       int reduce ();
+       void replaceMap (const Map<Ordinal> &map);
+       void reduce ();
      */
 
     //@{ \name Constructor/Destructor Methods
@@ -89,19 +89,19 @@ namespace Tpetra {
     void replaceGlobalValue(Ordinal globalRow, Ordinal vectorIndex, const Scalar &value);
 
     //! Adds ScalarValue to existing value at the specified (GlobalRow, VectorIndex) location.
-    int sumIntoGlobalValue(Ordinal globalRow, Ordinal vectorIndex, const Scalar &value);
+    void sumIntoGlobalValue(Ordinal globalRow, Ordinal vectorIndex, const Scalar &value);
 
     //! Replace current value at the specified (MyRow, VectorIndex) location with ScalarValue.
-    int replaceMyValue(int MyRow, int VectorIndex, const Scalar &ScalarValue);
+    void replaceMyValue(Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue);
 
     //! Adds ScalarValue to existing value at the specified (MyRow, VectorIndex) location.
-    int sumIntoMyValue(int MyRow, int VectorIndex, const Scalar &ScalarValue);
+    void sumIntoMyValue(Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue);
 
     //! Initialize all values in a multi-vector with constant value.
-    int putScalar(const Scalar &ScalarConstant);
+    void putScalar(const Scalar &ScalarConstant);
 
     //! Set multi-vector values to random numbers.
-    int random();
+    void random();
 
     //@} 
 
@@ -186,16 +186,6 @@ namespace Tpetra {
 
     //@} 
 
-    //@{ \name Random number utilities
-
-    //! Set seed for Random function.
-    int setSeed(unsigned int Seed_in);
-
-    //! Get seed from Random function.
-    unsigned getSeed();
-
-    //@} 
-
     //@{ \name Overloaded operators
 
     //! = Operator.
@@ -225,18 +215,18 @@ namespace Tpetra {
     //@{ \name Attribute access functions
 
     //! Returns the number of vectors in the multi-vector.
-    int numVectors() const;
+    Ordinal numVectors() const;
 
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
-    int myLength() const;
+    Ordinal myLength() const;
 
     //! Returns the global vector length of vectors in the multi-vector.
-    int globalLength() const;
+    Ordinal globalLength() const;
 
-    //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true).
-    int stride() const;
+    //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
+    Ordinal stride() const;
 
-    //! Returns true if this multi-vector has constant stride between vectors.
+    //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
     bool constantStride() const;
 
     //@} 
@@ -252,7 +242,7 @@ namespace Tpetra {
     //@{ \name Expert-only unsupported methods
 
     //! Reset the view of an existing multivector to point to new user data.
-    int resetView(const Teuchos::ArrayRCP<const Teuchos::ArrayRCP<Scalar> > &arrayOfArrays);
+    void resetView(const Teuchos::ArrayRCP<const Teuchos::ArrayRCP<Scalar> > &arrayOfArrays);
 
     //! Get pointer to MultiVector values.
     const Teuchos::ArrayRCP<Scalar> & values();
@@ -275,20 +265,20 @@ namespace Tpetra {
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Ordinal,Scalar> & sourceObj);
 
-    int copyAndPermute(const DistObject<Ordinal,Scalar> & sourceObj,
+    void copyAndPermute(const DistObject<Ordinal,Scalar> & sourceObj,
                Ordinal numSameIDs,
                Ordinal numPermuteIDs,
                const std::vector<Ordinal> & permuteToLIDs,
                const std::vector<Ordinal> & permuteFromLIDs);
 
-    int packAndPrepare(const DistObject<Ordinal,Scalar> & sourceObj,
+    void packAndPrepare(const DistObject<Ordinal,Scalar> & sourceObj,
                Ordinal numExportIDs,
                const std::vector<Ordinal> & exportLIDs,
                std::vector<Scalar>& exports,
                Ordinal &packetSize,
                Distributor<Ordinal> &distor);
   
-    int unpackAndCombine(Ordinal numImportIDs,
+    void unpackAndCombine(Ordinal numImportIDs,
                const std::vector<Ordinal> & importLIDs,
                const std::vector<Scalar> & imports,
                Distributor<Ordinal> &distor,

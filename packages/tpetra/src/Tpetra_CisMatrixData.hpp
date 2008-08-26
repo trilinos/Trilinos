@@ -29,6 +29,8 @@
 #ifndef TPETRA_CISMATRIXDATA_HPP
 #define TPETRA_CISMATRIXDATA_HPP
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 #include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
@@ -152,5 +154,7 @@ namespace Tpetra {
   }; // class CisMatrixData
 
 } // namespace Tpetra
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_CISMATRIXDATA_HPP
