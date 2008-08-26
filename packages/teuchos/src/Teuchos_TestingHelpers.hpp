@@ -270,7 +270,7 @@ bool compareFloatingArrays(
   }
 
 
-/** \brief Test if an array element value is equal to a given constant.
+/** \brief Test that an array element value is equal to a given constant.
  *
  * This macro is not complicated so take a look for yourself!
  *
@@ -282,6 +282,23 @@ bool compareFloatingArrays(
     if (!l_result) (success) = false; \
     if (printPass || !(l_result)) { \
       out << #a"["<<i<<"] = " << (a)[i] << " == "#val" = " << (val) \
+          << " : " << Teuchos::passfail(l_result) << "\n"; \
+    } \
+  }
+
+
+/** \brief Test that an array element value is not equal to a given constant.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_ARRAY_ELE_INEQUALITY( a, i, val, printPass, out, success ) \
+  { \
+    const bool l_result = ( (a)[i] != (val) ); \
+    if (!l_result) (success) = false; \
+    if (printPass || !(l_result)) { \
+      out << #a"["<<i<<"] = " << (a)[i] << " != "#val" = " << (val) \
           << " : " << Teuchos::passfail(l_result) << "\n"; \
     } \
   }

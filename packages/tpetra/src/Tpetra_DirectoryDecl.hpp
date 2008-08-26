@@ -49,7 +49,8 @@ namespace Tpetra {
   class Directory : public Teuchos::Object {
   public:
     
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor.
+    //@{ 
     
     //! constructor
     Directory(const Map<Ordinal> & map);
@@ -63,7 +64,8 @@ namespace Tpetra {
     
     //@}
     
-    //@{ \name Query methods.
+    //! @name Query methods.
+    //@{ 
     
     //! getDirectoryEntries : Returns image info for non-local Map entries
     /*! Given a list of Global Entry IDs, this function returns the list of

@@ -58,7 +58,8 @@ namespace Tpetra {
        void reduce ();
      */
 
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! Basic MultiVector constuctor.
     MultiVector(const Map<Ordinal> &map, Ordinal numVectors, bool zeroOut=true);
@@ -83,7 +84,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Post-construction modification routines
+    //! @name Post-construction modification routines
+    //@{ 
 
     //! Replace current value at the specified (GlobalRow, VectorIndex) location with ScalarValue.
     void replaceGlobalValue(Ordinal globalRow, Ordinal vectorIndex, const Scalar &value);
@@ -105,7 +107,8 @@ namespace Tpetra {
 
     //@} 
 
-    //@{ \name Extraction methods
+    //! @name Extraction methods
+    //@{ 
 
     // FINISH: should these be const or not?
 
@@ -129,12 +132,13 @@ namespace Tpetra {
 
     //@} 
 
-    //@{ \name Mathematical methods
+    //! @name Mathematical methods
+    //@{ 
 
     // FINISH: expand documentation of these functions
 
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    void dot(const MultiVector<Ordinal,Scalar> &A, Teuchos::Array<Scalar> &dots) const;
+    void dot(const MultiVector<Ordinal,Scalar> &A, const Teuchos::ArrayView<Scalar> &dots) const;
 
     //! Puts element-wise absolute values of input Multi-vector in target, this = abs(A).
     void abs(const MultiVector<Ordinal,Scalar> &A);
@@ -155,13 +159,13 @@ namespace Tpetra {
     void update(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A, const Scalar &beta, const MultiVector<Ordinal,Scalar> &B, const Scalar &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
-    void norm1(Teuchos::Array<Scalar> &norms) const;
+    void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute 2-norm of each vector in multi-vector.
-    void norm2(Teuchos::Array<Scalar> &norms) const;
+    void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute Inf-norm of each vector in multi-vector.
-    void normInf(Teuchos::Array<Scalar> &norms) const;
+    void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     void normWeighted(const MultiVector<Ordinal,Scalar> &weights, Teuchos::Array<Scalar> &norms) const;
@@ -186,7 +190,8 @@ namespace Tpetra {
 
     //@} 
 
-    //@{ \name Overloaded operators
+    //! @name Overloaded operators
+    //@{ 
 
     //! = Operator.
     /*! \param In 
@@ -212,7 +217,8 @@ namespace Tpetra {
 
     //@} 
 
-    //@{ \name Attribute access functions
+    //! @name Attribute access functions
+    //@{ 
 
     //! Returns the number of vectors in the multi-vector.
     Ordinal numVectors() const;
@@ -231,7 +237,8 @@ namespace Tpetra {
 
     //@} 
 
-    //@{ \name I/O methods
+    //! @name I/O methods
+    //@{ 
 
     //! Print method.
     void print(std::ostream &os) const;
@@ -239,7 +246,8 @@ namespace Tpetra {
 
     //@} 
 
-    //@{ \name Expert-only unsupported methods
+    //! @name Expert-only unsupported methods
+    //@{ 
 
     //! Reset the view of an existing multivector to point to new user data.
     void resetView(const Teuchos::ArrayRCP<const Teuchos::ArrayRCP<Scalar> > &arrayOfArrays);

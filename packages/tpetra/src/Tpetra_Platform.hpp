@@ -50,7 +50,8 @@ namespace Tpetra {
   class Platform : public Teuchos::Object {
   public:
   
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! Constructor
     Platform(const std::string &str);
@@ -66,7 +67,8 @@ namespace Tpetra {
 
     //@}
   
-    //@{ \name Class Creation and Accessor Methods
+    //! @name Class Creation and Accessor Methods
+    //@{ 
 
     //! Create a Comm instance for global communication between nodes.
     virtual Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const = 0;

@@ -71,7 +71,8 @@ namespace Tpetra {
 
   public:
   
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! Sets all vector entries to zero.
     Vector(const Map<Ordinal> &map);
@@ -87,7 +88,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Post-Construction Modification Routines
+    //! @name Post-Construction Modification Routines
+    //@{ 
 
     //! Submit entries. Values submitted will be summed with existing values.
     void submitEntries(const Teuchos::ArrayView<const Ordinal> &indices,
@@ -102,7 +104,8 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Extraction Methods
+    //! @name Extraction Methods
+    //@{ 
 
     //! Put vector entries into user array (copy)
     // void extractCopy(Scalar* userArray) const;
@@ -113,7 +116,8 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Mathematical Methods
+    //! @name Mathematical Methods
+    //@{ 
 
     //! Returns result of dot product, \e result = this.x
     Scalar dotProduct(const Vector<Ordinal, Scalar> &x) const;
@@ -172,7 +176,8 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Random number utilities
+    //! @name Random number utilities
+    //@{ 
 
     //! Get seed
     const Scalar & getSeed() const;
@@ -183,7 +188,8 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Element access methods
+    //! @name Element access methods
+    //@{ 
 
     //! [] operator, nonconst version
     Scalar& operator[](Ordinal index);
@@ -194,7 +200,8 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Attribute access methods
+    //! @name Attribute access methods
+    //@{ 
 
     //! Returns number of vector entries owned by this image.
     Ordinal getNumMyEntries() const;
@@ -204,7 +211,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name I/O methods
+    //! @name I/O methods
+    //@{ 
 
     //! Print method, used by overloaded << operator.
     void print(std::ostream &os) const;
@@ -213,7 +221,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Misc. 
+    //! @name Misc. 
+    //@{ 
 
     //! Returns a const reference to the VectorSpace this Vector belongs to.
     const Map<Ordinal> & getMap() const;
@@ -223,7 +232,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Expert/Developer Use Only.
+    //! @name Expert/Developer Use Only.
+    //@{ 
 
     // Returns pointer to Scalar array inside of scalarArray
     Teuchos::ArrayView<Scalar> scalarPointer();

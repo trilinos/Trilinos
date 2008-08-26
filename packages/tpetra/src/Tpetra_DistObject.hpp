@@ -74,7 +74,8 @@ namespace Tpetra {
 
   public:
 
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! constructor
     DistObject(const Map<Ordinal>& map, Teuchos::RCP< Teuchos::Comm<Ordinal> > comm);
@@ -92,7 +93,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Import/Export Methods
+    //! @name Import/Export Methods
+    //@{ 
 
     //! Import
     void doImport(const DistObject<Ordinal, Scalar> & source, 
@@ -112,14 +114,16 @@ namespace Tpetra {
     
     //@}
 
-    //@{ \name I/O methods
+    //! @name I/O methods
+    //@{ 
 
     //! print method
     virtual void print(std::ostream& os) const;
 
     //@}
 
-    //@{ \name Attribute Accessor Methods
+    //! @name Attribute Accessor Methods
+    //@{ 
 
     //! Accessor for whether or not this is a global object
     bool isDistributed() const;

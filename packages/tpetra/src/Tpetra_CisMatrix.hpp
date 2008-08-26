@@ -110,7 +110,8 @@ namespace Tpetra {
 
   public:
   
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
   
     //! Constructor specifying the primary distribution only.
     CisMatrix(VectorSpace<OrdinalType, ScalarType> const& primaryDist, bool rowOriented = true)
@@ -138,7 +139,8 @@ namespace Tpetra {
   
     //@}
   
-    //@{ \name Post-Construction Modification Routines
+    //! @name Post-Construction Modification Routines
+    //@{ 
   
     //! Set all matrix entries equal to scalarThis
     void setAllToScalar(ScalarType scalarThis) {
@@ -361,7 +363,8 @@ namespace Tpetra {
     
     //@}
   
-    //@{ \name Computational Methods
+    //! @name Computational Methods
+    //@{ 
     
     //! Returns the global one norm of the matrix
     ScalarType normOne() const {
@@ -385,7 +388,8 @@ namespace Tpetra {
   
     //@}
   
-    //@{ \name Attribute Access Methods (Most of these can only be called after fillComplete has been called.)
+    //! @name Attribute Access Methods (Most of these can only be called after fillComplete has been called.)
+    //@{ 
   
     //! Returns the number of nonzero entries in the global matrix.
     OrdinalType getNumGlobalNonzeros() const {
@@ -537,7 +541,8 @@ namespace Tpetra {
   
     //@}
   
-    //@{ \name I/O Methods
+    //! @name I/O Methods
+    //@{ 
   
     // Print method, used by the overloaded << operator
     void print(ostream& os) const {
@@ -599,7 +604,8 @@ namespace Tpetra {
   
     //@}
   
-    //@{ \name Miscellaneous Methods
+    //! @name Miscellaneous Methods
+    //@{ 
   
     //! Inlined bracket operator, non-const version.
     //ScalarType* operator[] (OrdinalType index);

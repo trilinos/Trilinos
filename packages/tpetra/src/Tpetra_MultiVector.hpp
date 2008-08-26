@@ -197,6 +197,47 @@ namespace Tpetra {
     return Teuchos::as<Ordinal>(MVData_->pointers_.size());
   }
 
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::dot(
+      const MultiVector<Ordinal,Scalar> &A, 
+      const Teuchos::ArrayView<Scalar> &dots) const 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::norm1(
+      const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::norm2(
+      const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::normInf(
+      const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::random() 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::scale(const Scalar &alpha) 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
+
   /*
 
       // Basic constructor

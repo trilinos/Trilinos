@@ -61,7 +61,8 @@ namespace Tpetra {
 
   public:
 
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! Constructs a Export object from the source and target Map.
     Export(const Map<Ordinal> & source, const Map<Ordinal> & target);
@@ -74,7 +75,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Export Attribute Methods
+    //! @name Export Attribute Methods
+    //@{ 
 
     //! Returns the number of elements that are identical between the source and target Maps, up to the first different ID.
     Ordinal getNumSameIDs() const;
@@ -116,7 +118,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name I/O Methods
+    //! @name I/O Methods
+    //@{ 
 
     //! Print method inherited from Teuchos::Object
     virtual void print(std::ostream& os) const;

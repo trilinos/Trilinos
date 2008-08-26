@@ -51,7 +51,8 @@ namespace Tpetra {
   class Distributor : public Teuchos::Object {
   public:
 
-    //@{ \name Constructor/Destructor
+    //! @name Constructor/Destructor
+    //@{ 
 
     //! Comm Constuctor (default ctr)
     Distributor(const Teuchos::RCP< Teuchos::Comm<Ordinal> > & comm);
@@ -65,7 +66,8 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Gather/Scatter Constructors
+    //! @name Gather/Scatter Constructors
+    //@{ 
 
     //! Create Distributor object using list of ImageIDs to send to
     /*! Take a list of ImageIDs and construct a plan for efficiently scattering to these images.
@@ -99,7 +101,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Attribute Accessor Methods
+    //! @name Attribute Accessor Methods
+    //@{ 
 
     //! getNumReceives
     const Ordinal & getNumReceives() const;
@@ -144,7 +147,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Reverse Communication Methods
+    //! @name Reverse Communication Methods
+    //@{ 
 
     // getReverse
     //! Returns a Distributor with a reverse plan of this Distributor's plan
@@ -155,7 +159,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Execute Distributor Plan Methods
+    //! @name Execute Distributor Plan Methods
+    //@{ 
 
     //! doPostsAndWaits
     /*! Execute a plan specified by the distributor object.
@@ -203,7 +208,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name I/O Methods
+    //! @name I/O Methods
+    //@{ 
 
     //! Implements Teuchos::Object::print.
     void print(std::ostream& os) const;

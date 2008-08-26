@@ -44,7 +44,8 @@ namespace Tpetra {
 
   public:
 
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     /*! \brief Map constructor with Tpetra-defined contiguous uniform distribution.
      *   The entries are distributed among nodes so that the subsets of global entries
@@ -79,7 +80,8 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Map Attribute Methods
+    //! @name Map Attribute Methods
+    //@{ 
 
     //! Returns the number of entries in this Map.
     Ordinal getNumGlobalEntries() const;
@@ -140,7 +142,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Boolean Tests
+    //! @name Boolean Tests
+    //@{ 
 
     //! Returns true if \c map is compatible with this Map.
     bool isCompatible (const Map< Ordinal> &map) const;

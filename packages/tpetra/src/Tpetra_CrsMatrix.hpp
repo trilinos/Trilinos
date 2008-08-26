@@ -75,7 +75,8 @@ namespace Tpetra
   class CrsMatrix : public Teuchos::Object, public Teuchos::CompObject
   {
     public:
-      //@{ \name Constructor/Destructor Methods
+      //! @name Constructor/Destructor Methods
+      //@{ 
 
       //! Constructor specifying the primary distribution only.
       CrsMatrix(const Teuchos::Comm<OrdinalType>& Comm, 
@@ -109,7 +110,8 @@ namespace Tpetra
       }
 
       //@}
-      //@{ \name Query Methods
+      //! @name Query Methods
+      //@{ 
       
       //! Returns \c true if the matrix has already been fill completed.
       bool isFillCompleted() const
@@ -269,7 +271,8 @@ namespace Tpetra
 
 
       //@}
-      //@{ \name Construction Methods
+      //! @name Construction Methods
+      //@{ 
       
       //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
       void fillComplete()
@@ -447,7 +450,8 @@ namespace Tpetra
       }
 
       // @}
-      // @{ \name Computational Methods
+      //! @name Computational Methods
+      // @{ 
       
       //! Returns a copy of the specified local row, column indices are local.
       inline void getMyRowCopy(const OrdinalType MyRow, OrdinalType& NumEntries,
@@ -523,7 +527,8 @@ namespace Tpetra
       }
 
       //@}
-      //@{ \name I/O Methods
+      //! @name I/O Methods
+      //@{ 
       
       //! Prints the matrix on the specified stream.
       virtual void print(ostream& os) const 

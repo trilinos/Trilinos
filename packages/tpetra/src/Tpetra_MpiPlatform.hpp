@@ -42,7 +42,8 @@ namespace Tpetra {
   class MpiPlatform : public virtual Platform<Ordinal> {
   public:
 
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! Constructor
     MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
@@ -58,7 +59,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Class Creation and Accessor Methods
+    //! @name Class Creation and Accessor Methods
+    //@{ 
 
     //! Comm Instance
     Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const;
