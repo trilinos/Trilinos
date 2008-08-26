@@ -667,7 +667,12 @@ void Thyra::assertOutArgsEvalObjects(
     )
   {
     if ( inArgs->supports(MEB::IN_ARG_alpha) && inArgs->supports(MEB::IN_ARG_beta) ) {
-      TEST_FOR_EXCEPT( inArgs->get_alpha() == ST::zero() && inArgs->get_beta() == ST::zero() );
+      // 08/25/08 tscoffe:  In the block-composed linear operator case for
+      // Rythmos::ImplicitRKModelEvaluator, I need to specify that a given
+      // block is all zeros and I'm depending on the underlying model to
+      // intelligently fill the block with zeros if both alpha and beta are
+      // zero.  
+      //TEST_FOR_EXCEPT( inArgs->get_alpha() == ST::zero() && inArgs->get_beta() == ST::zero() );
     }
     else if ( inArgs->supports(MEB::IN_ARG_beta) ) {
       TEST_FOR_EXCEPT( inArgs->get_beta() == ST::zero() );
