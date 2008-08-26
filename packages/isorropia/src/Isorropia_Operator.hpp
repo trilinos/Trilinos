@@ -22,8 +22,6 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
-Questions? Contact Alan Williams (william@sandia.gov)
-                or Erik Boman    (egboman@sandia.gov)
 
 ************************************************************************
 */
@@ -37,16 +35,15 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 namespace Isorropia {
 
-/** Interface (abstract base class) for computing a new partitioning and
-  describing the layout of elements in the new partitions.
+/** Interface (abstract base class) for computing a new partitioning/coloring/
+    ordering and exploiting their results.
 
-  If the methods which describe the new partitioning (e.g., 
-  newPartitionNumber(), etc.) are called before compute_partitioning()
-  has been called, behavior is not well defined. Implementations will
-  either return empty/erroneous data, or throw an exception. In most
-  cases, implementations will probably call compute_partitioning()
-  internally in a constructor or factory method, so this won't usually
-  be an issue.
+  If the accessors methods are called before the computation of the
+  result (by a method like compute()) has been called, behavior is not
+  well defined.  Implementations will either return empty/erroneous
+  data, or throw an exception. In most cases, implementations will
+  probably call compute_partitioning() internally in a constructor or
+  factory method, so this won't usually be an issue.
 */
 class Operator {
 public:
@@ -54,7 +51,7 @@ public:
   /** Destructor */
   virtual ~Operator() {}
 
-  /** Set parameters for the Partitioner instance. The contents of the
+  /** Set parameters for the Operator instance. The contents of the
       input paramlist object are copied into an internal ParameterList
       attribute. Instances of this interface should not retain a reference
       to the input ParameterList after this method returns.
@@ -67,35 +64,38 @@ public:
      partitioning. This method computes a 'new' rebalanced
      partitioning for that input data.
 
-     \param force_repartitioning Optional argument defaults to false.
-        Depending on the implementation, compute_partitioning() should
-        only perform a repartitioning the first time it is called, and
-        subsequent repeated calls are no-ops. If the user's intent is
-        to re-compute the partitioning (e.g., if parameters or other
-        inputs have been changed), then setting this flag to true
-        will force a new partitioning to be computed.
+     \param forceRecomputing Optional argument defaults to false.
+     Depending on the implementation, compute() should
+     only perform a computation the first time it is called, and
+     subsequent repeated calls are no-ops. If the user's intent is
+     to re-compute the results (e.g., if parameters or other
+     inputs have been changed), then setting this flag to true
+     will force a new result to be computed.
    */
   virtual void compute(bool forceRecomputing=false) = 0;
 
-  /** Query whether compute_partitioning() has already been called.
+  /** Query whether the computation has already been called.
    */
   virtual bool alreadyComputed() const = 0;
 
 
+  /** Return the number of differtent "properties", like the number of
+   *  colors used for the overall graph/matrix.
+   */
   virtual int numProperties() const = 0;
 
-  /** Return the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
+  /** Return the "property" for a given element that resided locally
+   *  in the old partitioning.
+   */
   virtual const int& operator[](int myElem) const = 0;
 
-  /** Return the number of elements in a given partition.
-  */
+  /** Return the number of elements with the given property
+   */
   virtual int numElemsWithProperty(int property) const = 0;
 
-  /** Fill user-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-  */
+  /** Fill user-allocated list (of length len) with the local element
+   *  ids of the LOCAL elements with the given property.
+   */
   virtual void elemsWithProperty(int property,
 				 int* elementList,
 				 int len) const = 0;

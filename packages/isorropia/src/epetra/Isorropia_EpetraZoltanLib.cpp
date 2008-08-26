@@ -22,8 +22,6 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
-Questions? Contact Alan Williams (william@sandia.gov)
-		or Erik Boman    (egboman@sandia.gov)
 
 ************************************************************************
 */
@@ -447,12 +445,15 @@ void ZoltanLibClass::preCheckPartition()
 
 int ZoltanLibClass::
 repartition(Teuchos::ParameterList& zoltanParamList,
-	    std::vector<int>& myNewElements,
-// 	    std::map<int,int>& exports,
+	    std::vector<int>& properties,
 	    int& exportsSize,
 	    std::vector<int>& imports)
 {
   zoltanParamList_ = zoltanParamList;
+
+  // Avoid to construct import list.
+  // Perhaps "PARTITION ASSIGNMENTS" will be better in term of performance.
+  zoltanParamList_.set("RETURN_LISTS", "EXPORT AND IMPORT");
 
   preCheckPartition();
 
@@ -465,10 +466,10 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
   //Generate Load Balance
   int changes, num_gid_entries, num_lid_entries, num_import, num_export;
-  ZOLTAN_ID_PTR import_global_ids, import_local_ids;
-  ZOLTAN_ID_PTR export_global_ids, export_local_ids;
-  int * import_procs, * export_procs;
-  int *import_to_part, *export_to_part;
+  ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
+  ZOLTAN_ID_PTR export_global_ids=NULL, export_local_ids=NULL;
+  int * import_procs=NULL, * export_procs=NULL;
+  int *import_to_part=NULL, *export_to_part=NULL;
 
   int err = zz_->LB_Partition(changes, num_gid_entries, num_lid_entries,
    num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
@@ -479,45 +480,14 @@ repartition(Teuchos::ParameterList& zoltanParamList,
     return -1;
   }
 
-//   //Generate New Element List
-//   int numMyElements = queryObject_->RowMap().NumMyElements();
-//   std::vector<int> elementList( numMyElements );
-//   queryObject_->RowMap().MyGlobalElements( &elementList[0] );
-
-//   int newNumMyElements = numMyElements - num_export ; // no num_import because we do "insert" farther in the code
-//   myNewElements.resize( newNumMyElements );
-
-//   for( int i = 0; i < num_export; ++i ) {
-//     exports[export_global_ids[i]] = export_procs[i];
-//   }
-
-//   for( int i = 0; i < num_import; ++i ) {
-//     imports[import_global_ids[i]] = import_procs[i];
-//   }
   exportsSize = num_export;
   imports.clear();
   imports.assign(import_global_ids, import_global_ids + num_import);
 
-//   for( int i = 0; i < num_import; ++i ) {
-//     imports[import_global_ids[i]] = import_procs[i];
-//   }
-
-//   //Add unmoved indices to new list
-//   int loc = 0;
-//   for( int i = 0; i < numMyElements; ++i ) {
-//     if( !exports.count( elementList[i] ) ) {
-//       myNewElements[loc++] = elementList[i];
-//     }
-//   }
-
-  myNewElements.assign(queryObject_->RowMap().NumMyElements(), queryObject_->RowMap().Comm().MyPID());
+  properties.assign(num_obj_, queryObject_->RowMap().Comm().MyPID());
   for( int i = 0; i < num_export; ++i ) {
-    myNewElements[export_local_ids[i]] = export_to_part[i];
+    properties[export_local_ids[i]] = export_to_part[i];
   }
-
-
-  //Add imports to end of list
-//   myNewElements.insert(myNewElements.begin()+loc, import_global_ids, import_global_ids + num_import);
 
   //Free Zoltan Data
   zz_->LB_Free_Part(&import_global_ids, &import_local_ids,
@@ -532,7 +502,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
 int ZoltanLibClass::
 color(Teuchos::ParameterList& zoltanParamList,
-      std::vector<int>& myNewElements)
+      std::vector<int>& properties)
 {
   zoltanParamList_ = zoltanParamList;
   precompute();
@@ -540,28 +510,23 @@ color(Teuchos::ParameterList& zoltanParamList,
   //Generate Load Balance
   int  num_gid_entries, num_lid_entries;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
-  int *colors = new int[num_obj_];
 
+  properties.resize(num_obj_);
   int err = zz_->Color(num_gid_entries, num_lid_entries, num_obj_,
-		       import_global_ids, import_local_ids, colors);
+ 		       import_global_ids, import_local_ids, &properties[0]);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
-    delete[] colors;
     return -1;
   }
 
-  /* Convert array in vector */
-  myNewElements.assign(colors, colors + num_obj_);
-
   postcompute();
-  delete[] colors;
   return (0);
 }
 
 int ZoltanLibClass::
 order(Teuchos::ParameterList& zoltanParamList,
-      std::vector<int>& myNewElements)
+      std::vector<int>& properties)
 {
   zoltanParamList_ = zoltanParamList;
 
@@ -570,22 +535,17 @@ order(Teuchos::ParameterList& zoltanParamList,
   //Generate Load Balance
   int num_gid_entries, num_lid_entries;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
-  int *rank = new int[num_obj_];
 
+  properties.resize(num_obj_);
   int err = zz_->Order(num_gid_entries, num_lid_entries, num_obj_,
-		       import_global_ids, import_local_ids, rank, NULL);
+		       import_global_ids, import_local_ids, &properties[0], NULL);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
-    delete[] rank;
     return -1;
   }
 
-  /* Convert array in vector */
-  myNewElements.assign(rank, rank + num_obj_);
-
   postcompute();
-  delete[] rank;
   return (0);
 }
 
