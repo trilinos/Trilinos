@@ -26,20 +26,18 @@ USA
 */
 //@HEADER
 
+// Assumes we have Epetra and Zoltan support
+
 #include <Isorropia_EpetraPartitioner2D.hpp>
-#ifdef HAVE_ISORROPIA_ZOLTAN
 #include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_EpetraZoltanLib.hpp>
-#endif
 #include <Isorropia_EpetraInternalPartitioner.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
-
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#ifdef HAVE_EPETRA
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
 #include <Epetra_Import.h>
@@ -49,8 +47,6 @@ USA
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 
-#endif
-
 #include <cstring>
 #include <iostream>
 #include <sstream>
@@ -58,8 +54,6 @@ USA
 #include <ctype.h>
 
 namespace Isorropia {
-
-#ifdef HAVE_EPETRA
 
 namespace Epetra {
 
@@ -208,6 +202,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_
   /** Destructor */
 Partitioner2D::~Partitioner2D(){}
 
+////////////////////////////////////////////////////////////////////////////////
   /** setParameters() is an internal Partitioner2D method which handles
       the parameters from a Teuchos::ParameterList object. 
 
@@ -225,7 +220,7 @@ Partitioner2D::~Partitioner2D(){}
   0 to 10, default is 1), etc.
    */
 
-  /**  compute_partitioning is an internal method that computes 
+  /**  partition is a method that computes 
        a rebalanced partitioning for the data in the object
       that this class was constructed with.
 
@@ -236,61 +231,53 @@ Partitioner2D::~Partitioner2D(){}
          or other inputs have been changed), then setting this flag to
          true will force a new partitioning to be computed.
    */
+////////////////////////////////////////////////////////////////////////////////
 void Partitioner2D::
 partition(bool force_repartitioning)
 {
   std::cout << "MMW::NEED to reimplement" << std::endl;
+
   /* MMW
-  bool use_zoltan = false;
-  Teuchos::ParameterList sublist = paramlist_;
+//  Teuchos::ParameterList sublist = paramlist_;
 
   std::string partitioning_method_str("PARTITIONING_METHOD");
   std::string partitioning_method =
     paramlist_.get(partitioning_method_str, "UNSPECIFIED");
 
-  std::string zoltan("ZOLTAN");
+  if(partitioning_method_str == "UNSPECIFIED")
+  {
+    throw Isorropia::Exception("PARTITIONING_METHOD parameter must be specified.");
+  }
+
+  if(partitioning_method_str != "HGRAPH2D_FINEGRAIN" && partitioning_method_str != "HGRAPH2D_placeholder")
+  {
+    throw Isorropia::Exception("PARTITIONING_METHOD parameter must be HGRAPH2D_FINEGRAIN.");
+  }
 
   if (alreadyComputed() && !force_repartitioning)
     return;
 
-#ifdef HAVE_ISORROPIA_ZOLTAN
-  if (partitioning_method != "SIMPLE_LINEAR") {
-    use_zoltan = true;
-  }
+  // Determine whether graph input or matrix input is used
+  if (input_graph_.get() != 0)
+    lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
+  else
+    lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
 
-  if (use_zoltan) {
-    if (input_graph_.get() != 0)
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
-    else
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
-    sublist = (paramlist_.sublist(zoltan));
-  }
-
-#else // HAVE_ISORROPIA_ZOLTAN 
-  if (paramlist_.isSublist(zoltan)) {
-    throw Isorropia::Exception("Zoltan requested, but Zoltan not enabled.");
-  }
-#endif // HAVE_ISORROPIA_ZOLTAN 
-
-  if (use_zoltan == false) {
-    if (input_graph_.get() == 0)
-      lib_ = Teuchos::rcp(new InternalPartitioner(input_matrix_, costs_));
-    else
-      lib_ = Teuchos::rcp(new InternalPartitioner(input_graph_, costs_));
-  }
-
-  lib_->repartition(sublist, properties_, exportsSize_, imports_);
+  lib_->repartition(paramlist_, properties_, exportsSize_, imports_);
   computeNumberOfProperties();
   operation_already_computed_ = true;
 
 */
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
 void Partitioner2D::
 compute(bool force_repartitioning)
 {
   partition(force_repartitioning);
 }
+////////////////////////////////////////////////////////////////////////////////
 
 //  /** An internal method which determines whether the 
 //      method compute_partitioning() has already been
@@ -318,11 +305,13 @@ int Partitioner2D::numElemsInPartition(int partition) const
   return (numElemsWithProperty(partition));
 }
 
+////////////////////////////////////////////////////////////////////////////////
   /** An internal method which fills caller-allocated list (of length len) with the
       global element ids to be located in the given partition.
 
       (Currently only implemented for the case where 'partition' is local.)
   */
+////////////////////////////////////////////////////////////////////////////////
 void Partitioner2D::elemsInPartition(int partition, int* elementList, int len) const 
 {
   //MMW
@@ -330,7 +319,10 @@ void Partitioner2D::elemsInPartition(int partition, int* elementList, int len) c
 
   return (elemsWithProperty(partition, elementList, len));
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 int
 Partitioner2D::createNewMaps(Teuchos::RefCountPtr<Epetra_Map> domainMap, 
 			     Teuchos::RefCountPtr<Epetra_Map> rangeMap) 
@@ -373,7 +365,10 @@ Partitioner2D::createNewMaps(Teuchos::RefCountPtr<Epetra_Map> domainMap,
   */
   return 0;
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 int
 Partitioner2D::partitionVectors() 
 {
@@ -381,11 +376,9 @@ Partitioner2D::partitionVectors()
   std::cout << "MMW::NEED to implement" << std::endl;
   return 0;
 }
-
+////////////////////////////////////////////////////////////////////////////////
 
 } // namespace EPETRA
-
-#endif //HAVE_EPETRA
 
 }//namespace Isorropia
 

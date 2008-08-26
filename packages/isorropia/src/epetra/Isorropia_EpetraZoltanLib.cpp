@@ -109,7 +109,8 @@ int ZoltanLibClass::precompute()
 
   //MMW  bool isHypergraph = true;
   std::string lb_method_str("LB_METHOD");
-  if (zoltanParamList_.isParameter(lb_method_str)){
+  if (zoltanParamList_.isParameter(lb_method_str))
+  {
     std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
 
     if (lb_meth == "GRAPH")
@@ -448,12 +449,15 @@ void ZoltanLibClass::preCheckPartition()
 }
 
 int ZoltanLibClass::
-repartition(Teuchos::ParameterList& zoltanParamList,
+repartition(Teuchos::ParameterList& paramList,
 	    std::vector<int>& properties,
 	    int& exportsSize,
 	    std::vector<int>& imports)
 {
-  zoltanParamList_ = zoltanParamList;
+
+  std::string zoltan("ZOLTAN");
+  zoltanParamList_  = (paramList.sublist(zoltan));
+
 
   // Avoid to construct import list.
   // Perhaps "PARTITION ASSIGNMENTS" will be better in term of performance.

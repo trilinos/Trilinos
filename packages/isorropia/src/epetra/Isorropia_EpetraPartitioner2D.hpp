@@ -199,7 +199,7 @@ public:
   0 to 10, default is 1), etc.
    */
 
-  /**  compute_partitioning is an internal method that computes 
+  /**  partition is a method that computes 
        a rebalanced partitioning for the data in the object
       that this class was constructed with.
 
