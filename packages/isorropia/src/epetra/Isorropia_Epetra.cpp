@@ -349,7 +349,8 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
   //first put num-local-elements in position myPID, and gather-all so
   //that each proc has all entries.
   all_proc_offsets[myPID] = blkmap.NumMyElements();
-  comm.GatherAll(&all_proc_offsets[myPID], &all_proc_offsets[0], 1);
+  int tmpOffset = all_proc_offsets[myPID];
+  comm.GatherAll(&tmpOffset, &all_proc_offsets[0], 1);
 
   //now run the list and turn the local-sizes into global offsets.
   int offset = 0;
@@ -364,7 +365,7 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
 Teuchos::RefCountPtr<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix)
 {
-  CostDescriber costs; 
+  CostDescriber costs;
   Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =

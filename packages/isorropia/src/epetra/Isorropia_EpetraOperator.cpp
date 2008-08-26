@@ -169,7 +169,6 @@ Operator::computeNumberOfProperties()
   const Epetra_Comm& input_comm = input_map_->Comm();
 
   int max = 0;
-
   numberElemsByProperties_.assign(properties_.size(), 0);
 
   numberIter = numberElemsByProperties_.begin();
@@ -177,6 +176,11 @@ Operator::computeNumberOfProperties()
     int property;
     property = *elemsIter;
     if (max < property) max = property;
+    if (property >= numberElemsByProperties_.size()) {
+      int toAdd = max - numberElemsByProperties_.size();
+      numberElemsByProperties_.insert(numberElemsByProperties_.end(), toAdd, 0);
+      numberIter = numberElemsByProperties_.begin();
+    }
     (*(numberIter + property)) ++;
   }
 
