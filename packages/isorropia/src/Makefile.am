@@ -77,11 +77,13 @@ EPETRA_H = \
 
 EPETRA_ZOLTAN = \
 	$(srcdir)/epetra/zoltanLib/QueryObject.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner2D.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp 
 # 	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp 
 
 EPETRA_ZOLTAN_H = \
 	$(srcdir)/epetra/zoltanLib/QueryObject.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraPartitioner2D.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp 
 #	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp 
 
