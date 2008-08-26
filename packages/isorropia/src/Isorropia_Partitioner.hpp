@@ -22,8 +22,6 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
-Questions? Contact Alan Williams (william@sandia.gov)
-                or Erik Boman    (egboman@sandia.gov)
 
 ************************************************************************
 */
@@ -40,7 +38,7 @@ namespace Isorropia {
 /** Interface (abstract base class) for computing a new partitioning and
   describing the layout of elements in the new partitions.
 
-  If the methods which describe the new partitioning (e.g., 
+  If the methods which describe the new partitioning (e.g.,
   newPartitionNumber(), etc.) are called before compute_partitioning()
   has been called, behavior is not well defined. Implementations will
   either return empty/erroneous data, or throw an exception. In most
@@ -48,12 +46,11 @@ namespace Isorropia {
   internally in a constructor or factory method, so this won't usually
   be an issue.
 */
-class Partitioner {
+class Partitioner : virtual public Operator {
 public:
 
   /** Destructor */
   virtual ~Partitioner() {}
-
 
   /** Method which does the work of computing a new partitioning.
      Implementations of this interface will typically be constructed
@@ -61,36 +58,38 @@ public:
      partitioning. This method computes a 'new' rebalanced
      partitioning for that input data.
 
-     \param force_repartitioning Optional argument defaults to false.
-        Depending on the implementation, compute_partitioning() should
+     \param forceRepartitioning Optional argument defaults to false.
+        Depending on the implementation, partitioning() should
         only perform a repartitioning the first time it is called, and
         subsequent repeated calls are no-ops. If the user's intent is
         to re-compute the partitioning (e.g., if parameters or other
         inputs have been changed), then setting this flag to true
         will force a new partitioning to be computed.
    */
-  virtual void compute_partitioning(bool force_repartitioning=false) __deprecated {
-    return (partition(force_repartitioning));
+  virtual void partition(bool forceRepartitioning=false) = 0;
+
+  /** The deprecated way to compute partitioning. See the partition() method.
+   */
+  virtual __deprecated void compute_partitioning(bool forceRepartitioning=false) {
+    return (partition(forceRepartitioning));
   }
 
-  virtual void partition(bool force_repartitioning=false) = 0;
-
-  /** Query whether compute_partitioning() has already been called.
+  /** Query whether a partitioning as already been successfully computed.
    */
-  virtual bool partitioning_already_computed() const = 0;
+  virtual __deprecated bool partitioning_already_computed() const = 0 ;
 
   /** Return the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
+   *  resided locally in the old partitioning.
+   */
   virtual int newPartitionNumber(int myElem) const = 0;
 
-  /** Return the number of elements in a given partition.
-  */
+  /** Return the number of LOCAL elements in a given partition.
+   */
   virtual int numElemsInPartition(int partition) const = 0;
 
   /** Fill user-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-  */
+   *  local element ids to be located in the given partition.
+   */
   virtual void elemsInPartition(int partition,
                                 int* elementList,
                                 int len) const = 0;
