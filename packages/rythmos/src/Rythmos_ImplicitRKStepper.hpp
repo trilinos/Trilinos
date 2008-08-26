@@ -88,6 +88,12 @@ public:
 
   /** \brief . */
   RKButcherTableau<Scalar> getRKButcherTableau();
+
+  /** \brief . */
+  // This function is mostly for testing purposes to explicitely over-ride the
+  // internal RKBT detection to allow testing of 1-stage RKBTs as both fully
+  // implicit RK and as DIRK methods.
+  void setDirk(bool isDirk);
   
   /** \brief . */
   void setInterpolator(RCP<InterpolatorBase<Scalar> > interpolator);
@@ -294,9 +300,9 @@ void ImplicitRKStepper<Scalar>::initialize(
   irkButcherTableau_ = irkButcherTableau;
   E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(irkButcherTableau);
   if (
-      (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) ||
-      (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) ||
-      (irkButcherTableau_.numStages() == 1)
+         (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
+      || (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
+      || (irkButcherTableau_.numStages() == 1)
      ) 
   {
     isDirk_ = true;
@@ -456,7 +462,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   RCP<FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::takeStep");
+  Teuchos::OSTab ostab(out,1,"takeStep");
   VOTSNSB solver_outputTempState(solver_,out,incrVerbLevel(verbLevel,-1));
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
@@ -502,7 +508,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
     for (int stage=0 ; stage < numStages ; ++stage) {
       dirkModel_->setCurrentStage(stage);
       solver_->solve( &*(x_stage_bar_->getNonconstVectorBlock(stage)) );
-      dirkModel_->updateStageSolution( stage, *(x_stage_bar_->getVectorBlock(stage)) );
+      dirkModel_->setStageSolution( stage, *(x_stage_bar_->getVectorBlock(stage)) );
     }
 
   }
@@ -762,6 +768,27 @@ template <class Scalar>
 RKButcherTableau<Scalar> ImplicitRKStepper<Scalar>::getRKButcherTableau()
 {
   return irkButcherTableau_;
+}
+
+template<class Scalar>
+void ImplicitRKStepper<Scalar>::setDirk(bool isDirk)
+{
+  TEST_FOR_EXCEPTION(isInitialized_, std::logic_error,
+      "Error!  Cannot change DIRK flag after internal initialization is completed\n"
+      );
+  if (isDirk == true) {
+    E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(irkButcherTableau_);
+    bool RKBT_is_DIRK = (
+         (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
+      || (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
+      || (irkButcherTableau_.numStages() == 1)
+      );
+    TEST_FOR_EXCEPTION( !RKBT_is_DIRK, std::logic_error,
+        "Error!  Cannot set DIRK flag on a non-DIRK RK Butcher Tableau\n"
+        );
+  } else { // isDirk = false;
+    isDirk_ = isDirk;
+  }
 }
 
 } // namespace Rythmos

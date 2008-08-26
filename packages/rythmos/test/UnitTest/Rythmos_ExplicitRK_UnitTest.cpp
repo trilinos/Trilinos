@@ -49,7 +49,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, create ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
   RCP<SinCosModel> model = sinCosModel(false);
-  RKButcherTableau<double> rkbt = createExplicit4StageRKBT<double>();
+  RKButcherTableau<double> rkbt = createExplicit4Stage4thOrder_RKBT<double>();
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
   TEST_EQUALITY_CONST( is_null(stepper), false );
   RKButcherTableau<double> rkbt_out = stepper->getRKButcherTableau();

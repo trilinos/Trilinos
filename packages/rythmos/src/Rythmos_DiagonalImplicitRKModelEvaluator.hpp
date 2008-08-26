@@ -76,7 +76,7 @@ public:
     );
 
   /** \brief . */
-  void updateStageSolution(
+  void setStageSolution(
       int stageNumber,
       const Thyra::VectorBase<Scalar>& stage_solution
       );
@@ -271,7 +271,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::setTimeStepPoint(
 }
 
 template<class Scalar>
-void DiagonalImplicitRKModelEvaluator<Scalar>::updateStageSolution(
+void DiagonalImplicitRKModelEvaluator<Scalar>::setStageSolution(
       int stageNumber,
       const Thyra::VectorBase<Scalar>& stage_solution
       )

@@ -32,10 +32,18 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_as.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "EpetraExt_DiagonalTransientModel.hpp"
+#include "../SinCos/SinCosModel.hpp"
+#include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "../UnitTest/Rythmos_UnitTestModels.hpp"
 
 namespace Rythmos {
 
 using Teuchos::as;
+using Teuchos::rcp_dynamic_cast;
+using Thyra::ModelEvaluator;
+using Thyra::LinearOpWithSolveFactoryBase;
 
 template<class Scalar>
 class LinearRegression
@@ -161,15 +169,177 @@ RCP<LinearRegression<Scalar> > linearRegression()
 }
 
 template<class Scalar>
+class ModelFactoryBase
+{
+  public:
+    virtual RCP<ModelEvaluator<Scalar> > getModel() const =0;
+    virtual RCP<LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const =0;
+};
+
+class SinCosModelFactory : public virtual ModelFactoryBase<double>
+{
+  public:
+    SinCosModelFactory(bool implicitFlag) 
+    {
+      implicitFlag_ = implicitFlag;
+    }
+    virtual ~SinCosModelFactory() {}
+    RCP<ModelEvaluator<double> > getModel() const
+    {
+      return(sinCosModel(implicitFlag_));
+    }
+    RCP<LinearOpWithSolveFactoryBase<double> > get_W_factory() const
+    {
+      RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory = 
+        Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
+      return(irk_W_factory);
+    }
+  private:
+    bool implicitFlag_;
+};
+// non-member constructor for SinCosModelFactory
+RCP<SinCosModelFactory> sinCosModelFactory(bool implicit);
+
+// This is simply a class to provide an exact solution, since we haven't
+// standardized on anything in the ModelEvaluator interfaces.
+template<class Scalar>
+class ExactSolutionObjectBase
+{
+  public:
+    virtual RCP<const VectorBase<Scalar> > getExactSolution(Scalar t) const =0;
+};
+
+class SinCosModelExactSolutionObject : public virtual ExactSolutionObjectBase<double>
+{
+  public:
+    SinCosModelExactSolutionObject(RCP<SinCosModelFactory> modelFactory) {modelFactory_ = modelFactory;}
+    virtual ~SinCosModelExactSolutionObject() {}
+    RCP<const VectorBase<double> > getExactSolution(double time) const
+    {
+      RCP<ModelEvaluator<double> > model = modelFactory_->getModel();
+      RCP<SinCosModel> sinCosModel = rcp_dynamic_cast<SinCosModel>(model,true);
+      return(sinCosModel->getExactSolution(time).get_x());
+    }
+  private:
+    RCP<SinCosModelFactory> modelFactory_;
+};
+// non-member constructor for SinCosModelExactSolutionObject
+RCP<SinCosModelExactSolutionObject> sinCosModelExactSolutionObject(RCP<SinCosModelFactory> modelFactory);
+
+class DiagonalModelFactory : public virtual ModelFactoryBase<double>
+{
+  public:
+    DiagonalModelFactory() {}
+    virtual ~DiagonalModelFactory() {}
+    RCP<ModelEvaluator<double> > getModel() const
+    {
+      RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      RCP<Teuchos::ParameterList> stratPl = sublist(pl,Stratimikos_name);
+      RCP<Teuchos::ParameterList> modelPl = sublist(pl,DiagonalTransientModel_name);
+      stratPl->set("Linear Solver Type","AztecOO");
+      stratPl->set("Preconditioner Type","None");
+      modelPl->set("NumElements",2);
+      RCP<ModelEvaluator<double> > model = getDiagonalModel<double>(pl);
+      return(model);
+    }
+    RCP<LinearOpWithSolveFactoryBase<double> > get_W_factory() const
+    {
+      RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      RCP<Teuchos::ParameterList> stratPl = sublist(pl,Stratimikos_name);
+      RCP<Teuchos::ParameterList> modelPl = sublist(pl,DiagonalTransientModel_name);
+      stratPl->set("Linear Solver Type","AztecOO");
+      stratPl->set("Preconditioner Type","None");
+      modelPl->set("NumElements",2);
+      RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory =
+        getWFactory<double>(pl);
+      return(irk_W_factory);
+    }
+};
+// non-member constructor for DiagonalModelFactory
+RCP<DiagonalModelFactory> diagonalModelFactory();
+
+
+class DiagonalModelExactSolutionObject : public virtual ExactSolutionObjectBase<double>
+{
+  public:
+    DiagonalModelExactSolutionObject(RCP<DiagonalModelFactory> modelFactory) {modelFactory_ = modelFactory;}
+    virtual ~DiagonalModelExactSolutionObject() {}
+    RCP<const VectorBase<double> > getExactSolution(double t) const
+    {
+      RCP<Thyra::ModelEvaluator<double> > thyra_model = modelFactory_->getModel();
+      RCP<Thyra::EpetraModelEvaluator> thyra_epetra_model = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(thyra_model,true);
+      RCP<const EpetraExt::ModelEvaluator> epetra_model = thyra_epetra_model->getEpetraModel();
+      RCP<const EpetraExt::DiagonalTransientModel> model = Teuchos::rcp_dynamic_cast<const EpetraExt::DiagonalTransientModel>(epetra_model,true);
+      RCP<const Epetra_Vector> x_exact = model->getExactSolution(t);
+      // Convert this to a Thyra::VectorBase<double>
+      RCP<const Thyra::VectorSpaceBase<double> > x_space = Thyra::create_VectorSpace(model->get_x_map());
+      RCP<const VectorBase<double> > thyra_x_exact = Thyra::create_Vector(x_exact,x_space); 
+      return(thyra_x_exact);
+    }
+  private:
+    RCP<DiagonalModelFactory> modelFactory_;
+};
+// non-member constructor for DiagonalModelExactSolutionObject
+RCP<DiagonalModelExactSolutionObject> diagonalModelExactSolutionObject(RCP<DiagonalModelFactory> modelFactory);
+
+
+template<class Scalar>
 class StepperFactoryBase
 {
   public:
-    virtual RCP<StepperBase<Scalar> > create() const =0;
+    virtual RCP<StepperBase<Scalar> > getStepper() const =0;
 };
 
-double computeOrderByLocalErrorConvergenceStudy(const StepperFactoryBase<double>& stepperFactory);
+template<class Scalar>
+class StepperFactoryAndExactSolutionObject
+{
+  public:
+    StepperFactoryAndExactSolutionObject(
+        RCP<const StepperFactoryBase<Scalar> > stepperFactory,
+        RCP<const ExactSolutionObjectBase<Scalar> > exactSolutionObject
+        ) 
+    {
+      stepperFactory_ = stepperFactory;
+      exactSolutionObject_ = exactSolutionObject;
+    }
+    virtual ~StepperFactoryAndExactSolutionObject() {}
+    RCP<StepperBase<Scalar> > getStepper() const
+    {
+      return(stepperFactory_->getStepper());
+    }
+    RCP<const VectorBase<Scalar> > getExactSolution(Scalar time) const
+    {
+      return(exactSolutionObject_->getExactSolution(time));
+    }
+  private:
+    RCP<const StepperFactoryBase<Scalar> > stepperFactory_;
+    RCP<const ExactSolutionObjectBase<Scalar> > exactSolutionObject_;
+};
+// non-member constructor
+template<class Scalar>
+RCP<StepperFactoryAndExactSolutionObject<Scalar> > stepperFactoryAndExactSolutionObject(
+    RCP<const StepperFactoryBase<Scalar> > stepperFactory,
+    RCP<const ExactSolutionObjectBase<Scalar> > exactSolutionObject
+    )
+{
+  RCP<StepperFactoryAndExactSolutionObject<Scalar> > sfaeso = rcp(
+      new StepperFactoryAndExactSolutionObject<Scalar>(
+        stepperFactory,
+        exactSolutionObject
+        )
+      );
+  return sfaeso;
+}
 
-double computeOrderByGlobalErrorConvergenceStudy(const StepperFactoryBase<double>& stepperFactory);
+double computeOrderByLocalErrorConvergenceStudy(
+    const StepperFactoryAndExactSolutionObject<double>& stepperFactoryAndExactSolution,
+    int numCuts = 9
+    );
+
+double computeOrderByGlobalErrorConvergenceStudy(
+    const StepperFactoryAndExactSolutionObject<double>& stepperFactoryAndExactSolution,
+    int numCuts = 9
+    );
 
 } // namespace Rythmos
 

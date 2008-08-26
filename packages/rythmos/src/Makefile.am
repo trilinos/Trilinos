@@ -103,7 +103,8 @@ CORE_H = \
 
 
 CORE = \
-  $(srcdir)/Rythmos_Version.cpp
+  $(srcdir)/Rythmos_Version.cpp\
+	$(srcdir)/Rythmos_RKButcherTableau.cpp
 
 UTIL_H =
 

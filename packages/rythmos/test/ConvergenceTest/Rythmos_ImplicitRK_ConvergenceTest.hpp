@@ -30,33 +30,152 @@
 
 #include "Rythmos_Types.hpp"
 #include "Rythmos_ConvergenceTestHelpers.hpp"
-#include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_ImplicitRKStepper.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 namespace Rythmos {
 
-RCP<ImplicitRKStepper<double> > getIRKStepperByOrder(int order);
-RCP<ImplicitRKStepper<double> > getSDIRKStepperByIndex(int index);
+template<class Scalar>
+Array<std::string> getIRKButcherTableauNames()
+{
+  Array<std::string> allRKTableauNames = getS_RKButcherTableauMethodNames();
+  Array<std::string> iRKTableauNames;
 
-class SinCosModelIRKStepperFactory : public virtual StepperFactoryBase<double>
+  DefaultRKButcherTableauFactory<Scalar> rkbtFactory;
+  Teuchos::ParameterList pl;
+  pl.set("Selection Type", "Method by name");
+
+  int N = Teuchos::as<int>(allRKTableauNames.size());
+  for (int i=0 ; i<N ; ++i) {
+    pl.set("Method by name", allRKTableauNames[i]);
+    RKButcherTableau<Scalar> rkbt = rkbtFactory.create(pl);
+    if (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK) {
+      iRKTableauNames.push_back(allRKTableauNames[i]);
+    }
+  }
+  return iRKTableauNames;
+}
+
+template<class Scalar>
+Array<std::string> getDIRKButcherTableauNames()
+{
+  Array<std::string> allRKTableauNames = getS_RKButcherTableauMethodNames();
+  Array<std::string> dIRKTableauNames;
+
+  DefaultRKButcherTableauFactory<Scalar> rkbtFactory;
+  Teuchos::ParameterList pl;
+  pl.set("Selection Type", "Method by name");
+
+  int N = Teuchos::as<int>(allRKTableauNames.size());
+  for (int i=0 ; i<N ; ++i) {
+    pl.set("Method by name", allRKTableauNames[i]);
+    RKButcherTableau<Scalar> rkbt = rkbtFactory.create(pl);
+    if (    (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK)
+         || (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK)
+        ) {
+      dIRKTableauNames.push_back(allRKTableauNames[i]);
+    }
+  }
+  return dIRKTableauNames;
+}
+
+template<class Scalar>
+class ImplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
 {
   public:
-    SinCosModelIRKStepperFactory() { order_ = 1; }
-    void setOrder(int order) { order_ = order; }
-    RCP<StepperBase<double> > create() const { return getIRKStepperByOrder(order_); }
-  private:
-    int order_;
-};
-
-class SinCosModelSDIRKStepperFactory : public virtual StepperFactoryBase<double>
-{
-  public:
-    SinCosModelSDIRKStepperFactory() { index_ = 0; }
+    ImplicitRKStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
+    { 
+      modelFactory_ = modelFactory;
+      index_ = 0;
+      implicitRKNames_ = getIRKButcherTableauNames<Scalar>();
+    }
+    virtual ~ImplicitRKStepperFactory() {}
     void setIndex(int index) { index_ = index; }
-    RCP<StepperBase<double> > create() const { return getSDIRKStepperByIndex(index_); }
+    int maxIndex() { return Teuchos::as<int>(implicitRKNames_.size()); }
+    RCP<StepperBase<Scalar> > getStepper() const 
+    { 
+      // Get the model:
+      RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      // Get the RKBT:
+      Teuchos::ParameterList paramList;
+      paramList.set("Selection Type", "Method by name");
+      paramList.set("Method by name", implicitRKNames_[index_]);
+      RKButcherTableau<Scalar> rkbt = rkbtFactory_.create(paramList);
+      // Create the nonlinear solver
+      RCP<Rythmos::TimeStepNonlinearSolver<double> >
+        nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+      // Create the W_factory
+      RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory = modelFactory_->get_W_factory();
+      RCP<ImplicitRKStepper<Scalar> > stepper = implicitRKStepper<Scalar>(model,nonlinearSolver,irk_W_factory, rkbt);
+      // Set verbosity on Stepper:
+      RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
+      RCP<Teuchos::ParameterList> stepperVOPL = Teuchos::sublist(stepperPL,"VerboseObject");
+      stepperVOPL->set("Verbosity Level","none");
+      stepper->setParameterList(stepperPL);
+      return(stepper);
+    }
   private:
+    RCP<ModelFactoryBase<Scalar> > modelFactory_;
     int index_;
+    Array<std::string> implicitRKNames_;
+    DefaultRKButcherTableauFactory<Scalar> rkbtFactory_;
 };
+template<class Scalar>
+RCP<ImplicitRKStepperFactory<Scalar> > implicitRKStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
+{
+  RCP<ImplicitRKStepperFactory<Scalar> > irkFactory = rcp(
+      new ImplicitRKStepperFactory<Scalar>(modelFactory)
+      );
+  return irkFactory;
+}
+
+template<class Scalar>
+class DiagonalImplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
+{
+  public:
+    DiagonalImplicitRKStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
+    { 
+      modelFactory_ = modelFactory;
+      index_ = 0;
+      implicitRKNames_ = getDIRKButcherTableauNames<Scalar>();
+    }
+    virtual ~DiagonalImplicitRKStepperFactory() {}
+    void setIndex(int index) { index_ = index; }
+    int maxIndex() { return Teuchos::as<int>(implicitRKNames_.size()); }
+    RCP<StepperBase<Scalar> > getStepper() const 
+    { 
+      // Get the model:
+      RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      // Get the RKBT:
+      Teuchos::ParameterList paramList;
+      paramList.set("Selection Type", "Method by name");
+      paramList.set("Method by name", implicitRKNames_[index_]);
+      RKButcherTableau<Scalar> rkbt = rkbtFactory_.create(paramList);
+      // Create the nonlinear solver
+      RCP<Rythmos::TimeStepNonlinearSolver<double> >
+        nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+      // Create the W_factory
+      RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory = modelFactory_->get_W_factory();
+      RCP<ImplicitRKStepper<Scalar> > stepper = implicitRKStepper<Scalar>(model,nonlinearSolver,irk_W_factory, rkbt);
+      return(stepper);
+    }
+  private:
+    RCP<ModelFactoryBase<Scalar> > modelFactory_;
+    int index_;
+    Array<std::string> implicitRKNames_;
+    DefaultRKButcherTableauFactory<Scalar> rkbtFactory_;
+};
+// non-member constructor
+template<class Scalar>
+RCP<DiagonalImplicitRKStepperFactory<Scalar> > diagonalImplicitRKStepperFactory(
+    RCP<ModelFactoryBase<Scalar> > modelFactory
+    )
+{
+  RCP<DiagonalImplicitRKStepperFactory<Scalar> > dirkStepper = rcp(
+      new DiagonalImplicitRKStepperFactory<Scalar>(modelFactory)
+      );
+  return dirkStepper;
+}
 
 } // namespace Rythmos 
 

@@ -41,88 +41,56 @@ using Thyra::VectorBase;
 using Thyra::VectorSpaceBase;
 using Teuchos::is_null;
 
-RCP<ImplicitRKStepper<double> > getIRKStepperByOrder(int order) {
-  RCP<SinCosModel> model = sinCosModel(true);
-  DefaultRKButcherTableauFactory<double> rkbtFactory;
-  Teuchos::ParameterList pl;
-  pl.set("Selection Type", "Implicit method by order");
-  pl.set("Implicit method by order", order);
-  RKButcherTableau<double> rkbt = rkbtFactory.create(pl);
-  // Create the base point
-  Thyra::ModelEvaluatorBase::InArgs<double> basePoint = model->createInArgs();
-  RCP<VectorBase<double> > base_x = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x,0.0);
-  basePoint.set_x(base_x);
-  RCP<VectorBase<double> > base_x_dot = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x_dot,1.0);
-  basePoint.set_x_dot(base_x_dot);
-  double base_t = 0.0;
-  basePoint.set_t(base_t);
-  // Create the nonlinear solver
-  RCP<Rythmos::TimeStepNonlinearSolver<double> >
-    nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
-  // Create the IRK W factory
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory = 
-    Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
-  RCP<ImplicitRKStepper<double> > stepper = implicitRKStepper<double>(model,nonlinearSolver, irk_W_factory, rkbt);
-  return stepper;
-}
 
-RCP<ImplicitRKStepper<double> > getSDIRKStepperByIndex(int index) {
-  RCP<SinCosModel> model = sinCosModel(true);
-  DefaultRKButcherTableauFactory<double> rkbtFactory;
-  Teuchos::ParameterList pl;
-  pl.set("Selection Type", "Method by name");
-  if (index == 0) {
-    pl.set("Method by name", "Backward Euler");
-  } else if (index == 1) {
-    pl.set("Method by name", "SDIRK 3 Stage 4th order");
-  } else if (index == 2) {
-    pl.set("Method by name", "SDIRK 5 Stage 4th order");
-  } else if (index == 3) {
-    pl.set("Method by name", "SDIRK 5 Stage 5th order");
-  } else {
-    TEST_FOR_EXCEPT_MSG(true, "Invalid index!\n");
-  }
-  RKButcherTableau<double> rkbt = rkbtFactory.create(pl);
-  // Create the base point
-  Thyra::ModelEvaluatorBase::InArgs<double> basePoint = model->createInArgs();
-  RCP<VectorBase<double> > base_x = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x,0.0);
-  basePoint.set_x(base_x);
-  RCP<VectorBase<double> > base_x_dot = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x_dot,1.0);
-  basePoint.set_x_dot(base_x_dot);
-  double base_t = 0.0;
-  basePoint.set_t(base_t);
-  // Create the nonlinear solver
-  RCP<Rythmos::TimeStepNonlinearSolver<double> >
-    nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
-  // Create the IRK W factory
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory = 
-    Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
-  RCP<ImplicitRKStepper<double> > stepper = implicitRKStepper<double>(model,nonlinearSolver, irk_W_factory, rkbt);
-  return stepper;
-}
-
-/*
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, GlobalErrorConvergenceStudy ) {
 
-  SinCosModelIRKStepperFactory irkFactory;
-  for (int order=1 ; order<=1 ; ++order) {
-    irkFactory.setOrder(order);
-    double slope = computeOrderByGlobalErrorConvergenceStudy(irkFactory);
+  RCP<DiagonalModelFactory> modelFactory = diagonalModelFactory();
+  RCP<DiagonalModelExactSolutionObject> exactSolution = diagonalModelExactSolutionObject(modelFactory);
 
-    double tol = 1.0e-10;
+  RCP<ImplicitRKStepperFactory<double> > stepperFactory = implicitRKStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
+
+  int N = stepperFactory->maxIndex();
+  for (int index=0 ; index<N ; ++index) {
+    stepperFactory->setIndex(index);
+
+    //RCP<Teuchos::FancyOStream> fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+    //RCP<ImplicitRKStepper<double> > dirkStepper = rcp_dynamic_cast<ImplicitRKStepper<double> >(stepperFactoryAndExactSolution.getStepper(),true);
+    //dirkStepper->getRKButcherTableau().describe(*fancyOut,Teuchos::VERB_EXTREME);
+
+    int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
+
+    int numCuts = 4;
+    double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution,numCuts);
+
+    double tol = 1.0e-1;
     TEST_FLOATING_EQUALITY( slope, 1.0*order, tol ); // is slope close to order?
   }
 }
 
+/*
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, LocalErrorConvergenceStudy ) {
-  SinCosModelIRKStepperFactory irkFactory;
-  for (int order=1 ; order<=1 ; ++order) {
-    irkFactory.setOrder(order);
-    double slope = computeOrderByLocalErrorConvergenceStudy(irkFactory);
+
+  RCP<DiagonalModelFactory> modelFactory = diagonalModelFactory();
+  RCP<DiagonalModelExactSolutionObject> exactSolution = diagonalModelExactSolutionObject(modelFactory);
+
+  RCP<ImplicitRKStepperFactory<double> > stepperFactory = implicitRKStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
+
+  int N = stepperFactory->maxIndex();
+  for (int index=0 ; index<N ; ++index) {
+    stepperFactory->setIndex(index);
+
+    RCP<Teuchos::FancyOStream> fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+    RCP<ImplicitRKStepper<double> > dirkStepper = rcp_dynamic_cast<ImplicitRKStepper<double> >(stepperFactoryAndExactSolution.getStepper(),true);
+    dirkStepper->getRKButcherTableau().describe(*fancyOut,Teuchos::VERB_EXTREME);
+
+    int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
+
+    int numCuts = 9;
+    if (order > 4) { numCuts = 8; }
+    double slope = computeOrderByLocalErrorConvergenceStudy(stepperFactoryAndExactSolution,numCuts);
+
 
     int localOrder = order+1; // I don't know why the order is coming out one higher than it should!?!
     double tol = 1.0e-10;
@@ -131,35 +99,58 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, LocalErrorConvergenceStudy ) {
 }
 */
 
+
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, SDIRKGlobalErrorConvergenceStudy ) {
 
-  SinCosModelSDIRKStepperFactory sdirkFactory;
-  for (int index=0 ; index<4 ; ++index) {
-    sdirkFactory.setIndex(index);
-    double slope = computeOrderByGlobalErrorConvergenceStudy(sdirkFactory);
+  RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(true);
+  RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
+  RCP<DiagonalImplicitRKStepperFactory<double> > stepperFactory = diagonalImplicitRKStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
 
-    int order = sdirkFactory.create()->getOrder();
+  int N = stepperFactory->maxIndex();
+  for (int index=0 ; index<N ; ++index) {
+    stepperFactory->setIndex(index);
 
-    double tol = 1.0e-2;
-    if (index == 3) { tol = 1.0e-1; }
+    //RCP<Teuchos::FancyOStream> fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+    //RCP<ImplicitRKStepper<double> > dirkStepper = rcp_dynamic_cast<ImplicitRKStepper<double> >(stepperFactoryAndExactSolution.getStepper(),true);
+    //dirkStepper->getRKButcherTableau().describe(*fancyOut,Teuchos::VERB_EXTREME);
+
+    int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
+
+    int numCuts = 4;
+    double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution,numCuts);
+
+
+    double tol = 1.0e-1;
     TEST_FLOATING_EQUALITY( slope, 1.0*order, tol ); // is slope close to order?
   }
 }
 
+/*
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, SDIRKLocalErrorConvergenceStudy ) {
-  SinCosModelSDIRKStepperFactory sdirkFactory;
-  for (int index=0 ; index<4 ; ++index) {
-    sdirkFactory.setIndex(index);
-    double slope = computeOrderByLocalErrorConvergenceStudy(sdirkFactory);
+  RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(true);
+  RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
+  RCP<DiagonalImplicitRKStepperFactory<double> > stepperFactory = diagonalImplicitRKStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
 
-    int order = sdirkFactory.create()->getOrder();
+  int N = stepperFactory->maxIndex();
+  for (int index=0 ; index<N ; ++index) {
+    stepperFactory->setIndex(index);
+
+    RCP<Teuchos::FancyOStream> fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+    RCP<ImplicitRKStepper<double> > dirkStepper = rcp_dynamic_cast<ImplicitRKStepper<double> >(stepperFactoryAndExactSolution.getStepper(),true);
+    dirkStepper->getRKButcherTableau().describe(*fancyOut,Teuchos::VERB_EXTREME);
+
+    double slope = computeOrderByLocalErrorConvergenceStudy(stepperFactoryAndExactSolution);
+
+    int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
 
     int localOrder = order+1; // I don't know why the order is coming out one higher than it should!?!
-    double tol = 1.0e-1;
-    if (index == 3) { tol = 1.0e-3; }
+    double tol = 1.0e-10;
     TEST_FLOATING_EQUALITY( slope, 1.0*localOrder, tol ); // is slope close to order?
   }
 }
+*/
 
 
 } // namespace Rythmos

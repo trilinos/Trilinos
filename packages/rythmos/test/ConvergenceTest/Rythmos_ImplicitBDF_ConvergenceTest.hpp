@@ -30,26 +30,32 @@
 
 #include "Rythmos_Types.hpp"
 #include "Rythmos_ConvergenceTestHelpers.hpp"
-#include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 namespace Rythmos {
 
-class SinCosModelIBDFStepperFactory : public virtual StepperFactoryBase<double>
+template<class Scalar>
+class ImplicitBDFStepperFactory : public virtual StepperFactoryBase<Scalar>
 {
   public:
-    SinCosModelIBDFStepperFactory() { order_ = 1; }
-    void setOrder(int order) { order_ = order; }
-    RCP<StepperBase<double> > create() const 
+    ImplicitBDFStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
     { 
-      RCP<SinCosModel> model = sinCosModel(true);
-      RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+      modelFactory_ = modelFactory;
+      order_ = 1; 
+    }
+    virtual ~ImplicitBDFStepperFactory() {}
+    void setOrder(int order) { order_ = order; }
+    int maxOrder() { return 2; } // This can change when we ramp-up the step-sizes correctly for higher orders than 2
+    RCP<StepperBase<Scalar> > getStepper() const 
+    { 
+      RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
+        nonlinearSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
       RCP<ParameterList> nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->get("Default Tol",1.0e-9); // Set default if not set
       nonlinearSolver->setParameterList(nonlinearSolverPL);
-      RCP<ImplicitBDFStepper<double> > stepper = rcp(new ImplicitBDFStepper<double>(model,nonlinearSolver));
+      RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>(model,nonlinearSolver));
       RCP<ParameterList> bdfPL = Teuchos::parameterList();
       Teuchos::ParameterList& stepControlPL = bdfPL->sublist("Step Control Settings");
       stepControlPL.set("minOrder",order_);
@@ -60,8 +66,19 @@ class SinCosModelIBDFStepperFactory : public virtual StepperFactoryBase<double>
       return stepper;
     }
   private:
+    RCP<ModelFactoryBase<Scalar> > modelFactory_;
     int order_;
 };
+// non-member constructor
+template<class Scalar>
+RCP<ImplicitBDFStepperFactory<Scalar> > implicitBDFStepperFactory(
+    RCP<ModelFactoryBase<Scalar> > modelFactory)
+{
+  RCP<ImplicitBDFStepperFactory<Scalar> > ibdfFactory = rcp(
+      new ImplicitBDFStepperFactory<Scalar>(modelFactory)
+      );
+  return ibdfFactory;
+}
 
 } // namespace Rythmos 
 

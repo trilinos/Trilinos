@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
       // We need a separate LOWSFB object for the IRK stepper
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
         irk_W_factory = createLinearSolveStrategy(linearSolverBuilder);
-      Rythmos::RKButcherTableau<double> irkbt = Rythmos::createBackwardEulerRKBT<double>();
+      Rythmos::RKButcherTableau<double> irkbt = Rythmos::createBackwardEuler_RKBT<double>();
       stateStepper = Rythmos::implicitRKStepper<double>(
         stateModel, nonlinearSolver, irk_W_factory, irkbt
         );

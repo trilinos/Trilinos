@@ -30,22 +30,78 @@
 
 #include "Rythmos_Types.hpp"
 #include "Rythmos_ConvergenceTestHelpers.hpp"
-#include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 
 namespace Rythmos {
 
-RCP<ExplicitRKStepper<double> > getERKStepperByOrder(int order);
+using Thyra::ModelEvaluator;
 
-class SinCosModelERKStepperFactory : public virtual StepperFactoryBase<double>
+template<class Scalar>
+Array<std::string> getERKButcherTableauNames()
+{
+  Array<std::string> allRKTableauNames = getS_RKButcherTableauMethodNames();
+  Array<std::string> explicitRKTableauNames;
+
+  DefaultRKButcherTableauFactory<Scalar> rkbtFactory;
+  Teuchos::ParameterList pl;
+  pl.set("Selection Type", "Method by name");
+
+  int N = Teuchos::as<int>(allRKTableauNames.size());
+  for (int i=0 ; i<N ; ++i) {
+    pl.set("Method by name", allRKTableauNames[i]);
+    RKButcherTableau<Scalar> rkbt = rkbtFactory.create(pl);
+    if (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK) {
+      explicitRKTableauNames.push_back(allRKTableauNames[i]);
+    }
+  }
+  return explicitRKTableauNames;
+}
+
+template<class Scalar>
+class ExplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
 {
   public:
-    SinCosModelERKStepperFactory() { order_ = 1; }
-    void setOrder(int order) { order_ = order; }
-    RCP<StepperBase<double> > create() const { return getERKStepperByOrder(order_); }
+    ExplicitRKStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory)
+    {
+      modelFactory_ = modelFactory;
+      index_ = 0;
+      explicitRKNames_ = getERKButcherTableauNames<Scalar>();
+    }
+    virtual ~ExplicitRKStepperFactory() {}
+    RCP<StepperBase<Scalar> > getStepper() const
+    {
+      RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      Teuchos::ParameterList paramList;
+      paramList.set("Selection Type", "Method by name");
+      paramList.set("Method by name", explicitRKNames_[index_]);
+      RKButcherTableau<Scalar> rkbt = rkbtFactory_.create(paramList);
+      RCP<ExplicitRKStepper<Scalar> > stepper = explicitRKStepper<Scalar>(model,rkbt);
+      return(stepper);
+    }
+    void setIndex(int index)
+    {
+      index_ = index;
+    }
+    int maxIndex()
+    {
+      return Teuchos::as<int>(explicitRKNames_.size());
+    }
   private:
-    int order_;
+    RCP<ModelFactoryBase<Scalar> > modelFactory_;
+    int index_;
+    Array<std::string> explicitRKNames_;
+    DefaultRKButcherTableauFactory<Scalar> rkbtFactory_;
 };
+// non-member constructor
+template<class Scalar>
+RCP<ExplicitRKStepperFactory<Scalar> > explicitRKStepperFactory( 
+    RCP<ModelFactoryBase<Scalar> > modelFactory)
+{
+  RCP<ExplicitRKStepperFactory<Scalar> > erkFactory = rcp(
+      new ExplicitRKStepperFactory<Scalar>(modelFactory)
+      );
+  return erkFactory;
+}
 
 } // namespace Rythmos 
 

@@ -30,8 +30,6 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_ExplicitRK_ConvergenceTest.hpp"
-#include "Rythmos_RKButcherTableau.hpp"
-
 
 
 namespace Rythmos {
@@ -40,39 +38,50 @@ using Thyra::VectorBase;
 using Thyra::VectorSpaceBase;
 using Teuchos::is_null;
 
-RCP<ExplicitRKStepper<double> > getERKStepperByOrder(int order) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  DefaultRKButcherTableauFactory<double> rkbtFactory;
-  Teuchos::ParameterList pl;
-  pl.set("Selection Type", "Explicit method by order");
-  pl.set("Explicit method by order", order);
-  RKButcherTableau<double> rkbt = rkbtFactory.create(pl);
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
-  return stepper;
-}
-
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, GlobalErrorConvergenceStudy ) {
 
-  SinCosModelERKStepperFactory erkFactory;
-  for (int order=1 ; order<=4 ; ++order) {
-    erkFactory.setOrder(order);
-    double slope = computeOrderByGlobalErrorConvergenceStudy(erkFactory);
+  RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(false);
+  RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
+  RCP<ExplicitRKStepperFactory<double> > stepperFactory = explicitRKStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
 
-    double tol = 1.0e-2;
+  int N = stepperFactory->maxIndex();
+  for (int index=0; index<N ; ++index) {
+    stepperFactory->setIndex(index);
+
+//    RCP<Teuchos::FancyOStream> fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+//    RCP<ExplicitRKStepper<double> > erkStepper = rcp_dynamic_cast<ExplicitRKStepper<double> >(stepperFactoryAndExactSolution.getStepper(),true);
+//    erkStepper->getRKButcherTableau().describe(*fancyOut,Teuchos::VERB_EXTREME);
+
+    double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution);
+
+    int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
+    double tol = 1.0e-1;
     TEST_FLOATING_EQUALITY( slope, 1.0*order, tol ); // is slope close to order?
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, LocalErrorConvergenceStudy ) {
-  SinCosModelERKStepperFactory erkFactory;
-  for (int order=1 ; order<=4 ; ++order) {
-    erkFactory.setOrder(order);
-    double slope = computeOrderByLocalErrorConvergenceStudy(erkFactory);
 
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, LocalErrorConvergenceStudy ) {
+
+  RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(false);
+  RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
+  RCP<ExplicitRKStepperFactory<double> > stepperFactory = explicitRKStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
+
+  int N = stepperFactory->maxIndex();
+  for (int index=0 ; index<N ; ++index) {
+    stepperFactory->setIndex(index);
+
+//    RCP<Teuchos::FancyOStream> fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+//    RCP<ExplicitRKStepper<double> > erkStepper = rcp_dynamic_cast<ExplicitRKStepper<double> >(stepperFactoryAndExactSolution.getStepper(),true);
+//    erkStepper->getRKButcherTableau().describe(*fancyOut,Teuchos::VERB_EXTREME);
+//
+    double slope = computeOrderByLocalErrorConvergenceStudy(stepperFactoryAndExactSolution);
+
+    int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
     int localOrder = order+1; // I don't know why the order is coming out one higher than it should!?!
-    double tol = 1.0e-3;
-    if (order == 1) { tol = 1.0e-2; }
-    else if (order == 4) { tol = 1.0e-1; }
+    double tol = 1.0e-2;
     TEST_FLOATING_EQUALITY( slope, 1.0*localOrder, tol ); // is slope close to order?
   }
 }

@@ -27,15 +27,51 @@
 //@HEADER
 
 #include "Rythmos_ConvergenceTestHelpers.hpp"
-#include "../SinCos/SinCosModel.hpp"
 
 namespace Rythmos {
 
-// We are using the SinCosModel due to the need to get an exact solution.  They
-// will fail the rcp_dynamic_cast if the underlying model is not a SinCosModel
-// TODO:  Add some facility to the ModelEvaluator to provide this e.g.:
-// OUT_ARG_exact_solution returns InArg object
-double computeOrderByLocalErrorConvergenceStudy(const StepperFactoryBase<double>& stepperFactory)
+// non-member constructor for SinCosModelFactory
+RCP<SinCosModelFactory> sinCosModelFactory(bool implicit)
+{
+  RCP<SinCosModelFactory> factory = rcp(
+      new SinCosModelFactory(implicit)
+      );
+  return factory;
+}
+
+// non-member constructor for SinCosModelExactSolutionObject
+RCP<SinCosModelExactSolutionObject> sinCosModelExactSolutionObject(RCP<SinCosModelFactory> modelFactory)
+{
+  RCP<SinCosModelExactSolutionObject> scmeso = rcp(
+      new SinCosModelExactSolutionObject(modelFactory)
+      );
+  return scmeso;
+}
+
+// non-member constructor for DiagonalModelExactSolutionObject
+RCP<DiagonalModelExactSolutionObject> diagonalModelExactSolutionObject(RCP<DiagonalModelFactory> modelFactory)
+{
+  RCP<DiagonalModelExactSolutionObject> dmeso = rcp(
+      new DiagonalModelExactSolutionObject(modelFactory)
+      );
+  return dmeso;
+}
+
+// non-member constructor for DiagonalModelFactory
+RCP<DiagonalModelFactory> diagonalModelFactory()
+{
+  RCP<DiagonalModelFactory> dmf = rcp(
+      new DiagonalModelFactory()
+      );
+  return dmf;
+}
+
+
+
+double computeOrderByLocalErrorConvergenceStudy(
+    const StepperFactoryAndExactSolutionObject<double> & stepperFactoryAndExactSolution,
+    int numCuts
+    )
 {
 //  Array<double> stepSize;
   Array<double> logStepSize;
@@ -44,20 +80,15 @@ double computeOrderByLocalErrorConvergenceStudy(const StepperFactoryBase<double>
   Array<double> logErrorNorm;
 
   double h = 0.5;
-  int N = 9;
-  for (int i=0 ; i<N ; ++i) {
-    RCP<StepperBase<double> > stepper = stepperFactory.create();
+  for (int i=0 ; i<numCuts ; ++i) {
+    RCP<StepperBase<double> > stepper = stepperFactoryAndExactSolution.getStepper();
+
     double stepTaken = stepper->takeStep(h,STEP_TYPE_FIXED);
     TEUCHOS_ASSERT_EQUALITY( stepTaken, h );
     // get solution 
     RCP<const VectorBase<double> > x = stepper->getStepStatus().solution;
     // get exact solution
-    RCP<const VectorBase<double> > x_exact;
-    {
-      // This is the only place where we're using the SinCosModel specifically
-      RCP<const SinCosModel> sinCosModel = Teuchos::rcp_dynamic_cast<const SinCosModel>(stepper->getModel(),true);
-      x_exact = sinCosModel->getExactSolution(h).get_x();
-    }
+    RCP<const VectorBase<double> > x_exact = stepperFactoryAndExactSolution.getExactSolution(h);
     RCP<VectorBase<double> > tmp_vec = createMember(stepper->getModel()->get_x_space());
     // take norm of difference
     Thyra::V_StVpStV(&*tmp_vec,1.0,*x_exact,-1.0,*x);
@@ -83,11 +114,10 @@ double computeOrderByLocalErrorConvergenceStudy(const StepperFactoryBase<double>
   return slope;
 }
 
-// We are using the SinCosModel due to the need to get an exact solution.  They
-// will fail the rcp_dynamic_cast if the underlying model is not a SinCosModel
-// TODO:  Add some facility to the ModelEvaluator to provide this e.g.:
-// OUT_ARG_exact_solution returns InArg object
-double computeOrderByGlobalErrorConvergenceStudy(const StepperFactoryBase<double>& stepperFactory)
+double computeOrderByGlobalErrorConvergenceStudy(
+    const StepperFactoryAndExactSolutionObject<double> & stepperFactoryAndExactSolution,
+    int numCuts
+    )
 {
 //  Array<double> stepSize;
   Array<double> logStepSize;
@@ -99,9 +129,8 @@ double computeOrderByGlobalErrorConvergenceStudy(const StepperFactoryBase<double
 
 
   double h = 0.5;
-  int N = 9;
-  for (int i=0 ; i<N ; ++i) {
-    RCP<StepperBase<double> > stepper = stepperFactory.create();
+  for (int i=0 ; i<numCuts ; ++i) {
+    RCP<StepperBase<double> > stepper = stepperFactoryAndExactSolution.getStepper();
     int numSteps = int(round(t_final/h));
     for (int s=0 ; s<numSteps ; ++s) {
       double stepTaken = stepper->takeStep(h,STEP_TYPE_FIXED);
@@ -113,12 +142,7 @@ double computeOrderByGlobalErrorConvergenceStudy(const StepperFactoryBase<double
     TEUCHOS_ASSERT_EQUALITY( t, t_final );
     RCP<VectorBase<double> > tmp_vec = createMember(stepper->getModel()->get_x_space());
     // get exact solution 
-    RCP<const VectorBase<double> > x_exact;
-    {
-      // This is the only place where we're using the SinCosModel specifically
-      RCP<const SinCosModel> sinCosModel = Teuchos::rcp_dynamic_cast<const SinCosModel>(stepper->getModel(),true);
-      x_exact = sinCosModel->getExactSolution(t_final).get_x();
-    }
+    RCP<const VectorBase<double> > x_exact = stepperFactoryAndExactSolution.getExactSolution(t_final);
     // take norm of difference
     Thyra::V_StVpStV(&*tmp_vec,1.0,*x_exact,-1.0,*x);
 //    stepSize.push_back(h);

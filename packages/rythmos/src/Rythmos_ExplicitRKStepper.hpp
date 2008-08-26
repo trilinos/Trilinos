@@ -151,7 +151,7 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model 
     )
 {
-  RKButcherTableau<Scalar> rkbt = createExplicit4StageRKBT<Scalar>();
+  RKButcherTableau<Scalar> rkbt = createExplicit4Stage4thOrder_RKBT<Scalar>();
   RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model,rkbt));
   return stepper;
 }

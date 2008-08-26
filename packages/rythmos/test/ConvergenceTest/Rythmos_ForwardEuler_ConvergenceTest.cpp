@@ -38,17 +38,25 @@ using Thyra::VectorSpaceBase;
 using Teuchos::is_null;
 
 TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, GlobalErrorConvergenceStudy ) {
-  int order = 1;
-  SinCosModelFEStepperFactory feFactory;
-  double slope = computeOrderByGlobalErrorConvergenceStudy(feFactory);
+  RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(false);
+  RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
+  RCP<ForwardEulerStepperFactory<double> > stepperFactory = forwardEulerStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
+
+  double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution);
+  int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
   double tol = 1.0e-2;
   TEST_FLOATING_EQUALITY( slope, 1.0*order, tol );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, LocalErrorConvergenceStudy ) {
-  int order = 1;
-  SinCosModelFEStepperFactory feFactory;
-  double slope = computeOrderByLocalErrorConvergenceStudy(feFactory);
+  RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(false);
+  RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
+  RCP<ForwardEulerStepperFactory<double> > stepperFactory = forwardEulerStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
+
+  double slope = computeOrderByLocalErrorConvergenceStudy(stepperFactoryAndExactSolution);
+  int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
   double tol = 1.0e-1;
   int localOrder = order+1;
   TEST_FLOATING_EQUALITY( slope, 1.0*localOrder, tol );

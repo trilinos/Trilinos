@@ -36,22 +36,39 @@
 
 namespace Rythmos {
 
-class SinCosModelBEStepperFactory : public virtual StepperFactoryBase<double>
+template<class Scalar>
+class BackwardEulerStepperFactory : public virtual StepperFactoryBase<Scalar>
 {
   public:
-    SinCosModelBEStepperFactory() { }
-    RCP<StepperBase<double> > create() const 
+    BackwardEulerStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
     { 
-      RCP<SinCosModel> model = sinCosModel(true);
-      RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+      modelFactory_ = modelFactory;
+    }
+    virtual ~BackwardEulerStepperFactory() {}
+    RCP<StepperBase<Scalar> > getStepper() const 
+    { 
+      RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
+        nonlinearSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
       RCP<ParameterList> nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->get("Default Tol",1.0e-9); // Set default if not set
       nonlinearSolver->setParameterList(nonlinearSolverPL);
-      RCP<BackwardEulerStepper<double> > stepper = rcp(new BackwardEulerStepper<double>(model,nonlinearSolver));
+      RCP<BackwardEulerStepper<Scalar> > stepper = rcp(new BackwardEulerStepper<Scalar>(model,nonlinearSolver));
       return stepper;
     }
+  private:
+    RCP<ModelFactoryBase<Scalar> > modelFactory_;
 };
+// non-member constructor
+template<class Scalar>
+RCP<BackwardEulerStepperFactory<Scalar> > backwardEulerStepperFactory(
+    RCP<ModelFactoryBase<Scalar> > modelFactory)
+{
+  RCP<BackwardEulerStepperFactory<Scalar> > beFactory = rcp(
+      new BackwardEulerStepperFactory<Scalar>(modelFactory)
+      );
+  return beFactory;
+}
 
 } // namespace Rythmos 
 

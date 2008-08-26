@@ -406,18 +406,22 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
     daeInArgs.set_x( x_i );
     daeInArgs.set_x_dot( x_bar->getVectorBlock(i) );
     daeInArgs.set_t( t_old_ + irkButcherTableau_.c()(i) * delta_t_ );
+    Scalar alpha = ST::zero();
     if (i == 0) {
-      daeInArgs.set_alpha(ST::one());
+      alpha = ST::one();
     } else {
-      daeInArgs.set_alpha(ST::zero());
+      alpha = ST::zero();
     }
-    daeInArgs.set_beta( delta_t_ * irkButcherTableau_.A()(i,0) );
+    Scalar beta = delta_t_ * irkButcherTableau_.A()(i,0);
+    daeInArgs.set_alpha( alpha );
+    daeInArgs.set_beta( beta );
 
     // B.2) Setup the DAE's outArgs for stage f(i) ...
     if (!is_null(f_bar))
       daeOutArgs.set_f( f_bar->getNonconstVectorBlock(i) );
-    if (!is_null(W_op_bar))
+    if (!is_null(W_op_bar)) {
       daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,0));
+    }
 
     // B.3) Compute f_bar(i) and/or W_op_bar(i,0) ...
     daeModel_->evalModel( daeInArgs, daeOutArgs );
@@ -427,12 +431,15 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
     // B.4) Evaluate the rest of the W_op_bar(i,j=1...numStages-1) ...
     if (!is_null(W_op_bar)) {
       for ( int j = 1; j < numStages; ++j ) {
+        Scalar alpha = ST::zero();
         if (i == j) {
-          daeInArgs.set_alpha(ST::one());
+          alpha = ST::one();
         } else {
-          daeInArgs.set_alpha(ST::zero());
+          alpha = ST::zero();
         }
-        daeInArgs.set_beta( delta_t_ * irkButcherTableau_.A()(i,j) );
+        Scalar beta = delta_t_ * irkButcherTableau_.A()(i,j);
+        daeInArgs.set_alpha( alpha );
+        daeInArgs.set_beta( beta );
         daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,j));
         daeModel_->evalModel( daeInArgs, daeOutArgs );
         daeOutArgs.set_W_op(Teuchos::null);

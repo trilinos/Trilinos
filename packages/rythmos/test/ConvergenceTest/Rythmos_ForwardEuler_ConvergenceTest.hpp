@@ -30,22 +30,38 @@
 
 #include "Rythmos_Types.hpp"
 #include "Rythmos_ConvergenceTestHelpers.hpp"
-#include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_ForwardEulerStepper.hpp"
 
 namespace Rythmos {
 
-class SinCosModelFEStepperFactory : public virtual StepperFactoryBase<double>
+template<class Scalar>
+class ForwardEulerStepperFactory : public virtual StepperFactoryBase<Scalar>
 {
   public:
-    SinCosModelFEStepperFactory() { }
-    RCP<StepperBase<double> > create() const 
+    ForwardEulerStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
     { 
-      RCP<SinCosModel> model = sinCosModel(false);
-      RCP<ForwardEulerStepper<double> > stepper = rcp(new ForwardEulerStepper<double>(model));
+      modelFactory_ = modelFactory;
+    }
+    virtual ~ForwardEulerStepperFactory() {}
+    RCP<StepperBase<Scalar> > getStepper() const 
+    { 
+      RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      RCP<ForwardEulerStepper<Scalar> > stepper = rcp(new ForwardEulerStepper<Scalar>(model));
       return stepper;
     }
+  private:
+    RCP<ModelFactoryBase<Scalar> > modelFactory_;
 };
+// non-member constructor
+template<class Scalar>
+RCP<ForwardEulerStepperFactory<Scalar> > forwardEulerStepperFactory(
+    RCP<ModelFactoryBase<Scalar> > modelFactory)
+{
+  RCP<ForwardEulerStepperFactory<Scalar> > feFactory = rcp(
+      new ForwardEulerStepperFactory<Scalar>(modelFactory)
+      );
+  return feFactory;
+}
 
 } // namespace Rythmos 
 

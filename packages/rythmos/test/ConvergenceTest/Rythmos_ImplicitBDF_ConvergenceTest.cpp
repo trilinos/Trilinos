@@ -48,10 +48,15 @@ using Teuchos::is_null;
 //
 // So for now, just do order 1 and 2, as they seem to pass.
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, GlobalErrorConvergenceStudy ) {
-  SinCosModelIBDFStepperFactory ibdfFactory;
-  for (int order=1 ; order<=2 ; ++order) {
-    ibdfFactory.setOrder(order);
-    double slope = computeOrderByGlobalErrorConvergenceStudy(ibdfFactory);
+  RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(true);
+  RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
+  RCP<ImplicitBDFStepperFactory<double> > stepperFactory = implicitBDFStepperFactory<double>(modelFactory);
+  StepperFactoryAndExactSolutionObject<double> stepperFactoryAndExactSolution(stepperFactory,exactSolution);
+
+  int N = stepperFactory->maxOrder();
+  for (int order=1 ; order<=N ; ++order) {
+    stepperFactory->setOrder(order);
+    double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution);
     double tol = 1.0e-1;
     if (order == 1) { tol = 1.0e-2; }
     TEST_FLOATING_EQUALITY( slope, 1.0*order, tol );

@@ -48,6 +48,18 @@ Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > getWFactory(Teuchos::
     W_factory = createLinearSolveStrategy(linearSolverBuilder);
   return(W_factory);
 }
+
+template<class Scalar>
+Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > getWFactory() {
+  RCP<Teuchos::ParameterList> paramList  = Teuchos::parameterList();
+  RCP<Teuchos::ParameterList> stratPl = sublist(paramList,Stratimikos_name);
+  RCP<Teuchos::ParameterList> modelPl = sublist(paramList,DiagonalTransientModel_name);
+  stratPl->set("Linear Solver Type","AztecOO");
+  stratPl->set("Preconditioner Type","None");
+  modelPl->set("NumElements",2);
+  return(getWFactory<Scalar>(paramList));
+}
+
   
 template<class Scalar>
 Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > 
@@ -67,6 +79,20 @@ Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
     thyraDiagonalModel = Thyra::epetraModelEvaluator(epetraDiagonalModel,W_factory);
 
   return(thyraDiagonalModel);
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > 
+  getDiagonalModel() {
+
+  RCP<Teuchos::ParameterList> paramList  = Teuchos::parameterList();
+  RCP<Teuchos::ParameterList> stratPl = sublist(paramList,Stratimikos_name);
+  RCP<Teuchos::ParameterList> modelPl = sublist(paramList,DiagonalTransientModel_name);
+  stratPl->set("Linear Solver Type","AztecOO");
+  stratPl->set("Preconditioner Type","None");
+  modelPl->set("NumElements",2);
+
+  return(getDiagonalModel<Scalar>(paramList));
 }
 
 
