@@ -60,7 +60,7 @@ Redistributor::Redistributor(Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner
   created_importer_(false)
 {
   if (!partitioner_->alreadyComputed()) {
-    partitioner_->compute_partitioning();
+    partitioner_->partition();
   }
 }
 
