@@ -387,6 +387,7 @@ AC_DEFUN([PETSC_INCLUDE_CHECK],
 
 ])
 
+AM_CONDITIONAL(PETSCLIB_IS_DEFINED, [test "X${PETSC_LIB}" != "X"])
 if test X$ac_cv_use_petsc = Xyes; then
 
   PETSC_INCLUDE_CHECK(petsc,petsc.h)
@@ -428,9 +429,8 @@ if test X$ac_cv_use_petsc = Xyes; then
     USER_DEFINED_PETSCLIB=${PETSC_LIB}
     AC_SUBST(USER_DEFINED_PETSCLIB)
   fi
-
 fi #if test X$ac_cv_use_petsc = Xyes; then
-AM_CONDITIONAL(PETSCLIB_IS_DEFINED, [test "X${PETSC_LIB}" != "X"])
+
 
 # ------------------------------------------------------------------------
 # Checks for Petsc libraries
@@ -464,9 +464,12 @@ AC_DEFUN([PETSC_LIB_CHECK],
   LIBS="-l$1 ${LIBS}"
 
 ])
+  
+if test X$ac_cv_use_petsc = Xyes; then
+  # Check for petsc
+  PETSC_LIB_CHECK(petsc)
 
-# Check for petsc
-PETSC_LIB_CHECK(petsc)
+fi #if test X$ac_cv_use_petsc = Xyes; then
 
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
