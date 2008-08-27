@@ -11,7 +11,7 @@
 # Convergence Tests
 (FRAMEWORK, INSTALL) {
   TESTS = ConvergenceTest/Rythmos_ConvergenceTest.exe;
-  COMM = SERIAL, MPI(1);
+  COMM = SERIAL;
 }
 
 
