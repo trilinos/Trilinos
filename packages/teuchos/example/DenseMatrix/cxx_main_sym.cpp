@@ -1,6 +1,7 @@
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialSpdDenseSolver.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Version.hpp"
 
@@ -82,6 +83,19 @@ int main(int argc, char* argv[])
   info = My_Solver.solve();
   if (info != 0)
     std::cout << "Teuchos::SerialSpdDenseSolver::solve() returned : " << info << std::endl;
+
+  // A matrix triple-product can be computed:  C = alpha*W'*A*W
+  double alpha=0.5;
+  Teuchos::SerialDenseMatrix<int,double> W(3,2);
+  Teuchos::SerialSymDenseMatrix<int,double> A1(2), A2(3);
+  A1(0,0) = 1.0, A1(1,1) = 2.0;
+  A2(0,0) = 1.0, A2(1,1) = 2.0, A2(2,2) = 3.00;
+  W.putScalar( 1.0 );
+
+  Teuchos::SerialSymDenseMatrix<int,double> C1(3), C2(2);
+
+  Teuchos::symMatTripleProduct<int,double>( Teuchos::NO_TRANS, alpha, A1, W, C1);
+  Teuchos::symMatTripleProduct<int,double>( Teuchos::TRANS, alpha, A2, W, C2 );
 
   // A matrix can be sent to the output stream:
   std::cout<< My_Matrix << std::endl;

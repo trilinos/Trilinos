@@ -29,6 +29,7 @@
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_Version.hpp"
 
 #define OTYPE int
@@ -249,7 +250,7 @@ int main(int argc, char* argv[])
   //  Scale Tests.
 
   SDMatrix ScalTest( 8 );
-  ScalTest.putScalar( 1.0 );
+  ScalTest.putScalar( Teuchos::ScalarTraits<STYPE>::one() );
   //  Scale the entries by 8, it should be 8.
   if (verbose) std::cout << "operator*= -- scale matrix by some number ";
   ScalTest *= 8.0;
@@ -259,6 +260,41 @@ int main(int argc, char* argv[])
 	if (verbose) std::cout<< "unsuccessful." <<std::endl;
 	numberFailedTests++;
   }
+
+
+  //  Matrix Triple-Product Test
+  STYPE alpha=0.5*Teuchos::ScalarTraits<STYPE>::one();
+  DMatrix W(3,2);
+  SDMatrix A1(2), A2(3);
+  A1(0,0) = 1.0, A1(1,1) = 2.0;
+  A2(0,0) = 1.0, A2(1,1) = 2.0, A2(2,2) = 3.00;
+  W.putScalar( 1.0 );
+
+  SDMatrix C1upper(3), C1lower(3), C2upper(2), C2lower(2);
+  C1upper.setUpper(); C2upper.setUpper();
+  C1lower.setLower(); C2lower.setLower();
+
+  // Test all combinations of triple products.
+
+  // These should return a matrix with 1.5 in all entries
+  STYPE C1result = 1.5*Teuchos::ScalarTraits<STYPE>::one();
+  Teuchos::symMatTripleProduct<OTYPE,STYPE>( Teuchos::NO_TRANS, alpha, A1, W, C1upper );
+  Teuchos::symMatTripleProduct<OTYPE,STYPE>( Teuchos::NO_TRANS, alpha, A1, W, C1lower );
+
+  // These should return a matrix with 3 in all entries
+  STYPE C2result = 3.0*Teuchos::ScalarTraits<STYPE>::one();
+  Teuchos::symMatTripleProduct<OTYPE,STYPE>( Teuchos::TRANS, alpha, A2, W, C2upper );
+  Teuchos::symMatTripleProduct<OTYPE,STYPE>( Teuchos::TRANS, alpha, A2, W, C2lower );
+ 
+  if (verbose) std::cout << "triple product -- compute C = W'*A*W or C = W*A*W' ";
+  if (C1upper(2,1)==C1result && C1lower(1,2)==C1result && C2upper(1,0)==C2result && C2lower(0,1)==C2result) {
+        if (verbose) std::cout<< "successful." <<std::endl;
+  } else {
+        if (verbose) std::cout<< "unsuccessful." <<std::endl;
+        numberFailedTests++;
+  }
+
+
 
   //
   // If a test failed output the number of failed tests.
