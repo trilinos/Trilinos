@@ -903,7 +903,7 @@ void AZ_space_for_factors(double input_fill, int N_nz, int N,
   /* make sure things don't overflow */
 
   temp = 2*(N_nz + *extra_factor_nonzeros)*sizeof(double);
-  if ( temp < 0 ) {
+  if ( temp < 0 || *extra_factor_nonzeros < 0 ) {
       temp = 2;
       while ( temp < (2*temp) ) temp = 2*temp;
       *extra_factor_nonzeros = temp/(2*sizeof(double));
