@@ -746,6 +746,8 @@ ML_USING_NOX_TRUE
 ML_USING_NOX_FALSE
 ML_USING_ZOLTAN_TRUE
 ML_USING_ZOLTAN_FALSE
+ML_USING_PETSC_TRUE
+ML_USING_PETSC_FALSE
 ML_USING_EPETRA_TRUE
 ML_USING_EPETRA_FALSE
 ML_USING_AMESOS_TRUE
@@ -8934,7 +8936,14 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
-#
+ if test "X$ac_cv_use_petsc" = "Xyes"; then
+  ML_USING_PETSC_TRUE=
+  ML_USING_PETSC_FALSE='#'
+else
+  ML_USING_PETSC_TRUE='#'
+  ML_USING_PETSC_FALSE=
+fi
+
 
 #
 # ------------------------------------------------------------------------
@@ -9260,6 +9269,15 @@ fi
 
 
 
+#
+# if user wants PETSc, EpetraExt must be enabled.
+if test "X$ac_cv_use_epetraext" != "Xyes"; then
+   if test "X$ac_cv_use_petsc" = "Xyes"; then
+     { { echo "$as_me:$LINENO: error: --with-petsc requires --enable-epetraext." >&5
+echo "$as_me: error: --with-petsc requires --enable-epetraext." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
 #
 
 
@@ -18447,6 +18465,13 @@ echo "$as_me: error: conditional \"ML_USING_ZOLTAN\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${ML_USING_PETSC_TRUE}" && test -z "${ML_USING_PETSC_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ML_USING_PETSC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ML_USING_PETSC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${ML_USING_EPETRA_TRUE}" && test -z "${ML_USING_EPETRA_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ML_USING_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -19377,6 +19402,8 @@ ML_USING_NOX_TRUE!$ML_USING_NOX_TRUE$ac_delim
 ML_USING_NOX_FALSE!$ML_USING_NOX_FALSE$ac_delim
 ML_USING_ZOLTAN_TRUE!$ML_USING_ZOLTAN_TRUE$ac_delim
 ML_USING_ZOLTAN_FALSE!$ML_USING_ZOLTAN_FALSE$ac_delim
+ML_USING_PETSC_TRUE!$ML_USING_PETSC_TRUE$ac_delim
+ML_USING_PETSC_FALSE!$ML_USING_PETSC_FALSE$ac_delim
 ML_USING_EPETRA_TRUE!$ML_USING_EPETRA_TRUE$ac_delim
 ML_USING_EPETRA_FALSE!$ML_USING_EPETRA_FALSE$ac_delim
 ML_USING_AMESOS_TRUE!$ML_USING_AMESOS_TRUE$ac_delim
@@ -19426,7 +19453,7 @@ ac_aux_dir!$ac_aux_dir$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 81; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 83; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
