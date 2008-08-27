@@ -1021,7 +1021,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 */
       void *voidKSP = 0;
       ML_PetscKSP petscKSP = 0;
-      petscKSP = (ML_PetscKSP) smList.get("smoother: petsc pc", voidKSP);
+      petscKSP = (ML_PetscKSP) smList.get("smoother: petsc ksp", voidKSP);
       if (petscKSP == 0) {
         if (Comm().MyPID() == 0)
           cerr << ErrorMsg_
