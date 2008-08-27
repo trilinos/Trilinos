@@ -725,8 +725,8 @@ int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateRHS()
   if (R_.size()==0) ierr = computeEquilibrateScaling(); // Compute R and C if needed.
   if (ierr!=0) return(ierr);     // Can't count on R and C being computed.
 
-  ScalarType * R = &R_[0];
-  if (transpose_) R = &C_[0];
+  ScalarType * R_tmp = &R_[0];
+  if (transpose_) R_tmp = &C_[0];
 
   OrdinalType LDB = RHS_->stride(), NRHS = RHS_->numCols();
   ScalarType * B = RHS_->values();
@@ -734,7 +734,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateRHS()
   for (j=0; j<NRHS; j++) {
     ptr = B + j*LDB;
     for (i=0; i<M_; i++) {
-      *ptr = *ptr*R[i];
+      *ptr = *ptr*R_tmp[i];
       ptr++;
     }
   }
@@ -753,8 +753,8 @@ int SerialDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
 
   if (!equilibratedB_) return(0); // Nothing to do
 
-  ScalarType * C = &C_[0];
-  if (transpose_) C = &R_[0];
+  ScalarType * C_tmp = &C_[0];
+  if (transpose_) C_tmp = &R_[0];
 
   OrdinalType LDX = RHS_->stride(), NRHS = RHS_->numCols();
   ScalarType * X = RHS_->values();
@@ -762,7 +762,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
   for (j=0; j<NRHS; j++) {
     ptr = X + j*LDX;
     for (i=0; i<N_; i++) {
-      *ptr = *ptr*C[i];
+      *ptr = *ptr*C_tmp[i];
       ptr++;
     }
   }
