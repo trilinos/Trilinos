@@ -47,12 +47,10 @@
 #endif
 extern "C" {
 //Petsc headers.
-//Note: Petsc internally hard-codes paths to headers, relative to the PETSC home directory.
-//      This means that --with-incdirs must contain the full path(s) to the headers below
-//      plus the PETSc home directory.
-#include "petscksp.h"
+//Note: Petsc internally hard-codes paths to headers, relative to the PETSC home
+//      directory.  This means that --with-incdirs must contain the full path(s)
+//      to the header below plus the PETSc home directory.
 #include "src/mat/impls/aij/mpi/mpiaij.h"
-#include "src/mat/impls/aij/seq/aij.h"
 }
 
 class Epetra_Import;
