@@ -120,12 +120,38 @@ namespace {
     Array<Scalar> values(4);
 #ifdef TEUCHOS_DEBUG
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
-    TEST_THROW(MV mvec(map,values(0,3),TWO,numVecs), std::invalid_argument);
+    TEST_THROW(MV mvec(map,values(0,3),TWO,numVecs), std::runtime_error);
     // it could also be too small for the given LDA: 
-    TEST_THROW(MV mvec(map,values(),TWO+ONE,numVecs), std::invalid_argument);
+    TEST_THROW(MV mvec(map,values(),TWO+ONE,numVecs), std::runtime_error);
 #endif
     // LDA < numLocal throws an exception anytime
     TEST_THROW(MV mvec(map,values(0,4),ONE,numVecs), std::invalid_argument);
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadDot, Ordinal, Scalar )
+  {
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a Map
+    const Ordinal indexBase = as<Ordinal>(0);
+    const Ordinal NEGONE    = as<Ordinal>(-1);
+    Map<Ordinal> map1(NEGONE,as<Ordinal>(1),indexBase,platform),
+                 map2(NEGONE,as<Ordinal>(2),indexBase,platform);
+    MV mv12(map1,as<Ordinal>(1)),
+       mv21(map2,as<Ordinal>(1)),
+       mv22(map2,as<Ordinal>(2));
+    Array<Scalar> dots(2);
+    // incompatible maps
+    TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
+    // incompatible numvecs
+    TEST_THROW(mv22.dot(mv21,dots()),std::runtime_error);
+    // too small output array
+#ifdef TEUCHOS_DEBUG
+    TEST_THROW(mv22.dot(mv22,dots(0,1)),std::runtime_error);
+#endif
   }
 
 
@@ -215,8 +241,8 @@ namespace {
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
-    // dot(values,values) = [0 2 4]
-    // summed over all procs, this is [0 2*nprocs 4*nprocs]
+    // dot(values,values) = [0*0+0*0 1*1+1*1 + 2*2+2*2] = [0 2 8]
+    // summed over all procs, this is [0 2*nprocs 8*nprocs]
     values[0] = as<Scalar>(0);
     values[1] = as<Scalar>(0);
     values[2] = as<Scalar>(1);
@@ -228,7 +254,7 @@ namespace {
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
-    answer[2] = as<Scalar>(4*numImages);
+    answer[2] = as<Scalar>(8*numImages);
     // do the dots
     mvec1.dot(mvec2,dots1());
     mvec2.dot(mvec1,dots2());
@@ -302,7 +328,7 @@ namespace {
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
     // normInf(values) = [0 1 2]
-    // over all procs, this is [0 2 4]
+    // over all procs, this is [0 1 2]
     values[0] = as<Scalar>(0);
     values[1] = as<Scalar>(0);
     values[2] = as<Scalar>(1);
@@ -312,8 +338,8 @@ namespace {
     MV mvec(map,values(),TWO,numVectors);
     Array<MT> norms(numVectors), answer(numVectors);
     answer[0] = as<MT>(0);
-    answer[1] = as<MT>(2);
-    answer[2] = as<MT>(4);
+    answer[1] = as<MT>(1);
+    answer[2] = as<MT>(2);
     // do the dots
     mvec.normInf(norms());
     // check the answers
@@ -406,6 +432,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstLDA, ORDINAL, double ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OrthoDot, ORDINAL, double ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDot, ORDINAL, double ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadDot, ORDINAL, double ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNorm1, ORDINAL, double ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNormInf, ORDINAL, double ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Norm2, ORDINAL, double )

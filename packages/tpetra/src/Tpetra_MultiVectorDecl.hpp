@@ -207,7 +207,7 @@ namespace Tpetra {
     //! Vector access function.
     /** ArrayRCP to the local values in the ith vector of this multi-vector.
      */
-    const Teuchos::ArrayRCP<const Scalar> & operator[](Ordinal i) const;
+    Teuchos::ArrayRCP<const Scalar> operator[](Ordinal i) const;
 
     //! Vector access function.
     Vector<Ordinal,Scalar> & operator()(Ordinal i);
