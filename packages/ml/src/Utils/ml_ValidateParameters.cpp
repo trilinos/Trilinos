@@ -42,7 +42,7 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList,int d
     exit(EXIT_FAILURE);
   }
   try{
-    List.validateParameters(*validList,depth,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
+    List.validateParameters(*validList,depth,VALIDATE_USED_ENABLED,VALIDATE_DEFAULTS_DISABLED);
   }
   catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what()<<endl;}
   catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what()<<endl;}
@@ -88,6 +88,10 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   setDoubleParameter("subsmoother: damping factor",1.333,"Damping factor for symmetric Gauss-Seidel",PL,dblParam); 
   setIntParameter("subsmoother: edge sweeps",4,"Number of edge smoothing sweeps",PL,intParam);
   setIntParameter("subsmoother: node sweeps",4,"Number of node smoothing sweeps",PL,intParam);   
+# ifdef HAVE_PETSC
+  void *petscKSP;
+  PL->set("smoother: petsc ksp",petscKSP);
+# endif
   /* Unlisted Options */ 
   setIntParameter("smoother: self overlap",0,"experimental option",PL,intParam);
   /* Unlisted Options that should probably be listed */
@@ -203,12 +207,20 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   strParam.allowString(true); 
 
   /* Allocate List for Smoothing Options */
+# ifdef HAVE_PETSC
+  const int num_smoothers=25;
+# else
   const int num_smoothers=24;
+# endif
   const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi",
    "ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel",
    "Gauss-Seidel","Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu",
    "Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined",
-   "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT"};
+   "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT"
+#  ifdef HAVE_PETSC
+   ,"petsc"
+#  endif
+   };
   Array<string> smoothers(num_smoothers);
   for(int i=0;i<num_smoothers;i++) smoothers[i] = smoother_strings[i];
 
