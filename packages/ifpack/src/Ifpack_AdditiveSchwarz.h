@@ -24,6 +24,11 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
+#ifdef HAVE_IFPACK_AMESOS
+  #include "Ifpack_AMDReordering.h"
+#endif
+
+
 //! Ifpack_AdditiveSchwarz: a class to define Additive Schwarz preconditioners of Epetra_RowMatrix's.
 
 /*!
@@ -96,8 +101,8 @@ public:
    * OverlappingMatrix - (In) Pointer to the matrix extended with the
    *                     desired level of overlap.
    */
-  Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
-			 int OverlapLevel = 0);
+  Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix_in,
+			 int OverlapLevel_in = 0);
   
   //! Destructor
   virtual ~Ifpack_AdditiveSchwarz() {};
@@ -110,12 +115,12 @@ public:
      * implicitly.  
       
     \param 
-	   UseTranspose - (In) If true, multiply by the transpose of operator, 
+	   UseTranspose_in - (In) If true, multiply by the transpose of operator, 
 	   otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
-    virtual int SetUseTranspose(bool UseTranspose);
+    virtual int SetUseTranspose(bool UseTranspose_in);
   //@}
   
   //@{ \name Mathematical functions.
@@ -220,7 +225,7 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
-			 Epetra_RowMatrix* Matrix = 0);
+			 Epetra_RowMatrix* Matrix_in = 0);
 
   //! Returns the estimated condition number, or -1.0 if not computed.
   virtual double Condest() const
@@ -395,13 +400,13 @@ protected:
 //==============================================================================
 template<typename T>
 Ifpack_AdditiveSchwarz<T>::
-Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
-		       int OverlapLevel) :
+Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix_in,
+		       int OverlapLevel_in) :
   IsInitialized_(false),
   IsComputed_(false),
   UseTranspose_(false),
   IsOverlapping_(false),
-  OverlapLevel_(OverlapLevel),
+  OverlapLevel_(OverlapLevel_in),
   CombineMode_(Zero),
   Condest_(-1.0),
   ComputeCondest_(true),
@@ -419,7 +424,7 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   ApplyInverseFlops_(0.0)
 {
   // Construct a reference-counted pointer with the input matrix, don't manage the memory.
-  Matrix_ = Teuchos::rcp( Matrix, false );
+  Matrix_ = Teuchos::rcp( Matrix_in, false );
 
   if (Matrix_->Comm().NumProc() == 1)
     OverlapLevel_ = 0;
@@ -427,8 +432,8 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   if ((OverlapLevel_ != 0) && (Matrix_->Comm().NumProc() > 1))
     IsOverlapping_ = true;
   // Sets parameters to default values
-  Teuchos::ParameterList List;
-  SetParameters(List);
+  Teuchos::ParameterList List_in;
+  SetParameters(List_in);
 }
 
 //==============================================================================
@@ -461,6 +466,10 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
       Reordering_ = Teuchos::rcp( new Ifpack_RCMReordering() );
     else if (ReorderingType_ == "metis")
       Reordering_ = Teuchos::rcp( new Ifpack_METISReordering() );
+#ifdef HAVE_IFPACK_AMESOS	
+    else if (ReorderingType_ == "amd" )
+      Reordering_ = Teuchos::rcp( new Ifpack_AMDReordering() );
+#endif
     else {
       cerr << "reordering type not correct (" << ReorderingType_ << ")" << endl;
       exit(EXIT_FAILURE);
@@ -489,17 +498,17 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
 //==============================================================================
 template<typename T>
-int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
+int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List_in)
 {
  
   // compute the condition number each time Compute() is invoked.
-  ComputeCondest_ = List.get("schwarz: compute condest", ComputeCondest_);
+  ComputeCondest_ = List_in.get("schwarz: compute condest", ComputeCondest_);
   // combine mode
-  if( Teuchos::ParameterEntry *combineModeEntry = List.getEntryPtr("schwarz: combine mode") )
+  if( Teuchos::ParameterEntry *combineModeEntry = List_in.getEntryPtr("schwarz: combine mode") )
   {
     if( typeid(std::string) == combineModeEntry->getAny().type() )
     {
-      std::string mode = List.get("schwarz: combine mode", "Add");
+      std::string mode = List_in.get("schwarz: combine mode", "Add");
       if (mode == "Add")
         CombineMode_ = Add;
       else if (mode == "Zero")
@@ -528,16 +537,16 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
     else
     {
       // Throw exception with good error message!
-      Teuchos::getParameter<std::string>(List,"schwarz: combine mode");
+      Teuchos::getParameter<std::string>(List_in,"schwarz: combine mode");
     }
   }
   else
   {
     // Make the default be a string to be consistent with the valid parameters!
-    List.get("schwarz: combine mode","Zero");
+    List_in.get("schwarz: combine mode","Zero");
   }
   // type of reordering
-  ReorderingType_ = List.get("schwarz: reordering type", ReorderingType_);
+  ReorderingType_ = List_in.get("schwarz: reordering type", ReorderingType_);
   if (ReorderingType_ == "none")
     UseReordering_ = false;
   else 
@@ -546,10 +555,10 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
   // singletons! A simple example: upper triangular matrix, if I remove
   // the lower node, I still get a matrix with a singleton! However, filter
   // singletons should help for PDE problems with Dirichlet BCs.
-  FilterSingletons_ = List.get("schwarz: filter singletons", FilterSingletons_);
+  FilterSingletons_ = List_in.get("schwarz: filter singletons", FilterSingletons_);
 
   // This copy may be needed by Amesos or other preconditioners.
-  List_ = List;
+  List_ = List_in;
 
   return(0);
 }
@@ -652,15 +661,15 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
 
 //==============================================================================
 template<typename T>
-int Ifpack_AdditiveSchwarz<T>::SetUseTranspose(bool UseTranspose)
+int Ifpack_AdditiveSchwarz<T>::SetUseTranspose(bool UseTranspose_in)
 {
   // store the flag -- it will be set in Initialize() if Inverse_ does not
   // exist.
-  UseTranspose_ = UseTranspose;
+  UseTranspose_ = UseTranspose_in;
 
   // If Inverse_ exists, pass it right now.
   if (Inverse_!=Teuchos::null)
-    IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose));
+    IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose_in));
   return(0);
 }
 
@@ -887,12 +896,12 @@ Print(std::ostream& os) const
 template<typename T>
 double Ifpack_AdditiveSchwarz<T>::
 Condest(const Ifpack_CondestType CT, const int MaxIters, 
-        const double Tol, Epetra_RowMatrix* Matrix)
+        const double Tol, Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
-  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
 
   return(Condest_);
 }

@@ -104,10 +104,10 @@ class Ifpack_HashTable
     {
       int hashed_key = doHash(key);
 
-      for (int set = 0; set < counter_[hashed_key]; ++set)
+      for (int set_ptr = 0; set_ptr < counter_[hashed_key]; ++set_ptr)
       {
-        if (keys_[set][hashed_key] == key)  
-          return(vals_[set][hashed_key]);
+        if (keys_[set_ptr][hashed_key] == key)  
+          return(vals_[set_ptr][hashed_key]);
       }
 
       return(0.0);
@@ -120,14 +120,14 @@ class Ifpack_HashTable
       int hashed_key = doHash(key);
       int& hashed_counter = counter_[hashed_key];
 
-      for (int set = 0; set < hashed_counter; ++set)
+      for (int set_ptr = 0; set_ptr < hashed_counter; ++set_ptr)
       {
-        if (keys_[set][hashed_key] == key)
+        if (keys_[set_ptr][hashed_key] == key)
         {
           if (addToValue)
-            vals_[set][hashed_key] += value;
+            vals_[set_ptr][hashed_key] += value;
           else
-            vals_[set][hashed_key] = value;
+            vals_[set_ptr][hashed_key] = value;
           return;
         }
       }
@@ -177,10 +177,10 @@ class Ifpack_HashTable
     {
       int count = 0;
       for (int key = 0; key < n_keys_; ++key)
-        for (int set = 0; set < counter_[key]; ++set)
+        for (int set_ptr = 0; set_ptr < counter_[key]; ++set_ptr)
         {
-          key_array[count] = keys_[set][key];
-          val_array[count] = vals_[set][key];
+          key_array[count] = keys_[set_ptr][key];
+          val_array[count] = vals_[set_ptr][key];
           ++count;
         }
     }

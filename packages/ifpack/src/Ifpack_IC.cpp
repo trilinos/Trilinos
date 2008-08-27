@@ -335,13 +335,13 @@ int Ifpack_IC::Apply(const Epetra_MultiVector& X,
 //=============================================================================
 double Ifpack_IC::Condest(const Ifpack_CondestType CT, 
 			  const int MaxIters, const double Tol,
-			  Epetra_RowMatrix* Matrix)
+			  Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
   
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
   
   return(Condest_);
 }

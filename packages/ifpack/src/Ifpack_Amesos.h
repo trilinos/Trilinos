@@ -93,13 +93,13 @@ public:
      * implicitly.  
       
     \param 
-	   UseTranspose - (In) If true, multiply by the transpose of operator, 
+	   UseTranspose_in - (In) If true, multiply by the transpose of operator, 
 	   otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
 
-  virtual int SetUseTranspose(bool UseTranspose);
+  virtual int SetUseTranspose(bool UseTranspose_in);
   //@}
   
   //@{ \name Mathematical functions.
@@ -205,7 +205,7 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
-			 Epetra_RowMatrix* Matrix= 0);
+			 Epetra_RowMatrix* Matrix_in= 0);
   
   //! Returns the estimated condition number, never computes it.
   virtual double Condest() const
@@ -283,75 +283,75 @@ protected:
   //@{ \name Methods to get/set private data
 
   //! Sets the label.
-  inline void SetLabel(const char* Label) 
+  inline void SetLabel(const char* Label_in) 
   {
-    Label_ = Label;
+    Label_ = Label_in;
   }
 
   //! Sets \c IsInitialized_.
-  inline void SetIsInitialized(const bool IsInitialized)
+  inline void SetIsInitialized(const bool IsInitialized_in)
   {
-    IsInitialized_ = IsInitialized;
+    IsInitialized_ = IsInitialized_in;
   }
 
   //! Sets \c IsComputed_.
-  inline void SetIsComputed(const int IsComputed)
+  inline void SetIsComputed(const int IsComputed_in)
   {
-    IsComputed_ = IsComputed;
+    IsComputed_ = IsComputed_in;
   }
 
   //! Sets \c NumInitialize_.
-  inline void SetNumInitialize(const int NumInitialize)
+  inline void SetNumInitialize(const int NumInitialize_in)
   {
-    NumInitialize_ = NumInitialize;
+    NumInitialize_ = NumInitialize_in;
   }
 
   //! Sets \c NumCompute_.
-  inline void SetNumCompute(const int NumCompute)
+  inline void SetNumCompute(const int NumCompute_in)
   {
-    NumCompute_ = NumCompute;
+    NumCompute_ = NumCompute_in;
   }
 
   //! Sets \c NumApplyInverse_.
-  inline void SetNumApplyInverse(const int NumApplyInverse)
+  inline void SetNumApplyInverse(const int NumApplyInverse_in)
   {
-    NumApplyInverse_ = NumApplyInverse;
+    NumApplyInverse_ = NumApplyInverse_in;
   }
 
   //! Sets \c InitializeTime_.
-  inline void SetInitializeTime(const double InitializeTime)
+  inline void SetInitializeTime(const double InitializeTime_in)
   {
-    InitializeTime_ = InitializeTime;
+    InitializeTime_ = InitializeTime_in;
   }
 
   //! Sets \c ComputeTime_.
-  inline void SetComputeTime(const double ComputeTime)
+  inline void SetComputeTime(const double ComputeTime_in)
   {
-    ComputeTime_ = ComputeTime;
+    ComputeTime_ = ComputeTime_in;
   }
 
   //! Sets \c ApplyInverseTime_.
-  inline void SetApplyInverseTime(const double ApplyInverseTime)
+  inline void SetApplyInverseTime(const double ApplyInverseTime_in)
   {
-    ApplyInverseTime_ = ApplyInverseTime;
+    ApplyInverseTime_ = ApplyInverseTime_in;
   }
 
   //! Sets \c ComputeFlops_.
-  inline void SetComputeFlops(const double ComputeFlops)
+  inline void SetComputeFlops(const double ComputeFlops_in)
   {
-    ComputeFlops_ = ComputeFlops;
+    ComputeFlops_ = ComputeFlops_in;
   }
 
   //! Sets \c ComputeFlops_.
-  inline void SetApplyInverseFlops(const double ApplyInverseFlops)
+  inline void SetApplyInverseFlops(const double ApplyInverseFlops_in)
   {
-    ApplyInverseFlops_ = ApplyInverseFlops;
+    ApplyInverseFlops_ = ApplyInverseFlops_in;
   }
 
   //! Set \c List_.
-  inline void SetList(const Teuchos::ParameterList& List)
+  inline void SetList(const Teuchos::ParameterList& List_in)
   {
-    List_ = List;
+    List_ = List_in;
   }
   //@}
   

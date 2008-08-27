@@ -60,27 +60,27 @@ bool Ifpack_Graph_Epetra_RowMatrix::Filled() const
 }
  
 //==============================================================================
-int Ifpack_Graph_Epetra_RowMatrix::GRID(int LRID) const
+int Ifpack_Graph_Epetra_RowMatrix::GRID(int LRID_in) const
 {
-  return(RowMatrix_->RowMatrixRowMap().GID(LRID));
+  return(RowMatrix_->RowMatrixRowMap().GID(LRID_in));
 }
 
 //==============================================================================
-int Ifpack_Graph_Epetra_RowMatrix::GCID(int LCID) const
+int Ifpack_Graph_Epetra_RowMatrix::GCID(int LCID_in) const
 {
-  return(RowMatrix_->RowMatrixColMap().GID(LCID));
+  return(RowMatrix_->RowMatrixColMap().GID(LCID_in));
 }
 
 //==============================================================================
-int Ifpack_Graph_Epetra_RowMatrix::LRID(int GRID) const
+int Ifpack_Graph_Epetra_RowMatrix::LRID(int GRID_in) const
 {
-  return(RowMatrix_->RowMatrixRowMap().LID(GRID));
+  return(RowMatrix_->RowMatrixRowMap().LID(GRID_in));
 }
 
 //==============================================================================
-int Ifpack_Graph_Epetra_RowMatrix::LCID(int GCID) const
+int Ifpack_Graph_Epetra_RowMatrix::LCID(int GCID_in) const
 {
-  return(RowMatrix_->RowMatrixColMap().LID(GCID));
+  return(RowMatrix_->RowMatrixColMap().LID(GCID_in));
 }
 
 //==============================================================================

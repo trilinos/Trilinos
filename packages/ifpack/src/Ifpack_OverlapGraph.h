@@ -53,9 +53,9 @@ class Ifpack_OverlapGraph: public Epetra_Object {
   //! Constructor using Epetra_CrsGraph.
   /*! Creates an Ifpack_OverlapGraph object from the user graph. 
     \param In
-           UserMatrixGraph - Graph from user matrix.
+           UserMatrixGraph_in - Graph from user matrix.
   */
-  Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph, int OverlapLevel);
+  Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph_in, int OverlapLevel_in);
 
   //! Constructor using Epetra_RowMatrix.
   /*! Creates an Ifpack_OverlapGraph object from the user graph implicitly defined by the
@@ -63,7 +63,7 @@ class Ifpack_OverlapGraph: public Epetra_Object {
     \param In
             RowMatrix - An object that has implemented the Epetra_RowMatrix interface.
   */
-  Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& UserMatrix, int OverlapLevel);
+  Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& UserMatrix_in, int OverlapLevel_in);
   
   //! Copy constructor.
   Ifpack_OverlapGraph(const Ifpack_OverlapGraph & Source);

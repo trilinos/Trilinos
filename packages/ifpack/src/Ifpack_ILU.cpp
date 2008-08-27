@@ -51,9 +51,9 @@ using Teuchos::rcp;
 #endif
 
 //==============================================================================
-Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
-  A_(rcp(Matrix,false)),
-  Comm_(Matrix->Comm()),
+Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix_in) :
+  A_(rcp(Matrix_in,false)),
+  Comm_(Matrix_in->Comm()),
   UseTranspose_(false),
   NumMyDiagonals_(0),
   RelaxValue_(0.0),
@@ -566,7 +566,7 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
 //=============================================================================
 double Ifpack_ILU::Condest(const Ifpack_CondestType CT, 
                            const int MaxIters, const double Tol,
-                              Epetra_RowMatrix* Matrix)
+                              Epetra_RowMatrix* Matrix_in)
 {
 
 #ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
@@ -576,7 +576,7 @@ double Ifpack_ILU::Condest(const Ifpack_CondestType CT,
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
-  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
 
   return(Condest_);
 }

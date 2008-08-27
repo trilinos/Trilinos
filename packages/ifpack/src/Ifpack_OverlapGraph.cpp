@@ -37,23 +37,23 @@
 #include <ifp_parameters.h>
 
 //==============================================================================
-Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph, int OverlapLevel)
-  : UserMatrixGraph_(UserMatrixGraph),
-    OverlapLevel_(OverlapLevel)
+Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph_in, int OverlapLevel_in)
+  : UserMatrixGraph_(UserMatrixGraph_in),
+    OverlapLevel_(OverlapLevel_in)
 {
   // Test for non-trivial overlap here so we can use it later.
-  IsOverlapped_ = (OverlapLevel>0 && UserMatrixGraph->DomainMap().DistributedGlobal());
+  IsOverlapped_ = (OverlapLevel_in>0 && UserMatrixGraph_in->DomainMap().DistributedGlobal());
 
-  ConstructOverlapGraph(UserMatrixGraph);
+  ConstructOverlapGraph(UserMatrixGraph_in);
 
 }
 //==============================================================================
-Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& UserMatrix, int OverlapLevel)
-  : UserMatrix_(UserMatrix),
-    OverlapLevel_(OverlapLevel)
+Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& UserMatrix_in, int OverlapLevel_in)
+  : UserMatrix_(UserMatrix_in),
+    OverlapLevel_(OverlapLevel_in)
 {
   // Test for non-trivial overlap here so we can use it later.
-  IsOverlapped_ = (OverlapLevel>0 && UserMatrix->OperatorDomainMap().DistributedGlobal());
+  IsOverlapped_ = (OverlapLevel_in>0 && UserMatrix_in->OperatorDomainMap().DistributedGlobal());
   
   throw ReportError("This constructor is not implemented yet.  Need to add Epetra_SrcObject support to Epetra_Import/Export", -1);
 }

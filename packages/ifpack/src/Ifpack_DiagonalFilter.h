@@ -219,9 +219,9 @@ public:
     return(A_->RowMatrixImporter());
   }
 
-  int SetUseTranspose(bool UseTranspose)
+  int SetUseTranspose(bool UseTranspose_in)
   {
-    return(A_->SetUseTranspose(UseTranspose));
+    return(A_->SetUseTranspose(UseTranspose_in));
   }
 
   bool UseTranspose() const 

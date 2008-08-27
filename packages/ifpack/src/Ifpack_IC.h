@@ -173,7 +173,7 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
                  const int MaxIters = 1550, 
                  const double Tol = 1e-9,
-		 Epetra_RowMatrix* Matrix = 0);
+		 Epetra_RowMatrix* Matrix_in = 0);
 
   double Condest() const
   {
@@ -207,11 +207,11 @@ class Ifpack_IC: public Ifpack_Preconditioner {
 	does not support transpose use, this method should return a value of -1.
       
     \param In
-	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+	   UseTranspose_in -If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Always returns 0.
   */
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
 
     //! Returns 0.0 because this class cannot compute Inf-norm.
     double NormInf() const {return(0.0);};
@@ -237,9 +237,9 @@ class Ifpack_IC: public Ifpack_Preconditioner {
       return(Label_);
     }
 
-    int SetLabel(const char* Label)
+    int SetLabel(const char* Label_in)
     {
-      strcpy(Label_,Label);
+      strcpy(Label_,Label_in);
       return(0);
     }
  

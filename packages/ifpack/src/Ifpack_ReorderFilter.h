@@ -69,8 +69,8 @@ class Ifpack_ReorderFilter : public virtual Epetra_RowMatrix {
 
 public:
   // Constructor.
-  Ifpack_ReorderFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
-		       const Teuchos::RefCountPtr<Ifpack_Reordering>& Reordering);
+  Ifpack_ReorderFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix_in,
+		       const Teuchos::RefCountPtr<Ifpack_Reordering>& Reordering_in);
 
   //! Copy constructor.
   Ifpack_ReorderFilter(const Ifpack_ReorderFilter& RHS);
@@ -240,9 +240,9 @@ public:
   }
 
   //! Sets the use of the transpose.
-  int SetUseTranspose(bool UseTranspose)
+  int SetUseTranspose(bool UseTranspose_in)
   {
-    return(Matrix()->SetUseTranspose(UseTranspose));
+    return(Matrix()->SetUseTranspose(UseTranspose_in));
   }
 
   //! Returns \c true if the transpose of \c this matrix is used.

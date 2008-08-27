@@ -73,20 +73,20 @@ class Ifpack_IlukGraph {
   /*! Creates a Ifpack_IlukGraph object using the input graph and specified level of fill.  
     
     \param In
-           Graph - An existing Ifpack_CrsGraph.  This object must implement the Ifpack_CrsGraph functions
+           Graph_in - An existing Ifpack_CrsGraph.  This object must implement the Ifpack_CrsGraph functions
 	   that provide graph dimension and pattern information.
     \param In
-           LevelFill - The level of fill to compute via ILU(k) algorithm.
+           LevelFill_in - The level of fill to compute via ILU(k) algorithm.
     \param In
-           LevelOverlap - The level of between subdomains.
+           LevelOverlap_in - The level of between subdomains.
 
 	   \warning Actual construction occurs in ConstructFilledGraph.  This allows error codes to 
 	            be passed back to the user.
   */
-  Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill, int LevelOverlap);
+  Ifpack_IlukGraph(const Epetra_CrsGraph & Graph_in, int LevelFill_in, int LevelOverlap_in);
   
   //! Copy constructor.
-  Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph);
+  Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph_in);
 
   //! Ifpack_IlukGraph Destructor
   virtual ~Ifpack_IlukGraph();

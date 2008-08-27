@@ -46,8 +46,8 @@ class Ifpack_OverlappingRowMatrix : public virtual Epetra_RowMatrix {
 public:
 
   //@{ Constructors/Destructors
-  Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix,
-                              int OverlapLevel);
+  Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
+                              int OverlapLevel_in);
 
   ~Ifpack_OverlappingRowMatrix() {};
   //@}
@@ -266,9 +266,9 @@ public:
   }
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool UseTranspose)
+  int SetUseTranspose(bool UseTranspose_in)
   {
-    UseTranspose_ = UseTranspose;
+    UseTranspose_ = UseTranspose_in;
     return(0);
   }
 

@@ -180,6 +180,9 @@ int Ifpack_IKLU::Initialize()
   // Perform symbolic analysis on the current matrix structure
   int order = 1;
   cssS_ = csr_sqr( order, csrA_ );
+  for (int i = 0; i < NumMyRows_; ++i ) {
+     cout << "AMD Perm (from inside KLU) [" << i << "] = " << cssS_->q[i] << endl;
+  }
 
   // nothing else to do here
   IsInitialized_ = true;
@@ -249,20 +252,20 @@ int Ifpack_IKLU::Compute()
   csrnN_ = csr_lu( &*csrA_, &*cssS_, tol );
 
   // Create L and U as a view of the information stored in csrnN_->L and csrnN_->U
-  csr* L = csrnN_->L;
-  csr* U = csrnN_->U;
+  csr* L_tmp = csrnN_->L;
+  csr* U_tmp = csrnN_->U;
   vector<int> numEntriesL( NumMyRows_ ), numEntriesU( NumMyRows_ );
   for (int i=0; i < NumMyRows_; ++i) {
-    numEntriesL[i] = ( L->p[i+1] - L->p[i] );
-    numEntriesU[i] = ( U->p[i+1] - U->p[i] );
+    numEntriesL[i] = ( L_tmp->p[i+1] - L_tmp->p[i] );
+    numEntriesU[i] = ( U_tmp->p[i+1] - U_tmp->p[i] );
   }
   L_ = rcp(new Epetra_CrsMatrix(View, *SerialMap_, &numEntriesL[0]));
   U_ = rcp(new Epetra_CrsMatrix(View, *SerialMap_, &numEntriesU[0]));
 
   // Insert the values into L and U
   for (int i=0; i < NumMyRows_; ++i) {
-    L_->InsertGlobalValues( i, numEntriesL[i], &(L->x[L->p[i]]), &(L->j[L->p[i]]) );
-    U_->InsertGlobalValues( i, numEntriesU[i], &(U->x[U->p[i]]), &(U->j[U->p[i]]) );
+    L_->InsertGlobalValues( i, numEntriesL[i], &(L_tmp->x[L_tmp->p[i]]), &(L_tmp->j[L_tmp->p[i]]) );
+    U_->InsertGlobalValues( i, numEntriesU[i], &(U_tmp->x[U_tmp->p[i]]), &(U_tmp->j[U_tmp->p[i]]) );
   }
 
   IFPACK_CHK_ERR(L_->FillComplete());
@@ -353,14 +356,14 @@ int Ifpack_IKLU::Apply(const Epetra_MultiVector& X,
 //=============================================================================
 double Ifpack_IKLU::Condest(const Ifpack_CondestType CT, 
                             const int MaxIters, const double Tol,
-			    Epetra_RowMatrix* Matrix)
+			    Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   // NOTE: this is computing the *local* condest
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
 
   return(Condest_);
 }

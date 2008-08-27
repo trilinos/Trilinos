@@ -324,14 +324,14 @@ ostream& Ifpack_Chebyshev::Print(ostream & os) const
 double Ifpack_Chebyshev::
 Condest(const Ifpack_CondestType CT, 
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix)
+	Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   // always computes it. Call Condest() with no parameters to get
   // the previous estimate.
-  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
+  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
 
   return(Condest_);
 }

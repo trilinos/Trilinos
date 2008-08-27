@@ -108,9 +108,9 @@ public:
   //@{ Constructors/Destructors
 
   //! Default constructor
-  Ifpack_DenseContainer(const int NumRows, const int NumVectors = 1) :
-    NumRows_(NumRows),
-    NumVectors_(NumVectors),
+  Ifpack_DenseContainer(const int NumRows_in, const int NumVectors_in = 1) :
+    NumRows_(NumRows_in),
+    NumVectors_(NumVectors_in),
     KeepNonFactoredMatrix_(false),
     IsInitialized_(false),
     IsComputed_(false),
@@ -176,12 +176,12 @@ public:
   }
 
   //! Sets the number of vectors for LHS/RHS.
-  virtual int SetNumVectors(const int NumVectors)
+  virtual int SetNumVectors(const int NumVectors_in)
   {
-    if (NumVectors_ == NumVectors) 
+    if (NumVectors_ == NumVectors_in) 
       return(0);
 
-    NumVectors_ = NumVectors;
+    NumVectors_ = NumVectors_in;
     IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
     IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
     // zero out vector elements
@@ -290,7 +290,7 @@ public:
   virtual int Initialize();
 
   //! Finalizes the linear system matrix and prepares for the application of the inverse.
-  virtual int Compute(const Epetra_RowMatrix& Matrix);
+  virtual int Compute(const Epetra_RowMatrix& Matrix_in);
 
   //! Apply the matrix to RHS, results are stored in LHS.
   virtual int Apply();
@@ -326,7 +326,7 @@ public:
 private:
   
   //! Extract the submatrices identified by the ID set int ID().
-  virtual int Extract(const Epetra_RowMatrix& Matrix);
+  virtual int Extract(const Epetra_RowMatrix& Matrix_in);
 
   //! Number of rows in the container.
   int NumRows_; 

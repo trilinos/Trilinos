@@ -38,11 +38,11 @@
 #include <ifp_parameters.h>
 
 //==============================================================================
-Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph) 
+Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph_in) 
   : UserMatrixIsVbr_(false),
     UserMatrixIsCrs_(false),
-    Graph_(Graph),
-    Comm_(Graph.Comm()),
+    Graph_(Graph_in),
+    Comm_(Graph_in.Comm()),
     UseTranspose_(false),
     NumMyDiagonals_(0),
     Allocated_(false),
@@ -55,7 +55,7 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph)
     OverlapMode_(Zero)
 {
   // Test for non-trivial overlap here so we can use it later.
-  IsOverlapped_ = (Graph.LevelOverlap()>0 && Graph.DomainMap().DistributedGlobal());
+  IsOverlapped_ = (Graph_in.LevelOverlap()>0 && Graph_in.DomainMap().DistributedGlobal());
 }
 
 //==============================================================================
@@ -601,9 +601,9 @@ int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_Cr
   int NumBlockEntries;
   int * BlockIndices;
 
-  int NumMyRows = PG.NumMyRows();
+  int NumMyRows_tmp = PG.NumMyRows();
 
-  for (int i=0; i<NumMyRows; i++) {
+  for (int i=0; i<NumMyRows_tmp; i++) {
     EPETRA_CHK_ERR(BG.RowMap().FindLocalElementID(i, BlockRow, BlockOffset));
     EPETRA_CHK_ERR(BG.ExtractMyRowView(BlockRow, NumBlockEntries, BlockIndices));
 
@@ -616,7 +616,7 @@ int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_Cr
     // original block entry matrix are included in the nonzero pattern of the point graph
     if (Upper) {
       int jstart = i+1;
-      int jstop = EPETRA_MIN(NumMyRows,i+RowDim-BlockOffset);
+      int jstop = EPETRA_MIN(NumMyRows_tmp,i+RowDim-BlockOffset);
       for (int j= jstart; j< jstop; j++) {*ptr++ = j; NumEntries++;}
     }
 

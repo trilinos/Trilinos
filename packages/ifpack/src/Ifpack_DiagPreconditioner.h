@@ -65,9 +65,9 @@ class Ifpack_DiagPreconditioner : public Epetra_Operator
     //! dtor
     ~Ifpack_DiagPreconditioner();
 
-    int SetUseTranspose(bool UseTranspose)
+    int SetUseTranspose(bool UseTranspose_in)
     {
-      UseTranspose_ = UseTranspose;
+      UseTranspose_ = UseTranspose_in;
       return(0);
     }
 

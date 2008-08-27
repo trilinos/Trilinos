@@ -58,27 +58,27 @@ bool Ifpack_Graph_Epetra_CrsGraph::Filled() const
 }
  
 //==============================================================================
-int Ifpack_Graph_Epetra_CrsGraph::GRID(int LRID) const
+int Ifpack_Graph_Epetra_CrsGraph::GRID(int LRID_in) const
 {
-  return(CrsGraph_->GRID(LRID));
+  return(CrsGraph_->GRID(LRID_in));
 }
 
 //==============================================================================
-int Ifpack_Graph_Epetra_CrsGraph::GCID(int LCID) const
+int Ifpack_Graph_Epetra_CrsGraph::GCID(int LCID_in) const
 {
-  return(CrsGraph_->GCID(LCID));
+  return(CrsGraph_->GCID(LCID_in));
 }
 
 //==============================================================================
-int Ifpack_Graph_Epetra_CrsGraph::LRID(int GRID) const
+int Ifpack_Graph_Epetra_CrsGraph::LRID(int GRID_in) const
 {
-  return(CrsGraph_->LRID(GRID));
+  return(CrsGraph_->LRID(GRID_in));
 }
 
 //==============================================================================
-int Ifpack_Graph_Epetra_CrsGraph::LCID(int GCID) const
+int Ifpack_Graph_Epetra_CrsGraph::LCID(int GCID_in) const
 {
-  return(CrsGraph_->LCID(GCID));
+  return(CrsGraph_->LCID(GCID_in));
 }
 
 //==============================================================================

@@ -279,7 +279,7 @@ csr *csr_multiply (const csr *A, const csr *B)
 /* symbolic ordering and analysis for LU */
 css *csr_sqr (int order, const csr *A )
 {
-    int n, k, ok = 1, *post ;
+    int n, ok = 1;
     css *S ;
     if (!CS_CSC (A)) return (NULL) ;        /* check inputs */
     n = A->n ;
@@ -435,7 +435,7 @@ csrn *csr_lu (const csr *A, const css *S, double tol)
         row = q ? (q [k]) : k ;
         if( debug > 1 )
         {
-            printf(" --------------------------------\n",k, row);
+            printf("--------------------------------\n");
             printf(" %d spsolve row=%d \n",k, row);
             printf(" pinv = %d %d %d %d \n", pinv[0], pinv[1], pinv[2], pinv[3]);
         }
@@ -485,7 +485,7 @@ csrn *csr_lu (const csr *A, const css *S, double tol)
         if( debug > 1 )
         {
             printf ("U:") ; csr_print (U, 0) ;  
-            printf(" ------------------------------------\n",k, row);
+            printf("------------------------------------\n");
         }
     }
     /* --- Finalize U and L ------------------------------------------------- */

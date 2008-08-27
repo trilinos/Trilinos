@@ -266,8 +266,8 @@ include $(top_builddir)/Makefile.export.ifpack
 if HAVE_IFPACK_AMESOS
 IFPACK_INCLUDES_EXTRA = \
 	$(IFPACK_INCLUDES) \
-	-I$(top_srcdir)/../amesos/src/UFsparse/AMD/Include \
-	-I$(top_srcdir)/../amesos/src/UFsparse/UFconfig
+	-I$(top_srcdir)/../amesos/src/SuiteSparse/AMD/Include \
+	-I$(top_srcdir)/../amesos/src/SuiteSparse/UFconfig
 else
 IFPACK_INCLUDES_EXTRA = $(IFPACK_INCLUDES)
 endif
