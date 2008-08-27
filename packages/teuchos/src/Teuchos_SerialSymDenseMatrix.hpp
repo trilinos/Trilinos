@@ -124,6 +124,10 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
   //! Basic constructor; defines a matrix of \c numRowsCols size and (optionally) initializes it.
   /*!
     \param numRowsCols - Number of rows and columns in the matrix.
+    \param zeroOut - Initializes values to 0 if true (default)
+
+    Creates a shaped matrix with \c numRowsCols rows and cols.  All values are initialized to 0 when \c zeroOut is true.
+    Values of this matrix should be set using the [] or the () operators.
 
     \note By default the active part of the matrix is assumed to be the lower triangular part.
     To set the upper part as active, call SetUpper(). See Detailed Description section for further discussion.

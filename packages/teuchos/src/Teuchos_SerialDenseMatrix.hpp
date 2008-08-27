@@ -87,11 +87,12 @@ public:
   /*! 
     \param numRows - Number of rows in matrix.
     \param numCols - Number of columns in matrix.
+    \param zeroOut - Initializes values to 0 if true (default)
 
-    Creates a shaped matrix with \c numRows rows and \c numCols cols.  All values are initialized to 0.
+    Creates a shaped matrix with \c numRows rows and \c numCols cols.  All values are initialized to 0 when \c zeroOut is true.
     Values of this matrix should be set using the [] or the () operators.
   */
-  SerialDenseMatrix(OrdinalType numRows, OrdinalType numCols);
+  SerialDenseMatrix(OrdinalType numRows, OrdinalType numCols, bool zeroOut = true);
 
   //! Shaped Constructor with Values
   /*!
@@ -394,13 +395,14 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix()
   
 template<typename OrdinalType, typename ScalarType>
 SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
-  OrdinalType numRows_in, OrdinalType numCols_in
+  OrdinalType numRows_in, OrdinalType numCols_in, bool zeroOut
   )
   : CompObject(), Object("Teuchos::SerialDenseMatrix"), numRows_(numRows_in), numCols_(numCols_in), stride_(numRows_in)
 {
   values_ = new ScalarType[stride_*numCols_];
-  putScalar();
   valuesCopied_ = true;
+  if (zeroOut == true)  
+    putScalar();
 }
 
 template<typename OrdinalType, typename ScalarType>

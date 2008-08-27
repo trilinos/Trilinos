@@ -31,7 +31,7 @@
 #define _TEUCHOS_SERIALDENSEVECTOR_HPP_
 
 /*! \file Teuchos_SerialDenseVector.hpp
-    \brief Templated serial dense std::vector class
+    \brief Templated serial dense vector class
 */
 
 #include "Teuchos_ConfigDefs.hpp"
@@ -51,23 +51,25 @@ namespace Teuchos {
   //@{ 
 
     //! Default Constructor
-    /*! Creates an empty std::vector of no length.  The Sizing methods should be used to size this matrix.  Values of this matrix should be set using the [] or the () operators.
+    /*! Creates an empty vector of no length.  The Sizing methods should be used to size this matrix.  Values of this matrix should be set using the [] or the () operators.
     */
     SerialDenseVector();
 
     //! Shaped Constructor
     /*!
-	\param length - Number of elements in this std::vector.
+	\param length - Number of elements in this vector.
+	\param zeroOut - Initializes values to 0 if true (default)
 
-	Creates a shaped std::vector of length \c length.  All values are initialized to zero.  Values of this std::vector should be set using [] or the () operators.
+    Creates a shaped vector of length \c length.  All values are initialized to 0 when \c zeroOut is true.
+    Values of this matrix should be set using the [] or the () operators.
     */
-    SerialDenseVector(OrdinalType length);
+    SerialDenseVector(OrdinalType length, bool zeroOut = true);
 
     //! Shaped Constructor with Values
     /*!
 	\param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
 	\param values - Pointer to an array of ScalarType of the given \c length.
-	\param length - Length of std::vector to be constructed.
+	\param length - Length of vector to be constructed.
     */
     SerialDenseVector(DataAccess CV, ScalarType* values, OrdinalType length);
 
@@ -83,21 +85,25 @@ namespace Teuchos {
 
     //! Size method for changing the size of a SerialDenseVector, initializing entries to zero.
     /*!
-	\param length - The length of the new std::vector.
+	\param length - The length of the new vector.
 
 	This allows the user to define the length of a SerialDenseVector at any point.
 	This method can be called at any point after construction.  Any values previously in
-	this object will be destroyed and the resized std::vector starts with all zero values.
+	this object will be destroyed and the resized vector starts with all zero values.
     */
     int size(OrdinalType length_in)
       {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length_in, 1));}
 
+    //! Same as <tt>size()</tt> except leaves values uninitialized.
+    int sizeUninitialized(OrdinalType length_in)
+      {return(SerialDenseMatrix<OrdinalType, ScalarType>::shapeUninitialized(length_in, 1));}
+
     //! Resizing method for changing the size of a SerialDenseVector, keeping the entries.
     /*!
-	\param length - The length of the new std::vector.
+	\param length - The length of the new vector.
 	This allows the user to redefine the length of a SerialDenseVector at any point.
 	This method can be called at any point after construction.  Any values previously in
-	this object will be copied to the resized std::vector.
+	this object will be copied to the resized vector.
     */	
     int resize(OrdinalType length_in)
       {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length_in, 1));}
@@ -106,12 +112,12 @@ namespace Teuchos {
   //! @name Comparison methods.
   //@{ 
     //! Equality of two matrices.
-    /*! \return True if \e this std::vector and \c Operand are of the same length and have the same entries, else False will be returned.
+    /*! \return True if \e this vector and \c Operand are of the same length and have the same entries, else False will be returned.
     */
     bool operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
 
     //! Inequality of two matrices.
-    /*! \return True if \e this std::vector and \c Operand are not of the same length or do not have the same entries, else False will be returned.
+    /*! \return True if \e this vector and \c Operand are not of the same length or do not have the same entries, else False will be returned.
     */
     bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
   //@}
@@ -119,7 +125,7 @@ namespace Teuchos {
   //! @name Set methods.
   //@{ 
 
-    //! Copies values from one std::vector to another.
+    //! Copies values from one vector to another.
     /*!
 	The operator= copies the values from one existing SerialDenseVector to
 	another.  If \c Source is a view (i.e. CV = Teuchos::View), then this
@@ -163,7 +169,7 @@ namespace Teuchos {
 
   //! @name Attribute methods.
   //@{ 
-    //! Returns the length of this std::vector.
+    //! Returns the length of this vector.
     OrdinalType length() const {return(this->numRows_);}
   //@}
 
@@ -178,7 +184,7 @@ namespace Teuchos {
   SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector() : SerialDenseMatrix<OrdinalType,ScalarType>() {}
 
   template<typename OrdinalType, typename ScalarType>
-  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector( OrdinalType length_in ) : SerialDenseMatrix<OrdinalType,ScalarType>( length_in, 1 ) {}
+  SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector( OrdinalType length_in, bool zeroOut ) : SerialDenseMatrix<OrdinalType,ScalarType>( length_in, 1, zeroOut ) {}
 
   template<typename OrdinalType, typename ScalarType>
   SerialDenseVector<OrdinalType, ScalarType>::SerialDenseVector(DataAccess CV, ScalarType* values_in, OrdinalType length_in) : 
