@@ -274,7 +274,7 @@ am__objects_20 = EpetraExt_MultiMpiComm.$(OBJEXT)
 am__objects_23 = EpetraExt_ModelEvaluator.$(OBJEXT) \
 	EpetraExt_ModelEvaluatorScalingTools.$(OBJEXT)
 @BUILD_MODEL_EVALUATOR_TRUE@am__objects_24 = $(am__objects_23)
-@BUILD_PETSC_TRUE@am__objects_25 = EpetraExt_PETScAIJMatrix.$(OBJEXT)
+@EPETRAEXT_USING_PETSC_TRUE@am__objects_25 = EpetraExt_PETScAIJMatrix.$(OBJEXT)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_9) $(am__objects_11) \
 	$(am__objects_14) $(am__objects_16) $(am__objects_18) \
@@ -404,6 +404,9 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+EPETRAEXT_PETSC_ARCH = @EPETRAEXT_PETSC_ARCH@
+EPETRAEXT_PETSC_DIR = @EPETRAEXT_PETSC_DIR@
+EPETRAEXT_PETSC_INCLUDES = @EPETRAEXT_PETSC_INCLUDES@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -441,6 +444,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
+USER_DEFINED_PETSCLIB = @USER_DEFINED_PETSCLIB@
 VERSION = @VERSION@
 XTRALDADD = @XTRALDADD@
 abs_builddir = @abs_builddir@
@@ -824,12 +828,12 @@ EXTRA_RESTRICT = \
 @BUILD_RESTRICT_TRUE@RESTRICT = \
 @BUILD_RESTRICT_TRUE@    $(EXTRA_RESTRICT)
 
-@BUILD_PETSC_FALSE@PETSC_H = 
+@EPETRAEXT_USING_PETSC_FALSE@PETSC_H = 
 
 ### Only build PETSc interfaces if the PETSc configure flag is set.
-@BUILD_PETSC_TRUE@PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
-@BUILD_PETSC_FALSE@PETSC = 
-@BUILD_PETSC_TRUE@PETSC = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
+@EPETRAEXT_USING_PETSC_TRUE@PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
+@EPETRAEXT_USING_PETSC_FALSE@PETSC = 
+@EPETRAEXT_USING_PETSC_TRUE@PETSC = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
@@ -879,7 +883,7 @@ EPETRAEXT_H = \
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(EPETRAEXT_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(PETSC_CXXFLAGS)
 @USE_ALTERNATE_AR_FALSE@libepetraext_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
