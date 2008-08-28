@@ -1,3 +1,5 @@
+## $Id$ 
+## $Source$ 
 #@HEADER
 # ************************************************************************
 # 
@@ -30,4 +32,41 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = NOX_1DFEMNonlinear NOX_Sacado_FEApp LOCA_Brusselator_xyzt LOCA_Tcubed LOCA_Sacado_FEApp System_Sacado_FEApp LOCA_ContinuationManager
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
+else
+EXAMPLE_LIBS     = $(LOCA_LIBS)
+EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+
+if BUILD_LOCA_EPETRA_EXAMPLES
+noinst_PROGRAMS = linearSystem 
+endif
+
+linearSystem_SOURCES = $(srcdir)/main.C $(srcdir)/LinearSystem.H $(srcdir)/LinearSystem.C 
+
+linearSystem_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
+
+linearSystem_LDADD = $(EXAMPLE_LIBS)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+

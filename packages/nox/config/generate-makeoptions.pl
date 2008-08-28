@@ -33,6 +33,7 @@ my @macros =
 	 ,"FFLAGS"
 	 ,"LDFLAGS"
 	 ,"FLIBS"
+	 ,"LIBS"
 	 ,"BLAS_LIBS"
 	 ,"LAPACK_LIBS"
 	 ,"prefix"

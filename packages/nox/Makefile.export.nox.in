@@ -106,6 +106,7 @@ LOCA_INCLUDES_BASE = \
                -I@abs_top_srcdir@/src-loca/src \
                -I@abs_top_srcdir@/src-loca/src-lapack \
                -I@abs_top_srcdir@/src-loca/src-epetra \
+               -I@abs_top_srcdir@/src-loca/src-epetra/continuation-manager \
 	       -I@abs_top_srcdir@/src-loca/src-thyra \
                -I@abs_top_srcdir@/src-loca/src-mf \
                $(NOX_INCLUDES) \

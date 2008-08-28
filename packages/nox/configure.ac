@@ -921,6 +921,8 @@ AC_CONFIG_FILES([
 		examples/epetra/LOCA_Brusselator_xyzt/Makefile
 		examples/epetra/LOCA_Sacado_FEApp/Makefile
 		examples/epetra/System_Sacado_FEApp/Makefile
+		examples/epetra/LOCA_ContinuationManager/Makefile
+		examples/epetra/LOCA_ContinuationManager/task.xml
                 examples/petsc/Makefile
                 examples/petsc/DS6.5.1/Makefile
                 examples/petsc/1DFiniteDifference/Makefile

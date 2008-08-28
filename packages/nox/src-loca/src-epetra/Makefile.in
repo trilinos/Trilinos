@@ -126,6 +126,11 @@ am__liblocaepetra_a_SOURCES_DIST = $(srcdir)/LOCA_Epetra_TransposeLinearSystem_T
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C \
+	$(srcdir)/continuation-manager/ContinuationManager.C \
+	$(srcdir)/continuation-manager/LOCAInterface.C \
+	$(srcdir)/continuation-manager/ProblemNOXPrototype.C \
+	$(srcdir)/continuation-manager/ProblemLOCAPrototype.C \
+	$(srcdir)/continuation-manager/IOContFileUtils.C \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
 	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.C \
 	$(srcdir)/LOCA_Epetra_xyztPrec.C \
@@ -152,6 +157,11 @@ am__liblocaepetra_a_SOURCES_DIST = $(srcdir)/LOCA_Epetra_TransposeLinearSystem_T
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H \
+	$(srcdir)/continuation-manager/ContinuationManager.H \
+	$(srcdir)/continuation-manager/LOCAInterface.H \
+	$(srcdir)/continuation-manager/ProblemNOXPrototype.H \
+	$(srcdir)/continuation-manager/ProblemLOCAPrototype.H \
+	$(srcdir)/continuation-manager/IOContFileUtils.H \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
 	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.H \
 	$(srcdir)/LOCA_Epetra_xyztPrec.H \
@@ -170,7 +180,10 @@ am__objects_1 = LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.$(OBJE
 	LOCA_Epetra_AugmentedOp.$(OBJEXT) \
 	LOCA_BorderedSolver_EpetraAugmented.$(OBJEXT) \
 	LOCA_Epetra_Factory.$(OBJEXT) \
-	LOCA_Epetra_ShiftInvertOperator.$(OBJEXT)
+	LOCA_Epetra_ShiftInvertOperator.$(OBJEXT) \
+	ContinuationManager.$(OBJEXT) LOCAInterface.$(OBJEXT) \
+	ProblemNOXPrototype.$(OBJEXT) ProblemLOCAPrototype.$(OBJEXT) \
+	IOContFileUtils.$(OBJEXT)
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__objects_2 = LOCA_Epetra_Interface_xyzt.$(OBJEXT) \
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	LOCA_Epetra_Interface_MultiPoint.$(OBJEXT) \
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	LOCA_Epetra_xyztPrec.$(OBJEXT) \
@@ -216,6 +229,11 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H \
+	$(srcdir)/continuation-manager/ContinuationManager.H \
+	$(srcdir)/continuation-manager/LOCAInterface.H \
+	$(srcdir)/continuation-manager/ProblemNOXPrototype.H \
+	$(srcdir)/continuation-manager/ProblemLOCAPrototype.H \
+	$(srcdir)/continuation-manager/IOContFileUtils.H \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
 	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.H \
 	$(srcdir)/LOCA_Epetra_xyztPrec.H \
@@ -386,7 +404,12 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
-	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H \
+	$(srcdir)/continuation-manager/ContinuationManager.H \
+	$(srcdir)/continuation-manager/LOCAInterface.H \
+	$(srcdir)/continuation-manager/ProblemNOXPrototype.H \
+	$(srcdir)/continuation-manager/ProblemLOCAPrototype.H \
+	$(srcdir)/continuation-manager/IOContFileUtils.H
 
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.C \
@@ -402,7 +425,12 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
-	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C \
+	$(srcdir)/continuation-manager/ContinuationManager.C \
+	$(srcdir)/continuation-manager/LOCAInterface.C \
+	$(srcdir)/continuation-manager/ProblemNOXPrototype.C \
+	$(srcdir)/continuation-manager/ProblemLOCAPrototype.C \
+	$(srcdir)/continuation-manager/IOContFileUtils.C
 
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@LOCA_EPETRA_XYZT_H = \
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
@@ -551,6 +579,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ContinuationManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IOContFileUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCAInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSolver_EpetraAugmented.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSolver_EpetraHouseholder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Po@am__quote@
@@ -571,6 +602,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_TransposeLinearSystem_LeftPreconditioning.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_xyztPrec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProblemLOCAPrototype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProblemNOXPrototype.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -781,6 +814,76 @@ LOCA_Epetra_ShiftInvertOperator.obj: $(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C' object='LOCA_Epetra_ShiftInvertOperator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_ShiftInvertOperator.obj `if test -f '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C'; fi`
+
+ContinuationManager.o: $(srcdir)/continuation-manager/ContinuationManager.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ContinuationManager.o -MD -MP -MF $(DEPDIR)/ContinuationManager.Tpo -c -o ContinuationManager.o `test -f '$(srcdir)/continuation-manager/ContinuationManager.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/ContinuationManager.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ContinuationManager.Tpo $(DEPDIR)/ContinuationManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/ContinuationManager.C' object='ContinuationManager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ContinuationManager.o `test -f '$(srcdir)/continuation-manager/ContinuationManager.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/ContinuationManager.C
+
+ContinuationManager.obj: $(srcdir)/continuation-manager/ContinuationManager.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ContinuationManager.obj -MD -MP -MF $(DEPDIR)/ContinuationManager.Tpo -c -o ContinuationManager.obj `if test -f '$(srcdir)/continuation-manager/ContinuationManager.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/ContinuationManager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/ContinuationManager.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ContinuationManager.Tpo $(DEPDIR)/ContinuationManager.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/ContinuationManager.C' object='ContinuationManager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ContinuationManager.obj `if test -f '$(srcdir)/continuation-manager/ContinuationManager.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/ContinuationManager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/ContinuationManager.C'; fi`
+
+LOCAInterface.o: $(srcdir)/continuation-manager/LOCAInterface.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCAInterface.o -MD -MP -MF $(DEPDIR)/LOCAInterface.Tpo -c -o LOCAInterface.o `test -f '$(srcdir)/continuation-manager/LOCAInterface.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/LOCAInterface.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCAInterface.Tpo $(DEPDIR)/LOCAInterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/LOCAInterface.C' object='LOCAInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCAInterface.o `test -f '$(srcdir)/continuation-manager/LOCAInterface.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/LOCAInterface.C
+
+LOCAInterface.obj: $(srcdir)/continuation-manager/LOCAInterface.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCAInterface.obj -MD -MP -MF $(DEPDIR)/LOCAInterface.Tpo -c -o LOCAInterface.obj `if test -f '$(srcdir)/continuation-manager/LOCAInterface.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/LOCAInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/LOCAInterface.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCAInterface.Tpo $(DEPDIR)/LOCAInterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/LOCAInterface.C' object='LOCAInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCAInterface.obj `if test -f '$(srcdir)/continuation-manager/LOCAInterface.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/LOCAInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/LOCAInterface.C'; fi`
+
+ProblemNOXPrototype.o: $(srcdir)/continuation-manager/ProblemNOXPrototype.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ProblemNOXPrototype.o -MD -MP -MF $(DEPDIR)/ProblemNOXPrototype.Tpo -c -o ProblemNOXPrototype.o `test -f '$(srcdir)/continuation-manager/ProblemNOXPrototype.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/ProblemNOXPrototype.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ProblemNOXPrototype.Tpo $(DEPDIR)/ProblemNOXPrototype.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/ProblemNOXPrototype.C' object='ProblemNOXPrototype.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ProblemNOXPrototype.o `test -f '$(srcdir)/continuation-manager/ProblemNOXPrototype.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/ProblemNOXPrototype.C
+
+ProblemNOXPrototype.obj: $(srcdir)/continuation-manager/ProblemNOXPrototype.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ProblemNOXPrototype.obj -MD -MP -MF $(DEPDIR)/ProblemNOXPrototype.Tpo -c -o ProblemNOXPrototype.obj `if test -f '$(srcdir)/continuation-manager/ProblemNOXPrototype.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/ProblemNOXPrototype.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/ProblemNOXPrototype.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ProblemNOXPrototype.Tpo $(DEPDIR)/ProblemNOXPrototype.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/ProblemNOXPrototype.C' object='ProblemNOXPrototype.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ProblemNOXPrototype.obj `if test -f '$(srcdir)/continuation-manager/ProblemNOXPrototype.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/ProblemNOXPrototype.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/ProblemNOXPrototype.C'; fi`
+
+ProblemLOCAPrototype.o: $(srcdir)/continuation-manager/ProblemLOCAPrototype.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ProblemLOCAPrototype.o -MD -MP -MF $(DEPDIR)/ProblemLOCAPrototype.Tpo -c -o ProblemLOCAPrototype.o `test -f '$(srcdir)/continuation-manager/ProblemLOCAPrototype.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/ProblemLOCAPrototype.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ProblemLOCAPrototype.Tpo $(DEPDIR)/ProblemLOCAPrototype.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/ProblemLOCAPrototype.C' object='ProblemLOCAPrototype.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ProblemLOCAPrototype.o `test -f '$(srcdir)/continuation-manager/ProblemLOCAPrototype.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/ProblemLOCAPrototype.C
+
+ProblemLOCAPrototype.obj: $(srcdir)/continuation-manager/ProblemLOCAPrototype.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ProblemLOCAPrototype.obj -MD -MP -MF $(DEPDIR)/ProblemLOCAPrototype.Tpo -c -o ProblemLOCAPrototype.obj `if test -f '$(srcdir)/continuation-manager/ProblemLOCAPrototype.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/ProblemLOCAPrototype.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/ProblemLOCAPrototype.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ProblemLOCAPrototype.Tpo $(DEPDIR)/ProblemLOCAPrototype.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/ProblemLOCAPrototype.C' object='ProblemLOCAPrototype.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ProblemLOCAPrototype.obj `if test -f '$(srcdir)/continuation-manager/ProblemLOCAPrototype.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/ProblemLOCAPrototype.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/ProblemLOCAPrototype.C'; fi`
+
+IOContFileUtils.o: $(srcdir)/continuation-manager/IOContFileUtils.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IOContFileUtils.o -MD -MP -MF $(DEPDIR)/IOContFileUtils.Tpo -c -o IOContFileUtils.o `test -f '$(srcdir)/continuation-manager/IOContFileUtils.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/IOContFileUtils.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IOContFileUtils.Tpo $(DEPDIR)/IOContFileUtils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/IOContFileUtils.C' object='IOContFileUtils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IOContFileUtils.o `test -f '$(srcdir)/continuation-manager/IOContFileUtils.C' || echo '$(srcdir)/'`$(srcdir)/continuation-manager/IOContFileUtils.C
+
+IOContFileUtils.obj: $(srcdir)/continuation-manager/IOContFileUtils.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT IOContFileUtils.obj -MD -MP -MF $(DEPDIR)/IOContFileUtils.Tpo -c -o IOContFileUtils.obj `if test -f '$(srcdir)/continuation-manager/IOContFileUtils.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/IOContFileUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/IOContFileUtils.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/IOContFileUtils.Tpo $(DEPDIR)/IOContFileUtils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/continuation-manager/IOContFileUtils.C' object='IOContFileUtils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o IOContFileUtils.obj `if test -f '$(srcdir)/continuation-manager/IOContFileUtils.C'; then $(CYGPATH_W) '$(srcdir)/continuation-manager/IOContFileUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/continuation-manager/IOContFileUtils.C'; fi`
 
 LOCA_Epetra_Interface_xyzt.o: $(srcdir)/LOCA_Epetra_Interface_xyzt.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_Interface_xyzt.o -MD -MP -MF $(DEPDIR)/LOCA_Epetra_Interface_xyzt.Tpo -c -o LOCA_Epetra_Interface_xyzt.o `test -f '$(srcdir)/LOCA_Epetra_Interface_xyzt.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_Interface_xyzt.C
