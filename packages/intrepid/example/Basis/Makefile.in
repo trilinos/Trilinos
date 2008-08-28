@@ -247,7 +247,7 @@ example_01_DEPENDENCIES = \
     $(top_builddir)/../sacado/src/libsacado.a
 
 example_01_SOURCES = example_01.cpp
-example_01_LDADD = $(EXPORT_LIBS)
+example_01_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS)
 example_01_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 example_02_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
@@ -255,7 +255,7 @@ example_02_DEPENDENCIES = \
 	$(top_builddir)/../sacado/src/libsacado.a
 
 example_02_SOURCES = example_02.cpp
-example_02_LDADD = $(EXPORT_LIBS)
+example_02_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS)
 example_02_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 example_03_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
@@ -263,7 +263,7 @@ example_03_DEPENDENCIES = \
 	$(top_builddir)/../sacado/src/libsacado.a
 
 example_03_SOURCES = example_03.cpp
-example_03_LDADD = $(EXPORT_LIBS)
+example_03_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS)
 example_03_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
 all: all-am
 
