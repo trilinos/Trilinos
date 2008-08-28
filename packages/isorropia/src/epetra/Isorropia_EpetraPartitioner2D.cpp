@@ -235,10 +235,9 @@ Partitioner2D::~Partitioner2D(){}
 void Partitioner2D::
 partition(bool force_repartitioning)
 {
-  std::cout << "MMW::NEED to reimplement" << std::endl;
 
-  /* MMW
-//  Teuchos::ParameterList sublist = paramlist_;
+  std::cout << "MMW::NEED to reimplement" << std::endl; //MMW
+
 
   std::string partitioning_method_str("PARTITIONING_METHOD");
   std::string partitioning_method =
@@ -264,10 +263,11 @@ partition(bool force_repartitioning)
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
 
   lib_->repartition(paramlist_, properties_, exportsSize_, imports_);
+
   computeNumberOfProperties();
+
   operation_already_computed_ = true;
 
-*/
 }
 ////////////////////////////////////////////////////////////////////////////////
 

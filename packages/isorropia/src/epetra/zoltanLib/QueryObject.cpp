@@ -187,7 +187,8 @@ int QueryObject::Number_Objects(void *data, int *ierr)
 
   QueryObject *zq = (QueryObject *)data;
 
-  if (zq){
+  if (zq)
+  {
     numObj = zq->My_Number_Objects(ierr);
   }
   else{
@@ -317,18 +318,31 @@ int QueryObject::My_Number_Objects(int * ierr )
   }
 #endif
 
+  // if statement for now, maybe set function pointer for different function instead
+  if(inputType_ == "HGRAPH2D_FINEGRAIN")
+  {
+    if (!haveGraph_)
+    {
+      return matrix_->NumMyNonzeros();
+    }
+    else
+    {
+      return graph_->NumMyNonzeros();
+    }
+  }
+
   return rowMap_->NumMyElements();
 }
 
-void QueryObject::My_Object_List  (int num_gid_entries, int num_lid_entries,
+void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
                   ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                   int weight_dim, float * object_weights, int * ierr )
 {
   *ierr = ZOLTAN_OK;
 
-  int rows = rowMap_->NumMyElements();
+  int numRows = rowMap_->NumMyElements();
 
-  if (rows < 1){
+  if (numRows < 1){
 #if DEBUG_QUERIES
     if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
       std::cout << myProc_ << ": in My_Object_List, return due to no objects" << std::endl;
@@ -337,8 +351,68 @@ void QueryObject::My_Object_List  (int num_gid_entries, int num_lid_entries,
     return;
   }
 
+  // if statement for now, maybe set function pointer for different function instead
+  if(inputType_ == "HGRAPH2D_FINEGRAIN")
+  {
+    object_weights = 0;
+
+    if (!haveGraph_) //matrix
+    {
+      int globIDindx = 0;
+      for (int rowNum=0; rowNum<numRows; rowNum++)
+      {
+        int rowSize;
+        matrix_->NumMyRowEntries(rowNum,rowSize);
+
+	//MMW need to make this memory allocation more efficient
+        int *tmprowCols = new int[rowSize];
+        double *tmprowVals = new double[rowSize];
+        int numEntries;
+
+	matrix_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowVals, tmprowCols);
+
+	for(int colIndx=0; colIndx<rowSize; colIndx++)
+	{
+          global_ids[globIDindx] = rowMap_->GID(rowNum); 
+          globIDindx++;
+          global_ids[globIDindx]= colMap_->GID(tmprowCols[colIndx]);
+          globIDindx++;
+	}
+
+        delete [] tmprowCols;
+	delete [] tmprowVals;
+      }
+    }
+    else // graph
+    {
+      int globIDindx = 0;
+      for (int rowNum=0; rowNum<numRows; rowNum++)
+      {
+        int rowSize;
+        rowSize = graph_->NumMyIndices(rowNum);
+
+        int *tmprowCols = new int[rowSize];
+        int numEntries;
+
+        graph_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowCols);
+
+	for(int colIndx=0;colIndx<rowSize;colIndx++)
+        {
+          global_ids[globIDindx] = rowMap_->GID(rowNum);
+          globIDindx++;
+	  global_ids[globIDindx]= colMap_->GID(tmprowCols[colIndx]);
+          globIDindx++;
+        }
+
+        delete [] tmprowCols;
+      }
+    }
+    return;
+  } // fine-grain hypergraph case
+
   rowMap_->MyGlobalElements( ((int *) global_ids) );
-  for (int i=0; i<rows; i++){
+  for (int i=0; i<numRows; i++)
+  {
     local_ids[i] = i;
   }
 
@@ -348,13 +422,13 @@ void QueryObject::My_Object_List  (int num_gid_entries, int num_lid_entries,
     std::map<int, float>::iterator end = weightMap.end();
 
     int mapSize = costs_->getVertexWeights(weightMap);
-    if (mapSize != rows){
+    if (mapSize != numRows){
       *ierr = ZOLTAN_FATAL;
       std::cout << "Proc:" << myProc_ << " Error: ";
       std::cout << "QueryObject::My_Object_List, number of vertex weights" << std::endl;
       return;
     }
-    for (int i=0; i < rows; i++){
+    for (int i=0; i < numRows; i++){
       curr = weightMap.find(global_ids[i]);
       if (curr == end){
         *ierr = ZOLTAN_FATAL;
@@ -369,10 +443,10 @@ void QueryObject::My_Object_List  (int num_gid_entries, int num_lid_entries,
   if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
     std::ostringstream msg;
 
-    msg << myProc_ << ": in My_Object_List, num_obj " << rows << ", weight_dim " << weight_dim;
+    msg << myProc_ << ": in My_Object_List, num_obj " << numRows << ", weight_dim " << weight_dim;
     msg << std::endl;  
 
-    for (int i=0; i<rows; i++){
+    for (int i=0; i<numRows; i++){
       if (weight_dim){
         msg << "   obj gid " << global_ids[i] << ", weight " << object_weights[i] << std::endl;
       }
@@ -596,11 +670,28 @@ void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int 
 
   *format = ZOLTAN_COMPRESSED_VERTEX;   // We will return row (vertex) lists
 
-  if (haveGraph_){
+  if(inputType_ == "HGRAPH2D_FINEGRAIN")
+  {
+    if (!haveGraph_)
+    {
+      *num_lists = matrix_->NumMyNonzeros();
+      *num_pins = 2*matrix_->NumMyNonzeros();
+    }
+    else
+    {
+      *num_lists = graph_->NumMyNonzeros();
+      *num_pins = 2*graph_->NumMyNonzeros();
+    }
+    return;
+  }
+
+  if (haveGraph_)
+  {
     *num_lists = graph_->NumMyRows();       // Number of rows
     *num_pins = graph_->NumMyNonzeros();    // Total nonzeros in these rows
   }
-  else{
+  else
+  {
     *num_lists = matrix_->NumMyRows();       // Number of rows
     *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
   }

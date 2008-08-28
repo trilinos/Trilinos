@@ -120,6 +120,12 @@ int ZoltanLibClass::precompute()
     }
   }
 
+  // 2D methods should have PARTITIONING_METHOD set
+  if(partMethod_ == "HGRAPH2D_FINEGRAIN")
+  {
+    setInputType(partMethod_);
+  }
+
 
   Library::precompute();
 
@@ -137,7 +143,8 @@ int ZoltanLibClass::precompute()
   return (-1);
 #endif /* HAVE_MPI */
   }
-  else {
+  else 
+  {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, inputType_));
     const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
 #ifdef HAVE_MPI
@@ -172,28 +179,50 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set(dbg_level_str, "0");
   }
 
-  if (!zoltanParamList_.isParameter(lb_method_str)) {
+  if (!zoltanParamList_.isParameter(lb_method_str)) 
+  {
     std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
     zoltanParamList_.set(lb_method_str, lb_meth);  // set to HYPERGRAPH
   }
 
-  // If no process set vertex weights, let Zoltan default to
-  // unit weights for vertices
+  // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
+  if(partMethod_ == "HGRAPH2D_FINEGRAIN")
+  {
+    zoltanParamList_.set("OBJ_WEIGHT_DIM", "0");
+    zoltanParamList_.set("EDGE_WEIGHT_DIM", "0");
+  }
+  else
+  {
+    // If user specifies weights, set OBJ_WEIGHT_DIM to 1
+    // Otherwise, let Zoltan default to
+    // unit weights for vertices
 
-  if (queryObject_->haveVertexWeights()) {
-    if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
-      zoltanParamList_.set("OBJ_WEIGHT_DIM", "1");
+    if (queryObject_->haveVertexWeights()) 
+    {
+      if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) 
+      {
+        zoltanParamList_.set("OBJ_WEIGHT_DIM", "1");
+      }
+    }
+
+    // If user specifies (hyper)edge weights, set EDGE_WEIGHT_DIM to 1
+    // Otherwise,
+    // let Zoltan default to unit weights for edges
+
+    if (queryObject_->haveGraphEdgeWeights() ||
+        queryObject_->haveHypergraphEdgeWeights()) {
+      if (!zoltanParamList_.isParameter("EDGE_WEIGHT_DIM")) {
+        zoltanParamList_.set("EDGE_WEIGHT_DIM", "1");
+      }
     }
   }
 
-  // If no process set graph or hypergraph edge weights,
-  // let Zoltan default to unit weights for edges
-
-  if (queryObject_->haveGraphEdgeWeights() ||
-      queryObject_->haveHypergraphEdgeWeights()) {
-    if (!zoltanParamList_.isParameter("EDGE_WEIGHT_DIM")) {
-      zoltanParamList_.set("EDGE_WEIGHT_DIM", "1");
-    }
+  // For fine-grain hypergraph, we will use (row, col) of nz for
+  // vertex GIDs.  Don't need LIDs.
+  if(partMethod_ == "HGRAPH2D_FINEGRAIN")
+  {
+    zoltanParamList_.set("NUM_GID_ENTRIES", "2");
+    zoltanParamList_.set("NUM_LID_ENTRIES", "0");
   }
 
 
@@ -201,7 +230,8 @@ int ZoltanLibClass::precompute()
     iter = zoltanParamList_.begin(),
     iter_end = zoltanParamList_.end();
 
-  for(; iter != iter_end; ++iter) {
+  for(; iter != iter_end; ++iter) 
+  {
     const std::string& name = iter->first;
     const std::string& value = Teuchos::getValue<std::string>(iter->second);
     zz_->Set_Param(name, value);
@@ -215,7 +245,13 @@ int ZoltanLibClass::precompute()
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
 
-  if (inputType_ == "HYPERGRAPH")
+
+  if (inputType_ == "HGRAPH2D_FINEGRAIN")
+  {
+    zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
+    zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
+  }
+  else if (inputType_ == "HYPERGRAPH")
   {
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
@@ -223,7 +259,8 @@ int ZoltanLibClass::precompute()
 				 (void *)queryObject_.get());
     zz_->Set_HG_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Edge_Weights, (void *)queryObject_.get());
   }
-  else{
+  else
+  {
     zz_->Set_Num_Edges_Multi_Fn(ZoltanLib::QueryObject::Number_Edges_Multi, (void *)queryObject_.get());
     zz_->Set_Edge_List_Multi_Fn(ZoltanLib::QueryObject::Edge_List_Multi, (void *)queryObject_.get());
   }
@@ -455,6 +492,10 @@ repartition(Teuchos::ParameterList& paramList,
 	    std::vector<int>& imports)
 {
 
+  std::string partitioning_method_str("PARTITIONING_METHOD");
+  partMethod_ =  paramList.get(partitioning_method_str, "UNSPECIFIED");
+
+
   std::string zoltan("ZOLTAN");
   zoltanParamList_  = (paramList.sublist(zoltan));
 
@@ -468,7 +509,8 @@ repartition(Teuchos::ParameterList& paramList,
   precompute();
 
   std::string lb_approach_str("LB_APPROACH");
-  if (!zoltanParamList_.isParameter(lb_approach_str)) {
+  if (!zoltanParamList_.isParameter(lb_approach_str)) 
+  {
     zoltanParamList_.set(lb_approach_str, "PARTITION");
   }
 
@@ -493,7 +535,8 @@ repartition(Teuchos::ParameterList& paramList,
   imports.assign(import_global_ids, import_global_ids + num_import);
   properties.assign(num_obj_, queryObject_->RowMap().Comm().MyPID());
 
-  for( int i = 0; i < num_export; ++i ) {
+  for( int i = 0; i < num_export; ++i ) 
+  {
     properties[export_local_ids[i]] = export_to_part[i];
   }
 

@@ -93,6 +93,7 @@ protected:
 
 private:
   Teuchos::ParameterList zoltanParamList_;
+  std::string partMethod_; // stores partitioning method used, perhaps should be in EpetraLibrary?
   Zoltan *zz_;
   Teuchos::RefCountPtr<ZoltanLib::QueryObject> queryObject_;
   int num_obj_;
