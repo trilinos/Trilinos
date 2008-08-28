@@ -88,17 +88,9 @@ endif
 
 LIBS = -lexzoltan -lzoltan $(THIRD_PARTY_LIBS) $(MPI_LIB) -lm
 
-ZOLTAN_INCLUDE= -I. -I$(ZUTIL)/Communication \
-                -I$(ZUTIL)/DDirectory \
-                -I$(ZUTIL)/Memory \
-                -I$(ZUTIL)/Timer \
-                -I$(ZUTIL)/shared \
-                -I$(ZTOP)/src/zz \
-                -I$(ZTOP)/src/ha \
-                -I$(ZTOP)/src/par \
-                -I$(ZTOP)/src/params \
-                -I$(ZTOP)/src/lb \
+ZOLTAN_INCLUDE= -I. \
                 -I$(ZTOP)/src/include
+
 
 INCLUDE = -I../lib $(ZOLTAN_INCLUDE) $(INCLUDE_PATH) $(MPI_INCPATH)
 
