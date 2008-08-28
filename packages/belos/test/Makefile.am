@@ -5,6 +5,6 @@
 
 all-local:
 
-SUBDIRS = BlockCG BlockGmres GCRODR PCPG MVOPTester
+SUBDIRS = BlockCG BlockGmres GCRODR MVOPTester
 
 EXTRA_DIST = definition

@@ -8423,7 +8423,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile example/PCPG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/PCPG/Makefile test/MVOPTester/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/MVOPTester/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9131,12 +9131,10 @@ do
     "example/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockGmres/Makefile" ;;
     "example/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockCG/Makefile" ;;
     "example/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES example/GCRODR/Makefile" ;;
-    "example/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES example/PCPG/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
     "test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
     "test/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES test/GCRODR/Makefile" ;;
-    "test/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES test/PCPG/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

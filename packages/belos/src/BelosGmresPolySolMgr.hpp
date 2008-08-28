@@ -160,7 +160,12 @@ public:
   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
     return tuple(timerSolve_);
   }
-   
+  
+  //! Get the iteration count for the most recent call to \c solve().
+  int getNumIters() const {
+    return numIters_;
+  }
+ 
   /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
       \note This flag will be reset the next time solve() is called.
    */
@@ -267,7 +272,7 @@ private:
 
   // Current solver values.
   MagnitudeType convtol_, orthoKappa_;
-  int maxRestarts_, maxIters_;
+  int maxRestarts_, maxIters_, numIters_;
   int blockSize_, numBlocks_, verbosity_, outputFreq_;
   bool showMaxResNormOnly_;
   std::string orthoType_; 
