@@ -260,8 +260,23 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     SerialBextract_ = rcp (new Epetra_MultiVector(*SerialMap_,NumVectors_));
 
     ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->RowMatrixRowMap() ) );
+
     if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-9);
 
+    // Build the vector data import/export once and only once
+#define CHRIS
+#ifdef CHRIS
+    if(StdIndexMatrix_->RowMatrixRowMap().SameAs(StdIndexMatrix_->OperatorRangeMap()))
+      ImportRangeToSerial_=ImportToSerial_;
+    else
+      ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->OperatorRangeMap() ) );
+
+    if(StdIndexMatrix_->RowMatrixRowMap().SameAs(StdIndexMatrix_->OperatorDomainMap()))
+      ImportDomainToSerial_=ImportToSerial_;
+    else
+      ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->OperatorDomainMap() ) );
+#endif
+    
     SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) ) ;
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
   }
@@ -689,7 +704,7 @@ int Amesos_Klu::Solve()
     
     Epetra_MultiVector* OrigVecX ;
     Epetra_MultiVector* OrigVecB ;
-    
+
     if (IsNumericFactorizationOK_ == false)
       AMESOS_CHK_ERR(NumericFactorization());
     
@@ -737,8 +752,12 @@ int Amesos_Klu::Solve()
       if (NumVectors_ != vecB->NumVectors())
 	AMESOS_CHK_ERR(-1); // internal error 
       
-      ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecB->Map() ) );
-      if ( SerialBextract_->Import(*vecB,*ImportRangeToSerial_,Insert) )
+      //ImportRangeToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecB->Map() ) );
+      //if ( SerialBextract_->Import(*vecB,*ImportRangeToSerial_,Insert) )
+      Epetra_Import *UseImport;
+      if(!UseTranspose_) UseImport=&*ImportRangeToSerial_;
+      else UseImport=&*ImportDomainToSerial_;      
+      if ( SerialBextract_->Import(*vecB,*UseImport,Insert) )
 	AMESOS_CHK_ERR( -1 ) ; // internal error
       
       SerialB_ = &*SerialBextract_ ;
@@ -785,8 +804,11 @@ int Amesos_Klu::Solve()
     ResetTimer(1);
     
     if (UseDataInPlace_ == 0) {
-      ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
-      vecX->Export( *SerialX_, *ImportDomainToSerial_, Insert ) ;
+      Epetra_Import *UseImport;
+      if(!UseTranspose_) UseImport=&*ImportDomainToSerial_;
+      else UseImport=&*ImportRangeToSerial_;      
+      //        ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
+      vecX->Export( *SerialX_, *UseImport, Insert ) ;
       
     } // otherwise we are already in place.
     
