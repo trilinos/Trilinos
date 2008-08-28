@@ -1,0 +1,11 @@
+../configure -C \
+  --enable-mpi --with-mpi-compilers \
+  --prefix=/your/install/directory \
+  --with-install="/usr/bin/install -p" \
+  --with-gnumake \
+  --disable-default-packages \
+  --enable-teuchos \
+  --enable-epetra \
+  --enable-galeri \
+  --enable-aztecoo \
+  --enable-komplex

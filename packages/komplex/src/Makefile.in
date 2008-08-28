@@ -106,11 +106,11 @@ AR = ar
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libkomplex_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = azk_create_linsys.$(OBJEXT) \
-	azk_create_precon.$(OBJEXT) azk_destroy_linsys.$(OBJEXT) \
-	azk_destroy_precon.$(OBJEXT) azk_create_matrix.$(OBJEXT) \
-	azk_create_vector.$(OBJEXT) azk_destroy_matrix.$(OBJEXT) \
-	azk_destroy_vector.$(OBJEXT)
+am__objects_1 = Komplex_LinearProblem.$(OBJEXT) \
+	azk_create_linsys.$(OBJEXT) azk_create_precon.$(OBJEXT) \
+	azk_destroy_linsys.$(OBJEXT) azk_destroy_precon.$(OBJEXT) \
+	azk_create_matrix.$(OBJEXT) azk_create_vector.$(OBJEXT) \
+	azk_destroy_matrix.$(OBJEXT) azk_destroy_vector.$(OBJEXT)
 am__objects_2 =
 am__objects_3 = azk_extract_solution.$(OBJEXT) azk_matvec.$(OBJEXT) \
 	azk_precon.$(OBJEXT) azk_permute_ri.$(OBJEXT) \
@@ -126,6 +126,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 SOURCES = $(libkomplex_a_SOURCES)
 DIST_SOURCES = $(libkomplex_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -255,10 +260,12 @@ top_srcdir = @top_srcdir@
 # ------------------------------------------------------------------------
 # For now, these are just guesses as to where the files belong.
 CORE_H = \
+	$(srcdir)/Komplex_LinearProblem.h \
 	$(srcdir)/azk_komplex.h \
 	$(srcdir)/Komplex_Version.h
 
 CORE = \
+	$(srcdir)/Komplex_LinearProblem.cpp \
 	$(srcdir)/azk_create_linsys.c \
 	$(srcdir)/azk_create_precon.c \
 	$(srcdir)/azk_destroy_linsys.c \
@@ -271,8 +278,10 @@ CORE = \
 
 ### add in paths as needed - trying to prevent 
 ### unnecessary paths from being listed - see old.Makefile for ideas
-AM_CPPFLAGS = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src 
-#	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+AM_CPPFLAGS = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
+	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src 
+
 SERIAL_H = 
 SERIAL = 
 @HAVE_MPI_FALSE@MPI_H = 
@@ -374,7 +383,7 @@ all: Komplex_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -461,6 +470,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Komplex_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/azk_create_linsys.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/azk_create_matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/azk_create_precon.Po@am__quote@
@@ -670,6 +680,34 @@ azk_residual_norm.obj: $(srcdir)/azk_residual_norm.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/azk_residual_norm.c' object='azk_residual_norm.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o azk_residual_norm.obj `if test -f '$(srcdir)/azk_residual_norm.c'; then $(CYGPATH_W) '$(srcdir)/azk_residual_norm.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/azk_residual_norm.c'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Komplex_LinearProblem.o: $(srcdir)/Komplex_LinearProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Komplex_LinearProblem.o -MD -MP -MF $(DEPDIR)/Komplex_LinearProblem.Tpo -c -o Komplex_LinearProblem.o `test -f '$(srcdir)/Komplex_LinearProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/Komplex_LinearProblem.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Komplex_LinearProblem.Tpo $(DEPDIR)/Komplex_LinearProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Komplex_LinearProblem.cpp' object='Komplex_LinearProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Komplex_LinearProblem.o `test -f '$(srcdir)/Komplex_LinearProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/Komplex_LinearProblem.cpp
+
+Komplex_LinearProblem.obj: $(srcdir)/Komplex_LinearProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Komplex_LinearProblem.obj -MD -MP -MF $(DEPDIR)/Komplex_LinearProblem.Tpo -c -o Komplex_LinearProblem.obj `if test -f '$(srcdir)/Komplex_LinearProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/Komplex_LinearProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Komplex_LinearProblem.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Komplex_LinearProblem.Tpo $(DEPDIR)/Komplex_LinearProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Komplex_LinearProblem.cpp' object='Komplex_LinearProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Komplex_LinearProblem.obj `if test -f '$(srcdir)/Komplex_LinearProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/Komplex_LinearProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Komplex_LinearProblem.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
