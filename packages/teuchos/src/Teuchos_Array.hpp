@@ -1171,7 +1171,8 @@ ArrayView<T> Array<T>::view( size_type offset, size_type size_in )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(offset);
-  TEUCHOS_ASSERT_INEQUALITY(size_in, >=, 0);
+  // TEUCHOS_ASSERT_INEQUALITY(size_in, >=, 0); // according to C99, size_type should be unsigned
+                                                // this comparison will generate warnings on compliant compilers
   if (size_in)
     assertIndex(offset+size_in-1);
 #endif
