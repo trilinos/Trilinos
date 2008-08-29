@@ -7,6 +7,13 @@ include @abs_top_builddir@/../epetra/Makefile.export.epetra
 ## Optional dependency on triutils
 @BUILD_EPETRAEXT_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
+## Optional dependency on PETSc
+@EPETRAEXT_USING_PETSC_TRUE@PETSC_DIR = @EPETRAEXT_PETSC_DIR@
+@EPETRAEXT_USING_PETSC_TRUE@PETSC_ARCH = @EPETRAEXT_PETSC_ARCH@
+@EPETRAEXT_USING_PETSC_TRUE@@PETSCLIB_IS_DEFINED_FALSE@include @abs_top_builddir@/petsc_variables
+@EPETRAEXT_USING_PETSC_TRUE@@PETSCLIB_IS_DEFINED_FALSE@EPETRAEXT_PETSC_LIBS=$(PETSC_LIB)
+@EPETRAEXT_USING_PETSC_TRUE@@PETSCLIB_IS_DEFINED_TRUE@EPETRAEXT_PETSC_LIBS=@USER_DEFINED_PETSCLIB@
+
 _EPETRAEXT_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
                      -I@abs_top_srcdir@/src/block \
                      -I@abs_top_srcdir@/src/btf \
@@ -21,11 +28,12 @@ _EPETRAEXT_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
                      -I@abs_top_srcdir@/src/petsc \
                      $(EPETRA_INCLUDES) \
                      $(TRIUTILS_INCLUDES) \
-                     $(TEUCHOS_INCLUDES)
+                     $(TEUCHOS_INCLUDES) \
+                     @EPETRAEXT_PETSC_INCLUDES@
 
 _EPETRAEXT_LIBS = \
   @LDFLAGS@ -L@abs_top_builddir@/src -lepetraext \
-  $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
+  $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@ $(EPETRAEXT_PETSC_LIBS) @FLIBS@
 
 @USING_GNUMAKE_TRUE@EPETRAEXT_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_EPETRAEXT_INCLUDES))
 @USING_GNUMAKE_TRUE@EPETRAEXT_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_EPETRAEXT_LIBS))

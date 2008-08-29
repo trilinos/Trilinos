@@ -454,7 +454,7 @@ endif
 
 
 ### Only build PETSc interfaces if the PETSc configure flag is set.
-if BUILD_PETSC
+if EPETRAEXT_USING_PETSC
 PETSC_H = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.h
 PETSC   = $(srcdir)/petsc/EpetraExt_PETScAIJMatrix.cpp
 else

@@ -342,7 +342,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( epetraext, modelevaluator, [Enable EpetraExt Model E
 AM_CONDITIONAL(BUILD_MODEL_EVALUATOR, [test "X$ac_cv_use_epetraext_modelevaluator" != "Xno"])
 
 TAC_ARG_WITH_PACKAGE(petsc, [Enable EpetraExt interface support for PETSc.], PETSC,no)
-AM_CONDITIONAL(BUILD_PETSC, [test "X$ac_cv_use_petsc" != "Xno"])
+AM_CONDITIONAL(EPETRAEXT_USING_PETSC, [test "X$ac_cv_use_petsc" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE_SUB(epetraext, graphreorderings, [Enable experimental RCM and AMD graph reorderings.  This also requires --enable-epetraext-experimental.], GRAPH_REORDERINGS,no)
 AM_CONDITIONAL(BUILD_GRAPH_REORDERINGS, [test "X$ac_cv_use_epetraext_graphreorderings" != "Xno"])
@@ -359,6 +359,117 @@ if test "X$ac_cv_use_epetraext_hdf5" != "Xno" ; then
 else
   AM_CONDITIONAL(HAVE_EPETRAEXT_HDF5, false ) 
 fi
+
+# ------------------------------------------------------------------------
+# Check for PETSc (copied from NOX!)
+# ------------------------------------------------------------------------
+AC_DEFUN([PETSC_INCLUDE_CHECK],
+[
+  AC_MSG_CHECKING(for $1 include directory)
+  if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/$2; then
+    $1_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/bmake/common/$2; then
+    $1_INC=${PETSC_DIR}/bmake/common
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/include/$2; then
+    $1_INC=${PETSC_DIR}/include
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/include/mpiuni/$2; then
+    $1_INC=${PETSC_DIR}/include/mpiuni
+    AC_MSG_RESULT([${$1_INC}])
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([Cannot find $1 include directory containing $2. Make sure PETSC_DIR and PETSC_ARCH are defined.])
+  fi
+
+])
+
+AM_CONDITIONAL(PETSCLIB_IS_DEFINED, [test "X${PETSC_LIB}" != "X"])
+if test X$ac_cv_use_petsc = Xyes; then
+
+  PETSC_INCLUDE_CHECK(petsc,petsc.h)
+  PETSC_INCLUDE_CHECK(petsccommon,base)
+  PETSC_INCLUDE_CHECK(petscbmake,petscconf.h)
+  if test "X${HAVE_PKG_MPI}" = "Xno"; then
+    PETSC_INCLUDE_CHECK(mpiuni,mpi.h)
+  fi
+
+  EPETRAEXT_PETSC_INCLUDES="-I${PETSC_DIR} -I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
+  if test "X${HAVE_PKG_MPI}" = "Xno"; then
+    EPETRAEXT_PETSC_INCLUDES=" ${EPETRAEXT_PETSC_INCLUDES} -I${mpiuni_INC}"
+  fi
+
+  AC_SUBST(EPETRAEXT_PETSC_INCLUDES)
+  #JJH 8/26/2008
+  # ${PETSC_DIR} and ${PETSC_ARCH} can't be used directly in
+  # Makefile.export.epetraext because not all packages know about them.
+  # EpetraExt does know about them, so I use AC_SUBST to get their values
+  # directly into the export makefile.
+  EPETRAEXT_PETSC_DIR=${PETSC_DIR}
+  EPETRAEXT_PETSC_ARCH=${PETSC_ARCH}
+  AC_SUBST(EPETRAEXT_PETSC_DIR)
+  AC_SUBST(EPETRAEXT_PETSC_ARCH)
+
+  AC_MSG_CHECKING(whether PETSC_LIB is defined)
+  if test "X${PETSC_LIB}" = "X"; then
+    #JJH 8/26/2008
+    #The PETSc file "variables" defines PETSC_LIB, which contains all of
+    #PETSc's link dependencies.  Unfortunately, "variables" includes another
+    #file "petscconf" that redefines top_builddir (argh!). But since we need
+    #that other file for PETSC_LIB, I copy both and modify to my liking.  Ugh.
+    AC_MSG_RESULT(no)
+    cat ${PETSC_DIR}/bmake/common/variables | sed "s/^include /#include /" > petsc_variables
+    echo "include ${PWD}/petscconf" >> petsc_variables
+    cat ${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf | sed "s/^top_builddir/#top_builddir/" > petscconf
+  else
+    AC_MSG_RESULT(yes)
+    USER_DEFINED_PETSCLIB=${PETSC_LIB}
+    AC_SUBST(USER_DEFINED_PETSCLIB)
+  fi
+fi #if test X$ac_cv_use_petsc = Xyes; then
+
+
+# ------------------------------------------------------------------------
+# Checks for Petsc libraries
+# ------------------------------------------------------------------------
+
+AC_DEFUN([PETSC_LIB_CHECK],
+[
+  AC_ARG_WITH($1-libdir,
+  [AC_HELP_STRING([--with-$1-libdir],[specify location of $1 library])],
+  [$1_LIBDIR=$withval])
+
+  AC_MSG_CHECKING(whether PETSC_DIR is defined)
+  if test -n "${PETSC_DIR}"; then
+     AC_MSG_RESULT([yes (${PETSC_DIR})])
+  else
+     AC_MSG_ERROR([Cannot find PETSC_DIR environment variable. Please define.])
+  fi
+
+  AC_MSG_CHECKING(for $1)
+  if test -n "${$1_LIBDIR}" && test -f ${$1_LIBDIR}/lib$1.a; then
+    LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
+    AC_MSG_RESULT(yes)
+  elif test -f ${PETSC_DIR}/lib/${PETSC_ARCH}/lib$1.a; then
+    LDFLAGS="-L${PETSC_DIR}/lib/${PETSC_ARCH} ${LDFLAGS}"
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([Cannot find $1 library])
+  fi
+
+  LIBS="-l$1 ${LIBS}"
+
+])
+  
+if test X$ac_cv_use_petsc = Xyes; then
+  # Check for petsc
+  PETSC_LIB_CHECK(petsc)
+
+fi #if test X$ac_cv_use_petsc = Xyes; then
 
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
@@ -536,6 +647,7 @@ AC_CONFIG_FILES([
 		example/zoltan/Makefile
 		example/matlab/Makefile
 		example/MapColoring/Makefile
+		example/petsc/Makefile
 		])
 
 AC_OUTPUT()

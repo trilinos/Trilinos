@@ -58,13 +58,11 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
 #else
   Comm_ = new Epetra_SerialComm();
 #endif  
-  //TODO PETSc's CHKERRQ macro returns a value, which isn't allowed in ctors.
   int ierr;
+  char errMsg[80];
   MatGetType(Amat, &MatType_);
   if ( strcmp(MatType_,MATSEQAIJ) != 0 && strcmp(MatType_,MATMPIAIJ) != 0 ) {
-    char errMsg[80];
     sprintf(errMsg,"PETSc matrix must be either seqaij or mpiaij (but it is %s)",MatType_);
-    //throw Comm_->ReportError("PETSc matrix must be either seqaij or mpiaij", -1);
     throw Comm_->ReportError(errMsg,-1);
   }
   petscMatrixType mt;
@@ -78,25 +76,32 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
   }
   int numLocalRows, numLocalCols;
   ierr = MatGetLocalSize(Amat,&numLocalRows,&numLocalCols);
+  if (ierr) {
+    sprintf(errMsg,"EpetraExt_PETScAIJMatrix.cpp, line %d, MatGetLocalSize() returned error code %d",__LINE__,ierr);
+    throw Comm_->ReportError(errMsg,-1);
+  }
   NumMyRows_ = numLocalRows;
   NumMyCols_ = numLocalCols; //numLocalCols is the total # of unique columns in the local matrix (the diagonal block)
   //TODO what happens if some columns are empty?
   if (mt == PETSC_MPI_AIJ)
     NumMyCols_ += aij->B->cmap.n;
   MatInfo info;
-  ierr = MatGetInfo(Amat,MAT_LOCAL,&info);//CHKERRQ(ierr);
+  ierr = MatGetInfo(Amat,MAT_LOCAL,&info);
   if (ierr) {
-    char errMsg[80];
-    sprintf(errMsg,"MatGetInfo returned error code %d",ierr);
+    sprintf(errMsg,"EpetraExt_PETScAIJMatrix.cpp, line %d, MatGetInfo() returned error code %d",__LINE__,ierr);
     throw Comm_->ReportError(errMsg,-1);
   }
   NumMyNonzeros_ = (int) info.nz_used; //PETSc stores nnz as double
   Comm_->SumAll(&(info.nz_used), &NumGlobalNonzeros_, 1);
 
-  //FIXME The PETSc documentation warns that this may not be robust.
-  //FIXME In particular, this will break if the ordering is not contiguous!
+  //The PETSc documentation warns that this may not be robust.
+  //In particular, this will break if the ordering is not contiguous!
   int rowStart, rowEnd;
   ierr = MatGetOwnershipRange(Amat,&rowStart,&rowEnd);
+  if (ierr) {
+    sprintf(errMsg,"EpetraExt_PETScAIJMatrix.cpp, line %d, MatGetOwnershipRange() returned error code %d",__LINE__,ierr);
+    throw Comm_->ReportError(errMsg,-1);
+  }
 
   PetscRowStart_ = rowStart;
   PetscRowEnd_   = rowEnd;
@@ -105,15 +110,17 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
   for (int i=0; i<rowEnd-rowStart; i++)
     MyGlobalElements[i] = rowStart+i;
 
-  ierr = MatGetInfo(Amat,MAT_GLOBAL_SUM,&info);//CHKERRQ(ierr);
+  ierr = MatGetInfo(Amat,MAT_GLOBAL_SUM,&info);
+  if (ierr) {
+    sprintf(errMsg,"EpetraExt_PETScAIJMatrix.cpp, line %d, MatGetInfo() returned error code %d",__LINE__,ierr);
+    throw Comm_->ReportError(errMsg,-1);
+  }
   NumGlobalRows_ = (info.rows_global);
 
   DomainMap_ = new Epetra_Map(NumGlobalRows_, NumMyRows_, MyGlobalElements, 0, *Comm_);
 
   // get the GIDs of the non-local columns
-
   //FIXME what if the matrix is sequential?
-  // TODO are these sorted and/or unique?
 
   int * ColGIDs = new int[NumMyCols_];
   for (int i=0; i<numLocalCols; i++) ColGIDs[i] = MyGlobalElements[i];
