@@ -5,8 +5,6 @@ ROOT=cxx_main
  
 include $(TRILINOS_INSTALLATION)/include/Makefile.export.$(PLC).macros
 include $(TRILINOS_INSTALLATION)/include/Makefile.export.$(PLC)
-include $(TRILINOS_INSTALLATION)/include/Makefile.export.epetraext.macros
-include $(TRILINOS_INSTALLATION)/include/Makefile.export.epetraext
 include $(TRILINOS_INSTALLATION)/include/Makefile.export.galeri.macros
 include $(TRILINOS_INSTALLATION)/include/Makefile.export.galeri
  
