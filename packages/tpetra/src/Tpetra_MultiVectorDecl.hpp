@@ -168,7 +168,7 @@ namespace Tpetra {
     void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    void normWeighted(const MultiVector<Ordinal,Scalar> &weights, Teuchos::Array<Scalar> &norms) const;
+    void normWeighted(const MultiVector<Ordinal,Scalar> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute minimum value of each vector in multi-vector.
     void minValue(Teuchos::Array<Scalar> &mins) const;

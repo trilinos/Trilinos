@@ -27,6 +27,8 @@
 // @HEADER
 
 // FINISH: some of these arrayview objects should be something else, like Ptr
+// FINISH: consider requiring that ArrayView objects are the exact size needed, and no larger.
+// FINISH: if both MVs are contiguous, a lot of the level one blas routines below can be turned from multiple calls to one call for best efficiency (eliminate loop over numVecs)
 
 #ifndef TPETRA_MULTIVECTOR_HPP
 #define TPETRA_MULTIVECTOR_HPP
@@ -43,12 +45,12 @@ namespace Tpetra {
 
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, Ordinal NumVectors, bool zeroOut) 
-    : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
+    : Teuchos::CompObject(), DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
   {
     using Teuchos::as;
     TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
         "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
-    const Ordinal myLen = this->getMap().getNumMyEntries();
+    const Ordinal myLen = myLength();
     MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
     MVData_->constantStride_ = true;
     MVData_->stride_ = myLen;
@@ -62,12 +64,27 @@ namespace Tpetra {
     }
   }
 
+
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source) 
-    : DistObject<Ordinal,Scalar>(source)
+    : Teuchos::CompObject(), DistObject<Ordinal,Scalar>(source)
   {
-    TEST_FOR_EXCEPT(true);
+    // copy data from the source MultiVector into this multivector
+    // this multivector will be allocated with constant stride, even if the source multivector does not have constant stride
+    using Teuchos::as;
+    const Ordinal myLen   = myLength();
+    const Ordinal numVecs = source.numVectors();
+    MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    MVData_->constantStride_ = true;
+    MVData_->stride_ = myLen;
+    MVData_->values_ = Teuchos::arcp<Scalar>(numVecs*myLen);
+    MVData_->pointers_ = Teuchos::arcp<Teuchos::ArrayRCP<Scalar> >(numVecs);
+    for (Ordinal i = as<Ordinal>(0); i < numVecs; ++i) {
+      MVData_->pointers_[i] = MVData_->values_.persistingView(i*myLen,myLen);
+      std::copy( source.MVData_->pointers_[i].begin(), source.MVData_->pointers_[i].end(), MVData_->pointers_[i].begin() );
+    }
   }
+
 
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Scalar> &A, Ordinal LDA, Ordinal NumVectors)
@@ -99,12 +116,14 @@ namespace Tpetra {
     }
   }
 
+
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &arrayOfArrays, Ordinal NumVectors)
     : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
   {
     TEST_FOR_EXCEPT(true);
   }
+
 
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source, const Teuchos::ArrayView<const Ordinal> &indices)
@@ -113,6 +132,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPT(true);
   }
 
+
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source, Ordinal startIndex, Ordinal NumVectors)
     : DistObject<Ordinal,Scalar>(source)
@@ -120,10 +140,12 @@ namespace Tpetra {
     TEST_FOR_EXCEPT(true);
   }
 
+
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::~MultiVector()
   {
   }
+
 
   template <typename Ordinal, typename Scalar> 
   bool MultiVector<Ordinal,Scalar>::constantStride() const
@@ -131,11 +153,13 @@ namespace Tpetra {
     return MVData_->constantStride_;
   }
 
+
   template <typename Ordinal, typename Scalar> 
   Ordinal MultiVector<Ordinal,Scalar>::myLength() const
   {
     return this->getMap().getNumMyEntries();
   }
+
 
   template <typename Ordinal, typename Scalar> 
   Ordinal MultiVector<Ordinal,Scalar>::globalLength() const
@@ -143,11 +167,13 @@ namespace Tpetra {
     return this->getMap().getNumGlobalEntries();
   }
 
+
   template <typename Ordinal, typename Scalar> 
   Ordinal MultiVector<Ordinal,Scalar>::stride() const
   {
     return MVData_->stride_;
   }
+
 
   template <typename Ordinal, typename Scalar> 
   void MultiVector<Ordinal,Scalar>::print(std::ostream &os) const
@@ -172,12 +198,14 @@ namespace Tpetra {
       comm->barrier();
     }
   }
-  
+
+
   template <typename Ordinal, typename Scalar> 
   void MultiVector<Ordinal,Scalar>::printValues(std::ostream &os) const
   {
     TEST_FOR_EXCEPT(true);
   }
+
 
   template<typename Ordinal, typename Scalar>
   bool MultiVector<Ordinal,Scalar>::checkSizes(const DistObject<Ordinal,Scalar> &/*sourceObj*/) 
@@ -185,6 +213,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPT(true);
     return true;
   }
+
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::copyAndPermute(
@@ -194,6 +223,7 @@ namespace Tpetra {
   {
     TEST_FOR_EXCEPT(true);
   }
+
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::packAndPrepare(
@@ -206,6 +236,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPT(true);
   }
 
+
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::unpackAndCombine(
       Ordinal /*numImportIDs*/,
@@ -217,11 +248,13 @@ namespace Tpetra {
     TEST_FOR_EXCEPT(true);
   }
 
+
   template<typename Ordinal, typename Scalar>
   Ordinal MultiVector<Ordinal,Scalar>::numVectors() const 
   {
     return Teuchos::as<Ordinal>(MVData_->pointers_.size());
   }
+
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::dot(
@@ -233,44 +266,45 @@ namespace Tpetra {
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     // compute local dot products of *this and A
     // sum these across all nodes
-    const Ordinal myLen   = this->myLength();
     const Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors must have compatible Maps.");
     TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors must have the same number of vectors.");
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(dots.size() < numVecs, std::runtime_error,
+    TEST_FOR_EXCEPTION(dots.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::dots(A,dots): dots.size() must be as large as the number of vectors in *this and A.");
 #endif
     Teuchos::Array<Scalar> ldots(numVecs);
     for (Ordinal i=ZERO; i<numVecs; ++i) {
-      ldots[i] = blas.DOT(myLen,MVData_->pointers_[i].getRawPtr(),ONE,A[i].getRawPtr(),ONE);
+      ldots[i] = blas.DOT(MVData_->pointers_[i].size(),MVData_->pointers_[i].getRawPtr(),ONE,A[i].getRawPtr(),ONE);
     }
     Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,ldots.getRawPtr(),dots.getRawPtr());
   }
+
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::norm1(
       const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
   {
     Teuchos::BLAS<Ordinal,Scalar> blas;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     // compute local components of the norms
     // sum these across all nodes
-    const Ordinal myLen   = this->myLength();
     const Ordinal numVecs = this->numVectors();
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(norms.size() < numVecs, std::runtime_error,
+    TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::norm1(norms): norms.size() must be as large as the number of vectors in *this.");
 #endif
-    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> lnorms(numVecs);
+    Teuchos::Array<Mag> lnorms(numVecs);
     for (Ordinal i=ZERO; i<numVecs; ++i) {
-      lnorms[i] = blas.ASUM(myLen,MVData_->pointers_[i].getRawPtr(),ONE);
+      lnorms[i] = blas.ASUM(MVData_->pointers_[i].size(),MVData_->pointers_[i].getRawPtr(),ONE);
     }
     Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
   }
+
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::norm2(
@@ -282,20 +316,18 @@ namespace Tpetra {
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     // compute local components of the norms
     // sum these across all nodes
-    const Ordinal myLen   = this->myLength();
     const Ordinal numVecs = this->numVectors();
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(norms.size() < numVecs, std::runtime_error,
+    TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the number of vectors in *this.");
 #endif
     Teuchos::Array<Mag> lnorms(numVecs,ScalarTraits<Mag>::zero());
     for (Ordinal j=ZERO; j<numVecs; ++j) {
       Teuchos::ArrayRCP<const Scalar> cpos = MVData_->pointers_[j].getConst();
-      for (Ordinal i=ZERO; i<myLen; ++i) {
-        lnorms[i] += ScalarTraits<Scalar>::magnitude( 
+      for (; cpos != cpos.end(); ++cpos) {
+        lnorms[j] += ScalarTraits<Scalar>::magnitude( 
                        (*cpos) * ScalarTraits<Scalar>::conjugate(*cpos)
                      );
-        ++cpos;
       }
     }
     Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
@@ -304,28 +336,79 @@ namespace Tpetra {
     }
   }
 
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::normWeighted(
+      const MultiVector<Ordinal,Scalar> &weights,
+      const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
+  {
+    using Teuchos::ScalarTraits;
+    using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+    using Teuchos::Array;
+    using Teuchos::as;
+    typedef ScalarTraits<Scalar> SCT;
+    typedef typename SCT::magnitudeType Mag;
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE  = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal numImages = this->getMap().getComm()->getSize();
+    bool OneW = false;
+    const Ordinal numVecs = this->numVectors();
+    if (weights.numVectors() == ONE) {
+      OneW = true;
+    }
+    else {
+      TEST_FOR_EXCEPTION(weights.numVectors() != numVecs, std::runtime_error,
+          "Tpetra::MultiVector::normWeighted(): MultiVector of weights must contain either one vector or the same number of vectors as this.");
+    }
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(weights.getMap()), std::runtime_error,
+        "Tpetra::MultiVector::normWeighted(): MultiVectors must have compatible Maps.");
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::normWeighted(): norms.size() must be as large as the number of vectors in *this.");
+#endif
+    // compute local components of the norms
+    // sum these across all nodes
+    Array<Mag> lnorms(numVecs,ScalarTraits<Mag>::zero());
+    for (Ordinal j=ZERO; j<numVecs; ++j) {
+      ArrayRCP<const Scalar> wpos = (OneW ? weights[0] : weights[j]);
+      ArrayRCP<const Scalar> cpos = MVData_->pointers_[j].getConst();
+      for (; cpos != cpos.end(); ++cpos, ++wpos) {
+        Scalar tmp = *cpos / *wpos;
+        lnorms[j] += SCT::magnitude( tmp * SCT::conjugate(tmp) );
+      }
+    }
+    Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
+      *n = ScalarTraits<Mag>::squareroot(*n/as<Mag>(numImages));
+    }
+  }
+
+
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::normInf(
       const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
   {
     Teuchos::BLAS<Ordinal,Scalar> blas;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     // compute local components of the norms
     // sum these across all nodes
-    const Ordinal myLen   = this->myLength();
     const Ordinal numVecs = this->numVectors();
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(norms.size() < numVecs, std::runtime_error,
-        "Tpetra::MultiVector::norm1(norms): norms.size() must be as large as the number of vectors in *this.");
+    TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::normInf(norms): norms.size() must be as large as the number of vectors in *this.");
 #endif
-    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> lnorms(numVecs);
+    Teuchos::Array<Mag> lnorms(numVecs);
     for (Ordinal i=ZERO; i<numVecs; ++i) {
-      Ordinal ind = blas.IAMAX(myLen,MVData_->pointers_[i].getRawPtr(),ONE);
+      // careful!!! IAMAX returns FORTRAN-style (i.e., one-based) index. subtract ind by one
+      Ordinal ind = blas.IAMAX(MVData_->pointers_[i].size(),MVData_->pointers_[i].getRawPtr(),ONE) - ONE;
       lnorms[i] = Teuchos::ScalarTraits<Scalar>::magnitude( MVData_->pointers_[i][ind] );
     }
     Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_MAX,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
   }
+
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::random() 
@@ -342,18 +425,150 @@ namespace Tpetra {
     }
   }
 
+
   template<typename Ordinal, typename Scalar>
-  void MultiVector<Ordinal,Scalar>::scale(const Scalar &alpha) 
+  void MultiVector<Ordinal,Scalar>::putScalar(const Scalar &alpha) 
   {
     using Teuchos::OrdinalTraits;
     using Teuchos::ArrayRCP;
-    const Ordinal myLen   = this->myLength();
     const Ordinal numVecs = this->numVectors();
     for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
       ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
-      std::fill(curpos.begin(),curpos.begin()+myLen,alpha);
+      std::fill(curpos.begin(),curpos.end(),alpha);
     }
   }
+
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::scale(const Scalar &alpha) 
+  {
+    Teuchos::BLAS<Ordinal,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    using Teuchos::ArrayRCP;
+    const Ordinal numVecs = this->numVectors();
+    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+      blas.SCAL(curpos.size(),alpha,curpos.getRawPtr(),ONE);
+    }
+  }
+
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::scale(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A) 
+  {
+    Teuchos::BLAS<Ordinal,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayRCP;
+    const Ordinal numVecs = this->numVectors();
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
+        "Tpetra::MultiVector::scale(): MultiVectors must have compatible Maps.");
+    TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::scale(): MultiVectors must have the same number of vectors.");
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
+      // copy A to *this
+      blas.COPY(curpos.size(),Apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+      // then scale *this in-situ
+      blas.SCAL(curpos.size(),alpha,curpos.getRawPtr(),ONE);
+    }
+  }
+
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::reciprocal(const MultiVector<Ordinal,Scalar> &A) 
+  {
+    Teuchos::BLAS<Ordinal,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ScalarTraits;
+    using Teuchos::ArrayRCP;
+    const Ordinal numVecs = this->numVectors();
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
+        "Tpetra::MultiVector::reciprocal(): MultiVectors must have compatible Maps.");
+    TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::reciprocal(): MultiVectors must have the same number of vectors.");
+    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
+      for (; curpos != curpos.end(); ++curpos, ++Apos) {
+#ifdef TEUCHOS_DEBUG
+        TEST_FOR_EXCEPTION( ScalarTraits<Scalar>::magnitude(*Apos) <= ScalarTraits<Scalar>::sfmin() ||
+            *Apos == ScalarTraits<Scalar>::sfmin(), std::runtime_error,
+            "Tpetra::MultiVector::reciprocal(): element of A was zero or too small to invert: " << *Apos );
+#endif
+        *curpos = ScalarTraits<Scalar>::one()/(*Apos);
+      }
+    }
+  }
+
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::abs(const MultiVector<Ordinal,Scalar> &A) 
+  {
+    Teuchos::BLAS<Ordinal,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayRCP;
+    const Ordinal numVecs = this->numVectors();
+    TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::abs(): MultiVectors must have the same number of vectors.");
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
+        "Tpetra::MultiVector::abs(): MultiVectors must have compatible Maps.");
+    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
+      for (; curpos != curpos.end(); ++curpos, ++Apos) {
+        *curpos = Teuchos::ScalarTraits<Scalar>::magnitude(*Apos);
+      }
+    }
+  }
+
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::update(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A, const Scalar &beta) 
+  {
+    Teuchos::BLAS<Ordinal,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayRCP;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal numVecs = this->numVectors();
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
+        "Tpetra::MultiVector::update(): MultiVectors must have compatible Maps.");
+    TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
+    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
+      blas.SCAL(curpos.size(),beta,curpos.getRawPtr(),ONE);
+      blas.AXPY(curpos.size(),alpha,Apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+    }
+  }
+
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::update(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A, const Scalar &beta, const MultiVector<Ordinal,Scalar> &B, const Scalar &gamma)
+  {
+    Teuchos::BLAS<Ordinal,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayRCP;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal numVecs = this->numVectors();
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()) || !this->getMap().isCompatible(B.getMap()),
+        std::runtime_error,
+        "Tpetra::MultiVector::update(): MultiVectors must have compatible Maps.");
+    TEST_FOR_EXCEPTION(A.numVectors() != numVecs || B.numVectors() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
+    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
+      ArrayRCP<Scalar> &Bpos = B.MVData_->pointers_[i];
+      blas.SCAL(curpos.size(),gamma,curpos.getRawPtr(),ONE);
+      blas.AXPY(curpos.size(),alpha,Apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+      blas.AXPY(curpos.size(),beta, Bpos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+    }
+  }
+
 
   template<typename Ordinal, typename Scalar>
   Teuchos::ArrayRCP<const Scalar> MultiVector<Ordinal,Scalar>::operator[](Ordinal i) const
@@ -361,6 +576,7 @@ namespace Tpetra {
     // teuchos does the bounds checking here, if TEUCHOS_DEBUG
     return MVData_->pointers_[i].getConst();
   }
+
 
   /*
 
