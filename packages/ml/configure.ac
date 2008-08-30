@@ -450,7 +450,6 @@ AM_CONDITIONAL(ML_USING_ZOLTAN, test "X$ac_cv_use_ml_zoltan" = "Xyes")
 TAC_ARG_WITH_PACKAGE(ml_zoltan3, [Enable Zoltan 3.0 support. This option requires that MPI and --enable-zoltan.], ML_ZOLTAN_THREE, no)
 #
 TAC_ARG_WITH_PACKAGE(petsc, [Enable PETSc support.], PETSC, no)
-#
 
 #
 # ------------------------------------------------------------------------
@@ -482,6 +481,13 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, teuchos, ML_TEUCHOS, ML_USING_TEUCHOS, yes, [
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, aztecoo, ML_AZTECOO, ML_USING_AZTECOO, yes, [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis.], [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis. Can be overridden with --disable-ml-aztecoo.])
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, epetraext, ML_EPETRAEXT, ML_USING_EPETRAEXT, yes, [Enable EpetraExt support. EpetraExt requires --enable-epetra. See notes for --enable-ml_metis.], [Enable EpetraExt support. EpetraExt requires --enable-epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-epetraext.])
+#
+# if user wants PETSc, EpetraExt must be enabled.
+if test "X$ac_cv_use_epetraext" != "Xyes"; then
+   if test "X$ac_cv_use_petsc" = "Xyes"; then
+     AC_MSG_ERROR([[--with-petsc requires --enable-epetraext.]])
+   fi
+fi
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, isorropia, ML_ISORROPIA, ML_USING_ISORROPIA, yes, [Enable Isorropia support. Isorropia requires --enable-isorropia. See notes for --enable-ml_metis.], [Enable Isorropia support. Isorropia requires --enable-isorropia. See notes for --enable-ml_metis. Can be overridden with --disable-ml-isorropia.])
 #

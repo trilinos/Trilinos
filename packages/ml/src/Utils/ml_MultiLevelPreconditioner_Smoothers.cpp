@@ -1012,16 +1012,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ML just applies it.
 
 #     ifdef HAVE_PETSC
-
-      
-/*
-      void *voidPC = 0;
-      ML_PetscPC petscPC = 0;
-      petscPC = (ML_PetscPC) smList.get("smoother: petsc pc", voidPC);
-*/
-      void *voidKSP = 0;
+      void *voidKSP=0;
       ML_PetscKSP petscKSP = 0;
-      petscKSP = (ML_PetscKSP) smList.get("smoother: petsc pc", voidKSP);
+      petscKSP = (ML_PetscKSP) smList.get("smoother: petsc ksp", voidKSP);
       if (petscKSP == 0) {
         if (Comm().MyPID() == 0)
           cerr << ErrorMsg_

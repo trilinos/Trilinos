@@ -20,7 +20,13 @@
 
 #ifdef HAVE_PETSC
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "petscksp.h"
+#ifdef __cplusplus
+}
+#endif
 
 /*wrap PETSc's pointers to preconditioner and solver structures*/
 typedef PC ML_PetscPC;
