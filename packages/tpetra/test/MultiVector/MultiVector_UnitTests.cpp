@@ -1,6 +1,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_Array.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -43,6 +44,7 @@ namespace {
   using Tpetra::MultiVector;
   using std::endl;
   using Teuchos::Array;
+  using Teuchos::ArrayView;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -101,7 +103,7 @@ namespace {
     TEST_EQUALITY( mvec.numVectors(), numVecs );
     TEST_EQUALITY( mvec.myLength(), numLocal );
     TEST_EQUALITY( mvec.globalLength(), numImages*numLocal );
-    // we zeroes it out in the constructor; all norms should be zero
+    // we zeroed it out in the constructor; all norms should be zero
     Array<Magnitude> norms(numVecs), zeros(numVecs);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
     mvec.norm2(norms);
@@ -161,6 +163,41 @@ namespace {
 #endif
     // LDA < numLocal throws an exception anytime
     TEST_THROW(MV mvec(map,values(0,4),ONE,numVecs), std::invalid_argument);
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadConstAA, Ordinal, Scalar )
+  {
+    // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
+    // A.size() == NumVectors
+    // A[i].size() >= MyLength
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    const Ordinal NEGONE = ZERO - ONE;
+    const Ordinal TWO = ONE + ONE;
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a Map
+    const Ordinal indexBase = ZERO;
+    const Ordinal numLocal = TWO;
+    const Ordinal numVecs = TWO;
+    // multivector has two vectors, each proc having two values per vector
+    Map<Ordinal> map2(NEGONE,numLocal  ,indexBase,platform),
+                 map3(NEGONE,numLocal+1,indexBase,platform);
+    // we need 4 scalars to specify values on each proc
+    Array<Scalar> values(4);
+    Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const double>(Teuchos::null));
+    arrOfarr[0] = values(0,2);
+    arrOfarr[1] = values(2,2);
+#ifdef TEUCHOS_DEBUG
+    // arrOfarr.size() == NumVectors
+    TEST_THROW(MV mvec(map2,arrOfarr(),numVecs+1), std::runtime_error);
+    TEST_THROW(MV mvec(map2,arrOfarr(),numVecs-1), std::runtime_error);
+    // individual ArrayViews could be too small
+    TEST_THROW(MV mvec(map3,arrOfarr(),numVecs), std::runtime_error);
+#endif
   }
 
 
@@ -686,9 +723,14 @@ namespace {
 
   /* TODO 
      Many constructors left to test
-        MultiVector (const Map< Ordinal > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &arrayOfArrays, Ordinal numVectors)
-        MultiVector (const MultiVector< Ordinal, Scalar > &source, const Teuchos::ArrayView< const Ordinal > &indices)
-        MultiVector (const MultiVector< Ordinal, Scalar > &source, Ordinal startIndex, Ordinal numVectors)
+     MultiVector (const Map< Ordinal > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &arrayOfArrays, Ordinal numVectors)
+
+     MultiVector<Ordinal,Scalar> subCopy(const Teuchos::Range1D &colRng) const;
+     MultiVector<Ordinal,Scalar> subCopy(const Teuchos::ArrayView<Teuchos_Index> &cols) const;
+     MultiVector<Ordinal,Scalar> subView(const Teuchos::Range1D &colRng);
+     MultiVector<Ordinal,Scalar> subView(const Teuchos::ArrayView<Teuchos_Index> &cols);
+     const MultiVector<Ordinal,Scalar> subViewConst(const Teuchos::Range1D &colRng) const;
+     const MultiVector<Ordinal,Scalar> subViewConst(const Teuchos::ArrayView<Teuchos_Index> &cols) const;
 
      Mod routines left to test
      void replaceGlobalValue (Ordinal globalRow, Ordinal vectorIndex, const Scalar &value)
@@ -697,12 +739,6 @@ namespace {
      void sumIntoMyValue (Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue)
 
      Arithmetic methods left to test:
-     void abs (const MultiVector< Ordinal, Scalar > &A)
-     void reciprocal (const MultiVector< Ordinal, Scalar > &A)
-     void normWeighted (const MultiVector< Ordinal, Scalar > &weights, Teuchos::Array< Scalar > &norms) const
-     void minValue (Teuchos::Array< Scalar > &mins) const
-     void maxValue (Teuchos::Array< Scalar > &maxs) const
-     void meanValue (Teuchos::Array< Scalar > &means) const
      void multiply (Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Ordinal, Scalar > &A, const MultiVector< Ordinal, Scalar > &B, const Scalar &beta)
      void multiply (const Scalar &alpha, const MultiVector< Ordinal, Scalar > &A, const MultiVector< Ordinal, Scalar > &B, const Scalar &beta)
      void reciprocalMultiply (const Scalar &alpha, const MultiVector< Ordinal, Scalar > &A, const MultiVector< Ordinal, Scalar > &B, const Scalar &beta)
@@ -732,6 +768,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstNumVecs, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstLDA, ORDINAL, SCALAR ) \
+      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstAA, ORDINAL, * SCALAR )*/ \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyConst, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OrthoDot, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDot, ORDINAL, SCALAR ) \
@@ -742,7 +779,6 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Norm2, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations, ORDINAL, SCALAR )
-
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \

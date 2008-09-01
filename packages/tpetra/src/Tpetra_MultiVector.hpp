@@ -26,9 +26,9 @@
 // ***********************************************************************
 // @HEADER
 
-// FINISH: some of these arrayview objects should be something else, like Ptr
-// FINISH: consider requiring that ArrayView objects are the exact size needed, and no larger.
-// FINISH: if both MVs are contiguous, a lot of the level one blas routines below can be turned from multiple calls to one call for best efficiency (eliminate loop over numVecs)
+// TODO: some of these arrayview objects should be something else, like Ptr
+// TODO: consider requiring that ArrayView objects are the exact size needed, and no larger.
+// TODO: with contiguous MVs, some of the level one blas routines below can be turned from multiple calls to one call for best efficiency (eliminate loop over numVecs)
 
 #ifndef TPETRA_MULTIVECTOR_HPP
 #define TPETRA_MULTIVECTOR_HPP
@@ -37,6 +37,7 @@
 #include <Teuchos_as.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_Array.hpp>
 
 #include "Tpetra_MultiVectorDecl.hpp"
 #include "Tpetra_MultiVectorData.hpp"
@@ -126,25 +127,8 @@ namespace Tpetra {
 
 
   template <typename Ordinal, typename Scalar> 
-  MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source, const Teuchos::ArrayView<const Ordinal> &indices)
-    : DistObject<Ordinal,Scalar>(source)
-  {
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template <typename Ordinal, typename Scalar> 
-  MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source, Ordinal startIndex, Ordinal NumVectors)
-    : DistObject<Ordinal,Scalar>(source)
-  {
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::~MultiVector()
-  {
-  }
+  {}
 
 
   template <typename Ordinal, typename Scalar> 
@@ -577,215 +561,81 @@ namespace Tpetra {
     return MVData_->pointers_[i].getConst();
   }
 
+  template<typename Ordinal, typename Scalar>
+  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subCopy(const Teuchos::Range1D &colRng) const
+  {
+    MultiVector<Ordinal,Scalar> ret;
+    TEST_FOR_EXCEPT(true);
+  }
 
-  /*
+  template<typename Ordinal, typename Scalar>
+  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subCopy(const Teuchos::ArrayView<Teuchos_Index> &cols) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-      // Basic constructor
-      MultiVector(const VectorSpace<Ordinal, Scalar>& vectorSpace, const Ordinal NumVectors) :
-        vectorSpace_(vectorSpace),
-        NumVectors_(NumVectors)
-      {
-        Init(); 
+  template<typename Ordinal, typename Scalar>
+  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subView(const Teuchos::Range1D &colRng) 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-        array_.resize(getNumVectors());
+  template<typename Ordinal, typename Scalar>
+  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subView(const Teuchos::ArrayView<Teuchos_Index> &cols) 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-        for (Ordinal i = OrdinalZero_ ; i < NumVectors ; ++i)
-        {
-          array_[i] = Teuchos::rcp(new Vector<Ordinal, Scalar> (vectorSpace));
-        }
-      }
+  template<typename Ordinal, typename Scalar>
+  const MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subViewConst(const Teuchos::Range1D &colRng) const 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-      // Creates a deep copy of the input set of vectors.
-      MultiVector(const VectorSpace<Ordinal, Scalar>& vectorSpace, 
-                  std::vector<Tpetra::Vector<Ordinal, Scalar> const *> list) :
-        vectorSpace_(vectorSpace),
-        NumVectors_(list.size())
-      {
-        Init(); 
+  template<typename Ordinal, typename Scalar>
+  const MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subViewConst(const Teuchos::ArrayView<Teuchos_Index> &cols) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-        array_.resize(getNumVectors());
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<const Scalar> &A, Ordinal &MyLDA) const 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-        for (Ordinal i = OrdinalZero_ ; i < NumVectors_ ; ++i)
-        {
-          // deep copy of each of the vectors
-          array_[i] = Teuchos::rcp(new Vector<Ordinal, Scalar> (*(list[i])));
-        }
-      }
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<const Scalar> > &arrayOfArrays) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-      // Creates a shallow copy of the input set of vectors.
-      MultiVector(const VectorSpace<Ordinal, Scalar>& vectorSpace, 
-                  std::vector<Teuchos::RCP<Tpetra::Vector<Ordinal, Scalar> > > list) :
-        vectorSpace_(vectorSpace),
-        NumVectors_(list.size())
-      {
-        Init();
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::extractView(Teuchos::ArrayRCP<Scalar> &A, Ordinal &MyLDA) 
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-        array_.resize(NumVectors_);
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::extractConstView(Teuchos::ArrayRCP<const Scalar> &A, Ordinal &MyLDA) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-        for (Ordinal i = OrdinalZero_ ; i < NumVectors_ ; ++i)
-        {
-          // copy RCP's from the list to this array.
-          array_[i] = list[i];
-        }
-      }
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::extractView(Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > &arrayOfArrays)
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-      // Copy constructor.
-      MultiVector(const MultiVector& rhs) :
-        vectorSpace_(rhs.vectorSpace()),
-        NumVectors_(rhs.getNumVectors())
-      {
-        Init();
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::extractConstView(Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > &arrayOfArrays) const
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
-        array_.resize(NumVectors_);
 
-        for (Ordinal i = OrdinalZero_ ; i < NumVectors_ ; ++i)
-        {
-          array_[i] = Teuchos::rcp(new Vector<Ordinal, Scalar> (*(rhs.GetVector(i))));
-        }
-      }
 
-      //! Returns the global number of entries.
-      Ordinal getNumGlobalEntries() const
-      {
-        return(vectorSpace_.getNumGlobalEntries());
-      }
-
-      //! Returns the number of entries on the calling image.
-      Ordinal getNumMyEntries() const
-      {
-        return(vectorSpace_.getNumMyEntries());
-      }
-
-      //! Returns the number of vectors in this multivector.
-      Ordinal getNumVectors() const
-      {
-        return(NumVectors_);
-      }
-
-      //! Returns a reference to the vector space of this multivector.
-      VectorSpace<Ordinal, Scalar> const& vectorSpace () const
-      {
-        return(vectorSpace_);
-      }
-
-      //! Returns a reference to the i-th element of the j-th vector.
-      Scalar& operator() (const Ordinal i, const Ordinal j)
-      {
-        return((*array_[j])[i]);
-      }
-
-      //! Returns a reference to the i-th element of the j-th vector (const version)
-      Scalar const& operator() (const Ordinal i, const Ordinal j) const
-      {
-        return((*array_[j])[i]);
-      }
-
-      //! Sets all elements of all vectors to the given value.
-      void setAllToScalar(Scalar const value)
-      {
-        for (int i = 0 ; i < NumVectors_ ; ++i)
-          array_[i]->setAllToScalar(value);
-      }
-
-      //! Sets all elements of all vectors to random value.
-      void setAllToRandom()
-      {
-        // FIXME: sets only the real part to random
-        for (int i = 0 ; i < NumVectors_ ; ++i)
-        {
-          //array_[i]->setAllToRandom();
-          for (int j = 0 ; j < array_[0]->getNumMyEntries() ; ++j)
-          {
-            // FIXME (*array_[i])[j] = complex<double>(Teuchos::ScalarTraits<double>::random(), 0.0);
-            (*array_[i])[j] = Teuchos::ScalarTraits<Scalar>::random();
-          }
-        }
-      }
-
-      //! Prints the vector to cout. FIXME
-      void Print() const
-      {
-        for (int i = 0 ; i < NumVectors_ ; ++i)
-          cout << (*array_[i]);
-      }
-
-      //! Returns a RCP pointer to the i-th vector.
-      Teuchos::RCP<Tpetra::Vector<Ordinal, Scalar> > GetRCP(const int i)
-      {
-        return(array_[i]);
-      }
-
-      //! Returns a RCP pointer to the i-th vector (const version).
-      Teuchos::RCP<Tpetra::Vector<Ordinal, Scalar> const > GetRCP(const int i) const
-      {
-        return(array_[i]);
-      }
-
-      //! Returns a Tpetra::Vector pointer to the i-th vector.
-      Tpetra::Vector<Ordinal, Scalar>* GetVector(const int i)
-      {
-        return(array_[i].get());
-      }
-
-      //! Returns a Tpetra::Vector pointer to the i-th vector (const version).
-      const Tpetra::Vector<Ordinal, Scalar>* GetVector(const int i) const
-      {
-        return(array_[i].get());
-      }
-
-      void norm1(Scalar* Values) const
-      {
-        for (Ordinal i = OrdinalZero_ ; i < getNumVectors() ; ++i)
-        {
-          Values[i] = Teuchos::ScalarTraits<Scalar>::magnitude(array_[i]->norm1());
-        }
-      }
-
-      void norm2(typename Teuchos::ScalarTraits<Scalar>::magnitudeType* Values) const
-      {
-        for (Ordinal i = OrdinalZero_ ; i < getNumVectors() ; ++i)
-        {
-          Values[i] = Teuchos::ScalarTraits<Scalar>::magnitude(array_[i]->norm2());
-        }
-      }
-
-      void normInf(Scalar* Values) const
-      {
-        for (Ordinal i = OrdinalZero_ ; i < getNumVectors() ; ++i)
-        {
-          Values[i] = Teuchos::ScalarTraits<Scalar>::magnitude(array_[i]->normInf());
-        }
-      }
-
-      void dotProduct(const MultiVector<Ordinal, Scalar>& A, Scalar* Values) const
-      {
-        for (int v = 0 ; v < getNumVectors() ; ++v)
-        {
-          Values[v] = GetVector(v)->dotProduct(*(A.GetVector(v)));
-        }
-      }
-
-    private:
-
-      void Init()
-      {
-        OrdinalZero_ = Teuchos::ScalarTraits<Ordinal>::zero();
-        OrdinalOne_  = Teuchos::ScalarTraits<Ordinal>::one();
-
-        ScalarZero_ = Teuchos::ScalarTraits<Scalar>::zero();
-        ScalarOne_  = Teuchos::ScalarTraits<Scalar>::one();
-      }
-
-      std::vector<Teuchos::RCP<Vector<Ordinal, Scalar> > > array_;
-      const VectorSpace<Ordinal, Scalar>& vectorSpace_;
-      Ordinal NumVectors_;
-
-      Ordinal OrdinalZero_;
-      Ordinal OrdinalOne_;
-
-      Scalar ScalarZero_;
-      Scalar ScalarOne_;
-*/
 
 } // namespace Tpetra
 
