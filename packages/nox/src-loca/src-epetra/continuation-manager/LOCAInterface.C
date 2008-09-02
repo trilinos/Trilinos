@@ -100,5 +100,4 @@ cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " 
 void LOCAInterface::setXdot(const Epetra_Vector& xdot, const double time) {
   // current problem does not depend on xdot or t
   t = time;
-};
-
+}
