@@ -672,6 +672,7 @@ int Zoltan_ParMetis_Order(
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     ord.sep_sizes = zz->Order.start; /* Trick : use the same table */
+    memset(ord.sep_sizes, 0, 2*zz->Num_Proc+1); /* It seems parmetis don't initialize correctly */
   }
 
   /* Allocate space for direct perm */
@@ -733,7 +734,7 @@ int Zoltan_ParMetis_Order(
     int numbloc;
     int start;
 
-    for (numbloc = 0, start=0 ; numbloc < 2*zz->Num_Proc+1 ; ++numbloc) { /* convert size tab in start tab */
+    for (numbloc = 0, start=0 ; numbloc < 2*zz->Num_Proc ; ++numbloc) { /* convert size tab in start tab */
       int tmp;
       tmp = start;
       start += ord.sep_sizes[numbloc]; /* Save save for next bloc */

@@ -40,6 +40,7 @@ struct Zoltan_Order_Struct {
   int *rank;        		/* rank[i] is the rank of gids[i] */
   ZOLTAN_ID_PTR gidrank;
   int *iperm;
+  int  start_index;
   char method[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
   char order_type[MAX_PARAM_STRING_LEN+1];
 

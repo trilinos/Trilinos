@@ -187,7 +187,7 @@ int Zoltan_Get_Processor_Graph(int *vtxdist, int p, int index)
   /* Check for values out of range */
   if (index<vtxdist[0] || index>=vtxdist[p])
     return (-1);
-  
+
   /* Binary search */
   while(hi > lo+1){
     mid = (lo+hi)/2;
