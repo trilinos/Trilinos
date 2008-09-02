@@ -333,6 +333,28 @@ repartition(const Epetra_BlockMap& input_map,
   for (i = 0 ;  i<send_info.size(); i+=3)
     exportsSize += send_info[i+2];
 
+  int num_import = 0;
+  while(i<recv_info.size()) {
+    num_import += recv_info[i+2];
+    i+=3;
+  }
+  imports.resize(num_import);
+
+  int num_reqs = recv_info.size()/3;
+  unsigned int base_offset = (num_reqs > 0)?(recv_info[1]):0;
+  for (i = 0 ;  i<recv_info.size(); i+=3) {
+    int proc = recv_info[i];
+    int recv_offset = recv_info[i+1];
+    int num_recv = recv_info[i+2];
+
+    for (int j = 0 ;  i<send_info.size(); i+=3) {
+      if (recv_info[i] != myPID)
+	continue;
+      memcpy(&imports[recv_offset-base_offset], &old_gids[send_info[j+1]],
+	     num_recv*sizeof(int));
+    }
+  }
+
 #endif /* HAVE_MPI */
 
   return(0);
