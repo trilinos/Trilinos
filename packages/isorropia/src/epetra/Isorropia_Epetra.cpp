@@ -329,6 +329,10 @@ repartition(const Epetra_BlockMap& input_map,
     i += 3;
   }
 
+  exportsSize = 0;
+  for (i = 0 ;  i<send_info.size(); i+=3)
+    exportsSize += send_info[i+2];
+
 #endif /* HAVE_MPI */
 
   return(0);
