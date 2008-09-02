@@ -57,6 +57,7 @@ example_multidimensional_array_SOURCES = \
 	$(srcdir)/FactoryTraits.hpp \
 	$(srcdir)/CellData.hpp \
 	$(srcdir)/CellData.cpp \
+	$(srcdir)/Dimension.hpp \
 	$(srcdir)/Dimension.cpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
@@ -73,7 +74,3 @@ example_multidimensional_array_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
 example_multidimensional_array_LDADD = $(EXAMPLE_LIBS)
-
-EXTRA_DIST = \
-	$(srcdir)/Dimension.hpp
-
