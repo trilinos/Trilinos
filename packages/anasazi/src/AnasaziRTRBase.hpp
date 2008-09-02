@@ -1,12 +1,34 @@
+// @HEADER
+// ***********************************************************************
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+
 /*! \file AnasaziRTRBase.hpp
-  \brief finish
+  \brief Base class for Implicit Riemannian Trust-Region solvers
 */
-
-/*
-    RTRBase
-    
- */
-
 
 // FINISH: make sure that cloneview(const) is called where appropriate
 
@@ -31,7 +53,15 @@
 
 /*!     \class Anasazi::RTRBase
 
-        \brief This class is an abstract base class for Riemannian Trust-Region based eigensolvers without subspace acceleration.
+        \brief This class is an abstract base class for Implicit Riemannian Trust-Region
+        based eigensolvers. The class provides the interfaces shared by the %IRTR
+        solvers (e.g., getState() and initialize()) as well as the shared
+        implementations (e.g., inner products). 
+
+        This class is abstract and objects cannot be instantiated. Instead,
+        instantiate one of the concrete derived classes: IRTR and SIRTR.
+
+        \ingroup anasazi_solver_framework
 
         \author Chris Baker
 */
@@ -57,7 +87,9 @@ namespace Anasazi {
     Teuchos::RCP<const MV> R;
     //! The current Ritz values.
     Teuchos::RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
-    //! The current rho value
+    /*! \brief The current rho value.
+     *  This is only valid if the debugging level of verbosity is enabled.
+     */ 
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType rho;
     RTRState() : X(Teuchos::null),AX(Teuchos::null),BX(Teuchos::null),
                  R(Teuchos::null),T(Teuchos::null),rho(0) {};
@@ -71,13 +103,13 @@ namespace Anasazi {
   /** \brief RTRRitzFailure is thrown when the RTR solver is unable to
    *  continue a call to RTRBase::iterate() due to a failure of the algorithm.
    *
-   *  This signals that the Rayleigh-Ritz analysis over the subspace \c
-   *  colsp([X H P]) detected ill-conditioning of the projected mass matrix
+   *  This signals that the Rayleigh-Ritz analysis of <tt>X + Eta</tt>
+   *  detected ill-conditioning of the projected mass matrix
    *  and the inability to generate a set of orthogonal eigenvectors for 
-   *  the projected problem.
+   *  the projected problem (if thrown from iterate()) or that the analysis of 
+   *  the initial iterate failed in RTRBase::initialize().
    *
-   *  This exception is only thrown from the RTRBase::iterate() routine. After
-   *  catching this exception, the user can recover the subspace via
+   *  After catching this exception, the user can recover the subspace via
    *  RTRBase::getState(). This information can be used to restart the solver.
    *
    */
@@ -130,9 +162,16 @@ namespace Anasazi {
 
     /*! \brief %RTRBase constructor with eigenproblem, solver utilities, and parameter list of solver options.
      *
+     * The RTRBase class is abstract and cannot be instantiated; this constructor is called by derived classes
+     * IRTR and RTR.
+     * 
      * This constructor takes pointers required by the eigensolver, in addition
      * to a parameter list of options for the eigensolver. These options include the following:
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
+     *   - "Leftmost" - a \c bool specifying whether the solver is computing the
+     *     leftmost ("SR") or rightmost ("LR") eigenvalues. Default: true.
+     *   - "Kappa Convergence" - a \c Magnitude specifing the rate of convergence for the linear convergence regime. Default: 0.1
+     *   - "Theta Convergence" - a \c Magnitude specifing the order of convergence for the linear convergence regime. theta implies a convergence order of theta+1. Default: 1.0
      */
     RTRBase(const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
             const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
@@ -162,8 +201,9 @@ namespace Anasazi {
      * caller.
      *
      * The %RTR iteration proceeds as follows:
-     * -# 
-     * -# 
+     * -# the trust-region subproblem at \c X is solved for update \c Eta
+     * -# the iterate <tt>X+Eta</tt> is formed
+     * -# the new iterate is the Ritz vectors with respect to <tt>X+Eta</tt>
      *
      * The status test is queried at the beginning of the iteration.
      *
@@ -429,10 +469,10 @@ namespace Anasazi {
     // solves the model minimization
     virtual void solveTRSubproblem() = 0;
     // Riemannian metric
-    MagnitudeType ginner(const MV &xi) const;
-    MagnitudeType ginner(const MV &xi, const MV &zeta) const;
-    void ginnersep(const MV &xi, std::vector<MagnitudeType> &d) const;
-    void ginnersep(const MV &xi, const MV &zeta, std::vector<MagnitudeType> &d) const;
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType ginner(const MV &xi) const;
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType ginner(const MV &xi, const MV &zeta) const;
+    void ginnersep(const MV &xi, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > &d) const;
+    void ginnersep(const MV &xi, const MV &zeta, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > &d) const;
     //
     // Classes input through constructor that define the eigenproblem to be solved.
     //
@@ -558,12 +598,12 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   RTRBase<ScalarType,MV,OP>::RTRBase(
-        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
-        const Teuchos::RCP<OutputManager<ScalarType> >      &printer,
-        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >   &tester,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+        const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
+        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
         const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
-        Teuchos::ParameterList &params,
+        Teuchos::ParameterList                                 &params,
         const std::string &solverLabel, bool skinnySolver
         ) :
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
@@ -1229,8 +1269,9 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         ret = Utils::directSolver(blockSize_,AA,Teuchos::null,S,theta_,nevLocal_,10);
       }
-      TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::RTRBase::initialize(): failure solving projected eigenproblem after retraction.");
-      TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,RTRRitzFailure,"Anasazi::RTRBase::initialize(): retracted iterate failed in Ritz analysis.");
+      TEST_FOR_EXCEPTION(ret != 0,RTRInitFailure,
+          "Anasazi::RTRBase::initialize(): failure solving projected eigenproblem after retraction. LAPACK returns " << ret);
+      TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,RTRInitFailure,"Anasazi::RTRBase::initialize(): retracted iterate failed in Ritz analysis.");
 
       // We only have blockSize_ ritz pairs, ergo we do not need to select.
       // However, we still require them to be ordered correctly
@@ -1254,7 +1295,7 @@ namespace Anasazi {
         int info;
         if (hasBOp_) {
           info = RR.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,BB,S,ZERO);
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         }
         else {
           RR.assign(S);
@@ -1263,7 +1304,7 @@ namespace Anasazi {
           blas.SCAL(blockSize_,theta_[i],RR[i],1);
         }
         info = RR.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,AA,S,-ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         for (int i=0; i<blockSize_; i++) {
           ritz2norms_[i] = blas.NRM2(blockSize_,RR[i],1);
         }

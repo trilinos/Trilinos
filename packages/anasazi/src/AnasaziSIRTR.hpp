@@ -1,11 +1,4 @@
-/*! \file AnasaziSIRTR.hpp
-  \brief 
-*/
-
-/*
-    SIRTR
-    
- */
+//! \file AnasaziSIRTR.hpp
 
 
 #ifndef ANASAZI_SIRTR_HPP
@@ -27,7 +20,13 @@
 
 /*!     \class Anasazi::SIRTR
 
-        \brief 
+        SIRTR is a lower-memory ("skinny") implementation of the Implicit
+        Riemannian Trust-Region (%IRTR) eigensolver. The solver uses between 6
+        and 8 blocks of vectors.
+        
+        The base requirement is 6 blocks of vectors;
+        additional blocks are required when solving a generalized eigenvalue
+        problem or when using a preconditioiner. 
 
         \author Chris Baker
 */
