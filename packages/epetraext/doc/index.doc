@@ -4,12 +4,12 @@
 
 \section EpetraExt_intro Introduction
 EpetraExt is a set of extensions to Epetra.  To allow Epetra to remain
-focused on it's primary functionality as a Linear Algebra object support,
+focused on its primary functionality as a Linear Algebra object support,
 EpetraExt was created to maintain additional support for such capabilities
-as transformations (permutions, sub-block views, etc.), coloring support,
+as transformations (permutations, sub-block views, etc.), coloring support,
 partitioning (Zoltan), and I/O.
 
-\section EpetraExt_startup Overview of EpetraExt.
+\section EpetraExt_startup Overview of EpetraExt
 
 \subsection EpetraExt_formulations EpetraExt Classes
 
@@ -68,7 +68,193 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 
 <li> EpetraExt::MatrixMatrix: Static Matrix Matrix Operations including Multiply and Add.
 
-<li> InOut: I/O operations for Epetra objects based on 
+<li> \ref epetraext_inout.  Epetra supports I/O operations for Epetra objects based on 
+<ol>
+<li> Matlab triplet (i,j,value) format for writing and reading of Epetra RowMatrix and Operator objects.
+<li> Matrix Market format: Support writing and reading of Epetra BlockMap, Map, MultiVector, Vector, RowMatrix and
+Operator objects.
+<li> HDF5 format: Support writing and reading of Epetra BlockMap, Map, MultiVector, Vector, RowMatrix and
+Operator objects.  Available when EpetraExt is configured with \c --enable-epetraext-hdf5. 
+<li> An XML-compatible reader and writer is available when Teuchos is configures with --enable-teuchos-expat.
+</ol>
+
+<li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
+
+<li> Zoltan Tools: Primarily tools for generation of repartitioned Epetra objects using
+     the Zoltan library.
+     
+<li> Matlab: Communication interface between Epetra and Matlab.  Exports Epetra objects to Matlab and imports objects from Matlab.
+     Sends user specified Matlab commands to the Matlab engine to modify the Matlab workspace which provides user interaction with the Matlab engine.
+
+<li> \ref epetraext_petsc_interface : Wrapper class intended for users who would like to use Trilinos preconditioners within their
+PETSc-based application.
+
+<li> Nonlinear Model Evaluator: <tt>EpetraExt::ModelEvaluator</tt> provides an
+Epetra-specific interface to nonlinear models for use by equation solvers all the
+way up to optimization.
+
+</ul>
+
+\section EpetraExt_adapters EpetraExt adapters
+
+The EpetraExt package can also optionally support adapters to various
+interfaces.  Support for these adapters can be turned on at configure time.
+
+<ul>
+
+<li> <a href="../../thyra/doc/html/index.html">EpetraExt/Thyra
+Adapters</a>: These adapters implement various advanced %Thyra interfaces in
+terms of %EpetraExt code.
+
+</ul>
+
+\section EpetraExt_browser Browse all of Epetraext as a single doxygen collection
+
+You can browse all of EpetraExt as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about EpetraExt software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of epetraext</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
+*/
+
+/*! \page epetraext_petsc_interface Trilinos/PETSc Interface
+
+\section epetraext_petsc_overview Introduction
+
+The Epetra_PETScAIJMatrix class is a lightweight wrapper class for
+encapsulating PETSc serial and parallel AIJ matrices. 
+Its intended audience is PETSc users who would like to build and apply
+Trilinos preconditioners.  This class derives from the Epetra_RowMatrix class.
+
+Epetra_PETScAIJMatrix utilizes callbacks for as many access and apply functions
+as possible.  In particular, fetching individual rows and matrix-vector multiplies
+are callbacks.
+
+\section epetraext_petsc_requirements Requirements
+
+This class is available in Trilinos release 9.0.  It has been tested in serial and parallel with PETSc version 2.3.3,
+built in static library mode.
+
+\section epetraext_petsc_building Configuring and Building
+
+In order to use this feature, you must specify PETSC_DIR, PETSC_ARCH, and "--with-petsc"
+when configuring Trilinos.  You may optionally supply PETSC_LIB, which contains
+all link-time dependencies for PETSc.
+
+Here are two ways of doing this.  We'll assume that the Trilinos source directory is ~/Trilinos,
+and that the Trilinos build directory is ~/TrilinosBuild.
+
+\verbatim
+setenv PETSC_DIR /home/joeblow/petsc-2.3.3-p12
+setenv PETSC_ARCH linux-gnu-c-debug
+cd ~/TrilinosBuild
+../Trilinos/configure --with-petsc
+\endverbatim
+
+or
+
+\verbatim
+cd ~/TrilinosBuild
+../Trilinos/configure PETSC_DIR=/home/joeblow/petsc-2.3.3-p12 PETSC_ARCH=linux-gnu-c-debug --with-petsc
+\endverbatim
+
+\section epetraext_petsc_example Example
+
+We now dissect the example Trilinos/packages/epetraext/examples/petsc/\ref epetraext_petsc_cpp.
+In this example,
+a 2D Poisson matrix and right-hand side corresponding to the solution of all ones are constructed.
+The resulting linear system is solved twice, the first time with CG from AztecOO, the second time with
+CG from PETSc.  In both cases, the preconditioner is algebraic multigrid (AMG) from the Trilinos package ML.
+
+\dontinclude petsc.cpp
+
+The include file "ml_config.h"  contains definitions for all the appropriate Trilinos preprocessor macros.
+Of the following include files, "EpetraExt_PETScAIJMatrix.h" and "ml_MultiLevelPreconditioner.h" are required to
+wrap the PETSc matrix and create the ML preconditioner.
+
+\skipline ml_config.h
+\until Epetra_LinearProblem.h
+
+After the PETSc matrix is constructed, it is wrapped as an Epetra_PETScAIJMatrix:
+
+\skipline Epetra_PETScAIJMatrix epA
+
+Note that this is a lightweight wrap -- no matrix data is copied!
+
+The parameter list for the multigrid preconditioner is created and populated.  (For more information on multigrid
+options, please see the ML user's guide.)
+
+\skip Teuchos::ParameterList
+\until 10);
+
+In this case, we are going to use symmetric Gauss-Seidel as the fine-grid smoother.  Since this requires access to individual
+matrix rows, it is much more efficient to use the PETSc implementation, which will be optimized for the underlying aij data
+structure.  (There is no performance penalty associated with Trilinos smoothers whose kernel is a matrix-vector multiply, as the multiply is simply a callback to PETSc's native implementation.) To do this, the KSP object <tt>kspSmoother</tt> is created and populated:
+
+\skip ierr = KSPCreate
+\until KSPSetUp
+
+The fine grid smoother (level 0) is set to be of PETSc type
+
+\skipline smoother: type
+
+and <tt>kspSmoother</tt> is placed in the parameter list.
+
+Note that trying to set a PETSc smoother on any other level will generate an error.
+Also note that ML has many other smoothers available, e.g., polynomial and incomplete factorizations.
+
+\skipline smoother: petsc
+
+Finally, the ML AMG preconditioner is constructed.
+
+\skipline new ML_Epetra
+
+The linear system is solved first using CG from the Trilinos package AztecOO.
+
+\skip epu.Put
+\until solver.Iterate
+
+The system is solved a second time using CG from PETSc.  The AMG preconditioner <tt>Prec</tt> must be wrapped as a PETSc
+shell preconditioner
+
+\skip KSPGetPC
+\until PCShellSetName
+
+where the apply method is given by
+
+\skip ShellApplyML(
+\until *ShellApplyML*
+
+Other preconditioners, such as those provided by Ifpack or AztecOO, can be wrapped in a similar fashion.
+
+\section EpetraExt_Linking Linking
+
+We would expect most applications to be linking to Trilinos as a third partly library.  Towards this end,
+in the build directory of each Trilinos package, there is a stub file called "Makefile.export.XX", where
+XX is the package name.  The stub defines variables that contain all of the include and link dependencies
+for that particular package.  For example, "Makefile.export.epetraext" defines EPETRAEXT_INCLUDES and EPETRAEXT_LIBS,
+which contain EpetraExt's include and link dependencies, respectively.  An application developer simply includes this stub
+in her Makefile, and uses the variables in the appropriate compile and link lines.
+
+The example in the previous section could be built as an "external" application with this simple Makefile:
+
+\verbatim
+include /home/joeblow/TrilinosBuild/packages/ml/Makefile.export.ml
+all:
+    mpicxx -c -DHAVE_CONFIG_H ${ML_INCLUDES} petsc.cpp
+    mpicxx -o petsc.exe petsc.o ${ML_LIBS}
+\endverbatim
+
+*/
+
+/*! \page epetraext_petsc_cpp petsc.cpp
+\include petsc.cpp
+*/
+
+/*! \page epetraext_inout I/O Operations for Epetra Objects
+
+Epetra supports I/O operations for Epetra objects based on 
 <ol>
 <li> Matlab triplet (i,j,value) format for writing and reading of Epetra RowMatrix and Operator objects.
 <li> Matrix Market format: Support writing and reading of Epetra BlockMap, Map, MultiVector, Vector, RowMatrix and
@@ -129,41 +315,5 @@ use of these classes, illustrating how to use these classes in conjunction with
 AztecOO to write out the coefficients of the inverse of a matrix:
 
 \verbinclude cxx_main.cpp
-
-
-<li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
-
-<li> Zoltan Tools: Primarily tools for generation of repartitioned Epetra objects using
-     the Zoltan library.
-     
-<li> Matlab: Communication interface between Epetra and Matlab.  Exports Epetra objects to Matlab and imports objects from Matlab.
-     Sends user specified Matlab commands to the Matlab engine to modify the Matlab workspace which provides user interaction with the Matlab engine.
-
-<li> Nonlinear Model Evaluator: <tt>EpetraExt::ModelEvaluator</tt> provides an
-Epetra-specific interface to nonlinear models for use by equation solvers all the
-way up to optimization.
-
-</ul>
-
-\section EpetraExt_adapters EpetraExt adapters
-
-The EpetraExt pacakge can also optionally support adapters to various
-interfaces.  Support for these adapters can be turned on at configure time.
-
-<ul>
-
-<li> <a href="../../thyra/doc/html/index.html">EpetraExt/Thyra
-Adapters</a>: These adapters implement various advanced %Thyra interfaces in
-terms of %EpetraExt code.
-
-</ul>
-
-\section EpetraExt_browser Browse all of Epetraext as a single doxygen collection
-
-You can browse all of EpetraExt as a <A HREF="../../browser/doc/html/index.html">single
-doxygen collection</A>. Warning, this is not the recommended way to learn
-about EpetraExt software.  However, this is a good way to browse the <a
-href="../../browser/doc/html/dirs.html">directory structure of epetraext</a>, to <a
-href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 */
