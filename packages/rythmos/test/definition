@@ -5,7 +5,7 @@
 # Unit Tests
 (FRAMEWORK, INSTALL) {
   TESTS = UnitTest/Rythmos_UnitTest.exe;
-  COMM = SERIAL, MPI(1);
+  COMM = SERIAL;
 }
 
 # Convergence Tests
