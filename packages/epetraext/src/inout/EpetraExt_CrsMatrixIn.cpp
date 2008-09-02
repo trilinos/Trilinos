@@ -376,9 +376,9 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   }
 
   delete [] numNonzerosPerRow;
-  delete [] iv;
-  delete [] jv;
-  delete [] vv;
+  free(iv); iv=NULL;
+  free(jv); jv=NULL;
+  free(vv); vv=NULL;
     
   if (verbose && me == 0) cout << "   Completing matrix fill" << endl;
   if (rangeMap != 0 && domainMap != 0) {
