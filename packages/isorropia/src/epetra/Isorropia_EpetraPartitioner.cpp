@@ -264,6 +264,7 @@ partition(bool force_repartitioning)
   }
 
 #else /* HAVE_ISORROPIA_ZOLTAN */
+  std::string zoltan("Zoltan");
   if (paramlist_.isSublist(zoltan)) {
     throw Isorropia::Exception("Zoltan requested, but Zoltan not enabled.");
   }

@@ -329,6 +329,32 @@ repartition(const Epetra_BlockMap& input_map,
     i += 3;
   }
 
+  exportsSize = 0;
+  for (i = 0 ;  i<send_info.size(); i+=3)
+    exportsSize += send_info[i+2];
+
+  int num_import = 0;
+  while(i<recv_info.size()) {
+    num_import += recv_info[i+2];
+    i+=3;
+  }
+  imports.resize(num_import);
+  int num_reqs = recv_info.size()/3;
+  unsigned int base_offset = (num_reqs > 0)?(recv_info[1]):0;
+  for (i = 0 ;  i<recv_info.size(); i+=3) {
+    int proc = recv_info[i];
+    int recv_offset = recv_info[i+1];
+    int num_recv = recv_info[i+2];
+    for (int j = 0 ;  i<send_info.size(); i+=3) {
+      if (recv_info[i] != myPID)
+	continue;
+      memcpy(&imports[recv_offset-base_offset], &old_gids[send_info[j+1]],
+	     num_recv*sizeof(int));
+    }
+
+    i += 3;
+  }
+
 #endif /* HAVE_MPI */
 
   return(0);
@@ -349,7 +375,8 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
   //first put num-local-elements in position myPID, and gather-all so
   //that each proc has all entries.
   all_proc_offsets[myPID] = blkmap.NumMyElements();
-  comm.GatherAll(&all_proc_offsets[myPID], &all_proc_offsets[0], 1);
+  int tmpOffset = all_proc_offsets[myPID];
+  comm.GatherAll(&tmpOffset, &all_proc_offsets[0], 1);
 
   //now run the list and turn the local-sizes into global offsets.
   int offset = 0;
@@ -364,7 +391,7 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
 Teuchos::RefCountPtr<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix)
 {
-  CostDescriber costs; 
+  CostDescriber costs;
   Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
