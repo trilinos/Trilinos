@@ -208,6 +208,161 @@ BuildLOCAStepper()
   return true;
 }
 
+
+bool ContinuationManager::
+BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
+{
+
+  if (comm->MyPID()==0) cout << endl << "Building the LOCA stepper..." << endl;
+
+  // Make sure the problem has been set
+  TEST_FOR_EXCEPTION( problem == Teuchos::null, 
+      std::logic_error,
+      "ContinuationManager has not been given a valid ProblemLOCAPrototype");
+
+  // Create the Epetra_RowMatrix for the Jacobian/Preconditioner
+  Teuchos::RCP <Epetra_RowMatrix> jacobian = problem->GetJacF();
+
+  // Get the initial guess vector
+  Teuchos::RCP <Epetra_Vector> initialGuess = 
+    problem->GetInitialGuess();
+
+  // NOX and LOCA sublist
+  Teuchos::RCP <Teuchos::ParameterList> noxAndLocaList =
+    Teuchos::rcp(new Teuchos::ParameterList(taskList->sublist("NOX and LOCA")));
+
+  // Create the lists needed for linear systems
+  Teuchos::ParameterList & noxPrintingList = 
+    noxAndLocaList->
+      sublist("NOX").
+        sublist("Printing");
+  Teuchos::ParameterList & linearSystemList = 
+    noxAndLocaList->
+      sublist("NOX").
+        sublist("Direction").
+          sublist("Newton").
+            sublist("Linear Solver");
+
+  // Create the interface between the test problem and the nonlinear solver
+  // This is created by the user using inheritance of the abstract base 
+  // class
+  Teuchos::RCP <LOCAInterface> interface = 
+    Teuchos::rcp(new LOCAInterface(problem,Teuchos::rcp(&*this,false)));
+
+  Epetra_MultiVector guessMV(initialGuess->Map(), globalComm->NumTimeStepsOnDomain());
+  for (int i=0; i<globalComm->NumTimeStepsOnDomain(); i++) *(guessMV(i)) = *initialGuess;
+
+
+cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain() << endl;
+
+  double dt = 1.0;
+  Teuchos::RCP <LOCA::Epetra::Interface::xyzt> xyzt_interface = 
+   Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, guessMV, jacobian, globalComm, *initialGuess, dt ));
+
+
+  Teuchos::RCP <LOCA::Epetra::Interface::Required> interfaceRequired = xyzt_interface;
+  Teuchos::RCP <NOX::Epetra::Interface::Jacobian> interfaceJacobian = xyzt_interface;
+
+  Teuchos::RCP<Epetra_RowMatrix> Axyzt =
+     Teuchos::rcp(&(xyzt_interface->getJacobian()),false);
+  Epetra_Vector& solnxyzt = xyzt_interface->getSolution();
+
+
+  // Create the linear system
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linearSystem = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(noxPrintingList, 
+          linearSystemList,
+          interfaceRequired,
+          interfaceJacobian,
+          Axyzt,
+          solnxyzt));
+
+  // Get the parameter vector
+  LOCA::ParameterVector continuableParams = problem->GetContinuableParams();
+
+  // Create Epetra factory
+  Teuchos::RCP <LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::rcp(new LOCA::Epetra::Factory);
+
+  // Create the loca vector
+  Teuchos::RCP <NOX::Epetra::Vector> locaInitialGuess = 
+    Teuchos::rcp (new NOX::Epetra::Vector(solnxyzt));
+
+  // Instantiate the constraint objects
+  //if (isConstrainedProblem) 
+  if (interfaceConstraint != Teuchos::null) {
+
+//    // Instantiate the constraint
+//    Teuchos::RCP <PhaseConstraint> phaseConstraint = 
+//      Teuchos::rcp(new PhaseConstraint(problem,*locaInitialGuess));
+//
+//    // Instantiate the interface
+//    Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface> 
+//      interfaceConstraint = phaseConstraint;
+
+    // Instantiate the constraint parameters names
+    Teuchos::RCP< vector<string> > constraintParamsNames = 
+      Teuchos::rcp(new vector<string>());
+
+    // The user-defined constrained parameters
+    Teuchos::ParameterList & constraintParams = 
+      taskList->sublist("Continuation Manager").
+                   sublist("Constraint").
+		    sublist("Constraint Parameters");
+
+    // Getting the parameter names from the user-defined list
+    Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
+    for (i = constraintParams.begin(); i !=constraintParams.end(); ++i) 
+      constraintParamsNames->push_back(
+	  constraintParams.get<string>(constraintParams.name(i)));
+
+    // Instantiating the constraint list
+    Teuchos::ParameterList & constraintsList =
+      noxAndLocaList->sublist("LOCA").sublist("Constraints");
+    constraintsList.set("Constraint Object", interfaceConstraint);
+    constraintsList.set("Constraint Parameter Names", 
+	constraintParamsNames);
+    constraintsList.set("Bordered Solver Method", "Householder");
+
+  }
+
+  // Create the global data object
+  locaGlobalData = LOCA::createGlobalData(noxAndLocaList, epetraFactory);
+
+  // Create the Group
+  Teuchos::RCP<LOCA::Epetra::Group> group = 
+    Teuchos::rcp(new LOCA::Epetra::Group(locaGlobalData, noxPrintingList, 
+      interfaceRequired, *locaInitialGuess, linearSystem, continuableParams));
+
+  // Create the Solver convergence test
+  Teuchos::RCP<NOX::StatusTest::NormF> normTolerance = 
+    Teuchos::rcp(new NOX::StatusTest::NormF(
+	  taskList->
+	    sublist("Continuation Manager").
+	      sublist("Continuation").
+		get<double>("Nonlinear Step Tolerance"),
+	  NOX::StatusTest::NormF::Scaled));
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxIterations = 
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(
+	  noxAndLocaList->
+	    sublist("LOCA").
+	      sublist("Stepper").
+	        get<int>("Max Nonlinear Iterations")));
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo->addStatusTest(normTolerance);
+  combo->addStatusTest(maxIterations);
+
+  // Create the stepper
+  locaStepper = Teuchos::rcp (new LOCA::Stepper(locaGlobalData, group, combo, noxAndLocaList));
+
+  // Performing some checks
+  ValidateLOCAStepper();
+
+  return true;
+}
+
+
 bool ContinuationManager::
 ValidateLOCAStepper()
 {
@@ -286,7 +441,7 @@ string ContinuationManager::
 GetSolutionFileName() const
 {
   // Number of digits
-  int numDigits = floor( log10( maxAllowedSteps ) ) + 1;
+  int numDigits = (int) floor( log10( maxAllowedSteps ) ) + 1;
 
   // Composing the filename
   ostringstream fileName;

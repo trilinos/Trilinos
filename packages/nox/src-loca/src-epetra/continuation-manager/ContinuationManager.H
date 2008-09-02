@@ -6,6 +6,8 @@
 #include "LOCA_Stepper.H"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
+#include "LOCA_Epetra_Interface_xyzt.H"
+#include "EpetraExt_MultiComm.h"
 
 // DefCont headers
 #include "ProblemLOCAPrototype.H"
@@ -28,6 +30,9 @@ class ContinuationManager {
       
     // Instantiante the LOCA stepper
     bool BuildLOCAStepper();
+
+    // Instantiante the LOCA stepper for periodic (xyzt) problems
+    bool BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm);
 
     // Perform some checks on the LOCA stepper
     bool ValidateLOCAStepper();

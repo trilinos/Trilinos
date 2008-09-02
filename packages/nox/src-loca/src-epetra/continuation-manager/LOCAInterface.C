@@ -82,11 +82,23 @@ printSolution (const Epetra_Vector &x, const double conParam)
   return;
 }
 
-//bool LOCAInterface::
-//computeShiftedMatrix (double alpha, double beta, 
-//                           const Epetra_Vector &x, Epetra_Operator &A)
-//{
-//  problem->ComputeShiftedJacobian(alpha,beta);
-//
-//  return true;
-//}
+bool LOCAInterface::
+computeShiftedMatrix (double alpha, double beta, 
+                           const Epetra_Vector &x, Epetra_Operator &A)
+{
+
+cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " << endl;
+  problem->ComputeJacF(x);
+  problem->GetJacF()->Scale(alpha);
+
+  // Need to add  beta * I for ODEs of the form:  u_dot = f(u)
+
+  //problem->ComputeShiftedJacobian(alpha,beta);
+  //return true;
+}
+
+void LOCAInterface::setXdot(const Epetra_Vector& xdot, const double time) {
+  // current problem does not depend on xdot or t
+  t = time;
+};
+

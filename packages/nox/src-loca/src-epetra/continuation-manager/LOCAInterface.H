@@ -10,8 +10,8 @@
 #include "ContinuationManager.H"
 
 class  LOCAInterface : 
-  public LOCA::Epetra::Interface::Required,
-//  public LOCA::Epetra::Interface::TimeDependent,
+//  public LOCA::Epetra::Interface::Required,
+  public LOCA::Epetra::Interface::TimeDependent,
   public NOX::Epetra::Interface::Jacobian {
 
     public:
@@ -36,9 +36,11 @@ class  LOCAInterface :
       // Print the solution
       void printSolution (const Epetra_Vector &x, const double conParam);
 
-//      // Compute the Shifted matrix needed for linear stability
-//      bool computeShiftedMatrix (double alpha, double beta, 
-//                                 const Epetra_Vector &x, Epetra_Operator &A);
+      // Compute the Shifted matrix needed for linear stability
+      virtual bool computeShiftedMatrix (double alpha, double beta, 
+                                 const Epetra_Vector &x, Epetra_Operator &A);
+
+      virtual void setXdot(const Epetra_Vector& xdot, const double time);
 
     private:
 
@@ -47,6 +49,8 @@ class  LOCAInterface :
 
       // The Problem
       Teuchos::RCP <ProblemLOCAPrototype> problem;
+
+      double t; // time, for non-autonomous problems
 
 };
 
