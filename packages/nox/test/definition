@@ -138,6 +138,14 @@
     COMM = SERIAL, MPI;
 }
 
+# LOCA Epetra examples
+(FRAMEWORK,INSTALL) {
+    DIRS= ../examples/epetra/LOCA_ContinuationManager_xyzt;
+    EXIT-STATUS = STRING-COMPARISON(All tests passed);
+    ARGS = ../examples/epetra/LOCA_ContinuationManager_xyzt/task.xml;
+    COMM = SERIAL, MPI;
+}
+
 # LOCA Epetra examples (one processor)
 (FRAMEWORK,INSTALL) {
     DIRS = ../examples/epetra/LOCA_Tcubed,
