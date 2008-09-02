@@ -284,6 +284,7 @@ UTILITIES_CPP = \
 @USE_ALTERNATE_AR_TRUE@libphalanx_utilities_a_AR = $(ALTERNATE_AR)
 libphalanx_utilities_a_SOURCES = $(UTILITIES_CPP)
 libphalanx_utilities_a_LIBADD = $(XTRALDADD)
+EXTRA_DIST = $(UTILITIES_HPP)
 MAINTAINERCLEANFILES = Makefile.in 
 test_utilitites_algebraic_types_SOURCES = \
 	$(srcdir)/Test_Utilities_AlgebraicTypes.cpp \

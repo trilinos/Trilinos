@@ -57,6 +57,7 @@ example_multidimensional_array_SOURCES = \
 	$(srcdir)/FactoryTraits.hpp \
 	$(srcdir)/CellData.hpp \
 	$(srcdir)/CellData.cpp \
+	$(srcdir)/Dimension.hpp \
 	$(srcdir)/Dimension.cpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \

@@ -194,6 +194,7 @@ int main(int argc, char* argv[])
     
   } // end loop over samples
 
+  cout << num_samples << " X " << num_loops << " X " << size << endl;
   TimeMonitor::summarize();
   
   double f_vector = vector_time->totalElapsedTime() / raw_time->totalElapsedTime();
