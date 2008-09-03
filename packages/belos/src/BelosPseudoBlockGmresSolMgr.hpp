@@ -1159,7 +1159,10 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
  
   // print timing information
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
-  
+ 
+  // get iteration information for this solve
+  numIters_ = maxIterTest_->getNumIters();
+ 
   if (!isConverged || loaDetected_) {
     return Unconverged; // return from PseudoBlockGmresSolMgr::solve() 
   }
