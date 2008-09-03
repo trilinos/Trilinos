@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
     std::cout << "Max number of restarts allowed: " << maxrestarts << std::endl;
-    std::cout << "Max number of Gmres iterations per restart cycle: " << maxiters << std::endl; 
+    std::cout << "Max number of Gmres iterations per linear system: " << maxiters << std::endl; 
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -186,6 +186,11 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   Belos::ReturnType ret = newSolver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  int numIters = newSolver->getNumIters();
+  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
   //
   // Compute actual residuals.
   //

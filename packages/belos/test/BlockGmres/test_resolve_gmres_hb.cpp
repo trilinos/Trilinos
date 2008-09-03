@@ -151,6 +151,11 @@ int main(int argc, char *argv[]) {
   }
   //
   //
+  // Get the number of iterations for this solve.
+  //
+  int numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+  //
   // Compute actual residuals.
   //
   std::vector<double> actual_resids( numrhs );
@@ -212,6 +217,11 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   ret = solver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
   //
   // Compute actual residuals.
   //

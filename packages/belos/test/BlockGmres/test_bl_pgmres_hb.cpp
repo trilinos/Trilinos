@@ -133,11 +133,13 @@ int main(int argc, char *argv[]) {
   //
   if (Lfill > -1) {
     ilukGraph = Teuchos::rcp(new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap));
-    assert(ilukGraph->ConstructFilledGraph()==0);
+    int info = ilukGraph->ConstructFilledGraph();
+    assert( info == 0 );
     ilukFactors = Teuchos::rcp(new Ifpack_CrsRiluk(*ilukGraph));
     int initerr = ilukFactors->InitValues(*A);
     if (initerr != 0) std::cout << "InitValues error = " << initerr;
-    assert(ilukFactors->Factor() == 0);
+    info = ilukFactors->Factor();
+    assert( info == 0 );
   }
   //
   bool transA = false;
