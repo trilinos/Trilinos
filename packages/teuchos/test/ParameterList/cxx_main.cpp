@@ -46,6 +46,7 @@
 
 using Teuchos::CommandLineProcessor;
 using Teuchos::ParameterList;
+using Teuchos::getParameter;
 typedef ParameterList::PrintOptions PLPrintOptions;
 using Teuchos::ParameterEntry;
 using Teuchos::OSTab;
@@ -691,6 +692,27 @@ int main( int argc, char *argv[] )
 #endif
   }
 
+  //-----------------------------------------------------------
+  // We can store and retrieve void* pointers!
+  //-----------------------------------------------------------
+  
+  {
+    ParameterList pl;
+    int someInt = 1;
+    void *someIntPtr = &someInt;
+    pl.set("Some Pointer", someIntPtr);
+    void *someIntPtrRtn = getParameter<void*>(pl, "Some Pointer");
+    TEST_FOR_EXCEPT(someIntPtrRtn != someIntPtr);
+    if (verbose)
+      cout << "someIntPtrRtn = " << someIntPtrRtn << " == " << someIntPtr << " : ";
+    if (someIntPtrRtn == someIntPtr) {
+      if (verbose) cout << "passed\n";
+    }
+    else {
+      if (verbose) cout << "failed\n";
+      FailedTests++;
+    }
+  }
 
   //-----------------------------------------------------------
   // Print using the public iterators

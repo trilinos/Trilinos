@@ -116,6 +116,15 @@ public:
 };
 
 
+template<>
+class TypeNameTraits<void*> {
+public:
+  static std::string name() { return "void*"; }
+  static std::string concreteName( const std::string& t2 )
+    { (void)t2; return name(); }
+};
+
+
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
 
