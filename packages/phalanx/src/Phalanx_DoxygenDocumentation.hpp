@@ -36,21 +36,11 @@
 
 \mainpage
 
-*** WARNING: DOCUMENTATION IS UNDER CONSTRUCTION ***
-
-This will be updated for Trilinos release 9.0
-
-\section contents Contents
-
-  - \ref introduction
+\section main_index Index
 
   - \ref overview
 
-  - \ref domain_design
-
   - \ref user_guide
-
-  - \ref developer_guide
 
   - \ref faq
 
@@ -58,11 +48,9 @@ This will be updated for Trilinos release 9.0
 
   - \ref authors
 
-\section introduction Introduction
-
-Phalanx is an assembly kernel that provides fast and flexible evaluations of field values with complex dependency chains for partial differential equation systems.  It provides a flexible mechanism for automatically switching field evaluation routines at run-time (and thus the dependency chain).  A unique aspect of this library is that it was written to allow for arbitrary data field types so that embedded technology such as arbitrary precision, sensitivity analysis (via embedded automatic differentiation), and uncertainty quantification can be enabled by swapping teh scalar type and reusing the function evaluations.  It can be used with any cell-based discretization techniques including finite element and finite volume.
-
 \section overview Overview
+
+Phalanx is an assembly kernel that provides fast and flexible evaluations of field values with complex dependency chains for partial differential equation systems.  It provides a flexible mechanism for automatically switching field evaluation routines at run-time (and thus the dependency chain).  A unique aspect of this library is that it was written to allow for arbitrary data field types using template metaprogramming concepts.  This opens the door for embedded technology (embedded data types with overloaded mathematical operators) such as arbitrary precision, sensitivity analysis (via embedded automatic differentiation), and uncertainty quantification swapping the scalar type and reusing the same function evaluation code.  It can be used with any cell-based discretization techniques including finite element and finite volume.
 
 The main concept of Phalanx is to evaluate fields for solving PDEs.  Let's start with a simple example (found in Trilinos/packages/phalanx/example/energyFlux) that evaluates the Fourier energy flux and source term for the heat equation.  Suppose that we want to solve the heat equation of the physical space \f$ \Omega \f$:
 
@@ -86,7 +74,7 @@ Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
   \mathbf{q} = -\rho C_p \nabla T
 \f]
 
-<h3>Advantages of using Phalanx:</h3>
+\subsection advantages Advantages of using Phalanx
 
  - Increased flexibility because each simpler piece becomes an extension point that can be swapped out with different implementations.
 
@@ -103,7 +91,11 @@ Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
  and/or P will have to be evaluated before the density.  This is an
  easy example, but there are much more complex dependency chains.
 
-<h3>Disadvantages of using Phalanx:</h3>
+ - Fast evaluation of cell blocks.  Phalanx provides for an arbitrary size block of cells to be evaluated on the local processor.  By using the contiguous allocator and correctly sizing the number of cells to fit in processor cache, one can arrange all fields to exist in a contiguous block of memory, independent of the data type objects used to store the data (one must still be careful of data alignement issues).  By keeping all fields in cache, the code will run much faster.
+
+ - Allows the reuse of the same code used to evaluate a function for computing sensitivities and uncertainty quantification.
+
+\subsection disadvantages Disadvantages of using Phalanx
 
  - A potential performance loss due to fragmentation of the over-all algorithm (e.g., several small loops instead of one large loop) 
 
@@ -111,7 +103,94 @@ Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
 
 Managing these trade-offs can result in application code that both performs well and supports rapid development and extensibility.  
 
-\section user_guide User's Guide
+\section history History
+
+Phalanx grew out of the Variable Manger in the Charon code and the Expression Manager in the Aria code.  It is an attempt at merging the two capabilities and is slated to provide nonlinear function evaluation to the Intrepid discretiztion package.
+
+\section authors Authors
+
+  - Roger Pawlowski (PI), SNL 01414
+  - Eric Phipps, SNL 01411
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page user_guide User's Guide
+
+\section user_guide_index Index
+
+- \ref user_guide_getting_started
+- \ref user_guide_domain_model
+- \ref user_guide_mdarray_domain_model
+- \ref user_guide_step1
+- \ref user_guide_step2
+- \ref user_guide_step3
+- \ref user_guide_step4
+- \ref user_guide_step5
+- \ref user_guide_step6
+
+\section user_guide_getting_started Getting Started
+
+\subsection ug_dummy_1 Understand Templates
+Phalanx is a complex package that make heavy use of the C++ templating mechanism.  We recommend that users first familiarize themselves with C++ templates.  An excellent reference is "C++ Templates: The Complete Guide" by Vandevoorde and Josuttis, 2003.  While users do not need to understand template metaprogramming to use Phalanx, the concepts underlying many operations in Phalanx can be found in "C++ Template Metaprogramming" by Abrahams and Gurtovoy, 2004.
+
+\subsection ug_dummy_2 Learn the Phalanx Nomenclature
+Users should then learn the nomeclature used in the package defined in the \ref user_guide_domain_model.
+
+\subsection ug_dummy_3 Steps to Follow
+Follow the steps below to integrate Phalanx into your application.  The example code shown in the steps comes from the energy flux example in the directory "phalanx/example/EnergyFlux".  
+- \ref user_guide_step1
+- \ref user_guide_step2
+- \ref user_guide_step3
+- \ref user_guide_step4
+- \ref user_guide_step5
+- \ref user_guide_step6
+
+\section user_guide_domain_model Phalanx Domain Model
+
+<ul>
+<li><h3>%Cell</h3>
+Partial differential equations are solved in a domain.  This domain is discretized into cells (also called elements for the finite element method).  This library assumes that the block of cells being iterated over is of the same type!  If different evaluators (i.e. different material properties) are required in different blocks of cells, a new FieldMangager must be used for each unique block of elements.  This is required for efficiency.  
+
+<li><h3>Scalar Type</h3>
+A scalar type, typically the template argument ScalarT in Phalanx code, is the type of scalar used in an evaluation.  It is typically a double, but can be special object types for embedded methods such as sensitivity analysis.  for example, for sensitivity analysis, a double scalar type is replaced with a foward automatic differentiation object (FAD) or a reverse automatic differentaion object (RAD) to produce sensitivity information.  Whatever type is used, the standard mathematical operators are overloaded for the particular embedded technology.  For an example of this, see the <a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic Differentiation Library</a>.
+
+<li><h3>Algebraic Type</h3>
+An algebraic type is the type of object that hold data.  It is usually a rank n tensor.  Simple examples include a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
+
+<li><h3>Data Type</h3>
+A data type, typically the template argument DataT in Phalanx code, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  For example it can be a vector object of doubles: MyVector<double>, or it could be a tensor object of FAD type: MyTensor<Scadao::FAD<double> >, or it could just be a double.
+
+<li><h3>Evaluation Type</h3>
+The evaluation type, typically the template argument EvalT in Phalanx code, defines a unique type of evaluation to perform.  An EvaluationContainer is allocated for each evaluation type specified in the traits class.  Examples include a residual type, a Jacobian type, and a parameter sensitivity type.  The EvaluationContainer is associated with at least one scalar type and possibly more.  The scalar type usually determines what is being evaluated. For example, to evaluate the equation residuals, the scalar type is usually a double.  To evaluate a Jacobian, the scalar type could be a forward automatic differentiation object, Sacado::FAD<double>.  By using an evaluation type, the same scalar type can be used for different evaluation types.  For example computing the Jacobian and computing parameter sensitivities both could use the Sacado::FAD scalar type.
+
+<li><h3>Storage</h3>
+A DataContainer object stores all fields of a particular data type.  Each EvaluationContainer holds a vector of DataContainers, one DataContainer for each vaid data type that is associated with that particular evaluation type.  One EvaluationContainer is constructed for each evaluation type.
+
+<li><h3>Data Layout</h3>
+The DataLayout object is used to distinguish fields with the same name, but exist at different discretization points in the cell.  For example, supposed we have written an evaluator the computes the "Density" field at a point.  Now we want to evaluate the density at multiple points in the domain.  We might have a "Density" field in a cell associated with a set of integration points (quadrature points in finite elements) and another field associated with the nodes (nodal basis points in finite elements).  We use the same field name (so we can reuse the same Evaluator), "Density", but use two different DataLayouts, one for integration points and one for nodes.  Now a FieldTag comparison will differentiate the fields due to the different DataLayout.  Additionally, the DataLayout contains the number of DataT objects associated with the field in a single cell.  This size() parameter is not needed to distinguish uniqueness, since the number of objects can be the same for different fields.  It is stored here for convenience when figuring out the size of field arrays.
+
+<li><h3>Field Tag</h3>
+The FieldTag is a description of a field.  It is templated on the data type, DataT.  It is used to describe every field that is stored in the field manager.  It contains a unique identifier (a stl std::string) and a pointer to a data layout object.  If two FieldTags are equal, the DataLayout, the data type, and the string name are exactly the same.
+
+<li><h3>Field</h3>
+A Field is a set of values for a particular quantity of interest that must be evaluated.  It is templated on the data type, DataT.  It consists of a FieldTag and a reference counted smart pointer (Teuchos::RCP<DataT>) to the data array where the values are stored.  
+
+<li><h3>Evaluator</h3>
+An Evaluator is an object that evaluates a set of Fields.  It contains two vectors of Fields, one set is the fields it will evaluate and one set is the fields it depends on for the evaluation.  For example to evaluate a density field that is a function of temperature and pressure, the field the evaluator will evaluate (the first field set) is a density field, and the set of fields it requires to meet its dependencies are the temperature and pressure fields (the second field set).  The evaluator is templated on the evaluation type and the traits class.  
+
+<li><h3>Evaluator Manager</h3>
+The main object that stores all fields and evauation routines. Users can get access to all fields through this object. 
+
+</ul>
+
+\section user_guide_mdarray_domain_model Multi-Dimensional Array Domain Model
+
+Document is under development.  Will have reference shortly.
+
+\section user_guide_step1 Step 1: Configuring, Building, and installing Phalanx
 
 Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It can be enabled as part of a trilinos build with the configure option "--enable-phalanx".  Phalanx currently has direct dependencies on the following third party libraries:
 
@@ -121,77 +200,516 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
  - Requires the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>
 
- - Optional: Some performance examples runs comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  Use the configure option "--with-tvmet" to enable the tvmet functionality in the performance tests.
+ - Optional: Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  Use the configure option "--with-tvmet" to enable the tvmet functionality in the performance tests.
 
 We plan to remove the Boost dependencies in a future release.  
 
-\section domain_design Domain Model
+\subsection da A. Install Boost
+You must have boost installed on your system.  As we only require the MPL library headers, you only need to untar the source code and should not even need to run the configure script.
 
-<h3>A. Concepts</h3>
+\subsection db B. Configure Trilinos/Phalanx
+The general instructions for building trilinos can be found at <a href="http://trilinos.sandia.gov/documentation.html">Trilinos Documentation Page</a>.  Of particular importance are the Overview, User Guide, and Tutorial documents.  At a minimum you must enable the Teuchos, Sacado, and Phalanx packages.  An example configure script is:
 
-<ul>
-<li><h3>Cell</h3>
-Partial differential equations are solved in a domain.  This domain is discretized into cells (also called elements for the finite element method).  This library assumes that the block of cells being iterated over is of the same type!  If different evaluators (i.e. different material properties) are required in different blocks of cells, a new FieldMangager must be used to switch material properties.  This is required for efficiency.  A contiguous block of memory can be used for all fields allowing for very fast evaluation.
+\verbinclude reconfigure
 
-<li><h3>Scalar Type</h3>
-A scalar type, typically the template argument ScalarT in Phalanx code, is the default type of scalar used in an evaluation.  It is typically a double, but can be special object types such as a foward automatic differentiation object (FAD) or a reverse automatic differentaion object when used to produce sensitivity information.
+Once configure is run, build and install the library with the command:
 
-<li><h3>Algebraic Type</h3>
-An algebraic type is the type of objects that hold data.  It is a rank n tensor.  For example it can be a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
+\code
+make install
+\endcode
 
-<li><h3>Data Type</h3>
-A data type, typically the template argument DataT in Phalanx code, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  For example it can be a vector object of doubles: Vector<double>, or it could be a tensor object of FAD type: Tensor<Scadao::FAD<double> >, or it could just be a double.
+\section user_guide_step2 Step 2: Determine Algebraic Types
 
-<li><h3>Evaluation Type</h3>
-The evaluation type, typically the template argument EvalT in Phalanx code, defines a unique type of evaluation to perform.  An EvaluationContainer is allocated for each conputation type specified in the traits class.  Examples include a residual type, a Jacobian type, and a parameter sensitivity type.  The EvaluationContainer is associated with at least one scalar type and possibly more.  The scalar type usually determines what is being evaluated. For example, to evaluate the equation residuals, the scalar type is usually a double.  To evaluate a Jacobian, the scalar type could be a forward automatic differentiation object, FAD<double>.  By using an evaluation type, the same scalar type can be used for different evaluation types.  For example computing the Jacobian and computing parameter sensitivities both could use the FAD scalar type.
+Users must next determine the algebraic types they plan to use to store field data on a cell.  The algebraic types should all be templated on the scalar type, but this is not a requirement (expert users can violate this for performance reasons).  Typical examples of algebraic types include vectors, matrices, or higher order tensor objects, but in reality can be any struct/class that the user desires.  Remember to template the objects on the scalar type if possible.  An example of a very inefficient Vector and Matrix implementation (operator overloading without expression templates) can be found in AlgebraicTypes.hpp.
 
-<li><h3>Storage</h3>
-A DataContainer object stores all fields of a particular data type.  Each evaluation type holds a vector of containers, one container for each vaid data type.
+\section user_guide_step3 Step 3: Write the Traits Object
 
-<li><h3>Data Layout</h3>
-The DataLayout object is used to define a unique entity in a cell.  It's main purpose is to distinguish fields that have the same name, but exist on a different entity in the cell.  For example, supposed we have a field named "density".  We might want to store values in a cell associated with a set of integration points (quadrature points in finite elements) and another set of values associated with the nodes (nodal basis points in finite elements).  It additionally contains the number of entities in the cell.  This is not needed to distinguish uniqueness, since the number of entities can be the same for different entities.  It is stored here for convenience.
+The Traits object is a struct that defines the evaluation types, the data types for each evaluation type, the allocator type, and the user defined types that will be passed through evaluator calls.  We will go through each of these defninitions.
 
-<li><h3>Field Tag</h3>
-The FieldTag is a description of a field.  It is used to describe every field that is stored in the field manager.  It contains a unique identifier and a data layout.  It DOES NOT distinguish the actual data type for the field.  The same field tag can be passed to all evaluation type containers and each container can decide what data type it is associated with.  This leaves flexibility so that each evaluation type can change the data type for efficiency.  For example, one evaluation might want a field to be a FAD type, while another evaluation might want to change a field to a double type to eliminate wasted flops. 
+The basic class should derive from the PHX::TraitsBase object.
 
-<li><h3>Field</h3>
-A Field is a set of values for a particular quantity of interest that must be evaluated.  It is templated on the data type, DataT.  It consists of a FieldTag and a reference counted smart pointer (Teuchos::RCP<DataT>) to the data array where the values are stored.  
+The Traits struct must define each of the following typedef members of the struct:
 
-<li><h3>Evaluator</h3>
-An Evaluator is an object that evaluates a set of Fields.  It contains two sets of Fields, one set are the fields it will evaluate and one set are the fields it depends on for the evaluation.  For example to evaluate a density field that is a function of temperature and pressure, the field the evaluator will evaluate (the first field set) is a density field, and the set of field it requires to meet its dependencies are the temperature and pressure fields (the second field set).  The evaluator is templated on the evaluation type and the traits class.
+- EvalTypes - an mpl::vector of user defined evaluation types.  Each evaluation type must have a typedef member called ScalarT that provides the default scalar type.  This is used to automate the building of evaluators for each evaluation type using the EvaluatorFactory.
+      
+- EvalToDataMap - an mpl::map.  The key is an evaluation type and the value is an mpl::vector of valid data types for that particular evaluation type.
+      
+- Allocator type - type that defines the allocator class to use to allocate the memory for data storage.
+      
+- EvalData - A user defined type to be passed in to the evaluateFields() call.  Allows users to pass in arbitrary data on the cells.
 
-<li><h3>Evaluator Manager</h3>
-The main object that stores all fields and evauation routines. Users can get access to all fields through this object. 
+- PreEvalData - A user defined type to be passed in to the preEvaluate() call.  Allows users to pass in arbitrary data on the cells.
 
-</ul>
+- EvalData - A user defined type to be passed in to the postEvaluate() call.  Allows users to pass in arbitrary data on the cells.
 
-<h3>B. Design</h3>
+\subsection td1 A. Basic Class
+the basic outline of the traits struct is:
+\code
+struct MyTraits : public PHX::TraitsBase {
+    .
+    .
+    .
+};
+\endcode
 
-Roger - these need to be updated!
+Inside this struct we need to implement all the typedefs listed above.  The example we will follow is in the file Traits.hpp in "phalanx/example/EnergyFlux" directory.
 
-- The evaluate call is fixed for each scalar type.  Each scalar type figures out it's own dependency chain.  However you can trick the evaluate routine into using mixed scalar types based on writing the evaluator to use a hard-coded scalar type.  This is nasty and can have problems if the provider is only registered for one scalar type.  This will need to be addressed in the future.  The problem is that the variable is independent of the ScalarType.
+\subsection td2 B. EvalTypes
+First we need to know the evaluation types.  Each evaluation type must include at least a typedef'd default scalar type argument as a public member called ScalarType.  Here is the example code:
 
-- Previous design built a manager for each scalar type.  This is too restrictive, so an additional layer was added called a computation type.  This allows for multiple evaluations that used the same Scalar type, but different evaluators specific to the CalculationType.
+\code
+  struct MyTraits : public PHX::TraitsBase {
+    
+    // ******************************************************************
+    // *** Scalar Types
+    // ******************************************************************
+    
+    // Scalar types we plan to use
+    typedef double RealType;
+    typedef Sacado::Fad::DFad<double> FadType;
+    
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef RealType ScalarT; };
+    struct Jacobian { typedef FadType ScalarT;  };
+    typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
 
-- The fields of a Computation type should be constructed on the same scalar type.  If you are doing a Jacobian evaluation using the scalar type FAD to get sensitivities, changing some fields to double will break the dependency chain.  There are, however, compelling use cases where one might want ot break that chain and drop sensitivites with respect to certain components.  Therefore, a calculation type cal have multiple scalar types.  This is a departure from the original design in Charon that enforced each calculation type to be a unique scalar type.
+     .
+     .
+     .
+\endcode 
 
-- Each evaluator must be templated on the calculation type to be able to use teh automated factory class to build the evaluator for each calculation type.  Each evaluator must be constructed with a parameter list as the single argument to be able to use the automated factory class.
+\subsection td3 C. EvaltoDataMap
+Next we need to link the data types to the evaluation type:
 
-\section developer_guide Developer's Guide
+\code
+     .
+     .
+     .
+    // Residual (default scalar type is RealType)
+    typedef Sacado::mpl::vector< RealType, 
+				 MyVector<RealType>,
+				 MyTensor<RealType> 
+    > ResidualDataTypes;
+  
+    // Jacobian (default scalar type is Fad<double>)
+    typedef Sacado::mpl::vector< FadType,
+				 MyVector<FadType>,
+				 MyTensor<FadType> 
+    > JacobianDataTypes;
 
-\section faq Frequently Asked Questions
+    // Maps the key EvalType a vector of DataTypes
+    typedef boost::mpl::map<
+      boost::mpl::pair<Residual, ResidualDataTypes>,
+      boost::mpl::pair<Jacobian, JacobianDataTypes>
+    >::type EvalToDataMap;
+     .
+     .
+     .
+\endcode
 
-  - Why name it Phalanx?  The phalanx was one of the most dominant military formations of the Greek armies in the classical period.  It was a strictly ordered formation.  The Phalanx software library figures out ordered dependencies of field evaluators.   A second more obscure reference relates to the US Navy.  The Phalanx software package was designed to provide nonlinear functionality for the <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a> itegration library.  Intrepid was the name of an aircraft carrier during in WW II.  Modern US aircraft carriers are protected by a Close-In Weapons System (CIWS) named the Phalanx.  Finally, the PI of this project is an avid strategy warfare gamer and leans towards military references.
+\subsection td4 D. Allocator
+Define the Allocator type to use.  Phalanx comes with two allocators, but the user can write their own allocator class if these aren't sufficient.  The Phalanx allocator classes are:
+- PHX::NewAllocator: uses the C++ "new" command to allocate each field on the heap separately.
+- PHX::ContiguousAllocator: allocates a single contiguous block of memory on the heap for all fields regardless of the type.  This allows us to fit a subset of elements into cache to speed up the evaluation.
 
-  - Why is the scalar type not embedded in the FieldTag?  We designed the FieldTag to be scalar type independent.  The reason is that we could then use FieldTags as arguments for Evaluator objects of ANY scalar type.  We have a factory that can automatically build Evaluators for all scalar types.  This automation requires constructor arguments that are not dependent on the scalar type.  
+Code using the NewAllocator is:
+\code
+     .
+     .
+     .
+    // ******************************************************************
+    // *** Allocator Type
+    // ******************************************************************
+    typedef PHX::NewAllocator Allocator;
+     .
+     .
+     .
+\endcode
 
-\section history History
+\subsection td5 E. EvalData,PreEvalData,PostEvalData
+Users can pass their own data to the evaluate, preEvaluate and PostEvaluate methods of the PHX::FiledManager class.  In this example, the user passes in a vector of cell data objects that contain used defined auxiliary data fo each cell in the evaluation loop.  The pre and post evalution data is just to void - we are not using it in this example.  
+\code
+     .
+     .
+     .
+    // ******************************************************************
+    // *** User Defined Object Passed in for Evaluation Method
+    // ******************************************************************
+    typedef std::vector<CellData>& EvalData;
+    typedef void* PreEvalData;
+    typedef void* PostEvalData;
 
-Phalanx grew out of the Variable Manger in the Charon code and the Expression Manager in the Aria code.  It is an attempt at merging the two capabilities and is slated to provide nonlinear function evaluation to the Intrepid discretiztion package.
+  };
+\endcode
 
-\section authors Authors
+\section user_guide_step4 Step 4: Specialize the PHX::TypeString Object
+For debugging information, Phalanx makes a forward declaration of the PHX::TypeString object.  This must be specialized for each evaluation type and each data type so that if there is a run-time error, phalanx can report detailed information on the problem.  We could have used the typeinfo from the stl, but the name() method is not demangled on every platform, so it can make debugging a challenge.  The specialized classes can go into their own file or can be added to the traits file above depending on how you use the Traits class.  During linking, if the compiler complains about multiple defninitions of your specialized traits classes, separate the traits implementation into their own file.
 
-  - Roger Pawlowski (PI), SNL 01414
+\code
+namespace PHX {
+
+  // ******************************************************************
+  // ******************************************************************
+  // Debug strings.  Specialize the Evaluation and Data types for the
+  // TypeString object in the phalanx/src/Phalanx_TypeString.hpp file.
+  // ******************************************************************
+  // ******************************************************************
+
+  // Evaluation Types
+  template<> struct TypeString<MyTraits::Residual> 
+  { static const std::string value; };
+
+  template<> struct TypeString<MyTraits::Jacobian> 
+  { static const std::string value; };
+
+  const std::string TypeString<MyTraits::Residual>::value = 
+    "Residual";
+
+  const std::string TypeString<MyTraits::Jacobian>::value = 
+    "Jacobian";
+
+  // Data Types
+  template<> struct TypeString<double> 
+  { static const std::string value; };
+
+  template<> struct TypeString< MyVector<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< MyTensor<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< Sacado::Fad::DFad<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< MyVector<Sacado::Fad::DFad<double> > > 
+  { static const std::string value; };
+
+  template<> struct TypeString< MyTensor<Sacado::Fad::DFad<double> > > 
+  { static const std::string value; };
+
+  const std::string TypeString<double>::value = 
+    "double";
+
+  const std::string TypeString< MyVector<double> >::value = 
+    "MyVector<double>";
+
+  const std::string TypeString< MyTensor<double> >::value = 
+    "MyTensor<double>";
+
+  const std::string TypeString< Sacado::Fad::DFad<double> >::
+  value = "Sacado::Fad::DFad<double>";
+  
+  const std::string TypeString< MyVector<Sacado::Fad::DFad<double> > >::
+  value = "Sacado::Fad::DFad< MyVector<double> >";
+
+  const std::string TypeString< MyTensor<Sacado::Fad::DFad<double> > >::
+  value = "Sacado::Fad::DFad< MyTensor<double> >";
+}
+\endcode
+  
+\section user_guide_step5 Step 5: Write your Evaluators
+
+For each field, you will need an evaluator.  Evaluators can evlauate multiple fields at the same time.  You can derive from the base class PHX::Evaluator, or you can derive from class PHX::EvaluatorWithBaseImpl that has most of the methods already implemented so that a no code is repeated in each evaluator.
+
+An example for evaluating the density field is:
+
+\code
+#ifndef PHX_EXAMPLE_VP_DENSITY_HPP
+#define PHX_EXAMPLE_VP_DENSITY_HPP
+
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_Field.hpp"
+
+template<typename EvalT, typename Traits>
+class Density : 
+  public PHX::EvaluatorWithBaseImpl<Traits>,
+  public PHX::EvaluatorDerived<EvalT, Traits> {
+  
+public:
+  
+  Density(const Teuchos::ParameterList& p);
+  
+  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
+  
+  void evaluateFields(typename Traits::EvalData ud);
+  
+private:
+  
+  typedef typename EvalT::ScalarT ScalarT;
+
+  double constant;
+
+  PHX::Field<ScalarT> density;
+  PHX::Field<ScalarT> temp;
+
+  std::size_t data_layout_size;
+
+};
+
+#include "Evaluator_Density_Def.hpp"
+
+#endif
+\endcode
+
+Note that if you want to use the automated EvaluatorFactor builder to build an object of each evaluation type, you must derive from the PHX::EvaluatorDerived class.  This allows the variable manager to store a vector of base object pointers for each evaluation type in a single stl vector.
+
+Also note that we pull the scalar type out of the evaluation type.
+
+The implementation is just as simple:
+\code
+// **********************************************************************
+template<typename EvalT, typename Traits> Density<EvalT, Traits>::
+Density(const Teuchos::ParameterList& p) :
+  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
+  temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{ 
+  this->addEvaluatedField(density);
+  this->addDependentField(temp);
+  this->setName("Density");
+}
+
+// **********************************************************************
+template<typename EvalT, typename Traits>
+void Density<EvalT, Traits>::
+postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+{
+  this->utils.setFieldData(density,vm);
+  this->utils.setFieldData(temp,vm);
+
+  data_layout_size = density.fieldTag().dataLayout().size();
+}
+
+// **********************************************************************
+template<typename EvalT, typename Traits>
+void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
+{ 
+  std::size_t size = d.size() * data_layout_size;
+  
+  for (std::size_t i = 0; i < size; ++i)
+    density[i] =  temp[i] * temp[i];
+}
+\endcode
+
+The constructor pulls out data from the parameter list to set the correct data layout.  Additionally, it tells the FieldManager what fields it will evaluate and what fields it requires/depends on to perform the evaluation.
+
+The postRegistrationSetup gets pointers from the FieldManager to the start of the array for each particular field.
+
+\section user_guide_step6 Step 6: Implement the FieldManager in your code
+  Adding the FieldManager to your code is broken into steps.  You must build each Evaluator for each field type, register the evaluators with the FieldManager, and then call the evaluate routines.  Continuing from our example:
+
+\subsection fmd1 Building your Evaluators 
+  Phalanx provides an automated builder PHX::EvaluatorFactory that will create an object of each evaluation type.  The only requirement is that the constructor of your object take one argument that is a Teuchos::ParamterList object.  This allows you to pass an arbitrary number of objects with arbitrary types.  If you use this factory, then you must provide a FactoryTraits class that gives the factory a list of it's evaluator types.  An example of the factory traits class is in the file FactoryTraits.hpp:
+
+\code
+#ifndef EXAMPLE_FACTORY_TRAITS_HPP
+#define EXAMPLE_FACTORY_TRAITS_HPP
+
+// mpl (Meta Programming Library) templates
+#include "Sacado_mpl_vector.hpp"
+
+// User Defined Evaluator Types
+#include "Evaluator_Constant.hpp"
+#include "Evaluator_Density.hpp"
+#include "Evaluator_EnergyFlux_Fourier.hpp"
+#include "Evaluator_FEInterpolation.hpp"
+#include "Evaluator_NonlinearSource.hpp"
+
+
+#include "boost/mpl/placeholders.hpp"
+using namespace boost::mpl::placeholders;
+
+/*! \brief Struct to define Evaluator objects for the EvaluatorFactory.
+    
+    Preconditions:
+    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects that you wish the factory to build.  Do not confuse evaluator types (concrete instances of evaluator objects) with evaluation types (types of evaluations to perform, i.e., Residual, Jacobian). 
+
+*/
+template<typename Traits>
+struct MyFactoryTraits {
+  
+  static const int id_constant = 0;
+  static const int id_density = 1;
+  static const int id_fourier = 2;
+  static const int id_feinterpolation = 3;
+  static const int id_nonlinearsource = 4;
+
+  typedef Sacado::mpl::vector< Constant<_,Traits>,             // 0
+ 			       Density<_,Traits>,              // 1
+ 			       Fourier<_,Traits>,              // 2
+ 			       FEInterpolation<_,Traits>,      // 3
+ 			       NonlinearSource<_,Traits>       // 4
+  > EvaluatorTypes;
+
+};
+
+#endif
+
+\endcode 
+
+Since the factory is built at compile time, we need to link a run-time choice to the compile-time list of object types.  Thus the user must provide the static const int identifiers that are unique for each type that can be constructed.  Users can ignore the "_" argument in the mpl vector.  This is a placeholder argument that allows us to iterate over each evaluation type.
+
+Now let's build the evaluators.  We create a ParameterList for each evaluator and call the factory constructor.  This code can be found in the Example.cpp file in the directory "phalanx/example/EnergyFlux".
+
+\code
+      RCP<DataLayout> qp = rcp(new FlatLayout("QP", 4));
+      RCP<DataLayout> node = rcp(new FlatLayout("NODE", 4));
+
+      // Parser will build parameter list that determines the field
+      // evaluators to build
+      map<string, RCP<ParameterList> > evaluators_to_build;
+      
+      { // Temperature
+	RCP<ParameterList> p = rcp(new ParameterList);
+	int type = MyFactoryTraits<MyTraits>::id_constant;
+	p->set<int>("Type", type);
+	p->set<string>("Name", "Temperature");
+	p->set<double>("Value", 2.0);
+	p->set< RCP<DataLayout> >("Data Layout", node);
+	evaluators_to_build["DOF_Temperature"] = p;
+      }
+      { // Density
+	RCP<ParameterList> p = rcp(new ParameterList);
+	int type = MyFactoryTraits<MyTraits>::id_density;
+	p->set<int>("Type", type);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
+	evaluators_to_build["Density"] = p;
+      }
+
+      { // Constant Heat Capacity
+	RCP<ParameterList> p = rcp(new ParameterList);
+	int type = MyFactoryTraits<MyTraits>::id_constant;
+	p->set<int>("Type", type);
+	p->set<string>("Name", "Heat Capacity");
+	p->set<double>("Value", 2.0);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
+	evaluators_to_build["Heat Capacity"] = p;
+      }
+      
+      { // Nonlinear Source
+	RCP<ParameterList> p = rcp(new ParameterList);
+	int type = MyFactoryTraits<MyTraits>::id_nonlinearsource;
+	p->set<int>("Type", type);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
+	evaluators_to_build["Nonlinear Source"] = p;
+      }
+
+      { // Fourier Energy Flux
+	RCP<ParameterList> p = rcp(new ParameterList);
+	int type = MyFactoryTraits<MyTraits>::id_fourier;
+	p->set<int>("Type", type);
+	p->set< RCP<DataLayout> >("Data Layout", qp);
+	evaluators_to_build["Energy Flux"] = p;
+      }
+
+      { // FE Interpolation
+	RCP<ParameterList> p = rcp(new ParameterList);
+
+	int type = MyFactoryTraits<MyTraits>::id_feinterpolation;
+	p->set<int>("Type", type);
+
+	p->set<string>("Node Variable Name", "Temperature");
+	p->set<string>("QP Variable Name", "Temperature");
+	p->set<string>("Gradient QP Variable Name", "Temperature Gradient");
+
+	p->set< RCP<DataLayout> >("Node Data Layout", node);
+	p->set< RCP<DataLayout> >("QP Data Layout", qp);
+
+	evaluators_to_build["FE Interpolation"] = p;
+      }
+
+      // Build Field Evaluators for each evaluation type
+      EvaluatorFactory<MyTraits,MyFactoryTraits<MyTraits> > factory;
+      RCP< vector< RCP<Evaluator_TemplateManager<MyTraits> > > > 
+	evaluators;
+      evaluators = factory.buildEvaluators(evaluators_to_build);
+ 
+      // Create a FieldManager
+      FieldManager<MyTraits> fm;
+
+      // Register all Evaluators 
+      registerEvaluators(evaluators, fm);
+
+\endcode
+
+Next tell the Field Manager which quantities it need to provide to your code:
+
+\code
+      // Request quantities to assemble RESIDUAL PDE operators
+      {
+	typedef MyTraits::Residual::ScalarT ResScalarT;
+	Tag< MyVector<ResScalarT> > energy_flux("Energy_Flux", qp);
+	fm.requireField<MyTraits::Residual>(energy_flux);
+	Tag<ResScalarT> source("Nonlinear Source", qp);
+	fm.requireField<MyTraits::Residual>(source);
+      }
+
+      // Request quantities to assemble JACOBIAN PDE operators
+      {
+	typedef MyTraits::Jacobian::ScalarT JacScalarT;
+	Tag< MyVector<JacScalarT> > energy_flux("Energy_Flux", qp);
+	fm.requireField<MyTraits::Jacobian>(energy_flux);
+	Tag<JacScalarT> source("Nonlinear Source", qp);
+	fm.requireField<MyTraits::Jacobian>(source);
+      }
+\endcode
+
+Once the evaluators are registered with the FieldManager and it knows which field it needs to provide, call the postRegistrationSetup method to figure out the total amount of memory to allocate for all fields.  It will also figure out which evaluators to call and the order to call them in.  This will require the user to specify the maximum number of cells for each evaluation.  This number needs to be selected so that all fields can fit in the cache of the processor if possible.  
+
+\code
+      const std::size_t max_num_cells = 100;
+      fm.postRegistrationSetup(max_num_cells);
+\endcode
+
+
+Finally, users can call the evlauate routines and the pre/post evaluate routines if reuqired.
+
+\code
+      std::vector<CellData> cells(max_num_cells);
+
+      fm.preEvaluate<MyTraits::Residual>(NULL);
+      fm.evaluateFields<MyTraits::Residual>(cells);
+      fm.postEvaluate<MyTraits::Residual>(NULL);
+\endcode
+
+Accessing field data is achieved as follows:
+
+\code
+      Field< MyVector<double> > ef("Energy_Flux", qp);
+      fm.getFieldData<MyVector<double>,MyTraits::Residual>(ef);
+\endcode
+
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page faq Frequently Asked Questions
+
+\section Questions
+\ref faq1
+
+\ref faq2
+
+\ref faq3
+
+\ref faq4
+
+\section faq1 1. Why name it Phalanx?  
+The phalanx was one of the most dominant military formations of the Greek armies in the classical period.  It was a strictly ordered formation.  The Phalanx software library figures out ordered dependencies of field evaluators.   A second more obscure reference relates to the US Navy.  The Phalanx software package was designed to provide nonlinear functionality for the <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a> itegration library.  Intrepid was the name of an aircraft carrier during in WW II.  Modern US aircraft carriers are protected by a Close-In Weapons System (CIWS) named the Phalanx.  Finally, the PI of this project is an avid strategy warfare gamer and leans towards military references.
+
+\section faq2 2. Why does the evaluation type exist?
+This allows for multiple evaluations that used the same Scalar type, but different evaluators specific to the CalculationType.  For example, evaluating the Jacobian (derivative of the residual with respect to the degrees of freedom) and the parameter sensitivities (derivative of the residual with respect to the parameters) both use the same Sacado data type.  They both want derivatives but with respect to a different set of entities.
+
+\section faq3 3. Why do evaluation types have arbitrary data types.  Shouldn't all fields of an evaluation type require the same scalar type?
+In 99% of the use cases, the answer is yes!  By changing the scalar type for a specific type of computation, you can break the dependency chain and get incorrect answers.  For example, if computing a Jacobian, you would use a FAD scalar type instead of a double scalar type for the evaluation.  By mixing FAD and double fields in an evaluation type, you will lose derivative components and get incorrect sensitivities.  But there are some use cases where one might want to use different data types.  If the user knows that certain evaluation routines have no derivative components, they can bypass the AD chain by switching to doubles for that part of the computation.  The is an expert only user mode, but we allow for it.
+
+\section faq4 4. Why are the evaluators templated on the evaluation type?
+Each evaluator must be templated on the evaluation type to be able to (1) allow for the expert use mode described in FAQ \ref faq3; (2) use the automated factory class (PHX::EvaluatorFactory) to build the evaluator for each evalution type.  
 
 */
 
