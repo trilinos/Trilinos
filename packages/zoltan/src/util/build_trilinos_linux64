@@ -1,0 +1,28 @@
+#Script for building isorropia and zoltan on octopi with openmpi.
+#This script is equivalent to Config.linux64.
+#This is a 64-bit installation.
+#NOTE:  Read build_trilinos_README.txt in this directory.
+set path=(/usr/local/bin $path)
+setenv CC /usr/local/bin/mpicc
+setenv CXX /usr/local/bin/mpic++
+setenv F77 /usr/local/bin/mpif77
+setenv CFLAGS -m64
+setenv CXXFLAGS -m64
+setenv CPPFLAGS -m64
+setenv FFLAGS -m64
+#setenv LDFLAGS -m64
+
+../configure -C \
+  --prefix=/Net/local/homes/kddevin/code/trilinos_v9.0/Obj_linux64 \
+  --enable-mpi --with-mpi-compilers \
+  --disable-default-packages \
+  --enable-epetra \
+  --enable-epetraext \
+  --enable-isorropia \
+  --enable-zoltan \
+  --with-gnumake \
+  --with-incdirs="-I/Net/local/proj/zoltan/arch/all/src/ParMETIS3 -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3/METISLib" \
+  --with-libs="-L/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3_1 -lparmetis -lmetis -L/Net/local/proj/zoltan/arch/linux64/PaToH -lpatoh" \
+   |& tee KDD.C
+make everything |& tee KDD.M
+make install |& tee KDD.I
