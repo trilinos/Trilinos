@@ -9,29 +9,34 @@
 
 AM_CFLAGS = -fPIC
 
-bin_PROGRAMS = mpicc mpif77 mpirun
-noinst_PROGRAMS = smoketest fortran_grinder fortran_parameterize
+#bin_PROGRAMS = mpicc mpif77 mpirun
+bin_PROGRAMS = mpirun
+#noinst_PROGRAMS = smoketest #fortran_grinder fortran_parameterize
 
 lib_LIBRARIES = libsimpi.a
-include_HEADERS = mpi.h mpif.h mpi_implementation.h mpi_prototypes.h mpi_profile.h mpi_config.h _MPI_UTILITY.h
+#include_HEADERS = mpi.h mpif.h mpi_implementation.h mpi_prototypes.h mpi_profile.h mpi_config.h _MPI_UTILITY.h
+include_HEADERS = mpi.h mpi_implementation.h mpi_prototypes.h mpi_profile.h mpi_config.h _MPI_UTILITY.h
 
-fortran_grinder_SOURCES = \
-    fortran_grinder.c
+#fortran_grinder_SOURCES = \
+#    fortran_grinder.c
 
-fortran_parameterize_SOURCES = \
-    fortran_parameterize.c
+#fortran_parameterize_SOURCES = \
+#    fortran_parameterize.c
 
-mpicc_SOURCES = \
-    mpicc.c
+#mpicc_SOURCES = \
+#    mpicc.c
 
-mpif77_SOURCES = \
-    mpif77.c
+#mpif77_SOURCES = \
+#    mpif77.c
 
 mpirun_SOURCES = \
     mpirun.c
 
-smoketest_SOURCES = \
-    smoketest.c
+#smoketest_SOURCES = \
+#    smoketest.c
+
+#Since we don't need Fortran, I removed the following files from the list below:
+# F_MPI_Finalize.c, F_MPI_Init.c, F_MPI_Reduce.c
 
 libsimpi_a_SOURCES = \
     MPI_Comm_create.c \
@@ -43,9 +48,7 @@ libsimpi_a_SOURCES = \
     MPI_ERRORS_RETURN.c \
     PMPI_Abort.c \
     MPI_Finalize.c \
-	F_MPI_Finalize.c \
     MPI_Init.c \
-	F_MPI_Init.c \
     PMPI_Comm_create.c \
     PMPI_Comm_free.c \
     PMPI_Comm_group.c \
@@ -72,7 +75,6 @@ libsimpi_a_SOURCES = \
     MPI_Bsend.c \
     PMPI_Reduce.c \
     MPI_Reduce.c \
-	F_MPI_Reduce.c \
     PMPI_Bcast.c \
     _MPI_BCAST.c \
     _MPI_OP_UTIL.c \
@@ -474,32 +476,33 @@ libsimpi_a_SOURCES = \
     PMPI_Wtick.c
 
 
-mpif.h: mpi.h fortran_parameterize
-	$(RM) -f mpif.h
-	./fortran_parameterize mpi.h > mpif.h
+#We don't need any Fortran-related code
+#mpif.h: mpi.h fortran_parameterize
+#	$(RM) -f mpif.h
+#	./fortran_parameterize mpi.h > mpif.h
 
-F_MPI_Init.c: MPI_Init.c fortran_grinder
-	$(RM) -f F_MPI_Init.c
-	./fortran_grinder MPI_Init.c '(MPI_FORTRAN_INTEGER* status) { int istatus = MPI_Init(0,0); *status = istatus; }' > F_MPI_Init.c
+#F_MPI_Init.c: MPI_Init.c fortran_grinder
+#	$(RM) -f F_MPI_Init.c
+#	./fortran_grinder $(srcdir)/MPI_Init.c '(MPI_FORTRAN_INTEGER* status) { int istatus = MPI_Init(0,0); *status = istatus; }' > F_MPI_Init.c
 
-F_MPI_Finalize.c: MPI_Finalize.c fortran_grinder
-	$(RM) -f F_MPI_Finalize.c
-	./fortran_grinder MPI_Finalize.c '(MPI_FORTRAN_INTEGER* status) { int istatus = MPI_Finalize(); *status = istatus; }' > F_MPI_Finalize.c
+#F_MPI_Finalize.c: MPI_Finalize.c fortran_grinder
+#	$(RM) -f F_MPI_Finalize.c
+#	./fortran_grinder $(srcdir)/MPI_Finalize.c '(MPI_FORTRAN_INTEGER* status) { int istatus = MPI_Finalize(); *status = istatus; }' > F_MPI_Finalize.c
 
-F_MPI_Reduce.c: MPI_Reduce.c fortran_grinder
-	$(RM) -f F_MPI_Reduce.c
-	./fortran_grinder MPI_Reduce.c > F_MPI_Reduce.c
+#F_MPI_Reduce.c: MPI_Reduce.c fortran_grinder
+#	$(RM) -f F_MPI_Reduce.c
+#	./fortran_grinder $(srcdir)/MPI_Reduce.c > F_MPI_Reduce.c
 
 $(libsimpi_a_OBJECTS): mpi.h mpi_implementation.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
-$(mpicc_OBJECTS): mpi_path.h
-$(mpif77_OBJECTS): mpi_path.h mpicc.c
-$(fortran_grinder_OBJECTS): mpi_config.h
-$(fortran_parameterize_OBJECTS): mpi_config.h
+#$(mpicc_OBJECTS): mpi_path.h
+#$(mpif77_OBJECTS): mpi_path.h mpicc.c
+#$(fortran_grinder_OBJECTS): mpi_config.h
+#$(fortran_parameterize_OBJECTS): mpi_config.h
 
 TESTS = smoketest \
 	regressiontest
 
 EXTRA_DIST = boot mpi_implementation.h mpi_path.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
 
-smoketest: smoketest.c ./mpicc
-	./mpicc -o smoketest smoketest.c
+#smoketest: smoketest.c ./mpicc
+#	./mpicc -o smoketest smoketest.c
