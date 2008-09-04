@@ -225,12 +225,13 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
   std::map<int, int> colProc;
   std::map<int, int>::iterator procIter;
 
+  colProc.clear();
   for (int j=0; j<numCols; j++){
 
     // map from column GID to process owning row with that GID 
     //   (matrix is square)
 
-    colProc[colGIDs[j]] = nborProc_GID[j];
+    colProc.insert(std::pair<int,int>(colGIDs[j],nborProc_GID[j]));
   }
 
   if (numCols > 0){
@@ -255,6 +256,7 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
       std::set<int> nbors;
       float heWeight = 0.0;
 
+      nbors.clear();
       for (int j=0; j < numEdges; j++){
 
         int nborGID = colGIDs[rows[i][j]];
@@ -279,7 +281,7 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
           }
           wgt = curr->second;
         }
-  
+
         if (procNum != myProc){
           localNumCuts++;            // number of graph edges that are cut 
           nbors.insert(procNum);     // count number of neighboring processes
