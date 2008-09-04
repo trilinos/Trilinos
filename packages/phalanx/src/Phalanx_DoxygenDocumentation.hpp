@@ -38,70 +38,103 @@
 
 \section main_index Index
 
-  - \ref overview
-
-  - \ref user_guide
-
-  - \ref faq
-
-  - \ref history
-
-  - \ref authors
+- \ref overview
+- \ref user_guide
+- \ref faq
+- \ref bugs
+- \ref history
+- \ref authors
+- \ref questions
 
 \section overview Overview
 
-Phalanx is an assembly kernel that provides fast and flexible evaluations of field values with complex dependency chains for partial differential equation systems.  It provides a flexible mechanism for automatically switching field evaluation routines at run-time (and thus the dependency chain).  A unique aspect of this library is that it was written to allow for arbitrary data field types using template metaprogramming concepts.  This opens the door for embedded technology (embedded data types with overloaded mathematical operators) such as arbitrary precision, sensitivity analysis (via embedded automatic differentiation), and uncertainty quantification swapping the scalar type and reusing the same function evaluation code.  It can be used with any cell-based discretization techniques including finite element and finite volume.
+Phalanx is an assembly kernel that provides fast and flexible
+evaluations of field values with complex dependency chains for partial
+differential equation systems.  It provides a flexible mechanism for
+automatically switching field evaluation routines at run-time (and
+thus the dependency chain).  A unique aspect of this library is that
+it was written to allow for arbitrary data field types using template
+metaprogramming concepts.  This opens the door for embedded technology
+(embedded data types with overloaded mathematical operators) such as
+arbitrary precision, sensitivity analysis (via embedded automatic
+differentiation), and uncertainty quantification, all by swapping the
+scalar type and reusing the same function evaluation code.  It can be
+used with any cell-based discretization techniques including finite
+element and finite volume.
 
-The main concept of Phalanx is to evaluate fields for solving PDEs.  Let's start with a simple example (found in Trilinos/packages/phalanx/example/energyFlux) that evaluates the Fourier energy flux and source term for the heat equation.  Suppose that we want to solve the heat equation of the physical space \f$ \Omega \f$:
-
-\f[
-  \nabla \cdot (\mathbf{q}) + s = 0
-\f] 
-
-where \f$\mathbf{q}\f$ is the heat flux, \f$ \mathbf{q} = -\rho C_p \nabla T \f$  and \f$s\f$ is a nonlinear source term.  The specific discretization technique whether finite element (FE) of finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
-
-Using finite elements, we pose the problem in variational form:
-
-Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
-
-\f[
-  - \int_{\Omega} \nabla \phi \cdot \mathbf{q} d\Omega 
-  + \int_{\Gamma} \phi \mathbf{n} \cdot \mathbf{q} 
-  + \int_{\Omega} \phi s d\Omega = 0 
-\f]
-
-\f[
-  \mathbf{q} = -\rho C_p \nabla T
-\f]
+Phalanx is a hammer.  It's use should be carefully considered.  It
+should only be used for general PDE frameworks where the evaluation
+routines (and thus dependencies) are changed at run-time without
+recompiling the code.  Swapping both material models (such as stress
+tensors in the Navier-Stokes equations) and material properties
+between runs are two key examples.  Phalanx should be used for complex
+dependency chains where those dependencies can change between runs.
+It should not be used for simple sets of PDEs where the equations
+rarely change.  Below we discuss advantages, disadvantages and some
+use cases to guide whether Pahalnx is right for you.
 
 \subsection advantages Advantages of using Phalanx
 
- - Increased flexibility because each simpler piece becomes an extension point that can be swapped out with different implementations.
+- Increased flexibility because each simpler piece becomes an
+extension point that can be swapped out with different
+implementations.
 
- - Easier to implement new code because each piece is simpler, more focused and easier to test in isolation.  
+- Easier to implement new code because each piece is simpler, more
+focused and easier to test in isolation.
 
- - Ensures that complex dependency chains are evaluated correctly.  
+- Ensures consistent evaluations of fields according to their
+dependencies.  For example, if density were a field to be evaluated,
+many models that have different dependencies.  Model A could depend on
+temperature and pressure, whille model B could depend on temperature,
+pressure, and species mass fractions of a multicomponent mixture.  The
+order of evaluation of fields could change based on the change in
+dependencies.  Using Model B will require that the species mass
+fractions be evaluated and available for the density evaluation while
+Model A does not even require them.  This is a simple example, but the
+dependency chain can become quite complex when solving thousands of
+coupled PDE equations.  Phalanx aill automatically perform the sorting
+and ordering of the evaluator routines.
 
- - Determine the order of variable evaluation so that the correct
- evaluation is performed: For example, to compute the density at the
- quadrature points, it could be a constant, it could be a function of
- temperature or it could be a function of temperature and pressure.  A
- factory creates the density provider and from this, the manager
- automatically figures out the correct evaluation order - whether T
- and/or P will have to be evaluated before the density.  This is an
- easy example, but there are much more complex dependency chains.
+- Fast evaluation of cells.  Phalanx provides for an arbitrary
+size block of cells to be evaluated on the local processor.  By using
+the contiguous allocator and correctly sizing the number of cells to
+fit in processor cache, one can arrange all fields to exist in a
+contiguous block of memory, independent of the data type objects used
+to store the data (one must still be careful of data alignement
+issues).  By keeping all fields in cache, the code will run much
+faster.
 
- - Fast evaluation of cell blocks.  Phalanx provides for an arbitrary size block of cells to be evaluated on the local processor.  By using the contiguous allocator and correctly sizing the number of cells to fit in processor cache, one can arrange all fields to exist in a contiguous block of memory, independent of the data type objects used to store the data (one must still be careful of data alignement issues).  By keeping all fields in cache, the code will run much faster.
+- Allows the reuse of the same code used to evaluate a function for
+computing sensitivities and for uncertainty quantification.
 
- - Allows the reuse of the same code used to evaluate a function for computing sensitivities and uncertainty quantification.
+- Automatically extended to arbitrary data types.
 
 \subsection disadvantages Disadvantages of using Phalanx
 
- - A potential performance loss due to fragmentation of the over-all algorithm (e.g., several small loops instead of one large loop) 
+- A potential performance loss due to fragmentation of the over-all
+algorithm (e.g., several small loops instead of one large loop).
 
- - A potential loss of visibility of the original, composite problem (since the code is scattered into multiple places).  
+- A potential loss of visibility of the original, composite problem
+ (since the code is scattered into multiple places).  
 
 Managing these trade-offs can result in application code that both performs well and supports rapid development and extensibility.  
+
+\subsection simple_examples Some Use Cases
+
+This section outlines some more complex use cases where Phalanx should be used.
+
+- 
+
+
+\section bugs Reporting Bugs and Making Enhancement Requests
+
+  To reports bugs or make enhancement requests, visit the <A HREF="http://software.sandia.gov/bugzilla/">Trilinos Bugzilla (Bug Tracking) Database</A>, and use the following instructions.
+      <UL>
+      <LI>Click on "Enter a new bug report"
+      <LI>Choose "Phalanx"
+      <LI>Either login or create a new account
+      <LI>Submit your bug report
+      </UL>
 
 \section history History
 
@@ -109,15 +142,22 @@ Phalanx grew out of the Variable Manger in the Charon code and the Expression Ma
 
 \section authors Authors
 
+The following have contributed to the design and/or development of Phalanx:
+
   - Roger Pawlowski (PI), SNL 01414
   - Eric Phipps, SNL 01411
+  - Pat Notz, SNL 01541 
+
+\section questions For All Other Questions and Comments...
+  
+   Please contact Roger Pawlowski (rppawlo@sandia.gov).
 
 */
 
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page user_guide User's Guide
+/*! \page user_guide Users Guide
 
 \section user_guide_index Index
 
@@ -139,7 +179,30 @@ Phalanx is a complex package that make heavy use of the C++ templating mechanism
 \subsection ug_dummy_2 Learn the Phalanx Nomenclature
 Users should then learn the nomeclature used in the package defined in the \ref user_guide_domain_model.
 
-\subsection ug_dummy_3 Steps to Follow
+\subsection ug_dummy_3 Tutorial
+
+The main concept of Phalanx is to evaluate fields for solving PDEs.  Let's start with a simple example found in Trilinos/packages/phalanx/example/EnergyFlux.  Suppose that we want to solve the heat equation over the physical space \f$ \Omega \f$:
+
+\f[
+  \nabla \cdot (-\rho C_p \nabla T) + s = 0
+\f] 
+
+ \f$s\f$ is a nonlinear source term.  The specific discretization technique whether finite element (FE) of finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
+
+Using finite elements, we pose the problem in variational form:
+
+Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
+
+\f[
+  - \int_{\Omega} \nabla \phi \cdot \mathbf{q} d\Omega 
+  + \int_{\Gamma} \phi \mathbf{n} \cdot \mathbf{q} 
+  + \int_{\Omega} \phi s d\Omega = 0 
+\f]
+
+\f[
+  \mathbf{q} = -\rho C_p \nabla T
+\f]
+
 Follow the steps below to integrate Phalanx into your application.  The example code shown in the steps comes from the energy flux example in the directory "phalanx/example/EnergyFlux".  
 - \ref user_guide_step1
 - \ref user_guide_step2
@@ -158,7 +221,7 @@ Partial differential equations are solved in a domain.  This domain is discretiz
 A scalar type, typically the template argument ScalarT in Phalanx code, is the type of scalar used in an evaluation.  It is typically a double, but can be special object types for embedded methods such as sensitivity analysis.  for example, for sensitivity analysis, a double scalar type is replaced with a foward automatic differentiation object (FAD) or a reverse automatic differentaion object (RAD) to produce sensitivity information.  Whatever type is used, the standard mathematical operators are overloaded for the particular embedded technology.  For an example of this, see the <a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic Differentiation Library</a>.
 
 <li><h3>Algebraic Type</h3>
-An algebraic type is the type of object that hold data.  It is usually a rank n tensor.  Simple examples include a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.  The only requirement is that it be templated on the scalar type.
+An algebraic type is the type of object that hold data.  It is usually a rank n tensor.  Simple examples include a scalar (rank-0 tensor), a vector (rank 1 tensor) or a matrix (rank 2 tensor).  It is not actually restircted to tensors, but can be any struct/class.
 
 <li><h3>Data Type</h3>
 A data type, typically the template argument DataT in Phalanx code, is an actual type used for storing fields.  It is the combination of a specific scalar type and an algebraic type.  For example it can be a vector object of doubles: MyVector<double>, or it could be a tensor object of FAD type: MyTensor<Scadao::FAD<double> >, or it could just be a double.
@@ -218,9 +281,30 @@ Once configure is run, build and install the library with the command:
 make install
 \endcode
 
-\section user_guide_step2 Step 2: Determine Algebraic Types
+\section user_guide_step2 Step 2: Determine Types
 
-Users must next determine the algebraic types they plan to use to store field data on a cell.  The algebraic types should all be templated on the scalar type, but this is not a requirement (expert users can violate this for performance reasons).  Typical examples of algebraic types include vectors, matrices, or higher order tensor objects, but in reality can be any struct/class that the user desires.  Remember to template the objects on the scalar type if possible.  An example of a very inefficient Vector and Matrix implementation (operator overloading without expression templates) can be found in AlgebraicTypes.hpp.
+Users must next determine the evaluation types and data types they will require in their simulation.  Please see the section \ref user_guide_domain_model for detailed explanation of types.  Following the example in the phalanx/example/EnergyFlux directory, we will be requiring two evaluation types, one for the residual evaluation of the discretized PDE equation and one for the corresponding Jacobian.  Additional evaluation types might be for the parameter sensitivites and uncertainty quantification.  
+
+Once the evaluation types are chosen, users must decide on a default scalar type and on all data types that are valid for each evaluation type.  The data types should all be templated on the default scalar type for the particular evaluation type, but this is not a requirement (expert users can violate this for performance reasons).  Uses must implement their own data types or get them from a separate library.  For sensitivities, the trilinos package <a href="http://trilinos.sandia.gov/packages/sacado">Sacado</a> should be used.  For uncertainty quantification, the Trilinos package <a href="http://trilinos.sandia.gov/packages/stokhos">Stokhos</a> should be used.
+
+In our example, the user has written an implementation of vector (MyVector) and matrix (MyTensor) classes found in the file AlgebraicTypes.hpp.  They are templated on a scalar type and can be used for all evaluation types. 
+
+<ul>
+<li> Residual - Default scalar type will be "double".  The data types will be:
+<ul>
+<li> double
+<li> MyVector<double>
+<li> MyTensor<double>
+</ul>
+<li> Jacobian - Default scalar type will be "Sacado::Fad::DFad<double>".  This scalar type will carry both the residual information as well as sensitivity information.  The data types will be:
+<ul>
+<li> Sacado::Fad::DFad<double>
+<li> MyVector< Sacado::Fad::DFad<double> >
+<li> MyTensor< Sacado::Fad::DFad<double> >
+</ul>
+</ul>
+
+Typical examples of algebraic types include vectors, matrices, or higher order tensor objects, but in reality can be any struct/class that the user desires.  Remember to template the objects on the scalar type if possible.  An example of a very inefficient Vector and Matrix implementation (operator overloading without expression templates) can be found in AlgebraicTypes.hpp.
 
 \section user_guide_step3 Step 3: Write the Traits Object
 
