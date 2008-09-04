@@ -4495,6 +4495,7 @@ fi
 
 
 #fi
+if test "X$ac_cv_use_fortran90" = "Xyes"; then
 ac_ext=${ac_fc_srcext-f}
 ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
@@ -4754,6 +4755,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+fi
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
 set dummy ${ac_tool_prefix}ranlib; ac_word=$2
@@ -6419,7 +6421,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile src/Makefile src/driver/Makefile Makefile.export.zoltan example/lib/Makefile example/Makefile example/C/Makefile example/C/sparse_matrix/Makefile example/CPP/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/driver/Makefile Makefile.export.zoltan example/lib/Makefile example/Makefile example/C/Makefile example/C/sparse_matrix/Makefile example/CPP/Makefile siMPI/Makefile siMPI/pyMPI/Makefile siMPI/pyMPI/siMPI/Makefile"
 
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile
@@ -7126,6 +7128,9 @@ do
     "example/C/Makefile") CONFIG_FILES="$CONFIG_FILES example/C/Makefile" ;;
     "example/C/sparse_matrix/Makefile") CONFIG_FILES="$CONFIG_FILES example/C/sparse_matrix/Makefile" ;;
     "example/CPP/Makefile") CONFIG_FILES="$CONFIG_FILES example/CPP/Makefile" ;;
+    "siMPI/Makefile") CONFIG_FILES="$CONFIG_FILES siMPI/Makefile" ;;
+    "siMPI/pyMPI/Makefile") CONFIG_FILES="$CONFIG_FILES siMPI/pyMPI/Makefile" ;;
+    "siMPI/pyMPI/siMPI/Makefile") CONFIG_FILES="$CONFIG_FILES siMPI/pyMPI/siMPI/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

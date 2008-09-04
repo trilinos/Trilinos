@@ -114,7 +114,13 @@ clean-everything:
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+if HAVE_MPI
+SIMPI_SUBDIR=
+else
+SIMPI_SUBDIR=siMPI
+endif
+
+SUBDIRS = $(SIMPI_SUBDIR) src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

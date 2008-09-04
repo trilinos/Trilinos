@@ -108,7 +108,9 @@ AC_PROG_CC(cc gcc)
 #if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 AC_PROG_CXX(CC g++ c++ cxx)
 #fi
+if test "X$ac_cv_use_fortran90" = "Xyes"; then
 AC_PROG_FC(gfortran f90 xlf90 f95)
+fi
 AC_PROG_RANLIB
 
 # Check if --with-flags present, prepend any specs to FLAGS
@@ -294,6 +296,9 @@ AC_CONFIG_FILES([
 		example/C/Makefile
 		example/C/sparse_matrix/Makefile
 		example/CPP/Makefile
+		siMPI/Makefile
+		siMPI/pyMPI/Makefile
+		siMPI/pyMPI/siMPI/Makefile
 		])
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile
