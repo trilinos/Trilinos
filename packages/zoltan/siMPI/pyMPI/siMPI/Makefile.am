@@ -7,7 +7,8 @@
 #*                                                                        *#
 #**************************************************************************#
 
-AM_CFLAGS = -fPIC
+#We don't want to generally add this flag
+#AM_CFLAGS = -fPIC
 
 #bin_PROGRAMS = mpicc mpif77 mpirun
 bin_PROGRAMS = mpirun

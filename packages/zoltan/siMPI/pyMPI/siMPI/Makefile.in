@@ -23,6 +23,9 @@
 #*                                                                        *#
 #**************************************************************************#
 
+#We don't want to generally add this flag
+#AM_CFLAGS = -fPIC
+
 
 
 VPATH = @srcdir@
@@ -461,7 +464,6 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = -fPIC
 #noinst_PROGRAMS = smoketest #fortran_grinder fortran_parameterize
 lib_LIBRARIES = libsimpi.a
 #include_HEADERS = mpi.h mpif.h mpi_implementation.h mpi_prototypes.h mpi_profile.h mpi_config.h _MPI_UTILITY.h

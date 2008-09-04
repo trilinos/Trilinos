@@ -1,4 +1,4 @@
-@HAVE_MPI_FALSE@SIMPI_INCDIR = -I@abs_top_builddir@/siMPI/pyMPI/siMPI
+@HAVE_MPI_FALSE@SIMPI_INCDIR = -I@abs_top_srcdir@/siMPI/pyMPI/siMPI
 @HAVE_MPI_FALSE@SIMPI_LIBS = -L@abs_top_builddir@/siMPI/pyMPI/siMPI -lsimpi
 
 ZOLTAN_INCLUDES = -I@abs_top_builddir@/src/include -I@abs_top_srcdir@/src/include $(SIMPI_INCDIR)
