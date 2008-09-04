@@ -59,7 +59,7 @@ static void print_out(const Epetra_Comm& Comm, const int level, const char* what
 // ================================================ ====== ==== ==== == =
 
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs, 
-                  double AddToDiag, void **Amesos_Handle)
+                  double AddToDiag, Amesos_Handle_Type *Amesos_Handle)
 {
 # ifdef ML_MPI
   MPI_Comm  amesosComm;
@@ -79,12 +79,27 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 	val[i]=1.0;
   }
 
+
   int hasRows=1;
+  if(choice != ML_AMESOS_SUPERLUDIST) {
+#   ifdef ML_MPI
+    hasRows = MPI_UNDEFINED;
+    if (Ke->invec_leng > 0 || Ke->outvec_leng > 0) hasRows = 1;
+    MPI_Comm_split(Ke->comm->USR_comm,hasRows,Ke->comm->ML_mypid,&amesosComm);
+    Amesos_Handle->freeMpiComm = 1;
+#   endif
+  }
+  else {
+    amesosComm=Ke->comm->USR_comm;
+    Amesos_Handle->freeMpiComm = 0;
+  }
+/*
 # ifdef ML_MPI
   hasRows = MPI_UNDEFINED;
   if (Ke->invec_leng > 0 || Ke->outvec_leng > 0) hasRows = 1;
   MPI_Comm_split(Ke->comm->USR_comm,hasRows,Ke->comm->ML_mypid,&amesosComm);
 #endif
+*/
 
   if (hasRows == 1) {
     ML_Epetra::RowMatrix* Amesos_Matrix = 
@@ -264,23 +279,22 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     TimeForSolve__ = 0.0;
     NumSolves__ = 0;
     
-    *Amesos_Handle = (void *) A_Base ;
+    Amesos_Handle->A_Base = (void *) A_Base ;
 
   } //if (hasRows==1)
   else
-    *Amesos_Handle = 0;
+    Amesos_Handle->A_Base = 0;
 
   return 0;
 } //ML_Amesos_Gen()
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
+int ML_Amesos_Solve( Amesos_Handle_Type *Amesos_Handle, double x[], double rhs[] )
 {
+  if (Amesos_Handle->A_Base == 0) return 0;
 
-  if (Amesos_Handle == 0) return 0;
-
-  Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
+  Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle->A_Base ;
 
   Epetra_Time Time(A_Base->Comm());  
 
@@ -322,7 +336,7 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Amesos_Destroy(void *Amesos_Handle)
+void ML_Amesos_Destroy(Amesos_Handle_Type *Amesos_Handle)
 {
 
 #ifdef TFLOP
@@ -357,17 +371,33 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
   }
 #endif
   
-  if (Amesos_Handle == 0) return;
+  if (Amesos_Handle->A_Base == 0) {
+    ML_free(Amesos_Handle);
+    return;
+  }
 
-  Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle;
+  Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle->A_Base;
   const Epetra_LinearProblem *Amesos_LinearProblem;
   Amesos_LinearProblem = A_Base->GetProblem(); 
+# ifdef ML_MPI
+  const Epetra_MpiComm *comm = dynamic_cast<const Epetra_MpiComm*>(&(Amesos_LinearProblem->GetOperator()->Comm()));
+  if (comm == 0) {
+    printf("ML_Amesos_Destroy: error getting MPI_Comm object\n");
+    exit(EXIT_FAILURE);
+  }
+  MPI_Comm subcomm = comm->GetMpiComm();
+# endif
+
 
   delete A_Base ;
   delete Amesos_LinearProblem->GetOperator(); 
   delete Amesos_LinearProblem ;
+# ifdef ML_MPI
+  if (Amesos_Handle->freeMpiComm == 1) MPI_Comm_free(&subcomm);
+# endif
+  ML_free(Amesos_Handle);
 
-}
+} /*ML_Amesos_Destroy()*/
 
 #else
 
@@ -381,21 +411,21 @@ int ML_isKLUAvailable()
 }
 
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
-		  int MaxProcs, void **Amesos_Handle)
+		  int MaxProcs, Amesos_Handle_Type *Amesos_Handle)
 {
   puts("You must configure with --with-ml_amesos.");
   exit( EXIT_FAILURE );
   return EXIT_FAILURE;
 }
 
-int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
+int ML_Amesos_Solve(Amesos_Handle_Type *Amesos_Handle, double x[], double rhs[] )
 {
   puts("You must configure with --with-ml_amesos.");
   exit( EXIT_FAILURE );
   return EXIT_FAILURE;
 }
 
-void ML_Amesos_Destroy(void *Amesos_Handle)
+void ML_Amesos_Destroy(Amesos_Handle_Type *Amesos_Handle)
 {
   puts("You must configure with --with-ml_amesos.");
   exit( EXIT_FAILURE );

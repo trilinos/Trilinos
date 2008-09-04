@@ -18,6 +18,12 @@
 #define ML_AMESOS_SCALAPACK      4
 #define ML_AMESOS_SUPERLU        5
 
+typedef struct Amesos_Handle_Struct Amesos_Handle_Type;
+
+struct Amesos_Handle_Struct {
+  void  *A_Base;        /* really Amesos_BaseSolver pointer */
+  int   freeMpiComm;  /*0 = false, 1 = true */
+};
 
 #ifndef ML_CPP
 #ifdef __cplusplus

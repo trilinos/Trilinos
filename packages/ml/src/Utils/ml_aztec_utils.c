@@ -3761,7 +3761,7 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
   ML           *ml = NULL;
   int N_update;
 #ifdef HAVE_ML_AMESOS
-  void * Amesos_Handle;
+  Amesos_Handle_Type * Amesos_Handle;
 #endif
   
   N_update = Amat->data_org[AZ_N_border] + Amat->data_org[AZ_N_internal];
@@ -3790,7 +3790,8 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
   }
   
 #ifdef HAVE_ML_AMESOS
-  ML_Amesos_Gen(ml,0,choice,max_procs,0.0, &Amesos_Handle);
+  Amesos_Handle = (Amesos_Handle_Type*) ML_allocate(sizeof(Amesos_Handle_Type));
+  ML_Amesos_Gen(ml,0,choice,max_procs,0.0, Amesos_Handle);
 
   ML_Amesos_Solve(Amesos_Handle, delta_x, resid_vector );
 
