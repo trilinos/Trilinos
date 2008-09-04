@@ -257,6 +257,11 @@ if (! $?run ) then
   endif
 endif
 
+if ( $yes_serial ) then
+  # No mpirun in serial case.
+  unset run
+endif
+
 # suffix for special answer files
 if (! ${?suffix}) then
    set suffix=${arch}
@@ -328,7 +333,6 @@ set nem_methods = ( )
 if (! $yes_fortran && ! $yes_serial) then
   set ch_methods = ( $ch_methods block-oneproc random-oneproc )
 endif
-
 
 # Determine ParMETIS version, if any
 if ( $no_parmetis ) then
@@ -451,6 +455,7 @@ else
     set ch_nproc = ($ch_nproc 3 2 6 5) # no. of procs
   endif
 
+  # These Chaco problems are run only for C/C++ driver; F90 driver does not
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
     if (! $old_interface) then
@@ -714,10 +719,11 @@ if (! $no_chaco ) then
           endif
 
           # Run the driver
-          if ( $run != "") then
-            $run $np ../$zdrive
-          else
+          if (! $?run ) then
+            # serial case
             ../$zdrive
+          else
+            ${run} ${np} ../$zdrive
           endif
           sleep 1 # Make sure all processes have time to write to disk
     
