@@ -672,7 +672,7 @@ int Zoltan_ParMetis_Order(
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     ord.sep_sizes = zz->Order.start; /* Trick : use the same table */
-    memset(ord.sep_sizes, 0, 2*zz->Num_Proc+1); /* It seems parmetis don't initialize correctly */
+    memset(ord.sep_sizes, 0, (2*zz->Num_Proc+1)*sizeof(int)); /* It seems parmetis don't initialize correctly */
   }
 
   /* Allocate space for direct perm */
