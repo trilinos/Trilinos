@@ -329,7 +329,6 @@ int Zoltan_RB_Send_To_Part(
   int *dottop,                      /* dots >= this index are new */
   int *dotnum,                      /* number of dots */
   int *dotmax,                      /* max # of dots arrays can hold */
-  int  set,                         /* which part processor is in = 0/1 */
   int *allocflag,                   /* have to re-allocate space */
   double overalloc,                 /* amount to overallocate by when realloc
                                        of dot array must be done.
@@ -366,6 +365,7 @@ int i, ierr = ZOLTAN_OK;
 int proc = zz->Proc;
 int tmp;
 int num_gid = zz->Num_GID;
+int set = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   if (zz->LB.PartDist == NULL)
@@ -379,7 +379,6 @@ int num_gid = zz->Num_GID;
     }
   }
   
-  set = 0;
   outtop = 0;
   outgoing = 0;
   for (i = 0; i < *dotnum; i++) {

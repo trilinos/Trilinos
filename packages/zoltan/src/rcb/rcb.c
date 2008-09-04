@@ -1016,7 +1016,7 @@ static int rcb_fn(
 
   ierr = Zoltan_RB_Send_To_Part(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), &dotmark, &dottop,
-                               &dotnum, &dotmax, set, &allocflag, overalloc,
+                               &dotnum, &dotmax, &allocflag, overalloc,
                                stats, counters, use_ids);
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 

@@ -53,7 +53,7 @@ extern int Zoltan_RB_Send_Outgoing(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   int *, int, MPI_Comm, int, int, int, int);
 
 extern int Zoltan_RB_Send_To_Part(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
-  struct Dot_Struct **, int **, int *, int *, int *, int, int *, double, int,
+  struct Dot_Struct **, int **, int *, int *, int *, int *, double, int,
   int *, int);
 
 extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,

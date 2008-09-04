@@ -596,7 +596,7 @@ static int rib_fn(
 
   ierr = Zoltan_RB_Send_To_Part(zz, &(rib->Global_IDs), &(rib->Local_IDs),
                                &(rib->Dots), &dotmark, &dottop,
-                               &dotnum, &dotmax, set, &allocflag, overalloc,
+                               &dotnum, &dotmax, &allocflag, overalloc,
                                stats, counters, use_ids);
 
   if (ierr < 0) {
