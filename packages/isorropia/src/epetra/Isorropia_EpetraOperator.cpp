@@ -175,11 +175,13 @@ Operator::computeNumberOfProperties()
   for(elemsIter = properties_.begin() ; elemsIter != properties_.end() ; elemsIter ++) {
     int property;
     property = *elemsIter;
-    if (max < property) max = property;
-    if (property >= numberElemsByProperties_.size()) {
-      int toAdd = max - numberElemsByProperties_.size();
-      numberElemsByProperties_.insert(numberElemsByProperties_.end(), toAdd, 0);
-      numberIter = numberElemsByProperties_.begin();
+    if (max < property) {
+      max = property;
+      int toAdd = max - numberElemsByProperties_.size() + 1;
+      if (toAdd > 0) {
+	numberElemsByProperties_.insert(numberElemsByProperties_.end(), toAdd, 0);
+	numberIter = numberElemsByProperties_.begin();
+      }
     }
     (*(numberIter + property)) ++;
   }
