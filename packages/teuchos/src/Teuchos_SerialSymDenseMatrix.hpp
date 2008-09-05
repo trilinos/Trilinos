@@ -132,7 +132,7 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
     \note By default the active part of the matrix is assumed to be the lower triangular part.
     To set the upper part as active, call SetUpper(). See Detailed Description section for further discussion.
   */
-  SerialSymDenseMatrix(OrdinalType numRowsCols, bool zeroOut = false);
+  SerialSymDenseMatrix(OrdinalType numRowsCols, bool zeroOut = true);
 
   //! Set object values from two-dimensional array.
   /*!
@@ -415,7 +415,7 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(OrdinalType 
 {
   values_ = new ScalarType[stride_*numRowCols_];
   valuesCopied_ = true;
-  if (zeroOut = true)
+  if (zeroOut == true)
     putScalar( Teuchos::ScalarTraits<ScalarType>::zero(), true );
 }
   
