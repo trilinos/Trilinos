@@ -503,7 +503,8 @@ $(libsimpi_a_OBJECTS): mpi.h mpi_implementation.h _MPI_UTILITY.h mpi_prototypes.
 TESTS = smoketest \
 	regressiontest
 
-EXTRA_DIST = boot mpi_implementation.h mpi_path.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
+#EXTRA_DIST = boot mpi_implementation.h mpi_path.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
+EXTRA_DIST = boot mpi_implementation.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
 
 #smoketest: smoketest.c ./mpicc
 #	./mpicc -o smoketest smoketest.c

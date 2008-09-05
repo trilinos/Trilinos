@@ -933,7 +933,9 @@ libsimpi_a_SOURCES = \
 TESTS = smoketest \
 	regressiontest
 
-EXTRA_DIST = boot mpi_implementation.h mpi_path.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
+
+#EXTRA_DIST = boot mpi_implementation.h mpi_path.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
+EXTRA_DIST = boot mpi_implementation.h _MPI_UTILITY.h mpi_prototypes.h mpi_profile.h
 all: all-am
 
 .SUFFIXES:
