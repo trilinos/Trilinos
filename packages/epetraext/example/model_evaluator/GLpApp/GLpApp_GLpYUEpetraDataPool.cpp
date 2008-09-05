@@ -34,8 +34,14 @@
 #  include "Epetra_SerialComm.h"
 #endif
 
+
+// 2008/09/04: Added to address failed tests (see bug 4040)
+using namespace std;
+
+
 // Define to see all debug output for mesh generation
 //#define GLPYUEPETRA_DATAPOOL_DUMP_ALL_MESH
+
 
 namespace GLpApp {
 
