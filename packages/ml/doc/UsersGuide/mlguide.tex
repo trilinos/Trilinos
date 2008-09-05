@@ -1220,6 +1220,9 @@ See \S\ref{parameter list ex. 2} for an example.\\
 \verb!user-defined!              & User-defined smoothing function with
 prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
  double *outvec)}.  See \ML\ example {\tt ml\_user\_smoothing.cpp}.\\
+%
+\verb!petsc!              & PETSc smoothing function.  A fully-constructed PETSc KSP pointer
+must be passed as a pointer to {\tt void} via the parameter {\tt smoother: petsc ksp}.\\
 \hline
 \end{tabular}
 \caption{{\sf ML\_Epetra::MultiLevelPreconditioner}: Commonly used smoothers.
@@ -1768,6 +1771,9 @@ smoother. Default: ``User-defined".}
 preconditioner computational work while maintaining symmetry by doing edge-then-node 
 relaxation on the first leg of the V-cycle, and node-then-edge relaxation on the
 second leg. Default: {\tt true}.}
+
+\choicebox{\tt smoother: petsc ksp $\star$}{[{\tt void*}] A fully-constructed PETSc KSP
+smoother. Can only be used on finest level with a matrix of type Epetra\_PETScAIJMatrix.}
 
 \choicebox{\tt subsmoother: type $\star$}{[{\tt string}] Smoother to be used
 as a subsmoother on the nodal and edge subproblems within Hiptmair smoothing.  It can assume the
