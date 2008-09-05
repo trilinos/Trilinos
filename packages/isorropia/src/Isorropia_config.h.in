@@ -3,7 +3,7 @@
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
 
-/* Define if want to build with isorropia enabled */
+/* define unconditionally since Isorropia depends on Epetra */
 #undef HAVE_EPETRA
 
 /* Define if want to build with isorropia enabled */
@@ -33,7 +33,7 @@
 /* Define if want to build isorropia-tests */
 #undef HAVE_ISORROPIA_TESTS
 
-/* Define if want to build isorropia-zoltan */
+/* define unconditionally since Isorropia depends on Zoltan */
 #undef HAVE_ISORROPIA_ZOLTAN
 
 /* Define if want to build libcheck */

@@ -85,18 +85,20 @@ EPETRA_ZOLTAN_H = \
 
 DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
 
-if BUILD_EPETRA
+#Isorropia now depends on Epetra
+#if BUILD_EPETRA
 EPETRA_SOURCES = $(EPETRA)
 EPETRA_HEADERFILES = $(EPETRA_H)
 EPETRA_INC=-I$(srcdir)/epetra
 
-if BUILD_ZOLTAN
+#Isorropia now depends on Zoltan
+#if BUILD_ZOLTAN
 EPETRA_ZOLTAN_SOURCES = $(EPETRA_ZOLTAN)
 EPETRA_ZOLTAN_HEADERFILES = $(EPETRA_ZOLTAN_H)
 ZOLTAN_INC=-I$(srcdir)/epetra/zoltanLib
-endif
+#endif
 
-endif
+#endif
 
 if USING_GNUMAKE
 EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ISORROPIA_INCLUDES))

@@ -61,8 +61,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-TESTS = utest/utest.exe rebalance_1d_default/rebalance_1d_default.exe \
-	$(am__EXEEXT_1) $(MTX_TESTS)
 subdir = test
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -104,7 +102,6 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-@BUILD_ZOLTAN_TRUE@am__EXEEXT_1 = rebalance_zoltan.exe
 DIST_SUBDIRS = utils utest rebalance_1d_default zoltan mtx
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -219,10 +216,15 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_ZOLTAN_FALSE@ZOLTAN_TEST_DIR = 
-@BUILD_ZOLTAN_TRUE@ZOLTAN_TEST_DIR = zoltan
-@BUILD_ZOLTAN_FALSE@ZOLTAN_TEST = 
-@BUILD_ZOLTAN_TRUE@ZOLTAN_TEST = rebalance_zoltan.exe
+
+#Isorropia now depends on Zoltan
+#if BUILD_ZOLTAN
+ZOLTAN_TEST_DIR = zoltan
+ZOLTAN_TEST = rebalance_zoltan.exe
+#else
+#ZOLTAN_TEST_DIR =
+#ZOLTAN_TEST =
+#endif
 @BUILD_EPETRAEXT_TRUE@MTX_TEST_DIR = mtx
 @BUILD_EPETRAEXT_TRUE@MTX_TESTS = test_simple.exe test_colorer.exe
 
@@ -230,6 +232,11 @@ top_srcdir = @top_srcdir@
 # Note: utils must be built first, before the other subdirs
 #
 SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
+TESTS = \
+utest/utest.exe \
+rebalance_1d_default/rebalance_1d_default.exe \
+$(ZOLTAN_TEST) $(MTX_TESTS)
+
 EXTRA_DIST = definition README
 all: all-recursive
 

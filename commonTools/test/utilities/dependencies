@@ -82,6 +82,7 @@ REMOVE --enable-claps
 REMOVE --enable-epetraext
 REMOVE --enable-galeri
 REMOVE --enable-ifpack
+REMOVE --enable-isorropia
 REMOVE --enable-komplex
 REMOVE --enable-meros
 REMOVE --enable-ml_epetra
@@ -380,5 +381,6 @@ DONE
 # Zoltan  ------------------------------------------------------------------
 IF PACKAGE zoltan THEN
 REMOVE --enable-zoltan
+REMOVE --enable-isorropia
 DONE
 
