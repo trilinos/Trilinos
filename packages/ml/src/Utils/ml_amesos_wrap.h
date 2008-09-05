@@ -85,10 +85,10 @@ extern "C" {
                     double AddToDiag, Amesos_Handle_Type *Amesos_Handle);
 
   /** Solves using Amesos, and the factorization computed by ML_Amesos_Gen. */
-  int ML_Amesos_Solve( Amesos_Handle_Type *Amesos_Handle, double x[], double rhs[] ) ;
+  int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) ;
 
   /** Destroy the Amesos object. Prints out some timing. */
-  void ML_Amesos_Destroy(Amesos_Handle_Type *Amesos_Handle);
+  void ML_Amesos_Destroy(void *Amesos_Handle);
 
   int ML_isKLUAvailable();
 #ifndef ML_CPP

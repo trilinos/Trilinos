@@ -290,8 +290,9 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Amesos_Solve( Amesos_Handle_Type *Amesos_Handle, double x[], double rhs[] )
+int ML_Amesos_Solve( void *data, double x[], double rhs[] )
 {
+  Amesos_Handle_Type *Amesos_Handle = (Amesos_Handle_Type *) data;
   if (Amesos_Handle->A_Base == 0) return 0;
 
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle->A_Base ;
@@ -336,7 +337,7 @@ int ML_Amesos_Solve( Amesos_Handle_Type *Amesos_Handle, double x[], double rhs[]
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Amesos_Destroy(Amesos_Handle_Type *Amesos_Handle)
+void ML_Amesos_Destroy(void *data)
 {
 
 #ifdef TFLOP
@@ -370,6 +371,8 @@ void ML_Amesos_Destroy(Amesos_Handle_Type *Amesos_Handle)
 
   }
 #endif
+
+  Amesos_Handle_Type *Amesos_Handle = (Amesos_Handle_Type*) data;
   
   if (Amesos_Handle->A_Base == 0) {
     ML_free(Amesos_Handle);
@@ -418,7 +421,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   return EXIT_FAILURE;
 }
 
-int ML_Amesos_Solve(Amesos_Handle_Type *Amesos_Handle, double x[], double rhs[] )
+int ML_Amesos_Solve(void *Amesos_Handle, double x[], double rhs[] )
 {
   puts("You must configure with --with-ml_amesos.");
   exit( EXIT_FAILURE );
