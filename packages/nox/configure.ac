@@ -610,6 +610,12 @@ AC_SUBST(MF_LIBS)
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, epetraext, NOX_EPETRAEXT, BUILD_NOX_EPETRAEXT_SUPPORT, yes, [Build epetraext support into the noxepetra library.], [Implicitly build epetraext support into the noxepetra library. Can be overridden with --<en|dis>able-nox-epetraext.])
 
 # ------------------------------------------------------------------------
+# NOX-Amesos support
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, amesos, NOX_AMESOS, BUILD_NOX_AMESOS_SUPPORT, yes, [Build amesos support into the noxepetra library.], [Implicitly build amesos support into the noxepetra library. Can be overridden with --<en|dis>able-nox-amesos.])
+
+# ------------------------------------------------------------------------
 # NOX-Epetra Multiphysics support
 # ------------------------------------------------------------------------
 AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, true)
@@ -694,6 +700,11 @@ if test X${ADDON_epetra} = Xyes; then
   if test X${ac_cv_use_epetraext} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_ConfigDefs.h,src)
+  fi
+
+  if test X${ac_cv_use_amesos} = Xyes; then
+    TRILINOS_HEADER(amesos,Amesos_config.h,src)
+    TRILINOS_HEADER(amesos,Amesos_ConfigDefs.h,src)
   fi
 
   if test X${ac_cv_use_ml} = Xyes; then

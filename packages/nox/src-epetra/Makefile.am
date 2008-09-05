@@ -86,11 +86,19 @@ MODELEVAL_H = \
         $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
 endif
 
+if BUILD_NOX_AMESOS_SUPPORT
+NOX_AMESOS = \
+        $(srcdir)/NOX_Epetra_LinearSystem_Amesos.C
+
+NOX_AMESOS_H = \
+        $(srcdir)/NOX_Epetra_LinearSystem_Amesos.H
+endif
+
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(MODELEVAL) $(MODELEVAL_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(MODELEVAL) $(MODELEVAL_H) $(NOX_AMESOS) $(NOX_AMESOS_H)
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies

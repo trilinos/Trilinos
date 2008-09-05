@@ -17,7 +17,7 @@
     <ParameterList name="LOCA">
       <ParameterList name="Predictor">
 	<Parameter name="Method" 
-	  type="string" value="Secant"/>
+	  type="string" value="Constant"/>
       </ParameterList>
       <ParameterList name="Step Size">
 	<Parameter name="Failed Step Reduction Factor" 
@@ -29,7 +29,7 @@
       </ParameterList>
       <ParameterList name="Stepper">
 	<Parameter name="Bordered Solver Method" 
-	  type="string" value="Householder"/>
+	  type="string" value="Bordering"/>
 	<Parameter name="Continuation Parameter" 
 	  type="string" value="p"/>
 	<Parameter name="Initial Value" 
@@ -56,6 +56,14 @@
 	  <Parameter name="Forcing Term Method" 
 	    type="string" value="Constant"/>
 	  <ParameterList name="Linear Solver">
+	    <Parameter name="Solver" 
+	      type="string" value="Amesos"/>
+	    <Parameter name="Amesos Solver" 
+              type="string" value="Amesos_Klu"/>
+	    <Parameter name="PrintTiming" 
+	      type="bool" value="true"/>
+	    <Parameter name="PrintStatus" 
+	      type="bool" value="false"/>
 	    <Parameter name="Aztec Solver" 
 	      type="string" value="GMRES"/>
 	    <Parameter name="Convergence Test" 

@@ -18,7 +18,7 @@ bool WriteHeaderToContFile( const string & fileName,
   Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
   for (i = fileParams.begin(); i !=fileParams.end(); ++i) 
     oFile << setw(15) << fileParams.name(i);
-  oFile << endl;
+  oFile << std::endl;
 
   // Closing
   oFile.close();
@@ -41,7 +41,7 @@ bool UpdateContFile( const string & fileName,
   Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
   for (i = fileParams.begin(); i !=fileParams.end(); ++i) 
     oFile << scientific << setw(15) << fileParams.entry(i);
-  oFile << endl;
+  oFile << std::endl;
 
   // Closing
   oFile.close();

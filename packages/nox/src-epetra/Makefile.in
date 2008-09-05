@@ -135,7 +135,9 @@ am__libnoxepetra_a_SOURCES_DIST = $(srcdir)/NOX_Epetra_Vector.C \
 	$(srcdir)/NOX_Epetra_Scaling.H \
 	$(srcdir)/NOX_Epetra_BroydenOperator.H \
 	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C \
-	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
+	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H \
+	$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C \
+	$(srcdir)/NOX_Epetra_LinearSystem_Amesos.H
 am__objects_1 = NOX_Epetra_Vector.$(OBJEXT) \
 	NOX_Epetra_VectorSpace_L2.$(OBJEXT) \
 	NOX_Epetra_VectorSpace_ScaledL2.$(OBJEXT) \
@@ -148,8 +150,10 @@ am__objects_1 = NOX_Epetra_Vector.$(OBJEXT) \
 	NOX_Epetra_BroydenOperator.$(OBJEXT)
 am__objects_2 =
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__objects_3 = NOX_Epetra_ModelEvaluatorInterface.$(OBJEXT)
+@BUILD_NOX_AMESOS_SUPPORT_TRUE@am__objects_4 = NOX_Epetra_LinearSystem_Amesos.$(OBJEXT)
 am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_3) $(am__objects_2)
+	$(am__objects_3) $(am__objects_2) $(am__objects_4) \
+	$(am__objects_2)
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -372,11 +376,17 @@ EPETRA = \
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@MODELEVAL_H = \
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@        $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
 
+@BUILD_NOX_AMESOS_SUPPORT_TRUE@NOX_AMESOS = \
+@BUILD_NOX_AMESOS_SUPPORT_TRUE@        $(srcdir)/NOX_Epetra_LinearSystem_Amesos.C
+
+@BUILD_NOX_AMESOS_SUPPORT_TRUE@NOX_AMESOS_H = \
+@BUILD_NOX_AMESOS_SUPPORT_TRUE@        $(srcdir)/NOX_Epetra_LinearSystem_Amesos.H
+
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(MODELEVAL) $(MODELEVAL_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(MODELEVAL) $(MODELEVAL_H) $(NOX_AMESOS) $(NOX_AMESOS_H)
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(NOX_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -493,6 +503,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_FiniteDifference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_FiniteDifferenceColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_LinearSystem_Amesos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_MatrixFree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Po@am__quote@
@@ -683,6 +694,20 @@ NOX_Epetra_ModelEvaluatorInterface.obj: $(srcdir)/NOX_Epetra_ModelEvaluatorInter
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C' object='NOX_Epetra_ModelEvaluatorInterface.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_ModelEvaluatorInterface.obj `if test -f '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; fi`
+
+NOX_Epetra_LinearSystem_Amesos.o: $(srcdir)/NOX_Epetra_LinearSystem_Amesos.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_LinearSystem_Amesos.o -MD -MP -MF $(DEPDIR)/NOX_Epetra_LinearSystem_Amesos.Tpo -c -o NOX_Epetra_LinearSystem_Amesos.o `test -f '$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Epetra_LinearSystem_Amesos.Tpo $(DEPDIR)/NOX_Epetra_LinearSystem_Amesos.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C' object='NOX_Epetra_LinearSystem_Amesos.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_LinearSystem_Amesos.o `test -f '$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C
+
+NOX_Epetra_LinearSystem_Amesos.obj: $(srcdir)/NOX_Epetra_LinearSystem_Amesos.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_LinearSystem_Amesos.obj -MD -MP -MF $(DEPDIR)/NOX_Epetra_LinearSystem_Amesos.Tpo -c -o NOX_Epetra_LinearSystem_Amesos.obj `if test -f '$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Epetra_LinearSystem_Amesos.Tpo $(DEPDIR)/NOX_Epetra_LinearSystem_Amesos.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C' object='NOX_Epetra_LinearSystem_Amesos.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_LinearSystem_Amesos.obj `if test -f '$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_LinearSystem_Amesos.C'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

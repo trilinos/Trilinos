@@ -95,6 +95,9 @@
 /* define if the compiler supports the isnan() function */
 #undef HAVE_NAN_SUPPORT
 
+/* Define if want to build with amesos enabled */
+#undef HAVE_NOX_AMESOS
+
 /* define that Belos is activated in nox */
 #undef HAVE_NOX_BELOS
 

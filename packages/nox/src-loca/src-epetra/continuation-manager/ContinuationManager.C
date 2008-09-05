@@ -8,6 +8,9 @@
 //#include "PhaseConstraint.h"
 //#include "IOVtkUtils.h"
 #include "IOContFileUtils.H"
+#ifdef HAVE_NOX_AMESOS
+#include "NOX_Epetra_LinearSystem_Amesos.H"
+#endif
 
 ContinuationManager::
 ContinuationManager( 
@@ -34,11 +37,11 @@ ContinuationManager(
   Teuchos::updateParametersFromXmlFile(taskFileName,taskList.get());
 
   if (comm->MyPID()==0) {
-    cout << endl << "#### Task Parameters from task file \"" << 
-      taskFileName << " ####" << endl;
-    taskList->print(cout,2,false,false);
-    cout << endl << "#### End Parameters from "<< taskFileName << 
-      " ####" << endl << endl;
+    std::cout << std::endl << "#### Task Parameters from task file \"" << 
+      taskFileName << " ####" << std::endl;
+    taskList->print(std::cout,2,false,false);
+    std::cout << std::endl << "#### End Parameters from "<< taskFileName << 
+      " ####" << std::endl << std::endl;
   }
 
   // Getting the initial step label flag
@@ -76,7 +79,7 @@ bool ContinuationManager::
 BuildLOCAStepper()
 {
 
-  if (comm->MyPID()==0) cout << endl << "Building the LOCA stepper..." << endl;
+  if (comm->MyPID()==0) std::cout << std::endl << "Building the LOCA stepper..." << std::endl;
 
   // Make sure the problem has been set
   TEST_FOR_EXCEPTION( problem == Teuchos::null, 
@@ -114,14 +117,38 @@ BuildLOCAStepper()
           sublist("Newton").
             sublist("Linear Solver");
 
-  // Create the linear system
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linearSystem = 
-    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(noxPrintingList, 
-          linearSystemList,
-          interfaceRequired,
-          interfaceJacobian,
-          jacobian,
-          *initialGuess));
+  // Instntiating the appropriate linear system
+  string linearSolverType = linearSystemList.get("Solver","Aztec");
+  Teuchos::RCP<NOX::Epetra::LinearSystem> linearSystem = Teuchos::null; 
+
+  if (linearSolverType == "Aztec")
+    // Create the linear system
+    //Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linearSystem = 
+    linearSystem = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(noxPrintingList, 
+	    linearSystemList,
+	    interfaceRequired,
+	    interfaceJacobian,
+	    jacobian,
+	    *initialGuess));
+#ifdef HAVE_NOX_AMESOS
+  else if (linearSolverType == "Amesos")
+    // Create the linear system
+    //Teuchos::RCP<NOX::Epetra::LinearSystemAmesos> linearSystem = 
+    linearSystem = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAmesos(noxPrintingList, 
+	    linearSystemList,
+	    interfaceRequired,
+	    interfaceJacobian,
+	    jacobian,
+	    *initialGuess));
+#endif
+  else
+  {
+    TEST_FOR_EXCEPTION(true, 
+	std::logic_error, "Continuation manager: " + 
+			  linearSolverType + " is not a valid linear solver");
+  }
 
   // Get the parameter vector
   LOCA::ParameterVector continuableParams = problem->GetContinuableParams();
@@ -404,32 +431,32 @@ PrintLOCAStepperStatistics()
   // Ckecking the convergence of a nonlinear step
   if (locaStepperStatus != LOCA::Abstract::Iterator::Finished) 
      if (locaGlobalData->locaUtils->isPrintType(NOX::Utils::Error))
-       locaGlobalData->locaUtils->out() << "Stepper failed to converge!" << endl;
+       locaGlobalData->locaUtils->out() << "Stepper failed to converge!" << std::endl;
 
   // Output the parameter list
   if (locaGlobalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-    locaGlobalData->locaUtils->out() << endl << 
-      "### Final Parameters ############" << endl;
+    locaGlobalData->locaUtils->out() << std::endl << 
+      "### Final Parameters ############" << std::endl;
     locaStepper->getList()->print(locaGlobalData->locaUtils->out());
-    locaGlobalData->locaUtils->out() << endl;
+    locaGlobalData->locaUtils->out() << std::endl;
   }
 
   // The time spent
   if (comm->MyPID() == 0)
-    cout << endl << "#### Statistics ########" << endl;
+    std::cout << std::endl << "#### Statistics ########" << std::endl;
 
-  cout << " Time on proc " << comm->MyPID() << " = " 
-       << timeCounter.ElapsedTime() << endl;
+  std::cout << " Time on proc " << comm->MyPID() << " = " 
+       << timeCounter.ElapsedTime() << std::endl;
 
   // Check number of steps
   int numSteps = locaStepper->getStepNumber();
   if (comm->MyPID() == 0) 
-    cout << " Number of continuation Steps = " << numSteps << endl;
+    std::cout << " Number of continuation Steps = " << numSteps << std::endl;
 
   // Check number of failed steps
   int numFailedSteps = locaStepper->getNumFailedSteps();
   if (comm->MyPID() == 0) 
-    cout << " Number of failed continuation Steps = " << numFailedSteps << endl;
+    std::cout << " Number of failed continuation Steps = " << numFailedSteps << std::endl;
 
   // Destroying global data
   LOCA::destroyGlobalData(locaGlobalData);

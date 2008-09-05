@@ -48,6 +48,7 @@
 @BUILD_LIBNOXEPETRA_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
 @BUILD_LIBNOXEPETRA_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@BUILD_NOX_AMESOS_SUPPORT_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
 @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@include @abs_top_builddir@/../ml/Makefile.export.ml
 @BUILD_LIBNOXBELOS_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
 @BUILD_LOCAANASAZI_TRUE@include @abs_top_builddir@/../anasazi/Makefile.export.anasazi
@@ -87,6 +88,7 @@ NOX_INCLUDES_BASE = \
                $(AZTECOO_INCLUDES) \
                $(IFPACK_INCLUDES) \
                $(EPETRAEXT_INCLUDES) \
+               $(AMESOS_INCLUDES) \
                $(ML_INCLUDES) \
                $(BELOS_INCLUDES) \
 	       $(THYRA_INCLUDES) \
@@ -94,7 +96,7 @@ NOX_INCLUDES_BASE = \
 @USING_GNUMAKE_TRUE@NOX_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(NOX_INCLUDES_BASE))
 @USING_GNUMAKE_FALSE@NOX_INCLUDES = $(NOX_INCLUDES_BASE)
 
-NOX_LIBS_BASE = @LDFLAGS@ $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) $(NOX_THYRA_LIB) -L@abs_top_builddir@/src -lnox $(STRATIMIKOS_LIBS) $(THYRA_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
+NOX_LIBS_BASE = @LDFLAGS@ $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) $(NOX_THYRA_LIB) -L@abs_top_builddir@/src -lnox $(STRATIMIKOS_LIBS) $(THYRA_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(AMESOS_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
 @USING_GNUMAKE_TRUE@NOX_LIBS = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(NOX_LIBS_BASE))
 @USING_GNUMAKE_FALSE@NOX_LIBS = $(NOX_LIBS_BASE)
 

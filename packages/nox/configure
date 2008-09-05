@@ -824,6 +824,8 @@ MF_LIBDIR
 MF_LIBS
 BUILD_NOX_EPETRAEXT_SUPPORT_TRUE
 BUILD_NOX_EPETRAEXT_SUPPORT_FALSE
+BUILD_NOX_AMESOS_SUPPORT_TRUE
+BUILD_NOX_AMESOS_SUPPORT_FALSE
 BUILD_EPETRA_MULTIPHYSICS_TRUE
 BUILD_EPETRA_MULTIPHYSICS_FALSE
 BUILD_NOX_EPETRA_ML_SUPPORT_TRUE
@@ -1487,6 +1489,10 @@ Optional Features:
                           noxepetra library. Can be overridden with
                           --<en|dis>able-nox-epetraext.
   --enable-nox-epetraext  Build epetraext support into the noxepetra library.
+  --enable-amesos         Implicitly build amesos support into the noxepetra
+                          library. Can be overridden with
+                          --<en|dis>able-nox-amesos.
+  --enable-nox-amesos     Build amesos support into the noxepetra library.
   --enable-ml             Implicitly build ml support into the noxepetra
                           library. Can be overridden with
                           --<en|dis>able-nox-ml.
@@ -9681,6 +9687,61 @@ fi
 
 
 # ------------------------------------------------------------------------
+# NOX-Amesos support
+# ------------------------------------------------------------------------
+
+
+
+# Check whether --enable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval=$enable_amesos; ac_cv_implicit_use_amesos=$enableval
+else
+  ac_cv_implicit_use_amesos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_nox_using_amesos_default=$ac_cv_implicit_use_amesos
+else
+  ac_cv_nox_using_amesos_default=no
+fi
+
+# Check whether --enable-nox-amesos was given.
+if test "${enable_nox_amesos+set}" = set; then
+  enableval=$enable_nox_amesos; ac_cv_use_amesos=$enableval
+else
+  ac_cv_use_amesos=$ac_cv_nox_using_amesos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional amesos dependent code in nox" >&5
+echo $ECHO_N "checking whether to build optional amesos dependent code in nox... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NOX_AMESOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_amesos" = "Xyes"; then
+  BUILD_NOX_AMESOS_SUPPORT_TRUE=
+  BUILD_NOX_AMESOS_SUPPORT_FALSE='#'
+else
+  BUILD_NOX_AMESOS_SUPPORT_TRUE='#'
+  BUILD_NOX_AMESOS_SUPPORT_FALSE=
+fi
+
+
+
+
+# ------------------------------------------------------------------------
 # NOX-Epetra Multiphysics support
 # ------------------------------------------------------------------------
  if true; then
@@ -12848,6 +12909,333 @@ echo "$as_me: error: Cannot find epetraext include directory containing EpetraEx
 
   fi
 
+  if test X${ac_cv_use_amesos} = Xyes; then
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Amesos_config.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../amesos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Amesos_config.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../amesos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../amesos/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../amesos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Amesos_config.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../amesos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../amesos/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Amesos_config.h, part of the amesos package."
+    echo "Try --with-incdir=\"-I<dir1> -I<dir2>\""
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find amesos include directory containing Amesos_config.h" >&5
+echo "$as_me: error: Cannot find amesos include directory containing Amesos_config.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Amesos_ConfigDefs.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../amesos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Amesos_ConfigDefs.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../amesos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../amesos/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../amesos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Amesos_ConfigDefs.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../amesos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../amesos/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Amesos_ConfigDefs.h, part of the amesos package."
+    echo "Try --with-incdir=\"-I<dir1> -I<dir2>\""
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find amesos include directory containing Amesos_ConfigDefs.h" >&5
+echo "$as_me: error: Cannot find amesos include directory containing Amesos_ConfigDefs.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  fi
+
   if test X${ac_cv_use_ml} = Xyes; then
 
   save_CPPFLAGS=$CPPFLAGS
@@ -14630,7 +15018,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6; }
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-thyra/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-thyra/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/NOX_Sacado_FEApp/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/epetra/LOCA_Sacado_FEApp/Makefile examples/epetra/System_Sacado_FEApp/Makefile examples/epetra/LOCA_ContinuationManager/Makefile examples/epetra/LOCA_ContinuationManager/task.xml examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/StatusTests/Makefile test/lapack/UserDefinedObjects/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/LOCA_EpetraExt_ModelEvaluator/Makefile test/epetra/LOCA_Thyra_ModelEvaluator/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/PelletTransport/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/epetra/Thyra_2Dsim/Makefile test/petsc/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-thyra/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-thyra/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/NOX_Sacado_FEApp/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/epetra/LOCA_Sacado_FEApp/Makefile examples/epetra/System_Sacado_FEApp/Makefile examples/epetra/LOCA_ContinuationManager/Makefile examples/epetra/LOCA_ContinuationManager/task.xml examples/epetra/LOCA_ContinuationManager_xyzt/Makefile examples/epetra/LOCA_ContinuationManager_xyzt/task.xml examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/StatusTests/Makefile test/lapack/UserDefinedObjects/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/LOCA_EpetraExt_ModelEvaluator/Makefile test/epetra/LOCA_Thyra_ModelEvaluator/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/PelletTransport/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/epetra/Thyra_2Dsim/Makefile test/petsc/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -15034,6 +15422,13 @@ if test -z "${BUILD_NOX_EPETRAEXT_SUPPORT_TRUE}" && test -z "${BUILD_NOX_EPETRAE
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_EPETRAEXT_SUPPORT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_NOX_EPETRAEXT_SUPPORT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_NOX_AMESOS_SUPPORT_TRUE}" && test -z "${BUILD_NOX_AMESOS_SUPPORT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_AMESOS_SUPPORT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_NOX_AMESOS_SUPPORT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -15573,6 +15968,8 @@ do
     "examples/epetra/System_Sacado_FEApp/Makefile") CONFIG_FILES="$CONFIG_FILES examples/epetra/System_Sacado_FEApp/Makefile" ;;
     "examples/epetra/LOCA_ContinuationManager/Makefile") CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_ContinuationManager/Makefile" ;;
     "examples/epetra/LOCA_ContinuationManager/task.xml") CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_ContinuationManager/task.xml" ;;
+    "examples/epetra/LOCA_ContinuationManager_xyzt/Makefile") CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_ContinuationManager_xyzt/Makefile" ;;
+    "examples/epetra/LOCA_ContinuationManager_xyzt/task.xml") CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_ContinuationManager_xyzt/task.xml" ;;
     "examples/petsc/Makefile") CONFIG_FILES="$CONFIG_FILES examples/petsc/Makefile" ;;
     "examples/petsc/DS6.5.1/Makefile") CONFIG_FILES="$CONFIG_FILES examples/petsc/DS6.5.1/Makefile" ;;
     "examples/petsc/1DFiniteDifference/Makefile") CONFIG_FILES="$CONFIG_FILES examples/petsc/1DFiniteDifference/Makefile" ;;
@@ -15963,6 +16360,8 @@ MF_LIBDIR!$MF_LIBDIR$ac_delim
 MF_LIBS!$MF_LIBS$ac_delim
 BUILD_NOX_EPETRAEXT_SUPPORT_TRUE!$BUILD_NOX_EPETRAEXT_SUPPORT_TRUE$ac_delim
 BUILD_NOX_EPETRAEXT_SUPPORT_FALSE!$BUILD_NOX_EPETRAEXT_SUPPORT_FALSE$ac_delim
+BUILD_NOX_AMESOS_SUPPORT_TRUE!$BUILD_NOX_AMESOS_SUPPORT_TRUE$ac_delim
+BUILD_NOX_AMESOS_SUPPORT_FALSE!$BUILD_NOX_AMESOS_SUPPORT_FALSE$ac_delim
 BUILD_EPETRA_MULTIPHYSICS_TRUE!$BUILD_EPETRA_MULTIPHYSICS_TRUE$ac_delim
 BUILD_EPETRA_MULTIPHYSICS_FALSE!$BUILD_EPETRA_MULTIPHYSICS_FALSE$ac_delim
 BUILD_NOX_EPETRA_ML_SUPPORT_TRUE!$BUILD_NOX_EPETRA_ML_SUPPORT_TRUE$ac_delim
@@ -15985,7 +16384,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 35; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 37; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
