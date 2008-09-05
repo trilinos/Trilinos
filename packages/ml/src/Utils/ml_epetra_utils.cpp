@@ -3492,6 +3492,7 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
        printf( "** Enter a character to continue > "); fflush(stdout);
        scanf("%c",&go);
      }
+
    }
 
 } //BreakForDebugger()
