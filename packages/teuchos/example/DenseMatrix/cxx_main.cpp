@@ -1,4 +1,5 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseSolver.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Version.hpp"
@@ -14,10 +15,12 @@ int main(int argc, char* argv[])
   Teuchos::SerialDenseMatrix<int,double> My_Matrix( 3, 4 );
   // Basic copy of My_Matrix
   Teuchos::SerialDenseMatrix<int,double> My_Copy1( My_Matrix ),
-    // (Deep) Copy of principle 3x3 submatrix of My_Matrix
-    My_Copy2( Teuchos::Copy, My_Matrix, 3, 3 ),
-    // (Shallow) Copy of 2x3 submatrix of My_Matrix
-    My_Copy3( Teuchos::View, My_Matrix, 2, 3, 1, 1 );
+  // (Deep) Copy of principle 3x3 submatrix of My_Matrix
+  My_Copy2( Teuchos::Copy, My_Matrix, 3, 3 ),
+  // (Shallow) Copy of 2x3 submatrix of My_Matrix
+  My_Copy3( Teuchos::View, My_Matrix, 2, 3, 1, 1 );
+  // Create a double-precision vector:
+  Teuchos::SerialDenseVector<int,double> x(3), y(3);
 
   // The matrix dimensions and strided storage information can be obtained:
   int rows, cols, stride;
@@ -34,14 +37,18 @@ int main(int argc, char* argv[])
   My_Copy1.putScalar( 1.0 );      // every entry is 1.0
   My_Copy2(1,1) = 10.0;           // individual element access
   Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix 
+  x.putScalar( 1.0 );             // every entry of vector is 1.0
+  y.putScalar( 1.0 );
 
   // Basic matrix arithmetic can be performed:
+  double d;
   Teuchos::SerialDenseMatrix<int,double> My_Prod( 3, 2 );
   // Matrix multiplication ( My_Prod = 1.0*My_Matrix*My_Copy^T )
   My_Prod.multiply( Teuchos::NO_TRANS, Teuchos::TRANS, 
 		    1.0, My_Matrix, My_Copy3, 0.0 );
   My_Copy2 += My_Matrix;         // Matrix addition
   My_Copy2.scale( 0.5 );         // Matrix scaling
+  d = x.dot( y );                // Vector dot product  
   
   // The pointer to the array of matrix values can be obtained:
   double *My_Array=0, *My_Column=0;

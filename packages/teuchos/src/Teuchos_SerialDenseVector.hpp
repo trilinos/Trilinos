@@ -167,6 +167,12 @@ namespace Teuchos {
 
   //@}
 
+  //! @name Mathematical methods.
+  //@{ 
+    //! Compute the dot product of \c this vector and \c x.
+    ScalarType dot( const SerialDenseVector<OrdinalType,ScalarType> &x) const;
+  //@}
+
   //! @name Attribute methods.
   //@{ 
     //! Returns the length of this vector.
@@ -230,6 +236,17 @@ namespace Teuchos {
   {
     return !((*this)==Operand);
   }
+
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType SerialDenseVector<OrdinalType, ScalarType>::dot( const SerialDenseVector<OrdinalType, ScalarType> &x) const
+  {
+    TEST_FOR_EXCEPTION(this->numRows_!= x.numRows_, std::invalid_argument,
+    "SerialDenseVector<T>::dot : " << 
+    "Number of rows " << this->numRows_ << " not equal to x.numRows_ "<< x.numRows() );
+   
+    // Compute the dot product and return the result. 
+    return DOT(this->numRows_, this->values(), 1, x.values(), 1); 
+  } 
 
   template<typename OrdinalType, typename ScalarType>
   void SerialDenseVector<OrdinalType, ScalarType>::print(std::ostream& os) const
