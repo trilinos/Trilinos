@@ -49,7 +49,7 @@ namespace Teuchos {
   \param alpha - [in] The scaling factor.
   \param A - [in] SerialSymDenseMatrix
   \param W - [in] SerialDenseMatrix
-  \param B - [out] SerialDenseMatrix
+  \param B - [out] SerialSymDenseMatrix
   
   \note The syntax for calling this function is:  <tt> Teuchos::symMatTripleProduct<int,double>( Teuchos::TRANS, alpha, A, W, B ) </tt>
 */
