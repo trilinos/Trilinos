@@ -95,6 +95,10 @@ bool strMatch( const std::string &fullMatchStr, const std::string &str )
   typedef std::string::size_type size_type;
   const size_type npos = std::string::npos;
 
+  if (fullMatchStr == "*") {
+    return true;
+  }
+
   const size_type strLen = str.length();
   const size_type fullMatchStrLen = fullMatchStr.length();
 
