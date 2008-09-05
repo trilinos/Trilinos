@@ -22,7 +22,7 @@ typedef long ftnlen;
 
 /* All three of these machines use a simple uppercase mangling of Fortran names */
 
-/* if F77_FUNC is defined undefine it because we want to redefine */
+/* if F77_BLAS_MANGLE is defined undefine it because we want to redefine */
 
 #if defined(CRAY_T3X)
 
@@ -30,31 +30,31 @@ typedef long ftnlen;
 #define ml_fcd fcd
 #define PREFIX
 
-#define DGETRF_F77  F77_FUNC(sgetrf,SGETRF)
-#define DGETRS_F77  F77_FUNC(sgetrs,SGETRS)
-#define DGESVD_F77  F77_FUNC(sgesvd,SGESVD)
-#define DPOTRF_F77  F77_FUNC(spotrf,SPOTRF)
-#define DPOTRS_F77  F77_FUNC(spotrs,SPOTRS)
-#define DPOTRI_F77  F77_FUNC(spotri,SPOTRI)
-#define DPOCON_F77  F77_FUNC(spocon,SPOCON)
-#define DPOSV_F77   F77_FUNC(sposv,SPOSV)
-#define DPOEQU_F77  F77_FUNC(spoequ,SPOEQU)
-#define DPORFS_F77  F77_FUNC(sporfs,SPORFS)
-#define DPOSVX_F77  F77_FUNC(sposvx,SPOSVX)
-#define DGELS_F77   F77_FUNC(sgels,SGELS)
-#define DGEEV_F77   F77_FUNC(sgeev,SGEEV)
-#define DGEHRD_F77  F77_FUNC(sgehrs,SGEHRS)
-#define DHSEQR_F77  F77_FUNC(shseqr,SHSEQR)
-#define DORGHR_F77  F77_FUNC(sorghr,SORGHR)
-#define DORMHR_F77  F77_FUNC(sormhr,SORMHR)
-#define DTREVC_F77  F77_FUNC(strevc,STREVC)
-#define DTREXC_F77  F77_FUNC(strexc,STREXC)
-#define DGELSS_F77  F77_FUNC(sgelss,SGELSS)
-#define DSTEV_F77   F77_FUNC(sstev,SSTEV)
-#define DGEQPF_F77  F77_FUNC(sgeqpf,SGEQPF)
-#define DGEQRF_F77  F77_FUNC(sgeqrf,SGEQRF)
-#define DORGQR_F77  F77_FUNC(sorgqr,SORGQR)
-#define DSTEQR_F77  F77_FUNC(ssteqr,SSTEQR)
+#define DGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
+#define DGETRS_F77  F77_BLAS_MANGLE(sgetrs,SGETRS)
+#define DGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
+#define DPOTRF_F77  F77_BLAS_MANGLE(spotrf,SPOTRF)
+#define DPOTRS_F77  F77_BLAS_MANGLE(spotrs,SPOTRS)
+#define DPOTRI_F77  F77_BLAS_MANGLE(spotri,SPOTRI)
+#define DPOCON_F77  F77_BLAS_MANGLE(spocon,SPOCON)
+#define DPOSV_F77   F77_BLAS_MANGLE(sposv,SPOSV)
+#define DPOEQU_F77  F77_BLAS_MANGLE(spoequ,SPOEQU)
+#define DPORFS_F77  F77_BLAS_MANGLE(sporfs,SPORFS)
+#define DPOSVX_F77  F77_BLAS_MANGLE(sposvx,SPOSVX)
+#define DGELS_F77   F77_BLAS_MANGLE(sgels,SGELS)
+#define DGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
+#define DGEHRD_F77  F77_BLAS_MANGLE(sgehrs,SGEHRS)
+#define DHSEQR_F77  F77_BLAS_MANGLE(shseqr,SHSEQR)
+#define DORGHR_F77  F77_BLAS_MANGLE(sorghr,SORGHR)
+#define DORMHR_F77  F77_BLAS_MANGLE(sormhr,SORMHR)
+#define DTREVC_F77  F77_BLAS_MANGLE(strevc,STREVC)
+#define DTREXC_F77  F77_BLAS_MANGLE(strexc,STREXC)
+#define DGELSS_F77  F77_BLAS_MANGLE(sgelss,SGELSS)
+#define DSTEV_F77   F77_BLAS_MANGLE(sstev,SSTEV)
+#define DGEQPF_F77  F77_BLAS_MANGLE(sgeqpf,SGEQPF)
+#define DGEQRF_F77  F77_BLAS_MANGLE(sgeqrf,SGEQRF)
+#define DORGQR_F77  F77_BLAS_MANGLE(sorgqr,SORGQR)
+#define DSTEQR_F77  F77_BLAS_MANGLE(ssteqr,SSTEQR)
 
 #endif
 #if defined(INTEL_CXML)
@@ -62,31 +62,31 @@ typedef long ftnlen;
 #define ml_fcd char *, unsigned int
 #define PREFIX __stdcall
 
-#define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
-#define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
-#define DGELS_F77   F77_FUNC(dgels,DGELS)
-#define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
-#define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
-#define DGESVD_F77  F77_FUNC(dgesvd,DGESVD)
-#define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
-#define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
-#define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
-#define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
-#define DPOTRS_F77  F77_FUNC(dpotrs,DPOTRS)
-#define DPOTRI_F77  F77_FUNC(dpotri,DPOTRI)
-#define DPOCON_F77  F77_FUNC(dpocon,DPOCON)
-#define DPOSV_F77   F77_FUNC(dposv,DPOSV)
-#define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
-#define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
-#define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
-#define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
-#define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
-#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
-#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
-#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
-#define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
-#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
-#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
+#define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
+#define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
+#define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
+#define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
+#define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
+#define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
+#define DORGHR_F77  F77_BLAS_MANGLE(dorghr,DORGHR)
+#define DORMHR_F77  F77_BLAS_MANGLE(dormhr,DORMHR)
+#define DPOTRF_F77  F77_BLAS_MANGLE(dpotrf,DPOTRF)
+#define DPOTRS_F77  F77_BLAS_MANGLE(dpotrs,DPOTRS)
+#define DPOTRI_F77  F77_BLAS_MANGLE(dpotri,DPOTRI)
+#define DPOCON_F77  F77_BLAS_MANGLE(dpocon,DPOCON)
+#define DPOSV_F77   F77_BLAS_MANGLE(dposv,DPOSV)
+#define DPOEQU_F77  F77_BLAS_MANGLE(dpoequ,DPOEQU)
+#define DPORFS_F77  F77_BLAS_MANGLE(dporfs,DPORFS)
+#define DPOSVX_F77  F77_BLAS_MANGLE(dposvx,DPOSVX)
+#define DTREVC_F77  F77_BLAS_MANGLE(dtrevc,DTREVC)
+#define DTREXC_F77  F77_BLAS_MANGLE(dtrexc,DTREXC)
+#define DGELSS_F77  F77_BLAS_MANGLE(dgelss,DGELSS)
+#define DSTEV_F77   F77_BLAS_MANGLE(dstev,DSTEV)
+#define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
+#define DGEQRF_F77  F77_BLAS_MANGLE(dgeqrf,DGEQRF)
+#define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_BLAS_MANGLE(dsteqr,DSTEQR)
 
 #endif
 #if defined(INTEL_MKL)
@@ -94,135 +94,135 @@ typedef long ftnlen;
 #define ml_fcd char *
 #define PREFIX
 
-#define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
-#define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
-#define DGESVD_F77  F77_FUNC(dgesvd,DGESVD)
-#define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
-#define DPOTRS_F77  F77_FUNC(dpotrs,DPOTRS)
-#define DPOTRI_F77  F77_FUNC(dpotri,DPOTRI)
-#define DPOCON_F77  F77_FUNC(dpocon,DPOCON)
-#define DPOSV_F77   F77_FUNC(dposv,DPOSV)
-#define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
-#define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
-#define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
-#define DGELS_F77   F77_FUNC(dgels,DGELS)
-#define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
-#define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
-#define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
-#define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
-#define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
-#define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
-#define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
-#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
-#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
-#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
-#define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
-#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
-#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
+#define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
+#define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
+#define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
+#define DPOTRF_F77  F77_BLAS_MANGLE(dpotrf,DPOTRF)
+#define DPOTRS_F77  F77_BLAS_MANGLE(dpotrs,DPOTRS)
+#define DPOTRI_F77  F77_BLAS_MANGLE(dpotri,DPOTRI)
+#define DPOCON_F77  F77_BLAS_MANGLE(dpocon,DPOCON)
+#define DPOSV_F77   F77_BLAS_MANGLE(dposv,DPOSV)
+#define DPOEQU_F77  F77_BLAS_MANGLE(dpoequ,DPOEQU)
+#define DPORFS_F77  F77_BLAS_MANGLE(dporfs,DPORFS)
+#define DPOSVX_F77  F77_BLAS_MANGLE(dposvx,DPOSVX)
+#define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
+#define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
+#define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
+#define DORGHR_F77  F77_BLAS_MANGLE(dorghr,DORGHR)
+#define DORMHR_F77  F77_BLAS_MANGLE(dormhr,DORMHR)
+#define DTREVC_F77  F77_BLAS_MANGLE(dtrevc,DTREVC)
+#define DTREXC_F77  F77_BLAS_MANGLE(dtrexc,DTREXC)
+#define DGELSS_F77  F77_BLAS_MANGLE(dgelss,DGELSS)
+#define DSTEV_F77   F77_BLAS_MANGLE(dstev,DSTEV)
+#define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
+#define DGEQRF_F77  F77_BLAS_MANGLE(dgeqrf,DGEQRF)
+#define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_BLAS_MANGLE(dsteqr,DSTEQR)
 
 #endif
 
-#ifdef F77_FUNC
-#undef F77_FUNC
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
 #endif
 
-#define F77_FUNC(lcase,UCASE) UCASE
+#define F77_BLAS_MANGLE(lcase,UCASE) UCASE
 
 #else
 
 #define ml_fcd char *
 #define PREFIX
 
-/* Use autoconf's definition of F77_FUNC 
+/* Use autoconf's definition of F77_BLAS_MANGLE 
    unless using old make system */
 
 #ifdef TRILINOS_NO_CONFIG_H
 
-#ifdef F77_FUNC
-#undef F77_FUNC
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
 #endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#define F77_FUNC(lcase,UCASE) lcase
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#define F77_FUNC(lcase,UCASE) lcase ## _
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* TRILINOS_NO_CONFIG_H */
 
-#define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
-#define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
-#define DGESVD_F77  F77_FUNC(dgesvd,DGESVD)
-#define DPOTRF_F77  F77_FUNC(dpotrf,DPOTRF)
-#define DPOTRS_F77  F77_FUNC(dpotrs,DPOTRS)
-#define DPOTRI_F77  F77_FUNC(dpotri,DPOTRI)
-#define DPOCON_F77  F77_FUNC(dpocon,DPOCON)
-#define DPOSV_F77   F77_FUNC(dposv,DPOSV)
-#define DPOEQU_F77  F77_FUNC(dpoequ,DPOEQU)
-#define DPORFS_F77  F77_FUNC(dporfs,DPORFS)
-#define DPOSVX_F77  F77_FUNC(dposvx,DPOSVX)
-#define DGELS_F77   F77_FUNC(dgels,DGELS)
-#define DGEEV_F77   F77_FUNC(dgeev,DGEEV)
-#define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
-#define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
-#define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
-#define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
-#define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
-#define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
-#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
-#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
-#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
-#define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
-#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
-#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
+#define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
+#define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
+#define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
+#define DPOTRF_F77  F77_BLAS_MANGLE(dpotrf,DPOTRF)
+#define DPOTRS_F77  F77_BLAS_MANGLE(dpotrs,DPOTRS)
+#define DPOTRI_F77  F77_BLAS_MANGLE(dpotri,DPOTRI)
+#define DPOCON_F77  F77_BLAS_MANGLE(dpocon,DPOCON)
+#define DPOSV_F77   F77_BLAS_MANGLE(dposv,DPOSV)
+#define DPOEQU_F77  F77_BLAS_MANGLE(dpoequ,DPOEQU)
+#define DPORFS_F77  F77_BLAS_MANGLE(dporfs,DPORFS)
+#define DPOSVX_F77  F77_BLAS_MANGLE(dposvx,DPOSVX)
+#define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
+#define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
+#define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
+#define DORGHR_F77  F77_BLAS_MANGLE(dorghr,DORGHR)
+#define DORMHR_F77  F77_BLAS_MANGLE(dormhr,DORMHR)
+#define DTREVC_F77  F77_BLAS_MANGLE(dtrevc,DTREVC)
+#define DTREXC_F77  F77_BLAS_MANGLE(dtrexc,DTREXC)
+#define DGELSS_F77  F77_BLAS_MANGLE(dgelss,DGELSS)
+#define DSTEV_F77   F77_BLAS_MANGLE(dstev,DSTEV)
+#define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
+#define DGEQRF_F77  F77_BLAS_MANGLE(dgeqrf,DGEQRF)
+#define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_BLAS_MANGLE(dsteqr,DSTEQR)
 
 #endif
 
-#define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
-#define DGERFS_F77  F77_FUNC(dgerfs,DGERFS)
-#define DGECON_F77  F77_FUNC(dgecon,DGECON)
-#define DGESVX_F77  F77_FUNC(dgesvx,DGESVX)
-#define DGESV_F77   F77_FUNC(dgesv,DGESV)
-#define DGEEQU_F77  F77_FUNC(dgeequ,DGEEQU)
-#define DLAMCH_F77  F77_FUNC(dlamch,DLAMCH)
-#define DGELSS_F77  F77_FUNC(dgelss,DGELSS)
-#define DSTEV_F77   F77_FUNC(dstev,DSTEV)
-#define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
-#define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
-#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
-#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
+#define DGETRI_F77  F77_BLAS_MANGLE(dgetri,DGETRI)
+#define DGERFS_F77  F77_BLAS_MANGLE(dgerfs,DGERFS)
+#define DGECON_F77  F77_BLAS_MANGLE(dgecon,DGECON)
+#define DGESVX_F77  F77_BLAS_MANGLE(dgesvx,DGESVX)
+#define DGESV_F77   F77_BLAS_MANGLE(dgesv,DGESV)
+#define DGEEQU_F77  F77_BLAS_MANGLE(dgeequ,DGEEQU)
+#define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
+#define DGELSS_F77  F77_BLAS_MANGLE(dgelss,DGELSS)
+#define DSTEV_F77   F77_BLAS_MANGLE(dstev,DSTEV)
+#define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
+#define DGEQRF_F77  F77_BLAS_MANGLE(dgeqrf,DGEQRF)
+#define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_BLAS_MANGLE(dsteqr,DSTEQR)
 
-#define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
-#define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
-#define SGESVD_F77  F77_FUNC(sgesvd,SGESVD)
-#define SGETRI_F77  F77_FUNC(sgetri,SGETRI)
-#define SGERFS_F77  F77_FUNC(sgerfs,SGERFS)
-#define SGECON_F77  F77_FUNC(sgecon,SGECON)
-#define SGESVX_F77  F77_FUNC(sgesvx,SGESVX)
-#define SGESV_F77   F77_FUNC(sgesv,SGESV)
-#define SGEEQU_F77  F77_FUNC(sgeequ,SGEEQU)
-#define SPOTRF_F77  F77_FUNC(spotrf,SPOTRF)
-#define SPOTRS_F77  F77_FUNC(spotrs,SPOTRS)
-#define SPOTRI_F77  F77_FUNC(spotri,SPOTRI)
-#define SPOCON_F77  F77_FUNC(spocon,SPOCON)
-#define SPOSV_F77   F77_FUNC(sposv,SPOSV)
-#define SPOEQU_F77  F77_FUNC(spoequ,SPOEQU)
-#define SPORFS_F77  F77_FUNC(sporfs,SPORFS)
-#define SPOSVX_F77  F77_FUNC(sposvx,SPOSVX)
-#define SGELS_F77   F77_FUNC(sgels,SGELS)
-#define SGEEV_F77   F77_FUNC(sgeev,SGEEV)
-#define SGEHRD_F77  F77_FUNC(sgehrd,SGEHRD)
-#define SHSEQR_F77  F77_FUNC(shseqr,SHSEQR)
-#define SORGHR_F77  F77_FUNC(sorghr,SORGHR)
-#define SORMHR_F77  F77_FUNC(sormhr,SORMHR)
-#define STREVC_F77  F77_FUNC(strevc,STREVC)
-#define STREXC_F77  F77_FUNC(strexc,STREXC)
-#define SLAMCH_F77  F77_FUNC(slamch,SLAMCH)
-#define SGELSS_F77  F77_FUNC(sgelss,SGELSS)
-#define SSTEV_F77   F77_FUNC(sstev,SSTEV)
-#define SGEQPF_F77  F77_FUNC(sgeqpf,SGEQPF)
+#define SGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
+#define SGETRS_F77  F77_BLAS_MANGLE(sgetrs,SGETRS)
+#define SGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
+#define SGETRI_F77  F77_BLAS_MANGLE(sgetri,SGETRI)
+#define SGERFS_F77  F77_BLAS_MANGLE(sgerfs,SGERFS)
+#define SGECON_F77  F77_BLAS_MANGLE(sgecon,SGECON)
+#define SGESVX_F77  F77_BLAS_MANGLE(sgesvx,SGESVX)
+#define SGESV_F77   F77_BLAS_MANGLE(sgesv,SGESV)
+#define SGEEQU_F77  F77_BLAS_MANGLE(sgeequ,SGEEQU)
+#define SPOTRF_F77  F77_BLAS_MANGLE(spotrf,SPOTRF)
+#define SPOTRS_F77  F77_BLAS_MANGLE(spotrs,SPOTRS)
+#define SPOTRI_F77  F77_BLAS_MANGLE(spotri,SPOTRI)
+#define SPOCON_F77  F77_BLAS_MANGLE(spocon,SPOCON)
+#define SPOSV_F77   F77_BLAS_MANGLE(sposv,SPOSV)
+#define SPOEQU_F77  F77_BLAS_MANGLE(spoequ,SPOEQU)
+#define SPORFS_F77  F77_BLAS_MANGLE(sporfs,SPORFS)
+#define SPOSVX_F77  F77_BLAS_MANGLE(sposvx,SPOSVX)
+#define SGELS_F77   F77_BLAS_MANGLE(sgels,SGELS)
+#define SGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
+#define SGEHRD_F77  F77_BLAS_MANGLE(sgehrd,SGEHRD)
+#define SHSEQR_F77  F77_BLAS_MANGLE(shseqr,SHSEQR)
+#define SORGHR_F77  F77_BLAS_MANGLE(sorghr,SORGHR)
+#define SORMHR_F77  F77_BLAS_MANGLE(sormhr,SORMHR)
+#define STREVC_F77  F77_BLAS_MANGLE(strevc,STREVC)
+#define STREXC_F77  F77_BLAS_MANGLE(strexc,STREXC)
+#define SLAMCH_F77  F77_BLAS_MANGLE(slamch,SLAMCH)
+#define SGELSS_F77  F77_BLAS_MANGLE(sgelss,SGELSS)
+#define SSTEV_F77   F77_BLAS_MANGLE(sstev,SSTEV)
+#define SGEQPF_F77  F77_BLAS_MANGLE(sgeqpf,SGEQPF)
 
-#define DLASWP_F77  F77_FUNC(dlaswp,DLASWP)
-#define DLAIC1_F77  F77_FUNC(dlaic1,DLAIC1)
+#define DLASWP_F77  F77_BLAS_MANGLE(dlaswp,DLASWP)
+#define DLAIC1_F77  F77_BLAS_MANGLE(dlaic1,DLAIC1)
 
 
 #ifdef __cplusplus
@@ -293,8 +293,8 @@ void PREFIX DGEQPF_F77(int * m, int * n, double * a,
 				   int * lda, int * jpvt, double * tau,
 				   double * work, int * info);
 /*
-#define DGEQRF_F77  F77_FUNC(sgeqrf,SGEQRF)
-#define DORGQR_F77  F77_FUNC(sorgqr,SORGQR)
+#define DGEQRF_F77  F77_BLAS_MANGLE(sgeqrf,SGEQRF)
+#define DORGQR_F77  F77_BLAS_MANGLE(sorgqr,SORGQR)
 */
 void PREFIX DGEQRF_F77(int *, int *, double *, int *, 
                  double *, double *, int *, int *);
@@ -456,40 +456,40 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 #define PREFIX
 #define ml_fcd fcd
 
-#define DASUM_F77   F77_FUNC(sasum,SASUM)
-#define DAXPY_F77   F77_FUNC(saxpy,SAXPY)
-#define DCOPY_F77   F77_FUNC(scopy,SCOPY)
-#define DDOT_F77    F77_FUNC(sdot,SDOT)
-#define DNRM2_F77   F77_FUNC(snrm2,SNRM2)
-#define DSCAL_F77   F77_FUNC(sscal,SSCAL)
-#define IDAMAX_F77  F77_FUNC(isamax,ISAMAX)
-#define DGEMV_F77   F77_FUNC(sgemv,SGEMV)
-#define DGER_F77    F77_FUNC(sger,SGER)
-#define DTRMV_F77   F77_FUNC(strmv,STRMV)
-#define DGEMM_F77   F77_FUNC(sgemm,SGEMM)
-#define DSYMM_F77   F77_FUNC(ssymm,SSYMM)
-#define DTRMM_F77   F77_FUNC(strmm,STRMM)
-#define DTRSM_F77   F77_FUNC(strsm,STRSM)
+#define DASUM_F77   F77_BLAS_MANGLE(sasum,SASUM)
+#define DAXPY_F77   F77_BLAS_MANGLE(saxpy,SAXPY)
+#define DCOPY_F77   F77_BLAS_MANGLE(scopy,SCOPY)
+#define DDOT_F77    F77_BLAS_MANGLE(sdot,SDOT)
+#define DNRM2_F77   F77_BLAS_MANGLE(snrm2,SNRM2)
+#define DSCAL_F77   F77_BLAS_MANGLE(sscal,SSCAL)
+#define IDAMAX_F77  F77_BLAS_MANGLE(isamax,ISAMAX)
+#define DGEMV_F77   F77_BLAS_MANGLE(sgemv,SGEMV)
+#define DGER_F77    F77_BLAS_MANGLE(sger,SGER)
+#define DTRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
+#define DGEMM_F77   F77_BLAS_MANGLE(sgemm,SGEMM)
+#define DSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
+#define DTRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
+#define DTRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
 
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall
 #define ml_fcd char *, unsigned int
 
-#define DASUM_F77   F77_FUNC(dasum,DASUM)
-#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
-#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
-#define DDOT_F77    F77_FUNC(ddot,DDOT)
-#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
-#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
-#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
-#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
-#define DGER_F77    F77_FUNC(dger,DGER)
-#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
-#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
-#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
-#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
-#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+#define DASUM_F77   F77_BLAS_MANGLE(dasum,DASUM)
+#define DAXPY_F77   F77_BLAS_MANGLE(daxpy,DAXPY)
+#define DCOPY_F77   F77_BLAS_MANGLE(dcopy,DCOPY)
+#define DDOT_F77    F77_BLAS_MANGLE(ddot,DDOT)
+#define DNRM2_F77   F77_BLAS_MANGLE(dnrm2,DNRM2)
+#define DSCAL_F77   F77_BLAS_MANGLE(dscal,DSCAL)
+#define IDAMAX_F77  F77_BLAS_MANGLE(idamax,IDAMAX)
+#define DGEMV_F77   F77_BLAS_MANGLE(dgemv,DGEMV)
+#define DGER_F77    F77_BLAS_MANGLE(dger,DGER)
+#define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
+#define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
+#define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
+#define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
+#define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
 
 #elif defined(INTEL_MKL)
@@ -497,90 +497,90 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 #define PREFIX
 #define ml_fcd char *
 
-#define DASUM_F77   F77_FUNC(dasum,DASUM)
-#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
-#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
-#define DDOT_F77    F77_FUNC(ddot,DDOT)
-#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
-#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
-#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
-#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
-#define DGER_F77    F77_FUNC(dger,DGER)
-#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
-#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
-#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
-#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
-#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+#define DASUM_F77   F77_BLAS_MANGLE(dasum,DASUM)
+#define DAXPY_F77   F77_BLAS_MANGLE(daxpy,DAXPY)
+#define DCOPY_F77   F77_BLAS_MANGLE(dcopy,DCOPY)
+#define DDOT_F77    F77_BLAS_MANGLE(ddot,DDOT)
+#define DNRM2_F77   F77_BLAS_MANGLE(dnrm2,DNRM2)
+#define DSCAL_F77   F77_BLAS_MANGLE(dscal,DSCAL)
+#define IDAMAX_F77  F77_BLAS_MANGLE(idamax,IDAMAX)
+#define DGEMV_F77   F77_BLAS_MANGLE(dgemv,DGEMV)
+#define DGER_F77    F77_BLAS_MANGLE(dger,DGER)
+#define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
+#define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
+#define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
+#define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
+#define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
 
 #endif 
 
 /* All three of these machines use a simple uppercase mangling of Fortran names */
 
-/* if F77_FUNC is defined undefine it because we want to redefine */
+/* if F77_BLAS_MANGLE is defined undefine it because we want to redefine */
 
-#ifdef F77_FUNC
-#undef F77_FUNC
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
 #endif
 
 
-#define F77_FUNC(lcase,UCASE) UCASE
+#define F77_BLAS_MANGLE(lcase,UCASE) UCASE
 
 #else /* Define ml_fcd for all other machines */
 
 #define PREFIX
 #define ml_fcd char * 
 
-/* Use autoconf's definition of F77_FUNC 
+/* Use autoconf's definition of F77_BLAS_MANGLE 
    unless using old make system */
 
 #ifdef TRILINOS_NO_CONFIG_H
 
-#ifdef F77_FUNC
-#undef F77_FUNC
+#ifdef F77_BLAS_MANGLE
+#undef F77_BLAS_MANGLE
 #endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#define F77_FUNC(lcase,UCASE) lcase
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#define F77_FUNC(lcase,UCASE) lcase ## _
+#define F77_BLAS_MANGLE(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* TRILINOS_NO_CONFIG_H */
 
-#define DASUM_F77   F77_FUNC(dasum,DASUM)
-#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
-#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
-#define DDOT_F77    F77_FUNC(ddot,DDOT)
-#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
-#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
-#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
-#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
-#define DGER_F77    F77_FUNC(dger,DGER)
-#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
-#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
-#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
-#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
-#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+#define DASUM_F77   F77_BLAS_MANGLE(dasum,DASUM)
+#define DAXPY_F77   F77_BLAS_MANGLE(daxpy,DAXPY)
+#define DCOPY_F77   F77_BLAS_MANGLE(dcopy,DCOPY)
+#define DDOT_F77    F77_BLAS_MANGLE(ddot,DDOT)
+#define DNRM2_F77   F77_BLAS_MANGLE(dnrm2,DNRM2)
+#define DSCAL_F77   F77_BLAS_MANGLE(dscal,DSCAL)
+#define IDAMAX_F77  F77_BLAS_MANGLE(idamax,IDAMAX)
+#define DGEMV_F77   F77_BLAS_MANGLE(dgemv,DGEMV)
+#define DGER_F77    F77_BLAS_MANGLE(dger,DGER)
+#define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
+#define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
+#define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
+#define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
+#define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
 
 
 #endif
 
 
-#define SSCAL_F77   F77_FUNC(sscal,SSCAL)
-#define SCOPY_F77   F77_FUNC(scopy,SCOPY)
-#define SAXPY_F77   F77_FUNC(saxpy,SAXPY)
-#define SDOT_F77    F77_FUNC(sdot,SDOT)
-#define SNRM2_F77   F77_FUNC(snrm2,SNRM2)
-#define SASUM_F77   F77_FUNC(sasum,SASUM)
-#define ISAMAX_F77  F77_FUNC(isamax,ISAMAX)
+#define SSCAL_F77   F77_BLAS_MANGLE(sscal,SSCAL)
+#define SCOPY_F77   F77_BLAS_MANGLE(scopy,SCOPY)
+#define SAXPY_F77   F77_BLAS_MANGLE(saxpy,SAXPY)
+#define SDOT_F77    F77_BLAS_MANGLE(sdot,SDOT)
+#define SNRM2_F77   F77_BLAS_MANGLE(snrm2,SNRM2)
+#define SASUM_F77   F77_BLAS_MANGLE(sasum,SASUM)
+#define ISAMAX_F77  F77_BLAS_MANGLE(isamax,ISAMAX)
 
-#define SGEMV_F77   F77_FUNC(sgemv,SGEMV)
-#define SGER_F77    F77_FUNC(sger,SGER)
-#define STRMV_F77   F77_FUNC(strmv,STRMV)
-#define SGEMM_F77   F77_FUNC(sgemm,SGEMM)
-#define SSYMM_F77   F77_FUNC(ssymm,SSYMM)
-#define STRMM_F77   F77_FUNC(strmm,STRMM)
-#define STRSM_F77   F77_FUNC(strsm,STRSM)
+#define SGEMV_F77   F77_BLAS_MANGLE(sgemv,SGEMV)
+#define SGER_F77    F77_BLAS_MANGLE(sger,SGER)
+#define STRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
+#define SGEMM_F77   F77_BLAS_MANGLE(sgemm,SGEMM)
+#define SSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
+#define STRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
+#define STRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
     
 /* Explicitly define each F77 name for all BLAS kernels */
 
