@@ -54,6 +54,9 @@
 \newcommand \Th {\ensuremath{T_h}}
 %\newcommand \curlcurl {({\it curl,curl})}
 \newcommand \curlcurl {\ensuremath{\nabla\times\nabla\times}}
+\newcommand \trilinosWeb {trilinos.sandia.gov}
+\newcommand \petsc {PETSc}
+\newcommand \mlp {{\tt MultiLevelPreconditioner}}
 
 \newcommand{\comm}[2]{\bigskip
                       \begin{tabular}{|p{4.5in}|}\hline
@@ -334,9 +337,10 @@ smoother (see Section \ref{multigrid options}).
 %
 This section is intended for the impatient user.
 It's assumed that you've already have a local copy of
-\trilinos\footnote{Please refer to the web page {\tt
-  http://trilinos.sandia.gov} to know how to obtain a copy of
-    \trilinos.}.
+\trilinos\footnote{Please refer to the Trilinos web page,
+\href{http://\trilinosWeb}{\trilinosWeb},
+%{\tt http://trilinos.sandia.gov}
+to obtain a copy of \trilinos.}.
 Using the instructions here, your build of \trilinos~will have the following
 libraries: \aztecoo, \epetra, \epetraext, \ifpack, \loca, \ML, \newpackage,
 \nox, \amesos~and \teuchos.
@@ -662,10 +666,7 @@ Here is an example configure line, where \metis, \parmetis, \zoltan, and
 
 \noindent
 More details about the installation of \trilinos~can be found at the
-\trilinos~web site,
-\begin{verbatim}
-http://trilinos.sandia.gov
-\end{verbatim}
+\trilinos~web site, \href{http://\trilinosWeb}{\trilinosWeb},
 and \cite[Chapter 1]{Trilinos-Tutorial}.
 
 \subsubsection{Enabling Profiling}
@@ -1222,7 +1223,11 @@ prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLengt
  double *outvec)}.  See \ML\ example {\tt ml\_user\_smoothing.cpp}.\\
 %
 \verb!petsc!              & PETSc smoothing function.  A fully-constructed PETSc KSP pointer
-must be passed as a pointer to {\tt void} via the parameter {\tt smoother: petsc ksp}.\\
+must be passed as a pointer to {\tt void} via the parameter
+\hyperlink{petscksp}{{\tt smoother: petsc ksp}}.  Please see the \epetraext~
+\href{http://\trilinosWeb/packages/epetraext}{homepage} for
+more information.
+\\
 \hline
 \end{tabular}
 \caption{{\sf ML\_Epetra::MultiLevelPreconditioner}: Commonly used smoothers.
@@ -1460,24 +1465,26 @@ only if \ML\ has been properly configured. In particular:
 \item \ifpack~smoothers require {\tt --enable-ifpack --enable-epetra
   --enable-teuchos}.
 \item \parasails~smoother requires \verb!--with-ml_parasails!.
+\item \petsc~smoothers require \verb!--with-petsc! and
+\verb!--enable-epetraext!.
 \end{itemize}
 
-\medskip
+%\medskip
 
-\noindent
-{\bf Note that spaces are important within a parameter's name.  Do not
-  include non-required leading or trailing spaces. Please separate words by
-  just one space! Mispelled parameters will not be detected.} One may
-  find it useful to print unused parameters by calling \verb!PrintUnused()!
-  {\sl after} the construction of the multilevel hierarchy.\\
 
-\medskip
+%\medskip
 
+\subsubsection{Using Parameters on Individual Levels}
+\label{sec:parameters on different levels}
+%
 Some of the parameters that affect the MultiLevelPreconditioner class can in
 principle be different from level to level.  By default, the set method
 for the MultiLevelPreconditioner class affects all levels in the
-multigrid hierarchy.  In order to change a setting on a particular level,
-such as level \verb!d!, the string ``\verb!(level d)!" is appended to the
+multigrid hierarchy.  There are two ways to change settings for a particular
+level.
+
+The first method for changing a setting on a particular level,
+such as level \verb!d!, is to append the string ``\verb!(level d)!" to the
 option string (note that a space must separate the option and the level
 specification).  For instance, assuming decreasing levels starting from
 4, one could set the aggregation schemes as follows:
@@ -1493,6 +1500,44 @@ If the finest level is 0 and there are 5 levels,
 {\tt METIS} for level 1 and {\tt MIS} for level 3.
 Parameters that can be set differently on individual levels are denoted
 with the symbol $\star$ (this symbol is not part of the parameter name).
+
+The second method for changing a setting on a particular level
+is by using sublists.
+Smoother sublists name must be of the form "smoother: list (level XX)",
+and aggregation sublist names must be of the form "aggregation: list (level
+XX)", where XX is the
+level number (0 is the finest).  Parameter names in the sublist do not then
+need a level number.  Similarly, options for the coarsest level can be
+specified via the sublist "coarse: list".  Below is a short code fragment to
+illustrate this usage.
+%
+\begin{verbatim}
+  ParameterList MLList;
+  ParameterList &smList = MLList.sublist("smoother: list (level 1)");
+  smList.set("smoother: type","Jacobi");
+  smList.set("smoother: sweeps",5);
+
+  ParameterList &coarseList = MLList.sublist("coarse: list");
+  coarseList.set("coarse: type","symmetric Gauss-Seidel");
+\end{verbatim}
+
+\subsubsection{Parameter Validation}
+\label{sec:parameter validation}
+%
+By default, the \mlp~class validates the input parameter list.  A 
+parameter that is misspelled/unknown or has an incorrect value type will cause an exception to be thrown and execution to halt.
+{\bf Note that spaces are important within a parameter's name.  Do not
+  include non-required leading or trailing spaces. Please separate words by
+%  just one space!} The list given to the \mlp~constructor and the final list
+%  augmented by the \mlp~constructor can be printed via the options
+%  \verb!ML print initial list! and \verb!ML print final list!, respectively.
+  just one space!}
+  The option \verb!ML print initial list! prints the initial list given to the
+  \mlp~constructor.  The option \verb!ML print final list! prints
+  the final list actually used by the \mlp~constructor.
+  One may
+  find it useful to print unused parameters by calling \verb!PrintUnused()!
+  {\sl after} the construction of the multilevel hierarchy.\\
 
 % template for parameter list entry
 %   \choicebox{\tt}
@@ -1772,8 +1817,11 @@ preconditioner computational work while maintaining symmetry by doing edge-then-
 relaxation on the first leg of the V-cycle, and node-then-edge relaxation on the
 second leg. Default: {\tt true}.}
 
-\choicebox{\tt smoother: petsc ksp $\star$}{[{\tt void*}] A fully-constructed PETSc KSP
-smoother. Can only be used on finest level with a matrix of type Epetra\_PETScAIJMatrix.}
+\choicebox{\tt smoother: petsc ksp $\star$}{[{\tt void*}] A fully-constructed
+\hypertarget{petscksp}{\petsc KSP}
+smoother. Can only be used on finest level with a matrix of type
+ Epetra\_PETScAIJMatrix, part of the
+\href{http://\trilinosWeb/packages/epetraext}{\epetraext} package.}
 
 \choicebox{\tt subsmoother: type $\star$}{[{\tt string}] Smoother to be used
 as a subsmoother on the nodal and edge subproblems within Hiptmair smoothing.  It can assume the
