@@ -231,15 +231,18 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
             # Apply operator to interior points
             y[:,self.__y0:self.__y1] = 2.0 * xImp[:,1:-1] - xImp[:,:-2] - \
                                        xImp[:,2:]
-            # Apply left boundary conditions
+            # Apply boundary conditions.  Note that x[...] would attempt to
+            # return a new Epetra.MultiVector, and this hangs when only
+            # attempted on a single processor.  Therefore, we slice the
+            # MultiVector's internal array
             if self.__comm.MyPID() == 0:
-                y[:,:1] = x[:,:1]
+                y[:,:1] = x.array[:,:1]
             if self.__comm.MyPID() == self.__comm.NumProc() - 1:
-                y[:,-1:] = x[:,-1:]
+                y[:,-1:] = x.array[:,-1:]
             # NB: For the boundary calculations, I wanted to use
             #
-            #     y[:, 0] = x[:, 0]
-            #     y[:,-1] = x[:,-1]
+            #     y[:, 0] = x.array[:, 0]
+            #     y[:,-1] = x.array[:,-1]
             #
             # but this raised a ValueError: Object too deep for desired array on
             # beowulf, which was running numpy 0.9.8 at the time.  The simpler
