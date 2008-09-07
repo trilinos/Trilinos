@@ -656,6 +656,7 @@ TIMER = \
 
 UTILITIES_H = \
 	$(srcdir)/Utilities/Communication/comm.h \
+	$(srcdir)/Utilities/DDirectory/DD.h \
 	$(srcdir)/Utilities/Timer/timer.h \
 	$(srcdir)/Utilities/shared/zoltan_util.h \
 	$(srcdir)/Utilities/shared/zoltan_id.h
