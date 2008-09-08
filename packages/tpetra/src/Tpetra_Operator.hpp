@@ -29,40 +29,38 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
 #include <Teuchos_Object.hpp>
+#include <Teuchos_CompObject.hpp>
+#include "Tpetra_MapDecl.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 namespace Tpetra {
 
-  template<typename OrdinalType, typename ScalarType> class Vector;
-  template<typename OrdinalType, typename ScalarType> class VectorSpace;
-
   /** \brief Abstract interface for linear operators that accept Tpetra
-   * vectors.
+   * MultiVectors.
    */
-  template<typename OrdinalType, typename ScalarType>
-	class Operator : virtual public Teuchos::Object {
+  template<typename Ordinal, typename Scalar>
+	class Operator : public Teuchos::CompObject, public Teuchos::Object {
 	public:
-  
+
 		/** \name Pure virtual functions to be overridden by subclasses. */
     //@{
 
-		//! Returns the VectorSpace associated with the domain of this linear operator.
-		virtual VectorSpace<OrdinalType,ScalarType> const& getDomainDist() const = 0;
-  
-		//! Returns the VectorSpace associated with the range of this linear operator.
-		virtual VectorSpace<OrdinalType,ScalarType> const& getRangeDist() const = 0;
+		//! Returns the Map associated with the domain of this operator.
+		virtual const Map<Ordinal> & getDomainMap() const = 0;
+
+		//! Returns the Map associated with the range of this operator.
+		virtual const Map<Ordinal> & getRangeMap() const = 0;
 
     //! Computes the matrix-vector multiplication y = Ax.
-		virtual void apply(Vector<OrdinalType,ScalarType> const& x, Vector<OrdinalType, ScalarType> & y, bool transpose=false) const = 0;
-    
+		virtual void apply(const MultiVector<Ordinal,Scalar> &X, 
+                             MultiVector<Ordinal,Scalar> &Y, 
+                             bool transpose=false) const = 0;
+
     //@}
-    
+
 	};
 
 } // Tpetra namespace
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_OPERATOR_HPP
