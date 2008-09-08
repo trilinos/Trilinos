@@ -12,7 +12,7 @@ ADD_CUSTOM_TARGET(
   --build-dir=${TRILINOS_BUILD_DIR}
   --category=${TRILINOS_TEST_CATEGORY}
   --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-  --verbosity=3
+  --verbosity=1
   --packages=${PROJECT_DIR_NAME}
   )
 
@@ -27,7 +27,7 @@ ADD_CUSTOM_TARGET(
   --build-dir=${TRILINOS_BUILD_DIR}
   --category=${TRILINOS_TEST_CATEGORY}
   --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-  --verbosity=3
+  --verbosity=1
   --packages=${PROJECT_DIR_NAME}
   )
 ENDFUNCTION()
