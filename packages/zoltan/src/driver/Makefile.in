@@ -271,6 +271,7 @@ COMMON_DRIVER_SRC = \
 
 # List headers here that are used for both the C and C++ drivers.
 COMMON_DRIVER_HDRS = \
+	$(srcdir)/dr_compress_const.h \
 	$(srcdir)/dr_const.h $(srcdir)/dr_input_const.h \
 	$(srcdir)/dr_util_const.h $(srcdir)/dr_err_const.h \
 	$(srcdir)/dr_par_util_const.h $(srcdir)/dr_elem_const.h \
