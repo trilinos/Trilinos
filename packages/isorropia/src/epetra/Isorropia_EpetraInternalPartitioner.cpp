@@ -186,7 +186,7 @@ order(Teuchos::ParameterList& paramList,
 int InternalPartitioner::postcompute()
 {
   return (0);
-};
+}
 
 
 
