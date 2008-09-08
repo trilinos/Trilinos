@@ -48,9 +48,17 @@
 #include <Epetra_LinearProblem.h>
 #endif
 
+/* Isorropia now depends on Epetra, so I have replaced the
+   below code with the lines below the commented block. JW
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 #include <Epetra_MpiComm.h>
 #elif HAVE_EPETRA
+#include <Epetra_SerialComm.h>
+#endif*/
+
+#ifdef HAVE_MPI
+#include <Epetra_MpiComm.h>
+#else
 #include <Epetra_SerialComm.h>
 #endif
 

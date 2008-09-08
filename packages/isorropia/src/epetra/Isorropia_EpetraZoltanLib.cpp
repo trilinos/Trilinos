@@ -41,10 +41,11 @@ USA
 
 #include <Isorropia_EpetraZoltanLib.hpp>
 
+/*This is no longer true
 #ifndef HAVE_MPI
 #error "Isorropia_Zoltan requires MPI."
 #endif
-
+*/
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Comm.h>
