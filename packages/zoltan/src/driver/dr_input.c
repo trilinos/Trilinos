@@ -412,10 +412,10 @@ int read_cmd_file (
       continue;                             /* file generation testing flag */
 
     else if (sscanf(line, " test local partitions" SKIPEQ "%d%n",
-		    &Test.Local_Partitions, &n) == 1)
+		    &Test.Local_Parts, &n) == 1)
       continue;                /* Unusual Partition generation testing flag */
     else if (sscanf(line, " test local partition" SKIPEQ "%d%n",
-		    &Test.Local_Partitions, &n) == 1)
+		    &Test.Local_Parts, &n) == 1)
       continue;                /* Unusual Partition generation testing flag */
 
     else if (sscanf(line, " test fixed objects" SKIPEQ "%d%n",
@@ -646,7 +646,7 @@ void brdcst_cmd_info (
   j = 0;
   int_params[j++] = Debug_Driver;
   int_params[j++] = Test.DDirectory;
-  int_params[j++] = Test.Local_Partitions;
+  int_params[j++] = Test.Local_Parts;
   int_params[j++] = Test.Fixed_Objects;
   int_params[j++] = Test.Multi_Callbacks;
   int_params[j++] = Test.Graph_Callbacks;
@@ -670,7 +670,7 @@ void brdcst_cmd_info (
   j = 0;
   Debug_Driver           = int_params[j++];
   Test.DDirectory        = int_params[j++];
-  Test.Local_Partitions  = int_params[j++];
+  Test.Local_Parts  = int_params[j++];
   Test.Fixed_Objects     = int_params[j++];
   Test.Multi_Callbacks   = int_params[j++];
   Test.Graph_Callbacks   = int_params[j++];

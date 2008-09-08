@@ -558,7 +558,7 @@ int Zoltan_Hier(
 
     /* set the numbers of partitions */
     sprintf(msg, "%d", hpp.num_parts);
-    Zoltan_Set_Param(hpp.hierzz, "NUM_GLOBAL_PARTITIONS", msg);
+    Zoltan_Set_Param(hpp.hierzz, "NUM_GLOBAL_PARTS", msg);
 
     /* specify the callbacks */
     ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_OBJ_FN_TYPE,

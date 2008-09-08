@@ -8,7 +8,7 @@ File Type		= matrixmarket+
 File Name		= vwgt
 Parallel Disk Info	= number=0
 Zoltan Parameters       = phg_coarsening_limit = 1
-Zoltan Parameters       = num_global_partitions=7
+Zoltan Parameters       = num_global_parts=7
 Zoltan Parameters       = phg_coarsepartition_method=linear
 Zoltan Parameters       = remap=0
 test fixed objects      = 5

@@ -1,7 +1,7 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-Zoltan Parameters       = num_global_partitions=11
+Zoltan Parameters       = num_global_parts=11
 Zoltan Parameters       = phg_output_level=1
 Zoltan Parameters       = phg_coarsepartition_method=linear
 Zoltan Parameters       = remap=0

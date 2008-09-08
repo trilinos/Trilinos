@@ -1,5 +1,5 @@
 Decomposition Method 	= rib
-Zoltan Parameters	= num_global_partitions=2
+Zoltan Parameters	= num_global_parts=2
 Zoltan Parameters	= keep_cuts=1
 Zoltan Parameters	= debug_level=3, timer=cpu
 File Type		= Chaco

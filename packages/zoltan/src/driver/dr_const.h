@@ -286,7 +286,7 @@ typedef struct Problem_Description *PROB_INFO_PTR;
 /* Structure for driver flags for various test options. */
 struct Test_Flags {
   int DDirectory;           /* Exercises data directories */
-  int Local_Partitions;     /* Sets NUM_LOCAL_PARTITIONS parameter in various
+  int Local_Parts;          /* Sets NUM_LOCAL_PARTS parameter in various
                                ways. */
   int Fixed_Objects;        /* Registers functions for assigning fixed
                                objects; sets fixed_part within elements in

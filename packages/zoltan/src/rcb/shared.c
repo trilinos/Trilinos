@@ -352,7 +352,7 @@ int Zoltan_RB_Send_To_Part(
  * This situation arises when a processor has zero partitions assigned to
  * it, yet has participated in the parallel partitioning and has, as a result,
  * stored some dots.  
- * (e.g., three processors, two partitions, NUM_LOCAL_PARTITIONS = 1 on 
+ * (e.g., three processors, two partitions, NUM_LOCAL_PARTS = 1 on 
  * procs 1 and 2.  Procs 0 and 1 are in set 0 during parallel partitioning, so
  * Proc 0 may have some dots after the parallel partitioning.  Those dots 
  * must be sent to proc 1.

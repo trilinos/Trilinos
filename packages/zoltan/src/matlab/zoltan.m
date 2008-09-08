@@ -69,7 +69,7 @@ else
 end
 
 % Append number of parts
-fprintf(fp, 'Zoltan parameter = num_global_partitions=%d\n', p);
+fprintf(fp, 'Zoltan parameter = num_global_parts=%d\n', p);
 % Append other options
 if (opt)
   % Loop over options

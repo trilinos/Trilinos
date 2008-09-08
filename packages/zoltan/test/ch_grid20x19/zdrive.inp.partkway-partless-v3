@@ -1,5 +1,5 @@
 Decomposition Method 	= parmetis
-Zoltan Parameters       = num_global_partitions=2
+Zoltan Parameters       = num_global_parts=2
 Zoltan Parameters       = parmetis_method=partkway
 Zoltan Parameters       = debug_level=3, timer=cpu
 File Type		= Chaco

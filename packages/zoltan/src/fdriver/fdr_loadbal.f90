@@ -148,7 +148,7 @@ type(PARIO_INFO) :: pio_info
     s(2:2) = achar(Proc/10 + iachar('0'))
     s(3:3) = achar(modulo(Proc,10) + iachar('0'))
     s(4:4) = '\n'
-    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Param()"
       run_zoltan = .false.
       goto 9999
@@ -162,7 +162,7 @@ type(PARIO_INFO) :: pio_info
       s(2:2) = achar(Proc/10 + iachar('0'))
       s(3:3) = achar(modulo(Proc,10) + iachar('0'))
       s(4:4) = '\n'
-      if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Param()"
         run_zoltan = .false.
         goto 9999
@@ -191,7 +191,7 @@ type(PARIO_INFO) :: pio_info
     s(2:2) = achar(Proc/10 + iachar('0'))
     s(3:3) = achar(modulo(Proc,10) + iachar('0'))
     s(4:4) = '\n'
-    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Param()"
       run_zoltan = .false.
       goto 9999
