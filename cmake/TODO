@@ -4,29 +4,34 @@ TODOs for the Trilinos/CMake system
 Last updated: 2008/08/04
 
 (*) Clean up all PACKAGE/test/CMakeList.txt to be a clean as possible
-- Remove the direct calls INCLUDE_DIRECTORIES(...) and LINK_LIBRARIES(...)
+- Remove the direct calls INCLUDE_DIRECTORIES(...) and LINK_LIBRARIES(...) 
+... Done for 'test' but not 'example' ...
 - Remove all calls to TRILINOS_ADD_EXECUTABLE_AND_TEST(...) with
 separate calls to TRILINOS_ADD_EXECUTABLE(...) and
-TRILINOS_ADD_TEST(...)
-- Get rid of MPI_EXECUTABLE_FLAGS in ConfigureMPI.cmake once
-TRILINOS_ADD_EXECUTABLE_AND_TEST(....) is gone.
+TRILINOS_ADD_TEST(...) ... done for 'test' but not 'example' ...
 
 (*) Finish custom target for 'runtests-serial' and 'runtests-mpi' to run the
 perl 'runtest' script
 - Figure out PROJECT_DIR_NAME automatically from CMAKE_CURRENT_SOURCE_DIR and
 put this logic in TrilinosRuntestsTargets.cmake
 
+(*) TRILINOS_ADD_TEST(...) upgrades
+- Add the number of processes that an MPI test is being run with to the name
+of the test.  This will allow you to see just from the main output how many
+processors are selected to run with.
+- Look into changing the print width for ctest since it is truncating
+long test names.
+
+(*) Set up out own CDash results for Trilinos serial and mpi
+- Find machine and time to run build (exetazo or regresssion.sandia.gov)
+- Find machine and host resuls (software.sandia.gov)
+- Meet with Danny D. to go over process to set this up
+- See about getting some type of email alert
+
 (*) Write skeleton for new Trilinos Developers Guide with CMake instead of
 autotools ... ON GOING ...
 - Give to Jim W. to see if you can actually use cmake to build and test
 Trilinos
-
-(*) TRILINOS_ADD_TEST(...) upgrades
-- Add the number of processes that an MPI test is being run with.
-This will allow you to see just from the main output how many
-processors are selected to run with.
-- Look into changing the print width for ctest since it is truncating
-long test names.
 
 
 Completed:
@@ -38,3 +43,6 @@ Completed:
 - Change KEYWORDS to create postfix names to the end of the test name (but
 before the arbitrary number) [Done]
 - Enable and test absent DIRECTORY argument [Done]
+
+- Get rid of MPI_EXECUTABLE_FLAGS in ConfigureMPI.cmake once
+TRILINOS_ADD_EXECUTABLE_AND_TEST(....) is gone. [Done]
