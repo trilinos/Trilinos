@@ -3,10 +3,6 @@
 # Required modules
 INCLUDE(Trilinos_Add_Executable_And_Test)
 
-# Setup include directories and library dependencies
-INCLUDE_DIRECTORIES(${${PROJECT_NAME}_INCLUDE_DIRS})
-LINK_LIBRARIES(${${PROJECT_NAME}_LIBRARIES})
-
 # Example definitions
 TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockDavidson NAME BlockDavidsonEpetraEx EXAMPLE SOURCES BlockDavidsonEpetraEx.cpp)
 TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockKrylovSchur NAME BlockKrylovSchurEpetraEx EXAMPLE SOURCES BlockKrylovSchurEpetraEx.cpp)

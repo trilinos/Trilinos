@@ -1,24 +1,8 @@
 # $Header$ 
 
 # Required modules
-#INCLUDE(Trilinos_Add_Executable_And_Test)
 INCLUDE(Trilinos_Add_Executable)
 INCLUDE(Trilinos_Add_Test)
-
-# Setup include directories and library dependencies
-#INCLUDE_DIRECTORIES(${${PROJECT_NAME}_INCLUDE_DIRS})
-#LINK_LIBRARIES(${${PROJECT_NAME}_LIBRARIES})
-
-# Test arguments for MPI
-IF(TRILINOS_ENABLE_MPI)
-	SET(TEST_ARGUMENTS TEST MPITEST)
-ELSE(TRILINOS_ENABLE_MPI)
-	SET(TEST_ARGUMENTS TEST)
-ENDIF(TRILINOS_ENABLE_MPI)
-
-# 2008/06/09: rabartl: Above: This MPI logic gets duplicated in every
-# CMakeLists.txt file in every package.  Instead, it should be copied into a
-# single file and get reused.  NO DUPLICATION!
 
 # Test definitions
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(exit ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
