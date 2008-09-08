@@ -23,8 +23,8 @@ public:
 template<class Scalar, int D>
 class SGNodes{
 public:
-	vector< SGPoint<Scalar, D> > nodes;
-	vector< Scalar > weights;
+	std::vector< SGPoint<Scalar, D> > nodes;
+	std::vector< Scalar > weights;
 	bool addNode(Scalar new_node[D], Scalar weight);
 	void copyToTeuchos(Teuchos::Array< Point<Scalar> > & cubPoints, Teuchos::Array<Scalar> & cubWeights);
 	void copyToTeuchos(Teuchos::Array< Scalar* > & cubPoints, Teuchos::Array<Scalar> & cubWeights);
@@ -64,7 +64,7 @@ CubatureSparse<Scalar, dimension_>::CubatureSparse(const int                    
 	}
 	else if(dimension_ == 3)
 	{
-		if(degree == 1)
+		if(degree <= 1)
 			level_ = 1;
 		else if(degree <= 3)
 			level_ = 2;
@@ -335,7 +335,7 @@ void iterateThroughDimensions(int level, int dims_left, SGNodes< Scalar, DIM > &
 	int l = level;
 	int d = DIM;
 	int add_on = d - dims_left;
-	int start = dims_left > 1 ? 1 : (int)max(1, l);
+	int start = dims_left > 1 ? 1 : (int)std::max(1, l);
 	int end = l + add_on;
 
 	ECell cellType = CELL_EDGE;

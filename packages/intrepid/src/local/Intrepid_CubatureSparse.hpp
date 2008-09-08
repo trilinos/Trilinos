@@ -6,7 +6,7 @@
 #include "Intrepid_CubatureDirect.hpp"
 #include "Intrepid_MultiCell.hpp"
 #include "Teuchos_TestForException.hpp"
-#include <vector.h>
+//#include <vector.h>
 
 namespace Intrepid{
 
