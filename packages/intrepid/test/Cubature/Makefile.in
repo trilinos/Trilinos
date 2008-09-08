@@ -66,7 +66,7 @@ host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = test_01$(EXEEXT) test_02$(EXEEXT) test_03$(EXEEXT) \
 	test_04$(EXEEXT) test_05$(EXEEXT) test_06$(EXEEXT) \
-	Dummy$(EXEEXT)
+	test_07$(EXEEXT) test_08$(EXEEXT) Dummy$(EXEEXT)
 subdir = test/Cubature
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -126,6 +126,14 @@ am_test_06_OBJECTS = test_06-test_06.$(OBJEXT)
 test_06_OBJECTS = $(am_test_06_OBJECTS)
 test_06_LINK = $(CXXLD) $(test_06_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_test_07_OBJECTS = test_07-test_07.$(OBJEXT)
+test_07_OBJECTS = $(am_test_07_OBJECTS)
+test_07_LINK = $(CXXLD) $(test_07_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_test_08_OBJECTS = test_08-test_08.$(OBJEXT)
+test_08_OBJECTS = $(am_test_08_OBJECTS)
+test_08_LINK = $(CXXLD) $(test_08_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -140,10 +148,10 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(Dummy_SOURCES) $(test_01_SOURCES) $(test_02_SOURCES) \
 	$(test_03_SOURCES) $(test_04_SOURCES) $(test_05_SOURCES) \
-	$(test_06_SOURCES)
+	$(test_06_SOURCES) $(test_07_SOURCES) $(test_08_SOURCES)
 DIST_SOURCES = $(Dummy_SOURCES) $(test_01_SOURCES) $(test_02_SOURCES) \
 	$(test_03_SOURCES) $(test_04_SOURCES) $(test_05_SOURCES) \
-	$(test_06_SOURCES)
+	$(test_06_SOURCES) $(test_07_SOURCES) $(test_08_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -289,6 +297,14 @@ test_06_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
+test_07_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+test_08_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
 test_01_SOURCES = test_01.cpp
 test_01_LDADD = $(EXPORT_LIBS)
 test_01_CXXFLAGS = -I$(srcdir)
@@ -307,6 +323,12 @@ test_05_CXXFLAGS = -I$(srcdir)
 test_06_SOURCES = test_06.cpp
 test_06_LDADD = $(EXPORT_LIBS)
 test_06_CXXFLAGS = -I$(srcdir)
+test_07_SOURCES = test_07.cpp
+test_07_LDADD = $(EXPORT_LIBS)
+test_07_CXXFLAGS = -I$(srcdir)
+test_08_SOURCES = test_08.cpp
+test_08_LDADD = $(EXPORT_LIBS)
+test_08_CXXFLAGS = -I$(srcdir)
 Dummy_SOURCES = Dummy
 EXTRA_DIST = \
 data/HEX_integrals.dat       data/TET_integrals.dat \
@@ -367,6 +389,12 @@ test_05$(EXEEXT): $(test_05_OBJECTS) $(test_05_DEPENDENCIES)
 test_06$(EXEEXT): $(test_06_OBJECTS) $(test_06_DEPENDENCIES) 
 	@rm -f test_06$(EXEEXT)
 	$(test_06_LINK) $(test_06_OBJECTS) $(test_06_LDADD) $(LIBS)
+test_07$(EXEEXT): $(test_07_OBJECTS) $(test_07_DEPENDENCIES) 
+	@rm -f test_07$(EXEEXT)
+	$(test_07_LINK) $(test_07_OBJECTS) $(test_07_LDADD) $(LIBS)
+test_08$(EXEEXT): $(test_08_OBJECTS) $(test_08_DEPENDENCIES) 
+	@rm -f test_08$(EXEEXT)
+	$(test_08_LINK) $(test_08_OBJECTS) $(test_08_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -380,6 +408,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_04-test_04.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_05-test_05.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_06-test_06.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_07-test_07.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_08-test_08.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -478,6 +508,34 @@ test_06-test_06.obj: test_06.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_06.cpp' object='test_06-test_06.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_06_CXXFLAGS) $(CXXFLAGS) -c -o test_06-test_06.obj `if test -f 'test_06.cpp'; then $(CYGPATH_W) 'test_06.cpp'; else $(CYGPATH_W) '$(srcdir)/test_06.cpp'; fi`
+
+test_07-test_07.o: test_07.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_07_CXXFLAGS) $(CXXFLAGS) -MT test_07-test_07.o -MD -MP -MF $(DEPDIR)/test_07-test_07.Tpo -c -o test_07-test_07.o `test -f 'test_07.cpp' || echo '$(srcdir)/'`test_07.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_07-test_07.Tpo $(DEPDIR)/test_07-test_07.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_07.cpp' object='test_07-test_07.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_07_CXXFLAGS) $(CXXFLAGS) -c -o test_07-test_07.o `test -f 'test_07.cpp' || echo '$(srcdir)/'`test_07.cpp
+
+test_07-test_07.obj: test_07.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_07_CXXFLAGS) $(CXXFLAGS) -MT test_07-test_07.obj -MD -MP -MF $(DEPDIR)/test_07-test_07.Tpo -c -o test_07-test_07.obj `if test -f 'test_07.cpp'; then $(CYGPATH_W) 'test_07.cpp'; else $(CYGPATH_W) '$(srcdir)/test_07.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_07-test_07.Tpo $(DEPDIR)/test_07-test_07.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_07.cpp' object='test_07-test_07.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_07_CXXFLAGS) $(CXXFLAGS) -c -o test_07-test_07.obj `if test -f 'test_07.cpp'; then $(CYGPATH_W) 'test_07.cpp'; else $(CYGPATH_W) '$(srcdir)/test_07.cpp'; fi`
+
+test_08-test_08.o: test_08.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_08_CXXFLAGS) $(CXXFLAGS) -MT test_08-test_08.o -MD -MP -MF $(DEPDIR)/test_08-test_08.Tpo -c -o test_08-test_08.o `test -f 'test_08.cpp' || echo '$(srcdir)/'`test_08.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_08-test_08.Tpo $(DEPDIR)/test_08-test_08.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_08.cpp' object='test_08-test_08.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_08_CXXFLAGS) $(CXXFLAGS) -c -o test_08-test_08.o `test -f 'test_08.cpp' || echo '$(srcdir)/'`test_08.cpp
+
+test_08-test_08.obj: test_08.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_08_CXXFLAGS) $(CXXFLAGS) -MT test_08-test_08.obj -MD -MP -MF $(DEPDIR)/test_08-test_08.Tpo -c -o test_08-test_08.obj `if test -f 'test_08.cpp'; then $(CYGPATH_W) 'test_08.cpp'; else $(CYGPATH_W) '$(srcdir)/test_08.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_08-test_08.Tpo $(DEPDIR)/test_08-test_08.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='test_08.cpp' object='test_08-test_08.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_08_CXXFLAGS) $(CXXFLAGS) -c -o test_08-test_08.obj `if test -f 'test_08.cpp'; then $(CYGPATH_W) 'test_08.cpp'; else $(CYGPATH_W) '$(srcdir)/test_08.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
