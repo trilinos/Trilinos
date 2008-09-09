@@ -497,6 +497,29 @@ public:
     return Zoltan_Set_Unpack_Obj_Fn( ZZ_Ptr, fn_ptr, data );
   }
 
+  /// Backward compatibility with v3.0
+  ///--------------------------
+  int Set_Partition_Multi_Fn  ( ZOLTAN_PART_MULTI_FN * fn_ptr,
+                                void * data = 0 )
+  {
+    return Zoltan_Set_Part_Multi_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+
+  ///--------------------------
+  int Set_Partition_Fn        ( ZOLTAN_PART_FN * fn_ptr,
+                                void * data = 0 )
+  {
+    return Zoltan_Set_Part_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+
+  ///--------------------------
+  int Set_Hier_Partition_Fn( ZOLTAN_HIER_PART_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_Hier_Part_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  ///--------------------------
   int LB_Point_PP_Assign ( double * const coords,
                            int &proc,
                            int &part )
