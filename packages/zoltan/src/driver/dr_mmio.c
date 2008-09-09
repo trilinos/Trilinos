@@ -76,10 +76,9 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 
     for (i=0; i<nz; i++)
     {
-      int dummy;
-	ZOLTAN_FILE_scanf(&dummy, f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
-	I[i]--;  /* adjust from 1-based to 0-based */
-	J[i]--;
+      ZOLTAN_FILE_scanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+      I[i]--;  /* adjust from 1-based to 0-based */
+      J[i]--;
     }
     ZOLTAN_FILE_close(f);
 
@@ -215,7 +214,7 @@ int mm_read_mtx_crd_size(ZOLTAN_FILE* f, int *M, int *N, int *nz )
     else
     do
     {
-	ZOLTAN_FILE_scanf(&num_items_read, f, "%d %d %d", M, N, nz);
+	num_items_read = ZOLTAN_FILE_scanf(f, "%d %d %d", M, N, nz);
 	if (num_items_read == EOF) return MM_PREMATURE_EOF;
     }
     while (num_items_read != 3);
@@ -245,7 +244,7 @@ int mm_read_mtx_array_size(ZOLTAN_FILE* f, int *M, int *N)
     else /* we have a blank line */
     do
     {
-	ZOLTAN_FILE_scanf(&num_items_read, f, "%d %d", M, N);
+	num_items_read = ZOLTAN_FILE_scanf (f, "%d %d", M, N);
 	if (num_items_read == EOF) return MM_PREMATURE_EOF;
     }
     while (num_items_read != 2);
@@ -278,14 +277,14 @@ int mm_read_mtx_crd_data(ZOLTAN_FILE* f, int M, int N, int nz, int I[], int J[],
     if (mm_is_complex(matcode))
     {
 	for (i=0; i<nz; i++)
-	  ZOLTAN_FILE_scanf(&dummy, f, "%d %d %lg %lg", &I[i], &J[i], &val[2*i], &val[2*i+1]);
+	  dummy = ZOLTAN_FILE_scanf (f, "%d %d %lg %lg", &I[i], &J[i], &val[2*i], &val[2*i+1]);
 	if (dummy != 4) return MM_PREMATURE_EOF;
     }
     else if (mm_is_real(matcode))
     {
 	for (i=0; i<nz; i++)
 	{
-	  ZOLTAN_FILE_scanf(&dummy, f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+	  dummy = ZOLTAN_FILE_scanf(f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
 	  if (dummy != 3) return MM_PREMATURE_EOF;
 
 	}
@@ -294,7 +293,7 @@ int mm_read_mtx_crd_data(ZOLTAN_FILE* f, int M, int N, int nz, int I[], int J[],
     else if (mm_is_pattern(matcode))
     {
       for (i=0; i<nz; i++)
-	ZOLTAN_FILE_scanf(&dummy, f, "%d %d", &I[i], &J[i]);
+	dummy = ZOLTAN_FILE_scanf(f, "%d %d", &I[i], &J[i]);
       if (dummy	!= 2) return MM_PREMATURE_EOF;
     }
     else
@@ -310,18 +309,18 @@ int mm_read_mtx_crd_entry(ZOLTAN_FILE* f, int *I, int *J,
   int dummy;
   if (mm_is_complex(matcode))
     {
-      ZOLTAN_FILE_scanf(&dummy, f, "%d %d %lg %lg", I, J, real, imag);
+      dummy = ZOLTAN_FILE_scanf(f, "%d %d %lg %lg", I, J, real, imag);
       if (dummy != 4) return MM_PREMATURE_EOF;
     }
     else if (mm_is_real(matcode))
     {
-      ZOLTAN_FILE_scanf(&dummy, f, "%d %d %lg\n", I, J, real);
+      dummy = ZOLTAN_FILE_scanf(f, "%d %d %lg\n", I, J, real);
       if (dummy != 3) return MM_PREMATURE_EOF;
     }
 
     else if (mm_is_pattern(matcode))
     {
-      ZOLTAN_FILE_scanf(&dummy, f, "%d %d", I, J);
+      dummy = ZOLTAN_FILE_scanf(f, "%d %d", I, J);
       if (dummy != 2) return MM_PREMATURE_EOF;
     }
     else

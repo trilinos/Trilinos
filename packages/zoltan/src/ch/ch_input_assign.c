@@ -89,7 +89,7 @@ short    *assignment)		/* values to be printed */
     if (assignment[0] > nvtxs)
 	flag = assignment[1];
     for (i = 1; i < nvtxs; i++) {
-	ZOLTAN_FILE_scanf(&j, finassign, "%hd", &(assignment[i]));
+	j = ZOLTAN_FILE_scanf(finassign, "%hd", &(assignment[i]));
 	if (j != 1) {
 	    printf("ERROR: Too few values in assignment file `%s'.\n", inassignname);
 	    ZOLTAN_FILE_close(finassign);
@@ -192,7 +192,7 @@ short    *assignment)		/* values to be printed */
     done = FALSE;
     while (!done && total < nvtxs) {
 	for (i = 1; i <= size; i++) {
-	    ZOLTAN_FILE_scanf(&j, finassign, "%d", &k);
+	    j = ZOLTAN_FILE_scanf(finassign, "%d", &k);
 	    if (j != 1) {
 	        printf("ERROR: Too few values in assignment file `%s'.\n",
 		    inassignname);
@@ -222,7 +222,7 @@ short    *assignment)		/* values to be printed */
 	}
 
 	total += size;
-	ZOLTAN_FILE_scanf(&j, finassign, "%d", &size);
+	j = ZOLTAN_FILE_scanf(finassign, "%d", &size);
 	++set;
 	if (j != 1) {
 	    if (total != nvtxs) {
