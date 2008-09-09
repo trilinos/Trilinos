@@ -9,6 +9,7 @@ FFLAGS=-O3 \
 --cache-file=config.cache \
 --disable-default-packages \
 --with-swig=/home/wfspotz/bin/swig \
+--with-trilinosdatadir=/common/TrilinosTestHarness/TrilinosData \
 --enable-amesos \
 --enable-amesos-umfpack \
 --enable-amesos-dscpack \
@@ -34,6 +35,7 @@ FFLAGS=-O3 \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
 --enable-external \
+--enable-fei \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
@@ -59,6 +61,7 @@ FFLAGS=-O3 \
 --enable-nox-thyra \
 --enable-pamgen \
 --enable-phalanx \
+--enable-phdmesh \
 --enable-pliris \
 --enable-pytrilinos \
 --enable-rbgen \
@@ -77,5 +80,7 @@ FFLAGS=-O3 \
 --enable-sacado \
 --enable-sacado-alltests \
 --enable-stratimikos \
+--enable-sundance \
 --enable-webtrilinos \
+--enable-zoltan \
 --with-gnumake

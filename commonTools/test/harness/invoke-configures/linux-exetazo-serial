@@ -23,6 +23,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
 --enable-external \
+--enable-fei \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
@@ -68,4 +69,5 @@ FFLAGS="-O3 -fPIC" \
 --enable-sacado-alltests \
 --enable-stratimikos \
 --enable-webtrilinos \
+--enable-zoltan \
 --with-gnumake
