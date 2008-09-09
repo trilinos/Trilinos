@@ -708,7 +708,66 @@ void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 
 The constructor pulls out data from the parameter list to set the correct data layout.  Additionally, it tells the FieldManager what fields it will evaluate and what fields it requires/depends on to perform the evaluation.
 
-The postRegistrationSetup gets pointers from the FieldManager to the start of the array for each particular field.
+The postRegistrationSetup gets pointers from the FieldManager to the array for storing data for each particular field.
+
+  Writing evaluators can be tedious.  We have invested much time in minimizing the amount of code a user writes for a new evaluator.  Our experience is that you can literally have hundreds of evaluators.  So we have added macros to hide the boilerplate code in each evaluator.  Not only does this streamline/condense the code, but it also hides much of the templating.  So if your userbase is uncomfortable with C++ templates, the macro definitions could be very helpful.  The definitions are found in the file Phalanx_Evaluator_Macros.hpp.  The same evaluator shown above is now implemented using the macro definitions:
+
+Class declaration:
+\code
+#ifndef PHX_EXAMPLE_VP_DENSITY_HPP
+#define PHX_EXAMPLE_VP_DENSITY_HPP
+
+#include "Phalanx_Evaluator_Macros.hpp"
+#include "Phalanx_Field.hpp"
+
+PHX_EVALUATOR_CLASS(Density)
+
+  double constant;
+
+  PHX::Field<ScalarT> density;
+  PHX::Field<ScalarT> temp;
+
+  std::size_t data_layout_size;
+
+PHX_EVALUATOR_CLASS_END
+
+#include "Evaluator_Density_Def.hpp"
+
+#endif
+\endcode
+
+Class definition:
+\code
+//**********************************************************************
+PHX_EVALUATOR_CTOR(Density,p) :
+  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
+  temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{ 
+  this->addEvaluatedField(density);
+  this->addDependentField(temp);
+  this->setName("Density");
+}
+
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(Density,fm)
+{
+  this->utils.setFieldData(density,fm);
+  this->utils.setFieldData(temp,fm);
+
+  data_layout_size = density.fieldTag().dataLayout().size();
+}
+
+//**********************************************************************
+PHX_EVALUATE_FIELDS(Density,d)
+{ 
+  std::size_t size = d.size() * data_layout_size;
+  
+  for (std::size_t i = 0; i < size; ++i)
+    density[i] =  temp[i] * temp[i];
+}
+\endcode
+
+The evaluators for the example problem in "phalanx/example/EnergyFlux" have been rewritten using the macro definitions in the directory "phalanx/test/Utilities/evaluators".  
 
 \section user_guide_step6 Step 6: Implement the FieldManager in your code
   Adding the FieldManager to your code is broken into steps.  You must build each Evaluator for each field type, register the evaluators with the FieldManager, and then call the evaluate routines.  Continuing from our example:
@@ -728,31 +787,35 @@ RCP<ParameterList> p = rcp(new ParameterList);
 p->set< RCP<DataLayout> >("Data Layout", qp);
      
 // Residual
-Teuchos::RCP< Density<MyTraits::Residual,MyTriats> > residual_density = 
+Teuchos::RCP< Density<MyTraits::Residual,MyTraits> > residual_density = 
   Teuchos::rcp(new Density<MyTraits::Residual,MyTriats>(p));
 
 fm.registerEvaluator<MyTraits::Residual>(residual_density);
 
 // Jacobian
-Teuchos::RCP< Density<MyTraits::Jacobian,MyTriats> > jacobian_density = 
+Teuchos::RCP< Density<MyTraits::Jacobian,MyTraits> > jacobian_density = 
   Teuchos::rcp(new Density<MyTraits::Jacobian,MyTriats>(p));
 
 fm.registerEvaluator<MyTraits::Residual>(jacobian_density);
 \endcode
 
-As one can see, this becomes very tedious if there are many evaluation types.  It is much better to use the automated factory to build one for each evalaution type.  Where this method is useful is if you are in a class already templated on the evaluation type, and would like to build and register an evaluator in that peice of code for that specific evaluation type.
+As one can see, this becomes very tedious if there are many evaluation types.  It is much better to use the automated factory to build one for each evalaution type.  Where this method is useful is if you are in a class already templated on the evaluation type, and would like to build and register an evaluator in that peice of code.
 
 \subsubsection fmd1s2 A.2 Using the Automated Factory
 
-  Phalanx provides an automated builder PHX::EvaluatorFactory that will create an object of each evaluation type.  The following requirements are placed on each and every Evaluators that a user writes if they plan to use the automated factory:
-<ul>
-<li>  The constructor of your Evaluator must take exactly one argument that is a Teuchos::ParamterList object.  This allows you to pass an arbitrary number of objects with arbitrary types.
-<li>  In the Teuchos::ParamterList, you must have one key called "Type" that is associated with an integer value that uniquely corresponds to an Evaluator object written by the user.
+  Phalanx provides an automated builder PHX::EvaluatorFactory that will create an object of each evaluation type.  The following requirements are placed on each and every Evaluator that a user writes if they plan to use the automated factory:
+<ol>
+
+<li>  The constructor of your Evaluator must take exactly one argument that is a Teuchos::ParamterList object.  A Teuchos::ParameterList allows you to pass an arbitrary number of objects with arbitrary types.
+
+<li>  In the Teuchos::ParamterList, you must have one key called "Type" that is associated with an integer value that uniquely corresponds to an Evaluator object written by the user.  This integer is defined in the users factory traits object described below.
+
 <li>  The Evaluator must derive from the PHX::EvaluatorDerived class as shown in the example above.  This allows the variable manager to store a vector of base object pointers for each evaluation type in a single stl vector yet be able to return the derived class.
-</ul>
+
+</ol>
 
 
-To build an PHX::EvaluatorFactory, you must provide a FactoryTraits class that gives the factory a list of its evaluator types.  An example of the factory traits class is in the file FactoryTraits.hpp:
+To build an PHX::EvaluatorFactory, you must provide a factory traits class that gives the factory a list of its evaluator types.  An example of the factory traits class is the FactoryTraits object in the file FactoryTraits.hpp:
 
 \code
 #ifndef EXAMPLE_FACTORY_TRAITS_HPP
@@ -794,9 +857,9 @@ struct MyFactoryTraits {
 
 \endcode 
 
-Since the factory is built at compile time, we need to link a run-time choice to the compile-time list of object types.  Thus the user must provide the static const int identifiers that are unique for each type that can be constructed.  Users can ignore the "_" argument in the mpl vector.  This is a placeholder argument that allows us to iterate over each evaluation type.
+Since the factory is built at compile time, we need to link a run-time choice to the compile-time list of object types.  Thus the user must provide the static const int identifiers that are unique for each type that can be constructed.  Users can ignore the "_" argument in the mpl vector.  This is a placeholder argument that allows us to iterate over and instert each evaluation type into the factory traits.
 
-Now let's build the evaluators.  We create a ParameterList for each evaluator and call the factory constructor.  This code can be found in the Example.cpp file in the directory "phalanx/example/EnergyFlux".
+Now let's build the evaluators.  The following code can be found in the Example.cpp file in the directory "phalanx/example/EnergyFlux".  We create a ParameterList for each evaluator and call the factory constructor.  Since we are using the factory, we need to specify the "Type" argument set to the integer of the corresponding Evaluator in the factory traits that we wish to build:
 
 \code
       RCP<DataLayout> qp = rcp(new FlatLayout("QP", 4));
@@ -879,9 +942,13 @@ Now let's build the evaluators.  We create a ParameterList for each evaluator an
 
 \endcode
 
+The map "evaluators_to_build" has a key of type "std::string".  This key is irrelevant to the execution of the code.  It is an identifer that can help users debug code or search for a specific provider in the list.  What you put in the key is for your own use.
+
+You are free to register evaluators until the time you call the method postRegistrationSetup() on the field manager.  Once this is called, you can not register any more evaluators.  You can make multiple registration calls to add more providers - there is no limit on the number of calls.
+
 \subsection fmd2 B. Request which Fields to Evaluate
 
-Next tell the Field Manager which quantities it need to provide to your code.  You must request variables for each evaluation type:
+You must tell the FieldManager which quantities it should evaluate.  This step can occur before, after, or in-between the registration of Evaluators.  You must request variables separately for each evaluation type.  This is required since since data types can exist in multiple evaluation types.
 
 \code
       // Request quantities to assemble RESIDUAL PDE operators
@@ -907,9 +974,15 @@ Next tell the Field Manager which quantities it need to provide to your code.  Y
       }
 \endcode
 
-\subsection fmd3 C. Call postRegistrationSetup()
+\subsection fmd3 C. Call FieldManager::postRegistrationSetup()
 
-Once the evaluators are registered with the FieldManager and it knows which field it needs to provide, call the postRegistrationSetup method to figure out the total amount of memory to allocate for all fields.  It will also figure out which evaluators to call and the order to call them in.  This will require the user to specify the maximum number of cells for each evaluation.  This number needs to be selected so that all fields can fit in the cache of the processor if possible.  
+Once the evaluators are registered with the FieldManager and it knows which field it needs to provide, call the postRegistrationSetup() method on the FieldManager.  This method requires that the user specify the maximum number of cells for each evaluation.  This number should be selected so that all fields can fit in the cache of the processor if possible.  This method causes the following actions to take place in the FieldManager:
+
+<ol>
+<li> Based on the requested fields in \ref fmd2, the FieldManager will trace through the evaluators to determine which evaluators to call and the order in which they need to be called to achieve a consistent evaluation. Not all evaluators that are registered will be used.  They will only be called to satisfy dependencies of the required fields.
+<li> Once the dependency chain is known, we can pull together a flat list of all fields that will be used.  Now the FieldManager will allocate memory to store all fields.  It will use the Allocator object from the users traits class to accomplish this.  By unifying the allocation into a single object, we can force all fields to be allocated in a single contiguous block of memory if desired.
+<li> Once the memory for field data is allocated, we must set the pointer to that memory block inside each Field or MDField object in each evaluator.  The FieldManager does this by calling the postRegistrationSetup() method on each evaluator that is required for the computation. 
+</ol>
 
 \code
       const std::size_t max_num_cells = 100;
@@ -919,7 +992,7 @@ Once the evaluators are registered with the FieldManager and it knows which fiel
 
 \subsection fmd4 D. Call evaluate()
 
-Finally, users can call the evlauate routines and the pre/post evaluate routines if reuqired.
+Finally, users can call the evlauate routines and the pre/post evaluate routines if required.
 
 \code
       std::vector<CellData> cells(max_num_cells);
@@ -928,6 +1001,25 @@ Finally, users can call the evlauate routines and the pre/post evaluate routines
       fm.evaluateFields<MyTraits::Residual>(cells);
       fm.postEvaluate<MyTraits::Residual>(NULL);
 \endcode
+
+If you have more cells on a processor than you can fit into cache (the number of cells you set in the postRegistrationSetup call in \ref fmd4), you can perform multiple evaluate calls for each set:
+
+\code
+      int num_cells = 150;
+      int max_num_cells_in_cache = 30;
+
+      std::vector< std::vector<CellData> > cells(5);
+      std::vector<CellData> cache_cells(max_num_cells_in_cache);
+
+      fm.preEvaluate<MyTraits::Residual>(NULL);
+
+      for (
+      fm.evaluateFields<MyTraits::Residual>(cells);
+
+      fm.postEvaluate<MyTraits::Residual>(NULL);
+\endcode
+
+
 
 \subsection fmd5 E. Accessing Data
 
