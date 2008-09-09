@@ -138,33 +138,34 @@ namespace Tpetra
       void fillComplete();
 
       //! Submits one local or nonlocal entry to the matrix using global IDs.
-      void submitEntry(const CombineMode CM, const Ordinal& GlobalRow, const Ordinal& GlobalCol,
-                              const Scalar& Value);
+      void submitEntry(const Ordinal &globalRow, const Ordinal &globalCol,
+                       const Scalar &value);
 
       //! Submit multiple entries, using global IDs.
       /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
-      void submitEntries(const CombineMode CM, Ordinal const myRowOrColumn, 
-                         Ordinal const numEntries, Scalar const* values, 
-                         Ordinal const* indices);
+      void submitEntries(const Ordinal &globalRow, 
+                         const Teuchos::ArrayView<Scalar> &values, 
+                         const Teuchos::ArrayView<Ordinal> &indices);
 
       // @}
       //! @name Computational Methods
       // @{ 
-      
+
       //! Returns a copy of the specified local row, column indices are local.
-      void getMyRowCopy(const Ordinal MyRow, Ordinal& NumEntries,
-                               vector<Ordinal>& Indices, vector<Scalar>& Values) const;
+      void getMyRowCopy(const Ordinal &localRow, const Teuchos::ArrayView<Ordinal> &indices, 
+                                                const Teuchos::ArrayView<Scalar> &values) const;
 
       //! Returns a copy of the specified (and locally owned) global row, column indices are global.
-      void getGlobalRowCopy(const Ordinal GlobalRow, Ordinal& NumEntries,
-                                   vector<Ordinal>& Indices, vector<Scalar>& Values) const;
+      void getGlobalRowCopy(const Ordinal &globalRow, 
+                            const Teuchos::ArrayView<Ordinal> &indices,
+                            const Teuchos::ArrayView<Scalar> &values) const;
 
       //@}
       //! @name I/O Methods
       //@{ 
       
       //! Prints the matrix on the specified stream.
-      virtual void print(ostream& os) const;
+      virtual void print(std::ostream& os) const;
 
       //! Set all matrix entries equal to scalarThis.
       void setAllToScalar(Scalar scalarThis);
@@ -498,48 +499,49 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::submitEntry(const CombineMode CM, const Ordinal& GlobalRow, const Ordinal& GlobalCol,
-                                              const Scalar& Value)
+  void CrsMatrix<Ordinal,Scalar>::submitEntry(const Ordinal &globalRow, const Ordinal &globalCol,
+                                              const Scalar &value)
   {
-    if (CM != Tpetra::Add)
-      throw(-1); // other modes not implemented yet.
-
     if (fillCompleted_)
       throw(-1);
-
-    if (rowMap_.isMyGID(GlobalRow))
+    if (rowMap_.isMyGID(globalRow))
     {
-      Ordinal MyRow = rowMap_.getLID(GlobalRow);
-
-      indices_[MyRow].push_back(GlobalCol);
-      values_[MyRow].push_back(Value);
+      Ordinal myRow = rowMap_.getLID(globalRow);
+      indices_[myRow].push_back(globalCol);
+      values_[myRow].push_back(value);
     }
     else
     {
-      nonlocals_[GlobalRow].push_back(pair<Ordinal, Scalar>(GlobalCol, Value));
+      nonlocals_[globalRow].push_back(pair<Ordinal, Scalar>(globalCol, value));
     }
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::submitEntries(const CombineMode CM, Ordinal const myRowOrColumn, 
-                         Ordinal const numEntries, Scalar const* values, 
-                         Ordinal const* indices) 
+  void CrsMatrix<Ordinal,Scalar>::submitEntries(const Ordinal &globalRow, 
+                         const Teuchos::ArrayView<Scalar> &values, 
+                         const Teuchos::ArrayView<Ordinal> &indices)
   {
-    for (Ordinal i = ordinalZero() ; i < numEntries ; ++i)
-      submitEntry(CM, myRowOrColumn, indices[i], values[i]);
+    TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
+        "Tpetra::CrsMatrix::submitEntries(): values.size() must equal indices.size().");
+    typename Teuchos::ArrayView<Scalar>::iterator val = values.begin();
+    typename Teuchos::ArrayView<Ordinal>::iterator ind = indices.begin();
+    for (val != values.end(); ++val, ++ind) 
+    {
+      submitEntry(globalRow, *ind, *val);
+    }
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::getMyRowCopy(const Ordinal MyRow, Ordinal& NumEntries,
-                                               std::vector<Ordinal>& Indices, vector<Scalar>& Values) const
+  void CrsMatrix<Ordinal,Scalar>::getMyRowCopy(const Ordinal &localRow, 
+                                               const Teuchos::ArrayView<Ordinal> &indices, 
+                                               const Teuchos::ArrayView<Scalar> &values) const;
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
-      "Tpetra::CrsMatrix: cannot call getMyRowCopy() until fillComplete() has been called.");
+        "Tpetra::CrsMatrix: cannot call getMyRowCopy() until fillComplete() has been called.");
+    TEST_FOR_EXCEPTION(indices.size() < indices_[localRow].size() || values.size() < indices_[localRow].size(), std::runtime_error, 
+        "Tpetra::CrsMatrix::getMyRowCopy(indices,values): size of indices,values must be sufficient to store the values for the specified row.");
 
-    NumEntries = indices_[MyRow].size();
-
-    if (Indices.size() < NumEntries || Values.size() < NumEntries)
-      throw(-1);
+    Ordinal NumEntries = indices_[MyRow].size();
 
     for (Ordinal i = ordinalZero() ; i < NumEntries ; ++i)
     {
@@ -549,26 +551,26 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::getGlobalRowCopy(const Ordinal GlobalRow, Ordinal& NumEntries,
-                                                   std::vector<Ordinal>& Indices, vector<Scalar>& Values) const
+  void CrsMatrix<Ordinal,Scalar>::getGlobalRowCopy(const Ordinal &globalRow, 
+                                                   const Teuchos::ArrayView<Ordinal> &indices,
+                                                   const Teuchos::ArrayView<Scalar> &values) const
   {
     // Only locally owned rows can be queried, otherwise complain
-    if (!rowMap_.isMyGID(GlobalRow))
-      throw(-1);
+    TEST_FOR_EXCEPTION(!rowMap_.isMyGID(globalRow), std::runtime_error,
+        "Tpetra::CrsMatrix::getGlobalRowCOpy(globalRow): globalRow does not belong to this node.");
 
-    Ordinal MyRow = rowMap_.getLID(GlobalRow);
+    Ordinal myRow = rowMap_.getLID(GlobalRow);
 
-    NumEntries = indices_[MyRow].size();
-
-    if (Indices.size() < NumEntries || Values.size() < NumEntries)
-      throw(-1);
+    Ordinal NumEntries = indices_[myRow].size();
+    TEST_FOR_EXCEPTION(indices.size() < NumEntries || values.size() < NumEntries, std::runtime_error, 
+        "Tpetra::CrsMatrix::getGlobalRowCopy(indices,values): size of indices,values must be sufficient to store the values for the specified row.");
 
     if (isFillCompleted())
     {
       for (Ordinal i = ordinalZero() ; i < NumEntries ; ++i)
       {
-        Indices[i] = colMap_->getGID(indices_[MyRow][i]);
-        Values[i] = values_[MyRow][i];
+        Indices[i] = colMap_->getGID(indices_[myRow][i]);
+        Values[i] = values_[myRow][i];
       }
     }
     else
@@ -582,7 +584,7 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::apply(const Vector<Ordinal, Scalar>& x, Vector<Ordinal, Scalar> y,
+  void CrsMatrix<Ordinal,Scalar>::apply(const MultiVector<Ordinal, Scalar> &X, MultiVector<Ordinal,Scalar> &Y,
                                         Teuchos::ETransp mode = Teuchos::NO_TRANS) const
   {
     assert (Mode == AsIs);
