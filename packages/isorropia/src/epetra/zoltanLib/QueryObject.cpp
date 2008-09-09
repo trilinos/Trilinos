@@ -716,10 +716,105 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
 
   *ierr = ZOLTAN_OK;
 
-  if (haveGraph_){
+
+  /////////////////////////////////////////////////////////////
+  if(inputType_ == "HGRAPH2D_FINEGRAIN")
+  {
+    int vIdx=0;
+    vtxedge_ptr[0] = 0; 
+    int nzCnt = 1; 
+    int gNumRows;
+
+    if ((format != ZOLTAN_COMPRESSED_VERTEX) ||  (num_gid_entries != 2) )
+    {
+      *ierr = ZOLTAN_FATAL;
+      std::cout << "Proc:" << myProc_ << " Error: ";
+      std::cout << "QueryObject::My_HG_CS, bad arguments" << std::endl;
+      return;
+    }
+
+
+    int maxrow;
+    int *tmpCols;
+
+    if (haveGraph_)
+    {
+      gNumRows = graph_->NumGlobalRows();
+      maxrow=graph_->MaxNumIndices();
+    }
+    else
+    {
+      gNumRows = matrix_->NumGlobalRows();
+      maxrow = matrix_->MaxNumEntries();
+      tmp = new double [maxrow];
+      if (!tmp)
+      {
+        *ierr = ZOLTAN_MEMERR;
+        return;
+      }
+    }
+
+    tmpCols = new int[maxrow];
+    if (!tmpCols)
+    {
+      *ierr = ZOLTAN_MEMERR;
+      return;
+    }
+
+    for (int rownum=0; rownum<num_row_or_col; rownum++)
+    {
+
+      if (haveGraph_)
+      {
+	rc = graph_->ExtractMyRowCopy(rownum, num_pins, num_indices, tmpCols);
+      }
+      else
+      {
+        rc = matrix_->ExtractMyRowCopy(rownum, num_pins, num_indices, tmp, tmpCols);
+      }
+      if (rc != 0)
+      {
+	*ierr = ZOLTAN_FATAL;
+	std::cout << "Proc:" << myProc_ << " Error: ";
+	std::cout << "QueryObject::My_HG_CS, extracting row" << std::endl;
+	break;
+      }
+  
+      for(int nzIdx=0;nzIdx < num_indices; nzIdx++)
+      {
+        vtxedge_GID[vIdx] = rowMap_->GID(rownum);
+        vIdx++;
+        vtxedge_GID[vIdx] = colMap_->GID(tmpCols[nzIdx]);
+        vIdx++;
+
+        // Each vertex belongs to exactly 2 hyperedges.
+        // Row hyperedge
+        vtxedge_GID[vtxedge_ptr[nzCnt]] = rowMap_->GID(rownum); 
+        // Column hyperedge
+        vtxedge_GID[vtxedge_ptr[nzCnt]+1] = gNumRows + colMap_->GID(tmpCols[nzIdx]);
+
+        vtxedge_ptr[nzCnt] = vtxedge_ptr[nzCnt-1] + 2;
+        nzCnt++;
+      }
+
+    }
+
+    if (tmp) delete [] tmp;
+    if (tmpCols) delete [] tmpCols;
+
+    return;
+
+  }
+  /////////////////////////////////////////////////////////////
+
+
+
+  if (haveGraph_)
+  {
     npins = graph_->NumMyNonzeros();
   }
-  else{
+  else
+  {
     npins = matrix_->NumMyNonzeros();
     int maxrow = matrix_->MaxNumEntries();
     if (maxrow > 0){
@@ -733,7 +828,8 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
 
   if ((format != ZOLTAN_COMPRESSED_VERTEX) ||
       (num_row_or_col != rowMap_->NumMyElements()) ||
-      (num_pins != npins)){
+      (num_pins != npins))
+  {
     *ierr = ZOLTAN_FATAL;
     std::cout << "Proc:" << myProc_ << " Error: ";
     std::cout << "QueryObject::My_HG_CS, bad arguments" << std::endl;
@@ -744,11 +840,13 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   int pin_start_pos = 0;
   int *gids = (int *)pin_GID;
 
-  for (int i=0; i<num_row_or_col; i++){ 
+  for (int i=0; i<num_row_or_col; i++)
+  { 
     vtxedge_GID[i] = rowMap_->GID(i);
     vtxedge_ptr[i] = pin_start_pos;
 
-    if (haveGraph_){
+    if (haveGraph_)
+    {
       rc = graph_->ExtractMyRowCopy(i, npins, num_indices, gids + pin_start_pos);
     }
     else{
@@ -796,7 +894,8 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   }
 #endif
 
-  if (tmp){
+  if (tmp)
+  {
     delete [] tmp;
   }
 }
