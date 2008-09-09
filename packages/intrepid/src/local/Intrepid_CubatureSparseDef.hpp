@@ -186,7 +186,7 @@ bool const SGPoint<Scalar, D>::operator>(const SGPoint<Scalar, D> & right)
 }
 
 template<class Scalar, int D>
-ostream & operator<<(ostream & o, SGPoint<Scalar, D> & p)
+std::ostream & operator<<(std::ostream & o, SGPoint<Scalar, D> & p)
 {
 	o << "(";
 	for(int i = 0; i<D;i++)
