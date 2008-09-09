@@ -131,7 +131,7 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 
 #else /* HAVE_MPI */
-  return (-1);
+    mpicomm = MPI_COMM_WORLD;
 #endif /* HAVE_MPI */
   }
   else {
@@ -142,7 +142,7 @@ int ZoltanLibClass::precompute()
 
     mpicomm = empicomm.Comm();
 #else /* HAVE_MPI */
-  return (-1);
+    mpicomm = MPI_COMM_WORLD;
 #endif /* HAVE_MPI */
   }
 
@@ -466,7 +466,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   }
 
   //Generate Load Balance
-  int changes, num_gid_entries, num_lid_entries, num_import, num_export;
+  int changes=0, num_gid_entries=0, num_lid_entries=0, num_import=0, num_export=0;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
   ZOLTAN_ID_PTR export_global_ids=NULL, export_local_ids=NULL;
   int * import_procs=NULL, * export_procs=NULL;
