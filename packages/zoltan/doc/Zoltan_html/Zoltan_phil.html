@@ -533,8 +533,8 @@ info to a file).</td>
 <td valign=top>Needs information stored in an application's data structures.</td>
 </tr>
 <tr>
-<td valign=top>Accounts for partition sizes and communication costs.</td>
-<td valign=top>Accounts for partition sizes, communication costs, and data movement
+<td valign=top>Accounts for part sizes and communication costs.</td>
+<td valign=top>Accounts for part sizes, communication costs, and data movement
 costs.</td>
 </tr>
 </table>
@@ -554,21 +554,24 @@ tolerate greater remapping costs.  Most important, application developers
 might not know in advance which strategies work best in their applications, so
 the need a convenient means of comparing algorithms.
 <p>
-We provide three classes of parallel partitioning algorithms in the Zoltan
+We provide two classes of parallel partitioning algorithms in the Zoltan
 library:
 <ul>
-<li>Geometric bisection 
-(<a href="ug_html/ug_alg_rcb.html">Recursive Coordinate Bisection</a>, 
-<a href="ug_html/ug_alg_rib.html">Recursive Inertial Bisection</a>)
+<li>Geometric methods
+<blockquote>
+<a href="ug_html/ug_alg_rcb.html">Recursive Coordinate Bisection</a><br>
+<a href="ug_html/ug_alg_rib.html">Recursive Inertial Bisection</a><br>
+<a href="ug_html/ug_alg_hsfc.html">Hilbert Space-Filling Curve Partitioning</a> <br>
+<a href="ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</a>
+</blockquote>
 </li>
-<li>Space-filling curve partitioning
-(<a href="ug_html/ug_alg_hsfc.html">Hilbert Space-Filling Curve Partitioning</a>, 
-<a href="ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</a>, 
-<a href="ug_html/ug_alg_oct.html">Octree Partitioning</a>)
-</li>
-<li>Graph partitioning (through interfaces to
+<li>Topology-based methods
+<blockquote>
+<a href="ug_html/ug_alg_phg.htmml">Hypergraph partitioning</a><br>
+<a href="ug_html/ug_alg_phg.htmml">Graph partitioning</a><br>
+Graph partitioning (through interfaces to
 <a href="ug_html/ug_alg_parmetis.html">ParMETIS</a> (U. Minn.) and
-<a href="ug_html/ug_alg_jostle.html">Jostle</a> (U. Greenwich))
+<a href="ug_html/ug_alg_jostle.html">Jostle</a> (U. Greenwich))<br>
 </li>
 </ul>
 
