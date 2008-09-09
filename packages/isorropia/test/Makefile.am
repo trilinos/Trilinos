@@ -29,14 +29,14 @@
 
 all-local:
 
-#Isorropia now depends on Zoltan
-#if BUILD_ZOLTAN
+#Isorropia now depends on Zoltan, and these tests depend on MPI
+if HAVE_MPI
 ZOLTAN_TEST_DIR = zoltan
 ZOLTAN_TEST = rebalance_zoltan.exe
-#else
-#ZOLTAN_TEST_DIR =
-#ZOLTAN_TEST =
-#endif
+else
+ZOLTAN_TEST_DIR =
+ZOLTAN_TEST =
+endif
 
 if BUILD_EPETRAEXT
 MTX_TEST_DIR = mtx
