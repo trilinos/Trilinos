@@ -33,9 +33,9 @@
 #define PHX_EXAMPLE_VP_NONLINEAR_SOURCE_DEF_HPP
 
 //**********************************************************************
-template< typename EvalT, typename Traits> NonlinearSource<EvalT, Traits>::
-NonlinearSource(const Teuchos::ParameterList& p) :
-  source("Nonlinear Source", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
+PHX_EVALUATOR_CTOR(NonlinearSource,p) :
+  source("Nonlinear Source", 
+	 p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
   density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
   temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout"))
 { 
@@ -47,25 +47,17 @@ NonlinearSource(const Teuchos::ParameterList& p) :
 }
 
 //**********************************************************************
-template< typename EvalT, typename Traits> 
-NonlinearSource<EvalT, Traits>::~NonlinearSource()
-{ }
-
-//**********************************************************************
-template< typename EvalT, typename Traits>
-void NonlinearSource<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+PHX_POST_REGISTRATION_SETUP(NonlinearSource,fm)
 {
-  this->utils.setFieldData(source, vm);
-  this->utils.setFieldData(density, vm);
-  this->utils.setFieldData(temp, vm);
+  this->utils.setFieldData(source, fm);
+  this->utils.setFieldData(density, fm);
+  this->utils.setFieldData(temp, fm);
 
   data_layout_size = source.fieldTag().dataLayout().size();
 }
 
 //**********************************************************************
-template< typename EvalT, typename Traits>
-void NonlinearSource<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
+PHX_EVALUATE_FIELDS(NonlinearSource,d)
 { 
   std::size_t size = d.size() * data_layout_size;
   
@@ -74,21 +66,17 @@ void NonlinearSource<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 }
 
 //**********************************************************************
-template< typename EvalT, typename Traits>
-void NonlinearSource<EvalT, Traits>::
-preEvaluate(typename Traits::PreEvalData d)
+PHX_PRE_EVALUATE_FIELDS(NonlinearSource,d)
 { 
   using namespace std;
-  cout << "In Density Pre Op" << endl;
+  cout << "In NonlinearSource Pre Op" << endl;
 }
 
 //**********************************************************************
-template< typename EvalT, typename Traits>
-void NonlinearSource<EvalT, Traits>::
-postEvaluate(typename Traits::PostEvalData d)
+PHX_POST_EVALUATE_FIELDS(NonlinearSource,d)
 { 
   using namespace std;
-  cout << "In Density Post Op" << endl;
+  cout << "In NonlinearSource Post Op" << endl;
 }
 
 //**********************************************************************

@@ -30,8 +30,7 @@
 // @HEADER
 
 //**********************************************************************
-template<typename EvalT, typename Traits> Density<EvalT, Traits>::
-Density(const Teuchos::ParameterList& p) :
+PHX_EVALUATOR_CTOR(Density,p) :
   density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
   temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 { 
@@ -41,24 +40,16 @@ Density(const Teuchos::ParameterList& p) :
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-Density<EvalT, Traits>::~Density()
-{ }
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void Density<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+PHX_POST_REGISTRATION_SETUP(Density,fm)
 {
-  this->utils.setFieldData(density,vm);
-  this->utils.setFieldData(temp,vm);
+  this->utils.setFieldData(density,fm);
+  this->utils.setFieldData(temp,fm);
 
   data_layout_size = density.fieldTag().dataLayout().size();
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
+PHX_EVALUATE_FIELDS(Density,d)
 { 
   std::size_t size = d.size() * data_layout_size;
   
