@@ -60,7 +60,7 @@ static int Zoltan_Reftree_Export_Lists(ZZ *zz, ZOLTAN_REFTREE *subroot,
        ZOLTAN_ID_PTR *export_local_ids, int **export_to_partition,
        int **export_procs);
 static int export_it(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr);
-static int get_current_partition(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr);
+static int get_current_part(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -930,7 +930,7 @@ int current_part;
    either the new partition is not the old partition or the new
    partition is not assigned to this processor */
 
-  current_part = get_current_partition(subroot,zz,ierr);
+  current_part = get_current_part(subroot,zz,ierr);
   if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) return(FALSE);
 
   if ((current_part != subroot->partition ||
@@ -944,7 +944,7 @@ int current_part;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int get_current_partition(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr)
+static int get_current_part(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr)
 {
 /*
  * Function to return the current partition of an object.
@@ -953,29 +953,29 @@ static int get_current_partition(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr)
  * processor's number.
  */
 
-char *yo = "get_current_partition";
+char *yo = "get_current_part";
 int result;
 
   *ierr = ZOLTAN_OK;
 
 /* if the user registered a partition function, then use it */
-  if (zz->Get_Partition != NULL) {
-    result = zz->Get_Partition(zz->Get_Partition_Data,zz->Num_GID,zz->Num_LID,
+  if (zz->Get_Part != NULL) {
+    result = zz->Get_Part(zz->Get_Part_Data,zz->Num_GID,zz->Num_LID,
                                subroot->global_id,subroot->local_id, ierr);
     if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                         "Error returned from ZOLTAN_PARTITION_FN");
+                         "Error returned from ZOLTAN_PART_FN");
     }
   }
-  else if (zz->Get_Partition_Multi != NULL) {
+  else if (zz->Get_Part_Multi != NULL) {
 /* Not the best use of Multi function, but best I can do. KDD */
-    zz->Get_Partition_Multi(zz->Get_Partition_Multi_Data,
+    zz->Get_Part_Multi(zz->Get_Part_Multi_Data,
                             zz->Num_GID,zz->Num_LID,1,
                             subroot->global_id,subroot->local_id,
                             &result,ierr);
     if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                         "Error returned from ZOLTAN_PARTITION_MULTI_FN");
+                         "Error returned from ZOLTAN_PART_MULTI_FN");
     }
   }
   else {

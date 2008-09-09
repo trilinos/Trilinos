@@ -1,11 +1,23 @@
+interface Zoltan_Set_Part_Fn
+   module procedure Zf90_Set_Part_Fn0f
+   module procedure Zf90_Set_Part_Fn1f
+   module procedure Zf90_Set_Part_Fn2f
+   module procedure Zf90_Set_Part_Fn3f
+   module procedure Zf90_Set_Part_Fn4f
+   module procedure Zf90_Set_Part_Fn5f
+   module procedure Zf90_Set_Part_Fn6f
+   module procedure Zf90_Set_Part_Fn7f
+end interface
+
+! Backward compatibility with v3.0
 interface Zoltan_Set_Partition_Fn
-   module procedure Zf90_Set_Partition_Fn0f
-   module procedure Zf90_Set_Partition_Fn1f
-   module procedure Zf90_Set_Partition_Fn2f
-   module procedure Zf90_Set_Partition_Fn3f
-   module procedure Zf90_Set_Partition_Fn4f
-   module procedure Zf90_Set_Partition_Fn5f
-   module procedure Zf90_Set_Partition_Fn6f
-   module procedure Zf90_Set_Partition_Fn7f
+   module procedure Zf90_Set_Part_Fn0f
+   module procedure Zf90_Set_Part_Fn1f
+   module procedure Zf90_Set_Part_Fn2f
+   module procedure Zf90_Set_Part_Fn3f
+   module procedure Zf90_Set_Part_Fn4f
+   module procedure Zf90_Set_Part_Fn5f
+   module procedure Zf90_Set_Part_Fn6f
+   module procedure Zf90_Set_Part_Fn7f
 end interface
 

@@ -84,9 +84,9 @@ partitioner <a href="ug_alg_phg.html">PHG</a>.
 <hr>Backward Compatibility: Versions 1.5 and higher
 </h2>
 
-The ability to generate more partitions than processors was added to Zoltan
+The ability to generate more parts than processors was added to Zoltan
 in version 1.5.  Thus, Zoltan's partitioning and migration routines were 
-enhanced to return and use both partition assignments and processor assignments.
+enhanced to return and use both part assignments and processor assignments.
 New interface and query functions were added to support this additional
 information.  All former Zoltan <a href="ug_param.html">parameters</a> 
 apply to the new functions as they did to the old; new parameters 
@@ -95,15 +95,15 @@ and
 <a href="ug_alg.html#NUM_LOCAL_PARTS"><i>NUM_LOCAL_PARTS</i></a>
 apply only to the new functions.
 <p>
-The table below lists the Zoltan function that uses both partition and 
+The table below lists the Zoltan function that uses both part and 
 processor information, along with the analogous function that returns only
-processor information.  Applications requiring only one partition per 
+processor information.  Applications requiring only one part per 
 processor can use either version of the functions.
 <p>
 <table border="1" cellpadding="5">
 <tr>
 <td>
-<b>Function with Partition and Processor info (v1.5 and higher)</b>
+<b>Function with Part and Processor info (v1.5 and higher)</b>
 </td>
 <td>
 <b>Function with only Processor info (v1.3 and higher)</b>

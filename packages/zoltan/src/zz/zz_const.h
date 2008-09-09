@@ -217,20 +217,17 @@ struct Zoltan_Struct {
   int Timer;                      /*  Timer type that is currently active */
   struct Zoltan_Timer *ZTime;     /*  Timer structure for persistent timing. */
   /***************************************************************************/
-  ZOLTAN_PARTITION_MULTI_FN *Get_Partition_Multi;
-                                       /* Fn ptr to get objects'
-                                          partition assignments.     */
-  ZOLTAN_PARTITION_MULTI_FORT_FN *Get_Partition_Multi_Fort;
+  ZOLTAN_PART_MULTI_FN *Get_Part_Multi;/* Fn ptr to get objects'
+                                          part assignments.     */
+  ZOLTAN_PART_MULTI_FORT_FN *Get_Part_Multi_Fort;
                                        /* Fortran version            */
-  void *Get_Partition_Multi_Data;      /* Ptr to user defined data to be 
-                                          passed to Get_Partition_Multi()    */
-  ZOLTAN_PARTITION_FN *Get_Partition;          
-                                       /* Fn ptr to get an object's
-                                          partition assignment.      */
-  ZOLTAN_PARTITION_FORT_FN *Get_Partition_Fort;
-                                       /* Fortran version            */
-  void *Get_Partition_Data;            /* Ptr to user defined data
-                                          to be passed to Get_Partition()    */
+  void *Get_Part_Multi_Data;           /* Ptr to user defined data to be 
+                                          passed to Get_Part_Multi()    */
+  ZOLTAN_PART_FN *Get_Part;            /* Fn ptr to get an object's
+                                          part assignment.      */
+  ZOLTAN_PART_FORT_FN *Get_Part_Fort;  /* Fortran version            */
+  void *Get_Part_Data;                 /* Ptr to user defined data
+                                          to be passed to Get_Part()    */
   /***************************************************************************/
   ZOLTAN_NUM_EDGES_FN *Get_Num_Edges;  /* Fn ptr to get an object's
                                           number of edges.           */
@@ -478,14 +475,15 @@ struct Zoltan_Struct {
                                        /* Fortran version             */
   void *Get_Hier_Num_Levels_Data;      /* Ptr to user defined data to be passed
                                           to Get_Hier_Num_Levels() */
-  ZOLTAN_HIER_PARTITION_FN *Get_Hier_Partition;
-                                       /* Function that returns the partition
+  /***************************************************************************/
+  ZOLTAN_HIER_PART_FN *Get_Hier_Part;  /* Function that returns the part
                                           for process at a given level in
                                           hierarchical partitioning */
-  ZOLTAN_HIER_PARTITION_FORT_FN *Get_Hier_Partition_Fort;
+  ZOLTAN_HIER_PART_FORT_FN *Get_Hier_Part_Fort;
                                        /* Fortran version             */
-  void *Get_Hier_Partition_Data;       /* Ptr to user defined data to be passed
-                                          to Get_Hier_Partition() */
+  void *Get_Hier_Part_Data;            /* Ptr to user defined data to be passed
+                                          to Get_Hier_Part() */
+  /***************************************************************************/
   ZOLTAN_HIER_METHOD_FN *Get_Hier_Method;
                                        /* Function that allows app to set the
                                           LB method and params for process 

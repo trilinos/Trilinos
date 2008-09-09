@@ -82,8 +82,8 @@ enum Zoltan_Fn_Type {
   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
-  ZOLTAN_PARTITION_FN_TYPE,
-  ZOLTAN_PARTITION_MULTI_FN_TYPE,
+  ZOLTAN_PART_FN_TYPE,
+  ZOLTAN_PART_MULTI_FN_TYPE,
   ZOLTAN_PROC_NAME_FN_TYPE,
   ZOLTAN_HG_SIZE_CS_FN_TYPE,
   ZOLTAN_HG_CS_FN_TYPE,
@@ -96,12 +96,17 @@ enum Zoltan_Fn_Type {
   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE,
   ZOLTAN_HIER_NUM_LEVELS_FN_TYPE,
-  ZOLTAN_HIER_PARTITION_FN_TYPE,
+  ZOLTAN_HIER_PART_FN_TYPE,
   ZOLTAN_HIER_METHOD_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
 typedef enum Zoltan_Fn_Type ZOLTAN_FN_TYPE;
+
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_HIER_PARTITION_FN_TYPE ZOLTAN_HIER_PART_FN_TYPE
+#define ZOLTAN_PARTITION_FN_TYPE ZOLTAN_PART_FN_TYPE
+#define ZOLTAN_PARTITION_MULTI_FN_TYPE ZOLTAN_PART_MULTI_FN_TYPE
 
 /* Definitions to support name change for 31-character F90 names */
 #define ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE   ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE
@@ -157,7 +162,7 @@ struct Zoltan_Struct;
  *    *ierr               --  error code
  */
 
-typedef void ZOLTAN_PARTITION_MULTI_FN(
+typedef void ZOLTAN_PART_MULTI_FN(
   void *data,              
   int num_gid_entries, 
   int num_lid_entries,
@@ -168,7 +173,7 @@ typedef void ZOLTAN_PARTITION_MULTI_FN(
   int *ierr
 );
 
-typedef void ZOLTAN_PARTITION_MULTI_FORT_FN(
+typedef void ZOLTAN_PART_MULTI_FORT_FN(
   void *data, 
   int *num_gid_entries, 
   int *num_lid_entries,
@@ -178,6 +183,10 @@ typedef void ZOLTAN_PARTITION_MULTI_FORT_FN(
   int *parts,
   int *ierr
 );
+
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_PARTITION_MULTI_FN ZOLTAN_PART_MULTI_FN
+#define ZOLTAN_PARTITION_MULTI_FORT_FN ZOLTAN_PART_MULTI_FORT_FN
 
 /*****************************************************************************/
 /*
@@ -196,7 +205,7 @@ typedef void ZOLTAN_PARTITION_MULTI_FORT_FN(
  *  Returned value:       --  partition number the object is assigned to.
  */
 
-typedef int ZOLTAN_PARTITION_FN(
+typedef int ZOLTAN_PART_FN(
   void *data,              
   int num_gid_entries, 
   int num_lid_entries,
@@ -205,7 +214,7 @@ typedef int ZOLTAN_PARTITION_FN(
   int *ierr
 );
 
-typedef int ZOLTAN_PARTITION_FORT_FN(
+typedef int ZOLTAN_PART_FORT_FN(
   void *data, 
   int *num_gid_entries, 
   int *num_lid_entries,
@@ -213,6 +222,10 @@ typedef int ZOLTAN_PARTITION_FORT_FN(
   ZOLTAN_ID_PTR local_id, 
   int *ierr
 );
+
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_PARTITION_FN ZOLTAN_PART_FN
+#define ZOLTAN_PARTITION_FORT_FN ZOLTAN_PART_FN
 
 /*****************************************************************************/
 /*
@@ -2222,7 +2235,7 @@ typedef int ZOLTAN_HIER_NUM_LEVELS_FORT_FN(
 
 /*****************************************************************************/
 /*
- *  Function to return, for the calling processor, the partition
+ *  Function to return, for the calling processor, the part
  *  in which the processor is to be computing for hierarchical
  *  balancing at the given level in the hierarchy
  *  Input:  
@@ -2233,18 +2246,21 @@ typedef int ZOLTAN_HIER_NUM_LEVELS_FORT_FN(
  *  Returned value:       --  the partition number the processor is to compute
  */
 
-typedef int ZOLTAN_HIER_PARTITION_FN(
+typedef int ZOLTAN_HIER_PART_FN(
   void *data,
   int level,
   int *ierr
 );
 
-typedef int ZOLTAN_HIER_PARTITION_FORT_FN(
+typedef int ZOLTAN_HIER_PART_FORT_FN(
   void *data,
   int *level,
   int *ierr
 );
 
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_HIER_PARTITION_FN ZOLTAN_HIER_PART_FN
+#define ZOLTAN_HIER_PARTITION_FORT_FN ZOLTAN_HIER_PART_FORT_FN
 
 /*****************************************************************************/
 /*
@@ -2403,15 +2419,15 @@ extern int Zoltan_Set_Fn(
  *  Returned value:       --  Error code
  */
 
-extern int Zoltan_Set_Partition_Multi_Fn(
+extern int Zoltan_Set_Part_Multi_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_PARTITION_MULTI_FN *fn_ptr, 
+  ZOLTAN_PART_MULTI_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int Zoltan_Set_Partition_Fn(
+extern int Zoltan_Set_Part_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_PARTITION_FN *fn_ptr, 
+  ZOLTAN_PART_FN *fn_ptr, 
   void *data_ptr
 );
 
@@ -2684,9 +2700,9 @@ extern int Zoltan_Set_Hier_Num_Levels_Fn(
   void *data_ptr
 );
 
-extern int Zoltan_Set_Hier_Partition_Fn(
+extern int Zoltan_Set_Hier_Part_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_HIER_PARTITION_FN *fn_ptr, 
+  ZOLTAN_HIER_PART_FN *fn_ptr, 
   void *data_ptr
 );
 
@@ -2695,6 +2711,11 @@ extern int Zoltan_Set_Hier_Method_Fn(
   ZOLTAN_HIER_METHOD_FN *fn_ptr, 
   void *data_ptr
 );
+
+/* For backward compatibility with v3.0 */
+#define Zoltan_Set_Partition_Multi_Fn Zoltan_Set_Part_Multi_Fn
+#define Zoltan_Set_Partition_Fn Zoltan_Set_Part_Fn
+#define Zoltan_Set_Hier_Partition_Fn Zoltan_Set_Hier_Part_Fn
 
 /*****************************************************************************/
 /*

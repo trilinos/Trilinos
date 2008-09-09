@@ -73,14 +73,14 @@ For each loop, an MPI_Allreduce call is made to
 globally sum the weights in each bin.  This call also determines the maximum and
 minimum (inverse Hilbert) coordinate found in each bin.  A greedy algorithm sums the
 weights of the bins from left to right until the next bin would cause an overflow for
-the current partition. This results in new partition of P intervals. The location of
+the current part. This results in new partition of P intervals. The location of
 each cut (just before an "overflowing" bin) and the size of its "overflowing" bin are
 saved. The "overflowing" bin's maximum and minimum are compared to determine if the bin
 can be practically subdivided. (If the bin's maximum and minimum coordinates are too
 close relative to double precision resolution, the bin can not be practically
 subdivided.)  If at least one bin can be further refined, then looping will continue.
 In order to prevent a systematic bias, the greedy algorithm is assumed to exactly
-satisfy the weight required by each partition.
+satisfy the weight required by each part.
 <p>
 Before starting the next loop, the P intervals are again divided into N bins. The
 P-1 "overflow" bins are each subdivided into k-1 equal bins.  The
@@ -98,7 +98,7 @@ point is compared to the user's specified tolerance. An error is returned if
 the user's tolerance is not satisfied at any cut. After each cut is made, a
 correction is calculated as the ratio of the actual weight to the target
 weight used up to this point.  This correction is made to the target weight
-for the next partition.  This correction fixes the subsequent partitions when
+for the next part.  This correction fixes the subsequent parts when
 a "massive" weight object is on the border of a cut and its assignment creates an
 excessive imbalance.
 <p>
@@ -107,9 +107,9 @@ A maximum of MAX_LOOPS is
 used to prevent an infinite looping condition.  A user-defined
 function is used in the MPI_Allreduce call in order to simultaneously determine the
 sum, maximum, and minimum of each bin.  The message length in the MPI_Allreduce is
-proportional to the P, the number of partitions. 
+proportional to the P, the number of parts. 
 <p>
-Note, when a bin is encountered that satisfies more than two partitions, that bin is refined
+Note, when a bin is encountered that satisfies more than two parts, that bin is refined
 into a multiple of k-1 intervals which maintains a total of N bins.
 <BR>&nbsp;
 <h3>Hilbert Transformations</h3>
@@ -147,13 +147,13 @@ state table is used to find the next row (state) used in the next loop.
 The user can use
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
 to add a new point to the
-appropriate partition.  The bounding box coordinates,
+appropriate part.  The bounding box coordinates,
 the final partition, and other related information are maintained after partitioning if the KEEP_CUTS
 parameter is set by the user. The KEEP_CUTS parameter must be set by the user for Point Assign!
 The extended bounded box is
 used to compute the new point's inverse Hilbert coordinate.  Then the
-routine performs a binary search on the final partition to determine the partition (interval) which
-includes the point. The routine returns the partition number assigned to that
+routine performs a binary search on the final partition to determine the part (interval) which
+includes the point. The routine returns the part number assigned to that
 interval.
 <p>
 The Point Assign function now works for any point in space, even if the point is
@@ -168,7 +168,7 @@ replaced by one.  Otherwise the scaled coordinate is directly used.
 <h3>Box Assign</h3>
 The user can use
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a>
-to determine the partitions whose
+to determine the parts whose
 corresponding subdomains intersect the user's query box.
 Although very different in implementation, the papers by Lawder and King ("Querying Multi-
 dimensional Data Index Using the Hilbert Space-Filling Curve", 2000, etc.) were the original
@@ -177,10 +177,10 @@ user query region and determines its intersection with the Hilbert's bounding bo
 exterior to the bounding box get projected along the coordinate axis onto the bounding box.
 A fuzzy region is built around query points and lines to create the boxes required for the search.
 It also handles the trivial one-dimensional case.  Otherwise it repeatedly calls the 2d and 3d
-query functions using the next highest partition's left end point to start the search.  These query
+query functions using the next highest part's left end point to start the search.  These query
 routines return the next point on the Hilbert curve to enter the query region. A binary
-search finds the partition associated with this point.  The query functions are called one more
-time than the number of partitions that have points interior to the query region.
+search finds the part associated with this point.  The query functions are called one more
+time than the number of parts that have points interior to the query region.
 <p>
 The query functions decompose the unit square (or cube) level by level like the Octree method.
 Each level divides the remaining region into quadrants (or octets in 3d).  At each level, the
@@ -239,7 +239,7 @@ Guide</A></B>.  These can be set by use of the <b>Zoltan_HSFC_Set_Param</b> subr
 in the file <i>hsfc/hsfc.c</i>.
 <p>
 When the parameter <a href="../ug_html/ug_alg_hsfc.html">REDUCE_DIMENSIONS</a> 
-is specified, the HSFC algorithm will perform a lower dimensional
+is specified, the HSFC algorithm will perform  lower dimensional
 partitioning if the geometry is found to be degenerate.  More information
 on detecting degenerate
 geometries may be found in another <a href="dev_degenerate.html">

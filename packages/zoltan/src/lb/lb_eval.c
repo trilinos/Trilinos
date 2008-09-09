@@ -248,7 +248,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
 
   /* Compute statistics w.r.t. partitions? */
-  compute_part = (zz->Get_Partition != NULL || zz->Get_Partition_Multi != NULL);
+  compute_part = (zz->Get_Part != NULL || zz->Get_Part_Multi != NULL);
 
   if (compute_part){
     int tmp_max_nparts;
@@ -689,7 +689,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
-      printf("\n%s  Partition count: %1d requested, %1d computed, %1d non-empty\n", yo, req_nparts, nparts, nonempty_nparts);
+      printf("\n%s  Part count: %1d requested, %1d computed, %1d non-empty\n", yo, req_nparts, nparts, nonempty_nparts);
       printf("%s  Statistics with respect to %1d partitions: \n", yo, nparts);
       printf("%s                         Min.     Max.      Sum  Imbalance\n", yo);
       printf("%s  No. of objects   :  %8d %8d %8d   %5.3f\n",
@@ -793,7 +793,7 @@ static int eval_edge_list(
   int k,                      /* Index of object being processed */
   int num_gid_entries,        /* # of unsigned ints in a GID */
   ZOLTAN_ID_PTR global_ids,   /* Array of GIDs on this proc */
-  int *part,                  /* Partition numbers of GIDs on this proc */
+  int *part,                  /* Part numbers of GIDs on this proc */
   ZOLTAN_ID_PTR nbors_global, /* GIDs of this obj's neighboring objs. */
   int *nbors_proc,            /* Procs owning the neighboring objs. */
   int *nbors_part,            /* Parts owning the neighboring objs. */
@@ -813,7 +813,7 @@ static int eval_edge_list(
   int *part_arr,             /* tool for counting distinct partitions */
   float *cutl,               
   float *cutn               
-  /* int *part_count            TODO:  # edges to each partition  */
+  /* int *part_count            TODO:  # edges to each part  */
 )
 {
 /* Function to evaluate edge cuts, etc., for an object's edge list. */

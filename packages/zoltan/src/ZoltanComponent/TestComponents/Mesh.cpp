@@ -50,7 +50,7 @@ ZoltanTestSpace::Mesh::Mesh()
 
   Output.Gnuplot = 0 ;
   Output.Nemesis = 0 ;
-  Output.Plot_Partitions = 0 ;
+  Output.Plot_Partition = 0 ;
   Output.Mesh_Info_File = 0 ;
 }
 

@@ -59,18 +59,18 @@ Each object may have a weight that normally represents the amount of
 computation.
 The edges or arcs in the graph usually correspond to communication
 costs.
-In graph partitioning, the problem is to find a partitioning of the
+In graph partitioning, the problem is to find a partition of the
 graph
 (that is,&nbsp; each vertex is assigned to one out of <i>k</i>
 possible
-sets called partitions) that minimizes the cut size (weight) subject to
-the partitions having approximately equal size (weight). In
+sets called parts) that minimizes the cut size (weight) subject to
+the parts having approximately equal size (weight). In
 repartitioning,
-it is assumed that a partitioning already exists. The problem is to
+it is assumed that a partition already exists. The problem is to
 find
-a good partitioning that is also "similar" in some sense to the
+a good partition that is also "similar" in some sense to the
 existing
-partitioning. This keeps the migration cost low. All the problems
+partition. This keeps the migration cost low. All the problems
 described
 above are NP-hard so no efficient exact algorithm is known, but
 heuristics work well in practice.<br>
@@ -91,7 +91,7 @@ AdaptiveRepart (ParMETIS 3) and Repart* (ParMETIS 2)&nbsp; -
 Incremental
 algorithms with small migration cost. (LB_APPROACH=repartition)</li>
   <li>
-Refine* - Refines a given partitioning (balance).&nbsp; Can be applied
+Refine* - Refines a given partition (balance).&nbsp; Can be applied
 multiple times to reduce the communication cost (cut weight) if
 desired. (LB_APPROACH=refine)</li>
 </ol>
@@ -207,7 +207,7 @@ migration cost&nbsp;
 multilevel
 refinement&nbsp;
       <br>
-      <i>RefineKway</i> - refine the current partitioning (balance)</td>
+      <i>RefineKway</i> - refine the current partition (balance)</td>
     </tr>
     <tr>
       <td><br>

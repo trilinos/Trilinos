@@ -57,7 +57,7 @@ The user initially creates an empty distributed directory using
 directory keys, together with other optional information is added
 to the directory using <a href="#DD_Update">Zoltan_DD_Update</a>.
 The directory maintains the GID's basic information: local ID
-(optional), partition (optional), arbitrary user
+(optional), part (optional), arbitrary user
 data (optional), and the current data owner (optional). <a href="#DD_Update">
 Zoltan_DD_Update</a> is also called after data migration or whenever it is
 useful to update the information in the directory.
@@ -440,7 +440,7 @@ int <b>Zoltan_DD_Update</b>
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>user</i>,
-int *<i>partition</i>,
+int *<i>part</i>,
 int <i>count</i>);
 </td>
 </tr>
@@ -453,14 +453,14 @@ int <b>Zoltan_DD::Update</b>(
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>user</i>,
-int *<i>partition</i>,
+int *<i>part</i>,
 const int & <i>count</i>);
 </td>
 </tr>
 </table>
 <hr>
 <b>Zoltan_DD_Update</b> takes a list of GIDs and corresponding lists of
-optional local IDs, optional user data, and optional partitions. This
+optional local IDs, optional user data, and optional parts. This
 routine updates the information for existing directory entries or creates
 a new entry (filled with given data) if a GID is not found.  NULL
 lists should be passed for optional arguments not desired.  
@@ -483,8 +483,8 @@ within one update cycle.
 <td>List of corresponding local IDs (optional) (in).
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>user</i></td>
 <td>List of corresponding user data (optional) (in).</td></tr>
-<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>partition</i></td>
-<td>List of corresponding partitions (optional) (in).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>part</i></td>
+<td>List of corresponding parts (optional) (in).</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>count</i></td>
 <td>Number of GIDs in update list.</td></tr>
 
@@ -510,7 +510,7 @@ int <b>Zoltan_DD_Find</b>
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>data</i>,
-int *<i>partition</i>,
+int *<i>part</i>,
 int <i>count</i>,
 int *<i>owner</i>);
 </td>
@@ -524,7 +524,7 @@ int <b>Zoltan_DD::Find</b>(
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>data</i>,
-int *<i>partition</i>,
+int *<i>part</i>,
 const int & <i>count</i>,
 int *<i>owner</i>) const;
 </td>
@@ -532,7 +532,7 @@ int *<i>owner</i>) const;
 </table>
 <hr>
 Given a list of GIDs, <b>Zoltan_DD_Find</b> returns corresponding
-lists of the GIDs' owners, local IDs, partitions, data owners, and optional
+lists of the GIDs' owners, local IDs, parts, data owners, and optional
 user data.  NULL lists must be provided for optional information not
 being used.
 <br>&nbsp;
@@ -548,8 +548,8 @@ being used.
 <td>Corresponding list of local IDs (optional) (out).</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>data</i></td>
 <td>Corresponding list of user data (optional) (out).</td></tr>
-<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>partition</i></td>
-<td>Corresponding list of partitions (optional) (out).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>part</i></td>
+<td>Corresponding list of parts (optional) (out).</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>count</i></td>
 <td>Count of GIDs in above list.</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>owner</i></td>

@@ -228,9 +228,9 @@ void zoltanParams_hier_setup(struct Zoltan_Struct *zz) {
     fprintf(stderr,"zoltanParams_hier_setup: set NUM_LEVELS callback failed\n");
   }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_HIER_PARTITION_FN_TYPE, 
+  if (Zoltan_Set_Fn(zz, ZOLTAN_HIER_PART_FN_TYPE, 
 		    (void (*)()) get_partition, NULL) == ZOLTAN_FATAL) {
-    fprintf(stderr,"zoltanParams_hier_setup: set PARTITION callback failed\n");
+    fprintf(stderr,"zoltanParams_hier_setup: set PART callback failed\n");
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_HIER_METHOD_FN_TYPE, 

@@ -166,29 +166,29 @@ static int _Zoltan_Get_Obj_List(
     /* Get partition information for objects. */
     /* Call user-callback if provided; otherwise, all parts == zz->Proc */
     
-    if (zz->Get_Partition == NULL && zz->Get_Partition_Multi == NULL) {
+    if (zz->Get_Part == NULL && zz->Get_Part_Multi == NULL) {
       for (i = 0; i < *num_obj; i++) 
         (*parts)[i] = zz->Proc;
     }
-    else if (zz->Get_Partition_Multi) {
-      zz->Get_Partition_Multi(zz->Get_Partition_Multi_Data, 
+    else if (zz->Get_Part_Multi) {
+      zz->Get_Part_Multi(zz->Get_Part_Multi_Data, 
                               num_gid_entries, num_lid_entries, *num_obj,
                               *global_ids, *local_ids, *parts, &ierr);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                           "Error returned from ZOLTAN_PARTITION_MULTI_FN");
+                           "Error returned from ZOLTAN_PART_MULTI_FN");
         goto End;
       }
     }
     else {
       for (i = 0; i < *num_obj; i++) {
         lid = (num_lid_entries ? &((*local_ids)[i*num_lid_entries]) : NULL);
-        (*parts)[i] = zz->Get_Partition(zz->Get_Partition_Data,
+        (*parts)[i] = zz->Get_Part(zz->Get_Part_Data,
                               num_gid_entries, num_lid_entries,
                               &((*global_ids)[i*num_gid_entries]), lid, &ierr);
         if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                             "Error returned from ZOLTAN_PARTITION_FN");
+                             "Error returned from ZOLTAN_PART_FN");
           goto End;
         }
       }

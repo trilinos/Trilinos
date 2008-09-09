@@ -1,6 +1,6 @@
 
-function Zf90_Set_Hier_Partition_Fn0f(zz,fn_ptr)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn0f
+function Zf90_Set_Hier_Part_Fn0f(zz,fn_ptr)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn0f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(dummy, level, ierr)
@@ -18,15 +18,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr))
+Zf90_Set_Hier_Part_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr))
 #else
-Zf90_Set_Hier_Partition_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr)
+Zf90_Set_Hier_Part_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr)
 #endif
-end function Zf90_Set_Hier_Partition_Fn0f
+end function Zf90_Set_Hier_Part_Fn0f
 
 
-function Zf90_Set_Hier_Partition_Fn1f(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn1f
+function Zf90_Set_Hier_Part_Fn1f(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn1f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(data,level,ierr)
@@ -45,15 +45,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Hier_Part_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_Hier_Partition_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Hier_Part_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_Hier_Partition_Fn1f
+end function Zf90_Set_Hier_Part_Fn1f
 
 
-function Zf90_Set_Hier_Partition_Fn2f(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn2f
+function Zf90_Set_Hier_Part_Fn2f(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn2f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(data,level,ierr)
@@ -72,15 +72,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Hier_Part_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_Hier_Partition_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Hier_Part_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_Hier_Partition_Fn2f
+end function Zf90_Set_Hier_Part_Fn2f
 
 
-function Zf90_Set_Hier_Partition_Fn3f(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn3f
+function Zf90_Set_Hier_Part_Fn3f(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn3f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(data,level,ierr)
@@ -99,15 +99,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Hier_Part_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_Hier_Partition_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Hier_Part_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_Hier_Partition_Fn3f
+end function Zf90_Set_Hier_Part_Fn3f
 
 
-function Zf90_Set_Hier_Partition_Fn4f(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn4f
+function Zf90_Set_Hier_Part_Fn4f(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn4f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(data,level,ierr)
@@ -128,15 +128,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Hier_Part_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_Hier_Partition_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Hier_Part_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_Hier_Partition_Fn4f
+end function Zf90_Set_Hier_Part_Fn4f
 
 
-function Zf90_Set_Hier_Partition_Fn5f(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn5f
+function Zf90_Set_Hier_Part_Fn5f(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn5f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(data,level,ierr)
@@ -157,15 +157,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Hier_Part_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_Hier_Partition_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Hier_Part_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_Hier_Partition_Fn5f
+end function Zf90_Set_Hier_Part_Fn5f
 
 
-function Zf90_Set_Hier_Partition_Fn6f(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn6f
+function Zf90_Set_Hier_Part_Fn6f(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn6f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(data,level,ierr)
@@ -186,15 +186,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Hier_Part_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_Hier_Partition_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Hier_Part_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_Hier_Partition_Fn6f
+end function Zf90_Set_Hier_Part_Fn6f
 
 
-function Zf90_Set_Hier_Partition_Fn7f(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_Hier_Partition_Fn7f
+function Zf90_Set_Hier_Part_Fn7f(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Hier_Part_Fn7f
 type(Zoltan_Struct) INTENT_IN zz
 interface
   function fn_ptr(data,level,ierr)
@@ -215,10 +215,10 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_Hier_Partition_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Hier_Part_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_Hier_Partition_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_HIER_PARTITION_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Hier_Part_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_HIER_PART_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_Hier_Partition_Fn7f
+end function Zf90_Set_Hier_Part_Fn7f
 
 

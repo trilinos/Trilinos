@@ -35,7 +35,7 @@ import/export lists returned by
 Alternatively, users may specify their own import/export lists.
 <p>
 The
-migration functions can migrate objects based on their new partition assignments
+migration functions can migrate objects based on their new part assignments
 and/or their new processor assignments.  Behavior is determined by the 
 <a href="ug_alg.html#MIGRATE_ONLY_PROC_CHANGES"><B>MIGRATE_ONLY_PROC_CHANGES</b></a>
 parameter.
@@ -63,9 +63,9 @@ detailed descriptions can be found below.
 
 The following functions are maintained for <a href="ug_backward.html">backward compatibility</a> with previous
 versions of Zoltan.  These functions are applicable
-only when the number of partitions to be generated is equal to the number of
-processors on which the partitions are computed. That is,
-these functions assume "partitions" and "processors" are synonymous. 
+only when the number of parts to be generated is equal to the number of
+processors on which the parts are computed. That is,
+these functions assume "parts" and "processors" are synonymous. 
 <blockquote>
 <b><a href="#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>
 <br><b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
@@ -203,8 +203,8 @@ processors that the known objects will be received from (sent to).
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; known_to_part</i></td>
 
-<td>An array of size <i>num_known</i> listing the partition numbers of the
-partitions that the known objects will be assigned to.
+<td>An array of size <i>num_known</i> listing the part numbers of the
+parts that the known objects will be assigned to.
 </td>
 </tr>
 
@@ -241,8 +241,8 @@ IDs of processors that the found objects will be sent to (received from).</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; found_to_part</i></td>
 
-<td>An array of size <i>num_found</i> listing the partition numbers of the
-partitions that the found objects will be assigned to.
+<td>An array of size <i>num_found</i> listing the part numbers of the
+parts that the found objects will be assigned to.
 </td>
 </tr>
 
@@ -394,9 +394,9 @@ to be used in this invocation of the migration routine.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
 
-<td>The number of objects to be imported to partitions on this processor;
+<td>The number of objects to be imported to parts on this processor;
 these objects may be stored on other processors or may be moving to new
-partitions within this processor.
+parts within this processor.
 <br> Use <i>num_import</i>=-1 if all processors do not specify import arrays.
 </td>
 </tr>
@@ -405,7 +405,7 @@ partitions within this processor.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
 <td>An array of <i>num_import</i> global IDs of objects 
-to be imported to partitions on this processor.
+to be imported to parts on this processor.
 <br>(size = <i>num_import</i> * <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>).
 <br>All processors may pass <i>import_global_ids</i>=NULL if 
 export lists are provided and 
@@ -421,7 +421,7 @@ needed by callback functions
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
 <td>An array of <i>num_import</i> local IDs of objects to be imported
-to partitions on this processor.
+to parts on this processor.
 <br>(size = <i>num_import</i> * <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)
 <br>All processors may pass <i>import_local_ids</i>=NULL if 
 export lists are provided and 
@@ -440,7 +440,7 @@ a>, and
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
 
 <td>An array of size <i>num_import</i> listing the processor IDs of
-objects to be imported to partitions on this processor (i.e., the source
+objects to be imported to parts on this processor (i.e., the source
 processors).
 <br>All processors may pass <i>import_procs</i>=NULL if 
 export lists are provided and 
@@ -458,7 +458,7 @@ a>, and
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
 
-<td>An array of size <i>num_import</i> listing the partitions to which
+<td>An array of size <i>num_import</i> listing the parts to which
 imported objects should be assigned.
 <br>All processors may pass <i>import_to_part</i>=NULL if 
 export lists are provided and 
@@ -478,7 +478,7 @@ a>, and
 
 <td>The number of objects that were stored on this processor in the previous
 decomposition that are assigned to other processors or to different
-partitions within this processor in the new decomposition.
+parts within this processor in the new decomposition.
 <br> Use <i>num_export</i>=-1 if all processors do not specify export arrays.
 </td>
 </tr>
@@ -487,7 +487,7 @@ partitions within this processor in the new decomposition.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
 <td>An array of <i>num_export</i> global IDs of objects to be exported
-to new partitions.
+to new parts.
 <br>(size = <i>num_export</i> * <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>)
 <br>All processors may pass <i>export_global_ids</i>=NULL if 
 import lists are provided and 
@@ -506,7 +506,7 @@ a>, and
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
 <td>An array of <i>num_export</i> local IDs of objects to be exported to
-new partitions.
+new parts.
 <br>(size = <i>num_export</i> * <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)
 <br>All processors may pass <i>export_local_ids</i>=NULL if 
 import lists are provided and 
@@ -542,7 +542,7 @@ a>, and
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
 
-<td>An array of size <i>num_export</i> listing the partitions to which
+<td>An array of size <i>num_export</i> listing the parts to which
 exported objects should be assigned. 
 <br>All processors may pass <i>export_to_part</i>=NULL if 
 import lists are provided and 
@@ -618,11 +618,11 @@ found_procs</i>)&nbsp;
 
 <hr WIDTH="100%"><b>Zoltan_Compute_Destinations</b> is a wrapper around 
 <a href="#Zoltan_Invert_Lists"><b>Zoltan_Invert_Lists</b></a> that excludes
-partition assignment arrays.  It is maintained for backward compatibility with 
+part assignment arrays.  It is maintained for backward compatibility with 
 previous versions of Zoltan.  
 <p>
 <b>Zoltan_Compute_Destinations</b> assumes the 
-number of partitions is equal to the number of processors.
+number of parts is equal to the number of processors.
 The computed lists are 
 allocated in Zoltan; they should not be allocated by the application before
 calling <b>Zoltan_Compute_Destinations</b>.  These lists can be freed through a 
@@ -642,8 +642,8 @@ call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Dat
 <td>
 All arguments are analogous to those in 
 <a href="#Zoltan_Invert_Lists"><b>Zoltan_Invert_Lists</b></a>. 
-Partition-assignment arrays <i>known_to_part</i> and <i>found_to_part</i> are
-not included, as partition and processor numbers are assumed to be the same in
+Part-assignment arrays <i>known_to_part</i> and <i>found_to_part</i> are
+not included, as part and processor numbers are assumed to be the same in
 <b>Zoltan_Compute_Destinations</b>.
 </td>
 </tr>
@@ -707,15 +707,15 @@ export_procs</i>)
 
 <hr WIDTH="100%"><b>Zoltan_Help_Migrate</b> 
 is a wrapper around <a href="#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>
-that excludes partition assignment arrays.  It is maintained for backward
+that excludes part assignment arrays.  It is maintained for backward
 compatibility with previous versions of Zoltan.
 <p>
-<b>Zoltan_Help_Migrate</b> assumes the number of partitions is equal to the
+<b>Zoltan_Help_Migrate</b> assumes the number of parts is equal to the
 number of processors.  It uses migration pre-, mid-, and post-processing 
 routines 
 <b><a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN_TYPE</a></b>,
 <b><a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN_TYPE</a></b>, and 
-<b><a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN_TYPE</a></b>, respectively, which also exclude partition assignment arrays.
+<b><a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN_TYPE</a></b>, respectively, which also exclude part assignment arrays.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -729,8 +729,8 @@ routines
 <td>
 All arguments are analogous to those in 
 <a href="#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>. 
-Partition-assignment arrays <i>import_to_part</i> and <i>export_to_part</i> are
-not included, as partition and processor numbers are assumed to be the same in
+Part-assignment arrays <i>import_to_part</i> and <i>export_to_part</i> are
+not included, as part and processor numbers are assumed to be the same in
 <b>Zoltan_Help_Migrate</b>.
 </td>
 </tr>

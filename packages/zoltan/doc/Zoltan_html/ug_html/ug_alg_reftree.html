@@ -55,7 +55,7 @@ one element to the next (and does not go out the same vertex it came in).
 <P>The user may allow Zoltan to determine the order of the coarse grid
 elements, or may specify the order, which might be faster or produce a
 better path.  If Zoltan determines the order, the user can select between
-an order that will produce connected partitions, an order based on a Hilbert
+an order that will produce connected parts, an order based on a Hilbert
 Space Filling Curve, or an order based on a Sierpinski Space Filling Curve.
 See the parameter REFTREE_INITPATH below.  If the user provides the order, then
 the in/out vertices must also be supplied.  Similarly, the
@@ -74,18 +74,18 @@ only on the leaves (the elements of the final grid), but can also be on
 interior nodes (for example, to represent work on coarse grids of a multigrid
 algorithm).  The default weights are 1.0 at the leaves and 0.0 at the
 interior nodes, which produces a partition based on the number of elements
-in each partition.
+in each part.
 An initial tree traversal is used to sum the weights, and a second traversal
 to cut the space-filling curve into appropriately-sized pieces and assign
-elements to partitions.  The number of partitions is not necessarily equal
+elements to parts.  The number of parts is not necessarily equal
 to the number of processors.
 
 <P> The following limitations should be removed in the future.
 <LI>For multicomponent weights, only the first component is used.
 <LI>Heterogeneous architectures are not supported, in the sense that the
 computational load is equally divided over the processors.  A vector of
-relative partition sizes is used to determine the weight assigned to each
-partition, but they are currently all equal.  In the future they should
+relative part sizes is used to determine the weight assigned to each
+part, but they are currently all equal.  In the future they should
 be input to reflect heterogeneity.
 <BR>&nbsp;
 <BR>&nbsp;
@@ -134,9 +134,9 @@ grid. </BR>
 for grids consisting of triangles.  It is currently limited to 2D. </BR>
 "HILBERT" uses a Hilbert Space Filling Curve and is most appropriate for grids
 consisting of quadralaterals or hexahedra. </BR>
-"CONNECTED" attempts to produce connected partitions (guaranteed for triangles
+"CONNECTED" attempts to produce connected parts (guaranteed for triangles
 and tetrahedra), however they tend to be stringy, i.e., less compact than the
-SFC methods.  It is most appropriate when connected partitions are required. </BR>
+SFC methods.  It is most appropriate when connected parts are required. </BR>
 An invalid character string will invoke the default method.
 </TD>
 </TR>

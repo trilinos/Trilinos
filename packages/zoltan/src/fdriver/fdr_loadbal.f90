@@ -360,14 +360,14 @@ type(PARIO_INFO) :: pio_info
 
 
   if (Test_Multi_Callbacks .eq. 1) then
-    if (Zoltan_Set_Partition_Multi_Fn(zz_obj, get_partition_multi, &
+    if (Zoltan_Set_Part_Multi_Fn(zz_obj, get_part_multi, &
                                       mesh_wrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   else
-    if (Zoltan_Set_Partition_Fn(zz_obj, get_partition, &
+    if (Zoltan_Set_Part_Fn(zz_obj, get_part, &
                                 mesh_wrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
@@ -743,9 +743,9 @@ end function get_num_geom
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine get_partition_multi(data, num_gid_entries, num_lid_entries, &
+subroutine get_part_multi(data, num_gid_entries, num_lid_entries, &
                     num_obj, global_id, local_id, parts, ierr)
-integer(Zoltan_INT) :: get_partition
+integer(Zoltan_INT) :: get_part
 type (Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
 integer(Zoltan_INT), intent(in) :: global_id(*)
@@ -783,14 +783,14 @@ integer(Zoltan_INT), intent(out) :: parts(*), ierr
 
   ierr = ZOLTAN_OK
 
-end subroutine get_partition_multi
+end subroutine get_part_multi
 
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-function get_partition(data, num_gid_entries, num_lid_entries, &
+function get_part(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, ierr)
-integer(Zoltan_INT) :: get_partition
+integer(Zoltan_INT) :: get_part
 type (Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: global_id(*)
@@ -821,11 +821,11 @@ integer(Zoltan_INT), intent(out) :: ierr
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
 
-  get_partition = current_elem%my_part
+  get_part = current_elem%my_part
 
   ierr = ZOLTAN_OK
 
-end function get_partition
+end function get_part
 
 !/*****************************************************************************/
 !/*****************************************************************************/

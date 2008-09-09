@@ -311,7 +311,7 @@ struct Output_Flags {
   int Text;
   int Gnuplot;
   int Nemesis;
-  int Plot_Partitions;
+  int Plot_Partition;
   int Mesh_Info_File;
 };
 

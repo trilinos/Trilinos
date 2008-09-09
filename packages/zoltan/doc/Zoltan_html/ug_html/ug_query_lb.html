@@ -37,8 +37,8 @@ functions are required by individual algorithms.
 <br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 <br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b> (deprecated)
 <br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> (deprecated)
-<br><b><a href="#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b> or
-<b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b>
+<br><b><a href="#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b>
 </blockquote>
 <a href="#Geometry-based Functions">Geometry-Based Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
@@ -72,7 +72,7 @@ functions are required by individual algorithms.
 </blockquote>
 <a href="#Hierarchical Partitioning Functions">Hierarchical Partitioning Functions</a>
 <blockquote><b><a href="#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</a></b>
-<br><b><a href="#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</a></b>
+<br><b><a href="#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</a></b>
 <br><b><a href="#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</a></b>
 </blockquote>
 </blockquote>
@@ -586,14 +586,14 @@ of the next object.</td>
 <p>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_PARTITION_MULTI_FN"></a>
+<a NAME="ZOLTAN_PART_MULTI_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_PARTITION_MULTI_FN</b>
+typedef void <b>ZOLTAN_PART_MULTI_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -607,7 +607,7 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Partition_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids,
+<td>SUBROUTINE <b><i>Get_Part_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids,
 ierr</i>)
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
@@ -623,22 +623,22 @@ query functions</a> for an explanation.</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_PARTITION_MULTI_FN</b> query function returns a 
+<hr WIDTH="100%">A <b>ZOLTAN_PART_MULTI_FN</b> query function returns a 
 list of 
-partitions to which 
+parts to which 
 given objects are currently assigned.  
-If a <b>ZOLTAN_PARTITION_MULTI_FN</b> 
-or <b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b> is not
-registered, Zoltan assumes the partition numbers are the processor
+If a <b>ZOLTAN_PART_MULTI_FN</b> 
+or <b><a href="#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b> is not
+registered, Zoltan assumes the part numbers are the processor
 number of the owning processor.  
-Valid partition numbers are non-negative
+Valid part numbers are non-negative
 integers.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_PARTITION_MULTI_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_PART_MULTI_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -679,21 +679,21 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
 
-<td>The global IDs of the objects for which the partition numbers should be
+<td>The global IDs of the objects for which the part numbers should be
 returned.</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
 
-<td>The local IDs of the objects for which the partition numbers should be
+<td>The local IDs of the objects for which the part numbers should be
 returned.</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>parts</i></td>
 
-<td>Upon return, an array of partition numbers corresponding to the global 
+<td>Upon return, an array of part numbers corresponding to the global 
 and local IDs.
 </td>
 </tr>
@@ -710,14 +710,14 @@ and local IDs.
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_PARTITION_FN"></a>
+<a NAME="ZOLTAN_PART_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef int <b>ZOLTAN_PARTITION_FN</b>
+typedef int <b>ZOLTAN_PART_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -729,9 +729,9 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Partition</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+<td>FUNCTION <b><i>Get_Part</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 ierr</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Get_Partition&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Part&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
@@ -745,22 +745,22 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_PARTITION_FN</b> query function returns the 
-partition to which 
+<hr WIDTH="100%">A <b>ZOLTAN_PART_FN</b> query function returns the 
+part to which 
 a given object is currently assigned.
-If a <b>ZOLTAN_PARTITION_FN</b> 
-or <b><a href="#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b>
+If a <b>ZOLTAN_PART_FN</b> 
+or <b><a href="#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
 is not
-registered, Zoltan assumes the partition numbers are the processor
+registered, Zoltan assumes the part numbers are the processor
 number of the owning processor.  
-Valid partition numbers are non-negative
+Valid part numbers are non-negative
 integers.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_PARTITION_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_PART_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -794,14 +794,14 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>global_id</i></td>
 
-<td>The global ID of the object for which the partition number should be
+<td>The global ID of the object for which the part number should be
 returned.</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>local_id</i></td>
 
-<td>The local ID of the object for which the partition number should be
+<td>The local ID of the object for which the part number should be
 returned.</td>
 </tr>
 
@@ -820,7 +820,7 @@ returned.</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<td>The partition number for the object identified by <i>global_id</i> and
+<td>The part number for the object identified by <i>global_id</i> and
 <i>local_id</i>.</td>
 </tr>
 </table>
@@ -2240,12 +2240,12 @@ where <i>x</i> is 1, 2, 3 or 4. See the section on
 
 <hr WIDTH="100%">
 A <b>ZOLTAN_NUM_FIXED_OBJ_FN </b> returns
-the number of objects on a given processor fixed to particular partitions.
-These objects will not be assigned to a partition other than the user specified
-partition by the parallel hypergraph algorithm.
+the number of objects on a given processor fixed to particular parts.
+These objects will not be assigned to a part other than the user specified
+part by the parallel hypergraph algorithm.
 <br><br>
 This query function is not required.  If it is not defined, all
-objects are candidates for migration to new partitions.
+objects are candidates for migration to new parts.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -2281,7 +2281,7 @@ objects are candidates for migration to new partitions.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<td>The number of objects on this processor that are to be fixed to a specific partition.</td>
+<td>The number of objects on this processor that are to be fixed to a specific part.</td>
 </tr>
 
 
@@ -2327,12 +2327,12 @@ query functions</a> for an explanation.&nbsp;</td>
 
 <hr WIDTH="100%">A <b>ZOLTAN_FIXED_OBJ_LIST_FN</b> query function fills two
 arrays with information about the objects that should not be moved from
-their user assigned partitions.
+their user assigned parts.
 These arrays are allocated (and subsequently
 freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_FIXED_OBJ_FN">ZOLTAN_NUM_FIXED_OBJ_FN</a></b>
 query function to get the array size. 
 <p>
-A process should only fix the partition of objects that it <i>owns</i>, that is,
+A process should only fix the part of objects that it <i>owns</i>, that is,
 objects that it had previously supplied in a
 <a href=#ZOLTAN_OBJ_LIST_FN>ZOLTAN_OBJ_LIST_FN</a> query function.  It is
 an error to list the global ID of an object owned by another process.
@@ -2372,15 +2372,15 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fixed_gids</i></td>
 
-<td>Upon return, an array of unique global IDs for all objects assigned to the processor which are to be fixed to a partition.</td>
+<td>Upon return, an array of unique global IDs for all objects assigned to the processor which are to be fixed to a part.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>fixed_parts</i></td>
 
-<td>Upon return, an array of partition numbers, one for each object listed
+<td>Upon return, an array of part numbers, one for each object listed
 in the global ID array.  These objects will not be migrated from this assigned
-partition.</td>
+part.</td>
 </tr>
 
 <tr>
@@ -3513,14 +3513,14 @@ for hierarchical load balancing.
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_HIER_PARTITION_FN"></a>
+<a NAME="ZOLTAN_HIER_PART_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef int <b>ZOLTAN_HIER_PARTITION_FN</b>
+typedef int <b>ZOLTAN_HIER_PART_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>level</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -3529,8 +3529,8 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Hier_Partition</i></b>(<i>data, level, ierr</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Get_Hier_Partition
+<td>FUNCTION <b><i>Get_Hier_Part</i></b>(<i>data, level, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Hier_Part
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) ::: level&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
@@ -3542,13 +3542,13 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_HIER_PARTITION_FN</b> query function gets the partition number to be used for the given level of a hierarchical balancing procedure.
+<hr WIDTH="100%">A <b>ZOLTAN_HIER_PART_FN</b> query function gets the part number to be used for the given level of a hierarchical balancing procedure.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_HIER_PARTITION_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_HIER_PART_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -3566,7 +3566,7 @@ query functions</a> for an explanation.&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>level</i></td>
 
-<td>The level of a hierarchical balancing for which the partition ID is requested.</td>
+<td>The level of a hierarchical balancing for which the part ID is requested.</td>
 </tr>
 
 <tr>
@@ -3584,7 +3584,7 @@ query functions</a> for an explanation.&nbsp;</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<td>The partition number the process is to compute for this level.</td>
+<td>The part number the process is to compute for this level.</td>
 </tr>
 
 </table>

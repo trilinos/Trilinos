@@ -171,7 +171,7 @@ int zoltanParams_hier_get_num_levels() {
   return num_levels;
 }
 
-int zoltanParams_hier_get_partition(int level) {
+int zoltanParams_hier_get_part(int level) {
 
   check_level(level);
 
@@ -200,11 +200,11 @@ static int get_num_levels(void *data, int *ierr) {
   return zoltanParams_hier_get_num_levels();
 }
 
-static int get_partition(void *data, int level, int *ierr) {
+static int get_part(void *data, int level, int *ierr) {
 
   *ierr = ZOLTAN_OK;
 
-  return zoltanParams_hier_get_partition(level);
+  return zoltanParams_hier_get_part(level);
 }
 
 static void get_method(void *data, int level, struct Zoltan_Struct *zz,
@@ -226,8 +226,8 @@ void zoltanParams_hier_setup(Zoltan &zz) {
     fprintf(stderr,"zoltanParams_hier_setup: set NUM_LEVELS callback failed\n");
   }
 
-  if (zz.Set_Hier_Partition_Fn(get_partition, NULL) == ZOLTAN_FATAL) {
-    fprintf(stderr,"zoltanParams_hier_setup: set PARTITION callback failed\n");
+  if (zz.Set_Hier_Part_Fn(get_part, NULL) == ZOLTAN_FATAL) {
+    fprintf(stderr,"zoltanParams_hier_setup: set PART callback failed\n");
   }
 
   if (zz.Set_Hier_Method_Fn(get_method, NULL) == ZOLTAN_FATAL) {

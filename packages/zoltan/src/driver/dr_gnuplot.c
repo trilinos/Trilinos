@@ -130,14 +130,14 @@ int output_gnu(const char *cmd_file,
         if (mesh->blank_count && (mesh->blank[i] == 1)) continue;
         
         if (current_elem->my_part > max_part) max_part = current_elem->my_part;
-        parts[j] = (Output.Plot_Partitions ? current_elem->my_part : Proc);
+        parts[j] = (Output.Plot_Partition ? current_elem->my_part : Proc);
         index[j] = j;
         elem_index[j] = i;
         j++;
       }
     }
   }
-  if (Output.Plot_Partitions) {
+  if (Output.Plot_Partition) {
     /* Sort by partition numbers.  Assumes # parts >= # proc. */
     if (nelems > 0) 
       sort_index(nelems, parts, index);
@@ -202,7 +202,7 @@ int output_gnu(const char *cmd_file,
           if (current_elem->adj_proc[j] == Proc) {  /* Nbor is on same proc */
             if (mesh->blank_count && (mesh->blank[current_elem->adj[j]] == 1))
               continue;
-            if (!Output.Plot_Partitions || 
+            if (!Output.Plot_Partition || 
                 mesh->elements[current_elem->adj[j]].my_part == 
                              current_elem->my_part) {  
               /* Not plotting partitions, or nbor is in same partition */
@@ -266,7 +266,7 @@ int output_gnu(const char *cmd_file,
     }
   }
   
-  if (nelems == 0 && !Output.Plot_Partitions) { 
+  if (nelems == 0 && !Output.Plot_Partition) { 
     /* Open a file just so one exists; satisfies the gnuload file. */
     gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
     fp = fopen(par_out_fname, "w");

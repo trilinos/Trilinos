@@ -86,8 +86,8 @@ ZOLTAN_CHILD_LIST_FN get_child_elements;
 ZOLTAN_FIRST_COARSE_OBJ_FN get_first_coarse_element;
 ZOLTAN_NEXT_COARSE_OBJ_FN get_next_coarse_element;
 
-ZOLTAN_PARTITION_MULTI_FN get_partition_multi;
-ZOLTAN_PARTITION_FN get_partition;
+ZOLTAN_PART_MULTI_FN get_part_multi;
+ZOLTAN_PART_FN get_part;
 
 ZOLTAN_HG_SIZE_CS_FN get_hg_size_compressed_pin_storage;
 ZOLTAN_HG_SIZE_EDGE_WTS_FN get_hg_size_edge_weights;
@@ -500,16 +500,16 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   /* Functions for partitions */
   if (Test.Multi_Callbacks) {
-    if (Zoltan_Set_Fn(zz, ZOLTAN_PARTITION_MULTI_FN_TYPE,
-                      (void (*)()) get_partition_multi,
+    if (Zoltan_Set_Fn(zz, ZOLTAN_PART_MULTI_FN_TYPE,
+                      (void (*)()) get_part_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
     }
   }
   else {
-    if (Zoltan_Set_Fn(zz, ZOLTAN_PARTITION_FN_TYPE,
-                      (void (*)()) get_partition,
+    if (Zoltan_Set_Fn(zz, ZOLTAN_PART_FN_TYPE,
+                      (void (*)()) get_part,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
@@ -1678,7 +1678,7 @@ void get_child_elements(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void get_partition_multi(void *data, int num_gid_entries, int num_lid_entries,
+void get_part_multi(void *data, int num_gid_entries, int num_lid_entries,
   int num_obj, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *parts,
   int *ierr)
 {
@@ -1714,7 +1714,7 @@ void get_partition_multi(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_partition(void *data, int num_gid_entries, int num_lid_entries,
+int get_part(void *data, int num_gid_entries, int num_lid_entries,
                   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
 {
   ELEM_INFO *elem;
