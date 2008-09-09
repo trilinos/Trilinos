@@ -746,8 +746,6 @@ ML_USING_NOX_TRUE
 ML_USING_NOX_FALSE
 ML_USING_ZOLTAN_TRUE
 ML_USING_ZOLTAN_FALSE
-ML_USING_PETSC_TRUE
-ML_USING_PETSC_FALSE
 ML_USING_EPETRA_TRUE
 ML_USING_EPETRA_FALSE
 ML_USING_AMESOS_TRUE
@@ -4018,7 +4016,7 @@ else
 fi
 
 
-if test "X$ac_cv_use_epetra" == "Xno" && test "X$ac_cv_use_ml_multiple_rhs"; then
+if test "X$ac_cv_use_epetra" == "Xno" && test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
  { { echo "$as_me:$LINENO: error: The use of --enable-ml_multiple_rhs in ML requires Epetra." >&5
 echo "$as_me: error: The use of --enable-ml_multiple_rhs in ML requires Epetra." >&2;}
    { (exit 1); exit 1; }; }
@@ -8936,14 +8934,6 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
- if test "X$ac_cv_use_petsc" = "Xyes"; then
-  ML_USING_PETSC_TRUE=
-  ML_USING_PETSC_FALSE='#'
-else
-  ML_USING_PETSC_TRUE='#'
-  ML_USING_PETSC_FALSE=
-fi
-
 
 #
 # ------------------------------------------------------------------------
@@ -10448,12 +10438,12 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # for these libraries.
 if test "X$ac_cv_use_ml_tests" != "Xno" || test "X$ac_cv_use_ml_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-# #np# -
-# To add any libraries that you want to check for, replace pow below
-# with the name of an entry point in that library.
-# checks for libraries now
-#  #np# These lines can be removed if the math lib is not needed.
-{ echo "$as_me:$LINENO: checking for library containing pow" >&5
+  # #np# -
+  # To add any libraries that you want to check for, replace pow below
+  # with the name of an entry point in that library.
+  # checks for libraries now
+    #  #np# These lines can be removed if the math lib is not needed.
+  { echo "$as_me:$LINENO: checking for library containing pow" >&5
 echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6; }
 if test "${ac_cv_search_pow+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -10548,7 +10538,7 @@ echo "$as_me: error: Cannot find math library" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
-{ echo "$as_me:$LINENO: checking for library containing sqrt" >&5
+  { echo "$as_me:$LINENO: checking for library containing sqrt" >&5
 echo $ECHO_N "checking for library containing sqrt... $ECHO_C" >&6; }
 if test "${ac_cv_search_sqrt+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -10644,7 +10634,7 @@ echo "$as_me: error: Cannot find math library" >&2;}
 fi
 
 
-# find or choose to supply valid blas and lapack libraries
+  # find or choose to supply valid blas and lapack libraries
 
 
 
@@ -16923,6 +16913,66 @@ echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldf
 fi
 
 
+else
+
+  # If we don't check for BLAS above, we will use F77_FUNC as the name mangling
+  # for the BLAS and LAPACK.  This is what we used before we allowed the BLAS
+  # and LAPACK to use different name mangling than the compiler.
+  ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+case $ac_cv_f77_mangling in
+  upper*) ac_val="DGEMM" ;;
+  lower*) ac_val="dgemm" ;;
+  *)      ac_val="unknown" ;;
+esac
+case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
+
+dgemm="$ac_val"
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  if test "X$dgemm" = "Xdgemm_"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) name ## _
+_ACEOF
+
+  else
+    if test "X$dgemm" = "Xdgemm"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) name
+_ACEOF
+
+    else
+      if test "X$dgemm" = "XDGEMM"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) NAME
+_ACEOF
+
+      else
+        if test "X$dgemm" = "XDGEMM_"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) NAME ## _
+_ACEOF
+
+        else
+          { { echo "$as_me:$LINENO: error: Cannot determine BLAS and LAPACK name mangling using the value of F77_FUNC.  Please try configuring Trilinos without the --disable-libcheck option." >&5
+echo "$as_me: error: Cannot determine BLAS and LAPACK name mangling using the value of F77_FUNC.  Please try configuring Trilinos without the --disable-libcheck option." >&2;}
+   { (exit 1); exit 1; }; }
+        fi
+      fi
+    fi
+  fi
+
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
@@ -18465,13 +18515,6 @@ echo "$as_me: error: conditional \"ML_USING_ZOLTAN\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${ML_USING_PETSC_TRUE}" && test -z "${ML_USING_PETSC_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ML_USING_PETSC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ML_USING_PETSC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${ML_USING_EPETRA_TRUE}" && test -z "${ML_USING_EPETRA_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ML_USING_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -19402,8 +19445,6 @@ ML_USING_NOX_TRUE!$ML_USING_NOX_TRUE$ac_delim
 ML_USING_NOX_FALSE!$ML_USING_NOX_FALSE$ac_delim
 ML_USING_ZOLTAN_TRUE!$ML_USING_ZOLTAN_TRUE$ac_delim
 ML_USING_ZOLTAN_FALSE!$ML_USING_ZOLTAN_FALSE$ac_delim
-ML_USING_PETSC_TRUE!$ML_USING_PETSC_TRUE$ac_delim
-ML_USING_PETSC_FALSE!$ML_USING_PETSC_FALSE$ac_delim
 ML_USING_EPETRA_TRUE!$ML_USING_EPETRA_TRUE$ac_delim
 ML_USING_EPETRA_FALSE!$ML_USING_EPETRA_FALSE$ac_delim
 ML_USING_AMESOS_TRUE!$ML_USING_AMESOS_TRUE$ac_delim
@@ -19453,7 +19494,7 @@ ac_aux_dir!$ac_aux_dir$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 83; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 81; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

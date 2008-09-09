@@ -133,7 +133,7 @@ AC_ARG_ENABLE( ml_multiple_rhs,
              [ac_cv_use_ml_multiple_rhs=${enableval}],
              [ac_cv_use_ml_multiple_rhs=no])
 
-if test "X$ac_cv_use_epetra" == "Xno" && test "X$ac_cv_use_ml_multiple_rhs"; then
+if test "X$ac_cv_use_epetra" == "Xno" && test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
  AC_MSG_ERROR([[The use of --enable-ml_multiple_rhs in ML requires Epetra.]])
 # ac_cv_use_ml_multiple_rhs=no;
 fi
@@ -450,7 +450,6 @@ AM_CONDITIONAL(ML_USING_ZOLTAN, test "X$ac_cv_use_ml_zoltan" = "Xyes")
 TAC_ARG_WITH_PACKAGE(ml_zoltan3, [Enable Zoltan 3.0 support. This option requires that MPI and --enable-zoltan.], ML_ZOLTAN_THREE, no)
 #
 TAC_ARG_WITH_PACKAGE(petsc, [Enable PETSc support.], PETSC, no)
-AM_CONDITIONAL(ML_USING_PETSC, test "X$ac_cv_use_petsc" = "Xyes")
 
 #
 # ------------------------------------------------------------------------
@@ -565,18 +564,42 @@ AC_F77_WRAPPERS
 # for these libraries.
 if test "X$ac_cv_use_ml_tests" != "Xno" || test "X$ac_cv_use_ml_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-# #np# - 
-# To add any libraries that you want to check for, replace pow below 
-# with the name of an entry point in that library.
-# checks for libraries now
-dnl Replace `main' with a function in -lm:
-#  #np# These lines can be removed if the math lib is not needed.
-AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+  # #np# - 
+  # To add any libraries that you want to check for, replace pow below 
+  # with the name of an entry point in that library.
+  # checks for libraries now
+  dnl Replace `main' with a function in -lm:
+  #  #np# These lines can be removed if the math lib is not needed.
+  AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+  AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-# find or choose to supply valid blas and lapack libraries
+  # find or choose to supply valid blas and lapack libraries
   TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
   TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+else
+
+  # If we don't check for BLAS above, we will use F77_FUNC as the name mangling
+  # for the BLAS and LAPACK.  This is what we used before we allowed the BLAS
+  # and LAPACK to use different name mangling than the compiler.
+  AC_F77_FUNC(dgemm)
+  if test "X$dgemm" = "Xdgemm_"; then
+    AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name ## _], [Define the Fortran name mangling to be used for the BLAS])
+  else
+    if test "X$dgemm" = "Xdgemm"; then
+      AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name], [Define the Fortran name mangling to be used for the BLAS])
+    else
+      if test "X$dgemm" = "XDGEMM"; then
+        AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME], [Define the Fortran name mangling to be used for the BLAS])
+      else
+        if test "X$dgemm" = "XDGEMM_"; then
+           AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME ## _], [Define the Fortran name mangling to be used for the BLAS])
+        else
+          AC_MSG_ERROR([[Cannot determine BLAS and LAPACK name mangling using the value of F77_FUNC.  Please try configuring Trilinos without the --disable-libcheck option.]])
+        fi
+      fi
+    fi
+  fi
 
 fi
 # end of the list of libraries that don't need to be checked for if
