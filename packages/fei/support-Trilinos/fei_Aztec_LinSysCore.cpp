@@ -1200,15 +1200,14 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
   //equation in 'globalEqn'. This means that the following modification
   //should be made to A and b, for each globalEqn:
   //
-  //for(each local equation i){
-  //   for(each column j in row i) {
+  //for(each locally-owned equation i in the globalEqn array){
+  //   zero row i and put 1.0 on the diagonal
+  //   for(each row j in column i) {
   //      if (i==j) b[i] = gamma/alpha;
   //      else b[j] -= (gamma/alpha)*A[j,i];
+  //      A[j,i] = 0.0;
   //   }
   //}
-  //
-  //all of row 'globalEqn' and column 'globalEqn' in A should be zeroed,
-  //except for 1.0 on the diagonal.
   //
 
   if (len == 0) return(0);
@@ -1292,11 +1291,9 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
       tmp_bc_[globalEqn_i -localOffset_] = bc_term;
     }
 
-    for(int jj=0; jj<offDiagLength; jj++) {
+    for(int jj=localOffset_; jj<=localEnd; jj++) {
 
-      int col_row = A_ptr_->getTransformedEqn(offDiagIndices[jj]);
-
-      if (localOffset_ > col_row || col_row > localEnd) continue;
+      int col_row = jj;
 
       int* offDiagIndices2 = NULL;
       double* offDiagCoefs2 = NULL;
