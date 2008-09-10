@@ -475,4 +475,6 @@ July 7 2005: version 2.14.00
   - Removed the fei::Exception class. Now use std::runtime_error instead.
     Also removed feiPoolAllocator. Now use fei_Pool_alloc, which is more
     similar to a standard allocator.
+  - Fixed a bug in fei_Aztec_LinSysCore.cpp where dirichlet boundary-condition
+    enforcement was assuming that the structure of the matrix is symmetric.
 

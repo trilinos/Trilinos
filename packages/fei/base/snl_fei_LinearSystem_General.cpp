@@ -565,15 +565,15 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
   if (rowNumbers.length() > 0) {
     feiArray<SSVec*>& rows    = inner->getRows();
 
-    feiArray<int*> colIndices(rows.length());
-    feiArray<double*> coefs(rows.length());
-    feiArray<int> colIndLengths(rows.length());
+    feiArray<int*> colIndices(rows.size());
+    feiArray<double*> coefs(rows.size());
+    feiArray<int> colIndLengths(rows.size());
 
-    for(int i=0; i<rows.length(); ++i) {
+    for(int i=0; i<rows.size(); ++i) {
       SSVec* row = rows[i];
       colIndices[i] = row->indices().dataPtr();
       coefs[i] = row->coefs().dataPtr();
-      colIndLengths[i] = row->indices().length();
+      colIndLengths[i] = row->indices().size();
     }
 
     int numEqns = rows.length();
@@ -608,10 +608,9 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
   int numEqns = essBCvalues_->length();
   int* eqns = essBCvalues_->indices().dataPtr();
   double* bccoefs = essBCvalues_->coefs().dataPtr();
-  feiArray<double> ones(numEqns);
-  ones = 1.0;
+  std::vector<double> ones(numEqns, 1.0);
 
-  return(lscmatrix->getMatrix()->enforceEssentialBC(eqns, ones.dataPtr(),
+  return(lscmatrix->getMatrix()->enforceEssentialBC(eqns, &ones[0],
 						    bccoefs, numEqns));
 }
 
@@ -936,8 +935,8 @@ int snl_fei::LinearSystem_General::loadPenaltyConstraint(int constraintID,
   int* indicesPtr = &(iwork_[0]);
 
   //now add the contributions to the matrix and rhs
-  feiArray<double> coefs(numIndices);
-  double* coefPtr = coefs.dataPtr();
+  std::vector<double> coefs(numIndices);
+  double* coefPtr = &coefs[0];
   for(int i=0; i<numIndices; ++i) {
     for(int j=0; j<numIndices; ++j) {
       coefPtr[j] = weights[i]*weights[j]*penaltyValue;

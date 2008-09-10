@@ -1004,6 +1004,7 @@ size_t fei::VectorSpace::getNumIDTypes()
 void fei::VectorSpace::getIDTypes(std::vector<int>& idTypes) const
 {
   size_t numIDTypes = idTypes_.size();
+  idTypes.resize(numIDTypes);
   for(size_t i=0; i<numIDTypes; ++i) idTypes[i] = idTypes_[i];
 }
 
