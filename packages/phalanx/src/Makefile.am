@@ -71,6 +71,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_Evaluator_Factory.hpp \
 	$(srcdir)/Phalanx_Evaluator_Factory_UFO.hpp \
 	$(srcdir)/Phalanx_Evaluator.hpp \
+	$(srcdir)/Phalanx_Evaluator_Macros.hpp \
 	$(srcdir)/Phalanx_Evaluator_Manager_Def.hpp \
 	$(srcdir)/Phalanx_Evaluator_Manager.hpp \
 	$(srcdir)/Phalanx_Evaluator_TemplateBuilder.hpp \
