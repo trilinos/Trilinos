@@ -68,6 +68,23 @@ public:
    */
   virtual void partition(bool forceRepartitioning=false) = 0;
 
+
+  /** Return the new partition ID for a given element that
+   *  resided locally in the old partitioning.
+   */
+  virtual  int newPartNumber(int myElem) const = 0;
+
+  /** Return the number of LOCAL elements in a given part.
+   */
+  virtual  int numElemsInPart(int part) const = 0;
+
+  /** Fill user-allocated list (of length len) with the
+   *  local element ids to be located in the given part.
+   */
+  virtual  void elemsInPart(int part,
+			    int* elementList,
+			    int len) const = 0;
+
   /** The deprecated way to compute partitioning. See the partition() method.
    */
   virtual __deprecated void compute_partitioning(bool forceRepartitioning=false) {
@@ -81,18 +98,24 @@ public:
   /** Return the new partition ID for a given element that
    *  resided locally in the old partitioning.
    */
-  virtual int newPartitionNumber(int myElem) const = 0;
+  virtual __deprecated int newPartitionNumber(int myElem) {
+    return (newPartNumber(myElem));
+  }
 
   /** Return the number of LOCAL elements in a given partition.
    */
-  virtual int numElemsInPartition(int partition) const = 0;
+  virtual __deprecated int numElemsInPartition(int partition) {
+    return (numElemsInPart(partition));
+  }
 
   /** Fill user-allocated list (of length len) with the
    *  local element ids to be located in the given partition.
    */
-  virtual void elemsInPartition(int partition,
+  virtual __deprecated void elemsInPartition(int part,
                                 int* elementList,
-                                int len) const = 0;
+                                int len) {
+    return (elemsInPart(part, elementList, len));
+  }
 
 };//class Partitioner
 

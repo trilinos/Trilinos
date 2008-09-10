@@ -223,31 +223,29 @@ public:
   /** An internal method which returns the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  int newPartitionNumber(int myElem) const __deprecated;
+  __deprecated int newPartNumber(int myElem) const
+  {
+    return ((*this)[myElem]);
+  }
 
   /** An internal method which returns the number of elements in a given partition.
 
       (Currently only implemented for the case where 'partition' is local.)
   */
-  int numElemsInPartition(int partition) const;
+  int numElemsInPart(int part) const {
+    return (numElemsWithProperty(part));
+  }
 
   /** An internal method which fills caller-allocated list (of length len) with the
       global element ids to be located in the given partition.
 
       (Currently only implemented for the case where 'partition' is local.)
   */
-  void elemsInPartition(int partition, int* elementList, int len) const;
+  void elemsInPart(int part, int* elementList, int len) const {
+    elemsWithProperty(part, elementList, len);
+  }
 
   Teuchos::RefCountPtr<Epetra_Map> createNewMap();
-
-
-//   void elemsWithProperty(int property,
-// 			 int* elementList,
-// 			 int len) const;
-
-//   const int& operator[](int myElem) const;
-
-//   int numElemsWithProperty(int partition) const;
 
 };//class Partitioner
 
