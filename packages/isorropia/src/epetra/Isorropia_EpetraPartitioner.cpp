@@ -29,7 +29,6 @@ USA
 
 #include <Isorropia_EpetraPartitioner.hpp>
 #ifdef HAVE_ISORROPIA_ZOLTAN
-#include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_EpetraZoltanLib.hpp>
 #endif
 #include <Isorropia_EpetraInternalPartitioner.hpp>

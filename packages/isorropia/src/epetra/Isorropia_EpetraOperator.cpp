@@ -28,9 +28,6 @@ USA
 //@HEADER
 
 #include <Isorropia_EpetraOperator.hpp>
-#ifdef HAVE_ISORROPIA_ZOLTAN
-#include <Isorropia_Zoltan_Repartition.hpp>
-#endif /* HAVE_ISORROPIA_ZOLTAN */
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>

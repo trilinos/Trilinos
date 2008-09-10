@@ -29,7 +29,6 @@ USA
 
 #include <Isorropia_EpetraColorer.hpp>
 #ifdef HAVE_ISORROPIA_ZOLTAN
-#include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_EpetraZoltanLib.hpp>
 #endif /* HAVE_ISORROPIA_ZOLTAN */
 #include <Isorropia_Exception.hpp>
