@@ -436,18 +436,17 @@ TAC_ARG_WITH_PACKAGE(ml_nox, [Enable ML_NOX support. --with-ml_nox requires that
 AM_CONDITIONAL(ML_USING_NOX, test "X$ac_cv_use_ml_nox" = "Xyes")
 #
 TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. This option requires that MPI be enabled.  See notes for --with-ml_metis.], ML_ZOLTAN, no) 
-#this works
+AM_CONDITIONAL(ML_USING_ZOLTAN, test "X$ac_cv_use_ml_zoltan" = "Xyes")
+#
+TAC_ARG_WITH_PACKAGE(ml_zoltan3, [Enable Zoltan 3.0 support. This option requires that MPI and --enable-zoltan.], ML_ZOLTAN_THREE, no)
+#
 if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-#if test "X${HAVE_MPI}" != "Xyes"; then
    #issue an error message and abort if the user has configured with
    #the zoltan interface enabled but without mpi enabled
-   if test "X$ac_cv_use_ml_zoltan" = "Xyes"; then
+   if test "X$ac_cv_use_ml_zoltan" = "Xyes" || test "X$ac_cv_use_ml_zoltan3" = "Xyes"; then
      AC_MSG_ERROR([[Zoltan support in ML requires enabling MPI.]])
    fi
 fi
-AM_CONDITIONAL(ML_USING_ZOLTAN, test "X$ac_cv_use_ml_zoltan" = "Xyes")
-
-TAC_ARG_WITH_PACKAGE(ml_zoltan3, [Enable Zoltan 3.0 support. This option requires that MPI and --enable-zoltan.], ML_ZOLTAN_THREE, no)
 #
 TAC_ARG_WITH_PACKAGE(petsc, [Enable PETSc support.], PETSC, no)
 

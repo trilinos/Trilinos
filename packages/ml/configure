@@ -8861,17 +8861,6 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
-#this works
-if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-#if test "X${HAVE_MPI}" != "Xyes"; then
-   #issue an error message and abort if the user has configured with
-   #the zoltan interface enabled but without mpi enabled
-   if test "X$ac_cv_use_ml_zoltan" = "Xyes"; then
-     { { echo "$as_me:$LINENO: error: Zoltan support in ML requires enabling MPI." >&5
-echo "$as_me: error: Zoltan support in ML requires enabling MPI." >&2;}
-   { (exit 1); exit 1; }; }
-   fi
-fi
  if test "X$ac_cv_use_ml_zoltan" = "Xyes"; then
   ML_USING_ZOLTAN_TRUE=
   ML_USING_ZOLTAN_FALSE='#'
@@ -8880,7 +8869,7 @@ else
   ML_USING_ZOLTAN_FALSE=
 fi
 
-
+#
 
 
 # Check whether --with-ml_zoltan3 was given.
@@ -8907,6 +8896,16 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
+#
+if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+   #issue an error message and abort if the user has configured with
+   #the zoltan interface enabled but without mpi enabled
+   if test "X$ac_cv_use_ml_zoltan" = "Xyes" || test "X$ac_cv_use_ml_zoltan3" = "Xyes"; then
+     { { echo "$as_me:$LINENO: error: Zoltan support in ML requires enabling MPI." >&5
+echo "$as_me: error: Zoltan support in ML requires enabling MPI." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
 #
 
 
