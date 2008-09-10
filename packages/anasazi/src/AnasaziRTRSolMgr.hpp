@@ -31,7 +31,7 @@
 
 /*! \file AnasaziRTRSolMgr.hpp
   \brief The Anasazi::RTRSolMgr provides a simple solver manager over the IRTR 
-  eigensolver.
+  eigensolvers.
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -52,11 +52,12 @@
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#include "Teuchos_TimeMonitor.hpp"
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_FancyOStream.hpp>
 
 /*! \class Anasazi::RTRSolMgr
   \brief The Anasazi::RTRSolMgr provides a simple solver
-  manager over the RTR eigensolver. 
+  manager over the RTR eigensolver. For more information, see the discussion for RTRBase.
 
   \ingroup anasazi_solver_framework
 
@@ -85,7 +86,8 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
    *   - Solver parameters
-   *      - \c "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. NOTE: Currently only "SR" supported.
+   *      - \c "Skinny Solver" - a \c bool specifying whether a non-caching ("skinny") solver implementation is used. Determines whether the underlying solver is IRTR or SIRTR.
+   *      - \c "Which" - a \c string specifying the desired eigenvalues: SR or LR, i.e., smallest or largest algebraic eigenvalues.
    *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying RTR solver. Default: problem->getNEV()
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
    *   - Convergence parameters 
@@ -113,7 +115,6 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
    *
    * The timers are ordered as follows:
    *   - time spent in solve() routine
-   *   - time spent locking converged eigenvectors
    */
    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
      return tuple(_timerSolve);

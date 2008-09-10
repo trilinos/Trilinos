@@ -20,19 +20,25 @@
 
 /*!     \class Anasazi::SIRTR
 
-        SIRTR is a lower-memory ("skinny") implementation of the Implicit
-        Riemannian Trust-Region (%IRTR) eigensolver. The solver uses between 6
-        and 8 blocks of vectors.
-        
-        The base requirement is 6 blocks of vectors;
-        additional blocks are required when solving a generalized eigenvalue
-        problem or when using a preconditioiner. 
+        SIRTR ("skinny IRTR") is a non-caching, lower-memory implementation of the Implicit
+        Riemannian Trust-Region (%IRTR) eigensolver.
+
+        The solver uses between 6 and 8 blocks of vectors, compared to the
+        requirements by IRTR of 10 to 13 blocks of vectors. The base requirement
+        is 6 blocks of vectors, where a block of vectors contains a number of vectors equal to the 
+        block size specified for the solver (see RTRBase::getBlockSize()).
+        Additional blocks are required when solving a generalized eigenvalue problem or when using a preconditioiner. 
+
+        For more information, see RTRBase.
+
+        \ingroup anasazi_solver_framework
 
         \author Chris Baker
 */
 
 
-// FINISH: add randomization
+// TODO: add randomization
+// TODO: add expensive debug checking on Teuchos_Debug
 
 namespace Anasazi {
 
@@ -47,8 +53,12 @@ namespace Anasazi {
      *
      * This constructor takes pointers required by the eigensolver, in addition
      * to a parameter list of options for the eigensolver. These options include the following:
+     *   - "Rho Prime" - an \c MagnitudeType specifying the size of the implicit trust-region radius.
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
-     *   - "Inner Solver" - 
+     *   - "Leftmost" - a \c bool specifying whether the solver is computing the
+     *     leftmost ("SR") or rightmost ("LR") eigenvalues. Default: true. This must be in accord with the SortManager pass to the constructor.
+     *   - "Kappa Convergence" - a \c MagnitudeType specifing the rate of convergence for the linear convergence regime. Default: 0.1
+     *   - "Theta Convergence" - a \c MagnitudeType specifing the order of convergence for the linear convergence regime. theta implies a convergence order of theta+1. Default: 1.0
      */
     SIRTR( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
            const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           &sorter,
@@ -66,26 +76,7 @@ namespace Anasazi {
     //! @name Solver methods
     //@{
     
-    /*! \brief This method performs %SIRTR iterations until the status test
-     * indicates the need to stop or an error occurs (in which case, an
-     * exception is thrown).
-     *
-     * iterate() will first determine whether the solver is initialized; if
-     * not, it will call initialize() using default arguments.  After
-     * initialization, the solver performs %SIRTR iterations until the status
-     * test evaluates as ::Passed, at which point the method returns to the
-     * caller.
-     *
-     * The %SIRTR iteration proceeds as follows:
-     * -# 
-     * -# 
-     *
-     * The status test is queried at the beginning of the iteration.
-     *
-     * Possible exceptions thrown include std::logic_error, std::invalid_argument or
-     * one of the SIRTR-specific exceptions.
-     *
-    */
+    //! \brief Impemements Eigensolver. The outer %IRTR iteration. See RTRBase::iterate().
     void iterate();
 
     //@}
@@ -93,7 +84,7 @@ namespace Anasazi {
     //!  @name Output methods
     //@{
 
-    //! This method requests that the solver print out its current status to screen.
+    //! Impemements Eigensolver. This method requests that the solver print out its current status to screen.
     void currentStatus(std::ostream &os);
 
     //@}
@@ -126,6 +117,7 @@ namespace Anasazi {
     //
     // Internal methods
     //
+    //! \brief The inner %IRTR iteration. See RTRBase::solveTRSubproblem().
     void solveTRSubproblem();
     //
     // rho_prime 
@@ -259,7 +251,7 @@ namespace Anasazi {
     // theta (superlinear) convergence
     //
     MagnitudeType kconv = r0_norm * this->conv_kappa_;
-    // FINISH: consider insert some scaling here
+    // FINISH: consider inserting some scaling here
     // MagnitudeType tconv = r0_norm * MAT::pow(r0_norm/normgradf0_,this->conv_theta_);
     MagnitudeType tconv = MAT::pow(r0_norm,this->conv_theta_+ONE);
     if (this->om_->isVerbosity(Debug)) {
