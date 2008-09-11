@@ -269,7 +269,8 @@ CORE_H = \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
-	$(srcdir)/Isorropia_ConfigDefs.hpp
+	$(srcdir)/Isorropia_ConfigDefs.hpp \
+	$(srcdir)/Isorropia_Version.hpp
 
 EPETRA = \
 	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
