@@ -174,6 +174,12 @@
 #endif
 #endif
 
+#ifdef HAVE_ML_ZOLTAN_THREE
+#  ifndef HAVE_ML_ZOLTAN
+#    define HAVE_ML_ZOLTAN
+#  endif
+#endif
+
 #endif /*ifndef TRILINOS_NO_CONFIG_H*/
 
 #endif
