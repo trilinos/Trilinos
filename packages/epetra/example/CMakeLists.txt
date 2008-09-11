@@ -9,7 +9,7 @@ INCLUDE(Trilinos_Add_Test)
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(petra_power_method EXAMPLE SOURCES cxx_main.cpp ARGS 100)
 TRILINOS_ADD_EXECUTABLE(
   petra_power_method 
-  COMM mpi serial  
+  COMM serial  
   SOURCES cxx_main.cpp
   DIRECTORY petra_power_method
   )
@@ -17,7 +17,7 @@ TRILINOS_ADD_EXECUTABLE(
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(verySimple EXAMPLE SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   verySimple 
-  COMM mpi serial  
+  COMM serial  
   SOURCES cxx_main.cpp
   DIRECTORY verySimple
   )
@@ -25,14 +25,14 @@ TRILINOS_ADD_EXECUTABLE(
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(UG_Ex1 EXAMPLE SOURCES cxx_main.cpp power_method.cpp ARGS 100)
 TRILINOS_ADD_EXECUTABLE(
   UG_Ex1
-  COMM mpi serial  
+  COMM serial  
   SOURCES cxx_main.cpp power_method.cpp
   DIRECTORY UG_Ex1
   )
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(UG_ExMaps EXAMPLE SOURCES cxx_main.cpp ARGS 100)
 TRILINOS_ADD_EXECUTABLE(
   UG_ExMaps
-  COMM mpi serial  
+  COMM serial  
   SOURCES cxx_main.cpp 
   DIRECTORY UG_ExMaps
   )
