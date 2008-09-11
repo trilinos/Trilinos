@@ -1,35 +1,8 @@
 namespace Intrepid {
 
-/************************************************************************
-**	Class Definition for class SGPoint
-**	Function: Helper Class with cosntruction of Sparse Grid
-*************************************************************************/
-template<class Scalar, int D>
-class SGPoint{
-public:
-	Scalar coords[D];
-
-	SGPoint(Scalar p[D]);
-	bool const operator==(const SGPoint<Scalar, D> & right);
-	bool const operator<(const SGPoint<Scalar, D> & right);
-	bool const operator>(const SGPoint<Scalar, D> & right);
-	//friend ostream & operator<<(ostream & o, const SGPoint<D> & p);
-};
-
-/************************************************************************
-**	Class Definition for class SGNode
-**	function: Helper Class with constrution of Sparse Grid
+/***********************************************************************
+**	Helper Functions for Class CubatureSparse
 ************************************************************************/
-template<class Scalar, int D>
-class SGNodes{
-public:
-	std::vector< SGPoint<Scalar, D> > nodes;
-	std::vector< Scalar > weights;
-	bool addNode(Scalar new_node[D], Scalar weight);
-	void copyToTeuchos(Teuchos::Array< Point<Scalar> > & cubPoints, Teuchos::Array<Scalar> & cubWeights);
-	void copyToTeuchos(Teuchos::Array< Scalar* > & cubPoints, Teuchos::Array<Scalar> & cubWeights);
-	int size() {return nodes.size();}
-};
 
 template< class Scalar, int DIM >
 void iterateThroughDimensions(int level, int dims_left, SGNodes< Scalar, DIM > & cubPointsND, Scalar* partial_node, Scalar partial_weight);
@@ -64,7 +37,7 @@ CubatureSparse<Scalar, dimension_>::CubatureSparse(const int                    
 	}
 	else if(dimension_ == 3)
 	{
-		if(degree <= 1)
+		if(degree == 1)
 			level_ = 1;
 		else if(degree <= 3)
 			level_ = 2;
@@ -126,180 +99,6 @@ int CubatureSparse<Scalar,dimension_>::getAccuracy() const {
   return 0;
 } //end getAccuracy
 
-template <class Scalar,int dimension_>
-void CubatureSparse<Scalar,dimension_>::getSpecialCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
-                           Teuchos::Array<Scalar>&          cubWeights) const{
-	SGNodes<Scalar, 2> grid;
-
-	getSpecialCub1(grid);
-	grid.copyToTeuchos(cubPoints, cubWeights);
-}
-
-
-/**************************************************************************
-**	Function Definitions for Class SGPoint
-***************************************************************************/
-template<class Scalar, int D>
-SGPoint<Scalar, D>::SGPoint(Scalar p[D])
-{
-	for(int i = 0; i < D; i++)
-	{
-		coords[i] = p[i];
-	}
-}
-
-template<class Scalar, int D>
-bool const SGPoint<Scalar, D>::operator==(const SGPoint<Scalar, D> & right)
-{
-	bool equal = true;
-
-	for(int i = 0; i < D; i++)
-	{
-		if(coords[i] != right.coords[i])
-			return false;
-	}
-
-	return equal;
-}
-
-template<class Scalar, int D>
-bool const SGPoint<Scalar, D>::operator<(const SGPoint<Scalar, D> & right)
-{
-	for(int i = 0; i < D; i++)
-	{
-		if(coords[i] < right.coords[i])
-			return true;
-		else if(coords[i] > right.coords[i])
-			return false;
-	}
-	
-	return false;
-}
-
-template<class Scalar, int D>
-bool const SGPoint<Scalar, D>::operator>(const SGPoint<Scalar, D> & right)
-{
-	if(this < right || this == right)
-		return false;
-
-	return true;
-}
-
-template<class Scalar, int D>
-std::ostream & operator<<(std::ostream & o, SGPoint<Scalar, D> & p)
-{
-	o << "(";
-	for(int i = 0; i<D;i++)
-		o<< p.coords[i] << " ";
-	o << ")";
-	return o;
-}
-
-
-/**************************************************************************
-**	Function Definitions for Class SGNode
-***************************************************************************/
-
-template<class Scalar, int D>
-bool SGNodes< Scalar, D >::addNode(Scalar new_node[D], Scalar weight)
-{
-	SGPoint<Scalar, D> new_point(new_node);
-	bool new_and_added = true;
-
-	if(nodes.size() == 0)
-	{
-		nodes.push_back(new_point);
-		weights.push_back(weight);
-	}
-	else
-	{		
-		int left = -1;
-		int right = (int)nodes.size();
-		int mid_node = (int)ceil(nodes.size()/2.0)-1;
-
-		bool iterate_continue = true;
-
-		while(iterate_continue)
-		{
-			if(new_point == nodes[mid_node]){
-				weights[mid_node] += weight;
-				iterate_continue = false;
-				new_and_added = false;	
-			}
-			else if(new_point < nodes[mid_node]){
-				if(right - left <= 2)
-				{
-					//insert the node into the vector to the left of mid_node
-					nodes.insert(nodes.begin()+mid_node, new_point);
-					weights.insert(weights.begin()+mid_node,weight);
-					iterate_continue = false;
-				}
-				else 
-				{
-					right = mid_node;
-					mid_node += (int)ceil((left-mid_node)/2.0);
-				}
-			}
-			else{ //new_point > nodes[mid_node];
-
-				if(mid_node == (int)nodes.size()-1)
-				{
-					nodes.push_back(new_point);
-					weights.push_back(weight);
-					iterate_continue = false;
-				}
-				else if(right - left <= 2)
-				{
-					//insert the node into the vector to the right of mid_node
-					nodes.insert(nodes.begin()+mid_node+1, new_point);
-					weights.insert(weights.begin()+mid_node+1,weight);
-					iterate_continue = false;
-				}
-				else 
-				{
-					left = mid_node;
-					mid_node += (int)ceil((right-mid_node)/2.0);
-				}
-			}
-		}
-	}
-
-	return new_and_added;
-}
-
-template< class Scalar, int D >
-void SGNodes<Scalar, D>::copyToTeuchos(Teuchos::Array< Point<Scalar> > & cubPoints, Teuchos::Array<Scalar> & cubWeights)
-{
-	int numPoints = size();
-
-	Point<Scalar> tempPoint(D);
-	cubPoints.assign(numPoints,tempPoint);
-	cubWeights.assign(numPoints, 0.0);
-
-	for(int i = 0; i < numPoints; i++)
-	{
-		cubPoints[i].setCoordinates(nodes[i].coords, D);
-		cubWeights[i] = weights[i];
-	}
-}
-
-template< class Scalar, int D >
-void SGNodes<Scalar,D>::copyToTeuchos(Teuchos::Array< Scalar* > & cubPoints, Teuchos::Array<Scalar> & cubWeights)
-{
-	int numPoints = size();
-
-	Scalar tempPoint[D];
-	cubPoints.assign(numPoints,tempPoint);
-	cubWeights.assign(numPoints, 0.0);
-
-	for(int i = 0; i < numPoints; i++)
-	{
-		cubPoints[i] = nodes[i].coords;
-		cubWeights[i] = weights[i];
-	}
-}
-
-
 /************************************************************************
 **Function Definition for iterateThroughDimensions() 
 **		and its helper functions
@@ -341,8 +140,13 @@ void iterateThroughDimensions(int level, int dims_left, SGNodes< Scalar, DIM > &
 	ECell cellType = CELL_EDGE;
 
 	for(int k_i = start; k_i <= end; k_i++)
-	{
-		int order1D = 2*k_i-1;	//line that could be more generalized - depending on speed
+	{	/*******************
+		**	Slow-Gauss
+		********************/
+		int order1D = 2*k_i-1;
+		/*******************
+		**	Fast-Gauss
+		********************/
 		//int order1D = (int)pow(2,k_i) - 1;
 		Teuchos::Array< Point<Scalar> > cubPoints1D;
 		Teuchos::Array<Scalar> cubWeights1D;
@@ -416,167 +220,5 @@ int iterateThroughDimensionsForNumCalc(int dims_left, int level, int levels_left
 	}
 	return numNodes;
 }
-
-template< class Scalar, int D>
-void getSpecialCub1(SGNodes< Scalar, D > & cubPointsND)
-{
-	ECell cellType = CELL_EDGE;
-	Point<Scalar> tempPoint1D(1);
-	int level1, level2;
-	int order1, order2;
-	int degree1, degree2;
-	
-	//Step 1
-	level1 = 3;
-	level2 = 2;
-	order1 = 2*level1-1;
-	order2 = 2*level2-1;
-	degree1 = 2*order1-1;
-	degree2 = 2*order2-1;
-
-	Teuchos::Array< Point<Scalar> > cubPoints1A;
-	Teuchos::Array<Scalar> cubWeights1A;
-	cubPoints1A.assign(order1,tempPoint1D);
-	cubWeights1A.assign(order1, 0.0);
-	CubatureDirect<Scalar> Cub1A(cellType, degree1);
-	Cub1A.getCubature(order1, cubPoints1A, cubWeights1A);
-
-	Teuchos::Array< Point<Scalar> > cubPoints1B;
-	Teuchos::Array<Scalar> cubWeights1B;
-	cubPoints1B.assign(order2,tempPoint1D);
-	cubWeights1B.assign(order2, 0.0);
-	CubatureDirect<Scalar> Cub1B(cellType, degree2);
-	Cub1B.getCubature(order2, cubPoints1B, cubWeights1B);
-
-	for(int i = 0; i < order1; i++)
-	{
-		for(int j = 0; j < order2; j++)
-		{
-			Scalar node[2];
-			Teuchos::Array<Scalar> temp_array = cubPoints1A[i].getCoordinates();
-			node[0] = temp_array[0];
-			temp_array = cubPoints1B[j].getCoordinates();
-			node[1] = temp_array[0];
-
-			Scalar weight = cubWeights1A[i]*cubWeights1B[j];
-
-			cubPointsND.addNode(node, weight);
-		}
-	}
-
-	//Step 2
-	level1 = 2;
-	level2 = 3;
-	order1 = 2*level1-1;
-	order2 = 2*level2-1;
-	degree1 = 2*order1-1;
-	degree2 = 2*order2-1;
-
-	Teuchos::Array< Point<Scalar> > cubPoints1C;
-	Teuchos::Array<Scalar> cubWeights1C;
-	cubPoints1C.assign(order1,tempPoint1D);
-	cubWeights1C.assign(order1, 0.0);
-	CubatureDirect<Scalar> Cub1C(cellType, degree1);
-	Cub1C.getCubature(order1, cubPoints1C, cubWeights1C);
-
-	Teuchos::Array< Point<Scalar> > cubPoints1D;
-	Teuchos::Array<Scalar> cubWeights1D;
-	cubPoints1D.assign(order2,tempPoint1D);
-	cubWeights1D.assign(order2, 0.0);
-	CubatureDirect<Scalar> Cub1D(cellType, degree2);
-	Cub1D.getCubature(order2, cubPoints1D, cubWeights1D);
-
-	for(int i = 0; i < order1; i++)
-	{
-		for(int j = 0; j < order2; j++)
-		{
-			Scalar node[2];
-			Teuchos::Array<Scalar> temp_array = cubPoints1C[i].getCoordinates();
-			node[0] = temp_array[0];
-			temp_array = cubPoints1D[j].getCoordinates();
-			node[1] = temp_array[0];
-
-			Scalar weight = cubWeights1C[i]*cubWeights1D[j];
-
-			cubPointsND.addNode(node, weight);
-		}
-	}
-
-	//Step 3
-	level1 = 2;
-	level2 = 2;
-	order1 = 2*level1-1;
-	order2 = 2*level2-1;
-	degree1 = 2*order1-1;
-	degree2 = 2*order2-1;
-
-	Teuchos::Array< Point<Scalar> > cubPoints1E;
-	Teuchos::Array<Scalar> cubWeights1E;
-	cubPoints1E.assign(order1,tempPoint1D);
-	cubWeights1E.assign(order1, 0.0);
-	CubatureDirect<Scalar> Cub1E(cellType, degree1);
-	Cub1E.getCubature(order1, cubPoints1E, cubWeights1E);
-
-	Teuchos::Array< Point<Scalar> > cubPoints1F;
-	Teuchos::Array<Scalar> cubWeights1F;
-	cubPoints1F.assign(order2,tempPoint1D);
-	cubWeights1F.assign(order2, 0.0);
-	CubatureDirect<Scalar> Cub1F(cellType, degree2);
-	Cub1F.getCubature(order2, cubPoints1F, cubWeights1F);
-
-	for(int i = 0; i < order1; i++)
-	{
-		for(int j = 0; j < order2; j++)
-		{
-			Scalar node[2];
-			Teuchos::Array<Scalar> temp_array = cubPoints1E[i].getCoordinates();
-			node[0] = temp_array[0];
-			temp_array = cubPoints1F[j].getCoordinates();
-			node[1] = temp_array[0];
-
-			Scalar weight = -cubWeights1E[i]*cubWeights1F[j];
-
-			cubPointsND.addNode(node, weight);
-		}
-	}
-}
-
-/*template< class Scalar, int D>
-void addProduct(int level_part[D], int dims_left, SGNodes< Scalar, D > & cubPointsND, Scalar* partial_node, Scalar partial_weight)
-{
-	int order[D];
-	int cub_degree[D];
-	ECell cellType = CELL_EDGE;
-	Teuchos::Array< Point<Scalar> > cubPoints1D[D];
-	Teuchos::Array<Scalar> cubWeights1D[D];
-	Point<Scalar> tempPoint1D(1);
-
-	int totalnum = 1;
-
-	for(int i = 0; i < D; i++)
-	{
-		totalnum *= level_part[i];
-
-		order[i] = 2*level_part[i] - 1;
-		cub_degree[i] = 2*order[i] - 1;
-
-		cubPoints1D[i].assign(order,tempPoint1D);
-		cubWeights1D[i].assign(order, 0.0);
-		CubatureDirect<Scalar> Cub1D(cellType, cub_degree[i]);
-		Cub1D.getCubature(order[i], cubPoints1D[i], cubWeights1D[i]);
-	}
-
-	
-	Scalar [][] point = new Scalar[D][totalnum];
-	Scalar weight[D];
-
-	for(int i = 0; i < totalnum; i++)
-	{
-		for(int d = 0; d < D; d++)
-		{
-
-		}
-	}
-}*/
 
 } // end namespace Intrepid

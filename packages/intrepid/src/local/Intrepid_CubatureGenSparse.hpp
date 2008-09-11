@@ -1,5 +1,5 @@
-#ifndef INTREPID_CUBATURE_SPARSE_HPP
-#define INTREPID_CUBATURE_SPARSE_HPP
+#ifndef INTREPID_CUBATURE_GEN_SPARSE_HPP
+#define INTREPID_CUBATURE_GEN_SPARSE_HPP
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Cubature.hpp"
@@ -7,27 +7,26 @@
 #include "Intrepid_CubatureSparseHelper.hpp"
 #include "Intrepid_MultiCell.hpp"
 #include "Teuchos_TestForException.hpp"
-//#include <vector.h>
 
 namespace Intrepid{
 
 //Need to talk to Denis about
-int INTREPID_MAX_CUBATURE_DEGREE_SPARSE2D = 15;
-int INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D = 13;
+ const int INTREPID_MAX_CUBATURE_DEGREE_GENSPARSE = 17;
+
 
 template<class Scalar, int dimension_>
-class CubatureSparse : public Intrepid::Cubature<Scalar> {
+class CubatureGenSparse : public Intrepid::Cubature<Scalar> {
   private:
-  int level_;
   int numPoints_;
   const int degree_;
+  SGNodes<Scalar, dimension_> grid;
   
   public:
 
-  ~CubatureSparse() {}
+  ~CubatureGenSparse() {}
 
 
-  CubatureSparse(const int degree);
+  CubatureGenSparse(const int degree);
 
   virtual void getCubature(int &                            numCubPoints,
                            Teuchos::Array< Point<Scalar> >& cubPoints,
@@ -36,11 +35,11 @@ class CubatureSparse : public Intrepid::Cubature<Scalar> {
   virtual void getCubature(Teuchos::Array< Point<Scalar> >& cubPoints,
                            Teuchos::Array<Scalar>&          cubWeights) const;
 
-  virtual int getNumPoints() const;
+  virtual int getNumPoints() const{return numPoints_;};
 
-  ECell getCellType() const;
+  ECell getCellType() const{return CELL_HEX;};
 
-  virtual int getAccuracy() const;
+  virtual int getAccuracy() const{return 0;};
 
 }; // end class CubatureSparse 
 
@@ -49,6 +48,6 @@ class CubatureSparse : public Intrepid::Cubature<Scalar> {
 
 
 // include templated definitions
-#include <Intrepid_CubatureSparseDef.hpp>
+#include <Intrepid_CubatureGenSparseDef.hpp>
 
 #endif

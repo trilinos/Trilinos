@@ -1,4 +1,4 @@
-// @HEADER
+//@HEADER
 // ************************************************************************
 //
 //                           Intrepid Package
@@ -29,12 +29,12 @@
 
 
 /** \file
-\brief  Unit test (CubatureSparse): correctness of
+\brief  Unit test (CubatureGenSparse): correctness of
         integration of monomials for 3D reference cells.
 \author Created by P. Bochev, D. Ridzal and M. Keegan
 */
 
-#include "Intrepid_CubatureSparse.hpp"
+#include "Intrepid_CubatureGenSparse.hpp"
 #include "Intrepid_Utils.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -73,7 +73,7 @@ void computeIntegral(Teuchos::Array<double>& testIntFixDeg, ECell cellType, int 
   switch (cellType) {
 
     case CELL_HEX:
-        myCub = Teuchos::rcp(new CubatureSparse<double,3>(cubDegree));
+        myCub = Teuchos::rcp(new CubatureGenSparse<double,3>(cubDegree));
       break;
 
     default:
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
       *outStream << "\nIntegrals of monomials on a reference " << MultiCell<double>::getCellName(testType) << ":\n";
       std::ifstream filecompare(&filename[0]);
       // compute integrals
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_GENSPARSE; cubDeg++) {
         int numMonomials = (cubDeg+1)*(cubDeg+2)*(cubDeg+3)/6; 
         testInt[cubDeg].resize(numMonomials);
         computeIntegral(testInt[cubDeg], testType, cubDeg);
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
         filecompare.close();
       }
       // perform comparison
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_GENSPARSE; cubDeg++) {
         polyCt = 0;
         offset = 0;
         int oldErrorFlag = errorFlag;

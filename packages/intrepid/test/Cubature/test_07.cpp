@@ -29,9 +29,9 @@
 
 
 /** \file
-\brief  Unit test (CubatureDirect,CubatureTensor): correctness of
+\brief  Unit test (CubatureSparse): correctness of
         integration of monomials for 2D reference cells.
-\author Created by P. Bochev and D. Ridzal.
+\author Created by P. Bochev, D. Ridzal and Matthew Keegan.
 */
 
 #include "Intrepid_CubatureSparse.hpp"

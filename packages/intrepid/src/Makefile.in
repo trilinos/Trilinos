@@ -280,8 +280,11 @@ INTREPID_LOCAL_H = \
   $(srcdir)/local/Intrepid_CubatureDirectDef.hpp \
   $(srcdir)/local/Intrepid_CubatureDirect.hpp \
   $(srcdir)/local/Intrepid_Cubature.hpp \
+  $(srcdir)/local/Intrepid_CubatureGenSparseDef.hpp \
+  $(srcdir)/local/Intrepid_CubatureGenSparse.hpp \
   $(srcdir)/local/Intrepid_CubatureSparseDef.hpp \
   $(srcdir)/local/Intrepid_CubatureSparse.hpp \
+  $(srcdir)/local/Intrepid_CubatureSparseHelper.hpp \
   $(srcdir)/local/Intrepid_CubatureTensorDef.hpp \
   $(srcdir)/local/Intrepid_CubatureTensor.hpp \
   $(srcdir)/local/Intrepid_DefaultCubatureFactory.hpp \
