@@ -4,21 +4,13 @@
 
 \section isorropia_intro Introduction
 
-Isorropia is a repartitioning/rebalancing package, intended to assist
-with redistributing objects such as matrices and matrix-graphs in a
-parallel execution setting, to allow for more efficient computations.
+Isorropia is a package for partitioning (load balancing), coloring, and ordering. Its main purpose is to assist with redistributing objects such as matrices and matrix-graphs in a parallel execution setting, to allow for more efficient computations. Isorropia produces good maps for Epetra matrices/graphs. Isorropia must be called after the matrix/graph is filled, so the sparsity pattern is known. <br/>
+
+      Isorropia is primarily an interface to the Zoltan library, which is now required. Zoltan became a Trilinos package in 9.0 and is automatically enabled by
+Isorropia. 
 To enable Isorropia in your Trilinos build, provide the argument
 '--enable-isorropia' to configure.
-
-Isorropia is primarily an interface to the Zoltan library, but can be
-built and used with minimal capability without Zoltan. To enable Isorropia's
-Zoltan support, you need to add '--enable-isorropia-zoltan' and
-'--enable-epetraext' to your Trilinos configure command, and provide
-include-paths and library specifications
-for Zoltan version 3.0 or higher (provide these to configure using the
-'--with-incdirs' and '--with-libs' configure arguments).
-If you built Zoltan with third party libraries, e.g. ParMETIS,
-then you must also link with these libraries.
+If you wish to use third-party libraries (such as ParMetis or PT-Scotch) with Isorropia via Zoltan, see the configure options for Zoltan.
 
 <ul>
 <li> <a href="#overview">Overview of Isorropia</a>
@@ -27,8 +19,16 @@ then you must also link with these libraries.
 </ul>
 
 <a name="overview"> </a>
-\section isorropia_startup Overview of Isorropia.
+\section isorropia_overview Overview of Isorropia.
 
+Isorropia contains algorithms for three separate problems, all of which can be formulated as a combinatorial problem based on graphs:
+<ul>
+<li> Partitioning (load-balancing) and redistribution. 
+<li> Graph coloring.
+<li> Fill-reducing ordering (for direct solvers).
+</ul>
+
+We focus here on the partitioning (load balancing), which is most heavily used.
 Isorropia's user interface consists primarily of the Isorropia::Partitioner,
 Isorropia::Redistributor and Isorropia::CostDescriber classes, as well as the
 Isorropia::Epetra::create_balanced_copy functions.
@@ -53,7 +53,7 @@ Isorropia::Partitioner instance)
  to the new partitioning.
 </ol>
 
-Isorropia is currently aimed primarily at repartitioning/redistributing
+Isorropia currently supports  partitioning/redistributing of
 Epetra objects, including Epetra_CrsGraph, Epetra_RowMatrix (which includes
 Epetra_CrsMatrix and Epetra_VbrMatrix) and Epetra_MultiVector.
 
