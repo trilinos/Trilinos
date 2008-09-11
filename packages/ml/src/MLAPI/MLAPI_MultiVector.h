@@ -738,8 +738,8 @@ public:
     }
 
     for (int i = 0 ; i < GetMyLength() ; ++i) {
-      if (GetValues(0)[i] != 0.0)
-        GetValues(0)[i] = 1.0 / GetValues(0)[i];
+      if (GetValues(v)[i] != 0.0)
+        GetValues(v)[i] = 1.0 / GetValues(v)[i];
     }
 
     StackPop();
