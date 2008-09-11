@@ -58,6 +58,15 @@ postRegistrationSetup(PHX::FieldManager<Traits>& fm)
   this->utils.setFieldData(val_node,fm);
   this->utils.setFieldData(val_qp,fm);
   this->utils.setFieldData(val_grad_qp,fm);
+
+  // Get dimensions of MDArray
+  std::vector<std::size_t> dims;
+  val_node.dimensions(dims);
+  num_nodes = dims[1];
+
+  val_grad_qp.dimensions(dims);
+  num_qp = dims[1];
+  num_dim = dims[2];
 }
 
 //**********************************************************************
@@ -65,35 +74,39 @@ template<typename EvalT, typename Traits>
 void FEInterpolation<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData cell_data)
 { 
+  std::vector<MyCell>::iterator cell_it = cell_data.begin;
+
   // Loop over number of cells
-  for (std::size_t cell = 0; cell < cell_data.size(); ++cell) {
+  for (std::size_t cell = 0; cell < cell_data.num_cells; ++cell) {
     
     phdmesh::ArrayNatural<double,QuadPoint,Node>& phi = 
-      cell_data[cell].getBasisFunctions();
+      cell_it->getBasisFunctions();
 
     phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& grad_phi = 
-      cell_data[cell].getBasisFunctionGradients();
+      cell_it->getBasisFunctionGradients();
 
     // Loop over quad points of cell
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       
       val_qp(cell,qp) = 0.0;
 
-      for (std::size_t dim = 0; dim < num_dim; ++qp)
+      for (std::size_t dim = 0; dim < num_dim; ++dim)
 	val_grad_qp(cell,qp,dim) = 0.0;
-      
+
       // Sum nodal contributions to qp
       for (std::size_t node = 0; node < num_nodes; ++node) {
-	
+
 	val_qp(cell,qp) += phi(qp,node) * val_node(cell,node);
 	
-	for (std::size_t dim = 0; dim < num_dim; ++qp)
+	for (std::size_t dim = 0; dim < num_dim; ++dim)
 	  val_grad_qp(cell,qp,dim) += 
 	    grad_phi(qp,node,dim) * val_node(cell,node);
        
       }
     }
     
+    ++cell_it;
+ 
   }
     
 }

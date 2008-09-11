@@ -64,7 +64,7 @@ postRegistrationSetup(PHX::FieldManager<Traits>& fm)
 template<typename EvalT, typename Traits>
 void Fourier<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { 
-  std::size_t size = d.size() * data_layout_size;
+  std::size_t size = d.num_cells * data_layout_size;
 
   for (std::size_t i = 0; i < size; ++i)
     flux[i] = - density[i] * dc[i] * grad_temp[i];

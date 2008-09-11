@@ -29,35 +29,22 @@
 // ************************************************************************
 // @HEADER
 
-#include "CellData.hpp"
+#ifndef PHX_EXAMPLE_MY_WORKSET_HPP
+#define PHX_EXAMPLE_MY_WORKSET_HPP
 
-//**********************************************************************
-CellData::CellData() :
-  m_phi_mem(4*4, 0.25),
-  m_grad_phi_mem(4*4*3, 0.25),
-  m_phi(&m_phi_mem[0],4,4),
-  m_grad_phi(&m_grad_phi_mem[0],4,4,3)
-{ 
+#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "Cell.hpp"
+
+struct MyWorkset {
   
-}
+  std::size_t local_offset;
 
-//**********************************************************************
-phdmesh::ArrayNatural<double,Node,Dim>& CellData::getNodeCoordinates()
-{
-  return m_coords;
-}
+  std::size_t num_cells;
+  
+  std::vector<MyCell>::iterator begin;
 
-//**********************************************************************
-phdmesh::ArrayNatural<double,QuadPoint,Node>& CellData::getBasisFunctions()
-{
-  return m_phi;
-}
+  std::vector<MyCell>::iterator end;
 
-//**********************************************************************
-phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& CellData::
-getBasisFunctionGradients()
-{
-  return m_grad_phi;
-}
+};
 
-//**********************************************************************
+#endif

@@ -55,10 +55,11 @@ example_multidimensional_array_SOURCES = \
 	$(srcdir)/Example_MultiDimensionalArray.cpp \
 	$(srcdir)/Traits.hpp \
 	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/CellData.hpp \
-	$(srcdir)/CellData.cpp \
+	$(srcdir)/Cell.hpp \
+	$(srcdir)/Cell.cpp \
 	$(srcdir)/Dimension.hpp \
 	$(srcdir)/Dimension.cpp \
+	$(srcdir)/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_Density.hpp \

@@ -89,14 +89,13 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_example_OBJECTS = Example.$(OBJEXT) CellData.$(OBJEXT)
+am_example_OBJECTS = Example.$(OBJEXT) Cell.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
-am_example_algebraic_types_OBJECTS = Example_AlgebraicTypes.$(OBJEXT) \
-	CellData.$(OBJEXT)
+am_example_algebraic_types_OBJECTS = Example_AlgebraicTypes.$(OBJEXT)
 example_algebraic_types_OBJECTS =  \
 	$(am_example_algebraic_types_OBJECTS)
 am_example_debug_names_OBJECTS = Example_DebugNames.$(OBJEXT)
@@ -245,8 +244,9 @@ example_SOURCES = \
 	$(srcdir)/AlgebraicTypes.hpp \
 	$(srcdir)/Traits.hpp \
 	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/CellData.hpp \
-	$(srcdir)/CellData.cpp \
+	$(srcdir)/Cell.hpp \
+	$(srcdir)/Cell.cpp \
+	$(srcdir)/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_Density.hpp \
@@ -264,21 +264,7 @@ example_DEPENDENCIES = \
 example_LDADD = $(EXAMPLE_LIBS)
 example_algebraic_types_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_AlgebraicTypes.cpp \
-	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp \
-	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/CellData.hpp \
-	$(srcdir)/CellData.cpp \
-	$(srcdir)/evaluators/Evaluator_Constant.hpp \
-	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_Density.hpp \
-	$(srcdir)/evaluators/Evaluator_Density_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
+	$(srcdir)/AlgebraicTypes.hpp
 
 example_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
@@ -345,7 +331,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellData.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Cell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_AlgebraicTypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_DebugNames.Po@am__quote@
@@ -378,19 +364,19 @@ Example.obj: $(srcdir)/Example.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.obj `if test -f '$(srcdir)/Example.cpp'; then $(CYGPATH_W) '$(srcdir)/Example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.cpp'; fi`
 
-CellData.o: $(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CellData.o -MD -MP -MF $(DEPDIR)/CellData.Tpo -c -o CellData.o `test -f '$(srcdir)/CellData.cpp' || echo '$(srcdir)/'`$(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/CellData.Tpo $(DEPDIR)/CellData.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CellData.cpp' object='CellData.o' libtool=no @AMDEPBACKSLASH@
+Cell.o: $(srcdir)/Cell.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Cell.o -MD -MP -MF $(DEPDIR)/Cell.Tpo -c -o Cell.o `test -f '$(srcdir)/Cell.cpp' || echo '$(srcdir)/'`$(srcdir)/Cell.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Cell.Tpo $(DEPDIR)/Cell.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Cell.cpp' object='Cell.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CellData.o `test -f '$(srcdir)/CellData.cpp' || echo '$(srcdir)/'`$(srcdir)/CellData.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Cell.o `test -f '$(srcdir)/Cell.cpp' || echo '$(srcdir)/'`$(srcdir)/Cell.cpp
 
-CellData.obj: $(srcdir)/CellData.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CellData.obj -MD -MP -MF $(DEPDIR)/CellData.Tpo -c -o CellData.obj `if test -f '$(srcdir)/CellData.cpp'; then $(CYGPATH_W) '$(srcdir)/CellData.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CellData.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/CellData.Tpo $(DEPDIR)/CellData.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CellData.cpp' object='CellData.obj' libtool=no @AMDEPBACKSLASH@
+Cell.obj: $(srcdir)/Cell.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Cell.obj -MD -MP -MF $(DEPDIR)/Cell.Tpo -c -o Cell.obj `if test -f '$(srcdir)/Cell.cpp'; then $(CYGPATH_W) '$(srcdir)/Cell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Cell.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Cell.Tpo $(DEPDIR)/Cell.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Cell.cpp' object='Cell.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CellData.obj `if test -f '$(srcdir)/CellData.cpp'; then $(CYGPATH_W) '$(srcdir)/CellData.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CellData.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Cell.obj `if test -f '$(srcdir)/Cell.cpp'; then $(CYGPATH_W) '$(srcdir)/Cell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Cell.cpp'; fi`
 
 Example_AlgebraicTypes.o: $(srcdir)/auxiliary_tests/Example_AlgebraicTypes.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_AlgebraicTypes.o -MD -MP -MF $(DEPDIR)/Example_AlgebraicTypes.Tpo -c -o Example_AlgebraicTypes.o `test -f '$(srcdir)/auxiliary_tests/Example_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/auxiliary_tests/Example_AlgebraicTypes.cpp

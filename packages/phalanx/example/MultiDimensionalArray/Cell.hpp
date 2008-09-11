@@ -29,33 +29,49 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#ifndef PHX_EXAMPLE_MYCELL_HPP
+#define PHX_EXAMPLE_MYCELL_HPP
 
-#include "Phalanx_ConfigDefs.hpp" // for std::vector
-#include "AlgebraicTypes.hpp"
+#include "Phalanx_ConfigDefs.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+#include "Dimension.hpp"
+#include "Phalanx_Array.hpp"
 
-class CellData {
+class MyCell {
   
 public:
 
-  CellData();
+  MyCell();
   
-  virtual ~CellData() {}
+  virtual ~MyCell() {}
   
-  std::vector< MyVector<double> >& getNodeCoordinates();
+  phdmesh::ArrayNatural<double,Node,Dim>& getNodeCoordinates();
   
-  std::vector< std::vector<double> >& getBasisFunctions();
+  phdmesh::ArrayNatural<double,QuadPoint,Node>& getBasisFunctions();
   
-  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
+  phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& 
+  getBasisFunctionGradients();
   
+  std::size_t localIndex();
+
+  void setLocalIndex(std::size_t index);
+
 private:
   
-  std::vector< MyVector<double> > coords_;
+  std::size_t local_index_;
+
+  Teuchos::ArrayRCP<double> m_coords_mem;
   
-  std::vector< std::vector<double> > phi_;
+  Teuchos::ArrayRCP<double> m_phi_mem;
   
-  std::vector< std::vector< MyVector<double> > > grad_phi_;
+  Teuchos::ArrayRCP<double> m_grad_phi_mem;
+
+  phdmesh::ArrayNatural<double,Node,Dim> m_coords;
+  
+  phdmesh::ArrayNatural<double,QuadPoint,Node> m_phi;
+
+  phdmesh::ArrayNatural<double,QuadPoint,Node,Dim> m_grad_phi;
+
 };
 
 #endif
