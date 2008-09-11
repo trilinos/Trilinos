@@ -69,7 +69,7 @@
 
 (FRAMEWORK, INSTALL, StratimikosBelosIfpack) {
     TESTS = ./test_single_stratimikos_solver_driver_belos_ifpack.exe;
-    ARGS = --input-file=FourByFour.aztecoo.np.xml, --input-file=FourByFour.aztecoo.ml.xml;
+    ARGS = --input-file=FourByFour.belos.np.xml, --input-file=FourByFour.belos.ifpack.xml;
     COMM = MPI(1),SERIAL;
 }
 
