@@ -229,6 +229,8 @@ TRILINOS_ADD_TEST(
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
+  
+
 
 #TRILINOS_ADD_EXECUTABLE_AND_TEST(ScalarTraits ${TEST_ARGUMENTS} SOURCES ScalarTraits_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
