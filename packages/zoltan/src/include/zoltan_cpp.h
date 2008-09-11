@@ -168,8 +168,8 @@ public:
     return Zoltan_Order_Get_Block_Parent(ZZ_Ptr, block_num);
   }
 
-  int Order_Get_Nbr_Leaves() {
-    return Zoltan_Order_Get_Nbr_Leaves(ZZ_Ptr);
+  int Order_Get_Num_Leaves() {
+    return Zoltan_Order_Get_Num_Leaves(ZZ_Ptr);
   }
 
   int Order_Get_GID_Order(ZOLTAN_ID_PTR global_ids,ZOLTAN_ID_PTR order_ids) {

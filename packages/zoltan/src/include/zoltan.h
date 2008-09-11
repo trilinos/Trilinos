@@ -3138,7 +3138,7 @@ extern int Zoltan_Order_Get_Block_Parent(
  *  Returned value:       --  Number of leaves in the elimination tree.
  */
 
-extern int Zoltan_Order_Get_Nbr_Leaves(struct Zoltan_Struct *zz);
+extern int Zoltan_Order_Get_Num_Leaves(struct Zoltan_Struct *zz);
 
 
 /*****************************************************************************/

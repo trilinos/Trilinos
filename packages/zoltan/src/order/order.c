@@ -392,7 +392,7 @@ int Zoltan_Order_Get_Block_Parent(
  *    zz                  --  The ordering computed by Zoltan_Order.
  *  Returned value:       --  Number of leaves in the elimination tree.
  */
-int Zoltan_Order_Get_Nbr_Leaves(
+int Zoltan_Order_Get_Num_Leaves(
   struct Zoltan_Struct *zz
 )
 {
