@@ -3149,8 +3149,8 @@ extern int Zoltan_Order_Get_Num_Leaves(struct Zoltan_Struct *zz);
  *  Ouput:
  *    leaves              --  List of block indices that are leaves in the
  *                            elimination tree. -1 marks the end of the list.
- *                            The array must be of size nbr_leaves+1, known by calling
- *                            Zoltan_Order_Get_Nbr_Leaves.
+ *                            The array must be of size num_leaves+1, known by 
+ *                            calling Zoltan_Order_Get_Num_Leaves.
  */
 
 extern void Zoltan_Order_Get_Block_Leaves(
