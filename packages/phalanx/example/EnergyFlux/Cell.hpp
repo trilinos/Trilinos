@@ -29,42 +29,40 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_CELL_DATA_HPP
-#define PHX_EXAMPLE_CELL_DATA_HPP
+#ifndef PHX_EXAMPLE_CELL_HPP
+#define PHX_EXAMPLE_CELL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Dimension.hpp"
-#include "Phalanx_Array.hpp"
+#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "AlgebraicTypes.hpp"
 
-class CellData {
+//! A representation of a finite element cell.  This is not a realistic element, but is meant to represent what an element would act like (the actual basis functions values and node coordinates are fake).
+class MyCell {
   
 public:
 
-  CellData();
+  MyCell();
   
-  virtual ~CellData() {}
+  virtual ~MyCell() {}
   
-  phdmesh::ArrayNatural<double,Node,Dim>& getNodeCoordinates();
+  std::vector< MyVector<double> >& getNodeCoordinates();
   
-  phdmesh::ArrayNatural<double,QuadPoint,Node>& getBasisFunctions();
+  std::vector< std::vector<double> >& getBasisFunctions();
   
-  phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& 
-  getBasisFunctionGradients();
-  
+  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
+
+  std::size_t localIndex();
+
+  void setLocalIndex(std::size_t index);
+
 private:
   
-  std::vector<double> m_coords_mem;
-  
-  std::vector<double> m_phi_mem;
-  
-  std::vector<double> m_grad_phi_mem;
+  std::size_t local_index_;
 
-  phdmesh::ArrayNatural<double,Node,Dim> m_coords;
+  std::vector< MyVector<double> > coords_;
   
-  phdmesh::ArrayNatural<double,QuadPoint,Node> m_phi;
-
-  phdmesh::ArrayNatural<double,QuadPoint,Node,Dim> m_grad_phi;
-
+  std::vector< std::vector<double> > phi_;
+  
+  std::vector< std::vector< MyVector<double> > > grad_phi_;
 };
 
 #endif

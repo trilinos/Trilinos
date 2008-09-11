@@ -38,7 +38,9 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "CellData.hpp"
+// User defined objects
+#include "Cell.hpp"
+#include "Workset.hpp"
 #include "Traits.hpp"
 #include "FactoryTraits.hpp"
 
@@ -103,6 +105,8 @@ int main(int argc, char *argv[])
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
+
+    bool print_debug_info = false;
 
     {
       cout << "\nStarting EnergyFlux Example!" << endl;
@@ -186,42 +190,109 @@ int main(int argc, char *argv[])
       registerEvaluators(evaluators, fm);
 
       // Request quantities to assemble RESIDUAL PDE operators
-      {
-	typedef MyTraits::Residual::ScalarT ResScalarT;
-	Tag< MyVector<ResScalarT> > energy_flux("Energy_Flux", qp);
-	fm.requireField<MyTraits::Residual>(energy_flux);
-	Tag<ResScalarT> source("Nonlinear Source", qp);
-	fm.requireField<MyTraits::Residual>(source);
-      }
+      typedef MyTraits::Residual::ScalarT ResScalarT;
+
+      Tag< MyVector<ResScalarT> > energy_flux_tag("Energy_Flux", qp);
+      fm.requireField<MyTraits::Residual>(energy_flux_tag);
+
+      Tag<ResScalarT> source_tag("Nonlinear Source", qp);
+      fm.requireField<MyTraits::Residual>(source_tag);
 
       // Request quantities to assemble JACOBIAN PDE operators
-      {
-	typedef MyTraits::Jacobian::ScalarT JacScalarT;
-	Tag< MyVector<JacScalarT> > energy_flux("Energy_Flux", qp);
-	fm.requireField<MyTraits::Jacobian>(energy_flux);
-	Tag<JacScalarT> source("Nonlinear Source", qp);
-	fm.requireField<MyTraits::Jacobian>(source);
-      }
+      typedef MyTraits::Jacobian::ScalarT JacScalarT;
 
-      const std::size_t max_num_cells = 100;
+      Tag< MyVector<JacScalarT> > j_energy_flux_tag("Energy_Flux", qp);
+      fm.requireField<MyTraits::Jacobian>(j_energy_flux_tag);
+
+      Tag<JacScalarT> j_source_tag("Nonlinear Source", qp);
+      fm.requireField<MyTraits::Jacobian>(j_source_tag);
+
+      // Assume we have 102 cells on processor and can fit 20 cells in cache
+      const std::size_t num_local_cells = 102;
+      const std::size_t workset_size = 20;
 
       RCP<Time> registration_time = 
 	TimeMonitor::getNewTimer("Post Registration Setup Time");
       {
 	TimeMonitor t(*registration_time);
-	fm.postRegistrationSetup(max_num_cells);
+	fm.postRegistrationSetup(workset_size);
       }
 
       cout << fm << endl;
       
-      std::vector<CellData> cells(max_num_cells);
+      // Create Workset information: Cells and EvalData objects
+      std::vector<MyCell> cells(num_local_cells);
+      for (std::size_t i = 0; i < cells.size(); ++i)
+	cells[i].setLocalIndex(i);
+      std::vector<MyWorkset> worksets;
+
+      std::vector<MyCell>::iterator cell_it = cells.begin();
+      std::size_t count = 0;
+      MyWorkset w;
+      w.local_offset = cell_it->localIndex();
+      w.begin = cell_it;
+      for (; cell_it != cells.end(); ++cell_it) {
+	++count;
+	std::vector<MyCell>::iterator next = cell_it;
+	++next;
+	
+	if ( count == workset_size || next == cells.end()) {
+	  w.end = next;
+	  w.num_cells = count;
+	  worksets.push_back(w);
+	  count = 0;
+
+	  if (next != cells.end()) {
+	    w.local_offset = next->localIndex();
+	    w.begin = next;
+	  }
+	}
+      }
+      
+      if (print_debug_info) {
+	for (std::size_t i = 0; i < worksets.size(); ++i) {
+	  cout << "worksets[" << i << "]" << endl;
+	  cout << "  num_cells =" << worksets[i].num_cells << endl;
+	  cout << "  local_offset =" << worksets[i].local_offset << endl;
+	  std::vector<MyCell>::iterator it = worksets[i].begin;
+	  for (; it != worksets[i].end; ++it)
+	    cout << "  cell_local_index =" << it->localIndex() << endl;
+	}
+	cout << endl;
+      }
+
+      // Create local vectors to hold flux and source at quad points
+      std::vector< MyVector<double> > 
+	local_energy_flux_at_qp(num_local_cells * qp->size());
+      std::vector<double> local_source_at_qp(num_local_cells * qp->size());
+
+      // Fields we require
+      Field< MyVector<double> > energy_flux(energy_flux_tag);
+      Field<double> source(source_tag);
+      fm.getFieldData< MyVector<double>,MyTraits::Residual >(energy_flux);
+      fm.getFieldData<double,MyTraits::Residual>(source);
 
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time");
 
       fm.preEvaluate<MyTraits::Residual>(NULL);
       {
 	TimeMonitor t(*eval_time);
-	fm.evaluateFields<MyTraits::Residual>(cells);
+
+	for (std::size_t i = 0; i < worksets.size(); ++i) {
+	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
+	  
+	  // Use values: in this example, move values into local arrays
+	  for (int j = 0; j < energy_flux.size(); ++j) {
+	    std::size_t index = worksets[i].local_offset + j;
+	    local_energy_flux_at_qp[index] =  energy_flux[j];
+	  }
+	  for (int j = 0; j < source.size(); ++j) {
+	    std::size_t index = worksets[i].local_offset + j;
+	    local_source_at_qp[index] =  source[j];
+	  }
+
+	}
+
       }
       fm.postEvaluate<MyTraits::Residual>(NULL);
 
@@ -231,11 +302,10 @@ int main(int argc, char *argv[])
       Field<double> den(d_var); 
       fm.getFieldData<double,MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
-	   << max_num_cells * d_var.dataLayout().size() << "." << endl;
-      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(max_num_cells * d_var.dataLayout().size()),
+	   << workset_size * d_var.dataLayout().size() << "." << endl;
+      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(workset_size * d_var.dataLayout().size()),
 			 std::runtime_error, 
 			 "Returned arrays are not sized correctly!");
-      
       
       cout << endl;
 
@@ -249,7 +319,7 @@ int main(int argc, char *argv[])
       
       Field<double> temp_base("Temperature Baseline", node);
       ArrayRCP<double> temp_base_data = 
-	arcp<double>(max_num_cells * node->size());
+	arcp<double>(workset_size * node->size());
       temp_base.setFieldData(temp_base_data);
       for (int i=0; i<temp_base.size(); ++i)
 	temp_base[i] = 2.0;
@@ -265,7 +335,7 @@ int main(int argc, char *argv[])
       Field< MyVector<double> > 
 	tg_base("Temperature Gradient Baseline", qp);
       ArrayRCP< MyVector<double> > tg_base_data = 
-	arcp< MyVector<double> >(max_num_cells * qp->size());
+	arcp< MyVector<double> >(workset_size * qp->size());
       tg_base.setFieldData(tg_base_data);
       for (int i=0; i<tg_base.size(); ++i)
 	tg_base[i] = 2.0;
@@ -280,7 +350,7 @@ int main(int argc, char *argv[])
 
       Field< MyVector<double> > ef_base("Energy_Flux Baseline", qp);
       ArrayRCP< MyVector<double> > ef_base_data = 
-	arcp< MyVector<double> >(max_num_cells * qp->size());
+	arcp< MyVector<double> >(workset_size * qp->size());
       ef_base.setFieldData(ef_base_data);
       for (int i=0; i<ef_base.size(); ++i)
 	ef_base[i] = -16.0;

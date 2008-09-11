@@ -261,7 +261,7 @@ Follow the steps below to integrate Phalanx into your application.  The example 
 \section user_guide_domain_model Phalanx Domain Model
 
 <ul>
-<li><b>%Cell</b>
+<li><b>Cell</b>
 
 Partial differential equations are solved in a domain.  This domain is
 discretized into cells (also called elements for the finite element
@@ -270,6 +270,45 @@ over is of the same type!  If different evaluators (i.e. different
 material properties) are required in different blocks of cells, a new
 FieldMangager must be used for each unique block of elements.  This is
 required for efficiency.
+
+<li><b>Parallel and Serial Architectures</b> 
+
+Phalanx can be used on both serial and multi-processor architectures.  The library is designed to perform "local" evalautions on a "local" set of cells.  The term local means that all cell and field data required for an evaluation is on the processor that the evaluation is executed.  So for parallel runs, the cells are distributed over the processors and a FieldManager is built on each processor to evaluate only the cells that are assigned to that processor.  If there is any data distributed to another processor that is required for the evaluation, the user must handle pulling that information on to the evaluation processor.  The design of Phalanx will also allow for users to take advantage of multi-core architectures through a variety of implementations.
+
+<li><b>%Workset</b>
+
+For efficiency, the evaluation of fields on a set of cells can be divided into worksets.  The goal of using worksets is to fit all the required fields into the processor cache so that an evaluation is not slowed down by paging memory.  Suppose we have 2020 cells to evaluate on a 4 processor machine.  We might distribute the load so that 505 cells are on each processor.  Now the user must figure out the workset size.  This is the number of cells to per evaluation call so that the field memory will fit into cache.  If we have 505 cells on a processor, suppose we find that only 50 cells at a time will fit into cache.  Then we will create a FieldManager with a size of 50 cells.  This number is passed in during the call to the FieldManager method postRegistrationSetup():
+
+\code
+  field_manager.postRegistrationSetup(workset_size);
+\endcode
+
+During the call to postRegistrationSetup(), the FieldManager will allocate workspace storage for all fields relevant to the evaluation.  
+
+For our example, there will be 11 worksets.  The first 10 worksets will have the 50 cell maximum and the final workset will have the 5 remaining cells.  The evaluation routine is called for each workset, where workset information can be passed in through the evaluate call: 
+
+\code
+    std::vector<WorksetData> workset_data;
+        .
+        .
+    // Initialize workset data 
+        .
+        .
+    for (std::size_t i = 0; i < workset_data.size(); ++i) {
+      field_manager.evaluateFields<MyTraits::Residual>(workset_data[i]);
+	.
+        .  
+      // use evaluated fields 
+        .
+        .
+    }
+\endcode
+
+Note that you do not have to use the workset idea.  You could just pass in workset size equal to the number of local cells on the processor or you could use a workset size of one cell and wrap the evaluate call in a loop over the number of cells.  Be aware that this can result in a big performance hit.
+
+<li><b>Consistent Evaluation</b>
+
+Phalanx was written to perform consistent evaluations.  By consistent, we mean that all dependencies of a field evaluation have been updated before the evaluation.  For example, suppose we need to evaluate the the energy flux.  This has dependencies on the density, diffusivity, and the temperature gradient.  Each of these quantities in turn depends on the temperature.  So before the density, diffusivity and temperature  gradient are evaluated, the temperature must be evaluated.  Before the energy flux can be evaluated, the density, diffusivity, and temperature gradient must be evaluated.  Phalanx forces an ordered evaluation that updates fields in order to maintain consistency of the dependency chain.  Without this, one might end up with lagged values being used from a previous evaluate call.
 
 <li><b>Scalar Type</b>
 
@@ -362,16 +401,6 @@ An Evaluator is an object that evaluates a set of Fields.  It contains two vecto
 <li><b>Evaluator Manager</b>
 
 The main object that stores all Fields and Evaluators.  The evaluator manager (EM) sorts the evaluators and determines which evaluators to call and the order necessary to ensure consistency in the fields.  The EM also allocates the memory for storage of all fields so that if we want to force all fields to be in a contiguous block, we have that option available.  Users can write their own allocator for memory management.
-
-<li><b>Local</b> 
-
-The term local refers to having all information on a single processor in a multiprocessor run.
-Phalanx does local evaluation of fields, meaning that all information
-  required for the evaluation is stored locally on that processor (The user must handle pulling the info into the processor if distributed).  This
-does NOT in any way limit a user to serial runs.  Phalanx is used
-routinely for large-scale parallel distributed architecure codes.  The
-design of Phalanx will also allow for users to take advantage of multi-core
-architectures as well through a variety of implementations.
 
 </ul>
 
@@ -539,7 +568,7 @@ Code using the NewAllocator is:
 \endcode
 
 \subsection td5 E. EvalData,PreEvalData,PostEvalData
-Users can pass their own data to the evaluate, preEvaluate and PostEvaluate methods of the PHX::FiledManager class.  In this example, the user passes in a vector of cell data objects that contain used defined auxiliary data fo each cell in the evaluation loop.  The pre and post evalution data is just to void - we are not using it in this example.  
+  Users can pass their own data to the evaluateFields(), preEvaluate() and postEvaluate() methods of the PHX::FiledManager class.  In this example, the user passes in a struct that they have written called MyEvalData.  This contains information about the cell workset.  The user is not required to write their own object.  they could just pass in a null pointer if they don't need auxiliary information passed into the routine.  This is demonstrated in the PreEvalData and PostEvalData.  A void* is set for the data member. 
 \code
      .
      .
@@ -547,7 +576,7 @@ Users can pass their own data to the evaluate, preEvaluate and PostEvaluate meth
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
-    typedef std::vector<CellData>& EvalData;
+    typedef const MyEvalData& EvalData;
     typedef void* PreEvalData;
     typedef void* PostEvalData;
 
@@ -699,7 +728,7 @@ postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { 
-  std::size_t size = d.size() * data_layout_size;
+  std::size_t size = d.num_cells * data_layout_size;
   
   for (std::size_t i = 0; i < size; ++i)
     density[i] =  temp[i] * temp[i];
@@ -710,7 +739,7 @@ The constructor pulls out data from the parameter list to set the correct data l
 
 The postRegistrationSetup gets pointers from the FieldManager to the array for storing data for each particular field.
 
-  Writing evaluators can be tedious.  We have invested much time in minimizing the amount of code a user writes for a new evaluator.  Our experience is that you can literally have hundreds of evaluators.  So we have added macros to hide the boilerplate code in each evaluator.  Not only does this streamline/condense the code, but it also hides much of the templating.  So if your userbase is uncomfortable with C++ templates, the macro definitions could be very helpful.  The definitions are found in the file Phalanx_Evaluator_Macros.hpp.  The same evaluator shown above is now implemented using the macro definitions:
+  Writing evaluators can be tedious.  We have invested much time in minimizing the amount of code a user writes for a new evaluator.  Our experience is that you can literally have hundreds of evaluators.  So we have added macros to hide the boilerplate code in each evaluator.  Not only does this streamline/condense the code, but it also hides much of the templating.  So if your user base is uncomfortable with C++ templates, the macro definitions could be very helpful.  The definitions are found in the file Phalanx_Evaluator_Macros.hpp.  The same evaluator shown above is now implemented using the macro definitions:
 
 Class declaration:
 \code
@@ -760,14 +789,14 @@ PHX_POST_REGISTRATION_SETUP(Density,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Density,d)
 { 
-  std::size_t size = d.size() * data_layout_size;
+  std::size_t size = d.num_cells * data_layout_size;
   
   for (std::size_t i = 0; i < size; ++i)
     density[i] =  temp[i] * temp[i];
 }
 \endcode
 
-The evaluators for the example problem in "phalanx/example/EnergyFlux" have been rewritten using the macro definitions in the directory "phalanx/test/Utilities/evaluators".  
+The evaluators for the example problem in "phalanx/example/EnergyFlux" have been rewritten using the macro definitions and can be found in the directory "phalanx/test/Utilities/evaluators".  
 
 \section user_guide_step6 Step 6: Implement the FieldManager in your code
   Adding the FieldManager to your code is broken into steps.  You must build each Evaluator for each field type, register the evaluators with the FieldManager, and then call the evaluate routines.  Continuing from our example:
@@ -974,9 +1003,11 @@ You must tell the FieldManager which quantities it should evaluate.  This step c
       }
 \endcode
 
+You are free to request fields to evaluate until the time you call the method postRegistrationSetup() on the field manager.  Once this is called, you can not request any more fields. 
+
 \subsection fmd3 C. Call FieldManager::postRegistrationSetup()
 
-Once the evaluators are registered with the FieldManager and it knows which field it needs to provide, call the postRegistrationSetup() method on the FieldManager.  This method requires that the user specify the maximum number of cells for each evaluation.  This number should be selected so that all fields can fit in the cache of the processor if possible.  This method causes the following actions to take place in the FieldManager:
+Once the evaluators are registered with the FieldManager and it knows which field it needs to provide, call the postRegistrationSetup() method on the FieldManager.  This method requires that the user specify the maximum number of cells for each evaluation - the workset size.  This number should be selected so that all fields can fit in the cache of the processor if possible.  This method causes the following actions to take place in the FieldManager:
 
 <ol>
 <li> Based on the requested fields in \ref fmd2, the FieldManager will trace through the evaluators to determine which evaluators to call and the order in which they need to be called to achieve a consistent evaluation. Not all evaluators that are registered will be used.  They will only be called to satisfy dependencies of the required fields.
@@ -985,12 +1016,74 @@ Once the evaluators are registered with the FieldManager and it knows which fiel
 </ol>
 
 \code
-      const std::size_t max_num_cells = 100;
-      fm.postRegistrationSetup(max_num_cells);
+      const std::size_t workset_size = 100;
+      fm.postRegistrationSetup(workset_size);
 \endcode
 
+Note: you can no longer register evaluators or request fields to evaluate once post registration setup is called.
 
-\subsection fmd4 D. Call evaluate()
+\subsection fmd6 D. Setup Worksets
+
+If the user plans to use worksets, these objects are typically passed in through the member of the evaluate call as defined in your traits class.  In our example, we chose to pass a user defined class called MyEvalData in to the evaluate call.  Since we plan to use worksets, each object of MyEvalData contains information about the workset.  Here is the MyEvalData: 
+
+\code
+#ifndef PHX_EXAMPLE_MY_EVAL_DATA_HPP
+#define PHX_EXAMPLE_MY_EVAL_DATA_HPP
+
+#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "Cell.hpp"
+
+struct MyEvalData {
+  
+  std::size_t local_offset;
+
+  std::size_t num_cells;
+  
+  std::vector<MyCell>::iterator begin;
+
+  std::vector<MyCell>::iterator end;
+
+};
+
+#endif
+\endcode
+
+The user has written a MyCell class that contains data for each specific local cell.  MyEvalData contains iterators to the beginning and end of the chunk of cells for this particular workset.  The local_offset is the starting index into the local cell array.  The num_cells is the number of cells in the workset.   The MyEvalData objects are created one for each workset via the following code:
+
+\code
+      // Create Workset information: Cells and EvalData objects
+      std::vector<MyCell> cells(num_local_cells);
+      for (std::size_t i = 0; i < cells.size(); ++i)
+	cells[i].setLocalIndex(i);
+      std::vector<MyEvalData> eval_data;
+
+      std::vector<MyCell>::iterator cell_it = cells.begin();
+      std::size_t count = 0;
+      MyEvalData d;
+      d.local_offset = cell_it->localIndex();
+      d.begin = cell_it;
+      for (; cell_it != cells.end(); ++cell_it) {
+	++count;
+	std::vector<MyCell>::iterator next = cell_it;
+	++next;
+	
+	if ( count == workset_size || next == cells.end()) {
+	  d.end = next;
+	  d.num_cells = count;
+	  eval_data.push_back(d);
+	  count = 0;
+
+	  if (next != cells.end()) {
+	    d.local_offset = next->localIndex();
+	    d.begin = next;
+	  }
+	}
+      }
+\endcode
+
+Note that you do not have to use the workset idea.  You could just pass in workset size equal to the number of local cells on the processor or you could use a workset size of one cell and wrap the evaluate call in a loop over the number of cells.  Be aware that this can result in a big performance hit.
+
+\subsection fmd4 E. Call evaluate()
 
 Finally, users can call the evlauate routines and the pre/post evaluate routines if required.
 
@@ -1002,26 +1095,27 @@ Finally, users can call the evlauate routines and the pre/post evaluate routines
       fm.postEvaluate<MyTraits::Residual>(NULL);
 \endcode
 
-If you have more cells on a processor than you can fit into cache (the number of cells you set in the postRegistrationSetup call in \ref fmd4), you can perform multiple evaluate calls for each set:
+If you have more cells on a processor than you can fit into cache (the number of cells you set in the postRegistrationSetup call in \ref fmd3), you can perform multiple evaluate calls for each set:
 
 \code
-      int num_cells = 150;
-      int max_num_cells_in_cache = 30;
-
-      std::vector< std::vector<CellData> > cells(5);
-      std::vector<CellData> cache_cells(max_num_cells_in_cache);
-
       fm.preEvaluate<MyTraits::Residual>(NULL);
+      for (std::size_t i = 0; i < eval_data.size(); ++i) {
 
-      for (
-      fm.evaluateFields<MyTraits::Residual>(cells);
-
+	fm.evaluateFields<MyTraits::Residual>(eval_data[i]);
+	  
+        // Use workset data as needed - here it is copied into local data
+	for (std::size_t j = 0; j < eval_data[i].num_cells; ++j) {
+	  std::size_t index = eval_data[i].local_offset + j;
+	  local_energy_flux[index] =  energy_flux[j];
+	  local_source[index] =  source[j];
+	}
+      }
       fm.postEvaluate<MyTraits::Residual>(NULL);
 \endcode
 
 
 
-\subsection fmd5 E. Accessing Data
+\subsection fmd5 F. Accessing Data
 
 Accessing field data is achieved as follows:
 

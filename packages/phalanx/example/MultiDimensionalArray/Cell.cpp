@@ -29,36 +29,53 @@
 // ************************************************************************
 // @HEADER
 
+#include "Cell.hpp"
+
 //**********************************************************************
-template<typename EvalT, typename Traits> Density<EvalT, Traits>::
-Density(const Teuchos::ParameterList& p) :
-  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
-  temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+MyCell::MyCell() :
+  m_phi_mem(Teuchos::arcp<double>(4*4)),
+  m_grad_phi_mem(Teuchos::arcp<double>(4*4*3)),
+  m_phi(&(m_phi_mem[0]),4,4),
+  m_grad_phi(&(m_grad_phi_mem[0]),4,4,3)
 { 
-  this->addEvaluatedField(density);
-  this->addDependentField(temp);
-  this->setName("Density");
+  using namespace Teuchos;
+
+  for (ArrayRCP<double>::Ordinal i = 0; i < m_phi_mem.size(); ++i)
+    m_phi_mem[i] = 0.25;
+
+  for (ArrayRCP<double>::Ordinal i = 0; i < m_grad_phi_mem.size(); ++i)
+    m_grad_phi_mem[i] = 0.25;
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void Density<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+phdmesh::ArrayNatural<double,Node,Dim>& MyCell::getNodeCoordinates()
 {
-  this->utils.setFieldData(density,vm);
-  this->utils.setFieldData(temp,vm);
-
-  data_layout_size = density.fieldTag().dataLayout().size();
+  return m_coords;
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
-{ 
-  std::size_t size = d.num_cells * data_layout_size;
-  
-  for (std::size_t i = 0; i < size; ++i)
-    density[i] =  temp[i] * temp[i];
+phdmesh::ArrayNatural<double,QuadPoint,Node>& MyCell::getBasisFunctions()
+{
+  return m_phi;
+}
+
+//**********************************************************************
+phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& MyCell::
+getBasisFunctionGradients()
+{
+  return m_grad_phi;
+}
+
+//**********************************************************************
+std::size_t MyCell::localIndex()
+{
+  return local_index_;
+}
+
+//**********************************************************************
+void MyCell::setLocalIndex(std::size_t index)
+{
+  local_index_ = index;
 }
 
 //**********************************************************************

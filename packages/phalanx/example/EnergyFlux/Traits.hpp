@@ -44,7 +44,8 @@
 // Include User Data Types
 #include "Phalanx_ConfigDefs.hpp" // for std::vector
 #include "AlgebraicTypes.hpp"
-#include "CellData.hpp"
+#include "Workset.hpp"
+#include "Cell.hpp"
 #include "Phalanx_Allocator_New.hpp"
 
 namespace PHX {
@@ -115,7 +116,7 @@ namespace PHX {
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
-    typedef std::vector<CellData>& EvalData;
+    typedef const MyWorkset& EvalData;
     typedef void* PreEvalData;
     typedef void* PostEvalData;
 

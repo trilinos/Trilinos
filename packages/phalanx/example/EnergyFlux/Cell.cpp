@@ -29,36 +29,49 @@
 // ************************************************************************
 // @HEADER
 
+#include "Cell.hpp"
+
 //**********************************************************************
-template<typename EvalT, typename Traits> Density<EvalT, Traits>::
-Density(const Teuchos::ParameterList& p) :
-  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
-  temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+MyCell::MyCell() :
+  phi_(4),
+  grad_phi_(4)
 { 
-  this->addEvaluatedField(density);
-  this->addDependentField(temp);
-  this->setName("Density");
+  for (std::size_t i=0; i < phi_.size(); ++i)
+    phi_[i].resize(4,0.25);
+
+  for (std::size_t i=0; i < grad_phi_.size(); ++i)
+    grad_phi_[i].resize(4,MyVector<double>(0.25,0.25,0.25));
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void Density<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+std::vector< MyVector<double> >& MyCell::getNodeCoordinates()
 {
-  this->utils.setFieldData(density,vm);
-  this->utils.setFieldData(temp,vm);
-
-  data_layout_size = density.fieldTag().dataLayout().size();
+  return coords_;
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
-{ 
-  std::size_t size = d.num_cells * data_layout_size;
-  
-  for (std::size_t i = 0; i < size; ++i)
-    density[i] =  temp[i] * temp[i];
+std::vector< std::vector<double> >& MyCell::getBasisFunctions()
+{
+  return phi_;
+}
+
+//**********************************************************************
+std::vector< std::vector< MyVector<double> > >& 
+MyCell::getBasisFunctionGradients()
+{
+  return grad_phi_;
+}
+
+//**********************************************************************
+std::size_t MyCell::localIndex()
+{
+  return local_index_;
+}
+
+//**********************************************************************
+void MyCell::setLocalIndex(std::size_t index)
+{
+  local_index_ = index;
 }
 
 //**********************************************************************

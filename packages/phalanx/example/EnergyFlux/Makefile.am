@@ -56,8 +56,9 @@ example_SOURCES = \
 	$(srcdir)/AlgebraicTypes.hpp \
 	$(srcdir)/Traits.hpp \
 	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/CellData.hpp \
-	$(srcdir)/CellData.cpp \
+	$(srcdir)/Cell.hpp \
+	$(srcdir)/Cell.cpp \
+	$(srcdir)/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_Density.hpp \
@@ -76,21 +77,7 @@ example_LDADD = $(EXAMPLE_LIBS)
 
 example_algebraic_types_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_AlgebraicTypes.cpp \
-	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp \
-	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/CellData.hpp \
-	$(srcdir)/CellData.cpp \
-	$(srcdir)/evaluators/Evaluator_Constant.hpp \
-	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_Density.hpp \
-	$(srcdir)/evaluators/Evaluator_Density_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier.hpp \
-	$(srcdir)/evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
-	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource.hpp \
-	$(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
+	$(srcdir)/AlgebraicTypes.hpp
 
 example_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a

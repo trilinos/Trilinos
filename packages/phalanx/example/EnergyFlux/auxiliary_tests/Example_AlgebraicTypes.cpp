@@ -30,23 +30,16 @@
 // @HEADER
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx.hpp"
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "CellData.hpp"
-#include "Traits.hpp"
-#include "FactoryTraits.hpp"
+#include "AlgebraicTypes.hpp"
 
 int main(int argc, char *argv[]) 
 {
   using namespace std;
   using namespace Teuchos;
-  using namespace PHX;
   
   try {
     

@@ -29,37 +29,22 @@
 // ************************************************************************
 // @HEADER
 
-#include "CellData.hpp"
+#ifndef PHX_EXAMPLE_MY_WORKSET_HPP
+#define PHX_EXAMPLE_MY_WORKSET_HPP
 
-//**********************************************************************
-CellData::CellData() :
-  phi_(4),
-  grad_phi_(4)
-{ 
-  for (std::size_t i=0; i < phi_.size(); ++i)
-    phi_[i].resize(4,0.25);
+#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "Cell.hpp"
 
-  for (std::size_t i=0; i < grad_phi_.size(); ++i)
-    grad_phi_[i].resize(4,MyVector<double>(0.25,0.25,0.25));
-}
+struct MyWorkset {
+  
+  std::size_t local_offset;
 
-//**********************************************************************
-std::vector< MyVector<double> >& CellData::getNodeCoordinates()
-{
-  return coords_;
-}
+  std::size_t num_cells;
+  
+  std::vector<MyCell>::iterator begin;
 
-//**********************************************************************
-std::vector< std::vector<double> >& CellData::getBasisFunctions()
-{
-  return phi_;
-}
+  std::vector<MyCell>::iterator end;
 
-//**********************************************************************
-std::vector< std::vector< MyVector<double> > >& 
-CellData::getBasisFunctionGradients()
-{
-  return grad_phi_;
-}
+};
 
-//**********************************************************************
+#endif

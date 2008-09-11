@@ -45,7 +45,8 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Sacado.hpp"
 #include "Dimension.hpp"
-#include "CellData.hpp"
+#include "Cell.hpp"
+#include "Workset.hpp"
 #include "Phalanx_Allocator_New.hpp"
 
 namespace PHX {
@@ -93,7 +94,7 @@ namespace PHX {
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
-    typedef std::vector<CellData>& EvalData;
+    typedef const MyWorkset& EvalData;
     typedef void* PreEvalData;
     typedef void* PostEvalData;
 
