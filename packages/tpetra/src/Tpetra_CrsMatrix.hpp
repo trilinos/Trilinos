@@ -144,8 +144,8 @@ namespace Tpetra
       //! Submit multiple entries, using global IDs.
       /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
       void submitEntries(const Ordinal &globalRow, 
-                         const Teuchos::ArrayView<Scalar> &values, 
-                         const Teuchos::ArrayView<Ordinal> &indices);
+                         const Teuchos::ArrayView<const Scalar> &values, 
+                         const Teuchos::ArrayView<const Ordinal> &indices);
 
       // @}
       //! @name Computational Methods
@@ -153,7 +153,7 @@ namespace Tpetra
 
       //! Returns a copy of the specified local row, column indices are local.
       void getMyRowCopy(const Ordinal &localRow, const Teuchos::ArrayView<Ordinal> &indices, 
-                                                const Teuchos::ArrayView<Scalar> &values) const;
+                                                 const Teuchos::ArrayView<Scalar> &values) const;
 
       //! Returns a copy of the specified (and locally owned) global row, column indices are global.
       void getGlobalRowCopy(const Ordinal &globalRow, 
@@ -180,23 +180,22 @@ namespace Tpetra
 
     private:
       //! copy constructor.
-      CrsMatrix(CrsMatrix<Ordinal, Scalar> const& Source);
+      CrsMatrix(const CrsMatrix<Ordinal,Scalar> &Source);
 
-      CrsMatrix& operator=(const CrsMatrix<Ordinal, Scalar>& rhs);
+      CrsMatrix& operator=(const CrsMatrix<Ordinal, Scalar> &rhs);
 
       //! Performs importing of off-processor elements and adds them to the locally owned elements.
       void globalAssemble();
 
       const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
       const Map<Ordinal>& rowMap_;
+      Teuchos::RCP<Map<Ordinal> > colMap_;
 
       Ordinal numMyRows_, numGlobalRows_;
       const std::vector<Ordinal>& myGlobalEntries_;
 
       std::vector<std::vector<Ordinal> > indices_;
       std::vector<std::vector<Scalar> > values_;
-
-      Map<Ordinal>* colMap_;
 
       MultiVector<Ordinal, Scalar>* paddedMV_;
       Import<Ordinal>* importer_;

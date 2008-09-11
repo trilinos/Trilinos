@@ -4,6 +4,7 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_as.hpp"
 #include "Tpetra_Distributor.hpp"
+#include <Teuchos_Array.hpp>
 
 // FINISH: test handling of null export in createFromSends
 
@@ -19,6 +20,9 @@ namespace {
   using std::sort;
   using Teuchos::arrayViewFromVector;
   using Teuchos::broadcast;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -107,15 +111,15 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(numImages > 1 ? 2 : 0))
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(2*numImages));
     {
-      vector<Ordinal> imgFrom(distributor.getImagesFrom());
-      vector<Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
+      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
-      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
-      TEST_EQUALITY(lenFrom.size(),as<size_type>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<size_type>(numImages));
+      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
         TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(2) );
         TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(2) );
@@ -182,15 +186,15 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(2));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(2*numImages));
     {
-      vector<Ordinal> imgFrom(distributor.getImagesFrom());
-      vector<Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
+      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
-      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
-      TEST_EQUALITY(lenFrom.size(),as<size_type>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<size_type>(numImages));
+      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
         TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(2) );
         TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(2) );
@@ -200,7 +204,7 @@ namespace {
       TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), 0);
     }
     else {
-      TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<size_type>(2*numImages));
+      TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<typename ArrayView<Ordinal>::Ordinal>(2*numImages));
     }
 
     // All procs fail if any proc fails
@@ -260,15 +264,15 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numInMyPartition > 1 ? ONE : ZERO));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), numInMyPartition);
     {
-      vector<Ordinal> imgFrom(distributor.getImagesFrom());
-      vector<Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
+      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
-      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
-      TEST_EQUALITY(lenFrom.size(),as<size_type>(numInMyPartition));
-      TEST_EQUALITY(lenTo.size()  ,as<size_type>(numInMyPartition));
+      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numInMyPartition));
+      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numInMyPartition));
       for (int i=0; i<numInMyPartition; ++i) {
         TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(1) );
         TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(1) );
@@ -323,15 +327,15 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(1));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(numImages-1));
     {
-      vector<Ordinal> imgFrom(distributor.getImagesFrom());
-      vector<Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
+      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
-      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
-      TEST_EQUALITY(lenFrom.size(),as<size_type>(numImages-1));
-      TEST_EQUALITY(lenTo.size()  ,as<size_type>(numImages-1));
+      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages-1));
+      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages-1));
       for (int i=0; i<numImages-1; ++i) {
         TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(1) );
         TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(1) );
@@ -393,15 +397,15 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(3));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(3*numImages));
     {
-      vector<Ordinal> imgFrom(distributor.getImagesFrom());
-      vector<Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
+      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
-      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
-      TEST_EQUALITY(lenFrom.size(),as<size_type>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<size_type>(numImages));
+      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
         TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(3) );
         TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(3) );
@@ -455,21 +459,21 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(2));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(2*numImages));
     {
-      vector<Ordinal> imgFrom(distributor.getImagesFrom());
-      vector<Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
+      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      const vector<Ordinal> & lenFrom = distributor.getLengthsFrom();
-      const vector<Ordinal> & lenTo   = distributor.getLengthsTo();
-      TEST_EQUALITY(lenFrom.size(),as<size_type>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<size_type>(numImages));
+      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
         TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(2) );
         TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(2) );
       }
     }
-    TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<size_type>(2*numImages));
+    TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<typename ArrayView<Ordinal>::Ordinal>(2*numImages));
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -513,10 +517,10 @@ namespace {
     broadcast(*comm,0,arrayViewFromVector(exports));
 
     // pick a subset of entries to post
-    vector<Packet> myExports(exports.begin()+myImageID*numImages,exports.begin()+(myImageID+1)*numImages);
+    Array<Packet> myExports(exports.begin()+myImageID*numImages,exports.begin()+(myImageID+1)*numImages);
     // do posts, one Packet to each image
-    vector<Packet> imports;
-    distributor.doPostsAndWaits(myExports, 1, imports);
+    Array<Packet> imports(1*distributor.getTotalReceiveLength());
+    distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
     // imports[i] came from image i. it was element "myImageID" in his "myExports" vector. 
     // it corresponds to element i*numImages+myImageID in the global export vector
     // make a copy of the corresponding entries in the global vector, then compare these against the 
@@ -576,7 +580,7 @@ namespace {
     }
 
     Distributor<Ordinal> distributor(comm);
-    vector<Ordinal> exportGIDs, exportImageIDs;
+    ArrayRCP<Ordinal> exportGIDs, exportImageIDs;
     distributor.createFromRecvs(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
     
     TEST_EQUALITY(exportGIDs.size(), exportImageIDs.size());  // should *always* be the case

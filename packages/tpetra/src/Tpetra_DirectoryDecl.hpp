@@ -75,8 +75,8 @@ namespace Tpetra {
       \param Out
       images - On return contains list of Image IDs owning the Global IDs in question.
     */
-    void getDirectoryEntries(const std::vector<Ordinal> & globalEntries, 
-                                   std::vector<Ordinal>& images) const;
+    void getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+                             const Teuchos::ArrayView<Ordinal> &images) const;
     
     //! getDirectoryEntries : Returns image and local id info for non-local Map entries
     /*! Given a list of Global Entry IDs, this function returns the list of
@@ -89,9 +89,9 @@ namespace Tpetra {
       \param Out
       localEntries - On return contains the local ID of the global on the owning image. 
     */
-    void getDirectoryEntries(const std::vector<Ordinal> & globalEntries, 
-                                   std::vector<Ordinal>& images, 
-                                   std::vector<Ordinal>& localEntries) const;
+    void getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+                             const Teuchos::ArrayView<Ordinal> &images, 
+                             const Teuchos::ArrayView<Ordinal> &localEntries) const;
     //@}
     
   private:
@@ -106,9 +106,9 @@ namespace Tpetra {
     Directory<Ordinal>& operator = (const Directory<Ordinal> & Source);
 
     // common code for both versions of getDirectoryEntries
-    void getEntries(const std::vector<Ordinal> & globalEntries, 
-                          std::vector<Ordinal>& images, 
-                          std::vector<Ordinal>& localEntries, 
+    void getEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+                    const Teuchos::ArrayView<Ordinal> &images, 
+                    const Teuchos::ArrayView<Ordinal> &localEntries, 
                           bool computeLIDs) const;
     
     // directory setup for non-contiguous ES

@@ -2,29 +2,23 @@
 # FRAMEWORK group
 #
 
-# (FRAMEWORK, INSTALL) {
-#     DIRS = DistObject,
-#            ImportExport,
-#            Vector,
-#            CisMatrix;
-#     ARGS = -v;
-#     COMM = SERIAL, MPI;
-# }
-
 (FRAMEWORK, INSTALL) {
     DIRS = Platform;
+    # EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Distributor, Map, Directory, ImportExport;
+    DIRS = Distributor, Map, Directory; #, ImportExport;
+    EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }
 
 (TpetraInProgress) {
     DIRS = Vector, MultiVector;
+    EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }

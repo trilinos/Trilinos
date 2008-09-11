@@ -77,19 +77,14 @@ namespace {
     const vector<Ordinal> expectedLIDs(1,ZERO);
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1);              
+      vector<Ordinal> imageIDs(numEntries);              
       dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1), localIDs(numEntries+1); 
+      vector<Ordinal> imageIDs(numEntries), localIDs(numEntries); 
       dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
-      TEST_EQUALITY( allGIDs.size(), localIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
@@ -137,19 +132,14 @@ namespace {
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1);                         
+      vector<Ordinal> imageIDs(numEntries);                         
       dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1), localIDs(numEntries+1);
+      vector<Ordinal> imageIDs(numEntries), localIDs(numEntries);
       dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
-      TEST_EQUALITY( allGIDs.size(), localIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
@@ -195,19 +185,14 @@ namespace {
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1);                           
+      vector<Ordinal> imageIDs(numEntries);                           
       dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1), localIDs(numEntries+1); 
+      vector<Ordinal> imageIDs(numEntries), localIDs(numEntries); 
       dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
-      TEST_EQUALITY( allGIDs.size(), localIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
@@ -250,19 +235,14 @@ namespace {
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1);                           
+      vector<Ordinal> imageIDs(numEntries);                           
       dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1), localIDs(numEntries+1); 
+      vector<Ordinal> imageIDs(numEntries), localIDs(numEntries); 
       dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
-      TEST_EQUALITY( allGIDs.size(), localIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
@@ -286,7 +266,7 @@ namespace {
     myGIDs[0] = as<Ordinal>(myImageID);
     myGIDs[1] = as<Ordinal>(myImageID + numImages);
     myGIDs[2] = as<Ordinal>(myImageID + numImages*2);
-    Map<Ordinal> map(numEntries,myGIDs.size(),myGIDs,ZERO,*platform);
+    Map<Ordinal> map(numEntries,myGIDs,ZERO,*platform);
     // create a directory
     Directory<Ordinal> dir(map);
 
@@ -308,19 +288,14 @@ namespace {
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1);                           
+      vector<Ordinal> imageIDs(numEntries);                           
       dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
     }
 
     {
-      // set this too large, verify it is resized
-      vector<Ordinal> imageIDs(numEntries+1), localIDs(numEntries+1); 
+      vector<Ordinal> imageIDs(numEntries), localIDs(numEntries); 
       dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY( allGIDs.size(), imageIDs.size() );
-      TEST_EQUALITY( allGIDs.size(), localIDs.size() );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }

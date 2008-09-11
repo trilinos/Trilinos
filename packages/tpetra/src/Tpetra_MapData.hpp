@@ -43,8 +43,8 @@ namespace Tpetra {
             Ordinal maxAllGID,
             Ordinal minMyGID,
             Ordinal maxMyGID,
-            const std::vector<Ordinal>& lgMap,
-            const std::map<Ordinal, Ordinal>& glMap,
+            const Teuchos::ArrayRCP<Ordinal> &lgMap,
+            const std::map<Ordinal,Ordinal>  &glMap,
             bool contiguous,
             Teuchos::RCP< Platform<Ordinal> > platform,
             Teuchos::RCP< Teuchos::Comm<Ordinal> > comm)

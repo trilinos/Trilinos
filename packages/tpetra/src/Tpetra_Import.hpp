@@ -100,11 +100,11 @@ namespace Tpetra {
     //! Returns the number of entries that must be sent by the calling image to other images.
     Ordinal getNumExportIDs() const;
 
-    //! List of entries in the source map that will be sent to other images.
-    const std::vector<Ordinal> & getExportLIDs() const;
+    //! List of entries in the source map that will be sent to other images. (non-persisting view)
+    Teuchos::ArrayView<const Ordinal> getExportLIDs() const;
 
-    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i].
-    const std::vector<Ordinal> & getExportImageIDs() const;
+    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
+    Teuchos::ArrayView<const Ordinal> getExportImageIDs() const;
 
     //! Returns the Source Map used to construct this importer.
     const Map<Ordinal> & getSourceMap() const;
@@ -203,13 +203,13 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  const std::vector<Ordinal> & Import<Ordinal>::getExportLIDs() const {
-    return ImportData_->exportLIDs_;
+  Teuchos::ArrayView<const Ordinal> Import<Ordinal>::getExportLIDs() const {
+    return ImportData_->exportLIDs_();
   }
 
   template <typename Ordinal>
-  const std::vector<Ordinal> & Import<Ordinal>::getExportImageIDs() const {
-    return ImportData_->exportImageIDs_;
+  Teuchos::ArrayView<const Ordinal> Import<Ordinal>::getExportImageIDs() const {
+    return ImportData_->exportImageIDs_();
   }
 
   template <typename Ordinal>
@@ -240,8 +240,8 @@ namespace Tpetra {
     os << "permuteToLIDs_: " << toString(getPermuteToLIDs()) << endl;;
     os << "permuteFromLIDs_: " << toString(getPermuteFromLIDs()) << endl;
     os << "remoteLIDs_: " << toString(getRemoteLIDs()) << endl;
-    os << "exportLIDs_: " << toString(getExportLIDs()) << endl;
-    os << "exportImageIDs_: " << toString(getExportImageIDs()) << endl;
+    //os << "exportLIDs_: " << toString(getExportLIDs()) << endl;
+    //os << "exportImageIDs_: " << toString(getExportImageIDs()) << endl;
     os << "numSameIDs_: " << getNumSameIDs() << endl;
     os << "numPermuteIDs_: " << getNumPermuteIDs() << endl;
     os << "numRemoteIDs_: " << getNumRemoteIDs() << endl;
@@ -256,17 +256,16 @@ namespace Tpetra {
   {
     const Map<Ordinal> & source = getSourceMap();
     const Map<Ordinal> & target = getTargetMap();
-    const std::vector<Ordinal> & sourceGIDs = source.getMyGlobalEntries();
-    const std::vector<Ordinal> & targetGIDs = target.getMyGlobalEntries();
+    Teuchos::ArrayView<const Ordinal> sourceGIDs = source.getMyGlobalEntries();
+    Teuchos::ArrayView<const Ordinal> targetGIDs = target.getMyGlobalEntries();
 
     // -- compute numSameIDs_ ---
     // go through GID lists of source and target. if the ith GID on both is the same, 
     // increment numSameIDs_ and try the next. as soon as you come to a pair that don't
     // match, give up.
-    typename std::vector<Ordinal>::const_iterator sourceIter = sourceGIDs.begin(),
-                                                  targetIter = targetGIDs.begin();
-    while( sourceIter != sourceGIDs.end() && targetIter != targetGIDs.end() && 
-        *sourceIter == *targetIter )
+    typename Teuchos::ArrayView<const Ordinal>::iterator sourceIter = sourceGIDs.begin(),
+                                                         targetIter = targetGIDs.begin();
+    while( sourceIter != sourceGIDs.end() && targetIter != targetGIDs.end() && *sourceIter == *targetIter )
     {
       ++ImportData_->numSameIDs_;
       ++sourceIter;
@@ -333,12 +332,12 @@ namespace Tpetra {
     // call Distributor.createFromRecvs()
     // takes in numRemoteIDs_, remoteGIDs_, and remoteImageIDs_
     // returns numExportIDs_, exportLIDs_, and exportImageIDs_
-    TEST_FOR_EXCEPT(ImportData_->remoteGIDs_.size() != (unsigned int)ImportData_->numRemoteIDs_); // FINISH: remove this
-    TEST_FOR_EXCEPT(ImportData_->exportLIDs_.size() != (unsigned int)ImportData_->numExportIDs_ ); // FINISH: remove this
+    TEST_FOR_EXCEPT(ImportData_->remoteGIDs_.size() != (typename std::vector<Ordinal>::size_type)ImportData_->numRemoteIDs_);      // FINISH: remove this
+    TEST_FOR_EXCEPT(ImportData_->exportLIDs_.size() != (typename Teuchos::ArrayRCP<Ordinal>::Ordinal)ImportData_->numExportIDs_ ); // FINISH: remove this
     ImportData_->distributor_.createFromRecvs(ImportData_->remoteGIDs_, remoteImageIDs, ImportData_->exportLIDs_, ImportData_->exportImageIDs_);
 
     // convert exportLIDs_ from GIDs to their LIDs in target
-    for(typename std::vector<Ordinal>::iterator i = ImportData_->exportLIDs_.begin(); 
+    for(typename Teuchos::ArrayRCP<Ordinal>::const_iterator i = ImportData_->exportLIDs_.begin(); 
         i != ImportData_->exportLIDs_.end(); ++i) 
     {
       *i = source.getLocalIndex(*i);

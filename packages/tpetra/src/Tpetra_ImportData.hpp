@@ -32,6 +32,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Object.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 #include "Tpetra_Import.hpp"
 
 namespace Tpetra {
@@ -52,8 +53,8 @@ namespace Tpetra {
     std::vector<Ordinal> permuteFromLIDs_;
     std::vector<Ordinal> remoteLIDs_;
     std::vector<Ordinal> remoteGIDs_;
-    std::vector<Ordinal> exportLIDs_;
-    std::vector<Ordinal> exportImageIDs_;
+    Teuchos::ArrayRCP<Ordinal> exportLIDs_;
+    Teuchos::ArrayRCP<Ordinal> exportImageIDs_;
 
     // OTs
     Ordinal numSameIDs_;

@@ -378,7 +378,7 @@ namespace Tpetra {
       const std::vector<Ordinal> &permuteToLIDs, const std::vector<Ordinal> &permuteFromLIDs) 
   {
     // cast sourceObj to a Tpetra::Vector so we can actually do something with it
-    const Vector<Ordinal,Scalar> &sourceVector = dynamic_cast<const Vector<Ordinal,Scalar> &>(sourceObj);
+    // const Vector<Ordinal,Scalar> &sourceVector = dynamic_cast<const Vector<Ordinal,Scalar> &>(sourceObj);
 
     /*
     const std::vector<Scalar> &sourceArray = sourceVector.scalarArray();

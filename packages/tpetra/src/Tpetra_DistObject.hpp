@@ -415,19 +415,26 @@ namespace Tpetra {
       sizes_.resize(numExportIDs);
     packAndPrepare(source, numExportIDs, exportLIDs, exports, packetSize, distor);
 
-    if((isDistributed() && doReverse) || (source.getMap().isDistributed() && !doReverse)) {
+    if ((isDistributed() && doReverse) || (source.getMap().isDistributed() && !doReverse)) 
+    {
       // call one of the doPostsAndWaits functions
-      if(doReverse) {
-        if(varSizes)
+      if (doReverse) {
+        if (varSizes) {
           throw reportError("var-sized doReversePostsAndWaits not implemented yet", -99);
-        else
-          distor.doReversePostsAndWaits(exports, packetSize, imports);
+        }
+        else {
+          TEST_FOR_EXCEPT(true); // not finished
+          // distor.doReversePostsAndWaits(exports, packetSize, imports);
+        }
       }
       else {
-        if(varSizes)
+        if (varSizes) {
           throw reportError("var-sized doPostsAndWaits not implemented yet", -99);
-        else
-          distor.doPostsAndWaits(exports, packetSize, imports);
+        }
+        else {
+          TEST_FOR_EXCEPT(true); // not finished
+          // distor.doPostsAndWaits(exports, packetSize, imports);
+        }
       }
       unpackAndCombine(numRemoteIDs, remoteLIDs, imports, distor, CM);
     }

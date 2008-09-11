@@ -52,7 +52,7 @@ namespace Tpetra {
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    Map (Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform);
+    Map(Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform);
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
      *  The entries are distributed among the nodes so that the subsets of global entries
@@ -63,19 +63,18 @@ namespace Tpetra {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map (Ordinal numGlobalEntries, Ordinal numMyEntries, Ordinal indexBase, 
-         const Platform<Ordinal> &platform);
+    Map(Ordinal numGlobalEntries, Ordinal numMyEntries, Ordinal indexBase, 
+        const Platform<Ordinal> &platform);
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
-    Map (Ordinal numGlobalEntries, Ordinal numMyEntries, 
-         const std::vector<Ordinal> &entryList, Ordinal indexBase, 
-         const Platform<Ordinal> &platform);
+    Map(Ordinal numGlobalEntries, const Teuchos::ArrayView<const Ordinal> &entryList, 
+        Ordinal indexBase, const Platform<Ordinal> &platform);
 
     //! Map copy constructor.
-    Map (const Map<Ordinal> &Map);
+    Map(const Map<Ordinal> &Map);
 
     //! Map destructor. 
-    ~Map ();
+    ~Map();
 
     //@}
 
@@ -117,16 +116,16 @@ namespace Tpetra {
     Ordinal getGlobalIndex(Ordinal localIndex) const;
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    void getRemoteIndexList(const std::vector<Ordinal> & GIDList, 
-                                  std::vector<Ordinal> & imageIDList, 
-                                  std::vector<Ordinal> & LIDList) const;
+    void getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
+                            const Teuchos::ArrayView<Ordinal> & imageIDList, 
+                            const Teuchos::ArrayView<Ordinal> & LIDList) const;
 
     //! Returns the node IDs for a given list of global indices.
-    void getRemoteIndexList(const std::vector<Ordinal> & GIDList, 
-                                  std::vector<Ordinal> & imageIDList) const;
+    void getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
+                            const Teuchos::ArrayView<Ordinal> & imageIDList) const;
 
     //! Return a list of the global entries owned by this image
-    const std::vector<Ordinal> & getMyGlobalEntries() const;
+    Teuchos::ArrayView<const Ordinal> getMyGlobalEntries() const;
 
     //! Returns true if the local index value passed in is found on the calling image, returns false if it doesn't.
     bool isMyLocalIndex(Ordinal localIndex) const;
@@ -136,7 +135,7 @@ namespace Tpetra {
 
     //! Returns true if this Map is distributed contiguously, returns false otherwise.
     bool isContiguous() const;
-    
+
     //! Returns true if this Map is distributed across more than one image, returns false otherwise.
     bool isDistributed() const;
 

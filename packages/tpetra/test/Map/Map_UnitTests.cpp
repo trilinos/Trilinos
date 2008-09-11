@@ -12,6 +12,7 @@ namespace {
 
   using Teuchos::as;
   using Teuchos::RCP;
+  using Teuchos::arcp;
   using Teuchos::rcp;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
@@ -129,21 +130,15 @@ namespace {
     RCP<Comm<Ordinal> > comm = platform.createComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    // bad constructor calls: (global entries, local entries, index base, )
-    TEST_THROW(Map<Ordinal> map(-2, 0,vector<Ordinal>(1,myImageID+1)     ,1, platform), std::invalid_argument);
-    TEST_THROW(Map<Ordinal> map( 1, 0,vector<Ordinal>(1,myImageID+1)     ,1, platform), std::invalid_argument);
-    TEST_THROW(Map<Ordinal> map(numImages,-1,vector<Ordinal>(0),1, platform), std::invalid_argument);
-    TEST_THROW(Map<Ordinal> map(numImages, 1,vector<Ordinal>(0),1, platform), std::invalid_argument);
-    TEST_THROW(Map<Ordinal> map(numImages, 1,vector<Ordinal>(1,-myImageID)  ,1, platform), std::invalid_argument);
+    // bad constructor calls: (num global, entry list, index base)
+    TEST_THROW(Map<Ordinal> map(-2, arcp(rcp(new vector<Ordinal>(1,myImageID+1))).getConst()     ,1, platform), std::invalid_argument);    // nG not valid
+    TEST_THROW(Map<Ordinal> map(numImages, arcp(rcp(new vector<Ordinal>(1,-myImageID))).getConst()  ,1, platform), std::invalid_argument); // GID less than iB
     if (numImages > 1) {
-      TEST_THROW(Map<Ordinal> map(numImages-2,(myImageID == 0 ? -1 : 1),vector<Ordinal>(1,myImageID+1),1, platform), std::invalid_argument);
-      TEST_THROW(Map<Ordinal> map(numImages,1,vector<Ordinal>(1,-myImageID),1, platform), std::invalid_argument);
-      TEST_THROW(Map<Ordinal> map((myImageID == 0 ? -2 : -1),0,vector<Ordinal>(1,myImageID+1),1, platform), std::invalid_argument);
-      TEST_THROW(Map<Ordinal> map((myImageID == 0 ? -2 :  0),0,vector<Ordinal>(1,myImageID+1),1, platform), std::invalid_argument);
-      TEST_THROW(Map<Ordinal> map((myImageID == 0 ? -2 :  1),0,vector<Ordinal>(1,myImageID+1),1, platform), std::invalid_argument);
-      TEST_THROW(Map<Ordinal> map((myImageID == 0 ? -1 :  1),0,vector<Ordinal>(1,myImageID+1),1, platform), std::invalid_argument);
-      TEST_THROW(Map<Ordinal> map((myImageID == 0 ?  1 :  0),0,vector<Ordinal>(1,myImageID+1),1, platform), std::invalid_argument);
-      TEST_THROW(Map<Ordinal> map(0,0,vector<Ordinal>(1,myImageID+1),(myImageID == 0 ? 0 : 1), platform), std::invalid_argument);
+      TEST_THROW(Map<Ordinal> map( 1, arcp(rcp(new vector<Ordinal>(1,myImageID+1))).getConst()     ,1, platform), std::invalid_argument);    // nG != sum nL
+      TEST_THROW(Map<Ordinal> map((myImageID == 0 ? -2 : -1),arcp(rcp(new vector<Ordinal>(1,myImageID+1))).getConst(),1, platform), std::invalid_argument);
+      TEST_THROW(Map<Ordinal> map((myImageID == 0 ? -2 :  0),arcp(rcp(new vector<Ordinal>(1,myImageID+1))).getConst(),1, platform), std::invalid_argument);
+      TEST_THROW(Map<Ordinal> map((myImageID == 0 ? -1 :  0),arcp(rcp(new vector<Ordinal>(1,myImageID+1))).getConst(),1, platform), std::invalid_argument);
+      TEST_THROW(Map<Ordinal> map(0,arcp(rcp(new vector<Ordinal>(1,myImageID+1))).getConst(),(myImageID == 0 ? 0 : 1), platform), std::invalid_argument);
     }
   }
 

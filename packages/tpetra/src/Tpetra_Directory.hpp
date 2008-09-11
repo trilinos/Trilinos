@@ -83,26 +83,26 @@ namespace Tpetra {
 
   template<typename Ordinal>
   void Directory<Ordinal>::getDirectoryEntries(
-      std::vector<Ordinal> const& globalEntries, 
-      std::vector<Ordinal>& images) const 
+      const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+      const Teuchos::ArrayView<Ordinal> &images) const 
   {
-    getEntries(globalEntries, images, images, false);
+    getEntries(globalEntries, images, Teuchos::ArrayView<Ordinal>(Teuchos::null), false);
   }
 
   template<typename Ordinal>
   void Directory<Ordinal>::getDirectoryEntries(
-      const std::vector<Ordinal> & globalEntries, 
-      std::vector<Ordinal> & images, 
-      std::vector<Ordinal> & localEntries) const 
+      const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+      const Teuchos::ArrayView<Ordinal> &images, 
+      const Teuchos::ArrayView<Ordinal> &localEntries) const 
   {
     getEntries(globalEntries, images, localEntries, true);
   }
 
   template<typename Ordinal>
   void Directory<Ordinal>::getEntries(
-      const std::vector<Ordinal> & globalEntries, 
-            std::vector<Ordinal> & images, 
-            std::vector<Ordinal> & localEntries, 
+      const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+      const Teuchos::ArrayView<Ordinal> &images, 
+      const Teuchos::ArrayView<Ordinal> &localEntries, 
             bool computeLIDs) const 
   {
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
@@ -111,9 +111,15 @@ namespace Tpetra {
 
     // allocate space in images and localEntries
     // resize to same length as globalEntries and fill with -1s.
-    images.assign(globalEntries.size(), NEGONE);
-    if(computeLIDs) {
-      localEntries.assign(globalEntries.size(), NEGONE);
+    TEST_FOR_EXCEPTION(images.size() != globalEntries.size(), std::runtime_error,
+        "Tpetra::Directory<" << Teuchos::TypeNameTraits<Ordinal>::name() << 
+        ">::getEntries(): Output buffers are not allocated properly.");
+    std::fill(images.begin(),images.end(),NEGONE);
+    if (computeLIDs) {
+      TEST_FOR_EXCEPTION(localEntries.size() != globalEntries.size(), std::runtime_error,
+          "Tpetra::Directory<" << Teuchos::TypeNameTraits<Ordinal>::name() << 
+          ">::getEntries(): Output buffers are not allocated properly.");
+      std::fill(localEntries.begin(),localEntries.end(),NEGONE);
     }
 
     bool ierr = false;
@@ -205,29 +211,30 @@ namespace Tpetra {
         }
       }
 
-      std::vector<Ordinal> sendGIDs;
-      std::vector<Ordinal> sendImages;
+      Teuchos::ArrayRCP<Ordinal> sendGIDs, sendImages;
       distor.createFromRecvs(globalEntries, dirImages, sendGIDs, sendImages);
       Ordinal numSends = Teuchos::as<Ordinal>(sendGIDs.size());
 
       Ordinal currLID;
-      std::vector<Ordinal> exports;
-      exports.reserve(packetSize * numSends);
-      for(Ordinal i = ZERO; i < numSends; i++) {
-        Ordinal currGID = sendGIDs[i];
-        exports.push_back(currGID);
-        currLID = directoryMap_->getLocalIndex(currGID);
-        assert(currLID != NEGONE); // Internal error
-        exports.push_back(imageIDs_[currLID]);
-        if(computeLIDs) {
-          exports.push_back(LIDs_[currLID]);
+      Teuchos::Array<Ordinal> exports(packetSize*numSends);
+      {
+        typename Teuchos::Array<Ordinal>::iterator ptr = exports.begin();
+        for(Ordinal i = ZERO; i < numSends; i++) {
+          Ordinal currGID = sendGIDs[i];
+          *ptr++ = currGID;
+          currLID = directoryMap_->getLocalIndex(currGID);
+          assert(currLID != NEGONE); // Internal error
+          *ptr++ = imageIDs_[currLID];
+          if(computeLIDs) {
+            *ptr++ = LIDs_[currLID];
+          }
         }
       }
 
-      std::vector<Ordinal> imports;
-      distor.doPostsAndWaits(exports, packetSize, imports);
+      Teuchos::Array<Ordinal> imports(packetSize*distor.getTotalReceiveLength());
+      distor.doPostsAndWaits(exports().getConst(), packetSize, imports());
 
-      typename std::vector<Ordinal>::iterator ptr = imports.begin();
+      typename Teuchos::Array<Ordinal>::iterator ptr = imports.begin();
       const Ordinal numRecv = numEntries - numMissing;
       for(Ordinal i = ZERO; i < numRecv; i++) {
         currLID = *ptr++;
@@ -283,7 +290,7 @@ namespace Tpetra {
     Ordinal myImageID = comm_->getRank();
     Ordinal numMyEntries = map_.getNumMyEntries();
     std::vector<Ordinal> sendImageIDs(numMyEntries);
-    const std::vector<Ordinal> & myGlobalEntries = map_.getMyGlobalEntries();
+    Teuchos::ArrayView<const Ordinal> myGlobalEntries = map_.getMyGlobalEntries();
     directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs);
 
     // Create distributor & call createFromSends
@@ -294,27 +301,30 @@ namespace Tpetra {
     // Execute distributor plan
     // Transfer GIDs, ImageIDs, and LIDs that we own to all images
     // End result is all images have list of all GIDs and corresponding ImageIDs and LIDs
-    std::vector<Ordinal> exportEntries;
     Ordinal packetSize = Teuchos::as<Ordinal>(3); // We will send GIDs, ImageIDs, and LIDs.
-
-    exportEntries.reserve(packetSize * numMyEntries);
-    for(Ordinal i = ZERO; i < numMyEntries; i++) {
-      exportEntries.push_back(myGlobalEntries[i]);
-      exportEntries.push_back(myImageID);
-      exportEntries.push_back(i);
+    Teuchos::Array<Ordinal> exportEntries(packetSize*numMyEntries);
+    {
+      typename Teuchos::Array<Ordinal>::iterator ptr = exportEntries.begin();
+      for(Ordinal i = ZERO; i < numMyEntries; ++i) {
+        *ptr++ = myGlobalEntries[i];
+        *ptr++ = myImageID;
+        *ptr++ = i;
+      }
     }
 
-    std::vector<Ordinal> importElements;
-    distor.doPostsAndWaits(exportEntries, packetSize, importElements);
+    Teuchos::Array<Ordinal> importElements(packetSize*distor.getTotalReceiveLength());
+    distor.doPostsAndWaits(exportEntries().getConst(), packetSize, importElements());
 
-    typename std::vector<Ordinal>::iterator ptr = importElements.begin();
-    for(Ordinal i = ZERO; i < numReceives; i++) {
-      Ordinal currLID = directoryMap_->getLocalIndex(*ptr++); // Convert incoming GID to Directory LID
-      assert(currLID != NEGONE); // Internal error
-      TEST_FOR_EXCEPTION(currLID == NEGONE, std::logic_error,
-        "Tpetra::Directory<" << Teuchos::OrdinalTraits<Ordinal>::name() << ">::generateDirectory(): logic error. Please notify the Tpetra team.");
-      imageIDs_[currLID] = *ptr++;
-      LIDs_[currLID] = *ptr++;
+    {
+      typename Teuchos::Array<Ordinal>::iterator ptr = importElements.begin();
+      for(Ordinal i = ZERO; i < numReceives; i++) {
+        Ordinal currLID = directoryMap_->getLocalIndex(*ptr++); // Convert incoming GID to Directory LID
+        assert(currLID != NEGONE); // Internal error
+        TEST_FOR_EXCEPTION(currLID == NEGONE, std::logic_error,
+            "Tpetra::Directory<" << Teuchos::OrdinalTraits<Ordinal>::name() << ">::generateDirectory(): logic error. Please notify the Tpetra team.");
+        imageIDs_[currLID] = *ptr++;
+        LIDs_[currLID] = *ptr++;
+      }
     }
   }
     
