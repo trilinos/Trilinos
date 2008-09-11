@@ -1731,10 +1731,13 @@ query functions</a> for an explanation.&nbsp;</td>
 
 </table>
 
-<hr WIDTH="100%">A hypergraph (which may alternatively be viewed
-as a sparse matrix) 
+<hr WIDTH="100%">A hypergraph 
 can be supplied to the Zoltan library in
-one of two compressed storage formats.  In compressed hyperedge format 
+one of two compressed storage formats.  Although hypergraphs
+are often used to represent the structure of sparse matrices, 
+the Zoltan/PHG terminology is purely in terms of vertices and hyperedges
+(not rows or columns). The two compressed formats are analogous to CRS and CCS 
+for matrices. In compressed hyperedge format 
 (<b>ZOLTAN_COMPRESSED_EDGE</b>)
 a list of global hyperedge IDs is provided.  Then a single
 list of the hypergraph pins, is provided.  
@@ -1749,14 +1752,11 @@ The other format
 is compressed vertex (<b>ZOLTAN_COMPRESSED_VERTEX</b>).  In this
 format a list of vertex global IDs is provided.  Then a
 list of pins ordered by vertex and then by hyperedge is provided.
-The pin ID in this case is the global ID of the row (or hyperedge) in which the
+The pin ID in this case is the global ID of the hyperedge in which the
 pin appears.  In both formats, an array must be provided pointing to
-the start in the list of pins where each row or column begins.
-Sparse matrix users may think of these two formats as CSR
-(compressed sparse row) and CSC (compressed sparse column) format,
-respectively.
+the start in the list of pins where each hyperedge or vertex begins.
 <p> 
-The point of this query function is to tell Zoltan in which format the
+The purpose of this query function is to tell Zoltan in which format the
 application will supply the hypergraph, how many vertices and hyperedges
 there will be, and how many pins.  The actual hypergraph is supplied
 with a query function of the type
@@ -1789,14 +1789,13 @@ functions with hypergraph code instead).
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lists</i></td>
-<td>Upon return, the number of rows (if using compressed row storage) or columns (if
-using compressed column storage) that will be supplied to Zoltan by
-the application process.</td>
+<td>Upon return, the number of vertices (if using compressed vertex storage) or
+hyperedges (if using compressed hyperedge storage) that will be supplied to Zoltan by the application process.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_pins</i></td>
-<td>Upon return, the number of pins (matrix non-zeroes) that will be
+<td>Upon return, the number of pins (connections between vertices and hyperedges) that will be
 supplied to Zoltan by the application process.</td>
 </tr>
 
@@ -1859,7 +1858,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%">A <b>ZOLTAN_HG_CS_FN</b> returns 
-a hypergraph, in a sparse matrix-like style.  The size and format
+a hypergraph in a compressed storage (CS) format.  The size and format
 of the data to be returned must have been supplied to Zoltan using a
 <b><a href="#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN_TYPE</a></b>
 function.
@@ -1868,10 +1867,9 @@ When a hypergraph is distributed across multiple processes, Zoltan
 expects that all processes share a consistent global numbering
 scheme for hyperedges and vertices. Also, no two
 processes should return the same pin (matrix non-zero) in this
-query function.
+query function. (Pin ownership is unique.)
 <br> <br>
-This query function 
-is required by all applications using the hypergraph methods
+This query function is required by all applications using the hypergraph methods
 of Zoltan (unless they are using the
 <a href="#Graph-based Functions">graph-based</a>
 functions with hypergraph code instead).
@@ -1919,11 +1917,11 @@ that is expected to appear on return in <i>pin_GID</i>.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>format</i></td>
 <td>If <i>format</i> is <b>ZOLTAN_COMPRESSED_EDGE</b>, Zoltan expects
-that row (hyperedge) global IDs will be returned in <i>vtxedge_GID</i>,
-and that column (vertex) global IDs will be returned in
+that hyperedge global IDs will be returned in <i>vtxedge_GID</i>,
+and that vertex global IDs will be returned in
 <i>pin_GIDs</i>.  If it is <b>ZOLTAN_COMPRESSED_VERTEX</b>, then
-column global IDs are expected to be returned in <i>vtxedge_GID</i> and row
-global IDs are expected to be returned in <i>pin_GIDs</i>.
+vertex global IDs are expected to be returned in <i>vtxedge_GID</i> and 
+hyperedge global IDs are expected to be returned in <i>pin_GIDs</i>.
 </tr>
 
 <tr NOSAVE>
@@ -1935,8 +1933,8 @@ global IDs are expected to be returned in <i>pin_GIDs</i>.
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_ptr</i></td>
 <td>Upon return, this array contains <i>num_vtx_edge</i> integers.
 The integer in the <i>i'th</i> array element is the index in
-array <i>pin_GID</i> where the pins for the <i>i'th</i> row
-(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> column
+array <i>pin_GID</i> where the pins for the <i>i'th</i> hyperedge
+(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> vertex
 (if format is <b>ZOLTAN_COMPRESSED_VERTEX</b>) begins.  Array indices
 begin at zero.
 </td>
@@ -1945,7 +1943,7 @@ begin at zero.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>pin_GID</i></td>
 <td>Upon return, a list of <i>num_pins</i> global IDs.  This is the list
-of the pins (or matrix non-zeros) contained in the rows or columns
+of the pins contained in the hyperedges or vertices 
 listed in <i>vtxedge_GID</i>.
 </tr>
 
@@ -1970,13 +1968,13 @@ listed in <i>vtxedge_GID</i>.
   <th>hyperedge</th> <th>10</th> <th>20</th> <th>30</th> <th>40</th> <th>50</th>
   </tr>
   <tr>
-  <th>1</th> <td>0</td> <td>0</td> <td>1</td> <td>1</td> <td>0</td>
+  <th>1</th> <td>0</td> <td>0</td> <td>X</td> <td>X</td> <td>0</td>
   </tr>
   <tr>
-  <th>2</th> <td>0</td> <td>1</td> <td>1</td> <td>0</td> <td>0</td>
+  <th>2</th> <td>0</td> <td>X</td> <td>X</td> <td>0</td> <td>0</td>
   </tr>
   <tr>
-  <th>3</th> <td>1</td> <td>0</td> <td>0</td> <td>0</td> <td>1</td>
+  <th>3</th> <td>X</td> <td>0</td> <td>0</td> <td>0</td> <td>X</td>
   </tr>
   </table>
 </td>
