@@ -64,7 +64,7 @@ public:
    */
   virtual void order(bool forceOrdering=false) = 0;
 
-};//class Colorer
+};//class Orderer
 
 }//namespace Isorropia
 

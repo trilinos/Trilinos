@@ -57,7 +57,7 @@ namespace Isorropia {
 
 namespace Epetra {
 
-/** An implementation of the Partitioner interface that operates on
+/** An implementation of the Colorer interface that operates on
     Epetra matrices and linear systems.
 
 */
@@ -76,20 +76,7 @@ public:
   /** Destructor */
   ~Colorer() {} ;
 
-  /** Method which does the work of computing a new partitioning.
-     Implementations of this interface will typically be constructed
-     with an object or information describing the existing ('old')
-     partitioning. This method computes a 'new' rebalanced
-     partitioning for that input data.
 
-     \param force_repartitioning Optional argument defaults to false.
-        Depending on the implementation, compute_partitioning() should
-        only perform a repartitioning the first time it is called, and
-        subsequent repeated calls are no-ops. If the user's intent is
-        to re-compute the partitioning (e.g., if parameters or other
-        inputs have been changed), then setting this flag to true
-        will force a new partitioning to be computed.
-   */
   void color(bool force_coloring=false);
 
   void compute(bool force_compute=false) {
@@ -97,6 +84,11 @@ public:
   }
 
 #ifdef HAVE_EPETRAEXT
+  /** Generate an @c Epetra_MapColoring object.
+
+  Provide access on the coloring thru the EpetraEXT color class @c Epetra_MapColoring.
+  This methods requires EpetraEXT support.
+  */
   Teuchos::RefCountPtr<Epetra_MapColoring> generateMapColoring() ;
 #endif /* HAVE_EPETRAEXT */
 
