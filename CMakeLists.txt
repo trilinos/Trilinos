@@ -13,10 +13,11 @@ SET(TRILINOS_TEST_CATEGORY "FRAMEWORK")
 
 #2008/07/10: ejguill: Updated to use the same command 
 #that the perl test harness uses to get the name of the host
-EXECUTE_PROCESS( COMMAND uname -n
-                 OUTPUT_VARIABLE TRILINOS_HOSTNAME
-                 OUTPUT_STRIP_TRAILING_WHITESPACE
-                )
+EXECUTE_PROCESS(
+  COMMAND uname -n
+  OUTPUT_VARIABLE TRILINOS_HOSTNAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 
 SET(${PROJECT_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "${PROJECT_NAME} include directories")
 SET(${PROJECT_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "${PROJECT_NAME} library directories")
@@ -25,7 +26,7 @@ SET(${PROJECT_NAME}_LIBRARIES "" CACHE INTERNAL "${PROJECT_NAME} libraries")
 SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Setup paqckages to include ...
-SET(${PROJECT_NAME}_PACKAGES
+SET( ${PROJECT_NAME}_PACKAGES
  Teuchos
  Epetra
  #Anasazi
@@ -47,39 +48,10 @@ FIND_LIBRARY(TRILINOS_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the 
 
 IF(CMAKE_SIZEOF_VOID_P GREATER 4)
   ADD_DEFINITIONS(-DEPETRA_ADDRESS64BIT)
-ENDIF(CMAKE_SIZEOF_VOID_P GREATER 4)
+ENDIF()
 
 # Set global options that will be inserted into config.h files ...
-# Note: we should really be probing for these values, but will hard-code them in the short-term.
-# Most of these should be fine for all but ridiculously out-of-date C++ compilers, but you never know.
-SET(HAVE_ALGORITHM TRUE)
-SET(HAVE_CASSERT TRUE)
-SET(HAVE_CCTYPE TRUE)
-SET(HAVE_CERRNO TRUE)
-SET(HAVE_CLIMITS TRUE)
-SET(HAVE_CMATH TRUE)
-SET(HAVE_COMPLEX TRUE)
-SET(HAVE_CSTDARG TRUE)
-SET(HAVE_CSTDIO TRUE)
-SET(HAVE_CSTDLIB TRUE)
-SET(HAVE_CSTRING TRUE)
-SET(HAVE_IOMANIP TRUE)
-SET(HAVE_IOSTREAM TRUE)
-SET(HAVE_ITERATOR TRUE)
-SET(HAVE_LIST TRUE)
-SET(HAVE_MAP TRUE)
-SET(HAVE_MEMORY TRUE)
-SET(HAVE_MUTABLE TRUE)
-SET(HAVE_NAMESPACES TRUE)
-SET(HAVE_NEW_FOR_SCOPING TRUE)
-SET(HAVE_NUMERIC TRUE)
-SET(HAVE_NUMERIC_LIMITS TRUE)
-SET(HAVE_POW TRUE)
-SET(HAVE_SET TRUE)
-SET(HAVE_SSTREAM TRUE)
-SET(HAVE_STDEXCEPT TRUE)
-SET(HAVE_STRING TRUE)
-SET(HAVE_VECTOR TRUE)
+INCLUDE(TrilinosProbeEnv)
 
 # MPI related configuration
 IF(TRILINOS_ENABLE_MPI)
@@ -90,39 +62,12 @@ IF(TRILINOS_ENABLE_MPI)
 ENDIF(TRILINOS_ENABLE_MPI)
 
 # Setup Fortran name mangling
-
-# 2008/06/09: rabartl: The details of the Fortran name mangling should
-# be copied off to a separate file and loaded as needed.  This is clutter
-# here.
-
-IF(CYGWIN)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) name ## __")
-	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
-ENDIF(CYGWIN)
-
-IF(WIN32)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) NAME")
-	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
-ENDIF(WIN32)
-
-IF(UNIX AND NOT APPLE)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) name ## _")
-	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
-ENDIF(UNIX AND NOT APPLE)
-
-IF(APPLE)
-	SET(F77_FUNC "(name,NAME) name ## _")
-	SET(F77_FUNC_ "(name,NAME) name ## __")
-	SET(F77_BLAS_MANGLE "(name,NAME) name ## _")
-ENDIF(APPLE)
+INCLUDE(TrilinosFortranMangling)
 
 # Setup platform-specific compiler options ...
 IF(WIN32)
-	ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
-ENDIF(WIN32)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+ENDIF()
 
 # Setup testing ...
 INCLUDE(CTest)
@@ -151,10 +96,10 @@ SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${${PROJECT_NAME}_VERSION}/in
 
 
 FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
-	SET(${PACKAGE}_INCLUDE_DIRS "" CACHE INTERNAL "${PACKAGE} include directories")
-	SET(${PACKAGE}_LIBRARY_DIRS "" CACHE INTERNAL "${PACKAGE} library directories")
-	SET(${PACKAGE}_LIBRARIES "" CACHE INTERNAL "${PACKAGE} libraries")
-ENDFOREACH(PACKAGE ${PROJECT_NAME}_PACKAGES)
+  SET(${PACKAGE}_INCLUDE_DIRS "" CACHE INTERNAL "${PACKAGE} include directories")
+  SET(${PACKAGE}_LIBRARY_DIRS "" CACHE INTERNAL "${PACKAGE} library directories")
+  SET(${PACKAGE}_LIBRARIES "" CACHE INTERNAL "${PACKAGE} libraries")
+ENDFOREACH()
 
 # Setup individual packages ...
 ADD_SUBDIRECTORY(packages)
@@ -171,8 +116,8 @@ SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
 SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${${PROJECT_NAME}_VERSION}")
 
 IF(WIN32)
-	SET(CPACK_GENERATOR "NSIS")
-ENDIF(WIN32)
+  SET(CPACK_GENERATOR "NSIS")
+ENDIF()
 
 INCLUDE(CPack)
 
@@ -201,28 +146,19 @@ FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     #   case.  This will not work for PyTrilinos, ForTrilinos, ThreadPool, etc.  You should
     #   just name the packages with their directory names!
     MESSAGE(STATUS "${PROJECT_NAME}_ENABLE_${PACKAGE}=${${PROJECT_NAME}_ENABLE_${PACKAGE}}")
+    ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
     INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/packages/${PACKAGE_DIR}/${PACKAGE}Config.cmake)
     LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
     LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
     LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${${PACKAGE}_LIBRARIES})
-  ENDIF(${${PROJECT_NAME}_ENABLE_${PACKAGE}} STREQUAL "ON")
-ENDFOREACH(PACKAGE ${PROJECT_NAME}_PACKAGES)
-
-# 2008/06/09: rabartl: Above: Why is this look not moved to
-# ./packages/CMakeLists.txt which has a similar to this loop.  There is some
-# duplication (like assuming that all package directories are lower case which
-# is not true in general).
+  ENDIF()
+ENDFOREACH()
 
 LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${TRILINOS_BLAS_LIBRARY} ${TRILINOS_LAPACK_LIBRARY})
 
 LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)
 LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARY_DIRS)
 LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
-
-# 2008/06/09: rabartl: Above: What version of CMake do you need to have in
-# order to use the REMOVE_DUPLICATES option with the list command?  The
-# REMOVE_DUPLICATES option is not mentioned in "Matering CMake: Fourth
-# Edition".
 
 ##############################################################################
 # Configure <PACKAGE>Config.cmake for the build tree.
