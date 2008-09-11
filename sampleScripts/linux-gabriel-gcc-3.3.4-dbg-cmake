@@ -1,3 +1,5 @@
+EXTRA_ARGS=$@
+
 cmake \
 -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
 -D Teuchos_ENABLE_EXAMPLES:BOOL=ON \
@@ -10,4 +12,5 @@ cmake \
 -D Epetra_ENABLE_FORTRAN:BOOL=OFF \
 -D Epetra_ENABLE_TESTS:BOOL=ON \
 -D RBGen_ENABLE_EPETRA:BOOL=ON \
+$EXTRA_ARGS \
 ../../../Trilinos
