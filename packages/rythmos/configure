@@ -1378,7 +1378,10 @@ Optional Features:
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
                           your path or defined with --with-perl=<perl
-                          executable>(default is no)
+                          executable>. Note that the export makefiles are
+                          always created and used in the build directory, but
+                          will not be installable without this option to
+                          change the paths. (default is yes)
   --enable-nox            Build in NOX support in Rythmos. Can be overridden
                           with --disable-rythmos-nox.
   --enable-rythmos-nox    Build in NOX support in Rythmos.
@@ -1477,14 +1480,14 @@ Optional Packages:
   --with-ar               override archiver command (default is "ar cru")
   --with-perl             supply a perl executable. For example
                           --with-perl=/usr/bin/perl.
-  --with-gnumake          Gnu's make has special functions we can use to clean
-                          up build and link lines. Enable this if you use
-                          gnu-make to build Trilinos. This requires that perl
-                          is in your path or that you have specified the perl
-                          executable with --with-perl=<perl executable>.
-                          Configure will check for the existence of the perl
-                          executable and quit with an error if it is not
-                          found. Default is no.
+  --with-gnumake          Gnu's make has special functions we can use to
+                          eliminate redundant paths in the build and link
+                          lines. Enable this if you use gnu-make to build
+                          Trilinos. This requires that perl is in your path or
+                          that you have specified the perl executable with
+                          --with-perl=<perl executable>. Configure will check
+                          for the existence of the perl executable and quit
+                          with an error if it is not found. (default is no)
   --with-incdirs          additional directories containing include files:
                           will prepend to search here for includes, use -Idir
                           format
@@ -5042,7 +5045,7 @@ fi
 if test "${enable_export_makefiles+set}" = set; then
   enableval=$enable_export_makefiles; ac_cv_use_export_makefiles=$enableval
 else
-  ac_cv_use_export_makefiles=no
+  ac_cv_use_export_makefiles=yes
 fi
 
 
@@ -5180,8 +5183,8 @@ if test "X$HAVE_PERL" != "Xyes" &&
    test "X$ac_cv_use_export_makefiles" != "Xno"; then
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
-  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
-echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
+  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&5
+echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7087,207 +7090,6 @@ _ACEOF
 fi
 
 
-# ------------------------------------------------------------------------
-# Checks for Makefile.export related systems
-# ------------------------------------------------------------------------
-
-# Check whether --enable-export-makefiles was given.
-if test "${enable_export_makefiles+set}" = set; then
-  enableval=$enable_export_makefiles; ac_cv_use_export_makefiles=$enableval
-else
-  ac_cv_use_export_makefiles=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build export makefiles" >&5
-echo $ECHO_N "checking whether to build export makefiles... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_export_makefiles" != "Xno"; then
-
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_EXPORT_MAKEFILES
-_ACEOF
-
-
-else
-
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
-fi
-
- if test X${ac_cv_use_export_makefiles} = Xyes; then
-  USING_EXPORT_MAKEFILES_TRUE=
-  USING_EXPORT_MAKEFILES_FALSE='#'
-else
-  USING_EXPORT_MAKEFILES_TRUE='#'
-  USING_EXPORT_MAKEFILES_FALSE=
-fi
-
-
-# Check for perl to run scripts (Required dependency)
-
-
-
-# Check whether --with-perl was given.
-if test "${with_perl+set}" = set; then
-  withval=$with_perl;
-{ echo "$as_me:$LINENO: checking for user supplied perl executable" >&5
-echo $ECHO_N "checking for user supplied perl executable... $ECHO_C" >&6; }
-{ echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-USER_SPECIFIED_PERL=yes
-PERL_EXE="${withval}"
-
-else
-
-USER_SPECIFIED_PERL=no
-
-fi
-
-
-if test "X${USER_SPECIFIED_PERL}" = "Xyes"; then
-  as_ac_File=`echo "ac_cv_file_${PERL_EXE}" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for ${PERL_EXE}" >&5
-echo $ECHO_N "checking for ${PERL_EXE}... $ECHO_C" >&6; }
-if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${PERL_EXE}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-ac_res=`eval echo '${'$as_ac_File'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-  HAVE_PERL=yes
-else
-  HAVE_PERL=no
-fi
-
-  PERL_EXE=${PERL_EXE}
-
-else
-  # Extract the first word of "perl", so it can be a program name with args.
-set dummy perl; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_HAVE_PERL+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$HAVE_PERL"; then
-  ac_cv_prog_HAVE_PERL="$HAVE_PERL" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_HAVE_PERL="yes"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_prog_HAVE_PERL" && ac_cv_prog_HAVE_PERL="no"
-fi
-fi
-HAVE_PERL=$ac_cv_prog_HAVE_PERL
-if test -n "$HAVE_PERL"; then
-  { echo "$as_me:$LINENO: result: $HAVE_PERL" >&5
-echo "${ECHO_T}$HAVE_PERL" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-  PERL_EXE=perl
-
-fi
- if test X${HAVE_PERL} = Xyes; then
-  USING_PERL_TRUE=
-  USING_PERL_FALSE='#'
-else
-  USING_PERL_TRUE='#'
-  USING_PERL_FALSE=
-fi
-
-
-
-if test "X$HAVE_PERL" != "Xyes" &&
-   test "X$ac_cv_use_export_makefiles" != "Xno"; then
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
-echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export_makefiles requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-# Check for using gnumake to clean up link lines via
-# gnumake's "shell" command. Optional dependency.
-
-
-
-
-# Check whether --with-gnumake was given.
-if test "${with_gnumake+set}" = set; then
-  withval=$with_gnumake; ac_cv_use_gnumake=$withval
-else
-  ac_cv_use_gnumake=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether gnumake specific code should be enabled" >&5
-echo $ECHO_N "checking whether gnumake specific code should be enabled... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_gnumake" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GNUMAKE
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
- if test "X$ac_cv_use_gnumake" = "Xyes"; then
-  USING_GNUMAKE_TRUE=
-  USING_GNUMAKE_FALSE='#'
-else
-  USING_GNUMAKE_TRUE='#'
-  USING_GNUMAKE_FALSE=
-fi
-
-
-
-if test "X$HAVE_PERL" != "Xyes" &&
-   test "X$ac_cv_use_gnumake" != "Xno"; then
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-  { { echo "$as_me:$LINENO: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
-echo "$as_me: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-
-
 # ---------------------------------------------------------------------
 # These are pretty obscure
 # ---------------------------------------------------------------------
@@ -9036,27 +8838,6 @@ if test -z "${USE_ALTERNATE_AR_TRUE}" && test -z "${USE_ALTERNATE_AR_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USING_EXPORT_MAKEFILES_TRUE}" && test -z "${USING_EXPORT_MAKEFILES_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USING_PERL_TRUE}" && test -z "${USING_PERL_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USING_PERL\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USING_PERL\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USING_GNUMAKE_TRUE}" && test -z "${USING_GNUMAKE_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USING_GNUMAKE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USING_GNUMAKE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
