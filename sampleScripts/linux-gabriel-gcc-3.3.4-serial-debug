@@ -9,7 +9,6 @@ CFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions" \
 FFLAGS="-g -O0 " \
 FLIBS="-lg2c" \
 --with-libs="-L$HOME/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/HSL -lHSL" \
---enable-export-makefiles \
 --with-gnumake \
 --disable-default-packages \
 --enable-teuchos \
@@ -34,7 +33,6 @@ FLIBS="-lg2c" \
 --enable-rythmos \
 --enable-moocho --enable-moocho-ma28 \
 --enable-sacado \
---enable-tpetra \
 --enable-meros \
 --enable-new_package \
 --enable-galeri \
@@ -45,6 +43,9 @@ FLIBS="-lg2c" \
 --enable-didasko \
 --with-trilinosdatadir=/home/rabartl/PROJECTS/Trilinos.base/TrilinosData \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/trilinos/dev/serial/dbg
+
+# 2008/08/07: Tpetra is not building today
+#--enable-tpetra \
 
 # 2008/07/31: rbgen fails to link RBGenDriver_EpetraMV
 #--enable-rbgen \
