@@ -101,10 +101,9 @@ DIST_H = \
 	$(srcdir)/Tpetra_Map.hpp \
 	$(srcdir)/Tpetra_MapDataDecl.hpp \
 	$(srcdir)/Tpetra_MapData.hpp \
+	$(srcdir)/Tpetra_ImportExportData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
-	$(srcdir)/Tpetra_ImportData.hpp \
-	$(srcdir)/Tpetra_Export.hpp \
-	$(srcdir)/Tpetra_ExportData.hpp
+	$(srcdir)/Tpetra_Export.hpp
 
 DIST = 
 

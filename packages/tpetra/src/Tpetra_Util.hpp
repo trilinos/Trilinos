@@ -32,6 +32,7 @@
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #include <Teuchos_Utils.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 namespace Tpetra {
 
@@ -135,66 +136,67 @@ namespace Tpetra {
 
   // for two arrays
   template<typename T1, typename T2>
-  void sortArrays(std::vector<T1>& sortVals, std::vector<T2>& otherVals) {
+  void sortArrays(const Teuchos::ArrayView<T1> &sortVals, const Teuchos::ArrayView<T2> &otherVals) {
     // if sortVals and otherVals are not the same length, throw exception
-    if(sortVals.size() != otherVals.size()) {
-      std::cerr << "Error in Tpetra_Util::sortArrays: sortVals and otherVals are not equally sized" << std::endl;
-      throw (-99);
-    }
+    TEST_FOR_EXCEPTION(sortVals.size() != otherVals.size(), std::runtime_error,
+        "Error in Tpetra_Util::sortArrays(sortVals,otherVals): sortVals and otherVals are not equally sized");
     
     // copy sortVals and otherVals into a multimap
     // (using a multimap instead of a map because values in sortVals may be duplicated)
     std::multimap<T1,T2> tempMap;
-    typename std::vector<T1>::iterator keyIter   = sortVals.begin();
-    typename std::vector<T2>::iterator valueIter = otherVals.begin();
+    typename Teuchos::ArrayView<T1>::iterator keyIter   = sortVals.begin();
+    typename Teuchos::ArrayView<T2>::iterator valueIter = otherVals.begin();
     for(; keyIter != sortVals.end(); ++keyIter, ++valueIter) {
-      tempMap.insert(std::pair<const T1,T2>(*keyIter, *valueIter));
+      tempMap.insert(std::pair<T1,T2>(*keyIter, *valueIter));
     }
 
     // multimap will automatically sort them, we just need to pull them out in order
     // and write them back to the original arrays
-    keyIter = sortVals.begin();
+    keyIter   = sortVals.begin();
     valueIter = otherVals.begin();
-    for(typename std::multimap<T1, T2>::iterator i = tempMap.begin(); 
+    for(typename std::multimap<T1,T2>::iterator i = tempMap.begin(); 
         i != tempMap.end(); ++i, ++keyIter, ++valueIter) 
     {
-      *keyIter = i->first;
+      *keyIter   = i->first;
       *valueIter = i->second;
     }
   }
 
   // for three arrays
   template<typename T1, typename T2, typename T3>
-  void sortArrays(std::vector<T1>& sortVals, std::vector<T2>& otherVals1, std::vector<T3>& otherVals2) {
+  void sortArrays(const Teuchos::ArrayView<T1> &sortVals, 
+                  const Teuchos::ArrayView<T2> &otherVals1, 
+                  const Teuchos::ArrayView<T2> &otherVals2) 
+  {
     // if sortVals and otherVals are not the same length, throw exception
-    if((sortVals.size() != otherVals1.size()) || (sortVals.size() != otherVals2.size())) {
-      std::cerr << "Error in Tpetra_Util::sortArrays: sortVals and otherVals are not equally sized" << std::endl;
-      throw (-99);
-    }
+    TEST_FOR_EXCEPTION((sortVals.size() != otherVals1.size()) || (sortVals.size() != otherVals2.size()), std::runtime_error,
+        "Error in Tpetra_Util::sortArrays(sortVals,otherVals1,otherVals2): sortVals and otherVals are not equally sized");
     
     // copy sortVals and otherVals into a multimap
     // (using a multimap instead of a map because values in sortVals may be duplicated)
     typedef typename std::pair<T2, T3> ValuePair;
     std::multimap<T1, ValuePair> tempMap;
-    typename std::vector<T1>::iterator keyIter = sortVals.begin();
-    typename std::vector<T2>::iterator valueIter1 = otherVals1.begin();
-    typename std::vector<T3>::iterator valueIter2 = otherVals2.begin();
-    for(; keyIter != sortVals.end(); keyIter++, valueIter1++, valueIter2++)
-      tempMap.insert(std::pair<const T1, ValuePair>(*keyIter, ValuePair(*valueIter1, *valueIter2)));
+    typename Teuchos::ArrayView<T1>::iterator keyIter    = sortVals.begin();
+    typename Teuchos::ArrayView<T2>::iterator valueIter1 = otherVals1.begin();
+    typename Teuchos::ArrayView<T3>::iterator valueIter2 = otherVals2.begin();
+    for(; keyIter != sortVals.end(); ++keyIter, ++valueIter1, ++valueIter2) {
+      tempMap.insert(std::pair<T1, ValuePair>(*keyIter, ValuePair(*valueIter1, *valueIter2)));
+    }
 
     // multimap will automatically sort them, we just need to pull them out in order
     // and write them back to the original arrays
-    keyIter = sortVals.begin();
+    keyIter    = sortVals.begin();
     valueIter1 = otherVals1.begin();
     valueIter2 = otherVals2.begin();
-    for(typename std::multimap<T1, ValuePair>::iterator i = tempMap.begin(); 
-      i != tempMap.end(); i++, keyIter++, valueIter1++, valueIter2++) {
-      *keyIter = i->first;
+    for(typename std::multimap<T1,ValuePair>::iterator i = tempMap.begin(); 
+        i != tempMap.end(); i++, keyIter++, valueIter1++, valueIter2++) 
+    {
+      *keyIter    = i->first;
       *valueIter1 = i->second.first;
       *valueIter2 = i->second.second;
     }
   }
-  
+
 } // namespace Tpetra
 
 #endif // TPETRA_UTIL_HPP

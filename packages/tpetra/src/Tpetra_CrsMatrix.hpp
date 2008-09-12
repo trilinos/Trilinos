@@ -91,7 +91,7 @@ namespace Tpetra
       Ordinal getNumMyCols() const;
 
       //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons. 
-      Ordinal getNumGlobalDiagonals() const
+      Ordinal getNumGlobalDiagonals() const;
 
       //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons. 
       Ordinal getNumMyDiagonals() const;
@@ -138,12 +138,12 @@ namespace Tpetra
       void fillComplete();
 
       //! Submits one local or nonlocal entry to the matrix using global IDs.
-      void submitEntry(const Ordinal &globalRow, const Ordinal &globalCol,
+      void submitEntry(Ordinal globalRow, Ordinal globalCol,
                        const Scalar &value);
 
       //! Submit multiple entries, using global IDs.
       /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
-      void submitEntries(const Ordinal &globalRow, 
+      void submitEntries(Ordinal globalRow, 
                          const Teuchos::ArrayView<const Scalar> &values, 
                          const Teuchos::ArrayView<const Ordinal> &indices);
 
@@ -152,11 +152,11 @@ namespace Tpetra
       // @{ 
 
       //! Returns a copy of the specified local row, column indices are local.
-      void getMyRowCopy(const Ordinal &localRow, const Teuchos::ArrayView<Ordinal> &indices, 
-                                                 const Teuchos::ArrayView<Scalar> &values) const;
+      void getMyRowCopy(Ordinal localRow, const Teuchos::ArrayView<Ordinal> &indices, 
+                                          const Teuchos::ArrayView<Scalar> &values) const;
 
       //! Returns a copy of the specified (and locally owned) global row, column indices are global.
-      void getGlobalRowCopy(const Ordinal &globalRow, 
+      void getGlobalRowCopy(Ordinal globalRow, 
                             const Teuchos::ArrayView<Ordinal> &indices,
                             const Teuchos::ArrayView<Scalar> &values) const;
 
@@ -498,7 +498,7 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::submitEntry(const Ordinal &globalRow, const Ordinal &globalCol,
+  void CrsMatrix<Ordinal,Scalar>::submitEntry(Ordinal globalRow, Ordinal globalCol,
                                               const Scalar &value)
   {
     if (fillCompleted_)
@@ -516,9 +516,9 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::submitEntries(const Ordinal &globalRow, 
-                         const Teuchos::ArrayView<Scalar> &values, 
-                         const Teuchos::ArrayView<Ordinal> &indices)
+  void CrsMatrix<Ordinal,Scalar>::submitEntries(Ordinal globalRow, 
+                         const Teuchos::ArrayView<const Scalar> &values, 
+                         const Teuchos::ArrayView<const Ordinal> &indices)
   {
     TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
         "Tpetra::CrsMatrix::submitEntries(): values.size() must equal indices.size().");
@@ -531,7 +531,7 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::getMyRowCopy(const Ordinal &localRow, 
+  void CrsMatrix<Ordinal,Scalar>::getMyRowCopy(Ordinal localRow, 
                                                const Teuchos::ArrayView<Ordinal> &indices, 
                                                const Teuchos::ArrayView<Scalar> &values) const;
   {
@@ -550,7 +550,7 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::getGlobalRowCopy(const Ordinal &globalRow, 
+  void CrsMatrix<Ordinal,Scalar>::getGlobalRowCopy(Ordinal globalRow, 
                                                    const Teuchos::ArrayView<Ordinal> &indices,
                                                    const Teuchos::ArrayView<Scalar> &values) const
   {
@@ -604,7 +604,7 @@ namespace Tpetra
   }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::print(ostream& os) const 
+  void CrsMatrix<Ordinal,Scalar>::print(std::ostream& os) const 
   {
     int MyImageID = rowMap_.comm().getRank();
 

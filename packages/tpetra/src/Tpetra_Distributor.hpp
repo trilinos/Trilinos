@@ -252,13 +252,13 @@ namespace Tpetra {
     Ordinal numSends_;
     // imagesTo_, startsTo_ and lengthsTo_ each have size 
     //   numSends_ + selfMessage_
-    std::vector<Ordinal> imagesTo_;
-    std::vector<Ordinal> startsTo_;
-    std::vector<Ordinal> lengthsTo_;
+    Teuchos::Array<Ordinal> imagesTo_;
+    Teuchos::Array<Ordinal> startsTo_;
+    Teuchos::Array<Ordinal> lengthsTo_;
     // maxSendLength_ is the maximum send to another node: 
     //   max(lengthsTo_[i]) for i != me
     Ordinal maxSendLength_;
-    std::vector<Ordinal> indicesTo_;
+    Teuchos::Array<Ordinal> indicesTo_;
     // numReceives_ is the number of receives by me from other procs, not
     // counting self receives
     Ordinal numReceives_;
@@ -267,13 +267,13 @@ namespace Tpetra {
     Ordinal totalReceiveLength_;
     // imagesFrom_, startsFrom_ and lengthsFrom_ each have size 
     //   numReceives_ + selfMessage_
-    std::vector<Ordinal> lengthsFrom_;
-    std::vector<Ordinal> imagesFrom_;
-    std::vector<Ordinal> startsFrom_;
-    std::vector<Ordinal> indicesFrom_;
+    Teuchos::Array<Ordinal> lengthsFrom_;
+    Teuchos::Array<Ordinal> imagesFrom_;
+    Teuchos::Array<Ordinal> startsFrom_;
+    Teuchos::Array<Ordinal> indicesFrom_;
 
     // requests associated with non-blocking receives
-    std::vector<Teuchos::RCP<Teuchos::CommRequest> > requests_;
+    Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > requests_;
 
     mutable Teuchos::RCP<Distributor<Ordinal> > reverseDistributor_;
 
@@ -323,7 +323,7 @@ namespace Tpetra {
   {
   // we shouldn't have any outstanding requests at this point; verify
 # ifdef TEUCHOS_DEBUG
-    for (typename std::vector<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i = requests_.begin(); 
+    for (typename Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i = requests_.begin(); 
          i != requests_.end(); ++i)
     {
       TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
@@ -382,7 +382,7 @@ namespace Tpetra {
 
     // Setup data structures for quick traversal of arrays
     // this contains the number of sends for each image id
-    std::vector<Ordinal> starts(numImages + 1, ZERO);
+    Teuchos::Array<Ordinal> starts(numImages + 1, ZERO);
 
     // numActive is the number of sends that are not Null
     Ordinal numActive = ZERO;
@@ -473,7 +473,7 @@ namespace Tpetra {
       // sort the startsTo and image IDs together, in ascending order, according
       // to image IDs
       if (numSends_ > ZERO) {
-        sortArrays(imagesTo_, startsTo_);
+        sortArrays(imagesTo_(), startsTo_());
       }
 
       // compute the maximum send length
@@ -499,7 +499,7 @@ namespace Tpetra {
       else {
         numSends_ = ONE;
       }
-      for (typename std::vector<Ordinal>::iterator i=starts.begin()+1,
+      for (typename Teuchos::Array<Ordinal>::iterator i=starts.begin()+1,
                                                  im1=starts.begin();
            i != starts.end(); ++i) 
       {
@@ -509,7 +509,7 @@ namespace Tpetra {
       }
       // starts[i] now contains the number of exports to nodes 0 through i
 
-      for (typename std::vector<Ordinal>::reverse_iterator ip1=starts.rbegin(),
+      for (typename Teuchos::Array<Ordinal>::reverse_iterator ip1=starts.rbegin(),
                                                              i=starts.rbegin()+1;
            i != starts.rend(); ++i)
       {
@@ -626,27 +626,27 @@ namespace Tpetra {
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> Distributor<Ordinal>::getImagesFrom() const 
-  { return Teuchos::arrayViewFromVector(imagesFrom_); }
+  { return imagesFrom_; }
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> Distributor<Ordinal>::getLengthsFrom() const 
-  { return Teuchos::arrayViewFromVector(lengthsFrom_); }
+  { return lengthsFrom_; }
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> Distributor<Ordinal>::getImagesTo() const 
-  { return Teuchos::arrayViewFromVector(imagesTo_); }
+  { return imagesTo_; }
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> Distributor<Ordinal>::getIndicesTo() const 
-  { return Teuchos::arrayViewFromVector(indicesTo_); }
+  { return indicesTo_; }
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> Distributor<Ordinal>::getStartsTo() const 
-  { return Teuchos::arrayViewFromVector(startsTo_); }
+  { return startsTo_; }
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> Distributor<Ordinal>::getLengthsTo() const 
-  { return Teuchos::arrayViewFromVector(lengthsTo_); }
+  { return lengthsTo_; }
 
   template <typename Ordinal>
   Teuchos::RCP<Distributor<Ordinal> > Distributor<Ordinal>::getReverse() const
@@ -802,7 +802,7 @@ namespace Tpetra {
     }
     else { // data is not blocked by image, use send buffer
       // allocate sendArray buffer
-      std::vector<Packet> sendArray(maxSendLength_*numPackets); 
+      Teuchos::Array<Packet> sendArray(maxSendLength_*numPackets); 
 
       for (Ordinal i = ZERO; i < numBlocks; ++i) {
         Ordinal p = i + imageIndex;
@@ -821,7 +821,7 @@ namespace Tpetra {
             std::copy( srcBegin, srcEnd, sendArray.begin()+sendArrayOffset );
             sendArrayOffset += numPackets;
           }
-          Teuchos::ArrayView<const Packet> tmpSend(&sendArray[0],lengthsTo_[p]*numPackets);
+          Teuchos::ArrayView<const Packet> tmpSend = sendArray(0,lengthsTo_[p]*numPackets);
           Teuchos::readySend<Ordinal,Packet>(*comm_,tmpSend,imagesTo_[p]);
         }
         else { 
@@ -848,10 +848,10 @@ namespace Tpetra {
   {
     const Ordinal & numReceives = getNumReceives();
     if (numReceives > Teuchos::OrdinalTraits<Ordinal>::zero()) {
-      Teuchos::waitAll(*comm_,arrayViewFromVector(requests_));
+      Teuchos::waitAll(*comm_,requests_());
       // Requests should all be null, clear them
 #ifdef TEUCHOS_DEBUG
-      for (typename std::vector<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i = requests_.begin(); 
+      for (typename Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i = requests_.begin(); 
            i != requests_.end(); ++i) 
       {
         TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
@@ -992,7 +992,7 @@ namespace Tpetra {
     }
     comm_->barrier();
 
-    sortArrays(imagesFrom_, lengthsFrom_);
+    sortArrays(imagesFrom_(), lengthsFrom_());
 
     // Compute indicesFrom_
     totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), ZERO);

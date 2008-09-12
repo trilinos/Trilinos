@@ -192,18 +192,19 @@ namespace Tpetra {
 
 
   template<typename Ordinal, typename Scalar>
-  bool MultiVector<Ordinal,Scalar>::checkSizes(const DistObject<Ordinal,Scalar> &/*sourceObj*/) 
+  bool MultiVector<Ordinal,Scalar>::checkSizes(const DistObject<Ordinal,Scalar> &sourceObj) 
   {
-    TEST_FOR_EXCEPT(true);
-    return true;
+    const MultiVector<Ordinal,Scalar> &A = dynamic_cast<const MultiVector<Ordinal,Scalar>&>(sourceObj);
+    return A.numVectors() == this->numVectors();
   }
-
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::copyAndPermute(
-      const DistObject<Ordinal,Scalar> &/*sourceObj*/,
-      Ordinal /*numSameIDs*/, Ordinal /*numPermuteIDs*/,
-      const std::vector<Ordinal> &/*permuteToLIDs*/, const std::vector<Ordinal> &/*permuteFromLIDs*/)
+      const DistObject<Ordinal,Scalar> & sourceObj,
+      Ordinal numSameIDs,
+      Ordinal numPermuteIDs,
+      const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+      const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs)
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -211,11 +212,12 @@ namespace Tpetra {
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::packAndPrepare(
-      const DistObject<Ordinal,Scalar> &/*sourceObj*/,
-      Ordinal /*numExportIDs*/,
-      const std::vector<Ordinal> &/*exportLIDs*/, std::vector<Scalar> &/*exports*/,
-      Ordinal &/*packetSize*/,
-      Distributor<Ordinal> &/*distor*/) 
+      const DistObject<Ordinal,Scalar> & sourceObj,
+      Ordinal numExportIDs,
+      const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+      const Teuchos::ArrayView<Scalar> &exports,
+      Ordinal &packetSize,
+      Distributor<Ordinal> &distor)
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -223,11 +225,11 @@ namespace Tpetra {
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::unpackAndCombine(
-      Ordinal /*numImportIDs*/,
-      const std::vector<Ordinal> &/*importLIDs*/,
-      const std::vector<Scalar> &/*imports*/,
-      Distributor<Ordinal> &/*distor*/,
-      CombineMode /*CM*/) 
+      Ordinal numImportIDs,
+      const Teuchos::ArrayView<const Ordinal> &importLIDs,
+      const Teuchos::ArrayView<const Scalar> &imports,
+      Distributor<Ordinal> &distor,
+      CombineMode CM)
   {
     TEST_FOR_EXCEPT(true);
   }

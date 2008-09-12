@@ -30,22 +30,21 @@
 #define TPETRA_EXPORT_HPP
 
 #include <Teuchos_Object.hpp>
+#include <Teuchos_as.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_ImportExportData.hpp"
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of ExportData, needed to prevent circular inclusions
-  // actual #include statement at the end of this file
-  template<typename Ordinal> class ExportData;
-#endif
-
-  //! Tpetra::Export: This class builds an export object for efficient exporting of off-processor elements.
+  //! Tpetra::Export: This class builds an export object for efficient exporting of off-processor entries.
 
   /*! Export is used to construct a communication plan that can be called repeatedly by computational
-      classes such the Tpetra CisMatrix and Vector classes to efficiently export elements to other
+      classes such the Tpetra CisMatrix and Vector classes to efficiently export entries to other
       images. An exporter is used when we start out with a multiple-ownership distribution,
       and we want to merge that into a uniquely-owned distribution.
 
@@ -78,32 +77,32 @@ namespace Tpetra {
     //! @name Export Attribute Methods
     //@{ 
 
-    //! Returns the number of elements that are identical between the source and target Maps, up to the first different ID.
+    //! Returns the number of entries that are identical between the source and target Maps, up to the first different ID.
     Ordinal getNumSameIDs() const;
 
-    //! Returns the number of elements that are local to the calling image, but not part of the first getNumSameIDs() elements.
+    //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
     Ordinal getNumPermuteIDs() const;
 
-    //! List of elements in the source Map that are permuted.
-    const std::vector<Ordinal> & getPermuteFromLIDs() const;
+    //! List of entries in the source Map that are permuted. (non-persisting view)
+    Teuchos::ArrayView<const Ordinal> getPermuteFromLIDs() const;
 
-    //! List of elements in the target Map that are permuted.
-    const std::vector<Ordinal> & getPermuteToLIDs() const;
+    //! List of entries in the target Map that are permuted. (non-persisting view)
+    Teuchos::ArrayView<const Ordinal> getPermuteToLIDs() const;
 
-    //! Returns the number of elements that are not on the calling image.
+    //! Returns the number of entries that are not on the calling image.
     Ordinal getNumRemoteIDs() const;
 
-    //! List of elements in the target Map that are coming from other images.
-    const std::vector<Ordinal> & getRemoteLIDs() const;
+    //! List of entries in the target Map that are coming from other images. (non-persisting view)
+    Teuchos::ArrayView<const Ordinal> getRemoteLIDs() const;
 
-    //! Returns the number of elements that must be sent by the calling image to other images.
+    //! Returns the number of entries that must be sent by the calling image to other images.
     Ordinal getNumExportIDs() const;
 
-    //! List of elements in the source Map that will be sent to other images.
-    const std::vector<Ordinal> & getExportLIDs() const;
+    //! List of entries in the source Map that will be sent to other images. (non-persisting view)
+    Teuchos::ArrayView<const Ordinal> getExportLIDs() const;
 
-    //! List of images to which elements will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i].
-    const std::vector<Ordinal> & getExportImageIDs() const;
+    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
+    Teuchos::ArrayView<const Ordinal> getExportImageIDs() const;
 
     //! Returns the Source Map used to construct this exporter.
     const Map<Ordinal> & getSourceMap() const;
@@ -128,12 +127,12 @@ namespace Tpetra {
 
   private:
 
-    Teuchos::RCP< ExportData<Ordinal> > ExportData_;
+    Teuchos::RCP<ImportExportData<Ordinal> > ExportData_;
 
     // subfunctions used by constructor
     //==============================================================================
     // sets up numSameIDs_, numPermuteIDs_, and numExportIDs_
-    // these variables are already initialized to 0 by the ImportData ctr.
+    // these variables are already initialized to 0 by the ImportExportData ctr.
     // also sets up permuteToLIDs_, permuteFromLIDs_, exportGIDs_, and exportLIDs_
     void setupSamePermuteExport();
     void setupRemote();
@@ -144,11 +143,12 @@ namespace Tpetra {
     : Teuchos::Object("Tpetra::Export")
     , ExportData_()
   {
-    ExportData_ = Teuchos::rcp(new ExportData<Ordinal>(source, target));
+    ExportData_ = Teuchos::rcp(new ImportExportData<Ordinal>(source, target));
     // call subfunctions
     setupSamePermuteExport();
-    if(source.isGlobal())
+    if(source.isDistributed()) {
       setupRemote();
+    }
   }
 
   template <typename Ordinal>
@@ -172,13 +172,13 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  const std::vector<Ordinal> & 
+  Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getPermuteFromLIDs() const {
     return ExportData_->permuteFromLIDs_;
   }
 
   template <typename Ordinal>
-  const std::vector<Ordinal> &
+  Teuchos::ArrayView<const Ordinal>
   Export<Ordinal>::getPermuteToLIDs() const {
     return ExportData_->permuteToLIDs_;
   }
@@ -189,7 +189,7 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  const std::vector<Ordinal> & 
+  Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getRemoteLIDs() const {
     return ExportData_->remoteLIDs_;
   }
@@ -200,13 +200,13 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  const std::vector<Ordinal> & 
+  Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getExportLIDs() const {
     return ExportData_->exportLIDs_;
   }
 
   template <typename Ordinal>
-  const std::vector<Ordinal> & 
+  Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getExportImageIDs() const {
     return ExportData_->exportImageIDs_;
   }
@@ -242,18 +242,19 @@ namespace Tpetra {
   {
     using std::endl;
     os << "Export Data Members:" << endl;
-    os << "permuteToLIDs: " << Teuchos::toString(getPermuteToLIDs()) << endl;;
-    os << "permuteFromLIDs: " << Teuchos::toString(getPermuteFromLIDs()) << endl;
-    os << "remoteLIDs: " << Teuchos::toString(getRemoteLIDs()) << endl;
-    os << "exportLIDs: " << Teuchos::toString(getExportLIDs()) << endl;
-    os << "exportImageIDs: " << Teuchos::toString(getExportImageIDs()) << endl;
-    os << "numSameIDs: " << getNumSameIDs() << endl;
+    os << "permuteToLIDs:   {"; std::copy(getPermuteToLIDs().begin()  ,getPermuteToLIDs().end()  ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+    os << "permuteFromLIDs: {"; std::copy(getPermuteFromLIDs().begin(),getPermuteFromLIDs().end(),std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+    os << "remoteLIDs:      {"; std::copy(getRemoteLIDs().begin()     ,getRemoteLIDs().end()     ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+    os << "exportLIDs:      {"; std::copy(getExportLIDs().begin()     ,getExportLIDs().end()     ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+    os << "exportImageIDs:  {"; std::copy(getExportImageIDs().begin() ,getExportImageIDs().end() ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+    os << "numSameIDs   : " << getNumSameIDs() << endl;
     os << "numPermuteIDs: " << getNumPermuteIDs() << endl;
-    os << "numRemoteIDs: " << getNumRemoteIDs() << endl;
-    os << "numExportIDs: " << getNumExportIDs() << endl;
+    os << "numRemoteIDs : " << getNumRemoteIDs() << endl;
+    os << "numExportIDs : " << getNumExportIDs() << endl;
     os << "\nsource: " << endl << getSourceMap();
     os << "\ntarget: " << endl << getTargetMap();
   }
+
 
   template <typename Ordinal>
   void Export<Ordinal>::setupSamePermuteExport() 
@@ -326,7 +327,7 @@ namespace Tpetra {
     // and apply the same permutation to exportGIDs_ and exportLIDs_.
     sortArrays(ExportData_->exportImageIDs_, ExportData_->exportGIDs_, ExportData_->exportLIDs_);
 
-    // Construct list of elements that calling image needs to send as a result
+    // Construct list of entries that calling image needs to send as a result
     // of everyone asking for what it needs to receive.
     ExportData_->distributor_.createFromSends(ExportData_->numExportIDs_, ExportData_->exportImageIDs_, true, ExportData_->numRemoteIDs_);
     // -- numRemoteIDs_ is now defined --
@@ -345,7 +346,5 @@ namespace Tpetra {
   }
 
 } // namespace Tpetra
-
-#include "Tpetra_ExportData.hpp"
 
 #endif // TPETRA_EXPORT_HPP

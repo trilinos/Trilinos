@@ -134,20 +134,20 @@ namespace Tpetra {
     //@}
 
   protected:
- 
-    //! Perform actual transfer (redistribution) of data across memory images.
+
+    //! Perform transfer (redistribution) of data across memory images.
     virtual void doTransfer(const DistObject<Ordinal, Scalar> & source,
                  CombineMode CM,
                  Ordinal numSameIDs,
                  Ordinal numPermuteIDs,
                  Ordinal numRemoteIDs,
                  Ordinal numExportIDs,
-                 const std::vector<Ordinal> & permuteToLIDs,
-                 const std::vector<Ordinal> & permuteFromLIDs,
-                 const std::vector<Ordinal> & remoteLIDs,
-                 const std::vector<Ordinal> & exportLIDs,
-                 std::vector<Scalar>& exports,
-                 std::vector<Scalar>& imports,
+                 const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+                 const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs,
+                 const Teuchos::ArrayView<const Ordinal> &remoteLIDs,
+                 const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+                 const Teuchos::ArrayView<Scalar> &exports,
+                 const Teuchos::ArrayView<Scalar> &imports,
                  Distributor<Ordinal> &distor,
                  bool doReverse);
 
@@ -177,8 +177,8 @@ namespace Tpetra {
     virtual void copyAndPermute(const DistObject<Ordinal, Scalar> & source,
                    Ordinal numSameIDs,
                    Ordinal numPermuteIDs,
-                   const std::vector<Ordinal> & permuteToLIDs,
-                   const std::vector<Ordinal> & permuteFromLIDs) = 0;
+                   const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+                   const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs) = 0;
 
     //! Perform any packing or preparation required for communication.
     /*!
@@ -197,13 +197,13 @@ namespace Tpetra {
       \param distor In
              On entry, contains the Distributor object we are using.         
     */
-    virtual void packAndPrepare(const DistObject<Ordinal, Scalar> & source,
+    virtual void packAndPrepare(const DistObject<Ordinal,Scalar> & source,
                    Ordinal numExportIDs,
-                   const std::vector<Ordinal> & exportLIDs,
-                   std::vector<Scalar>& exports,
-                   Ordinal & packetSize,
+                   const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+                   const Teuchos::ArrayView<Scalar> &exports,
+                   Ordinal &packetSize,
                    Distributor<Ordinal> &distor) = 0;
-  
+
     //! Perform any unpacking and combining after communication.
     /*!
       \param numImportIDs In
@@ -220,18 +220,18 @@ namespace Tpetra {
          entries with existing entries.
     */
     virtual void unpackAndCombine(Ordinal numImportIDs,
-                   const std::vector<Ordinal> & importLIDs,
-                   const std::vector<Scalar> & imports,
+                   const Teuchos::ArrayView<const Ordinal> &importLIDs,
+                   const Teuchos::ArrayView<const Scalar> &imports,
                    Distributor<Ordinal> &distor,
                    CombineMode CM) = 0;
 
   private:
-    
+
     const Map<Ordinal> map_;
     Teuchos::RCP< Teuchos::Comm<Ordinal> > Comm_;
-    std::vector<Scalar> imports_;
-    std::vector<Scalar> exports_;
-    std::vector<Ordinal> sizes_;
+    Teuchos::Array<Scalar> imports_;
+    Teuchos::Array<Scalar> exports_;
+    Teuchos::Array<Ordinal> sizes_;
 
   }; // class DistObject
 
@@ -284,10 +284,10 @@ namespace Tpetra {
     Ordinal numPermuteIDs = importer.getNumPermuteIDs();
     Ordinal numRemoteIDs = importer.getNumRemoteIDs();
     Ordinal numExportIDs = importer.getNumExportIDs();
-    const std::vector<Ordinal> & exportLIDs = importer.getExportLIDs();
-    const std::vector<Ordinal> & remoteLIDs = importer.getRemoteLIDs();
-    const std::vector<Ordinal> & permuteToLIDs = importer.getPermuteToLIDs();
-    const std::vector<Ordinal> & permuteFromLIDs = importer.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs = importer.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs = importer.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs = importer.getPermuteToLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteFromLIDs();
 
     // call doTransfer
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
@@ -309,10 +309,10 @@ namespace Tpetra {
     Ordinal numPermuteIDs = exporter.getNumPermuteIDs();
     Ordinal numRemoteIDs = exporter.getNumRemoteIDs();
     Ordinal numExportIDs = exporter.getNumExportIDs();
-    const std::vector<Ordinal> & exportLIDs = exporter.getExportLIDs();
-    const std::vector<Ordinal> & remoteLIDs = exporter.getRemoteLIDs();
-    const std::vector<Ordinal> & permuteToLIDs = exporter.getPermuteToLIDs();
-    const std::vector<Ordinal> & permuteFromLIDs = exporter.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs = exporter.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs = exporter.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs = exporter.getPermuteToLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteFromLIDs();
 
     // call doTransfer
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
@@ -335,10 +335,10 @@ namespace Tpetra {
     Ordinal numPermuteIDs = exporter.getNumPermuteIDs();
     Ordinal numRemoteIDs = exporter.getNumExportIDs();
     Ordinal numExportIDs = exporter.getNumRemoteIDs();
-    const std::vector<Ordinal> & exportLIDs = exporter.getRemoteLIDs();
-    const std::vector<Ordinal> & remoteLIDs = exporter.getExportLIDs();
-    const std::vector<Ordinal> & permuteToLIDs = exporter.getPermuteFromLIDs();
-    const std::vector<Ordinal> & permuteFromLIDs = exporter.getPermuteToLIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs = exporter.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs = exporter.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs = exporter.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteToLIDs();
 
     // call doTransfer
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
@@ -361,10 +361,10 @@ namespace Tpetra {
     Ordinal numPermuteIDs = importer.getNumPermuteIDs();
     Ordinal numRemoteIDs = importer.getNumExportIDs();
     Ordinal numExportIDs = importer.getNumRemoteIDs();
-    const std::vector<Ordinal> & exportLIDs = importer.getRemoteLIDs();
-    const std::vector<Ordinal> & remoteLIDs = importer.getExportLIDs();
-    const std::vector<Ordinal> & permuteToLIDs = importer.getPermuteFromLIDs();
-    const std::vector<Ordinal> & permuteFromLIDs = importer.getPermuteToLIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs = importer.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs = importer.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs = importer.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteToLIDs();
 
     // call doTransfer
     doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
@@ -395,17 +395,21 @@ namespace Tpetra {
       const DistObject<Ordinal, Scalar> & source,
       CombineMode CM,
       Ordinal numSameIDs, Ordinal numPermuteIDs, Ordinal numRemoteIDs, Ordinal numExportIDs,
-      const std::vector<Ordinal> & permuteToLIDs, const std::vector<Ordinal> & permuteFromLIDs,
-      const std::vector<Ordinal> & remoteLIDs,    const std::vector<Ordinal> & exportLIDs,
-      std::vector<Scalar>& exports, std::vector<Scalar>& imports,
+      const Teuchos::ArrayView<const Ordinal> &permuteToLIDs, 
+      const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs,
+      const Teuchos::ArrayView<const Ordinal> &remoteLIDs,    
+      const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+      const Teuchos::ArrayView<Scalar> &exports, 
+      const Teuchos::ArrayView<Scalar> &imports,
       Distributor<Ordinal> &distor, bool doReverse) 
   {
     const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
 
     checkSizes(source);
 
-    if(numSameIDs + numPermuteIDs > zero)
+    if(numSameIDs + numPermuteIDs > zero) {
       copyAndPermute(source, numSameIDs, numPermuteIDs, permuteToLIDs, permuteFromLIDs);
+    }
 
     // we don't have a "Zero" CombineMode like Epetra does, so we don't have to check for that
 
@@ -423,8 +427,7 @@ namespace Tpetra {
           throw reportError("var-sized doReversePostsAndWaits not implemented yet", -99);
         }
         else {
-          TEST_FOR_EXCEPT(true); // not finished
-          // distor.doReversePostsAndWaits(exports, packetSize, imports);
+          distor.doReversePostsAndWaits(exports.getConst(), packetSize, imports);
         }
       }
       else {
@@ -432,8 +435,7 @@ namespace Tpetra {
           throw reportError("var-sized doPostsAndWaits not implemented yet", -99);
         }
         else {
-          TEST_FOR_EXCEPT(true); // not finished
-          // distor.doPostsAndWaits(exports, packetSize, imports);
+          distor.doPostsAndWaits(exports.getConst(), packetSize, imports);
         }
       }
       unpackAndCombine(numRemoteIDs, remoteLIDs, imports, distor, CM);

@@ -89,7 +89,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-# define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+// # define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

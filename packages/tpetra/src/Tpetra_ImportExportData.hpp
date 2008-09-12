@@ -26,34 +26,39 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_IMPORTDATA_HPP
-#define TPETRA_IMPORTDATA_HPP
+#ifndef TPETRA_IMPORTEXPORTDATA_HPP
+#define TPETRA_IMPORTEXPORTDATA_HPP
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_Object.hpp>
+#include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
-#include "Tpetra_Import.hpp"
+#include <Teuchos_Object.hpp>
 
 namespace Tpetra {
 
-  template<typename Ordinal>
-  class ImportData : public Teuchos::Object {
-    friend class Import<Ordinal>;
-  public:
-    // default constructor
-    ImportData(const Map<Ordinal> & source, const Map<Ordinal> & target);
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of Import,Export, needed to prevent circular inclusions
+  template<typename Ordinal> class Import;
+  template<typename Ordinal> class Export;
+#endif
 
-    // destructor. no heap-data, so no need to override
-    ~ImportData();
+  template<typename Ordinal>
+  class ImportExportData : public Teuchos::Object {
+    friend class Import<Ordinal>;
+    friend class Export<Ordinal>;
+  public:
+    ImportExportData(const Map<Ordinal> & source, const Map<Ordinal> & target);
+    ~ImportExportData();
 
   protected:
     // OT vectors
-    std::vector<Ordinal> permuteToLIDs_;
-    std::vector<Ordinal> permuteFromLIDs_;
-    std::vector<Ordinal> remoteLIDs_;
-    std::vector<Ordinal> remoteGIDs_;
+    Teuchos::Array<Ordinal> permuteToLIDs_;
+    Teuchos::Array<Ordinal> permuteFromLIDs_;
+    Teuchos::Array<Ordinal> remoteLIDs_;
+    Teuchos::Array<Ordinal> remoteGIDs_;
     Teuchos::ArrayRCP<Ordinal> exportLIDs_;
+    Teuchos::ArrayRCP<Ordinal> exportGIDs_;
     Teuchos::ArrayRCP<Ordinal> exportImageIDs_;
 
     // OTs
@@ -72,15 +77,15 @@ namespace Tpetra {
 
   private:
     //! Copy constructor (declared but not defined, do not use)
-    ImportData(ImportData<Ordinal> const& rhs);
+    ImportExportData(ImportExportData<Ordinal> const& rhs);
     //! Assignment operator (declared but not defined, do not use)
-    ImportData<Ordinal>& operator = (ImportData<Ordinal> const& rhs);
+    ImportExportData<Ordinal>& operator = (ImportExportData<Ordinal> const& rhs);
+  }; // class ImportExportData
 
-  }; // class ImportData
 
   template <typename Ordinal>
-  ImportData<Ordinal>::ImportData(const Map<Ordinal> & source, const Map<Ordinal> & target)
-  : Teuchos::Object("Tpetra::ImportData")
+  ImportExportData<Ordinal>::ImportExportData(const Map<Ordinal> & source, const Map<Ordinal> & target)
+  : Teuchos::Object("Tpetra::ImportExportData")
   , numSameIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
   , numPermuteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
   , numRemoteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
@@ -92,9 +97,9 @@ namespace Tpetra {
   {}
 
   template <typename Ordinal>
-  ImportData<Ordinal>::~ImportData() 
+  ImportExportData<Ordinal>::~ImportExportData() 
   {}
 
 } // namespace Tpetra
 
-#endif // TPETRA_IMPORTDATA_HPP
+#endif // TPETRA_IMPORTEXPORTDATA_HPP

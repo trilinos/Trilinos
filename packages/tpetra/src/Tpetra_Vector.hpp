@@ -375,7 +375,8 @@ namespace Tpetra {
   void Vector<Ordinal,Scalar>::copyAndPermute(
       const DistObject<Ordinal,Scalar> &sourceObj,
       Ordinal numSameIDs, Ordinal numPermuteIDs,
-      const std::vector<Ordinal> &permuteToLIDs, const std::vector<Ordinal> &permuteFromLIDs) 
+      const Teuchos::ArrayView<const Ordinal> &permuteToLIDs, 
+      const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs) 
   {
     // cast sourceObj to a Tpetra::Vector so we can actually do something with it
     // const Vector<Ordinal,Scalar> &sourceVector = dynamic_cast<const Vector<Ordinal,Scalar> &>(sourceObj);
@@ -401,7 +402,8 @@ namespace Tpetra {
   void Vector<Ordinal,Scalar>::packAndPrepare(
       const DistObject<Ordinal,Scalar> &sourceObj,
       Ordinal numExportIDs,
-      const std::vector<Ordinal> &exportLIDs, std::vector<Scalar> &exports,
+      const Teuchos::ArrayView<const Ordinal> &exportLIDs, 
+      const Teuchos::ArrayView<Scalar> &exports,
       Ordinal &packetSize,
       Distributor<Ordinal> &distor) 
   {
@@ -423,8 +425,8 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void Vector<Ordinal,Scalar>::unpackAndCombine(
       Ordinal numImportIDs,
-      const std::vector<Ordinal> &importLIDs,
-      const std::vector<Scalar> &imports,
+      const Teuchos::ArrayView<const Ordinal> &importLIDs,
+      const Teuchos::ArrayView<const Scalar> &imports,
       Distributor<Ordinal> &distor,
       CombineMode CM) 
   {

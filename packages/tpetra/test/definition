@@ -10,7 +10,7 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Distributor, Map, Directory; #, ImportExport;
+    DIRS = Distributor, Map, Directory, ImportExport;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
