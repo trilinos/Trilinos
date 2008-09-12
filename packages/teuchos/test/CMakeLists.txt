@@ -18,7 +18,6 @@ TRILINOS_ADD_TEST(
   NAME BLAS_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -35,7 +34,6 @@ TRILINOS_ADD_TEST(
   DIRECTORY Comm
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -58,7 +56,6 @@ TRILINOS_ADD_TEST(
   NAME Comm_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -73,7 +70,6 @@ TRILINOS_ADD_TEST(
   DIRECTORY Containers
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -92,7 +88,6 @@ TRILINOS_ADD_TEST(
   DIRECTORY UnitTest
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -165,7 +160,6 @@ TRILINOS_ADD_TEST(
   DIRECTORY UnitTest
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -181,7 +175,6 @@ TRILINOS_ADD_TEST(
   NAME DenseMatrix_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -197,10 +190,8 @@ TRILINOS_ADD_TEST(
   NAME FancyOutputting_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
-
 
 TRILINOS_ADD_EXECUTABLE(
   Handle_test  
@@ -228,7 +219,6 @@ TRILINOS_ADD_TEST(
   NAME LAPACK_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -244,7 +234,6 @@ TRILINOS_ADD_TEST(
   NAME ArrayRPC_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -260,7 +249,6 @@ TRILINOS_ADD_TEST(
   NAME ArrayView-test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -276,7 +264,6 @@ TRILINOS_ADD_TEST(
   NAME Array_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -292,7 +279,6 @@ TRILINOS_ADD_TEST(
   NAME Ptr_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -308,7 +294,6 @@ TRILINOS_ADD_TEST(
   NAME RCP_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -324,7 +309,6 @@ TRILINOS_ADD_TEST(
   NAME Tuple_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
   
@@ -340,7 +324,6 @@ TRILINOS_ADD_TEST(
   NAME ScalarTraits_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -356,7 +339,6 @@ TRILINOS_ADD_TEST(
   NAME Time_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -401,7 +383,6 @@ TRILINOS_ADD_TEST(
   NAME XMLParser_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -430,7 +411,6 @@ TRILINOS_ADD_TEST(
   DIRECTORY exit
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
@@ -446,7 +426,6 @@ TRILINOS_ADD_TEST(
   NAME Polling_test
   NUM_MPI_PROCS 2
   COMM mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
 )
 
@@ -461,6 +440,5 @@ TRILINOS_ADD_TEST(
   DIRECTORY ParameterList
   NAME ParameterList_test
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
 )
