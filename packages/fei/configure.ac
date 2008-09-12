@@ -16,7 +16,7 @@
 # ************************************************************************
 # @HEADER
 
-AC_INIT(FEI, 2.22.07, william@sandia.gov)
+AC_INIT(FEI, 2.23.00, william@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running FEI Configure Script"

@@ -464,3 +464,8 @@ July 7 2005: version 2.14.00
     prescribed values along with the ids and field-ids which specify where
     the prescribed value is to be imposed. This allows the underlying
     implementation code to be greatly simplified also.
+
+ Sep 11 2008 version 2.23.00
+  - Fixed a bug in fei_Aztec_LinSysCore.cpp where dirichlet boundary-condition
+    enforcement was assuming that the structure of the matrix is symmetric.
+

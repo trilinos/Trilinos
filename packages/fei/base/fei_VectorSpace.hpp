@@ -459,11 +459,7 @@ namespace fei {
 	@param numFields Output. Number of fields. If numFields > lenFieldIDs,
 	then fieldIDs will contain the first 'lenFieldIDs' field identifiers.
     */
-    int getFieldList(int idType,
-		     int ID,
-		     int lenFieldIDs,
-		     int* fieldIDs,
-		     int& numFields);
+    int getFields(int idType, int ID, std::vector<int>& fieldIDs);
 
     /** Query for the number of identifier-types defined for this vector-space.
      */
@@ -471,16 +467,10 @@ namespace fei {
 
     /** Query for the list of identifier-types defined for this vector-space.
 
-	@param len Input, length of the user-allocated list 'idTypes'.
-	@param idTypes Input/Output, user-allocated list, on exit contents will
+	@param idTypes Output, on exit contents will
 	contain id-types that are defined for this vector-space.
-	@param numIDTypes Output, number of id-types that are defined for this
-	vector-space. If numIDTypes is less than user-provided 'len', then only
-	'numIDTypes' positions in 'idTypes' are referenced. If numIDTypes is
-	greater than user-provided len, then 'idTypes' is filled with the first
-	'len' id-types that are defined for this vector-space.
      */
-    int getIDTypes(int len, int* idTypes, int& numIDTypes);
+    void getIDTypes(std::vector<int>& idTypes);
 
     /** Request the number of partitions. (For MPI implementations, partitions
 	is a synonym for processes.) The main purpose of this function is to
@@ -580,16 +570,10 @@ namespace fei {
         are locally owned as well as shared-but-not-owned. Only available
         after initComplete has been called.
 
-	@param lenIndices Input. Length of user-allocated 'globalIndices' list.
-	@param globalIndices User-allocated list. On output, will contain all
+	@param globalIndices On output, will contain all
 	indices owned or shared by local processor.
-	@param numIndices Output. Number of indices. If 'numIndices' is
-            different than 'lenIndices', then globalIndices will contain
-	'min(lenIndices, numIndices)' of the local processor's indices.
     */
-    int getIndices_SharedAndOwned(int lenIndices,
-				  int* globalIndices,
-				  int& numIndices) const;
+    int getIndices_SharedAndOwned(std::vector<int>& globalIndices) const;
 
     /** Query number of block indices on local processor, including ones that
         are locally owned as well as shared-but-not-owned. Only available after

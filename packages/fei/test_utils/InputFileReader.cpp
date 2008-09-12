@@ -764,8 +764,7 @@ void InputFileReader::save_soln(int idType, const char* fileName)
     outfile << ids[i] << " " << numDOF << FEI_ENDL;
 
     numFields = vspace->getNumFields(idType, ids[i]);
-    fields.resize(numFields);
-    vspace->getFieldList(idType, ids[i], numFields, &fields[0], numFields);
+    vspace->getFields(idType, ids[i], fields);
 
     for(int j=0; j<numFields; ++j) {
       int fieldSize = vspace->getFieldSize(fields[j]);

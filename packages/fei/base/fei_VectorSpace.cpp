@@ -1016,16 +1016,11 @@ int fei::VectorSpace::getNumIDTypes()
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getIDTypes(int len, int* idTypes, int& numIDTypes)
+void fei::VectorSpace::getIDTypes(std::vector<int>& idTypes)
 {
-  numIDTypes = idTypes_.length();
-  int num = len;
-  if (num > numIDTypes) num = numIDTypes;
-
-  int* idtPtr = idTypes_.dataPtr();
-  for(int i=0; i<num; ++i) idTypes[i] = idtPtr[i];
-
-  return(0);
+  size_t numIDTypes = idTypes_.size();
+  idTypes.resize(numIDTypes);
+  for(size_t i=0; i<numIDTypes; ++i) idTypes[i] = idTypes_[i];
 }
 
 //----------------------------------------------------------------------------
@@ -1100,25 +1095,23 @@ unsigned fei::VectorSpace::getFieldSize(int fieldID)
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getFieldList(int idType,
-				       int ID,
-				       int lenFieldIDs,
-				       int* fieldIDs,
-				       int& numFields)
+int fei::VectorSpace::getFields(int idType, int ID, std::vector<int>& fieldIDs)
 {
   int idindex = snl_fei::binarySearch(idType, idTypes_);
-  if (idindex < 0) return(-1);
+  if (idindex < 0) {
+    fieldIDs.resize(0);
+    return(0);
+  }
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
 
   fei::FieldMask* fieldMask = record->getFieldMask();
   std::vector<int>& maskFieldIDs = fieldMask->getFieldIDs();
-  numFields = maskFieldIDs.size();
-  int len = numFields > lenFieldIDs ? lenFieldIDs : numFields;
-  for(int i=0; i<len; ++i) {
+  int numFields = maskFieldIDs.size();
+  fieldIDs.resize(numFields);
+  for(int i=0; i<numFields; ++i) {
     fieldIDs[i] = maskFieldIDs[i];
   }
-
   return(0);
 }
 
@@ -1288,20 +1281,18 @@ int fei::VectorSpace::getNumIndices_SharedAndOwned() const
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getIndices_SharedAndOwned(int lenIndices,
-						int* globalIndices,
-						int& numIndices) const
+int fei::VectorSpace::getIndices_SharedAndOwned(std::vector<int>& globalIndices) const
 {
   if (eqnNumbers_.size() == 0) {
-    numIndices = 0;
+    globalIndices.resize(0);
     return(0);
   }
 
-  numIndices = eqnNumbers_.size();
+  size_t numIndices = eqnNumbers_.size();
   const int* indicesPtr = &eqnNumbers_[0];
 
-  int len = numIndices > lenIndices ? lenIndices : numIndices;
-  for(int i=0; i<len; ++i) {
+  globalIndices.resize(numIndices);
+  for(size_t i=0; i<numIndices; ++i) {
     globalIndices[i] = indicesPtr[i];
   }
 
