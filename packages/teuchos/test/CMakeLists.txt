@@ -5,9 +5,7 @@ INCLUDE(Trilinos_Add_Executable)
 INCLUDE(Trilinos_Add_Test)
 
 # Test definitions
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(exit ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(BLAS ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   BLAS_test  
   COMM serial mpi  
@@ -21,15 +19,38 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Comm ${TEST_ARGUMENTS} NAME Comm_test SOURCES Comm_test.cpp)
+TRILINOS_ADD_EXECUTABLE(
+  DefaultMpiComm_UnitTests  
+  DIRECTORY Comm
+  COMM serial mpi  
+  SOURCES
+    DefaultMpiComm_UnitTests.cpp
+    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+  )
+TRILINOS_ADD_TEST(
+  DefaultMpiComm_UnitTests
+  DIRECTORY Comm
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  )
+
+TRILINOS_ADD_EXECUTABLE(
+  ReduceAllAndScatter_test  
+  DIRECTORY Comm
+  COMM serial mpi  
+  SOURCES ReduceAllAndScatter_test.cpp
+  )
+
 TRILINOS_ADD_EXECUTABLE(
   TEUCHOS_Comm_test  
+  DIRECTORY Comm
   COMM serial mpi  
   SOURCES Comm_test.cpp
-  DIRECTORY Comm
   )
 TRILINOS_ADD_TEST(
   TEUCHOS_Comm_test
@@ -38,28 +59,116 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Comm ${TEST_ARGUMENTS} NAME SOURCES ../../test/UnitTest/Teuchos_StandardUnitTestMain.cpp DefaultMpiComm_UnitTests.cpp)
 TRILINOS_ADD_EXECUTABLE(
-  UnitTest_test
+  Containers_test  
+  DIRECTORY Containers
   COMM serial mpi  
-  SOURCES Teuchos_StandardUnitTestMain.cpp ../../test/Comm/DefaultMpiComm_UnitTests.cpp
-  DIRECTORY UnitTest
+  SOURCES cxx_main.cpp
   )
 TRILINOS_ADD_TEST(
-  UnitTest_test
-  DIRECTORY UnitTest
-  NAME UnitTest_test
+  Containers_test  
+  DIRECTORY Containers
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(DenseMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
+TRILINOS_ADD_EXECUTABLE(
+  UnitTest_UnitTests
+  DIRECTORY UnitTest
+  COMM serial mpi  
+  SOURCES
+    Int_UnitTests.cpp
+    TemplateFunc_UnitTests.cpp
+    vector_UnitTests.cpp
+    Teuchos_StandardUnitTestMain.cpp
+  )
+TRILINOS_ADD_TEST(
+  UnitTest_UnitTests
+  DIRECTORY UnitTest
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  )
+
+TRILINOS_ADD_EXECUTABLE(
+  UnitTest_BadUnitTest
+  DIRECTORY UnitTest
+  COMM serial mpi  
+  SOURCES
+    Int_UnitTests.cpp
+    TemplateFunc_UnitTests.cpp
+    Failing_UnitTest.cpp
+    Teuchos_StandardUnitTestMain.cpp
+  )
+TRILINOS_ADD_TEST(
+  UnitTest_BadUnitTest
+  NAME UnitTest_BadUnitTest_final_results
+  DIRECTORY UnitTest
+  ARGS --show-test-details=FINAL_RESULTS
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Int_BadAssignment_UnitTest"
+  )
+TRILINOS_ADD_TEST(
+  UnitTest_BadUnitTest
+  NAME UnitTest_BadUnitTest_end_result_failed
+  DIRECTORY UnitTest
+  ARGS --teuchos-suppress-startup-banner
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "End Result: TEST FAILED"
+  )
+TRILINOS_ADD_TEST(
+  UnitTest_BadUnitTest
+  NAME UnitTest_BadUnitTest_end_result_totals
+  DIRECTORY UnitTest
+  ARGS --teuchos-suppress-startup-banner
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Summary: total = 8, run = 8, passed = 6, failed = 2"
+  )
+TRILINOS_ADD_TEST(
+  UnitTest_BadUnitTest
+  NAME UnitTest_BadUnitTest_Int_BadAssignment_final
+  DIRECTORY UnitTest
+  ARGS --show-test-details=FINAL_RESULTS --group-name=Int --test-name=BadAssignment
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "[FAILED]"
+  )
+TRILINOS_ADD_TEST(
+  UnitTest_BadUnitTest
+  NAME UnitTest_BadUnitTest_Int_BadAssignment_name
+  DIRECTORY UnitTest
+  ARGS --show-test-details=TEST_NAMES --group-name=Int --test-name=BadAssignment
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "[FAILED]"
+  )
+
+TRILINOS_ADD_EXECUTABLE(
+  teuchosUnitTests
+  DIRECTORY UnitTest
+  COMM serial mpi  
+  SOURCES
+    ../MemoryManagement/Array_UnitTests.cpp
+    Teuchos_StandardUnitTestMain.cpp
+  )
+TRILINOS_ADD_TEST(
+  teuchosUnitTests
+  DIRECTORY UnitTest
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  )
+
 TRILINOS_ADD_EXECUTABLE(
   DenseMatrix_test  
   COMM serial mpi  
@@ -73,10 +182,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(FancyOutputting NAME FancyOutputting_test ${TEST_ARGUMENTS} SOURCES FancyOutputting_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
   FancyOutputting_test  
   COMM serial mpi  
@@ -90,28 +198,24 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Handle ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   Handle_test  
   COMM serial mpi  
   SOURCES cxx_main.cpp
   DIRECTORY Handle
   )
-TRILINOS_ADD_TEST(
-  Handle_test
-  DIRECTORY Handle
-  NAME Handle_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
-  )
+#TRILINOS_ADD_TEST(
+#  Handle_test
+#  DIRECTORY Handle
+#  NAME Handle_test
+#  NUM_MPI_PROCS 1
+#  COMM serial mpi
+#  )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(LAPACK ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   LAPACK_test  
   COMM serial mpi  
@@ -125,10 +229,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MemoryManagement NAME ArrayRCP_test ${TEST_ARGUMENTS} SOURCES ArrayRCP_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
   ArrayRPC_test  
   COMM serial mpi  
@@ -142,10 +245,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MemoryManagement NAME ArrayView_test ${TEST_ARGUMENTS} SOURCES ArrayView_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
   ArrayView_test  
   COMM serial mpi  
@@ -159,10 +261,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MemoryManagement NAME Array_test ${TEST_ARGUMENTS} SOURCES Array_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
   Array_test  
   COMM serial mpi  
@@ -176,10 +277,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MemoryManagement NAME Ptr_test ${TEST_ARGUMENTS} SOURCES Ptr_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
   Ptr_test  
   COMM serial mpi  
@@ -193,10 +293,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MemoryManagement NAME RCP_test ${TEST_ARGUMENTS} SOURCES RCP_test.cpp TestClasses.cpp)
 TRILINOS_ADD_EXECUTABLE(
   RCP_test  
   COMM serial mpi  
@@ -210,10 +309,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MemoryManagement NAME Tuple_test ${TEST_ARGUMENTS} SOURCES Tuple_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
   Tuple_test  
   COMM serial mpi  
@@ -227,12 +325,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
   
-
-
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(ScalarTraits ${TEST_ARGUMENTS} SOURCES ScalarTraits_test.cpp)
 TRILINOS_ADD_EXECUTABLE(
   ScalarTraits_test  
   COMM serial mpi  
@@ -246,10 +341,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Time ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   Time_test  
   COMM serial mpi  
@@ -263,10 +357,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Workspace ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   Workspace_test  
   COMM serial mpi  
@@ -279,11 +372,8 @@ TRILINOS_ADD_TEST(
   NAME Workspace_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(XML ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   XML_test  
   COMM serial mpi  
@@ -296,11 +386,9 @@ TRILINOS_ADD_TEST(
   NAME XML_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  #PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(XMLParser ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   XMLParser_test  
   COMM serial mpi  
@@ -314,10 +402,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(dyn_cast ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   dyn_cast_test  
   COMM serial mpi  
@@ -330,11 +417,23 @@ TRILINOS_ADD_TEST(
   NAME dyn_cast_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Polling MPITEST SOURCES cxx_main.cpp)
+TRILINOS_ADD_EXECUTABLE(
+  Teuchos_exit_test  
+  DIRECTORY exit
+  COMM serial mpi  
+  SOURCES cxx_main.cpp some_c_func.c 
+  )
+TRILINOS_ADD_TEST(
+  Teuchos_exit_test  
+  DIRECTORY exit
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  )
+
 TRILINOS_ADD_EXECUTABLE(
   Polling_test  
   COMM mpi  
@@ -348,10 +447,9 @@ TRILINOS_ADD_TEST(
   NUM_MPI_PROCS 2
   COMM mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
 )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(ParameterList ${TEST_ARGUMENTS} SOURCES cxx_main.cpp)
 TRILINOS_ADD_EXECUTABLE(
   ParameterList_test 
   COMM serial mpi  
@@ -364,5 +462,5 @@ TRILINOS_ADD_TEST(
   NAME ParameterList_test
   COMM serial mpi
   #HOST somehost s868953.srn.sandia.gov gabriel.sandia.gov
-  FAIL_REGULAR_EXPRESSION "tests FAILED"
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
 )
