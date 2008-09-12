@@ -2,9 +2,11 @@
 #define INTREPID_CUBATURE_SPARSE_HELPER_HPP
 
 #include "Intrepid_ConfigDefs.hpp"
+#include "Intrepid_Types.hpp"
 #include "Intrepid_Cubature.hpp"
 #include "Intrepid_MultiCell.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_Array.hpp"
 
 namespace Intrepid{
 
@@ -32,8 +34,10 @@ public:
 template<class Scalar, int D>
 class SGNodes{
 public:
-	std::vector< SGPoint<Scalar, D> > nodes;
-	std::vector< Scalar > weights;
+	//std::vector< SGPoint<Scalar, D> > nodes;
+        //std::vector< Scalar > weights;
+	Teuchos::Array< SGPoint<Scalar, D> > nodes;
+	Teuchos::Array< Scalar > weights;
 	bool addNode(Scalar new_node[D], Scalar weight);
 	void copyToTeuchos(Teuchos::Array< Point<Scalar> > & cubPoints, Teuchos::Array<Scalar> & cubWeights) const;
 	void copyToTeuchos(Teuchos::Array< Scalar* > & cubPoints, Teuchos::Array<Scalar> & cubWeights) const;
@@ -185,7 +189,7 @@ void SGNodes<Scalar, D>::copyToTeuchos(Teuchos::Array< Point<Scalar> > & cubPoin
 {
 	int numPoints = size();
 
-	Point<Scalar> tempPoint(D);
+	Point<Scalar> tempPoint(D, FRAME_REFERENCE);
 	cubPoints.assign(numPoints,tempPoint);
 	cubWeights.assign(numPoints, 0.0);
 

@@ -123,7 +123,7 @@ SGNodes<int, dimension_> list;
 				int big_sum[dimension_];
 				for(int i = 0; i < dimension_; i++)
 					big_sum[i] = bigger_rules.nodes[y].coords[i];
-				double coeff = pow(-1, Sum(big_sum, 0, dimension_-1));
+				double coeff = std::pow(-1.0, Sum(big_sum, 0, dimension_-1));
 				
 				double point[dimension_];
 				int point_record[dimension_];
@@ -145,7 +145,7 @@ SGNodes<int, dimension_> list;
 						/*******************
 						**	Fast-Gauss
 						********************/
-						//int order1D = (int)pow(2,next_rule.coords[w]) - 1;
+						//int order1D = (int)std::pow(2.0,next_rule.coords[w]) - 1;
 						Teuchos::Array< Point<Scalar> > cubPoints1D;
 						Teuchos::Array<Scalar> cubWeights1D;
 						Point<Scalar> tempPoint1D(1);

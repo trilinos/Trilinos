@@ -380,8 +380,9 @@ basis_(basis), cubature_(cubature) {
   basisCoordSystem_ = basis_->getCoordinateSystem();
   basisType_        = basis_->getBasisType();
   basisDegree_      = basis_->getDegree();
-  basisDofTags_     = basis_->getAllLocalDofTags();
-  basisNumDofs_     = basisDofTags_.size();
+    //basisDofTags_     = basis_->getAllLocalDofTags();  // deprecated
+    //basisNumDofs_     = basisDofTags_.size();          // deprecated
+  basisNumDofs_     = basis->getNumLocalDof();
   basisVals_.resize(OPERATOR_MAX);
   
   compEngine_       = compEngine;
