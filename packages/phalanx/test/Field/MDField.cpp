@@ -44,54 +44,54 @@
 
 
 // Dimension tags for this problem
-struct Dim : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Dim : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Dim& descriptor();
+  static const Dim& tag();
 };
 
-struct Quadrature : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Quadrature : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Quadrature& descriptor();
+  static const Quadrature& tag();
 };
 
-struct Node : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Node : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Node& descriptor();
+  static const Node& tag();
 };
 
-struct Cell : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Cell : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Cell& descriptor();
+  static const Cell& tag();
 };
 
-struct Point : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Point : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Point& descriptor();
+  static const Point& tag();
 };
 
 const char * Dim::name() const 
 { static const char n[] = "Dim" ; return n ; }
-const Dim & Dim::descriptor() 
+const Dim & Dim::tag() 
 { static const Dim myself ; return myself ; }
 
 const char * Quadrature::name() const 
 { static const char n[] = "Quadrature" ; return n ; }
-const Quadrature & Quadrature::descriptor() 
+const Quadrature & Quadrature::tag() 
 { static const Quadrature myself ; return myself ; }
 
 const char * Node::name() const 
 { static const char n[] = "Node" ; return n ; }
-const Node & Node::descriptor() 
+const Node & Node::tag() 
 { static const Node myself ; return myself ; }
 
 const char * Cell::name() const 
 { static const char n[] = "Cell" ; return n ; }
-const Cell & Cell::descriptor() 
+const Cell & Cell::tag() 
 { static const Cell myself ; return myself ; }
 
 const char * Point::name() const 
 { static const char n[] = "Point" ; return n ; }
-const Point & Point::descriptor() 
+const Point & Point::tag() 
 { static const Point myself ; return myself ; }
 
 
@@ -102,6 +102,7 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
+  using namespace phdmesh;
   
   try {
     
@@ -112,6 +113,8 @@ int main(int argc, char *argv[])
     // Start of Field Tag Testing
     // *********************************************************************
     {
+
+      typedef MDField<double,NaturalOrder,Cell,Node>::size_type size_type;
 
       // Dummy data layouts
       RCP<DataLayout> node_scalar = rcp(new MDALayout<Node>(4));
@@ -128,18 +131,20 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // Ctors
       cout << "Testing ctor with FieldTag...";
-      MDField<double,Cell,Node> a(nodal_density);
-      MDField<double,Cell,Quadrature,Dim> b(grad_qp_density);
+      MDField<double,NaturalOrder,Cell,Node> a(nodal_density);
+      MDField<double,NaturalOrder,Cell,Quadrature,Dim> b(grad_qp_density);
       cout << "passed!" << endl;
       
       cout << "Testing ctor with individual data...";
-      MDField<MyTraits::FadType,Cell,Node> c("density", node_scalar);
-      MDField<MyTraits::FadType,Cell,Quadrature,Dim> d("density", quad_vector);
+      MDField<MyTraits::FadType,NaturalOrder,Cell,Node> 
+	c("density", node_scalar);
+      MDField<MyTraits::FadType,NaturalOrder,Cell,Quadrature,Dim> 
+	d("density", quad_vector);
       cout << "passed!" << endl;
       
       cout << "Testing empty ctor...";
-      MDField<double,Cell,Point> e;
-      MDField<MyTraits::FadType,Cell,Point,Dim> f;
+      MDField<double,NaturalOrder,Cell,Point> e;
+      MDField<MyTraits::FadType,NaturalOrder,Cell,Point,Dim> f;
       cout << "passed!" << endl;
       
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,7 +215,7 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // dimensions()
       cout << "Testing dimensions() method...";
-      std::vector<std::size_t> dims;
+      std::vector<size_type> dims;
       b.dimensions(dims);
       TEST_FOR_EXCEPTION(dims.size() != 3, std::logic_error,
 			 "Number of dimesions is wrong!");
@@ -267,13 +272,13 @@ int main(int argc, char *argv[])
       RCP<DataLayout> d7 = 
 	rcp(new MDALayout<Dim,Dim,Dim,Dim,Dim,Dim,Dim>(1,2,3,4,5,6,7));
 
-      MDField<double,Cell,Dim> f1("Test1",d1);
-      MDField<double,Cell,Dim,Dim> f2("Test7",d2);
-      MDField<double,Cell,Dim,Dim,Dim> f3("Test7",d3);
-      MDField<double,Cell,Dim,Dim,Dim,Dim> f4("Test7",d4);
-      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim> f5("Test7",d5);
-      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f6("Test7",d6);
-      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
+      MDField<double,NaturalOrder,Cell,Dim> f1("Test1",d1);
+      MDField<double,NaturalOrder,Cell,Dim,Dim> f2("Test7",d2);
+      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim> f3("Test7",d3);
+      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim> f4("Test7",d4);
+      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim,Dim> f5("Test7",d5);
+      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f6("Test7",d6);
+      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
 
       ArrayRCP<double> mem1 = arcp<double>(num_cells * d1->size());
       ArrayRCP<double> mem2 = arcp<double>(num_cells * d2->size());

@@ -41,47 +41,48 @@
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_FlatLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_Array.hpp"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct Spatial : public PHX::DimTag {
+struct Spatial : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Spatial & descriptor();
+  static const Spatial & tag();
 };
 
-struct Quadrature : public PHX::DimTag {
+struct Quadrature : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Quadrature & descriptor();
+  static const Quadrature & tag();
 };
 
-struct Node : public PHX::DimTag {
+struct Node : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Node & descriptor();
+  static const Node & tag();
 };
 
-struct Cell : public PHX::DimTag {
+struct Cell : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Cell & descriptor();
+  static const Cell & tag();
 };
 
 const char * Spatial::name() const 
 { static const char n[] = "Spatial" ; return n ; }
-const Spatial & Spatial::descriptor() 
+const Spatial & Spatial::tag() 
 { static const Spatial myself ; return myself ; }
 
 const char * Quadrature::name() const 
 { static const char n[] = "Quadrature" ; return n ; }
-const Quadrature & Quadrature::descriptor() 
+const Quadrature & Quadrature::tag() 
 { static const Quadrature myself ; return myself ; }
 
 const char * Node::name() const 
 { static const char n[] = "Node" ; return n ; }
-const Node & Node::descriptor() 
+const Node & Node::tag() 
 { static const Node myself ; return myself ; }
 
 const char * Cell::name() const 
 { static const char n[] = "Cell" ; return n ; }
-const Cell & Cell::descriptor() 
+const Cell & Cell::tag() 
 { static const Cell myself ; return myself ; }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -154,7 +155,7 @@ int main(int argc, char *argv[])
       // dimensions()
       {
 	cout << "Testing dimensions() accessor...";
-	std::vector<std::size_t> dims;
+	std::vector<PHX::DataLayout::size_type> dims;
 	node4->dimensions(dims);
 	TEST_FOR_EXCEPTION(dims[0] != 4, 
 			   std::logic_error,
@@ -252,7 +253,7 @@ int main(int argc, char *argv[])
       // dimensions()
       {
 	cout << "Testing dimensions() accessor...";
-	std::vector<std::size_t> dims;
+	std::vector<PHX::DataLayout::size_type> dims;
 	n_mat.dimensions(dims);
 	TEST_FOR_EXCEPTION(dims[0] != 100, 
 			   std::logic_error,

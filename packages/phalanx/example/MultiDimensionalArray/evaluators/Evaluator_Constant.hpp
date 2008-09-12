@@ -58,7 +58,7 @@ private:
 
   ScalarT value;
 
-  PHX::MDField<ScalarT,Cell,Point> constant;
+  PHX::MDField<ScalarT,phdmesh::NaturalOrder,Cell,Point> constant;
 
 };
 

@@ -33,31 +33,30 @@
 #define PHX_DIMENSION_HPP
 
 #include "Phalanx_Array.hpp"
-#include "Phalanx_DimTag.hpp"
 
-struct Dim : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Dim : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Dim& descriptor();
+  static const Dim& tag();
 };
 
-struct QuadPoint : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct QuadPoint : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const QuadPoint& descriptor();
+  static const QuadPoint& tag();
 };
 
-struct Node : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Node : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Node& descriptor();
+  static const Node& tag();
 };
 
-struct Point : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Point : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Point& descriptor();
+  static const Point& tag();
 };
 
-struct Cell : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Cell : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Cell& descriptor();
+  static const Cell& tag();
 };
 
 #endif

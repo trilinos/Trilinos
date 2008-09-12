@@ -38,7 +38,6 @@
 // Inefficient vector/tensor objects
 #include "Special_AlgebraicTypes.hpp"
 
-#include "Phalanx_DimTag.hpp"
 #include "Phalanx_Array.hpp"
 
 // TVMET - efficient expression template vector/tensor objects
@@ -47,24 +46,24 @@
 #include "tvmet/Matrix.h"
 #endif
 
-struct Point : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Point : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Point& descriptor();
+  static const Point& tag();
 };
 
-struct Dim : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Dim : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Dim& descriptor();
+  static const Dim& tag();
 };
 
 const char * Point::name() const 
 { static const char n[] = "Point" ; return n ; }
-const Point & Point::descriptor() 
+const Point & Point::tag() 
 { static const Point myself ; return myself ; }
 
 const char * Dim::name() const 
 { static const char n[] = "Dim" ; return n ; }
-const Dim & Dim::descriptor() 
+const Dim & Dim::tag() 
 { static const Dim myself ; return myself ; }
 
 int main(int argc, char* argv[])
@@ -72,6 +71,7 @@ int main(int argc, char* argv[])
 
   using namespace std;
   using namespace Teuchos;
+  using namespace phdmesh;
 
   const int num_samples = 3;
   const int num_loops = 5000;
@@ -107,9 +107,11 @@ int main(int argc, char* argv[])
 
   // 3. MultiDimensional Array Support
   double* mda_array = new double[num_vectors * size * 3];
-  phdmesh::ArrayNatural<double,Point,Dim> mda_a(mda_array,size,3);
-  phdmesh::ArrayNatural<double,Point,Dim> mda_b(&mda_array[size*3],size,3);
-  phdmesh::ArrayNatural<double,Point,Dim> mda_c(&mda_array[2*size*3],size,3);
+  phdmesh::Array<double,NaturalOrder,Point,Dim> mda_a(mda_array,size,3);
+  phdmesh::Array<double,NaturalOrder,Point,Dim> 
+    mda_b(&mda_array[size*3],size,3);
+  phdmesh::Array<double,NaturalOrder,Point,Dim> 
+    mda_c(&mda_array[2*size*3],size,3);
 
   // 4. Raw vector support
   double* raw_array = new double[num_vectors * size * 3];
@@ -194,6 +196,7 @@ int main(int argc, char* argv[])
     
   } // end loop over samples
 
+  cout << num_samples << " X " << num_loops << " X " << size << endl;
   TimeMonitor::summarize();
   
   double f_vector = vector_time->totalElapsedTime() / raw_time->totalElapsedTime();

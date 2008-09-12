@@ -45,7 +45,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx.hpp \
 	$(srcdir)/Phalanx_Allocator_Contiguous.hpp \
 	$(srcdir)/Phalanx_Allocator_New.hpp \
-	$(srcdir)/Phalanx_ArrayHelper.hpp \
+	$(srcdir)/Phalanx_ArrayPrivate.hpp \
 	$(srcdir)/Phalanx_Array.hpp \
 	$(srcdir)/Phalanx_ConfigDefs.hpp \
 	$(srcdir)/Phalanx_DataContainer_Base_Def.hpp \
@@ -57,7 +57,6 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataLayout_MDALayout_Def.hpp \
 	$(srcdir)/Phalanx_DataLayout_MDALayout.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
-	$(srcdir)/Phalanx_DimTag.hpp \
 	$(srcdir)/Phalanx_DoxygenDocumentation.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base_Def.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base.hpp \
@@ -90,6 +89,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_MDField_Def.hpp \
 	$(srcdir)/Phalanx_MDField.hpp \
 	$(srcdir)/Phalanx_Print_Utilities.hpp \
+	$(srcdir)/Phalanx_SimpleArrayOps.hpp \
 	$(srcdir)/Phalanx_TemplateIterator.hpp \
 	$(srcdir)/Phalanx_TemplateManager_Def.hpp \
 	$(srcdir)/Phalanx_TemplateManager.hpp \
@@ -98,10 +98,9 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_Version.hpp
 
 PHALANX_CPP = \
-	$(srcdir)/Phalanx_Array.cpp \
+	$(srcdir)/Phalanx_ArrayPrivate.cpp \
 	$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp \
-	$(srcdir)/Phalanx_DataLayout.cpp \
-	$(srcdir)/Phalanx_DimTag.cpp
+	$(srcdir)/Phalanx_DataLayout.cpp
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies

@@ -55,15 +55,17 @@ namespace PHX{
 
   public:
 
+    typedef unsigned size_type;
+
     DataLayout() {}
 
     virtual ~DataLayout() {}
 
-    virtual std::size_t rank() const = 0; 
+    virtual size_type rank() const = 0; 
 
-    virtual void dimensions(std::vector<std::size_t>& dim) const = 0; 
+    virtual void dimensions(std::vector<size_type>& dim) const = 0; 
 
-    virtual std::size_t size() const = 0;
+    virtual size_type size() const = 0;
 
     virtual bool operator==(const DataLayout& left) const = 0;
 

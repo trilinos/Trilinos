@@ -29,32 +29,29 @@
 // ************************************************************************
 // @HEADER
 
-#include "Phalanx_Array.hpp"
-#include "Phalanx_DimTag.hpp"
-
 #include "Dimension.hpp"
 
 const char * Dim::name() const 
 { static const char n[] = "Dim" ; return n ; }
-const Dim & Dim::descriptor() 
+const Dim & Dim::tag() 
 { static const Dim myself ; return myself ; }
 
 const char * QuadPoint::name() const 
 { static const char n[] = "QuadPoint" ; return n ; }
-const QuadPoint & QuadPoint::descriptor() 
+const QuadPoint & QuadPoint::tag() 
 { static const QuadPoint myself ; return myself ; }
 
 const char * Node::name() const 
 { static const char n[] = "Node" ; return n ; }
-const Node & Node::descriptor() 
+const Node & Node::tag() 
 { static const Node myself ; return myself ; }
 
 const char * Point::name() const 
 { static const char n[] = "Point" ; return n ; }
-const Point & Point::descriptor() 
+const Point & Point::tag() 
 { static const Point myself ; return myself ; }
 
 const char * Cell::name() const 
 { static const char n[] = "Cell" ; return n ; }
-const Cell & Cell::descriptor() 
+const Cell & Cell::tag() 
 { static const Cell myself ; return myself ; }
