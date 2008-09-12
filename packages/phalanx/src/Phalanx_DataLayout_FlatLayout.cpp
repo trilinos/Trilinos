@@ -62,18 +62,19 @@ const std::string& PHX::FlatLayout::name() const
 { return m_name; }
 
 //**********************************************************************
-std::size_t PHX::FlatLayout::rank() const
+PHX::DataLayout::size_type PHX::FlatLayout::rank() const
 { return 1; }
 
 //**********************************************************************
-void PHX::FlatLayout::dimensions(std::vector<std::size_t>& dim) const
+void PHX::FlatLayout::
+dimensions(std::vector<PHX::DataLayout::size_type>& dim) const
 { 
   dim.resize(1);
   dim[0] = m_size;
 }
 
 //**********************************************************************
-std::size_t PHX::FlatLayout::size() const
+PHX::DataLayout::size_type PHX::FlatLayout::size() const
 { return m_size; }
 
 //**********************************************************************

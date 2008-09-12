@@ -32,7 +32,7 @@
 
 #include <vector>
 #include <string>
-#include <Phalanx_SimpleArrayOps.hpp>
+#include <SimpleArrayOps.hpp>
 
 namespace phdmesh {
 
@@ -149,7 +149,7 @@ private:
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-#include <Phalanx_ArrayPrivate.hpp>
+#include <ArrayPrivate.hpp>
 
 namespace phdmesh {
 

@@ -41,7 +41,7 @@ namespace PHX {
   struct PrintDimension {
     void addName(std::vector<const char*>& names)
     { 
-      names.push_back(Dimension::descriptor().name());
+      names.push_back(Dimension::tag().name());
     }
   };
 

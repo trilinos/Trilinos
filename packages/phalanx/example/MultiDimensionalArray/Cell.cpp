@@ -48,20 +48,22 @@ MyCell::MyCell() :
 }
 
 //**********************************************************************
-phdmesh::ArrayNatural<double,Node,Dim>& MyCell::getNodeCoordinates()
+phdmesh::Array<double,phdmesh::NaturalOrder,Node,Dim>& 
+MyCell::getNodeCoordinates()
 {
   return m_coords;
 }
 
 //**********************************************************************
-phdmesh::ArrayNatural<double,QuadPoint,Node>& MyCell::getBasisFunctions()
+phdmesh::Array<double,phdmesh::NaturalOrder,QuadPoint,Node>& 
+MyCell::getBasisFunctions()
 {
   return m_phi;
 }
 
 //**********************************************************************
-phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& MyCell::
-getBasisFunctionGradients()
+phdmesh::Array<double,phdmesh::NaturalOrder,QuadPoint,Node,Dim>& 
+MyCell::getBasisFunctionGradients()
 {
   return m_grad_phi;
 }

@@ -60,7 +60,7 @@ postRegistrationSetup(PHX::FieldManager<Traits>& fm)
   this->utils.setFieldData(val_grad_qp,fm);
 
   // Get dimensions of MDArray
-  std::vector<std::size_t> dims;
+  typename std::vector< typename PHX::template MDField<ScalarT,phdmesh::NaturalOrder,Cell,Node>::size_type > dims;
   val_node.dimensions(dims);
   num_nodes = dims[1];
 
@@ -74,15 +74,17 @@ template<typename EvalT, typename Traits>
 void FEInterpolation<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData cell_data)
 { 
+  using namespace phdmesh;
+  
   std::vector<MyCell>::iterator cell_it = cell_data.begin;
 
   // Loop over number of cells
   for (std::size_t cell = 0; cell < cell_data.num_cells; ++cell) {
     
-    phdmesh::ArrayNatural<double,QuadPoint,Node>& phi = 
+    Array<double,NaturalOrder,QuadPoint,Node>& phi = 
       cell_it->getBasisFunctions();
 
-    phdmesh::ArrayNatural<double,QuadPoint,Node,Dim>& grad_phi = 
+    Array<double,NaturalOrder,QuadPoint,Node,Dim>& grad_phi = 
       cell_it->getBasisFunctionGradients();
 
     // Loop over quad points of cell

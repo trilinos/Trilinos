@@ -49,11 +49,11 @@ namespace PHX{
 
     virtual const std::string& name() const;
 
-    virtual std::size_t rank() const; 
+    virtual size_type rank() const; 
 
-    virtual void dimensions(std::vector<std::size_t>& dim) const; 
+    virtual void dimensions(std::vector<size_type>& dim) const; 
 
-    virtual std::size_t size() const;
+    virtual size_type size() const;
 
     virtual const std::string identifier() const;
 
@@ -63,7 +63,7 @@ namespace PHX{
 
     const std::string m_name;
 
-    const std::size_t m_size;
+    const size_type m_size;
 
   };
 

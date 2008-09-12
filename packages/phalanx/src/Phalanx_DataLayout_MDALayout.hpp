@@ -36,7 +36,6 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include "Phalanx_DimTag.hpp"
 
 namespace PHX {
 
@@ -65,50 +64,48 @@ namespace PHX {
 
   public:
 
-    typedef std::size_t size_type;
-
     typedef PHX::DLTagList<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> tag_list;
 
     enum { MaxRank = 8 };
 
     enum { Rank = tag_list::Rank };
 
-    MDALayout(std::size_t size1, std::size_t size2, std::size_t size3, 
-	      std::size_t size4, std::size_t size5, std::size_t size6,
-	      std::size_t size7, std::size_t size8);
+    MDALayout(size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5, size_type size6,
+	      size_type size7, size_type size8);
 
-    MDALayout(std::size_t size1, std::size_t size2, std::size_t size3, 
-	      std::size_t size4, std::size_t size5, std::size_t size6,
-	      std::size_t size7);
+    MDALayout(size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5, size_type size6,
+	      size_type size7);
 
-    MDALayout(std::size_t size1, std::size_t size2, std::size_t size3, 
-	      std::size_t size4, std::size_t size5, std::size_t size6);
+    MDALayout(size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5, size_type size6);
 
-    MDALayout(std::size_t size1, std::size_t size2, std::size_t size3, 
-	      std::size_t size4, std::size_t size5);
+    MDALayout(size_type size1, size_type size2, size_type size3, 
+	      size_type size4, size_type size5);
 
-    MDALayout(std::size_t size1, std::size_t size2, std::size_t size3, 
-	      std::size_t size4);
+    MDALayout(size_type size1, size_type size2, size_type size3, 
+	      size_type size4);
 
-    MDALayout(std::size_t size1, std::size_t size2, std::size_t size3);
+    MDALayout(size_type size1, size_type size2, size_type size3);
 
-    MDALayout(std::size_t size1, std::size_t size2);
+    MDALayout(size_type size1, size_type size2);
 
-    MDALayout(std::size_t size1);
+    MDALayout(size_type size1);
 
     ~MDALayout() {}
 
     virtual bool operator==(const DataLayout& right) const;
 
-    virtual std::size_t rank() const; 
+    virtual size_type rank() const; 
 
-    virtual void dimensions(std::vector<std::size_t>& dim) const; 
+    virtual void dimensions(std::vector<size_type>& dim) const; 
 
-    virtual std::size_t size() const;
+    virtual size_type size() const;
 
     virtual const std::string identifier() const;
 
-    virtual const std::size_t dimension(std::size_t ordinal) const;
+    virtual const size_type dimension(size_type ordinal) const;
 
     virtual void print(std::ostream& os, int offset) const;
 
@@ -120,9 +117,9 @@ namespace PHX {
 
     std::vector<const char*> m_dim_name;
 
-    std::size_t m_dim_size[Rank];
+    size_type m_dim_size[Rank];
 
-    std::size_t m_size;
+    size_type m_size;
 
     std::string m_identifier;
 

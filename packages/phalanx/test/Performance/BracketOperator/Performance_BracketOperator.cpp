@@ -55,14 +55,14 @@
 
 */
 
-struct Point : public PHX::DimTag, public phdmesh::ArrayDimTag {
+struct Point : public phdmesh::ArrayDimTag {
   const char * name() const ;
-  static const Point& descriptor();
+  static const Point& tag();
 };
 
 const char * Point::name() const 
 { static const char n[] = "Point" ; return n ; }
-const Point & Point::descriptor() 
+const Point & Point::tag() 
 { static const Point myself ; return myself ; }
 
 int main(int argc, char *argv[]) 
@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
+  using namespace phdmesh;
   
   try {
     
@@ -95,7 +96,7 @@ int main(int argc, char *argv[])
       
       ArrayRCP<double> mda_density = arcp<double>(size);
       RCP<DataLayout> mddl = rcp(new MDALayout<Point>(size));
-      MDField<double,Point,Point> mddensity("density", mddl);
+      MDField<double,NaturalOrder,Point,Point> mddensity("density", mddl);
       mddensity.setFieldData(mda_density);
       
       for (int i=0; i < size; ++i) {

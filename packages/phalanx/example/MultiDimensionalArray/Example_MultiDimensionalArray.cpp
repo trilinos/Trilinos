@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
+  using namespace phdmesh;
   
   try {
     
@@ -250,10 +251,10 @@ int main(int argc, char *argv[])
 	local_source_at_qp(num_local_cells * qp_scalar->size());
 
       // Fields we require
-      MDField<double,Cell,QuadPoint,Dim> energy_flux(energy_flux_tag);
-      MDField<double,Cell,QuadPoint> source(source_tag);
-      fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint,Dim>(energy_flux);
-      fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint>(source);
+      MDField<double,NaturalOrder,Cell,QuadPoint,Dim> energy_flux(energy_flux_tag);
+      MDField<double,NaturalOrder,Cell,QuadPoint> source(source_tag);
+      fm.getFieldData<double,MyTraits::Residual,NaturalOrder,Cell,QuadPoint,Dim>(energy_flux);
+      fm.getFieldData<double,MyTraits::Residual,NaturalOrder,Cell,QuadPoint>(source);
 
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time");
 
