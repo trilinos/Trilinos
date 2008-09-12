@@ -11,6 +11,8 @@ SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(TRILINOS_TEST_CATEGORY "FRAMEWORK")
 
+OPTION(VERBOSE_CONFIGURE "Make the configure process verbose." OFF)
+
 #2008/07/10: ejguill: Updated to use the same command 
 #that the perl test harness uses to get the name of the host
 EXECUTE_PROCESS(
@@ -36,7 +38,7 @@ SET( ${PROJECT_NAME}_PACKAGES
 # Setup user options ...
 FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
   OPTION(${PROJECT_NAME}_ENABLE_${PACKAGE} "Build the ${PACKAGE} package." ON)
-ENDFOREACH(PACKAGE ${PROJECT_NAME}_PACKAGES)
+ENDFOREACH()
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 #OPTION(TRILINOS_INSTALL_BLAS "Include BLAS library in installations / packages." OFF)

@@ -1,3 +1,5 @@
+EXTRA_ARGS=$@
+
 cmake \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/mpi/bin/mpiCC \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/local/mpi/bin/mpicc \
@@ -16,6 +18,7 @@ cmake \
 -D RBGen_ENABLE_EPETRA:BOOL=ON \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
 -D MPI_EXTRA_LIBRARY:FILEPATH="" \
+$EXTRA_ARGS \
 ../../../Trilinos
 
 

@@ -54,7 +54,7 @@ TRILINOS_ADD_TEST(
   TEUCHOS_Comm_test
   DIRECTORY Comm
   NAME Comm_test
-  NUM_MPI_PROCS 1
+  NUM_MPI_PROCS 1-10
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
@@ -105,7 +105,7 @@ TRILINOS_ADD_TEST(
   UnitTest_BadUnitTest
   NAME UnitTest_BadUnitTest_final_results
   DIRECTORY UnitTest
-  ARGS --show-test-details=FINAL_RESULTS
+  ARGS "--show-test-details=FINAL_RESULTS"
   NUM_MPI_PROCS 1
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Int_BadAssignment_UnitTest"
@@ -114,7 +114,7 @@ TRILINOS_ADD_TEST(
   UnitTest_BadUnitTest
   NAME UnitTest_BadUnitTest_end_result_failed
   DIRECTORY UnitTest
-  ARGS --teuchos-suppress-startup-banner
+  ARGS "--teuchos-suppress-startup-banner"
   NUM_MPI_PROCS 1
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "End Result: TEST FAILED"
@@ -123,25 +123,18 @@ TRILINOS_ADD_TEST(
   UnitTest_BadUnitTest
   NAME UnitTest_BadUnitTest_end_result_totals
   DIRECTORY UnitTest
-  ARGS --teuchos-suppress-startup-banner
+  ARGS "--teuchos-suppress-startup-banner"
   NUM_MPI_PROCS 1
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Summary: total = 8, run = 8, passed = 6, failed = 2"
   )
 TRILINOS_ADD_TEST(
   UnitTest_BadUnitTest
-  NAME UnitTest_BadUnitTest_Int_BadAssignment_final
+  NAME UnitTest_BadUnitTest_Int_BadAssignment_failed
   DIRECTORY UnitTest
-  ARGS --show-test-details=FINAL_RESULTS --group-name=Int --test-name=BadAssignment
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "[FAILED]"
-  )
-TRILINOS_ADD_TEST(
-  UnitTest_BadUnitTest
-  NAME UnitTest_BadUnitTest_Int_BadAssignment_name
-  DIRECTORY UnitTest
-  ARGS --show-test-details=TEST_NAMES --group-name=Int --test-name=BadAssignment
+  ARGS
+    "--show-test-details=FINAL_RESULTS --group-name=Int --test-name=BadAssignment"
+    "--show-test-details=TEST_NAMES --group-name=Int --test-name=BadAssignment"
   NUM_MPI_PROCS 1
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "[FAILED]"
