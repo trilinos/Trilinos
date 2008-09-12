@@ -84,10 +84,18 @@ public:
 
       Method to accept a Epetra_CrsGraph object, and
       return a redistributed Epetra_CrsGraph object.
+      The row map of the redistributed graph is determined by
+      the partitioner that was given to the Redistributor.
 
       Note that the 'input_graph' argument may be a
       different object than the one which was used to
       construct the partitioner.
+
+      The graph is FillComplete'd if callFillComplete is true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_graph has different domain and range maps, in which case
+      the range map is preserved.
   */
   Teuchos::RefCountPtr<Epetra_CrsGraph>
      redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete= true);
@@ -97,10 +105,19 @@ public:
 
       Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
+      The row map of the redistributed matrix is determined by
+      the partitioner that was given to the Redistributor.
 
       Note that the 'input_matrix' argument may be a
       different object than the one which was used to
       construct the partitioner.
+
+      The matrix is FillComplete'd if callFillComplete is true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_matrix has different domain and range maps, in which case
+      the range map is preserved.
+
   */
   Teuchos::RefCountPtr<Epetra_CrsMatrix>
      redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete= true);
