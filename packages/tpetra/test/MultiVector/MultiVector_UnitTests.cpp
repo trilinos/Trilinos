@@ -167,6 +167,34 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Multiply, Ordinal, Scalar )
+  {
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    const Ordinal NEGONE = ZERO - ONE;
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a Map
+    Map<Ordinal> map3(NEGONE,3*ONE,ZERO,platform),
+                 map2(NEGONE,2*ONE,ZERO,platform);
+    // fill multivectors with ones
+    // A is 3 x 2
+    // B is 2 x 3
+    // C is 3 x 3
+    // D is 2 x 2
+    MV mvecA(map3,2*ONE),
+       mvecB(map2,3*ONE),
+       mvecC(map3,3*ONE),
+       mvecD(map2,2*ONE);
+    mvecA.putScalar(ScalarTraits<Scalar>::one());
+    mvecB.putScalar(ScalarTraits<Scalar>::one());
+    mvecC.putScalar(ScalarTraits<Scalar>::one());
+    mvecD.putScalar(ScalarTraits<Scalar>::one());
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadConstAA, Ordinal, Scalar )
   {
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors

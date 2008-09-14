@@ -636,6 +636,166 @@ namespace Tpetra {
     TEST_FOR_EXCEPT(true);
   }
 
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A, const MultiVector<Ordinal,Scalar> &B, const Scalar &beta) 
+  {
+    // This routine performs a variety of matrix-matrix multiply operations, interpreting
+    // the MultiVector (this-aka C , A and B) as 2D matrices.  Variations are due to
+    // the fact that A, B and C can be local replicated or global distributed
+    // MultiVectors and that we may or may not operate with the transpose of 
+    // A and B.  Possible cases are:
+    using Teuchos::NO_TRANS;
+    using Teuchos::TRANS;
+    using Teuchos::CONJ_TRANS;
+    using Teuchos::ScalarTraits;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    //                                       Num
+    //      OPERATIONS                        cases  Notes
+    //  1) C(local) = A^X(local) * B^X(local)  4    (X=Trans or Not, No comm needed) 
+    //  2) C(local) = A^T(distr) * B  (distr)  1    (2D dot product, replicate C)
+    //  3) C(distr) = A  (distr) * B^X(local)  2    (2D vector update, no comm needed)
+    //
+    // The following operations are not meaningful for 1D distributions:
+    //
+    // u1) C(local) = A^T(distr) * B^T(distr)  1
+    // u2) C(local) = A  (distr) * B^X(distr)  2
+    // u3) C(distr) = A^X(local) * B^X(local)  4
+    // u4) C(distr) = A^X(local) * B^X(distr)  4
+    // u5) C(distr) = A^T(distr) * B^X(local)  2
+    // u6) C(local) = A^X(distr) * B^X(local)  4
+    // u7) C(distr) = A^X(distr) * B^X(local)  4
+    // u8) C(local) = A^X(local) * B^X(distr)  4
+    //
+    // Total of 32 case (2^5).
+
+    std::string errPrefix("Tpetra::MultiVector::multiply(transOpA,transOpB,A,B): ");
+
+    TEST_FOR_EXCEPTION( ScalarTraits<Scalar>::isComplex && (transA == TRANS || transB == TRANS), std::invalid_argument,
+        errPrefix << "non-conjugate transpose not supported for complex types.");
+    transA = (transA == NO_TRANS ? NO_TRANS : CONJ_TRANS);
+    transB = (transB == NO_TRANS ? NO_TRANS : CONJ_TRANS);
+
+    // Compute effective dimensions, w.r.t. transpose operations on 
+    Ordinal A_nrows = (transA==Teuchos::CONJ_TRANS) ? A.numVectors() : A.myLength();
+    Ordinal A_ncols = (transA==Teuchos::CONJ_TRANS) ? A.myLength() : A.numVectors();
+    Ordinal B_nrows = (transB==Teuchos::CONJ_TRANS) ? B.numVectors() : B.myLength();
+    Ordinal B_ncols = (transB==Teuchos::CONJ_TRANS) ? B.myLength() : B.numVectors();
+
+    Scalar beta_local = beta; // local copy of beta; might be reassigned below
+
+    TEST_FOR_EXCEPTION( myLength() != A_nrows || numVectors() != B_ncols || A_ncols != B_nrows, std::runtime_error,
+        errPrefix << "dimension of *this, op(A) and op(B) must be consistent.");
+
+    bool A_is_local = !A.isDistributed();
+    bool B_is_local = !B.isDistributed();
+    bool C_is_local = !this->isDistributed();
+    bool Case1 = ( C_is_local &&  A_is_local &&  B_is_local);                                           // Case 1: C(local) = A^X(local) * B^X(local)
+    bool Case2 = ( C_is_local && !A_is_local && !B_is_local && transA==CONJ_TRANS && transB==NO_TRANS); // Case 2: C(local) = A^T(distr) * B  (distr)
+    bool Case3 = (!C_is_local && !A_is_local &&  B_is_local && transA==NO_TRANS  );                     // Case 3: C(distr) = A  (distr) * B^X(local)
+
+    // Test that we are considering a meaningful cases
+    TEST_FOR_EXCEPTION( !Case1 && !Case2 && !Case3, std::runtime_error,
+        errPrefix << "multiplication of op(A) and op(B) into *this is not a supported use case.");
+
+    if (beta != ScalarTraits<Scalar>::zero() && Case2) // 
+    {
+      // if Case2, then C is local and contributions must be summed across all nodes
+      // however, if beta != 0, then accumulate beta*C into the sum
+      // when summing across all nodes, we only want to accumulate this once, so 
+      // set beta == 0 on all nodes except node 0
+      int MyPID = this->getMap().getComm()->myRank();
+      if (MyPID!=0) beta_local = ScalarTraits<Scalar>::zero();
+    }
+
+    // Check if A, B, C have constant stride, if not then make temp copy (strided)
+    RCP<const MultiVector<Ordinal,Scalar> > Atmp, Btmp; 
+    RCP<MultiVector<Ordinal,Scalar> > Ctmp;
+    if (constantStride() == false) Ctmp = rcp(new MultiVector<Ordinal,Scalar>(*this));
+    else Ctmp = rcp(this,false);
+
+    if (A.constantStride() == false) Atmp = rcp(new MultiVector<Ordinal,Scalar>(&A));
+    else Atmp = rcp(&A,false);
+
+    if (B.constantStride() == false) Btmp = rcp(new MultiVector<Ordinal,Scalar>(&B));
+    else Btmp = rcp(&B,false);
+
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(!Ctmp->constantStride() || !Btmp->constantStride() || !Atmp->constantStride(), std::logic_error,
+        errPrefix << "failed making temporary strided copies of input multivectors.");
+#endif
+
+    Ordinal m = this->myLength();
+    Ordinal n = this->numVectors();
+    Ordinal k = A_ncols;
+    Ordinal lda, ldb, ldc;
+    Teuchos::ArrayRCP<const Scalar> Ap, Bp;
+    Teuchos::ArrayRCP<Scalar> Cp;
+    Atmp->extractConstView(Ap,lda);
+    Btmp->extractConstView(Bp,lda);
+    Ctmp->extractView(Cp,lda);
+
+    Teuchos::BLAS<Ordinal,Scalar> blas;
+    // do the arithmetic now
+    blas.GEMM(transA,transB,m,n,k,alpha,Ap.getRawPtr(),lda,Bp.getRawPtr(),ldb,beta_local,Cp.getRawPtr(),ldc);
+
+    // Dispose of (possibly) extra copies of A, B
+    Atmp = Teuchos::null;
+    Btmp = Teuchos::null;
+
+    // If *this was not strided, copy the data from the strided version and then delete it
+    if (constantStride() == false) {
+      Teuchos::Array<Teuchos::ArrayView<Scalar> > aoa(MVData_->pointers_.size());
+      for (Ordinal i=0; i<aoa.size(); ++i) {
+        aoa[i] = MVData_->pointers_[i]();
+      }
+      // FINISH: test this
+      Ctmp->extractCopy(aoa());
+    }
+    Ctmp = Teuchos::null;
+
+    // If Case 2 then sum up C and distribute it to all processors.
+    if (Case2) 
+    {
+      // need storage to sum the local quantities
+      TEST_FOR_EXCEPT(true);
+
+    /*
+      // Global reduction on each entry of a Replicated Local MultiVector
+      int i, j;
+      double * source = 0;
+      if (MyLength_>0) source = new double[MyLength_*NumVectors_];
+      double * target = 0;
+      bool packed = (ConstantStride_ && (Stride_==MyLength_));
+      if (packed) {
+        for (i=0; i<MyLength_*NumVectors_; i++) source[i] = Values_[i];
+        target = Values_;
+      }
+      else {
+        double * tmp1 = source;
+        for (i = 0; i < NumVectors_; i++) {
+          double * tmp2 = Pointers_[i];
+          for (j=0; j< MyLength_; j++) *tmp1++ = *tmp2++;
+        }
+        if (MyLength_>0) target = new double[MyLength_*NumVectors_];
+      }
+
+      Comm_->SumAll(source, target, MyLength_*NumVectors_);
+      if (MyLength_>0) delete [] source;
+      if (!packed) {
+        double * tmp2 = target;
+        for (i = 0; i < NumVectors_; i++) {
+          double * tmp1 = Pointers_[i];
+          for (j=0; j< MyLength_; j++) *tmp1++ = *tmp2++;
+        }
+        if (MyLength_>0) delete [] target;
+      }
+      return(0);
+    */
+    } // Case2
+
+  }
 
 
 
