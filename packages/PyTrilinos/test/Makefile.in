@@ -209,10 +209,12 @@ EXTRA_DIST = definition setpath.src \
 	     testEpetra_MultiVector.src testEpetra_Object.src \
 	     testEpetra_SerialDense.src testEpetra_Util.src \
 	     testEpetra_Vector.src testGaleri_CrsMatrices.src \
-	     testGaleri_Maps.src testIFPACK.src testML_Preconditioner.src \
-	     testNOX_StatusTest.src testTeuchos.src testTeuchos_Comm.src \
-	     testTeuchos_ParameterList.src testTeuchos_ScalarTraits.src \
-	     testThyra.src testTriUtils.src
+	     testGaleri_Maps.src testIFPACK.src testML_Space.src \
+	     testML_CompObject.src testML_TimeObject.src \
+	     testML_MultiVector.src testML_PyMatrix.src \
+	     testML_Preconditioner.src testNOX_StatusTest.src testTeuchos.src \
+	     testTeuchos_Comm.src testTeuchos_ParameterList.src \
+	     testTeuchos_ScalarTraits.src testThyra.src testTriUtils.src
 
 MAINTAINERCLEANFILES = Makefile.in
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_TESTS = testTeuchos.py testTeuchos_Comm.py \
@@ -239,7 +241,9 @@ MAINTAINERCLEANFILES = Makefile.in
 @HAVE_PYTRILINOS_AMESOS_TRUE@AMESOS_TESTS = testAmesos.py
 @HAVE_PYTRILINOS_IFPACK_TRUE@IFPACK_TESTS = testIFPACK.py
 @HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_TESTS = testAnasazi.py
-@HAVE_PYTRILINOS_ML_TRUE@ML_TESTS = testML_Preconditioner.py
+@HAVE_PYTRILINOS_ML_TRUE@ML_TESTS = testML_Space.py testML_CompObject.py testML_TimeObject.py \
+@HAVE_PYTRILINOS_ML_TRUE@	   testML_MultiVector.py testML_PyMatrix.py testML_Preconditioner.py
+
 @HAVE_PYTRILINOS_NOX_TRUE@NOX_TESTS = testNOX_StatusTest.py
 TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS) $(TRIUTILS_TESTS) \
 	     $(EPETRAEXT_TESTS) $(AZTECOO_TESTS) $(GALERI_TESTS) $(AMESOS_TESTS)   \

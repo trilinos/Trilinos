@@ -228,6 +228,7 @@ class TeuchosXMLTestCase(unittest.TestCase):
 
     def testXMLParameterListReaderWriter(self):
         "Test Teuchos XMLParameterList Reader/Writer classes"
+        import sys
         dict = { "maxiters"       : 100,
                  "tol"            : 1.0e-6,
                  "preconditioner" : "IC" }

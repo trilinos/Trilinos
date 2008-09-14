@@ -91,6 +91,11 @@ public:
   //! Destructor.
   ~PyMatrix() { }
 
+  const Space & GetRowSpace() const
+  {
+    return RowSpace_;
+  }
+
   void SetElement(int row, int col, double value)
   {
     if (Matrix_->Filled())

@@ -48,10 +48,12 @@ EXTRA_DIST = definition setpath.src \
 	     testEpetra_MultiVector.src testEpetra_Object.src \
 	     testEpetra_SerialDense.src testEpetra_Util.src \
 	     testEpetra_Vector.src testGaleri_CrsMatrices.src \
-	     testGaleri_Maps.src testIFPACK.src testML_Preconditioner.src \
-	     testNOX_StatusTest.src testTeuchos.src testTeuchos_Comm.src \
-	     testTeuchos_ParameterList.src testTeuchos_ScalarTraits.src \
-	     testThyra.src testTriUtils.src
+	     testGaleri_Maps.src testIFPACK.src testML_Space.src \
+	     testML_CompObject.src testML_TimeObject.src \
+	     testML_MultiVector.src testML_PyMatrix.src \
+	     testML_Preconditioner.src testNOX_StatusTest.src testTeuchos.src \
+	     testTeuchos_Comm.src testTeuchos_ParameterList.src \
+	     testTeuchos_ScalarTraits.src testThyra.src testTriUtils.src
 
 MAINTAINERCLEANFILES = Makefile.in
 
@@ -108,7 +110,8 @@ ANASAZI_TESTS = testAnasazi.py
 endif
 
 if HAVE_PYTRILINOS_ML
-ML_TESTS = testML_Preconditioner.py
+ML_TESTS = testML_Space.py testML_CompObject.py testML_TimeObject.py \
+	   testML_MultiVector.py testML_PyMatrix.py testML_Preconditioner.py
 endif
 
 if HAVE_PYTRILINOS_NOX

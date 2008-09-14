@@ -223,10 +223,10 @@ __version__ = Teuchos_Version().split()[2]
   delete $1;
 }
 
-//%typemap(out) SWIGTYPE SMARTPOINTER
-//{
-//  $result = SWIG_NewPointerObj($1.get(), $descriptor(Type*), 1);
-//}
+%typemap(out) SWIGTYPE SMARTPOINTER
+{
+  $result = SWIG_NewPointerObj((void*)$1.get(), $descriptor(Type*), 1);
+}
 
 %extend_smart_pointer(RCP< Type >)
 %template()           RCP< Type >;
