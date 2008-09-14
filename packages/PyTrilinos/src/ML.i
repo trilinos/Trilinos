@@ -347,10 +347,6 @@ Space.GetMyGlobalElements = Space_GetMyGlobalElements
   npy_intp dims = (arg1)->GetMyLength();
   $result = PyArray_SimpleNewFromData(1, &dims, PyArray_DOUBLE, (void*) $1);
 }
-%typemap(out) double& operator()
-{
-  $result = PyFloat_FromDouble(*($1));
-}
 namespace MLAPI
 {
 %ignore MultiVector::MultiVector(const Space &, double **, const int);
