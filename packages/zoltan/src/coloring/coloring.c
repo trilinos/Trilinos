@@ -399,6 +399,7 @@ static int D1coloring(
         newcolored[i] = (int *) ZOLTAN_MALLOC(2 * ss * sizeof(int));
         if (!newcolored[i])
             MEMORY_ERROR;
+	memset(newcolored[i], 0, 2 * ss * sizeof(int));
     }
 
     /* Generate random numbers associated with global numbers of the vertices */
