@@ -340,6 +340,16 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
     TEST_COMPARE_ARRAYS( v2, v );
   }
 
+  if (n > 0) 
+  {
+    out << "\nTest ArrayView operator=() ...\n";
+    std::vector<T> v2(n,as<T>(-1));
+    const ArrayView<T> av2(v2);
+    const ArrayView<T> av2_copy = av2;
+    av2_copy[0] = 0;
+    TEST_COMPARE_ARRAYS(av2,av2_copy);
+  }
+
   // ToDo: Test requesting views outside of valid range!
 
   return success;

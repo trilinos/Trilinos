@@ -124,10 +124,10 @@ namespace Tpetra {
     const MultiVector<Ordinal,Scalar> subViewConst(const Teuchos::ArrayView<Teuchos_Index> &cols) const;
 
     //! Return multi-vector values in user-provided two-dimensional array.
-    void extractCopy(Teuchos::ArrayView<const Scalar> &A, Ordinal &MyLDA) const;
+    void extractCopy(Teuchos::ArrayView<Scalar> A, Ordinal &MyLDA) const;
 
     //! Return multi-vector values in user-provided array of pointers.
-    void extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<const Scalar> > &arrayOfArrays) const;
+    void extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > arrayOfArrays) const;
 
     //! Return non-const pointers to multi-vector values in user-provided two-dimensional array.
     void extractView(Teuchos::ArrayRCP<Scalar> &A, Ordinal &MyLDA);
@@ -260,6 +260,7 @@ namespace Tpetra {
     //! @name Expert-only unsupported methods
     //@{ 
 
+/*
     //! Reset the view of an existing multivector to point to new user data.
     void resetView(const Teuchos::ArrayRCP<const Teuchos::ArrayRCP<Scalar> > &arrayOfArrays);
 
@@ -274,6 +275,7 @@ namespace Tpetra {
 
     //! Get pointer to individual vector pointers.
     const Teuchos::ArrayRCP<const Teuchos::ArrayRCP<const Scalar> > & pointersConst() const;
+*/
 
     //@}
 

@@ -30,6 +30,7 @@ namespace {
 
   using Teuchos::as;
   using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
@@ -45,6 +46,9 @@ namespace {
   using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using Teuchos::NO_TRANS;
+  using Teuchos::TRANS;
+  using Teuchos::CONJ_TRANS;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -167,7 +171,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Multiply, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadMultiply, Ordinal, Scalar )
   {
     typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
@@ -178,6 +182,8 @@ namespace {
     // create a Map
     Map<Ordinal> map3(NEGONE,3*ONE,ZERO,platform),
                  map2(NEGONE,2*ONE,ZERO,platform);
+    const Scalar SONE = ScalarTraits<Scalar>::one(),
+                SZERO = ScalarTraits<Scalar>::zero();
     // fill multivectors with ones
     // A is 3 x 2
     // B is 2 x 3
@@ -187,10 +193,75 @@ namespace {
        mvecB(map2,3*ONE),
        mvecC(map3,3*ONE),
        mvecD(map2,2*ONE);
-    mvecA.putScalar(ScalarTraits<Scalar>::one());
-    mvecB.putScalar(ScalarTraits<Scalar>::one());
-    mvecC.putScalar(ScalarTraits<Scalar>::one());
-    mvecD.putScalar(ScalarTraits<Scalar>::one());
+    // failures, 18 combinations:
+    // [NTC],[NTC]: A,B don't match
+    // [NTC],[NTC]: C doesn't match A,B
+    TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(NO_TRANS  ,TRANS     ,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(TRANS     ,NO_TRANS  ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(TRANS     ,TRANS     ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(TRANS     ,CONJ_TRANS,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(CONJ_TRANS,TRANS     ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+    TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(NO_TRANS  ,TRANS     ,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(TRANS     ,NO_TRANS  ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(TRANS     ,TRANS     ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(TRANS     ,CONJ_TRANS,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(CONJ_TRANS,TRANS     ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Multiply, Ordinal, Scalar )
+  {
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    const Ordinal NEGONE = ZERO - ONE;
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a Map
+    Map<Ordinal> map3(NEGONE,3*ONE,ZERO,platform),
+                 map2(NEGONE,2*ONE,ZERO,platform),
+                lmap3(3*ONE,ZERO,platform,true),
+                lmap2(2*ONE,ZERO,platform,true);
+    const Scalar SONE = ScalarTraits<Scalar>::one(),
+                SZERO = ScalarTraits<Scalar>::zero();
+    const Mag   MZERO = ScalarTraits<Mag>::zero();
+    // fill multivectors with ones
+    // A is 3 x 2
+    // B is 2 x 3
+    // C is 3 x 3
+    // D is 2 x 2
+    MV mv3x2l(lmap3,2*ONE),
+       mv2x3l(lmap2,3*ONE),
+       mv2x2l(lmap2,2*ONE),
+       mv3x3l(lmap3,3*ONE);
+    mv3x2l.putScalar(ScalarTraits<Scalar>::one());
+    mv2x3l.putScalar(ScalarTraits<Scalar>::one());
+    // case 1: C(local) = A^X(local) * B^X(local)  : four of these
+    {
+      ArrayRCP<Scalar> tmpView; Ordinal dummy;
+      Teuchos::Array<Scalar> check2(4,3*ONE); // each entry (of four) is the product [1 1 1]*[1 1 1]' = 3
+      Teuchos::Array<Scalar> check3(9,2*ONE); // each entry (of nine) is the product [1 1]*[1 1]' = 2
+      mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mv3x2l,mv2x3l,SZERO);
+      mv3x3l.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,MZERO);
+      mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mv2x3l,mv2x3l,SZERO);
+      mv2x2l.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,MZERO);
+      mv2x2l.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mv3x2l,mv3x2l,SZERO);
+      mv2x2l.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,MZERO);
+      mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mv2x3l,mv3x2l,SZERO);
+      mv3x3l.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,MZERO);
+    }
+    // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
+    // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
   }
 
 
@@ -806,7 +877,9 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNormInf, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Norm2, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply, ORDINAL, SCALAR )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \

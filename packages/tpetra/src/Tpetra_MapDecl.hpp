@@ -52,7 +52,7 @@ namespace Tpetra {
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    Map(Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform);
+    Map(Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform, bool local=false);
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
      *  The entries are distributed among the nodes so that the subsets of global entries

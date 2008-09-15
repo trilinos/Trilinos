@@ -249,6 +249,17 @@ void ArrayView<T>::assign(const ArrayView<const T>& array) const
   // optimized mode, these are raw pointers which should run very fast!
 }
 
+template<class T>
+ArrayView<T>& ArrayView<T>::operator=(const ArrayView<T>& array) 
+{
+  ptr_ = array.ptr_;
+  size_ = array.size_;
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  node_ = array.node_;
+  arcp_ = array.arcp_;
+#endif
+  return *this;
+}
 
 // Standard Container-Like Functions 
 

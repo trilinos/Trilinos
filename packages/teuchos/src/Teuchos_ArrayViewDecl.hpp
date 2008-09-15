@@ -261,14 +261,12 @@ public:
    *
    * WARNING!  If <tt>T</tt> is a const type (e.g. <tt>const double</tt>) then
    * do not try to instantiate this function since it will not compile!
-   *
-   * NOTE: This function is really like an operator=() function except that it
-   * is declared const.  This is the correct behavior since a const ArrayView
-   * simply means that we can not change what *this points to.  The type of
-   * the template argument always determines if the underlyihng data is const
-   * or not.
    */
 	void assign(const ArrayView<const T>& array) const;
+
+	/** \brief Reassign this ArrayView to another ArrayView of the same type.
+   */
+	ArrayView<T>& operator=(const ArrayView<T>&);
 
   //@}
 
@@ -343,7 +341,6 @@ private:
 
   // Not defined and not to be called!
   ArrayView();
-	ArrayView& operator=(const ArrayView&);
 
   // Disable dynamic allocation
 	static void* operator new(size_t);

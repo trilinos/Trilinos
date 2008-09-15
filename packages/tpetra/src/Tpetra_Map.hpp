@@ -53,8 +53,8 @@
 namespace Tpetra {
 
   template<typename Ordinal>
-  Map<Ordinal>::Map(Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform) 
-    : Teuchos::Object("Tpetra::Map")
+  Map<Ordinal>::Map(Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform, bool local) 
+    : Teuchos::Object(local == false ? "Tpetra::Map" : "Teptra::Map(local)")
     , MapData_()
   {
     // distribute the entries across the nodes so that they are 
@@ -67,128 +67,150 @@ namespace Tpetra {
 
     std::string errPrefix;
     errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
-              + ">::constructor(numGlobal,indexBase,platform): ";
+              + ">::constructor(numGlobal,indexBase,platform,local): ";
 
     // get a internodal communicator from the Platform
     Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = platform.createComm();
-    Ordinal numImages = comm->getSize();
-    Ordinal myImageID = comm->getRank();
+    if (local == false) 
+    {
+      Ordinal numImages = comm->getSize();
+      Ordinal myImageID = comm->getRank();
 
-    // check that numGlobalEntries,indexBase is equivalent across images
-    std::vector<Ordinal> root_entries(2);
-    root_entries[0] = numGlobalEntries;
-    root_entries[1] = indexBase;
-    Teuchos::broadcast(*comm,(Ordinal)0,(Ordinal)2,&root_entries[0]);   // broadcast 2 ordinals from node 0
-    std::vector<Ordinal> localChecks(2);
-    localChecks[0] = negOne;  // fail or pass
-    localChecks[1] = zero;    // fail reason
-    if (numGlobalEntries != root_entries[0]) {
-      localChecks[0] = myImageID;
-      localChecks[1] = one;
-    }
-    else if (indexBase != root_entries[1]) {
-      localChecks[0] = myImageID;
-      localChecks[1] = one + one;
-    }
-    // if checkPassed == negOne, then it passed on this proc
-    // otherwise, checkPassed == myImageID signifies it did not pass
-    // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass, as well as the reason
-    // this will be negOne and zero if all procs passed
-    Ordinal globalChecks[2];
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
-    if (globalChecks[0] != negOne) {
-      if (globalChecks[1] == one) {
-        TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "numGlobal must be the same on all nodes (examine node " << globalChecks[0] << ").");
+      // check that numGlobalEntries,indexBase is equivalent across images
+      std::vector<Ordinal> root_entries(2);
+      root_entries[0] = numGlobalEntries;
+      root_entries[1] = indexBase;
+      Teuchos::broadcast(*comm,(Ordinal)0,(Ordinal)2,&root_entries[0]);   // broadcast 2 ordinals from node 0
+      std::vector<Ordinal> localChecks(2);
+      localChecks[0] = negOne;  // fail or pass
+      localChecks[1] = zero;    // fail reason
+      if (numGlobalEntries != root_entries[0]) {
+        localChecks[0] = myImageID;
+        localChecks[1] = one;
       }
-      else if (globalChecks[1] == one+one) {
-        TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "indexBase must be the same on all nodes (examine node " << globalChecks[0] << ").");
+      else if (indexBase != root_entries[1]) {
+        localChecks[0] = myImageID;
+        localChecks[1] = one + one;
       }
-      else {
-        // logic error on my part
-        TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "logic error. Please contact the Tpetra team.");
+      // if checkPassed == negOne, then it passed on this proc
+      // otherwise, checkPassed == myImageID signifies it did not pass
+      // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass, as well as the reason
+      // this will be negOne and zero if all procs passed
+      Ordinal globalChecks[2];
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
+      if (globalChecks[0] != negOne) {
+        if (globalChecks[1] == one) {
+          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+              errPrefix << "numGlobal must be the same on all nodes (examine node " << globalChecks[0] << ").");
+        }
+        else if (globalChecks[1] == one+one) {
+          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+              errPrefix << "indexBase must be the same on all nodes (examine node " << globalChecks[0] << ").");
+        }
+        else {
+          // logic error on my part
+          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+              errPrefix << "logic error. Please contact the Tpetra team.");
+        }
       }
-    }
-    // numgGlobalEntries is coherent, but is it valid?
-    TEST_FOR_EXCEPTION(numGlobalEntries < zero, std::invalid_argument,
-        errPrefix << "numGlobal == " << numGlobalEntries << ". Must be >= 0.");
+      // numgGlobalEntries is coherent, but is it valid?
+      TEST_FOR_EXCEPTION(numGlobalEntries < zero, std::invalid_argument,
+          errPrefix << "numGlobal == " << numGlobalEntries << ". Must be >= 0.");
 
-    /* compute numLocalEntries
-       We can write numGlobalEntries as follows:
-          numGlobalEntries == numImages * B + remainder
-       Each image is allocated entries as follows:
-                         [ B+1    iff myImageID <  remainder
-          numLocalEntries = [
-                         [ B      iff myImageID >= remainder
-       In the case that remainder == 0, then all images fall into the 
-       latter case: numLocalEntries == B == numGlobalEntries / numImages
-       It can then be shown that 
-          numImages
-            \Sum      numLocalEntries_i  == numGlobalEntries
-             i=0
-       This strategy is simple, requires no communication, and is optimal vis-a-vis
-       uniform distribution of entries.
-       This strategy is valid for any value of numGlobalEntries and numImages, 
-       including the following border cases:
+      /* compute numLocalEntries
+         We can write numGlobalEntries as follows:
+         numGlobalEntries == numImages * B + remainder
+         Each image is allocated entries as follows:
+         [ B+1    iff myImageID <  remainder
+         numLocalEntries = [
+         [ B      iff myImageID >= remainder
+         In the case that remainder == 0, then all images fall into the 
+         latter case: numLocalEntries == B == numGlobalEntries / numImages
+         It can then be shown that 
+         numImages
+         \Sum      numLocalEntries_i  == numGlobalEntries
+         i=0
+         This strategy is simple, requires no communication, and is optimal vis-a-vis
+         uniform distribution of entries.
+         This strategy is valid for any value of numGlobalEntries and numImages, 
+         including the following border cases:
          - numImages == 1         -> remainder == 0 && numGlobalEntries == numLocalEntries
          - numEntries < numImages -> remainder == numGlobalEntries && numLocalEntries \in [0,1]
-     */
-    Ordinal numLocalEntries = numGlobalEntries / numImages;    
-    Ordinal remainder = numGlobalEntries % numImages;
-#ifdef TEUCHOS_DEBUG
-    // the above code assumes truncation. is that safe?
-    SHARED_TEST_FOR_EXCEPTION(numLocalEntries * numImages + remainder != numGlobalEntries,
-        std::logic_error, "Tpetra::Map::constructor(numGlobal,indexBase,platform): Ordinal does not implement division with truncation."
-        << " Please contact Tpetra team.",*comm);
-#endif
-    Ordinal start_index;
-    if (myImageID < remainder) {
-      ++numLocalEntries;
-      /* the myImageID images before were each allocated 
-            numGlobalEntries/numImages+1
-         ergo, my offset is:
-            myImageID * (numGlobalEntries/numImages+1)
-            == myImageID * numLocalEntries
        */
-      start_index = myImageID * numLocalEntries;
-    }
-    else {
-      /* a quantity (equal to remainder) of the images before me
-         were each allocated 
+      Ordinal numLocalEntries = numGlobalEntries / numImages;    
+      Ordinal remainder = numGlobalEntries % numImages;
+#ifdef TEUCHOS_DEBUG
+      // the above code assumes truncation. is that safe?
+      SHARED_TEST_FOR_EXCEPTION(numLocalEntries * numImages + remainder != numGlobalEntries,
+          std::logic_error, "Tpetra::Map::constructor(numGlobal,indexBase,platform): Ordinal does not implement division with truncation."
+          << " Please contact Tpetra team.",*comm);
+#endif
+      Ordinal start_index;
+      if (myImageID < remainder) {
+        ++numLocalEntries;
+        /* the myImageID images before were each allocated 
            numGlobalEntries/numImages+1
-         entries. a quantity (equal to myImageID-remainder) of the remaining 
-         images before me were each allocated 
+           ergo, my offset is:
+           myImageID * (numGlobalEntries/numImages+1)
+           == myImageID * numLocalEntries
+         */
+        start_index = myImageID * numLocalEntries;
+      }
+      else {
+        /* a quantity (equal to remainder) of the images before me
+           were each allocated 
+           numGlobalEntries/numImages+1
+           entries. a quantity (equal to myImageID-remainder) of the remaining 
+           images before me were each allocated 
            numGlobalEntries/numImages
-         entries. ergo, my offset is:
+           entries. ergo, my offset is:
            remainder*(numGlobalEntries/numImages+1) + (myImageID-remainder)*numGlobalEntries/numImages
            == remainder*numLocalEntries + remainder + myImageID*numLocalEntries - remainder*numLocalEntries
            == myImageID*numLocalEntries + remainder
-       */
-      start_index = myImageID*numLocalEntries + remainder;
+         */
+        start_index = myImageID*numLocalEntries + remainder;
+      }
+
+      // create empty maps between local and global entries: let the MapData constructor fill them
+      Teuchos::ArrayRCP<Ordinal> lgMap = Teuchos::null;
+      std::map<Ordinal,Ordinal> glMap;
+
+      // compute the min/max global IDs
+      Ordinal minAllGID = indexBase;
+      Ordinal maxAllGID = indexBase + numGlobalEntries - one;
+      Ordinal minMyGID  = start_index + indexBase;
+      Ordinal maxMyGID  = minMyGID + numLocalEntries - one;
+
+      Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
+
+      // create a MapData structure 
+      MapData_ = Teuchos::rcp( new MapData<Ordinal>(indexBase,numGlobalEntries,numLocalEntries,
+            minAllGID,maxAllGID,minMyGID,maxMyGID,
+            lgMap,glMap,true,  // we are contiguous
+            platform_clone, comm) );
+
+      // initialize the directory
+      directorySetup();
     }
+    else 
+    {
+      Teuchos::ArrayRCP<Ordinal> lgMap = Teuchos::null;
+      std::map<Ordinal,Ordinal>  glMap;
 
-    // create empty maps between local and global entries: let the MapData constructor fill them
-    Teuchos::ArrayRCP<Ordinal> lgMap = Teuchos::null;
-    std::map<Ordinal,Ordinal> glMap;
+      // compute the min/max global IDs
+      Ordinal minAllGID = indexBase;
+      Ordinal maxAllGID = indexBase + numGlobalEntries - one;
+      Ordinal minMyGID  = minAllGID;
+      Ordinal maxMyGID  = maxAllGID;
 
-    // compute the min/max global IDs
-    Ordinal minAllGID = indexBase;
-    Ordinal maxAllGID = indexBase + numGlobalEntries - one;
-    Ordinal minMyGID  = start_index + indexBase;
-    Ordinal maxMyGID  = minMyGID + numLocalEntries - one;
+      Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
 
-    Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
-
-    // create a MapData structure 
-    MapData_ = Teuchos::rcp( new MapData<Ordinal>(indexBase,numGlobalEntries,numLocalEntries,
-                                                      minAllGID,maxAllGID,minMyGID,maxMyGID,
-                                                      lgMap,glMap,true,  // we are contiguous
-                                                      platform_clone, comm) );
-
-    // initialize the directory
-    directorySetup();
+      // create a MapData structure 
+      MapData_ = Teuchos::rcp( new MapData<Ordinal>(indexBase,numGlobalEntries,numGlobalEntries,
+            minAllGID,maxAllGID,minMyGID,maxMyGID,
+            lgMap,glMap,true,  // we are contiguous
+            platform_clone, comm,true) );
+    }
   }
 
   template<typename Ordinal>

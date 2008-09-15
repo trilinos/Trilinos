@@ -601,13 +601,13 @@ namespace Tpetra {
   }
 
   template<typename Ordinal, typename Scalar>
-  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<const Scalar> &A, Ordinal &MyLDA) const 
+  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Scalar> A, Ordinal &MyLDA) const 
   {
     TEST_FOR_EXCEPT(true);
   }
 
   template<typename Ordinal, typename Scalar>
-  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<const Scalar> > &arrayOfArrays) const
+  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > arrayOfArrays) const
   {
     TEST_FOR_EXCEPT(true);
   }
@@ -615,13 +615,19 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::extractView(Teuchos::ArrayRCP<Scalar> &A, Ordinal &MyLDA) 
   {
-    TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPTION(constantStride() == false, std::runtime_error,
+      "MultiVector::extractConstView(A,LDA): only support for constant stride multivectors.");
+    A = MVData_->values_;
+    MyLDA = MVData_->stride_;
   }
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::extractConstView(Teuchos::ArrayRCP<const Scalar> &A, Ordinal &MyLDA) const
   {
-    TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPTION(constantStride() == false, std::runtime_error,
+      "MultiVector::extractConstView(A,LDA): only support for constant stride multivectors.");
+    A = MVData_->values_.getConst();
+    MyLDA = MVData_->stride_;
   }
 
   template<typename Ordinal, typename Scalar>
@@ -705,7 +711,7 @@ namespace Tpetra {
       // however, if beta != 0, then accumulate beta*C into the sum
       // when summing across all nodes, we only want to accumulate this once, so 
       // set beta == 0 on all nodes except node 0
-      int MyPID = this->getMap().getComm()->myRank();
+      int MyPID = this->getMap().getComm()->getRank();
       if (MyPID!=0) beta_local = ScalarTraits<Scalar>::zero();
     }
 
@@ -715,10 +721,10 @@ namespace Tpetra {
     if (constantStride() == false) Ctmp = rcp(new MultiVector<Ordinal,Scalar>(*this));
     else Ctmp = rcp(this,false);
 
-    if (A.constantStride() == false) Atmp = rcp(new MultiVector<Ordinal,Scalar>(&A));
+    if (A.constantStride() == false) Atmp = rcp(new MultiVector<Ordinal,Scalar>(A));
     else Atmp = rcp(&A,false);
 
-    if (B.constantStride() == false) Btmp = rcp(new MultiVector<Ordinal,Scalar>(&B));
+    if (B.constantStride() == false) Btmp = rcp(new MultiVector<Ordinal,Scalar>(B));
     else Btmp = rcp(&B,false);
 
 #ifdef TEUCHOS_DEBUG
@@ -733,8 +739,8 @@ namespace Tpetra {
     Teuchos::ArrayRCP<const Scalar> Ap, Bp;
     Teuchos::ArrayRCP<Scalar> Cp;
     Atmp->extractConstView(Ap,lda);
-    Btmp->extractConstView(Bp,lda);
-    Ctmp->extractView(Cp,lda);
+    Btmp->extractConstView(Bp,ldb);
+    Ctmp->extractView(Cp,ldc);
 
     Teuchos::BLAS<Ordinal,Scalar> blas;
     // do the arithmetic now
@@ -746,11 +752,10 @@ namespace Tpetra {
 
     // If *this was not strided, copy the data from the strided version and then delete it
     if (constantStride() == false) {
-      Teuchos::Array<Teuchos::ArrayView<Scalar> > aoa(MVData_->pointers_.size());
-      for (Ordinal i=0; i<aoa.size(); ++i) {
+      Teuchos::Array<Teuchos::ArrayView<Scalar> > aoa(MVData_->pointers_.size(),Teuchos::null);
+      for (Ordinal i=0; i<Teuchos::as<Ordinal>(aoa.size()); ++i) {
         aoa[i] = MVData_->pointers_[i]();
       }
-      // FINISH: test this
       Ctmp->extractCopy(aoa());
     }
     Ctmp = Teuchos::null;

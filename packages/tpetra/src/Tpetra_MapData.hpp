@@ -30,7 +30,6 @@
 #define TPETRA_MAPDATA_HPP
 
 #include "Tpetra_MapDataDecl.hpp"
-#include "Tpetra_Directory.hpp"
 
 namespace Tpetra {
 
@@ -47,7 +46,7 @@ namespace Tpetra {
             const std::map<Ordinal,Ordinal>  &glMap,
             bool contiguous,
             Teuchos::RCP< Platform<Ordinal> > platform,
-            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm)
+            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm) 
       : Teuchos::Object("Tpetra::MapData")
       , platform_(platform)
       , comm_(comm)
@@ -62,10 +61,38 @@ namespace Tpetra {
       , distributed_(checkIsDist())
       , lgMap_(lgMap)
       , glMap_(glMap)
-      /*, haveDirectory_(false)  FINISH: add these back in
-        , Directory_() */
-    {}
+  {}
 
+  template<typename Ordinal>
+  MapData<Ordinal>::MapData(
+            Ordinal indexBase, 
+            Ordinal numGlobalEntries,
+            Ordinal numMyEntries,
+            Ordinal minAllGID,
+            Ordinal maxAllGID,
+            Ordinal minMyGID,
+            Ordinal maxMyGID,
+            const Teuchos::ArrayRCP<Ordinal> &lgMap,
+            const std::map<Ordinal,Ordinal>  &glMap,
+            bool contiguous,
+            Teuchos::RCP< Platform<Ordinal> > platform,
+            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm,
+            bool isLocal)
+      : Teuchos::Object("Tpetra::MapData")
+      , platform_(platform)
+      , comm_(comm)
+      , numGlobalEntries_(numGlobalEntries)
+      , indexBase_(indexBase)
+      , numMyEntries_(numMyEntries)
+      , minMyGID_(minMyGID)
+      , maxMyGID_(maxMyGID)
+      , minAllGID_(minAllGID)
+      , maxAllGID_(maxAllGID)
+      , contiguous_(contiguous)
+      , distributed_(!isLocal)
+      , lgMap_(lgMap)
+      , glMap_(glMap)
+    {}
   template<typename Ordinal>
   MapData<Ordinal>::~MapData() {}
 

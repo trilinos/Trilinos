@@ -59,6 +59,20 @@ namespace Tpetra {
             Teuchos::RCP< Platform<Ordinal> > platform,
             Teuchos::RCP< Teuchos::Comm<Ordinal> > comm);
 
+  MapData(Ordinal indexBase, 
+          Ordinal numGlobalEntries,
+          Ordinal numMyEntries,
+          Ordinal minAllGID,
+          Ordinal maxAllGID,
+          Ordinal minMyGID,
+          Ordinal maxMyGID,
+          const Teuchos::ArrayRCP<Ordinal> &lgMap,
+          const std::map<Ordinal,Ordinal>  &glMap,
+          bool contiguous,
+          Teuchos::RCP< Platform<Ordinal> > platform,
+          Teuchos::RCP< Teuchos::Comm<Ordinal> > comm,
+          bool isLocal);
+
 		//! Destructor.
 		~MapData();
 
