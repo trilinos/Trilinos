@@ -98,16 +98,16 @@ typedef struct ZOLTAN_Output_Part_ {
   int  compute_only_part_changes;
 
   int  num_imp;
-  ZOLTAN_ID_PTR imp_gids;
-  ZOLTAN_ID_PTR imp_lids;
-  int *imp_procs;
-  int *imp_part;
+  ZOLTAN_ID_PTR* imp_gids;
+  ZOLTAN_ID_PTR* imp_lids;
+  int **imp_procs;
+  int **imp_part;
 
   int  num_exp;
-  ZOLTAN_ID_PTR exp_gids;
-  ZOLTAN_ID_PTR exp_lids;
-  int *exp_procs;
-  int *exp_part;
+  ZOLTAN_ID_PTR *exp_gids;
+  ZOLTAN_ID_PTR *exp_lids;
+  int **exp_procs;
+  int **exp_part;
 } ZOLTAN_Output_Part;
 
 /*****************************

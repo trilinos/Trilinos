@@ -133,6 +133,18 @@ int Zoltan_ParMetis(
   memset (&prt, 0, sizeof(ZOLTAN_Third_Part));
   memset (&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
   memset (&part, 0, sizeof(ZOLTAN_Output_Part));
+
+  /* Initialize return-argument arrays to return arguments so that F90 works. */
+  part.imp_gids = imp_gids;
+  part.imp_lids = imp_lids;
+  part.imp_procs = imp_procs;
+  part.imp_part = imp_to_part;
+
+  part.exp_gids = exp_gids;
+  part.exp_lids = exp_lids;
+  part.exp_procs = exp_procs;
+  part.exp_part = exp_to_part;
+
   part.num_imp = part.num_exp = -1;
   prt.input_part_sizes = prt.part_sizes = part_sizes;
 
@@ -340,15 +352,15 @@ int Zoltan_ParMetis(
 
   /* Write results in user variables */
   *num_imp = part.num_imp;
-  *imp_gids = part.imp_gids;
-  *imp_lids = part.imp_lids;
-  *imp_procs = part.imp_procs;
-  *imp_to_part = part.imp_part;
+  *imp_gids = *(part.imp_gids);
+  *imp_lids = *(part.imp_lids);
+  *imp_procs = *(part.imp_procs);
+  *imp_to_part = *(part.imp_part);
   *num_exp = part.num_exp;
-  *exp_gids = part.exp_gids;
-  *exp_lids = part.exp_lids;
-  *exp_procs = part.exp_procs;
-  *exp_to_part = part.exp_part;
+  *exp_gids = *(part.exp_gids);
+  *exp_lids = *(part.exp_lids);
+  *exp_procs = *(part.exp_procs);
+  *exp_to_part = *(part.exp_part);
 
 
   /* Get a time here */
