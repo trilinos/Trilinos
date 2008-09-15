@@ -117,13 +117,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   const Epetra_SerialComm &Comm = dynamic_cast<const Epetra_SerialComm &>(matrix->Comm());
 #endif
 
-// TEMPORARY HACK TO AVOID HANG. FIXME!
-  if (numProcs>4) {
-    std::cout << "FAILED" << std::endl;
-    return -1;
-  }
-
-
   int numRows = matrix->NumGlobalRows();
 
   if (numRows < (numProcs * 100)){
