@@ -47,7 +47,7 @@ implicit none
   real(Zoltan_FLOAT) :: version
 
   integer(Zoltan_INT) :: Proc, Num_Proc
-  integer(Zoltan_INT) :: error, i, j
+  integer(Zoltan_INT) :: error, i
 
   type(PARIO_INFO) :: pio_info
   type(PROB_INFO) :: prob

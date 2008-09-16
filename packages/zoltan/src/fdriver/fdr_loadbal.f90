@@ -742,7 +742,6 @@ end function get_num_geom
 !/*****************************************************************************/
 subroutine get_part_multi(data, num_gid_entries, num_lid_entries, &
                     num_obj, global_id, local_id, parts, ierr)
-integer(Zoltan_INT) :: get_part
 type (Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
 integer(Zoltan_INT), intent(in) :: global_id(*)
@@ -751,8 +750,7 @@ integer(Zoltan_INT), intent(out) :: parts(*), ierr
 
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
-  integer(Zoltan_INT) :: i, j
-  real(Zoltan_DOUBLE) :: tmp
+  integer(Zoltan_INT) :: i
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
@@ -796,8 +794,6 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
-  integer(Zoltan_INT) :: i, j
-  real(Zoltan_DOUBLE) :: tmp
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
@@ -1189,9 +1185,12 @@ REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(0:*) :: edge_weight
 INTEGER(Zoltan_INT), INTENT(OUT) :: ierr 
 ! Local variables
 integer i, k, q
+type(MESH_INFO), pointer :: mesh
 
 ! TEST: return all unit weights just to test functionality.
 !       f90 driver supports only plain MatrixMarket (no weights).
+
+  mesh => data%ptr
 
   if (edge_weight_dim > 0) then
     q = 0
