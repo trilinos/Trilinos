@@ -78,7 +78,6 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: ierr         !   Return code
   integer(Zoltan_INT) :: num_gid_entries  ! # of array entries in global IDs
   integer(Zoltan_INT) :: num_lid_entries  ! # of array entries in local IDs
-  type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
   character(8) :: s
   real(Zoltan_FLOAT), allocatable :: psize(:)
   integer(Zoltan_INT), allocatable :: partid(:)
@@ -98,8 +97,6 @@ type(PARIO_INFO) :: pio_info
   nullify(zz_obj, zz_obj_copy, import_gids, import_lids, import_procs, &
     import_to_part, export_gids, export_lids, export_procs, export_to_part)
 
-! make Mesh passable to the callback functions
-  mesh_wrapper%ptr => Mesh
 
 ! /* Allocate space for arrays. */
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr)
@@ -212,7 +209,7 @@ type(PARIO_INFO) :: pio_info
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_OBJ_FN_TYPE, get_num_elements) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Num_Obj_Fn(zz_obj, get_num_elements, &
-                        mesh_wrapper) == ZOLTAN_FATAL) then
+                        MeshWrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
     goto 9999
@@ -220,21 +217,21 @@ type(PARIO_INFO) :: pio_info
 
   if (Test_Multi_Callbacks .eq. 1)  then
     if (Zoltan_Set_Obj_List_Fn(zz_obj, get_elements, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   else
     if (Zoltan_Set_First_Obj_Fn(zz_obj, get_first_element, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
 
     if (Zoltan_Set_Next_Obj_Fn(zz_obj, get_next_element, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -244,7 +241,7 @@ type(PARIO_INFO) :: pio_info
 !  /* Functions for geometry based algorithms */
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_GEOM_FN_TYPE, get_num_geom) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Num_Geom_Fn(zz_obj, get_num_geom, &
-                         mesh_wrapper) == ZOLTAN_FATAL) then
+                         MeshWrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
     goto 9999
@@ -254,14 +251,14 @@ type(PARIO_INFO) :: pio_info
   if ((Test_Hypergraph_Callbacks .eq. 1) .or. (Test_Graph_Callbacks .eq. 1))  then
     if (Test_Multi_Callbacks.eq.1) then
       if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi, &
-                   mesh_wrapper) == ZOLTAN_FATAL) then
+                   MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false. 
         goto 9999
       endif
     else
       if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
-                   mesh_wrapper) == ZOLTAN_FATAL) then
+                   MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -271,7 +268,7 @@ type(PARIO_INFO) :: pio_info
 
   if (Test_Multi_Callbacks.eq.1) then
 
-    if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi, mesh_wrapper) &
+    if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi, MeshWrapper) &
         == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
@@ -280,8 +277,8 @@ type(PARIO_INFO) :: pio_info
 
   else
 !   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_GEOM_FN_TYPE, get_geom, &
-!                  mesh_wrapper) == ZOLTAN_FATAL) then
-    if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, mesh_wrapper) == ZOLTAN_FATAL) then
+!                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -292,14 +289,14 @@ type(PARIO_INFO) :: pio_info
   if (Test_Graph_Callbacks .eq. 1)  then
     if (Test_Multi_Callbacks .eq. 1)  then
       if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
       if (Zoltan_Set_Edge_List_Multi_Fn(zz_obj, get_edge_list_multi, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -307,14 +304,14 @@ type(PARIO_INFO) :: pio_info
   
     else
       if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
       if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -325,14 +322,14 @@ type(PARIO_INFO) :: pio_info
 !  /* Functions for hypergraph based algorithms */
   if (Test_Hypergraph_Callbacks .eq. 1)  then
     if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   
     if (Zoltan_Set_Hg_Cs_Fn(zz_obj, get_hg_compressed_pins, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -343,14 +340,14 @@ type(PARIO_INFO) :: pio_info
   !   Register hypergraph edge weight query functions
   
       if (Zoltan_Set_Hg_Size_Edge_Wts_Fn(zz_obj, get_hg_size_edge_weights, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
       if (Zoltan_Set_Hg_Edge_Wts_Fn(zz_obj, get_hg_edge_weights, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -361,14 +358,14 @@ type(PARIO_INFO) :: pio_info
 
   if (Test_Multi_Callbacks .eq. 1) then
     if (Zoltan_Set_Part_Multi_Fn(zz_obj, get_part_multi, &
-                                      mesh_wrapper) == ZOLTAN_FATAL) then
+                                      MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   else
     if (Zoltan_Set_Part_Fn(zz_obj, get_part, &
-                                mesh_wrapper) == ZOLTAN_FATAL) then
+                                MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999

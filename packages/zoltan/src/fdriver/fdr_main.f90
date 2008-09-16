@@ -138,6 +138,7 @@ end interface
     print *, "fatal: insufficient memory"
     goto 9999
   endif
+  MeshWrapper%ptr => Mesh
 
   nullify(Mesh%eb_names,Mesh%eb_ids,Mesh%eb_cnts,Mesh%eb_nnodes, &
                Mesh%eb_nattrs,Mesh%ecmap_id,Mesh%ecmap_cnt,Mesh%ecmap_elemids,&

@@ -94,47 +94,43 @@ logical function migrate_elements(Proc, zz_obj, &
   integer(Zoltan_INT), pointer :: exp_to_part(:)
 
 !/* Local declarations. */
-type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 
 !/***************************** BEGIN EXECUTION ******************************/
-
-! make Mesh passable to the callback functions
-  mesh_wrapper%ptr => Mesh
 
 !  /*
 !   * register migration functions
 !   */
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, migrate_pre_process, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
+!               MeshWrapper) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Pre_Migrate_PP_Fn(zz_obj, migrate_pre_process, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
+                MeshWrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_POST_MIGRATE_FN_TYPE, migrate_post_process, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
+!               MeshWrapper) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Post_Migrate_Fn(zz_obj, migrate_post_process, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
+                MeshWrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
   if (Test_Multi_Callbacks.eq.1) then
     if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi, &
-                 mesh_wrapper) == ZOLTAN_FATAL) then
+                 MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
     if (Zoltan_Set_Pack_Obj_Multi_Fn(zz_obj, migrate_pack_elem_multi, & 
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
     if (Zoltan_Set_Unpack_Obj_Multi_Fn(zz_obj, migrate_unpack_elem_multi, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
@@ -142,25 +138,25 @@ type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
   else
 
 !   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
-!                mesh_wrapper) == ZOLTAN_FATAL) then
+!                MeshWrapper) == ZOLTAN_FATAL) then
     if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
-                 mesh_wrapper) == ZOLTAN_FATAL) then
+                 MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
 !   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
-!                 mesh_wrapper) == ZOLTAN_FATAL) then
+!                 MeshWrapper) == ZOLTAN_FATAL) then
     if (Zoltan_Set_Pack_Obj_Fn(zz_obj, migrate_pack_elem, & 
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
 !   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
-!                 mesh_wrapper) == ZOLTAN_FATAL) then
+!                 MeshWrapper) == ZOLTAN_FATAL) then
     if (Zoltan_Set_Unpack_Obj_Fn(zz_obj, migrate_unpack_elem, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
