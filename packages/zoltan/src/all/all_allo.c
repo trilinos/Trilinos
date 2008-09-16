@@ -20,6 +20,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "zoltan_util.h"
 #include "all_allo_const.h"
 #include "params_const.h"
 

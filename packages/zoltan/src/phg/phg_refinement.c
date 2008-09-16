@@ -20,6 +20,7 @@ extern "C" {
 #include <float.h>
 #include "phg.h"
 #include "zz_heap.h"
+#include "zz_const.h"
 
 #define BADBALANCE  2.0
 #define HANDLE_ISOLATED_VERTICES    

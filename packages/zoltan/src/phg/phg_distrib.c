@@ -10,7 +10,14 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "phg_distrib.h"
+#include "zz_const.h"
 
     /*
 #define _DEBUG1
@@ -465,3 +472,6 @@ int Zoltan_PHG_Redistribute(
 }
 
     
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

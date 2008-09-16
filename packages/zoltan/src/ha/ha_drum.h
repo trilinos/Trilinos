@@ -16,6 +16,8 @@
 #ifndef __HA_DRUM_H
 #define __HA_DRUM_H
 
+#include "zoltan_util.h"
+
 /* prototypes and structure definitions for Zoltan's DRUM interface */
 
 /* include drum.h for DRUM_machineModel type definition and DRUM prototypes */

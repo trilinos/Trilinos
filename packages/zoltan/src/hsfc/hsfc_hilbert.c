@@ -18,6 +18,7 @@ extern "C" {
 #include <stdio.h>
 #include "hsfc_hilbert_const.h"  /* contains state tables and documentation */
 #include "hsfc.h"
+#include "zz_const.h"
 
 /* see maintenance note at the end of this file for information about extending
 the precision of these routines. */

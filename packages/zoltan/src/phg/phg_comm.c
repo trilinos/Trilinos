@@ -19,6 +19,7 @@ extern "C" {
 /* UNDER CONSTRUCTION */
     
 #include "phg.h"
+#include "zz_const.h"
 
 #if 0
 /* 

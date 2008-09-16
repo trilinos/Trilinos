@@ -26,6 +26,7 @@ extern "C" {
 
 #include <stdio.h>
 #include "rib.h"
+#include "zz_const.h"
 
 int Zoltan_RIB_inertial1d(
      struct Dot_Struct *dotpt,  /* graph data structure for weights */

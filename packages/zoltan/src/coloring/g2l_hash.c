@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+#include "zoltan_util.h"
 #include "coloring.h"    
 #include "g2l_hash.h"
 

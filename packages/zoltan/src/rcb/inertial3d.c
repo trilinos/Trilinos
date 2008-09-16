@@ -26,6 +26,7 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include "rib.h"
+#include "zz_const.h"
 
 /* macros for routines */ 
 #define max(a, b) ((a) < (b) ? (b) : (a)) 

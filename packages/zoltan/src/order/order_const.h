@@ -19,6 +19,7 @@
 #ifndef __PARAMS_CONST_H
 #include "params_const.h" /* needed for MAX_PARAM_STRING_LEN */
 #endif
+#include "zoltan_util.h"
 
 
 #ifdef __cplusplus

@@ -10,9 +10,16 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <float.h>
 #include <limits.h>
 #include "phg_hypergraph.h"
+#include "zz_const.h"
 
 /*****************************************************************************/
 /*************** Hypergraph Function *****************************************/
@@ -593,3 +600,6 @@ void Zoltan_HG_HGraph_Print(
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
