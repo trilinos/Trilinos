@@ -398,46 +398,50 @@ void CostDescriber::free_hg_edge_weights_()
   }
 }
 
-void CostDescriber::ShowCosts()
+void CostDescriber::ShowCosts() const
+{
+  ShowCosts(std::cout);
+}
+void CostDescriber::ShowCosts(std::ostream &os) const
 {
   int nv = getNumVertices();
   int nhge = getNumHypergraphEdgeWeights();
 
   int *gids = NULL;
   if (nv){
-    std::cout << "Vertices and weights" << std::endl << "  ";
+    os << "Vertices and weights" << std::endl << "  ";
     gids = new int [nv];
     float *w = new float [nv];
 
     getVertexWeights(nv, gids, w);
     for (int j=0; j<nv; j++){
-      std::cout << gids[j] << " (" << w[j] << ") ";
+      os << gids[j] << " (" << w[j] << ") ";
     }
-    std::cout << std::endl;
+    os << std::endl;
     delete [] w;
   }
   else{
-    std::cout << "No vertex weights" << std::endl;
+    os << "No vertex weights" << std::endl;
   }
   if (gids && haveGraphEdgeWeights()){
-    std::cout << "Graph edge (non zero) weights for each vertex (row)" << std::endl;
+    os << "Graph edge (non zero) weights for each vertex (row)" << std::endl;
     for (int i=0; i < nv; i++){
       int vid = gids[i];
       std::map<int, float> wgts;
 
       getGraphEdgeWeights(vid, wgts);
 
-      std::cout << "  Vertex (row) GID " << vid << std::endl << "    ";
+      os << "  Vertex (row) GID " << vid << std::endl << "    ";
       std::map<int, float>::iterator curr;
 
       for(curr = wgts.begin(); curr != wgts.end(); curr++){
-        std::cout << curr->first << " (" << curr->second << ") ";
+        os << curr->first << " (" << curr->second << ") ";
       } 
-      std::cout << std::endl;
+      os << std::endl;
     }
   }
   else{
-    std::cout << "No graph edge weights" << std::endl;
+    os << "No graph edge weights" << std::endl;
   }
   if (nhge){
     int *colgids = new int [nhge];
@@ -445,18 +449,18 @@ void CostDescriber::ShowCosts()
 
     getHypergraphEdgeWeights(nhge, colgids, wgts);
 
-    std::cout << "Hypergraph Edge (column) weights" << std::endl << "  ";
+    os << "Hypergraph Edge (column) weights" << std::endl << "  ";
 
     for (int j=0; j < nhge; j++){
-      std::cout << colgids[j] << " (" << wgts[j] << ") ";
+      os << colgids[j] << " (" << wgts[j] << ") ";
     }
-    std::cout << std::endl;
+    os << std::endl;
 
     delete [] colgids;
     delete [] wgts;
   }
   else{
-    std::cout << "No hypergraph edge weights" << std::endl;
+    os << "No hypergraph edge weights" << std::endl;
   }
   
   if (gids) delete [] gids;
@@ -466,36 +470,41 @@ void CostDescriber::ShowCosts()
   nhge = numGlobalHypergraphEdgeWeights_;
 
   if (paramlist_.begin() == paramlist_.end()){
-    std::cout << "No parameters set" << std::endl;
+    os << "No parameters set" << std::endl;
   }
   else{
-    std::cout << "Have some parameters set" << std::endl;
+    os << "Have some parameters set" << std::endl;
   }
 
   if (haveGlobalVertexWeights()){
-    std::cout << "Number of global vertices " << nv << std::endl;
+    os << "Number of global vertices " << nv << std::endl;
   }
   else{
-    std::cout << "Don't know number of global vertices " << std::endl;
+    os << "Don't know number of global vertices " << std::endl;
   }
 
   if (haveGlobalGraphEdgeWeights()){
-    std::cout << "Number of global graph edge weights " << nge << std::endl;
+    os << "Number of global graph edge weights " << nge << std::endl;
   }
   else{
-    std::cout << "Don't know number of global graph edge weights " << std::endl;
+    os << "Don't know number of global graph edge weights " << std::endl;
   }
 
   if (haveGlobalHypergraphEdgeWeights()){
-    std::cout << "Number of global hypergraph edge weights " << nhge << std::endl;
+    os << "Number of global hypergraph edge weights " << nhge << std::endl;
   }
   else{
-    std::cout << "Don't know number of global hypergraph edge weights " << std::endl;
+    os << "Don't know number of global hypergraph edge weights " << std::endl;
   }
-
 }
 
 }//namespace Epetra
 }//namespace Isorropia
+
+std::ostream& operator <<(std::ostream& os, const Isorropia::Epetra::CostDescriber &cd){
+  cd.ShowCosts(os);
+  return os;
+}
+
 #endif
 

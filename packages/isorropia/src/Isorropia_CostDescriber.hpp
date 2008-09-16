@@ -1,8 +1,7 @@
 //@HEADER
 /*
 ************************************************************************
-
-              Isorropia: Partitioning and Load Balancing Package
+Isorropia: Partitioning and Load Balancing Package
                 Copyright (2006) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -40,16 +39,15 @@ USA
 
 namespace Isorropia {
 
-/** Interface (abstract base class) for describing the weights/costs
+/** Interface (abstract base class) for describing the weights or costs
   associated with the vertices and/or edges of the object to be
-  repartitioned and redistributed.
+  partitioned, ordered or colored.
 
-  The CostDescriber object is created by the application and then is
-  queried by the partitioner.  If no CostDescriber is supplied by the
+  A CostDescriber object is created by the application.  If no CostDescriber is supplied by the
   application, sensible default weights should be used.
 
-  The queries for whether weights are provided are the methods 
-  haveVertexWeights(), haveGraphEdgeWeights() and haveHypergraphEdgeWeights().
+  The queries haveVertexWeights(), haveGraphEdgeWeights() and haveHypergraphEdgeWeights() 
+  indicate whether the application has supplied weights to Isorropia.
 */
 class CostDescriber {
 public:
@@ -65,8 +63,12 @@ public:
   virtual void setParameters(const Teuchos::ParameterList& paramlist) = 0;
 
   /** Query whether non-default vertex weights are present. If this
-    function returns false, the caller can assume that vertex weights
-    are all 1.0.
+    function returns false, and the operation is being performed by Zoltan, 
+    the caller can assume that vertex weights are all 1.0.  (When Zoltan is
+    turned off and Isorropia's simple internal linear partitioning is
+    employed, then the default weight of a vertex is the number of non-zeros in the
+    matrix row representing the vertex, or equivalently the number of neighbors the
+    vertex has in the graph.)
   */
   virtual bool haveVertexWeights() const = 0;
 
@@ -75,7 +77,8 @@ public:
   */
   virtual int getNumVertices() const = 0;
 
-  /** Get the lists of vertex ids and weights.
+  /** Get the lists of vertex ids and weights.  global_ids and weights are
+      allocated by the caller.
   */
   virtual void getVertexWeights(int numVertices,
                                 int* global_ids,
@@ -83,7 +86,9 @@ public:
 
   /** Query whether non-default graph edge weights are present.
      If this function returns false, the caller can assume that
-     graph edge weights are all 1.0.
+     graph edge weights are all 1.0.  (If the operation is being performed
+     by Isorropia's internal partitioner because Zoltan has been turned
+     off with a parameter, then edge weights are ignored.)
   */
   virtual bool haveGraphEdgeWeights() const = 0;
 
@@ -92,7 +97,8 @@ public:
   */
   virtual int getNumGraphEdges(int vertex_global_id) const = 0;
 
-  /** Get the graph edge weights for a specified vertex.
+  /** Get the graph edge weights for a specified vertex.  neighbor_global_ids and
+      weights are allocated by the caller.
   */
   virtual void getGraphEdgeWeights(int vertex_global_id,
                                    int num_neighbors,
@@ -101,7 +107,9 @@ public:
 
   /** Query whether non-default hypergraph edge weights are present.
      If this function returns false, the caller can assume that
-     hypergraph edge weights are all 1.0.
+     hypergraph edge weights are all 1.0.  (If Zoltan is not being used,
+     but rather the Isorropia internal partitioner is being used, there
+     is no concept of hyperedges.)
   */
   virtual bool haveHypergraphEdgeWeights() const = 0;
 
@@ -110,7 +118,8 @@ public:
   */
   virtual int getNumHypergraphEdgeWeights() const = 0;
 
-  /** Get the hypergraph edge weights.
+  /** Get the hypergraph edge weights.  The global_ids and weights are
+      allocated by the caller.
   */
   virtual void getHypergraphEdgeWeights(int numEdges,
                                         int* global_ids,

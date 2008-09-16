@@ -36,6 +36,7 @@ USA
 #include <Teuchos_ParameterList.hpp>
 
 #include <map>
+#include <iostream>
 
 #ifdef HAVE_EPETRA
 class Epetra_Vector;
@@ -86,7 +87,7 @@ namespace Epetra {
 
     It is instantiated by the application to define
     weights, and then supplied to Isorropia with the
-    Isorropia::Epetra::create_balanced_copy method or the.
+    Isorropia::Epetra::create_balanced_copy method or the
     Isorropia::Epetra::create_partitioner method.
 
     The CostDescriber can hold vertex (row) weights.
@@ -107,11 +108,19 @@ public:
   /** Destructor */
   ~CostDescriber();
 
-  /** For debugging purposes, print out the cost information.
+  /** For debugging purposes, print the cost information to std::cout.
    */
-  void ShowCosts();
+  void ShowCosts() const;
 
-  /** An internal Isorropia method to set parameters for the CostDescriber instance. 
+  /** For debugging purposes, print the cost information to an output stream.
+   */
+  void ShowCosts(std::ostream &os) const;
+
+  /** For debugging purposes, print the cost information to an output stream.
+   */
+  friend std::ostream& operator <<(std::ostream &, const Isorropia::Epetra::CostDescriber &cd);
+
+  /** An internal Isorropia method to set parameters for the CostDescriber instance.
 
      The contents of the
      input paramlist object are copied into an internal ParameterList
@@ -178,7 +187,7 @@ public:
   */
   bool haveVertexWeights() const;
 
-  /** An internal CostDescriber method used by Isorropia to query whether 
+  /** An internal CostDescriber method used by Isorropia to query 
       the number of vertex weights present. 
 
       Vertices typically correspond to matrix rows.
@@ -300,10 +309,11 @@ public:
   void setNumGlobalHypergraphEdgeWeights(int num);
 
 private:
-  /** to do
+  /** Dynamically allocate storage for hypergraph edge weights.
    */
   void allocate_hg_edge_weights_(int n);
-  /** to do
+
+  /** Free storage used by hypergraph edge weights.
    */
   void free_hg_edge_weights_();
 
