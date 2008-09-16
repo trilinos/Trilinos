@@ -3,7 +3,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(Trilinos)
-SET(${PROJECT_NAME}_VERSION "9.0d")
+SET(Trilinos_VERSION "9.0d")
 
 FIND_PACKAGE(Perl)
 
@@ -21,14 +21,14 @@ EXECUTE_PROCESS(
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-SET(${PROJECT_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "${PROJECT_NAME} include directories")
-SET(${PROJECT_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "${PROJECT_NAME} library directories")
-SET(${PROJECT_NAME}_LIBRARIES "" CACHE INTERNAL "${PROJECT_NAME} libraries")
+SET(Trilinos_INCLUDE_DIRS "" CACHE INTERNAL "Trilinos include directories")
+SET(Trilinos_LIBRARY_DIRS "" CACHE INTERNAL "Trilinos library directories")
+SET(Trilinos_LIBRARIES "" CACHE INTERNAL "Trilinos libraries")
 
 SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Setup paqckages to include ...
-SET( ${PROJECT_NAME}_PACKAGES
+SET( Trilinos_PACKAGES
  Teuchos
  Epetra
  #Anasazi
@@ -36,8 +36,8 @@ SET( ${PROJECT_NAME}_PACKAGES
 )
 
 # Setup user options ...
-FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
-  OPTION(${PROJECT_NAME}_ENABLE_${PACKAGE} "Build the ${PACKAGE} package." ON)
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  OPTION(Trilinos_ENABLE_${PACKAGE} "Build the ${PACKAGE} package." ON)
 ENDFOREACH()
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
@@ -77,9 +77,9 @@ INCLUDE(CTest)
 # Handle some common installation stuff ...
 
 # This is the path where packages should install their header files.
-SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${${PROJECT_NAME}_VERSION}")
+SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${Trilinos_VERSION}")
 # This is the path where packages should install their header configuration files ...
-SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${${PROJECT_NAME}_VERSION}/include")
+SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${Trilinos_VERSION}/include")
 
 # Disable these two because they're problematic.  The issue is that the procedure
 # to install these libraries correctly changes radically based on platform and
@@ -96,8 +96,10 @@ SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${${PROJECT_NAME}_VERSION}/in
 #  INSTALL(FILES ${TRILINOS_LAPACK_LIBRARY} DESTINATION lib)
 #ENDIF(TRILINOS_INSTALL_LAPACK)
 
-
-FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
+# Set up global cache variables for each packages include paths, library
+# directories and dependent libraries.  These form the foundation for linking
+# packages together.
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
   SET(${PACKAGE}_INCLUDE_DIRS "" CACHE INTERNAL "${PACKAGE} include directories")
   SET(${PACKAGE}_LIBRARY_DIRS "" CACHE INTERNAL "${PACKAGE} library directories")
   SET(${PACKAGE}_LIBRARIES "" CACHE INTERNAL "${PACKAGE} libraries")
@@ -108,14 +110,14 @@ ADD_SUBDIRECTORY(packages)
 
 # Setup packaging and distribution ...
 SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
-SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${${PROJECT_NAME}_VERSION}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${${PROJECT_NAME}_VERSION}")
-SET(CPACK_PACKAGE_REGISTRY_KEY "Trilinos ${${PROJECT_NAME}_VERSION}")
+SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${Trilinos_VERSION}")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${Trilinos_VERSION}")
+SET(CPACK_PACKAGE_REGISTRY_KEY "Trilinos ${Trilinos_VERSION}")
 SET(CPACK_PACKAGE_NAME "trilinos")
 SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
-SET(CPACK_PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
+SET(CPACK_PACKAGE_VERSION "${Trilinos_VERSION}")
 SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
-SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${${PROJECT_NAME}_VERSION}")
+SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${Trilinos_VERSION}")
 
 IF(WIN32)
   SET(CPACK_GENERATOR "NSIS")
@@ -141,31 +143,32 @@ MARK_AS_ADVANCED(TRILINOS_LAPACK_LIBRARY)
 # LAPACK libraries advanced since you almost always have to specify these and
 # we don't want to hide that from users.
 
-FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
-  IF(${${PROJECT_NAME}_ENABLE_${PACKAGE}} STREQUAL "ON")
+# Loop over all of the packages and process their CMakeList.txt files.
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  IF(${Trilinos_ENABLE_${PACKAGE}} STREQUAL "ON")
     STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
     # 2008/06/09: rabartl: Above, you can not assume that all package names are lower
     #   case.  This will not work for PyTrilinos, ForTrilinos, ThreadPool, etc.  You should
     #   just name the packages with their directory names!
-    MESSAGE(STATUS "${PROJECT_NAME}_ENABLE_${PACKAGE}=${${PROJECT_NAME}_ENABLE_${PACKAGE}}")
+    MESSAGE(STATUS "Trilinos_ENABLE_${PACKAGE}=${Trilinos_ENABLE_${PACKAGE}}")
     ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
     INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/packages/${PACKAGE_DIR}/${PACKAGE}Config.cmake)
-    LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
-    LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
-    LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${${PACKAGE}_LIBRARIES})
+    LIST(APPEND Trilinos_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
+    LIST(APPEND Trilinos_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
+    LIST(APPEND Trilinos_LIBRARIES ${${PACKAGE}_LIBRARIES})
   ENDIF()
 ENDFOREACH()
 
-LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${TRILINOS_BLAS_LIBRARY} ${TRILINOS_LAPACK_LIBRARY})
+LIST(APPEND Trilinos_LIBRARIES ${TRILINOS_BLAS_LIBRARY} ${TRILINOS_LAPACK_LIBRARY})
 
-LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)
-LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARY_DIRS)
-LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+LIST(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
+LIST(REMOVE_DUPLICATES Trilinos_LIBRARY_DIRS)
+LIST(REMOVE_DUPLICATES Trilinos_LIBRARIES)
 
 ##############################################################################
-# Configure <PACKAGE>Config.cmake for the build tree.
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
+# Configure TrilinosConfig.cmake for the build tree.
+CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake )
 ##############################################################################
 
 # 2008/06/09: rabartl: General Comment: A lot of the logic that is duplicated
@@ -188,7 +191,6 @@ ADD_CUSTOM_TARGET(
   --category=${TRILINOS_TEST_CATEGORY}
   --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
   )
-
 
 ADD_CUSTOM_TARGET(
   runtests-mpi

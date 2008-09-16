@@ -195,13 +195,13 @@ TRILINOS_ADD_EXECUTABLE(
   SOURCES cxx_main.cpp
   DIRECTORY Handle
   )
-#TRILINOS_ADD_TEST(
-#  Handle_test
-#  DIRECTORY Handle
-#  NAME Handle_test
-#  NUM_MPI_PROCS 1
-#  COMM serial mpi
-#  )
+TRILINOS_ADD_TEST(
+  Handle_test
+  DIRECTORY Handle
+  NAME Handle_test
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  )
 
 TRILINOS_ADD_EXECUTABLE(
   LAPACK_test  
