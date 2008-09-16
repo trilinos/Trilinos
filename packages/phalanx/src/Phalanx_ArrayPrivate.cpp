@@ -32,7 +32,7 @@
 
 #include <Phalanx_Array.hpp>
 
-namespace phdmesh {
+namespace PHX {
 
 //----------------------------------------------------------------------
 

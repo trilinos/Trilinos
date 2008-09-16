@@ -34,27 +34,27 @@
 
 #include "Phalanx_Array.hpp"
 
-struct Dim : public phdmesh::ArrayDimTag {
+struct Dim : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Dim& tag();
 };
 
-struct QuadPoint : public phdmesh::ArrayDimTag {
+struct QuadPoint : public PHX::ArrayDimTag {
   const char * name() const ;
   static const QuadPoint& tag();
 };
 
-struct Node : public phdmesh::ArrayDimTag {
+struct Node : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Node& tag();
 };
 
-struct Point : public phdmesh::ArrayDimTag {
+struct Point : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Point& tag();
 };
 
-struct Cell : public phdmesh::ArrayDimTag {
+struct Cell : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Cell& tag();
 };

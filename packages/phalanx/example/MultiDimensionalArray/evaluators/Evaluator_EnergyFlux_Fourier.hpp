@@ -53,10 +53,10 @@ private:
   
   typedef typename EvalT::ScalarT ScalarT;
 
-  PHX::MDField<ScalarT,phdmesh::NaturalOrder,Cell,QuadPoint,Dim> flux;
-  PHX::MDField<ScalarT,phdmesh::NaturalOrder,Cell,QuadPoint> density;
-  PHX::MDField<ScalarT,phdmesh::NaturalOrder,Cell,QuadPoint> dc;
-  PHX::MDField<ScalarT,phdmesh::NaturalOrder,Cell,QuadPoint,Dim> grad_temp;
+  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> flux;
+  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> density;
+  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> dc;
+  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> grad_temp;
   
   std::size_t num_qp;
   std::size_t num_dim;

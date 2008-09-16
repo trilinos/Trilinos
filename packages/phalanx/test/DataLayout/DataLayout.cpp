@@ -45,22 +45,22 @@
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct Spatial : public phdmesh::ArrayDimTag {
+struct Spatial : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Spatial & tag();
 };
 
-struct Quadrature : public phdmesh::ArrayDimTag {
+struct Quadrature : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Quadrature & tag();
 };
 
-struct Node : public phdmesh::ArrayDimTag {
+struct Node : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Node & tag();
 };
 
-struct Cell : public phdmesh::ArrayDimTag {
+struct Cell : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Cell & tag();
 };

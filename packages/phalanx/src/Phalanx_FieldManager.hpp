@@ -72,7 +72,7 @@ namespace PHX {
     template<typename DataT, typename EvalT> 
     void getFieldData(PHX::Field<DataT>& f);
     
-    template<typename DataT, typename EvalT, phdmesh::ArrayOrder Order, 
+    template<typename DataT, typename EvalT, PHX::ArrayOrder Order, 
 	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	     typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
     void getFieldData(PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,

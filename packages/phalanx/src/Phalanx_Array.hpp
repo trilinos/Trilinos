@@ -34,12 +34,68 @@
 #include <string>
 #include <Phalanx_SimpleArrayOps.hpp>
 
-namespace phdmesh {
+namespace PHX {
 
 /**
  * \defgroup mdarray_module
- * \author H. Carter Edwards  <hcedwar@sandia.gov>
- * \date   June 2008
+ * \author  H. Carter Edwards  <hcedwar@sandia.gov>
+ * \date    June 2008
+ * \brief  Multi-dimensional array view of a contiguous block
+ *         of member data with the array dimension ordinates
+ *         documented by "tags".
+ *
+ *  <b> Trivial Example of a Function accepting a 2D Array </b>
+ *
+ *  Given the user-defined array dimension tags
+ *  <b> Cartesian3D </b> and <b> Points </b>
+ *  define a function to find the centroid of an array of points.
+ *  <PRE>
+ *  void centroid( const Array<double,FortranOrder,Cartesian3D,Points> points ,
+ *                 const Array<double,FortranOrder,Cartesian3D> x )
+ *  {
+ *    const unsigned nspace  = points.dimension<0>();
+ *    const unsigned npoints = points.dimension<1>();
+ *
+ *    for ( unsigned id = 0 ; ip < npoints ; ++id ) {
+ *      x(id) = 0 ;
+ *    }
+ *    for ( unsigned ip = 0 ; ip < npoints ; ++ip ) {
+ *      for ( unsigned id = 0 ; id < npoints ; ++id ) {
+ *        x(id) += points( id , ip );
+ *      }
+ *    }
+ *    for ( unsigned id = 0 ; ip < npoints ; ++id ) {
+ *      x(id) /= npoints ;
+ *    }
+ *  }
+ *  </PRE>
+ *
+ *  <b> Example of User-defined Array Dimension Tags </b>
+ *  <PRE>
+ *  struct Cartesian3D : public ArrayDimTag {
+ *    enum { Size = 3 };                // Default size for this dimension.
+ *    const char * name() const ;       // Supply the pure-virtual function.
+ *    static const Cartesian3D & tag(); // Runtime singleton for this tag.
+ *  };
+ *  struct Points : public ArrayDimTag {
+ *    const char * name() const ;  // Supply the pure-virtual function.
+ *    static const Points & tag(); // Runtime singleton for this tag.
+ *    // NO default Size enumeration.
+ *  };
+ *  </PRE>
+ *
+ *  <b> Example of Creating an Array </b> <br>
+ *  Given a block of memory for the collection of points, wrap it in an Array.
+ *  <PRE>
+ *  double * chunk   = ... ; // Chunk of memory from somewhere
+ *  unsigned npoints = ... ; // containing a number of points
+ *
+ *  Array<double,FortranOrder,Cartesian3D,Points> points( chunk , npoints );
+ *  </PRE>
+ *  The <b> points </b> array has dimension<0> set to Cartesian3D::Size
+ *  and dimension<1> set to npoints.  If the npoints argument
+ *  where omitted then a compilation error would be generated due to
+ *  the missing Points::Size enumeration.
  */
 
 //----------------------------------------------------------------------
@@ -78,7 +134,7 @@ template< class ArrayType , class Tag > struct ArrayAppend ;
 
 //----------------------------------------------------------------------
 /** \class  ArrayDimTag
- *  \brief  Virtual base class for array dimension tags supplied to
+ *  \brief  Abstract base class for array dimension tags supplied to
  *          the Array template class.
  *  \ingroup mdarray_module 
  *  \sa Array
@@ -87,7 +143,7 @@ template< class ArrayType , class Tag > struct ArrayAppend ;
  *  <b> name </b> method and <b> tag </b> singleton method
  *  as in the following example.
  *  <PRE>
- *  struct MyTag : public phdmesh::ArrayDimTag {
+ *  struct MyTag : public PHX::ArrayDimTag {
  *    const char * name() const ;
  *    static const MyTag & tag();
  *  };
@@ -135,7 +191,7 @@ struct ArrayDimension : public ArrayDimTag {
 
   const char * name() const ;
 
-  static const ArrayDimension & tag();
+  static const ArrayDimension & tag(); ///< Singleton
 
 private:
   ~ArrayDimension();
@@ -144,14 +200,14 @@ private:
   ArrayDimension & operator = ( const ArrayDimension & );
 };
 
-} // namespace phdmesh
+} // namespace PHX
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
 #include <Phalanx_ArrayPrivate.hpp>
 
-namespace phdmesh {
+namespace PHX {
 
 //----------------------------------------------------------------------
 /** \class  Array
@@ -466,13 +522,16 @@ public:
   /** \} */
 protected:
 
+  /** \brief Pointer to contiguous block of members */
   value_type * m_ptr ;
-  size_type    m_stride[ Rank ];
+
+  /** \brief Array of strides, smallest to largest */
+  size_type m_stride[ Rank ];
 
   template< typename , ArrayOrder ,
             class , class , class , class ,
             class , class , class , class >
-  friend class phdmesh::Array ;
+  friend class PHX::Array ;
 };
 
 //----------------------------------------------------------------------
@@ -537,7 +596,7 @@ protected:
   template< typename , ArrayOrder ,
             class , class , class , class ,
             class , class , class , class >
-  friend class phdmesh::Array ;
+  friend class PHX::Array ;
 };
 
 #endif /* DOXYGEN_COMPILE */
@@ -833,21 +892,28 @@ public:
   /** \} */
 protected:
 
+  /** \brief Pointer to contiguous block of members */
   value_type * m_ptr ;
+
+  /** \brief Rank of the array */
   unsigned     m_rank ;
+
+  /** \brief Array of strides, smallest to largest */
   size_type    m_stride[8];
+
+  /** \brief Array of singleton tags, aligned with strides */
   tag_type     m_tag[8] ;
 
   template< typename , ArrayOrder ,
             class , class , class , class ,
             class , class , class , class >
-  friend class phdmesh::Array ;
+  friend class PHX::Array ;
 };
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-} // namespace phdmesh
+} // namespace PHX
 
 #undef ARRAY_CHECK
 

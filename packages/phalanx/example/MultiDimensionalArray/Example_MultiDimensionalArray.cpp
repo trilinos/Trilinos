@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  using namespace phdmesh;
   
   try {
     
