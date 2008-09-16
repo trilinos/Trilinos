@@ -46,7 +46,6 @@ extern "C" {
 static int Num_Global_Parts;
 static int Num_GID = 1, Num_LID = 1;
 static int Export_Lists_Special = 0;
-static int Matrix_Partition_Approach = 0;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 
@@ -96,11 +95,6 @@ ZOLTAN_HG_EDGE_WTS_FN get_hg_edge_weights;
 
 ZOLTAN_NUM_FIXED_OBJ_FN get_num_fixed_obj;
 ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
-
-ZOLTAN_CSR_SIZE_FN get_sparse_matrix_size;
-ZOLTAN_CSC_SIZE_FN get_sparse_matrix_size;
-ZOLTAN_CSR_FN get_sparse_matrix;
-ZOLTAN_CSC_FN get_sparse_matrix;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -158,21 +152,6 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Num_LID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0) 
       Export_Lists_Special = (strstr(prob->params[i].Val,"partition") != NULL);
-    else if (strcasecmp(prob->params[i].Name, "MATRIX_APPROACH") == 0) {
-      if ((strstr(prob->params[i].Val,"rows") != NULL) ||
-          (strstr(prob->params[i].Val,"row") != NULL)){
-        Matrix_Partition_Approach = MP_ROWS;
-      }
-      else if ((strstr(prob->params[i].Val,"columns") != NULL) ||
-               (strstr(prob->params[i].Val,"cols") != NULL)    ||
-               (strstr(prob->params[i].Val,"col") != NULL)) {
-        Matrix_Partition_Approach = MP_COLS;
-      }
-      else{
-        /* Zoltan_Matrix_Partition defaults to using phg on s.m. rows */
-        Matrix_Partition_Approach = MP_ROWS;
-      }
-    }
   }
 
   /* Set the load-balance method */
@@ -510,37 +489,6 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   else {
     if (Zoltan_Set_Fn(zz, ZOLTAN_PART_FN_TYPE,
                       (void (*)()) get_part,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-  }
-
-  /* Functions for partitioning sparse matrices */
-
-  if (pio_info->init_dist_pins == INITIAL_ROW){
-    if (Zoltan_Set_Fn(zz, ZOLTAN_CSR_SIZE_FN_TYPE,
-                      (void (*)()) get_sparse_matrix_size,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-    if (Zoltan_Set_Fn(zz, ZOLTAN_CSR_FN_TYPE,
-                      (void (*)()) get_sparse_matrix,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-  }
-  else{
-    if (Zoltan_Set_Fn(zz, ZOLTAN_CSC_SIZE_FN_TYPE,
-                      (void (*)()) get_sparse_matrix_size,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-    if (Zoltan_Set_Fn(zz, ZOLTAN_CSC_FN_TYPE,
-                      (void (*)()) get_sparse_matrix,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
@@ -1818,79 +1766,6 @@ void get_hg_size_edge_weights(
 
   *ierr = ZOLTAN_OK;
 }
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void get_sparse_matrix_size(
-  void *data,
-  unsigned int *numrc,
-  unsigned int *numnz,
-  int *ierr)
-{
-  MESH_INFO_PTR mesh;
-
-  START_CALLBACK_TIMER;
-  *ierr = ZOLTAN_OK;
-
-  mesh = (MESH_INFO_PTR) data;
-  if (data == NULL) {
-    *ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  *numrc = mesh->nhedges;
-  *numnz = mesh->hindex[mesh->nhedges];
- 
-End:
-
-  STOP_CALLBACK_TIMER;
-} 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void get_sparse_matrix(
-  void *data,
-  unsigned int numrc,
-  unsigned int numnz,
-  unsigned int *rc_gids,
-  unsigned int *cr_index,
-  unsigned int *cr_gids,
-  int *ierr)
-{
-  MESH_INFO_PTR mesh;
-  int i, numIDs;
-
-  START_CALLBACK_TIMER;
-  *ierr = ZOLTAN_OK;
-
-  mesh = (MESH_INFO_PTR) data;
-  if (data == NULL) {
-    *ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  numIDs = mesh->nhedges;
-
-  if ((numrc != numIDs) || (numnz != mesh->hindex[numIDs])){
-    *ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  /* we could use memcpy's , but maybe someday these won't
-   * be the same objects.
-   */
-  for (i=0; i<numIDs; i++){
-    rc_gids[i] = mesh->hgid[i];
-    cr_index[i] = mesh->hindex[i];
-  }
-  for (i=0; i<numnz; i++){
-    cr_gids[i] = mesh->hvertex[i];
-  }
-    
-End:
-
-  STOP_CALLBACK_TIMER;
-} 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

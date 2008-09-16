@@ -39,11 +39,6 @@ extern "C" {
 #define COLUMNS         1
 #define NONZEROS        2
 
-/* define the matrix partitioning approach for LB_METHOD=sparse_matrix */
-
-#define MP_ROWS   1
-#define MP_COLS   2
-
 /* define the initial distribution types - for Chaco file vertices
    and for hypergraph file pins  */
 

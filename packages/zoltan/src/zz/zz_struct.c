@@ -284,10 +284,6 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Child_Weight = NULL;
   zz->Get_Num_Fixed_Obj = NULL;
   zz->Get_Fixed_Obj_List = NULL;
-  zz->Get_CSC_Size = NULL;
-  zz->Get_CSC = NULL;
-  zz->Get_CSR_Size = NULL;
-  zz->Get_CSR = NULL;
   zz->Get_Part_Fort = NULL;
   zz->Get_Num_Edges_Fort = NULL;
   zz->Get_Edge_List_Fort = NULL;
@@ -342,10 +338,6 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Child_Weight_Data = NULL;
   zz->Get_Num_Fixed_Obj_Data = NULL;
   zz->Get_Fixed_Obj_List_Data = NULL;
-  zz->Get_CSC_Size_Data = NULL;
-  zz->Get_CSC_Data = NULL;
-  zz->Get_CSR_Size_Data = NULL;
-  zz->Get_CSR_Data = NULL;
 
   zz->Pack_Obj = NULL;
   zz->Unpack_Obj = NULL;

@@ -414,28 +414,6 @@ struct Zoltan_Struct {
   void *Get_HG_CS_Data;                /* Ptr to user defined data
                                         to be passed to Get_HG_CS() */
   /***************************************************************************/
-  ZOLTAN_CSC_SIZE_FN *Get_CSC_Size;    /* Get size of compressed matrix columns */
-  /*ZOLTAN_CSC_SIZE_FORT_FN *Get_CSC_Size_Fort;*/
-                                       /* Fortran version            */
-  void *Get_CSC_Size_Data;             /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
-  ZOLTAN_CSR_SIZE_FN *Get_CSR_Size;    /* Get size of compressed matrix rows */
-  /*ZOLTAN_CSR_SIZE_FORT_FN *Get_CSR_Size_Fort;*/
-                                       /* Fortran version            */
-  void *Get_CSR_Size_Data;             /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
-  ZOLTAN_CSC_FN *Get_CSC;                /* Get compressed matrix columns */
-  /*ZOLTAN_CSC_FN *Get_CSC_Fort;*/           /* Fortran version            */
-  void *Get_CSC_Data;                   /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
-  ZOLTAN_CSR_FN *Get_CSR;                /* Get compressed matrix rows */
-  /*ZOLTAN_CSR_FN *Get_CSR_Fort;*/           /* Fortran version            */
-  void *Get_CSR_Data;                   /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
   ZOLTAN_HG_SIZE_EDGE_WTS_FN *Get_HG_Size_Edge_Wts;    
                                        /* Fn ptr to get size of hypergraph
                                           edge weights to be returned.  */

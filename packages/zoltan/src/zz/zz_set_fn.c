@@ -217,22 +217,6 @@ int ierr;
     ierr = Zoltan_Set_HG_Edge_Wts_Fn(zz, 
                   (ZOLTAN_HG_EDGE_WTS_FN *) fn, data);
     break;
-  case ZOLTAN_CSC_SIZE_FN_TYPE:
-    ierr = Zoltan_Set_CSC_Size_Fn(zz, 
-                  (ZOLTAN_CSC_SIZE_FN *) fn, data);
-    break;
-  case ZOLTAN_CSR_SIZE_FN_TYPE:
-    ierr = Zoltan_Set_CSR_Size_Fn(zz, 
-                  (ZOLTAN_CSR_SIZE_FN *) fn, data);
-    break;
-  case ZOLTAN_CSC_FN_TYPE:
-    ierr = Zoltan_Set_CSC_Fn(zz, 
-                  (ZOLTAN_CSC_FN *) fn, data);
-    break;
-  case ZOLTAN_CSR_FN_TYPE:
-    ierr = Zoltan_Set_CSR_Fn(zz, 
-                  (ZOLTAN_CSR_FN *) fn, data);
-    break;
   case ZOLTAN_NUM_FIXED_OBJ_FN_TYPE:
     ierr = Zoltan_Set_Num_Fixed_Obj_Fn(zz, 
                   (ZOLTAN_NUM_FIXED_OBJ_FN *) fn, data);
@@ -739,58 +723,6 @@ int Zoltan_Set_HG_Edge_Wts_Fn(
 {
   zz->Get_HG_Edge_Wts = fn;
   zz->Get_HG_Edge_Wts_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_CSC_Size_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSC_SIZE_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSC_Size = fn;
-  zz->Get_CSC_Size_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_CSR_Size_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSR_SIZE_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSR_Size = fn;
-  zz->Get_CSR_Size_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_CSC_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSC_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSC = fn;
-  zz->Get_CSC_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_CSR_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSR_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSR = fn;
-  zz->Get_CSR_Data = data;
   return ZOLTAN_OK;
 }
 
