@@ -44,27 +44,27 @@
 
 
 // Dimension tags for this problem
-struct Dim : public phdmesh::ArrayDimTag {
+struct Dim : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Dim& tag();
 };
 
-struct Quadrature : public phdmesh::ArrayDimTag {
+struct Quadrature : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Quadrature& tag();
 };
 
-struct Node : public phdmesh::ArrayDimTag {
+struct Node : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Node& tag();
 };
 
-struct Cell : public phdmesh::ArrayDimTag {
+struct Cell : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Cell& tag();
 };
 
-struct Point : public phdmesh::ArrayDimTag {
+struct Point : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Point& tag();
 };
@@ -102,7 +102,6 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  using namespace phdmesh;
   
   try {
     

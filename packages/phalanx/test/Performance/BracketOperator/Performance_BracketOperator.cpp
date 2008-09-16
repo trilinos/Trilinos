@@ -55,7 +55,7 @@
 
 */
 
-struct Point : public phdmesh::ArrayDimTag {
+struct Point : public PHX::ArrayDimTag {
   const char * name() const ;
   static const Point& tag();
 };
@@ -70,7 +70,6 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  using namespace phdmesh;
   
   try {
     

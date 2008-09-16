@@ -45,12 +45,12 @@ public:
   
   virtual ~MyCell() {}
   
-  phdmesh::Array<double,phdmesh::NaturalOrder,Node,Dim>& getNodeCoordinates();
+  PHX::Array<double,PHX::NaturalOrder,Node,Dim>& getNodeCoordinates();
   
-  phdmesh::Array<double,phdmesh::NaturalOrder,QuadPoint,Node>& 
+  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node>& 
   getBasisFunctions();
   
-  phdmesh::Array<double,phdmesh::NaturalOrder,QuadPoint,Node,Dim>& 
+  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
   getBasisFunctionGradients();
   
   std::size_t localIndex();
@@ -67,11 +67,11 @@ private:
   
   Teuchos::ArrayRCP<double> m_grad_phi_mem;
 
-  phdmesh::Array<double,phdmesh::NaturalOrder,Node,Dim> m_coords;
+  PHX::Array<double,PHX::NaturalOrder,Node,Dim> m_coords;
   
-  phdmesh::Array<double,phdmesh::NaturalOrder,QuadPoint,Node> m_phi;
+  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node> m_phi;
 
-  phdmesh::Array<double,phdmesh::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi;
+  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi;
 
 };
 

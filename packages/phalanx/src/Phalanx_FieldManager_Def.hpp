@@ -67,7 +67,7 @@ getFieldData(PHX::Field<DataT>& f)
     
 // **************************************************************
 template<typename Traits>
-template<typename DataT, typename EvalT, phdmesh::ArrayOrder Order,
+template<typename DataT, typename EvalT, PHX::ArrayOrder Order,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
 inline
