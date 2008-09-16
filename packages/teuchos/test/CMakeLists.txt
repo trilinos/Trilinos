@@ -141,16 +141,19 @@ TRILINOS_ADD_TEST(
   )
 
 TRILINOS_ADD_EXECUTABLE(
-  teuchosUnitTests
-  DIRECTORY UnitTest
+  MemoryManagement_UnitTests
+  DIRECTORY MemoryManagement
   COMM serial mpi  
   SOURCES
-    ../MemoryManagement/Array_UnitTests.cpp
-    Teuchos_StandardUnitTestMain.cpp
+    RCPNodeHandle_UnitTests.cpp
+    Array_UnitTest_helpers.cpp
+    Array_UnitTests.cpp
+    ArrayView_UnitTests.cpp
+    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
   )
 TRILINOS_ADD_TEST(
-  teuchosUnitTests
-  DIRECTORY UnitTest
+  MemoryManagement_UnitTests
+  DIRECTORY MemoryManagement
   NUM_MPI_PROCS 1
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"

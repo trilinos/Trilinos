@@ -16,12 +16,12 @@ INCLUDE(Parse_Variable_Arguments)
 SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
 
 FUNCTION (TRILINOS_ADD_EXECUTABLE EXE_NAME)
+
    PARSE_ARGUMENTS(
      PARSE  #prefix
      "SOURCES;DIRECTORY;COMM" #lists
      "" #options
      ${ARGN} )
-  
 
   SET(ADD_THE_EXE OFF)
   IF(TRILINOS_ENABLE_MPI)
