@@ -192,6 +192,7 @@ The following have contributed to the design through ideas, discussions, and/or 
 - \ref user_guide_getting_started
 - \ref user_guide_domain_model
 - \ref user_guide_mdarray_domain_model
+- \ref performance
 - \ref user_guide_step1
 - \ref user_guide_step2
 - \ref user_guide_step3
@@ -404,6 +405,21 @@ An Evaluator is an object that evaluates a set of Fields.  It contains two vecto
 <li><b>Evaluator Manager</b>
 
 The main object that stores all Fields and Evaluators.  The evaluator manager (EM) sorts the evaluators and determines which evaluators to call and the order necessary to ensure consistency in the fields.  The EM also allocates the memory for storage of all fields so that if we want to force all fields to be in a contiguous block, we have that option available.  Users can write their own allocator for memory management.
+
+</ul>
+
+\section performance Performance
+
+Some recomendations for high performance:
+<ul>
+
+<li> <b>Use worksets</b>  
+
+<li> <b>Enable compiler optimization:</b>  The Field and MDField classes use overloaded inlined bracket operators for data access.  That means if you build without optimization some compilers will produce very slow code.  To see if your compiler is optimizing away the bracket operator overhead, run the test found in the directory "phalanx/test/Performance/BracketOperator".  If the timings are the same, your compiler is optimizing correctly.   For example, on gnu g++ 4.2.4, compiling with -O0 shows approximately 2x overhead for bracket accessors, while -O2 shows about a 10% overhead, while -O3 completely removes the overhead.
+
+<li> <b>Algebraic Types:</b> Roger - finish this (talk about perf tests)
+
+<li> <b>Use Contiguous Allocator:</b> Roger - finish this (talk about perf tests)
 
 </ul>
 
