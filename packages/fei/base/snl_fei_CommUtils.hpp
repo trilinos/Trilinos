@@ -176,7 +176,6 @@ namespace snl_fei {
     int exchange(MessageHandler<T>* msgHandler);
 
   private:
-    bool inErrorState_;
     std::vector<T> tmpData_;
   };
 
@@ -188,7 +187,7 @@ namespace snl_fei {
 #include <fei_mpiTraits.hpp>
 
 #undef fei_file
-#define fei_file "snl_fei_CommUtils.h"
+#define fei_file "snl_fei_CommUtils.hpp"
 
 #include <fei_ErrMacros.hpp>
 
@@ -196,7 +195,6 @@ namespace snl_fei {
 template<class T>
 snl_fei::CommUtils<T>::CommUtils(MPI_Comm comm)
   : fei::CommUtilsBase(comm),
-    inErrorState_(false),
     tmpData_(0)
 {
   tmpData_.resize(numProcs_);
@@ -214,8 +212,6 @@ int snl_fei::CommUtils<T>::Allgatherv(std::vector<T>& sendbuf,
                                       std::vector<int>& recvLengths,
                                       std::vector<T>& recvbuf)
 {
-  if (inErrorState_) return(-1);
-
   return( fei::Allgatherv<T>(comm_, sendbuf, recvLengths, recvbuf) );
 }
 

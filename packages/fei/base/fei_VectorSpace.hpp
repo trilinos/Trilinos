@@ -22,7 +22,6 @@
 namespace fei {
   class FieldMask;
   class Lookup_Impl;
-  class ParameterSet;
   class Pattern;
   class Record;
   class Record_Operator;
@@ -627,11 +626,11 @@ namespace fei {
      */
     int getGlobalNumBlkIndices() const;
 
-    /** Intended to be used by other snl_fei:: classes.
+    /** Intended to be used by other fei classes.
     */
     int getRecordCollection(int idType, snl_fei::RecordCollection*& records);
 
-    /** Intended to be used only by other snl_fei:: classes.
+    /** Intended to be used only by other fei classes.
     */
     std::vector<int>& getEqnNumbers();
 

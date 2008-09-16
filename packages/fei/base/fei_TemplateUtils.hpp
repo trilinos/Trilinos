@@ -16,7 +16,6 @@
 #include <fei_SparseRowGraph.hpp>
 #include <snl_fei_RaggedTable.hpp>
 #include <snl_fei_Utils.hpp>
-#include <fei_CommUtilsBase.hpp>
 
 #include <set>
 #include <vector>
@@ -33,6 +32,7 @@ namespace fei {
 		   std::vector<int>& recvLengths,
 		   std::vector<T>& recvbuf)
     {
+      int numProcs = 1;
 #ifdef FEI_SER
       //If we're in serial mode, just copy sendbuf to recvbuf and return.
 
@@ -40,16 +40,13 @@ namespace fei {
       recvLengths.resize(1);
       recvLengths[0] = sendbuf.size();
 #else
-
-      fei::CommUtilsBase commUtilsBase(comm);
+      MPI_Comm_size(comm, &numProcs);
 
       try {
 
 	MPI_Datatype mpi_dtype = fei::mpiTraits<T>::mpi_type();
-	int numProcs = commUtilsBase.numProcs();
 
-	std::vector<int>& tmpInt = commUtilsBase.commCore_->tmpIntData_;
-	tmpInt.assign(numProcs, 0);
+	std::vector<int> tmpInt(numProcs, 0);
 
 	int len = (int)sendbuf.size();
 	int* tmpBuf = &tmpInt[0];

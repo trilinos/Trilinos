@@ -16,13 +16,6 @@
 // Interface to Linear Solvers.
 //
 //=========================================================================
-// Work has begun, in specifying FEI 3.0. FEI 3.0 will consist of a number
-// of separate interfaces, in contrast to FEI 2.x which is a single large
-// interface that manages the entire assembly/solution process. Thus the
-// FEI 3.0 interfaces will be spread among several files, reflecting the
-// class names of the individual interfaces. This header, containing FEI 2.x,
-// will continue to exist for users who don't wish to switch to the new
-// specification.
 //
 // Below is a list of the functions in FEI 2.x, grouped roughly by
 // usage categories, with the initialization and load groups (1 and 2)
@@ -149,10 +142,12 @@
 //
  
 #include <fei_macros.hpp>
-//Include some #defines
 #include <fei_defs.h>
 
 /** public Finite Element Interface specification, version 2.1, in C++.
+
+ Abstract base class.
+
 Note: all FEI functions return an int error code. A value of 0 indicates
 that there was no error. Errors are usually indicated by -1, except where
 noted in the documentation for a particular function.
@@ -161,7 +156,7 @@ class FEI {
  
   public: 
 
-   /** Destructor. This will call through to the implementation's destructor.
+   /** Destructor.
    */
    virtual ~FEI() {} 
 
