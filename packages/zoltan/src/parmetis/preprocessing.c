@@ -276,7 +276,7 @@ int Zoltan_Preprocess_Graph(
 
   if (gr->scatter>0) {
     ierr = Zoltan_Preprocess_Scatter_Graph (zz, gr, prt, geo, vsp);
-    if (ierr) {
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL,
 			    "Error returned from Zoltan_Preprocess_Scatter_Graph");
     }
