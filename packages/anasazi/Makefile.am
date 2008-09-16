@@ -114,8 +114,8 @@ tests:
 	@echo ""
 	cd $(abs_top_builddir)/test && $(MAKE) && \
 			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/test && $(MAKE) && \
-			cd $(abs_top_builddir)/thyra/test && $(MAKE) 
-#cd $(abs_top_builddir)/tpetra/test && $(MAKE)
+			cd $(abs_top_builddir)/thyra/test && $(MAKE) && \
+			cd $(abs_top_builddir)/tpetra/test && $(MAKE)
 	@echo ""
 	@echo "Finished building anasazi tests."
 	@echo ""
@@ -153,8 +153,8 @@ endif
 clean-tests:
 	cd $(abs_top_builddir)/test && $(MAKE) clean && \
 			cd $(abs_top_builddir)/epetra/util && $(MAKE) clean && cd $(abs_top_builddir)/epetra/test && $(MAKE) clean && \
-			cd $(abs_top_builddir)/thyra/test && $(MAKE) clean
-#cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
+			cd $(abs_top_builddir)/thyra/test && $(MAKE) clean && \
+			cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
 
 clean-examples:
 	cd $(abs_top_builddir)/example && $(MAKE) clean && \
@@ -180,7 +180,7 @@ EPETRA_SUBDIR = epetra
 endif
 
 if BUILD_ANASAZI_TPETRA
-TPETRA_SUBDIR = #tpetra
+TPETRA_SUBDIR = tpetra
 endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR) $(TPETRA_SUBDIR) 

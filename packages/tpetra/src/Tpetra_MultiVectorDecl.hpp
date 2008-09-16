@@ -105,26 +105,32 @@ namespace Tpetra {
     //! @name Extraction methods
     //@{ 
 
-    // Returns a MultiVector with copies of selected columns.
-    MultiVector<Ordinal,Scalar> subCopy(const Teuchos::Range1D &colRng) const;
+    /*
+    //! Returns a MultiVector with copies of selected columns.
+    Teuchos::RCP<MultiVector<Ordinal,Scalar> > subCopy(const Teuchos::Range1D &colRng) const;
+    */
 
     // Returns a MultiVector with copies of selected columns.
-    MultiVector<Ordinal,Scalar> subCopy(const Teuchos::ArrayView<Teuchos_Index> &cols) const;
+    Teuchos::RCP<MultiVector<Ordinal,Scalar> > subCopy(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
-    // Returns a MultiVector with views of selected columns.
-    MultiVector<Ordinal,Scalar> subView(const Teuchos::Range1D &colRng);
+    /*
+    //! Returns a MultiVector with views of selected columns.
+    Teuchos::RCP<MultiVector<Ordinal,Scalar> > subView(const Teuchos::Range1D &colRng);
+    */
 
-    // Returns a MultiVector with views of selected columns.
-    MultiVector<Ordinal,Scalar> subView(const Teuchos::ArrayView<Teuchos_Index> &cols);
+    //! Returns a MultiVector with views of selected columns.
+    Teuchos::RCP<MultiVector<Ordinal,Scalar> > subView(const Teuchos::ArrayView<const Teuchos_Index> &cols);
 
-    // Returns a const MultiVector with const views of selected columns.
-    const MultiVector<Ordinal,Scalar> subViewConst(const Teuchos::Range1D &colRng) const;
+    /*
+    //! Returns a const MultiVector with const views of selected columns.
+    Teuchos::RCP<const MultiVector<Ordinal,Scalar> > subViewConst(const Teuchos::Range1D &colRng) const;
+    */
 
-    // Returns a const MultiVector with const views of selected columns.
-    const MultiVector<Ordinal,Scalar> subViewConst(const Teuchos::ArrayView<Teuchos_Index> &cols) const;
+    //! Returns a const MultiVector with const views of selected columns.
+    Teuchos::RCP<const MultiVector<Ordinal,Scalar> > subViewConst(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
     //! Return multi-vector values in user-provided two-dimensional array.
-    void extractCopy(Teuchos::ArrayView<Scalar> A, Ordinal &MyLDA) const;
+    void extractCopy(const Teuchos::ArrayView<Scalar> &A, Ordinal &MyLDA) const;
 
     //! Return multi-vector values in user-provided array of pointers.
     void extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > arrayOfArrays) const;
@@ -208,7 +214,7 @@ namespace Tpetra {
     /*! \param In 
       A - Multivector to copy
      */
-    MultiVector<Ordinal,Scalar> operator=(const MultiVector<Ordinal,Scalar> &source);
+    MultiVector<Ordinal,Scalar>& operator=(const MultiVector<Ordinal,Scalar> &source);
 
     //! Vector access function.
     /*! ArrayRCP to the local values in the ith vector of this multi-vector.
@@ -282,6 +288,9 @@ namespace Tpetra {
     protected:
 
     Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > MVData_;
+
+    // Advanced MultiVector constuctor for creating views.
+    MultiVector(const Map<Ordinal> &map, Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata);
 
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Ordinal,Scalar> & sourceObj);

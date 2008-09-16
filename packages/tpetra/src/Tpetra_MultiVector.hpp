@@ -38,6 +38,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_Ptr.hpp>
 
 #include "Tpetra_MultiVectorDecl.hpp"
 #include "Tpetra_MultiVectorData.hpp"
@@ -96,7 +97,7 @@ namespace Tpetra {
     using Teuchos::as;
     TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
         "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
-    const Ordinal myLen = this->getMap().getNumMyEntries();
+    const Ordinal myLen = myLength();
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(LDA < myLen, std::invalid_argument,
         "Tpetra::MultiVector::MultiVector(): LDA must be large enough to accomodate the local entries.");
@@ -116,6 +117,12 @@ namespace Tpetra {
       copy(Aptr.begin(),Aptr.end(),MVData_->pointers_[i].begin());
     }
   }
+
+
+  template <typename Ordinal, typename Scalar> 
+  MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata) 
+    : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector"), MVData_(mvdata)
+  {}
 
 
   template <typename Ordinal, typename Scalar> 
@@ -206,6 +213,11 @@ namespace Tpetra {
       const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
       const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs)
   {
+    (void)sourceObj;
+    (void)numSameIDs;
+    (void)numPermuteIDs;
+    (void)permuteToLIDs;
+    (void)permuteFromLIDs;
     TEST_FOR_EXCEPT(true);
   }
 
@@ -219,6 +231,12 @@ namespace Tpetra {
       Ordinal &packetSize,
       Distributor<Ordinal> &distor)
   {
+    (void)sourceObj;
+    (void)numExportIDs;
+    (void)exportLIDs;
+    (void)exports;
+    (void)packetSize;
+    (void)distor;
     TEST_FOR_EXCEPT(true);
   }
 
@@ -231,6 +249,11 @@ namespace Tpetra {
       Distributor<Ordinal> &distor,
       CombineMode CM)
   {
+    (void)numImportIDs;
+    (void)importLIDs;
+    (void)imports;
+    (void)distor;
+    (void)CM;
     TEST_FOR_EXCEPT(true);
   }
 
@@ -433,9 +456,17 @@ namespace Tpetra {
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     using Teuchos::ArrayRCP;
     const Ordinal numVecs = this->numVectors();
-    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
-      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
-      blas.SCAL(curpos.size(),alpha,curpos.getRawPtr(),ONE);
+    if (alpha == Teuchos::ScalarTraits<Scalar>::one()) {
+      // do nothing
+    }
+    else if (alpha == Teuchos::ScalarTraits<Scalar>::zero()) {
+      putScalar(alpha);
+    }
+    else {
+      for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+        ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+        blas.SCAL(curpos.size(),alpha,curpos.getRawPtr(),ONE);
+      }
     }
   }
 
@@ -452,13 +483,22 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::scale(): MultiVectors must have the same number of vectors.");
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
-    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
-      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
-      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
-      // copy A to *this
-      blas.COPY(curpos.size(),Apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
-      // then scale *this in-situ
-      blas.SCAL(curpos.size(),alpha,curpos.getRawPtr(),ONE);
+    if (alpha == Teuchos::ScalarTraits<Scalar>::zero()) {
+      putScalar(alpha); // set me = 0.0
+    }
+    else if (alpha == Teuchos::ScalarTraits<Scalar>::one()) {
+      *this = A;        // set me = A
+    }
+    else {
+      // set me == alpha*A
+      for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+        ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
+        ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
+        // copy A to *this
+        blas.COPY(curpos.size(),Apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+        // then scale *this in-situ
+        blas.SCAL(curpos.size(),alpha,curpos.getRawPtr(),ONE);
+      }
     }
   }
 
@@ -514,20 +554,49 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::update(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A, const Scalar &beta) 
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
     using Teuchos::OrdinalTraits;
     using Teuchos::ArrayRCP;
-    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    if (alpha == ST::zero()) {
+      scale(beta);
+    }
     const Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have compatible Maps.");
     TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
-      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
-      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
-      blas.SCAL(curpos.size(),beta,curpos.getRawPtr(),ONE);
-      blas.AXPY(curpos.size(),alpha,Apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+
+    if (beta == ST::zero()) { // this = alpha*A
+      scale(alpha,A);
+      return;
+    }
+    else if (beta == ST::one()) { // this = this + alpha*A
+      if (alpha == ST::one()) { // this = this + A
+        for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+          ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = A.MVData_->pointers_[i].getConst();
+          for (; curpos != curpos.end(); ++curpos, ++Apos) { *curpos = (*curpos) + (*Apos); }
+        }
+      }
+      else { // this = this + alpha*A
+        for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+          ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = A.MVData_->pointers_[i].getConst();
+          for (; curpos != curpos.end(); ++curpos, ++Apos) { *curpos = (*curpos) + alpha*(*Apos); }
+        }
+      }
+    }
+    else { // this = beta*this + alpha*A
+      if (alpha == ST::one()) { // this = beta*this + A
+        for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+          ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = A.MVData_->pointers_[i].getConst();
+          for (; curpos != curpos.end(); ++curpos, ++Apos) { *curpos = beta*(*curpos) + (*Apos); }
+        }
+      }
+      else { // this = beta*this + alpha*A
+        for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+          ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = A.MVData_->pointers_[i].getConst();
+          for (; curpos != curpos.end(); ++curpos, ++Apos) { *curpos = beta*(*curpos) + alpha*(*Apos); }
+        }
+      }
     }
   }
 
@@ -535,23 +604,99 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::update(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A, const Scalar &beta, const MultiVector<Ordinal,Scalar> &B, const Scalar &gamma)
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
     using Teuchos::OrdinalTraits;
     using Teuchos::ArrayRCP;
-    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    if (alpha == ST::zero()) {
+      update(beta,B,gamma);
+    }
+    else if (beta == ST::zero()) {
+      update(alpha,A,gamma);
+    }
     const Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()) || !this->getMap().isCompatible(B.getMap()),
         std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have compatible Maps.");
     TEST_FOR_EXCEPTION(A.numVectors() != numVecs || B.numVectors() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
-      ArrayRCP<Scalar> &curpos = MVData_->pointers_[i];
-      ArrayRCP<Scalar> &Apos = A.MVData_->pointers_[i];
-      ArrayRCP<Scalar> &Bpos = B.MVData_->pointers_[i];
-      blas.SCAL(curpos.size(),gamma,curpos.getRawPtr(),ONE);
-      blas.AXPY(curpos.size(),alpha,Apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
-      blas.AXPY(curpos.size(),beta, Bpos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+    // determine if alpha==1 xor beta==1
+    // if only one of these is 1.0, make it alpha
+    Teuchos::Ptr<const MultiVector<Ordinal,Scalar> > Aptr = Teuchos::ptr(&A), Bptr = Teuchos::ptr(&B);
+    Teuchos::Ptr<const Scalar> lalpha = Teuchos::ptr(&alpha),
+                               lbeta  = Teuchos::ptr(&beta);
+    if (alpha!=ST::one() && beta==ST::one()) {
+      // switch them
+      Aptr = Teuchos::ptr(&B);
+      Bptr = Teuchos::ptr(&A);
+      lalpha = Teuchos::ptr(&beta);
+      lbeta  = Teuchos::ptr(&alpha);
+    }
+
+    if (gamma == ST::zero()) { // this = lalpha*A + lbeta*B
+      if (*lalpha == ST::one()) {
+        if (*lbeta == ST::one()) { // this = gamma*this + A + B
+          for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+            ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+            for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = (*Apos) + (*Bpos); }
+          }
+        }
+        else { // this = A + lbeta*B
+          for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+            ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+            for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = (*Apos) + (*lbeta)*(*Bpos); }
+          }
+        }
+      }
+      else { // this = lalpha*A + lbeta*B
+        for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+          ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+          for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
+        }
+      }
+    }
+    else if (gamma == ST::one()) { // this = this + lalpha*A + lbeta*B
+      if ((*lalpha) == ST::one()) {
+        if ((*lbeta) == ST::one()) { // this = this + A + B
+          for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+            ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+            for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*Apos) + (*Bpos); }
+          }
+        }
+        else { // this = this + A + lbeta*B
+          for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+            ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+            for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*Apos) + (*lbeta)*(*Bpos); }
+          }
+        }
+      }
+      else { // this = this + lalpha*A + lbeta*B
+        for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+          ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+          for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
+        }
+      }
+    }
+    else { // this = gamma*this + lalpha*A + lbeta*B
+      if ((*lalpha) == ST::one()) {
+        if ((*lbeta) == ST::one()) { // this = gamma*this + A + B
+          for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+            ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+            for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*Apos) + (*Bpos); }
+          }
+        }
+        else { // this = gamma*this + A + lbeta*B
+          for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+            ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+            for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*Apos) + (*lbeta)*(*Bpos); }
+          }
+        }
+      }
+      else { // this = gamma*this + lalpha*A + lbeta*B
+        for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+          ArrayRCP<Scalar> curpos = MVData_->pointers_[i]; ArrayRCP<const Scalar> Apos = Aptr->MVData_->pointers_[i].getConst(), Bpos = Bptr->MVData_->pointers_[i].getConst();
+          for (; curpos != curpos.end(); ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
+        }
+      }
     }
   }
 
@@ -564,51 +709,125 @@ namespace Tpetra {
   }
 
   template<typename Ordinal, typename Scalar>
-  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subCopy(const Teuchos::Range1D &colRng) const
+  MultiVector<Ordinal,Scalar>& MultiVector<Ordinal,Scalar>::operator=(const MultiVector<Ordinal,Scalar> &source) {
+    // Check for special case of this=Source
+    if (this != &source) {
+      TEST_FOR_EXCEPTION( !this->getMap().isCompatible(source.getMap()), std::runtime_error,
+          "Tpetra::MultiVector::operator=(): MultiVectors must have compatible Maps.");
+      if (constantStride() && source.constantStride() && myLength()==stride() && source.myLength()==source.stride()) {
+        // can copy in one call
+        std::copy( source.MVData_->values_.begin(), source.MVData_->values_.begin() + source.numVectors()*source.stride(),
+                   MVData_->values_.begin() );
+      }
+      else {
+        for (Ordinal j=0; j<numVectors(); ++j) {
+          std::copy( source.MVData_->pointers_[j].begin(), source.MVData_->pointers_[j].end(), 
+                     MVData_->pointers_[j] );
+        }
+      }
+    }
+    return(*this);
+  }
+
+  /*
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<MultiVector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::subCopy(const Teuchos::Range1D &colRng) const
   {
-    MultiVector<Ordinal,Scalar> ret;
+    // FINISH
     TEST_FOR_EXCEPT(true);
+    return Teuchos::null;
+  }
+  */
+
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<MultiVector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::subCopy(const Teuchos::ArrayView<const Teuchos_Index> &cols) const
+  {
+    // TODO: in debug mode, do testing that cols[j] are distinct
+    Ordinal numCols = cols.size();
+    // allocate new MV
+    const bool zeroData = false;
+    Teuchos::RCP<MultiVector<Ordinal,Scalar> > mv = rcp( new MultiVector<Ordinal,Scalar>(this->getMap(),numCols,zeroData) );
+    // copy data from *this into mv
+    for (Ordinal j=0; j<numCols; ++j)
+    {
+      std::copy( MVData_->pointers_[cols[j]].begin(), MVData_->pointers_[cols[j]].end(), mv->MVData_->pointers_[j].begin() );
+    }
+    return mv;
+  }
+
+  /*
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<MultiVector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::subView(const Teuchos::Range1D &colRng) 
+  {
+    // FINISH
+    TEST_FOR_EXCEPT(true);
+    return Teuchos::null;
+  }
+  */
+
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<MultiVector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::subView(const Teuchos::ArrayView<const Teuchos_Index> &cols) 
+  {
+    using Teuchos::as;
+    const Ordinal numVecs = cols.size();
+    Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > mvdata = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    mvdata->constantStride_ = false;
+    mvdata->stride_ = stride();
+    mvdata->values_ = MVData_->values_;
+    mvdata->pointers_ = Teuchos::arcp<Teuchos::ArrayRCP<Scalar> >(numVecs);
+    for (Ordinal j = as<Ordinal>(0); j < numVecs; ++j) {
+      mvdata->pointers_[j] = MVData_->pointers_[cols[j]];
+    }
+    Teuchos::RCP<MultiVector<Ordinal,Scalar> > mv = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(this->getMap(),mvdata) );
+    return mv;
+  }
+
+  /*
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<const MultiVector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::subViewConst(const Teuchos::Range1D &colRng) const 
+  {
+    // FINISH
+    TEST_FOR_EXCEPT(true);
+    return Teuchos::null;
+  }
+  */
+
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<const MultiVector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::subViewConst(const Teuchos::ArrayView<const Teuchos_Index> &cols) const
+  {
+    using Teuchos::as;
+    const Ordinal numVecs = cols.size();
+    Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > mvdata = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    mvdata->constantStride_ = false;
+    mvdata->stride_ = stride();
+    mvdata->values_ = MVData_->values_;
+    mvdata->pointers_ = Teuchos::arcp<Teuchos::ArrayRCP<Scalar> >(numVecs);
+    for (Ordinal j = as<Ordinal>(0); j < numVecs; ++j) {
+      mvdata->pointers_[j] = MVData_->pointers_[cols[j]];
+    }
+    Teuchos::RCP<MultiVector<Ordinal,Scalar> > mv = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(this->getMap(),mvdata) );
+    return mv;
   }
 
   template<typename Ordinal, typename Scalar>
-  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subCopy(const Teuchos::ArrayView<Teuchos_Index> &cols) const
+  void MultiVector<Ordinal,Scalar>::extractCopy(const Teuchos::ArrayView<Scalar> &A, Ordinal &MyLDA) const 
   {
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subView(const Teuchos::Range1D &colRng) 
-  {
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subView(const Teuchos::ArrayView<Teuchos_Index> &cols) 
-  {
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  const MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subViewConst(const Teuchos::Range1D &colRng) const 
-  {
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  const MultiVector<Ordinal,Scalar> MultiVector<Ordinal,Scalar>::subViewConst(const Teuchos::ArrayView<Teuchos_Index> &cols) const
-  {
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Scalar> A, Ordinal &MyLDA) const 
-  {
-    TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPTION(constantStride() == false, std::runtime_error,
+      "MultiVector::extractCopy(A,LDA): only supported for constant stride multivectors.");
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(A.size() != stride()*numVectors(), std::runtime_error,
+      "MultiVector::extractCopy(A,LDA): A must be large enough to hold contents of MultiVector.");
+#endif
+    MyLDA = stride();
+    std::copy(MVData_->values_.begin(), MVData_->values_.begin()+stride()*numVectors(),
+              A.begin());
   }
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > arrayOfArrays) const
   {
+    (void)arrayOfArrays;
+    // FINISH
     TEST_FOR_EXCEPT(true);
   }
 
@@ -616,7 +835,7 @@ namespace Tpetra {
   void MultiVector<Ordinal,Scalar>::extractView(Teuchos::ArrayRCP<Scalar> &A, Ordinal &MyLDA) 
   {
     TEST_FOR_EXCEPTION(constantStride() == false, std::runtime_error,
-      "MultiVector::extractConstView(A,LDA): only support for constant stride multivectors.");
+      "MultiVector::extractConstView(A,LDA): only supported for constant stride multivectors.");
     A = MVData_->values_;
     MyLDA = MVData_->stride_;
   }
@@ -625,7 +844,7 @@ namespace Tpetra {
   void MultiVector<Ordinal,Scalar>::extractConstView(Teuchos::ArrayRCP<const Scalar> &A, Ordinal &MyLDA) const
   {
     TEST_FOR_EXCEPTION(constantStride() == false, std::runtime_error,
-      "MultiVector::extractConstView(A,LDA): only support for constant stride multivectors.");
+      "MultiVector::extractConstView(A,LDA): only supported for constant stride multivectors.");
     A = MVData_->values_.getConst();
     MyLDA = MVData_->stride_;
   }
@@ -633,6 +852,7 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::extractView(Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > &arrayOfArrays)
   {
+    // FINISH
     TEST_FOR_EXCEPT(true);
   }
 
@@ -650,12 +870,19 @@ namespace Tpetra {
     // the fact that A, B and C can be local replicated or global distributed
     // MultiVectors and that we may or may not operate with the transpose of 
     // A and B.  Possible cases are:
-    using Teuchos::NO_TRANS;
+    using Teuchos::NO_TRANS;      // enums
     using Teuchos::TRANS;
     using Teuchos::CONJ_TRANS;
-    using Teuchos::ScalarTraits;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    using Teuchos::null;
+    using Teuchos::ScalarTraits;  // traits
+    using Teuchos::OrdinalTraits;
+    using Teuchos::as;
+    using Teuchos::RCP;           // data structures
+    using Teuchos::ArrayRCP;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::rcp;           // initializers for data structures
+    using Teuchos::arcp;
 
     //                                       Num
     //      OPERATIONS                        cases  Notes
@@ -684,10 +911,10 @@ namespace Tpetra {
     transB = (transB == NO_TRANS ? NO_TRANS : CONJ_TRANS);
 
     // Compute effective dimensions, w.r.t. transpose operations on 
-    Ordinal A_nrows = (transA==Teuchos::CONJ_TRANS) ? A.numVectors() : A.myLength();
-    Ordinal A_ncols = (transA==Teuchos::CONJ_TRANS) ? A.myLength() : A.numVectors();
-    Ordinal B_nrows = (transB==Teuchos::CONJ_TRANS) ? B.numVectors() : B.myLength();
-    Ordinal B_ncols = (transB==Teuchos::CONJ_TRANS) ? B.myLength() : B.numVectors();
+    Ordinal A_nrows = (transA==CONJ_TRANS) ? A.numVectors() : A.myLength();
+    Ordinal A_ncols = (transA==CONJ_TRANS) ? A.myLength() : A.numVectors();
+    Ordinal B_nrows = (transB==CONJ_TRANS) ? B.numVectors() : B.myLength();
+    Ordinal B_ncols = (transB==CONJ_TRANS) ? B.myLength() : B.numVectors();
 
     Scalar beta_local = beta; // local copy of beta; might be reassigned below
 
@@ -736,8 +963,8 @@ namespace Tpetra {
     Ordinal n = this->numVectors();
     Ordinal k = A_ncols;
     Ordinal lda, ldb, ldc;
-    Teuchos::ArrayRCP<const Scalar> Ap, Bp;
-    Teuchos::ArrayRCP<Scalar> Cp;
+    ArrayRCP<const Scalar> Ap, Bp;
+    ArrayRCP<Scalar> Cp;
     Atmp->extractConstView(Ap,lda);
     Btmp->extractConstView(Bp,ldb);
     Ctmp->extractView(Cp,ldc);
@@ -747,59 +974,69 @@ namespace Tpetra {
     blas.GEMM(transA,transB,m,n,k,alpha,Ap.getRawPtr(),lda,Bp.getRawPtr(),ldb,beta_local,Cp.getRawPtr(),ldc);
 
     // Dispose of (possibly) extra copies of A, B
-    Atmp = Teuchos::null;
-    Btmp = Teuchos::null;
+    Atmp = null;
+    Btmp = null;
 
     // If *this was not strided, copy the data from the strided version and then delete it
     if (constantStride() == false) {
-      Teuchos::Array<Teuchos::ArrayView<Scalar> > aoa(MVData_->pointers_.size(),Teuchos::null);
-      for (Ordinal i=0; i<Teuchos::as<Ordinal>(aoa.size()); ++i) {
+      Array<ArrayView<Scalar> > aoa(MVData_->pointers_.size(),null);
+      for (Ordinal i=0; i<as<Ordinal>(aoa.size()); ++i) {
         aoa[i] = MVData_->pointers_[i]();
       }
       Ctmp->extractCopy(aoa());
     }
-    Ctmp = Teuchos::null;
+    Ctmp = null;
 
     // If Case 2 then sum up C and distribute it to all processors.
     if (Case2) 
     {
-      // need storage to sum the local quantities
-      TEST_FOR_EXCEPT(true);
-
-    /*
+      RCP<const Teuchos::Comm<Ordinal> > comm = this->getMap().getComm();
       // Global reduction on each entry of a Replicated Local MultiVector
-      int i, j;
-      double * source = 0;
-      if (MyLength_>0) source = new double[MyLength_*NumVectors_];
-      double * target = 0;
-      bool packed = (ConstantStride_ && (Stride_==MyLength_));
+      // Comm requires that local and global buffers be congruous and distinct
+      // Therefore, we must allocate storage for the local values
+      // Furthermore, if the storage in C (our destination for the global results)
+      //   is not packed, we must allocate storage for the result as well.
+      ArrayRCP<Scalar> source = arcp<Scalar>(m*n), target;
+      bool packed = constantStride() && (stride() == m);
       if (packed) {
-        for (i=0; i<MyLength_*NumVectors_; i++) source[i] = Values_[i];
-        target = Values_;
+        // copy local info into source buffer
+        // target buffer will be multivector storage
+        std::copy(MVData_->values_.begin(),MVData_->values_.begin()+m*n,
+                  source.begin());
+        // local storage is packed. can use it for target buffer.
+        target = MVData_->values_;
       }
       else {
-        double * tmp1 = source;
-        for (i = 0; i < NumVectors_; i++) {
-          double * tmp2 = Pointers_[i];
-          for (j=0; j< MyLength_; j++) *tmp1++ = *tmp2++;
+        // copy local info into source buffer
+        ArrayRCP<Scalar> sptr = source;
+        for (Ordinal j=OrdinalTraits<Ordinal>::zero(); j<n; ++j) 
+        {
+          // copy j-th local MV data into source buffer
+          std::copy(MVData_->pointers_[j].begin(),MVData_->pointers_[j].begin()+m,
+                    sptr.begin());
+          // advance ptr into source buffer
+          sptr += m;
         }
-        if (MyLength_>0) target = new double[MyLength_*NumVectors_];
+        // must allocate packed storage for target buffer
+        target = arcp<Scalar>(m*n);
       }
-
-      Comm_->SumAll(source, target, MyLength_*NumVectors_);
-      if (MyLength_>0) delete [] source;
+      // reduce 
+      Teuchos::reduceAll<Ordinal,Scalar>(*comm,Teuchos::REDUCE_SUM,m*n,source.getRawPtr(),target.getRawPtr());
       if (!packed) {
-        double * tmp2 = target;
-        for (i = 0; i < NumVectors_; i++) {
-          double * tmp1 = Pointers_[i];
-          for (j=0; j< MyLength_; j++) *tmp1++ = *tmp2++;
+        // copy target buffer into multivector storage buffer
+        ArrayRCP<Scalar> tptr = target;
+        for (Ordinal j=OrdinalTraits<Ordinal>::zero(); j<n; ++j) 
+        {
+          std::copy(tptr.begin(),tptr.begin()+m,
+                    MVData_->pointers_[j].begin()
+                   );
+          tptr += m;
         }
-        if (MyLength_>0) delete [] target;
       }
-      return(0);
-    */
-    } // Case2
-
+      // clear allocated buffers
+      source = null;
+      target = null;
+    } // Case2 reduction
   }
 
 

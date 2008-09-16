@@ -495,12 +495,12 @@ AC_CONFIG_FILES([
 		thyra/test/LOBPCG/Makefile
 		thyra/test/BlockKrylovSchur/Makefile
 		thyra/test/BlockDavidson/Makefile
+		tpetra/Makefile
+		tpetra/src/Makefile
+		tpetra/test/Makefile
+		tpetra/test/MVOPTester/Makefile
 		])
-		#tpetra/Makefile
-		#tpetra/src/Makefile
 		#tpetra/example/Makefile
-		#tpetra/test/Makefile
-		#tpetra/test/MVOPTester/Makefile
 
 AC_OUTPUT()
 

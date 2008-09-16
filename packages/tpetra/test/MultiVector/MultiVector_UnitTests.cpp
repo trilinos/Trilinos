@@ -179,41 +179,65 @@ namespace {
     const Ordinal NEGONE = ZERO - ONE;
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
-    // create a Map
-    Map<Ordinal> map3(NEGONE,3*ONE,ZERO,platform),
-                 map2(NEGONE,2*ONE,ZERO,platform);
     const Scalar SONE = ScalarTraits<Scalar>::one(),
                 SZERO = ScalarTraits<Scalar>::zero();
-    // fill multivectors with ones
-    // A is 3 x 2
-    // B is 2 x 3
-    // C is 3 x 3
-    // D is 2 x 2
-    MV mvecA(map3,2*ONE),
-       mvecB(map2,3*ONE),
-       mvecC(map3,3*ONE),
-       mvecD(map2,2*ONE);
-    // failures, 18 combinations:
-    // [NTC],[NTC]: A,B don't match
-    // [NTC],[NTC]: C doesn't match A,B
-    TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(NO_TRANS  ,TRANS     ,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(TRANS     ,NO_TRANS  ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(TRANS     ,TRANS     ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(TRANS     ,CONJ_TRANS,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(CONJ_TRANS,TRANS     ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-    TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(NO_TRANS  ,TRANS     ,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(TRANS     ,NO_TRANS  ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(TRANS     ,TRANS     ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(TRANS     ,CONJ_TRANS,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(CONJ_TRANS,TRANS     ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-    TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    // case 1: C(local) = A^X(local) * B^X(local)  : four of these
+    {
+      // create local Maps
+      Map<Ordinal> map3l(3*ONE,ZERO,platform,true),
+                   map2l(2*ONE,ZERO,platform,true);
+      MV mvecA(map3l,2*ONE),
+         mvecB(map2l,3*ONE),
+         mvecD(map2l,2*ONE);
+      // failures, 8 combinations:
+      // [NTC],[NTC]: A,B don't match
+      // [NTC],[NTC]: C doesn't match A,B
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+    }
+    // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
+    {
+      Map<Ordinal> map3n(NEGONE,3*ONE,ZERO,platform),
+                   map2n(NEGONE,2*ONE,ZERO,platform),
+                   map2l(2*ONE,ZERO,platform,true),
+                   map3l(3*ONE,ZERO,platform,true);
+      MV mv3nx2(map3n,2*ONE),
+         mv2nx2(map2n,2*ONE),
+         mv2lx2(map2l,2*ONE),
+         mv2lx3(map2l,3*ONE),
+         mv3lx2(map3l,2*ONE),
+         mv3lx3(map3l,3*ONE);
+      // non-matching input lengths
+      TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv2nx2,SZERO), std::runtime_error);   // (2 x 3n) x (2n x 2) not compat
+      TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv2nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 2n) x (3n x 2) not compat
+      // non-matching output size
+      TEST_THROW( mv3lx3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 3x3
+      TEST_THROW( mv3lx2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 3x2
+      TEST_THROW( mv2lx3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 2x3
+    }
+    // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
+    {
+      Map<Ordinal> map3n(NEGONE,3*ONE,ZERO,platform),
+                   map2n(NEGONE,2*ONE,ZERO,platform),
+                   map2l(2*ONE,ZERO,platform,true),
+                   map3l(3*ONE,ZERO,platform,true);
+      MV mv3nx2(map3n,2*ONE),
+         mv2nx2(map2n,2*ONE),
+         mv2x3(map2l,3*ONE),
+         mv3x2(map3l,2*ONE);
+      // non-matching input lengths
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,SONE,mv3nx2,mv2x3,SZERO), std::runtime_error);   // (3n x 2) x (3 x 2) (trans) not compat
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,SONE,mv3nx2,mv3x2,SZERO), std::runtime_error);   // (3n x 2) x (3 x 2) (nontrans) not compat
+      // non-matching output sizes
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,SONE,mv3nx2,mv3x2,SZERO), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,SONE,mv3nx2,mv2x3,SZERO), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
+    }
   }
 
 
@@ -227,30 +251,31 @@ namespace {
     const Ordinal NEGONE = ZERO - ONE;
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    const int numImages = comm->getSize();
     // create a Map
-    Map<Ordinal> map3(NEGONE,3*ONE,ZERO,platform),
-                 map2(NEGONE,2*ONE,ZERO,platform),
+    Map<Ordinal> map3n(NEGONE,3*ONE,ZERO,platform),
+                 map2n(NEGONE,2*ONE,ZERO,platform),
                 lmap3(3*ONE,ZERO,platform,true),
                 lmap2(2*ONE,ZERO,platform,true);
     const Scalar SONE = ScalarTraits<Scalar>::one(),
                 SZERO = ScalarTraits<Scalar>::zero();
     const Mag   MZERO = ScalarTraits<Mag>::zero();
-    // fill multivectors with ones
-    // A is 3 x 2
-    // B is 2 x 3
-    // C is 3 x 3
-    // D is 2 x 2
-    MV mv3x2l(lmap3,2*ONE),
-       mv2x3l(lmap2,3*ONE),
-       mv2x2l(lmap2,2*ONE),
-       mv3x3l(lmap3,3*ONE);
-    mv3x2l.putScalar(ScalarTraits<Scalar>::one());
-    mv2x3l.putScalar(ScalarTraits<Scalar>::one());
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
+      MV mv3x2l(lmap3,2*ONE),
+         mv2x3l(lmap2,3*ONE),
+         mv2x2l(lmap2,2*ONE),
+         mv3x3l(lmap3,3*ONE);
+      // fill multivectors with ones
+      mv3x2l.putScalar(ScalarTraits<Scalar>::one());
+      mv2x3l.putScalar(ScalarTraits<Scalar>::one());
+      // fill expected answers Array
       ArrayRCP<Scalar> tmpView; Ordinal dummy;
       Teuchos::Array<Scalar> check2(4,3*ONE); // each entry (of four) is the product [1 1 1]*[1 1 1]' = 3
       Teuchos::Array<Scalar> check3(9,2*ONE); // each entry (of nine) is the product [1 1]*[1 1]' = 2
+      // test
       mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mv3x2l,mv2x3l,SZERO);
       mv3x3l.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,MZERO);
       mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mv2x3l,mv2x3l,SZERO);
@@ -261,7 +286,34 @@ namespace {
       mv3x3l.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,MZERO);
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
+    {
+      MV mv3nx2(map3n,2*ONE),
+         mv3nx3(map3n,3*ONE),
+         // locals
+         mv2x2(lmap2,2*ONE),
+         mv2x3(lmap2,3*ONE),
+         mv3x2(lmap3,2*ONE),
+         mv3x3(lmap3,3*ONE);
+      // fill multivectors with ones
+      mv3nx3.putScalar(ScalarTraits<Scalar>::one());
+      mv3nx2.putScalar(ScalarTraits<Scalar>::one());
+      // fill expected answers Array
+      ArrayRCP<Scalar> tmpView; Ordinal dummy;
+      Teuchos::Array<Scalar> check(9,3*ONE*numImages);
+      // test
+      mv2x2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO); 
+      mv2x2.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
+      mv2x3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx3,SZERO);
+      mv2x3.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
+      mv3x2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx3,mv3nx2,SZERO);
+      mv3x2.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
+      mv3x3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx3,mv3nx3,SZERO);
+      mv3x3.extractView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
+    }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
+    {
+      // FINISH
+    }
   }
 
 

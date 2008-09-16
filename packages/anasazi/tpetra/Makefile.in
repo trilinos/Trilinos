@@ -219,7 +219,7 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @SUB_TEST_TRUE@TEST_SUBDIR = test
-@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = #example
 SUBDIRS = # src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 all: all-recursive
 
