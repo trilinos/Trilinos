@@ -125,25 +125,24 @@ not even require them.  This is a simple example, but the dependency
 chain can become quite complex when solving thousands of coupled PDE
 equations.
 
-<li> Efficient evaluation of field data: Phalanx provides for an
-arbitrary size block of cells to be evaluated on the local processor.
-It evaluates all fields of interest at once for each block of cells.
-By using the contiguous allocator and correctly sizing the number of
-cells to fit in processor cache, one can arrange all fields to exist
-in a contiguous block of memory, independent of the data type objects
-used to store the data (one must still be careful of data alignement
-issues).  By keeping all fields in cache, the code will run much
-faster.  This blocking will also, in the future, allow for multi-core
-distrubution of the cell evaluations.
+<li> Efficient evaluation of field data: Phalanx was designed on the
+idea of worksets.  A workset is an arbitrarily sized block of cells to
+be evaluated on the local processor.  Phalanx evaluates all fields of
+interest at once for each block of cells.  By using the contiguous
+allocator and correctly sizing the workset to fit in processor cache,
+one can arrange all fields to exist in a contiguous block of memory,
+independent of the data type objects used to store the data (one must
+still be careful of data alignement issues).  By keeping all fields in
+cache, the code will run much faster.  This workset idea will also, in
+the future, allow for multi-core distrubution of the cell evaluations.
 
 </ul>
 
 Phalanx is a hammer.  It's use should be carefully considered.  We
 recommend its use when writing a general PDE framework where one needs
-support for flexibility in equation sets and material properties in
-those sets.  It should not be used for simple sets of PDEs where the
-equations rarely change.  There are some drawbacks to using Phalanx
-that should be considered:
+support for flexibility in equation sets.  It should not be used for
+simple sets of PDEs where the equations rarely change.  There are some
+drawbacks to using Phalanx that should be considered:
 
 - A potential performance loss due to fragmentation of the over-all
 algorithm (e.g., several small loops instead of one large loop).  A
@@ -212,12 +211,14 @@ Phalanx, the concepts underlying many operations in Phalanx can be
 found in "C++ Template Metaprogramming" by Abrahams and Gurtovoy,
 2004 and the Boost template metaprogramming library (MPL).
 
-Once Phalanx is integrated into a code, the actual addition of
-Evalators requires very little knowledge of templates.  In fact if the
-user does a cut-and-paste of a current evaluator and makes the simple
-modifications, they won't have to know anything about templates.  So
-once Phalanx is integrated into a code, the users writing evaluators
-(i.e., new material models) need not know anything about templates.
+Once Phalanx is integrated into a code by a template savvy developer,
+the only operation application users should perform is to extend the
+evaluation routines to new equations and new models by adding new
+Evaluators.  We realize that application developers and application
+users have two distictly different skill sets. Therefore much design
+work has been invested in making the Evaluator implementation very
+clean and as template free as possible.  Therefore, users of the code
+who only write new Evaluators DO NOT need to know templates.
 
 \subsection ug_dummy_2 B. Learn the Phalanx Nomenclature
 Users should then learn the nomeclature used in the package defined in
@@ -231,11 +232,15 @@ The main concept of Phalanx is to evaluate fields for solving PDEs.  We demonstr
   \nabla \cdot (-\rho C_p \nabla T) + s = 0
 \f] 
 
-where \f$s\f$ is a nonlinear source term.  The specific discretization technique whether finite element (FE) of finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
+where \f$ T \f$ is the temparature (and our degree of freedom), \f$ \rho \f$ is the density, \f$ C_p \f$ is the heat capacity, and \f$s\f$ is a nonlinear source term.  We pose this in terms of a conservation law system:
 
-Using finite elements, we pose the problem in variational form:
+\f[
+  \nabla \cdot (\mathbf{q}) + s = 0
+\f]
 
-Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
+where \f$ \mathbf{q} = -\rho C_p \nabla T \f$ is the heat flux.  The specific discretization technique whether finite element (FE) of finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
+
+Using finite elements, we pose the problem in variational form:  Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
 
 \f[
   - \int_{\Omega} \nabla \phi \cdot \mathbf{q} d\Omega 
@@ -243,14 +248,12 @@ Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
   + \int_{\Omega} \phi s d\Omega = 0 
 \f]
 
-where \f$ \mathbf{q} = -\rho C_p \nabla T \f$.
+Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at the quadrature points of the cells and pass them off to the integrator such as <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a>.
 
+This is a trivial example, but the dependency chains can grow quite complex if performing something such as a reacting flow calculation coupled to Navier-Stokes.
 
+Follow the steps below to integrate Phalanx into your application.  The example code shown in the steps comes from the energy flux example in the directory "phalanx/example/EnergyFlux".  Note that many classes are named with the word "My" such as MyWorkset, MyTraits, and MyFactory traits.  Any object that starts with the word "My" denotes that this is a user defined class.  The user must implement this class.  All Evaluator derived objects are additionally implemented by the user.
 
-
-
-
-Follow the steps below to integrate Phalanx into your application.  The example code shown in the steps comes from the energy flux example in the directory "phalanx/example/EnergyFlux".  
 - \ref user_guide_step1
 - \ref user_guide_step2
 - \ref user_guide_step3
@@ -308,7 +311,7 @@ Note that you do not have to use the workset idea.  You could just pass in works
 
 <li><b>Consistent Evaluation</b>
 
-Phalanx was written to perform consistent evaluations.  By consistent, we mean that all dependencies of a field evaluation have been updated before the evaluation.  For example, suppose we need to evaluate the the energy flux.  This has dependencies on the density, diffusivity, and the temperature gradient.  Each of these quantities in turn depends on the temperature.  So before the density, diffusivity and temperature  gradient are evaluated, the temperature must be evaluated.  Before the energy flux can be evaluated, the density, diffusivity, and temperature gradient must be evaluated.  Phalanx forces an ordered evaluation that updates fields in order to maintain consistency of the dependency chain.  Without this, one might end up with lagged values being used from a previous evaluate call.
+Phalanx was written to perform consistent evaluations.  By consistent, we mean that all dependencies of a field evaluation are current with respect to the current degree of freedom values.  For example, suppose we need to evaluate the the energy flux.  This has dependencies on the density, diffusivity, and the temperature gradient.  Each of these quantities in turn depends on the temperature.  So before the density, diffusivity and temperature  gradient are evaluated, the temperature must be evaluated.  Before the energy flux can be evaluated, the density, diffusivity, and temperature gradient must be evaluated.  Phalanx forces an ordered evaluation that updates fields in order to maintain consistency of the dependency chain.  Without this, one might end up with lagged values being used from a previous evaluate call.
 
 <li><b>Scalar Type</b>
 
@@ -331,7 +334,7 @@ Differentiation Library</a>. Some sample scalar types include:
 
 <li><b>Algebraic Type</b>
 
-An algebraic type is the type of objects that hold data.  It is usually a rank n tensor.  Simple examples include a scalar (rank-0 tensor), a vector (rank-1 tensor) or a matrix (rank-2 tensor).  It is not actually restircted to tensors, but can be any struct/class that a user implements.  The algebraic type is a description of how data is stored but does NOT have a corresponding type in the Phalanx code.  It is a notion or idea we use to describe a data type without specifying the actual scalar type (See "Data Type" for more information).  These types are defined by the user.  In the example in the directory "phalanx/example/EnergyFlux", the user selects three algebraic types to represent scalars, vectors and tensors.  The scalar algebraic type is equivalent to the scalar type used in the evaluation.  The vector and tensor objects are objects templated on the scalar type:
+An algebraic type is the type of objects that hold data.  It is usually a rank n tensor.  Simple examples include a scalar (rank-0 tensor), a vector (rank-1 tensor) or a matrix (rank-2 tensor).  It is not actually restircted to tensors, but can be any struct/class/data type that a user implements.  The algebraic type is a description of how data is stored but does NOT have a corresponding type in the Phalanx code.  It is a notion or idea we use to describe a data type without specifying the actual scalar type (See "Data Type" for more information).  These types are defined by the user.  In the example in the directory "phalanx/example/EnergyFlux", the user selects three algebraic types to represent scalars, vectors and tensors.  The scalar algebraic type is equivalent to the scalar type used in the evaluation.  The vector and tensor objects are objects templated on the scalar type:
 
 <ul>
 <li> template<typename ScalarT> class MyVector { ... };
@@ -737,7 +740,7 @@ void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 
 The constructor pulls out data from the parameter list to set the correct data layout.  Additionally, it tells the FieldManager what fields it will evaluate and what fields it requires/depends on to perform the evaluation.
 
-The postRegistrationSetup gets pointers from the FieldManager to the array for storing data for each particular field.
+The postRegistrationSetup method gets pointers from the FieldManager to the array for storing data for each particular field.
 
   Writing evaluators can be tedious.  We have invested much time in minimizing the amount of code a user writes for a new evaluator.  Our experience is that you can literally have hundreds of evaluators.  So we have added macros to hide the boilerplate code in each evaluator.  Not only does this streamline/condense the code, but it also hides much of the templating.  So if your user base is uncomfortable with C++ templates, the macro definitions could be very helpful.  The definitions are found in the file Phalanx_Evaluator_Macros.hpp.  The same evaluator shown above is now implemented using the macro definitions:
 
@@ -1007,7 +1010,17 @@ You are free to request fields to evaluate until the time you call the method po
 
 \subsection fmd3 C. Call FieldManager::postRegistrationSetup()
 
-Once the evaluators are registered with the FieldManager and it knows which field it needs to provide, call the postRegistrationSetup() method on the FieldManager.  This method requires that the user specify the maximum number of cells for each evaluation - the workset size.  This number should be selected so that all fields can fit in the cache of the processor if possible.  This method causes the following actions to take place in the FieldManager:
+Once the evaluators are registered with the FieldManager and it knows which field it needs to provide, call the postRegistrationSetup() method on the FieldManager.  This method requires that the user specify the maximum number of cells for each evaluation - the workset size.  This number should be selected so that all fields can fit in the cache of the processor if possible.  
+
+\code
+      // Assume we have 102 cells on processor and can fit 20 cells in cache
+      const std::size_t num_local_cells = 102;
+      const std::size_t workset_size = 20;
+
+      fm.postRegistrationSetup(workset_size);
+\endcode
+
+The postRegistrationSetup() method causes the following actions to take place in the FieldManager:
 
 <ol>
 <li> Based on the requested fields in \ref fmd2, the FieldManager will trace through the evaluators to determine which evaluators to call and the order in which they need to be called to achieve a consistent evaluation. Not all evaluators that are registered will be used.  They will only be called to satisfy dependencies of the required fields.
@@ -1015,25 +1028,20 @@ Once the evaluators are registered with the FieldManager and it knows which fiel
 <li> Once the memory for field data is allocated, we must set the pointer to that memory block inside each Field or MDField object in each evaluator.  The FieldManager does this by calling the postRegistrationSetup() method on each evaluator that is required for the computation. 
 </ol>
 
-\code
-      const std::size_t workset_size = 100;
-      fm.postRegistrationSetup(workset_size);
-\endcode
-
-Note: you can no longer register evaluators or request fields to evaluate once post registration setup is called.
+Note: you can no longer register evaluators or request fields to evaluate once postRegistrationSetup() method is called.
 
 \subsection fmd6 D. Setup Worksets
 
-If the user plans to use worksets, these objects are typically passed in through the member of the evaluate call as defined in your traits class.  In our example, we chose to pass a user defined class called MyEvalData in to the evaluate call.  Since we plan to use worksets, each object of MyEvalData contains information about the workset.  Here is the MyEvalData: 
+If the user plans to use worksets, these objects are typically passed in through the member of the evaluate call as defined in your traits class.  In our example, we chose to pass a user defined class called a MyWorkset in to the evaluate call.  Since we plan to use worksets, each object of MyWorkset contains information about the workset.  Here is the MyWorkset implementation: 
 
 \code
-#ifndef PHX_EXAMPLE_MY_EVAL_DATA_HPP
-#define PHX_EXAMPLE_MY_EVAL_DATA_HPP
+#ifndef PHX_EXAMPLE_MY_WORKSET_HPP
+#define PHX_EXAMPLE_MY_WORKSET_HPP
 
 #include "Phalanx_ConfigDefs.hpp" // for std::vector
 #include "Cell.hpp"
 
-struct MyEvalData {
+struct MyWorkset {
   
   std::size_t local_offset;
 
@@ -1048,34 +1056,34 @@ struct MyEvalData {
 #endif
 \endcode
 
-The user has written a MyCell class that contains data for each specific local cell.  MyEvalData contains iterators to the beginning and end of the chunk of cells for this particular workset.  The local_offset is the starting index into the local cell array.  The num_cells is the number of cells in the workset.   The MyEvalData objects are created one for each workset via the following code:
+The user has written a MyCell class that contains data for each specific local cell.  MyWorkset contains iterators to the beginning and end of the chunk of cells for this particular workset.  The local_offset is the starting index into the local cell array.  The num_cells is the number of cells in the workset.   The MyWorkset objects are created one for each workset via the following code:
 
 \code
       // Create Workset information: Cells and EvalData objects
       std::vector<MyCell> cells(num_local_cells);
       for (std::size_t i = 0; i < cells.size(); ++i)
 	cells[i].setLocalIndex(i);
-      std::vector<MyEvalData> eval_data;
+      std::vector<MyWorkset> worksets;
 
       std::vector<MyCell>::iterator cell_it = cells.begin();
       std::size_t count = 0;
-      MyEvalData d;
-      d.local_offset = cell_it->localIndex();
-      d.begin = cell_it;
+      MyWorkset w;
+      w.local_offset = cell_it->localIndex();
+      w.begin = cell_it;
       for (; cell_it != cells.end(); ++cell_it) {
 	++count;
 	std::vector<MyCell>::iterator next = cell_it;
 	++next;
 	
 	if ( count == workset_size || next == cells.end()) {
-	  d.end = next;
-	  d.num_cells = count;
-	  eval_data.push_back(d);
+	  w.end = next;
+	  w.num_cells = count;
+	  worksets.push_back(w);
 	  count = 0;
 
 	  if (next != cells.end()) {
-	    d.local_offset = next->localIndex();
-	    d.begin = next;
+	    w.local_offset = next->localIndex();
+	    w.begin = next;
 	  }
 	}
       }
@@ -1088,32 +1096,21 @@ Note that you do not have to use the workset idea.  You could just pass in works
 Finally, users can call the evlauate routines and the pre/post evaluate routines if required.
 
 \code
-      std::vector<CellData> cells(max_num_cells);
-
       fm.preEvaluate<MyTraits::Residual>(NULL);
-      fm.evaluateFields<MyTraits::Residual>(cells);
-      fm.postEvaluate<MyTraits::Residual>(NULL);
-\endcode
 
-If you have more cells on a processor than you can fit into cache (the number of cells you set in the postRegistrationSetup call in \ref fmd3), you can perform multiple evaluate calls for each set:
+      // Process all local cells on processor by looping over worksets
+      for (std::size_t i = 0; i < worksets.size(); ++i) {
 
-\code
-      fm.preEvaluate<MyTraits::Residual>(NULL);
-      for (std::size_t i = 0; i < eval_data.size(); ++i) {
-
-	fm.evaluateFields<MyTraits::Residual>(eval_data[i]);
+	fm.evaluateFields<MyTraits::Residual>(worksets[i]);
 	  
-        // Use workset data as needed - here it is copied into local data
-	for (std::size_t j = 0; j < eval_data[i].num_cells; ++j) {
-	  std::size_t index = eval_data[i].local_offset + j;
-	  local_energy_flux[index] =  energy_flux[j];
-	  local_source[index] =  source[j];
-	}
+	// Use workset values
+                .
+                .
+                .
       }
+
       fm.postEvaluate<MyTraits::Residual>(NULL);
 \endcode
-
-
 
 \subsection fmd5 F. Accessing Data
 
@@ -1125,6 +1122,14 @@ Accessing field data is achieved as follows:
       fm.getFieldData<MyVector<double>,MyTraits::Residual>(ef);
 \endcode
 
+You do not need to use the Field objects to access field data.  You can get the reference counted smart pointer to the data array directly by using the field tag:
+
+\code
+      RCP<DataLayout> qp = rcp(new FlatLayout("QP", 4));
+      PHX::FieldTag<double> s("Nonlinear Source", qp);
+      Teuchos::ArrayRCP<double> source_values;
+      fm.getFieldData<double,MyTraits::Residual>(s,source_values);
+\endcode
 
 */
 
@@ -1142,6 +1147,8 @@ Accessing field data is achieved as follows:
 
 \ref faq4
 
+\ref faq5
+
 \section faq1 1. Why name it Phalanx?  
 The phalanx was one of the most dominant military formations of the Greek armies in the classical period.  It was a strictly ordered formation.  The Phalanx software library figures out ordered dependencies of field evaluators.   A second more obscure reference relates to the US Navy.  The Phalanx software package was designed to provide nonlinear functionality for the <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a> itegration library.  Intrepid was the name of an aircraft carrier during in WW II.  Modern US aircraft carriers are protected by a Close-In Weapons System (CIWS) named the Phalanx.  Finally, the PI of this project is an avid strategy warfare gamer and leans towards military references.
 
@@ -1153,6 +1160,9 @@ In 99% of the use cases, the answer is yes!  By changing the scalar type for a s
 
 \section faq4 4. Why are the evaluators templated on the evaluation type?
 Each evaluator must be templated on the evaluation type to be able to (1) allow for the expert use mode described in FAQ \ref faq3; (2) use the automated factory class (PHX::EvaluatorFactory) to build the evaluator for each evalution type.  
+
+\section faq5 5. Why is the MDALayout object not templated on the ArrayOrder type?
+This introduces many complications in the comparison operator (operator==) during a comparison of a reverse and natural data layout with the same (but reversed index types).  Should these objects be the same?  Probably, but this might introduce some confusion.  So in an effort to keep things as clean as possible, there is no differentiation based on forward or reverse (Fortran) array ordering.  If we were to introduce this, then we would have to add another method to the DataLayout base class to allow for checking the ordering.  If mixing natural and reverse ordering becomes common, we may revisit this decision.
 
 */
 
