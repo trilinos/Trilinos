@@ -153,7 +153,7 @@ void Basis_F0_HEX_DD<Scalar>::initialize() {
     tagsCur += tagSize;
 
     // interior nodes
-    for (int k=1;k<degree_-1;k++) {
+    for (int k=1;k<degree_;k++) {
       tagsCur[0] = 2;
       tagsCur[1] = 0;
       tagsCur[2] = (i-1)*(degree_-1) + (k-1);
