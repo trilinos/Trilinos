@@ -236,7 +236,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -249,7 +249,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
 <td>Upon return, an array of local IDs, the meaning of which can be determined by the
-application, for all objects assigned to the processor.</td>
+application, for all objects assigned to the processor. (Optional.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -364,7 +364,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -514,7 +514,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -666,7 +666,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -687,7 +687,7 @@ returned.</td>
 <td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
 
 <td>The local IDs of the objects for which the part numbers should be
-returned.</td>
+returned. (Optional.)</td>
 </tr>
 
 <tr>
@@ -788,7 +788,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -988,7 +988,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -1007,7 +1007,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Array of local IDs of objects whose geometry values should be returned.</td>
+<td>Array of local IDs of objects whose geometry values should be returned. (Optional.)</td>
 </tr>
 
 <tr>
@@ -1111,7 +1111,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -1226,7 +1226,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -1245,7 +1245,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
 
-<td>Array of local IDs of objects whose number of edges should be returned.</td>
+<td>Array of local IDs of objects whose number of edges should be returned. (Optional.)</td>
 </tr>
 
 <tr>
@@ -1341,7 +1341,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -1467,7 +1467,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -1486,7 +1486,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Array of local IDs of objects whose edge lists should be returned.</td>
+<td>Array of local IDs of objects whose edge lists should be returned. (Optional.)</td>
 </tr>
 
 <tr>
@@ -1635,7 +1635,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -2156,7 +2156,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -2558,7 +2558,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -2570,7 +2570,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Upon return, an array of local IDs of all objects in the coarse grid.</td>
+<td>Upon return, an array of local IDs of all objects in the coarse grid. (Optional.)</td>
 </tr>
 
 <tr>
@@ -2721,7 +2721,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -2733,7 +2733,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Upon return, the local ID of the first object in the coarse grid.</td>
+<td>Upon return, the local ID of the first object in the coarse grid. (Optional.)</td>
 </tr>
 
 <tr>
@@ -2897,7 +2897,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -3065,7 +3065,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -3196,7 +3196,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -3220,7 +3220,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; child_lids</i></td>
 
-<td>Upon return, an array of local IDs of all children of this object.</td>
+<td>Upon return, an array of local IDs of all children of this object. (Optional.)</td>
 </tr>
 
 <tr>
@@ -3392,7 +3392,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
