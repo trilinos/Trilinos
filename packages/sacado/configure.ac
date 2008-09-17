@@ -39,7 +39,7 @@
 
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
-AC_INIT([sacado], [9.0-dev], [sacado-developers@software.sandia.gov])
+AC_INIT([sacado], [9.0], [sacado-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
