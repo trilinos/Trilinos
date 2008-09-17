@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#include "zoltan_util.h"
+
 /* Include ParMetis and/or Scotch header files if necessary.
  * These include files must be available in the include path set in the
  * Zoltan configuration file.
