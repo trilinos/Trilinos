@@ -599,7 +599,6 @@ int Zoltan_ParMetis_Order(
   int n, ierr;
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
-  ZOLTAN_Third_Vsize vsp;
 
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
   int numflag = 0;
@@ -614,7 +613,6 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
-  memset(&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
 
   ord.order_opt = order_opt;
@@ -673,7 +671,7 @@ int Zoltan_ParMetis_Order(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
-  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, &vsp);
+  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
 
   /* Allocate space for separator sizes */
 
@@ -774,7 +772,8 @@ int Zoltan_ParMetis_Order(
     zz->Order.leaves = NULL;
   }
 
-  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, &vsp, &ord, NULL);
+  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, NULL, &ord, NULL);
+
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -792,7 +791,7 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_FREE(&ord.rank);
 
   /* Free all other "graph" stuff */
-  Zoltan_Third_Exit(&gr, NULL, NULL, &vsp, NULL, NULL);
+  Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, NULL);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
