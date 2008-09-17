@@ -181,7 +181,11 @@ or
 <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>,
 renumber parts to maximize overlap between the old decomposition and
 the new decomposition (to reduce data movement from old to new decompositions).
-Valid values are "0" (no remapping) or "1" (remapping). Requests for remapping
+Valid values are "0" (no remapping) or "1" (remapping). Part assignments from
+<a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a> or
+<a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> query functions
+can be used in remapping if provided; otherwise, processor numbers are used
+as part numbers.  Requests for remapping
 are ignored when, in the new decomposition, a part is spread across
 multiple processors or part sizes are specified using <a href="ug_interface_lb.html#Zoltan_LB_Set_Part_Sizes"><b>Zoltan_LB_Set_Part_Sizes</b>.</a></td>
 </tr>
