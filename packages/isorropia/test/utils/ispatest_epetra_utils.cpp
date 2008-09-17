@@ -136,12 +136,6 @@ int fill_graph(Epetra_CrsGraph& graph,
 
 bool test_matrix_vector_multiply(Epetra_CrsMatrix &A)
 {
-#ifdef HAVE_MPI
-  const Epetra_MpiComm &comm = dynamic_cast<const Epetra_MpiComm &>(A.Comm());
-#else
-  const Epetra_SerialComm &comm = dynamic_cast<const Epetra_SerialComm &>(A.Comm());
-#endif
-  
   const Epetra_Map &xmap = A.DomainMap();
   const Epetra_Map &ymap = A.RangeMap();
 
@@ -177,12 +171,6 @@ bool test_matrix_vector_multiply(Epetra_CrsMatrix &A)
 }
 bool test_row_matrix_vector_multiply(Epetra_RowMatrix &A)
 {
-#ifdef HAVE_MPI
-  const Epetra_MpiComm &comm = dynamic_cast<const Epetra_MpiComm &>(A.Comm());
-#else
-  const Epetra_SerialComm &comm = dynamic_cast<const Epetra_SerialComm &>(A.Comm());
-#endif
-  
   const Epetra_Map &xmap = A.OperatorDomainMap();
   const Epetra_Map &ymap = A.OperatorRangeMap(); // same as A.RowMatrixRowMap()
 

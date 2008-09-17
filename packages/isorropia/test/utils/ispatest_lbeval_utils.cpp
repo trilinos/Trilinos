@@ -546,8 +546,8 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
 static double compute_balance(const Epetra_Comm &comm, double myGoalWeight, 
                               int myRows, int nwgts, float *wgts)
 {
-  int nProcs = comm.NumProc();
-  int myProc = comm.MyPID();
+//   int nProcs = comm.NumProc();
+//   int myProc = comm.MyPID();
   double weightTotal, balance;
 
   if ((myGoalWeight < 0) || (myGoalWeight > 1.0)){
