@@ -45,21 +45,18 @@ Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator_TemplateManager<Traits> >
 PHX::EvaluatorFactory<Traits, FactoryTraits>::
 buildEvaluators(const std::map<std::string, Teuchos::RCP<Teuchos::ParameterList> >& data)
 {
-  using namespace std;
-  using namespace Teuchos;
-  using namespace PHX;
+  Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator_TemplateManager<Traits> > > > vector_tm = 
+    Teuchos::rcp(new std::vector< Teuchos::RCP<Evaluator_TemplateManager<Traits> > >);
 
-  RCP< std::vector< RCP<Evaluator_TemplateManager<Traits> > > > vector_tm = 
-    rcp(new std::vector< RCP<Evaluator_TemplateManager<Traits> > >);
-
-  std::map<std::string, RCP<ParameterList> >::const_iterator it = data.begin();
+  std::map<std::string, Teuchos::RCP<Teuchos::ParameterList> >::const_iterator
+    it = data.begin();
   
   for (; it != data.end(); ++it) {
     
-    RCP< Evaluator_TemplateManager<Traits> > tm = 
-      rcp(new Evaluator_TemplateManager<Traits>);
+    Teuchos::RCP< PHX::Evaluator_TemplateManager<Traits> > tm = 
+      Teuchos::rcp(new PHX::Evaluator_TemplateManager<Traits>);
     
-    RCP<ParameterList> p = it->second;
+    Teuchos::RCP<Teuchos::ParameterList> p = it->second;
 
     bool found_type = false;
     int object_type = p->get<int>("Type");
@@ -67,7 +64,7 @@ buildEvaluators(const std::map<std::string, Teuchos::RCP<Teuchos::ParameterList>
     boost::mpl::for_each< boost::mpl::range_c<int,0,size> >( UFO<Traits,FactoryTraits>(object_type, p, tm, found_type) );
 
     if (!found_type) {
-      ostringstream msg;
+      std::ostringstream msg;
       msg << "Unable to find model in EvaluatorFactory for "
 	  << it->first
 	  << ".  Please make sure you have set a valid integer "
@@ -86,10 +83,8 @@ buildEvaluators(const std::map<std::string, Teuchos::RCP<Teuchos::ParameterList>
 template<typename Traits>
 void PHX::registerEvaluators(const Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator_TemplateManager<Traits> > > >& providers, PHX::FieldManager<Traits>& fm)
 {
-  using namespace std;
-  using namespace Teuchos;
   // Loop over each provider template manager
-  typename vector< RCP<Evaluator_TemplateManager<Traits> > >::iterator 
+  typename std::vector< Teuchos::RCP<Evaluator_TemplateManager<Traits> > >::iterator 
     tm = providers->begin();
   for (; tm != providers->end(); ++tm) {
     
@@ -98,8 +93,8 @@ void PHX::registerEvaluators(const Teuchos::RCP< std::vector< Teuchos::RCP<PHX::
     typename Evaluator_TemplateManager<Traits>::iterator vpit = 
       (*tm)->begin();
     for (; vpit != (*tm)->end(); ++vpit) {
-      RCP<PHX::Evaluator<Traits> > vp =
-	rcp_dynamic_cast<PHX::Evaluator<Traits> >(vpit.rcp());
+      Teuchos::RCP<PHX::Evaluator<Traits> > vp =
+	Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(vpit.rcp());
       fm.registerEvaluator(vmit, vp);
       ++vmit;
     } 

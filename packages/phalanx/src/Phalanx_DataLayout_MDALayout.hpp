@@ -103,9 +103,9 @@ namespace PHX {
 
     virtual size_type size() const;
 
-    virtual const std::string identifier() const;
+    virtual std::string identifier() const;
 
-    virtual const size_type dimension(size_type ordinal) const;
+    virtual size_type dimension(size_type ordinal) const;
 
     virtual void print(std::ostream& os, int offset) const;
 

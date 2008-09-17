@@ -160,7 +160,7 @@ operator-(const MyVector<T>& v , const MyVector<U>& u)
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const MyVector<T>& v)
 {
-  v.template print(os);
+  v.print(os);
   return os;
 }
 

@@ -1,0 +1,22 @@
+../configure \
+--disable-shared \
+--enable-debug \
+--prefix=/projects/charon/people/rppawlo/junk \
+--disable-default-packages \
+--enable-tests \
+--enable-examples \
+--enable-teuchos --enable-teuchos-complex --enable-teuchos-extended \
+--enable-sacado \
+--enable-phalanx --with-tvmet \
+--with-incdirs="-I/projects/charon/people/rppawlo/boost_1_35_0 -I/projects/charon/people/rppawlo/junk/include" \
+--with-libdirs="-L/projects/global/x86_64/compilers/intel/intel-10.0-fce-025/lib" \
+--with-libs="-lrt -lpthread -lm  -lifcore -lifport -limf" \
+CXX=mpicxx \
+CC=mpicc \
+F77=mpif77 \
+CXXFLAGS="-O3 -mp1 -ip -funroll-loops -inline-level=2 -finline -DCODE_MP -DOMPI_SKIP_MPICXX " \
+CFLAGS="-O3 -mp1 -DCODE_MP -DOMPI_SKIP_MPICXX " \
+FFLAGS="-O3 -DCODE_MP -DOMPI_SKIP_MPICXX " \
+--cache-file=config.cache \
+--with-gnumake \
+--enable-export-makefiles

@@ -78,7 +78,7 @@ PHX::DataLayout::size_type PHX::FlatLayout::size() const
 { return m_size; }
 
 //**********************************************************************
-const std::string PHX::FlatLayout::identifier() const
+std::string PHX::FlatLayout::identifier() const
 { 
   std::ostringstream ost;
   ost << this->name() << this->size();

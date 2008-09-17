@@ -73,7 +73,7 @@ namespace PHX{
     { return !(*this == left); }
 
     //! Unique name identifier that can be used for strict weak ordering in stl std::map keys.
-    virtual const std::string identifier() const = 0;
+    virtual std::string identifier() const = 0;
 
     virtual void print(std::ostream& os, int indent = 0) const = 0;
 

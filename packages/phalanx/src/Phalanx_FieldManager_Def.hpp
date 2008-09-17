@@ -40,7 +40,7 @@
 template<typename Traits>
 inline
 PHX::FieldManager<Traits>::FieldManager() :
-  m_max_num_cells(-1)
+  m_max_num_cells(0)
 {
   m_num_evaluation_types = 
     Sacado::mpl::size<typename Traits::EvalTypes>::value;
@@ -111,7 +111,7 @@ inline
 void PHX::FieldManager<Traits>::
 requireField(const PHX::FieldTag& t)
 {
-  m_eval_containers.template getAsBase<EvalT>()->template requireField(t);
+  m_eval_containers.template getAsBase<EvalT>()->requireField(t);
 }
     
 // **************************************************************
@@ -135,7 +135,7 @@ inline
 void PHX::FieldManager<Traits>::
 registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
-  m_eval_containers.template getAsBase<EvalT>()->template registerEvaluator(e);
+  m_eval_containers.template getAsBase<EvalT>()->registerEvaluator(e);
 }
 
 // **************************************************************
@@ -169,7 +169,7 @@ inline
 void PHX::FieldManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  m_eval_containers.template getAsBase<EvalT>()->template evaluateFields(d);
+  m_eval_containers.template getAsBase<EvalT>()->evaluateFields(d);
 }
 
 // **************************************************************
@@ -179,7 +179,7 @@ inline
 void PHX::FieldManager<Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-  m_eval_containers.template getAsBase<EvalT>()->template preEvaluate(d);
+  m_eval_containers.template getAsBase<EvalT>()->preEvaluate(d);
 }
 
 // **************************************************************
@@ -189,7 +189,7 @@ inline
 void PHX::FieldManager<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
-  m_eval_containers.template getAsBase<EvalT>()->template postEvaluate(d);
+  m_eval_containers.template getAsBase<EvalT>()->postEvaluate(d);
 }
 
 // **************************************************************

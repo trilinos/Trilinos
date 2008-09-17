@@ -68,15 +68,13 @@ PHX_EVALUATE_FIELDS(NonlinearSource,d)
 //**********************************************************************
 PHX_PRE_EVALUATE_FIELDS(NonlinearSource,d)
 { 
-  using namespace std;
-  cout << "In NonlinearSource Pre Op" << endl;
+  std::cout << "In NonlinearSource Pre Op" << std::endl;
 }
 
 //**********************************************************************
 PHX_POST_EVALUATE_FIELDS(NonlinearSource,d)
 { 
-  using namespace std;
-  cout << "In NonlinearSource Post Op" << endl;
+  std::cout << "In NonlinearSource Post Op" << std::endl;
 }
 
 //**********************************************************************

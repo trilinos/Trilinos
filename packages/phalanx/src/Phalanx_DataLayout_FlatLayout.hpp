@@ -55,7 +55,7 @@ namespace PHX{
 
     virtual size_type size() const;
 
-    virtual const std::string identifier() const;
+    virtual std::string identifier() const;
 
     virtual void print(std::ostream& os, int indent = 0) const;
 
