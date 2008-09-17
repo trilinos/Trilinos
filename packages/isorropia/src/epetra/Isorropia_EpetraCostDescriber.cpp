@@ -285,6 +285,21 @@ int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights
   return nextID;
 }
 
+int CostDescriber::getGraphEdgeVertices(std::set<int> &gids) const
+{
+  gids.clear();
+  int ngids = 0;
+
+  if (haveGraphEdgeWeights()){
+    const Epetra_Map &rowmap = graph_edge_weights_->RowMap();
+    ngids = rowmap.NumMyElements();
+    for (int i=0; i<ngids; i++){
+      gids.insert(rowmap.GID(i));
+    }
+  }
+  return ngids;
+}
+
 int CostDescriber::getGraphEdgeWeights(int vertex_global_id, std::map<int, float> &wgtMap) const
 {
   int rowlen = getNumGraphEdges(vertex_global_id);
@@ -350,6 +365,43 @@ void CostDescriber::getHypergraphEdgeWeights(int numEdges,
     global_ids[i] = hg_edge_gids_[i];
   }
 }
+int CostDescriber::getHypergraphEdgeWeights(std::map<int, float> &wgtMap) const
+{
+  int nEdges = num_hg_edge_weights_;
+  if (nEdges < 1) return 0;
+
+  for(int i=0; i<nEdges; ++i) {
+    wgtMap[hg_edge_gids_[i]] = hg_edge_weights_[i];
+  }
+  return nEdges;
+}
+
+void CostDescriber::getCosts(std::map<int, float> &vertexWeights,
+                           std::map<int, std::map<int, float > > &graphEdgeWeights, 
+                           std::map<int, float> &hypergraphEdgeWeights) const
+{
+  if (haveVertexWeights()){
+    getVertexWeights(vertexWeights);
+  }
+
+  if (haveHypergraphEdgeWeights()){
+    getHypergraphEdgeWeights(hypergraphEdgeWeights);
+  }
+
+  if (haveGraphEdgeWeights()){
+    std::set<int> vgids;
+    int ngids = getGraphEdgeVertices(vgids);
+    std::set<int>::iterator curr;
+    std::set<int>::iterator end = vgids.end();
+    curr = vgids.begin();
+    while (curr != end){
+      std::map<int, float> nborMap;
+      getGraphEdgeWeights(*curr, nborMap);
+      graphEdgeWeights[*curr] = nborMap;
+      curr++;
+    }
+  }
+}
 
 bool CostDescriber::haveGlobalVertexWeights() const
 {
@@ -397,12 +449,7 @@ void CostDescriber::free_hg_edge_weights_()
     num_hg_edge_weights_ = 0;
   }
 }
-
-void CostDescriber::ShowCosts() const
-{
-  ShowCosts(std::cout);
-}
-void CostDescriber::ShowCosts(std::ostream &os) const
+void CostDescriber::show_cd(std::ostream &os) const
 {
   int nv = getNumVertices();
   int nhge = getNumHypergraphEdgeWeights();
@@ -501,10 +548,12 @@ void CostDescriber::ShowCosts(std::ostream &os) const
 }//namespace Epetra
 }//namespace Isorropia
 
-std::ostream& operator <<(std::ostream& os, const Isorropia::Epetra::CostDescriber &cd){
-  cd.ShowCosts(os);
+std::ostream& operator <<(std::ostream& os, const Isorropia::Epetra::CostDescriber &cd)
+{
+  cd.show_cd(os);
   return os;
 }
+
 
 #endif
 
