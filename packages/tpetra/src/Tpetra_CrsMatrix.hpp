@@ -29,6 +29,7 @@
 #ifndef TPETRA_CRSMATRIX_HPP
 #define TPETRA_CRSMATRIX_HPP
 
+#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Operator.hpp"
@@ -50,7 +51,7 @@ namespace Tpetra
    *
    */
   template<class Ordinal, class Scalar>
-  class CrsMatrix : public Teuchos::Object, public Teuchos::CompObject
+  class CrsMatrix : public Operator<Ordinal,Scalar>
   {
     public:
       //! @name Constructor/Destructor Methods
@@ -70,7 +71,7 @@ namespace Tpetra
       bool isFillCompleted() const;
 
       //! Returns the communicator.
-      const Teuchos::Comm<Ordinal>& getComm() const;
+      Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const;
 
       //! Returns the number of nonzero entries in the global matrix. 
       Ordinal getNumGlobalNonzeros() const;
@@ -165,7 +166,7 @@ namespace Tpetra
       //@{ 
       
       //! Prints the matrix on the specified stream.
-      virtual void print(std::ostream& os) const;
+      void print(std::ostream& os) const;
 
       //! Set all matrix entries equal to scalarThis.
       void setAllToScalar(Scalar scalarThis);
@@ -174,7 +175,7 @@ namespace Tpetra
       void scale(Scalar scalarThis);
 
       //! Basic print, for debugging purposes only.
-      void rawPrint();
+      void printValues();
 
       // @}
 
@@ -183,6 +184,17 @@ namespace Tpetra
       CrsMatrix(const CrsMatrix<Ordinal,Scalar> &Source);
 
       CrsMatrix& operator=(const CrsMatrix<Ordinal, Scalar> &rhs);
+
+      // struct for i,j,v
+      struct CrsIJV {
+        CrsIJV(Ordinal row, Ordinal col, const Scalar &val) {
+          i = row;
+          j = col;
+          v = val;
+        }
+        Ordinal i,j;
+        Scalar  v;
+      };
 
       //! Performs importing of off-processor elements and adds them to the locally owned elements.
       void globalAssemble();
@@ -200,7 +212,9 @@ namespace Tpetra
       MultiVector<Ordinal, Scalar>* paddedMV_;
       Import<Ordinal>* importer_;
 
-      std::map<Ordinal, std::vector<pair<Ordinal, Scalar> > > nonlocals_;
+      // a map between a (non-local) row and a list of (col,val)
+      // TODO: switch this to a hash-based map (instead of a sort-based map) as soon as one is available
+      std::map<Ordinal, std::list<std::pair<Ordinal,Scalar> > > nonlocals_;
 
       bool fillCompleted_;
 
@@ -213,8 +227,12 @@ namespace Tpetra
       Ordinal globalMaxNumEntries_;
       Ordinal myMaxNumEntries_;
 
-
   }; // class CrsMatrix
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
 
   template<class Ordinal, class Scalar>
   CrsMatrix<Ordinal,Scalar>::CrsMatrix(
@@ -229,35 +247,31 @@ namespace Tpetra
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     indices_.resize(numMyRows_);
     values_.resize(numMyRows_);
-
     fillCompleted_ = false;
-
     numGlobalNonzeros_ = ZERO;
     numMyNonzeros_     = ZERO;
-
     numGlobalDiagonals_ = ZERO;
     numMyDiagonals_     = ZERO;
-
     globalMaxNumEntries_ = ZERO;
     myMaxNumEntries_     = ZERO;
   }
+
 
   template<class Ordinal, class Scalar>
   CrsMatrix<Ordinal,Scalar>::~CrsMatrix()
   {}
 
+
   template<class Ordinal, class Scalar>
   bool CrsMatrix<Ordinal,Scalar>::isFillCompleted() const
-  {
-    return fillCompleted_;
-  }
+  { return fillCompleted_; }
+
 
   template<class Ordinal, class Scalar>
   Teuchos::RCP<const Teuchos::Comm<Ordinal> > 
   CrsMatrix<Ordinal,Scalar>::getComm() const
-  {
-    return comm_;
-  }
+  { return comm_; }
+
 
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumGlobalNonzeros() const
@@ -267,6 +281,7 @@ namespace Tpetra
     return numGlobalNonzeros_;
   }
 
+
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumMyNonzeros() const
   {
@@ -275,11 +290,11 @@ namespace Tpetra
     return numMyNonzeros_;
   }
 
+
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumGlobalRows() const
-  {
-    return rowMap_.getNumGlobalEntries();
-  }
+  { return rowMap_.getNumGlobalEntries(); }
+
 
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumGlobalCols() const
@@ -289,11 +304,11 @@ namespace Tpetra
     return colMap_->getGlobalEntries();
   }
 
+
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumMyRows() const
-  {
-    return rowMap_.getNumMyEntries();
-  }
+  { return rowMap_.getNumMyEntries(); }
+
 
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumMyCols() const
@@ -312,6 +327,7 @@ namespace Tpetra
     return numGlobalDiagonals_;
   }
 
+
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumMyDiagonals() const
   {
@@ -319,6 +335,7 @@ namespace Tpetra
       "Tpetra::CrsMatrix: cannot call getNumMyDiagonals() until fillComplete() has been called.");
     return numMyDiagonals_;
   }
+
 
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumRowEntries(Ordinal globalRow) const
@@ -328,6 +345,7 @@ namespace Tpetra
     return indices_[rowMap_.getLID(globalRow)].size();
   }
 
+
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getGlobalMaxNumEntries() const
   {
@@ -335,6 +353,7 @@ namespace Tpetra
       "Tpetra::CrsMatrix: cannot call getGlobalMaxNumEntries() until fillComplete() has been called.");
     return globalMaxNumEntries_;
   }
+
 
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getMyMaxNumEntries() const
@@ -344,23 +363,21 @@ namespace Tpetra
     return myMaxNumEntries_;
   }
 
+
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getIndexBase() const
-  {
-    return rowMap_.getIndexBase();
-  }
+  { return rowMap_.getIndexBase(); }
+
 
   template<class Ordinal, class Scalar>
   const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getRowMap() const 
-  {
-    return rowMap_;
-  }
+  { return rowMap_; }
+
 
   template<class Ordinal, class Scalar>
   const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getColMap() const 
-  {
-    return colMap_;
-  }
+  { return colMap_; }
+
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::fillComplete()
@@ -497,23 +514,23 @@ namespace Tpetra
     fillCompleted_ = true;
   }
 
+
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::submitEntry(Ordinal globalRow, Ordinal globalCol,
                                               const Scalar &value)
   {
-    if (fillCompleted_)
-      throw(-1);
-    if (rowMap_.isMyGID(globalRow))
-    {
+    TEST_FOR_EXCEPTION(isFillCompleted() == true, std::runtime_error,
+      "Tpetra::CrsMatrix::submitEntry(): fillComplete() has already been called.");
+    if (rowMap_.isMyGID(globalRow)) {
       Ordinal myRow = rowMap_.getLID(globalRow);
       indices_[myRow].push_back(globalCol);
       values_[myRow].push_back(value);
     }
-    else
-    {
-      nonlocals_[globalRow].push_back(pair<Ordinal, Scalar>(globalCol, value));
+    else {
+      nonlocals_[globalRow].push_back(make_pair(globalCol, value));
     }
   }
+
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::submitEntries(Ordinal globalRow, 
@@ -529,6 +546,7 @@ namespace Tpetra
       submitEntry(globalRow, *ind, *val);
     }
   }
+
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::getMyRowCopy(Ordinal localRow, 
@@ -548,6 +566,7 @@ namespace Tpetra
       Values[i] = values_[MyRow][i];
     }
   }
+
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::getGlobalRowCopy(Ordinal globalRow, 
@@ -582,16 +601,14 @@ namespace Tpetra
     }
   }
 
+
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::apply(const MultiVector<Ordinal, Scalar> &X, MultiVector<Ordinal,Scalar> &Y,
                                         Teuchos::ETransp mode = Teuchos::NO_TRANS) const
   {
     assert (Mode == AsIs);
-
     y.setAllToScalar(scalarZero());
-
     paddedMV_->doImport(x, *importer_, Insert);
-
     for (Ordinal i = ordinalZero() ; i < numMyRows_ ; ++i)
     {
       for (Ordinal j = ordinalZero() ; j < indices_[i].size() ; ++j)
@@ -602,6 +619,7 @@ namespace Tpetra
       }
     }
   }
+
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::print(std::ostream& os) const 
@@ -650,20 +668,19 @@ namespace Tpetra
     }
   }
 
+
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::setAllToScalar(Scalar scalarThis)
-  {
-    throw(-2); // not yet implemented
-  }
+  { TEST_FOR_EXCEPT(true); }
+
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::scale(Scalar scalarThis)
-  {
-    throw(-2); // not yet implemented
-  }
+  { TEST_FOR_EXCEPT(true); }
+
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::rawPrint()
+  void CrsMatrix<Ordinal,Scalar>::printValues()
   {
     // this prints out the structure as they are
     for (int i = 0 ; i < indices_.size() ; ++i)
@@ -675,109 +692,126 @@ namespace Tpetra
     }
   }
 
+
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::globalAssemble()
   {
-#ifdef HAVE_MPI_THIS_IS_BROKEN // FINISH
-    MPI_Comm MpiCommunicator;
-    try
+    using Teuchos::OrdinalTraits;
+    using Teuchos::Array;
+    using Teuchos::SerialDenseMatrix;
+    using Teuchos::ArrayView;
+    using std::pair;
+    using std::make_pair;
+    typedef OrdinalTraits<Ordinal> OT;
+    typedef typename std::map<Ordinal,std::list<pair<Ordinal,Scalar> > >::const_iterator NLITER;
+    int numImages = comm_->getSize();
+    int myImageID = comm_->getRank();
+    // Determine if any nodes have global entries to share
+    Ordinal MyNonlocals = nonlocals_.size(),
+            MaxGlobalNonlocals;
+    Teuchos::reduceAll<Ordinal>(*comm_,TEUCHOS::REDUCE_MAX,MyNonlocals,MaxGlobalNonlocals);
+    if (MaxGlobalNonlocals == OT::OrdinalTraits<Ordinal>::zero()) return;  // no entries to share
+
+    // compute a list of NLRs from nonlocals_ and use it to compute:
+    //      IdsAndRows: a vector of (id,row) pairs
+    //          NLR2Id: a map from NLR to the Id that owns it
+    // globalNeighbors: a global graph of connectivity between images: globalNeighbors(i,j) indicates that j sends to i
+    //         sendIDs: a list of all images I send to
+    //         recvIDs: a list of all images I receive from (constructed later)
+    Array<pair<Ordinal,Ordinal> > IdsAndRows;
+    std::map<Ordinal,Ordinal> NLR2Id;
+    SerialDenseMatrix<Ordinal,char> globalNeighbors;
+    Array<Ordinal> sendIDs, recvIDs;
     {
-      MpiCommunicator = (dynamic_cast<const MpiComm<Ordinal, Scalar>&>(getComm())).getMpiComm();
-    }
-    catch(std::bad_cast bc) 
-    {
-      cerr << "Bad cast" << endl;
-      throw(-1);
-    }
-
-    // First I want to check that we actually need to do this; it may be
-    // that the user has only inserted locally owned elements.
-
-    Ordinal MyNonlocals = nonlocals_.size(), GlobalNonlocals;
-
-    MPI_Allreduce((void*)&MyNonlocals, (void*)&GlobalNonlocals, MpiTraits<Ordinal>::count(1),
-        MpiTraits<Ordinal>::datatype(), MPI_MAX, MpiCommunicator);
-
-    if (GlobalNonlocals == ordinalZero()) return;
-
-    // Ok, so we need to do the hard work.
-
-    int NumImages = getComm().getSize();
-
-    std::map<Ordinal, Ordinal> containter_map;
-
-    // this is a list of non-locally owned rows, in a map (should become a
-    // hash some day for faster access)
-    for (typename std::map<Ordinal, vector<pair<Ordinal, Scalar> > >::iterator iter = nonlocals_.begin() ; 
-        iter != nonlocals_.end() ; ++iter)
-    {
-      containter_map[iter->first] = ordinalOne();
-    }
-
-    // convert the map to a vector so that I can use get getRemoteIDList()
-    vector<Ordinal> container_vector;
-
-    for (typename std::map<Ordinal, Ordinal>::iterator iter = containter_map.begin() ;
-        iter != containter_map.end() ; ++iter)
-    {
-      container_vector.push_back(iter->first);
-    }
-
-    vector<int> image_vector(container_vector.size());
-
-    rowMap_.getRemoteIDList (container_vector, image_vector);
-
-    std::map<Ordinal, int> image_map;
-
-    for (Ordinal i = ordinalZero() ; i < image_vector.size() ; ++i)
-    {
-      image_map[container_vector[i]] = image_vector[i];
-    }
-
-    vector<int> local_neighbors(rowMap_.comm().getSize());
-    for (int i = 0 ; i < local_neighbors.size() ; ++i) local_neighbors[i] = 0;
-
-    for (int i = 0 ; i < image_vector.size() ; ++i)
-    {
-      local_neighbors[image_vector[i]] = 1;
-    }
-
-    vector<int> global_neighbors(NumImages * NumImages);
-
-    rowMap_.comm().gatherAll(&local_neighbors[0], &global_neighbors[0], NumImages);
-
-    // `global_neighbors' at this point contains (on all images) the
-    // connectivity between the images. On the row `i', a nonzero on col `j' means
-    // that image i will send something to image j. On the column `j', a
-    // nonzero on row `i' means that image j will receive something from
-    // image i.
-
-    // now I loop over all columns to know which image is supposed to send
-    // me something
-    vector<int> recvImages;
-
-    for (int j = 0 ; j < NumImages ; ++j)
-    {
-      int what = global_neighbors[j * NumImages + rowMap_.comm().getRank()];
-      if (what > 0)
+      // nonlocals_ contains the entries we are holding for all non-local rows
+      // we want a list of the rows for which we have data
+      Array<Ordinal> NLRs;
+      std::set<Ordinal> setOfRows;
+      for (NLITER iter = nonlocals_.begin(); iter != nonlocals_.end(); ++iter)
       {
-        recvImages.push_back(j);
+        setOfRows.insert(iter->first);
+      }
+      // copy the elements in the set into an Array
+      NLRs.resize(setOfRows.size());
+      std::copy(setOfRows.begin(), setOfRows.end(), NLRs.begin());
+
+      // get a list of ImageIDs for the non-local rows (NLRs)
+      Array<Ordinal> NLRIds(NLRs.size());
+      rowMap_.getRemoteIndexList(NLRs(),NLRIds());
+      // build up a list of neighbors, as well as a map between NLRs and Ids
+      // localNeighbors[i] != 0 iff I have data to send to image i
+      // put NLRs,Ids into an array of pairs
+      IdsAndRows.reserve(NLRs.size());
+      Array<char> localNeighbors(numImages,OrdinalTraits<char>::zero());
+      for (Array<Ordinal>::const_iterator nlr = NLRs.begin(), id = NLRIds.begin();
+          nlr != NLRs.end(); ++nlr, ++id) 
+      {
+        NLR2Id[*nlr] = *id;
+        localNeighbors[*id] = OrdinalTraits<char>::one();
+        IdsAndRows.push_back(make_pair(*id,*nlr));
+      }
+      for (Ordinal j=OT::zero(); j<numImages; ++j) {
+      {
+        if (localNeighbors[j]) {
+          sendIDs.push_back(j);
+        }
+      }
+      // sort IdsAndRows, by Ids first, then rows
+      std::sort(IdsAndRows.begin(),IdsAndRows.end());
+      // gather from other nodes to form the full graph
+      globalNeighbors.shapeUninitialized(numImages,numImages);
+      Teuchos::gatherAll(*comm_,numImages,localNeighbors.getRawPtr(),numImages,globalNeighbors.values());
+      // globalNeighbors at this point contains (on all images) the
+      // connectivity between the images. 
+      // globalNeighbors(i,j) != 0 means that j send to i/that i receives from j
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////// 
+    // FIGURE OUT WHO IS SENDING TO WHOM AND HOW MUCH
+    // DO THIS IN THE PROCESS OF PACKING ALL OUTGOING DATA ACCORDING TO DESTINATION ID
+    ////////////////////////////////////////////////////////////////////////////////////// 
+
+    // loop over all columns to know from which images I can expect to receive something
+    for (Ordinal j=OT::zero(); j<numImages; ++j)
+    {
+      if (globalNeighbors(i,j)) {
+        recvIDs.push_back(j);
       }
     }
 
-    // do the same but with send
-    vector<int> sendImages;
+    // we know how many we're sending to already
+    // form a contiguous list of all data to be sent
+    // track the number of entries for each ID
+    Array<CrsIJV> IJVcontig;
+    Array<Ordinal> sendSizes(sendIDs.size(), 0);
+    typename Array<Ordinal>::size_type numSends = 0;
+    for (typename Array<pair<Ordinal,Ordinal> >::const_iterator IdAndRow = IdsAndRows.begin();
+         IdAndRow != IdsAndRows.end(); ++IdAndRow) 
+    {
+      Ordinal  id = IdAndRow->first;
+      Ordinal row = IdAndRow->second;
+      // have we advanced to a new send?
+      if (sendIDs[numSends] != id) {
+        numSends++;
+      }
+      // HERE
+      // copy data for row into contiguous storage
+      // for () {}
+      // keep track of the amount, assign it to sendSizes[numSends]
+    }
+    numSends++; // one last increment, to make it a count instead of an index
+    TEST_FOR_EXCEPTION(numSends != sendIDs.size(), std::logic_error, "Tpetra::CrsMatrix::globalAssemble(): internal logic error. Contact Tpetra team.");
+
+    // from the size info, build the ArrayViews into IJVcontig
 
     // now I pack what has to be sent to the other images
-    std::map<Ordinal, vector<Ordinal> > sendRows;
-    std::map<Ordinal, vector<Ordinal> > sendCols;
-    std::map<Ordinal, vector<Scalar> >  sendVals;
-
-    for (typename std::map<Ordinal, vector<pair<Ordinal, Scalar> > >::iterator iter = nonlocals_.begin() ; 
-        iter != nonlocals_.end() ; ++iter)
+    std::map<Ordinal,vector<Ordinal> > sendRows;
+    std::map<Ordinal,vector<Ordinal> > sendCols;
+    std::map<Ordinal,vector<Scalar> >  sendVals;
+    for (NLITER iter = nonlocals_.begin(); iter != nonlocals_.end(); ++iter)
     {
       Ordinal row   = iter->first;
-      int image = image_map[row];
+      int     image = NLR2Id[row];
 
       for (Ordinal i = ordinalZero() ; i < iter->second.size() ; ++i)
       {
@@ -792,16 +826,15 @@ namespace Tpetra
 
     int MyImageID = rowMap_.comm().getRank();
 
-    vector<MPI_Request> send_requests(NumImages * 3);
-    vector<MPI_Status>  send_status(NumImages * 3);
+    vector<MPI_Request> send_requests(numImages * 3);
+    vector<MPI_Status>  send_status(numImages * 3);
 
     Ordinal send_count = 0;
 
-    vector<Ordinal> send_sizes(NumImages); // because Isend is not buffered
 
-    for (int j = 0 ; j < NumImages ; ++j)
+    for (int j = 0 ; j < numImages ; ++j)
     {
-      int what = global_neighbors[j + NumImages * rowMap_.comm().getRank()];
+      int what = globalNeighbors[j + numImages * rowMap_.comm().getRank()];
       if (what > 0)
       {
         sendImages.push_back(j);
@@ -814,16 +847,16 @@ namespace Tpetra
     }
 
     // Now receive the actual sizes
-    vector<MPI_Request> recv_requests(NumImages * 3);
-    vector<MPI_Status>  recv_status(NumImages * 3);
+    vector<MPI_Request> recv_requests(numImages * 3);
+    vector<MPI_Status>  recv_status(numImages * 3);
 
-    vector<Ordinal> recv_sizes(NumImages);
-    vector<Ordinal> recv_images(NumImages);
+    vector<Ordinal> recv_sizes(numImages);
+    vector<Ordinal> recv_images(numImages);
 
     Ordinal recv_count = 0;
-    for (int j = 0 ; j < NumImages ; ++j)
+    for (int j = 0 ; j < numImages ; ++j)
     {
-      int what = global_neighbors[j * NumImages + rowMap_.comm().getRank()];
+      int what = globalNeighbors[j * numImages + rowMap_.comm().getRank()];
       if (what > 0)
       {
         recv_images[recv_count] = j;
@@ -838,6 +871,10 @@ namespace Tpetra
 
     MPI_Barrier(MpiCommunicator);
 
+    ////////////////////////////////////////////////////////////////////////////////////
+    // NOW RECEIVE THE DATA BASED ON THE INFO FROM ABOVE
+    ////////////////////////////////////////////////////////////////////////////////////
+
     std::map<Ordinal, vector<Ordinal> > recvRows;
     std::map<Ordinal, vector<Ordinal> > recvCols;
     std::map<Ordinal, vector<Scalar> >  recvVals;
@@ -850,7 +887,6 @@ namespace Tpetra
       recvRows[image].resize(recv_sizes[i]);
       recvCols[image].resize(recv_sizes[i]);
       recvVals[image].resize(recv_sizes[i]);
-
       xxx[image] = recv_sizes[i];
     }
 
@@ -861,9 +897,9 @@ namespace Tpetra
     // First I start sending, then receiving
 
     send_count = 0;
-    for (int j = 0 ; j < NumImages ; ++j)
+    for (int j = 0 ; j < numImages ; ++j)
     {
-      int what = global_neighbors[j + NumImages * rowMap_.comm().getRank()];
+      int what = globalNeighbors[j + numImages * rowMap_.comm().getRank()];
       if (what > 0)
       {
         // want to send to image `j', first Rows, then Cols, then Vals
@@ -882,9 +918,9 @@ namespace Tpetra
     }
 
     recv_count = 0;
-    for (int j = 0 ; j < NumImages ; ++j)
+    for (int j = 0 ; j < numImages ; ++j)
     {
-      int what = global_neighbors[j * NumImages + rowMap_.comm().getRank()];
+      int what = globalNeighbors[j * numImages + rowMap_.comm().getRank()];
       if (what > 0)
       {
         int osize = MpiTraits<Ordinal>::count(xxx[j]);
@@ -917,7 +953,9 @@ namespace Tpetra
         submitEntry(Tpetra::Add, recvRows[image][j], recvCols[image][j], recvVals[image][j]);
       }
     }
-#endif
+
+    // don't need this data anymore
+    nonLocals_.clear();
   }
 
 } // namespace Tpetra

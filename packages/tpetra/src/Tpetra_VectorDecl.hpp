@@ -29,7 +29,6 @@
 #ifndef TPETRA_VECTOR_DECL_HPP
 #define TPETRA_VECTOR_DECL_HPP
 
-#include <Teuchos_CompObject.hpp>
 #include <Teuchos_Object.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include "Tpetra_ConfigDefs.hpp"
@@ -67,7 +66,7 @@ namespace Tpetra {
   */
 
   template<typename Ordinal, typename Scalar>
-  class Vector : public Teuchos::CompObject, public DistObject<Ordinal,Scalar> {
+  class Vector : public DistObject<Ordinal,Scalar> {
 
   public:
   

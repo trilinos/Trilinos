@@ -30,7 +30,6 @@
 #define TPETRA_OPERATOR_HPP
 
 #include <Teuchos_Object.hpp>
-#include <Teuchos_CompObject.hpp>
 #include "Tpetra_MapDecl.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -40,7 +39,7 @@ namespace Tpetra {
    * MultiVectors.
    */
   template<typename Ordinal, typename Scalar>
-	class Operator : public Teuchos::CompObject, public Teuchos::Object {
+	class Operator : public Teuchos::Object {
 	public:
 
 		/** \name Pure virtual functions to be overridden by subclasses. */

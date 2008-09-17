@@ -47,7 +47,7 @@ namespace Tpetra {
 
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, Ordinal NumVectors, bool zeroOut) 
-    : Teuchos::CompObject(), DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
+    : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::MultiVector")
   {
     using Teuchos::as;
     TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
@@ -69,7 +69,7 @@ namespace Tpetra {
 
   template <typename Ordinal, typename Scalar> 
   MultiVector<Ordinal,Scalar>::MultiVector(const MultiVector<Ordinal,Scalar> &source) 
-    : Teuchos::CompObject(), DistObject<Ordinal,Scalar>(source)
+    : DistObject<Ordinal,Scalar>(source)
   {
     // copy data from the source MultiVector into this multivector
     // this multivector will be allocated with constant stride, even if the source multivector does not have constant stride

@@ -31,7 +31,6 @@
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
-#include <Teuchos_CompObject.hpp>
 #include <Teuchos_Object.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -50,7 +49,7 @@ namespace Tpetra {
 
   /*! multivector */
   template<class Ordinal, class Scalar>
-  class MultiVector : public Teuchos::CompObject, public DistObject<Ordinal,Scalar>{
+  class MultiVector : public DistObject<Ordinal,Scalar>{
 
     public:
 

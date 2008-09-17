@@ -10,14 +10,14 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    DIRS = Distributor, Map, Directory, ImportExport;
+    DIRS = Distributor, Map, Directory, ImportExport, MultiVector;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }
 
 (TpetraInProgress) {
-    DIRS = Vector, MultiVector;
+    DIRS = Vector;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;

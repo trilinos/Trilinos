@@ -41,15 +41,16 @@
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
 
+#include <Tpetra_Operator.hpp>
 #include <Tpetra_MultiVector.hpp>
 
 namespace Anasazi {
 
-  ////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Anasazi::MultiVecTraits for Tpetra::MultiVector.
+  // Implementation of the Anasazi::MultiVecTraits for Tpetra::MultiVector
   //
-  ////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////
 
   /*! 
     \brief Template specialization of Anasazi::MultiVecTraits class using the Tpetra::MultiVector class.
@@ -298,6 +299,37 @@ namespace Anasazi {
     //@}
   };        
 
+
+  ///////////////////////////////////////////////////////////////////////// 
+  //
+  // Implementation of the Anasazi::OperatorTraits for Thyra::LinearOpBase
+  //
+  ///////////////////////////////////////////////////////////////////////// 
+
+  /*! 
+                         
+    \brief Template specialization of Anasazi::OperatorTraits class using the
+    Thyra::LinearOpBase virtual base class and Thyra::MultiVectorBase class.
+
+    This interface will ensure that any LinearOpBase and MultiVectorBase
+    implementations will be accepted by the Anasazi templated solvers.
+
+  */
+  template <class ScalarType> 
+  class OperatorTraits < ScalarType, Tpetra::MultiVector<int,ScalarType>, Tpetra::Operator<int,ScalarType> >
+  {
+  public:
+    
+    /*! \brief This method takes the MultiVectorBase \c x and
+      applies the LinearOpBase \c Op to it resulting in the MultiVectorBase \c y.
+    */    
+    static void Apply ( const Tpetra::Operator<int,ScalarType>& Op, const Tpetra::MultiVector<int,ScalarType>& x, Tpetra::MultiVector<int,ScalarType>& y )
+    { 
+      Op.apply(x,y);
+    }
+    
+  };
+  
   
 } // end of Anasazi namespace 
 
