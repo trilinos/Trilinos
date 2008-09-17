@@ -87,7 +87,7 @@ endif
 ZOLTAN_OCT=1
 ZOLTAN_HIER=1
 
-GDEFINES	=
+GDEFINES	= -DTRILINOS_NO_CONFIG_H
 
 # If YES_FORTRAN, compile the Fortran interface into the library.
 ifdef YES_FORTRAN
