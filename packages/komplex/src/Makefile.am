@@ -42,10 +42,12 @@ all-local:
 # For now, these are just guesses as to where the files belong.
 
 CORE_H = \
+	$(srcdir)/Komplex_LinearProblem.h \
 	$(srcdir)/azk_komplex.h \
 	$(srcdir)/Komplex_Version.h
 
 CORE = \
+	$(srcdir)/Komplex_LinearProblem.cpp \
 	$(srcdir)/azk_create_linsys.c \
 	$(srcdir)/azk_create_precon.c \
 	$(srcdir)/azk_destroy_linsys.c \
@@ -58,8 +60,9 @@ CORE = \
 ### add in paths as needed - trying to prevent 
 ### unnecessary paths from being listed - see old.Makefile for ideas
 
-AM_CPPFLAGS =-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src 
-#	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+AM_CPPFLAGS =-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
+	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src 
 
 SERIAL_H = 
 

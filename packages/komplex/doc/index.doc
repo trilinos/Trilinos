@@ -3,8 +3,21 @@
 \endhtmlonly
 
   \section intro Introduction
-  KOMPLEX is an add-on module to AZTEC that allows users to solve
-  complex-valued linear systems.
+  KOMPLEX is  collection of software that solves complex-valued linear
+  systems using an equivalent real-valued formulation.  There are two
+  versions of capabilities in this package:
+  <ol> 
+    <li> Komplex_LinearProblem: This is the newest capability and should be
+         used if at all possible.  Komplex_LinearProblem constructs an Epetra_LinearProblem
+         from existing matrix and coefficient data.  A real matrix of twice the 
+         dimension of the original complex-valued problem is explicitly constructed
+         as an Epetra_CrsMatrix.  Given this matrix and the user-supplied RHS (and
+         possibly an initial guess), the Komplex_LinearProblem object is ready for
+         use with any Trilinos solver and preconditioner.
+    <li> Aztec 2.1-compatible Komplex functions: An add-on module to AZTEC that 
+         allows users to solve complex-valued linear systems using AZTEC C functionality.
+         This approach is not recommended for new development and is provided for maintenance only.
+  </ol>
 
   KOMPLEX solves a complex-valued linear system \f$Ax = b\f$ by solving
   an equivalent real-valued system of twice the dimension.  Specifically,
@@ -37,9 +50,11 @@
   \f$ x_i \f$, we can form the solution to the original system as \f$x =
 x_r +i*x_i\f$.
 
-\section install Installation
-  Installation and use of Komplex assumes a good working knowledge of
-Aztec 2.1.
+\section install Installation (Aztec 2.1-compatible only)
+  <b>Note: Since Komplex builds with the standard Trilinos build process, 
+          the build process described below is not required when using Komplex with Trilinos. </b>
+
+  Installation and use of Komplex assumes a good working knowledge of Aztec 2.1.
 To install Komplex 1.0, you must:
 
 <ol>
@@ -89,7 +104,8 @@ When porting to other machines, the following issues are the most difficult:
 </ol>
 
 
-\section startup Overview of Using Komplex
+\section startup Overview of Using Komplex (Aztec 2.1-compatible version only)
+<b> Note: See the class documentation for Komplex_LinearProblem for details on its use. </b>
 
 \subsection formulations Possible Formulations
 
