@@ -59,9 +59,6 @@ current partition/distribution
       <i>REFINE</i>&nbsp; - refine the current partition/distribution;
 assumes only small changes
       <br>
-      <i>FAST_REPARTITION</i>&nbsp; - a hybrid of REPARTITION and REFINE, small
-refinement to existing partition that tries to stay close to the current partition
-      <br>
       <i>PARTITION</i>&nbsp; - partition from scratch, not taking&nbsp;
 the current data distribution into account<br>
              
@@ -81,6 +78,14 @@ units for edges and object sizes are the same.<br>
 Simply put, to emphasize communication within the application, use a
 large value for PHG_REPART_MULTIPLIER. Typically this should be
 proportional to the number of iterations between load-balancing calls. </td>
+    </tr>
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp; PHG_MULTILEVEL<br>
+      </i></td>
+      <td>This parameter specifies whether a multilevel method
+should be used.  Multilevel methods produce higher quality but 
+require more execution time and memory.
+      </td>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp; <a
@@ -235,6 +240,11 @@ after each processor redistribution.<br>
       <td style="vertical-align: top;"><br>
       </td>
       <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REPART_MULTIPLIER=100</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_MULTILEVEL=1 if LB_APPROACH = partition or repartition; 0 otherwise.</span></td>
     </tr>
     <tr>
       <td><br>
