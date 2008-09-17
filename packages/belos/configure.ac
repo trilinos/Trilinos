@@ -38,7 +38,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(belos, 1.1d, hkthorn@sandia.gov)
+AC_INIT(belos, 1.2d, hkthorn@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
