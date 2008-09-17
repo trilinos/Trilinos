@@ -48,6 +48,8 @@ typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, float *, Partition,
 struct PHGPartParamsStruct {
   char hgraph_pkg[MAX_PARAM_STRING_LEN];/* Package (Zoltan,PaToH,ParKway) */
   char hgraph_method[MAX_PARAM_STRING_LEN]; /* Operation(partition,repart,refine)*/
+  int useMultilevel;             /* Flag indicating whether to use multilevel
+                                    method */
   float bal_tol;                 /* Balance tolerance in % of average */
   float bal_tol_adjustment;      /* balance tolerance adjustment;
                                     between [0-1.0]: it is % of bal_tol

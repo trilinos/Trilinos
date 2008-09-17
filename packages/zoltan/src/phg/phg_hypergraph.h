@@ -31,9 +31,12 @@ typedef struct {
   int nVtx;             /* number of vertices on this processor */
   int nEdge;            /* number of hyperedges on this processor */
   int nPins;            /* number of pins (nonzeros) on this processor */
-  int nRepartVtx;       /* number of repartition vertices added in PHG_REPART */
-  int nRepartEdge;      /* number of repartition edges added in PHG_REPART. */
-  int nRepartPin;       /* number of repartition pins added in PHG_REPART. */
+  int nRepartVtx;       /* number of repartition vertices added 
+                           when LB_APPROACH=repartition */
+  int nRepartEdge;      /* number of repartition edges added 
+                           when LB_APPROACH=repartition. */
+  int nRepartPin;       /* number of repartition pins added 
+                           when LB_APPROACH=repartition. */
   
   int VtxWeightDim;     /* number of weight dimensions for a vertex */
   int EdgeWeightDim;    /* number of weight dimensions for a hyperedge */
@@ -138,9 +141,9 @@ struct Zoltan_HGraph {
   ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
   int GnRepartVtx;          /* Global number of repartition vtxs added for
-                               PHG_REPART. */
+                               LB_APPROACH=repartition. */
   int GnRepartEdge;         /* Global number of repartition edges added for
-                               PHG_REPART. */
+                               LB_APPROACH=repartition. */
   int *Input_Parts;         /* Initial partition #s for on-processor objects */
   int *Output_Parts;        /* Final partition #s for on-processor objects */
   int *AppObjSizes;         /* Object sizes for on-processor objects */
