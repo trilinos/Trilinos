@@ -96,7 +96,7 @@ namespace Tpetra {
     
   private:
     const Map<Ordinal> map_;
-    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
     std::vector<Ordinal> allMinGIDs_;
     std::vector<Ordinal> imageIDs_;
     std::vector<Ordinal> LIDs_;

@@ -167,7 +167,7 @@ namespace Tpetra {
     Teuchos::RCP< const Platform<Ordinal> > getPlatform() const;
 
     //! Get the Comm object for this Map
-    Teuchos::RCP< Teuchos::Comm<Ordinal> > getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const;
 
     //@}
 

@@ -57,7 +57,7 @@ namespace Tpetra {
     //@{ 
 
     //! Comm Constuctor (default ctr)
-    Distributor(const Teuchos::RCP< Teuchos::Comm<Ordinal> > & comm);
+    Distributor(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > & comm);
 
     //! Copy Constructor
     Distributor(const Distributor<Ordinal> & distributor);
@@ -243,7 +243,7 @@ namespace Tpetra {
   private:
 
     // private data members
-    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
 
     Ordinal numExports_;
     // selfMessage_ is whether I have a send for myself
@@ -294,7 +294,7 @@ namespace Tpetra {
 
 
   template <typename Ordinal>
-  Distributor<Ordinal>::Distributor(Teuchos::RCP< Teuchos::Comm<Ordinal> > const& comm) 
+  Distributor<Ordinal>::Distributor(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm) 
     : Teuchos::Object("Tpetra::Distributor")
     , comm_(comm)
     , numExports_(Teuchos::OrdinalTraits<Ordinal>::zero())

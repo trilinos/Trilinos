@@ -1,5 +1,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMVOPTester.hpp"
@@ -23,6 +24,7 @@ namespace {
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
   using Tpetra::MultiVector;
+  using Tpetra::CrsMatrix;
   using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -65,6 +67,14 @@ namespace {
     return rcp(new Tpetra::SerialPlatform<Ordinal>());
   }
 
+  template<class Ordinal, class Scalar> 
+  RCP<CrsMatrix<Ordinal,Scalar> > constructTriDiagMatrix(const Map<Ordinal> &map) 
+  {
+    RCP<CrsMatrix<Ordinal,Scalar> > op = rcp( new CrsMatrix<Ordinal,Scalar>(map.getComm(),map) );
+    op->fillComplete();
+    return op;
+  }
+
   //
   // UNIT TESTS
   // 
@@ -73,8 +83,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MVTestDist, Ordinal, Scalar )
   {
     typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    // const Ordinal dim = 500;
-    const Ordinal dim = 10;
+    const Ordinal dim = 500;
     const Ordinal numVecs = 5;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     // Create an output manager to handle the I/O from the solver
@@ -88,7 +97,59 @@ namespace {
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Anasazi::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MVTestLocal, Ordinal, Scalar )
+  {
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    const Ordinal dim = 500;
+    const Ordinal numVecs = 5;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new BasicOutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    // create a uniform contiguous map
+    Map<Ordinal> map(dim,ZERO,platform,true);
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
+    bool res = Anasazi::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OPTestLocal, Ordinal, Scalar )
+  {
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::Operator<Ordinal,Scalar>    OP;
+    // const Ordinal dim = 500;
+    const Ordinal dim = 10;
+    const Ordinal numVecs = 5;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new BasicOutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    // create a uniform contiguous map
+    Map<Ordinal> map(dim,ZERO,platform,true);
+    // create a CrsMatrix
+    RCP<OP> op = constructTriDiagMatrix<Ordinal,Scalar>(map);
+    // create a multivector
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
+    bool res = Anasazi::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
+    TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -116,7 +177,9 @@ namespace {
   #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestDist, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestDist, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestLocal, ORDINAL, SCALAR )
+      // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OPTestLocal, ORDINAL, SCALAR )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \

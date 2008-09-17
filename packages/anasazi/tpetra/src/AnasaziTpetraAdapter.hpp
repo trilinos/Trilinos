@@ -41,6 +41,7 @@
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
 
+#include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_MultiVector.hpp>
 
@@ -315,17 +316,17 @@ namespace Anasazi {
     implementations will be accepted by the Anasazi templated solvers.
 
   */
-  template <class ScalarType> 
-  class OperatorTraits < ScalarType, Tpetra::MultiVector<int,ScalarType>, Tpetra::Operator<int,ScalarType> >
+  template <class Scalar> 
+  class OperatorTraits < Scalar, Tpetra::MultiVector<int,Scalar>, Tpetra::Operator<int,Scalar> >
   {
   public:
     
     /*! \brief This method takes the MultiVectorBase \c x and
       applies the LinearOpBase \c Op to it resulting in the MultiVectorBase \c y.
     */    
-    static void Apply ( const Tpetra::Operator<int,ScalarType>& Op, const Tpetra::MultiVector<int,ScalarType>& x, Tpetra::MultiVector<int,ScalarType>& y )
+    static void Apply ( const Tpetra::Operator<int,Scalar>& Op, const Tpetra::MultiVector<int,Scalar>& x, Tpetra::MultiVector<int,Scalar>& y )
     { 
-      Op.apply(x,y);
+      Op.apply(Teuchos::ScalarTraits<Scalar>::one(),x,Teuchos::ScalarTraits<Scalar>::zero(),y);
     }
     
   };

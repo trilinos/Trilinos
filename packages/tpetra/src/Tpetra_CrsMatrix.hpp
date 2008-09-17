@@ -29,12 +29,36 @@
 #ifndef TPETRA_CRSMATRIX_HPP
 #define TPETRA_CRSMATRIX_HPP
 
+#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
+
+namespace Tpetra {
+  // struct for i,j,v triplets
+  template <class Ordinal, class Scalar>
+  struct CrsIJV {
+    CrsIJV() {}
+    CrsIJV(Ordinal row, Ordinal col, const Scalar &val) {
+      i = row;
+      j = col;
+      v = val;
+    }
+    Ordinal i,j;
+    Scalar  v;
+  };
+}
+
+namespace Teuchos {
+  // SerializationTraits specialization for CrsIJV, using DirectSerialization
+  template<typename Ordinal, typename Scalar>
+  class SerializationTraits<Ordinal,Tpetra::CrsIJV<Ordinal,Scalar> >
+  : public DirectSerializationTraits<Ordinal,Tpetra::CrsIJV<Ordinal,Scalar> >
+  {};
+}
 
 namespace Tpetra 
 {
@@ -58,7 +82,7 @@ namespace Tpetra
       //@{ 
 
       //! Constructor specifying the domain map only.
-      CrsMatrix(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > & comm, Map<Ordinal> &rowMap);
+      CrsMatrix(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > & comm, const Map<Ordinal> &rowMap);
 
       // !Destructor.
       virtual ~CrsMatrix();
@@ -68,46 +92,46 @@ namespace Tpetra
       //@{ 
       
       //! Returns \c true if the matrix has already been fill completed.
-      bool isFillCompleted() const;
+      inline bool isFillCompleted() const;
 
       //! Returns the communicator.
       Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const;
 
       //! Returns the number of nonzero entries in the global matrix. 
-      Ordinal getNumGlobalNonzeros() const;
+      inline Ordinal getNumGlobalNonzeros() const;
 
       //! Returns the number of nonzero entries in the calling image's portion of the matrix. 
-      Ordinal getNumMyNonzeros() const;
+      inline Ordinal getNumMyNonzeros() const;
 
       //! Returns the number of global matrix rows. 
-      Ordinal getNumGlobalRows() const;
+      inline Ordinal getNumGlobalRows() const;
 
       //! Returns the number of global matrix columns. 
-      Ordinal getNumGlobalCols() const;
+      inline Ordinal getNumGlobalCols() const;
 
       //! Returns the number of matrix rows owned by the calling image. 
-      Ordinal getNumMyRows() const;
+      inline Ordinal getNumMyRows() const;
 
       //! Returns the number of matrix columns owned by the calling image. 
-      Ordinal getNumMyCols() const;
+      inline Ordinal getNumMyCols() const;
 
       //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons. 
-      Ordinal getNumGlobalDiagonals() const;
+      inline Ordinal getNumGlobalDiagonals() const;
 
       //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons. 
-      Ordinal getNumMyDiagonals() const;
+      inline Ordinal getNumMyDiagonals() const;
 
       //! Returns the current number of nonzero entries in specified global index on this image. 
-      Ordinal getNumRowEntries(Ordinal globalRow) const;
+      inline Ordinal getNumRowEntries(Ordinal globalRow) const;
 
       //! Returns the maximum number of nonzero entries across all rows/columns on all images. 
-      Ordinal getGlobalMaxNumEntries() const;
+      inline Ordinal getGlobalMaxNumEntries() const;
 
       //! Returns the maximum number of nonzero entries across all rows/columns on this image. 
-      Ordinal getMyMaxNumEntries() const;
+      inline Ordinal getMyMaxNumEntries() const;
 
       //! Returns the index base for global indices for this matrix. 
-      Ordinal getIndexBase() const;
+      inline Ordinal getIndexBase() const;
       
       //! Returns the Map that describes the row distribution in this matrix.
       const Map<Ordinal> & getRowMap() const;
@@ -127,8 +151,9 @@ namespace Tpetra
       const Map<Ordinal> & getRangeMap() const;
 
       //! Computes the matrix-vector multilication y = A x.
-      void apply(const MultiVector<Ordinal,Scalar>& X, MultiVector<Ordinal,Scalar> &Y,
-                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+      void apply(const Scalar &alpha, const MultiVector<Ordinal,Scalar>& X, 
+                 const Scalar &beta,        MultiVector<Ordinal,Scalar> &Y,
+                       Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
       //@}
 
@@ -145,16 +170,23 @@ namespace Tpetra
       //! Submit multiple entries, using global IDs.
       /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
       void submitEntries(Ordinal globalRow, 
-                         const Teuchos::ArrayView<const Scalar> &values, 
-                         const Teuchos::ArrayView<const Ordinal> &indices);
+                         const Teuchos::ArrayView<const Ordinal> &cols,
+                         const Teuchos::ArrayView<const Scalar> &vals);
+
+      //! Set all matrix entries equal to scalarThis.
+      void setAllToScalar(const Scalar &alpha);
+
+      //! Scale the current values of a matrix, this = alpha*this. 
+      void scale(const Scalar &alpha);
 
       // @}
+
       //! @name Computational Methods
       // @{ 
 
       //! Returns a copy of the specified local row, column indices are local.
-      void getMyRowCopy(Ordinal localRow, const Teuchos::ArrayView<Ordinal> &indices, 
-                                          const Teuchos::ArrayView<Scalar> &values) const;
+      void getMyRowCopy(Ordinal myRow, const Teuchos::ArrayView<Ordinal> &indices, 
+                                       const Teuchos::ArrayView<Scalar> &values) const;
 
       //! Returns a copy of the specified (and locally owned) global row, column indices are global.
       void getGlobalRowCopy(Ordinal globalRow, 
@@ -162,20 +194,15 @@ namespace Tpetra
                             const Teuchos::ArrayView<Scalar> &values) const;
 
       //@}
+
       //! @name I/O Methods
       //@{ 
       
       //! Prints the matrix on the specified stream.
       void print(std::ostream& os) const;
 
-      //! Set all matrix entries equal to scalarThis.
-      void setAllToScalar(Scalar scalarThis);
-
-      //! Scale the current values of a matrix, this = scalarThis*this. 
-      void scale(Scalar scalarThis);
-
       //! Basic print, for debugging purposes only.
-      void printValues();
+      void printValues(std::ostream& os);
 
       // @}
 
@@ -185,32 +212,24 @@ namespace Tpetra
 
       CrsMatrix& operator=(const CrsMatrix<Ordinal, Scalar> &rhs);
 
-      // struct for i,j,v
-      struct CrsIJV {
-        CrsIJV(Ordinal row, Ordinal col, const Scalar &val) {
-          i = row;
-          j = col;
-          v = val;
-        }
-        Ordinal i,j;
-        Scalar  v;
-      };
-
       //! Performs importing of off-processor elements and adds them to the locally owned elements.
       void globalAssemble();
 
       const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
       const Map<Ordinal>& rowMap_;
-      Teuchos::RCP<Map<Ordinal> > colMap_;
+      Teuchos::RCP<const Map<Ordinal> > colMap_;
 
       Ordinal numMyRows_, numGlobalRows_;
-      const std::vector<Ordinal>& myGlobalEntries_;
 
-      std::vector<std::vector<Ordinal> > indices_;
-      std::vector<std::vector<Scalar> > values_;
+      // column indices
+      Teuchos::Array<Teuchos::Array<Ordinal> > colinds_;
+      // values
+      Teuchos::Array<Teuchos::Array<Scalar> > values_;
 
-      MultiVector<Ordinal, Scalar>* paddedMV_;
-      Import<Ordinal>* importer_;
+      // TODO: consider using a contiguous storage
+      // what are the benefits? costs are: insertions are more difficult
+      Teuchos::RCP<MultiVector<Ordinal,Scalar> > paddedMV_;
+      Teuchos::RCP<Import<Ordinal> > importer_;
 
       // a map between a (non-local) row and a list of (col,val)
       // TODO: switch this to a hash-based map (instead of a sort-based map) as soon as one is available
@@ -218,11 +237,11 @@ namespace Tpetra
 
       bool fillCompleted_;
 
-      Ordinal numGlobalNonzeros_;
-      Ordinal numMyNonzeros_;
+      Ordinal globalNNZ_;
+      Ordinal myNNZ_;
 
-      Ordinal numGlobalDiagonals_;
-      Ordinal numMyDiagonals_;
+      Ordinal numGlobalDiags_;
+      Ordinal numMyDiags_;
 
       Ordinal globalMaxNumEntries_;
       Ordinal myMaxNumEntries_;
@@ -237,23 +256,22 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   CrsMatrix<Ordinal,Scalar>::CrsMatrix(
       const Teuchos::RCP<const Teuchos::Comm<Ordinal> > & comm, 
-            Map<Ordinal> &rowMap) 
+      const Map<Ordinal> &rowMap) 
   : comm_(comm)
   , rowMap_(rowMap)
   , numMyRows_(rowMap.getNumMyEntries())
   , numGlobalRows_(rowMap.getNumGlobalEntries())
-  , myGlobalEntries_(rowMap.getMyGlobalEntries())
+  , colinds_(numMyRows_)
+  ,  values_(numMyRows_)
   {
-    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
-    indices_.resize(numMyRows_);
-    values_.resize(numMyRows_);
-    fillCompleted_ = false;
-    numGlobalNonzeros_ = ZERO;
-    numMyNonzeros_     = ZERO;
-    numGlobalDiagonals_ = ZERO;
-    numMyDiagonals_     = ZERO;
-    globalMaxNumEntries_ = ZERO;
-    myMaxNumEntries_     = ZERO;
+    typedef Teuchos::OrdinalTraits<Ordinal> OT;
+    fillCompleted_       = false;
+    globalNNZ_           = OT::zero();
+    myNNZ_               = OT::zero();
+    numGlobalDiags_      = OT::zero();
+    numMyDiags_          = OT::zero();
+    globalMaxNumEntries_ = OT::zero();
+    myMaxNumEntries_     = OT::zero();
   }
 
 
@@ -278,7 +296,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumGlobalNonzeros() until fillComplete() has been called.");
-    return numGlobalNonzeros_;
+    return globalNNZ_;
   }
 
 
@@ -287,7 +305,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumMyNonzeros() until fillComplete() has been called.");
-    return numMyNonzeros_;
+    return myNNZ_;
   }
 
 
@@ -324,7 +342,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumGlobalDiagonals() until fillComplete() has been called.");
-    return numGlobalDiagonals_;
+    return numGlobalDiags_;
   }
 
 
@@ -333,7 +351,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumMyDiagonals() until fillComplete() has been called.");
-    return numMyDiagonals_;
+    return numMyDiags_;
   }
 
 
@@ -342,7 +360,9 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumRowEntries() until fillComplete() has been called.");
-    return indices_[rowMap_.getLID(globalRow)].size();
+    TEST_FOR_EXCEPTION(!rowMap_.isMyGlobalIndex(globalRow), std::runtime_error,
+        "Tpetra::CrsMatrix::getNumRowEntries(globalRow): globalRow does not belong to this node.");
+    return colinds_[rowMap_.getLocalIndex(globalRow)].size();
   }
 
 
@@ -376,172 +396,50 @@ namespace Tpetra
 
   template<class Ordinal, class Scalar>
   const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getColMap() const 
-  { return colMap_; }
-
-
-  template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::fillComplete()
-  {
-    TEST_FOR_EXCEPTION(isFillCompleted() == true, std::runtime_error,
-      "Tpetra::CrsMatrix::fillComplete(): fillComplete() has already been called.");
-
-    // =============================== //
-    // Part 0: send off-image elements //
-    // =============================== //
-
-    if (getComm().getSize() > 1) globalAssemble();
-
-    // =============================== //
-    // Part I: remove repeated indices //
-    // =============================== //
-
-    // I load all matrix entries in a hash table, then I re-fill
-    // the row with the last inserted value.
-    for (Ordinal i = ordinalZero() ; i < numMyRows_ ; ++i)
-    {
-      std::map<Ordinal, Scalar> singleRow;
-
-      for (Ordinal j = ordinalZero() ; j < indices_[i].size() ; ++j)
-      {
-        singleRow[indices_[i][j]] += values_[i][j];
-      }
-
-      Ordinal count = ordinalZero();
-
-      for (typename std::map<Ordinal,Scalar>::iterator iter = singleRow.begin() ; 
-          iter != singleRow.end() ; ++iter)
-      {
-        indices_[i][count] = iter->first;
-        values_[i][count] = iter->second;
-        ++count;
-      }
-
-      indices_[i].resize(count);
-      values_[i].resize(count);
-    }
-
-    // =============================== //
-    // Part II: build the column space //
-    // =============================== //
-
-    // I have to find the list of non-locally owned columns
-
-    std::map<Ordinal, bool> container; // replace with a hash table
-
-    for (Ordinal i = ordinalZero() ; i < numMyRows_ ; ++i)
-    {
-      for (Ordinal j = ordinalZero() ; j < indices_[i].size() ; ++j)
-      {
-        Ordinal what = indices_[i][j];
-        if (rowMap_.isMyGID(what)) continue;
-        else
-          container[what] = true;
-      }
-    }
-
-    vector<Ordinal> MyPaddedGlobalEntries(myGlobalEntries_);
-
-    for (typename std::map<Ordinal, bool>::iterator iter = container.begin() ; 
-        iter != container.end() ; ++iter)
-    {
-      MyPaddedGlobalEntries.push_back(iter->first);
-    }
-
-    // now I can build the column space
-
-    colMap_ = new ElementSpace<Ordinal>(-1, MyPaddedGlobalEntries.size(),
-        MyPaddedGlobalEntries, rowMap_.getIndexBase(), rowMap_.platform());
-
-    VectorColSpace_ = new VectorSpace<Ordinal, Scalar>(*colMap_, rowMap_.platform());
-
-    paddedMV_ = new Vector<Ordinal, Scalar>(*VectorColSpace_);
-    importer_ = new Import<Ordinal>(rowMap_, *colMap_);
-
-    // ============================== //
-    // Part IV: move to local indices //
-    // ============================== //
-
-    for (Ordinal i = ordinalZero() ; i < numMyRows_ ; ++i)
-    {
-      for (Ordinal j = ordinalZero() ; j < indices_[i].size() ; ++j)
-      {
-        indices_[i][j] = colMap_->getLID(indices_[i][j]);
-      }
-    }
-
-    // ================================================ //
-    // Part V: compute some local and global quantities //
-    // ================================================ //
-
-    for (Ordinal i = ordinalZero() ; i < numMyRows_ ; ++i)
-    {
-      Ordinal NumEntries = indices_[i].size();
-
-      numMyNonzeros_ += NumEntries;
-
-      for (Ordinal j = ordinalZero() ; j < NumEntries; ++j)
-      {
-        Ordinal col = indices_[i][j];
-        if (col == i)
-        {
-          ++numMyDiagonals_;
-          break;
-        }
-      }
-
-      if (myMaxNumEntries_ < NumEntries) myMaxNumEntries_ = NumEntries;
-    }
-
-    // workaround, should be fixed in Comm
-#ifdef HAVE_MPI_THIS_IS_BROKEN // FINISH
-    MPI_Comm MpiCommunicator = (dynamic_cast<const MpiComm<Ordinal, Scalar>&>(getComm())).getMpiComm();
-    MPI_Allreduce((void*)&numMyNonzeros_, (void*)&numGlobalNonzeros_, MpiTraits<Ordinal>::count(1),
-        MpiTraits<Ordinal>::datatype(), MPI_SUM, MpiCommunicator);
-
-    MPI_Allreduce((void*)&numMyDiagonals_, (void*)&numGlobalDiagonals_, MpiTraits<Ordinal>::count(1),
-        MpiTraits<Ordinal>::datatype(), MPI_SUM, MpiCommunicator);
-
-    MPI_Allreduce((void*)&myMaxNumEntries_, (void*)&globalMaxNumEntries_, MpiTraits<Ordinal>::count(1),
-        MpiTraits<Ordinal>::datatype(), MPI_MAX, MpiCommunicator);
-#else
-    numGlobalNonzeros_ = numMyNonzeros_;
-    numGlobalDiagonals_ = numMyDiagonals_;
-    globalMaxNumEntries_ = myMaxNumEntries_;
-#endif
-
-    // mark transformation as successfully completed
-
-    fillCompleted_ = true;
+  { 
+    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+        "Tpetra::CrsMatrix: cannot call getColMap() until fillComplete() has been called.");
+    return *colMap_; 
   }
 
+  template<class Ordinal, class Scalar>
+  const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getDomainMap() const
+  {
+    return getColMap();
+  }
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::submitEntry(Ordinal globalRow, Ordinal globalCol,
-                                              const Scalar &value)
+  const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getRangeMap() const
+  {
+    return getRowMap();
+  }
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::submitEntry(Ordinal globalRow, Ordinal globalCol, const Scalar &value)
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == true, std::runtime_error,
       "Tpetra::CrsMatrix::submitEntry(): fillComplete() has already been called.");
-    if (rowMap_.isMyGID(globalRow)) {
-      Ordinal myRow = rowMap_.getLID(globalRow);
-      indices_[myRow].push_back(globalCol);
+    if (rowMap_.isMyGlobalIndex(globalRow)) {
+      Ordinal myRow = rowMap_.getLocalIndex(globalRow);
+      colinds_[myRow].push_back(globalCol);
       values_[myRow].push_back(value);
     }
     else {
-      nonlocals_[globalRow].push_back(make_pair(globalCol, value));
+      nonlocals_[globalRow].push_back(std::make_pair(globalCol, value));
     }
   }
 
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::submitEntries(Ordinal globalRow, 
-                         const Teuchos::ArrayView<const Scalar> &values, 
-                         const Teuchos::ArrayView<const Ordinal> &indices)
+                         const Teuchos::ArrayView<const Ordinal> &indices,
+                         const Teuchos::ArrayView<const Scalar>  &values)
   {
     TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
         "Tpetra::CrsMatrix::submitEntries(): values.size() must equal indices.size().");
-    typename Teuchos::ArrayView<Scalar>::iterator val = values.begin();
+    typename  Teuchos::ArrayView<Scalar>::iterator val =  values.begin();
     typename Teuchos::ArrayView<Ordinal>::iterator ind = indices.begin();
-    for (val != values.end(); ++val, ++ind) 
+    for (; val != values.end(); ++val, ++ind) 
     {
       submitEntry(globalRow, *ind, *val);
     }
@@ -549,84 +447,108 @@ namespace Tpetra
 
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::getMyRowCopy(Ordinal localRow, 
+  void CrsMatrix<Ordinal,Scalar>::setAllToScalar(const Scalar &alpha)
+  { 
+    using Teuchos::Array;
+    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+        "Tpetra::CrsMatrix: cannot call setAllToScalar() until fillComplete() has been called.");
+    for (typename Array<Array<Scalar> >::const_iterator row = values_.begin(); row != values_.end(); ++row) 
+    {
+      std::fill(row->begin(),row->end(),alpha);
+    }
+  }
+
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::scale(const Scalar &alpha)
+  { 
+    using Teuchos::Array;
+    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+        "Tpetra::CrsMatrix: cannot call scale() until fillComplete() has been called.");
+    for (typename Array<Array<Scalar> >::const_iterator row = values_.begin(); row != values_.end(); ++row) 
+    {
+      for (typename Array<Scalar>::const_iterator val = row->begin(); val != row->end(); ++val)
+      {
+        *val *= alpha;
+      }
+    }
+  }
+
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::getMyRowCopy(Ordinal myRow, 
                                                const Teuchos::ArrayView<Ordinal> &indices, 
-                                               const Teuchos::ArrayView<Scalar> &values) const;
+                                               const Teuchos::ArrayView<Scalar>  &values) const
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
         "Tpetra::CrsMatrix: cannot call getMyRowCopy() until fillComplete() has been called.");
-    TEST_FOR_EXCEPTION(indices.size() < indices_[localRow].size() || values.size() < indices_[localRow].size(), std::runtime_error, 
+    TEST_FOR_EXCEPTION(indices.size() != colinds_[myRow].size() || values.size() != values_[myRow].size(), std::runtime_error, 
         "Tpetra::CrsMatrix::getMyRowCopy(indices,values): size of indices,values must be sufficient to store the values for the specified row.");
-
-    Ordinal NumEntries = indices_[MyRow].size();
-
-    for (Ordinal i = ordinalZero() ; i < NumEntries ; ++i)
-    {
-      Indices[i] = indices_[MyRow][i];
-      Values[i] = values_[MyRow][i];
-    }
+    std::copy( values_[myRow].begin(), values_[myRow].end(), values.begin());
+    std::copy(colinds_[myRow].begin(),colinds_[myRow].end(),indices.begin());
   }
 
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::getGlobalRowCopy(Ordinal globalRow, 
                                                    const Teuchos::ArrayView<Ordinal> &indices,
-                                                   const Teuchos::ArrayView<Scalar> &values) const
+                                                   const Teuchos::ArrayView<Scalar>  &values) const
   {
+    // TODO: is it possible to even call this one? we can't preallocate for the result without knowing the size, 
+    //       which (above) seems to require fillCompleted()
     // Only locally owned rows can be queried, otherwise complain
-    TEST_FOR_EXCEPTION(!rowMap_.isMyGID(globalRow), std::runtime_error,
+    TEST_FOR_EXCEPTION(!rowMap_.isMyGlobalIndex(globalRow), std::runtime_error,
         "Tpetra::CrsMatrix::getGlobalRowCOpy(globalRow): globalRow does not belong to this node.");
-
-    Ordinal myRow = rowMap_.getLID(GlobalRow);
-
-    Ordinal NumEntries = indices_[myRow].size();
-    TEST_FOR_EXCEPTION(indices.size() < NumEntries || values.size() < NumEntries, std::runtime_error, 
+    Ordinal myRow = rowMap_.getLocalIndex(globalRow);
+    TEST_FOR_EXCEPTION(indices.size() != colinds_[myRow].size() || values.size() != values_[myRow].size(), std::runtime_error, 
         "Tpetra::CrsMatrix::getGlobalRowCopy(indices,values): size of indices,values must be sufficient to store the values for the specified row.");
-
+    std::copy(values_[myRow].begin(),values_[myRow].end(),values.begin());
     if (isFillCompleted())
     {
-      for (Ordinal i = ordinalZero() ; i < NumEntries ; ++i)
+      typename Teuchos::ArrayView<Ordinal>::iterator gind = indices.begin();
+      for (typename Teuchos::Array<Ordinal>::const_iterator lind = colinds_[myRow].begin();
+           lind != colinds_[myRow].end(); ++lind, ++gind) 
       {
-        Indices[i] = colMap_->getGID(indices_[myRow][i]);
-        Values[i] = values_[myRow][i];
+        (*gind) = colMap_->getGlobalIndex(*lind);
       }
     }
     else
     {
-      for (Ordinal i = ordinalZero() ; i < NumEntries ; ++i)
-      {
-        Indices[i] = indices_[MyRow][i];
-        Values[i] = values_[MyRow][i];
-      }
+      std::copy(colinds_[myRow].begin(),colinds_[myRow].end(),indices.begin());
     }
   }
 
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::apply(const MultiVector<Ordinal, Scalar> &X, MultiVector<Ordinal,Scalar> &Y,
-                                        Teuchos::ETransp mode = Teuchos::NO_TRANS) const
+  void CrsMatrix<Ordinal,Scalar>::apply(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &X, 
+                                        const Scalar &beta,        MultiVector<Ordinal,Scalar> &Y,
+                                              Teuchos::ETransp mode) const
   {
+    TEST_FOR_EXCEPT(true);  // FINISH
+    /*
+    THIS IS LEFTOVER FROM AN APPLY TO A SINGLE VECTOR
     assert (Mode == AsIs);
     y.setAllToScalar(scalarZero());
     paddedMV_->doImport(x, *importer_, Insert);
     for (Ordinal i = ordinalZero() ; i < numMyRows_ ; ++i)
     {
-      for (Ordinal j = ordinalZero() ; j < indices_[i].size() ; ++j)
+      for (Ordinal j = ordinalZero() ; j < colinds_[i].size() ; ++j)
       {
-        Ordinal col = indices_[i][j];
+        Ordinal col = colinds_[i][j];
         Scalar val = values_[i][j];
         y[i] += val * (*paddedMV_)[col];
       }
     }
+     */
   }
 
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::print(std::ostream& os) const 
   {
-    int MyImageID = rowMap_.comm().getRank();
-
-    if (MyImageID == 0)
+    /*
+    int myImageID = Teuchos::rank(*comm_);
+    if (myImageID == 0)
     {
       os << "Tpetra::CrsMatrix, label = " << label() << endl;
       os << "Number of global rows    = " << rowMap_.getNumGlobalEntries() << endl;
@@ -642,22 +564,19 @@ namespace Tpetra
         os << "Status = not FillCompleted" << endl;
       }
     }
-
     if (isFillCompleted())
     {
       for (int pid = 0 ; pid < rowMap_.comm().getSize() ; ++pid)
       {
-        if (pid == MyImageID)
+        if (pid == myImageID)
         {
           vector<Ordinal> Indices(getMyMaxNumEntries()); // FIXME
           vector<Scalar>  Values(getMyMaxNumEntries());
           Ordinal NumEntries;
-
-          os << "% Number of rows on image " << MyImageID << " = " << rowMap_.getNumMyEntries() << endl;
+          os << "% Number of rows on image " << myImageID << " = " << rowMap_.getNumMyEntries() << endl;
           for (Ordinal i = ordinalZero() ; i < rowMap_.getNumMyEntries() ; ++i)
           {
-            Ordinal GlobalRow = rowMap_.getGID(i);
-
+            Ordinal GlobalRow = rowMap_.getGlobalIndex(i);
             getGlobalRowCopy(GlobalRow, NumEntries, Indices, Values);
             for (Ordinal j = ordinalZero() ; j < NumEntries ; ++j)
               os << "Matrix(" << GlobalRow << ", " << Indices[j] << ") = " << Values[j] << ";" << endl;
@@ -666,40 +585,146 @@ namespace Tpetra
         rowMap_.comm().barrier();
       }
     }
+    */
   }
 
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::setAllToScalar(Scalar scalarThis)
-  { TEST_FOR_EXCEPT(true); }
-
-
-  template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::scale(Scalar scalarThis)
-  { TEST_FOR_EXCEPT(true); }
-
-
-  template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::printValues()
+  void CrsMatrix<Ordinal,Scalar>::printValues(std::ostream& os)
   {
     // this prints out the structure as they are
-    for (int i = 0 ; i < indices_.size() ; ++i)
+    for (int i=0 ; i<colinds_.size(); ++i)
     {
-      for (int j = 0 ; j < indices_[i].size() ; ++j)
+      for (int j=0 ; j<colinds_[i].size(); ++j)
       {
-        cout << "local row " << i << ", col " << indices_[i][j] << ", val " << values_[i][j] << endl;
+        os << "local row " << i << ", col " << colinds_[i][j] << ", val " << values_[i][j] << std::endl;
       }
     }
   }
 
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::fillComplete()
+  {
+    using Teuchos::Array;
+    typedef Teuchos::OrdinalTraits<Ordinal> OT;
+    TEST_FOR_EXCEPTION(isFillCompleted() == true, std::runtime_error,
+      "Tpetra::CrsMatrix::fillComplete(): fillComplete() has already been called.");
+
+    Teuchos::ArrayView<const Ordinal> myGlobalEntries = rowMap_.getMyGlobalEntries();
+
+    // =============================== //
+    // Part 0: send off-image elements //
+    // =============================== //
+    if (comm_->getSize() > 1) globalAssemble();
+
+    // =============================== //
+    // Part I: remove repeated indices //
+    // =============================== //
+    //
+    // I load all matrix entries in a hash table, then I re-fill
+    // the row with the last inserted value.
+    // This also has the effect of sorting the indices.
+    for (Ordinal r = OT::zero(); r < numMyRows_ ; ++r)
+    {
+      // put them in the map from colinds_,values_
+      std::map<Ordinal,Scalar> row;
+      typename Array<Ordinal>::const_iterator cind = colinds_[r].begin();
+      typename  Array<Scalar>::const_iterator val  = values_[r].begin();
+      for (; cind != colinds_[r].end(); ++cind, ++val)
+      {
+        row[*cind] += *val;
+      }
+      // get them out of the map, back to colinds_,values_
+      typename std::map<Ordinal,Scalar>::size_type count = 0;
+      for (typename std::map<Ordinal,Scalar>::iterator iter = row.begin(); 
+           iter != row.end(); ++iter)
+      {
+        colinds_[r][count] = iter->first;
+        values_[r][count] = iter->second;
+        ++count;
+      }
+      colinds_[r].resize(count);
+      values_[r].resize(count);
+    }
+
+    // =============================== //
+    // Part II: build the column space //
+    // =============================== //
+    // construct a list of columns for which we have a non-zero, but are not locally owned by our row map
+    std::set<Ordinal> nnzcols;
+    for (Ordinal r=OT::zero(); r < numMyRows_ ; ++r)
+    {
+      for (typename Array<Ordinal>::const_iterator cind = colinds_[r].begin();
+           cind != colinds_[r].end(); ++cind)
+      {
+        if (!rowMap_.isMyGlobalIndex(*cind))
+        {
+          nnzcols.insert(*cind);
+        }
+      }
+    }
+    Array<Ordinal> myPaddedGlobalEntries(myGlobalEntries.begin(),myGlobalEntries.end());
+    for (typename std::set<Ordinal>::iterator iter = nnzcols.begin(); iter != nnzcols.end() ; ++iter)
+    {
+      myPaddedGlobalEntries.push_back(*iter);
+    }
+    colMap_ = Teuchos::rcp(new Map<Ordinal>(Teuchos::as<Ordinal>(-1), myPaddedGlobalEntries(),
+                                            rowMap_.getIndexBase(), *rowMap_.getPlatform()) );
+    importer_ = Teuchos::rcp( new Import<Ordinal>(rowMap_,*colMap_) );
+
+    // ============================== //
+    // Part IV: move to local indices //
+    // ============================== //
+    for (Ordinal r=OT::zero(); r < numMyRows_ ; ++r)
+    {
+      for (typename Array<Ordinal>::iterator cind = colinds_[r].begin();
+           cind != colinds_[r].end(); ++cind) 
+      {
+        (*cind) = colMap_->getLocalIndex(*cind);
+      }
+    }
+
+    // ================================================ //
+    // Part V: compute some local and global quantities //
+    // ================================================ //
+    for (Ordinal r=OT::zero(); r < numMyRows_; ++r)
+    {
+      Ordinal numEntries = colinds_[r].size();
+      myNNZ_ += numEntries;
+      if ( std::find(colinds_[r].begin(),colinds_[r].end(),r) != colinds_[r].end() )
+      {
+        ++numMyDiags_;
+      }
+      myMaxNumEntries_ = std::max(myMaxNumEntries_,numEntries);
+    }
+    // TODO: consider eliminating one of these comms in favor of a pair
+    Teuchos::reduceAll<Ordinal>(*comm_,Teuchos::REDUCE_SUM,myNNZ_,&globalNNZ_);
+    Teuchos::reduceAll<Ordinal>(*comm_,Teuchos::REDUCE_SUM,numMyDiags_,&numGlobalDiags_);
+    Teuchos::reduceAll<Ordinal>(*comm_,Teuchos::REDUCE_MAX,myMaxNumEntries_,&globalMaxNumEntries_);
+
+    // mark transformation as successfully completed
+    fillCompleted_ = true;
+  }
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::globalAssemble()
   {
+    using Teuchos::arcp;
     using Teuchos::OrdinalTraits;
     using Teuchos::Array;
     using Teuchos::SerialDenseMatrix;
     using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+    using Teuchos::rcp;
+    using std::list;
     using std::pair;
     using std::make_pair;
     typedef OrdinalTraits<Ordinal> OT;
@@ -709,8 +734,8 @@ namespace Tpetra
     // Determine if any nodes have global entries to share
     Ordinal MyNonlocals = nonlocals_.size(),
             MaxGlobalNonlocals;
-    Teuchos::reduceAll<Ordinal>(*comm_,TEUCHOS::REDUCE_MAX,MyNonlocals,MaxGlobalNonlocals);
-    if (MaxGlobalNonlocals == OT::OrdinalTraits<Ordinal>::zero()) return;  // no entries to share
+    Teuchos::reduceAll<Ordinal>(*comm_,Teuchos::REDUCE_MAX,MyNonlocals,&MaxGlobalNonlocals);
+    if (MaxGlobalNonlocals == OT::zero()) return;  // no entries to share
 
     // compute a list of NLRs from nonlocals_ and use it to compute:
     //      IdsAndRows: a vector of (id,row) pairs
@@ -743,14 +768,14 @@ namespace Tpetra
       // put NLRs,Ids into an array of pairs
       IdsAndRows.reserve(NLRs.size());
       Array<char> localNeighbors(numImages,OrdinalTraits<char>::zero());
-      for (Array<Ordinal>::const_iterator nlr = NLRs.begin(), id = NLRIds.begin();
+      for (typename Array<Ordinal>::const_iterator nlr = NLRs.begin(), id = NLRIds.begin();
           nlr != NLRs.end(); ++nlr, ++id) 
       {
         NLR2Id[*nlr] = *id;
         localNeighbors[*id] = OrdinalTraits<char>::one();
         IdsAndRows.push_back(make_pair(*id,*nlr));
       }
-      for (Ordinal j=OT::zero(); j<numImages; ++j) {
+      for (Ordinal j=OT::zero(); j<numImages; ++j)
       {
         if (localNeighbors[j]) {
           sendIDs.push_back(j);
@@ -774,17 +799,18 @@ namespace Tpetra
     // loop over all columns to know from which images I can expect to receive something
     for (Ordinal j=OT::zero(); j<numImages; ++j)
     {
-      if (globalNeighbors(i,j)) {
+      if (globalNeighbors(myImageID,j)) {
         recvIDs.push_back(j);
       }
     }
+    Ordinal numRecvs = recvIDs.size();
 
     // we know how many we're sending to already
     // form a contiguous list of all data to be sent
     // track the number of entries for each ID
-    Array<CrsIJV> IJVcontig;
+    Array<CrsIJV<Ordinal,Scalar> > IJVSendBuffer;
     Array<Ordinal> sendSizes(sendIDs.size(), 0);
-    typename Array<Ordinal>::size_type numSends = 0;
+    Ordinal numSends = 0;
     for (typename Array<pair<Ordinal,Ordinal> >::const_iterator IdAndRow = IdsAndRows.begin();
          IdAndRow != IdsAndRows.end(); ++IdAndRow) 
     {
@@ -793,169 +819,101 @@ namespace Tpetra
       // have we advanced to a new send?
       if (sendIDs[numSends] != id) {
         numSends++;
+        TEST_FOR_EXCEPTION(sendIDs[numSends] != id, std::logic_error, "Tpetra::CrsMatrix::globalAssemble(): internal logic error. Contact Tpetra team.");
       }
-      // HERE
       // copy data for row into contiguous storage
-      // for () {}
-      // keep track of the amount, assign it to sendSizes[numSends]
+      for (typename list<pair<Ordinal,Scalar> >::const_iterator jv = nonlocals_[row].begin(); jv != nonlocals_[row].end(); ++jv)
+      {
+        IJVSendBuffer.push_back( CrsIJV<Ordinal,Scalar>(row,jv->first,jv->second) );
+        sendSizes[numSends]++;
+      }
     }
     numSends++; // one last increment, to make it a count instead of an index
-    TEST_FOR_EXCEPTION(numSends != sendIDs.size(), std::logic_error, "Tpetra::CrsMatrix::globalAssemble(): internal logic error. Contact Tpetra team.");
-
-    // from the size info, build the ArrayViews into IJVcontig
-
-    // now I pack what has to be sent to the other images
-    std::map<Ordinal,vector<Ordinal> > sendRows;
-    std::map<Ordinal,vector<Ordinal> > sendCols;
-    std::map<Ordinal,vector<Scalar> >  sendVals;
-    for (NLITER iter = nonlocals_.begin(); iter != nonlocals_.end(); ++iter)
-    {
-      Ordinal row   = iter->first;
-      int     image = NLR2Id[row];
-
-      for (Ordinal i = ordinalZero() ; i < iter->second.size() ; ++i)
-      {
-        Ordinal col   = iter->second[i].first;
-        Scalar  val   = iter->second[i].second;
-
-        sendRows[image].push_back(row);
-        sendCols[image].push_back(col);
-        sendVals[image].push_back(val);
-      }
-    }
-
-    int MyImageID = rowMap_.comm().getRank();
-
-    vector<MPI_Request> send_requests(numImages * 3);
-    vector<MPI_Status>  send_status(numImages * 3);
-
-    Ordinal send_count = 0;
-
-
-    for (int j = 0 ; j < numImages ; ++j)
-    {
-      int what = globalNeighbors[j + numImages * rowMap_.comm().getRank()];
-      if (what > 0)
-      {
-        sendImages.push_back(j);
-        send_sizes[send_count] = MpiTraits<Ordinal>::count(sendRows[j].size());
-
-        MPI_Isend(&(send_sizes[send_count]), MpiTraits<Ordinal>::count(1), MpiTraits<Ordinal>::datatype(), 
-            j, 23, MpiCommunicator, &(send_requests[send_count]));
-        ++send_count;
-      }
-    }
-
-    // Now receive the actual sizes
-    vector<MPI_Request> recv_requests(numImages * 3);
-    vector<MPI_Status>  recv_status(numImages * 3);
-
-    vector<Ordinal> recv_sizes(numImages);
-    vector<Ordinal> recv_images(numImages);
-
-    Ordinal recv_count = 0;
-    for (int j = 0 ; j < numImages ; ++j)
-    {
-      int what = globalNeighbors[j * numImages + rowMap_.comm().getRank()];
-      if (what > 0)
-      {
-        recv_images[recv_count] = j;
-        MPI_Irecv(&(recv_sizes[recv_count]), MpiTraits<Ordinal>::count(1), MpiTraits<Ordinal>::datatype(), 
-            j, 23, MpiCommunicator, &(recv_requests[recv_count]));
-        ++recv_count;
-      }
-    }
-
-    MPI_Waitall(send_count, &(send_requests[0]), &(send_status[0]));
-    MPI_Waitall(recv_count, &(recv_requests[0]), &(recv_status[0]));
-
-    MPI_Barrier(MpiCommunicator);
-
-    ////////////////////////////////////////////////////////////////////////////////////
-    // NOW RECEIVE THE DATA BASED ON THE INFO FROM ABOVE
-    ////////////////////////////////////////////////////////////////////////////////////
-
-    std::map<Ordinal, vector<Ordinal> > recvRows;
-    std::map<Ordinal, vector<Ordinal> > recvCols;
-    std::map<Ordinal, vector<Scalar> >  recvVals;
-
-    std::map<Ordinal, Ordinal> xxx;
-
-    for (int i = 0 ; i < recv_count ; ++i)
-    {
-      Ordinal image = recv_images[i];
-      recvRows[image].resize(recv_sizes[i]);
-      recvCols[image].resize(recv_sizes[i]);
-      recvVals[image].resize(recv_sizes[i]);
-      xxx[image] = recv_sizes[i];
-    }
-
-    // At this point I know:
-    // - I have to receive from `recv_count' images;
-    // - image `i' will send recv_count[i] things, split in
-    //   two vectors of Ordinal and a vector of Scalar.
-    // First I start sending, then receiving
-
-    send_count = 0;
-    for (int j = 0 ; j < numImages ; ++j)
-    {
-      int what = globalNeighbors[j + numImages * rowMap_.comm().getRank()];
-      if (what > 0)
-      {
-        // want to send to image `j', first Rows, then Cols, then Vals
-        int osize = MpiTraits<Ordinal>::count(sendRows[j].size());
-        int ssize = MpiTraits<Scalar>::count(sendRows[j].size());
-
-        MPI_Isend(&(sendRows[j][0]), osize, MpiTraits<Ordinal>::datatype(), j, 32, MpiCommunicator, &(send_requests[send_count]));
-        ++send_count;
-
-        MPI_Isend(&(sendCols[j][0]), osize, MpiTraits<Ordinal>::datatype(), j, 33, MpiCommunicator, &(send_requests[send_count]));
-        ++send_count;
-
-        MPI_Isend(&(sendVals[j][0]), ssize, MpiTraits<Scalar>::datatype(), j, 34, MpiCommunicator, &(send_requests[send_count]));
-        ++send_count;
-      }
-    }
-
-    recv_count = 0;
-    for (int j = 0 ; j < numImages ; ++j)
-    {
-      int what = globalNeighbors[j * numImages + rowMap_.comm().getRank()];
-      if (what > 0)
-      {
-        int osize = MpiTraits<Ordinal>::count(xxx[j]);
-        int ssize = MpiTraits<Scalar>::count(xxx[j]);
-
-        // I want to receive from image `j', first Rows, then Cols, then Vals.
-        MPI_Irecv(&(recvRows[j][0]), osize, MpiTraits<Ordinal>::datatype(), j, 32, MpiCommunicator, &(recv_requests[recv_count]));
-        ++recv_count;
-
-        MPI_Irecv(&(recvCols[j][0]), osize, MpiTraits<Ordinal>::datatype(), j, 33, MpiCommunicator, &(recv_requests[recv_count]));
-        ++recv_count;
-
-        MPI_Irecv(&(recvVals[j][0]), ssize, MpiTraits<Scalar>::datatype(), j, 34, MpiCommunicator, &(recv_requests[recv_count]));
-        ++recv_count;
-      }
-    }
-
-    MPI_Waitall(send_count, &(send_requests[0]), &(send_status[0]));
-    MPI_Waitall(recv_count, &(recv_requests[0]), &(recv_status[0]));
-
-    MPI_Barrier(MpiCommunicator);
-
-    // now I add all the received elements to the list of local elements.
-
-    for (int i = 0 ; i < recv_images.size() ; ++i)
-    {
-      int image = recv_images[i];
-      for (int j = 0 ; j < recv_sizes[i] ; ++j)
-      {
-        submitEntry(Tpetra::Add, recvRows[image][j], recvCols[image][j], recvVals[image][j]);
-      }
-    }
+    TEST_FOR_EXCEPTION(Teuchos::as<typename Array<Ordinal>::size_type>(numSends) != sendIDs.size(), std::logic_error, "Tpetra::CrsMatrix::globalAssemble(): internal logic error. Contact Tpetra team.");
 
     // don't need this data anymore
-    nonLocals_.clear();
+    nonlocals_.clear();
+
+    ////////////////////////////////////////////////////////////////////////////////////// 
+    // TRANSMIT SIZE INFO BETWEEN SENDERS AND RECEIVERS
+    ////////////////////////////////////////////////////////////////////////////////////// 
+    // perform non-blocking sends: send sizes to our recipients
+    Array<Teuchos::RCP<Teuchos::CommRequest> > sendRequests;
+    for (int s=0; s < numSends ; ++s)
+    {
+      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
+      sendRequests.push_back( Teuchos::isend<Ordinal,Ordinal>(*comm_,rcp(&sendSizes[s],false),sendIDs[s]) );
+    }
+    // perform non-blocking receives: receive sizes from our senders
+    Array<Teuchos::RCP<Teuchos::CommRequest> > recvRequests;
+    Array<Ordinal> recvSizes(numRecvs);
+    for (int r=0; r < numRecvs; ++r) {
+      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
+      recvRequests.push_back( Teuchos::ireceive(*comm_,rcp(&recvSizes[r],false),recvIDs[r]) );
+    }
+    // wait on all 
+    Teuchos::waitAll(*comm_,sendRequests());
+    Teuchos::waitAll(*comm_,recvRequests());
+    Teuchos::barrier(*comm_);
+    sendRequests.clear();
+    recvRequests.clear();
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    // NOW SEND/RECEIVE ALL ROW DATA
+    ////////////////////////////////////////////////////////////////////////////////////
+    // from the size info, build the ArrayViews into IJVSendBuffer
+    Array<ArrayView<CrsIJV<Ordinal,Scalar> > > sendBuffers(numSends,Teuchos::null);
+    {
+      Ordinal cur = 0;
+      for (int s=0; s<numSends; ++s) {
+        sendBuffers[s] = IJVSendBuffer(cur,sendSizes[s]);
+        cur += sendSizes[s];
+      }
+    }
+    // perform non-blocking sends
+    for (int s=0; s < numSends ; ++s)
+    {
+      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
+      ArrayRCP<CrsIJV<Ordinal,Scalar> > tmparcp = arcp(sendBuffers[s].getRawPtr(),OT::zero(),sendBuffers[s].size(),false);
+      sendRequests.push_back( Teuchos::isend<Ordinal,CrsIJV<Ordinal,Scalar> >(*comm_,tmparcp,sendIDs[s]) );
+    }
+    // calculate amount of storage needed for receives
+    // setup pointers for the receives as well
+    Ordinal totalRecvSize = std::accumulate(recvSizes.begin(),recvSizes.end(),OT::zero());
+    Array<CrsIJV<Ordinal,Scalar> > IJVRecvBuffer(totalRecvSize);
+    // from the size info, build the ArrayViews into IJVRecvBuffer
+    Array<ArrayView<CrsIJV<Ordinal,Scalar> > > recvBuffers(numRecvs,Teuchos::null);
+    {
+      Ordinal cur = 0;
+      for (int r=0; r<numRecvs; ++r) {
+        recvBuffers[r] = IJVRecvBuffer(cur,recvSizes[r]);
+        cur += recvSizes[r];
+      }
+    }
+    // perform non-blocking recvs
+    for (int r=0; r < numRecvs ; ++r)
+    {
+      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
+      ArrayRCP<CrsIJV<Ordinal,Scalar> > tmparcp = arcp(recvBuffers[r].getRawPtr(),OT::zero(),recvBuffers[r].size(),false);
+      recvRequests.push_back( Teuchos::ireceive<Ordinal,CrsIJV<Ordinal,Scalar> >(*comm_,tmparcp,recvIDs[r]) );
+    }
+    // perform waits
+    Teuchos::waitAll(*comm_,sendRequests());
+    Teuchos::waitAll(*comm_,recvRequests());
+    Teuchos::barrier(*comm_);
+    sendRequests.clear();
+    recvRequests.clear();
+
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    // NOW PROCESS THE RECEIVED ROW DATA
+    ////////////////////////////////////////////////////////////////////////////////////
+    for (typename Array<CrsIJV<Ordinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv)
+    {
+      submitEntry(ijv->i, ijv->j, ijv->v);
+    }
+
+    // WHEW! THAT WAS TIRING!
   }
 
 } // namespace Tpetra

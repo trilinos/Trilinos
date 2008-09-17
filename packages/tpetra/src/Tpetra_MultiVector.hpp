@@ -288,7 +288,13 @@ namespace Tpetra {
     for (Ordinal i=ZERO; i<numVecs; ++i) {
       ldots[i] = blas.DOT(MVData_->pointers_[i].size(),MVData_->pointers_[i].getRawPtr(),ONE,A[i].getRawPtr(),ONE);
     }
-    Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,ldots.getRawPtr(),dots.getRawPtr());
+    if (this->getMap().isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,ldots.getRawPtr(),dots.getRawPtr());
+    }
+    else {
+      std::copy(ldots.begin(),ldots.end(),dots.begin());
+    }
   }
 
 
@@ -311,7 +317,13 @@ namespace Tpetra {
     for (Ordinal i=ZERO; i<numVecs; ++i) {
       lnorms[i] = blas.ASUM(MVData_->pointers_[i].size(),MVData_->pointers_[i].getRawPtr(),ONE);
     }
-    Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    if (this->getMap().isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    }
+    else {
+      std::copy(lnorms.begin(),lnorms.end(),norms.begin());
+    }
   }
 
 
@@ -339,7 +351,13 @@ namespace Tpetra {
                      );
       }
     }
-    Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    if (this->getMap().isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    }
+    else {
+      std::copy(lnorms.begin(),lnorms.end(),norms.begin());
+    }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
       *n = ScalarTraits<Mag>::squareroot(*n);
     }
@@ -387,7 +405,13 @@ namespace Tpetra {
         lnorms[j] += SCT::magnitude( tmp * SCT::conjugate(tmp) );
       }
     }
-    Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    if (this->getMap().isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    }
+    else {
+      std::copy(lnorms.begin(),lnorms.end(),norms.begin());
+    }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
       *n = ScalarTraits<Mag>::squareroot(*n/as<Mag>(numImages));
     }
@@ -415,7 +439,13 @@ namespace Tpetra {
       Ordinal ind = blas.IAMAX(MVData_->pointers_[i].size(),MVData_->pointers_[i].getRawPtr(),ONE) - ONE;
       lnorms[i] = Teuchos::ScalarTraits<Scalar>::magnitude( MVData_->pointers_[i][ind] );
     }
-    Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_MAX,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    if (this->getMap().isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_MAX,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
+    }
+    else {
+      std::copy(lnorms.begin(),lnorms.end(),norms.begin());
+    }
   }
 
 

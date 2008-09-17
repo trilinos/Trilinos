@@ -805,7 +805,7 @@ namespace Tpetra {
   }
 
   template<typename Ordinal>
-  Teuchos::RCP< Teuchos::Comm<Ordinal> >
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> >
   Map<Ordinal>::getComm() const {
     return MapData_->comm_;
   }
