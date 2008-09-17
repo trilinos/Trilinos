@@ -46,11 +46,8 @@ template <typename DataT, typename Traits>
 Teuchos::ArrayRCP<DataT> PHX::DataContainer<DataT, Traits>::
 getFieldData(const PHX::FieldTag& t)
 {
-  using namespace std;
-  using namespace Teuchos;
-  using namespace PHX;
-
-  typename map< RCP<const FieldTag>, ArrayRCP<DataT>, FTComp >::iterator it;
+  typename std::map< Teuchos::RCP<const PHX::FieldTag>, 
+    Teuchos::ArrayRCP<DataT>, PHX::FTComp >::iterator it;
   it = m_data.find(Teuchos::rcp(&t, false));
 
   if (it == m_data.end()) {
@@ -97,27 +94,24 @@ template <typename DataT, typename Traits>
 void PHX::DataContainer<DataT, Traits>::
 print(std::ostream& os) const
 {
-  using namespace std;
-  using namespace Teuchos;
-
   std::string type = PHX::typeAsString<DataT>();
   
-  os << "********************************************" << endl;
-  os << "PHX::DataContainer Output" << endl;
-  os << "********************************************" << endl;
-  os << "  Data Type = " << type << endl;
+  os << "********************************************" << std::endl;
+  os << "PHX::DataContainer Output" << std::endl;
+  os << "********************************************" << std::endl;
+  os << "  Data Type = " << type << std::endl;
   os << "  My FieldTags:";
 
   if (m_data.size() == 0)
-    os << " None!" << endl;
+    os << " None!" << std::endl;
   else {
-    os << endl;
-    typename map< RCP<const PHX::FieldTag>, ArrayRCP<DataT> >::const_iterator it = m_data.begin();
+    os << std::endl;
+    typename std::map< Teuchos::RCP<const PHX::FieldTag>, Teuchos::ArrayRCP<DataT> >::const_iterator it = m_data.begin();
     for (; it != m_data.end(); ++it)
-      os << "    " << *(it->first) << endl;
+      os << "    " << *(it->first) << std::endl;
   }
 
-  os << "********************************************" << endl;
+  os << "********************************************" << std::endl;
 }
 
 // ************************************************************************
