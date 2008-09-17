@@ -68,7 +68,7 @@ public:
     /** Constructor
 
     \param[in] input_graph the graph which is to have colors assigned to its rows
-    \param[in] paramlist this parameter list is currently ignored, but may be used in a future implementation
+    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c false
     */
 
@@ -79,7 +79,7 @@ public:
     /** Constructor
 
     \param[in] input_matrix the matrix which is to have colors assigned to its rows
-    \param[in] paramlist this parameter list is currently ignored, but may be used in a future implementation
+    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
   */
 
