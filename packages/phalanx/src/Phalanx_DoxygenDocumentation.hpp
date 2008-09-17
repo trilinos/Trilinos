@@ -114,27 +114,28 @@ When users switch models, the dependencies for fields evaluated by the
 model can change.  This can force field to be evaluated in a different
 order based on the new dependencies.  Phalanx will automatically
 perform the sorting and ordering of the evaluator routines.  For
-example, if density were a field to be evaluated, many models that
-have different dependencies.  Model A could depend on temperature and
-pressure, whille model B could depend on temperature, pressure, and
-species mass fractions of a multicomponent mixture.  The order of
-evaluation of fields could change based on the change in dependencies.
-Using Model B will require that the species mass fractions be
-evaluated and available for the density evaluation while Model A does
-not even require them.  This is a simple example, but the dependency
-chain can become quite complex when solving thousands of coupled PDE
-equations.
+example, if density were a field to be evaluated, different models
+could have different dependencies.  Model A could depend on
+temperature and pressure, whille model B could depend on temperature,
+pressure, and species mass fractions of a multicomponent mixture.  The
+order of evaluation of fields could change based on the change in
+dependencies.  Using Model B will require that the species mass
+fractions be evaluated and available for the density evaluation while
+Model A does not even require them.  This is a simple example, but the
+dependency chain can become quite complex when solving thousands of
+coupled PDE equations.
 
 <li> Efficient evaluation of field data: Phalanx was designed on the
 idea of worksets.  A workset is an arbitrarily sized block of cells to
 be evaluated on the local processor.  Phalanx evaluates all fields of
 interest at once for each block of cells.  By using the contiguous
-allocator and correctly sizing the workset to fit in processor cache,
-one can arrange all fields to exist in a contiguous block of memory,
-independent of the data type objects used to store the data (one must
-still be careful of data alignement issues).  By keeping all fields in
-cache, the code will run much faster.  This workset idea will also, in
-the future, allow for multi-core distrubution of the cell evaluations.
+allocator and correctly sizing the workset to fit in processor cache
+(if possible), one can arrange all fields to exist in a contiguous
+block of memory, independent of the data type objects used to store
+the data (one must still be careful of data alignement issues).  By
+keeping all fields in cache, the code should run much faster.  This
+workset idea will also, in the future, allow for multi-core
+distrubution of the cell evaluations.
 
 </ul>
 
@@ -172,11 +173,11 @@ Phalanx grew out of the Variable Manger in the Charon code and the Expression Ma
 
 The following have contributed to the design through ideas, discussions, and/or code development of Phalanx:
 
-  - Roger Pawlowski (PI), SNL 01414
+  - Roger Pawlowski (Lead Developer), SNL 01414
   - Eric Phipps, SNL 01411
   - Pat Notz, SNL 01541 
 
-\section questions For All Other Questions and Comments...
+\section questions For All Questions and Comments...
   
    Please contact Roger Pawlowski (rppawlo@sandia.gov).
 
@@ -199,6 +200,7 @@ The following have contributed to the design through ideas, discussions, and/or 
 - \ref user_guide_step4
 - \ref user_guide_step5
 - \ref user_guide_step6
+- \ref questions
 
 \section user_guide_getting_started Getting Started
 
@@ -249,11 +251,23 @@ Using finite elements, we pose the problem in variational form:  Find \f$ u \in 
   + \int_{\Omega} \phi s d\Omega = 0 
 \f]
 
-Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at the quadrature points of the cells and pass them off to the integrator such as <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a>.
+Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at the quadrature
+points of the cells and pass them off to the integrator such as <a
+href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a>.
 
-This is a trivial example, but the dependency chains can grow quite complex if performing something such as a reacting flow calculation coupled to Navier-Stokes.
+This is a trivial example, but the dependency chains can grow quite
+complex if performing something such as a reacting flow calculation
+coupled to Navier-Stokes.
 
-Follow the steps below to integrate Phalanx into your application.  The example code shown in the steps comes from the energy flux example in the directory "phalanx/example/EnergyFlux".  Note that many classes are named with the word "My" such as MyWorkset, MyTraits, and MyFactory traits.  Any object that starts with the word "My" denotes that this is a user defined class.  The user must implement this class.  All Evaluator derived objects are additionally implemented by the user.
+Follow the steps below to integrate Phalanx into your application.
+The example code shown in the steps comes from the energy flux example
+in the directory "phalanx/example/EnergyFlux".  Note that many classes
+are named with the word "My" such as MyWorkset, MyTraits, and
+MyFactory traits.  Any object that starts with the word "My" denotes
+that this is a user defined class.  The user must implement this
+class.  All Evaluator derived objects are additionally implemented by
+the user even though they do not follow the convention of starting
+with the word "My".
 
 - \ref user_guide_step1
 - \ref user_guide_step2
@@ -277,19 +291,45 @@ required for efficiency.
 
 <li><b>Parallel and Serial Architectures</b> 
 
-Phalanx can be used on both serial and multi-processor architectures.  The library is designed to perform "local" evalautions on a "local" set of cells.  The term local means that all cell and field data required for an evaluation is on the processor that the evaluation is executed.  So for parallel runs, the cells are distributed over the processors and a FieldManager is built on each processor to evaluate only the cells that are assigned to that processor.  If there is any data distributed to another processor that is required for the evaluation, the user must handle pulling that information on to the evaluation processor.  The design of Phalanx will also allow for users to take advantage of multi-core architectures through a variety of implementations.
+Phalanx can be used on both serial and multi-processor architectures.
+The library is designed to perform "local" evalautions on a "local"
+set of cells.  The term local means that all cell and field data
+required for an evaluation is on the processor that the evaluation is
+executed.  So for parallel runs, the cells are distributed over the
+processors and a FieldManager is built on each processor to evaluate
+only the cells that are assigned to that processor.  If there is any
+data distributed to another processor that is required for the
+evaluation, the user must handle pulling that information on to the
+evaluation processor.  The design of Phalanx will also allow for users
+to take advantage of multi-core architectures through a variety of
+implementations.
 
 <li><b>%Workset</b>
 
-For efficiency, the evaluation of fields on a set of cells can be divided into worksets.  The goal of using worksets is to fit all the required fields into the processor cache so that an evaluation is not slowed down by paging memory.  Suppose we have 2020 cells to evaluate on a 4 processor machine.  We might distribute the load so that 505 cells are on each processor.  Now the user must figure out the workset size.  This is the number of cells to per evaluation call so that the field memory will fit into cache.  If we have 505 cells on a processor, suppose we find that only 50 cells at a time will fit into cache.  Then we will create a FieldManager with a size of 50 cells.  This number is passed in during the call to the FieldManager method postRegistrationSetup():
+For efficiency, the evaluation of fields on a set of cells can be
+divided into worksets.  The goal of using worksets is to fit all the
+required fields into the processor cache so that an evaluation is not
+slowed down by paging memory.  Suppose we have 2020 cells to evaluate
+on a 4 processor machine.  We might distribute the load so that 505
+cells are on each processor.  Now the user must figure out the workset
+size.  This is the number of cells to per evaluation call so that the
+field memory will fit into cache.  If we have 505 cells on a
+processor, suppose we find that only 50 cells at a time will fit into
+cache.  Then we will create a FieldManager with a size of 50 cells.
+This number is passed in during the call to the FieldManager method
+postRegistrationSetup():
 
 \code
   field_manager.postRegistrationSetup(workset_size);
 \endcode
 
-During the call to postRegistrationSetup(), the FieldManager will allocate workspace storage for all fields relevant to the evaluation.  
+During the call to postRegistrationSetup(), the FieldManager will
+allocate workspace storage for all fields relevant to the evaluation.
 
-For our example, there will be 11 worksets.  The first 10 worksets will have the 50 cell maximum and the final workset will have the 5 remaining cells.  The evaluation routine is called for each workset, where workset information can be passed in through the evaluate call: 
+For our example, there will be 11 worksets.  The first 10 worksets
+will have the 50 cell maximum and the final workset will have the 5
+remaining cells.  The evaluation routine is called for each workset,
+where workset information can be passed in through the evaluate call:
 
 \code
     std::vector<WorksetData> workset_data;
@@ -308,11 +348,26 @@ For our example, there will be 11 worksets.  The first 10 worksets will have the
     }
 \endcode
 
-Note that you do not have to use the workset idea.  You could just pass in workset size equal to the number of local cells on the processor or you could use a workset size of one cell and wrap the evaluate call in a loop over the number of cells.  Be aware that this can result in a big performance hit.
+Note that you do not have to use the workset idea.  You could just
+pass in workset size equal to the number of local cells on the
+processor or you could use a workset size of one cell and wrap the
+evaluate call in a loop over the number of cells.  Be aware that this
+can result in a big performance hit.
 
 <li><b>Consistent Evaluation</b>
 
-Phalanx was written to perform consistent evaluations.  By consistent, we mean that all dependencies of a field evaluation are current with respect to the current degree of freedom values.  For example, suppose we need to evaluate the the energy flux.  This has dependencies on the density, diffusivity, and the temperature gradient.  Each of these quantities in turn depends on the temperature.  So before the density, diffusivity and temperature  gradient are evaluated, the temperature must be evaluated.  Before the energy flux can be evaluated, the density, diffusivity, and temperature gradient must be evaluated.  Phalanx forces an ordered evaluation that updates fields in order to maintain consistency of the dependency chain.  Without this, one might end up with lagged values being used from a previous evaluate call.
+Phalanx was written to perform consistent evaluations.  By consistent,
+we mean that all dependencies of a field evaluation are current with
+respect to the current degree of freedom values.  For example, suppose
+we need to evaluate the the energy flux.  This has dependencies on the
+density, diffusivity, and the temperature gradient.  Each of these
+quantities in turn depends on the temperature.  So before the density,
+diffusivity and temperature gradient are evaluated, the temperature
+must be evaluated.  Before the energy flux can be evaluated, the
+density, diffusivity, and temperature gradient must be evaluated.
+Phalanx forces an ordered evaluation that updates fields in order to
+maintain consistency of the dependency chain.  Without this, one might
+end up with lagged values being used from a previous evaluate call.
 
 <li><b>Scalar Type</b>
 
@@ -324,9 +379,10 @@ scalar type is replaced with a foward automatic differentiation object
 (FAD) or a reverse automatic differentaion object (RAD) to produce
 sensitivity information.  Whatever type is used, the standard
 mathematical operators are overloaded for the particular embedded
-technology.  For an example of this, see the
-<a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic
+technology.  For an example of this, see the <a
+href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic
 Differentiation Library</a>. Some sample scalar types include:
+
 <ul>
 <li> float
 <li> double
@@ -359,6 +415,7 @@ void myFunction() {
 <li><b>Data Type</b>
 
 A data type, typically the template argument DataT in Phalanx code, is an actual type used for storing fields.  It is the combination of a scalar type and an algebraic type.  Some examples include:
+
 <ul>
 <li> double
 <li> MyVector<double>
@@ -372,6 +429,7 @@ A data type, typically the template argument DataT in Phalanx code, is an actual
 <li><b>Evaluation Type</b>
 
 The evaluation type, typically the template argument EvalT in Phalanx code, defines a unique type of evaluation to perform.  The user is free to choose the evaluation types and actually creates their own evaluation types.  An EvaluationContainer is allocated for each evaluation type specified in the users traits class.  Examples include:
+
 <ul>
 <li> Residual
 <li> Jacobian
@@ -410,16 +468,20 @@ The main object that stores all Fields and Evaluators.  The evaluator manager (E
 
 \section performance Performance
 
-Some recomendations for high performance:
+Some recomendations for efficient code:
 <ul>
 
 <li> <b>Use worksets</b>  
 
-<li> <b>Enable compiler optimization:</b>  The Field and MDField classes use overloaded inlined bracket operators for data access.  That means if you build without optimization some compilers will produce very slow code.  To see if your compiler is optimizing away the bracket operator overhead, run the test found in the directory "phalanx/test/Performance/BracketOperator".  If the timings are the same, your compiler is optimizing correctly.   For example, on gnu g++ 4.2.4, compiling with -O0 shows approximately 2x overhead for bracket accessors, while -O2 shows about a 10% overhead, while -O3 completely removes the overhead.
+<li> <b>Enable compiler optimization:</b>  The Field and MDField classes use inlined bracket operators for data access.  That means if you build without optimization some compilers will produce very slow code.  To see if your compiler is optimizing away the bracket operator overhead, run the test found in the directory "phalanx/test/Performance/BracketOperator".  If the timings are the same between a raw pointer array and the Field and MDField classes, your compiler has removed the overhead.   For example, on gnu g++ 4.2.4, compiling with -O0 shows approximately 2x overhead for bracket accessors, while -O2 shows about a 10% overhead, while -O3 completely removes the overhead.
 
-<li> <b>Algebraic Types:</b> Roger - finish this (talk about perf tests)
+<li> <b>Algebraic Types:</b> Implementing your own algebraic types, while convenient for users, can introduce overhead as opposed to using raw arrays.  The tests found in "phalanx/test/Performance/AlgebraicTypes" demonstrate some of this overhead.  Expression templates should remove this overhead, but in our experience, this seems to be very compiler and implementation dependent.  If you build in tvmet support, you can compare expression templates, our "dumb" implementation for vectors and matrices against raw array access.  Our testing on gnu compilers shows an overhead of about 20-25% when using "dumb" objects and the expresion templates as opposed to raw arrays.  We recommend using raw arrays with the multi-dimensional array (MDField) for fastest runtimes.
 
-<li> <b>Use Contiguous Allocator:</b> Roger - finish this (talk about perf tests)
+<li> <b>Use Contiguous Allocator:</b> Phalanx has two allocators, one that uses the "new" command for each separate field, and one that allocates a single contiguous array for ALL fields.  If cache performance the limiting factor, the contiguous allocator could have a big effect on performance.  Additionally, alignment issues can play a part in the allocators depending on how you implement your algrbraic types.  Our ContiguousAllocator allows users to choose the alignment based on a template parameter.
+
+<li> <b>Limit the number of Fields and/or Evaluators:</b>  The more evaluators used in your code, the more the loop sturcutre is broken up.  You go from a single loop to a bunch of small loops.  This can have an effect on the overall performance.  Users should also be judicious on choosing Fields.  Only select Fields as a place to introduce variability in your models or for reuse.  For example, if you require density in a single place in the code and there is only one single model that won't change, do not make it a field.  Just evaluate it once where needed.  But if you need density in multiple providers or you want to swap models at runtime, then it should be a field.  This prevents having to recompute the model or recompile your code to switch models.  
+
+<li> <b>Slow compilation times:</b>  As the number of Evaluators in a code grows, the compilation times can become very long.  Making even a minor change can result in the code recompile all Evaluator code.  Therefore, we recommend using explicit template instantiation.  Currently there are no examples of this, but they will be added for Trilinos release 10.
 
 </ul>
 
@@ -1165,6 +1227,10 @@ You do not need to use the Field objects to access field data.  You can get the 
 
 \ref faq5
 
+\ref faq6
+
+\ref faq7
+
 \section faq1 1. Why name it Phalanx?  
 The phalanx was one of the most dominant military formations of the Greek armies in the classical period.  It was a strictly ordered formation.  The Phalanx software library figures out ordered dependencies of field evaluators.   A second more obscure reference relates to the US Navy.  The Phalanx software package was designed to provide nonlinear functionality for the <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a> itegration library.  Intrepid was the name of an aircraft carrier during in WW II.  Modern US aircraft carriers are protected by a Close-In Weapons System (CIWS) named the Phalanx.  Finally, the PI of this project is an avid strategy warfare gamer and leans towards military references.
 
@@ -1179,6 +1245,12 @@ Each evaluator must be templated on the evaluation type to be able to (1) allow 
 
 \section faq5 5. Why is the MDALayout object not templated on the ArrayOrder type?
 This introduces many complications in the comparison operator (operator==) during a comparison of a reverse and natural data layout with the same (but reversed index types).  Should these objects be the same?  Probably, but this might introduce some confusion.  So in an effort to keep things as clean as possible, there is no differentiation based on forward or reverse (Fortran) array ordering.  If we were to introduce this, then we would have to add another method to the DataLayout base class to allow for checking the ordering.  If mixing natural and reverse ordering becomes common, we may revisit this decision.
+
+\section faq6 6. My code seems to be running slow.  How can I speed it up?
+See the section on \ref performance in the Users Guide that gives recomendations on how to maximize the efficiency of your code.
+
+\section faq7 7. Compilation take a long time when minor changes are made to an evaluator.  How can I speed this up?
+See the section on \ref performance in the Users Guide.  Explicit template instantiation can be used.
 
 */
 
