@@ -23,17 +23,12 @@ II. Simply use the create_balanced_copy() function of Isorropia to get
 a balanced() copy of the input Epetra object.
 
 
+matrix_1.cpp: Tests create_balanced_copy with hypergraph (default) 
+and then graph partitioning.
+
 graphedge_weights.cpp:  This test must be run on 3 processes.  It uses
 interface I to Isorropia.  It creates a 9 x 9 matrix, and an 
 initial distribution of the matrix rows across the 3 processes.  
 The matrix non-zeroes represent graph edges, and the matrix rows 
 represent nodes or vertices of the graph.
 
-If Zoltan is compiled in to Trilinos, this test creates a parameter list 
-for Zoltan requesting graph partitioning, using Zoltan's interface to Parmetis.  
-(If Zoltan is not available, Isorropia will use a simple linear partitioner.)  
-The test creates graph edge weights (using an Isorropia CostDescriber object) 
-specifically chosen to make the initial partitioning unbalanced.
-
-See test/mtx/test_simple.mtx for an example of hypergraph partitioning
-where the hypergraph is neither square nor symmetric.

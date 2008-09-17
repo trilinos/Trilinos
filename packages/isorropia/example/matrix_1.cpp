@@ -94,38 +94,15 @@ int main(int argc, char** argv) {
   }
 
   //Now call Isorropia::create_balanced_copy to create a balanced
-  //copy of crsgraph. By default, Isorropia will use Zoltan for the
-  //repartitioning, if Isorropia was configured with Zoltan support.
-  //(i.e., --enable-isorropia-zoltan flag to configure, plus Zoltan include
-  //paths and library directives)
-  //If Isorropia was not configured with Zoltan support, then a simple
-  //built-in linear partitioner will be used to make sure the number
-  //of nonzeros on each processor is equal or close to equal.
-  //
-  //Use a try-catch block because Isorropia will throw an exception
-  //if it encounters a fatal error.
+  //copy of crsgraph. 
 
   if (localProc == 0) {
     std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
   }
 
   Teuchos::ParameterList paramlist;
-
-#ifdef HAVE_ISORROPIA_ZOLTAN
-
-  // If Zoltan is available, we'll specify that the Zoltan package use
-  // graph-partitioning for the partitioning operation and specifically
-  // PARMETIS_METHOD=PARTKWAY, by creating a parameter sublist named
-  // "Zoltan" and setting the appropriate values.
-  // (See Zoltan documentation for other valid parameters...)
-
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
-  sublist.set("PARMETIS_METHOD", "PARTKWAY");
-
-#else
-  //If Zoltan is not available, we don't need to set any parameters.
-#endif
+  //No parameters. By default, Isorropia will use Zoltan for the
+  //partitioning.
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
@@ -187,13 +164,23 @@ int main(int argc, char** argv) {
   }
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
-  //This time, we'll try hypergraph partitioning.
-  sublist.set("LB_METHOD", "HYPERGRAPH");
+  //This time, we'll try graph partitioning..
+  //Create a parameter sublist for Zoltan parameters.
+  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
+  sublist.set("LB_METHOD", "GRAPH");
+
+  //We could also call ParMetis, if Zoltan was built with ParMetis.
+  //sublist.set("GRAPH_PACKAGE", "PARMETIS");
+  //sublist.set("PARMETIS_METHOD", "PARTKWAY");
+
+#else
+  //This should never happen, since Zoltan is now required by Isorropia.
 #endif
+
 
   if (localProc == 0) {
     std::cout << " calling Isorropia::Epetra::create_balanced_copy...\n"
-            << "Specifying HYPERGRAPH partitioning if Zoltan available..."
+            << "Specifying GRAPH partitioning."
         << std::endl;
   }
 
