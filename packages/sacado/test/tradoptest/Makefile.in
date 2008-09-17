@@ -504,7 +504,7 @@ testall : $(noinst_PROGRAMS) tradoptest.exe
 @USING_GNUMAKE_TRUE@tradoptest.exe : testgen.as tradoptest.c0
 @USING_GNUMAKE_TRUE@	$(SHELL) testgen.as $(srcdir)/tradoptest.c0
 @USING_GNUMAKE_TRUE@	$(MAKE) -f $(srcdir)/GNUMakefile
-@USING_GNUMAKE_TRUE@	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
+@USING_GNUMAKE_TRUE@	echo '#!/bin/sh' >tradoptest.exe; echo 'echo OK' >>tradoptest.exe; chmod +x tradoptest.exe
 
 @USING_GNUMAKE_FALSE@tradoptest.exe : testgen.as tradoptest.c0
 @USING_GNUMAKE_FALSE@	$(SHELL) testgen.as $(srcdir)/tradoptest.c0
