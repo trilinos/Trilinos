@@ -108,7 +108,7 @@ namespace Epetra {
 
 namespace ZoltanLib{
   class QueryObject;
-};
+}
 class InternalPartitioner;
 class ZoltanLibClass;
 
