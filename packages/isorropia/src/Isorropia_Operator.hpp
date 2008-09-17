@@ -38,7 +38,7 @@ namespace Isorropia {
 /** Interface (abstract base class) for computing a new partitioning/coloring/
     ordering and exploiting their results.
 
-  If the accessors methods are called before the computation of the
+  If the accessor methods are called before the computation of the
   result (by a method like compute()) has been called, behavior is not
   well defined.  Implementations will either return empty/erroneous
   data, or throw an exception. In most cases, implementations will
@@ -56,7 +56,7 @@ public:
       attribute. Instances of this interface should not retain a
       reference to the input ParameterList after this method returns.
 
-      /param[in] paramlist List of parameters that the user want to use.
+      \param[in] paramlist List of parameters that the user wants to use.
   */
   virtual void setParameters(const Teuchos::ParameterList& paramlist) = 0;
 
@@ -79,7 +79,7 @@ public:
   /** Query whether the computation has already been called.
 
       \return @c True if the computation has already been done, @c
-      False else.
+      False otherwise.
    */
   virtual bool alreadyComputed() const = 0;
 
