@@ -34,6 +34,17 @@ through calls to query functions. These functions
 must be provided by the application. They are "registered" with Zoltan; 
 that is, a pointer to the function is passed to Zoltan, 
 which can then call that function when its information is needed.&nbsp;
+<p>
+Query functions return information about only on-processor data.
+They can be called by Zoltan with individual objects
+or lists of objects.  Each processor may call a given query function
+zero, one or
+more than one time.  Thus, most query functions should NOT contain 
+interprocessor communication, as such communication can cause 
+processors to hang while
+waiting for messages that were never sent. (The only exceptions to this rule 
+are certain <a href="ug_query_mig.html">migration query functions</a>.)
+<p>
 Two categories of query functions are used by the library:
 <blockquote><a href="ug_query_lb.html">General Zoltan Query Functions</a>
 <br><a href="ug_query_mig.html">Migration Query Functions</a></blockquote>

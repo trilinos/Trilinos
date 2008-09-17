@@ -29,7 +29,8 @@
 <h2>
 <a NAME="Migration Query Functions"></a>Migration Query Functions</h2>
 The following query functions must be registered to use any of the migration
-tools described in <a href="ug_interface_mig.html">Migration Functions</a>:
+tools described in <a href="ug_interface_mig.html">Migration Functions</a>.
+These functions should NOT use interprocessor communication.
 <blockquote>
 <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
 or
@@ -53,6 +54,7 @@ but not both).
 Optional, additional query functions for migration may also be registered; these
 functions are called at the beginning, middle, and end of migration in
 <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>.
+Interprocessor communication is allowed in these functions.
 <blockquote>
 <b><a href="#ZOLTAN_PRE_MIGRATE_PP_FN">ZOLTAN_PRE_MIGRATE_PP_FN</a></b>
 <br><b><a href="#ZOLTAN_MID_MIGRATE_PP_FN">ZOLTAN_MID_MIGRATE_PP_FN</a></b>

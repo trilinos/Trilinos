@@ -31,7 +31,8 @@
 The following registered functions are used by various Zoltan algorithms
 in the Zoltan library. No single algorithm uses all the query functions;
 the <a href="ug_alg.html">algorithm descriptions</a> indicate which query
-functions are required by individual algorithms.
+functions are required by individual algorithms.  These query functions should
+NOT contain interprocessor communication.
 <blockquote><a href="#General Functions">Object ID Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
