@@ -102,7 +102,7 @@ Results of the ordering are returned in&nbsp; the arrays <i>rank </i>and
 gives the rank of <i>global_ids[i] </i>in the computed ordering, which is a number between 0 and N-1 where N is the overall number of objects across all the processors.
 </li>
 <li>
-<i>iperm</i>is the inverse permutation of <i>rank, </i>that is,<i>iperm[rank[i]] = i.</i></li>
+<i>iperm</i> is the inverse permutation of <i>rank, </i>that is,<i>iperm[rank[i]] = i.</i></li>
 &nbsp; The ordering may be either global or local, depending on
 <i><a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a></i>. The arrays
 <i>global_ids, local_ids, rank,</i> and <i>iperm</i>
@@ -227,7 +227,7 @@ called.</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Order_Get_Num_Blocks </b> returns the number of subdomains computed during the ordering. For a Nested Dissection based ordering method, it corresponds to the separators and the subgraphs of the lower level.
+<hr WIDTH="100%"><b>Zoltan_Order_Get_Num_Blocks </b> returns the number of subdomains (or column blocks) computed during the ordering. For a Nested Dissection based ordering method, it corresponds to the sum of the separators and the subgraphs of the lowest level. For example, after one bisection the number of blocks is three.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -271,7 +271,7 @@ which has been used in the ordering routine.</td>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>first</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>last</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>last</i>)
 </tr>
 </table>
 
