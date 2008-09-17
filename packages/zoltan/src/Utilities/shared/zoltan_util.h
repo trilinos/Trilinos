@@ -22,7 +22,7 @@ extern "C" {
 
 /*****************   TRILINOS BUILD ENVIRONMENT  *******************/
 /* This block should be executed only for an Autotools build. */
-#ifdef TRILINOS_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package 

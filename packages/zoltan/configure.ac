@@ -84,7 +84,7 @@ TAC_ARG_ENABLE_FEATURE_SUB(zoltan, cppdriver, [Enable Zoltan's C++ driver], ZOLT
 AM_CONDITIONAL(HAVE_ZOLTAN_CPPDRIVER, [test "X$ac_cv_use_zoltan_cppdriver" != "Xno"])
 
 #This can be removed after we retire the old build system
-AC_DEFINE([TRILINOS_CONFIG_H],,[Define when using the autotools to build Zoltan])
+#AC_DEFINE([TRILINOS_CONFIG_H],,[Define when using the autotools to build Zoltan])
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done

@@ -2652,11 +2652,7 @@ fi
 
 
 #This can be removed after we retire the old build system
-
-cat >>confdefs.h <<\_ACEOF
-#define TRILINOS_CONFIG_H
-_ACEOF
-
+#AC_DEFINE([TRILINOS_CONFIG_H],,[Define when using the autotools to build Zoltan])
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done

@@ -56,6 +56,3 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define when using the autotools to build Zoltan */
-#undef TRILINOS_CONFIG_H
