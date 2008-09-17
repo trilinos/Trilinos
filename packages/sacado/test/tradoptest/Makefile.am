@@ -56,7 +56,7 @@ export CXXCOMPILE
 tradoptest.exe : testgen.as tradoptest.c0
 	$(SHELL) testgen.as $(srcdir)/tradoptest.c0
 	$(MAKE) -f $(srcdir)/GNUMakefile
-	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
+	echo '#!/bin/sh' >tradoptest.exe; echo 'echo OK' >>tradoptest.exe; chmod +x tradoptest.exe
 
 else
 

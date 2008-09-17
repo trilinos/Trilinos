@@ -45,7 +45,7 @@ ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = bootstrap config/generate-makeoptions.pl \
 	config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
 	config/replace-install-prefix.pl config/string-replace.pl \
-	config/token-replace.pl README
+	config/token-replace.pl README RELEASE_NOTES
 
 ## #######################################################################
 ## Tools in the auxillary directory 
