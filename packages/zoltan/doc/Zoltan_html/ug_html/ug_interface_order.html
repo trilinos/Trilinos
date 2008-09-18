@@ -27,10 +27,11 @@
 
 <h2>
 <a NAME="Ordering Functions"></a>Ordering Functions</h2>
-Zoltan provides limited capability for ordering a set of objects, 
-typically given as a graph.
-The following functions are the ordering interface functions in the Zoltan
-library; their descriptions are included below.
+Zoltan provides functions for ordering a set of objects, 
+typically given as a graph (which may correspond to a sparse matrix).
+The following functions are the ordering interface functions in Zoltan.
+The first is the main function, and the others are accessor functions
+that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 <blockquote>
 <ul>
 <li>
@@ -214,6 +215,13 @@ called.</td>
 
 
 <h3>Accessors</h3>
+
+Zoltan primarily supports nested dissection orderings, which are
+typically used to reduce fill in direct solvers. For this use case, it is 
+important to get additional information (the separators).
+The accessor functions below define the Zoltan interface.
+Note that these functions should be called after 
+<a href="#Zoltan_Order">Zoltan_Order</a>.
 
 <!------------------------------------------------------------------------->
 <a NAME="Zoltan_Order_Get_Num_Blocks"></a>
