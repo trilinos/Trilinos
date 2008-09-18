@@ -1,0 +1,12 @@
+Release notes for Isorropia 3.0 (Trilinos 9.0):
+
+Isorropia has expanded its scope from partitioning and load-balancing to algorithms for combinatorial scientific computing. The primary focus is still on partitioning and load-balancing of matrices and vectors. Version 3.0 includes a code refactoring compared to earlier versions to improve efficiency and robustness. 
+
+ - Isorropia now depends on Zoltan, which is available as a package in Trilinos 9.0. (Zoltan is automatically enabled by Isorropia.)
+ - New features: Graph coloring and matrix ordering (nested dissection).
+ - Redesign of the class structure. An Isorropia::Operator is the parent class of Partitioner, Colorer, and Orderer.
+ - Significant improvement in the efficiency (run time and memory usage) of redistributing Epetra matrices due to improved memory allocation.
+ - New redistribute_reverse() method in the Redistributor to support moving vectors back and forth between two distributions.
+ - When redistributing Epetra matrices, improved default choices for the maps. The call to FillComplete() is now optional, allowing the user to supply its own range and domain maps.
+ - Several minor changes in interface to enforce more consistent naming schemes, but version 3.0 is fully backwards compatible.
+
