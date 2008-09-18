@@ -44,7 +44,7 @@
 # Optional 3rd argument is email address for bugs.
 
 # package name, version number, and e-mail address below
-AC_INIT(ml, 4.0, jhu@sandia.gov)
+AC_INIT(ml, 6.2, jhu@sandia.gov)
 
 # Hello World!
 #
