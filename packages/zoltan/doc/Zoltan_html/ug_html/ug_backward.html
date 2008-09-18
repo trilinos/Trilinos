@@ -53,11 +53,11 @@ Enhancements to the Zoltan interface are described below.
 Terminology referring to partitions and parts was clarified.
 A "partition" describes the entire layout of the data across 
 processes.  A "part" is a subset of the data assigned to a 
-single process.  A partition is made up of many parts; the union 
-of the parts is equal to the partition.  
+single process.  A partition is made up of many parts; the set 
+of all the parts is a partition.  
 <p>
 We applied this naming convention more consistently throughout Zoltan.
-Old parameters NUM_GLOBAL_PARTITIONS and NUM_LOCAL_PARTS have been
+Old parameters NUM_GLOBAL_PARTITIONS and NUM_LOCAL_PARTITIONS have been
 more accurately renamed <a href="ug_alg.html#NUM_GLOBAL_PARTS">NUM_GLOBAL_PARTS</a> and
 <a href="ug_alg.html#NUM_LOCAL_PARTS">NUM_LOCAL_PARTS</a>.  Old query functions
 ZOLTAN_PARTITIONS_MULTI_FN and ZOLTAN_PARTITION_FN have been more
