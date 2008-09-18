@@ -27,8 +27,17 @@ ML -- History of visible changes
 ================================
 
 This file reports (some of) the visible changes to ML.
-Please submit ML bugs at software.sandia.gov/buzgilla, or
+Please submit ML bugs at software.sandia.gov/bugzilla, or
 report bugs to {jhu|rstumin}@sandia.gov.
+
+August 2008
+
+       * Added support for PETSc smoothers in the case when the fine grid
+         matrix is really a PETSc data structure.  This is meant to be used
+         in conjunction with the Epetra_PETScAIJMatrix class.
+
+       * Implemented MPI subcommunicators for direct solves on coarsest
+         level.  This will mainly impact large scale simulations (>1K processors).
 
 Jan 2007
 
