@@ -483,7 +483,11 @@ execincludedir = $(exec_prefix)/include
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
 
-SUBDIRS = . driver
+if BUILD_FORTRAN90DRIVER
+FDRIVER_SUBDIR = fdriver
+endif
+
+SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
