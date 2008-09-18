@@ -27,11 +27,8 @@
  href="ug_alg_hypergraph.html">Previous</a></i></b></div>
 <h2 =""><a name="PHG"></a>PHG - Parallel Hypergraph and Graph Partitioning with
 Zoltan</h2>
-<span style="font-weight: bold;">New in version 3.0</span>: PHG now
-supports hypergraph repartititioning for dynamic load balancing!
-Repartititioning is the new default setting. Use the LB_APPROACH
-parameter to select partitioning "from scratch". <br>
-<br>
+This is the built-in parallel hypergraph partitioner in Zoltan.
+<p>
 <table nosave="" width="100%">
   <tbody>
     <tr>
@@ -83,7 +80,7 @@ proportional to the number of iterations between load-balancing calls. </td>
       <td valign="top"><i>&nbsp;&nbsp; PHG_MULTILEVEL<br>
       </i></td>
       <td>This parameter specifies whether a multilevel method
-should be used.  Multilevel methods produce higher quality but 
+should be used (1) or not (0). Multilevel methods produce higher quality but 
 require more execution time and memory.
       </td>
     </tr>
