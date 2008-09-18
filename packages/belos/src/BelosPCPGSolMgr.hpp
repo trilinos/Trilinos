@@ -209,7 +209,12 @@ namespace Belos {
     Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
       return tuple(timerSolve_);
     }
-   
+
+    //! Get the iteration count for the most recent call to \c solve().
+    int getNumIters() const {
+      return numIters_;
+    }
+ 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
      */
     bool isLOADetected() const { return false; }
@@ -296,7 +301,7 @@ namespace Belos {
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
-    int maxIters_, deflatedBlocks_, savedBlocks_, verbosity_, outputFreq_;
+    int numIters_, maxIters_, deflatedBlocks_, savedBlocks_, verbosity_, outputFreq_;
     std::string orthoType_; 
 
     // Recycled subspace, its image and the residual
@@ -978,7 +983,10 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
   
   // print timing information
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
-  
+
+  // get iteration information for this solve
+  numIters_ = maxIterTest_->getNumIters();
+ 
   if (!isConverged) {
     return Unconverged; // return from PCPGSolMgr::solve() 
   }

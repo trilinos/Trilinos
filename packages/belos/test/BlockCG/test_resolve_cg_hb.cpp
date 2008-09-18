@@ -139,6 +139,11 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   Belos::ReturnType ret = solver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  int numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
 
   if (ret!=Belos::Converged) {
     if (proc_verbose)
@@ -201,6 +206,12 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   ret = solver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+
   //
   // Compute actual residuals.
   //

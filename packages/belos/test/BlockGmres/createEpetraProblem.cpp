@@ -111,14 +111,18 @@ int Belos::createEpetraProblem(
     row_vals = val + bindx[i];
     col_inds = bindx + bindx[i];
     NumEntries = bindx[i+1] - bindx[i];
-    assert((*A)->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds)==0);
-    assert((*A)->InsertGlobalValues(update[i], 1, val+i, update+i)==0);
+    int info = (*A)->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
+    assert( info == 0 );
+    info =  (*A)->InsertGlobalValues(update[i], 1, val+i, update+i);
+    assert( info == 0 );
   }
   //
   // Finish up
   //
-  assert((*A)->FillComplete()==0);
-  assert((*A)->OptimizeStorage()==0);
+  int info = (*A)->FillComplete();
+  assert( info == 0 );
+  info = (*A)->OptimizeStorage();
+  assert( info == 0 );
   (*A)->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
   //
   // Construct the right-hand side and solution multivectors.

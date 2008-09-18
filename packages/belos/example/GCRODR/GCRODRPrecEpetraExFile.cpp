@@ -240,6 +240,11 @@ int main(int argc, char *argv[]) {
   //
   Belos::ReturnType ret = solver->solve();
   //
+  // Get the number of iterations for this solve.
+  //
+  int numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+  //
   // Compute actual residuals.
   //
   bool badRes = false;

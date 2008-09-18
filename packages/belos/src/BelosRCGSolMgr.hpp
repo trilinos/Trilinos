@@ -168,6 +168,11 @@ namespace Belos {
       return tuple(timerSolve_);
     }
 
+    //! Get the iteration count for the most recent call to \c solve().
+    int getNumIters() const {
+      return numIters_;
+    }
+
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve. */
     bool isLOADetected() const { return false; }
  
@@ -261,7 +266,7 @@ namespace Belos {
 
     // Current solver values.
     MagnitudeType convtol_;
-    int maxIters_;
+    int maxIters_, numIters_;
     int numBlocks_, recycleBlocks_;
     bool showMaxResNormOnly_;
     int verbosity_, outputFreq_;
@@ -1957,6 +1962,9 @@ for (int i=0; i<recycleBlocks_; ++i) { index[i] = i; }
  
   // print timing information
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
+
+  // get iteration information for this solve
+  numIters_ = maxIterTest_->getNumIters();
   
   if (!isConverged) {
     return Unconverged; // return from RCGSolMgr::solve() 

@@ -54,7 +54,7 @@ class SolverManager : virtual public Teuchos::Describable {
     
   public:
 
-    //!@name Constructors/Destructor 
+  //!@name Constructors/Destructor 
   //@{ 
 
   //! Empty constructor.
@@ -72,6 +72,9 @@ class SolverManager : virtual public Teuchos::Describable {
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 
   virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const = 0;
+
+  //! Get the iteration count for the most recent call to \c solve().
+  virtual int getNumIters() const = 0;
 
   virtual bool isLOADetected() const = 0;
  
