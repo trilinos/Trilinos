@@ -35,7 +35,7 @@
 #include "Phalanx_ConfigDefs.h"
 
 string Phalanx_Version() { 
-  return("Phalanx Version: development"); 
+  return("Phalanx Version: 1.0 (Trilinos release 9)"); 
 }
 
 #endif
