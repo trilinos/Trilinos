@@ -100,7 +100,7 @@ host_triplet = @host@
 target_triplet = @target@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
-@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_NOX_SACADO_TRUE@noinst_PROGRAMS = system$(EXEEXT)
+@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@noinst_PROGRAMS = system$(EXEEXT)
 subdir = examples/epetra/System_Sacado_FEApp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -1111,7 +1111,7 @@ uninstall-am:
 # Include export Makefiles for correct paths
 include $(top_builddir)/Makefile.export.nox
 
-@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_NOX_SACADO_TRUE@include $(top_builddir)/../sacado/Makefile.export.sacado
+@BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@include $(top_builddir)/../sacado/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
