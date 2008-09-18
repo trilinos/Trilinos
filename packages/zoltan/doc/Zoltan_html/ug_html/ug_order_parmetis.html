@@ -36,7 +36,7 @@ a certain size, and some version of minimum degree ordering is applied
 to the remaining graph.
 <p>METIS computes a local ordering of the objects on each processor, while
 ParMETIS performs a global ordering of all the objects. ParMETIS currently
-(versions 2.0 and 3.0) requires that the number of processors is a power
+(version 3.1, supported by Zoltan) requires that the number of processors is a power
 of two.
 <p>The generic name for this method is NODEND<i>.</i> If GRAPH_TYPE=GLOBAL
 ParMETIS is called, but if it is LOCAL, METIS is called. Alternatively,
