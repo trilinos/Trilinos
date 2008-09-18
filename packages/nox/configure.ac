@@ -41,7 +41,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT([nox],[7.0],[nox-developers@software.sandia.gov])
+AC_INIT([nox],[9.0],[nox-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
