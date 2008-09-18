@@ -32,29 +32,28 @@
 The source code and documentation for the Zoltan library is maintained
 under the Concurrent Versions System (CVS) software. CVS allows multiple
 developers to edit their own copies of the software and merges updated
-versions with the developers' own versions.
+versions with the developers' own versions.  Zoltan's repository
+is part of the <a href="http://trilinos.sandia.gov">Trilinos</a> repository.
 
-<P>On Sandia's CSRI SON LAN, CVS is accessed through the following
-path:
-<BLOCKQUOTE>/Net/local/gnu/bin/cvs&nbsp; for Sun workstations
-running Solaris.
-</BLOCKQUOTE>
 Developers must set the CVSROOT environment variable to the repository
 directory:
 <BLOCKQUOTE>setenv CVSROOT <i>username</i>@software.sandia.gov:/space/CVS
 </BLOCKQUOTE>
 where <i>username</i> is the developer's username on the CVS server 
 software.sandia.gov.
-To get a working copy of the Zoltan software, the CVS check-out facility
-is used:
+Since Zoltan is part of Trilinos, it is best to check out Trilinos from
+the repository:
+<BLOCKQUOTE>cvs checkout -P Trilinos</BLOCKQUOTE>
+Zoltan is then in directory Trilinos/packages/zoltan.
+
+<p>
+Alternatively, one can get a working copy of only the Zoltan software:
 <BLOCKQUOTE>cvs checkout -P zoltan</BLOCKQUOTE>
-Other useful CVS commands update a developer's working directory, merging
-the developer's changes with those in the repository:
-<BLOCKQUOTE>cvs update</BLOCKQUOTE>
-and check into the repository a developer's changes:
-<BLOCKQUOTE>cvs commit</BLOCKQUOTE>
-The UNIX man page for cvs contains information on these and other useful
-CVS commands.
+However, changes to the 
+<a href="../ug_html/ug_usage.html#TrilinosAutotools">Autotools build 
+environment</a> require directories above the Zoltan directory in
+the Trilinos repository, so it is best to check out the entire Trilinos
+repository.
 
 <P>
 <HR WIDTH="100%">
