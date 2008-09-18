@@ -230,7 +230,7 @@ Other preconditioners, such as those provided by Ifpack or AztecOO, can be wrapp
 
 \section EpetraExt_Linking Linking
 
-We would expect most applications to be linking to Trilinos as a third partly library.  Towards this end,
+We would expect most applications to be linking to Trilinos as a third party library.  Towards this end,
 in the build directory of each Trilinos package, there is a stub file called "Makefile.export.XX", where
 XX is the package name.  The stub defines variables that contain all of the include and link dependencies
 for that particular package.  For example, "Makefile.export.epetraext" defines EPETRAEXT_INCLUDES and EPETRAEXT_LIBS,
