@@ -380,7 +380,7 @@ int *actual_imp_to_part = NULL;          /* processor may not be included.  */
       sizes[i] = Zoltan_Align(sizes[i]);
       total_send_size += sizes[i] + tag_size;
     }
-    export_buf = (char *) ZOLTAN_MALLOC(total_send_size);
+    export_buf = (char *) ZOLTAN_CALLOC(total_send_size, sizeof(char));
     if (!export_buf) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
