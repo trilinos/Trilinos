@@ -51,7 +51,8 @@ EXTRA_DIST = config/generate-makeoptions.pl \
        example/CrsSingletonFilterExample/README \
        example/CrsSingletonFilterExample/cxx_main.cpp \
        example/CrsSingletonFilterExample/hutch3.hb \
-       example/CrsSingletonFilterExample/referenceOutput4procs
+       example/CrsSingletonFilterExample/referenceOutput4procs \
+       example/OSKI/cxx_main.cpp
 
 
 ## #######################################################################
