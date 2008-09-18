@@ -69,27 +69,28 @@ void Basis_F0_QUAD_DD<Scalar>::initialize() {
 
   tagsCur += tagSize;
 
-  // get interior nodes on bottom edge, which is edge 0
+
+  // get interior nodes, leftmost edge (edge 3)
   for (int j=1;j<degree_;j++) {
     tagsCur[0] = 1;
-    tagsCur[1] = 0;
+    tagsCur[1] = 3;
     tagsCur[2] = j-1;
     tagsCur[3] = degree_ - 1;
     tagsCur += tagSize;
   }
 
-  // get bottom right vertex
+  // get top left vertex
   tagsCur[0] = 0;
-  tagsCur[1] = 1;
+  tagsCur[1] = 3;
   tagsCur[2] = 0;
   tagsCur[3] = 1;
   tagsCur += tagSize;
 
   // now loop over interior rows
   for (int i=1;i<degree_;i++) {
-    // first dof is on edge 3
+    // first dof is on edge 0
     tagsCur[0] = 1;
-    tagsCur[1] = 3;
+    tagsCur[1] = 0;
     tagsCur[2] = i - 1;
     tagsCur[3] = degree_ - 1;
     tagsCur += tagSize;
@@ -105,26 +106,25 @@ void Basis_F0_QUAD_DD<Scalar>::initialize() {
 
     // last dof is on edge 1
     tagsCur[0] = 1;
-    tagsCur[1] = 1;
+    tagsCur[1] = 2;
     tagsCur[2] = i-1;
     tagsCur[3] = degree_ - i;
     tagsCur += tagSize;
   
   }
 
-  // now get top row.
-  // top left is vertex number 3
+  // now get right row.
+  // bottom right vertex number 1
   tagsCur[0] = 0;
-  tagsCur[1] = 3;
+  tagsCur[1] = 1;
   tagsCur[2] = 0;
   tagsCur[3] = 1;
   tagsCur += tagSize;
 
-  // interior of top, which is ordered right to left
-  // top edge is edge number 2
+  // interior of right edge (#1)
   for (int j=1;j<degree_;j++) {
     tagsCur[0] = 1;
-    tagsCur[1] = 2;
+    tagsCur[1] = 1;
     tagsCur[2] = j - 1;
     tagsCur[3] = degree_ - 1;
     tagsCur += tagSize;
