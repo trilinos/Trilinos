@@ -78,7 +78,14 @@ AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 AC_PREREQ(2.61)
 
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
+TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
+AM_CONDITIONAL(BUILD_FORTRAN90DRIVER, [test "X$ac_cv_use_fortran90driver" != "Xno"])
+AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
+
+if test "X$ac_cv_use_fortran90driver" != "Xno"; then
 ac_cv_use_fortran90=yes
+fi
 
 TAC_ARG_ENABLE_FEATURE_SUB(zoltan, cppdriver, [Enable Zoltan's C++ driver], ZOLTAN_CPPDRIVER, yes)
 AM_CONDITIONAL(HAVE_ZOLTAN_CPPDRIVER, [test "X$ac_cv_use_zoltan_cppdriver" != "Xno"])
@@ -111,6 +118,11 @@ AC_PROG_CXX(CC g++ c++ cxx)
 if test "X$ac_cv_use_fortran90" = "Xyes"; then
 AC_PROG_FC(gfortran f90 xlf90 f95)
 fi
+
+if test "X$ac_cv_use_fortran" = "Xyes"; then
+AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+fi
+
 AC_PROG_RANLIB
 
 # Check if --with-flags present, prepend any specs to FLAGS
@@ -120,7 +132,8 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 #fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fcflags, FFLAGS)
+TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
+TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -229,7 +242,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_zoltan_examples" != "Xno")
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -275,6 +288,7 @@ dnl Replace `main' with a function in -lm:
 
 # Determine libraries needed for linking with Fortran
 AC_FC_LIBRARY_LDFLAGS
+AC_F77_LIBRARY_LDFLAGS
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
@@ -300,6 +314,7 @@ AC_CONFIG_FILES([
 		siMPI/pyMPI/Makefile
 		siMPI/pyMPI/siMPI/Makefile
 		])
+#		src/fdriver/Makefile
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile
 #		ZoltanComponent/CCA_Wrapper/Makefile

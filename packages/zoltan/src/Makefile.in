@@ -303,9 +303,12 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EXEEXT = @EXEEXT@
+F77 = @F77@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
+FFLAGS = @FFLAGS@
+FLIBS = @FLIBS@
 HAVE_PERL = @HAVE_PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -346,6 +349,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_F77 = @ac_ct_F77@
 ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -822,7 +826,8 @@ EXTRA_DIST = $(ZOLTAN_H)
 execincludedir = $(exec_prefix)/include
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
-SUBDIRS = . driver
+@BUILD_FORTRAN90DRIVER_TRUE@FDRIVER_SUBDIR = #fdriver
+SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

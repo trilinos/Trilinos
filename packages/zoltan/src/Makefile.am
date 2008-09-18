@@ -484,7 +484,7 @@ execincludedir = $(exec_prefix)/include
 #nodist_execinclude_HEADERS = Zoltan_config.h
 
 if BUILD_FORTRAN90DRIVER
-FDRIVER_SUBDIR = fdriver
+FDRIVER_SUBDIR = #fdriver
 endif
 
 SUBDIRS = . driver $(FDRIVER_SUBDIR)

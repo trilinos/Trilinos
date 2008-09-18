@@ -38,7 +38,7 @@ zfdrive_SOURCES = \
 	$(srcdir)/fdr_chaco_io.f90 \
 	$(srcdir)/fdr_mm_io.f90 \
 	$(srcdir)/fdr_const.f90 \
-	$(srcdir)/mmio.f \
+	$(srcdir)/mmio.f
 
 zfdrive_DEPENDENCIES = \
 			$(ZOLTAN_DEPS)
