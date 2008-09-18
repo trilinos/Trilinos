@@ -414,9 +414,12 @@ is being sent)</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
 
-<td>The size (in bytes) of the communication buffer for the specified object
-(as returned by the <b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
-query function).</td>
+<td>The size (in bytes) of the communication buffer for the specified object.
+This value is at least as large as the value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.</td>
 </tr>
 
 <tr>
@@ -550,7 +553,13 @@ are being sent)</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes</i></td>
 
-<td>An array containing the per-object sizes (in bytes) of the communication buffer for each object.
+<td>An array containing the per-object sizes (in bytes) of the communication 
+buffer for each object. Each value is at least as large as the corresponding
+value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
+or <b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.
 </td>
 </tr>
 
@@ -671,7 +680,13 @@ buffer.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
 
-<td>The size (in bytes) of the object's data in the communication buffer.</td>
+<td>The size (in bytes) of the object's data in the communication buffer.
+This value is at least as large as the value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.
+</td>
 </tr>
 
 <tr>
@@ -781,6 +796,11 @@ object begins in <i>global_ids[i*num_gid_entries]</i>.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes</i></td>
 
 <td>An array containing the per-object sizes (in bytes) of the communication buffer for each object.
+Each value is at least as large as the corresponding value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.
 </td>
 </tr>
 
