@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//            Phalanx: A Partial Differential Equation Assembly 
+//        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                  Copyright (2008) Sandia Corporation
 // 
