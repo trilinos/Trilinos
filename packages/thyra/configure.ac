@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(thyra, Development Version, rabartl@sandia.gov)
+AC_INIT(thyra, Trilinos 9.0, rabartl@sandia.gov)
 
 # Hello World!
 #  #np# - package name below

@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(stratimikos, Development Version, rabartl@sandia.gov)
+AC_INIT(stratimikos, Trilinos 9.0, rabartl@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running stratimikos Configure Script"
@@ -196,10 +196,10 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
   [see thyra/configure --help],
   [see thyra/configure --help])
 
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-  thyra, tpetra, STRATIMIKOS_THYRA_TPETRA, ENABLE_STRATIMIKOS_THYRA_TPETRA, yes,
-  [see thyra/configure --help],
-  [see thyra/configure --help])
+#TAC_ARG_INFORM_SUBPACKAGE_USED(
+#  thyra, tpetra, STRATIMIKOS_THYRA_TPETRA, ENABLE_STRATIMIKOS_THYRA_TPETRA, yes,
+#  [see thyra/configure --help],
+#  [see thyra/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
   thyra, epetraext, STRATIMIKOS_THYRA_EPETRAEXT, ENABLE_STRATIMIKOS_THYRA_EPETRAEXT, yes,
@@ -351,12 +351,13 @@ AC_CONFIG_FILES([
     adapters/belos/example/Makefile
     adapters/belos/example/LOWSFactory/Makefile
     adapters/belos/example/LOWSFactory/Epetra/Makefile
-    adapters/belos/example/LOWSFactory/Tpetra/Makefile
     adapters/ifpack/Makefile
     adapters/ifpack/src/Makefile
     adapters/ml/Makefile
     adapters/ml/src/Makefile
     ])
+
+#     adapters/belos/example/LOWSFactory/Tpetra/Makefile
 
 AC_OUTPUT()
 

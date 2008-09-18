@@ -1,0 +1,22 @@
+================================================================================
+
+Thyra : Release Notes for Trilinos 9.0
+
+================================================================================
+
+(*) Added new templated Thyra::DefaultSerialDenseLinearOp[WithSolve]Factory
+subclasses to allow use of LAPACK for solving linear systems using
+Thyra::MultiVector objects as input.  This was mostly just to allow for
+better, more independent unit tests.
+
+(*) Some refactorings to replace raw C++ pointers with safe Teuchos memory
+management classes (but a lot of work still needs to be done here)
+
+(*) Removed the SUNDIALS RTOp wrappers since they no longer exist in RTOp
+
+(*) Changed from Thyra::ETransp to Thyra::EOpTransp to avoid doxygen
+conflicts with Teuchos::ETransp.  A backward-compatible typedef to
+Thyra::ETransp still exists to not break existing external code.
+
+With few exceptions, all changes should be backward compatible (search for
+"deprecated" comments).

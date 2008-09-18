@@ -33,5 +33,5 @@
 
 std::string RTOpPack::version()
 { 
-  return("RTOp Development Version"); 
+  return("RTOp Trilinos 9.0"); 
 }

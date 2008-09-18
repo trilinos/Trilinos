@@ -1,0 +1,12 @@
+================================================================================
+
+Stratimikos : Release Notes for Trilinos 9.0
+
+================================================================================
+
+Mostly minor changes which include:
+
+(*) Changed the name of Thyra::DefaultRealLinearSolverBuilder to
+Stratimikos::DefaultLinearSolverBuilder.
+
+(*) Added some better unit tests, especially for adjoint solves.

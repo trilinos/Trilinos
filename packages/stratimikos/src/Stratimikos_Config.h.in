@@ -42,9 +42,6 @@
 /* Define if want to build with thyra enabled */
 #undef HAVE_STRATIMIKOS_THYRA_EPETRAEXT
 
-/* Define if want to build with thyra enabled */
-#undef HAVE_STRATIMIKOS_THYRA_TPETRA
-
 /* Define if want to build with stratimikos enabled */
 #undef HAVE_STRATIMIKOS_TRIUTILS
 

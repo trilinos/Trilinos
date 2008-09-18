@@ -1,0 +1,28 @@
+================================================================================
+
+RTOp : Release Notes for Trilinos 9.0
+
+================================================================================
+
+Major refactoring of all code.
+
+(*) All interfaces in rtop/src/interfaces are now "memory safe" using Teuchos
+memory management classes
+
+(*) Support code in rtop/src/support has been significantly changed to remove
+duplication and bloat, provide for memory safely, and make it infinitely easier
+to create simple RTOp subclasses.
+
+(*) All of the concrete RTOp classes in rtop/src/ops_lib have been updated.
+All of the simpler RTOps now use a simple set of macros and provide good
+examples for users on how to create their own RTOp classes.  This includes
+very detailed unit tests for all of the code.
+
+(*) Old MPI junk that was not needed anymore was removed.
+
+(*) Removed SUNDIAL RTOp subclasses since these are not being used and there
+was no unit tests for them.
+
+With few exceptions, all changes should be backward compatible for clients of
+the RTOpPack::RTOpT abstract interface (search for "deprecated" comments).
+ 
