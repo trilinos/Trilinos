@@ -87,8 +87,7 @@ Part* - Perform graph partitioning without consideration of the initial
 distribution. (LB_APPROACH=partition)<br>
   </li>
   <li>
-AdaptiveRepart (ParMETIS 3) and Repart* (ParMETIS 2)&nbsp; -
-Incremental
+AdaptiveRepart - Incremental
 algorithms with small migration cost. (LB_APPROACH=repartition)</li>
   <li>
 Refine* - Refines a given partition (balance).&nbsp; Can be applied
@@ -108,17 +107,11 @@ suited&nbsp; for dynamic load balancing (for example,&nbsp; adaptive
 mesh
 refinement). A reasonable strategy is to call PartKway once to obtain a
 good initial balance and&nbsp; later update this balance using
-AdaptiveRepart
-(Repart* in ParMetis 2.0).
-<p>Zoltan is currently compatible with ParMETIS versions 3.1 and
-2.0.&nbsp;
-There is no guarantee that Zoltan will work correctly if you have a
-different
-version of ParMETIS on your computer. (ParMETIS 3.0 will work with
-Zoltan in most cases, but is not officially supported. ParMETIS 3.1 is
-highly recommended.
-The 2.0 version will soon become obsolete and may not be supported in
-future Zoltan versions.) The ParMETIS source code can be obtained from
+AdaptiveRepart.
+
+<p>Zoltan is currently compatible with ParMETIS version 3.1.
+(Version 2.0 is obsolete and is no longer supported by Zoltan.)
+The ParMETIS source code can be obtained from
 the <a href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS
 home page</a>. As a courtesy service,&nbsp; a recent, compatible
 version of the
@@ -129,13 +122,9 @@ is possible to compile Zoltan without any references to ParMETIS&nbsp;
 the
 configuration file <i><a href="ug_usage.html#Building%20the%20Library">Utilities/Config/Config.&lt;platform&gt;</a></i>).
 </p>
-<p>Note that Zoltan ignores the imbalance tolerance parameter
-IMBALANCE_TOL
-when ParMETIS 2.0 is used (the default value 1.05 is used), while
-IMBALANCE_TOL
-works correctly with ParMETIS 3.0.&nbsp; Zoltan supports the
-multiconstraint
-feature of ParMETIS 3 through multiple object weights (see <i><a
+<p>
+Zoltan supports the multiconstraint partitioning 
+feature of ParMETIS through multiple object weights (see <i><a
  href="ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></i>).
 </p>
 <p>The graph given to Zoltan/ParMETIS must be symmetric. Any self edges
@@ -265,11 +254,10 @@ and should be used only during debugging).</td>
 chunks of objects
 (vertices) of roughly equal size to each processor before calling the
 partitioner.
-0 = don't scatter; 1 = scatter only if all objects are on a single
-processor;
-2 = scatter if at least one processor owns no objects (recommended to
-avoid
-a bug in ParMETIS 2.0); 3 = always scatter.&nbsp;</td>
+0 = don't scatter; 
+1 = scatter only if all objects are on a single processor;
+2 = scatter if at least one processor owns no objects; 
+3 = always scatter.&nbsp;</td>
     </tr>
     <tr>
       <td valign="top"><b>Default values:</b></td>
