@@ -44,7 +44,7 @@ PROJECT_NAME           = Phalanx
 
 INPUT                  = ../src
 
-EXAMPLE_PATH           = ../example ../example/EnergyFlux ../example/EnergyFlux/evaluators ../maintenance
+EXAMPLE_PATH           = ../example ../example/EnergyFlux ../example/EnergyFlux/evaluators ../maintenance ../
 
 GENERATE_TAGFILE       = ../../common/tag_files/phalanx.tag
 

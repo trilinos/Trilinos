@@ -1,0 +1,23 @@
+../configure \
+--disable-shared \
+--enable-debug \
+--prefix=/home/rppawlo/junk \
+--disable-default-packages \
+--enable-tests \
+--enable-examples \
+--enable-teuchos --enable-teuchos-complex --enable-teuchos-extended \
+--enable-sacado \
+--disable-phdmesh \
+--enable-phalanx --with-tvmet \
+--with-incdirs="-I/home/rppawlo/Libs/Boost/boost_1_35_0 -I/home/rppawlo/junk/include" \
+--with-blas=/home/rppawlo/local/lib/libblas_intel.a \
+--with-lapack=/home/rppawlo/local/lib/lapack_INTEL.a \
+CXX=icpc \
+CC=icc \
+F77=ifort \
+CXXFLAGS="-O3 -g " \
+CFLAGS="-O3 -g " \
+FFLAGS="-O3 -g " \
+--cache-file=config.cache \
+--with-gnumake \
+--enable-export-makefiles

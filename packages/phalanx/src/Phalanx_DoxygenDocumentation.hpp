@@ -38,20 +38,35 @@
 
 \section main_index Index
 
+- \ref elevator_speech
 - \ref overview
 - \ref user_guide
 - \ref faq
 - \ref bugs
 - \ref history
 - \ref authors
+- \ref copyright
 - \ref questions
+
+\section elevator_speech The Elevator Speech
+
+Phalanx is a local field evaluation kernel specifically designed for
+general partial differential equation solvers. The main goal of
+Phalanx is to decompose a complex problem into a number of simpler
+problems with managed dependencies to support rapid development and
+extensibility of the PDE code. Through the use of template
+metaprogramming concepts, Phalanx supports arbitrary user defined data
+types and evaluation types. This allows for unprecedented flexibility
+for direct integration with user applications and provides extensive
+support for embedded technology such as automatic differentiation for
+sensitivity analysis and uncertainty quantification.
 
 \section overview Overview
 
-Phalanx is a local assembly kernel specifically designed for general
-partial differential equation (PDE) solvers.  It can be used with any
-cell-based discretization techniques including finite element and
-finite volume.  The main goal of Phalanx is to decompose a complex
+Phalanx is a local field evaluation kernel specifically designed for
+general partial differential equation (PDE) solvers.  It can be used
+with any cell-based discretization techniques including finite element
+and finite volume.  The main goal of Phalanx is to decompose a complex
 problem into a number of simpler problems with managed dependencies to
 support rapid development and extensibility of the PDE code.  This
 approach, coupled with the template capabilities of C++ offers a
@@ -176,6 +191,10 @@ The following have contributed to the design through ideas, discussions, and/or 
   - Roger Pawlowski (Lead Developer), SNL 01414
   - Eric Phipps, SNL 01411
   - Pat Notz, SNL 01541 
+
+\section copyright Copyright
+
+\verbinclude copyright.txt
 
 \section questions For All Questions and Comments...
   
