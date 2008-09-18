@@ -5971,9 +5971,11 @@ else
 fi
 
 
-if test "X$tac_with_parmetis_incdir" != "Xno"; then
-  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
-fi
+# It was necessary to move the parmetis include directories before the scotch
+# include directories.
+#if test "X$tac_with_parmetis_incdir" != "Xno"; then
+#  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
+#fi
 
 
 
@@ -6034,6 +6036,11 @@ fi
 
 if test "X$tac_with_scotch_incdir" != "Xno"; then
   CPPFLAGS="-I${tac_with_scotch_incdir}  ${CPPFLAGS}"
+fi
+# The parmetis include directories need to be before the Scotch include
+# directories.
+if test "X$tac_with_parmetis_incdir" != "Xno"; then
+  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 fi
 
 

@@ -171,9 +171,11 @@ if test "X$tac_with_parmetis_libdir" != "Xno"; then
   LIBS="-L${tac_with_parmetis_libdir} -lparmetis -lmetis ${LIBS}"
 fi
 TAC_ARG_WITH_3PL_SUB(parmetis, incdir, [Specify where the Parmetis header files are located.  Ex. /path/to/headers])
-if test "X$tac_with_parmetis_incdir" != "Xno"; then
-  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
-fi
+# It was necessary to move the parmetis include directories before the scotch
+# include directories.
+#if test "X$tac_with_parmetis_incdir" != "Xno"; then
+#  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
+#fi
 
 TAC_ARG_WITH_PACKAGE(scotch, [Enable Scotch support.], SCOTCH, no)
 AM_CONDITIONAL(BUILD_SCOTCH, [test "X$ac_cv_use_scotch" != "Xno"])
@@ -184,6 +186,11 @@ fi
 TAC_ARG_WITH_3PL_SUB(scotch, incdir, [Specify where the Scotch header files are located.  Ex. /path/to/headers])
 if test "X$tac_with_scotch_incdir" != "Xno"; then
   CPPFLAGS="-I${tac_with_scotch_incdir}  ${CPPFLAGS}"
+fi
+# The parmetis include directories need to be before the Scotch include
+# directories.
+if test "X$tac_with_parmetis_incdir" != "Xno"; then
+  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 fi
 
 TAC_ARG_WITH_PACKAGE(patoh, [Enable Patoh support.], PATOH, no)
