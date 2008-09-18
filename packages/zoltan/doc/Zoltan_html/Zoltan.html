@@ -381,22 +381,37 @@ Contact:  Karen Devine<br>
 New Features in Zoltan v3.1, released September 2008:
 <ul>
 <li>
-Graph ordering interface to 
-<a href="http://www.labri.fr/perso/pelegrin/scotch/">PT-Scotch</a>, a 
+Graph/Matrix ordering interface to 
+<a href="ug_html/ug_order_ptscotch.html">PT-Scotch</a>, a 
 high-quality graph ordering and partitioning library from the University of
 Bordeaux.
 <li>
-Improvements to Zoltan's parallel 
+New <a href="ug_html/ug_interface_order.html">matrix ordering interface</a> 
+that returns ordering information such as permutations and
+separators to the application.
+<li>
+New <a href="ug_html/ug_alg_phg.html">hypergraph partitioning</a> 
+options for inexpensively 
+<a href="ug_html/ug_alg.html#LB_APPROACH">refining</a> partitions.
+<li>
+Robustness improvements to Zoltan's parallel 
 <a href="ug_html/ug_alg_hypergraph.html">hypergraph</a> 
 partitioner and repartitioner.
 <li>
+New <a href="ug_html/ug_usage.html#TrilinosAutotools">Autotools 
+build environment</a>.
+<li>
+Tight integration with the <a href="http://trilinos.sandia.gov">Trilinos</a>
+project, including Trilinos package 
+<a href="http://trilinos.sandia.gov/packages/isorropia/">Isorropia</a>,
+a matrix-based interface to Zoltan.
+
 </ul>
 
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
-<hr width="100%">
 <a NAME="ZOLTAN3"></a>
-<b>New Features in Zoltan 3.0, released May 2007:</b>
+New Features in Zoltan 3.0, released May 2007:
 <ul>
 <li>
 <a href="http://www.cs.sandia.gov/~kddevin/papers/Catalyurek_IPDPS07.pdf">Parallel 

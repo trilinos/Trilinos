@@ -38,10 +38,35 @@ applications use new Zoltan functionality.
 <p>
 Enhancements to the Zoltan interface are described below.
 <blockquote>
-<a href="#Backward v3.0">Versions 3.0 and higher</a>
+<a href="#Backward v3.1">Versions 3.1 and higher</a>
+<br><a href="#Backward v3.0">Versions 3.0 and higher</a>
 <br><a href="#Backward v1.5">Versions 1.5 and higher</a>
 <br><a href="#Backward v1.3">Versions 1.3 and higher</a>
 </blockquote>
+
+<!---------------------------------------------------------------------------->
+
+<h2><a name="Backward v3.1"></a>
+<hr>Backward Compatibility: Versions 3.1 and higher
+</h2>
+
+Terminology referring to partitions and parts was clarified.
+A "partition" describes the entire layout of the data across 
+processes.  A "part" is a subset of the data assigned to a 
+single process.  A partition is made up of many parts; the union 
+of the parts is equal to the partition.  
+<p>
+We applied this naming convention more consistently throughout Zoltan.
+Old parameters NUM_GLOBAL_PARTITIONS and NUM_LOCAL_PARTS have been
+more accurately renamed <a href="ug_alg.html#NUM_GLOBAL_PARTS">NUM_GLOBAL_PARTS</a> and
+<a href="ug_alg.html#NUM_LOCAL_PARTS">NUM_LOCAL_PARTS</a>.  Old query functions
+ZOLTAN_PARTITIONS_MULTI_FN and ZOLTAN_PARTITION_FN have been more
+accurately renamed 
+<a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a>
+and 
+<a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a>.
+However, in both cases, the old naming convention still works in the
+Zoltan library.
 
 <!---------------------------------------------------------------------------->
 

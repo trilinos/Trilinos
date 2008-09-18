@@ -32,6 +32,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.1">Zoltan Release v3.1</a><br>
   <a href="#Release3.0">Zoltan Release v3.0</a><br>
   <a href="#Release2.1">Zoltan Release v2.1</a><br>
   <a href="#Release2.02">Zoltan Release v2.02</a><br>
@@ -47,6 +48,55 @@ releases of Zoltan:
   <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.1">Zoltan Release Notes v3.1: September 26, 2008</a></h2>
+Zoltan v3.1 includes the following new features:
+<ul>
+<li>
+Important new capabilities for Matrix ordering are included in Zoltan v3.1.
+<ul>
+<li>
+A graph/matrix ordering interface to
+<a href="ug_order_ptscotch.html">PT-Scotch</a>, a
+high-quality graph ordering and partitioning library from the University of
+Bordeaux, is now available.
+<li>
+Zoltan's new <a href="ug_interface_order.html">matrix 
+ordering interface</a>
+returns ordering information such as permutations and
+separators to the application.
+</ul>
+<li>
+New <a href="ug_alg_phg.html">hypergraph partitioning</a>
+options for inexpensively
+<a href="ug_alg.html#LB_APPROACH">refining</a> partitions are
+included and controlled simply by parameters 
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a> and 
+<a href="ug_alg_phg.html">PHG_MULTILEVEL</a>.
+<li>
+Robustness improvements have been made to Zoltan's parallel
+<a href="ug_alg_hypergraph.html">hypergraph</a>
+partitioner and repartitioner.
+<li>
+A new <a href="ug_usage.html#TrilinosAutotools">Autotools 
+build environment</a> is available.  
+The native Zoltan build environment is still 
+supported in this release.
+<li>
+Zoltan is now a 
+<a href="http://trilinos.sandia.gov">Trilinos</a> package.
+Integration with <a href="http://trilinos.sandia.gov">Trilinos</a>,
+is now tighter and more seamless.  
+In particular, Zoltan is the default partitioner for the Trilinos package
+<a href="http://trilinos.sandia.gov/packages/isorropia/">Isorropia</a>,
+a matrix-based interface to Zoltan.
+</ul>
+
+<p>
+Please see the <a href="ug_backward.html">backward compatibility</a> section
+for a detailed description of changes that may affect current users.
+
+
 <hr>
 <h2><a name="Release3.0"></a>Zoltan Release Notes v3.0:  May 1, 2007</h2>
 Zoltan v3.0 includes major new features.
@@ -363,16 +413,16 @@ Several packages of parallel data services have been added and made
 available to
 application developers. These services include the following:
 <ul>
-  <li>An <a href="../ug_html/ug_util_comm.html">unstructured
+  <li>An <a href="ug_util_comm.html">unstructured
 communication package</a> that simplifies complicated communication by
 insulating applications from the details of message
 sends and receives.
   </li>
-  <li>A <a href="../ug_html/ug_util_dd.html">distributed data directory</a>
+  <li>A <a href="ug_util_dd.html">distributed data directory</a>
 that allows applications to efficiently
 (in memory and time) locate off-processor data.
   </li>
-  <li>A <a href="../ug_html/ug_util_mem.html">dynamic memory
+  <li>A <a href="ug_util_mem.html">dynamic memory
 management package</a> that simplifies debugging of
 memory allocation problems on state-of-the-art parallel computers.
   </li>
