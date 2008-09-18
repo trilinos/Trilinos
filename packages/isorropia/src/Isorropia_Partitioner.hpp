@@ -36,10 +36,10 @@ USA
 namespace Isorropia {
 
 /** Interface (abstract base class) for computing a new partitioning and
-  describing the layout of elements in the new partitions.
+  describing the layout of elements in the new partition (the parts).
 
   If the methods which describe the new partitioning (e.g.,
-  newPartitionNumber(), etc.) are called before compute_partitioning()
+  operator [], elemsInPart()) are called before compute_partitioning()
   has been called, behavior is not well defined. Implementations will
   either return empty/erroneous data, or throw an exception. In most
   cases, implementations will probably call compute_partitioning()
