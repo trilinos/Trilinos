@@ -722,7 +722,6 @@ SUB_TEST_TRUE
 SUB_TEST_FALSE
 SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
-FCLIBS
 FLIBS
 ac_aux_dir
 LIBOBJS
@@ -1326,10 +1325,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-maintainer-mode  enable make rules and dependencies not useful
 			  (and sometimes confusing) to the casual installer
-  --enable-fortran        enable Fortran support (default is yes)
-  --enable-fortran90driver
-                          enable Fortran 90 driver (automatically enables
-                          Fortran support) (default is no)
+  --enable-fortran        enable Fortran support (default is no)
   --enable-zoltan-cppdriver
                           Enable Zoltan's C++ driver (default is yes)
   --enable-mpi            MPI support
@@ -1379,8 +1375,6 @@ Optional Packages:
                           prepend to CXXFLAGS
   --with-cflags           additional CFLAGS flags to be added: will prepend
                           to CFLAGS
-  --with-fcflags          additional FCFLAGS flags to be added: will prepend
-                          to FCFLAGS
   --with-fflags           additional FFLAGS flags to be added: will prepend
                           to FFLAGS
   --with-libs             List additional libraries here. For example,
@@ -2638,7 +2632,7 @@ echo "${ECHO_T}$am_cv_prog_tar_ustar" >&6; }
 if test "${enable_fortran+set}" = set; then
   enableval=$enable_fortran; ac_cv_use_fortran=$enableval
 else
-  ac_cv_use_fortran=yes
+  ac_cv_use_fortran=no
 fi
 
 
@@ -2658,31 +2652,8 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
-
-# Check whether --enable-fortran90driver was given.
-if test "${enable_fortran90driver+set}" = set; then
-  enableval=$enable_fortran90driver; ac_cv_use_fortran90driver=$enableval
-else
-  ac_cv_use_fortran90driver=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use fortran90driver" >&5
-echo $ECHO_N "checking whether to use fortran90driver... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_fortran90driver" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_FORTRAN90DRIVER 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
+#This option is not currently available
+#TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
  if test "X$ac_cv_use_fortran90driver" != "Xno"; then
   BUILD_FORTRAN90DRIVER_TRUE=
   BUILD_FORTRAN90DRIVER_FALSE='#'
@@ -2700,9 +2671,11 @@ else
 fi
 
 
-if test "X$ac_cv_use_fortran90driver" != "Xno"; then
-ac_cv_use_fortran90=yes
-fi
+#if test "X$ac_cv_use_fortran90driver" = "Xyes"; then
+#ac_cv_use_fortran90=yes
+#else
+ac_cv_use_fortran90=no
+#fi
 
 
 # Check whether --enable-zoltan-cppdriver was given.
@@ -5258,24 +5231,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-
-{ echo "$as_me:$LINENO: checking whether additional FCFLAGS flags should be added" >&5
-echo $ECHO_N "checking whether additional FCFLAGS flags should be added... $ECHO_C" >&6; }
-
-# Check whether --with-fcflags was given.
-if test "${with_fcflags+set}" = set; then
-  withval=$with_fcflags;
-FCFLAGS="${withval} ${FCFLAGS}"
-{ echo "$as_me:$LINENO: result: FCFLAGS = ${FCFLAGS}" >&5
-echo "${ECHO_T}FCFLAGS = ${FCFLAGS}" >&6; }
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
-fi
-
-
+#TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
 
 { echo "$as_me:$LINENO: checking whether additional FFLAGS flags should be added" >&5
 echo $ECHO_N "checking whether additional FFLAGS flags should be added... $ECHO_C" >&6; }
@@ -6450,331 +6406,7 @@ fi
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-
-ac_ext=${ac_fc_srcext-f}
-ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
-ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_fc_compiler_gnu
-{ echo "$as_me:$LINENO: checking how to get verbose linking output from $FC" >&5
-echo $ECHO_N "checking how to get verbose linking output from $FC... $ECHO_C" >&6; }
-if test "${ac_cv_prog_fc_v+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-      program main
-
-      end
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_fc_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_cv_prog_fc_v=
-# Try some options frequently used verbose output
-for ac_verb in -v -verbose --verbose -V -\#\#\#; do
-  cat >conftest.$ac_ext <<_ACEOF
-      program main
-
-      end
-_ACEOF
-
-# Compile and link our simple test program by passing a flag (argument
-# 1 to this macro) to the Fortran compiler in order to get
-# "verbose" output that we can then parse for the Fortran linker
-# flags.
-ac_save_FFLAGS=$FCFLAGS
-FCFLAGS="$FCFLAGS $ac_verb"
-eval "set x $ac_link"
-shift
-echo "$as_me:$LINENO: $*" >&5
-ac_fc_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
-echo "$ac_fc_v_output" >&5
-FCFLAGS=$ac_save_FFLAGS
-
-rm -f conftest*
-
-# On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
-# /foo, /bar, and /baz are search directories for the Fortran linker.
-# Here, we change these into -L/foo -L/bar -L/baz (and put it first):
-ac_fc_v_output="`echo $ac_fc_v_output |
-	grep 'LPATH is:' |
-	sed 's,.*LPATH is\(: *[^ ]*\).*,\1,;s,: */, -L/,g'` $ac_fc_v_output"
-
-# FIXME: we keep getting bitten by quoted arguments; a more general fix
-#        that detects unbalanced quotes in FLIBS should be implemented
-#        and (ugh) tested at some point.
-case $ac_fc_v_output in
-  # If we are using xlf then replace all the commas with spaces.
-  *xlfentry*)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed 's/,/ /g'` ;;
-
-  # With Intel ifc, ignore the quoted -mGLOB_options_string stuff (quoted
-  # $LIBS confuse us, and the libraries appear later in the output anyway).
-  *mGLOB_options_string*)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed 's/"-mGLOB[^"]*"/ /g'` ;;
-
-  # Portland Group compiler has singly- or doubly-quoted -cmdline argument
-  # Singly-quoted arguments were reported for versions 5.2-4 and 6.0-4.
-  # Doubly-quoted arguments were reported for "PGF90/x86 Linux/x86 5.0-2".
-  *-cmdline\ * | *-ignore\ * | *-def\ *)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed "\
-        s/-cmdline  *'[^']*'/ /g; s/-cmdline  *\"[^\"]*\"/ /g
-        s/-ignore  *'[^']*'/ /g; s/-ignore  *\"[^\"]*\"/ /g
-        s/-def  *'[^']*'/ /g; s/-def  *\"[^\"]*\"/ /g"` ;;
-
-  # If we are using Cray Fortran then delete quotes.
-  *cft90*)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed 's/"//g'` ;;
-esac
-
-
-  # look for -l* and *.a constructs in the output
-  for ac_arg in $ac_fc_v_output; do
-     case $ac_arg in
-        [\\/]*.a | ?:[\\/]*.a | -[lLRu]*)
-          ac_cv_prog_fc_v=$ac_verb
-          break 2 ;;
-     esac
-  done
-done
-if test -z "$ac_cv_prog_fc_v"; then
-   { echo "$as_me:$LINENO: WARNING: cannot determine how to obtain linking information from $FC" >&5
-echo "$as_me: WARNING: cannot determine how to obtain linking information from $FC" >&2;}
-fi
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	{ echo "$as_me:$LINENO: WARNING: compilation failed" >&5
-echo "$as_me: WARNING: compilation failed" >&2;}
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_prog_fc_v" >&5
-echo "${ECHO_T}$ac_cv_prog_fc_v" >&6; }
-{ echo "$as_me:$LINENO: checking for Fortran libraries of $FC" >&5
-echo $ECHO_N "checking for Fortran libraries of $FC... $ECHO_C" >&6; }
-if test "${ac_cv_fc_libs+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test "x$FCLIBS" != "x"; then
-  ac_cv_fc_libs="$FCLIBS" # Let the user override the test.
-else
-
-cat >conftest.$ac_ext <<_ACEOF
-      program main
-
-      end
-_ACEOF
-
-# Compile and link our simple test program by passing a flag (argument
-# 1 to this macro) to the Fortran compiler in order to get
-# "verbose" output that we can then parse for the Fortran linker
-# flags.
-ac_save_FFLAGS=$FCFLAGS
-FCFLAGS="$FCFLAGS $ac_cv_prog_fc_v"
-eval "set x $ac_link"
-shift
-echo "$as_me:$LINENO: $*" >&5
-ac_fc_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
-echo "$ac_fc_v_output" >&5
-FCFLAGS=$ac_save_FFLAGS
-
-rm -f conftest*
-
-# On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
-# /foo, /bar, and /baz are search directories for the Fortran linker.
-# Here, we change these into -L/foo -L/bar -L/baz (and put it first):
-ac_fc_v_output="`echo $ac_fc_v_output |
-	grep 'LPATH is:' |
-	sed 's,.*LPATH is\(: *[^ ]*\).*,\1,;s,: */, -L/,g'` $ac_fc_v_output"
-
-# FIXME: we keep getting bitten by quoted arguments; a more general fix
-#        that detects unbalanced quotes in FLIBS should be implemented
-#        and (ugh) tested at some point.
-case $ac_fc_v_output in
-  # If we are using xlf then replace all the commas with spaces.
-  *xlfentry*)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed 's/,/ /g'` ;;
-
-  # With Intel ifc, ignore the quoted -mGLOB_options_string stuff (quoted
-  # $LIBS confuse us, and the libraries appear later in the output anyway).
-  *mGLOB_options_string*)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed 's/"-mGLOB[^"]*"/ /g'` ;;
-
-  # Portland Group compiler has singly- or doubly-quoted -cmdline argument
-  # Singly-quoted arguments were reported for versions 5.2-4 and 6.0-4.
-  # Doubly-quoted arguments were reported for "PGF90/x86 Linux/x86 5.0-2".
-  *-cmdline\ * | *-ignore\ * | *-def\ *)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed "\
-        s/-cmdline  *'[^']*'/ /g; s/-cmdline  *\"[^\"]*\"/ /g
-        s/-ignore  *'[^']*'/ /g; s/-ignore  *\"[^\"]*\"/ /g
-        s/-def  *'[^']*'/ /g; s/-def  *\"[^\"]*\"/ /g"` ;;
-
-  # If we are using Cray Fortran then delete quotes.
-  *cft90*)
-    ac_fc_v_output=`echo $ac_fc_v_output | sed 's/"//g'` ;;
-esac
-
-
-
-ac_cv_fc_libs=
-
-# Save positional arguments (if any)
-ac_save_positional="$@"
-
-set X $ac_fc_v_output
-while test $# != 1; do
-  shift
-  ac_arg=$1
-  case $ac_arg in
-        [\\/]*.a | ?:[\\/]*.a)
-            ac_exists=false
-  for ac_i in $ac_cv_fc_libs; do
-    if test x"$ac_arg" = x"$ac_i"; then
-      ac_exists=true
-      break
-    fi
-  done
-
-  if test x"$ac_exists" = xtrue; then
-  :
-else
-  ac_cv_fc_libs="$ac_cv_fc_libs $ac_arg"
-fi
-
-          ;;
-        -bI:*)
-            ac_exists=false
-  for ac_i in $ac_cv_fc_libs; do
-    if test x"$ac_arg" = x"$ac_i"; then
-      ac_exists=true
-      break
-    fi
-  done
-
-  if test x"$ac_exists" = xtrue; then
-  :
-else
-  if test "$ac_compiler_gnu" = yes; then
-  for ac_link_opt in $ac_arg; do
-    ac_cv_fc_libs="$ac_cv_fc_libs -Xlinker $ac_link_opt"
-  done
-else
-  ac_cv_fc_libs="$ac_cv_fc_libs $ac_arg"
-fi
-fi
-
-          ;;
-          # Ignore these flags.
-        -lang* | -lcrt*.o | -lc | -lgcc* | -lSystem | -libmil | -LANG:=* | -LIST:* | -LNO:*)
-          ;;
-        -lkernel32)
-          test x"$CYGWIN" != xyes && ac_cv_fc_libs="$ac_cv_fc_libs $ac_arg"
-          ;;
-        -[LRuYz])
-          # These flags, when seen by themselves, take an argument.
-          # We remove the space between option and argument and re-iterate
-          # unless we find an empty arg or a new option (starting with -)
-	  case $2 in
-	     "" | -*);;
-	     *)
-		ac_arg="$ac_arg$2"
-		shift; shift
-		set X $ac_arg "$@"
-		;;
-	  esac
-          ;;
-        -YP,*)
-          for ac_j in `echo $ac_arg | sed -e 's/-YP,/-L/;s/:/ -L/g'`; do
-              ac_exists=false
-  for ac_i in $ac_cv_fc_libs; do
-    if test x"$ac_j" = x"$ac_i"; then
-      ac_exists=true
-      break
-    fi
-  done
-
-  if test x"$ac_exists" = xtrue; then
-  :
-else
-  ac_arg="$ac_arg $ac_j"
-                               ac_cv_fc_libs="$ac_cv_fc_libs $ac_j"
-fi
-
-          done
-          ;;
-        -[lLR]*)
-            ac_exists=false
-  for ac_i in $ac_cv_fc_libs; do
-    if test x"$ac_arg" = x"$ac_i"; then
-      ac_exists=true
-      break
-    fi
-  done
-
-  if test x"$ac_exists" = xtrue; then
-  :
-else
-  ac_cv_fc_libs="$ac_cv_fc_libs $ac_arg"
-fi
-
-          ;;
-	-zallextract*| -zdefaultextract)
-	  ac_cv_fc_libs="$ac_cv_fc_libs $ac_arg"
-	  ;;
-          # Ignore everything else.
-  esac
-done
-# restore positional arguments
-set X $ac_save_positional; shift
-
-# We only consider "LD_RUN_PATH" on Solaris systems.  If this is seen,
-# then we insist that the "run path" must be an absolute path (i.e. it
-# must begin with a "/").
-case `(uname -sr) 2>/dev/null` in
-   "SunOS 5"*)
-      ac_ld_run_path=`echo $ac_fc_v_output |
-                        sed -n 's,^.*LD_RUN_PATH *= *\(/[^ ]*\).*$,-R\1,p'`
-      test "x$ac_ld_run_path" != x &&
-        if test "$ac_compiler_gnu" = yes; then
-  for ac_link_opt in $ac_ld_run_path; do
-    ac_cv_fc_libs="$ac_cv_fc_libs -Xlinker $ac_link_opt"
-  done
-else
-  ac_cv_fc_libs="$ac_cv_fc_libs $ac_ld_run_path"
-fi
-      ;;
-esac
-fi # test "x$[]_AC_LANG_PREFIX[]LIBS" = "x"
-
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_fc_libs" >&5
-echo "${ECHO_T}$ac_cv_fc_libs" >&6; }
-FCLIBS="$ac_cv_fc_libs"
-
-
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
+#AC_FC_LIBRARY_LDFLAGS
 
 ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -8082,14 +7714,13 @@ SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
 SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
-FCLIBS!$FCLIBS$ac_delim
 FLIBS!$FLIBS$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 51; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

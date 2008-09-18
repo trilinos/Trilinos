@@ -26,6 +26,7 @@ noinst_PROGRAMS = zfdrive
 FARG_SRC = $(srcdir)/farg_typical.f
 
 zfdrive_SOURCES = \
+	$(srcdir)/mpi_h.f \
 	$(srcdir)/fdr_migrate.f90 \
 	$(FARG_SRC) \
 	$(srcdir)/mpistring.c \

@@ -14,16 +14,14 @@
 
 @SET_MAKE@
 
-# @HEADER
+#@HEADER
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
 # This software is distributed under the GNU Lesser General Public License.  #
 # For more info, see the README file in the top-level Zoltan directory.      #
 ##############################################################################
-# @HEADER
-
-# The following line helps the test harness recover from build errors.
+#@HEADER
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -44,9 +42,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = zCPPExample1$(EXEEXT) zCPPExample2$(EXEEXT) \
-	simpleRCB$(EXEEXT)
-subdir = example/CPP
+noinst_PROGRAMS = zfdrive$(EXEEXT)
+subdir = src/fdriver
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
@@ -71,35 +68,35 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/Zoltan_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_simpleRCB_OBJECTS = simpleRCB-simpleRCB.$(OBJEXT)
-simpleRCB_OBJECTS = $(am_simpleRCB_OBJECTS)
+am__objects_1 = farg_typical.$(OBJEXT)
+am_zfdrive_OBJECTS = mpi_h.$(OBJEXT) fdr_migrate.$(OBJEXT) \
+	$(am__objects_1) zfdrive-mpistring.$(OBJEXT) lampmpi.$(OBJEXT) \
+	fdr_sort.$(OBJEXT) fdr_main.$(OBJEXT) fdr_loadbal.$(OBJEXT) \
+	fdr_input.$(OBJEXT) fdr_param_file.$(OBJEXT) \
+	fdr_chaco_io.$(OBJEXT) fdr_mm_io.$(OBJEXT) fdr_const.$(OBJEXT) \
+	mmio.$(OBJEXT)
+zfdrive_OBJECTS = $(am_zfdrive_OBJECTS)
 am__DEPENDENCIES_1 =
-simpleRCB_LINK = $(CXXLD) $(simpleRCB_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_zCPPExample1_OBJECTS = zCPPExample1-zCPPExample1.$(OBJEXT)
-zCPPExample1_OBJECTS = $(am_zCPPExample1_OBJECTS)
-zCPPExample1_LINK = $(CXXLD) $(zCPPExample1_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_zCPPExample2_OBJECTS = zCPPExample2-zCPPExample2.$(OBJEXT)
-zCPPExample2_OBJECTS = $(am_zCPPExample2_OBJECTS)
-zCPPExample2_LINK = $(CXXLD) $(zCPPExample2_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(ZOLTAN_LIBS))
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(simpleRCB_SOURCES) $(zCPPExample1_SOURCES) \
-	$(zCPPExample2_SOURCES)
-DIST_SOURCES = $(simpleRCB_SOURCES) $(zCPPExample1_SOURCES) \
-	$(zCPPExample2_SOURCES)
+F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
+F77LD = $(F77)
+F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
+	$@
+FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
+FCLD = $(FC)
+FCLINK = $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
+	$@
+SOURCES = $(zfdrive_SOURCES)
+DIST_SOURCES = $(zfdrive_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -128,6 +125,7 @@ EXEEXT = .exe
 F77 = @F77@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
+FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_PERL = @HAVE_PERL@
@@ -220,25 +218,38 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ZOLTAN_EX_LIBS = -L$(top_builddir)/example/lib -lexzoltan $(ZOLTAN_LIBS)
-ZOLTAN_EX_DEPS = $(top_builddir)/src/libzoltan.a $(top_builddir)/example/lib/libexzoltan.a
-ZOLTAN_EX_INCLUDES = -I$(top_srcdir)/example/lib $(ZOLTAN_INCLUDES)
-zCPPExample1_SOURCES = zCPPExample1.cpp
-zCPPExample1_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-zCPPExample1_CXXFLAGS = $(ZOLTAN_EX_INCLUDES)
-zCPPExample1_LDADD = $(ZOLTAN_EX_LIBS)
-zCPPExample2_SOURCES = zCPPExample2.cpp
-zCPPExample2_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-zCPPExample2_CXXFLAGS = $(ZOLTAN_EX_INCLUDES)
-zCPPExample2_LDADD = $(ZOLTAN_EX_LIBS)
-simpleRCB_SOURCES = simpleRCB.cpp rectangularMesh.h
-simpleRCB_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simpleRCB_CXXFLAGS = $(ZOLTAN_EX_INCLUDES)
-simpleRCB_LDADD = $(ZOLTAN_EX_LIBS)
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(ZOLTAN_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ZOLTAN_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ZOLTAN_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ZOLTAN_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+FARG_SRC = $(srcdir)/farg_typical.f
+zfdrive_SOURCES = \
+	$(srcdir)/mpi_h.f \
+	$(srcdir)/fdr_migrate.f90 \
+	$(FARG_SRC) \
+	$(srcdir)/mpistring.c \
+	$(srcdir)/lampmpi.f90 \
+	$(srcdir)/fdr_sort.f90 \
+	$(srcdir)/fdr_main.f90 \
+	$(srcdir)/fdr_loadbal.f90 \
+	$(srcdir)/fdr_input.f90 \
+	$(srcdir)/fdr_param_file.f90 \
+	$(srcdir)/fdr_chaco_io.f90 \
+	$(srcdir)/fdr_mm_io.f90 \
+	$(srcdir)/fdr_const.f90 \
+	$(srcdir)/mmio.f
+
+zfdrive_DEPENDENCIES = \
+			$(ZOLTAN_DEPS)
+
+zfdrive_CPPFLAGS = $(EXPORT_INC_PATH) -I$(srcdir)/ -I$(top_srcdir)/src/ch/
+zfdrive_LDADD = $(EXPORT_LIBS)
+EXTRA_DIST = 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .f .f90 .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -248,9 +259,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/CPP/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/fdriver/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/CPP/Makefile
+	  $(AUTOMAKE) --foreign  src/fdriver/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -271,15 +282,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-simpleRCB$(EXEEXT): $(simpleRCB_OBJECTS) $(simpleRCB_DEPENDENCIES) 
-	@rm -f simpleRCB$(EXEEXT)
-	$(simpleRCB_LINK) $(simpleRCB_OBJECTS) $(simpleRCB_LDADD) $(LIBS)
-zCPPExample1$(EXEEXT): $(zCPPExample1_OBJECTS) $(zCPPExample1_DEPENDENCIES) 
-	@rm -f zCPPExample1$(EXEEXT)
-	$(zCPPExample1_LINK) $(zCPPExample1_OBJECTS) $(zCPPExample1_LDADD) $(LIBS)
-zCPPExample2$(EXEEXT): $(zCPPExample2_OBJECTS) $(zCPPExample2_DEPENDENCIES) 
-	@rm -f zCPPExample2$(EXEEXT)
-	$(zCPPExample2_LINK) $(zCPPExample2_OBJECTS) $(zCPPExample2_LDADD) $(LIBS)
+zfdrive$(EXEEXT): $(zfdrive_OBJECTS) $(zfdrive_DEPENDENCIES) 
+	@rm -f zfdrive$(EXEEXT)
+	$(F77LINK) $(zfdrive_OBJECTS) $(zfdrive_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -287,65 +292,125 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simpleRCB-simpleRCB.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPExample1-zCPPExample1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPExample2-zCPPExample2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfdrive-mpistring.Po@am__quote@
 
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+.c.o:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c $<
 
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+.c.obj:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-simpleRCB-simpleRCB.o: simpleRCB.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleRCB_CXXFLAGS) $(CXXFLAGS) -MT simpleRCB-simpleRCB.o -MD -MP -MF $(DEPDIR)/simpleRCB-simpleRCB.Tpo -c -o simpleRCB-simpleRCB.o `test -f 'simpleRCB.cpp' || echo '$(srcdir)/'`simpleRCB.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/simpleRCB-simpleRCB.Tpo $(DEPDIR)/simpleRCB-simpleRCB.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='simpleRCB.cpp' object='simpleRCB-simpleRCB.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleRCB_CXXFLAGS) $(CXXFLAGS) -c -o simpleRCB-simpleRCB.o `test -f 'simpleRCB.cpp' || echo '$(srcdir)/'`simpleRCB.cpp
+zfdrive-mpistring.o: $(srcdir)/mpistring.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zfdrive-mpistring.o -MD -MP -MF $(DEPDIR)/zfdrive-mpistring.Tpo -c -o zfdrive-mpistring.o `test -f '$(srcdir)/mpistring.c' || echo '$(srcdir)/'`$(srcdir)/mpistring.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zfdrive-mpistring.Tpo $(DEPDIR)/zfdrive-mpistring.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mpistring.c' object='zfdrive-mpistring.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zfdrive-mpistring.o `test -f '$(srcdir)/mpistring.c' || echo '$(srcdir)/'`$(srcdir)/mpistring.c
 
-simpleRCB-simpleRCB.obj: simpleRCB.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleRCB_CXXFLAGS) $(CXXFLAGS) -MT simpleRCB-simpleRCB.obj -MD -MP -MF $(DEPDIR)/simpleRCB-simpleRCB.Tpo -c -o simpleRCB-simpleRCB.obj `if test -f 'simpleRCB.cpp'; then $(CYGPATH_W) 'simpleRCB.cpp'; else $(CYGPATH_W) '$(srcdir)/simpleRCB.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/simpleRCB-simpleRCB.Tpo $(DEPDIR)/simpleRCB-simpleRCB.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='simpleRCB.cpp' object='simpleRCB-simpleRCB.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleRCB_CXXFLAGS) $(CXXFLAGS) -c -o simpleRCB-simpleRCB.obj `if test -f 'simpleRCB.cpp'; then $(CYGPATH_W) 'simpleRCB.cpp'; else $(CYGPATH_W) '$(srcdir)/simpleRCB.cpp'; fi`
+zfdrive-mpistring.obj: $(srcdir)/mpistring.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zfdrive-mpistring.obj -MD -MP -MF $(DEPDIR)/zfdrive-mpistring.Tpo -c -o zfdrive-mpistring.obj `if test -f '$(srcdir)/mpistring.c'; then $(CYGPATH_W) '$(srcdir)/mpistring.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mpistring.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zfdrive-mpistring.Tpo $(DEPDIR)/zfdrive-mpistring.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mpistring.c' object='zfdrive-mpistring.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zfdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zfdrive-mpistring.obj `if test -f '$(srcdir)/mpistring.c'; then $(CYGPATH_W) '$(srcdir)/mpistring.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mpistring.c'; fi`
 
-zCPPExample1-zCPPExample1.o: zCPPExample1.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample1_CXXFLAGS) $(CXXFLAGS) -MT zCPPExample1-zCPPExample1.o -MD -MP -MF $(DEPDIR)/zCPPExample1-zCPPExample1.Tpo -c -o zCPPExample1-zCPPExample1.o `test -f 'zCPPExample1.cpp' || echo '$(srcdir)/'`zCPPExample1.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/zCPPExample1-zCPPExample1.Tpo $(DEPDIR)/zCPPExample1-zCPPExample1.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='zCPPExample1.cpp' object='zCPPExample1-zCPPExample1.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample1_CXXFLAGS) $(CXXFLAGS) -c -o zCPPExample1-zCPPExample1.o `test -f 'zCPPExample1.cpp' || echo '$(srcdir)/'`zCPPExample1.cpp
+.f.o:
+	$(F77COMPILE) -c -o $@ $<
 
-zCPPExample1-zCPPExample1.obj: zCPPExample1.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample1_CXXFLAGS) $(CXXFLAGS) -MT zCPPExample1-zCPPExample1.obj -MD -MP -MF $(DEPDIR)/zCPPExample1-zCPPExample1.Tpo -c -o zCPPExample1-zCPPExample1.obj `if test -f 'zCPPExample1.cpp'; then $(CYGPATH_W) 'zCPPExample1.cpp'; else $(CYGPATH_W) '$(srcdir)/zCPPExample1.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/zCPPExample1-zCPPExample1.Tpo $(DEPDIR)/zCPPExample1-zCPPExample1.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='zCPPExample1.cpp' object='zCPPExample1-zCPPExample1.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample1_CXXFLAGS) $(CXXFLAGS) -c -o zCPPExample1-zCPPExample1.obj `if test -f 'zCPPExample1.cpp'; then $(CYGPATH_W) 'zCPPExample1.cpp'; else $(CYGPATH_W) '$(srcdir)/zCPPExample1.cpp'; fi`
+.f.obj:
+	$(F77COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-zCPPExample2-zCPPExample2.o: zCPPExample2.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample2_CXXFLAGS) $(CXXFLAGS) -MT zCPPExample2-zCPPExample2.o -MD -MP -MF $(DEPDIR)/zCPPExample2-zCPPExample2.Tpo -c -o zCPPExample2-zCPPExample2.o `test -f 'zCPPExample2.cpp' || echo '$(srcdir)/'`zCPPExample2.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/zCPPExample2-zCPPExample2.Tpo $(DEPDIR)/zCPPExample2-zCPPExample2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='zCPPExample2.cpp' object='zCPPExample2-zCPPExample2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample2_CXXFLAGS) $(CXXFLAGS) -c -o zCPPExample2-zCPPExample2.o `test -f 'zCPPExample2.cpp' || echo '$(srcdir)/'`zCPPExample2.cpp
+mpi_h.o: $(srcdir)/mpi_h.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mpi_h.o `test -f '$(srcdir)/mpi_h.f' || echo '$(srcdir)/'`$(srcdir)/mpi_h.f
 
-zCPPExample2-zCPPExample2.obj: zCPPExample2.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample2_CXXFLAGS) $(CXXFLAGS) -MT zCPPExample2-zCPPExample2.obj -MD -MP -MF $(DEPDIR)/zCPPExample2-zCPPExample2.Tpo -c -o zCPPExample2-zCPPExample2.obj `if test -f 'zCPPExample2.cpp'; then $(CYGPATH_W) 'zCPPExample2.cpp'; else $(CYGPATH_W) '$(srcdir)/zCPPExample2.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/zCPPExample2-zCPPExample2.Tpo $(DEPDIR)/zCPPExample2-zCPPExample2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='zCPPExample2.cpp' object='zCPPExample2-zCPPExample2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zCPPExample2_CXXFLAGS) $(CXXFLAGS) -c -o zCPPExample2-zCPPExample2.obj `if test -f 'zCPPExample2.cpp'; then $(CYGPATH_W) 'zCPPExample2.cpp'; else $(CYGPATH_W) '$(srcdir)/zCPPExample2.cpp'; fi`
+mpi_h.obj: $(srcdir)/mpi_h.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mpi_h.obj `if test -f '$(srcdir)/mpi_h.f'; then $(CYGPATH_W) '$(srcdir)/mpi_h.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mpi_h.f'; fi`
+
+farg_typical.o: $(srcdir)/farg_typical.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o farg_typical.o `test -f '$(srcdir)/farg_typical.f' || echo '$(srcdir)/'`$(srcdir)/farg_typical.f
+
+farg_typical.obj: $(srcdir)/farg_typical.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o farg_typical.obj `if test -f '$(srcdir)/farg_typical.f'; then $(CYGPATH_W) '$(srcdir)/farg_typical.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/farg_typical.f'; fi`
+
+mmio.o: $(srcdir)/mmio.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mmio.o `test -f '$(srcdir)/mmio.f' || echo '$(srcdir)/'`$(srcdir)/mmio.f
+
+mmio.obj: $(srcdir)/mmio.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mmio.obj `if test -f '$(srcdir)/mmio.f'; then $(CYGPATH_W) '$(srcdir)/mmio.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mmio.f'; fi`
+
+.f90.o:
+	$(FCCOMPILE) -c -o $@ $<
+
+.f90.obj:
+	$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+fdr_migrate.o: $(srcdir)/fdr_migrate.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_migrate.o `test -f '$(srcdir)/fdr_migrate.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_migrate.f90
+
+fdr_migrate.obj: $(srcdir)/fdr_migrate.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_migrate.obj `if test -f '$(srcdir)/fdr_migrate.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_migrate.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_migrate.f90'; fi`
+
+lampmpi.o: $(srcdir)/lampmpi.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lampmpi.o `test -f '$(srcdir)/lampmpi.f90' || echo '$(srcdir)/'`$(srcdir)/lampmpi.f90
+
+lampmpi.obj: $(srcdir)/lampmpi.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lampmpi.obj `if test -f '$(srcdir)/lampmpi.f90'; then $(CYGPATH_W) '$(srcdir)/lampmpi.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/lampmpi.f90'; fi`
+
+fdr_sort.o: $(srcdir)/fdr_sort.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_sort.o `test -f '$(srcdir)/fdr_sort.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_sort.f90
+
+fdr_sort.obj: $(srcdir)/fdr_sort.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_sort.obj `if test -f '$(srcdir)/fdr_sort.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_sort.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_sort.f90'; fi`
+
+fdr_main.o: $(srcdir)/fdr_main.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_main.o `test -f '$(srcdir)/fdr_main.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_main.f90
+
+fdr_main.obj: $(srcdir)/fdr_main.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_main.obj `if test -f '$(srcdir)/fdr_main.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_main.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_main.f90'; fi`
+
+fdr_loadbal.o: $(srcdir)/fdr_loadbal.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_loadbal.o `test -f '$(srcdir)/fdr_loadbal.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_loadbal.f90
+
+fdr_loadbal.obj: $(srcdir)/fdr_loadbal.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_loadbal.obj `if test -f '$(srcdir)/fdr_loadbal.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_loadbal.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_loadbal.f90'; fi`
+
+fdr_input.o: $(srcdir)/fdr_input.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_input.o `test -f '$(srcdir)/fdr_input.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_input.f90
+
+fdr_input.obj: $(srcdir)/fdr_input.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_input.obj `if test -f '$(srcdir)/fdr_input.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_input.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_input.f90'; fi`
+
+fdr_param_file.o: $(srcdir)/fdr_param_file.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_param_file.o `test -f '$(srcdir)/fdr_param_file.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_param_file.f90
+
+fdr_param_file.obj: $(srcdir)/fdr_param_file.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_param_file.obj `if test -f '$(srcdir)/fdr_param_file.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_param_file.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_param_file.f90'; fi`
+
+fdr_chaco_io.o: $(srcdir)/fdr_chaco_io.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_chaco_io.o `test -f '$(srcdir)/fdr_chaco_io.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_chaco_io.f90
+
+fdr_chaco_io.obj: $(srcdir)/fdr_chaco_io.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_chaco_io.obj `if test -f '$(srcdir)/fdr_chaco_io.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_chaco_io.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_chaco_io.f90'; fi`
+
+fdr_mm_io.o: $(srcdir)/fdr_mm_io.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_mm_io.o `test -f '$(srcdir)/fdr_mm_io.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_mm_io.f90
+
+fdr_mm_io.obj: $(srcdir)/fdr_mm_io.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_mm_io.obj `if test -f '$(srcdir)/fdr_mm_io.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_mm_io.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_mm_io.f90'; fi`
+
+fdr_const.o: $(srcdir)/fdr_const.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_const.o `test -f '$(srcdir)/fdr_const.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_const.f90
+
+fdr_const.obj: $(srcdir)/fdr_const.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_const.obj `if test -f '$(srcdir)/fdr_const.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_const.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_const.f90'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -423,7 +488,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) all-local
+all-am: Makefile $(PROGRAMS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -508,21 +573,19 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
-
-all-local:
 
 include $(top_builddir)/Makefile.export.zoltan
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

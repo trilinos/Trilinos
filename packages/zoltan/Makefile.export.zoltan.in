@@ -3,9 +3,12 @@
 
 ZOLTAN_INCLUDES = -I@abs_top_builddir@/src/include -I@abs_top_srcdir@/src/include $(SIMPI_INCDIR)
 
-@BUILD_FORTRAN90DRIVER_TRUE@ZFORLIBS = @FCLIBS@
+#@BUILD_FORTRAN90DRIVER_TRUE@ZFORLIBS = @FCLIBS@
 @USE_FORTRAN_TRUE@ZFLIBS = @FLIBS@
-@BUILD_FORTRAN90DRIVER_FALSE@ZFORLIBS = $(ZFLIBS)
+#The following line can be edited in the case that -lm is not available
+@USE_FORTRAN_FALSE@ZFLIBS = -lm
+#@BUILD_FORTRAN90DRIVER_FALSE@ZFORLIBS = $(ZFLIBS)
+ZFORLIBS = $(ZFLIBS)
 
 ZOLTAN_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lzoltan $(SIMPI_LIBS) @LIBS@ $(ZFORLIBS)
 
@@ -38,7 +41,8 @@ ZOLTAN_MPI_DIR = @MPI_DIR@
 ############################################################################
 
 # Fortran & standard math libs
-ZOLTAN_FCLIBS = @FCLIBS@
+#ZOLTAN_FCLIBS = @FCLIBS@
+ZOLTAN_FLIBS = $(ZFLIBS)
 
 # Extra libraries
 ZOLTAN_EXTRA_LIBS = @LIBS@

@@ -78,14 +78,17 @@ AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 AC_PREREQ(2.61)
 
-TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
-TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
+#This option is not currently available
+#TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
 AM_CONDITIONAL(BUILD_FORTRAN90DRIVER, [test "X$ac_cv_use_fortran90driver" != "Xno"])
 AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
 
-if test "X$ac_cv_use_fortran90driver" != "Xno"; then
-ac_cv_use_fortran90=yes
-fi
+#if test "X$ac_cv_use_fortran90driver" = "Xyes"; then
+#ac_cv_use_fortran90=yes
+#else
+ac_cv_use_fortran90=no
+#fi
 
 TAC_ARG_ENABLE_FEATURE_SUB(zoltan, cppdriver, [Enable Zoltan's C++ driver], ZOLTAN_CPPDRIVER, yes)
 AM_CONDITIONAL(HAVE_ZOLTAN_CPPDRIVER, [test "X$ac_cv_use_zoltan_cppdriver" != "Xno"])
@@ -132,7 +135,7 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 #fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
+#TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
@@ -287,7 +290,7 @@ dnl Replace `main' with a function in -lm:
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-AC_FC_LIBRARY_LDFLAGS
+#AC_FC_LIBRARY_LDFLAGS
 AC_F77_LIBRARY_LDFLAGS
 
 # ------------------------------------------------------------------------
