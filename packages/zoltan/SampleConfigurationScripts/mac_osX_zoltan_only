@@ -1,0 +1,20 @@
+#Script for building Zoltan only on a 64-bit Mac OS X with LAM mpi 
+#Assuming running this script from /Users/kddevin/code/zoltan_v3.1/OBJ_MAC64.
+
+setenv CFLAGS -m64
+setenv CXXFLAGS -m64
+../configure \
+  --prefix=/Users/kddevin/code/zoltan_v3.1/OBJ_MAC64 \
+  --enable-mpi --with-mpi-compilers \
+  --enable-zoltan \
+  --with-gnumake \
+  --with-parmetis \
+  --with-parmetis-incdir="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+  --with-parmetis-libdir="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+  --with-patoh \
+  --with-patoh-incdir="/Users/kddevin/code/lib-m64/PaToH/dist" \
+  --with-patoh-libdir="/Users/kddevin/code/lib-m64/PaToH/dist" \
+ |& tee OUTPUT.C
+make everything |& tee OUTPUT.M
+make install |& tee OUTPUT.I
+
