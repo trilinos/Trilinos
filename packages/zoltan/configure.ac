@@ -111,7 +111,7 @@ TAC_ARG_CONFIG_MPI
 #	  cases.
 
 AC_ARG_ENABLE(mpi-recv-limit,
- AS_HELP_STRING([--enable-mpi-recv-limit],[Set to the limit on the number of simultaneous MPI posted receives, if any]),
+ AS_HELP_STRING([--enable-mpi-recv-limit],[Set to the limit on the number of simultaneous MPI posted receives, if any; default is --enable-mpi-recv-limit=2000]),
  [ AC_MSG_NOTICE(Building Zoltan to observe a limit of $enable_mpi_recv_limit simultaneously posted MPI receives)
    AC_SUBST(MPI_RECV_LIMIT_FLAG, "-DMPI_RECV_LIMIT=$enable_mpi_recv_limit")
  ]
