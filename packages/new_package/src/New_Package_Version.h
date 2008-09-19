@@ -32,7 +32,7 @@
 #include "New_Package_ConfigDefs.h"
 
 string New_Package_Version() { 
-  return("New_Package Version 1.5d - 09/06/2007"); 
+  return("New_Package Version 1.5 - 09/19/2008"); 
 }
 
 #endif /* NEW_PACKAGE_VERSION_H */
