@@ -667,6 +667,7 @@ MPI_CXX_EXISTS
 MPI_CC_EXISTS
 MPI_F77_EXISTS
 MPI_F90_EXISTS
+MPI_RECV_LIMIT_FLAG
 CC
 CFLAGS
 LDFLAGS
@@ -1329,6 +1330,8 @@ Optional Features:
   --enable-zoltan-cppdriver
                           Enable Zoltan's C++ driver (default is yes)
   --enable-mpi            MPI support
+  Set to the limit on the number of simultaneous MPI posted receives
+
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-export-makefiles
@@ -3179,6 +3182,18 @@ fi
 #	  the Fortran compiler check or the check for Fortran flags.  Doing
 #	  so will prevent the detection of the proper name mangling in some
 #	  cases.
+
+# Check whether --enable-mpi-recv-limit was given.
+if test "${enable_mpi_recv_limit+set}" = set; then
+  enableval=$enable_mpi_recv_limit;  { echo "$as_me:$LINENO: Building Zoltan to observe a limit of $enable_mpi_recv_limit simultaneously posted MPI receives" >&5
+echo "$as_me: Building Zoltan to observe a limit of $enable_mpi_recv_limit simultaneously posted MPI receives" >&6;}
+   MPI_RECV_LIMIT_FLAG="-DMPI_RECV_LIMIT=$enable_mpi_recv_limit"
+
+
+
+fi
+
+
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
@@ -7625,6 +7640,7 @@ MPI_CXX_EXISTS!$MPI_CXX_EXISTS$ac_delim
 MPI_CC_EXISTS!$MPI_CC_EXISTS$ac_delim
 MPI_F77_EXISTS!$MPI_F77_EXISTS$ac_delim
 MPI_F90_EXISTS!$MPI_F90_EXISTS$ac_delim
+MPI_RECV_LIMIT_FLAG!$MPI_RECV_LIMIT_FLAG$ac_delim
 CC!$CC$ac_delim
 CFLAGS!$CFLAGS$ac_delim
 LDFLAGS!$LDFLAGS$ac_delim
@@ -7633,7 +7649,6 @@ ac_ct_CC!$ac_ct_CC$ac_delim
 EXEEXT!$EXEEXT$ac_delim
 OBJEXT!$OBJEXT$ac_delim
 DEPDIR!$DEPDIR$ac_delim
-am__include!$am__include$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7675,6 +7690,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+am__include!$am__include$ac_delim
 am__quote!$am__quote$ac_delim
 AMDEP_TRUE!$AMDEP_TRUE$ac_delim
 AMDEP_FALSE!$AMDEP_FALSE$ac_delim
@@ -7727,7 +7743,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 51; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

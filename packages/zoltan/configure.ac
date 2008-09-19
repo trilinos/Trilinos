@@ -109,6 +109,14 @@ TAC_ARG_CONFIG_MPI
 #	  the Fortran compiler check or the check for Fortran flags.  Doing
 #	  so will prevent the detection of the proper name mangling in some
 #	  cases.
+
+AC_ARG_ENABLE(mpi-recv-limit,
+ AS_HELP_STRING([Set to the limit on the number of simultaneous MPI posted receives, if any]),
+ [ AC_MSG_NOTICE(Building Zoltan to observe a limit of $enable_mpi_recv_limit simultaneously posted MPI receives)
+   AC_SUBST(MPI_RECV_LIMIT_FLAG, "-DMPI_RECV_LIMIT=$enable_mpi_recv_limit")
+ ]
+ )
+
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------

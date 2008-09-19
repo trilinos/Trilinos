@@ -430,7 +430,7 @@ else
 EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
 
 # ------------------------------------------------------------------------
 # For using a special archiver
