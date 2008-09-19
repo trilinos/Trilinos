@@ -168,19 +168,32 @@ with the following command issued in the top-level zoltan directory:
 <blockquote>
 ./configure --help
 </blockquote>
+<b>IMPORTANT!</b>  To comply with Trilinos practices, the default 
+autotools configuration
+produces a <b>serial</b> build of Zoltan -- that is, a version of Zoltan that
+runs on only one processor.  
+In most cases, Zoltan users prefer a <b>parallel</b> build that runs on 
+multiple processors; users must link with MPI and may choose to compile 
+with the MPI compilers. To enable the parallel build, users must use the 
+<i>--enable-mpi</i> option; they can also require that MPI compilers
+(e.g., mpicc, mpic++) be used by specifying the 
+<i>--with-mpi-compiler</i> option.  
 <p>
 The following script is an example of configuration and build commands
 using Autotools.  It specifies that Zoltan should be built with both
-the <a href="ug_alg_parmetis.html">ParMETIS</a> and <a href="ug_alg_ptscotch.html">PT-Scotch</a> interfaces.  Paths to both ParMETIS and PT-Scotch are given.
-In most cases, users need to link with MPI and compile with the
-MPI compilers; these choices are specified with the options
-<i>--enable-mpi --with-mpi-compiler</i>.
-In this example, Zoltan's include files will be installed in
-/Net/local/homes/kddevin/code/zoltan_v3.1/OBJ_OCTOPI/include; the libraries
-will be installed in /Net/local/homes/kddevin/code/zoltan_v3.1/OBJ_OCTOPI/lib.
+the <a href="ug_alg_parmetis.html">ParMETIS</a> and 
+<a href="ug_alg_ptscotch.html">PT-Scotch</a> interfaces.  
+Paths to both ParMETIS and PT-Scotch are given.
+The prefix option states where Zoltan should be installed;
+in this example, Zoltan's include files will be installed in
+/homes/username/zoltan_v3.1/OBJ_LINUX/include, and the libraries
+will be installed in /homes/username/zoltan_v3.1/OBJ_LINUX/lib.
+This examples assumes the script is run from 
+/homes/username/zoltan_v3.1/OBJ_LINUX.
 <blockquote>
+#<br>
 ../configure \<br>
-  --prefix=/Net/local/homes/kddevin/code/zoltan_v3.1/OBJ_OCTOPI \<br>
+  --prefix=/homes/username/zoltan_v3.1/OBJ_LINUX \<br>
   --enable-mpi --with-mpi-compilers \<br>
   --enable-zoltan \<br>
   --with-gnumake \<br>
