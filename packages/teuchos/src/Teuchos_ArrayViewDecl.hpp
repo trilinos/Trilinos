@@ -328,7 +328,6 @@ private:
 	T *ptr_;
   int size_;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  RCPNode *node_;
   ArrayRCP<T> arcp_;
 #endif
 

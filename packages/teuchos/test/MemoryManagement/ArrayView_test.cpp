@@ -189,6 +189,15 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
   }
 
   {
+    out << "\nTest shallow implicit conversion from ArrayView<const T> to ArrayView<const T> twice ...\n";
+    ArrayView<const T> cav2(cav);
+    ArrayView<const T> cav3(cav2);
+    TEST_COMPARE_ARRAYS( cav3, cav );
+    // 2008/09/18: rabartl: Above, this test reproduces an error reported in
+    // bug 4190.
+  }
+
+  {
     out << "\nTest shallow implicit conversion from ArrayView<const T> to ArrayView<T> ...\n";
     ArrayView<const T> cav2(av);
     TEST_COMPARE_ARRAYS( cav2, av );

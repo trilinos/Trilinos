@@ -44,9 +44,6 @@ namespace Teuchos {
 template<class T> inline
 ArrayView<T>::ArrayView( ENull /*null_arg*/ )
   :ptr_(0), size_(0)
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  ,node_(0)
-#endif
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   setUpIterators();
@@ -57,9 +54,6 @@ ArrayView<T>::ArrayView( ENull /*null_arg*/ )
 template<class T> inline
 ArrayView<T>::ArrayView( T* p, Ordinal size_in )
   :ptr_(p), size_(size_in)
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  ,node_(0)
-#endif
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
@@ -75,11 +69,7 @@ ArrayView<T>::ArrayView(const ArrayView<T>& array)
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   ,arcp_(array.arcp_) // It is okay to share the same iterator implementation!
 #endif
-{
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEST_FOR_EXCEPT(array.node_); // Error can't handle this yetQ
-#endif
-}
+{}
 
 
 template<class T> inline
@@ -87,9 +77,6 @@ ArrayView<T>::ArrayView(
   std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
   : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  ,node_(0)
-#endif
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   setUpIterators();
@@ -102,9 +89,6 @@ ArrayView<T>::ArrayView(
   const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
   : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  ,node_(0)
-#endif
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   setUpIterators();
@@ -114,9 +98,7 @@ ArrayView<T>::ArrayView(
 
 template<class T> inline
 ArrayView<T>::~ArrayView()
-{
-  // ToDo: Consider deletion of node_!
-}
+{}
 
 
 // General query functions 
@@ -255,7 +237,6 @@ ArrayView<T>& ArrayView<T>::operator=(const ArrayView<T>& array)
   ptr_ = array.ptr_;
   size_ = array.size_;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  node_ = array.node_;
   arcp_ = array.arcp_;
 #endif
   return *this;
