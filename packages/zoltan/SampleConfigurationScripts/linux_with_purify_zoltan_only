@@ -1,7 +1,7 @@
 # Script for building Zoltan with purify on linux workstation octopi 
 # with openmpi.
 # Assuming running this script from 
-# /Net/local/homes/code/trilinos_v9.0/Obj_linux64.
+# /Net/local/homes/kddevin/code/trilinos_v9.0/Obj_linux64.
 # PLEASE CHANGE THE PREFIX TO POINT TO YOUR OWN DIRECTORY!  THANKS!
 # This is a 64-bit installation.
 
