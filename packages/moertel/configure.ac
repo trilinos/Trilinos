@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(moertel, 1.2d, mwgee@software.sandia.gov)
+AC_INIT(moertel, 1.2, mwgee@software.sandia.gov)
 
 # Hello World!
 #  #auto np# - package name below
