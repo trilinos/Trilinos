@@ -145,10 +145,7 @@ TRILINOS_ADD_EXECUTABLE(
   DIRECTORY MemoryManagement
   COMM serial mpi  
   SOURCES
-    RCPNodeHandle_UnitTests.cpp
-    Array_UnitTest_helpers.cpp
     Array_UnitTests.cpp
-    ArrayView_UnitTests.cpp
     ../UnitTest/Teuchos_StandardUnitTestMain.cpp
   )
 TRILINOS_ADD_TEST(
