@@ -106,10 +106,8 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
  * limit of posted receives to 2000, leaving some for the application.
  */
 
-#ifdef ZOLTAN_MPI_RECV_LIMIT
-#define MAX_MPI_RECVS ZOLTAN_MPI_RECV_LIMIT
-#else
-#define MAX_MPI_RECVS 2000
+#ifndef MPI_RECV_LIMIT
+#define MPI_RECV_LIMIT 2000
 #endif
 
 

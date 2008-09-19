@@ -290,13 +290,13 @@ Mem_Err:
     plan->maxed_recvs = 0;
     plan->comm = comm;
 
-    if (MAX_MPI_RECVS > 0){
+    if (MPI_RECV_LIMIT > 0){
       /* If we have a limit to the number of posted receives we are allowed,
       ** and our plan has exceeded that, then switch to an MPI_Alltoallv so
       ** that we will have fewer receives posted when we do the communication.
       */
       MPI_Allreduce(&nrecvs, &i, 1, MPI_INT, MPI_MAX, comm);
-      if (i > MAX_MPI_RECVS){
+      if (i > MPI_RECV_LIMIT){
         plan->maxed_recvs = 1;
       }
     }
