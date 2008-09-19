@@ -1330,8 +1330,8 @@ Optional Features:
   --enable-zoltan-cppdriver
                           Enable Zoltan's C++ driver (default is yes)
   --enable-mpi            MPI support
-  Set to the limit on the number of simultaneous MPI posted receives
-
+  --enable-mpi-recv-limit Set to the limit on the number of simultaneous MPI
+                          posted receives, if any
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-export-makefiles
