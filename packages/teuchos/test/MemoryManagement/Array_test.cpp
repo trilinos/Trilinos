@@ -281,6 +281,15 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     else success = false;
   }
 
+  {
+    out << "\nTest Array<ArrayView<T> > and iterators ... ";
+    Array<ArrayView<T> > aav(n);
+    aav.begin();
+    // 2008/09/19: rabartl: Above, this causes a compilation error due to
+    // using DeallocDelete<> when instead DeallocArrayDelete<> should be used
+    // instead (see bug 4194).
+  }
+
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
   {
