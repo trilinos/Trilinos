@@ -1,84 +1,90 @@
-=============================================
- PyTrilinos 4.0 (Trilinos 8.0) Release Notes
-=============================================
+Release Notes for PyTrilinos 4.1 (Trilinos 9.0)
+===============================================
 
-* PyTrilinos is now a single, self-contained package again.  For the
-  most part, this affects developers more than users, with one
-  exception.  The PyTrilinos package is enabled with the configuration
-  option
+General notes for PyTrilinos:
 
-    --enable-pytrilinos
+  * Added auto-generated documentation.
 
-  rather than the previous option, --enable-python, which had the
-  effect of enabling python support within each package that provided
-  wrappers.  Individual PyTrilinos package wrappers can be enabled or
-  disabled with
+  * Standardized and upgraded PyTrilinos module docstrings.
 
-    --enable-pytrilinos-package
-    --disable-pytrilinos-package
+  * Improved exception handling.
 
-  where "package" refers to a specific Trilinos package.
+  * Fixed problem with patch for numpy 0.9.8 bug; moved fix for python
+    2.5 compatibility into file where it is directly needed.
 
-* Under Linux and Mac OS X, PyTrilinos creates shared versions of
-  Trilinos libraries and links against them rather than the static
-  versions (previously, this was the case for MPI builds only, but now
-  is universal).  This solves many dynamic casting errors by
-  preventing multiple copies of the same static library being linked
-  to the PyTrilinos extension modules.  This is not yet supported on
-  any other operating systems.
+  * Fixed problem some PyTrilinos modules had interpreting elements of
+    numpy arrays as integers.
 
-* Shared libraries (for all enabled Trilinos packages, not just those
-  with python wrappers) can be built on Linux and Mac OS X without
-  enabling PyTrilinos.  Use the configuration option
+  * Added logic to python extension module builds so that compile
+    flags -ansi and -pedantic will be ignored.
 
-    --enable-shared
+  * Fixed some incompatibilities between the generated code from swig
+    version 1.3.35 and earlier versions.
 
-  Note that the build system for building shared libraries employs
-  python, so this must be installed.  However, the other PyTrilinos
-  prerequisites -- swig and numpy -- are not required for building
-  shared libraries.  The resulting shared libraries are stored in your
-  build directory in the sub-directory
+  * Better error checking when a python argument is converted to an
+    array of char* strings.
 
-    packages/PyTrilinos/shared
+  * Eliminated certain runtime type information errors by moving to
+    shared laibraries, thus ensuring that no symbols get duplicated.
 
-  and are installed in the same directory in which the static
-  libraries are installed.  Note that these shared libraries are
-  considered EXPERIMENTAL.  Only those shared libraries that are
-  linked to PyTrilinos extension modules get tested.  The other shared
-  libraries might possibly have unresolved symbols.  Please report any
-  problems.
+  * Added C89 compliance.
 
-* The Teuchos::RCP<> reference-counting pointer templated class that
-  provides memory management for many Trilinos packages, is now
-  supported within PyTrilinos.  Note that since all python objects are
-  automatically reference-counted, a design decision was made that
-  Teuchos::RCP<> shall be "invisible" to the python user.  In other
-  words, when a method argument requests a Teuchos::RCP<> of an
-  object, the python interface merely requires the object.
+  * Changed PyTrilinos/__init__.py to alter the python dlopen flags so
+    that symbols are shared across all of the PyTrilinos extension
+    modules.  This fixed many bugs associated with symbols crossing
+    shared library boundaries.
 
-* The PyTrilinos interface to the nonlinear solver package NOX has
-  been re-enabled.
+  * Added fixes for installation on Fedora Core.
 
-* The Anasazi eigensolver package now has a PyTrilinos interface.
+PyTrilinos.Teuchos notes:
 
-* If ML is enabled (which is the default) and PyTrilinos is enabled
-  (which is not), then Amesos must also be enabled (which is not the
-  default) or the compilation will fail.  This is a known bug.
+  * Added support for Teuchos::Comm, Teuchos::SerialComm,
+    Teuchos::MpiComm and Teuchos::DefaultComm, including tests.
 
-* It may be necessary to manually add position-independent code
-  options to the compiler flag variables.  This is not necessary on
-  Mac OS X or some flavors of Linux, because position-independent code
-  is the default.  However, on those Linux versions for which this is
-  not the default, and on 64-bit sytems, you will need to add these
-  compiler options.  For example, if the proper option for your
-  compiler for position-independent code is "-fPIC", then your
-  configuration invocation should include
+PyTrilinos.Epetra notes:
 
-    FFLAGS=-fPIC CFLAGS=-fPIC CXXFLAGS=-fPIC
+  * Added support for the Epetra.Comm Broadcast method with string
+    data, including additions to testEpetra_Comm.py to test the
+    capability.  Since these are in-place, users must use numpy arrays
+    of strings.
 
-  There is a standing feature request that this be done automatically,
-  but it has not been implemented yet.
+  * Some PyTrilinos.Epetra MPI reduction operations were returning
+    garbage.  This was fixed by clearing out those arrays prior to the
+    call.
 
-* Because of bug fixes and feature enhancements, the latest version of
-  swig at the time of this release, 1.3.31, is required to build
-  PyTrilinos.
+  * Epetra.Finalize() (called automatically when the Epetra module is
+    destroyed) now checks MPI_Finalized() before calling
+    MPI_Finalize().  This should help it play nice with Teuchos MPI
+    support.
+
+  * Upgraded Epetra.FEVector to reflect its new multivector nature.
+
+  * Fixed Epetra.Vector and Epetra.MultiVector objects so that slices
+    return new Epetra.[Multi]Vector objects with accurate Maps.
+
+PyTrilinos.AztecOO notes:
+
+  * Improved the AztecOO wrappers for better compatibility with older
+    versions of numpy.
+
+  * Fixed exAztecOO_Operator.py, exAztecOO_RowMatrix.py and
+    exAztecOO_BasicRowMatrix.py example scripts so that they work in
+    parallel.
+
+PyTrilinos.ML notes:
+
+  * Updated PyTrilinos.ML to be more robust.
+
+PyTrilinos.NOX notes:
+
+  * Fixed NOX.Solver.myBuildSolver to properly use new Teuchos::Ptr
+    templated class.
+
+PyTrilinos.Anasazi notes:
+
+  * Added MPI support to Anasazi wrappers.
+
+  * Updated PyTrilinos w.r.t. changes in Anasazi::SortManager interface.
+
+  * Added support to Anasazi wrappers for extracting eigenvalues and
+    eigenvectors.
