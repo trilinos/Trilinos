@@ -276,7 +276,7 @@ execincludedir = $(exec_prefix)/include
 #nodist_execinclude_HEADERS = Zoltan_config.h
 
 #SUBDIRS = 
-
+EXTRA_DIST = makefile
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------

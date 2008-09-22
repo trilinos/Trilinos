@@ -212,6 +212,7 @@ ex1_SOURCES = ex1.c queries1.c matrix.h
 ex1_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
 ex1_CFLAGS = $(ZOLTAN_EX_INCLUDES)
 ex1_LDADD = $(ZOLTAN_EX_LIBS)
+EXTRA_DIST = makefile
 all: all-am
 
 .SUFFIXES:

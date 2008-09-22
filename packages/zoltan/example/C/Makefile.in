@@ -281,6 +281,7 @@ phgExample_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
 phgExample_CFLAGS = $(ZOLTAN_EX_INCLUDES)
 phgExample_LDADD = $(ZOLTAN_EX_LIBS)
 SUBDIRS = sparse_matrix
+EXTRA_DIST = makefile
 all: all-recursive
 
 .SUFFIXES:

@@ -17,3 +17,4 @@ endif
 
 SUBDIRS = lib C $(CPP_EXAMPLES)
 
+EXTRA_DIST = makefile

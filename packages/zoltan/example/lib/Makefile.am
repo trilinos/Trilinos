@@ -84,6 +84,7 @@ execincludedir = $(exec_prefix)/include
 
 #SUBDIRS = 
 
+EXTRA_DIST = makefile
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------

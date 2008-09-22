@@ -38,3 +38,4 @@ simpleRCB_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
 simpleRCB_CXXFLAGS     = $(ZOLTAN_EX_INCLUDES)
 simpleRCB_LDADD        = $(ZOLTAN_EX_LIBS)
 
+EXTRA_DIST = makefile
