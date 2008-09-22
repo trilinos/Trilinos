@@ -326,7 +326,7 @@ namespace Anasazi {
     */    
     static void Apply ( const Tpetra::Operator<int,Scalar>& Op, const Tpetra::MultiVector<int,Scalar>& x, Tpetra::MultiVector<int,Scalar>& y )
     { 
-      Op.apply(Teuchos::ScalarTraits<Scalar>::one(),x,Teuchos::ScalarTraits<Scalar>::zero(),y);
+      Op.apply(x,y);
     }
     
   };

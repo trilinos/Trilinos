@@ -47,9 +47,9 @@ namespace Tpetra {
 	*/
 	
 	enum CombineMode {
-		Add,    /*!< Existing values will be summed with new values. */
-		Insert, /*!< Insert new values that don't currently exist. */
-		Replace /*!< Existing values will be replaced with new values. */
+		ADD,    /*!< Existing values will be summed with new values. */
+		INSERT, /*!< Insert new values that don't currently exist. */
+		REPLACE /*!< Existing values will be replaced with new values. */
 	};
 
 } // namespace Tpetra

@@ -31,7 +31,7 @@
 all-local:
 
 #if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport Vector MultiVector # CisMatrix DistObject BasicPerfTest
+STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector # BasicPerfTest 
 #endif
 
 SUBDIRS = $(STANDARD_SUBDIRS)

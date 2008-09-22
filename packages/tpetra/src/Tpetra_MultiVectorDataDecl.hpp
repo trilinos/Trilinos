@@ -41,15 +41,16 @@ namespace Tpetra {
 
   public:
     MultiVectorData();
-
     ~MultiVectorData();
 
   protected:
+    void updateConstPointers();
     Teuchos::ArrayRCP<Scalar> values_;
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > pointers_;
+    Teuchos::Array<Teuchos::ArrayView<Scalar> > ptrs_;
+    Teuchos::Array<Teuchos::ArrayView<const Scalar> > cPtrs_;
     bool constantStride_;
     Ordinal stride_;
-
+    
   private:
     //! Copy constructor (declared but not defined, do not use)
     MultiVectorData(const MultiVectorData<Ordinal,Scalar> &source);

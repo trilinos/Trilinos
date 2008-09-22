@@ -30,12 +30,14 @@
 #define TPETRA_DISTOBJECT_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_RCP.hpp>
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
+#include "Tpetra_Distributor.hpp"
+
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
@@ -59,18 +61,10 @@ namespace Tpetra {
     functions produce small dense matrices that are required by all images.  
     Replicated local objects handle these types of situation.
     </ul>
-
-    DistObject error codes (positive for non-fatal, negative for fatal):
-    <ol>
-    <li> -1  importer's target Map does not match my Map
-    <li> -2  importer's source Map does not match source's Map
-    <li> -99 Internal DistObject error. Contact developer.
-    </ol>
-    
   */
 
   template<typename Ordinal, typename Scalar>
-  class DistObject: public Teuchos::Object {
+  class DistObject : public Teuchos::Object {
 
   public:
 
@@ -78,11 +72,11 @@ namespace Tpetra {
     //@{ 
 
     //! constructor
-    DistObject(const Map<Ordinal>& map, Teuchos::RCP< Teuchos::Comm<Ordinal> > comm);
+    DistObject(const Map<Ordinal>& map, Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm);
 
     //! constructor, taking label
     DistObject(const Map<Ordinal>& map, 
-           Teuchos::RCP< Teuchos::Comm<Ordinal> > comm,
+           Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm,
            const std::string & Label);
 
     //! copy constructor
@@ -98,27 +92,19 @@ namespace Tpetra {
 
     //! Import
     void doImport(const DistObject<Ordinal, Scalar> & source, 
-           const Import<Ordinal> & importer, CombineMode CM);
+                  const Import<Ordinal> & importer, CombineMode CM);
 
     //! Export
     void doExport(const DistObject<Ordinal, Scalar> & source, 
-           const Export<Ordinal> & exporter, CombineMode CM);
+                  const Export<Ordinal> & exporter, CombineMode CM);
 
     //! Import (using an Exporter)
     void doImport(const DistObject<Ordinal, Scalar> & source,
-           const Export<Ordinal> & exporter, CombineMode CM);
-    
+                  const Export<Ordinal> & exporter, CombineMode CM);
+
     //! Export (using an Importer)
     void doExport(const DistObject<Ordinal, Scalar> & source,
-           const Import<Ordinal> & importer, CombineMode CM);
-    
-    //@}
-
-    //! @name I/O methods
-    //@{ 
-
-    //! print method
-    virtual void print(std::ostream& os) const;
+                  const Import<Ordinal> & importer, CombineMode CM);
 
     //@}
 
@@ -126,36 +112,40 @@ namespace Tpetra {
     //@{ 
 
     //! Accessor for whether or not this is a global object
-    bool isDistributed() const;
+    inline bool isDistributed() const;
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Map<Ordinal> & getMap() const;
+    inline const Map<Ordinal> & getMap() const;
 
     //@}
+
+    //! @name I/O methods
+    //@{ 
+
+    //! Print method.
+
+    void print(std::ostream &os) const;
+
+    //@} 
 
   protected:
 
     //! Perform transfer (redistribution) of data across memory images.
-    virtual void doTransfer(const DistObject<Ordinal, Scalar> & source,
-                 CombineMode CM,
-                 Ordinal numSameIDs,
-                 Ordinal numPermuteIDs,
-                 Ordinal numRemoteIDs,
-                 Ordinal numExportIDs,
-                 const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
-                 const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs,
-                 const Teuchos::ArrayView<const Ordinal> &remoteLIDs,
-                 const Teuchos::ArrayView<const Ordinal> &exportLIDs,
-                 const Teuchos::ArrayView<Scalar> &exports,
-                 const Teuchos::ArrayView<Scalar> &imports,
-                 Distributor<Ordinal> &distor,
-                 bool doReverse);
+    virtual void doTransfer(const DistObject<Ordinal,Scalar> &source,
+                            CombineMode CM,
+                            Ordinal numSameIDs,
+                            const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+                            const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs,
+                            const Teuchos::ArrayView<const Ordinal> &remoteLIDs,
+                            const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+                            Distributor<Ordinal> &distor,
+                            bool doReverse);
 
     // The following four methods must be implemented by the derived class
 
     //! Allows the source and target (\e this) objects to be compared for compatibility.
-    /*! Return true if they are compatible, return false if they aren't. */ 
-    virtual bool checkSizes(const DistObject<Ordinal, Scalar> & source) = 0;
+    /*! Return true if they are compatible, return false if they aren't. Also return the number of Scalar variables representing an entry. */ 
+    virtual bool checkSizes(const DistObject<Ordinal, Scalar> & source, Ordinal &packetSize) = 0;
 
     //! Perform copies and permutations that are local to this image.
     /*!
@@ -175,85 +165,68 @@ namespace Tpetra {
          source DistObject.)
     */
     virtual void copyAndPermute(const DistObject<Ordinal, Scalar> & source,
-                   Ordinal numSameIDs,
-                   Ordinal numPermuteIDs,
-                   const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
-                   const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs) = 0;
+                                      Ordinal numSameIDs,
+                                const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+                                const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs) = 0;
 
     //! Perform any packing or preparation required for communication.
     /*!
       \param source In
              On entry, the DistObject that we are importing from.
-      \param numExportIDs In
-             On entry, the number of elements we will be sending to other images.
       \param exportLIDs In
-             On entry, a list of the elements we will be sending to other images.
-         (Listed by their LID in the source DistObject.)
+             On entry, a list of the entries we will be sending to other images.
+             (Listed by their LID in the source DistObject.)
       \param exports Out
              On exit, buffer for data we will be sending out.
-      \param packetSize Out
-             On exit, will contain the number of Scalar variables used to pack
-         a single element.
       \param distor In
              On entry, contains the Distributor object we are using.         
     */
     virtual void packAndPrepare(const DistObject<Ordinal,Scalar> & source,
-                   Ordinal numExportIDs,
-                   const Teuchos::ArrayView<const Ordinal> &exportLIDs,
-                   const Teuchos::ArrayView<Scalar> &exports,
-                   Ordinal &packetSize,
-                   Distributor<Ordinal> &distor) = 0;
+                                const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+                                const Teuchos::ArrayView<Scalar> &exports,
+                                Distributor<Ordinal> &distor) = 0;
 
     //! Perform any unpacking and combining after communication.
     /*!
-      \param numImportIDs In
-             The number of elements we received from other images.
       \param importLIDs In
-             On entry, a list of the elements we received from other images.
-         (Listed by their LID in the target DistObject.)
+             On entry, a list of the entries we received from other images.
+             (Listed by their LID in the target DistObject.)
       \param imports In
-             Buffer for data we received.
+             Buffer containing data we received.
       \param distor In
              The Distributor object we are using.
       \param CM In
-             The Tpetra::CombineMode to use when combining the imported
-         entries with existing entries.
+             The Tpetra::CombineMode to use when combining the imported entries with existing entries.
     */
-    virtual void unpackAndCombine(Ordinal numImportIDs,
-                   const Teuchos::ArrayView<const Ordinal> &importLIDs,
-                   const Teuchos::ArrayView<const Scalar> &imports,
-                   Distributor<Ordinal> &distor,
-                   CombineMode CM) = 0;
+    virtual void unpackAndCombine(const Teuchos::ArrayView<const Ordinal> &importLIDs,
+                                  const Teuchos::ArrayView<const Scalar> &imports,
+                                  Distributor<Ordinal> &distor,
+                                  CombineMode CM) = 0;
 
   private:
 
     const Map<Ordinal> map_;
-    Teuchos::RCP< Teuchos::Comm<Ordinal> > Comm_;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm_;
+    // buffers into which packed data is imported
     Teuchos::Array<Scalar> imports_;
+    // buffers from which packed data is exported
     Teuchos::Array<Scalar> exports_;
-    Teuchos::Array<Ordinal> sizes_;
 
   }; // class DistObject
 
   template <typename Ordinal, typename Scalar>
-  DistObject<Ordinal,Scalar>::DistObject(const Map<Ordinal>& map, Teuchos::RCP< Teuchos::Comm<Ordinal> > comm)
+  DistObject<Ordinal,Scalar>::DistObject(const Map<Ordinal>& map, Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm)
   : Teuchos::Object("Tpetra::DistObject")
   , map_(map)
   , Comm_(comm)
-  , imports_()
-  , exports_()
-  , sizes_()
   {}
 
   template <typename Ordinal, typename Scalar>
   DistObject<Ordinal,Scalar>::DistObject(const Map<Ordinal>& map, 
-      Teuchos::RCP< Teuchos::Comm<Ordinal> > comm, const std::string & Label)
+      Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm, const std::string & Label)
   : Teuchos::Object(Label.c_str())
   , map_(map)
   , Comm_(comm)
-  , imports_()
-  , exports_()
-  , sizes_()
   {}
 
   template <typename Ordinal, typename Scalar>
@@ -261,9 +234,6 @@ namespace Tpetra {
   : Teuchos::Object(source.label())
   , map_(source.map_)
   , Comm_(source.Comm_)
-  , imports_(source.imports_)
-  , exports_(source.exports_)
-  , sizes_(source.sizes_)
   {}
 
   template <typename Ordinal, typename Scalar>
@@ -271,111 +241,63 @@ namespace Tpetra {
   {}
 
   template <typename Ordinal, typename Scalar>
-  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal, Scalar> & source, 
-                                           const Import<Ordinal> & importer, CombineMode CM) 
+  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source, 
+                                            const Import<Ordinal> & importer, CombineMode CM) 
   {
-    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error,
-        "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error,
-        "Source Maps don't match.");
-
-    // copy variables from importer
+    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = importer.getNumSameIDs();
-    Ordinal numPermuteIDs = importer.getNumPermuteIDs();
-    Ordinal numRemoteIDs = importer.getNumRemoteIDs();
-    Ordinal numExportIDs = importer.getNumExportIDs();
-    Teuchos::ArrayView<const Ordinal> exportLIDs = importer.getExportLIDs();
-    Teuchos::ArrayView<const Ordinal> remoteLIDs = importer.getRemoteLIDs();
-    Teuchos::ArrayView<const Ordinal> permuteToLIDs = importer.getPermuteToLIDs();
-    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteFromLIDs();
-
-    // call doTransfer
-    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-        permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-        exports_, imports_, importer.getDistributor(), false);
+    const Teuchos::ArrayView<const Ordinal> exportLIDs      = importer.getExportLIDs();
+    const Teuchos::ArrayView<const Ordinal> remoteLIDs      = importer.getRemoteLIDs();
+    const Teuchos::ArrayView<const Ordinal> permuteToLIDs   = importer.getPermuteToLIDs();
+    const Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteFromLIDs();
+    this->doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+                     importer.getDistributor(), false);
   }
 
   template <typename Ordinal, typename Scalar>
   void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & source, 
-                                           const Export<Ordinal> & exporter, CombineMode CM) 
+                                            const Export<Ordinal> & exporter, CombineMode CM) 
   {
-    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error,
-        "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error,
-        "Source Maps don't match.");
-
-    // copy variables from exporter
+    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = exporter.getNumSameIDs();
-    Ordinal numPermuteIDs = exporter.getNumPermuteIDs();
-    Ordinal numRemoteIDs = exporter.getNumRemoteIDs();
-    Ordinal numExportIDs = exporter.getNumExportIDs();
-    Teuchos::ArrayView<const Ordinal> exportLIDs = exporter.getExportLIDs();
-    Teuchos::ArrayView<const Ordinal> remoteLIDs = exporter.getRemoteLIDs();
-    Teuchos::ArrayView<const Ordinal> permuteToLIDs = exporter.getPermuteToLIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs      = exporter.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs      = exporter.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs   = exporter.getPermuteToLIDs();
     Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteFromLIDs();
-
-    // call doTransfer
-    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-        permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-        exports_, imports_, exporter.getDistributor(), false);
+    doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+               exporter.getDistributor(), false);
   }
 
   template <typename Ordinal, typename Scalar>
   void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source,
-                                           const Export<Ordinal> & exporter, CombineMode CM)
+                                            const Export<Ordinal> & exporter, CombineMode CM)
   {
-    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error,
-        "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error,
-        "Source Maps don't match.");
-
-    // copy variables from exporter
-    // note that some of them are swapped
+    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = exporter.getNumSameIDs();
-    Ordinal numPermuteIDs = exporter.getNumPermuteIDs();
-    Ordinal numRemoteIDs = exporter.getNumExportIDs();
-    Ordinal numExportIDs = exporter.getNumRemoteIDs();
-    Teuchos::ArrayView<const Ordinal> exportLIDs = exporter.getRemoteLIDs();
-    Teuchos::ArrayView<const Ordinal> remoteLIDs = exporter.getExportLIDs();
-    Teuchos::ArrayView<const Ordinal> permuteToLIDs = exporter.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs      = exporter.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs      = exporter.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs   = exporter.getPermuteFromLIDs();
     Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteToLIDs();
-
-    // call doTransfer
-    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-        permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-        imports_, exports_, exporter.getDistributor(), true);
+    doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+               exporter.getDistributor(), true);
   }
 
   template <typename Ordinal, typename Scalar>
   void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & source,
-                                           const Import<Ordinal> & importer, CombineMode CM)
+                                            const Import<Ordinal> & importer, CombineMode CM)
   {
-    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error,
-        "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error,
-        "Source Maps don't match.");
-
-    // copy variables from importer
-    // note that some of them are swapped
+    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = importer.getNumSameIDs();
-    Ordinal numPermuteIDs = importer.getNumPermuteIDs();
-    Ordinal numRemoteIDs = importer.getNumExportIDs();
-    Ordinal numExportIDs = importer.getNumRemoteIDs();
-    Teuchos::ArrayView<const Ordinal> exportLIDs = importer.getRemoteLIDs();
-    Teuchos::ArrayView<const Ordinal> remoteLIDs = importer.getExportLIDs();
-    Teuchos::ArrayView<const Ordinal> permuteToLIDs = importer.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs      = importer.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs      = importer.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs   = importer.getPermuteFromLIDs();
     Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteToLIDs();
-
-    // call doTransfer
-    doTransfer(source, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-        permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-        imports_, exports_, importer.getDistributor(), true);
-  }
-
-  template <typename Ordinal, typename Scalar>
-  void DistObject<Ordinal,Scalar>::print(std::ostream& /*os*/) const 
-  {
-    TEST_FOR_EXCEPT(true); // FINISH
+    doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+               importer.getDistributor(), true);
   }
 
   template <typename Ordinal, typename Scalar>
@@ -394,52 +316,46 @@ namespace Tpetra {
   void DistObject<Ordinal,Scalar>::doTransfer(
       const DistObject<Ordinal, Scalar> & source,
       CombineMode CM,
-      Ordinal numSameIDs, Ordinal numPermuteIDs, Ordinal numRemoteIDs, Ordinal numExportIDs,
+      Ordinal numSameIDs, 
       const Teuchos::ArrayView<const Ordinal> &permuteToLIDs, 
       const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs,
       const Teuchos::ArrayView<const Ordinal> &remoteLIDs,    
       const Teuchos::ArrayView<const Ordinal> &exportLIDs,
-      const Teuchos::ArrayView<Scalar> &exports, 
-      const Teuchos::ArrayView<Scalar> &imports,
       Distributor<Ordinal> &distor, bool doReverse) 
   {
-    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-
-    checkSizes(source);
-
-    if(numSameIDs + numPermuteIDs > zero) {
-      copyAndPermute(source, numSameIDs, numPermuteIDs, permuteToLIDs, permuteFromLIDs);
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    Ordinal packetSize;
+    TEST_FOR_EXCEPTION( checkSizes(source,packetSize) == false, std::runtime_error, 
+        "Tpetra::DistObject::doTransfer(): checkSizes() indicates that DistOjbects are not size-compatible.");
+    Ordinal bufLen = exportLIDs.size()*packetSize;
+    exports_.resize(bufLen);
+    imports_.resize(bufLen);
+    if (numSameIDs + permuteToLIDs.size()) {
+      copyAndPermute(source,numSameIDs,permuteToLIDs,permuteFromLIDs);
     }
-
-    // we don't have a "Zero" CombineMode like Epetra does, so we don't have to check for that
-
-    Ordinal packetSize = zero; // dummy value
-    bool varSizes = false;
-    if((!sizes_.empty()) && (numExportIDs > zero))
-      sizes_.resize(numExportIDs);
-    packAndPrepare(source, numExportIDs, exportLIDs, exports, packetSize, distor);
-
-    if ((isDistributed() && doReverse) || (source.getMap().isDistributed() && !doReverse)) 
+    packAndPrepare(source,exportLIDs,exports_(),distor);
+    if ((isDistributed() && doReverse) || (source.isDistributed() && !doReverse)) 
     {
       // call one of the doPostsAndWaits functions
       if (doReverse) {
-        if (varSizes) {
-          throw reportError("var-sized doReversePostsAndWaits not implemented yet", -99);
-        }
-        else {
-          distor.doReversePostsAndWaits(exports.getConst(), packetSize, imports);
-        }
+        distor.doReversePostsAndWaits(exports_().getConst(),ONE,imports_());
       }
       else {
-        if (varSizes) {
-          throw reportError("var-sized doPostsAndWaits not implemented yet", -99);
-        }
-        else {
-          distor.doPostsAndWaits(exports.getConst(), packetSize, imports);
-        }
+        distor.doPostsAndWaits(exports_().getConst(),ONE,imports_());
       }
-      unpackAndCombine(numRemoteIDs, remoteLIDs, imports, distor, CM);
+      unpackAndCombine(remoteLIDs,imports_(),distor,CM);
     }
+  }
+
+  template <typename Ordinal, typename Scalar>
+  void DistObject<Ordinal,Scalar>::print(std::ostream &os) const
+  {
+    using std::endl;
+    os << "Tpetra::DistObject" << endl
+       << " export buffer size: " << exports_.size() << endl
+       << " import buffer size: " << imports_.size() << endl
+       << "Map:" << endl
+       << map_;
   }
 
 } // namespace Tpetra

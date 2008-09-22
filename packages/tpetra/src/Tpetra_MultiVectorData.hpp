@@ -43,6 +43,11 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   MultiVectorData<Ordinal,Scalar>::~MultiVectorData() {}
 
+  template<typename Ordinal, typename Scalar>
+  void MultiVectorData<Ordinal,Scalar>::updateConstPointers() {
+    cPtrs_.assign(ptrs_.begin(),ptrs_.end());
+  }
+
 } // namespace Tpetra
 
 #endif // TPETRA_MULTIVECTORDATA_HPP

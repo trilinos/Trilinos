@@ -70,7 +70,7 @@ namespace {
   template<class Ordinal, class Scalar> 
   RCP<CrsMatrix<Ordinal,Scalar> > constructTriDiagMatrix(const Map<Ordinal> &map) 
   {
-    RCP<CrsMatrix<Ordinal,Scalar> > op = rcp( new CrsMatrix<Ordinal,Scalar>(map.getComm(),map) );
+    RCP<CrsMatrix<Ordinal,Scalar> > op = rcp( new CrsMatrix<Ordinal,Scalar>(map) );
     op->fillComplete();
     return op;
   }
@@ -142,8 +142,37 @@ namespace {
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
     RCP<Comm<Ordinal> > comm = platform.createComm();
-    // create a uniform contiguous map
+    // create a uniform contiguous map (local)
     Map<Ordinal> map(dim,ZERO,platform,true);
+    // create a CrsMatrix
+    RCP<OP> op = constructTriDiagMatrix<Ordinal,Scalar>(map);
+    // create a multivector
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
+    bool res = Anasazi::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OPTestDist, Ordinal, Scalar )
+  {
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::Operator<Ordinal,Scalar>    OP;
+    // const Ordinal dim = 500;
+    const Ordinal dim = 10;
+    const Ordinal numVecs = 5;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new BasicOutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    // create a uniform contiguous map
+    Map<Ordinal> map(dim,ZERO,platform);
     // create a CrsMatrix
     RCP<OP> op = constructTriDiagMatrix<Ordinal,Scalar>(map);
     // create a multivector
@@ -178,8 +207,9 @@ namespace {
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestDist, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestLocal, ORDINAL, SCALAR )
-      // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OPTestLocal, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestLocal, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OPTestDist, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OPTestLocal, ORDINAL, SCALAR )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \

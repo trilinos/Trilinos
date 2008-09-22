@@ -36,6 +36,7 @@
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
 
 namespace Tpetra {
   // struct for i,j,v triplets
@@ -82,7 +83,7 @@ namespace Tpetra
       //@{ 
 
       //! Constructor specifying the domain map only.
-      CrsMatrix(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > & comm, const Map<Ordinal> &rowMap);
+      CrsMatrix(const Map<Ordinal> &rowMap);
 
       // !Destructor.
       virtual ~CrsMatrix();
@@ -121,9 +122,6 @@ namespace Tpetra
       //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons. 
       inline Ordinal getNumMyDiagonals() const;
 
-      //! Returns the current number of nonzero entries in specified global index on this image. 
-      inline Ordinal getNumRowEntries(Ordinal globalRow) const;
-
       //! Returns the maximum number of nonzero entries across all rows/columns on all images. 
       inline Ordinal getGlobalMaxNumEntries() const;
 
@@ -151,9 +149,7 @@ namespace Tpetra
       const Map<Ordinal> & getRangeMap() const;
 
       //! Computes the matrix-vector multilication y = A x.
-      void apply(const Scalar &alpha, const MultiVector<Ordinal,Scalar>& X, 
-                 const Scalar &beta,        MultiVector<Ordinal,Scalar> &Y,
-                       Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+      void apply(const MultiVector<Ordinal,Scalar>& X, MultiVector<Ordinal,Scalar> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
       //@}
 
@@ -181,8 +177,11 @@ namespace Tpetra
 
       // @}
 
-      //! @name Computational Methods
+      //! @name Data Access Methods
       // @{ 
+
+      //! Returns the current number of nonzero entries in specified global index on this image. 
+      inline Ordinal getNumRowEntries(Ordinal globalRow) const;
 
       //! Returns a copy of the specified local row, column indices are local.
       void getMyRowCopy(Ordinal myRow, const Teuchos::ArrayView<Ordinal> &indices, 
@@ -198,22 +197,24 @@ namespace Tpetra
       //! @name I/O Methods
       //@{ 
       
-      //! Prints the matrix on the specified stream.
+      //! Prints the matrix on the specified stream. This is very verbose.
       void print(std::ostream& os) const;
-
-      //! Basic print, for debugging purposes only.
-      void printValues(std::ostream& os);
 
       // @}
 
     private:
-      //! copy constructor.
+      // copy constructor disabled
       CrsMatrix(const CrsMatrix<Ordinal,Scalar> &Source);
-
+      // operator= disabled
       CrsMatrix& operator=(const CrsMatrix<Ordinal, Scalar> &rhs);
+      // useful typedefs
+      typedef Teuchos::OrdinalTraits<Ordinal> OT;
 
-      //! Performs importing of off-processor elements and adds them to the locally owned elements.
+      // Performs importing of off-processor elements and adds them to the locally owned elements.
       void globalAssemble();
+      // multiplication routines
+      void GeneralMV(const Teuchos::ArrayView<const Scalar> &X, const Teuchos::ArrayView<Scalar> &Y) const;
+      void GeneralMM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const;
 
       const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
       const Map<Ordinal>& rowMap_;
@@ -227,9 +228,10 @@ namespace Tpetra
       Teuchos::Array<Teuchos::Array<Scalar> > values_;
 
       // TODO: consider using a contiguous storage
-      // what are the benefits? costs are: insertions are more difficult
-      Teuchos::RCP<MultiVector<Ordinal,Scalar> > paddedMV_;
+      // costs are: insertions are more difficult
+      mutable Teuchos::RCP<MultiVector<Ordinal,Scalar> > importMV_, exportMV_;
       Teuchos::RCP<Import<Ordinal> > importer_;
+      Teuchos::RCP<Export<Ordinal> > exporter_;
 
       // a map between a (non-local) row and a list of (col,val)
       // TODO: switch this to a hash-based map (instead of a sort-based map) as soon as one is available
@@ -254,17 +256,14 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
 
   template<class Ordinal, class Scalar>
-  CrsMatrix<Ordinal,Scalar>::CrsMatrix(
-      const Teuchos::RCP<const Teuchos::Comm<Ordinal> > & comm, 
-      const Map<Ordinal> &rowMap) 
-  : comm_(comm)
+  CrsMatrix<Ordinal,Scalar>::CrsMatrix(const Map<Ordinal> &rowMap) 
+  : comm_(rowMap.getComm())
   , rowMap_(rowMap)
   , numMyRows_(rowMap.getNumMyEntries())
   , numGlobalRows_(rowMap.getNumGlobalEntries())
   , colinds_(numMyRows_)
   ,  values_(numMyRows_)
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
     fillCompleted_       = false;
     globalNNZ_           = OT::zero();
     myNNZ_               = OT::zero();
@@ -319,7 +318,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumGlobalCols() until fillComplete() has been called.");
-    return colMap_->getGlobalEntries();
+    return colMap_->getNumGlobalEntries();
   }
 
 
@@ -358,11 +357,9 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumRowEntries(Ordinal globalRow) const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
-      "Tpetra::CrsMatrix: cannot call getNumRowEntries() until fillComplete() has been called.");
     TEST_FOR_EXCEPTION(!rowMap_.isMyGlobalIndex(globalRow), std::runtime_error,
         "Tpetra::CrsMatrix::getNumRowEntries(globalRow): globalRow does not belong to this node.");
-    return colinds_[rowMap_.getLocalIndex(globalRow)].size();
+    return values_[rowMap_.getLocalIndex(globalRow)].size();
   }
 
 
@@ -494,17 +491,21 @@ namespace Tpetra
                                                    const Teuchos::ArrayView<Ordinal> &indices,
                                                    const Teuchos::ArrayView<Scalar>  &values) const
   {
-    // TODO: is it possible to even call this one? we can't preallocate for the result without knowing the size, 
+    // TODO: is it possible to even call this one? we can't preallocate for the output buffer without knowing the size, 
     //       which (above) seems to require fillCompleted()
+    // 
     // Only locally owned rows can be queried, otherwise complain
     TEST_FOR_EXCEPTION(!rowMap_.isMyGlobalIndex(globalRow), std::runtime_error,
         "Tpetra::CrsMatrix::getGlobalRowCOpy(globalRow): globalRow does not belong to this node.");
     Ordinal myRow = rowMap_.getLocalIndex(globalRow);
-    TEST_FOR_EXCEPTION(indices.size() != colinds_[myRow].size() || values.size() != values_[myRow].size(), std::runtime_error, 
+    TEST_FOR_EXCEPTION(
+        Teuchos::as<typename Teuchos::Array<Ordinal>::size_type>(indices.size()) != colinds_[myRow].size() 
+          || Teuchos::as<typename Teuchos::Array<Scalar>::size_type>(values.size()) != values_[myRow].size(), std::runtime_error, 
         "Tpetra::CrsMatrix::getGlobalRowCopy(indices,values): size of indices,values must be sufficient to store the values for the specified row.");
     std::copy(values_[myRow].begin(),values_[myRow].end(),values.begin());
     if (isFillCompleted())
     {
+      // translate local IDs back to global IDs
       typename Teuchos::ArrayView<Ordinal>::iterator gind = indices.begin();
       for (typename Teuchos::Array<Ordinal>::const_iterator lind = colinds_[myRow].begin();
            lind != colinds_[myRow].end(); ++lind, ++gind) 
@@ -520,84 +521,121 @@ namespace Tpetra
 
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::apply(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &X, 
-                                        const Scalar &beta,        MultiVector<Ordinal,Scalar> &Y,
-                                              Teuchos::ETransp mode) const
+  void CrsMatrix<Ordinal,Scalar>::apply(const MultiVector<Ordinal,Scalar> &X, MultiVector<Ordinal,Scalar> &Y, Teuchos::ETransp mode) const
   {
-    TEST_FOR_EXCEPT(true);  // FINISH
-    /*
-    THIS IS LEFTOVER FROM AN APPLY TO A SINGLE VECTOR
-    assert (Mode == AsIs);
-    y.setAllToScalar(scalarZero());
-    paddedMV_->doImport(x, *importer_, Insert);
-    for (Ordinal i = ordinalZero() ; i < numMyRows_ ; ++i)
-    {
-      for (Ordinal j = ordinalZero() ; j < colinds_[i].size() ; ++j)
-      {
-        Ordinal col = colinds_[i][j];
-        Scalar val = values_[i][j];
-        y[i] += val * (*paddedMV_)[col];
+    // TODO: add support for alpha,beta term coefficients: Y = alpha*A*X + beta*Y
+    using Teuchos::null;
+    using Teuchos::ArrayView;
+    TEST_FOR_EXCEPTION(!isFillCompleted(), std::runtime_error, 
+        "Tpetra::CrsMatrix: cannot call apply() until fillComplete() has been called.");
+    TEST_FOR_EXCEPTION(X.numVectors() != Y.numVectors(), std::runtime_error,
+        "Tpetra::CrsMatrix::apply(X,Y): X and Y must have the same number of vectors.");
+    Ordinal numVectors = X.numVectors();
+    // because of Views, it is difficult to determine if X and Y point to the same data. 
+    // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
+    Teuchos::RCP<const MultiVector<Ordinal,Scalar> > Xcopy;
+    ArrayView<const ArrayView<const Scalar> > Xdata = X.extractConstView();
+    ArrayView<const ArrayView<      Scalar> > Ydata = Y.extractView();
+    if (&X==&Y && importer_==null && exporter_==null) {
+#     if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
+      std::string err;
+      err += "Tpetra::CrsMatrix<" + Teuchos::TypeNameTraits<Ordinal>::name() + "," + Teuchos::TypeNameTraits<Ordinal>::name()
+        + ">::apply(X,Y): If X and Y are the same, it necessitates a temporary copy of X, which is inefficient.";
+#     if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
+      TEST_FOR_EXCEPTION(true, std::runtime_error, err);
+#     else
+      std::cerr << err << std::endl;
+#     endif
+#     endif
+      // generate a copy of X 
+      Xcopy = Teuchos::rcp(new MultiVector<Ordinal,Scalar>(X));
+      Xdata = Xcopy->extractConstView();
+    }
+    if (importer_ != null) {
+      if (importMV_ != null && importMV_->numVectors() != numVectors) importMV_ = null;
+      if (importMV_ == null) {
+        importMV_ = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(*colMap_,numVectors) );
       }
     }
-     */
+    if (exporter_ != null) {
+      if (exportMV_ != null && exportMV_->numVectors() != numVectors) exportMV_ = null;
+      if (exportMV_ == null) {
+        exportMV_ = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(rowMap_,numVectors) );
+      }
+    }
+    // only support NO_TRANS currently
+    TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::logic_error,
+        "Tpetra::CrsMatrix::apply() does not currently support transposed multiplications.");
+    if (mode == Teuchos::NO_TRANS) {
+      // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+      if (importer_ != null) {
+        importMV_->doImport(X, *importer_, INSERT);
+        Xdata = importMV_->extractConstView();
+      }
+      // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+      if (exporter_ != null) {
+        Ydata = exportMV_->extractView();
+      }
+      // Do actual computation
+      if (numVectors==Teuchos::OrdinalTraits<Ordinal>::one()) {
+        GeneralMV(Xdata[0],Ydata[0]);
+      }
+      else {
+        GeneralMM(Xdata,Ydata);
+      }
+      if (exporter_ != null) {
+        Y.putScalar(0.0);  // Make sure target is zero
+        Y.doExport(*exportMV_, *exporter_, ADD); // Fill Y with Values from export vector
+      }
+      // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
+      if (Y.isDistributed() == false) Y.reduce();
+    }
   }
 
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::print(std::ostream& os) const 
   {
-    /*
+    using std::endl;
     int myImageID = Teuchos::rank(*comm_);
     if (myImageID == 0)
     {
-      os << "Tpetra::CrsMatrix, label = " << label() << endl;
-      os << "Number of global rows    = " << rowMap_.getNumGlobalEntries() << endl;
+      os << "Tpetra::CrsMatrix, label = " << this->label() << endl;
+      os << "Number of global rows    = " << getNumGlobalRows() << endl;
       if (isFillCompleted())
       {
-        os << "Number of global columns = " << colMap_->getNumGlobalEntries() << endl;
-        os << "Status = FillCompleted" << endl;
+        os << "Number of global columns = " << getNumGlobalCols() << endl;
+        os << "Status = fillCompleted" << endl;
         os << "MyMaxNumEntries = " << getMyMaxNumEntries() << endl;
         os << "GlobalMaxNumEntries = " << getGlobalMaxNumEntries() << endl;
       }
       else
       {
-        os << "Status = not FillCompleted" << endl;
+        os << "Status = not fillCompleted" << endl;
       }
     }
     if (isFillCompleted())
     {
-      for (int pid = 0 ; pid < rowMap_.comm().getSize() ; ++pid)
+      for (int pid=0; pid < Teuchos::size(*comm_); ++pid)
       {
         if (pid == myImageID)
         {
-          vector<Ordinal> Indices(getMyMaxNumEntries()); // FIXME
-          vector<Scalar>  Values(getMyMaxNumEntries());
-          Ordinal NumEntries;
-          os << "% Number of rows on image " << myImageID << " = " << rowMap_.getNumMyEntries() << endl;
-          for (Ordinal i = ordinalZero() ; i < rowMap_.getNumMyEntries() ; ++i)
+          Teuchos::Array<Ordinal> indices(getMyMaxNumEntries());
+          Teuchos::Array<Scalar>   values(getMyMaxNumEntries());
+          os << "% Number of rows on image " << myImageID << " = " << getNumMyRows() << endl;
+          for (Ordinal i=OT::zero(); i < getNumMyRows(); ++i)
           {
-            Ordinal GlobalRow = rowMap_.getGlobalIndex(i);
-            getGlobalRowCopy(GlobalRow, NumEntries, Indices, Values);
-            for (Ordinal j = ordinalZero() ; j < NumEntries ; ++j)
-              os << "Matrix(" << GlobalRow << ", " << Indices[j] << ") = " << Values[j] << ";" << endl;
+            Ordinal globalRow = rowMap_.getGlobalIndex(i);
+            Ordinal rowSize = getNumRowEntries(globalRow);
+            getGlobalRowCopy(globalRow, indices(0,rowSize), values(0,rowSize));
+            for (Ordinal j=OT::zero(); j < rowSize; ++j) {
+              os << "Matrix(" << globalRow << ", " << indices[j] << ") = " << values[j] << endl;
+            }
           }
         }
-        rowMap_.comm().barrier();
-      }
-    }
-    */
-  }
-
-
-  template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::printValues(std::ostream& os)
-  {
-    // this prints out the structure as they are
-    for (int i=0 ; i<colinds_.size(); ++i)
-    {
-      for (int j=0 ; j<colinds_[i].size(); ++j)
-      {
-        os << "local row " << i << ", col " << colinds_[i][j] << ", val " << values_[i][j] << std::endl;
+        Teuchos::barrier(*comm_);
+        Teuchos::barrier(*comm_);
+        Teuchos::barrier(*comm_);
       }
     }
   }
@@ -610,7 +648,6 @@ namespace Tpetra
   void CrsMatrix<Ordinal,Scalar>::fillComplete()
   {
     using Teuchos::Array;
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
     TEST_FOR_EXCEPTION(isFillCompleted() == true, std::runtime_error,
       "Tpetra::CrsMatrix::fillComplete(): fillComplete() has already been called.");
 
@@ -727,7 +764,6 @@ namespace Tpetra
     using std::list;
     using std::pair;
     using std::make_pair;
-    typedef OrdinalTraits<Ordinal> OT;
     typedef typename std::map<Ordinal,std::list<pair<Ordinal,Scalar> > >::const_iterator NLITER;
     int numImages = comm_->getSize();
     int myImageID = comm_->getRank();
@@ -915,6 +951,47 @@ namespace Tpetra
 
     // WHEW! THAT WAS TIRING!
   }
+
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::GeneralMV(const Teuchos::ArrayView<const Scalar> &x, const Teuchos::ArrayView<Scalar> &y) const
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typename Teuchos::Array<Ordinal>::const_iterator col;
+    typename Teuchos::Array<Scalar >::const_iterator val;
+    for (Ordinal r=0; r < numMyRows_; ++r) {
+      col = colinds_[r].begin(); 
+      val =  values_[r].begin(); 
+      Scalar sum = ST::zero();
+      for (; col != colinds_[r].end(); ++col, ++val) {
+        sum += (*val) * x[*col];
+      }
+      y[r] = sum;
+    }
+  }
+
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::GeneralMM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    Ordinal numVectors = X.size();
+    typename Teuchos::Array<Ordinal>::const_iterator col;
+    typename Teuchos::Array<Scalar >::const_iterator val;
+    for (Ordinal r=0; r < numMyRows_; ++r) {
+      for (int j=0; j<numVectors; ++j) {
+        const Teuchos::ArrayView<const Scalar> &xvals = X[j]; 
+        col = colinds_[r].begin(); 
+        val = values_[r].begin(); 
+        Scalar sum = ST::zero();
+        for (; col != colinds_[r].end(); ++col, ++val) {
+          sum += (*val) * xvals[*col];
+        }
+        Y[j][r] = sum;
+      }
+    }
+  }
+
 
 } // namespace Tpetra
 

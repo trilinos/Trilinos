@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(tpetra, 1.1d, maherou@sandia.gov)
+AC_INIT(tpetra, 1.2, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -334,7 +334,6 @@ AC_CONFIG_FILES([
         test/Map/Makefile
         test/Directory/Makefile
         test/ImportExport/Makefile
-        test/Vector/Makefile
         test/MultiVector/Makefile
         ])
 # example/verySimple/Makefile
@@ -342,7 +341,8 @@ AC_CONFIG_FILES([
 # example/TpetraOPs/Makefile
 # test/BasicPerfTest/Makefile
 # test/DistObject/Makefile
-# test/CisMatrix/Makefile
+# test/CrsMatrix/Makefile
+# test/Vector/Makefile
 
 AC_OUTPUT()
 

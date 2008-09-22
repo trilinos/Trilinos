@@ -110,7 +110,7 @@ namespace Tpetra {
     //! Returns the Target Map used to construct this exporter.
     const Map<Ordinal> & getTargetMap() const;
 
-    const Distributor<Ordinal>& getDistributor() const;
+    Distributor<Ordinal>& getDistributor() const;
 
     //! Assignment operator
     Export<Ordinal>& operator = (const Export<Ordinal> & Source);
@@ -174,13 +174,13 @@ namespace Tpetra {
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getPermuteFromLIDs() const {
-    return ExportData_->permuteFromLIDs_;
+    return ExportData_->permuteFromLIDs_();
   }
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal>
   Export<Ordinal>::getPermuteToLIDs() const {
-    return ExportData_->permuteToLIDs_;
+    return ExportData_->permuteToLIDs_();
   }
 
   template <typename Ordinal>
@@ -191,7 +191,7 @@ namespace Tpetra {
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getRemoteLIDs() const {
-    return ExportData_->remoteLIDs_;
+    return ExportData_->remoteLIDs_();
   }
 
   template <typename Ordinal>
@@ -202,13 +202,13 @@ namespace Tpetra {
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getExportLIDs() const {
-    return ExportData_->exportLIDs_;
+    return ExportData_->exportLIDs_();
   }
 
   template <typename Ordinal>
   Teuchos::ArrayView<const Ordinal> 
   Export<Ordinal>::getExportImageIDs() const {
-    return ExportData_->exportImageIDs_;
+    return ExportData_->exportImageIDs_();
   }
 
   template <typename Ordinal>
@@ -224,7 +224,7 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  const Distributor<Ordinal>& 
+  Distributor<Ordinal>& 
   Export<Ordinal>::getDistributor() const {
     return ExportData_->distributor_;
   }

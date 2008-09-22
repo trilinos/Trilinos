@@ -40,6 +40,7 @@
 
 
 // FINISH: some of the get accessors may not be necessary anymore. clean up.
+// FINISH: This class may not be const correct. doPosts() et al. perhaps should be const, with affected members made mutable.
 
 namespace Tpetra {
 

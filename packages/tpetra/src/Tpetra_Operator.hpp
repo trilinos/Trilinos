@@ -52,9 +52,7 @@ namespace Tpetra {
 		virtual const Map<Ordinal> & getRangeMap() const = 0;
 
     //! Computes the matrix-vector multiplication y = Ax.
-		virtual void apply(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &X, 
-                       const Scalar &beta,        MultiVector<Ordinal,Scalar> &Y,
-                             Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
+		virtual void apply(const MultiVector<Ordinal,Scalar> &X, MultiVector<Ordinal,Scalar> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
 
     //@}
 

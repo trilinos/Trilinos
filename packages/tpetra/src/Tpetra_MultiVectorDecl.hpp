@@ -37,8 +37,8 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_Range1D.hpp>
+#include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_Vector.hpp"
 
 namespace Tpetra {
 
@@ -49,14 +49,9 @@ namespace Tpetra {
 
   /*! multivector */
   template<class Ordinal, class Scalar>
-  class MultiVector : public DistObject<Ordinal,Scalar>{
+  class MultiVector : public DistObject<Ordinal,Scalar> {
 
     public:
-
-    /* FINISH: what with these?
-       void replaceMap (const Map<Ordinal> &map);
-       void reduce ();
-     */
 
     //! @name Constructor/Destructor Methods
     //@{ 
@@ -99,6 +94,13 @@ namespace Tpetra {
     //! Set multi-vector values to random numbers.
     void random();
 
+    //! Replace the underlying Map with a compatible one.
+    void replaceMap(const Map<Ordinal> &map);
+
+    //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
+    void reduce();
+
+
     //@} 
 
     //! @name Extraction methods
@@ -109,7 +111,7 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Ordinal,Scalar> > subCopy(const Teuchos::Range1D &colRng) const;
     */
 
-    // Returns a MultiVector with copies of selected columns.
+    //! Returns a MultiVector with copies of selected columns.
     Teuchos::RCP<MultiVector<Ordinal,Scalar> > subCopy(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
     /*
@@ -128,23 +130,24 @@ namespace Tpetra {
     //! Returns a const MultiVector with const views of selected columns.
     Teuchos::RCP<const MultiVector<Ordinal,Scalar> > subViewConst(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
+
     //! Return multi-vector values in user-provided two-dimensional array.
     void extractCopy(const Teuchos::ArrayView<Scalar> &A, Ordinal &MyLDA) const;
 
     //! Return multi-vector values in user-provided array of pointers.
     void extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > arrayOfArrays) const;
 
-    //! Return non-const pointers to multi-vector values in user-provided two-dimensional array.
-    void extractView(Teuchos::ArrayRCP<Scalar> &A, Ordinal &MyLDA);
+    //! Return non-const non-persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
+    void extractView(Teuchos::ArrayView<Scalar> &A, Ordinal &MyLDA);
 
-    //! Return const pointers to multi-vector values in user-provided two-dimensional array.
-    void extractConstView(Teuchos::ArrayRCP<const Scalar> &A, Ordinal &MyLDA) const;
+    //! Return non-const non-persisting pointers to values. This is a non-persisting view.
+    Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > extractView();
 
-    //! Return non-const pointers to multi-vector values in user-provided array of pointers.
-    void extractView(Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > &arrayOfArrays);
+    //! Return const non-persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
+    void extractConstView(Teuchos::ArrayView<const Scalar> &A, Ordinal &MyLDA) const;
 
-    //! Return const pointers to multi-vector values in user-provided array of pointers.
-    void extractConstView(Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > &arrayOfArrays) const;
+    //! Return const non-persisting pointers to values. This is a non-persisting view.
+    Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > extractConstView() const;
 
     //@} 
 
@@ -187,13 +190,13 @@ namespace Tpetra {
     void normWeighted(const MultiVector<Ordinal,Scalar> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute minimum value of each vector in multi-vector.
-    void minValue(Teuchos::Array<Scalar> &mins) const;
+    void minValue(const Teuchos::ArrayView<Scalar> &mins) const;
 
     //! Compute maximum value of each vector in multi-vector.
-    void maxValue(Teuchos::Array<Scalar> &maxs) const;
+    void maxValue(const Teuchos::ArrayView<Scalar> &maxs) const;
 
     //! Compute mean (average) value of each vector in multi-vector.
-    void meanValue(Teuchos::Array<Scalar> &means) const;
+    void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A, const MultiVector<Ordinal,Scalar> &B, const Scalar &beta);
@@ -215,21 +218,25 @@ namespace Tpetra {
      */
     MultiVector<Ordinal,Scalar>& operator=(const MultiVector<Ordinal,Scalar> &source);
 
-    //! Vector access function.
+    //! Local vector access function.
     /*! ArrayRCP to the local values in the ith vector of this multi-vector.
      */
-    const Teuchos::ArrayRCP<Scalar> & operator[](Ordinal i);
+    Teuchos::ArrayView<Scalar> operator[](Ordinal i);
 
-    //! Vector access function.
+    //! Local vector access function.
     /** ArrayRCP to the local values in the ith vector of this multi-vector.
      */
-    Teuchos::ArrayRCP<const Scalar> operator[](Ordinal i) const;
+    Teuchos::ArrayView<const Scalar> operator[](Ordinal i) const;
 
+    /*
     //! Vector access function.
     Vector<Ordinal,Scalar> & operator()(Ordinal i);
+    */
 
+    /*
     //! Vector access function.
     const Vector<Ordinal,Scalar> & operator() (Ordinal i) const;
+    */
 
     //@} 
 
@@ -292,26 +299,22 @@ namespace Tpetra {
     MultiVector(const Map<Ordinal> &map, Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata);
 
     // four functions needed for DistObject derivation
-    bool checkSizes(const DistObject<Ordinal,Scalar> & sourceObj);
+    bool checkSizes(const DistObject<Ordinal,Scalar> &sourceObj, Ordinal &packetSize);
 
-    void copyAndPermute(const DistObject<Ordinal,Scalar> & sourceObj,
-               Ordinal numSameIDs,
-               Ordinal numPermuteIDs,
-               const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
-               const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs);
+    void copyAndPermute(const DistObject<Ordinal,Scalar> &sourceObj,
+                              Ordinal numSameIDs,
+                        const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+                        const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs);
 
-    void packAndPrepare(const DistObject<Ordinal,Scalar> & sourceObj,
-               Ordinal numExportIDs,
-               const Teuchos::ArrayView<const Ordinal> &exportLIDs,
-               const Teuchos::ArrayView<Scalar> &exports,
-               Ordinal &packetSize,
-               Distributor<Ordinal> &distor);
-  
-    void unpackAndCombine(Ordinal numImportIDs,
-               const Teuchos::ArrayView<const Ordinal> &importLIDs,
-               const Teuchos::ArrayView<const Scalar> &imports,
-               Distributor<Ordinal> &distor,
-               CombineMode CM);
+    void packAndPrepare(const DistObject<Ordinal,Scalar> &sourceObj,
+                        const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+                        const Teuchos::ArrayView<Scalar> &exports,
+                        Distributor<Ordinal> &distor);
+
+    void unpackAndCombine(const Teuchos::ArrayView<const Ordinal> &importLIDs,
+                          const Teuchos::ArrayView<const Scalar> &imports,
+                          Distributor<Ordinal> &distor,
+                          CombineMode CM);
 
 
   }; // class MultiVector
