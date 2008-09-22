@@ -28,6 +28,11 @@ OPTION(${PROJECT_NAME}_ENABLE_COMPLEX
   ON
   )
 
+OPTION(${PROJECT_NAME}_ENABLE_GCC_DEMANGLE
+  "Enable Teuchos calls to GCC demangle library function."
+  OFF
+  )
+
 ADD_SUBDIRECTORY(src)
 
 IF(${PROJECT_NAME}_ENABLE_TESTS)
