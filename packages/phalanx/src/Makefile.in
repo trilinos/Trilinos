@@ -17,7 +17,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#            Phalanx: A Partial Differential Equation Assembly 
+#        Phalanx: A Partial Differential Equation Field Evaluation 
 #       Kernel for Flexible Management of Complex Dependency Chains
 #                  Copyright (2008) Sandia Corporation
 # 
@@ -104,7 +104,7 @@ ARFLAGS = cru
 libphalanx_a_DEPENDENCIES =
 am__objects_1 = Phalanx_ArrayPrivate.$(OBJEXT) \
 	Phalanx_DataLayout_FlatLayout.$(OBJEXT) \
-	Phalanx_DataLayout.$(OBJEXT)
+	Phalanx_DataLayout.$(OBJEXT) Phalanx_FieldTag.$(OBJEXT)
 am_libphalanx_a_OBJECTS = $(am__objects_1)
 libphalanx_a_OBJECTS = $(am_libphalanx_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -301,7 +301,8 @@ PHALANX_HPP = \
 PHALANX_CPP = \
 	$(srcdir)/Phalanx_ArrayPrivate.cpp \
 	$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp \
-	$(srcdir)/Phalanx_DataLayout.cpp
+	$(srcdir)/Phalanx_DataLayout.cpp \
+	$(srcdir)/Phalanx_FieldTag.cpp
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(PHALANX_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
@@ -473,6 +474,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_ArrayPrivate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DataLayout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_DataLayout_FlatLayout.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Phalanx_FieldTag.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -529,6 +531,20 @@ Phalanx_DataLayout.obj: $(srcdir)/Phalanx_DataLayout.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_DataLayout.cpp' object='Phalanx_DataLayout.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_DataLayout.obj `if test -f '$(srcdir)/Phalanx_DataLayout.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_DataLayout.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_DataLayout.cpp'; fi`
+
+Phalanx_FieldTag.o: $(srcdir)/Phalanx_FieldTag.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_FieldTag.o -MD -MP -MF $(DEPDIR)/Phalanx_FieldTag.Tpo -c -o Phalanx_FieldTag.o `test -f '$(srcdir)/Phalanx_FieldTag.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_FieldTag.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_FieldTag.Tpo $(DEPDIR)/Phalanx_FieldTag.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_FieldTag.cpp' object='Phalanx_FieldTag.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_FieldTag.o `test -f '$(srcdir)/Phalanx_FieldTag.cpp' || echo '$(srcdir)/'`$(srcdir)/Phalanx_FieldTag.cpp
+
+Phalanx_FieldTag.obj: $(srcdir)/Phalanx_FieldTag.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Phalanx_FieldTag.obj -MD -MP -MF $(DEPDIR)/Phalanx_FieldTag.Tpo -c -o Phalanx_FieldTag.obj `if test -f '$(srcdir)/Phalanx_FieldTag.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_FieldTag.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_FieldTag.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Phalanx_FieldTag.Tpo $(DEPDIR)/Phalanx_FieldTag.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Phalanx_FieldTag.cpp' object='Phalanx_FieldTag.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Phalanx_FieldTag.obj `if test -f '$(srcdir)/Phalanx_FieldTag.cpp'; then $(CYGPATH_W) '$(srcdir)/Phalanx_FieldTag.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Phalanx_FieldTag.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
