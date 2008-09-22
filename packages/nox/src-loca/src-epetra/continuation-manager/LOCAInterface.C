@@ -94,7 +94,7 @@ cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " 
   // Need to add  beta * I for ODEs of the form:  u_dot = f(u)
 
   //problem->ComputeShiftedJacobian(alpha,beta);
-  //return true;
+  return true;
 }
 
 void LOCAInterface::setXdot(const Epetra_Vector& xdot, const double time) {

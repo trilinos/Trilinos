@@ -16,7 +16,7 @@ class ProblemLOCAPrototype :
       ProblemLOCAPrototype();
 
       // Destructor
-      ~ProblemLOCAPrototype();
+      virtual ~ProblemLOCAPrototype();
 
       // Pointer to the continuation parameter list
       virtual LOCA::ParameterVector GetContinuableParams() const =0 ;

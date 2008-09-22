@@ -13,7 +13,7 @@ class ProblemNOXPrototype {
     ProblemNOXPrototype();
 
     // Destructor
-    ~ProblemNOXPrototype();
+    virtual ~ProblemNOXPrototype();
 
     // Compute F
     virtual bool ComputeF(const Epetra_Vector & x, 

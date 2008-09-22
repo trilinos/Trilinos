@@ -468,7 +468,8 @@ string ContinuationManager::
 GetSolutionFileName() const
 {
   // Number of digits
-  int numDigits = (int) floor( log10( maxAllowedSteps ) ) + 1;
+  int numDigits = 
+    static_cast<int>( std::floor( std::log10( maxAllowedSteps ) ) ) + 1;
 
   // Composing the filename
   ostringstream fileName;
