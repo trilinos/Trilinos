@@ -15,7 +15,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-amesos-umfpack \
 --enable-amesos-superlu \
 --enable-amesos-dscpack \
---enable-amesos-paraklete \
+--disable-amesos-paraklete \
 --enable-amesos-superludist \
 --enable-amesos-taucs \
 --enable-amesos-tests \
