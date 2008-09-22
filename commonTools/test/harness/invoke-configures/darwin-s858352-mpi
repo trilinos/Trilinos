@@ -4,7 +4,7 @@ F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 CXXFLAGS="-O0" \
---with-incdirs="-I/sw/include -I/usr/include/malloc" \
+--with-incdirs="-I/sw/include -I/usr/include/malloc -I/Users/jmwille/boost_1_35_0" \
 --with-ldflags="-framework veclib -L/sw/lib/ -L/usr/local/lib" \
 --with-libs="-lsuperlu -lumfpack -lamd -lg2c -lexpat -lSystemStubs" \
 --enable-mpi \
