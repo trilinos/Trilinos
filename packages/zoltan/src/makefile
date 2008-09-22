@@ -496,7 +496,7 @@ zoltan:
 	"ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" \
 	"ZOLTAN_LIB=$(LIB_NAME)"  $(LIB_TARGET)
 	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(LIB_NAME) 			\
 	"LIB_NAME=$(LIB_NAME)"			\
@@ -522,7 +522,7 @@ zoltan:
 ifdef SCOTCH_LIBPATH
 order_eval:
 	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) order_eval                      \
 	"ZTARGET=order_eval"			\
@@ -538,7 +538,7 @@ endif
 
 vtk_view:
 	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) vtk_view                        \
 	"ZTARGET=vtk_view"			\
@@ -553,7 +553,7 @@ vtk_view:
 
 vtk_write:
 	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
 	@cd util ; cp -f vtk_view.cpp vtk_write.cpp ; 
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) vtk_write                       \

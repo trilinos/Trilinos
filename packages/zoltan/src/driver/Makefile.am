@@ -89,7 +89,8 @@ zdrive_LDADD = $(EXPORT_LIBS)
 
 zCPPdrive_LDADD = $(EXPORT_LIBS)
 
-EXTRA_DIST = $(COMMON_DRIVER_HDRS) $(zCPPdrive_HDRS) $(zdrive_HDRS)
+EXTRA_DIST = $(COMMON_DRIVER_HDRS) $(zCPPdrive_HDRS) $(zdrive_HDRS) \
+             $(srcdir)/dr_compress.c
 
 # Dummy for new export makefiles
 #LIBS = 

@@ -91,21 +91,21 @@ to build the Zoltan library, utilities and test drivers.
 <p>
 
 <h4><a NAME="NativeZoltanBuild"></a>Using the Native Zoltan Build Environment</h4>
-In the native Zoltan build environment, Makefiles are distributed 
+In the native Zoltan build environment, makefiles are distributed 
 with the source code in directory zoltan/src; these
 makefiles require the GNU Make (gmake) utility.  The
-top-level Makefile defines targets for the Zoltan library,
+top-level makefile defines targets for the Zoltan library,
 <a href="../dev_html/dev_driver.html">test driver</a> programs 
 in C, C++ and Fortran90, and 
 <a href="../dev_html/dev_view.html">two graphical utilities</a> useful
 for visualization of geometric partitions.  (The test drivers and
 utilities are primarily intended for use
-by developers.)  This Makefile need not be
+by developers.)  This makefile need not be
 edited to build Zoltan.  Instead, environment-specific definitions
 are specified in the configuration file, <i>zoltan/src/Utilities/Config/Config.&lt;platform></i>,
 where <i>&lt;platform></i> specifies the particular platform for which
 Zoltan is being built.  Paths to compilers, include files, and libraries
-are defined in this file and are then read by the top-level Makefile.
+are defined in this file and are then read by the top-level makefile.
 Examples of configuration files for Solaris, Sandia's ASC RedStorm 
 computer, SGI workstations, Macs running OS X, and PCs running Linux are
 included in the <i>zoltan/src/Utilities/Config</i> subdirectory.  
@@ -217,7 +217,7 @@ Fortran 90 interface.
 <h3>
 <a NAME="Testing the Library"></a>Testing the Zoltan Library</h3>
 The <I>examples</I> directory contains simple C and C++ examples which use
-the Zoltan library.  The Makefile in this directory has three targets:
+the Zoltan library.  The makefile in this directory has three targets:
 <DL>
 <DT>gmake ZOLTAN_ARCH=&lt;platform> C_Examples
 <DD>This builds simple C language examples that use the Zoltan library to perform load balancing.

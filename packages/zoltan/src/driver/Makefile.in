@@ -317,7 +317,9 @@ zdrive_CPPFLAGS = $(EXPORT_INC_PATH) -I$(srcdir)/ -I$(top_srcdir)/src/ch/
 zCPPdrive_CPPFLAGS = $(EXPORT_INC_PATH) -I$(srcdir)/ -I$(top_srcdir)/src/ch/
 zdrive_LDADD = $(EXPORT_LIBS)
 zCPPdrive_LDADD = $(EXPORT_LIBS)
-EXTRA_DIST = $(COMMON_DRIVER_HDRS) $(zCPPdrive_HDRS) $(zdrive_HDRS)
+EXTRA_DIST = $(COMMON_DRIVER_HDRS) $(zCPPdrive_HDRS) $(zdrive_HDRS) \
+             $(srcdir)/dr_compress.c
+
 all: all-am
 
 .SUFFIXES:

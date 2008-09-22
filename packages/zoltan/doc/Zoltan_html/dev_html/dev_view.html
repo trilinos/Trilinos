@@ -62,7 +62,7 @@ that the xrange is [-0.2,1.2] and the yrange is [-0.3,0.35].
 </h3>
 3D visualization requires downloading and compiling the 
 <a href="http://www.vtk.org">Visualization Toolkit</a> (VTK) library (version
-5.0 or later).  You can then use the Zoltan top level Makefile to build
+5.0 or later).  You can then use the Zoltan top level makefile to build
 the <I>vtk_view</I> application found in the <I>util</I> directory of
 Zoltan.  Build details can be found in the <I>Config.generic</I> file
 in <I>Utilities/Config</I>.  Note that you will have to download and
@@ -134,7 +134,7 @@ output files from <i>file_name</i>.<B>f</B>out.<i>p</i>.<i>n</i> to
 In some situations it is not possible or not convenient to open a window 
 on a display.  In that case, you can compile <I>util/vtk_view.cpp</I> with the flag
 <B>OUTPUT_TO_FILE</B> and it will create a program that renders the image
-to a file instead of opening a window on a display.  (The Zoltan top level Makefile
+to a file instead of opening a window on a display.  (The Zoltan top level makefile
 does exactly this when you use the <I>vtk_write</I> target.)
 <p>
 Note that while
