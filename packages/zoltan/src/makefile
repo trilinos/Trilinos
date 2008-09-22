@@ -12,7 +12,7 @@
 ##############################################################################
 
 ##############################################################################
-# Top-level Makefile for Zoltan library, test drivers, and graphical tools
+# Top-level makefile for Zoltan library, test drivers, and graphical tools
 #
 # To compile the library, type
 #    gmake <optional flags> ZOLTAN_ARCH=<targetmachine> zoltan
@@ -41,7 +41,7 @@
 
 ZTARGET=zdrive 
 LIB_NAME=libzoltan.a     # if change LIB_NAME, must change ZOLTAN_LIB 
-                         # in Utilities/Makefile
+                         # in Utilities/makefile
 LIB_TARGET=zoltan
 
 ##############################################################################
@@ -495,8 +495,8 @@ zoltan:
 	"ZOLTAN=$(LIB_TARGET)" \
 	"ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" \
 	"ZOLTAN_LIB=$(LIB_NAME)"  $(LIB_TARGET)
-	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@rm -f $(ZOLTAN_OBJ_DIR)/makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/makefile
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(LIB_NAME) 			\
 	"LIB_NAME=$(LIB_NAME)"			\
@@ -521,8 +521,8 @@ zoltan:
 
 ifdef SCOTCH_LIBPATH
 order_eval:
-	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@rm -f $(ZOLTAN_OBJ_DIR)/makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/makefile
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) order_eval                      \
 	"ZTARGET=order_eval"			\
@@ -537,8 +537,8 @@ order_eval:
 endif
 
 vtk_view:
-	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@rm -f $(ZOLTAN_OBJ_DIR)/makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/makefile
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) vtk_view                        \
 	"ZTARGET=vtk_view"			\
@@ -552,8 +552,8 @@ vtk_view:
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
 
 vtk_write:
-	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	@rm -f $(ZOLTAN_OBJ_DIR)/makefile
+	@cp makefile_sub $(ZOLTAN_OBJ_DIR)/makefile
 	@cd util ; cp -f vtk_view.cpp vtk_write.cpp ; 
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) vtk_write                       \
@@ -724,7 +724,7 @@ zscript:
 	@echo "cd .." >> zoltan_script
 	@chmod +x zoltan_script
 
-# Makefile target to compile ZoltanComponent. This assumesthat the CCA_SPEC_DIR and
+# makefile target to compile ZoltanComponent. This assumesthat the CCA_SPEC_DIR and
 # DCCAFE_DIR definitions in Utilities/Config/Config.<arch> exist.
 
 zoltan_component : zoltan zdrive

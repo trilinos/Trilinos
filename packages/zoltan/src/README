@@ -95,9 +95,9 @@ docs/octree                        -- Documentation for RPI's
 ZOLTAN LIBRARY FILES
 --------------------
 
-Makefile        -- Top-level Zoltan Makefile.  
+makefile        -- Top-level Zoltan makefile.  
 
-Makefile_sub    -- Lower-level Makefile template.  Copied to Obj_target
+makefile_sub    -- Lower-level makefile template.  Copied to Obj_target
                    directories when targets are compiled.
 
 all             -- Memory allocation functions.
