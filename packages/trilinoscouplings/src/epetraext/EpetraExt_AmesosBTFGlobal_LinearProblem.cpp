@@ -68,7 +68,6 @@ operator()( OriginalTypeRef orig )
 	
   int nGlobal = OldMatrix_->NumGlobalRows(); 
   int n = OldMatrix_->NumMyRows();
-  int nnz = OldMatrix_->NumMyNonzeros();  
 
   // Check if the matrix is on one processor.
   int myMatProc = -1, matProc = -1;
@@ -214,14 +213,8 @@ operator()( OriginalTypeRef orig )
     Epetra_Vector rowWeights( View, blkGraph->Map(), &weight[0] );
     
     // Call Isorropia to rebalance this graph.
-    Teuchos::ParameterList isorropiaList;
-    Teuchos::ParameterList& sublist = isorropiaList.sublist( "Zoltan" );
-    sublist.set("LB_METHOD", "GRAPH");
-    sublist.set("PARMETIS_METHOD", "PARTKWAY");
-    //Teuchos::RCP<Epetra_CrsGraph> balancedGraph =
-    //  Isorropia::Epetra::create_balanced_copy( *blkGraph, rowWeights );
     Teuchos::RCP<Epetra_CrsGraph> balancedGraph =
-      Isorropia::Epetra::create_balanced_copy( *blkGraph );
+      Isorropia::Epetra::create_balanced_copy( *blkGraph, rowWeights );
     
     int myNumBlkRows = balancedGraph->NumMyRows();    
     
