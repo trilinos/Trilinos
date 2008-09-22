@@ -100,7 +100,8 @@ PHALANX_HPP = \
 PHALANX_CPP = \
 	$(srcdir)/Phalanx_ArrayPrivate.cpp \
 	$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp \
-	$(srcdir)/Phalanx_DataLayout.cpp
+	$(srcdir)/Phalanx_DataLayout.cpp \
+	$(srcdir)/Phalanx_FieldTag.cpp
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
