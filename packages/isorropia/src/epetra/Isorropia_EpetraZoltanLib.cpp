@@ -345,10 +345,10 @@ void ZoltanLibClass::preCheckPartition()
   int localProc = comm.MyPID();
   int nprocs = comm.NumProc();
 
-  // Checks for Zoltan parameters NUM_GLOBAL_PARTITIONS and NUM_LOCAL_PARTITIONS.
+  // Checks for Zoltan parameters NUM_GLOBAL_PARTS and NUM_LOCAL_PARTS.
 
-  std::string gparts_str("NUM_GLOBAL_PARTITIONS");
-  std::string lparts_str("NUM_LOCAL_PARTITIONS");
+  std::string gparts_str("NUM_GLOBAL_PARTS");
+  std::string lparts_str("NUM_LOCAL_PARTS");
   std::string gparts("0");
   std::string lparts("0");
 
@@ -375,7 +375,7 @@ void ZoltanLibClass::preCheckPartition()
   maxLparts = maxParts[1];
 
   // Fix problem if the number of rows is less than the number
-  // of processes.  We need to set NUM_GLOBAL_PARTITIONS to
+  // of processes.  We need to set NUM_GLOBAL_PARTS to
   // the number of rows, unless it was already set to something
   // greater than 0 but less than the number of rows.
 
@@ -401,18 +401,18 @@ void ZoltanLibClass::preCheckPartition()
     if (maxGparts > 0){
       if (maxGparts > numrows){
 	// This is an error because we can't split rows among partitions
-	str2 = "NUM_GLOBAL_PARTITIONS exceeds number of rows (objects to be partitioned)";
+	str2 = "NUM_GLOBAL_PARTS exceeds number of rows (objects to be partitioned)";
 	throw Isorropia::Exception(str1+str2);
       }
 
       if ((sumLparts > 0) && (sumLparts != maxGparts)){
 	// This is an error because local partitions must sum to number of global
-	str2 = "NUM_GLOBAL_PARTITIONS not equal to sum of NUM_LOCAL_PARTITIONS";
+	str2 = "NUM_GLOBAL_PARTS not equal to sum of NUM_LOCAL_PARTS";
 	throw Isorropia::Exception(str1+str2);
       }
 
       if ((sumLparts == 0) && (maxGparts < nprocs)){
-	// Set NUM_LOCAL_PARTITIONS to 1 or 0, because Zoltan will divide
+	// Set NUM_LOCAL_PARTS to 1 or 0, because Zoltan will divide
 	// a partition across 2 or more processes when the number of
 	// partitions is less than the number of processes.  This doesn't
 	// work for Epetra matrices, where rows are not owned by more than
@@ -423,8 +423,8 @@ void ZoltanLibClass::preCheckPartition()
     }
     else if (maxLparts > 0){
 
-      // Set NUM_GLOBAL_PARTITIONS to sum of local partitions.  It's possible
-      // that Zoltan does this already, but just to be safe...
+      // Set NUM_GLOBAL_PARTS to sum of local partitions.  
+      // Zoltan does this already, but just to be safe...
 
       fixGparts = sumLparts;
     }
