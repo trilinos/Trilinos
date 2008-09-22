@@ -21,6 +21,11 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
+ZOLTAN_TESTS = \
+    test/test_zoltan \
+    test/ch_simple \
+    test/hg_simple 
+
 ZOLTAN_DOCS = \
     doc/Zoltan_html/Zoltan.html \
     doc/Zoltan_html/Zoltan_FAQ.html \
@@ -151,7 +156,7 @@ EXTRA_DIST = config/generate-makeoptions.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
        config/token-replace.pl \
        Disclaimer GNU_Lesser_GPL.txt Known_Problems VERSION \
-       $(ZOLTAN_DOCS) $(ZOLTAN_SAMPLE)
+       $(ZOLTAN_DOCS) $(ZOLTAN_SAMPLE) $(ZOLTAN_TESTS)
 
 
 ## #######################################################################
