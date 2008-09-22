@@ -172,6 +172,10 @@ public:
     return Zoltan_Order_Get_Num_Leaves(ZZ_Ptr);
   }
 
+  void Order_Get_Block_Leaves(int *leaves) {
+    return Zoltan_Order_Get_Block_Leaves(ZZ_Ptr, leaves);
+  }
+
   int Order_Get_GID_Order(ZOLTAN_ID_PTR global_ids,ZOLTAN_ID_PTR order_ids) {
     return Zoltan_Order_Get_GID_Order(ZZ_Ptr, global_ids, order_ids);
   }

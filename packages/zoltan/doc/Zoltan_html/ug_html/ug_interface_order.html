@@ -233,6 +233,13 @@ Note that these functions should be called after
 <td WIDTH="85%">int <b>Zoltan_Order_Get_Num_Blocks</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>)
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Num_Blocks</b> ()
+</tr>
+
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order_Get_Num_Blocks </b> returns the number of subdomains (or column blocks) computed during the ordering. For a Nested Dissection based ordering method, it corresponds to the sum of the separators and the subgraphs of the lowest level. For example, after one bisection the number of blocks is three.
@@ -281,6 +288,17 @@ which has been used in the ordering routine.</td>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>first</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>last</i>)
 </tr>
+
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Block_Bounds</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>first</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>last</i>)
+</tr>
+
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Bounds </b> gives the
@@ -352,6 +370,15 @@ which has been used in the ordering routine.</td>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
 </tr>
+
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Block_Size</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
+</tr>
+
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Size </b> returns the number of objects in the block <i>block_id</i>.
@@ -403,6 +430,14 @@ which has been used in the ordering routine.</td>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Block_Parent</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
+</tr>
+
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Parent </b> returns the
@@ -455,6 +490,13 @@ value is -1 for the root of the tree.</td> </tr> </table>
 <td WIDTH="85%">int <b>Zoltan_Order_Get_Num_Leaves</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>)
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Num_Leaves</b> ()
+</tr>
+
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order_Get_Num_Leaves </b> returns the number of leaves in the elimination tree.
@@ -502,6 +544,16 @@ which has been used in the ordering routine.</td>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>leaves</i>)
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">void <b>Zoltan::Order_Get_Block_Leaves</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>leaves</i>)
+</tr>
+
+
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Leaves </b> get the indices
@@ -545,6 +597,15 @@ which has been used in the ordering routine.</td>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>order_ids</i>)
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_GID_Order</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>order_ids</i>)
+</tr>
+
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order_Get_GID_Order </b> provides the
