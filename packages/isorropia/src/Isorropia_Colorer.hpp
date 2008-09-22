@@ -39,19 +39,15 @@ namespace Isorropia {
 /** Interface (abstract base class) for computing a new coloring and
     describing the result.
 
-    If the methods which describe the new partitioning (e.g.,
-  newPartitionNumber(), etc.) are called before compute_partitioning()
-  has been called, behavior is not well defined. Implementations will
-  either return empty/erroneous data, or throw an exception. In most
-  cases, implementations will probably call compute_partitioning()
-  internally in a constructor or factory method, so this won't usually
-  be an issue.
+    The colors returned have values between 1 and C, where C is the number of colors used.
+
 */
 class Colorer : virtual public Operator {
 public:
 
   /** Destructor */
   virtual ~Colorer() {}
+
 
   /** Method which does the work of computing a new coloring.
 
@@ -65,18 +61,40 @@ public:
    */
   virtual void color(bool forceColoring=false) = 0;
 
+
   /** Method which returns the number (global) of colors used.
+
+      \return The overall number of colors used. All colors used for
+      all vertices are between 1 and this value (included).
+
+      \sa Isorropia::Operator::numProperties()
    */
   virtual int numColors() const {
       return numProperties(); }
 
-  /** Return the number of elements of a given color.
+
+  /** Return the number of \b local elements of a given color.
+
+      \param color The wanted color.
+
+      \return The number of \b local of the asked color.
+
+      \sa Isorropia::Operator::numElemsWithProperty()
    */
   virtual int numElemsWithColor(int color) const
   { return numElemsWithProperty(color); }
 
+
   /** Fill user-allocated list (of length len) with the
    *  local element ids for LOCAL elements of the given color.
+
+      \param color the wanted color
+
+      \param elementList an array to receive local elements of the given color
+
+      \param len the number of elements wanted
+
+      \sa Isorropia::Operator::elemsWithProperty()
    */
   virtual void elemsWithColor(int color,
 			      int* elementList,

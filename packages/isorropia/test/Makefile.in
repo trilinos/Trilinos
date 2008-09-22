@@ -104,7 +104,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-@BUILD_ZOLTAN_TRUE@am__EXEEXT_1 = rebalance_zoltan.exe
+@HAVE_MPI_TRUE@am__EXEEXT_1 = rebalance_zoltan.exe
 DIST_SUBDIRS = utils utest rebalance_1d_default zoltan mtx
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -219,10 +219,12 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_ZOLTAN_FALSE@ZOLTAN_TEST_DIR = 
-@BUILD_ZOLTAN_TRUE@ZOLTAN_TEST_DIR = zoltan
-@BUILD_ZOLTAN_FALSE@ZOLTAN_TEST = 
-@BUILD_ZOLTAN_TRUE@ZOLTAN_TEST = rebalance_zoltan.exe
+@HAVE_MPI_FALSE@ZOLTAN_TEST_DIR = 
+
+#Isorropia now depends on Zoltan, and these tests depend on MPI
+@HAVE_MPI_TRUE@ZOLTAN_TEST_DIR = zoltan
+@HAVE_MPI_FALSE@ZOLTAN_TEST = 
+@HAVE_MPI_TRUE@ZOLTAN_TEST = rebalance_zoltan.exe
 @BUILD_EPETRAEXT_TRUE@MTX_TEST_DIR = mtx
 @BUILD_EPETRAEXT_TRUE@MTX_TESTS = test_simple.exe test_colorer.exe
 

@@ -199,7 +199,7 @@ public:
   0 to 10, default is 1), etc.
    */
 
-  /**  compute_partitioning is an internal method that computes 
+  /**  partition is an internal method that computes 
        a rebalanced partitioning for the data in the object
       that this class was constructed with.
 
@@ -214,30 +214,30 @@ public:
 
   virtual void compute(bool forceRecomputing=false);
 
-  /** An internal method which determines whether the
-      method compute_partitioning() has already been
-      called on this class instance.
-  */
   bool partitioning_already_computed() const __deprecated;
 
-  /** An internal method which returns the new partition ID for a given element that
-     resided locally in the old partitioning.
+  __deprecated int newPartNumber(int myElem) const
+  {
+    return ((*this)[myElem]);
+  }
+
+  int numElemsInPart(int part) const {
+    return (numElemsWithProperty(part));
+  }
+  void elemsInPart(int part, int* elementList, int len) const {
+    elemsWithProperty(part, elementList, len);
+  }
+
+  /** Create a new @c Epetra_Map corresponding to the new partition.
+
+      This method is essentially used by the
+      Isorropia::Epetra::Redistributor object.
+
+      \return @c Epetra_Map that contains the new distribution of elements.
+
+      \pre The number of parts might be the same or lower than the
+      number of processors.
   */
-  int newPartitionNumber(int myElem) const __deprecated;
-
-  /** An internal method which returns the number of elements in a given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
-  */
-  int numElemsInPartition(int partition) const;
-
-  /** An internal method which fills caller-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
-  */
-  void elemsInPartition(int partition, int* elementList, int len) const;
-
   Teuchos::RefCountPtr<Epetra_Map> createNewMap();
 
 };//class Partitioner

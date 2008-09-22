@@ -28,9 +28,6 @@ USA
 //@HEADER
 
 #include <Isorropia_EpetraOperator.hpp>
-#ifdef HAVE_ISORROPIA_ZOLTAN
-#include <Isorropia_Zoltan_Repartition.hpp>
-#endif /* HAVE_ISORROPIA_ZOLTAN */
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -142,7 +139,7 @@ const int& Operator::operator[](int myElem) const
 
 int Operator::numElemsWithProperty(int property) const
 {
-  if ((unsigned) property <= numberElemsByProperties_.size())
+  if ((unsigned) property < numberElemsByProperties_.size())
     return numberElemsByProperties_[property];
   return (0);
 }
@@ -169,14 +166,20 @@ Operator::computeNumberOfProperties()
   const Epetra_Comm& input_comm = input_map_->Comm();
 
   int max = 0;
-
   numberElemsByProperties_.assign(properties_.size(), 0);
 
   numberIter = numberElemsByProperties_.begin();
   for(elemsIter = properties_.begin() ; elemsIter != properties_.end() ; elemsIter ++) {
     int property;
     property = *elemsIter;
-    if (max < property) max = property;
+    if (max < property) {
+      max = property;
+      int toAdd = max - numberElemsByProperties_.size() + 1;
+      if (toAdd > 0) {
+	numberElemsByProperties_.insert(numberElemsByProperties_.end(), toAdd, 0);
+	numberIter = numberElemsByProperties_.begin();
+      }
+    }
     (*(numberIter + property)) ++;
   }
 

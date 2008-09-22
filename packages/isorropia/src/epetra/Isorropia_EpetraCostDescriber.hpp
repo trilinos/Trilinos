@@ -36,6 +36,9 @@ USA
 #include <Teuchos_ParameterList.hpp>
 
 #include <map>
+#include <list>
+#include <set>
+#include <iostream>
 
 #ifdef HAVE_EPETRA
 class Epetra_Vector;
@@ -67,7 +70,7 @@ namespace Isorropia {
 
     If Trilinos has been built with the Zoltan parallel dynamic load
     balancing library (http://www.cs.sandia.gov/Zoltan),
-    then Isorropia with use Zoltan to partition the Epetra object.
+    then Isorropia will use Zoltan to partition the Epetra object.
     The application can set Zoltan parameters with the ParameterList object.
 
     If Zoltan is not available, or the application has set the parameter
@@ -80,13 +83,15 @@ namespace Isorropia {
     consider edge weights in the partitioning.
 */
 
+class Operator;
+
 namespace Epetra {
 
 /** The CostDescriber class describes the vertex, edge and/or hyperedge weights.
 
     It is instantiated by the application to define
     weights, and then supplied to Isorropia with the
-    Isorropia::Epetra::create_balanced_copy method or the.
+    Isorropia::Epetra::create_balanced_copy method or the
     Isorropia::Epetra::create_partitioner method.
 
     The CostDescriber can hold vertex (row) weights.
@@ -99,7 +104,24 @@ namespace Epetra {
     are available to override those defaults.
 */
 
+// Forward declarations of friends
+
+namespace ZoltanLib{
+  class QueryObject;
+}
+class InternalPartitioner;
+class ZoltanLibClass;
+
 class CostDescriber : public Isorropia::CostDescriber {
+
+  // public methods are part of API, private methods are used by different
+  // classes in isorropia
+
+  friend class Isorropia::Operator;
+  friend class Isorropia::Epetra::ZoltanLib::QueryObject;
+  friend class Isorropia::Epetra::InternalPartitioner;
+  friend class Isorropia::Epetra::ZoltanLibClass;
+
 public:
   /** Constructor */
   CostDescriber();
@@ -107,203 +129,191 @@ public:
   /** Destructor */
   ~CostDescriber();
 
-  /** For debugging purposes, print out the cost information.
+  /**  Overloaded << operator for CostDescriber object
    */
-  void ShowCosts();
+  friend std::ostream& operator <<(std::ostream &, const Isorropia::Epetra::CostDescriber &cd);
 
-  /** An internal Isorropia method to set parameters for the CostDescriber instance. 
+  /** setVertexWeights is called by a process to supply the
+      weight of each vertex that it owns in the matrix.
 
-     The contents of the
-     input paramlist object are copied into an internal ParameterList
-     attribute. This class does not retain a reference
-     to the input ParameterList after this method returns.
-     Used by library, not application.
-   */
-  void setParameters(const Teuchos::ParameterList& paramlist);
-
-  /** A CostDescriber API method where the application specifies the
-      vertex (row) weights.
-
-      Each vertex (row) weight should be supplied by exactly one process
-      (the process that "owns" that row).
-      Used by application
+      \param vwgts  vector of weights, one for each vertex
    */
   void setVertexWeights(Teuchos::RefCountPtr<const Epetra_Vector> vwts);
 
-  /** A CostDescriber API method where the application specifies the
-      graph edge (non zero) weights.
-     
-      Edges belonging to a vertex are represented by non-zeroes in the
-      row that corresponds to the vertex.  All of the edges for a given
-      vertex should be supplied by the one process that "owns" that row.
+  /** setGraphEdgeWeights is called by a process to supply the weights for
+      each of the edges of its vertices.  An edge corresponds to a non-zero
+      in the row representing the vertex.
+
+      This method is called only when performing graph partitioning with a
+      square symmetric matrix.  For hypergraph partitioning call the equivalent
+      hypergraph method.
+
+      \param gewts an Epetra_CrsMatrix supplied by the application, each non-zero
+             represents a weight for an edge
    */
   void setGraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_CrsMatrix> gewts);
 
-  /** A CostDescriber API method where the application specifies the
-      hypergraph edge (column) weights.
+  /** setHypergraphEdgeWeights is called by processes in an application to
+      supply weights for the hyperedges, which are represented by the columns
+      of the matrix.  (A hyperedge can in general link more than one vertex.)
      
       Matrices that represent hypergraphs are not in general square.
       There may be more or fewer hyperedges (columns) than vertices (rows).
-     
+
+      \param hgewts  an Epetra_Vector containing the weights for each hyperedge.
+   */
+  void setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector> hgewts);
+
+  /** setHypergraphEdgeWeights is called by processes in an application to
+      supply weights for the hyperedges, which are represented by the columns
+      of the matrix.  (A hyperedge can in general link more than one vertex.)
+
+      Matrices that represent hypergraphs are not in general square.
+      There may be more or fewer hyperedges (columns) than vertices (rows).
+
       More than one process can supply a weight for the same column.  (So
       there is no concept of a process owning a hyperedge.)  Zoltan
       combines these weights according to the setting of the
       PHG_EDGE_WEIGHT_OPERATION parameter.
-      Used by application
-   */
-  void setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector> hgewts);
-
-  /** A CostDescriber API method where the application specifies the
-      hypergraph edge (column) weights.
      
-      Supply a list of hypergraph edge weights and corresponding hypergraph
-      global IDs.
+       \param numHGedges  the length of the hgGIDs and heEwgts arrays
+       \param hgGIDs      the global ID for each hyperedge this process will supply a weight for
+       \param hgEwgts   the hyperedge weight corresponding to each hyperedge listed in hgGIDs
    */
   void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const float *hgEwgts);
 
-  /** A CostDescriber API method where the application specifies the
-      hypergraph edge (column) weights.
-     
-      Supply a list of hypergraph edge weights and corresponding hypergraph
-      global IDs.
+  /** \copydoc Isorropia::Epetra::CostDescriber::setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector>
    */
+
   void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const double *hgEwgts);
 
-  /** An internal CostDescriber method used by Isorropia to query whether 
-    non-default vertex weights are present. 
+  /** Get the contents of this CostDescriber
 
-   If this
-    function returns false, the caller can assume that vertex weights
-    are all 1.0, or this process has no vertices.
-  */
+      \param vertexWeights is set to a mapping from vertex global IDs to their weights
+      \param graphEdgeWeights is a mapping from vertex global IDs to a map from neighboring
+                 IDs to edge weights
+      \param hypergraphEdgeWeights is a mapping from hyperedge (column) global IDs to hyperedge weights
+
+   */
+  void getCosts(std::map<int, float > &vertexWeights,
+                std::map<int, std::map<int, float > > &graphEdgeWeights,
+                std::map<int, float > &hypergraphEdgeWeights) const;
+
+  /** Print out the contents of this CostDescriber
+   */
+  void show_cd(std::ostream &) const;
+
+private:
+
+  /** \copydoc Isorropia::CostDescriber::setParameters
+   */
+  void setParameters(const Teuchos::ParameterList& paramlist);
+
+  /** \copydoc Isorropia::CostDescriber::haveVertexWeights
+   */
   bool haveVertexWeights() const;
-
-  /** An internal CostDescriber method used by Isorropia to query whether 
-      the number of vertex weights present. 
-
-      Vertices typically correspond to matrix rows.
-  */
+  /** \copydoc Isorropia::CostDescriber::getNumVertices
+   */
   int getNumVertices() const;
-
-  /** An internal CostDescriber method used by Isorropia to obtain the vertex weights.
-
-      Create a map from each vertex global ID to its weight.  Return the
-      number of vertices in the map.  If vertex weights are defined, there
-      is one weight for each vertex owned by this process. 
-  */
-  int getVertexWeights(std::map<int, float> &wgtMap) const;
-
-  /** An internal CostDescriber method used by Isorropia to obtain the vertex weights.
-
-     Get the lists of vertex ids and weights.
-  */
+  /** \copydoc Isorropia::CostDescriber::getVertexWeights
+   */
   void getVertexWeights(int numVertices,
                       int* global_ids, float* weights) const; 
-
-  /** An internal CostDescriber method used by Isorropia to query whether 
-     non-default graph edge weights are present.
-
-     If this function returns false, the caller can assume that
-     graph edge weights are all 1.0, or that this process has
-     no rows.
-  */
+  /** \copydoc Isorropia::CostDescriber::haveGraphEdgeWeights
+   */
   bool haveGraphEdgeWeights() const;
-
-  /** An internal CostDescriber method used by Isorropia to query 
-      the number of graph edges (non zeros) present for a given vertex (row).
-  */
+  /** \copydoc Isorropia::CostDescriber::getNumGraphEdges
+   */
   int getNumGraphEdges(int vertex_global_id) const;
 
-  /** An internal CostDescriber method used by Isorropia to obtain
-      the graph edge weights for a given vertex (row).
- 
-      Create a map from neighbor global ID to edge weight, and return
-      the number of neighbors.
-  */
-  int getGraphEdgeWeights(int vertex_global_id, std::map<int, float> &wgtMap) const;
+  /** Get the set of global IDs for the vertices that we have edge information for.
 
-  /** An internal CostDescriber method used by Isorropia to obtain
-      the graph edge weights for a given vertex (row).
- 
-      Get the graph edge weights for a specified vertex.
-     Used by library, not application.
-  */
+      \param gids will be set to the global IDs of the vertices for which neighbor and edge weight information have been provided
+   */
+  int getGraphEdgeVertices(std::set<int> &gids) const;
+
+
+  /** \copydoc Isorropia::CostDescriber::getGraphEdgeWeights
+   */
   void getGraphEdgeWeights(int vertex_global_id,
                                    int num_neighbors,
                                    int* neighbor_global_ids,
                                    float* weights) const; 
-
-  /** An internal CostDescriber method used by Isorropia to query whether
-      hypergraph edge weights are available.
-
-     If this function returns false, the caller can assume that
-     hypergraph edge weights are all 1.0, or that all hyperedge
-     weights were supplied by other processes.
-  */
+  /** \copydoc Isorropia::CostDescriber::haveHypergraphEdgeWeights
+   */
   bool haveHypergraphEdgeWeights() const;
-
-  /** An internal CostDescriber method used by Isorropia to obtain the
-      number of hypergraph edge (column) weights available on this process.
-  */
+  /** \copydoc Isorropia::CostDescriber::getNumHypergraphEdgeWeights
+   */
   int getNumHypergraphEdgeWeights() const;
-
-  /** An internal CostDescriber method used by Isorropia to obtain the
-      hypergraph edge (column) weights.
-  */
+  /** \copydoc Isorropia::CostDescriber::getHypergraphEdgeWeights
+   */
   void getHypergraphEdgeWeights(int numEdges,
                                         int* global_ids,
                                         float* weights) const;
 
-  /** An internal CostDescriber method used by Isorropia to query whether
-      any processes in the application supplied vertex weights.
+   /** Return the CostDescribers hypergraph edge weights as a map from hyperedge (column)
+       global ID to weight.
   
-     It's possible that (haveVertexWeights() == false) because this
-     process has no rows of the matrix, but that
-     the application overall has supplied vertex weights.
+       \wgtMap will be set to a map from hyperedge global ID to hyperedge weight
+   */
+   int getHypergraphEdgeWeights(std::map<int, float> &wgtMap) const;
+
+
+  /** Get vertex weights in the form of a map from vertex global ID to vertex weight.
+
+      \param wgtMap a map supplied by the caller, the vertex weights will be added to this map
+      \return the size of wgtMap
+  */
+  int getVertexWeights(std::map<int, float> &wgtMap) const;
+
+
+
+  /** getGraphEdgeWeights is called to obtain
+      the graph edge weights for a given vertex (row).
+ 
+      \param vertex_global_id the global ID of the vertex the caller wants edge weights for
+      \param wgtMap a map from the global ID of each vertex neighbor to the weight of the edge formed by the vertex and this neighbor
+      \return  the count of the neighbors of vertex_global_id
+  */
+  int getGraphEdgeWeights(int vertex_global_id, std::map<int, float> &wgtMap) const;
+
+
+
+  /** haveGlobalVertexWeights returns true if any process in the application has
+        supplied vertex weights, it returns false otherwise.
    */
   bool haveGlobalVertexWeights() const;
 
-  /** An internal CostDescriber method used by Isorropia to tell
-      the CostDescriber object how many vertex weights were supplied
-      by all processes in the application.
+  /** setNumGlobalVertexWeights may be used to set the count of the
+        global number of vertex weights supplied to the CostDescriber
    */
   void setNumGlobalVertexWeights(int num);
 
-  /** An internal CostDescriber method used by Isorropia to query whether
-      any processes in the application supplied graph edge weights.
-  
-     It's possible that (haveGraphEdgeWeights() == false) because this
-     process has no rows of the matrix, but that
-     the application overall has supplied graph edge weights.
+  /** haveGlobalGraphEdgeWeights returns true if any process in the application has
+        supplied graph edge weights, it returns false otherwise.
    */
   bool haveGlobalGraphEdgeWeights() const;
 
-  /** An internal CostDescriber method used by Isorropia to tell
-      the CostDescriber object how many graph edges weights were supplied
-      by all processes in the application.
+  /** setNumGlobalGraphEdgeWeights may be used to set the count of the
+        global number of graph edge weights supplied to the CostDescriber
    */
   void setNumGlobalGraphEdgeWeights(int num);
 
-  /** An internal CostDescriber method used by Isorropia to query whether
-      any processes in the application supplied hypergraph edge weights.
-  
-     It's possible that (haveHypergraphEdgeWeights() == false) because 
-     the hypergraph edge weights were all supplied by other processes,
-     but that the application overall has supplied hypergraph edge weights.
+  /** haveGlobalHypergraphEdgeWeights returns true if any process in the application has
+        supplied hyperedge weights, it returns false otherwise.
    */
   bool haveGlobalHypergraphEdgeWeights() const;
 
-  /** An internal CostDescriber method used by Isorropia to tell
-      the CostDescriber object how many hypergraph edges weights were supplied
-      by all processes in the application.
+  /** setNumGlobalHypergraphEdgeWeights may be used to set the count of the
+        global number of hyperedge weights supplied to the CostDescriber
    */
   void setNumGlobalHypergraphEdgeWeights(int num);
 
-private:
-  /** to do
+  /** Dynamically allocate storage for hypergraph edge weights.
    */
   void allocate_hg_edge_weights_(int n);
-  /** to do
+
+  /** Free storage used by hypergraph edge weights.
    */
   void free_hg_edge_weights_();
 
@@ -321,9 +331,17 @@ private:
   int numGlobalGraphEdgeWeights_;
   int numGlobalHypergraphEdgeWeights_;
 
-  /** Create an array of the global IDs for the neighbors of the
-     given vertex, and also array of the edge weight for each edge.
-     Return the number of edges.  Self edges are not included.
+  /** getEdges creates an array of the neighbors and edge weights for given vertex.
+      Self edges are not included.
+
+      \param vertexGID the global ID of the vertex (must be one owned by calling process)
+      \param length of preallocated nborGID and weights arrays
+      \param nborGID on return contains the global ID of each vertex neighboring vertexGID,
+                         allocated by caller      
+      \param weights on return contains the weight for each edge formed by the vertices in nborGID
+
+      \return the number of neighbors in nborGID is returned
+
    */
   int getEdges(int vertexGID, int len, int *nborGID, float *weights) const;
 

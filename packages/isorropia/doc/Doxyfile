@@ -16,13 +16,13 @@
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project. 
 
-PROJECT_NAME           = "Isorropia Partitioning and Load Balancing package"
+PROJECT_NAME           = "Isorropia: Partitioning, Load Balancing and more"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = "Version 3.0d"
+PROJECT_NUMBER         = "Version 3.0"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -560,7 +560,7 @@ INCLUDE_FILE_PATTERNS  =
 # or name=definition (no spaces). If the definition and the = are 
 # omitted =1 is assumed. 
 
-PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS HAVE_EPETRA
+PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS HAVE_EPETRA HAVE_EPETRAEXT HAVE_ZOLTAN
 
 # If the MACRO_EXPANSION and EXPAND_PREDEF_ONLY tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
@@ -665,4 +665,3 @@ MAX_DOT_GRAPH_HEIGHT   = 1024
 # used. If set to NO the values of all tags below this one will be ignored. 
 
 SEARCHENGINE           = NO
-

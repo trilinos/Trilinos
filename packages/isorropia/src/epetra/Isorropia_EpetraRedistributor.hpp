@@ -60,10 +60,11 @@ namespace Epetra {
 
 class Redistributor : public Isorropia::Redistributor {
 public:
-  /** This constructor is part of the Isorropia API.
-
-      This constructor calls partitioner.compute_partitioning() if it
-      has not already been called.
+  /** This constructor calls the Isorropia::Epetra::Partitioner::partition
+      method on the @c partitioner if it has not already been called.
+ 
+      \param[in] partitioner this input partitioner determines the new partitioning
+            to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
   Redistributor(Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner);
 
@@ -71,78 +72,115 @@ public:
    */
   virtual ~Redistributor();
 
-  /** This method, part of the Isorropia API, is used to redistribute an Epetra object.
-
-      Method to redistribute a Epetra_SrcDistObject into a
+  /** Method to redistribute a Epetra_SrcDistObject into a
       Epetra_DistObject. The caller is required to have constructed
       the target object using the correct target map.
   */
   void redistribute(const Epetra_SrcDistObject& src,
 		    Epetra_DistObject& target);
 
-  /** This method is part of the Isorropia API, used to redistribute an Epetra object.
-
-      Method to accept a Epetra_CrsGraph object, and
+  /** Method to accept a Epetra_CrsGraph object, and
       return a redistributed Epetra_CrsGraph object.
 
-      Note that the 'input_graph' argument may be a
-      different object than the one which was used to
-      construct the partitioner.
+      \param[in] input_graph the graph for which we want a new graph that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_graph has different domain and range maps, in which case
+      the range map is preserved.  By default callFillComplete is @c true.
+
+      \return a reference counted pointer to the new redistributed graph 
   */
   Teuchos::RefCountPtr<Epetra_CrsGraph>
      redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete= true);
 
-  /** This method is part of the Isorropia API, used
-      to redistribute an Epetra object.
-
-      Method to accept a Epetra_CrsMatrix object, and
+  /** Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
-      Note that the 'input_matrix' argument may be a
-      different object than the one which was used to
-      construct the partitioner.
+      \param[in] input_matrix the matrix for which we want a new matrix that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_matrix has different domain and range maps, in which case
+      the range map is preserved.  By default callFillComplete is @c true.
+
+      \return a reference counted pointer to the new redistributed matrix
   */
   Teuchos::RefCountPtr<Epetra_CrsMatrix>
      redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete= true);
 
-  /** This method is part of the Isorropia API, used
-      to redistribute an Epetra object.
-
-      Method to accept a Epetra_RowMatrix object, and
+  /** Method to accept a Epetra_RowMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
+
+      \param[in] input_matrix the row matrix for which we want a new matrix that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_matrix has different domain and range maps, in which case
+      the range map is preserved.  By default callFillComplete is @c true.
+
+      \return a reference counted pointer to the new redistributed matrix
   */
   Teuchos::RefCountPtr<Epetra_CrsMatrix>
      redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete= true);
 
-  /** This method is part of the Isorropia API, used
-      to redistribute an Epetra object.
-
-      Method to accept a Epetra_Vector object, and
+  /** Method to accept a Epetra_Vector object, and
       return a redistributed Epetra_Vector object.
+
+      \param[in] input_vector the vector for which we want a new vector that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \return a reference counted pointer to the new redistributed vector
   */
   Teuchos::RefCountPtr<Epetra_Vector>
      redistribute(const Epetra_Vector& input_vector);
 
-  /** This method is part of the Isorropia API, used
-      to redistribute an Epetra object.
-
-      Method to accept a Epetra_MultiVector object, and
+  /** Method to accept a Epetra_MultiVector object, and
       return a redistributed Epetra_MultiVector object.
+
+      \param[in] input_vector the multi vector for which we want a new multi vector that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \return a reference counted pointer to the new redistributed multi vector
   */
   Teuchos::RefCountPtr<Epetra_MultiVector>  
      redistribute(const Epetra_MultiVector& input_vector);
 
   /** Reverse redistribute an Epetra_Vector.
+
+      \param[in] input_vector a vector that is distributed according to the partitioner that was used to create this Redistributor
+
+      \param[out] output_vector a copy of the @c input_vector which has been redistributed according
+                    to the reverse of the partitioner that was used to create this Redistributor
   */
   void
      redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Vector& output_vector);
 
   /** Reverse redistribute an Epetra_MultiVector.
-   */
+
+      \param[in] input_vector a multi vector that is distributed according to the partitioner that was used to create this Redistributor
+
+      \param[out] output_vector a copy of the @c input_vector which has been redistributed according
+                    to the reverse of the partitioner that was used to create this Redistributor
+
+  */
   void
      redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector);
 private:
-  /** This is an internal method of the Redistributor class.
+  /** Create an importer object to be used in the redistribution
+
+      \param[in] src_map the map describing the pattern of the import operation
    */
   void create_importer(const Epetra_BlockMap& src_map);
 

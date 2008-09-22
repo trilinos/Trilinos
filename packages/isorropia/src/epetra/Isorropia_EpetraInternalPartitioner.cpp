@@ -186,8 +186,7 @@ order(Teuchos::ParameterList& paramList,
 int InternalPartitioner::postcompute()
 {
   return (0);
-};
-
+}
 
 
 } // namespace EPETRA

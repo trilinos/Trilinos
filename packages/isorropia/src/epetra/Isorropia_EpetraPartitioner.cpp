@@ -29,7 +29,6 @@ USA
 
 #include <Isorropia_EpetraPartitioner.hpp>
 #ifdef HAVE_ISORROPIA_ZOLTAN
-#include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_EpetraZoltanLib.hpp>
 #endif
 #include <Isorropia_EpetraInternalPartitioner.hpp>
@@ -296,31 +295,6 @@ bool Partitioner::partitioning_already_computed() const {
   return (alreadyComputed());
 }
 
-  /** An internal method which returns the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
-int Partitioner::newPartitionNumber(int myElem) const
-{
-  return ((*this)[myElem]);
-}
-
-  /** An internal method which returns the number of elements in a given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
-  */
-int Partitioner::numElemsInPartition(int partition) const
-{
-  return (numElemsWithProperty(partition));
-}
-
-  /** An internal method which fills caller-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
-  */
-void Partitioner::elemsInPartition(int partition, int* elementList, int len) const {
-  return (elemsWithProperty(partition, elementList, len));
-}
 
 Teuchos::RefCountPtr<Epetra_Map>
 Partitioner::createNewMap()

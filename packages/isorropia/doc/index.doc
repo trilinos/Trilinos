@@ -1,61 +1,101 @@
-/*! \mainpage Isorropia: Partitioning and Rebalancing package
+/*! \mainpage Isorropia: Partitioning, Coloring, and Ordering
 \htmlonly
 \endhtmlonly
 
 \section isorropia_intro Introduction
 
-Isorropia is a repartitioning/rebalancing package, intended to assist
-with redistributing objects such as matrices and matrix-graphs in a
-parallel execution setting, to allow for more efficient computations.
+Isorropia is a package for combinatorial scientific computing, with focus on partitioning (load balancing), but also supports coloring and ordering. Its main purpose is to assist with redistributing objects such as matrices and matrix-graphs in a parallel execution setting, to allow for more efficient computations. Isorropia produces good maps for Epetra matrices/graphs. Isorropia should be called after the matrix/graph is filled, so the sparsity pattern is known.
+<br>
+
+      Isorropia is primarily an interface to the Zoltan toolkit, which is now required. Zoltan became a Trilinos package in 9.0 and is automatically enabled by
+Isorropia.
 To enable Isorropia in your Trilinos build, provide the argument
 '--enable-isorropia' to configure.
-
-Isorropia is primarily an interface to the Zoltan library, but can be
-built and used with minimal capability without Zoltan. To enable Isorropia's
-Zoltan support, you need to add '--enable-isorropia-zoltan' and
-'--enable-epetraext' to your Trilinos configure command, and provide
-include-paths and library specifications
-for Zoltan version 3.0 or higher (provide these to configure using the
-'--with-incdirs' and '--with-libs' configure arguments).
-If you built Zoltan with third party libraries, e.g. ParMETIS,
-then you must also link with these libraries.
+If you wish to use third-party libraries (such as ParMetis or PT-Scotch) with Isorropia via Zoltan, see the configure options for Zoltan.
 
 <ul>
 <li> <a href="#overview">Overview of Isorropia</a>
+<li> <a href="#partitioning">Partitioning</a>
 <li> <a href="#example_programs">Example Programs</a>
-<li> <a href="#defaults_params">Defaults, Parameters</a>
+<li> <a href="#coloring">Coloring</a>
+<li> <a href="#ordering">Ordering</a>
 </ul>
 
 <a name="overview"> </a>
-\section isorropia_startup Overview of Isorropia.
+\section isorropia_overview Overview of Isorropia.
 
-Isorropia's user interface consists primarily of the Isorropia::Partitioner,
-Isorropia::Redistributor and Isorropia::CostDescriber classes, as well as the
-Isorropia::Epetra::create_balanced_copy functions.
+Isorropia currently contains algorithms for three separate problems, all of which can be viewed as a combinatorial problem based on graphs:
+<ul>
+<li> Partitioning (load-balancing) and data redistribution. 
+<li> Graph coloring.
+<li> Fill-reducing ordering (for sparse direct solvers).
+</ul>
+
+Isorropia contains separate classes to solve each of these problems, all of which derive from Isorropia::Operator and Isorropia::EpetraOperator. Note that an operator in Isorropia is different from an operator in Epetra!
+
+<a name="partitioning"> </a>
+\section partitioning  Partitioning and Load Balancing
+
+We focus on the partitioning (load balancing), which is the most heavily used feature.
+Isorropia's load balancing user interface consists primarily of the Isorropia::Partitioner, Isorropia::Redistributor and Isorropia::CostDescriber classes, as well as the Isorropia::Epetra::create_balanced_copy functions.
 
 The Isorropia::create_balanced_copy functions are free-standing functions
 (not class members) which simply take an input object (Epetra_CrsGraph,
 Epetra_CrsMatrix, etc.) and return a copy which is balanced across
-partitions.
+processes (parts). The reference-counter pointer class Teuchos::RCP is used. 
 
-For more sophisticated use-cases, such as performing one partitioning
+In many use cases, such as performing one partitioning
 and then using it to redistribute multiple objects, it is more
 efficient to use the Isorropia::Partitioner and Isorropia::Redistributor
-classes. The general usage model is to:<br>
+classes. The general usage model is to:
 <ol>
-<li> create a Isorropia::Partitioner instance (providing as input the
- matrix-graph or row-matrix object that is to be re-partitioned, and
+<li> Create a Isorropia::Partitioner instance (providing as input the
+ matrix-graph or row-matrix object that is to be partitioned, and
  optionally a Isorropia::CostDescriber instance with weights/costs to
  influence the partitioning).
-<li> create a Isorropia::Redistributor object (providing as input a
+<li> Create a Isorropia::Redistributor object (providing as input a
 Isorropia::Partitioner instance)
 <li> Use the Isorropia::Redistributor to redistribute one or more objects
  to the new partitioning.
 </ol>
 
-Isorropia is currently aimed primarily at repartitioning/redistributing
+Isorropia was designed such that these steps can usually be done in three lines of code. For example, the Partitioner will by default compute the partitioning at construction time.
+
+Isorropia currently supports  partitioning/redistributing of several
 Epetra objects, including Epetra_CrsGraph, Epetra_RowMatrix (which includes
 Epetra_CrsMatrix and Epetra_VbrMatrix) and Epetra_MultiVector.
+
+Several Isorropia classes and methods accept Teuchos::ParameterList
+objects, allowing the user to control certain behavior.
+Isorropia parameters can be either lower or upper case.
+<ul>
+<li>Choice of partitioner<br>
+By default Zoltan is used as the partitioner (with hypergraph model of 
+sparse matrices). In rare cases one may wish to use the simple built-in 
+linear partitioner instead.  Set the following parameter:
+\verbatim
+  Teuchos::ParameterList params;
+  params.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
+\endverbatim
+
+<li>Passing parameters through to Zoltan<br>
+Isorropia can relay Zoltan parameters directly to Zoltan. Before passing
+a Teuchos::ParameterList to Isorropia, create a sublist in it named "Zoltan".
+Then, any parameters that should be passed to Zoltan itself, can be stored
+in the sublist exactly as they appear in the Zoltan users guide. Example:
+\verbatim
+  Teuchos::ParameterList params;
+  Teuchos::ParameterList& sublist = params.sublist("Zoltan");
+  sublist.set("LB_METHOD", "GRAPH"); // Only works for symmetric matrices!
+\endverbatim
+
+Refer to the Zoltan User's guide (available at
+<a href=http://www.cs.sandia.gov/zoltan>the Zoltan web site</a>)
+for available Zoltan parameters.
+In many cases, no parameters are necessary.
+Note that Isorropia will override a few default Zoltan settings:
+The default method (LB_METHOD) is HYPERGRAPH. The default approach (LB_APPROACH) is PARTITION. Isorropia will balance the number of nonzeros in a matrix, not the rows.
+</ul>
 
 <a name="example_programs"> </a>
 \section isorropia_example Example Programs
@@ -76,35 +116,15 @@ Other programs in the example subdirectory demonstrate the use of
 weights/costs data to influence the partitioner.
 See \ref vert_weights, \ref graphedge_weights and \ref hgedge_weights.
 
-<a name="defaults_params"> </a>
-\section defaults Defaults, Parameters, ...
+<a name="coloring"> </a>
+\section coloring  Coloring 
+Isorropia supports vertex coloring of a graph via Zoltan. Both distance-1 and distance-2 coloring is supported. See the Zoltan User's guide (available at
+<a href=http://www.cs.sandia.gov/zoltan>the Zoltan web site</a>)
+for details. Currently, coloring is limited to structurally symmetric matrices but we expect to support nonsymmetric matrices (e.g. Jacobians) in the future. 
 
-Several Isorropia classes and methods accept Teuchos::ParameterList
-objects, allowing the user to control certain behavior.
-<ul>
-<li>Choice of partitioner<br>
-If Isorropia is configured with Zoltan support, then by default Zoltan will
-be used as the partitioner. To use the simple built-in linear partitioner
-instead, set the following parameter:
-\verbatim
-  Teuchos::ParameterList params;
-  params.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
-\endverbatim
 
-<li>Passing parameters through to Zoltan<br>
-Isorropia can relay Zoltan parameters directly to Zoltan. Before passing
-a Teuchos::ParameterList to Isorropia, create a sublist in it named "Zoltan".
-Then, any parameters that should be passed to Zoltan itself, can be stored
-in the sublist exactly as they appear in the Zoltan users guide. Example:
-\verbatim
-  Teuchos::ParameterList params;
-  Teuchos::ParameterList& sublist = params.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
-  sublist.set("PARMETIS_METHOD", "PARTKWAY");
-\endverbatim
-Refer to the Zoltan users guide (available at
-<a href=http://www.cs.sandia.gov/zoltan>www.cs.sandia.gov/zoltan</a>)
-for available Zoltan parameters.
-</ul>
+<a name="ordering"> </a>
+\section ordering  Ordering 
+Isorropia currently supports a subset of the graph (sparse matrix) ordering features in Zoltan. The intended main use is to produce a permutation that can be used as fill-reducing ordering for direct solvers. Currently Zoltan relies on third-party libraries (ParMetis and PT-Scotch) for this.
 
 */

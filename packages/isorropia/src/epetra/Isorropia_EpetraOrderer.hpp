@@ -89,6 +89,10 @@ public:
    */
   void order(bool force_ordering=false);
 
+  void compute(bool forceOrdering=false) {
+    return (order(forceOrdering));
+  }
+
 };//class Orderer
 
 }//namespace Epetra

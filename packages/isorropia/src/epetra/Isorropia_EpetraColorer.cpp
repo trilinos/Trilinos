@@ -29,7 +29,6 @@ USA
 
 #include <Isorropia_EpetraColorer.hpp>
 #ifdef HAVE_ISORROPIA_ZOLTAN
-#include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_EpetraZoltanLib.hpp>
 #endif /* HAVE_ISORROPIA_ZOLTAN */
 #include <Isorropia_Exception.hpp>
@@ -105,7 +104,6 @@ Colorer::color(bool force_coloring)
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
 
   lib_->color(sublist, properties_);
-
   operation_already_computed_ = true;
   computeNumberOfProperties();
 }

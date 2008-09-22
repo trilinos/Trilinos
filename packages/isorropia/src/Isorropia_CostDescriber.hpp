@@ -1,8 +1,7 @@
 //@HEADER
 /*
 ************************************************************************
-
-              Isorropia: Partitioning and Load Balancing Package
+Isorropia: Partitioning and Load Balancing Package
                 Copyright (2006) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -40,16 +39,13 @@ USA
 
 namespace Isorropia {
 
-/** Interface (abstract base class) for describing the weights/costs
-  associated with the vertices and/or edges of the object to be
-  repartitioned and redistributed.
+/** Interface (abstract base class) for describing the weights or costs
+  associated with the vertices and/or edges or hyperedges of the object to be
+  partitioned, ordered or colored.
 
-  The CostDescriber object is created by the application and then is
-  queried by the partitioner.  If no CostDescriber is supplied by the
+  A CostDescriber object is created by the application.  If no CostDescriber is supplied by the
   application, sensible default weights should be used.
 
-  The queries for whether weights are provided are the methods 
-  haveVertexWeights(), haveGraphEdgeWeights() and haveHypergraphEdgeWeights().
 */
 class CostDescriber {
 public:
@@ -57,6 +53,7 @@ public:
   /** Destructor */
   virtual ~CostDescriber() {}
 
+private:
   /** Set parameters for the CostDescriber instance. The contents of the
       input paramlist object are copied into an internal ParameterList
       attribute. Instances of this interface should not retain a reference
@@ -64,54 +61,97 @@ public:
   */
   virtual void setParameters(const Teuchos::ParameterList& paramlist) = 0;
 
-  /** Query whether non-default vertex weights are present. If this
-    function returns false, the caller can assume that vertex weights
-    are all 1.0.
+  /** Query whether vertex weights have been supplied by the application.
+
+      \return returns true if the application has supplied vertex weights
+              with the CostDescriber, false otherwise
   */
   virtual bool haveVertexWeights() const = 0;
 
-  /** Get the number of vertices. Vertices typically correspond to
-    matrix rows.
+  /** Get the number of vertices for which this process supplied
+      vertex weights. Vertices typically correspond to matrix rows.
+
+      \return returns the number of vertices on this process for which
+              the CostDescriber has vertex weights
   */
   virtual int getNumVertices() const = 0;
 
-  /** Get the lists of vertex ids and weights.
+  /** Get lists of the vertex ids and weights supplied by this process.  
+
+     \param numVertices size of global_ids and weights arrays
+
+     \param global_ids pointer to an array of vertex global IDs,
+                         allocated by the caller.
+     \param weights pointer to an array of vertex weights,
+                         allocated by the caller.
   */
   virtual void getVertexWeights(int numVertices,
                                 int* global_ids,
                                 float* weights) const = 0;
 
-  /** Query whether non-default graph edge weights are present.
-     If this function returns false, the caller can assume that
-     graph edge weights are all 1.0.
+  /** Query whether graph edge weights have been supplied by the application.
+
+      \return returns true if the application has supplied graph edge weights
+              with the CostDescriber, false otherwise
   */
   virtual bool haveGraphEdgeWeights() const = 0;
 
   /** Get the number of graph edges for a specified vertex.
      Graph edges typically correspond to matrix nonzeros.
+
+     \param vertex_global_id  The global ID for the vertex (on this process)
+                               for which the number of edges is desired
+
+     \return the number of graph edges supplied by this process for this vertex
   */
   virtual int getNumGraphEdges(int vertex_global_id) const = 0;
 
-  /** Get the graph edge weights for a specified vertex.
+  /** Get the graph edge weights for a specified vertex.  
+
+      \param vertex_global_id  vertex global ID (on this process) for which
+                               edge information is requested
+
+      \param num_neighbors     size for which neighbor_global_ids and weights
+                               had been preallocated
+
+      \param neighbor_global_ids  buffer allocated by caller, on return will
+                                   contain a list of neighbor vertex global IDs
+
+      \param weights  buffer allocated by caller, on return will contain a
+                      weight for each edge indicated in neighbor_global_ids
+
   */
   virtual void getGraphEdgeWeights(int vertex_global_id,
                                    int num_neighbors,
                                    int* neighbor_global_ids,
                                    float* weights) const = 0;
 
-  /** Query whether non-default hypergraph edge weights are present.
-     If this function returns false, the caller can assume that
-     hypergraph edge weights are all 1.0.
+  /** Query whether hypergraph edge weights have been supplied by the application.
+
+      \return returns true if the application has supplied hypergraph edge weights
+              with the CostDescriber, false otherwise
   */
   virtual bool haveHypergraphEdgeWeights() const = 0;
 
   /** Get the number of Hypergraph edges. Hypergraph edges typically
      correspond to matrix columns.
+
+    \return returns the number of hypergraph edge weights supplied by this process
   */
   virtual int getNumHypergraphEdgeWeights() const = 0;
 
-  /** Get the hypergraph edge weights.
+  /** Get the hypergraph edge weights that were supplied by this process
+
+      \param numEdges size for which global_ids and weights
+                               had been preallocated
+
+      \param  global_ids  buffer allocated by caller, on return will
+                                   contain a list of hyperedge global IDs
+
+      \param weights  buffer allocated by caller, on return will contain a
+                      weight for each hyperedge indicated in global_ids
   */
+
   virtual void getHypergraphEdgeWeights(int numEdges,
                                         int* global_ids,
                                         float* weights) const = 0;

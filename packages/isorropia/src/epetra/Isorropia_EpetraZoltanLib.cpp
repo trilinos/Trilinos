@@ -28,7 +28,6 @@ USA
 //@HEADER
 
 
-// #include <Isorropia_Zoltan_Repartition.hpp>
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
 #endif
@@ -41,10 +40,11 @@ USA
 
 #include <Isorropia_EpetraZoltanLib.hpp>
 
+/*This is no longer true
 #ifndef HAVE_MPI
 #error "Isorropia_Zoltan requires MPI."
 #endif
-
+*/
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Comm.h>
@@ -140,7 +140,7 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 
 #else /* HAVE_MPI */
-  return (-1);
+    mpicomm = MPI_COMM_WORLD;
 #endif /* HAVE_MPI */
   }
   else 
@@ -152,7 +152,7 @@ int ZoltanLibClass::precompute()
 
     mpicomm = empicomm.Comm();
 #else /* HAVE_MPI */
-  return (-1);
+    mpicomm = MPI_COMM_WORLD;
 #endif /* HAVE_MPI */
   }
 
@@ -179,8 +179,7 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set(dbg_level_str, "0");
   }
 
-  if (!zoltanParamList_.isParameter(lb_method_str)) 
-  {
+  if (!zoltanParamList_.isParameter(lb_method_str)) {
     std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
     zoltanParamList_.set(lb_method_str, lb_meth);  // set to HYPERGRAPH
   }
@@ -486,19 +485,25 @@ void ZoltanLibClass::preCheckPartition()
 }
 
 int ZoltanLibClass::
-repartition(Teuchos::ParameterList& paramList,
+repartition(Teuchos::ParameterList& zoltanParamList,
 	    std::vector<int>& properties,
 	    int& exportsSize,
 	    std::vector<int>& imports)
 {
 
   std::string partitioning_method_str("PARTITIONING_METHOD");
-  partMethod_ =  paramList.get(partitioning_method_str, "UNSPECIFIED");
+  partMethod_ =  zoltanParamList.get(partitioning_method_str, "UNSPECIFIED");
 
 
   std::string zoltan("ZOLTAN");
-  zoltanParamList_  = (paramList.sublist(zoltan));
+  zoltanParamList_  = (zoltanParamList.sublist(zoltan));
 
+
+  // Avoid to construct import list.
+  // Perhaps "PARTITION ASSIGNMENTS" will be better in term of performance.
+  zoltanParamList_.set("RETURN_LISTS", "EXPORT AND IMPORT");
+
+  preCheckPartition();
 
   // Avoid to construct import list.
   // Perhaps "PARTITION ASSIGNMENTS" will be better in term of performance.
@@ -515,7 +520,7 @@ repartition(Teuchos::ParameterList& paramList,
   }
 
   //Generate Load Balance
-  int changes, num_gid_entries, num_lid_entries, num_import, num_export;
+  int changes=0, num_gid_entries=0, num_lid_entries=0, num_import=0, num_export=0;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
   ZOLTAN_ID_PTR export_global_ids=NULL, export_local_ids=NULL;
   int * import_procs=NULL, * export_procs=NULL;
@@ -533,13 +538,11 @@ repartition(Teuchos::ParameterList& paramList,
   exportsSize = num_export;
   imports.clear();
   imports.assign(import_global_ids, import_global_ids + num_import);
-  properties.assign(num_obj_, queryObject_->RowMap().Comm().MyPID());
 
-  for( int i = 0; i < num_export; ++i ) 
-  {
+  properties.assign(num_obj_, queryObject_->RowMap().Comm().MyPID());
+  for( int i = 0; i < num_export; ++i ) {
     properties[export_local_ids[i]] = export_to_part[i];
   }
-
 
   //Free Zoltan Data
   zz_->LB_Free_Part(&import_global_ids, &import_local_ids,

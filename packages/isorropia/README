@@ -1,11 +1,14 @@
 Welcome to Isorropia, a package for partitioning and load-balancing
-in the Trilinos framework!
+in the Trilinos framework! Please note this package is NOT related to
+the thermodynamics code from Georgia Tech.
 
 Several example programs reside in the example subdirectory, to
-demonstrate using Isorropia to rebalance Epetra objects.
+demonstrate using Isorropia to partition and rebalance Epetra objects.
 
-It is strongly recommended, but not required, to use Isorropia with Zoltan.
+Isorropia was refactored for version 3.0 (Trilinos 9.0), and now depends
+on Zoltan and Epetra. There are several new features, including coloring 
+and ordering. Please see the release notes for details.
 
 For documentation, see our website:
-http://trilinos.sandia.gov/packages/isorropia/documentation.html
+http://trilinos.sandia.gov/packages/isorropia/
 

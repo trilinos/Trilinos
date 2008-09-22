@@ -351,8 +351,6 @@ repartition(const Epetra_BlockMap& input_map,
       memcpy(&imports[recv_offset-base_offset], &old_gids[send_info[j+1]],
 	     num_recv*sizeof(int));
     }
-
-    i += 3;
   }
 
 #endif /* HAVE_MPI */
