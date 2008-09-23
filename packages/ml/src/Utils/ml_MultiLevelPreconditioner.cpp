@@ -2173,9 +2173,16 @@ ApplyInverse(const Epetra_MultiVector& X,
              ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);    
       break;
     default: 
+#ifdef ReverseOrder
+       ML *ml_ggb = (ML *) ml_->void_options;
+       printf("not done\n"); exit(1);
+       /*some code would need to go here to change the order of the ML Cycles */
+       /*there would probably also need to be some additional changes elsewhere*/
+#else
       ML_Cycle_MG(&(ml_->SingleLevel[ml_->ML_finest_level]), 
                   yvectors[i], xvectors[i], StartingSolution,
                   ml_->comm, ML_NO_RES_NORM, ml_);
+#endif
       }
     }
 
