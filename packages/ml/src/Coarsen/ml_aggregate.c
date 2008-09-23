@@ -1010,7 +1010,7 @@ int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
 int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix, 
                           ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int i=1, ndofs, Ncoarse, coarsen_scheme;
+   int i=1, ndofs, Ncoarse, coarsen_scheme, status;
    int mypid, nprocs;
    char *label;
 
@@ -1126,6 +1126,54 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
             freed in ML_AGG_Gen_Prolongator() in ml_agg_genP.c. */
          /*(*Pmatrix) = NULL;*/
          return 0;
+      }
+   }
+   if (coarsen_scheme == ML_AGGR_MIS) {
+      i = -1;
+      if (ML_Get_PrintLevel()  >= 10) i = mypid;
+      status = ML_CommInfoOP_Deficient_GhostBlk_Check(
+                Amatrix->getrow->pre_comm, Amatrix->num_PDEs,i);
+      if (status != -1) status = 0; 
+      else status = 1; 
+      ML_gsum_scalar_int(&status, &i, comm);
+      if ( (mypid == 0) && (status != 0)) {
+         printf("**********************************************************\n");
+         printf("Switch to the uncoupled aggregation scheme!!!\n\n");
+         printf("A deficient ghost block was discovered.  This means that a\n");
+         printf("PDE system (numPDEs > 1) is constructed but the ghost part\n");
+         printf("of the matrix doesn't conform to the blocking. An example\n");
+         printf("with 2x2 blocks follows:\n");
+         printf("                   (  x  x       )\n");
+         printf("  global view      (  x  x     x )\n");
+         printf("  of matrix        (        x  x )\n");
+         printf("                   (     x  x  x )\n\n");
+         printf("We would have a problem if on two processors this matrix\n");
+         printf("is essentially stored as\n");
+         printf("  proc 0: (  x  x    )         proc 1: (     x  x )\n");
+         printf("          (  x  x  x )                 (  x  x  x )\n\n");
+         printf("The problem is that the empty columns have been squeezed\n");
+         printf("out and this breaks the 2x2 block structure. Sometimes\n");
+         printf("it is possible to trick the system into doing the right\n");
+         printf("thing by adding small elements at the right locations.\n");
+         printf("For example,\n");
+         printf("                   (  x  x  e    )\n");
+         printf("  global view      (  x  x     x )\n");
+         printf("  of matrix        (  e     x  x )\n");
+         printf("                   (     x  x  x )\n\n");
+         printf("where e is a small element. This might then force\n");
+         printf("something like\n");
+         printf("  proc 0: (  x  x  e    )      proc 1: (  e     x  x )\n");
+         printf("          (  x  x     x )              (     x  x  x ) .\n\n");
+         printf("IT IS IMPORTANT TO RECOGNIZE that this trick might not\n");
+         printf("be enough if ghost columns get permuted. In fact, this\n");
+         printf("problem can even occur for dense blocks if the order of\n");
+         printf("the local ghost columns is different from the order of the\n");
+         printf("global columns (ie., consecutive columns within a block\n");
+         printf("are no longer consecutive).\n");
+         printf("The specific deficient ghost block can be printed by\n");
+         printf("setting ML's print level to 10 (or greater).\n");
+         printf("**********************************************************\n");
+         fflush(stdout);  exit(1);
       }
    }
 
