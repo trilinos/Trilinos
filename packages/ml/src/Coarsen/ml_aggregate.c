@@ -1128,6 +1128,29 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
          return 0;
       }
    }
+   /* We need to add the following code to Epetra_CrsGraph.cpp after  */
+   /* Util.Sort() so that Epetra's numbering is consistent with ML's. */
+   /*                                                                 */
+   /*
+   // Sort external column indices so that columns from a given remote processor are not only contiguous
+  // but also in ascending order. NOTE: I don't know if the number of externals associated
+  // with a given remote processor is known at this point ... so I count them here.
+  NLists--;
+  int StartCurrent, StartNext;
+  StartCurrent = 0; StartNext = 1;
+  while ( StartNext < NumRemoteColGIDs ) {
+     if (   (PIDList.Values())[StartNext] ==  (PIDList.Values())[StartNext-1]) StartNext++;
+     else {
+        if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
+        Util.Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,NLists,SortLists);
+        StartCurrent = StartNext; StartNext++;
+     }
+  }
+  if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
+  Util.Sort(true, StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]), 0, 0, NLists, SortLists);
+   */
+   /*                                                                 */
+
    if (coarsen_scheme == ML_AGGR_MIS) {
       i = -1;
       if (ML_Get_PrintLevel()  >= 10) i = mypid;
