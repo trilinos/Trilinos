@@ -52,7 +52,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT([amesos],[2.4d],[trilinos-help@software.sandia.gov])
+AC_INIT([amesos],[2.4],[trilinos-help@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
