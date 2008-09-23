@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# This script works for SunOS
+#
+TIME="`date +%H%M`"
+DATE="`date +%d%h%y`"
+#
+# Get rid of blanks in the date
+TAGVAL="distrib_${TIME}_${DATE}"
+CURDIR="`pwd`"
+#
+# Get rid of space when day of the month is a single digit
+ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
+rm -rf Zoltan ParMETIS3_1 siMPI
+rm -f zoltan_distrib.tar.gz
+cvs -d software:/space/CVS checkout -r trilinos-release-9-0-branch -d Zoltan -P zoltan
+cvs -d software:/space/CVS-Zoltan checkout -P ParMETIS3_1
+#siMPI is now part of Zoltan repository.
+#cvs checkout -P siMPI
+#Get siMPI directly from Pat Miller's sourceforge. miller2007
+#cvs -z3 -d:ext:knogard@pympi.cvs.sourceforge.net:/cvsroot/pympi co -P -d siMPI pyMPI/siMPI
+find . -name 'CVS' -exec rm -rf {} \;
+find . -name '*.sh' -exec rm -f {} \;
+find . -name '.cvsignore' -exec rm -f {} \;
+#
+#
+# Remove stuff we don't want to share.
+cd Zoltan; /bin/rm -rf docs/internal; cd ..
+cd Zoltan; /bin/rm -rf test/nem*; cd ..
+cd Zoltan; /bin/rm -rf test/th; cd ..
+cd ParMETIS3_1; /bin/rm -rf Graphs; cd ..
+#
+# Build Zoltan script.
+cd Zoltan; /bin/rm -f docs/Zoltan_html/lgpl.pl; cd src; gmake ZOLTAN_ARCH=zscript zscript; cd ../..
+#
+# Remove $ from Revision so that other people don't change Revision when
+# checking Zoltan into their own CVS repositories.
+rm -rf tmp
+FLIST="`find Zoltan -name '*.[ch]' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name '*.f??' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name '[mM]akefile*' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name 'Config*' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+#
+# Build tarball.
+chmod -R ogu+r *
+mv Zoltan Zoltan_v3.1
+tar cvf zoltan_distrib_v3.1.tar Zoltan_v3.1 ParMETIS3_1
+gzip zoltan_distrib_v3.1.tar
+#
+# Tag repository.
+cvs -d software:/space/CVS rtag -r trilinos-release-9-0-branch ${ACT_TAG} zoltan 
+cvs -d software:/space/CVS-Zoltan rtag ${ACT_TAG} ParMETIS3_1
+#cvs rtag ${ACT_TAG} siMPI
+#Tag Pat Miller's cvs repository on sourceforge miller2007
+#cvs -d:ext:knogard@pympi.cvs.sourceforge.net:/cvsroot/pympi rtag ${ACT_TAG} pyMPI/siMPI
+exit 0
