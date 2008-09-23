@@ -6787,7 +6787,7 @@ void ML_build_ggb_fat(ML *ml, void *data)
 {
   ML *ml_ggb;
   ML_Aggregate *ag;
-  int  Nrows, Ncols, N_levels, num_PDE_eqns ;
+  int  Nrows, Ncols, N_levels, num_PDE_eqns, actual_levels ;
 
   
   ML_Operator *Amat;
@@ -6819,13 +6819,15 @@ void ML_build_ggb_fat(ML *ml, void *data)
   ML_Aggregate_Set_DampingFactor(ag,0.0);
   ML_Aggregate_Set_Threshold(ag, 0.0);
   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
+/*
+ML_Aggregate_Set_CoarsenSchemeLevel_METIS(N_levels-1,N_levels,ag);
+ML_Aggregate_Set_NodesPerAggr(ml_ggb,ag,N_levels-1,3);
+*/
   ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Ncols, mydata->values, Nrows);
-  ML_Gen_MGHierarchy_UsingAggregation(ml_ggb, N_levels-1,ML_DECREASING, ag);
+  actual_levels=ML_Gen_MGHierarchy_UsingAggregation(ml_ggb, N_levels-1,ML_DECREASING, ag);
 
-  /*  ML_Operator_Print(&(ml_ggb->Pmat[0]), "Pmat");  */
-
-  ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
-  ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
+  if (actual_levels > 1) ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+  ML_Gen_Solver(ml_ggb, ML_MGV, 1, N_levels-actual_levels);
    
   ml->void_options = (void *) ml_ggb;
 

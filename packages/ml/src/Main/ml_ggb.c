@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /*************************************************************************************       
   HAIM: GLOBAL EIGENVALUE CALCULATIONS FOR MULTIGRID           
@@ -270,6 +270,11 @@ void  ML_ARPACK_driver(char which[],
       /*  time =  GetClock(); */
       /* First perform K*v = rhs */
       
+#ifdef ReverseOrder
+      ML_Solve_MGV(ml ,&workd[ipntr[0]-1], rhs);
+      ML_Operator_Apply(Amat, Amat->invec_leng, rhs,
+			Amat->outvec_leng, rhs1);
+#else
       ML_Operator_Apply(Amat, Amat->invec_leng, &workd[ipntr[0]-1], 
 			Amat->outvec_leng, rhs);
 
@@ -281,6 +286,7 @@ void  ML_ARPACK_driver(char which[],
 
       /* Second perform inv(P)*rhs = rhs1 */
 	ML_Solve_MGV(ml ,rhs , rhs1);
+#endif
 	
 	/* printf("time for M^-1 * K * v = %g \n", GetClock()-time); */
 
@@ -418,10 +424,16 @@ void  ML_ARPACK_driver(char which[],
 	    a1 = 0.0;
 	    if (Debug_Flag > 2) {
 
+#ifdef ReverseOrder
+	      ML_Solve_MGV(ml , &v[j*ldv], rhs);
+	      ML_Operator_Apply(Amat, Amat->invec_leng, rhs,
+				Amat->outvec_leng, rhs1);
+#else
 	      ML_Operator_Apply(Amat, Amat->invec_leng, &v[j*ldv],
 				Amat->outvec_leng, rhs);
 	      
 	      ML_Solve_MGV(ml ,rhs , rhs1);
+#endif
 	      
 	      for (kk =0 ; kk < nloc2 ; kk++ ) 
 		rhs1[kk]     = (1-lamR)*v[j*ldv+kk] - rhs1[kk];
@@ -466,17 +478,27 @@ void  ML_ARPACK_driver(char which[],
 	      
 	      /* Need only to analyze the eigenvalues of the MG iteration matrix */ 
 	      a2 = 0.0;
+	      a1 = 1 - lamR;
 	      
+#ifdef ReverseOrder
+	      ML_Solve_MGV(ml , &v[j*ldv], vecx);
+	      ML_Solve_MGV(ml , &v[(j+1)*ldv], vecy);
+	      ML_Operator_Apply(Amat, Amat->invec_leng, vecx, 
+				Amat->outvec_leng, rhs);
+	      
+	      ML_Operator_Apply(Amat, Amat->invec_leng, vecy,
+				Amat->outvec_leng, rhs1);
+#else
 	      ML_Operator_Apply(Amat, Amat->invec_leng, &v[j*ldv],
 				Amat->outvec_leng, vecx);
 	      
 	      ML_Operator_Apply(Amat, Amat->invec_leng, &v[(j+1)*ldv],
 				Amat->outvec_leng, vecy);
 	      
-	      a1 = 1 - lamR;
 	      
 	      ML_Solve_MGV(ml ,vecx ,rhs);
 	      ML_Solve_MGV(ml ,vecy ,rhs1);
+#endif
 	      
 	      for (kk =0 ; kk < nloc ; kk++ ) {
 		rhs[kk]  = a1*v[j*ldv+kk]     + lamI*v[(j+1)*ldv+kk] - rhs[kk];
@@ -1085,8 +1107,13 @@ int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
       dumm[kk] = vec[i*Nrows+kk];
     
     
+#ifdef ReverseOrder
+    ML_Solve_MGV(ml ,dumm, rhs);
+    ML_Operator_Apply(Amat, Amat->invec_leng, rhs, Amat->outvec_leng, rhs1);
+#else
     ML_Operator_Apply(Amat, Amat->invec_leng, dumm, Amat->outvec_leng, rhs);
     ML_Solve_MGV(ml ,rhs , rhs1);
+#endif
     
     for (kk =0 ; kk < Nrows ; kk++ ) 
       Rq[i*Nrows+kk] = dumm[kk]  - rhs1[kk];
@@ -1160,12 +1187,19 @@ extern int  ML_Rayleigh (ML *ml, int nrows, double *q, int count)
     Amat          = &(ml->Amat[level]);
     
     /* Get the product   u<-A*qx  and  v<-A*qy  */ 
+#ifdef ReverseOrder
+    ML_Solve_MGV(ml ,&q[0], u);
+    ML_Solve_MGV(ml ,&q[nrows], v);
+    ML_Operator_Apply(Amat, Amat->invec_leng, u,     Amat->outvec_leng, rhs);
+    ML_Operator_Apply(Amat, Amat->invec_leng, v, Amat->outvec_leng, rhs1);
+#else
     ML_Operator_Apply(Amat, Amat->invec_leng, &q[0],     Amat->outvec_leng, u);
     ML_Operator_Apply(Amat, Amat->invec_leng, &q[nrows], Amat->outvec_leng, v);
    
     /* Get the product rhs <- (M^-1)*u   and  rhs1 <- (M^-1)*v  */ 
     ML_Solve_MGV(ml ,u ,rhs);
     ML_Solve_MGV(ml ,v ,rhs1);
+#endif
     
     /* Get the final rhs <- R*qx   and rhs1 <- R*qy          */
     for (i =0 ; i < nrows ; i++ ) {
@@ -1213,10 +1247,15 @@ extern int  ML_Rayleigh (ML *ml, int nrows, double *q, int count)
     
    
     /* Get the product   u<-A*qx  */ 
+#ifdef ReverseOrder
+    ML_Solve_MGV(ml , &q[0], u);
+    ML_Operator_Apply(Amat, Amat->invec_leng, u, Amat->outvec_leng, rhs);
+#else
     ML_Operator_Apply(Amat, Amat->invec_leng, &q[0], Amat->outvec_leng, u);
 
     /* Get the product rhs <- (M^-1)*u  */ 
     ML_Solve_MGV(ml ,u ,rhs);
+#endif
     
     /* Get the final rhs <- R*qx    */
     for (i =0 ; i < nrows ; i++ )  rhs[i]  = q[i] - rhs[i]; 
