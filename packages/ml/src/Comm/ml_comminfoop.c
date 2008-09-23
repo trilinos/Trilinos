@@ -1537,7 +1537,69 @@ int ML_Comm_Envelope_Increment_Tag(ML_Comm_Envelope* envelope)
    envelope->tag++;
    return 0;
 }
+/********************************************************************
+ * Check a block matrix to make sure that all of the ghost blocks
+ * have the same constant size as BlkSize. This might not always be true
+ * if a matrix is really stored as a point matrix but ML is asked to
+ * treat it as a block matrix. This would occur, for example, if only a 
+ * subset of information is needed within an off-processor block when
+ * performing a matrix-vector product.  The main issue is that some of 
+ * ML's block algorithms needs true block matrix (even among ghost variable).
+ *
+ * This check is performed by checking the matrix send list to make sure
+ * that if we send one variable within a block to a particular processor,
+ * we must send all the variables within that block.
+ *
+ *    On input:
+ *        c_info       An existing communication structure whose send list
+ *                     will be checked to make sure it corresponds to 
+ *                     a constant block size.
+ *        BlkSize      The size of the constant block
+ *
+ *    On output: 
+ *        ML_Comm_Deficient_GhostBlk_Check returns 0 if everything is
+ *        okay. It returns -2 if BlkSize does not make sense. It returns
+ *        -1 if the sendlist is deficient.
+ *        
+ *******************************************************************/
+int ML_CommInfoOP_Deficient_GhostBlk_Check(ML_CommInfoOP *c_info, int BlkSize,
+	int PrintFromNode)
+{ 
+   int CurrentBlk = -1, CurrentIndex = -1;
+   int NextBlk = -1, NextIndex = -1;
+   int i, j;
 
+   CurrentIndex = BlkSize-1;
+   if ( c_info == NULL) return  0;
+   if (BlkSize ==    1) return  0;
+   if (BlkSize <=    0) return -2;
+
+   for (i = 0; i < c_info->N_neighbors; i++) {
+      for (j = 0; j < c_info->neighbors[i].N_send; j++) {
+         NextBlk = c_info->neighbors[i].send_list[j]/BlkSize;
+         NextIndex = c_info->neighbors[i].send_list[j] - NextBlk*BlkSize;
+         if (NextBlk != CurrentBlk) {
+            if ((NextIndex != 0) && (PrintFromNode != -1))
+                printf("%d: Deficient_GhostBlk: v[%d],%d (but not v[%d]) sent to Proc %d though they are in the same block of size %d\n",
+                       PrintFromNode, c_info->neighbors[i].send_list[j],j,
+                       NextBlk*BlkSize, c_info->neighbors[i].ML_id, BlkSize);
+            if (NextIndex != 0) return -1;
+            CurrentBlk = NextBlk;
+            CurrentIndex = NextIndex;
+         }
+         else {
+            if ((NextIndex != CurrentIndex+1) && (PrintFromNode != -1))
+                printf("%d: Deficient_GhostBlk: v[%d],%d (and not v[%d]) sent to Proc %d but they are in the same block of size %d\n",
+                       PrintFromNode, c_info->neighbors[i].send_list[j],j,
+                       c_info->neighbors[i].send_list[j]-1,
+                       c_info->neighbors[i].ML_id, BlkSize);
+            if (NextIndex != CurrentIndex+1) return -1;
+            CurrentIndex = NextIndex;
+         }
+      }
+   }
+   return 0;
+}
 /********************************************************************
  * Take a standard 'pre_comm' communication object and transpose it
  * so that we can do post communication. This routine is used when

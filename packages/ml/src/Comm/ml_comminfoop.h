@@ -114,6 +114,9 @@ extern int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info);
 
 extern int  ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
 
+extern int ML_CommInfoOP_Deficient_GhostBlk_Check(ML_CommInfoOP *c_info,
+                                                int BlkSize, int PrintFromNode);
+
 extern int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, 
 				   ML_CommInfoOP **post_comm,
 				   int invec_leng);
