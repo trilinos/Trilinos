@@ -190,7 +190,7 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
 
   if (numPartitions > 0){
     std::cout << std::endl << "      ";
-    std::cout << "NUM_GLOBAL_PARTITIONS is " << numPartitions;
+    std::cout << "NUM_GLOBAL_PARTS is " << numPartitions;
   }
   std::cout << std::endl;
 
@@ -454,7 +454,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       std::ostringstream os;
       os << numPartitions;
       std::string s = os.str();
-      sublist.set("NUM_GLOBAL_PARTITIONS", s);
+      sublist.set("NUM_GLOBAL_PARTS", s);
     }
 
     //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
