@@ -165,7 +165,7 @@ char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file)
     offset = file->size - file->pos;
 
   if (offset > 0) {
-    end = memchr(file->buffer + file->pos, '\n', MIN(offset, len - 1));
+    end = (char *) memchr(file->buffer + file->pos, '\n', MIN(offset, len - 1));
 
   }
   if (end != NULL) {          /* End of line found */
@@ -180,7 +180,7 @@ char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file)
   if (size == 0)
     return (NULL);
   buf[size] = '\0';
-  end = memchr(buf, '\n', size);
+  end = (char *) memchr(buf, '\n', size);
   if (end == NULL) {
     return (buf);
   }
