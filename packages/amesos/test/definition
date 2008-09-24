@@ -15,7 +15,7 @@
     DIRS = scripts/daily/mpi;
     COMM = CUSTOM-MPI; 
     ARGS = NightlyTest True True;      
-    X-HOST = regression.sandia.gov;
+    X-HOST = regression.sandia.gov, beowulf;
     EXIT-STATUS = STRING-COMPARISON ; 
 }
 (FRAMEWORK) {   
@@ -56,7 +56,7 @@
 # 
 (FRAMEWORK ) {   
    DIRS = TestOptions;
-   X-HOST = regression.sandia.gov;
+   X-HOST = regression.sandia.gov, beowulf;
    COMM = SERIAL, MPI(1-4); 
 }
 
