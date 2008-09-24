@@ -54,6 +54,7 @@ endif
 example_multidimensional_array_SOURCES = \
 	$(srcdir)/Example_MultiDimensionalArray.cpp \
 	$(srcdir)/Traits.hpp \
+	$(srcdir)/Traits.cpp \
 	$(srcdir)/FactoryTraits.hpp \
 	$(srcdir)/Cell.hpp \
 	$(srcdir)/Cell.cpp \

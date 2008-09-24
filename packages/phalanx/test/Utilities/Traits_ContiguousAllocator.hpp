@@ -47,6 +47,9 @@
 #include "CellData.hpp"
 #include "Phalanx_Allocator_Contiguous.hpp"
 
+// Debug information
+#include "Phalanx_TypeStrings.hpp"
+
 namespace PHX {
 
   /*! \brief Traits class for tests with contiguous allocator.
@@ -115,12 +118,6 @@ namespace PHX {
 
   template<> struct TypeString<MyCTraits::Jacobian> 
   { static const std::string value; };
-
-  const std::string TypeString<MyCTraits::Residual>::value = 
-    "Residual";
-
-  const std::string TypeString<MyCTraits::Jacobian>::value = 
-    "Jacobian";
 
 }
 

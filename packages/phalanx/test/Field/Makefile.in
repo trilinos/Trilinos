@@ -92,7 +92,7 @@ field_OBJECTS = $(am_field_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
+@USING_GNUMAKE_TRUE@	$(PHALANX_TEST_LIBS))
 am_mdfield_OBJECTS = MDField.$(OBJEXT)
 mdfield_OBJECTS = $(am_mdfield_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -223,15 +223,16 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@USING_GNUMAKE_FALSE@TEST_LIBS = $(PHALANX_LIBS)
-@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
-@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(PHALANX_INCLUDES)
-@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
-AM_CPPFLAGS = -I$(srcdir)/../Utilities $(TEST_INCLUDES)
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(PHALANX_TEST_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_TEST_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(PHALANX_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_TEST_INCLUDES))
+AM_CPPFLAGS = $(TEST_INCLUDES)
 field_SOURCES = \
 	$(srcdir)/Field.cpp 
 
 field_DEPENDENCIES = \
+	$(top_builddir)/test/Utilities/libphalanx_utilities.a \
 	$(top_builddir)/src/libphalanx.a
 
 field_LDADD = $(TEST_LIBS)
@@ -239,6 +240,7 @@ mdfield_SOURCES = \
 	$(srcdir)/MDField.cpp 
 
 mdfield_DEPENDENCIES = \
+	$(top_builddir)/test/Utilities/libphalanx_utilities.a \
 	$(top_builddir)/src/libphalanx.a
 
 mdfield_LDADD = $(TEST_LIBS)

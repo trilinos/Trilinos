@@ -36,14 +36,14 @@ include $(top_builddir)/Makefile.export.phalanx
 all-local:
 
 if USING_GNUMAKE
-TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
-TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_TEST_INCLUDES))
 else
-TEST_LIBS     = $(PHALANX_LIBS)
-TEST_INCLUDES = $(PHALANX_INCLUDES)
+TEST_LIBS     = $(PHALANX_TEST_LIBS)
+TEST_INCLUDES = $(PHALANX_TEST_INCLUDES)
 endif
 
-AM_CPPFLAGS = -I$(srcdir)/../Utilities $(TEST_INCLUDES)
+AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
@@ -55,6 +55,7 @@ field_tag_SOURCES = \
 	$(srcdir)/FieldTag.cpp 
 
 field_tag_DEPENDENCIES = \
+	$(top_builddir)/test/Utilities/libphalanx_utilities.a \
 	$(top_builddir)/src/libphalanx.a
 
 field_tag_LDADD = $(TEST_LIBS)

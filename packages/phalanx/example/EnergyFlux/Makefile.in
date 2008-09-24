@@ -89,7 +89,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_example_OBJECTS = Example.$(OBJEXT) Cell.$(OBJEXT)
+am_example_OBJECTS = Example.$(OBJEXT) Traits.$(OBJEXT) Cell.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
@@ -98,7 +98,8 @@ am__DEPENDENCIES_1 =
 am_example_algebraic_types_OBJECTS = Example_AlgebraicTypes.$(OBJEXT)
 example_algebraic_types_OBJECTS =  \
 	$(am_example_algebraic_types_OBJECTS)
-am_example_debug_names_OBJECTS = Example_DebugNames.$(OBJEXT)
+am_example_debug_names_OBJECTS = Example_DebugNames.$(OBJEXT) \
+	Traits.$(OBJEXT)
 example_debug_names_OBJECTS = $(am_example_debug_names_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -243,6 +244,7 @@ example_SOURCES = \
 	$(srcdir)/Example.cpp \
 	$(srcdir)/AlgebraicTypes.hpp \
 	$(srcdir)/Traits.hpp \
+	$(srcdir)/Traits.cpp \
 	$(srcdir)/FactoryTraits.hpp \
 	$(srcdir)/Cell.hpp \
 	$(srcdir)/Cell.cpp \
@@ -273,7 +275,8 @@ example_algebraic_types_LDADD = $(EXAMPLE_LIBS)
 example_debug_names_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_DebugNames.cpp \
 	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp
+	$(srcdir)/Traits.hpp \
+	$(srcdir)/Traits.cpp
 
 example_debug_names_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
@@ -335,6 +338,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_AlgebraicTypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_DebugNames.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Traits.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -363,6 +367,20 @@ Example.obj: $(srcdir)/Example.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example.cpp' object='Example.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example.obj `if test -f '$(srcdir)/Example.cpp'; then $(CYGPATH_W) '$(srcdir)/Example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example.cpp'; fi`
+
+Traits.o: $(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.o -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+
+Traits.obj: $(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.obj -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
 
 Cell.o: $(srcdir)/Cell.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Cell.o -MD -MP -MF $(DEPDIR)/Cell.Tpo -c -o Cell.o `test -f '$(srcdir)/Cell.cpp' || echo '$(srcdir)/'`$(srcdir)/Cell.cpp

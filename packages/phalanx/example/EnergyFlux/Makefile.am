@@ -55,6 +55,7 @@ example_SOURCES = \
 	$(srcdir)/Example.cpp \
 	$(srcdir)/AlgebraicTypes.hpp \
 	$(srcdir)/Traits.hpp \
+	$(srcdir)/Traits.cpp \
 	$(srcdir)/FactoryTraits.hpp \
 	$(srcdir)/Cell.hpp \
 	$(srcdir)/Cell.cpp \
@@ -87,7 +88,8 @@ example_algebraic_types_LDADD = $(EXAMPLE_LIBS)
 example_debug_names_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_DebugNames.cpp \
 	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp
+	$(srcdir)/Traits.hpp \
+	$(srcdir)/Traits.cpp
 
 example_debug_names_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a

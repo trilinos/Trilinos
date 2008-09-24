@@ -50,7 +50,7 @@
     									\
     NAME(const Teuchos::ParameterList& p);				\
     									\
-    void postRegistrationSetup(PHX::FieldManager<Traits>& vm);		\
+    void postRegistrationSetup(PHX::FieldManager<Traits>& fm);		\
     									\
     void evaluateFields(typename Traits::EvalData d);			\
     									\
@@ -70,7 +70,7 @@
     									\
     NAME(const Teuchos::ParameterList& p);				\
     									\
-    void postRegistrationSetup(PHX::FieldManager<Traits>& vm);		\
+    void postRegistrationSetup(PHX::FieldManager<Traits>& fm);		\
     									\
     void evaluateFields(typename Traits::EvalData d);			\
 									\

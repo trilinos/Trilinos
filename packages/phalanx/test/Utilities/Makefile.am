@@ -69,7 +69,9 @@ UTILITIES_HPP = \
 
 
 UTILITIES_CPP = \
-              $(srcdir)/CellData.cpp
+              $(srcdir)/CellData.cpp \
+              $(srcdir)/Traits.cpp \
+              $(srcdir)/Traits_ContiguousAllocator.cpp
 
 
 if BUILD_TESTS
@@ -106,9 +108,7 @@ noinst_PROGRAMS = test_utilitites_algebraic_types
 endif
 
 test_utilitites_algebraic_types_SOURCES = \
-	$(srcdir)/Test_Utilities_AlgebraicTypes.cpp \
-	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp
+	$(srcdir)/Test_Utilities_AlgebraicTypes.cpp
 
 test_utilitites_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a

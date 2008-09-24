@@ -102,7 +102,8 @@ LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
 libphalanx_utilities_a_DEPENDENCIES =
-am__objects_1 = CellData.$(OBJEXT)
+am__objects_1 = CellData.$(OBJEXT) Traits.$(OBJEXT) \
+	Traits_ContiguousAllocator.$(OBJEXT)
 am_libphalanx_utilities_a_OBJECTS = $(am__objects_1)
 libphalanx_utilities_a_OBJECTS = $(am_libphalanx_utilities_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
@@ -122,10 +123,6 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libphalanx_utilities_a_SOURCES) \
 	$(test_utilitites_algebraic_types_SOURCES)
 DIST_SOURCES = $(libphalanx_utilities_a_SOURCES) \
@@ -276,7 +273,9 @@ UTILITIES_HPP = \
               $(srcdir)/evaluators/Evaluator_NonlinearSource_Def.hpp
 
 UTILITIES_CPP = \
-              $(srcdir)/CellData.cpp
+              $(srcdir)/CellData.cpp \
+              $(srcdir)/Traits.cpp \
+              $(srcdir)/Traits_ContiguousAllocator.cpp
 
 @BUILD_TESTS_TRUE@lib_LIBRARIES = libphalanx_utilities.a
 @BUILD_TESTS_TRUE@include_HEADERS = $(UTILITIES_H)
@@ -287,9 +286,7 @@ libphalanx_utilities_a_LIBADD = $(XTRALDADD)
 EXTRA_DIST = $(UTILITIES_HPP)
 MAINTAINERCLEANFILES = Makefile.in 
 test_utilitites_algebraic_types_SOURCES = \
-	$(srcdir)/Test_Utilities_AlgebraicTypes.cpp \
-	$(srcdir)/AlgebraicTypes.hpp \
-	$(srcdir)/Traits.hpp
+	$(srcdir)/Test_Utilities_AlgebraicTypes.cpp
 
 test_utilitites_algebraic_types_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
@@ -376,6 +373,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Test_Utilities_AlgebraicTypes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Traits.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Traits_ContiguousAllocator.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -404,6 +403,34 @@ CellData.obj: $(srcdir)/CellData.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CellData.cpp' object='CellData.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CellData.obj `if test -f '$(srcdir)/CellData.cpp'; then $(CYGPATH_W) '$(srcdir)/CellData.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CellData.cpp'; fi`
+
+Traits.o: $(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.o -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+
+Traits.obj: $(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.obj -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
+
+Traits_ContiguousAllocator.o: $(srcdir)/Traits_ContiguousAllocator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits_ContiguousAllocator.o -MD -MP -MF $(DEPDIR)/Traits_ContiguousAllocator.Tpo -c -o Traits_ContiguousAllocator.o `test -f '$(srcdir)/Traits_ContiguousAllocator.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits_ContiguousAllocator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits_ContiguousAllocator.Tpo $(DEPDIR)/Traits_ContiguousAllocator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits_ContiguousAllocator.cpp' object='Traits_ContiguousAllocator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits_ContiguousAllocator.o `test -f '$(srcdir)/Traits_ContiguousAllocator.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits_ContiguousAllocator.cpp
+
+Traits_ContiguousAllocator.obj: $(srcdir)/Traits_ContiguousAllocator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits_ContiguousAllocator.obj -MD -MP -MF $(DEPDIR)/Traits_ContiguousAllocator.Tpo -c -o Traits_ContiguousAllocator.obj `if test -f '$(srcdir)/Traits_ContiguousAllocator.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits_ContiguousAllocator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits_ContiguousAllocator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits_ContiguousAllocator.Tpo $(DEPDIR)/Traits_ContiguousAllocator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits_ContiguousAllocator.cpp' object='Traits_ContiguousAllocator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits_ContiguousAllocator.obj `if test -f '$(srcdir)/Traits_ContiguousAllocator.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits_ContiguousAllocator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits_ContiguousAllocator.cpp'; fi`
 
 Test_Utilities_AlgebraicTypes.o: $(srcdir)/Test_Utilities_AlgebraicTypes.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Test_Utilities_AlgebraicTypes.o -MD -MP -MF $(DEPDIR)/Test_Utilities_AlgebraicTypes.Tpo -c -o Test_Utilities_AlgebraicTypes.o `test -f '$(srcdir)/Test_Utilities_AlgebraicTypes.cpp' || echo '$(srcdir)/'`$(srcdir)/Test_Utilities_AlgebraicTypes.cpp

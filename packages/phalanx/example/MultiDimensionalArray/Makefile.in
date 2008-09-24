@@ -89,8 +89,8 @@ CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_example_multidimensional_array_OBJECTS =  \
-	Example_MultiDimensionalArray.$(OBJEXT) Cell.$(OBJEXT) \
-	Dimension.$(OBJEXT)
+	Example_MultiDimensionalArray.$(OBJEXT) Traits.$(OBJEXT) \
+	Cell.$(OBJEXT) Dimension.$(OBJEXT)
 example_multidimensional_array_OBJECTS =  \
 	$(am_example_multidimensional_array_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -237,6 +237,7 @@ AM_CPPFLAGS = -I$(srcdir)/evaluators $(EXAMPLE_INCLUDES)
 example_multidimensional_array_SOURCES = \
 	$(srcdir)/Example_MultiDimensionalArray.cpp \
 	$(srcdir)/Traits.hpp \
+	$(srcdir)/Traits.cpp \
 	$(srcdir)/FactoryTraits.hpp \
 	$(srcdir)/Cell.hpp \
 	$(srcdir)/Cell.cpp \
@@ -307,6 +308,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Cell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Dimension.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_MultiDimensionalArray.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Traits.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -335,6 +337,20 @@ Example_MultiDimensionalArray.obj: $(srcdir)/Example_MultiDimensionalArray.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_MultiDimensionalArray.cpp' object='Example_MultiDimensionalArray.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_MultiDimensionalArray.obj `if test -f '$(srcdir)/Example_MultiDimensionalArray.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_MultiDimensionalArray.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_MultiDimensionalArray.cpp'; fi`
+
+Traits.o: $(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.o -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+
+Traits.obj: $(srcdir)/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.obj -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
 
 Cell.o: $(srcdir)/Cell.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Cell.o -MD -MP -MF $(DEPDIR)/Cell.Tpo -c -o Cell.o `test -f '$(srcdir)/Cell.cpp' || echo '$(srcdir)/'`$(srcdir)/Cell.cpp

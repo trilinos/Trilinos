@@ -84,7 +84,9 @@ int main(int argc, char *argv[])
 	  cout << "a[" << i << "] = " << a[i] << endl;
 	}
 
-      
+      // check truncating down to matrix
+      Array<double,NaturalOrder,Spatial,Spatial> m = (a.truncate(0)).truncate(0);
+
 
       cout << "\nFinished MultiDimensionalArray Example!\n" << endl;
     }

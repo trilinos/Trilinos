@@ -49,6 +49,9 @@
 #include "Workset.hpp"
 #include "Phalanx_Allocator_New.hpp"
 
+// Debugging information
+#include "Phalanx_TypeStrings.hpp"
+
 namespace PHX {
 
   struct MyTraits : public PHX::TraitsBase {
@@ -114,24 +117,12 @@ namespace PHX {
   template<> struct TypeString<MyTraits::Jacobian> 
   { static const std::string value; };
 
-  const std::string TypeString<MyTraits::Residual>::value = 
-    "Residual";
-
-  const std::string TypeString<MyTraits::Jacobian>::value = 
-    "Jacobian";
-
   // Data Types
   template<> struct TypeString<double> 
   { static const std::string value; };
 
   template<> struct TypeString< Sacado::Fad::DFad<double> > 
   { static const std::string value; };
-
-  const std::string TypeString<double>::value = 
-    "double";
-
-  const std::string TypeString< Sacado::Fad::DFad<double> >::
-  value = "Sacado::Fad::DFad<double>";
 
 }
 

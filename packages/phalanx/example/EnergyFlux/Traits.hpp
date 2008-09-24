@@ -48,6 +48,9 @@
 #include "Cell.hpp"
 #include "Phalanx_Allocator_New.hpp"
 
+// Debugging information
+#include "Phalanx_TypeStrings.hpp"
+
 namespace PHX {
 
   /*! \brief Struct to define traits for the FieldManager.
@@ -125,7 +128,7 @@ namespace PHX {
   // ******************************************************************
   // ******************************************************************
   // Debug strings.  Specialize the Evaluation and Data types for the
-  // TypeString object in the phalanx/src/Phalanx_TypeString.hpp file.
+  // TypeString object in the phalanx/src/Phalanx_TypeStrings.hpp file.
   // ******************************************************************
   // ******************************************************************
 
@@ -135,12 +138,6 @@ namespace PHX {
 
   template<> struct TypeString<MyTraits::Jacobian> 
   { static const std::string value; };
-
-  const std::string TypeString<MyTraits::Residual>::value = 
-    "Residual";
-
-  const std::string TypeString<MyTraits::Jacobian>::value = 
-    "Jacobian";
 
   // Data Types
   template<> struct TypeString<double> 
@@ -161,23 +158,6 @@ namespace PHX {
   template<> struct TypeString< MyTensor<Sacado::Fad::DFad<double> > > 
   { static const std::string value; };
 
-  const std::string TypeString<double>::value = 
-    "double";
-
-  const std::string TypeString< MyVector<double> >::value = 
-    "MyVector<double>";
-
-  const std::string TypeString< MyTensor<double> >::value = 
-    "MyTensor<double>";
-
-  const std::string TypeString< Sacado::Fad::DFad<double> >::
-  value = "Sacado::Fad::DFad<double>";
-  
-  const std::string TypeString< MyVector<Sacado::Fad::DFad<double> > >::
-  value = "Sacado::Fad::DFad< MyVector<double> >";
-
-  const std::string TypeString< MyTensor<Sacado::Fad::DFad<double> > >::
-  value = "Sacado::Fad::DFad< MyTensor<double> >";
 }
 
 #endif

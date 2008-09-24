@@ -29,43 +29,33 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_ALLOCATOR_NEW_HPP
-#define PHX_ALLOCATOR_NEW_HPP
+// ******************************************************************
+// ******************************************************************
+// Debug strings.  Specialize the Evaluation and Data types for the
+// TypeString object in the phalanx/src/Phalanx_TypeStrings.hpp file.
+// ******************************************************************
+// ******************************************************************
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Teuchos_ArrayRCP.hpp"
+#include "Traits.hpp"
 
-namespace PHX {
-  
+const std::string PHX::TypeString<PHX::MyTraits::Residual>::value = "Residual";
 
-  /*! \brief Allocator that uses "new" to allocate each array separately.
+const std::string PHX::TypeString<PHX::MyTraits::Jacobian>::value = "Jacobian";
 
-      This object just uses new on the fly to allocate field data.  The memory for different fields is therefore non-contiguous.  This is a very safe allocator, but may be inefficient due to cache issues/page thrashing.
-   */
-  class NewAllocator {
-    
-  public:
-    
-    NewAllocator() {}
-    
-    ~NewAllocator() {}
-    
-    void reset() {}
+const std::string PHX::TypeString<double>::value = "double";
 
-    //! data_type_size is the size of a single element of the data type and num_elements is the number of elements of the data type that need to be allocated.
-    void addRequiredChunk(std::size_t size_of_data_type, 
-			  std::size_t num_elements) {}
-    
-    void setup() {}
+const std::string PHX::TypeString< MyVector<double> >::value = 
+  "MyVector<double>";
 
-    template<class DataT> 
-    Teuchos::ArrayRCP<DataT> allocate(std::size_t num_elements)
-    { 
-      Teuchos::ArrayRCP<DataT> ptr = Teuchos::arcp<DataT>(num_elements);
-      return ptr;
-    }
+const std::string PHX::TypeString< MyTensor<double> >::value = 
+  "MyTensor<double>";
 
-  };
+const std::string PHX::TypeString< Sacado::Fad::DFad<double> >::value = 
+  "Sacado::Fad::DFad<double>";
 
-} 
-#endif
+const std::string PHX::TypeString< MyVector<Sacado::Fad::DFad<double> > >::value = 
+  "Sacado::Fad::DFad< MyVector<double> >";
+
+const std::string PHX::TypeString< MyTensor<Sacado::Fad::DFad<double> > >::value = 
+  "Sacado::Fad::DFad< MyTensor<double> >";
+
