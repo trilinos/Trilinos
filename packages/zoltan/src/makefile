@@ -85,7 +85,6 @@ endif
 ##############################################################################
 # Default values for inclusion of methods.
 ZOLTAN_OCT=1
-ZOLTAN_HIER=1
 
 GDEFINES	= -DTRILINOS_NO_CONFIG_H
 
