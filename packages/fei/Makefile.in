@@ -44,12 +44,11 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-@BUILD_TESTS_TRUE@TESTS = test_utils test utest_cases utest \
-@BUILD_TESTS_TRUE@	test/elemDOF_Aztec test/remEssBCs \
-@BUILD_TESTS_TRUE@	test/cr_lagrange_20quad \
-@BUILD_TESTS_TRUE@	test/cr_lagrange_20quad_AZLSC \
-@BUILD_TESTS_TRUE@	test/cr_lagrange_20quad_old \
-@BUILD_TESTS_TRUE@	test/cr_multifield_slave
+@SUB_TEST_TRUE@TESTS = test utest_cases utest test/elemDOF_Aztec \
+@SUB_TEST_TRUE@	test/remEssBCs test/cr_lagrange_20quad \
+@SUB_TEST_TRUE@	test/cr_lagrange_20quad_AZLSC \
+@SUB_TEST_TRUE@	test/cr_lagrange_20quad_old \
+@SUB_TEST_TRUE@	test/cr_multifield_slave
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(include_HEADERS) \
 	$(srcdir)/FEI_config.h.in $(srcdir)/Makefile.am \
@@ -228,9 +227,9 @@ include_HEADERS = $(CORE_H)
 TRILINOS_DIR = support-Trilinos
 @FEI_HAVE_PETSC_FALSE@PETSC_DIR = 
 @FEI_HAVE_PETSC_TRUE@PETSC_DIR = support-PETSc
-@BUILD_EXAMPLES_FALSE@EXAMPLES = 
-@BUILD_EXAMPLES_TRUE@EXAMPLES = example
-SUBDIRS = base $(TRILINOS_DIR) $(PETSC_DIR) $(TESTS) $(EXAMPLES)
+@SUB_EXAMPLE_FALSE@EXAMPLES = 
+@SUB_EXAMPLE_TRUE@EXAMPLES = example
+SUBDIRS = base $(TRILINOS_DIR) $(PETSC_DIR) test_utils $(TESTS) $(EXAMPLES)
 EXTRA_DIST = \
 	RELEASE_NOTES.txt
 
@@ -781,6 +780,14 @@ uninstall-am: uninstall-includeHEADERS
 @BUILD_TESTS_TRUE@	@echo "Building fei tests."
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/utest_cases && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/utest && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test/remEssBCs && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE)
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Finished building fei tests."
 @BUILD_TESTS_TRUE@	@echo ""
@@ -795,8 +802,37 @@ uninstall-am: uninstall-includeHEADERS
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	@echo "Finished building fei examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
+
+@BUILD_EXAMPLES_TRUE@install-examples:
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install
 @BUILD_EXAMPLES_FALSE@examples:
 @BUILD_EXAMPLES_FALSE@	@echo "fei examples were disabled at configure time"
+
+@BUILD_EXAMPLES_FALSE@install-examples:
+@BUILD_EXAMPLES_FALSE@	@echo "fei examples were disabled at configure time"
+
+clean-tests:
+	cd $(top_builddir)/test && $(MAKE) clean
+	cd $(top_builddir)/utest_cases && $(MAKE) clean
+	cd $(top_builddir)/utest && $(MAKE) clean
+	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE) clean
+	cd $(top_builddir)/test/remEssBCs && $(MAKE) clean
+	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE) clean
+	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE) clean
+	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE) clean
+	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/example && $(MAKE) clean
+
+everything:
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+
+install-everything:
+	$(MAKE) install && $(MAKE) install-examples
 
 dist-hook:
 	for file in $(DONT_DISTRIBUTE) ; do \
