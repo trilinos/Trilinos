@@ -83,11 +83,12 @@ extern "C" {
 #endif
 
 #ifdef HAVE_OCTREEPARTITIONING
-#define ZOLTAN_OCTREEPARTITIONING
+#define ZOLTAN_OCT
 #endif
 
 #endif /* TRILINOS_NO_CONFIG_H */
 
+#define ZOLTAN_HIER
 /*****************************************************************************/
 /* 
  *  Macros and definitions that are common to all Zoltan modules and 
