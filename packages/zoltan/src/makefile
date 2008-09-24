@@ -284,14 +284,8 @@ REFTREE_CSRC    = reftree_build.c reftree_part.c reftree_hash.c \
                   reftree_coarse_path.c
 REFTREE_INC     = reftree_const.h
 
-ifdef ZOLTAN_HIER
 HIER_CSRC       = hier.c hier_free_struct.c
 HIER_INC        = hier.h
-GDEFINES       += -DZOLTAN_HIER
-else
-HIER_CSRC       = 
-HIER_INC        = 
-endif
 
 
 # source code and defines for zdrive and zCPPdrive
