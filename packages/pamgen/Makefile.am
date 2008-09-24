@@ -48,8 +48,9 @@ ACLOCAL_AMFLAGS = -I config
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
-config/strip_dup_incl_paths.pl            config/strip_dup_libs.pl \
-config/replace-install-prefix.pl          config/generate-makeoptions.pl
+config/strip_dup_incl_paths.pl          config/strip_dup_libs.pl \
+config/replace-install-prefix.pl        config/generate-makeoptions.pl \
+config/token-replace.pl
 #EXTRA_DIST = \
 #config/depcomp \
 #config/ac_cxx_have_std.m4                 config/install-sh \
