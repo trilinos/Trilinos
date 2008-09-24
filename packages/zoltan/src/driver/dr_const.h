@@ -87,7 +87,7 @@ extern "C" {
 #endif
 
 #ifdef HAVE_OCTREEPARTITIONING
-#define ZOLTAN_OCTREEPARTITIONING
+#define ZOLTAN_OCT
 #endif
 
 #ifdef HAVE_NEMESIS_EXODUS
