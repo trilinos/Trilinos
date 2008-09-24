@@ -78,7 +78,7 @@ int getPamgenEchoStreamSize()
   const char * cst = st.c_str();
   int stsz = strlen(cst);
   return stsz;
-};
+}
 
 /*****************************************************************************/
 int getPamgenErrorStreamSize()
@@ -88,7 +88,7 @@ int getPamgenErrorStreamSize()
   const char * cst = st.c_str();
   int stsz = strlen(cst);
   return stsz;
-};
+}
 
 /*****************************************************************************/
 int getPamgenWarningStreamSize()
@@ -98,7 +98,7 @@ int getPamgenWarningStreamSize()
   const char * cst = st.c_str();
   int stsz = strlen(cst);
   return stsz;
-};
+}
 
 
 /*****************************************************************************/
@@ -109,7 +109,7 @@ int getPamgenInfoStreamSize()
   const char * cst = st.c_str();
   int stsz = strlen(cst);
   return stsz;
-};
+}
 
 /*****************************************************************************/
 char * getPamgenErrorStream(char * car)
