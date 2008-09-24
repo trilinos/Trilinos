@@ -101,7 +101,7 @@ RANLIB			= ranlib
 AR			= ar r
 
 CC			= mpicc  -Wall -Werror-implicit-function-declaration
-CPPC			= mpiCC  -Wall -Werror-implicit-function-declaration
+CPPC			= mpiCC  -Wall 
 
 DBG_FLAGS		= -g -Wall
 OPT_FLAGS		= -O2 
