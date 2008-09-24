@@ -86,7 +86,7 @@ extern "C" {
 #define ZOLTAN_PARKWAY
 #endif
 
-#ifdef HAVE_OCTREEPARTITIONING
+#ifdef HAVE_ZOLTAN_OCT
 #define ZOLTAN_OCT
 #endif
 
