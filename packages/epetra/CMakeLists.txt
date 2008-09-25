@@ -10,18 +10,6 @@ SET(PROJECT_DIR_NAME epetra)
 # Setup package version
 SET(${PROJECT_NAME}_VERSION "3.7d")
 
-# Flag to enable tests
-OPTION(${PROJECT_NAME}_ENABLE_TESTS
-  "Build ${PROJECT_NAME} tests."
-  OFF
-)
-
-# Flag to enable examples
-OPTION(${PROJECT_NAME}_ENABLE_EXAMPLES
-  "Build ${PROJECT_NAME} examples."
-  OFF
-)
-
 # Flag to enable Fortran implementation code for performance
 IF(WIN32 AND NOT CYGWIN)
   SET(${PROJECT_NAME}_ENABLE_FORTRAN_DEFAULT OFF)

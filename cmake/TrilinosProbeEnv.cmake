@@ -1,5 +1,7 @@
-# Note: we should really be probing for these values, but will hard-code them in the short-term.
-# Most of these should be fine for all but ridiculously out-of-date C++ compilers, but you never know.
+# Note: we should really be probing for these values, but will hard-code them
+# in the short-term.  Most of these should be fine for all but ridiculously
+# out-of-date C++ compilers, but you never know.
+
 SET(HAVE_ALGORITHM TRUE)
 SET(HAVE_CASSERT TRUE)
 SET(HAVE_CCTYPE TRUE)
@@ -28,3 +30,34 @@ SET(HAVE_SSTREAM TRUE)
 SET(HAVE_STDEXCEPT TRUE)
 SET(HAVE_STRING TRUE)
 SET(HAVE_VECTOR TRUE)
+
+# Find the hostname used in selecting or deselecting tests by
+# TRILINOS_ADD_TEST(...) function.
+
+EXECUTE_PROCESS(
+  COMMAND uname -n
+  OUTPUT_VARIABLE TRILINOS_HOSTNAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+# Look for BLAS and LAPACK
+
+FIND_LIBRARY(TRILINOS_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
+FIND_LIBRARY(TRILINOS_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
+
+# Find MPI
+
+IF(TRILINOS_ENABLE_MPI)
+  INCLUDE(ConfigureMPI)
+ENDIF(TRILINOS_ENABLE_MPI)
+
+# Set some other options (NOTE: These should be handed in XXX_config.h files!
+
+IF(CMAKE_SIZEOF_VOID_P GREATER 4)
+  ADD_DEFINITIONS(-DEPETRA_ADDRESS64BIT)
+ENDIF()
+
+IF(WIN32)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+ENDIF()
+

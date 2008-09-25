@@ -8,21 +8,6 @@ SET(PROJECT_DIR_NAME teuchos)
 
 SET(${PROJECT_NAME}_VERSION "1.5d")
 
-OPTION(${PROJECT_NAME}_ENABLE_TESTS
-  "Build Teuchos tests."
-  OFF
-  )
-
-OPTION(${PROJECT_NAME}_ENABLE_EXAMPLES
-  "Build Teuchos examples."
-  OFF
-  )
-
-OPTION(${PROJECT_NAME}_ENABLE_EXTENDED
-  "Enable experimental Teuchos features."
-  ON
-  )
-
 OPTION(${PROJECT_NAME}_ENABLE_COMPLEX
   "Enable Teuchos features for complex arithmetic."
   ON
