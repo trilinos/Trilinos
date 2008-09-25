@@ -1,6 +1,33 @@
 
 
-(*) Discovering what targets are available to build:
+(*) How to configure Trilinos to build
+
+  a) Use ccmake $TRILINOS_BASE_DIR
+
+  b) [Recommened] Create a do_configure scripts like:
+
+      EXTRA_ARGS=$@
+      
+      cmake \
+      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+      -D Trilinos_ENABLE_TESTS:BOOL=ON \
+      -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+      -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
+      -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
+      -D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
+      -D Epetra_ENABLE_FORTRAN:BOOL=ON \
+      -D CMAKE_CXX_FLAGS:STRING="-DTEUCHOS_DEBUG -g -O0 -ansi -pedantic -Wall" \
+      -D F77_FUNC_:STRING="(name,NAME) name ## __" \
+      -D DART_TESTING_TIMEOUT:STRING=600 \
+      -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+      $EXTRA_ARGS \
+      ../../../Trilinos
+
+(*) Getting verbose output from configure
+
+  $ ./do_configure -D VERBOSE_CONFIGURE:BOOL=ON
+
+(*) Discovering what targets are available to build after configuration:
 
   $ make help
 
@@ -14,4 +41,38 @@
 
     $ make WHATEVER_WAS_RETURNED_ABOVE
 
-(*) 
+(*) Running the ctest tests:
+
+  a) Using 'make test'
+
+    $ make test
+
+  b) Using 'ctest'
+
+    $ ctest
+
+    (see output in Testing/Temporary/LastTest.log)
+
+  c) Only running tests for a single package
+
+    $ ctest -R Epetra
+
+    (see output in Testing/Temporary/LastTest.log)
+
+  d) Runing memory checking
+
+    $ ctest -R Epetra -T memcheck
+
+    (see the detailed output in ./Testing/Temporary/LastDynamicAnalysis_20080925-1648.log)
+  
+(*) Running the perl-based runtest tests
+
+  a) Serial tests
+
+    $ make runtests-serial
+
+  b) MPI tests
+
+    $ make runtests-mpi
+
+    (NOTE: No need to specify MPIGO or anything else!)

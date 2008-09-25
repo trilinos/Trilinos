@@ -1,48 +1,35 @@
 
 TODOs for the Trilinos/CMake system
 
-Last updated: 2008/08/04
+Last updated: 2008/09/25
 
-(*) Clean up all PACKAGE/test/CMakeList.txt to be a clean as possible
-- Remove the direct calls INCLUDE_DIRECTORIES(...) and LINK_LIBRARIES(...) 
-... Done for 'test' but not 'example' ...
-- Remove all calls to TRILINOS_ADD_EXECUTABLE_AND_TEST(...) with
-separate calls to TRILINOS_ADD_EXECUTABLE(...) and
-TRILINOS_ADD_TEST(...) ... done for 'test' but not 'example' ...
+(*) Set up our own CDash results for Trilinos serial and mpi
 
-(*) Finish custom target for 'runtests-serial' and 'runtests-mpi' to run the
-perl 'runtest' script
-- Figure out PROJECT_DIR_NAME automatically from CMAKE_CURRENT_SOURCE_DIR and
-put this logic in TrilinosRuntestsTargets.cmake
+- Set up area on software.sandia.gov for to host CDash:
+  + https://software.sandia.gov/trilinos/developer/cdash-results
+  + Meet with Danny D. to get this set up
+  + See about getting some type of email alerts set out (at least to
+    rabartl and ejguill)
 
-(*) TRILINOS_ADD_TEST(...) upgrades
-- Add the number of processes that an MPI test is being run with to the name
-of the test.  This will allow you to see just from the main output how many
-processors are selected to run with.
-- Look into changing the print width for ctest since it is truncating
-long test names.
+- Set up a MS Windows test machine feeding into Trilinos dashbaord
+  + Talk with Danny D. and Bill G.
+  + Get automated builds/tests with CTest/CDash running
 
-(*) Set up out own CDash results for Trilinos serial and mpi
-- Find machine and time to run build (exetazo or regresssion.sandia.gov)
-- Find machine and host resuls (software.sandia.gov)
-- Meet with Danny D. to go over process to set this up
-- See about getting some type of email alert
+- Set up a MAC test machine feeding into Trilinos dashboard
+  + Look into s858352. Talk with Mary Meinelt (msmeine@sandia.gov).
+  + Look for another machine:  Sugesstion: Send reqeust to
 
-(*) Write skeleton for new Trilinos Developers Guide with CMake instead of
-autotools ... ON GOING ...
-- Give to Jim W. to see if you can actually use cmake to build and test
-Trilinos
+(*) Experiment with creating MS Windows Visual Studio project files
+
+(*) Experiment with using CPack to create a MS Windows binary installer
+
+(*) Expand TrlinosCMakeQuickstart.txt
+- Configuring Trilinos to build
+- Getting debug output
+- Building
+- Running tests (cmake and runtests-[serial,mpi])
+- Will lead into 
 
 
 Completed:
 ----------
-
-(*) TRILINOS_ADD_TEST(...) upgrades
-- Add the package name to the beginning test name [Done]
-- Change the separator for the test index name from '_' to '-' [Done]
-- Change KEYWORDS to create postfix names to the end of the test name (but
-before the arbitrary number) [Done]
-- Enable and test absent DIRECTORY argument [Done]
-
-- Get rid of MPI_EXECUTABLE_FLAGS in ConfigureMPI.cmake once
-TRILINOS_ADD_EXECUTABLE_AND_TEST(....) is gone. [Done]
