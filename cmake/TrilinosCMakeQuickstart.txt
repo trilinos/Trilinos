@@ -1,0 +1,17 @@
+
+
+(*) Discovering what targets are available to build:
+
+  $ make help
+
+(*) Figuring out how to build an object file:
+
+  a) Look for the name of the object file to build source file SomeSourceFile.cpp:
+
+    $ make help | grep SomeSourceFile.o
+
+  b) Build the source file:
+
+    $ make WHATEVER_WAS_RETURNED_ABOVE
+
+(*) 
