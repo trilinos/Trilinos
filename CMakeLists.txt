@@ -40,11 +40,11 @@ INCLUDE(TrilinosGlobalHelpers)
 
 OPTION(VERBOSE_CONFIGURE "Make the configure process verbose." OFF)
 
-SET( Trilinos_ENABLE_ALL_PACKAGES "DEFAULT" CACHE STRING
+SET( Trilinos_ENABLE_ALL_PACKAGES "" CACHE BOOL
   "Enable all packages (set to ON, OFF, or leave DEFAULT)." )
-SET( Trilinos_ENABLE_TESTS "DEFAULT" CACHE STRING
+SET( Trilinos_ENABLE_TESTS "" CACHE BOOL
   "Enable tests in all packages  (set to ON, OFF, or leave DEFAULT)." )
-SET( ${PROJECT_NAME}_ENABLE_EXAMPLES "DEFAULT" CACHE STRING
+SET( ${PROJECT_NAME}_ENABLE_EXAMPLES "" CACHE BOOL
   "Enable examples in all packages  (set to ON, OFF, or leave DEFAULT)." )
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
@@ -146,8 +146,12 @@ INCLUDE(CPack)
 # G) Configure the individual pacakges
 # 
 
+MESSAGE("")
+MESSAGE("Configuring individual Trilinos packages ...")
+MESSAGE("")
+
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  IF(${Trilinos_ENABLE_${PACKAGE}} STREQUAL "ON")
+  IF(Trilinos_ENABLE_${PACKAGE})
     STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
     # 2008/06/09: rabartl: Above, you can not assume that all package names are lower
     #   case.  This will not work for PyTrilinos, ForTrilinos, ThreadPool, etc.  You should
