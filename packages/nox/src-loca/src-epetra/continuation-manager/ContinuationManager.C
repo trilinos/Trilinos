@@ -469,7 +469,7 @@ GetSolutionFileName() const
 {
   // Number of digits
   int numDigits = 
-    static_cast<int>( std::floor( std::log10( maxAllowedSteps ) ) ) + 1;
+    static_cast<int>( std::floor( std::log10( static_cast<double>(maxAllowedSteps) ) ) ) + 1;
 
   // Composing the filename
   ostringstream fileName;
