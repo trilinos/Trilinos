@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraPartitioner_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -65,7 +65,7 @@ public:
         API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RefCountPtr is used here because a
+        is to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -84,7 +84,7 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
@@ -92,7 +92,7 @@ public:
         API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RefCountPtr is used here because a
+        is to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -114,8 +114,8 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-              Teuchos::RefCountPtr<CostDescriber> costs,
+  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+              Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
@@ -124,7 +124,7 @@ public:
        API function create_partitioner().
 
      \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RefCountPtr is used here because a
+        to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -143,7 +143,7 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
@@ -152,7 +152,7 @@ public:
      CostDescriber, called by API function create_partitioner(). 
 
      \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RefCountPtr is used here because a
+        to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -174,8 +174,8 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-              Teuchos::RefCountPtr<CostDescriber> costs,
+  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+              Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
@@ -239,7 +239,7 @@ public:
       \pre The number of parts might be the same or lower than the
       number of processors.
   */
-  Teuchos::RefCountPtr<Epetra_Map> createNewMap();
+  Teuchos::RCP<Epetra_Map> createNewMap();
 
 };//class Partitioner
 

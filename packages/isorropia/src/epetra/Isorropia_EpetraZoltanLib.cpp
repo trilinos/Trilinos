@@ -35,7 +35,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraZoltanLib.hpp>
@@ -75,27 +75,27 @@ namespace Isorropia {
 
 namespace Epetra {
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph):
   Library(input_graph)
 {
   setInputType("HYPERGRAPH");
 }
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-			  Teuchos::RefCountPtr<CostDescriber> costs):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			  Teuchos::RCP<CostDescriber> costs):
   Library(input_graph, costs)
 {
   setInputType("HYPERGRAPH");
 }
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix):
   Library(input_matrix)
 {
   setInputType("HYPERGRAPH");
 }
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-			  Teuchos::RefCountPtr<CostDescriber> costs):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			  Teuchos::RCP<CostDescriber> costs):
   Library(input_matrix, costs)
 {
   setInputType("HYPERGRAPH");

@@ -68,7 +68,7 @@ void CostDescriber::setParameters(const Teuchos::ParameterList& paramlist)
     the application can supply no vertex weights at all.)  The weights should
     be in the same order as the rows in the Epetra object being partitioned.
 */
-void CostDescriber::setVertexWeights(Teuchos::RefCountPtr<const Epetra_Vector> vwts)
+void CostDescriber::setVertexWeights(Teuchos::RCP<const Epetra_Vector> vwts)
 {
   if (vertex_weights_.get() != 0){
     vertex_weights_.release();
@@ -77,7 +77,7 @@ void CostDescriber::setVertexWeights(Teuchos::RefCountPtr<const Epetra_Vector> v
 }
 
 void
-CostDescriber::setGraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_CrsMatrix> gewts)
+CostDescriber::setGraphEdgeWeights(Teuchos::RCP<const Epetra_CrsMatrix> gewts)
 {
   if (graph_edge_weights_.get() != 0){
     graph_edge_weights_.release();
@@ -107,7 +107,7 @@ CostDescriber::setGraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_CrsMatrix> 
 }
 
 void
-CostDescriber::setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector> hgewts)
+CostDescriber::setHypergraphEdgeWeights(Teuchos::RCP<const Epetra_Vector> hgewts)
 {
   free_hg_edge_weights_();
   const Epetra_BlockMap& map = hgewts->Map();

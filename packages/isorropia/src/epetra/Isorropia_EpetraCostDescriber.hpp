@@ -32,7 +32,7 @@ USA
 
 #include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_CostDescriber.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <map>
@@ -138,7 +138,7 @@ public:
 
       \param vwgts  vector of weights, one for each vertex
    */
-  void setVertexWeights(Teuchos::RefCountPtr<const Epetra_Vector> vwts);
+  void setVertexWeights(Teuchos::RCP<const Epetra_Vector> vwts);
 
   /** setGraphEdgeWeights is called by a process to supply the weights for
       each of the edges of its vertices.  An edge corresponds to a non-zero
@@ -151,7 +151,7 @@ public:
       \param gewts an Epetra_CrsMatrix supplied by the application, each non-zero
              represents a weight for an edge
    */
-  void setGraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_CrsMatrix> gewts);
+  void setGraphEdgeWeights(Teuchos::RCP<const Epetra_CrsMatrix> gewts);
 
   /** setHypergraphEdgeWeights is called by processes in an application to
       supply weights for the hyperedges, which are represented by the columns
@@ -162,7 +162,7 @@ public:
 
       \param hgewts  an Epetra_Vector containing the weights for each hyperedge.
    */
-  void setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector> hgewts);
+  void setHypergraphEdgeWeights(Teuchos::RCP<const Epetra_Vector> hgewts);
 
   /** setHypergraphEdgeWeights is called by processes in an application to
       supply weights for the hyperedges, which are represented by the columns
@@ -182,7 +182,7 @@ public:
    */
   void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const float *hgEwgts);
 
-  /** \copydoc Isorropia::Epetra::CostDescriber::setHypergraphEdgeWeights(Teuchos::RefCountPtr<const Epetra_Vector>
+  /** \copydoc Isorropia::Epetra::CostDescriber::setHypergraphEdgeWeights(Teuchos::RCP<const Epetra_Vector>
    */
 
   void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const double *hgEwgts);
@@ -317,8 +317,8 @@ private:
    */
   void free_hg_edge_weights_();
 
-  Teuchos::RefCountPtr<const Epetra_Vector> vertex_weights_;
-  Teuchos::RefCountPtr<const Epetra_CrsMatrix> graph_edge_weights_;
+  Teuchos::RCP<const Epetra_Vector> vertex_weights_;
+  Teuchos::RCP<const Epetra_CrsMatrix> graph_edge_weights_;
   std::set<int> graph_self_edges_;
 
   Teuchos::ParameterList paramlist_;

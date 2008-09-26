@@ -31,7 +31,7 @@ USA
 #define _Isorropia_Redistributor_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 
 namespace Isorropia {
   class Partitioner;

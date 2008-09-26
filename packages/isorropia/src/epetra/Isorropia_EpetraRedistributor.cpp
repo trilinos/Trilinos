@@ -32,7 +32,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Map.h>
@@ -51,7 +51,7 @@ namespace Epetra {
 
 #ifdef HAVE_EPETRA
 
-Redistributor::Redistributor(Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner)
+Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner)
   : partitioner_(partitioner),
   importer_(),
   target_map_(),
@@ -83,7 +83,7 @@ void Redistributor::redistribute(const Epetra_SrcDistObject& src,
   target.Import(src, *importer_, Insert);
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
 Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete)
 {
   if (!created_importer_) {
@@ -116,7 +116,7 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillCom
 
   // Receive new rows, send old rows
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> new_graph =
+  Teuchos::RCP<Epetra_CrsGraph> new_graph =
     Teuchos::rcp(new Epetra_CrsGraph(Copy, *target_map_, rowSize, true));
 
   if (myNewRows)
@@ -139,7 +139,7 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillCom
   return( new_graph );
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete)
 {
   if (!created_importer_) {
@@ -175,7 +175,7 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillC
 
   // Receive new rows, send old rows
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> new_matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> new_matrix =
     Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true));
 
   if (myNewRows)
@@ -198,7 +198,7 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillC
   return( new_matrix );
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete)
 {
   if (!created_importer_) {
@@ -233,7 +233,7 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillC
 
   // Receive new rows, send old rows
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> new_matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> new_matrix =
     Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true));
 
   if (myNewRows)
@@ -257,28 +257,28 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillC
   return( new_matrix );
 }
 
-Teuchos::RefCountPtr<Epetra_Vector>
+Teuchos::RCP<Epetra_Vector>
 Redistributor::redistribute(const Epetra_Vector& input_vector)
 {
   if (!created_importer_) {
     create_importer(input_vector.Map());
   }
 
-  Teuchos::RefCountPtr<Epetra_Vector> new_vec = Teuchos::rcp(new Epetra_Vector(*target_map_));
+  Teuchos::RCP<Epetra_Vector> new_vec = Teuchos::rcp(new Epetra_Vector(*target_map_));
 
   new_vec->Import(input_vector, *importer_, Insert);
 
   return( new_vec );
 }
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 Redistributor::redistribute(const Epetra_MultiVector& input_vector)
 {
   if (!created_importer_) {
     create_importer(input_vector.Map());
   }
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> new_vec =
+  Teuchos::RCP<Epetra_MultiVector> new_vec =
     Teuchos::rcp(new Epetra_MultiVector(*target_map_, input_vector.NumVectors()));
 
   new_vec->Import(input_vector, *importer_, Insert);

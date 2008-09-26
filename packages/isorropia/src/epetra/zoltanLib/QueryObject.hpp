@@ -30,7 +30,7 @@
 
 #include "Isorropia_ConfigDefs.hpp"
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 
 #include <zoltan_cpp.h>
 
@@ -68,12 +68,12 @@ namespace ZoltanLib {
  */
 class QueryObject
 {
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> graph_;
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix_;
+  Teuchos::RCP<const Epetra_CrsGraph> graph_;
+  Teuchos::RCP<const Epetra_RowMatrix> matrix_;
   const Epetra_BlockMap *rowMap_;
   const Epetra_BlockMap *colMap_;
 
-  Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs_;
+  Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs_;
 
   std::map<int,int> procmap_;
   std::set<int> graph_self_edges_;
@@ -137,15 +137,15 @@ class QueryObject
 
   /** Constructor
    */
-  QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
-	       Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
+  QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
+	       Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                bool isHypergraph);
 
 
   /** Constructor
    */
-  QueryObject( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
-	       Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
+  QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
+	       Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                bool isHypergraph);
 
   /** Destructor

@@ -59,40 +59,40 @@ namespace Isorropia {
 namespace Epetra {
 
 #ifdef HAVE_EPETRA
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		   const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(input_graph, paramlist));
   return(partitioner);
 }
 
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-		   Teuchos::RefCountPtr<CostDescriber> costs,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+		   Teuchos::RCP<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(input_graph, costs, paramlist));
   return(partitioner);
 }
 
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		   const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(input_matrix, paramlist));
   return(partitioner);
 }
 
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-		   Teuchos::RefCountPtr<CostDescriber> costs,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+		   Teuchos::RCP<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(input_matrix, costs, paramlist));
   return(partitioner);
 }
@@ -388,19 +388,19 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
   all_proc_offsets[numProcs] = offset;
 }
 
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix)
 {
   CostDescriber costs;
   Teuchos::ParameterList paramlist;
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      const Epetra_Vector &row_weights)
 {
@@ -411,59 +411,59 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   vwgts.release();
   costs.setVertexWeights(vwgts);
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
 		     const Teuchos::ParameterList& paramlist)
 {
   CostDescriber costs; 
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> matrixPtr=
+  Teuchos::RCP<const Epetra_RowMatrix> matrixPtr=
     Teuchos::rcp(&(input_matrix), false);
 
-  Teuchos::RefCountPtr<CostDescriber> costPtr =
+  Teuchos::RCP<CostDescriber> costPtr =
     Teuchos::rcp(&(costs), false);
 
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(matrixPtr, costPtr, paramlist));
 
   Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     rd.redistribute(input_matrix);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix)
 {
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      const Epetra_Vector &row_weights)
 {
@@ -478,58 +478,58 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
 
   costs.setVertexWeights(vwgts);
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
 		     const Teuchos::ParameterList& paramlist)
 {
   CostDescriber costs; 
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
   return balanced_matrix;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
+  Teuchos::RCP<const Epetra_CrsGraph> input_graph =
     Teuchos::rcp(&(input_matrix.Graph()), false);
 
-  Teuchos::RefCountPtr<CostDescriber> costPtr =
+  Teuchos::RCP<CostDescriber> costPtr =
     Teuchos::rcp(&(costs), false);
 
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(input_graph, costPtr, paramlist));
 
   Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     rd.redistribute(input_matrix);
 
   return balanced_matrix;
 }
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph)
 {
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+  Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     create_balanced_copy(input_graph, costs, paramlist);
 
   return balanced_graph;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      const Epetra_Vector &row_weights)
 {
@@ -544,59 +544,59 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
 
   costs.setVertexWeights(vwgts);
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+  Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     create_balanced_copy(input_graph, costs, paramlist);
 
   return balanced_graph;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
 		     const Teuchos::ParameterList& paramlist)
 {
   CostDescriber costs; 
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+  Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     create_balanced_copy(input_graph, costs, paramlist);
 
   return balanced_graph;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> graphPtr=
+  Teuchos::RCP<const Epetra_CrsGraph> graphPtr=
     Teuchos::rcp(&(input_graph), false);
 
-  Teuchos::RefCountPtr<CostDescriber> costPtr =
+  Teuchos::RCP<CostDescriber> costPtr =
     Teuchos::rcp(&(costs), false);
 
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(graphPtr, costPtr, paramlist));
 
   Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+  Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     rd.redistribute(input_graph);
 
   return balanced_graph;
 }
 
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem)
 {
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+  Teuchos::RCP<Epetra_LinearProblem> linprob =
     create_balanced_copy(input_problem, costs, paramlist);
 
   return linprob;
 }
 
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      const Epetra_Vector &row_weights)
 {
@@ -610,44 +610,44 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
   vwgts.release();  
   costs.setVertexWeights(vwgts);
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+  Teuchos::RCP<Epetra_LinearProblem> linprob =
     create_balanced_copy(input_problem, costs, paramlist);
 
   return linprob;
 }
 
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem,
 		     const Teuchos::ParameterList& paramlist)
 {
   CostDescriber costs; 
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+  Teuchos::RCP<Epetra_LinearProblem> linprob =
     create_balanced_copy(input_problem, costs, paramlist);
 
   return linprob;
 }
 
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmat =
+  Teuchos::RCP<const Epetra_RowMatrix> rowmat =
     Teuchos::rcp(input_problem.GetMatrix(), false);
 
-  Teuchos::RefCountPtr<CostDescriber> costPtr =
+  Teuchos::RCP<CostDescriber> costPtr =
     Teuchos::rcp(&(costs), false);
 
-  Teuchos::RefCountPtr<Partitioner> partitioner =
+  Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(rowmat, costPtr, paramlist));
 
   Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix =
+  Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     rd.redistribute(*input_problem.GetMatrix());
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> balanced_rhs =
+  Teuchos::RCP<Epetra_MultiVector> balanced_rhs =
     rd.redistribute(*input_problem.GetRHS());
 
   Teuchos::RCP<Epetra_MultiVector> x=
@@ -658,7 +658,7 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
   balanced_rhs.release();
   x.release();
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
+  Teuchos::RCP<Epetra_LinearProblem> linprob =
     Teuchos::rcp(new Epetra_LinearProblem(balanced_matrix.get(), x.get(), balanced_rhs.get()));
 
   return( linprob );

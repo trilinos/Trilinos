@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraColorer_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -72,7 +72,7 @@ public:
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c false
     */
 
-  Colorer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+  Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	  const Teuchos::ParameterList& paramlist,
 	  bool compute_now=true);
 
@@ -83,7 +83,7 @@ public:
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
   */
 
-  Colorer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+  Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	  const Teuchos::ParameterList& paramlist,
 	  bool compute_now=true);
 
@@ -114,7 +114,7 @@ public:
   Provide access on the coloring thru the EpetraEXT color class @c Epetra_MapColoring.
   This methods requires EpetraEXT support.
   */
-  Teuchos::RefCountPtr<Epetra_MapColoring> generateMapColoring() ;
+  Teuchos::RCP<Epetra_MapColoring> generateMapColoring() ;
 #endif /* HAVE_EPETRAEXT */
 
 };//class Colorer

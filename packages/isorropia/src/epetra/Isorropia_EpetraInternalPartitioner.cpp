@@ -31,7 +31,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraInternalPartitioner.hpp>
@@ -66,27 +66,27 @@ namespace Isorropia {
 
 namespace Epetra {
 
-InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph):
+InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph):
   Library(input_graph)
  {
    setInputType("HYPERGRAPH");
  }
 
-InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-			  Teuchos::RefCountPtr<CostDescriber> costs):
+InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			  Teuchos::RCP<CostDescriber> costs):
   Library(input_graph, costs)
 {
    setInputType("HYPERGRAPH");
 }
 
-InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix):
+InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix):
   Library(input_matrix)
 {
    setInputType("HYPERGRAPH");
 }
 
-InternalPartitioner::InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-			  Teuchos::RefCountPtr<CostDescriber> costs):
+InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			  Teuchos::RCP<CostDescriber> costs):
   Library(input_matrix, costs)
 {
    setInputType("HYPERGRAPH");

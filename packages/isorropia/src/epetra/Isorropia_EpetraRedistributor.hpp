@@ -32,7 +32,7 @@ USA
 
 #include <Isorropia_Redistributor.hpp>
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
@@ -66,7 +66,7 @@ public:
       \param[in] partitioner this input partitioner determines the new partitioning
             to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
-  Redistributor(Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner);
+  Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner);
 
   /** Destructor
    */
@@ -94,7 +94,7 @@ public:
 
       \return a reference counted pointer to the new redistributed graph 
   */
-  Teuchos::RefCountPtr<Epetra_CrsGraph>
+  Teuchos::RCP<Epetra_CrsGraph>
      redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete= true);
 
   /** Method to accept a Epetra_CrsMatrix object, and
@@ -112,7 +112,7 @@ public:
 
       \return a reference counted pointer to the new redistributed matrix
   */
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>
+  Teuchos::RCP<Epetra_CrsMatrix>
      redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete= true);
 
   /** Method to accept a Epetra_RowMatrix object, and
@@ -130,7 +130,7 @@ public:
 
       \return a reference counted pointer to the new redistributed matrix
   */
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>
+  Teuchos::RCP<Epetra_CrsMatrix>
      redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete= true);
 
   /** Method to accept a Epetra_Vector object, and
@@ -142,7 +142,7 @@ public:
 
       \return a reference counted pointer to the new redistributed vector
   */
-  Teuchos::RefCountPtr<Epetra_Vector>
+  Teuchos::RCP<Epetra_Vector>
      redistribute(const Epetra_Vector& input_vector);
 
   /** Method to accept a Epetra_MultiVector object, and
@@ -154,7 +154,7 @@ public:
 
       \return a reference counted pointer to the new redistributed multi vector
   */
-  Teuchos::RefCountPtr<Epetra_MultiVector>  
+  Teuchos::RCP<Epetra_MultiVector>  
      redistribute(const Epetra_MultiVector& input_vector);
 
   /** Reverse redistribute an Epetra_Vector.
@@ -184,9 +184,9 @@ private:
    */
   void create_importer(const Epetra_BlockMap& src_map);
 
-  Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner_;
-  Teuchos::RefCountPtr<Epetra_Import> importer_;
-  Teuchos::RefCountPtr<Epetra_Map> target_map_;
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner_;
+  Teuchos::RCP<Epetra_Import> importer_;
+  Teuchos::RCP<Epetra_Map> target_map_;
 
   bool created_importer_;
 

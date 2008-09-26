@@ -35,7 +35,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
@@ -63,7 +63,7 @@ namespace Isorropia {
 namespace Epetra {
 
 
-Orderer::Orderer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Orderer::Orderer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_graph, paramlist) {
@@ -79,7 +79,7 @@ Orderer::Orderer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     order(true);
 }
 
-Orderer::Orderer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Orderer::Orderer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_matrix, paramlist) {

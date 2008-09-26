@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraLibrary_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -60,21 +60,21 @@ namespace Epetra {
 class Library {
 public:
 
-  Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph);
-  Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-	  Teuchos::RefCountPtr<CostDescriber> costs);
-  Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix);
-  Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
- 	  Teuchos::RefCountPtr<CostDescriber> costs);
+  Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
+  Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+	  Teuchos::RCP<CostDescriber> costs);
+  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
+  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+ 	  Teuchos::RCP<CostDescriber> costs);
 
   virtual ~Library();
 
-  void setInput(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph);
-  void setInput(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-		Teuchos::RefCountPtr<CostDescriber> costs);
-  void setInput(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix);
-  void setInput(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-		Teuchos::RefCountPtr<CostDescriber> costs);
+  void setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
+  void setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+		Teuchos::RCP<CostDescriber> costs);
+  void setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
+  void setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+		Teuchos::RCP<CostDescriber> costs);
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
@@ -99,11 +99,11 @@ public:
 protected:
   std::string inputType_;
 
-  Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix_;
-  Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs_;
-  Teuchos::RefCountPtr<Epetra_Vector> weights_;
+  Teuchos::RCP<const Epetra_BlockMap> input_map_;
+  Teuchos::RCP<const Epetra_CrsGraph> input_graph_;
+  Teuchos::RCP<const Epetra_RowMatrix> input_matrix_;
+  Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs_;
+  Teuchos::RCP<Epetra_Vector> weights_;
 
   virtual int precompute();
   virtual int postcompute() = 0;

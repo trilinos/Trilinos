@@ -35,7 +35,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
@@ -62,7 +62,7 @@ namespace Isorropia {
 namespace Epetra {
 
 
-Colorer::Colorer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_graph, paramlist) {
@@ -77,7 +77,7 @@ Colorer::Colorer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     color(true);
 }
 
-Colorer::Colorer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Colorer::Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator (input_matrix, paramlist) {
@@ -110,10 +110,10 @@ Colorer::color(bool force_coloring)
 
 #ifdef HAVE_EPETRAEXT
 
-Teuchos::RefCountPtr<Epetra_MapColoring>
+Teuchos::RCP<Epetra_MapColoring>
 Colorer::generateMapColoring()
 {
-  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap;
+  Teuchos::RCP<Epetra_MapColoring> colorMap;
 
   color(false);
   colorMap = Teuchos::rcp(new Epetra_MapColoring(*input_map_));

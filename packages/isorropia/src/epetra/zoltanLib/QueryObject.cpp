@@ -48,8 +48,8 @@ namespace Epetra {
 
 namespace ZoltanLib{
 
-QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
-	   Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
+QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
+	   Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                                      bool isHypergraph) 
   : graph_(graph),
     matrix_(0),
@@ -92,8 +92,8 @@ QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
   }
 }
 
-QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
-	     Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
+QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
+	     Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                                  bool isHypergraph) 
   : graph_(0),
     matrix_(matrix),
