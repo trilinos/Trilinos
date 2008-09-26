@@ -10,6 +10,15 @@
    http://www.netlib.org/f2c/libf2c.zip
 */
 
+#include "AztecOO_config.h"
+
+#define SSWAP_F77 F77_BLAS_MANGLE(sswap,SSWAP)
+#define SDOT_F77 F77_BLAS_MANGLE(sdot,SDOT)
+#define SLAMCH_F77 F77_BLAS_MANGLE(slamch,SLAMCH)
+
+#define DDOT_F77 F77_BLAS_MANGLE(ddot,DDOT)
+#define DLAMCH_F77 F77_BLAS_MANGLE(dlamch,DLAMCH)
+
 /* From f2c.h  --  Standard Fortran to C header file */
 
 typedef int integer;
@@ -249,10 +258,10 @@ double az_d_sign(doublereal * a, doublereal * b) {
   double sqrt(doublereal);
   /* Local variables */
   static doublereal b, t, s1, s2, eps, tmp;
-  extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *, 
+  extern doublereal DDOT_F77(integer *, doublereal *, integer *, doublereal *, 
     integer *);
   static doublereal sine, test, zeta1, zeta2, alpha, norma;
-  extern doublereal dlamch_(char *, ftnlen);
+  extern doublereal DLAMCH_F77(char *, ftnlen);
   static doublereal absgam, absalp, cosine, absest;
 
 
@@ -343,8 +352,8 @@ double az_d_sign(doublereal * a, doublereal * b) {
   --x;
 
   /* Function Body */
-  eps = dlamch_("Epsilon", (ftnlen)7);
-  alpha = ddot_(j, &x[1], &c__1, &w[1], &c__1);
+  eps = DLAMCH_F77("Epsilon", (ftnlen)7);
+  alpha = DDOT_F77(j, &x[1], &c__1, &w[1], &c__1);
 
   absalp = abs(alpha);
   absgam = abs(*gamma);
@@ -709,9 +718,9 @@ double az_r_sign(real * a, real * b) {
 
   /* Local variables */
   static real b, t, s1, s2, eps, tmp, sine;
-  extern doublereal sdot_(integer *, real *, integer *, real *, integer *);
+  extern doublereal SDOT_F77(integer *, real *, integer *, real *, integer *);
   static real test, zeta1, zeta2, alpha, norma, absgam, absalp;
-  extern doublereal slamch_(char *, ftnlen);
+  extern doublereal SLAMCH_F77(char *, ftnlen);
   static real cosine, absest;
 
 
@@ -802,8 +811,8 @@ double az_r_sign(real * a, real * b) {
   --x;
 
   /* Function Body */
-  eps = slamch_("Epsilon", (ftnlen)7);
-  alpha = sdot_(j, &x[1], &c__1, &w[1], &c__1);
+  eps = SLAMCH_F77("Epsilon", (ftnlen)7);
+  alpha = SDOT_F77(j, &x[1], &c__1, &w[1], &c__1);
 
   absalp = dabs(alpha);
   absgam = dabs(*gamma);
@@ -1093,7 +1102,7 @@ double az_r_sign(real * a, real * b) {
     for (i__ = *k1; i__ <= i__1; ++i__) {
 	    ip = ipiv[i__];
 	    if (ip != i__) {
-        sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
+        SSWAP_F77(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
 	    }
 /* L10: */
     }
@@ -1102,7 +1111,7 @@ double az_r_sign(real * a, real * b) {
     for (i__ = *k1; i__ <= i__1; ++i__) {
 	    ip = ipiv[ix];
 	    if (ip != i__) {
-        sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
+        SSWAP_F77(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
 	    }
 	    ix += *incx;
 /* L20: */
@@ -1112,7 +1121,7 @@ double az_r_sign(real * a, real * b) {
     for (i__ = *k2; i__ >= i__1; --i__) {
 	    ip = ipiv[ix];
 	    if (ip != i__) {
-        sswap_(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
+        SSWAP_F77(n, &a[i__ + a_dim1], lda, &a[ip + a_dim1], lda);
 	    }
 	    ix += *incx;
 /* L30: */
