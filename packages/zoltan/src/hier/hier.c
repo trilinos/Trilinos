@@ -351,8 +351,8 @@ int Zoltan_Hier(
   if (zz->Get_Hier_Num_Levels == NULL) {
     ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_NUM_LEVELS_FN");
   }
-  if (zz->Get_Hier_Partition == NULL) {
-    ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_PARTITION_FN");
+  if (zz->Get_Hier_Part == NULL) {
+    ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_PART_FN");
   }
   if (zz->Get_Hier_Method == NULL) {
     ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_METHOD_FN");
@@ -504,7 +504,7 @@ int Zoltan_Hier(
 
     /* determine partitions to compute at this level */
     hpp.part_to_compute = 
-      zz->Get_Hier_Partition(zz->Get_Hier_Partition_Data, hpp.level, &ierr);
+      zz->Get_Hier_Part(zz->Get_Hier_Part_Data, hpp.level, &ierr);
     /* number of partitions is one more than the highest partition id
        specified on procs in the current hier_comm */
     MPI_Allreduce(&hpp.part_to_compute, &hpp.num_parts, 1, MPI_INT,
@@ -558,7 +558,7 @@ int Zoltan_Hier(
 
     /* set the numbers of partitions */
     sprintf(msg, "%d", hpp.num_parts);
-    Zoltan_Set_Param(hpp.hierzz, "NUM_GLOBAL_PARTITIONS", msg);
+    Zoltan_Set_Param(hpp.hierzz, "NUM_GLOBAL_PARTS", msg);
 
     /* specify the callbacks */
     ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_OBJ_FN_TYPE,

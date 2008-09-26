@@ -24,6 +24,7 @@ extern "C" {
 #ifndef _DR_CONST_H
 #include "dr_const.h"
 #endif
+#include "dr_compress_const.h"
 
 /* define the input file types */
 #define NO_FILE_POINTS    0
@@ -38,11 +39,6 @@ extern "C" {
 #define ROWS            0
 #define COLUMNS         1
 #define NONZEROS        2
-
-/* define the matrix partitioning approach for LB_METHOD=sparse_matrix */
-
-#define MP_ROWS   1
-#define MP_COLS   2
 
 /* define the initial distribution types - for Chaco file vertices
    and for hypergraph file pins  */
@@ -77,7 +73,7 @@ struct Parallel_IO
                         /*     /pfs/tmp_1)                                   */
 
   int     file_type;    /* input file type */
-  int     file_comp;    /* wether the file is compressed and how       */
+  ZOLTAN_FILETYPE file_comp;  /* whether the file is compressed and how      */
   int     chunk_reader;   /* for very large matrix market files */
   int     init_dist_type;      /* Flag indicating how input objects
                                   should be initially distributed.     */

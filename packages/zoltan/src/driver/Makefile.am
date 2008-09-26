@@ -45,12 +45,14 @@ COMMON_DRIVER_SRC = \
 
 # List headers here that are used for both the C and C++ drivers.
 COMMON_DRIVER_HDRS = \
+	$(srcdir)/dr_compress_const.h $(srcdir)/dr_hg_readfile.h \
 	$(srcdir)/dr_const.h $(srcdir)/dr_input_const.h \
 	$(srcdir)/dr_util_const.h $(srcdir)/dr_err_const.h \
 	$(srcdir)/dr_par_util_const.h $(srcdir)/dr_elem_const.h \
 	$(srcdir)/dr_elem_util_const.h $(srcdir)/dr_maps_const.h \
-	$(srcdir)/dr_eval_const.h \
-	$(srcdir)/dr_mmio.h $(srcdir)/dr_dd.h \
+	$(srcdir)/dr_eval_const.h $(srcdir)/dr_loadbal_const.h \
+	$(srcdir)/dr_mmio.h $(srcdir)/dr_output_const.h \
+	$(srcdir)/dr_param_file.h $(srcdir)/dr_dd.h \
 	$(top_srcdir)/src/ch/ch_input_const.h \
 	$(top_srcdir)/src/ch/ch_init_dist_const.h
 
@@ -87,7 +89,8 @@ zdrive_LDADD = $(EXPORT_LIBS)
 
 zCPPdrive_LDADD = $(EXPORT_LIBS)
 
-EXTRA_DIST = $(COMMON_DRIVER_HDRS) $(zCPPdrive_HDRS) $(zdrive_HDRS)
+EXTRA_DIST = $(COMMON_DRIVER_HDRS) $(zCPPdrive_HDRS) $(zdrive_HDRS) \
+             $(srcdir)/dr_compress.c
 
 # Dummy for new export makefiles
 #LIBS = 

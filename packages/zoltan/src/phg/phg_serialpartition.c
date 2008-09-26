@@ -19,6 +19,7 @@ extern "C" {
 #include "zz_sort.h"
 #include "zz_heap.h"
 #include "phg.h"
+#include "zz_const.h"
     
 /* If adding a new coarse partitioning fn, add prototype here 
  * AND add entry to CoarsePartitionFns array 

@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include "hsfc.h"
+#include "zz_const.h"
 #include "zz_util_const.h"
 #include <math.h>
 

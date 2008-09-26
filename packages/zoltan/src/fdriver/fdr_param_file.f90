@@ -346,21 +346,21 @@ integer :: ztnPrm_hier_get_num_levels
   ztnPrm_hier_get_num_levels = num_levels
 end function ztnPrm_hier_get_num_levels
 
-!int zoltanParams_hier_get_partition(int level) {
+!int zoltanParams_hier_get_part(int level) {
 !
 !  check_level(level);
 !
 !  return zph[level]->partition;
 !}
 
-function ztnPrm_hier_get_partition(level)
+function ztnPrm_hier_get_part(level)
 integer :: level
-integer :: ztnPrm_hier_get_partition
+integer :: ztnPrm_hier_get_part
 
   call check_level(level)
 
-  ztnPrm_hier_get_partition = zph(level)%partition
-end function ztnPrm_hier_get_partition
+  ztnPrm_hier_get_part = zph(level)%partition
+end function ztnPrm_hier_get_part
 
 !void zoltanParams_hier_use_params(int level, struct Zoltan_Struct *zz, int *ierr) {
 !  struct zoltanParams_list_entry *nextparam;
@@ -411,22 +411,22 @@ integer :: get_num_levels
   get_num_levels = ztnPrm_hier_get_num_levels()
 end function get_num_levels
 
-!static int get_partition(void *data, int level, int *ierr) {
+!static int get_part(void *data, int level, int *ierr) {
 !
 !  *ierr = ZOLTAN_OK;
 !
-!  return ztnPrm_hier_get_partition(level);
+!  return ztnPrm_hier_get_part(level);
 !}
 
-function get_partition(data, level, ierr)
+function get_part(data, level, ierr)
 integer(Zoltan_INT) :: data(*)
 integer :: level, ierr
-integer :: get_partition
+integer :: get_part
 
   ierr = ZOLTAN_OK
 
-  get_partition = ztnPrm_hier_get_partition(level)
-end function get_partition
+  get_part = ztnPrm_hier_get_part(level)
+end function get_part
 
 !static void get_method(void *data, int level, struct Zoltan_Struct *zz,
 !		       int *ierr) {
@@ -470,7 +470,7 @@ end subroutine ztnPrm_set_comm
 !  }
 !
 !  if (Zoltan_Set_Fn(zz, ZOLTAN_HIER_PARTITION_FN_TYPE, 
-!		    (void (*)()) get_partition, NULL) == ZOLTAN_FATAL) {
+!		    (void (*)()) get_part, NULL) == ZOLTAN_FATAL) {
 !    fprintf(stderr,"zoltanParams_hier_setup: set PARTITION callback failed\n");
 !  }
 !
@@ -491,7 +491,7 @@ integer(Zoltan_INT) :: dummy(1) = (/0/)
     write(stderr,*) "ztnPrm_hier_setup: set NUM_LEVELS callback failed"
   endif
 
-  if (Zoltan_Set_Hier_Partition_Fn(zz, get_partition, dummy) == &
+  if (Zoltan_Set_Hier_Part_Fn(zz, get_part, dummy) == &
       ZOLTAN_FATAL) then
     write(stderr,*) "ztnPrm_hier_setup: set PARTITION callback failed"
   endif

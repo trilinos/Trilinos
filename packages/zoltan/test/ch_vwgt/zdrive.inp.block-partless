@@ -1,6 +1,6 @@
 Decomposition Method 	= block
 Zoltan Parameters	= remap=0
-Zoltan Parameters	= num_global_partitions=2
+Zoltan Parameters	= num_global_parts=2
 Zoltan Parameters	= obj_weight_dim=1
 File Type		= Chaco
 File Name		= vwgt

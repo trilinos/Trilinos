@@ -1,0 +1,4 @@
+# Since Mac OS X is case-insensitive, autoconf produces a bad Makefile.in
+# Don't use Mac OS X until this bug is fixed.
+
+echo "Due to bug in autoconf Makefile.in, do not make dist on a case-insensitive system."

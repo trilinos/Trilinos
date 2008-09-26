@@ -82,26 +82,27 @@ enum Zoltan_Fn_Type {
   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
-  ZOLTAN_PARTITION_FN_TYPE,
-  ZOLTAN_PARTITION_MULTI_FN_TYPE,
+  ZOLTAN_PART_FN_TYPE,
+  ZOLTAN_PART_MULTI_FN_TYPE,
   ZOLTAN_PROC_NAME_FN_TYPE,
   ZOLTAN_HG_SIZE_CS_FN_TYPE,
   ZOLTAN_HG_CS_FN_TYPE,
   ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE,
   ZOLTAN_HG_EDGE_WTS_FN_TYPE,
-  ZOLTAN_CSC_SIZE_FN_TYPE,
-  ZOLTAN_CSR_SIZE_FN_TYPE,
-  ZOLTAN_CSC_FN_TYPE,
-  ZOLTAN_CSR_FN_TYPE,
   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE,
   ZOLTAN_HIER_NUM_LEVELS_FN_TYPE,
-  ZOLTAN_HIER_PARTITION_FN_TYPE,
+  ZOLTAN_HIER_PART_FN_TYPE,
   ZOLTAN_HIER_METHOD_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
 typedef enum Zoltan_Fn_Type ZOLTAN_FN_TYPE;
+
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_HIER_PARTITION_FN_TYPE ZOLTAN_HIER_PART_FN_TYPE
+#define ZOLTAN_PARTITION_FN_TYPE ZOLTAN_PART_FN_TYPE
+#define ZOLTAN_PARTITION_MULTI_FN_TYPE ZOLTAN_PART_MULTI_FN_TYPE
 
 /* Definitions to support name change for 31-character F90 names */
 #define ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE   ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE
@@ -157,7 +158,7 @@ struct Zoltan_Struct;
  *    *ierr               --  error code
  */
 
-typedef void ZOLTAN_PARTITION_MULTI_FN(
+typedef void ZOLTAN_PART_MULTI_FN(
   void *data,              
   int num_gid_entries, 
   int num_lid_entries,
@@ -168,7 +169,7 @@ typedef void ZOLTAN_PARTITION_MULTI_FN(
   int *ierr
 );
 
-typedef void ZOLTAN_PARTITION_MULTI_FORT_FN(
+typedef void ZOLTAN_PART_MULTI_FORT_FN(
   void *data, 
   int *num_gid_entries, 
   int *num_lid_entries,
@@ -178,6 +179,10 @@ typedef void ZOLTAN_PARTITION_MULTI_FORT_FN(
   int *parts,
   int *ierr
 );
+
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_PARTITION_MULTI_FN ZOLTAN_PART_MULTI_FN
+#define ZOLTAN_PARTITION_MULTI_FORT_FN ZOLTAN_PART_MULTI_FORT_FN
 
 /*****************************************************************************/
 /*
@@ -196,7 +201,7 @@ typedef void ZOLTAN_PARTITION_MULTI_FORT_FN(
  *  Returned value:       --  partition number the object is assigned to.
  */
 
-typedef int ZOLTAN_PARTITION_FN(
+typedef int ZOLTAN_PART_FN(
   void *data,              
   int num_gid_entries, 
   int num_lid_entries,
@@ -205,7 +210,7 @@ typedef int ZOLTAN_PARTITION_FN(
   int *ierr
 );
 
-typedef int ZOLTAN_PARTITION_FORT_FN(
+typedef int ZOLTAN_PART_FORT_FN(
   void *data, 
   int *num_gid_entries, 
   int *num_lid_entries,
@@ -213,6 +218,10 @@ typedef int ZOLTAN_PARTITION_FORT_FN(
   ZOLTAN_ID_PTR local_id, 
   int *ierr
 );
+
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_PARTITION_FN ZOLTAN_PART_FN
+#define ZOLTAN_PARTITION_FORT_FN ZOLTAN_PART_FN
 
 /*****************************************************************************/
 /*
@@ -1868,100 +1877,6 @@ typedef void ZOLTAN_HG_EDGE_WTS_FORT_FN(
 
 /*****************************************************************************/
 /*
- *  Function to return the size of compressed sparse column data that
- *  will be supplied by the user to describe a sparse matrix.
- *
- *  Input:
- *    data                --  pointer to user defined data structure
- *  Output:
- *    num_columns         --  number of columns to be supplied by user
- *    num_non_zeroes      --  total number of non-zeroes in the columns
- *    ierr                --  error code
- */
-
-typedef void ZOLTAN_CSC_SIZE_FN(
-  void *data,
-  unsigned int *num_columns,
-  unsigned int *num_non_zeroes,
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Function to return the size of compressed sparse row data that
- *  will be supplied by the user to describe a sparse matrix.
- *
- *  Input:
- *    data                --  pointer to user defined data structure
- *  Output:
- *    num_rows            --  number of rows to be supplied by user
- *    num_non_zeroes      --  total number of non-zeroes in the columns
- *    ierr                --  error code
- */
-
-typedef void ZOLTAN_CSR_SIZE_FN(
-  void *data,
-  unsigned int *num_rows,
-  unsigned int *num_non_zeroes,
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Function to return a portion of a distributed sparse matrix using
- *  compressed sparse column format.
- *
- *  Input:
- *    data           --  pointer to user defined data structure
- *    num_columns    --  number of columns to be supplied by user
- *    num_non_zeroes --  total number of non-zeroes in the columns
- *
- *  Output:
- *    column_gids    --  array of global IDs for the columns
- *    row_gid_index  --  index into row_gids of start of non-zeros for each column
- *    row_gids       --  list of global IDs of rows of non-zeros in columns
- *    ierr           --  error code
- */
-
-typedef void ZOLTAN_CSC_FN(
-  void *data,
-  unsigned int num_columns,
-  unsigned int num_non_zeroes,
-  unsigned int *column_gids,
-  unsigned int *row_gid_index,
-  unsigned int *row_gids,
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Function to return a portion of a distributed sparse matrix using
- *  compressed sparse row format.
- *
- *  Input:
- *    data           --  pointer to user defined data structure
- *    num_rows       --  number of rows to be supplied by user
- *    num_non_zeroes --  total number of non-zeroes in the rows
- *
- *  Output:
- *    row_gids       --  array of global IDs for the rows
- *    column_gid_index  --  index into column_gids of start of non-zeros for each row
- *    column_gids    --  list of global IDs of columns of non-zeros in rows
- *    ierr           --  error code
- */
-
-typedef void ZOLTAN_CSR_FN(
-  void *data,
-  unsigned int num_rows,
-  unsigned int num_non_zeroes,
-  unsigned int *row_gids,
-  unsigned int *column_gid_index,
-  unsigned int *column_gids,
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
  *  Function to return
  *  the number of objects on a given processor fixed to particular partitions.
  *  Input:  
@@ -2222,7 +2137,7 @@ typedef int ZOLTAN_HIER_NUM_LEVELS_FORT_FN(
 
 /*****************************************************************************/
 /*
- *  Function to return, for the calling processor, the partition
+ *  Function to return, for the calling processor, the part
  *  in which the processor is to be computing for hierarchical
  *  balancing at the given level in the hierarchy
  *  Input:  
@@ -2233,18 +2148,21 @@ typedef int ZOLTAN_HIER_NUM_LEVELS_FORT_FN(
  *  Returned value:       --  the partition number the processor is to compute
  */
 
-typedef int ZOLTAN_HIER_PARTITION_FN(
+typedef int ZOLTAN_HIER_PART_FN(
   void *data,
   int level,
   int *ierr
 );
 
-typedef int ZOLTAN_HIER_PARTITION_FORT_FN(
+typedef int ZOLTAN_HIER_PART_FORT_FN(
   void *data,
   int *level,
   int *ierr
 );
 
+/* For backward compatibility with v3.0 */
+#define ZOLTAN_HIER_PARTITION_FN ZOLTAN_HIER_PART_FN
+#define ZOLTAN_HIER_PARTITION_FORT_FN ZOLTAN_HIER_PART_FORT_FN
 
 /*****************************************************************************/
 /*
@@ -2403,15 +2321,15 @@ extern int Zoltan_Set_Fn(
  *  Returned value:       --  Error code
  */
 
-extern int Zoltan_Set_Partition_Multi_Fn(
+extern int Zoltan_Set_Part_Multi_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_PARTITION_MULTI_FN *fn_ptr, 
+  ZOLTAN_PART_MULTI_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int Zoltan_Set_Partition_Fn(
+extern int Zoltan_Set_Part_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_PARTITION_FN *fn_ptr, 
+  ZOLTAN_PART_FN *fn_ptr, 
   void *data_ptr
 );
 
@@ -2630,30 +2548,6 @@ extern int Zoltan_Set_HG_CS_Fn(
   void *data_ptr
 );
 
-extern int Zoltan_Set_CSC_Size_Fn(
-  struct Zoltan_Struct *zz, 
-  ZOLTAN_CSC_SIZE_FN *fn_ptr, 
-  void *data_ptr
-);
-
-extern int Zoltan_Set_CSR_Size_Fn(
-  struct Zoltan_Struct *zz, 
-  ZOLTAN_CSR_SIZE_FN *fn_ptr, 
-  void *data_ptr
-);
-
-extern int Zoltan_Set_CSC_Fn(
-  struct Zoltan_Struct *zz, 
-  ZOLTAN_CSC_FN *fn_ptr, 
-  void *data_ptr
-);
-
-extern int Zoltan_Set_CSR_Fn(
-  struct Zoltan_Struct *zz, 
-  ZOLTAN_CSR_FN *fn_ptr, 
-  void *data_ptr
-);
-
 extern int Zoltan_Set_HG_Size_Edge_Wts_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_HG_SIZE_EDGE_WTS_FN *fn_ptr, 
@@ -2684,9 +2578,9 @@ extern int Zoltan_Set_Hier_Num_Levels_Fn(
   void *data_ptr
 );
 
-extern int Zoltan_Set_Hier_Partition_Fn(
+extern int Zoltan_Set_Hier_Part_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_HIER_PARTITION_FN *fn_ptr, 
+  ZOLTAN_HIER_PART_FN *fn_ptr, 
   void *data_ptr
 );
 
@@ -2695,6 +2589,11 @@ extern int Zoltan_Set_Hier_Method_Fn(
   ZOLTAN_HIER_METHOD_FN *fn_ptr, 
   void *data_ptr
 );
+
+/* For backward compatibility with v3.0 */
+#define Zoltan_Set_Partition_Multi_Fn Zoltan_Set_Part_Multi_Fn
+#define Zoltan_Set_Partition_Fn Zoltan_Set_Part_Fn
+#define Zoltan_Set_Hier_Partition_Fn Zoltan_Set_Hier_Part_Fn
 
 /*****************************************************************************/
 /*
@@ -2842,139 +2741,6 @@ extern int Zoltan_LB_Balance(
 
 /*****************************************************************************/
 /*
- *  Function to partition a sparse matrix.  The interface differs from
- *  Zoltan_LB_Partition in that you supply (through query functions) a
- *  sparse matrix and then Zoltan_Matrix_Partition sets up and runs a Zoltan
- *  PHG problem for you.  You obtain the row or column assignments by
- *  calling Zoltan_MP_* functions with the Zoltan_Struct.  
- *  (Zoltan_Matrix_Partition encoded the necessary information in the 
- *  Zoltan_Struct after invoking PHG.)
- *
- *  The goal was to make the common case of matrix partitioning easier.  The
- *  application does not need to set up a Zoltan PHG problem.
- *
- *  Input:
- *    zz                  --  The Zoltan structure returned by Zoltan_Create.
- *
- *  Returned value:       --  Error code
- */
-
-int Zoltan_Matrix_Partition(
-  struct Zoltan_Struct *zz);
-
-/*
- *  For direct matrix partitioning (with Zoltan_Matrix_Partition), this is 
- *  the type for a row ID, and column ID, or a matrix dimension.
- */
-typedef unsigned int IJTYPE;
-
-/*
- *  Function which may be called after calling Zoltan_Matrix_Partition in
- *  order to obtain the assignment of non zeros of the sparse matrix.
- *
- *  A process may only request the assignment for non-zeros that it supplied 
- *  to Zoltan in its query functions.
- *
- *  Input:
- *    zz                  --  The Zoltan structure that was given to
- *                            Zoltan_Matrix_Partition.
- *    nNZ                 --  The number of non-zeros for which partitioning
- *                            assignments are requested
- *    rowIDs              --  The row ID for each non-zero for which
- *                            partitioning assignments are requested.  (These
- *                            are the IDs you used in the query functions
- *                            to describe the sparse matrix.)
- *    colIDs              --  The column ID for each non-zero for which
- *                            partitioning assignments are requested
- *  Output:
- *    nzProcs             --  The process to which each non-zero is
- *                            assigned under the new partitioning.  The
- *                            memory must be allocated by the caller.
- *    nzParts             --  The partition to which each non-zero is
- *                            assigned under the new partitioning.  The
- *                            memory must be allocated by the caller.
- *
- *  Returned value:       --  Error code
- */
-
-int Zoltan_MP_Get_NonZero_Assignment(
-  struct Zoltan_Struct *zz, 
-  int nNZ,
-  IJTYPE *rowIDs, 
-  IJTYPE *colIDs, 
-  int *nzProcs, 
-  int *nzParts);
-
-/*
- *  Function which may be called after calling Zoltan_Matrix_Partition in
- *  order to obtain the assignment of columns of the sparse matrix.
- *
- *  A process may only request the assignment of columns for which it
- *  supplied non-zeros for to Zoltan in its query functions.
- *
- *  Input:
- *    zz                  --  The Zoltan structure that was given to
- *                            Zoltan_Matrix_Partition.
- *    nCols               --  The number of columns for which partitioning
- *                            assignments are requested
- *    colIDs              --  The column IDs for for which partitioning 
- *                            assignments are requested.  (These
- *                            are the IDs you used in the query functions
- *                            to describe the sparse matrix.)
- *  Output:
- *    colProcs            --  The process to which each column is
- *                            assigned under the new partitioning.  The
- *                            memory must be allocated by the caller.
- *    colParts            --  The partition to which each column is
- *                            assigned under the new partitioning.  The
- *                            memory must be allocated by the caller.
- *
- *  Returned value:       --  Error code
- */
-
-int Zoltan_MP_Get_Column_Assignment(
-  struct Zoltan_Struct *zz, 
-  int nCols, 
-  IJTYPE *colIDs,
-  int *colProcs, 
-  int *colParts);
-
-/*
- *  Function which may be called after calling Zoltan_Matrix_Partition in
- *  order to obtain the assignment of rows of the sparse matrix.
- *
- *  A process may only request the assignment of rows for which it
- *  supplied non-zeros for to Zoltan in its query functions.
- *
- *  Input:
- *    zz                  --  The Zoltan structure that was given to
- *                            Zoltan_Matrix_Partition.
- *    nRows               --  The number of rows for which partitioning
- *                            assignments are requested
- *    rowIDs              --  The row IDs for for which partitioning 
- *                            assignments are requested.  (These
- *                            are the IDs you used in the query functions
- *                            to describe the sparse matrix.)
- *  Output:
- *    rowProcs            --  The process to which each row is
- *                            assigned under the new partitioning.  The
- *                            memory must be allocated by the caller.
- *    rowParts            --  The partition to which each row is
- *                            assigned under the new partitioning.  The
- *                            memory must be allocated by the caller.
- *
- *  Returned value:       --  Error code
- */
-
-int Zoltan_MP_Get_Row_Assignment(
-  struct Zoltan_Struct *zz, 
-  int nRow, 
-  IJTYPE *rowIDs,
-  int *rowProcs, 
-  int *rowParts);
-
-/*****************************************************************************/
-/*
  *  Function to return the bounding box of a partition generated by RCB.
  *  Input:
  *    zz                  --  The Zoltan structure returned by Zoltan_Create.
@@ -3117,7 +2883,7 @@ extern int Zoltan_Order_Get_Block_Parent(
  *  Returned value:       --  Number of leaves in the elimination tree.
  */
 
-extern int Zoltan_Order_Get_Nbr_Leaves(struct Zoltan_Struct *zz);
+extern int Zoltan_Order_Get_Num_Leaves(struct Zoltan_Struct *zz);
 
 
 /*****************************************************************************/
@@ -3128,8 +2894,8 @@ extern int Zoltan_Order_Get_Nbr_Leaves(struct Zoltan_Struct *zz);
  *  Ouput:
  *    leaves              --  List of block indices that are leaves in the
  *                            elimination tree. -1 marks the end of the list.
- *                            The array must be of size nbr_leaves+1, known by calling
- *                            Zoltan_Order_Get_Nbr_Leaves.
+ *                            The array must be of size num_leaves+1, known by 
+ *                            calling Zoltan_Order_Get_Num_Leaves.
  */
 
 extern void Zoltan_Order_Get_Block_Leaves(

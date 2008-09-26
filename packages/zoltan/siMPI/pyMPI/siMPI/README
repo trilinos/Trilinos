@@ -1,0 +1,34 @@
+In general...
+To build from CVS, first run
+
+% ./boot
+
+This builds the ./configure file
+
+% ./configure
+
+% make
+% make check
+------------------------------------------------------------------------------
+To build using Zoltan configuration files...
+
+gmake -f Makefile.zoltan ZOLTAN_ARCH=<arch> ZOLTAN_PATH=<path> siMPI
+gmake -f Makefile.zoltan ZOLTAN_ARCH=<arch> ZOLTAN_PATH=<path> mpirun
+
+where 
+-  <arch> is the ZOLTAN_ARCH configuration file architecture
+(corresponding to Zoltan/Utilities/Config/Config.<arch> which specifies
+desired build paths, etc.)
+-  <path> is the full path of the Zoltan source directory.
+
+The siMPI library and mpirun executable will be in siMPI/Obj_<arch>.
+
+In Zoltan/Utilities/Config/Config.<arch>, set 
+   MPI_LIB     = -lsiMPI
+   MPI_LIBPATH = -L<path to siMPI directory>/siMPI/Obj_<arch>
+   MPI_INCPATH = -I<path to siMPI directory>/siMPI
+
+Then build Zoltan:
+   gmake ZOLTAN_ARCH=<arch> zoltan
+and/or zdrive
+   gmake ZOLTAN_ARCH=<arch> zdrive

@@ -21,6 +21,7 @@ extern "C" {
 #include "phg.h"
 #include "params_const.h"
 #include "all_allo_const.h"
+#include "zz_const.h"
 
 
 /*
@@ -39,8 +40,8 @@ static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
     /* Software package: PHG (Zoltan) or Patoh */
-  {"PHG_METHOD",                      NULL,  "STRING", 0},
-    /* deprecated: Use HYPERGRAPH_PACKAGE and key param LB_APPROACH instead */
+  {"PHG_MULTILEVEL",                  NULL,  "INT", 0},
+    /* Indicate whether or not to use multilevel method (1/0) */
   {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},  
     /* Hypergraph model: neighbors or pairs */
   {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
@@ -377,17 +378,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_TIMER_STOP(zz->ZTime, timer->build, zz->Communicator);
 
 
-/* UVCUVC DEBUG PRINT
-  if (zz->LB.Method == PHG_REFINE) { 
-      uprintf(hg->comm, 
-          "UVC AFTERBUILD |V|=%6d |E|=%6d #pins=%6d p=%d bal=%.2f cutl=%.2f\n",
-          hg->nVtx, hg->nEdge, hg->nPins, p,
-          Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, parts),
-          Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
-      detailed_balance_info(zz, hg, part_sizes, p, parts);
-  }
-*/
-  
 /*
   UVCUVC DEBUG PRINT
   uprintf(hg->comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
@@ -479,8 +469,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     }
   }
 
-  if (!strcasecmp(hgp.hgraph_method, "REPART") ||
-      !strcasecmp(hgp.hgraph_method, "FAST_REPART")){
+  if (!strcasecmp(hgp.hgraph_method, "REPARTITION")) {
     Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg, &hgp);
   }
 
@@ -629,7 +618,6 @@ End:
   /* KDDKDD  End of printing section. */
   
   ZOLTAN_FREE(&parts);
-  //UGH
   if (zoltan_hg != NULL) {
     Zoltan_PHG_Free_Hypergraph_Data(zoltan_hg);
     ZOLTAN_FREE (&zoltan_hg);
@@ -725,14 +713,13 @@ int Zoltan_PHG_Initialize_Params(
   char cut_objective[MAX_PARAM_STRING_LEN];
   char *package = hgp->hgraph_pkg; 
   char *method = hgp->hgraph_method;
-  char *phg = "PHG";
   char buf[1024];
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
                                    another param at least it will be 0 */
   
   Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_PACKAGE", &hgp->hgraph_pkg);
-  Zoltan_Bind_Param(PHG_params, "PHG_METHOD", &hgp->hgraph_method);
+  Zoltan_Bind_Param(PHG_params, "PHG_MULTILEVEL", &hgp->useMultilevel);
   Zoltan_Bind_Param(PHG_params, "PHG_FROM_GRAPH_METHOD", hgp->convert_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
@@ -799,8 +786,12 @@ int Zoltan_PHG_Initialize_Params(
   strncpy(cut_objective,    "connectivity", MAX_PARAM_STRING_LEN);
   strncpy(add_obj_weight,           "none", MAX_PARAM_STRING_LEN);
   strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
-  /* LB.Approach is initialized to "repartition", and set in Set_Key_Params  */
+  /* LB.Approach is initialized to "REPARTITION", and set in Set_Key_Params  */
   strncpy(hgp->hgraph_method,  zz->LB.Approach, MAX_PARAM_STRING_LEN);
+  if (!strcasecmp(zz->LB.Approach,"REFINE")) 
+    hgp->useMultilevel = 0;
+  else
+    hgp->useMultilevel = 1;
 
   hgp->use_timers = 0;
   hgp->LocalCoarsePartition = 0;
@@ -910,41 +901,9 @@ int Zoltan_PHG_Initialize_Params(
     err = ZOLTAN_WARN;
   }
 
-  /* Documentation says "repartition" is a valid LB_APPROACH,
-   * but the code always tests for REPART.  Rather than change
-   * all the code or require testing first six characters,
-   * we'll edit the string here.
-   */
-
-  if (!strcasecmp(hgp->hgraph_method, "REPARTITION")) 
-    hgp->hgraph_method[6]='\0';
-  else if (!strcasecmp(hgp->hgraph_method, "FAST_REPARTITION")) 
-    hgp->hgraph_method[11]='\0';
-
-  /* Allow backward compatible specifications.  Now these are
-   * specified this way:
-   *     LB_METHOD=hypergraph
-   *     HYPERGRAPH_PACKAGE=phg
-   *     LB_APPROACH=partition, repartition, refine or fast_repartition
-   *
-   *     MULTILEVEL_REFINE is an undocumented feature.
-   */
-
-  if ((!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")) ||
-      (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")) ||
-      (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE"))) {
-    method = hgp->hgraph_pkg + 4; /* "repart", "refine", "multilevel_refine" */
-    strcpy(hgp->hgraph_method, method);
-    package = phg;                /* "phg" */
-    strcpy(hgp->hgraph_pkg, package);
-  }
-
-  if ((strcasecmp(method, "partition")) &&
-      (strcasecmp(method, "repart")) &&
-      (strcasecmp(method, "fast_repart")) &&
-      (strcasecmp(method, "refine")) &&
-      (strcasecmp(method, "multilevel_refine"))){
-  
+  if ((strcasecmp(method, "PARTITION")) &&
+      (strcasecmp(method, "REPARTITION")) &&
+      (strcasecmp(method, "REFINE"))) {
     sprintf(buf,"%s is not a valid hypergraph method\n",method);
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, buf);
     err = ZOLTAN_FATAL;
@@ -971,15 +930,12 @@ int Zoltan_PHG_Initialize_Params(
          * number of processors. */
         usePrimeComm = 1;
 
-    if ((!strcasecmp(method, "REPART")) ||
-        (!strcasecmp(method, "FAST_REPART"))) {
+    if ((!strcasecmp(method, "REPARTITION"))){
         zz->LB.Remap_Flag = 0;
     }
 
-    if ((!strcasecmp(method, "REPART")) ||
-        (!strcasecmp(method, "REFINE")) ||
-        (!strcasecmp(method, "FAST_REPART")) ||
-        (!strcasecmp(method, "MULTILEVEL_REFINE")) ){
+    if ((!strcasecmp(method, "REPARTITION")) ||
+        (!strcasecmp(method, "REFINE"))) {
         hgp->fm_loop_limit = 4; /* experimental evaluation showed that for
                                 repartitioning/refinement small number of passes
                                 is "good enough". These are all heuristics hence
@@ -987,8 +943,8 @@ int Zoltan_PHG_Initialize_Params(
                                 but in general this seems to be sufficient */
     }
     
-    if (!strcasecmp(method, "REFINE") || !strcasecmp(method, "FAST_REPART")){
-        /* since this is just refinement; we don't do coarsening */
+    if (!hgp->useMultilevel) {
+        /* don't do coarsening */
         strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);
 
         /* we have modified all coarse partitioners to handle preferred part
@@ -999,7 +955,7 @@ int Zoltan_PHG_Initialize_Params(
         hgp->UsePrefPart = 1;
 
     }
-    if (!strcasecmp(method, "MULTILEVEL_REFINE")){
+    if (!strcasecmp(method, "REFINE") && hgp->useMultilevel){
         /* UVCUVC: as a heuristic we prefer local matching;
            in our experiments for IPDPS'07 and WileyChapter multilevel_refine
            didn't prove itself useful; it is too costly even with local matching
@@ -1062,11 +1018,8 @@ int Zoltan_PHG_Set_Param(
   int status;
   int i;
 
-  char *valid_method[] = {
-        "PARTITION", "REPARTITION", "REFINE", "FAST_REPARTITION",
-         NULL };
   char *valid_pkg[] = {
-        "ZOLTAN", "PHG", "PHG_REFINE", "PHG_REPART", "PATOH",
+        "ZOLTAN", "PHG", "PATOH",
          NULL };
 
   status = Zoltan_Check_Param(name, val, PHG_params, &result, &index);
@@ -1078,15 +1031,6 @@ int Zoltan_PHG_Set_Param(
       status = 2;
       for (i=0; valid_pkg[i] != NULL; i++){
         if (strcasecmp(val, valid_pkg[i]) == 0){
-          status = 0;
-          break;
-        }
-      }
-    }
-    else if (strcasecmp(name, "PHG_METHOD") == 0){
-      status = 2;
-      for (i=0; valid_method[i] != NULL; i++){
-        if (strcasecmp(val, valid_method[i]) == 0){
           status = 0;
           break;
         }

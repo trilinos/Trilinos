@@ -1,7 +1,7 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = lb_approach=partition
 Zoltan Parameters       = hypergraph_package=phg
-Zoltan Parameters       = num_global_partitions = 63
+Zoltan Parameters       = num_global_parts = 63
 Zoltan Parameters       = phg_coarsening_limit = 1
 File Type		= matrixmarket+
 File Name		= simple

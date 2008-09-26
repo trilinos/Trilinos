@@ -384,10 +384,10 @@ int read_cmd_file (
     }
 
     else if (sscanf(line, " plot partitions" SKIPEQ "%d%n",
-		    &Output.Plot_Partitions, &n) == 1)
+		    &Output.Plot_Partition, &n) == 1)
       continue;                    /* Plot processor numbers or partitions? */
     else if (sscanf(line, " plot partition" SKIPEQ "%d%n",
-		    &Output.Plot_Partitions, &n) == 1)
+		    &Output.Plot_Partition, &n) == 1)
       continue;                    /* Plot processor numbers or partitions? */
 
     else if (sscanf(line, " print mesh info file" SKIPEQ "%d%n",
@@ -412,10 +412,10 @@ int read_cmd_file (
       continue;                             /* file generation testing flag */
 
     else if (sscanf(line, " test local partitions" SKIPEQ "%d%n",
-		    &Test.Local_Partitions, &n) == 1)
+		    &Test.Local_Parts, &n) == 1)
       continue;                /* Unusual Partition generation testing flag */
     else if (sscanf(line, " test local partition" SKIPEQ "%d%n",
-		    &Test.Local_Partitions, &n) == 1)
+		    &Test.Local_Parts, &n) == 1)
       continue;                /* Unusual Partition generation testing flag */
 
     else if (sscanf(line, " test fixed objects" SKIPEQ "%d%n",
@@ -646,7 +646,7 @@ void brdcst_cmd_info (
   j = 0;
   int_params[j++] = Debug_Driver;
   int_params[j++] = Test.DDirectory;
-  int_params[j++] = Test.Local_Partitions;
+  int_params[j++] = Test.Local_Parts;
   int_params[j++] = Test.Fixed_Objects;
   int_params[j++] = Test.Multi_Callbacks;
   int_params[j++] = Test.Graph_Callbacks;
@@ -656,7 +656,7 @@ void brdcst_cmd_info (
   int_params[j++] = Output.Text;
   int_params[j++] = Output.Gnuplot;
   int_params[j++] = Output.Nemesis;
-  int_params[j++] = Output.Plot_Partitions;
+  int_params[j++] = Output.Plot_Partition;
   int_params[j++] = Output.Mesh_Info_File;
   int_params[j++] = Number_Iterations;
   int_params[j++] = Driver_Action;
@@ -670,7 +670,7 @@ void brdcst_cmd_info (
   j = 0;
   Debug_Driver           = int_params[j++];
   Test.DDirectory        = int_params[j++];
-  Test.Local_Partitions  = int_params[j++];
+  Test.Local_Parts  = int_params[j++];
   Test.Fixed_Objects     = int_params[j++];
   Test.Multi_Callbacks   = int_params[j++];
   Test.Graph_Callbacks   = int_params[j++];
@@ -680,7 +680,7 @@ void brdcst_cmd_info (
   Output.Text            = int_params[j++];
   Output.Gnuplot         = int_params[j++];
   Output.Nemesis         = int_params[j++];
-  Output.Plot_Partitions = int_params[j++];
+  Output.Plot_Partition  = int_params[j++];
   Output.Mesh_Info_File  = int_params[j++];
   Number_Iterations      = int_params[j++];
   Driver_Action          = int_params[j++];

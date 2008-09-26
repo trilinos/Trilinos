@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "phg.h"
 #include "phg_distrib.h"
+#include "zz_const.h"
 
 
 
@@ -696,3 +703,7 @@ static float balanceTol(PHGPartParams *hgp, int part_dim, int pno, float *ratios
 /*    printf("%s: TW=%.1lf pw=%.1lf (%.3lf) old_tol=%.2f  part_s=(%.3f, %.3f) and new tol=%.2f\n", (pno==0) ? "LEFT" : "RIGHT", tot, pw, pw/tot, hgp->bal_tol, ratios[0], ratios[1], ntol);*/
     return ntol;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

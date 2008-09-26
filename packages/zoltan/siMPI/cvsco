@@ -1,0 +1,5 @@
+#!/bin/tcsh
+echo '> echo $CVS_RSH'
+echo $CVS_RSH 
+echo '> cvs -t -z3 -d:ext:knogard@pympi.cvs.sourceforge.net:/cvsroot/pympi co -P pyMPI/siMPI'
+cvs -t -z3 -d:ext:knogard@pympi.cvs.sourceforge.net:/cvsroot/pympi co -P pyMPI/siMPI

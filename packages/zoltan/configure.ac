@@ -78,13 +78,23 @@ AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 AC_PREREQ(2.61)
 
-ac_cv_use_fortran90=yes
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
+#This option is not currently available
+#TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
+AM_CONDITIONAL(BUILD_FORTRAN90DRIVER, [test "X$ac_cv_use_fortran90driver" != "Xno"])
+AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
+
+#if test "X$ac_cv_use_fortran90driver" = "Xyes"; then
+#ac_cv_use_fortran90=yes
+#else
+ac_cv_use_fortran90=no
+#fi
 
 TAC_ARG_ENABLE_FEATURE_SUB(zoltan, cppdriver, [Enable Zoltan's C++ driver], ZOLTAN_CPPDRIVER, yes)
 AM_CONDITIONAL(HAVE_ZOLTAN_CPPDRIVER, [test "X$ac_cv_use_zoltan_cppdriver" != "Xno"])
 
 #This can be removed after we retire the old build system
-AC_DEFINE([TRILINOS_CONFIG_H],,[Define when using the autotools to build Zoltan])
+#AC_DEFINE([TRILINOS_CONFIG_H],,[Define when using the autotools to build Zoltan])
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
@@ -99,6 +109,14 @@ TAC_ARG_CONFIG_MPI
 #	  the Fortran compiler check or the check for Fortran flags.  Doing
 #	  so will prevent the detection of the proper name mangling in some
 #	  cases.
+
+AC_ARG_ENABLE(mpi-recv-limit,
+ AS_HELP_STRING([--enable-mpi-recv-limit],[Set to the limit on the number of simultaneous MPI posted receives, if any; default is --enable-mpi-recv-limit=2000]),
+ [ AC_MSG_NOTICE(Building Zoltan to observe a limit of $enable_mpi_recv_limit simultaneously posted MPI receives)
+   AC_SUBST(MPI_RECV_LIMIT_FLAG, "-DMPI_RECV_LIMIT=$enable_mpi_recv_limit")
+ ]
+ )
+
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
@@ -108,7 +126,14 @@ AC_PROG_CC(cc gcc)
 #if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 AC_PROG_CXX(CC g++ c++ cxx)
 #fi
+if test "X$ac_cv_use_fortran90" = "Xyes"; then
 AC_PROG_FC(gfortran f90 xlf90 f95)
+fi
+
+if test "X$ac_cv_use_fortran" = "Xyes"; then
+AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+fi
+
 AC_PROG_RANLIB
 
 # Check if --with-flags present, prepend any specs to FLAGS
@@ -118,7 +143,8 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 #fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fcflags, FFLAGS)
+#TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
+TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -153,9 +179,11 @@ if test "X$tac_with_parmetis_libdir" != "Xno"; then
   LIBS="-L${tac_with_parmetis_libdir} -lparmetis -lmetis ${LIBS}"
 fi
 TAC_ARG_WITH_3PL_SUB(parmetis, incdir, [Specify where the Parmetis header files are located.  Ex. /path/to/headers])
-if test "X$tac_with_parmetis_incdir" != "Xno"; then
-  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
-fi
+# It was necessary to move the parmetis include directories before the scotch
+# include directories.
+#if test "X$tac_with_parmetis_incdir" != "Xno"; then
+#  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
+#fi
 
 TAC_ARG_WITH_PACKAGE(scotch, [Enable Scotch support.], SCOTCH, no)
 AM_CONDITIONAL(BUILD_SCOTCH, [test "X$ac_cv_use_scotch" != "Xno"])
@@ -166,6 +194,11 @@ fi
 TAC_ARG_WITH_3PL_SUB(scotch, incdir, [Specify where the Scotch header files are located.  Ex. /path/to/headers])
 if test "X$tac_with_scotch_incdir" != "Xno"; then
   CPPFLAGS="-I${tac_with_scotch_incdir}  ${CPPFLAGS}"
+fi
+# The parmetis include directories need to be before the Scotch include
+# directories.
+if test "X$tac_with_parmetis_incdir" != "Xno"; then
+  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 fi
 
 TAC_ARG_WITH_PACKAGE(patoh, [Enable Patoh support.], PATOH, no)
@@ -227,7 +260,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_zoltan_examples" != "Xno")
 AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
 AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
-#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -272,7 +305,8 @@ dnl Replace `main' with a function in -lm:
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-AC_FC_LIBRARY_LDFLAGS
+#AC_FC_LIBRARY_LDFLAGS
+AC_F77_LIBRARY_LDFLAGS
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
@@ -294,7 +328,11 @@ AC_CONFIG_FILES([
 		example/C/Makefile
 		example/C/sparse_matrix/Makefile
 		example/CPP/Makefile
+		siMPI/Makefile
+		siMPI/pyMPI/Makefile
+		siMPI/pyMPI/siMPI/Makefile
 		])
+#		src/fdriver/Makefile
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile
 #		ZoltanComponent/CCA_Wrapper/Makefile

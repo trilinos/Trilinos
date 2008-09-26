@@ -19,7 +19,8 @@ extern "C" {
 
 
 #include "hsfc.h"
-#include "../zz/zz_util_const.h"
+#include "zz_const.h"
+#include "zz_util_const.h"
 
 /* For a detailed explaination of this module, please see the Developers
    Guide.  For instructions on its use, please see the Users Guide.   */

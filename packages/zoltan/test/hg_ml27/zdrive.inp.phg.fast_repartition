@@ -1,8 +1,9 @@
 #Run on 27 processors.
 Decomposition Method    = hypergraph
-Zoltan Parameters       = lb_approach=fast_repartition
+Zoltan Parameters       = lb_approach=repartition
+Zoltan Parameters       = phg_multilevel=0
 Zoltan Parameters       = hypergraph_package=phg
-Zoltan Parameters       = num_global_partitions=5
+Zoltan Parameters       = num_global_parts=5
 File Type               = matrixmarket+, initial distribution = file, initial pins = file
 File Name               = ml27
 Parallel Disk Info      = number=0

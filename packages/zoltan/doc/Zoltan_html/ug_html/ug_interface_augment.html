@@ -45,8 +45,8 @@ For <a href="ug_backward.html">backward compatibility</a>
 with previous versions of Zoltan, the following
 functions are also maintained.  
 These functions are applicable only when the
-number of partitions to be generated is equal to the number of processors on
-which the partitions are computed.  That is, these functions assume "partitions"
+number of parts to be generated is equal to the number of processors on
+which the parts are computed.  That is, these functions assume "parts"
 and "processors" are synonymous.
 <blockquote>
 <B><A HREF="#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</A></B>
@@ -98,7 +98,7 @@ int <B>Zoltan::LB_Point_PP_Assign</B> (
 </TABLE>
 
 <HR WIDTH="100%"><B>Zoltan_LB_Point_PP_Assign</B> is used to determine to 
-which processor and partition
+which processor and parts
 a new point should be assigned. It is applicable only to geometrically
 generated decompositions 
 (<A HREF="ug_alg_rcb.html">RCB</A>, 
@@ -107,7 +107,7 @@ generated decompositions
 If the parameter <B>KEEP_CUTS</B>
 is set to TRUE, then the sequence of cuts that define the 
 decomposition is saved. Given a new geometric point, the processor and 
-partition which
+parts which
 own it can be determined.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
@@ -137,7 +137,7 @@ own it can be determined.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; part</I></TD>
 
-<TD>Upon return, the ID of the partition to which the point should belong.</TD>
+<TD>Upon return, the ID of the parts to which the point should belong.</TD>
 </TR>
 <TR>
 <TD><B>Returned Value:</B></TD>
@@ -212,7 +212,7 @@ int <B>Zoltan::LB_Box_PP_Assign</B> (
 </TABLE>
 
 <HR WIDTH="100%">In many settings, it is useful to know which processors
-and partitions
+and parts
 might need to know about an extended geometric object. <B>Zoltan_LB_Box_PP_Assign</B>
 addresses this problem. Given a geometric decomposition of space (currently
 only 
@@ -221,7 +221,7 @@ only
 <a href="ug_alg_hsfc.html">HSFC</a> are
 supported), and given an axis-aligned box around the geometric
 object, <B>Zoltan_LB_Box_PP_Assign</B> determines which processors and
-partitions own geometry that
+parts own geometry that
 intersects the box. To use this routine, the parameter <B>KEEP_CUTS</B>
 must be set to TRUE when the decomposition is generated. This parameter
 will cause the sequence of geometric cuts to be saved, which
@@ -233,11 +233,11 @@ calculated, then the calculation was performed on transformed
 coordinates.  This means that <B>Zoltan_LB_Box_PP_Assign</B>
 must transform the supplied bounding box accordingly.  
 The transformed vertices are bounded again,
-and the partition intersections are calculated in the transformed
+and the parts intersections are calculated in the transformed
 space on this new bounding box.
 The impact of this is that <B>Zoltan_LB_Box_PP_Assign</B> may return
-partitions not actually intersecting the original bounding box, but
-it will not omit any partitions intersecting the original bounding
+parts not actually intersecting the original bounding box, but
+it will not omit any parts intersecting the original bounding
 box.
 <BR>&nbsp;
 
@@ -288,7 +288,7 @@ the box (i.e. the number of entries placed in the <I>procs</I> list).&nbsp;</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; parts</I></TD>
 
-<TD>The list of partitions intersecting the box are returned starting at
+<TD>The list of parts intersecting the box are returned starting at
 this address. Note that <i>it is the responsibility of the calling routine
 to ensure that there is sufficient space for the return list.</i>&nbsp;</TD>
 </TR>
@@ -296,7 +296,7 @@ to ensure that there is sufficient space for the return list.</i>&nbsp;</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; numparts</I></TD>
 
-<TD>Upon return, this value contains the number of partitions that intersect
+<TD>Upon return, this value contains the number of parts that intersect
 the box (i.e. the number of entries placed in the <I>parts</I> list).&nbsp;</TD>
 </TR>
 
@@ -346,9 +346,9 @@ int <B>Zoltan_LB_Point_Assign</B> (
 is a wrapper around
 <a href="#Zoltan_LB_Point_PP_Assign"><b>Zoltan_LB_Point_PP_Assign</b></a> 
 that excludes
-the partition assignment results.  <b>Zoltan_LB_Point_Assign</b> assumes the
-number of partitions is equal to the number of processors; thus, the
-partition assignment is equivalent to the processor assignment.
+the parts assignment results.  <b>Zoltan_LB_Point_Assign</b> assumes the
+number of parts is equal to the number of processors; thus, the
+parts assignment is equivalent to the processor assignment.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
@@ -361,8 +361,8 @@ partition assignment is equivalent to the processor assignment.
 
 <td>All arguments are analogous to those in
 <a href="#Zoltan_LB_Point_PP_Assign"><b>Zoltan_LB_Point_PP_Assign</b></a>.
-Partition-assignment argument <i>part</i>
-is not included, as processor and partitions
+Parts-assignment argument <i>part</i>
+is not included, as processor and parts
 numbers are considered to be the same in <b>Zoltan_LB_Point_Assign</b>.
 </td>
 </tr>
@@ -420,9 +420,9 @@ zmax, procs, numprocs</I>)&nbsp;
 <b>Zoltan_LB_Box_Assign</b> is a wrapper around
 <a href="#Zoltan_LB_Box_PP_Assign"><b>Zoltan_LB_Box_PP_Assign</b></a> 
 that excludes
-the partition assignment results.  <b>Zoltan_LB_Box_Assign</b> assumes the
-number of partitions is equal to the number of processors; thus, the
-partition assignment is equivalent to the processor assignment.
+the parts assignment results.  <b>Zoltan_LB_Box_Assign</b> assumes the
+number of parts is equal to the number of processors; thus, the
+parts assignment is equivalent to the processor assignment.
 
 <P>&nbsp;
 <TABLE WIDTH="100%" >
@@ -436,8 +436,8 @@ partition assignment is equivalent to the processor assignment.
 
 <td>All arguments are analogous to those in
 <a href="#Zoltan_LB_Box_PP_Assign"><b>Zoltan_LB_Box_PP_Assign</b></a>.
-Partition-assignment arguments <i>parts</i> and <i>numparts</i>
-are not included, as processor and partitions
+Parts-assignment arguments <i>parts</i> and <i>numparts</i>
+are not included, as processor and parts
 numbers are considered to be the same in <b>Zoltan_LB_Box_Assign</b>.
 </td>
 </TR>

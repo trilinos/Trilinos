@@ -18,6 +18,7 @@ extern "C" {
 
 #include "phg.h"
 #include "phg_distrib.h"
+#include "zz_const.h"
 #include <limits.h>
 
 

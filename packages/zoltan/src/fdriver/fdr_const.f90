@@ -24,7 +24,7 @@ use zoltan_user_data
 implicit none
 private
 
-public :: DRIVER_NAME, VER_STR, PROB_INFO, MESH_INFO, Mesh, &
+public :: DRIVER_NAME, VER_STR, PROB_INFO, MESH_INFO, Mesh, MeshWrapper,&
           FILENAME_MAX, MAX_PARAMETER_LEN, Parameter_Pair
 
 public :: Test_Multi_Callbacks
@@ -149,6 +149,7 @@ integer(Zoltan_INT), parameter :: MAX_PARAMETER_LEN = 128 ! chars in parameter
 ! */
 
 type(MESH_INFO),pointer :: Mesh
+type(Zoltan_User_Data_2) :: MeshWrapper ! wrapper to pass mesh to query
 
 
 !/* typedef for parameter strings. 

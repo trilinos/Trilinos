@@ -78,7 +78,6 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: ierr         !   Return code
   integer(Zoltan_INT) :: num_gid_entries  ! # of array entries in global IDs
   integer(Zoltan_INT) :: num_lid_entries  ! # of array entries in local IDs
-  type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
   character(8) :: s
   real(Zoltan_FLOAT), allocatable :: psize(:)
   integer(Zoltan_INT), allocatable :: partid(:)
@@ -98,8 +97,6 @@ type(PARIO_INFO) :: pio_info
   nullify(zz_obj, zz_obj_copy, import_gids, import_lids, import_procs, &
     import_to_part, export_gids, export_lids, export_procs, export_to_part)
 
-! make Mesh passable to the callback functions
-  mesh_wrapper%ptr => Mesh
 
 ! /* Allocate space for arrays. */
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr)
@@ -148,7 +145,7 @@ type(PARIO_INFO) :: pio_info
     s(2:2) = achar(Proc/10 + iachar('0'))
     s(3:3) = achar(modulo(Proc,10) + iachar('0'))
     s(4:4) = '\n'
-    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Param()"
       run_zoltan = .false.
       goto 9999
@@ -162,7 +159,7 @@ type(PARIO_INFO) :: pio_info
       s(2:2) = achar(Proc/10 + iachar('0'))
       s(3:3) = achar(modulo(Proc,10) + iachar('0'))
       s(4:4) = '\n'
-      if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Param()"
         run_zoltan = .false.
         goto 9999
@@ -191,7 +188,7 @@ type(PARIO_INFO) :: pio_info
     s(2:2) = achar(Proc/10 + iachar('0'))
     s(3:3) = achar(modulo(Proc,10) + iachar('0'))
     s(4:4) = '\n'
-    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Param()"
       run_zoltan = .false.
       goto 9999
@@ -212,7 +209,7 @@ type(PARIO_INFO) :: pio_info
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_OBJ_FN_TYPE, get_num_elements) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Num_Obj_Fn(zz_obj, get_num_elements, &
-                        mesh_wrapper) == ZOLTAN_FATAL) then
+                        MeshWrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
     goto 9999
@@ -220,21 +217,21 @@ type(PARIO_INFO) :: pio_info
 
   if (Test_Multi_Callbacks .eq. 1)  then
     if (Zoltan_Set_Obj_List_Fn(zz_obj, get_elements, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   else
     if (Zoltan_Set_First_Obj_Fn(zz_obj, get_first_element, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
 
     if (Zoltan_Set_Next_Obj_Fn(zz_obj, get_next_element, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -244,7 +241,7 @@ type(PARIO_INFO) :: pio_info
 !  /* Functions for geometry based algorithms */
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_GEOM_FN_TYPE, get_num_geom) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Num_Geom_Fn(zz_obj, get_num_geom, &
-                         mesh_wrapper) == ZOLTAN_FATAL) then
+                         MeshWrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
     goto 9999
@@ -254,14 +251,14 @@ type(PARIO_INFO) :: pio_info
   if ((Test_Hypergraph_Callbacks .eq. 1) .or. (Test_Graph_Callbacks .eq. 1))  then
     if (Test_Multi_Callbacks.eq.1) then
       if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi, &
-                   mesh_wrapper) == ZOLTAN_FATAL) then
+                   MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false. 
         goto 9999
       endif
     else
       if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
-                   mesh_wrapper) == ZOLTAN_FATAL) then
+                   MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -271,7 +268,7 @@ type(PARIO_INFO) :: pio_info
 
   if (Test_Multi_Callbacks.eq.1) then
 
-    if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi, mesh_wrapper) &
+    if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi, MeshWrapper) &
         == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
@@ -280,8 +277,8 @@ type(PARIO_INFO) :: pio_info
 
   else
 !   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_GEOM_FN_TYPE, get_geom, &
-!                  mesh_wrapper) == ZOLTAN_FATAL) then
-    if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, mesh_wrapper) == ZOLTAN_FATAL) then
+!                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -292,14 +289,14 @@ type(PARIO_INFO) :: pio_info
   if (Test_Graph_Callbacks .eq. 1)  then
     if (Test_Multi_Callbacks .eq. 1)  then
       if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
       if (Zoltan_Set_Edge_List_Multi_Fn(zz_obj, get_edge_list_multi, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -307,14 +304,14 @@ type(PARIO_INFO) :: pio_info
   
     else
       if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
       if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, &
-                    mesh_wrapper) == ZOLTAN_FATAL) then
+                    MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -325,14 +322,14 @@ type(PARIO_INFO) :: pio_info
 !  /* Functions for hypergraph based algorithms */
   if (Test_Hypergraph_Callbacks .eq. 1)  then
     if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   
     if (Zoltan_Set_Hg_Cs_Fn(zz_obj, get_hg_compressed_pins, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -343,14 +340,14 @@ type(PARIO_INFO) :: pio_info
   !   Register hypergraph edge weight query functions
   
       if (Zoltan_Set_Hg_Size_Edge_Wts_Fn(zz_obj, get_hg_size_edge_weights, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
       if (Zoltan_Set_Hg_Edge_Wts_Fn(zz_obj, get_hg_edge_weights, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
+                  MeshWrapper) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -360,15 +357,15 @@ type(PARIO_INFO) :: pio_info
 
 
   if (Test_Multi_Callbacks .eq. 1) then
-    if (Zoltan_Set_Partition_Multi_Fn(zz_obj, get_partition_multi, &
-                                      mesh_wrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Part_Multi_Fn(zz_obj, get_part_multi, &
+                                      MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   else
-    if (Zoltan_Set_Partition_Fn(zz_obj, get_partition, &
-                                mesh_wrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Part_Fn(zz_obj, get_part, &
+                                MeshWrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -743,9 +740,8 @@ end function get_num_geom
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine get_partition_multi(data, num_gid_entries, num_lid_entries, &
+subroutine get_part_multi(data, num_gid_entries, num_lid_entries, &
                     num_obj, global_id, local_id, parts, ierr)
-integer(Zoltan_INT) :: get_partition
 type (Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
 integer(Zoltan_INT), intent(in) :: global_id(*)
@@ -754,8 +750,7 @@ integer(Zoltan_INT), intent(out) :: parts(*), ierr
 
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
-  integer(Zoltan_INT) :: i, j
-  real(Zoltan_DOUBLE) :: tmp
+  integer(Zoltan_INT) :: i
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
@@ -783,14 +778,14 @@ integer(Zoltan_INT), intent(out) :: parts(*), ierr
 
   ierr = ZOLTAN_OK
 
-end subroutine get_partition_multi
+end subroutine get_part_multi
 
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-function get_partition(data, num_gid_entries, num_lid_entries, &
+function get_part(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, ierr)
-integer(Zoltan_INT) :: get_partition
+integer(Zoltan_INT) :: get_part
 type (Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: global_id(*)
@@ -799,8 +794,6 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
-  integer(Zoltan_INT) :: i, j
-  real(Zoltan_DOUBLE) :: tmp
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
@@ -821,11 +814,11 @@ integer(Zoltan_INT), intent(out) :: ierr
     current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
   endif
 
-  get_partition = current_elem%my_part
+  get_part = current_elem%my_part
 
   ierr = ZOLTAN_OK
 
-end function get_partition
+end function get_part
 
 !/*****************************************************************************/
 !/*****************************************************************************/
@@ -1192,9 +1185,12 @@ REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(0:*) :: edge_weight
 INTEGER(Zoltan_INT), INTENT(OUT) :: ierr 
 ! Local variables
 integer i, k, q
+type(MESH_INFO), pointer :: mesh
 
 ! TEST: return all unit weights just to test functionality.
 !       f90 driver supports only plain MatrixMarket (no weights).
+
+  mesh => data%ptr
 
   if (edge_weight_dim > 0) then
     q = 0

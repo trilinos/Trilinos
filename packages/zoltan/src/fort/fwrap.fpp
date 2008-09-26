@@ -54,8 +54,8 @@ public :: &
    ZOLTAN_FN_TYPES
 
 public :: &
-   ZOLTAN_PARTITION_FN_TYPE, &
-   ZOLTAN_PARTITION_MULTI_FN_TYPE, &
+   ZOLTAN_PART_FN_TYPE, &
+   ZOLTAN_PART_MULTI_FN_TYPE, &
    ZOLTAN_NUM_EDGES_FN_TYPE, &
    ZOLTAN_NUM_EDGES_MULTI_FN_TYPE, &
    ZOLTAN_EDGE_LIST_FN_TYPE, &
@@ -81,6 +81,12 @@ public :: &
    ZOLTAN_PACK_OBJ_FN_TYPE, &
    ZOLTAN_UNPACK_OBJ_FN_TYPE, &
    ZOLTAN_HIER_NUM_LEVELS_FN_TYPE, &
+   ZOLTAN_HIER_PART_FN_TYPE
+
+! Backward compatibility with v3.0
+public:: &
+   ZOLTAN_PARTITION_FN_TYPE, &    
+   ZOLTAN_PARTITION_MULTI_FN_TYPE, &
    ZOLTAN_HIER_PARTITION_FN_TYPE
 
 public:: &
@@ -154,7 +160,7 @@ public :: &
    Zoltan_Set_Num_Border_Obj_Fn, Zoltan_Set_Border_Obj_List_Fn, &
    Zoltan_Set_First_Border_Obj_Fn, Zoltan_Set_Next_Border_Obj_Fn, &
    Zoltan_Set_Num_Geom_Fn, Zoltan_Set_Geom_Multi_Fn, Zoltan_Set_Geom_Fn, &
-   Zoltan_Set_Partition_Fn, Zoltan_Set_Partition_Multi_Fn, &
+   Zoltan_Set_Part_Fn, Zoltan_Set_Part_Multi_Fn, &
    Zoltan_Set_Num_Edges_Fn, Zoltan_Set_Num_Edges_Multi_Fn, &
    Zoltan_Set_Edge_List_Fn, Zoltan_Set_Edge_List_Multi_Fn, &
    Zoltan_Set_Num_Coarse_Obj_Fn, Zoltan_Set_Coarse_Obj_List_Fn, &
@@ -171,8 +177,13 @@ public :: &
    Zoltan_Set_HG_Size_CS_Fn, Zoltan_Set_HG_CS_Fn, &
    Zoltan_Set_HG_Size_Edge_Wts_Fn, Zoltan_Set_HG_Edge_Wts_Fn,  &
    Zoltan_Set_Num_Fixed_Obj_Fn, Zoltan_Set_Fixed_Obj_List_Fn, &
-   Zoltan_Set_Hier_Num_Levels_Fn, Zoltan_Set_Hier_Partition_Fn, &
+   Zoltan_Set_Hier_Num_Levels_Fn, Zoltan_Set_Hier_Part_Fn, &
    Zoltan_Set_Hier_Method_Fn
+
+! Backward compatibility with v3.0
+public :: &
+   Zoltan_Set_Partition_Fn, Zoltan_Set_Partition_Multi_Fn, &
+   Zoltan_Set_Hier_Partition_Fn
 
 public :: &
    Zoltan_Get_Child_Order
@@ -207,9 +218,9 @@ type(ZOLTAN_FN_TYPEF), parameter :: &
    ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(26_Zoltan_INT), &
    ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(27_Zoltan_INT), &
    ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(28_Zoltan_INT), &
-   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(34_Zoltan_INT), &
+   ZOLTAN_PART_FN_TYPE             = ZOLTAN_FN_TYPEF(34_Zoltan_INT), &
    ZOLTAN_HIER_NUM_LEVELS_FN_TYPE  = ZOLTAN_FN_TYPEF(43_Zoltan_INT), &
-   ZOLTAN_HIER_PARTITION_FN_TYPE   = ZOLTAN_FN_TYPEF(44_Zoltan_INT)
+   ZOLTAN_HIER_PART_FN_TYPE        = ZOLTAN_FN_TYPEF(44_Zoltan_INT)
 
 type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_NUM_EDGES_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(1_Zoltan_INT), &
@@ -233,7 +244,7 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(31_Zoltan_INT), &
    ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(32_Zoltan_INT), &
    ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(33_Zoltan_INT), &
-   ZOLTAN_PARTITION_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(35_Zoltan_INT), &
+   ZOLTAN_PART_MULTI_FN_TYPE       = ZOLTAN_FN_TYPES(35_Zoltan_INT), &
    ZOLTAN_PROC_NAME_FN_TYPE        = ZOLTAN_FN_TYPES(36_Zoltan_INT), &
    ZOLTAN_HG_SIZE_CS_FN_TYPE       = ZOLTAN_FN_TYPES(37_Zoltan_INT), &
    ZOLTAN_HG_CS_FN_TYPE            = ZOLTAN_FN_TYPES(38_Zoltan_INT), &
@@ -242,6 +253,13 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_NUM_FIXED_OBJ_FN_TYPE    = ZOLTAN_FN_TYPES(41_Zoltan_INT), &
    ZOLTAN_FIXED_OBJ_LIST_FN_TYPE   = ZOLTAN_FN_TYPES(42_Zoltan_INT), &
    ZOLTAN_HIER_METHOD_FN_TYPE      = ZOLTAN_FN_TYPES(45_Zoltan_INT)
+
+! Backward compatibility with v3.0
+type(ZOLTAN_FN_TYPEF), parameter :: &
+   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(34_Zoltan_INT), &
+   ZOLTAN_HIER_PARTITION_FN_TYPE   = ZOLTAN_FN_TYPEF(44_Zoltan_INT)
+type(ZOLTAN_FN_TYPES), parameter :: &
+   ZOLTAN_PARTITION_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(35_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h

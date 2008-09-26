@@ -3,7 +3,7 @@ $Id$
 Some simple C examples may be found in the "C" directory, and
 C++ examples in the "CPP" directory.  
 
-Both sets of examples are built with the Makefile found in
+Both sets of examples are built with the makefile found in
 this directory, with the command:
 
 gmake ZOLTAN_ARCH={arch} all

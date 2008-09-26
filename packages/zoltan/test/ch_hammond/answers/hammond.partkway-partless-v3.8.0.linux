@@ -1,5 +1,5 @@
 Decomposition Method 	= parmetis
-Zoltan Parameters       = num_global_partitions=3
+Zoltan Parameters       = num_global_parts=3
 Zoltan Parameters       = parmetis_method=partkway
 File Type		= Chaco
 File Name		= hammond

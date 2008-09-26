@@ -46,9 +46,9 @@ extern "C" {
 
 
 /* The following structure, DD_Node, is the basic unit of the hash table's
-// linked list.  DD_Node contains the global ID (used as the table lookup
-// key) and other necessary information.  NOTE: DD_Node is malloc'd to
-// store gid, lid & user data beyond the struct's end.
+ * linked list.  DD_Node contains the global ID (used as the table lookup
+ * key) and other necessary information.  NOTE: DD_Node is malloc'd to
+ * store gid, lid & user data beyond the struct's end.
 */
 
 typedef struct DD_Node  {
@@ -64,13 +64,13 @@ typedef struct DD_Node  {
 
 
 /* The directory structure, Zoltan_DD_Struct, is created by the call
-// to Zoltan_DD_Create(). It maintains the state information and storage
-// allocation for the distributed directory. Other state information may
-// be added in the future. This structure must be passed back to all other
-// distributed directory calls: Zoltan_DD_Update(), Zoltan_DD_Find(),
-// Zoltan_DD_Destroy(), Zoltan_DD_Set_Hash_Fn(), DD_Update_Local(),
-// DD_Find_Local(), DD_Remove_Local().  NOTE: Zoltan_DD_Struct is
-// malloc'd for storage beyond the struct's end to hold hash table.
+ * to Zoltan_DD_Create(). It maintains the state information and storage
+ * allocation for the distributed directory. Other state information may
+ * be added in the future. This structure must be passed back to all other
+ * distributed directory calls: Zoltan_DD_Update(), Zoltan_DD_Find(),
+ * Zoltan_DD_Destroy(), Zoltan_DD_Set_Hash_Fn(), DD_Update_Local(),
+ * DD_Find_Local(), DD_Remove_Local().  NOTE: Zoltan_DD_Struct is
+ * malloc'd for storage beyond the struct's end to hold hash table.
 */
 
 struct Zoltan_DD_Struct {
@@ -118,12 +118,12 @@ typedef struct {           /* Only used by Zoltan_DD_Update()              */
 
 
 /* A single structure can serve for both the request and its answer (in
-// DD_Find_Msg if its memory is sized to hold either a global ID or a
-// local ID.  On the request direction, the proc field is the
-// destination and the id field holds the global ID being located.  In
-// the return direction, the proc field holds the objects location and
-// the id field holds its corresponding local ID. The index field is
-// untouched & unused.
+ * DD_Find_Msg if its memory is sized to hold either a global ID or a
+ * local ID.  On the request direction, the proc field is the
+ * destination and the id field holds the global ID being located.  In
+ * the return direction, the proc field holds the objects location and
+ * the id field holds its corresponding local ID. The index field is
+ * untouched & unused.
 */
 
 typedef struct {           /* Only used by Zoltan_DD_Find()         */

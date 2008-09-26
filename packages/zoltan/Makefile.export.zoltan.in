@@ -1,9 +1,18 @@
+@HAVE_MPI_FALSE@SIMPI_INCDIR = -I@abs_top_srcdir@/siMPI/pyMPI/siMPI
+@HAVE_MPI_FALSE@SIMPI_LIBS = -L@abs_top_builddir@/siMPI/pyMPI/siMPI -lsimpi
 
-ZOLTAN_INCLUDES = -I@abs_top_builddir@/src/include -I@abs_top_srcdir@/src/include 
+ZOLTAN_INCLUDES = -I@abs_top_builddir@/src/include -I@abs_top_srcdir@/src/include $(SIMPI_INCDIR)
 
-ZOLTAN_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lzoltan @LIBS@ @FCLIBS@
+#@BUILD_FORTRAN90DRIVER_TRUE@ZFORLIBS = @FCLIBS@
+@USE_FORTRAN_TRUE@ZFLIBS = @FLIBS@
+#The following line can be edited in the case that -lm is not available
+@USE_FORTRAN_FALSE@ZFLIBS = -lm
+#@BUILD_FORTRAN90DRIVER_FALSE@ZFORLIBS = $(ZFLIBS)
+ZFORLIBS = $(ZFLIBS)
 
-ZOLTAN_LIBRARY_INCLUDES = -I@abs_top_builddir@/src/include -I@abs_top_srcdir@/src/include -I@abs_top_srcdir@/src/all -I@abs_top_srcdir@/src/coloring -I@abs_top_srcdir@/src/ha -I@abs_top_srcdir@/src/hier -I@abs_top_srcdir@/src/hsfc -I@abs_top_srcdir@/src/lb -I@abs_top_srcdir@/src/oct -I@abs_top_srcdir@/src/order -I@abs_top_srcdir@/src/par -I@abs_top_srcdir@/src/params -I@abs_top_srcdir@/src/parmetis -I@abs_top_srcdir@/src/phg -I@abs_top_srcdir@/src/rcb -I@abs_top_srcdir@/src/reftree -I@abs_top_srcdir@/src/timer -I@abs_top_srcdir@/src/Utilities/Communication -I@abs_top_srcdir@/src/Utilities/Timer -I@abs_top_srcdir@/src/Utilities/DDirectory -I@abs_top_srcdir@/src/Utilities/Memory -I@abs_top_srcdir@/src/Utilities/shared -I@abs_top_srcdir@/src/zz
+ZOLTAN_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lzoltan $(SIMPI_LIBS) @LIBS@ $(ZFORLIBS)
+
+ZOLTAN_LIBRARY_INCLUDES = -I@abs_top_builddir@/src/include -I@abs_top_srcdir@/src/include -I@abs_top_srcdir@/src/all -I@abs_top_srcdir@/src/coloring -I@abs_top_srcdir@/src/ha -I@abs_top_srcdir@/src/hier -I@abs_top_srcdir@/src/hsfc -I@abs_top_srcdir@/src/lb -I@abs_top_srcdir@/src/oct -I@abs_top_srcdir@/src/order -I@abs_top_srcdir@/src/par -I@abs_top_srcdir@/src/params -I@abs_top_srcdir@/src/parmetis -I@abs_top_srcdir@/src/phg -I@abs_top_srcdir@/src/rcb -I@abs_top_srcdir@/src/reftree -I@abs_top_srcdir@/src/timer -I@abs_top_srcdir@/src/Utilities/Communication -I@abs_top_srcdir@/src/Utilities/Timer -I@abs_top_srcdir@/src/Utilities/DDirectory -I@abs_top_srcdir@/src/Utilities/Memory -I@abs_top_srcdir@/src/Utilities/shared -I@abs_top_srcdir@/src/zz $(SIMPI_INCDIR)
 
 ZOLTAN_DEPS = @abs_top_builddir@/src/libzoltan.a
 
@@ -32,7 +41,8 @@ ZOLTAN_MPI_DIR = @MPI_DIR@
 ############################################################################
 
 # Fortran & standard math libs
-ZOLTAN_FCLIBS = @FCLIBS@
+#ZOLTAN_FCLIBS = @FCLIBS@
+ZOLTAN_FLIBS = $(ZFLIBS)
 
 # Extra libraries
 ZOLTAN_EXTRA_LIBS = @LIBS@
@@ -47,8 +57,9 @@ ZOLTAN_EXTRA_LIBS = @LIBS@
 ZOLTAN_DEFS = @DEFS@
 
 # Fortran compilation flags
-ZOLTAN_FCFLAGS = @FCFLAGS@
-
+@BUILD_FORTRAN90DRIVER_TRUE@ZOLTAN_FCFLAGS = @FCFLAGS@
+@USE_FORTRAN_TRUE@ZOLTAN_FFLAGS = @FFLAGS@
+ 
 # C compilation flags
 ZOLTAN_CFLAGS = @CFLAGS@
 

@@ -6,7 +6,7 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_order.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_order.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_ptscotch.html">Previous</a></i></b></div>
 
 
 <H2>
@@ -71,8 +71,8 @@ not the (larger and more costly) application data.<P>
 Hierarchical partitioning requires three callback functions to specify
 the number of levels (<B><A
 HREF="ug_query_lb.html#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</A></B>),
-which partitions each process should compute at each level (<B><A
-HREF="ug_query_lb.html#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</A></B>),
+which parts each process should compute at each level (<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>),
 and which method and parameters to be used at each level (<B><A
 HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>).
 These are in addition to the callbacks needed to specify objects,
@@ -110,11 +110,11 @@ callback is called.  All processes should return 2, the number of
 levels in the hierarchy.
 
 <LI>The <B><A
-HREF="ug_query_lb.html#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</A></B>
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>
 callback is called, with a <B>level</B> parameter equal to 0.  This
-means the callback should return, on each process, the partition
+means the callback should return, on each process, the part
 number to be computed at level 0 by that process.  Since in our
-example, the 16 processes are computing a four-way partitioning at level
+example, the 16 processes are computing a four-way partition at level
 0, processes with ranks 0-3 should return 0, ranks 4-7 should return
 1, 8-11 should return 2, and 12-15 should return 3.
 
@@ -124,7 +124,7 @@ callback is called, with a <B>level</B> parameter equal to 0, and the
 Zoltan_Struct that has been allocated internally by the hierarchical
 partitioning procedure is passed as <B>zz</B>.  The callback should
 use Zoltan_Set_Param to specify an LB_METHOD and any other parameters
-that should be done by the four-way partitioning across the 16 processes
+that should be done by the four-way partition across the 16 processes
 at level 0.  In this case, two calls might be appropriate:
 
 <PRE>
@@ -133,30 +133,30 @@ at level 0.  In this case, two calls might be appropriate:
 </PRE>
 
 At this point, Zoltan's hierarchical balancing procedure can proceed
-with the level 0 partitioning, using ParMetis' PARTKWAY method to
-produce a four-way partitioning across the 16 processes, with partition 0
-distributed among the processes with ranks 0-3, partition 1
-distributed among 4-7, partition 2 distributed among 8-11, and
-partition 3 distributed among 12-15.
+with the level 0 partition, using ParMetis' PARTKWAY method to
+produce a four-way partition across the 16 processes, with part 0
+distributed among the processes with ranks 0-3, part 1
+distributed among 4-7, part 2 distributed among 8-11, and
+part 3 distributed among 12-15.
 
 
 <LI>The <B><A
-HREF="ug_query_lb.html#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</A></B>
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>
 callback is called again, this time with <B>level</B> equal to 1.  At
 level 1, each group of four processes on the same node is responsible for
-computing its own four-way partitioning.  To specify this, processes with
+computing its own four-way partition.  To specify this, processes with
 ranks 0, 4, 8, and 12 should return 0, ranks 1, 5, 9, and 13 should
 return 1, ranks 2, 6, 10, and 14 should return 2, and ranks 3, 7, 11,
 and 15 should return 3.  Note that we are specifying four separate four-way
-partitionings at this level, so each group of four processes on the same
-node will have one process computing each partition 0, 1, 2, and 3,
+partitions at this level, so each group of four processes on the same
+node will have one process computing each part 0, 1, 2, and 3,
 for that group.
 
 <LI>The <B><A
 HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>
 callback is called again, with <B>level</B> equal to 1, and another
 internally-allocated Zoltan_Struct passed as <B>zz</B>.  Here, we want
-all processes to be computing a partitioning using recursive inertial
+all processes to be computing a partition using recursive inertial
 bisection.  The following call would be appropriate inside the
 callback:
 
@@ -166,16 +166,16 @@ callback:
 
 Additional Zoltan_Set_Param calls would be used to specify any
 additional procedures.  Note that in this case, we are computing four
-separate partitionings but all with the same LB_METHOD.  It would be
+separate partitions but all with the same LB_METHOD.  It would be
 allowed to specify different LB_METHODs for each group, but all
-processes cooperating on a partitioning must agree on their LB_METHOD
+processes cooperating on a partition must agree on their LB_METHOD
 and other parameters (just like any other Zoltan partitioning).
 <P>
 
 At this point, Zoltan's hierarchical balancing procedure can proceed
-with the level 1 partitioning, using four independent recursive inertial
-bisections produce the four four-way partitionings across the processes on
-each node.  Since this is the final level, the 16 resulting partitions
+with the level 1 partition, using four independent recursive inertial
+bisections produce the four four-way partitions across the processes on
+each node.  Since this is the final level, the 16 resulting parts
 are returned by the hierarchical balancing procedure to the calling
 application.
 
@@ -253,7 +253,7 @@ debugging information.</TD>
 <TD><B><A
 HREF="ug_query_lb.html#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</A></B>,
 <B><A
-HREF="ug_query_lb.html#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</A></B>,
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>,
 and <B><A
 HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>.
 </TD>
@@ -288,6 +288,6 @@ partitioning requires graph information:</td>
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_order.html">Next:&nbsp; Ordering </A>&nbsp;
-|&nbsp; <A HREF="ug_alg_jostle.html">Previous:&nbsp;&nbsp; Jostle</A>]
+|&nbsp; <A HREF="ug_alg_ptscotch.html">Previous:&nbsp;&nbsp; PT-Scotch</A>]
 </BODY>
 </HTML>

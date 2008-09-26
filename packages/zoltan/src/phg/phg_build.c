@@ -393,8 +393,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     }
     zoltan_lb_eval = 0;
 
-    method_repart = (!strcasecmp(hgp->hgraph_method, "REPART") ||
-                   !strcasecmp(hgp->hgraph_method, "FAST_REPART"));
+    method_repart = (!strcasecmp(hgp->hgraph_method, "REPARTITION"));
   }
   else{
     /*   
@@ -420,8 +419,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     else{                                 /* "pairs"     */
       use_all_neighbors = 0;
     }
-    method_repart = (!strcasecmp(temphgp->hgraph_method, "REPART") ||
-                   !strcasecmp(temphgp->hgraph_method, "FAST_REPART"));
+    method_repart = (!strcasecmp(temphgp->hgraph_method, "REPARTITION"));
 
     if (temphgp->globalcomm.row_comm != MPI_COMM_NULL)
       MPI_Comm_free(&(temphgp->globalcomm.row_comm));
@@ -1584,7 +1582,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 /*printf("%d) %d edges %d vertices\n",zz->Proc, nEdge, nVtx);*/
 
   if (method_repart){
-    /* For REPART, we add one vertex per partition and one edge 
+    /* For REPARTITION, we add one vertex per partition and one edge 
      * per object in a repartition part (connecting the object with 
      * its input partition vertex).
      * Compute the number of these per processor within the 2D distribution
@@ -1846,7 +1844,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   dim = zz->Edge_Weight_Dim;
   if (method_repart && (!dim))
-    dim = 1;  /* Need edge weights for REPART; force malloc of ewgt array */
+    dim = 1; /* Need edge weights for REPARTITION; force malloc of ewgt array */
   phg->EdgeWeightDim = dim;
   nwgt = (phg->nEdge + nRepartEdge) * dim;
 
@@ -1943,7 +1941,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
       }
     }
     else { /* dim > 0 but zz->Edge_Weight_Dim == 0 */
-      /* Edge weights are needed for REPART but are not provided by app */
+      /* Edge weights are needed for REPARTITION but are not provided by app */
       /* Set the edge weights for input vertices to 1. */
       for (i = 0; i < phg->nEdge; i++) phg->ewgt[i] = 1.;
     }
@@ -3358,7 +3356,7 @@ int Zoltan_PHG_Remove_Repart_Data(
 )
 {
 /* Routine to remove repartition vertices, repartition edges, and 
- * repartition pins after partitioning with REPART.
+ * repartition pins after partitioning with REPARTITION.
  * We don't have to actually remove the data; we only have to update
  * certain hypergraph fields so subsequent processing calls don't
  * look at the data.

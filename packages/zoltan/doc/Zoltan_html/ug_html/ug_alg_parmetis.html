@@ -23,7 +23,7 @@
 </head>
 <body bgcolor="#ffffff">
 <div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_jostle.html">Next</a>&nbsp; |&nbsp; <a
+|&nbsp; <a href="ug_alg_ptscotch.html">Next</a>&nbsp; |&nbsp; <a
  href="ug_graph_vs_hg.html">Previous</a></i></b></div>
 <h2>
 <a name="ParMETIS"></a>ParMETIS - Parallel Graph Partitioning</h2>
@@ -59,18 +59,18 @@ Each object may have a weight that normally represents the amount of
 computation.
 The edges or arcs in the graph usually correspond to communication
 costs.
-In graph partitioning, the problem is to find a partitioning of the
+In graph partitioning, the problem is to find a partition of the
 graph
 (that is,&nbsp; each vertex is assigned to one out of <i>k</i>
 possible
-sets called partitions) that minimizes the cut size (weight) subject to
-the partitions having approximately equal size (weight). In
+sets called parts) that minimizes the cut size (weight) subject to
+the parts having approximately equal size (weight). In
 repartitioning,
-it is assumed that a partitioning already exists. The problem is to
+it is assumed that a partition already exists. The problem is to
 find
-a good partitioning that is also "similar" in some sense to the
+a good partition that is also "similar" in some sense to the
 existing
-partitioning. This keeps the migration cost low. All the problems
+partition. This keeps the migration cost low. All the problems
 described
 above are NP-hard so no efficient exact algorithm is known, but
 heuristics work well in practice.<br>
@@ -87,11 +87,10 @@ Part* - Perform graph partitioning without consideration of the initial
 distribution. (LB_APPROACH=partition)<br>
   </li>
   <li>
-AdaptiveRepart (ParMETIS 3) and Repart* (ParMETIS 2)&nbsp; -
-Incremental
+AdaptiveRepart - Incremental
 algorithms with small migration cost. (LB_APPROACH=repartition)</li>
   <li>
-Refine* - Refines a given partitioning (balance).&nbsp; Can be applied
+Refine* - Refines a given partition (balance).&nbsp; Can be applied
 multiple times to reduce the communication cost (cut weight) if
 desired. (LB_APPROACH=refine)</li>
 </ol>
@@ -108,17 +107,11 @@ suited&nbsp; for dynamic load balancing (for example,&nbsp; adaptive
 mesh
 refinement). A reasonable strategy is to call PartKway once to obtain a
 good initial balance and&nbsp; later update this balance using
-AdaptiveRepart
-(Repart* in ParMetis 2.0).
-<p>Zoltan is currently compatible with ParMETIS versions 3.1 and
-2.0.&nbsp;
-There is no guarantee that Zoltan will work correctly if you have a
-different
-version of ParMETIS on your computer. (ParMETIS 3.0 will work with
-Zoltan in most cases, but is not officially supported. ParMETIS 3.1 is
-highly recommended.
-The 2.0 version will soon become obsolete and may not be supported in
-future Zoltan versions.) The ParMETIS source code can be obtained from
+AdaptiveRepart.
+
+<p>Zoltan is currently compatible with ParMETIS version 3.1.
+(Version 2.0 is obsolete and is no longer supported by Zoltan.)
+The ParMETIS source code can be obtained from
 the <a href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS
 home page</a>. As a courtesy service,&nbsp; a recent, compatible
 version of the
@@ -129,13 +122,9 @@ is possible to compile Zoltan without any references to ParMETIS&nbsp;
 the
 configuration file <i><a href="ug_usage.html#Building%20the%20Library">Utilities/Config/Config.&lt;platform&gt;</a></i>).
 </p>
-<p>Note that Zoltan ignores the imbalance tolerance parameter
-IMBALANCE_TOL
-when ParMETIS 2.0 is used (the default value 1.05 is used), while
-IMBALANCE_TOL
-works correctly with ParMETIS 3.0.&nbsp; Zoltan supports the
-multiconstraint
-feature of ParMETIS 3 through multiple object weights (see <i><a
+<p>
+Zoltan supports the multiconstraint partitioning 
+feature of ParMETIS through multiple object weights (see <i><a
  href="ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></i>).
 </p>
 <p>The graph given to Zoltan/ParMETIS must be symmetric. Any self edges
@@ -207,7 +196,7 @@ migration cost&nbsp;
 multilevel
 refinement&nbsp;
       <br>
-      <i>RefineKway</i> - refine the current partitioning (balance)</td>
+      <i>RefineKway</i> - refine the current partition (balance)</td>
     </tr>
     <tr>
       <td><br>
@@ -265,11 +254,10 @@ and should be used only during debugging).</td>
 chunks of objects
 (vertices) of roughly equal size to each processor before calling the
 partitioner.
-0 = don't scatter; 1 = scatter only if all objects are on a single
-processor;
-2 = scatter if at least one processor owns no objects (recommended to
-avoid
-a bug in ParMETIS 2.0); 3 = always scatter.&nbsp;</td>
+0 = don't scatter; 
+1 = scatter only if all objects are on a single processor;
+2 = scatter if at least one processor owns no objects; 
+3 = always scatter.&nbsp;</td>
     </tr>
     <tr>
       <td valign="top"><b>Default values:</b></td>
@@ -371,7 +359,16 @@ or
       <td>
 <b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
 or
-<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b> for <i>PARMETIS_METHOD</i>=<i>AdaptiveRepart</i>
+</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+<b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
+or
+<b><a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b> for part remapping in ParMETIS.
 </td>
     </tr>
 
@@ -380,8 +377,8 @@ or
 </p>
 <p></p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
- href="ug_alg_jostle.html">Next:&nbsp;
-Jostle</a>&nbsp; |&nbsp; <a href="ug_graph_vs_hg.html">Previous:&nbsp;
+ href="ug_alg_ptscotch.html">Next:&nbsp;
+PT-Scotch</a>&nbsp; |&nbsp; <a href="ug_graph_vs_hg.html">Previous:&nbsp;
 Graph vs. Hypergraph Partitioning</a>]
 </body>
 </html>

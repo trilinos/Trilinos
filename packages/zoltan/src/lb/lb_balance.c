@@ -736,17 +736,17 @@ int Zoltan_LB_Build_PartDist(ZZ *zz)
 char *yo = "Zoltan_LB_Build_PartDist";
 int ierr = ZOLTAN_OK;
 int inflag[6], outflag[6] = {0,0,-1,0,0,0};
-int global_parts_set = 0;   /* number of procs on which NUM_GLOBAL_PARTITIONS 
+int global_parts_set = 0;   /* number of procs on which NUM_GLOBAL_PARTS 
                                parameter was set. */
-int local_parts_set = 0;    /* number of procs on which NUM_LOCAL_PARTITIONS
+int local_parts_set = 0;    /* number of procs on which NUM_LOCAL_PARTS
                                parameter was set. */
 int max_global_parts = 0;   /* Max value of Num_Global_Parts_Param on all 
                                procs. */
 int sum_local_parts = 0;    /* Sum of Num_Local_Parts over all procs.
-                               Procs on which NUM_LOCAL_PARTITIONS was not
+                               Procs on which NUM_LOCAL_PARTS was not
                                set assume zero parts on them.  Thus,
                                sum_local_parts may be < max_global_parts. */
-int remaining_procs;        /* Num of procs not setting NUM_LOCAL_PARTITIONS */
+int remaining_procs;        /* Num of procs not setting NUM_LOCAL_PARTS */
 int avail_local_parts;      /* max_global_parts - sum_local_parts */
 int num_proc = zz->Num_Proc;
 int *pdist;
@@ -804,7 +804,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
   }
 
   else {
-    /* Either NUM_GLOBAL_PARTITIONS is set != num_proc or NUM_LOCAL_PARTITIONS
+    /* Either NUM_GLOBAL_PARTS is set != num_proc or NUM_LOCAL_PARTS
      * is set.  Build PartDist, distributing partitions to processors as 
      * specified. 
      */
@@ -816,7 +816,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       else if (sum_local_parts > max_global_parts) {
         char emsg[256];
         sprintf(emsg, 
-                "Sum of NUM_LOCAL_PARTITIONS %d > NUM_GLOBAL_PARTITIONS %d", 
+                "Sum of NUM_LOCAL_PARTS %d > NUM_GLOBAL_PARTS %d", 
                 sum_local_parts, max_global_parts);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, emsg);
         ierr = ZOLTAN_FATAL;
@@ -826,7 +826,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
                local_parts_set == num_proc) {
         char emsg[256];
         sprintf(emsg, 
-                "Sum of NUM_LOCAL_PARTITIONS %d < NUM_GLOBAL_PARTITIONS %d", 
+                "Sum of NUM_LOCAL_PARTS %d < NUM_GLOBAL_PARTS %d", 
                 sum_local_parts, max_global_parts);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, emsg);
         ierr = ZOLTAN_FATAL;
@@ -853,7 +853,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
     if (!local_parts_set) {
       if (max_global_parts > num_proc) {
-        /* NUM_LOCAL_PARTITIONS is not set; NUM_GLOBAL_PARTITIONS > num_proc. */
+        /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS > num_proc. */
         /* Even distribution of partitions to processors. */
         zz->LB.Single_Proc_Per_Part = 1;
         frac = max_global_parts / num_proc;
@@ -867,7 +867,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
         pdist[cnt] = num_proc;
       }
       else { /* num_proc < max_global_parts */
-        /* NUM_LOCAL_PARTITIONS is not set; NUM_GLOBAL_PARTITIONS < num_proc. */
+        /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS < num_proc. */
         /* Even distribution of processors to partitions. */
         zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */
         pdist[0] = 0;
@@ -880,10 +880,10 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     }
     else /* local_parts_set */ {
 
-      /* NUM_LOCAL_PARTITIONS is set on at least some processors. */
-      /* Distribute partitions to processors to match NUM_LOCAL_PARTITIONS
+      /* NUM_LOCAL_PARTS is set on at least some processors. */
+      /* Distribute partitions to processors to match NUM_LOCAL_PARTS
          where specified; distribute remaining partitions 
-         to processors that didn't specify NUM_LOCAL_PARTITIONS */
+         to processors that didn't specify NUM_LOCAL_PARTS */
 
       zz->LB.Single_Proc_Per_Part = 1;
 
@@ -892,8 +892,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       MPI_Allgather(&(zz->LB.Num_Local_Parts_Param), 1, MPI_INT, 
                     local_parts_params, 1, MPI_INT, zz->Communicator);
 
-      /* Compute number of parts not specified by NUM_LOCAL_PARTITIONS */
-      /* In MPI_Allreduce above, processors not specifying NUM_LOCAL_PARTITIONS
+      /* Compute number of parts not specified by NUM_LOCAL_PARTS */
+      /* In MPI_Allreduce above, processors not specifying NUM_LOCAL_PARTS
        * specified contributed zero partitions to sum_local_parts.  */
 
       remaining_procs = num_proc - local_parts_set;
@@ -905,7 +905,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
       for (cnt = 0, pcnt = 0, i = 0; i < num_proc; i++)
         if (local_parts_params[i] != -1) {
-          /* Fill in processor for its NUM_LOCAL_PARTITIONS partitions. */
+          /* Fill in processor for its NUM_LOCAL_PARTS partitions. */
           for (j = 0; j < local_parts_params[i]; j++)
             pdist[cnt++] = i;
         }

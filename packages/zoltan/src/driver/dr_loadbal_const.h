@@ -38,10 +38,6 @@ extern void setup_fixed_obj(MESH_INFO_PTR, int);
 extern int run_zoltan(ZOLTAN_STRUCT, int, PROB_INFO_PTR, MESH_INFO_PTR,
                       PARIO_INFO_PTR); 
 
-int run_zoltan_sparse_matrix(struct Zoltan_Struct *zz,
-               int Proc, PROB_INFO_PTR prob,
-               MESH_INFO_PTR mesh, PARIO_INFO_PTR pio_info);
-
 
 extern int migrate_elements(int, MESH_INFO_PTR, ZOLTAN_STRUCT,
                             int, int, 

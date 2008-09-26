@@ -57,13 +57,13 @@ char msg[256];
 int ierr;
 
   switch (fn_type) {
-  case ZOLTAN_PARTITION_FN_TYPE:
-    ierr = Zoltan_Set_Partition_Fn(zz, 
-                  (ZOLTAN_PARTITION_FN *) fn, data);
+  case ZOLTAN_PART_FN_TYPE:
+    ierr = Zoltan_Set_Part_Fn(zz, 
+                  (ZOLTAN_PART_FN *) fn, data);
     break;
-  case ZOLTAN_PARTITION_MULTI_FN_TYPE:
-    ierr = Zoltan_Set_Partition_Multi_Fn(zz, 
-                  (ZOLTAN_PARTITION_MULTI_FN *) fn, data);
+  case ZOLTAN_PART_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Part_Multi_Fn(zz, 
+                  (ZOLTAN_PART_MULTI_FN *) fn, data);
     break;
   case ZOLTAN_NUM_EDGES_FN_TYPE:
     ierr = Zoltan_Set_Num_Edges_Fn(zz, 
@@ -217,22 +217,6 @@ int ierr;
     ierr = Zoltan_Set_HG_Edge_Wts_Fn(zz, 
                   (ZOLTAN_HG_EDGE_WTS_FN *) fn, data);
     break;
-  case ZOLTAN_CSC_SIZE_FN_TYPE:
-    ierr = Zoltan_Set_CSC_Size_Fn(zz, 
-                  (ZOLTAN_CSC_SIZE_FN *) fn, data);
-    break;
-  case ZOLTAN_CSR_SIZE_FN_TYPE:
-    ierr = Zoltan_Set_CSR_Size_Fn(zz, 
-                  (ZOLTAN_CSR_SIZE_FN *) fn, data);
-    break;
-  case ZOLTAN_CSC_FN_TYPE:
-    ierr = Zoltan_Set_CSC_Fn(zz, 
-                  (ZOLTAN_CSC_FN *) fn, data);
-    break;
-  case ZOLTAN_CSR_FN_TYPE:
-    ierr = Zoltan_Set_CSR_Fn(zz, 
-                  (ZOLTAN_CSR_FN *) fn, data);
-    break;
   case ZOLTAN_NUM_FIXED_OBJ_FN_TYPE:
     ierr = Zoltan_Set_Num_Fixed_Obj_Fn(zz, 
                   (ZOLTAN_NUM_FIXED_OBJ_FN *) fn, data);
@@ -245,9 +229,9 @@ int ierr;
     ierr = Zoltan_Set_Hier_Num_Levels_Fn(zz,
 		  (ZOLTAN_HIER_NUM_LEVELS_FN *) fn, data);
     break;
-  case ZOLTAN_HIER_PARTITION_FN_TYPE:
-    ierr = Zoltan_Set_Hier_Partition_Fn(zz,
-		  (ZOLTAN_HIER_PARTITION_FN *) fn, data);
+  case ZOLTAN_HIER_PART_FN_TYPE:
+    ierr = Zoltan_Set_Hier_Part_Fn(zz,
+		  (ZOLTAN_HIER_PART_FN *) fn, data);
     break;
   case ZOLTAN_HIER_METHOD_FN_TYPE:
     ierr = Zoltan_Set_Hier_Method_Fn(zz,
@@ -276,31 +260,31 @@ int ierr;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int Zoltan_Set_Partition_Multi_Fn(
+int Zoltan_Set_Part_Multi_Fn(
   ZZ *zz, 
-  ZOLTAN_PARTITION_MULTI_FN *fn, 
+  ZOLTAN_PART_MULTI_FN *fn, 
   void *data
 )
 {
-  zz->Get_Partition_Multi = fn;
-  zz->Get_Partition_Multi_Data = data;
-  zz->Get_Partition = NULL;
-  zz->Get_Partition_Data = NULL;
+  zz->Get_Part_Multi = fn;
+  zz->Get_Part_Multi_Data = data;
+  zz->Get_Part = NULL;
+  zz->Get_Part_Data = NULL;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
-int Zoltan_Set_Partition_Fn(
+int Zoltan_Set_Part_Fn(
   ZZ *zz, 
-  ZOLTAN_PARTITION_FN *fn, 
+  ZOLTAN_PART_FN *fn, 
   void *data
 )
 {
-  zz->Get_Partition = fn;
-  zz->Get_Partition_Data = data;
-  zz->Get_Partition_Multi = NULL;
-  zz->Get_Partition_Multi_Data = NULL;
+  zz->Get_Part = fn;
+  zz->Get_Part_Data = data;
+  zz->Get_Part_Multi = NULL;
+  zz->Get_Part_Multi_Data = NULL;
   return ZOLTAN_OK;
 }
 
@@ -744,58 +728,6 @@ int Zoltan_Set_HG_Edge_Wts_Fn(
 
 /*****************************************************************************/
 
-int Zoltan_Set_CSC_Size_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSC_SIZE_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSC_Size = fn;
-  zz->Get_CSC_Size_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_CSR_Size_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSR_SIZE_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSR_Size = fn;
-  zz->Get_CSR_Size_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_CSC_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSC_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSC = fn;
-  zz->Get_CSC_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Set_CSR_Fn(
-  ZZ *zz, 
-  ZOLTAN_CSR_FN *fn, 
-  void *data
-)
-{
-  zz->Get_CSR = fn;
-  zz->Get_CSR_Data = data;
-  return ZOLTAN_OK;
-}
-
-/*****************************************************************************/
-
 int Zoltan_Set_Num_Fixed_Obj_Fn(
   ZZ *zz, 
   ZOLTAN_NUM_FIXED_OBJ_FN *fn, 
@@ -835,14 +767,14 @@ int Zoltan_Set_Hier_Num_Levels_Fn(
 
 /*****************************************************************************/
 
-int Zoltan_Set_Hier_Partition_Fn(
+int Zoltan_Set_Hier_Part_Fn(
   ZZ *zz, 
-  ZOLTAN_HIER_PARTITION_FN *fn, 
+  ZOLTAN_HIER_PART_FN *fn, 
   void *data
 )
 {
-  zz->Get_Hier_Partition = fn;
-  zz->Get_Hier_Partition_Data = data;
+  zz->Get_Hier_Part = fn;
+  zz->Get_Hier_Part_Data = data;
   return ZOLTAN_OK;
 }
 

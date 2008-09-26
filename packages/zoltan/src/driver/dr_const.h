@@ -28,7 +28,7 @@ extern "C" {
 
 /********  Trilinos Build Environment *******/
 /* This block should only be executed for an Autotools build. */
-#ifdef TRILINOS_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
@@ -86,8 +86,8 @@ extern "C" {
 #define ZOLTAN_PARKWAY
 #endif
 
-#ifdef HAVE_OCTREEPARTITIONING
-#define ZOLTAN_OCTREEPARTITIONING
+#ifdef HAVE_ZOLTAN_OCT
+#define ZOLTAN_OCT
 #endif
 
 #ifdef HAVE_NEMESIS_EXODUS
@@ -286,7 +286,7 @@ typedef struct Problem_Description *PROB_INFO_PTR;
 /* Structure for driver flags for various test options. */
 struct Test_Flags {
   int DDirectory;           /* Exercises data directories */
-  int Local_Partitions;     /* Sets NUM_LOCAL_PARTITIONS parameter in various
+  int Local_Parts;          /* Sets NUM_LOCAL_PARTS parameter in various
                                ways. */
   int Fixed_Objects;        /* Registers functions for assigning fixed
                                objects; sets fixed_part within elements in
@@ -311,7 +311,7 @@ struct Output_Flags {
   int Text;
   int Gnuplot;
   int Nemesis;
-  int Plot_Partitions;
+  int Plot_Partition;
   int Mesh_Info_File;
 };
 

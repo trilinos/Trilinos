@@ -89,7 +89,7 @@ int Zoltan_Postprocess_Graph(
       }
   }
 
-  if (part) {                               /* We have done partitionning */
+  if (part) {                               /* We have done partitioning */
       ierr = Zoltan_Postprocess_Partition (zz, gr, prt, part, global_ids, local_ids);
       if (ierr) {
 	ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
@@ -256,22 +256,22 @@ Zoltan_Postprocess_Partition (ZZ *zz,
   if (zz->LB.Return_Lists){
     part->num_exp = nsend;
     if (nsend > 0) {
-      if (!Zoltan_Special_Malloc(zz,(void **)&part->exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {
+      if (!Zoltan_Special_Malloc(zz,(void **)part->exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {
 	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
-      if (!Zoltan_Special_Malloc(zz,(void **)&part->exp_lids,nsend,ZOLTAN_SPECIAL_MALLOC_LID)) {
-	Zoltan_Special_Free(zz,(void **)&part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+      if (!Zoltan_Special_Malloc(zz,(void **)part->exp_lids,nsend,ZOLTAN_SPECIAL_MALLOC_LID)) {
+	Zoltan_Special_Free(zz,(void **)part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
 	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
-      if (!Zoltan_Special_Malloc(zz,(void **)&part->exp_procs,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
-	Zoltan_Special_Free(zz,(void **)&part->exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
-	Zoltan_Special_Free(zz,(void **)&part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+      if (!Zoltan_Special_Malloc(zz,(void **)part->exp_procs,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
+	Zoltan_Special_Free(zz,(void **)part->exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
+	Zoltan_Special_Free(zz,(void **)part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
 	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
-      if (!Zoltan_Special_Malloc(zz,(void **)&part->exp_part,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
-	Zoltan_Special_Free(zz,(void **)&part->exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
-	Zoltan_Special_Free(zz,(void **)&part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
-	  Zoltan_Special_Free(zz,(void **)&part->exp_procs,ZOLTAN_SPECIAL_MALLOC_INT);
+      if (!Zoltan_Special_Malloc(zz,(void **)part->exp_part,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
+	Zoltan_Special_Free(zz,(void **)part->exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
+	Zoltan_Special_Free(zz,(void **)part->exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+	  Zoltan_Special_Free(zz,(void **)part->exp_procs,ZOLTAN_SPECIAL_MALLOC_INT);
 	  ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
       }
       j = 0;
@@ -279,13 +279,13 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 	if ((prt->part[i] != prt->input_part[i]) || ((!part->compute_only_part_changes)
 						      && (newproc[i] != zz->Proc))){
 	  /* Object should move to new partition or processor */
-	  ZOLTAN_SET_GID(zz, &((part->exp_gids)[j*num_gid_entries]),
+	  ZOLTAN_SET_GID(zz, &((*(part->exp_gids))[j*num_gid_entries]),
 			 &(global_ids[i*num_gid_entries]));
 	  if (num_lid_entries)
-	    ZOLTAN_SET_LID(zz, &((part->exp_lids)[j*num_lid_entries]),
+	    ZOLTAN_SET_LID(zz, &((*(part->exp_lids))[j*num_lid_entries]),
 			   &(local_ids[i*num_lid_entries]));
-	  (part->exp_part)[j] = prt->part[i];
-	  (part->exp_procs)[j] = newproc[i];
+	  (*(part->exp_part))[j] = prt->part[i];
+	  (*(part->exp_procs))[j] = newproc[i];
 /*	  printf("[%1d] Debug: Move object %1d to part %1d, proc %1d\n", */
 /*	     zz->Proc, i, prt->part[i], newproc[i]); */
 	  j++;

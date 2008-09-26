@@ -76,8 +76,8 @@ ZOLTAN_CHILD_LIST_FN get_child_elements;
 ZOLTAN_FIRST_COARSE_OBJ_FN get_first_coarse_element;
 ZOLTAN_NEXT_COARSE_OBJ_FN get_next_coarse_element;
 
-ZOLTAN_PARTITION_MULTI_FN get_partition_multi;
-ZOLTAN_PARTITION_FN get_partition;
+ZOLTAN_PART_MULTI_FN get_part_multi;
+ZOLTAN_PART_FN get_part;
 
 ZOLTAN_HG_SIZE_CS_FN get_hg_size_compressed_pin_storage;
 ZOLTAN_HG_SIZE_EDGE_WTS_FN get_hg_size_edge_weights;
@@ -119,7 +119,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
              prob->params[i].Index);
     else {
       ierr = zz.Set_Param(prob->params[i].Name, prob->params[i].Val);
-      if (strcasecmp(prob->params[i].Name, "NUM_GLOBAL_PARTITIONS") == 0)
+      if (strncasecmp(prob->params[i].Name, "NUM_GLOBAL_PART", 15) == 0)
         Num_Global_Parts = atoi(prob->params[i].Val);
     }
     if (ierr == ZOLTAN_FATAL) {
@@ -162,24 +162,24 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     }
   }
 
-  if (Test.Local_Partitions == 1) {
+  if (Test.Local_Parts == 1) {
     /* Compute Proc partitions for each processor */
     char s[8];
     sprintf(s, "%d", Proc);
-    if (zz.Set_Param("NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
+    if (zz.Set_Param("NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
       delete [] psize;
       delete [] partid;
       return 0;
     }
   }
-  else if (Test.Local_Partitions == 2) {
+  else if (Test.Local_Parts == 2) {
     /* Compute Proc partitions for odd-ranked processors; let remaining
      * partitions be in even-ranked processors. */
     if (Proc%2) {
       char s[8];
       sprintf(s, "%d", Proc);
-      if (zz.Set_Param("NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
+      if (zz.Set_Param("NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
         Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
         delete [] psize;
         delete [] partid;
@@ -187,26 +187,26 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
       }
     }
   }
-  else if (Test.Local_Partitions == 3 || Test.Local_Partitions == 5) {
+  else if (Test.Local_Parts == 3 || Test.Local_Parts == 5) {
     /* Variable partition sizes, but one partition per proc */
-    /* Test.Local_Partitions == 5 is same as 3, but with sizes increased by 1 */
+    /* Test.Local_Parts == 5 is same as 3, but with sizes increased by 1 */
     /* to avoid zero-sized partitions (for ParMETIS tests). */
     int i = 0;
-    psize[0] = (float) (Proc + (Test.Local_Partitions == 5)); 
+    psize[0] = (float) (Proc + (Test.Local_Parts == 5)); 
     /* Set partition sizes using global numbers. */
     zz.LB_Set_Part_Sizes(1, 1, &Proc, &i, psize);
     /* Reset partition sizes for upper half of procs. */
     if (Proc >= nprocs/2){
-      psize[0] = 0.5 + (Proc%2) + (Test.Local_Partitions == 5);
+      psize[0] = 0.5 + (Proc%2) + (Test.Local_Parts == 5);
       zz.LB_Set_Part_Sizes(1, 1, &Proc, &i, psize);
     }
   }
-  else if (Test.Local_Partitions == 4) {
+  else if (Test.Local_Parts == 4) {
     /* Variable number of partitions per proc and variable sizes. */
     /* Request Proc partitions for each processor, of size 1/Proc.  */
     char s[8];
     sprintf(s, "%d", Proc);
-    if (zz.Set_Param("NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
+    if (zz.Set_Param("NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
       delete [] psize;
       delete [] partid;
@@ -220,7 +220,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     }
     zz.LB_Set_Part_Sizes(0, Proc, partid, idx, psize);
   }
-  else if (Test.Local_Partitions == 6) {
+  else if (Test.Local_Parts == 6) {
     /* Variable partition sizes, but one partition per proc */
     /* When nprocs >= 6, zero-sized partitions on processors >= 2. */
     int i = 0;
@@ -238,7 +238,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
       error_report(Proc);
     }
   }
-  else if (Test.Local_Partitions == 7) {
+  else if (Test.Local_Parts == 7) {
     /* Variable partition sizes, but one partition per proc */
     /* When nprocs >= 6, zero-sized partitions on processors 0, 1, 2, and 3. */
     int i = 0;
@@ -256,7 +256,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
       error_report(Proc);
     }
   }
-  else if (Test.Local_Partitions == 8) {
+  else if (Test.Local_Parts == 8) {
     int nparts=100;
     /* Variable partition sizes. Assume at most 100 global partitions. */
     /* Realloc arrays. */
@@ -433,17 +433,17 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 
   /* Functions for partitions */
   if (Test.Multi_Callbacks) {
-    if (zz.Set_Partition_Multi_Fn(get_partition_multi, 
+    if (zz.Set_Part_Multi_Fn(get_part_multi, 
                   (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Set_Partition_Multi_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Part_Multi_Fn()\n");
       return 0;
     }
   }
   else {
-    if (zz.Set_Partition_Fn(get_partition, (void *) mesh) == ZOLTAN_FATAL) {
+    if (zz.Set_Part_Fn(get_part, (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Set_Partition_Fn()\n");
+        "fatal:  error returned from Zoltan_Set_Part_Fn()\n");
       return 0;
     }
   }
@@ -1408,7 +1408,7 @@ void get_child_elements(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void get_partition_multi(void *data, int num_gid_entries, int num_lid_entries,
+void get_part_multi(void *data, int num_gid_entries, int num_lid_entries,
   int num_obj, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *parts,
   int *ierr)
 {
@@ -1444,7 +1444,7 @@ void get_partition_multi(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_partition(void *data, int num_gid_entries, int num_lid_entries,
+int get_part(void *data, int num_gid_entries, int num_lid_entries,
                   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
 {
   ELEM_INFO *elem;
@@ -1759,7 +1759,7 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
 
   MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-  test_both = ((gmax_part == (Num_Proc-1)) && (Test.Local_Partitions == 0));
+  test_both = ((gmax_part == (Num_Proc-1)) && (Test.Local_Parts == 0));
 
   /* generate the parallel filename for this processor */
   strcpy(ctemp, pio_info->pexo_fname);

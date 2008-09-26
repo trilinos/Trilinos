@@ -1,0 +1,27 @@
+#Script for building Zoltan through Trilinos' build system on a 64-bit Mac OS X
+#with LAM MPI.
+#This script builds only Zoltan but builds it from the top-level Trilinos
+#directory.
+#Assuming running script from /Users/kddevin/code/trilinos_v9.0/Obj_mac64.
+set path=(/Users/kddevin/code/lib-m64/lam-7.1.4/bin $path)
+setenv CC /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpicc
+setenv CXX /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpic++
+setenv F77 /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpif77
+setenv CFLAGS -m64
+setenv CXXFLAGS -m64
+setenv CPPFLAGS -m64
+setenv FFLAGS -m64
+
+../configure -C \
+  --prefix=/Users/kddevin/code/trilinos_v9.0/Obj_mac64 \
+  --disable-default-packages \
+  --enable-mpi --with-mpi-compilers \
+  --enable-zoltan \
+  --with-parmetis \
+  --with-parmetis-incdir="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+  --with-parmetis-libdir="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+  --with-libs="-framework vecLib" \
+  --with-gnumake \
+  --with-cxxflags="-DLAM_BUILDING" |& tee OUTPUT.C
+make everything |& tee OUTPUT.M
+make install |& tee OUTPUT.I

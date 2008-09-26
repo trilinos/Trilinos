@@ -33,7 +33,7 @@ public :: read_chaco_mesh, free_element_arrays, in_list, build_elem_comm_maps, i
 !/*--------------------------------------------------------------------------*/
 
 
-logical, parameter :: CHECK_INPUT = .true.
+logical, parameter :: CHECK_INPUT = .false.
 integer(Zoltan_INT), parameter :: MAP_ALLOC = 10
 
 
@@ -52,7 +52,7 @@ type(ELEM_INFO), pointer :: elements(:)
 !  /* Local declarations. */
   character(len=FILENAME_MAX+8) :: chaco_fname
 
-  integer(Zoltan_INT) :: i, nvtxs, iostat, allocstat
+  integer(Zoltan_INT) :: i, nvtxs, ios, allocstat
   integer(Zoltan_INT) :: ndim = 0
   integer(Zoltan_INT), pointer, dimension(:) :: start, adj, vtxdist
 
@@ -72,8 +72,8 @@ type(ELEM_INFO), pointer :: elements(:)
 !    /* Open and read the Chaco graph file. */
     fp = 12
     chaco_fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".graph"
-    open(unit=fp,file=chaco_fname,action='read',iostat=iostat)
-    if (iostat /= 0) then
+    open(unit=fp,file=chaco_fname,action='read',status='old',iostat=ios)
+    if (ios /= 0) then
       print *, "fatal:  Could not open Chaco graph file ", chaco_fname
       read_chaco_mesh = .false.
       return
@@ -90,9 +90,8 @@ type(ELEM_INFO), pointer :: elements(:)
 !    /* Read Chaco geometry file, if provided. */
     fp = 12
     chaco_fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".coords"
-    open(unit=fp,file=chaco_fname,action='read',iostat=iostat)
-    if (iostat /= 0) then
-      print *, "fatal:  Could not open Chaco graph file ", chaco_fname
+    open(unit=fp,file=chaco_fname,action='read',status='old',iostat=ios)
+    if (ios /= 0) then
       print *, "warning:  Could not open Chaco geometry file ",chaco_fname, &
               "; no geometry data will be read"
     else
@@ -499,6 +498,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
             skip_flag = .false.
             ignore_me = .false.
 
+          if (CHECK_INPUT) then
             if (neighbor > nvtxs) then
                 print *,"ERROR in graph file ", inname, &
                         ": nvtxs=",nvtxs,", but edge (",vertex,",",neighbor, &
@@ -544,6 +544,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
                     endif
                 endif
             endif
+          endif !CHECK_INPUT
 
 !/* Read edge weight if it's being input. */
             if (using_ewgts) then

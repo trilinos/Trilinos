@@ -27,17 +27,21 @@
 <!---------------------------------------------------------------------------->
 <h2>
 <a NAME="Ordering Algorithms"></a>Ordering Algorithms</h2>
-The following graph ordering algorithms are currently included in the Zoltan
-library:
-<blockquote><a href="ug_order_parmetis.html">Nested dissection by METIS/ParMETIS
-(NODEND)</a></blockquote>
-The parenthetical string is the parameter value for <i><a href="#ORDER_METHOD">ORDER_METHOD</a></i>
-parameter; the parameter is set through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
-<p>
-Ordering is 
-accessed through calls to 
+The following graph (sparse matrix) ordering algorithms are currently included in the Zoltan toolkit:
+<blockquote>
+<a href="ug_order_parmetis.html">Nested dissection by METIS/ParMETIS </a><br>
+<a href="ug_order_ptscotch.html">Nested dissection by PT-Scotch</a>
+</blockquote>
+These methods produce orderings that reduce fill in sparse matrix factorizations (Cholesky).
+Ordering is accessed through calls to 
 <b><a href="ug_interface_order.html#Zoltan_Order">Zoltan_Order</a></b>.
 <p><!---------------------------------------------------------------------------->
+
+<h3>
+<b>Third-party libraries</b>
+</h3>
+Currently, all ordering in Zoltan is provided through the third-party libraries METIS/ParMETIS and PT-Scotch. At least one of these must be present to use Zoltan ordering.
+
 <h3>
 <a NAME="Order Parameters"></a>
 <hr><b>Ordering Parameters</b></h3>
@@ -64,8 +68,10 @@ Valid values are&nbsp;
 <blockquote>"NODEND" (for <a href="ug_order_parmetis.html">nodal nested
 dissection by ParMETIS or METIS</a>),
 <br>"METIS" (same as NODEND with ORDER_TYPE = local),
-<br>"PARMETIS" (same as NODEND with ORDER_TYPE = global), and
-<br>"NONE" (for no load-balancing).</blockquote>
+<br>"PARMETIS" (same as NODEND with ORDER_TYPE = global), 
+<br>"SCOTCH", and
+<br>"NONE" (for no ordering).
+</blockquote>
 </td>
 </tr>
 

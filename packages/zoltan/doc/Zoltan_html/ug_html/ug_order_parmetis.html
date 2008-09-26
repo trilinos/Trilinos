@@ -23,10 +23,10 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_color.html">Next</a>&nbsp; |&nbsp; <a href="ug_order.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_order_ptscotch.html">Next</a>&nbsp; |&nbsp; <a href="ug_order.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="RCB"></a>Nested Dissection by METIS/ParMETIS</h2>
+<a NAME="NodeND"></a>Nested Dissection by METIS/ParMETIS</h2>
 Nested Dissection (ND) is a popular method to compute fill-reducing orderings
 for sparse matrices. It can also be used for other ordering purposes.&nbsp;
 The algorithm recursively finds a separator (bisector) in a graph,
@@ -36,7 +36,7 @@ a certain size, and some version of minimum degree ordering is applied
 to the remaining graph.
 <p>METIS computes a local ordering of the objects on each processor, while
 ParMETIS performs a global ordering of all the objects. ParMETIS currently
-(versions 2.0 and 3.0) requires that the number of processors is a power
+(version 3.1, supported by Zoltan) requires that the number of processors is a power
 of two.
 <p>The generic name for this method is NODEND<i>.</i> If GRAPH_TYPE=GLOBAL
 ParMETIS is called, but if it is LOCAL, METIS is called. Alternatively,
@@ -99,7 +99,7 @@ N</a></b> or
 </table>
 
 <p>
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_color.html">Next:&nbsp;
-Coloring Algorithms</a> |&nbsp; <a href="ug_order.html">Previous:&nbsp; Ordering Algorithms</a>]
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_order_ptscotch.html">Next:&nbsp;
+Ordering by PT-Scotch</a> |&nbsp; <a href="ug_order.html">Previous:&nbsp; Ordering Algorithms</a>]
 </body>
 </html>

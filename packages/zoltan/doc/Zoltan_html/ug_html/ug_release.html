@@ -32,6 +32,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.1">Zoltan Release v3.1</a><br>
   <a href="#Release3.0">Zoltan Release v3.0</a><br>
   <a href="#Release2.1">Zoltan Release v2.1</a><br>
   <a href="#Release2.02">Zoltan Release v2.02</a><br>
@@ -47,6 +48,58 @@ releases of Zoltan:
   <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.1">Zoltan Release Notes v3.1: September 26, 2008</a></h2>
+Zoltan v3.1 includes the following new features:
+<ul>
+<li>
+Important new capabilities for Matrix ordering are included in Zoltan v3.1.
+<ul>
+<li>
+A graph/matrix ordering interface to
+<a href="ug_order_ptscotch.html">PT-Scotch</a>, a
+high-quality graph ordering and partitioning library from the University of
+Bordeaux, is now available.
+<li>
+Zoltan's new <a href="ug_interface_order.html">matrix 
+ordering interface</a>
+returns ordering information such as permutations and
+separators to the application.
+</ul>
+<li>
+New <a href="ug_alg_phg.html">hypergraph partitioning</a>
+options for inexpensively
+<a href="ug_alg.html#LB_APPROACH">refining</a> partitions are
+included and controlled simply by parameters 
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a> and 
+<a href="ug_alg_phg.html">PHG_MULTILEVEL</a>.
+<li>
+Robustness improvements have been made to Zoltan's parallel
+<a href="ug_alg_hypergraph.html">hypergraph</a>
+partitioner and repartitioner.
+<li>
+A new <a href="ug_usage.html#TrilinosAutotools">Autotools 
+build environment</a> is available.  
+The native Zoltan build environment is still 
+supported in this release.
+<li>
+<a href="ug_usage.html#TrilinosAutotools">Serial, non-MPI builds</a>
+of Zoltan are enabled through the new Autotools build environment.
+<li>
+Zoltan is now a 
+<a href="http://trilinos.sandia.gov">Trilinos</a> package.
+Integration with <a href="http://trilinos.sandia.gov">Trilinos</a>,
+is now tighter and more seamless.  
+In particular, Zoltan is the default partitioner for the Trilinos package
+<a href="http://trilinos.sandia.gov/packages/isorropia/">Isorropia</a>,
+a matrix-based interface to Zoltan.
+</ul>
+
+<p>
+Please see the <a href="ug_backward.html">backward compatibility</a> section
+for a detailed description of changes that may affect current users.
+
+
 <hr>
 <h2><a name="Release3.0"></a>Zoltan Release Notes v3.0:  May 1, 2007</h2>
 Zoltan v3.0 includes major new features.
@@ -67,9 +120,9 @@ improve the quality of an existing partition.
 Zoltan's parallel hypergraph partitioner.
 <li> Hypergraph partitioning with <a href="ug_alg_hypergraph.html">fixed 
 vertices</a>
-that allows application to assign or "fix" objects to a desired partition
+that allows application to assign or "fix" objects to a desired part
 before partitioning.
-<li> Improved <a href="ug_alg.html#REMAP">partition remapping</a> to reduce data migration costs in all
+<li> Improved <a href="ug_alg.html#REMAP">part remapping</a> to reduce data migration costs in all
 partitioners.
 <li> Hybrid <a href="ug_alg_hier.html">hierarchical partitioning</a> that allows
 different partitioning algorithms to be applied within a hierarchy of 
@@ -96,8 +149,8 @@ We strongly recommend that users upgrade to Zoltan v2.1.
 <h2><a name="Release2.02"></a>Zoltan Release Notes v2.02:  September 26, 2006</h2>
 Zoltan v2.02 includes bugfixes:
 <ul>
-<li>Zoltan_LB_Eval now correctly computes edge cuts with respect to partitions 
-when partitions are spread across more than one processor.
+<li>Zoltan_LB_Eval now correctly computes edge cuts with respect to parts 
+when parts are spread across more than one processor.
 </li>
 <li>Extraneous (and annoying) print statement has been removed from
 Zoltan partitioning method RCB.
@@ -193,11 +246,11 @@ Users of previous versions of Zoltan should refer to the <a
 <p>Short descriptions of the following features are included below;
 follow the links for more details.
 </p>
-<blockquote><a href="#REMAP">Partition remapping</a>
+<blockquote><a href="#REMAP">Part remapping</a>
   <br>
-  <a href="#KNEP">Unequal Numbers of Partitions and Processors</a>
+  <a href="#KNEP">Unequal Numbers of Parts and Processors</a>
   <br>
-  <a href="#UnequalSizes">Non-Uniform Partition Sizes</a>
+  <a href="#UnequalSizes">Non-Uniform Part Sizes</a>
   <br>
   <a href="#Interface1.5">Zoltan Interface Updated</a>
   <br>
@@ -211,8 +264,8 @@ follow the links for more details.
 </blockquote>
 <!---------------------------------------------------------------------------->
 <h4><a name="REMAP"></a>
-<hr>Partition Remapping</h4>
-During partitioning, Zoltan v1.5 can renumber partitions so that the
+<hr>Part Remapping</h4>
+During partitioning, Zoltan v1.5 can renumber parts so that the
 input and output partitions have greater overlap (and, thus, lower
 data-migration costs). This remapping is controlled by Zoltan parameter
 <i><a href="ug_alg.html#REMAP">REMAP</a></i>. Experiments have shown
@@ -220,38 +273,38 @@ that
 using this parameter can greatly reduce data migration costs.
 <!---------------------------------------------------------------------------->
 <h4><a name="KNEP"></a>
-<hr>Unequal Numbers of Partitions and Processors</h4>
-Zoltan v1.5 can be used to generate <i>k</i> partitions on <i>p</i>
+<hr>Unequal Numbers of Parts and Processors</h4>
+Zoltan v1.5 can be used to generate <i>k</i> parts on <i>p</i>
 processors,
 where <i>k</i> is not equal to <i>p</i>. Function <a
  href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>
 (replacing <a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>)
-can generate arbitrary numbers of partitions on the given processors.
-The number of desired partitions is set with parameters <i><a
- href="ug_alg.html#NUM_GLOBAL_PARTITIONS">NUM_GLOBAL_PARTITIONS</a></i>
-or <i><a href="ug_alg.html#NUM_LOCAL_PARTITIONS">NUM_LOCAL_PARTITIONS</a></i>.
-Both partition and processor information are returned by
+can generate arbitrary numbers of parts on the given processors.
+The number of desired parts is set with parameters <i><a
+ href="ug_alg.html#NUM_GLOBAL_PARTS">NUM_GLOBAL_PARTS</a></i>
+or <i><a href="ug_alg.html#NUM_LOCAL_PARTS">NUM_LOCAL_PARTS</a></i>.
+Both part and processor information are returned by
 <a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>,
 <b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</a></b>,
 and
 <b><a href="ug_interface_augment.html#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</a></b>.
 New Zoltan query functions
-<b><a href="ug_query_lb.html#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b>
-and <b><a href="ug_query_lb.html#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b>
-return objects' partition information to Zoltan.
+<b><a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b>
+and <b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
+return objects' part information to Zoltan.
 <a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>
 can still be used for <i>k</i> equal to <i>p</i>.
 <!---------------------------------------------------------------------------->
 <h4><a name="UnequalSizes"></a>
-<hr>Non-Uniform Partition Sizes</h4>
-Partition sizes for local and global partitions can be specified using
+<hr>Non-Uniform Part Sizes</h4>
+Part sizes for local and global parts can be specified using
 <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Part_Sizes">Zoltan_LB_Set_Part_Sizes</a></b>,
-allowing non-uniformly sized partitions to be generated by
+allowing non-uniformly sized parts to be generated by
 Zoltan's partitioning algorithms.
 <!---------------------------------------------------------------------------->
 <h4><a name="Interface1.5"></a>
 <hr>Zoltan Interface Updated</h4>
-To support the concept of partitions separate from processors, many new
+To support the concept of parts separate from processors, many new
 interface functions were added to Zoltan v1.5 (e.g.,
 <a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>
 and
@@ -260,7 +313,7 @@ These functions mimic previous Zoltan functions (e.g.,
 <a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>
 and
 <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>,
-respectively), but include both partition and processor information.
+respectively), but include both part and processor information.
 Both the new and old interface functions work in Zoltan v1.5.
 See the notes on <a href="ug_backward.html">Backward Compatibility</a>.
 <!---------------------------------------------------------------------------->
@@ -293,7 +346,7 @@ Many performance improvements were added to Zoltan v1.5.
   <li>
 List-based callback functions have been added to Zoltan
 (<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>,
-    <b><a href="ug_query_lb.html#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b>,
+    <b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>,
     <b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>,
     <b><a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_MULTI_FN">ZOLTAN_PACK_OBJ_MULTI_FN</a></b>,
 and
@@ -363,16 +416,16 @@ Several packages of parallel data services have been added and made
 available to
 application developers. These services include the following:
 <ul>
-  <li>An <a href="../ug_html/ug_util_comm.html">unstructured
+  <li>An <a href="ug_util_comm.html">unstructured
 communication package</a> that simplifies complicated communication by
 insulating applications from the details of message
 sends and receives.
   </li>
-  <li>A <a href="../ug_html/ug_util_dd.html">distributed data directory</a>
+  <li>A <a href="ug_util_dd.html">distributed data directory</a>
 that allows applications to efficiently
 (in memory and time) locate off-processor data.
   </li>
-  <li>A <a href="../ug_html/ug_util_mem.html">dynamic memory
+  <li>A <a href="ug_util_mem.html">dynamic memory
 management package</a> that simplifies debugging of
 memory allocation problems on state-of-the-art parallel computers.
   </li>
@@ -400,7 +453,7 @@ parameter <a href="ug_alg_rcb.html"><i>RCB_RECTILINEAR_BLOCKS</i></a>.
 <hr>
 <h4>Support for ParMETIS v3.0</h4>
 In addition to providing interfaces to <a href="ug_alg_parmetis.html">ParMETIS
-v2.0</a> and <a href="ug_alg_jostle.html">PJostle</a>,
+v2.0</a>,
 Zoltan now provides an interfaces <a href="ug_alg_parmetis.html">ParMETIS
 v3.0</a>. Full support of ParMETIS v3.0's multiconstraint and
 multiobjective partitioning is

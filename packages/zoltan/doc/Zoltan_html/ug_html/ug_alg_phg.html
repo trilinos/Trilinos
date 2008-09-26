@@ -27,11 +27,8 @@
  href="ug_alg_hypergraph.html">Previous</a></i></b></div>
 <h2 =""><a name="PHG"></a>PHG - Parallel Hypergraph and Graph Partitioning with
 Zoltan</h2>
-<span style="font-weight: bold;">New in version 3.0</span>: PHG now
-supports hypergraph repartititioning for dynamic load balancing!
-Repartititioning is the new default setting. Use the LB_APPROACH
-parameter to select partitioning "from scratch". <br>
-<br>
+This is the built-in parallel hypergraph partitioner in Zoltan.
+<p>
 <table nosave="" width="100%">
   <tbody>
     <tr>
@@ -59,9 +56,6 @@ current partition/distribution
       <i>REFINE</i>&nbsp; - refine the current partition/distribution;
 assumes only small changes
       <br>
-      <i>FAST_REPARTITION</i>&nbsp; - a hybrid of REPARTITION and REFINE, small
-refinement to existing partition that tries to stay close to the current partitioning
-      <br>
       <i>PARTITION</i>&nbsp; - partition from scratch, not taking&nbsp;
 the current data distribution into account<br>
              
@@ -81,6 +75,14 @@ units for edges and object sizes are the same.<br>
 Simply put, to emphasize communication within the application, use a
 large value for PHG_REPART_MULTIPLIER. Typically this should be
 proportional to the number of iterations between load-balancing calls. </td>
+    </tr>
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp; PHG_MULTILEVEL<br>
+      </i></td>
+      <td>This parameter specifies whether a multilevel method
+should be used (1) or not (0). Multilevel methods produce higher quality but 
+require more execution time and memory.
+      </td>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp; <a
@@ -237,6 +239,11 @@ after each processor redistribution.<br>
       <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REPART_MULTIPLIER=100</span></td>
     </tr>
     <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_MULTILEVEL=1 if LB_APPROACH = partition or repartition; 0 otherwise.</span></td>
+    </tr>
+    <tr>
       <td><br>
       </td>
       <td><span style="font-style: italic;">PHG_EDGE_WEIGHT_OPERATION=max</span></td>
@@ -265,7 +272,7 @@ after each processor redistribution.<br>
     <tr>
       <td><br>
       </td>
-      <td><i>PHG_COARSENING_METHOD=ipm</i></td>
+      <td><i>PHG_COARSENING_METHOD=agg</i></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
@@ -332,7 +339,16 @@ after each processor redistribution.<br>
       <td>
 <b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
 or
-<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b> for <i>LB_APPROACH</i>=<i>Repartition</i>.
+</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+<b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
+or
+<b><a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b> for <i>LB_APPROACH</i>=<i>Repartition</i> and for <i>REMAP</i>=1.
 </td>
     </tr>
     <tr>
@@ -401,7 +417,16 @@ or
       <td>
 <b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
 or
-<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b> for <i>LB_APPROACH</i>=<i>Repartition</i>.
+</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+<b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
+or
+<b><a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b> for <i>LB_APPROACH</i>=<i>Repartition</i> and for <i>REMAP</i>=1.
 </td>
     </tr>
   </tbody>

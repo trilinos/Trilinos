@@ -106,6 +106,7 @@ while ( $#argv )
      @ yes_cpp = 1
   else if ( "$1" == "-yes_serial" ) then
      @ yes_serial = 1
+     @ no_hg = 1
      @ yes_nemesis = 0   # Nemesis input files require multiple processors
   else if ( "$1" == "-yes_nemesis" ) then
      @ yes_nemesis = 1
@@ -159,12 +160,13 @@ while ( $#argv )
 
 end # while ( $#argv )
 
+set ch_methods = ( )
 if ( $yes_serial ) then
   set ch_nproc = (1 1 1 1 1 1 1 1 1 1 1) # no. of procs
 
-  set hg_methods = (serial)   # creates 8 partitions
-  set hg_name  = (simple felix ibm01 ibm03)
-  set hg_nproc = (1      1     1     1)
+  set ch_methods = ($ch_methods patoh.felix patoh.vwgt phg.felix phg.vwgt)   
+  set ch_name  = ($ch_name serial )
+  set ch_nproc = ($ch_nproc 1 )
 endif
 
 # zfdrive can only handle plain MatrixMarket format, so run only these
@@ -183,8 +185,8 @@ if (! $?run ) then
     case sgi64:
       set run = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
       breaksw
-    case mac32_siMPI:
-      set run = "/Users/kddevin/code/siMPI/Obj_mac32/mpirun -np"
+    case mac64_siMPI:
+      set run = ""
       breaksw
     case bandito:
       set run = "/opt/mpich-intel/bin/mpirun -np"
@@ -255,6 +257,11 @@ if (! $?run ) then
   endif
 endif
 
+if ( $yes_serial ) then
+  # No mpirun in serial case.
+  unset run
+endif
+
 # suffix for special answer files
 if (! ${?suffix}) then
    set suffix=${arch}
@@ -318,16 +325,14 @@ if (! $found) then
 endif
 
 # Initially, only the most basic methods are active
-set ch_methods = ( )
 if (! $yes_serial) then
   set ch_methods = ( $ch_methods block block-partless block-partmore \
                      random random-partless random-partmore)
 endif
 set nem_methods = ( )
-if (! $yes_fortran) then
+if (! $yes_fortran && ! $yes_serial) then
   set ch_methods = ( $ch_methods block-oneproc random-oneproc )
 endif
-
 
 # Determine ParMETIS version, if any
 if ( $no_parmetis ) then
@@ -450,6 +455,7 @@ else
     set ch_nproc = ($ch_nproc 3 2 6 5) # no. of procs
   endif
 
+  # These Chaco problems are run only for C/C++ driver; F90 driver does not
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
     if (! $old_interface) then
@@ -471,7 +477,9 @@ else
       set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
       set ch_methods = ( $ch_methods rcb-comparable rcb-norm2 rcb-norm3)
       set ch_methods = ( $ch_methods rcb-comparable-ts rcb-norm2-ts rcb-norm3-ts)
-      set ch_methods = ( $ch_methods rcb-1D rcb-2D)
+      if (! $yes_serial) then
+        set ch_methods = ( $ch_methods rcb-1D rcb-2D)
+      endif
 
     endif
     set nem_methods = ( $nem_methods rcb rcb-ts )
@@ -515,7 +523,9 @@ else
       set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
       set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
       set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
-      set ch_methods = ( $ch_methods rib-1D rib-2D)
+      if (! $yes_serial) then
+        set ch_methods = ( $ch_methods rib-1D rib-2D)
+      endif
     endif
     set nem_methods = ( $nem_methods rib rib-ts )
     if (! $old_interface) then
@@ -535,8 +545,8 @@ else
       set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
       set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
       set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
-      set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
       if (! $yes_serial) then
+        set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
         # These tests assume six or more processors are used.
         set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
       endif
@@ -709,7 +719,12 @@ if (! $no_chaco ) then
           endif
 
           # Run the driver
-          $run $np ../$zdrive
+          if (! $?run ) then
+            # serial case
+            ../$zdrive
+          else
+            ${run} ${np} ../$zdrive
+          endif
           sleep 1 # Make sure all processes have time to write to disk
     
           # Save and compare output files 

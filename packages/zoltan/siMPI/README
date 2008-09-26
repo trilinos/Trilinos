@@ -1,0 +1,10 @@
+siMPI:  Serial Implementation of MPI
+siMPI is part of the PyMPI project.
+
+PyMPI:  MPI Python project led by Pat Miller
+Obtained from http://sourceforge.net/projects/pympi
+
+Used and redistributed with permission from Pat Miller.
+PyMPI and SiMPI are NOT products of Sandia National Laboratories.
+
+Used by Zoltan for non-MPI Trilinos builds.

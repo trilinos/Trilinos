@@ -142,6 +142,7 @@ int Zoltan_Order(
   Zoltan_Assign_Param_Vals(zz->Params, Order_params, zz->Debug_Level,
                            zz->Proc, zz->Debug_Proc);
 
+  zz->Order.start_index = opt.start_index;
 
   /*
    *  Check that the user has allocated space for the return args.
@@ -391,7 +392,7 @@ int Zoltan_Order_Get_Block_Parent(
  *    zz                  --  The ordering computed by Zoltan_Order.
  *  Returned value:       --  Number of leaves in the elimination tree.
  */
-int Zoltan_Order_Get_Nbr_Leaves(
+int Zoltan_Order_Get_Num_Leaves(
   struct Zoltan_Struct *zz
 )
 {
@@ -453,7 +454,7 @@ int Zoltan_Order_Get_GID_Order(
 
   if (!strcmp(zz->Order.order_type, "LOCAL")) {
     for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
-      order_ids[i] = global_ids[zz->Order.rank[i]];
+      order_ids[i] = global_ids[zz->Order.rank[i] - zz->Order.start_index];
     }
     return (ZOLTAN_OK);
   }
@@ -474,8 +475,8 @@ int Zoltan_Order_Get_GID_Order(
   recvtab = sendtab + zz->Order.nbr_objects;
 
   for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
-    proctab[i] = Zoltan_Get_Processor_Graph(vtxdist, zz->Num_Proc, zz->Order.rank[i]);
-    sendtab[i] = zz->Order.rank[i];
+    proctab[i] = Zoltan_Get_Processor_Graph(vtxdist, zz->Num_Proc, zz->Order.rank[i] - zz->Order.start_index);
+    sendtab[i] = zz->Order.rank[i] - zz->Order.start_index;
   }
 
   ierr = Zoltan_Comm_Create(&plan, zz->Order.nbr_objects, proctab, zz->Communicator, tag++,

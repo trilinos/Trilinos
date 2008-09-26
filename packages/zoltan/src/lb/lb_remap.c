@@ -27,7 +27,7 @@ extern "C" {
  */
 #define ZOLTAN_LB_REMAP_NONE 0
 #define ZOLTAN_LB_REMAP_PROCESSORS 1
-#define ZOLTAN_LB_REMAP_PARTITIONS 2
+#define ZOLTAN_LB_REMAP_PARTS 2
 
 #define HEINFO_ENTRIES 3
 
@@ -202,7 +202,7 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
     }
   }
 
-  else {  /* ZOLTAN_LB_REMAP_PARTITIONS */
+  else {  /* ZOLTAN_LB_REMAP_PARTS */
 
     /* Renumber new partitions to minimize changes in partition assignment */
 
@@ -352,7 +352,7 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
     }
   }
 
-  else {  /* ZOLTAN_LB_REMAP_PARTITIONS */
+  else {  /* ZOLTAN_LB_REMAP_PARTS */
     /* Cannot renumber partitions given export lists without summing HE weights
      * across processors.  This summation is not straightforward.  Also, a 
      * potentially large number of HEs may exist 
@@ -434,7 +434,7 @@ int ierr = ZOLTAN_OK;
   }
   else {
     /* # Partitions != # processors, or partitions not uniformly distributed */
-    *remap_type = ZOLTAN_LB_REMAP_PARTITIONS;
+    *remap_type = ZOLTAN_LB_REMAP_PARTS;
   }
 
   return ierr;

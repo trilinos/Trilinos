@@ -133,6 +133,18 @@ int Zoltan_ParMetis(
   memset (&prt, 0, sizeof(ZOLTAN_Third_Part));
   memset (&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
   memset (&part, 0, sizeof(ZOLTAN_Output_Part));
+
+  /* Initialize return-argument arrays to return arguments so that F90 works. */
+  part.imp_gids = imp_gids;
+  part.imp_lids = imp_lids;
+  part.imp_procs = imp_procs;
+  part.imp_part = imp_to_part;
+
+  part.exp_gids = exp_gids;
+  part.exp_lids = exp_lids;
+  part.exp_procs = exp_procs;
+  part.exp_part = exp_to_part;
+
   part.num_imp = part.num_exp = -1;
   prt.input_part_sizes = prt.part_sizes = part_sizes;
 
@@ -340,15 +352,15 @@ int Zoltan_ParMetis(
 
   /* Write results in user variables */
   *num_imp = part.num_imp;
-  *imp_gids = part.imp_gids;
-  *imp_lids = part.imp_lids;
-  *imp_procs = part.imp_procs;
-  *imp_to_part = part.imp_part;
+  *imp_gids = *(part.imp_gids);
+  *imp_lids = *(part.imp_lids);
+  *imp_procs = *(part.imp_procs);
+  *imp_to_part = *(part.imp_part);
   *num_exp = part.num_exp;
-  *exp_gids = part.exp_gids;
-  *exp_lids = part.exp_lids;
-  *exp_procs = part.exp_procs;
-  *exp_to_part = part.exp_part;
+  *exp_gids = *(part.exp_gids);
+  *exp_lids = *(part.exp_lids);
+  *exp_procs = *(part.exp_procs);
+  *exp_to_part = *(part.exp_part);
 
 
   /* Get a time here */
@@ -587,7 +599,6 @@ int Zoltan_ParMetis_Order(
   int n, ierr;
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
-  ZOLTAN_Third_Vsize vsp;
 
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
   int numflag = 0;
@@ -602,7 +613,6 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
-  memset(&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
 
   ord.order_opt = order_opt;
@@ -661,7 +671,7 @@ int Zoltan_ParMetis_Order(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
-  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, &vsp);
+  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
 
   /* Allocate space for separator sizes */
 
@@ -672,6 +682,7 @@ int Zoltan_ParMetis_Order(
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
     ord.sep_sizes = zz->Order.start; /* Trick : use the same table */
+    memset(ord.sep_sizes, 0, (2*zz->Num_Proc+1)*sizeof(int)); /* It seems parmetis don't initialize correctly */
   }
 
   /* Allocate space for direct perm */
@@ -733,7 +744,7 @@ int Zoltan_ParMetis_Order(
     int numbloc;
     int start;
 
-    for (numbloc = 0, start=0 ; numbloc < 2*zz->Num_Proc+1 ; ++numbloc) { /* convert size tab in start tab */
+    for (numbloc = 0, start=0 ; numbloc < 2*zz->Num_Proc ; ++numbloc) { /* convert size tab in start tab */
       int tmp;
       tmp = start;
       start += ord.sep_sizes[numbloc]; /* Save save for next bloc */
@@ -761,7 +772,8 @@ int Zoltan_ParMetis_Order(
     zz->Order.leaves = NULL;
   }
 
-  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, &vsp, &ord, NULL);
+  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, NULL, &ord, NULL);
+
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -779,7 +791,7 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_FREE(&ord.rank);
 
   /* Free all other "graph" stuff */
-  Zoltan_Third_Exit(&gr, NULL, NULL, &vsp, NULL, NULL);
+  Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, NULL);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 

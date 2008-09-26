@@ -105,20 +105,11 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
 /* Red Storm MPI permits a maximum of 2048 receives.  We set our
  * limit of posted receives to 2000, leaving some for the application.
  */
-#if 1
 
-#ifdef REDSTORM
-#define MAX_MPI_RECVS 2000
-#else
-#define MAX_MPI_RECVS 0
+#ifndef MPI_RECV_LIMIT
+#define MPI_RECV_LIMIT 2000
 #endif
 
-#else
-
-/* For testing this feature */
-#define MAX_MPI_RECVS 2
-
-#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

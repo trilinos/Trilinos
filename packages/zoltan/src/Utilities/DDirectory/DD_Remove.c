@@ -167,7 +167,7 @@ int Zoltan_DD_Remove (
 /******************  DD_Remove_Local()  **************************/
 
 /* The given global ID, gid, is removed from the local distributed
-// directory. An error is returned if the gid is not found.
+ * directory. An error is returned if the gid is not found.
 */
 
 static int DD_Remove_Local (Zoltan_DD_Directory *dd,

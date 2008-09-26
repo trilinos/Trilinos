@@ -3,7 +3,7 @@ Zoltan Parameters	= hypergraph_package=phg
 Zoltan Parameters	= lb_approach=partition
 Zoltan Parameters	= remap=0
 Zoltan Parameters	= obj_weight_dim=1
-Zoltan Parameters	= num_global_partitions=4
+Zoltan Parameters	= num_global_parts=4
 File Type		= chaco
 File Name		= vwgt
 Parallel Disk Info	= number=0

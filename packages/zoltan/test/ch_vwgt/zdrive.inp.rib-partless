@@ -1,7 +1,7 @@
 Decomposition Method 	= rib
 Zoltan Parameters	= remap=0
 Zoltan Parameters       = obj_weight_dim=1
-Zoltan Parameters	= num_global_partitions=2
+Zoltan Parameters	= num_global_parts=2
 File Type		= Chaco
 File Name		= vwgt
 Parallel Disk Info	= number=0

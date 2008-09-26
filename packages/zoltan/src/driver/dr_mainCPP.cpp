@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
   /* Initialize flags */
   Test.DDirectory = 0;
-  Test.Local_Partitions = 0;
+  Test.Local_Parts = 0;
   Test.Drops = 0;
   Test.RCB_Box = 0;
   Test.Multi_Callbacks = 0;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   Output.Text = 1;
   Output.Gnuplot = 0;
   Output.Nemesis = 0;
-  Output.Plot_Partitions = 0;
+  Output.Plot_Partition = 0;
   Output.Mesh_Info_File = 0;
 
   /* Interpret the command line */
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 #ifdef KDDKDD_COOL_TEST
 /* KDD Cool test of changing number of partitions  */
     sprintf(cmesg, "%d", Num_Proc * iteration);
-    zz->Set_Param("NUM_GLOBAL_PARTITIONS", cmesg);
+    zz->Set_Param("NUM_GLOBAL_PARTS", cmesg);
 #endif
 
     /*

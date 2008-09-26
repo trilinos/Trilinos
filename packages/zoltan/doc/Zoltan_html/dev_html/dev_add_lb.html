@@ -88,12 +88,12 @@ to be used in the load-balancing algorithm.</TD>
 <TR VALIGN=TOP>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; part_sizes</I></TD>
 
-<TD>Input:  an array of partition sizes for each weight component.
+<TD>Input:  an array of part sizes for each weight component.
 Entry 
 <i>part_sizes[i*obj_weight_dim+j]</i>
 contains the user-requested 
-partition size for partition <i>i</i> with respect to object weight <i>j</i> for
-<i>i</i>=0,1,...,number of partitions-1, and 
+part size for part <i>i</i> with respect to object weight <i>j</i> for
+<i>i</i>=0,1,...,number of parts-1, and 
 <i>j</i>=0,1,...,<i>obj_weight_dim</i>-1.
 If the application sets parameter 
 <i><a href="../ug_html/ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a></i>,
@@ -145,8 +145,8 @@ If this array is non-null, it must be allocated by
 <TR VALIGN=TOP>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>import_to_parts</I></TD>
 
-<TD>Upon return, an array of size <I>num_import</I> containing the partition
-IDs of partitions to which objects will be imported
+<TD>Upon return, an array of size <I>num_import</I> containing the part
+IDs of parts to which objects will be imported
  <i>in the NEW decomposition</i>.
 If this array is non-null, it must be allocated by 
 <b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
@@ -194,7 +194,7 @@ If this array is non-null, it must be allocated by
 <TD>&nbsp;&nbsp;&nbsp; <I>export_to_parts</I></TD>
 
 <TD>Upon return, an array of size <I>num_export</I> containing the
-partition IDs of partitions to which the objects will be 
+part IDs of parts to which the objects will be 
 exported for the new decomposition.&nbsp;
 If this array is non-null, it must be allocated by 
 <b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.

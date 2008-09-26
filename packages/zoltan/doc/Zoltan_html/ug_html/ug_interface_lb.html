@@ -35,9 +35,9 @@ Zoltan library; their descriptions are included below.
 <br><b><a href="#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b></blockquote>
 For <a href="ug_backward.html">backward compatibility</a> with previous
 versions of Zoltan, the following functions are also maintained. These
-functions are applicable only when the number of partitions to be generated
-is equal to the number of processors on which the partitions are computed.
-That is, these functions assume "partitions" and "processors" are synonymous.
+functions are applicable only when the number of parts to be generated
+is equal to the number of processors on which the parts are computed.
+That is, these functions assume "parts" and "processors" are synonymous.
 <blockquote>
 <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 <br><b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>
@@ -120,15 +120,15 @@ export_to_part</i>)&nbsp;
 
 <hr WIDTH="100%"><b>Zoltan_LB_Partition</b> invokes the load-balancing
 routine specified by the <i><a href="ug_alg.html#LB_METHOD">LB_METHOD</a></i>
-parameter. The number of partitions it generates is specified by the <i><a href="ug_alg.html#NUM_GLOBAL_PARTITIONS">NUM_GLOBAL_PARTITIONS</a></i>
+parameter. The number of parts it generates is specified by the <i><a href="ug_alg.html#NUM_GLOBAL_PARTS">NUM_GLOBAL_PARTS</a></i>
 or
-<i><a href="ug_alg.html#NUM_LOCAL_PARTITIONS">NUM_LOCAL_PARTITIONS</a></i>
+<i><a href="ug_alg.html#NUM_LOCAL_PARTS">NUM_LOCAL_PARTS</a></i>
 parameters. Results of the partitioning are returned in lists of objects
-to be imported into and exported from partitions on this processor. 
-Objects are included in these lists if <i>either</i> their partition
+to be imported into and exported from parts on this processor. 
+Objects are included in these lists if <i>either</i> their part
 assignment or their processor assignment is changed by the new decomposition.
-If an application requests multiple partitions on a single processor, these 
-lists may include objects whose partition assignment is changing, but whose
+If an application requests multiple parts on a single processor, these 
+lists may include objects whose part assignment is changing, but whose
 processor assignment is unchanged.
 <p>
 Returned arrays are allocated in Zoltan; applications
@@ -176,9 +176,9 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
 
 <td>Upon return, the number of objects 
-that are newly assigned to this processor or to partitions on this processor
-(i.e., the number of objects being imported from different partitions to
-partitions on this processor).
+that are newly assigned to this processor or to parts on this processor
+(i.e., the number of objects being imported from different parts to
+parts on this processor).
 If the value returned
 is -1, no import information has been returned and all import arrays below
 are NULL. (The
@@ -190,7 +190,7 @@ determines whether import lists are returned).</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
 <td>Upon return, an array of <i>num_import</i> global IDs of objects to
-be imported to partitions on this processor.
+be imported to parts on this processor.
 <br>(size = <i>num_import</i> * <i>num_gid_entries</i>)</td>
 </tr>
 
@@ -198,7 +198,7 @@ be imported to partitions on this processor.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
 <td>Upon return, an array of&nbsp; <i>num_import</i> local IDs of objects
-to be imported to partitions on this processor.
+to be imported to parts on this processor.
 <br>(size = <i>num_import</i> * <i>num_lid_entries</i>)</td>
 </tr>
 
@@ -213,7 +213,7 @@ IDs of the processors that owned the imported objects in the previous decomposit
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
 
-<td>Upon return, an array of size <i>num_import</i> listing the partitions
+<td>Upon return, an array of size <i>num_import</i> listing the parts
 to which the imported objects are being imported.</td>
 </tr>
 
@@ -224,7 +224,7 @@ depends on the value of
 the <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter:
 <UL>
 <LI>It is the count of objects on this processor
-that are newly assigned to other processors or to other partitions 
+that are newly assigned to other processors or to other parts 
 on this processor, if 
 <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
 is "EXPORT" or "EXPORT AND IMPORT".
@@ -247,7 +247,7 @@ are NULL .
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
 <td>Upon return, an array of <i>num_export</i> global IDs of objects to
-be exported from partitions on this processor 
+be exported from parts on this processor 
 (if <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
 is equal to "EXPORT" or "EXPORT AND IMPORT"), 
 or an array of <i>num_export</i> global IDs
@@ -275,7 +275,7 @@ ID of the processor to which each object is now assigned
 (i.e., the destination processor).
 If <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
 is equal to "PARTITION ASSIGNMENTS", this list includes all objects, otherwise
-it only includes the objects which are moving to a new partition and/or process.
+it only includes the objects which are moving to a new part and/or process.
 
 </td>
 </tr>
@@ -283,8 +283,8 @@ it only includes the objects which are moving to a new partition and/or process.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
 
-<td>Upon return, an array of size <i>num_export</i> listing the partitions
-to which the objects are assigned under the new partitioning.</td>
+<td>Upon return, an array of size <i>num_export</i> listing the parts
+to which the objects are assigned under the new partition.</td>
 </tr>
 
 <tr>
@@ -342,14 +342,14 @@ function <b>Zoltan_LB_Set_Part_Sizes</b>(
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Set_Part_Sizes</b> is used to specify the
-desired partition sizes in Zoltan. By default, Zoltan assumes that all
-partitions should be of equal size.&nbsp; With <b>Zoltan_LB_Set_Part_Sizes</b>,
-one can specify the relative (not absolute) sizes of the partitions. For
-example, if two partitions are requested and the desired sizes are 1 and
-2, that means that the first partition will be assigned approximately one
+desired part sizes in Zoltan. By default, Zoltan assumes that all
+parts should be of equal size.&nbsp; With <b>Zoltan_LB_Set_Part_Sizes</b>,
+one can specify the relative (not absolute) sizes of the parts. For
+example, if two parts are requested and the desired sizes are 1 and
+2, that means that the first part will be assigned approximately one
 third of the total load. If the sizes were instead given as 1/3 and 2/3,
 respectively, the result would be exactly the same. Note that if there
-are multiple weights per object, one can (must) specify the partition size
+are multiple weights per object, one can (must) specify the part size
 for each weight dimension independently.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -368,8 +368,8 @@ for each weight dimension independently.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp; global_num</i></td>
 
-<td>Set to 1 if global partition numbers are given, 0 otherwise (local
-partition numbers).</td>
+<td>Set to 1 if global part numbers are given, 0 otherwise (local
+part numbers).</td>
 </tr>
 
 <tr>
@@ -381,7 +381,7 @@ partition numbers).</td>
 <tr>
 <td>&nbsp;&nbsp; <i>part_ids</i></td>
 
-<td>Array of partition numbers, either global or local. (Partition numbers
+<td>Array of part numbers, either global or local. (Part numbers
 are integers starting from 0.)</td>
 </tr>
 
@@ -395,8 +395,8 @@ array should contain all zeros when there is only one weight per object.</td>
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp; <i>part_sizes</i></td>
 
-<td NOSAVE>Relative values for partition sizes; <i>part_sizes[i]</i> is
-the desired relative size of the <i>vwgt_idx[i]</i>'th weight of partition
+<td NOSAVE>Relative values for part sizes; <i>part_sizes[i]</i> is
+the desired relative size of the <i>vwgt_idx[i]</i>'th weight of part
 <i>part_ids[i].</i></td>
 </tr>
 
@@ -592,10 +592,10 @@ the number of edges cut in the graph (because each edge is counted twice).
 The same principle holds for <i>cut_wgt.</i><i></i>
 <p>There are a few improvements in Zoltan_LB_Eval&nbsp; in Zoltan version
 1.5 (or higher). First, the balance data are computed with respect to both
-processors and partitions (if applicable). Second, the desired partition
-sizes (as set by Zoltan_LB_Set_Partition_Sizes)&nbsp; are taken into account
+processors and parts (if applicable). Second, the desired part
+sizes (as set by Zoltan_LB_Set_Part_Sizes)&nbsp; are taken into account
 when computing the imbalance.
-<p>Known bug: If a partition is spread across several processors, the computed
+<p>Known bug: If a part is spread across several processors, the computed
 cut information (<i>ncuts </i>and <i>cut_wgt)</i> may be incorrect (too
 high).
 <p><!------------------------------------------------------------------------->
@@ -677,7 +677,7 @@ in C and Fortran and by the object destructor in C++.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; to_part</i></td>
 
-<td>An array containing partition numbers.</td>
+<td>An array containing part numbers.</td>
 </tr>
 
 <tr>
@@ -738,9 +738,9 @@ num_export, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 
 <hr WIDTH="100%"><b>Zoltan_LB_Balance</b> is a wrapper around
 <b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
-that excludes the partition assignment results. <b>Zoltan_LB_Balance</b>
-assumes the number of partitions is equal to the number of processors;
-thus, the partition assignment is equivalent to the processor assignment.
+that excludes the part assignment results. <b>Zoltan_LB_Balance</b>
+assumes the number of parts is equal to the number of processors;
+thus, the part assignment is equivalent to the processor assignment.
 Results of the partitioning are returned in lists of objects to be imported
 and exported. These arrays are allocated in Zoltan; applications should
 not allocate these arrays before calling <b>Zoltan_LB_Balance</b>. The
@@ -759,8 +759,8 @@ or
 <td VALIGN=TOP></td>
 
 <td>All arguments are analogous to those in <b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
-Partition-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
-are not included, as processor and partitions numbers are considered to
+Part-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and parts numbers are considered to
 be the same in <b>Zoltan_LB_Balance</b>.</td>
 </tr>
 

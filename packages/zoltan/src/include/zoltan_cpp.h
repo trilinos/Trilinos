@@ -168,8 +168,12 @@ public:
     return Zoltan_Order_Get_Block_Parent(ZZ_Ptr, block_num);
   }
 
-  int Order_Get_Nbr_Leaves() {
-    return Zoltan_Order_Get_Nbr_Leaves(ZZ_Ptr);
+  int Order_Get_Num_Leaves() {
+    return Zoltan_Order_Get_Num_Leaves(ZZ_Ptr);
+  }
+
+  void Order_Get_Block_Leaves(int *leaves) {
+    return Zoltan_Order_Get_Block_Leaves(ZZ_Ptr, leaves);
   }
 
   int Order_Get_GID_Order(ZOLTAN_ID_PTR global_ids,ZOLTAN_ID_PTR order_ids) {
@@ -241,17 +245,17 @@ public:
   // Individual callback support
 
   ///--------------------------
-  int Set_Partition_Multi_Fn  ( ZOLTAN_PARTITION_MULTI_FN * fn_ptr,
+  int Set_Part_Multi_Fn  ( ZOLTAN_PART_MULTI_FN * fn_ptr,
                                 void * data = 0 )
   {
-    return Zoltan_Set_Partition_Multi_Fn( ZZ_Ptr, fn_ptr, data );
+    return Zoltan_Set_Part_Multi_Fn( ZZ_Ptr, fn_ptr, data );
   }
 
   ///--------------------------
-  int Set_Partition_Fn        ( ZOLTAN_PARTITION_FN * fn_ptr,
+  int Set_Part_Fn        ( ZOLTAN_PART_FN * fn_ptr,
                                 void * data = 0 )
   {
-    return Zoltan_Set_Partition_Fn( ZZ_Ptr, fn_ptr, data );
+    return Zoltan_Set_Part_Fn( ZZ_Ptr, fn_ptr, data );
   }
 
   ///--------------------------
@@ -411,10 +415,10 @@ public:
     return Zoltan_Set_Hier_Num_Levels_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
-  int Set_Hier_Partition_Fn( ZOLTAN_HIER_PARTITION_FN * fn_ptr,
+  int Set_Hier_Part_Fn( ZOLTAN_HIER_PART_FN * fn_ptr,
                                void * data = 0 )
   {
-    return Zoltan_Set_Hier_Partition_Fn( ZZ_Ptr, fn_ptr, data );
+    return Zoltan_Set_Hier_Part_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
   int Set_Hier_Method_Fn( ZOLTAN_HIER_METHOD_FN * fn_ptr,
@@ -497,6 +501,29 @@ public:
     return Zoltan_Set_Unpack_Obj_Fn( ZZ_Ptr, fn_ptr, data );
   }
 
+  /// Backward compatibility with v3.0
+  ///--------------------------
+  int Set_Partition_Multi_Fn  ( ZOLTAN_PART_MULTI_FN * fn_ptr,
+                                void * data = 0 )
+  {
+    return Zoltan_Set_Part_Multi_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+
+  ///--------------------------
+  int Set_Partition_Fn        ( ZOLTAN_PART_FN * fn_ptr,
+                                void * data = 0 )
+  {
+    return Zoltan_Set_Part_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+
+  ///--------------------------
+  int Set_Hier_Partition_Fn( ZOLTAN_HIER_PART_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_Hier_Part_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  ///--------------------------
   int LB_Point_PP_Assign ( double * const coords,
                            int &proc,
                            int &part )

@@ -18,6 +18,7 @@ extern "C" {
 #include "zz_sort.h"    
 #include "phg.h"
 #include "zoltan_comm.h"
+#include "zz_const.h"
 
 
 #define PLAN_TAG 32010      /* tag for comm plan */ 

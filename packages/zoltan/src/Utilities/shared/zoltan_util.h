@@ -22,7 +22,7 @@ extern "C" {
 
 /*****************   TRILINOS BUILD ENVIRONMENT  *******************/
 /* This block should be executed only for an Autotools build. */
-#ifdef TRILINOS_CONFIG_H
+#ifndef TRILINOS_NO_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package 
@@ -82,12 +82,13 @@ extern "C" {
 #define ZOLTAN_PARKWAY
 #endif
 
-#ifdef HAVE_OCTREEPARTITIONING
-#define ZOLTAN_OCTREEPARTITIONING
+#ifdef HAVE_ZOLTAN_OCT
+#define ZOLTAN_OCT
 #endif
 
 #endif /* TRILINOS_NO_CONFIG_H */
 
+#define ZOLTAN_HIER
 /*****************************************************************************/
 /* 
  *  Macros and definitions that are common to all Zoltan modules and 

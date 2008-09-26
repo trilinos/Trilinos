@@ -51,7 +51,7 @@ ZoltanTestSpace::Driver::Driver()
 
   // Initialize the global structs, Test and Output
   Test.DDirectory = 0 ;
-  Test.Local_Partitions = 0 ;
+  Test.Local_Parts = 0 ;
   Test.Drops = 0 ;
   Test.Multi_Callbacks = 0 ;
   Test.Gen_Files = 0 ;
@@ -59,7 +59,7 @@ ZoltanTestSpace::Driver::Driver()
 
   Output.Gnuplot = 0 ;
   Output.Nemesis = 0 ;
-  Output.Plot_Partitions = 0 ;
+  Output.Plot_Partition = 0 ;
   Output.Mesh_Info_File = 0 ;
 }
 

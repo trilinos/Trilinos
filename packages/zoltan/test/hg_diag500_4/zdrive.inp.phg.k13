@@ -1,5 +1,5 @@
 Decomposition Method    = hypergraph
-Zoltan Parameters       = NUM_GLOBAL_PARTITIONS = 13 
+Zoltan Parameters       = NUM_GLOBAL_PARTS = 13 
 Zoltan Parameters       = lb_approach=partition
 File Type		= matrixmarket
 File Name		= diag500_4

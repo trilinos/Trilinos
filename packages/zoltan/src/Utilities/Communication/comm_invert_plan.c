@@ -96,13 +96,13 @@ int max_recv_length;
   new->comm = old->comm;
   new->maxed_recvs = 0;
 
-  if (MAX_MPI_RECVS > 0){
+  if (MPI_RECV_LIMIT > 0){
     /* If we have a limit to the number of posted receives we are allowed,
     ** and our plan has exceeded that, then switch to an MPI_Alltoallv so
     ** that we will have fewer receives posted when we do the communication.
     */
     MPI_Allreduce(&new->nrecvs, &i, 1, MPI_INT, MPI_MAX, new->comm);
-    if (i > MAX_MPI_RECVS){
+    if (i > MPI_RECV_LIMIT){
       new->maxed_recvs = 1;
     }
   }

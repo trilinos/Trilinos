@@ -18,6 +18,7 @@ extern "C" {
 
 #include "zz_sort.h"    
 #include "phg.h"
+#include "zz_const.h"
 
 /*****************************************************************************/
 void Zoltan_PHG_Plot_2D_Distrib(

@@ -1,0 +1,175 @@
+diff simpi/mpi_implementation.h karen_simpi/mpi_implementation.h
+233c233
+< int _MPI_Set_Request(MPI_Request request, void* message, int count, MPI_Datatype datatype, 
+---
+> int _MPI_Set_Request(MPI_Request *request, void* message, int count, MPI_Datatype datatype, /* KDDKDD  Passing pointer */
+diff simpi/mpi_path.h karen_simpi/mpi_path.h
+15,17c15,17
+< #define IFLAG "-I/home/pjmiller/junk/include"
+< #define LFLAG "-L/home/pjmiller/junk/lib"
+< #define LPATH "/home/pjmiller/junk/lib/libmpi.a"
+---
+> #define IFLAG "-I/usr/local/include"
+> #define LFLAG "-L/usr/local/lib"
+> #define LPATH "/usr/local/lib/libmpi.a"
+diff simpi/_MPI_REQ_UTIL.c karen_simpi/_MPI_REQ_UTIL.c
+64c64
+< int _MPI_Set_Request(MPI_Request request, void* message, int count, MPI_Datatype datatype, 
+---
+> int _MPI_Set_Request(MPI_Request *request, void* message, int count, MPI_Datatype datatype,  
+67,74c67,76
+<   request = (_MPI_REQUEST_OBJECT *) _MPI_safeMalloc(sizeof(_MPI_REQUEST_OBJECT), "MPI_Recv malloc of MPI_Request");
+<   request->buffer = message;
+<   request->size = count;
+<   request->tag = tag;
+<   request->type = datatype;
+<   request->comm = comm;
+<   request->send = send;
+<   request->valid = _MPI_VALID;
+---
+> /* KDDKDD I think this routine should be called only for sends.  Recvs search
+>    KDDKDD global request array. */
+>   *request = (_MPI_REQUEST_OBJECT *) _MPI_safeMalloc(sizeof(_MPI_REQUEST_OBJECT), "MPI_Recv malloc of MPI_Request");
+>   (*request)->buffer = message;
+>   (*request)->size = count;
+>   (*request)->tag = tag;
+>   (*request)->type = datatype;
+>   (*request)->comm = comm;
+>   (*request)->send = send;
+>   (*request)->valid = _MPI_VALID;
+diff simpi/mpirun.c karen_simpi/mpirun.c
+11a12,13
+> #include <unistd.h>
+> #include <string.h>
+25c27,28
+<   /* for(i=1;i<argc;++i) arguments[i] = argv[i];*/
+---
+>   for(i=1;i<argc;++i) arguments[i] = argv[i+3];  /* KDDKDD Removed comment;
+>                                                     fixed index of argv */
+30a34,36
+> /* KDDKDD  Don't know what this code is doing except seg-faulting due to index
+>    to argv 
+> 
+33a40,41
+> KDDKDD */
+> 
+diff simpi/_MPI_SENDREC_UTIL.c karen_simpi/_MPI_SENDREC_UTIL.c
+265a266,273
+>     /* KDDKDD  Moved following section before the assignments */
+>     if(_MPI_DATA_BUFF[index].user==_MPI_TRUE) {
+>        ;
+>     } else {
+>       _MPI_safeFree(_MPI_DATA_BUFF[index].buffer,"BUFF buffer"); 
+>       _MPI_DATA_BUFF[index].buffer = 0;
+>     }
+>     /* KDDKDD  End of moved section (it used to be before the return) */
+273,278d280
+<     if(_MPI_DATA_BUFF[index].user==_MPI_TRUE) {
+<        ;
+<     } else {
+<       _MPI_safeFree(_MPI_DATA_BUFF[index].buffer,"BUFF buffer"); 
+<       _MPI_DATA_BUFF[index].buffer = 0;
+<     }
+diff simpi/_MPI_TYPE_UTIL.c karen_simpi/_MPI_TYPE_UTIL.c
+45c45
+<   printf("%s:%d: BOGUS value??? 0x%x\n",__FILE__,__LINE__,_MPI_TYPE_LIST[index].next);
+---
+>   printf("%s:%d: BOGUS value??? %d %d 0x%x\n",__FILE__,__LINE__,datatype, index, _MPI_TYPE_LIST[index].next);
+49c49,52
+<   _MPI_safeFree(_MPI_TYPE_LIST[index].next,"type next");
+---
+> /* KDD
+> KDD  _MPI_safeFree(_MPI_TYPE_LIST[index].next,"type next");
+> KDD */
+> /*KDD*/  _MPI_TYPE_LIST[index].next = 0;
+53a57
+>   return MPI_SUCCESS;   /* KDDKDD */
+diff simpi/PMPI_Ibsend.c karen_simpi/PMPI_Ibsend.c
+17c17
+<     _MPI_Set_Request(*request, message, count, datatype, _MPI_TRUE, tag, comm);
+---
+>     _MPI_Set_Request(request, message, count, datatype, _MPI_TRUE, tag, comm); /* KDDKDD passing request pointer */
+diff simpi/PMPI_Irecv.c karen_simpi/PMPI_Irecv.c
+24a25,26
+> 
+> #ifdef KDDKDD  /* WHAT IS THIS DOING? */
+26c28,30
+<     _MPI_Set_Request(*request, message, count, datatype, _MPI_FALSE, tag, comm);
+---
+>     _MPI_Set_Request(request, message, count, datatype, _MPI_FALSE, tag, comm);/* KDDKDD Passing request pointer */
+> #endif /* KDDKDD */
+> 
+29a34,35
+> 
+> #ifdef KDDKDD  /* WHAT IS THIS DOING? */
+31a38,39
+> #endif /* KDDKDD */
+> 
+35a44
+> #ifdef KDDKDD  /* I think the wait should check for the message */
+47c56
+<       printf("MPI_RECV : Message truncated.\n");
+---
+>       printf("MPI_IRECV : Message truncated.\n");  /* KDDKDD Added I to RECV */
+53a63
+> #endif /* KDDKDD */
+diff simpi/PMPI_Isend.c karen_simpi/PMPI_Isend.c
+24,25c24,28
+<   if (request == 0) {
+<     _MPI_Set_Request(*request, message, count, datatype, _MPI_TRUE, tag, comm);
+---
+> /* KDDKDD DON'T UNDERSTAND THIS TEST 
+>   if (request == 0) 
+> KDDKDD */
+>   { 
+>     _MPI_Set_Request(request, message, count, datatype, _MPI_TRUE, tag, comm); /* KDDKDD Passing request pointer */
+diff simpi/PMPI_Issend.c karen_simpi/PMPI_Issend.c
+23c23
+<     _MPI_Set_Request(*request, message, count, datatype, _MPI_TRUE, tag, comm);
+---
+>     _MPI_Set_Request(request, message, count, datatype, _MPI_TRUE, tag, comm); /* KDDKDD Passing request pointer */
+diff simpi/PMPI_Recv.c karen_simpi/PMPI_Recv.c
+23a24
+> /* KDDKDD  Why does PMPI_Recv post a request?  */
+diff simpi/PMPI_Reduce.c karen_simpi/PMPI_Reduce.c
+17a18
+>   int retval;  /* KDD */
+21,23c22,24
+<   if ( _MPI_checks(sendbuf, count, datatype, root, 1, comm) != MPI_SUCCESS ) {
+<     _MPI_ERR_ROUTINE (MPI_ERR_OTHER, "MPI_REDUCE : Invalid argument");
+<     MPI_Abort(comm, MPI_ERR_OTHER);
+---
+>   if (/* KDD */ (retval = _MPI_checks(sendbuf, count, datatype, root, 1, comm)) != MPI_SUCCESS ) {
+>     _MPI_ERR_ROUTINE (retval, "MPI_REDUCE : Invalid argument");
+>     MPI_Abort(comm, retval);
+36c37
+<     _MPI_ERR_ROUTINE(MPI_ERR_BUFFER, "MPI_REDUCE : Invalid MPI_Op");
+---
+>     _MPI_ERR_ROUTINE(MPI_ERR_OP/* KDD */, "MPI_REDUCE : Invalid MPI_Op");
+diff simpi/PMPI_Type_free.c karen_simpi/PMPI_Type_free.c
+12c12,13
+<   _MPI_Free_datatype (*datatype);
+---
+> int retval;    /* KDDKDD -- added return value */
+>   retval = _MPI_Free_datatype (*datatype);   /* KDDKDD */
+13a15
+>   return retval;   /* KDDKDD */
+diff simpi/PMPI_Waitall.c karen_simpi/PMPI_Waitall.c
+43a44
+>         _MPI_Unset_Request(request);  /* KDDKDD Free request memory */
+diff simpi/PMPI_Waitany.c karen_simpi/PMPI_Waitany.c
+42a43
+>           _MPI_Unset_Request(request);  /* KDDKDD  Free request memory */
+47c48
+<           retval = PMPI_Irecv(request->buffer, request->size, request->type, _MPI_RANK, request->tag, request->comm, &request); 
+---
+>           retval = PMPI_Recv(request->buffer, request->size, request->type, _MPI_RANK, request->tag, request->comm, &request);  /* KDDKDD Changed Irecv to Recv */
+51,52d51
+<             _MPI_Req_Invalid(i);
+<             array_of_requests[i] = MPI_REQUEST_NULL;
+55a55,56
+>             _MPI_Req_Invalid(i);     /* KDDKDD Moved after use of request */
+>             array_of_requests[i] = MPI_REQUEST_NULL;
+diff simpi/PMPI_Wait.c karen_simpi/PMPI_Wait.c
+32a33
+>     _MPI_Unset_Request(*request);  /* KDDKDD Free request memory */

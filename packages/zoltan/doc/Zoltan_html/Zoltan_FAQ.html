@@ -282,6 +282,9 @@ Makefile:28: mem.d: No such file or directory
 methods RCB and RIB use an increasing amount of memory over multiple 
 invocations?</a>
 <li>  <a href="#ZOLTANUSERDATA">Why does compilation of the Fortran90 driver <i>zfdrive</i> fail in fdr_const.f90?</a>
+<li>  <a href="#MPIRECVLIMIT">During runs (particularly on RedStorm), MPI 
+reports that it is out of resources or too many messages have been posted.
+What does this mean and what can I do?</a>
 </ol>
 <p>
 <hr WIDTH="100%">
@@ -323,6 +326,7 @@ implementation that doesn't use MPI_Comm_split to be invoked.
 
 <hr WIDTH="100%">
 <li>  <a name="ZOLTANUSERDATA"></a>Why does compilation of the Fortran90 driver <i>zfdrive</i> fail in fdr_const.f90?
+<p>
 The Fortran90 driver <i>zfdrive</i> uses user-defined data types for a mesh
 data structure.  It passes these data types to the Zoltan query functions
 through the <i>void *data</i> argument.  Strict type checking in Fortran90
@@ -340,6 +344,29 @@ See the <a href="ug_html/ug_fortran.html#fortran ug api">Fortran90 API</a>
 description in the User's Guide 
 and <a href="dev_html/dev_driver.html">instructions for using <i>zfdrive</i></a>
 in the Developer's Guide for more details.
+
+<hr WIDTH="100%">
+<li><a name="MPIRECVLIMIT"></a>During runs (particularly on RedStorm), MPI 
+reports that it is out of resources or too many messages have been posted.
+What does this mean and what can I do?
+<p>
+Some implementations of MPI (including RedStorm's implementation) limit
+the number of message receives that can be posted simultaneously.  Some
+communications in Zoltan (including hashing of IDs to processors in the
+Zoltan Distributed Data Directory) can require messages from large numbers
+of processors, triggering this error on certain platforms. 
+<p>
+To avoid this problem, Zoltan contains logic to use AllToAll communication 
+instead of point-to-point communication when a large number
+of receives are needed.  The maximum number of simultaneous receives allowed
+can be set as a compile-time option to Zoltan.
+In the <a href="ug_html/ug_usage.html#NativeZoltanBuild">native Zoltan
+build environment</a>, add -DMPI_RECV_LIMIT=# to the
+DEFS line of zoltan/src/Utilities/Config/Config.&lt;platform>
+, where # is the maximum number of simultaneous receives allowed.
+In the <a href="ug_html/ug_usage.html#TrilinosAutotools">Autotool build
+environment</a>, option <i>--enable-mpi-recv-limit=#</i> sets the 
+maximum number of simultaneous receives allowed.  The default value is 2000.
 </ol>
 
 <p>

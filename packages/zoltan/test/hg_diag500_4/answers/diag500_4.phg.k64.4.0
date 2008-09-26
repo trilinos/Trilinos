@@ -1,6 +1,6 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-Zoltan Parameters	= num_global_partitions=64
+Zoltan Parameters	= num_global_parts=64
 Zoltan Parameters	= ADD_OBJ_WEIGHT=none
 Zoltan Parameters       = lb_approach=partition
 File Type		= matrixmarket

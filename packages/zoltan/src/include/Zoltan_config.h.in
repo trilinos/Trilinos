@@ -9,6 +9,9 @@
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
+/* Define if want to build with fortran enabled */
+#undef HAVE_FORTRAN_SUPPORT
+
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
@@ -56,6 +59,3 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define when using the autotools to build Zoltan */
-#undef TRILINOS_CONFIG_H

@@ -38,7 +38,7 @@ the same weight of objects associated to these intervals by their inverse Hilber
 coordinates. N bins are created (where N > P) to partition [0,1].  The weights in
 each bin are summed across all processors.
 A greedy algorithm sums the bins (from left to right) placing a cut when the desired weight
-for current partition interval is achieved.
+for current part interval is achieved.
 This process is repeated as needed to improve partitioning tolerance by
 a technique that maintains the same total number of bins but refines the bins previously
 containing a cut.
@@ -46,15 +46,15 @@ containing a cut.
 HSFC returns an warning if the final imbalance exceeds the user specified tolerance.
 <p>
 This code implements both the point assign and box assign functionality.  The point
-assign determines an appropriate partition (associated with a specific group of processors)
+assign determines an appropriate part (associated with a specific group of processors)
 for a new point.   The box assign determines the list of processors
 whose associated subdomains intersect the given box.  In order to
 use either of these routines, the user parameter KEEP_CUTS must be turned on.
 Both point assign and box assign now work for points or boxes anywhere in space even if
-they are exterior to the original bounding box.  If a partition is empty (due to the
-partition being assigned zero work), it is not included in the list of partitions
+they are exterior to the original bounding box.  If a part is empty (due to the
+part being assigned zero work), it is not included in the list of parts
 returned by box assign.  Note: the original box assign algorithm was not rigorous and
-may have missed partitions.  This version is both rigorous and fast.
+may have missed parts.  This version is both rigorous and fast.
 <p>
 The Zoltan implementation of HSFC has one parameter that can be modified
 by the <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
@@ -110,7 +110,7 @@ geometry will be treated as 2 dimensional if is very flat,
 or 1 dimensional if it very thin.  And a 2 dimensional geometry will
 be treated as 1 dimensional if it is very thin.
 Turning this parameter on removes the possibility that disconnected
-partitions will appear on the surface of a flat 3 dimensional object.
+parts will appear on the surface of a flat 3 dimensional object.
 </td>
 </tr>
 <tr>

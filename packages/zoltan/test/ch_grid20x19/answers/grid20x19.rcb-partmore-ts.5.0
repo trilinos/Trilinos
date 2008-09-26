@@ -1,6 +1,6 @@
 Decomposition Method 	= rcb
 Zoltan Parameters	= tflops_special = 1
-Zoltan Parameters	= num_global_partitions=7
+Zoltan Parameters	= num_global_parts=7
 Zoltan Parameters	= keep_cuts=1
 Zoltan Parameters	= debug_level=3, timer=cpu
 File Type		= Chaco

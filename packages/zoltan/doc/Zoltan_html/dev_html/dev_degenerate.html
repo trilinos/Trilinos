@@ -37,12 +37,12 @@ it may have 3-dimensional coordinates but be essentially flat, or
 it may have 3 or 2-dimensional coordinates but be essentially a line
 in space.  If we treat the geometry as a lower dimensional object
 for the purpose of partitioning, the result may be a more natural
-partitioning (one the user would have expected) and a faster
+partition (one the user would have expected) and a faster
 run time.
 <p>
 The caller may set the <B>REDUCE_DIMENSIONS</B> parameter to TRUE
 in any of the three geometric methods if they want Zoltan to check
-for a degenerate condition and do a lower dimensional partitioning
+for a degenerate condition and do lower dimensional partitioning
 if such a condition if found.  They may set the <B>DEGENERATE_RATIO</B>
 to specify how flat or thin a geometry must be to be considered
 degenerate.
@@ -89,24 +89,24 @@ coordinates to a coordinate system where the XY plane corresponds
 to the oriented bounding box,
 and project all coordinates to that plane.  These
 X,Y coordinates are returned to the partitioning algorithm, which
-performs a two dimensional partitioning.  Similarly if the geometry
+performs two dimensional partitioning.  Similarly if the geometry
 is very thin, we transform coordinates to a coordinate system
 with the X axis going through the
 bounding box in it's principal direction, and project all points to
-that axis.  Then a 1 dimensional partitioning is performed.
+that axis.  Then one dimensional partitioning is performed.
 <p>
 There is a small problem in calculating
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a>
 when the partitioning was performed
 on transformed geometry.  The caller provides the box vertices in
-problem coordinates, but the partitioning was calculated in
+problem coordinates, but the partition was calculated in
 transformed coordinates.  When the vertices are transformed, they
 are in general no longer the vertices of an axis-aligned box in
 the new coordinate system.  The
 <B>Box_Assign</B> calculation requires an axis-aligned box, and
 so we use the bounding box of the transformed vertices.  The resulting
-list of processes or partitions intersecting the box may therefore
-contain some processes or partitions which actually do not intersect
+list of processes or parts intersecting the box may therefore
+contain some processes or parts which actually do not intersect
 the box in problem coordinates, however it will not omit any.
 
 

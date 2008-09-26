@@ -65,3 +65,4 @@ phgExample_LDADD        = $(ZOLTAN_EX_LIBS)
 
 SUBDIRS = sparse_matrix
 
+EXTRA_DIST = makefile

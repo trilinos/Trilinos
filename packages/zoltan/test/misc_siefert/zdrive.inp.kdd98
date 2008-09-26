@@ -3,7 +3,7 @@ Decomposition Method    = hypergraph
 #Zoltan Parameters       = lb_approach=partition
 Zoltan Parameters       = lb_approach=repartition
 Zoltan Parameters       = hypergraph_package=phg
-Zoltan Parameters       = num_global_partitions=5
+Zoltan Parameters       = num_global_parts=5
 #Zoltan Parameters       = phg_coarsening_limit=1
 #Zoltan Parameters       = phg_output_level=1
 Zoltan Parameters       = final_output = 1

@@ -99,13 +99,13 @@ float   **z
     for (nread = 1; nread < nvtxs; nread++) {
 	++line_num;
 	if (ndims == 1) {
-	    ZOLTAN_FILE_scanf(&i, fingeom, "%f", &((*x)[nread]));
+	    i = ZOLTAN_FILE_scanf(fingeom, "%f", &((*x)[nread]));
 	}
 	else if (ndims == 2) {
-	    ZOLTAN_FILE_scanf(&i, fingeom, "%f%f", &((*x)[nread]), &((*y)[nread]));
+	    i = ZOLTAN_FILE_scanf(fingeom, "%f%f", &((*x)[nread]), &((*y)[nread]));
 	}
 	else if (ndims == 3) {
-	    ZOLTAN_FILE_scanf(&i, fingeom, "%f%f%f", &((*x)[nread]), &((*y)[nread]),
+	    i = ZOLTAN_FILE_scanf(fingeom, "%f%f%f", &((*x)[nread]), &((*y)[nread]),
 		       &((*z)[nread]));
 	}
 

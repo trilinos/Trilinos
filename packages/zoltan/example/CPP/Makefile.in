@@ -125,9 +125,11 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EXEEXT = .exe
+F77 = @F77@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
-FCLIBS = @FCLIBS@
+FFLAGS = @FFLAGS@
+FLIBS = @FLIBS@
 HAVE_PERL = @HAVE_PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -146,6 +148,7 @@ MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 MPI_F77_EXISTS = @MPI_F77_EXISTS@
 MPI_F90_EXISTS = @MPI_F90_EXISTS@
+MPI_RECV_LIMIT_FLAG = @MPI_RECV_LIMIT_FLAG@
 MPI_TEMP_CXX = @MPI_TEMP_CXX@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
@@ -168,6 +171,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_F77 = @ac_ct_F77@
 ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
@@ -232,6 +236,7 @@ simpleRCB_SOURCES = simpleRCB.cpp rectangularMesh.h
 simpleRCB_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
 simpleRCB_CXXFLAGS = $(ZOLTAN_EX_INCLUDES)
 simpleRCB_LDADD = $(ZOLTAN_EX_LIBS)
+EXTRA_DIST = makefile
 all: all-am
 
 .SUFFIXES:

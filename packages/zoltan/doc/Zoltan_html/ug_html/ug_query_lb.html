@@ -31,14 +31,15 @@
 The following registered functions are used by various Zoltan algorithms
 in the Zoltan library. No single algorithm uses all the query functions;
 the <a href="ug_alg.html">algorithm descriptions</a> indicate which query
-functions are required by individual algorithms.
+functions are required by individual algorithms.  These query functions should
+NOT contain interprocessor communication.
 <blockquote><a href="#General Functions">Object ID Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 <br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b> (deprecated)
 <br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> (deprecated)
-<br><b><a href="#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b> or
-<b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b>
+<br><b><a href="#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b>
 </blockquote>
 <a href="#Geometry-based Functions">Geometry-Based Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
@@ -72,7 +73,7 @@ functions are required by individual algorithms.
 </blockquote>
 <a href="#Hierarchical Partitioning Functions">Hierarchical Partitioning Functions</a>
 <blockquote><b><a href="#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</a></b>
-<br><b><a href="#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</a></b>
+<br><b><a href="#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</a></b>
 <br><b><a href="#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</a></b>
 </blockquote>
 </blockquote>
@@ -236,7 +237,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -249,7 +250,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
 <td>Upon return, an array of local IDs, the meaning of which can be determined by the
-application, for all objects assigned to the processor.</td>
+application, for all objects assigned to the processor. (Optional.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -364,7 +365,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -514,7 +515,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -586,14 +587,14 @@ of the next object.</td>
 <p>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_PARTITION_MULTI_FN"></a>
+<a NAME="ZOLTAN_PART_MULTI_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_PARTITION_MULTI_FN</b>
+typedef void <b>ZOLTAN_PART_MULTI_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -607,7 +608,7 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Partition_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids,
+<td>SUBROUTINE <b><i>Get_Part_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids,
 ierr</i>)
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
@@ -623,22 +624,25 @@ query functions</a> for an explanation.</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_PARTITION_MULTI_FN</b> query function returns a 
+<hr WIDTH="100%">A <b>ZOLTAN_PART_MULTI_FN</b> query function returns a 
 list of 
-partitions to which 
+parts to which 
 given objects are currently assigned.  
-If a <b>ZOLTAN_PARTITION_MULTI_FN</b> 
-or <b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b> is not
-registered, Zoltan assumes the partition numbers are the processor
+If a <b>ZOLTAN_PART_MULTI_FN</b> 
+or <b><a href="#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b> is not
+registered, Zoltan assumes the part numbers are the processor
 number of the owning processor.  
-Valid partition numbers are non-negative
-integers.
+Valid part numbers are non-negative
+integers.  
+This function is used when parameter <a href="ug_alg.html#REMAP">REMAP</a>=1 
+and for certain methods with parameter 
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a>=<i>Repartition</i>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_PARTITION_MULTI_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_PART_MULTI_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -666,7 +670,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -679,21 +683,21 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
 
-<td>The global IDs of the objects for which the partition numbers should be
+<td>The global IDs of the objects for which the part numbers should be
 returned.</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
 
-<td>The local IDs of the objects for which the partition numbers should be
-returned.</td>
+<td>The local IDs of the objects for which the part numbers should be
+returned. (Optional.)</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>parts</i></td>
 
-<td>Upon return, an array of partition numbers corresponding to the global 
+<td>Upon return, an array of part numbers corresponding to the global 
 and local IDs.
 </td>
 </tr>
@@ -710,14 +714,14 @@ and local IDs.
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_PARTITION_FN"></a>
+<a NAME="ZOLTAN_PART_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef int <b>ZOLTAN_PARTITION_FN</b>
+typedef int <b>ZOLTAN_PART_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -729,9 +733,9 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Partition</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+<td>FUNCTION <b><i>Get_Part</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 ierr</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Get_Partition&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Part&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
@@ -745,22 +749,25 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_PARTITION_FN</b> query function returns the 
-partition to which 
+<hr WIDTH="100%">A <b>ZOLTAN_PART_FN</b> query function returns the 
+part to which 
 a given object is currently assigned.
-If a <b>ZOLTAN_PARTITION_FN</b> 
-or <b><a href="#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b>
+If a <b>ZOLTAN_PART_FN</b> 
+or <b><a href="#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
 is not
-registered, Zoltan assumes the partition numbers are the processor
+registered, Zoltan assumes the part numbers are the processor
 number of the owning processor.  
-Valid partition numbers are non-negative
+Valid part numbers are non-negative
 integers.
+This function is used when parameter <a href="ug_alg.html#REMAP">REMAP</a>=1 
+and for certain methods with parameter 
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a>=<i>Repartition</i>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_PARTITION_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_PART_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -788,20 +795,20 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>global_id</i></td>
 
-<td>The global ID of the object for which the partition number should be
+<td>The global ID of the object for which the part number should be
 returned.</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>local_id</i></td>
 
-<td>The local ID of the object for which the partition number should be
+<td>The local ID of the object for which the part number should be
 returned.</td>
 </tr>
 
@@ -820,7 +827,7 @@ returned.</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<td>The partition number for the object identified by <i>global_id</i> and
+<td>The part number for the object identified by <i>global_id</i> and
 <i>local_id</i>.</td>
 </tr>
 </table>
@@ -988,7 +995,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -1007,7 +1014,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Array of local IDs of objects whose geometry values should be returned.</td>
+<td>Array of local IDs of objects whose geometry values should be returned. (Optional.)</td>
 </tr>
 
 <tr>
@@ -1111,7 +1118,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -1226,7 +1233,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -1245,7 +1252,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
 
-<td>Array of local IDs of objects whose number of edges should be returned.</td>
+<td>Array of local IDs of objects whose number of edges should be returned. (Optional.)</td>
 </tr>
 
 <tr>
@@ -1341,7 +1348,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -1467,7 +1474,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -1486,7 +1493,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Array of local IDs of objects whose edge lists should be returned.</td>
+<td>Array of local IDs of objects whose edge lists should be returned. (Optional.)</td>
 </tr>
 
 <tr>
@@ -1635,7 +1642,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -1731,10 +1738,13 @@ query functions</a> for an explanation.&nbsp;</td>
 
 </table>
 
-<hr WIDTH="100%">A hypergraph (which may alternatively be viewed
-as a sparse matrix) 
+<hr WIDTH="100%">A hypergraph 
 can be supplied to the Zoltan library in
-one of two compressed storage formats.  In compressed hyperedge format 
+one of two compressed storage formats.  Although hypergraphs
+are often used to represent the structure of sparse matrices, 
+the Zoltan/PHG terminology is purely in terms of vertices and hyperedges
+(not rows or columns). The two compressed formats are analogous to CRS and CCS 
+for matrices. In compressed hyperedge format 
 (<b>ZOLTAN_COMPRESSED_EDGE</b>)
 a list of global hyperedge IDs is provided.  Then a single
 list of the hypergraph pins, is provided.  
@@ -1749,14 +1759,11 @@ The other format
 is compressed vertex (<b>ZOLTAN_COMPRESSED_VERTEX</b>).  In this
 format a list of vertex global IDs is provided.  Then a
 list of pins ordered by vertex and then by hyperedge is provided.
-The pin ID in this case is the global ID of the row (or hyperedge) in which the
+The pin ID in this case is the global ID of the hyperedge in which the
 pin appears.  In both formats, an array must be provided pointing to
-the start in the list of pins where each row or column begins.
-Sparse matrix users may think of these two formats as CSR
-(compressed sparse row) and CSC (compressed sparse column) format,
-respectively.
+the start in the list of pins where each hyperedge or vertex begins.
 <p> 
-The point of this query function is to tell Zoltan in which format the
+The purpose of this query function is to tell Zoltan in which format the
 application will supply the hypergraph, how many vertices and hyperedges
 there will be, and how many pins.  The actual hypergraph is supplied
 with a query function of the type
@@ -1789,14 +1796,13 @@ functions with hypergraph code instead).
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lists</i></td>
-<td>Upon return, the number of rows (if using compressed row storage) or columns (if
-using compressed column storage) that will be supplied to Zoltan by
-the application process.</td>
+<td>Upon return, the number of vertices (if using compressed vertex storage) or
+hyperedges (if using compressed hyperedge storage) that will be supplied to Zoltan by the application process.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_pins</i></td>
-<td>Upon return, the number of pins (matrix non-zeroes) that will be
+<td>Upon return, the number of pins (connections between vertices and hyperedges) that will be
 supplied to Zoltan by the application process.</td>
 </tr>
 
@@ -1859,7 +1865,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%">A <b>ZOLTAN_HG_CS_FN</b> returns 
-a hypergraph, in a sparse matrix-like style.  The size and format
+a hypergraph in a compressed storage (CS) format.  The size and format
 of the data to be returned must have been supplied to Zoltan using a
 <b><a href="#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN_TYPE</a></b>
 function.
@@ -1868,10 +1874,9 @@ When a hypergraph is distributed across multiple processes, Zoltan
 expects that all processes share a consistent global numbering
 scheme for hyperedges and vertices. Also, no two
 processes should return the same pin (matrix non-zero) in this
-query function.
+query function. (Pin ownership is unique.)
 <br> <br>
-This query function 
-is required by all applications using the hypergraph methods
+This query function is required by all applications using the hypergraph methods
 of Zoltan (unless they are using the
 <a href="#Graph-based Functions">graph-based</a>
 functions with hypergraph code instead).
@@ -1919,11 +1924,11 @@ that is expected to appear on return in <i>pin_GID</i>.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>format</i></td>
 <td>If <i>format</i> is <b>ZOLTAN_COMPRESSED_EDGE</b>, Zoltan expects
-that row (hyperedge) global IDs will be returned in <i>vtxedge_GID</i>,
-and that column (vertex) global IDs will be returned in
+that hyperedge global IDs will be returned in <i>vtxedge_GID</i>,
+and that vertex global IDs will be returned in
 <i>pin_GIDs</i>.  If it is <b>ZOLTAN_COMPRESSED_VERTEX</b>, then
-column global IDs are expected to be returned in <i>vtxedge_GID</i> and row
-global IDs are expected to be returned in <i>pin_GIDs</i>.
+vertex global IDs are expected to be returned in <i>vtxedge_GID</i> and 
+hyperedge global IDs are expected to be returned in <i>pin_GIDs</i>.
 </tr>
 
 <tr NOSAVE>
@@ -1935,8 +1940,8 @@ global IDs are expected to be returned in <i>pin_GIDs</i>.
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_ptr</i></td>
 <td>Upon return, this array contains <i>num_vtx_edge</i> integers.
 The integer in the <i>i'th</i> array element is the index in
-array <i>pin_GID</i> where the pins for the <i>i'th</i> row
-(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> column
+array <i>pin_GID</i> where the pins for the <i>i'th</i> hyperedge
+(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> vertex
 (if format is <b>ZOLTAN_COMPRESSED_VERTEX</b>) begins.  Array indices
 begin at zero.
 </td>
@@ -1945,7 +1950,7 @@ begin at zero.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>pin_GID</i></td>
 <td>Upon return, a list of <i>num_pins</i> global IDs.  This is the list
-of the pins (or matrix non-zeros) contained in the rows or columns
+of the pins contained in the hyperedges or vertices 
 listed in <i>vtxedge_GID</i>.
 </tr>
 
@@ -1970,13 +1975,13 @@ listed in <i>vtxedge_GID</i>.
   <th>hyperedge</th> <th>10</th> <th>20</th> <th>30</th> <th>40</th> <th>50</th>
   </tr>
   <tr>
-  <th>1</th> <td>0</td> <td>0</td> <td>1</td> <td>1</td> <td>0</td>
+  <th>1</th> <td>0</td> <td>0</td> <td>X</td> <td>X</td> <td>0</td>
   </tr>
   <tr>
-  <th>2</th> <td>0</td> <td>1</td> <td>1</td> <td>0</td> <td>0</td>
+  <th>2</th> <td>0</td> <td>X</td> <td>X</td> <td>0</td> <td>0</td>
   </tr>
   <tr>
-  <th>3</th> <td>1</td> <td>0</td> <td>0</td> <td>0</td> <td>1</td>
+  <th>3</th> <td>X</td> <td>0</td> <td>0</td> <td>0</td> <td>X</td>
   </tr>
   </table>
 </td>
@@ -2158,7 +2163,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr NOSAVE>
@@ -2240,12 +2245,12 @@ where <i>x</i> is 1, 2, 3 or 4. See the section on
 
 <hr WIDTH="100%">
 A <b>ZOLTAN_NUM_FIXED_OBJ_FN </b> returns
-the number of objects on a given processor fixed to particular partitions.
-These objects will not be assigned to a partition other than the user specified
-partition by the parallel hypergraph algorithm.
+the number of objects on a given processor fixed to particular parts.
+These objects will not be assigned to a part other than the user specified
+part by the parallel hypergraph algorithm.
 <br><br>
 This query function is not required.  If it is not defined, all
-objects are candidates for migration to new partitions.
+objects are candidates for migration to new parts.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -2281,7 +2286,7 @@ objects are candidates for migration to new partitions.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<td>The number of objects on this processor that are to be fixed to a specific partition.</td>
+<td>The number of objects on this processor that are to be fixed to a specific part.</td>
 </tr>
 
 
@@ -2327,12 +2332,12 @@ query functions</a> for an explanation.&nbsp;</td>
 
 <hr WIDTH="100%">A <b>ZOLTAN_FIXED_OBJ_LIST_FN</b> query function fills two
 arrays with information about the objects that should not be moved from
-their user assigned partitions.
+their user assigned parts.
 These arrays are allocated (and subsequently
 freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_FIXED_OBJ_FN">ZOLTAN_NUM_FIXED_OBJ_FN</a></b>
 query function to get the array size. 
 <p>
-A process should only fix the partition of objects that it <i>owns</i>, that is,
+A process should only fix the part of objects that it <i>owns</i>, that is,
 objects that it had previously supplied in a
 <a href=#ZOLTAN_OBJ_LIST_FN>ZOLTAN_OBJ_LIST_FN</a> query function.  It is
 an error to list the global ID of an object owned by another process.
@@ -2372,15 +2377,15 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fixed_gids</i></td>
 
-<td>Upon return, an array of unique global IDs for all objects assigned to the processor which are to be fixed to a partition.</td>
+<td>Upon return, an array of unique global IDs for all objects assigned to the processor which are to be fixed to a part.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>fixed_parts</i></td>
 
-<td>Upon return, an array of partition numbers, one for each object listed
+<td>Upon return, an array of part numbers, one for each object listed
 in the global ID array.  These objects will not be migrated from this assigned
-partition.</td>
+part.</td>
 </tr>
 
 <tr>
@@ -2560,7 +2565,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -2572,7 +2577,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Upon return, an array of local IDs of all objects in the coarse grid.</td>
+<td>Upon return, an array of local IDs of all objects in the coarse grid. (Optional.)</td>
 </tr>
 
 <tr>
@@ -2723,7 +2728,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -2735,7 +2740,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>Upon return, the local ID of the first object in the coarse grid.</td>
+<td>Upon return, the local ID of the first object in the coarse grid. (Optional.)</td>
 </tr>
 
 <tr>
@@ -2899,7 +2904,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -3067,7 +3072,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -3198,7 +3203,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -3222,7 +3227,7 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; child_lids</i></td>
 
-<td>Upon return, an array of local IDs of all children of this object.</td>
+<td>Upon return, an array of local IDs of all children of this object. (Optional.)</td>
 </tr>
 
 <tr>
@@ -3394,7 +3399,7 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>The number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
 </tr>
 
 <tr>
@@ -3513,14 +3518,14 @@ for hierarchical load balancing.
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_HIER_PARTITION_FN"></a>
+<a NAME="ZOLTAN_HIER_PART_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef int <b>ZOLTAN_HIER_PARTITION_FN</b>
+typedef int <b>ZOLTAN_HIER_PART_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>level</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -3529,8 +3534,8 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Hier_Partition</i></b>(<i>data, level, ierr</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Get_Hier_Partition
+<td>FUNCTION <b><i>Get_Hier_Part</i></b>(<i>data, level, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Hier_Part
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) ::: level&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
@@ -3542,13 +3547,13 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_HIER_PARTITION_FN</b> query function gets the partition number to be used for the given level of a hierarchical balancing procedure.
+<hr WIDTH="100%">A <b>ZOLTAN_HIER_PART_FN</b> query function gets the part number to be used for the given level of a hierarchical balancing procedure.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_HIER_PARTITION_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_HIER_PART_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -3566,7 +3571,7 @@ query functions</a> for an explanation.&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>level</i></td>
 
-<td>The level of a hierarchical balancing for which the partition ID is requested.</td>
+<td>The level of a hierarchical balancing for which the part ID is requested.</td>
 </tr>
 
 <tr>
@@ -3584,7 +3589,7 @@ query functions</a> for an explanation.&nbsp;</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<td>The partition number the process is to compute for this level.</td>
+<td>The part number the process is to compute for this level.</td>
 </tr>
 
 </table>

@@ -29,7 +29,8 @@
 <h2>
 <a NAME="Migration Query Functions"></a>Migration Query Functions</h2>
 The following query functions must be registered to use any of the migration
-tools described in <a href="ug_interface_mig.html">Migration Functions</a>:
+tools described in <a href="ug_interface_mig.html">Migration Functions</a>.
+These functions should NOT use interprocessor communication.
 <blockquote>
 <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
 or
@@ -53,6 +54,7 @@ but not both).
 Optional, additional query functions for migration may also be registered; these
 functions are called at the beginning, middle, and end of migration in
 <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>.
+Interprocessor communication is allowed in these functions.
 <blockquote>
 <b><a href="#ZOLTAN_PRE_MIGRATE_PP_FN">ZOLTAN_PRE_MIGRATE_PP_FN</a></b>
 <br><b><a href="#ZOLTAN_MID_MIGRATE_PP_FN">ZOLTAN_MID_MIGRATE_PP_FN</a></b>
@@ -405,16 +407,19 @@ communication buffer.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest</i></td>
 
-<td>The destination partition (i.e., the partition to which the object
+<td>The destination part (i.e., the part to which the object
 is being sent)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
 
-<td>The size (in bytes) of the communication buffer for the specified object
-(as returned by the <b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
-query function).</td>
+<td>The size (in bytes) of the communication buffer for the specified object.
+This value is at least as large as the value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.</td>
 </tr>
 
 <tr>
@@ -541,14 +546,20 @@ object begins in <i>local_ids[i*num_lid_entries]</i>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest</i></td>
 
-<td>An array of destination partition numbers (i.e., the partitions to which the objects
+<td>An array of destination part numbers (i.e., the parts to which the objects
 are being sent)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes</i></td>
 
-<td>An array containing the per-object sizes (in bytes) of the communication buffer for each object.
+<td>An array containing the per-object sizes (in bytes) of the communication 
+buffer for each object. Each value is at least as large as the corresponding
+value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
+or <b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.
 </td>
 </tr>
 
@@ -669,7 +680,13 @@ buffer.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
 
-<td>The size (in bytes) of the object's data in the communication buffer.</td>
+<td>The size (in bytes) of the object's data in the communication buffer.
+This value is at least as large as the value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.
+</td>
 </tr>
 
 <tr>
@@ -779,6 +796,11 @@ object begins in <i>global_ids[i*num_gid_entries]</i>.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes</i></td>
 
 <td>An array containing the per-object sizes (in bytes) of the communication buffer for each object.
+Each value is at least as large as the corresponding value returned by 
+the <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+query function; it may be slightly larger due to padding for data alignment
+in the buffer.
 </td>
 </tr>
 
@@ -933,7 +955,7 @@ need to know which objects is will receive.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
 
-<td>An array of size <i>num_import</i> listing the partitions to which
+<td>An array of size <i>num_import</i> listing the parts to which
 objects will be imported.
 This array may be NULL, as the processor does not necessarily
 need to know from which objects it will receive.</td>
@@ -970,7 +992,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
 
-<td>An array of size <i>num_export</i> listing the partitions to which
+<td>An array of size <i>num_export</i> listing the parts to which
 objects will be sent. </td>
 </tr>
 <tr>
@@ -1119,7 +1141,7 @@ need to know which objects is will receive.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
 
-<td>An array of size <i>num_import</i> listing the partitions to which
+<td>An array of size <i>num_import</i> listing the parts to which
 objects will be imported.
 This array may be NULL, as the processor does not necessarily
 need to know from which objects it will receive.</td>
@@ -1156,7 +1178,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
 
-<td>An array of size <i>num_export</i> listing the partitions to which
+<td>An array of size <i>num_export</i> listing the parts to which
 objects will be sent. </td>
 </tr>
 <tr>
@@ -1301,7 +1323,7 @@ need to know which objects is will receive.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
 
-<td>An array of size <i>num_import</i> listing the partitions to which
+<td>An array of size <i>num_import</i> listing the parts to which
 objects will be imported.
 This array may be NULL, as the processor does not necessarily
 need to know from which objects it will receive.</td>
@@ -1338,7 +1360,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
 
-<td>An array of size <i>num_export</i> listing the partitions to which
+<td>An array of size <i>num_export</i> listing the parts to which
 objects will be sent. </td>
 </tr>
 <tr>
@@ -1433,8 +1455,8 @@ it cannot be used with <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_
 <td>
 All arguments are analogous to those in
 <a href="#ZOLTAN_PRE_MIGRATE_PP_FN"><b>ZOLTAN_PRE_MIGRATE_PP_FN</b></a>.
-Partition-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
-are not included, as processor and partitions
+Part-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and parts
 numbers are considered to be the same in 
 <a href="ug_interface_mig.html#Zoltan_Help_Migrate"><b>Zoltan_Help_Migrate</b></a>.
 </td>
@@ -1527,8 +1549,8 @@ it cannot be used with <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_
 <td>
 All arguments are analogous to those in
 <a href="#ZOLTAN_MID_MIGRATE_PP_FN"><b>ZOLTAN_MID_MIGRATE_PP_FN</b></a>.
-Partition-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
-are not included, as processor and partitions
+Part-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and parts
 numbers are considered to be the same in 
 <a href="ug_interface_mig.html#Zoltan_Help_Migrate"><b>Zoltan_Help_Migrate</b></a>.
 </td>
@@ -1621,8 +1643,8 @@ it cannot be used with <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_
 <td>
 All arguments are analogous to those in
 <a href="#ZOLTAN_POST_MIGRATE_PP_FN"><b>ZOLTAN_POST_MIGRATE_PP_FN</b></a>.
-Partition-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
-are not included, as processor and partitions
+Part-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and parts
 numbers are considered to be the same in 
 <a href="ug_interface_mig.html#Zoltan_Help_Migrate"><b>Zoltan_Help_Migrate</b></a>.
 </td>

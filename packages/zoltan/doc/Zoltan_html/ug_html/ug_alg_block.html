@@ -32,7 +32,7 @@ It is mainly intended for testing. It uses neither geometry
 nor connectivity (graph/hypergraph), so it requires very few query
 functions. 
 
-The block strategy is as follows: Consider all objects (on all processors) as a linear sequence. Assign the first block of n/num_parts objects to the first partition, the next block to the second, and so on. Block is smart enough to generalize this method to handle vertex weights and target partition sizes. Only a single weight per object (Obj_Weight_Dim=1) is currently supported. 
+The block strategy is as follows: Consider all objects (on all processors) as a linear sequence. Assign the first block of n/num_parts objects to the first part, the next block to the second, and so on. Block is smart enough to generalize this method to handle vertex weights and target part sizes. Only a single weight per object (Obj_Weight_Dim=1) is currently supported. 
 <br>
 &nbsp;
 <table width="100%" nosave="">

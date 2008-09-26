@@ -1,7 +1,7 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 0
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-Zoltan Parameters       = NUM_GLOBAL_PARTITIONS = 13 
+Zoltan Parameters       = NUM_GLOBAL_PARTS = 13 
 Zoltan Parameters       = lb_approach=partition
 File Type		= matrixmarket
 File Name		= cage10

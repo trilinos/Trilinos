@@ -76,7 +76,7 @@ int Zoltan_Order_Test(
     int *leaves;
     int *blocks;
 
-    nbrleaves = Zoltan_Order_Get_Nbr_Leaves(zz);
+    nbrleaves = Zoltan_Order_Get_Num_Leaves(zz);
 #ifdef DEBUG_PRINT
     fprintf(stderr, "Number of leaves : %d\n", nbrleaves);
 #endif /* DEBUG_PRINT */

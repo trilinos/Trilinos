@@ -1,5 +1,5 @@
 Decomposition Method 	= rcb
-Zoltan Parameters	= num_global_partitions=3
+Zoltan Parameters	= num_global_parts=3
 Zoltan Parameters       = keep_cuts=1
 File Type		= Chaco
 File Name		= hammond

@@ -303,7 +303,7 @@ Zdrive debug level = 1
 # text output = <integer>
 #
 # This line is optional.  If the integer specified is greater than zero,
-# zdrive produces files listing the partition and processor assignment of
+# zdrive produces files listing the part and processor assignment of
 # each object.  When "text output = 1," P files are generated, where P is
 # the number of processors used for the run.  Files have suffix ".out.P.N",
 # where P is the number of processors and N = 0,...,P-1 is the processor that
@@ -327,8 +327,8 @@ text output = 1
 # To plot the results, start gnuplot; then type 
 #   load "filename.gnuload"
 # 
-# The decomposition can be based on processor assignment or partition
-# assignment.  See zdrive input line "plot partitions".
+# The decomposition can be based on processor assignment or part
+# assignment.  See zdrive input line "plot partition".
 #
 # For Chaco input files, edges are not drawn between neighboring subdomains (
 # as Chaco input is balanced with respect to graph nodes).  Data style
@@ -357,8 +357,8 @@ gnuplot output = 0
 # Nemesis files must have space allocated for at least one
 # elemental variable; this allocation is done by nem_spread.
 #
-# The decomposition can be based on processor assignment or partition
-# assignment.  See zdrive input line "plot partitions".
+# The decomposition can be based on processor assignment or part
+# assignment.  See zdrive input line "plot partition".
 #
 # This option does nothing for Chaco input files.
 #
@@ -367,11 +367,11 @@ gnuplot output = 0
 nemesis output = 0
 
 #-----------------------------------------------------------------------------
-# plot partitions = <integer>
+# plot partition = <integer>
 #
 # This line is optional.  If the integer specified is greater than zero,
-# zdrive writes partition assignments to the gnuplot or nemesis output files;
-# one file per partition is generated.
+# zdrive writes part assignments to the gnuplot or nemesis output files;
+# one file per part is generated.
 # Otherwise, zdrive writes processor assignments to the gnuplot or nemesis
 # output files, with one file per processor generated.
 #
@@ -379,7 +379,7 @@ nemesis output = 0
 #
 # Default value is 0 (processor assignments written).
 #-----------------------------------------------------------------------------
-plot partitions = 0
+plot partition = 0
 
 #-----------------------------------------------------------------------------
 # print mesh info file = <integer>
@@ -502,34 +502,34 @@ Test Multi Callbacks = 0
 # Test Local Partitions = <integer>
 #
 # This line signals that zdrive should test Zoltan using various values
-# of the NUM_LOCAL_PARTITIONS parameter and/or nonuniform partition sizes.
-# While setting NUM_LOCAL_PARTITIONS using a "Zoltan Parameter" above
-# would make all processors have the same number of local partitions,
+# of the NUM_LOCAL_PARTS parameter and/or nonuniform part sizes.
+# While setting NUM_LOCAL_PARTS using a "Zoltan Parameter" above
+# would make all processors have the same number of local parts,
 # this flag allows different processors to have different values for
-# NUM_LOCAL_PARTITIONS.
+# NUM_LOCAL_PARTS.
 # Valid values are integers from 0 to 7.
-#     0:  NUM_LOCAL_PARTITIONS is not set (unless specified as a 
+#     0:  NUM_LOCAL_PARTS is not set (unless specified as a 
 #         "Zoltan Parameter" above).
-#     1:  Each processor sets NUM_LOCAL_PARTITIONS to its processor number;
-#         e.g., processor 0 requests zero local partitions; processor 1
-#         requests 1 local partition, etc.
-#     2:  Each odd-numbered processor sets NUM_LOCAL_PARTITIONS to its
+#     1:  Each processor sets NUM_LOCAL_PARTS to its processor number;
+#         e.g., processor 0 requests zero local parts; processor 1
+#         requests 1 local part, etc.
+#     2:  Each odd-numbered processor sets NUM_LOCAL_PARTS to its
 #         processor number; even-numbered processors do not set 
-#         NUM_LOCAL_PARTITIONS.  
-#     3:  One partition per proc, but variable partition sizes.
-#         Only set partition sizes for upper half of procs 
-#         (using Zoltan_LB_Set_Part_Sizes and global partition numbers).
-#     4:  Variable number of partitions per proc, and variable 
-#         partition sizes. Proc i requests i partitions, each
+#         NUM_LOCAL_PARTS.  
+#     3:  One part per proc, but variable part sizes.
+#         Only set part sizes for upper half of procs 
+#         (using Zoltan_LB_Set_Part_Sizes and global part numbers).
+#     4:  Variable number of parts per proc, and variable 
+#         part sizes. Proc i requests i parts, each
 #         of size 1/i.
-#     5:  One partition per proc, but variable partition sizes.
+#     5:  One part per proc, but variable part sizes.
 #         Same as case 3, except all sizes are increased by one to 
-#         avoid possible zero-sized partitions.
-#     6:  One partition per proc, but variable partition sizes.
-#         When nprocs >= 6, zero-sized partitions on processors >= 2.
+#         avoid possible zero-sized parts.
+#     6:  One part per proc, but variable part sizes.
+#         When nprocs >= 6, zero-sized parts on processors >= 2.
 #         (This case is of particular interest for HSFC.)
-#     7:  One partition per proc, but variable partition sizes.
-#         When nprocs >= 6, zero-sized partitions on processors <= 3.
+#     7:  One part per proc, but variable part sizes.
+#         When nprocs >= 6, zero-sized parts on processors <= 3.
 #         (This case is of particular interest for HSFC.)
 # 
 # Default value is 0.

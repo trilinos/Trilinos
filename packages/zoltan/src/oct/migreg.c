@@ -17,6 +17,7 @@ extern "C" {
 #include "dfs_const.h"
 #include "oct_util_const.h"
 #include "octree_const.h"
+#include "zz_const.h"
 
 #define MIGMIGREGCommCreate 32767
 #define MIGMIGREGCommDo     32766

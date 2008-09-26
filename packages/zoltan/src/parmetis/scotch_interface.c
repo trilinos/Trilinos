@@ -70,7 +70,6 @@ int Zoltan_Scotch_Order(
   int n, ierr;
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
-  ZOLTAN_Third_Vsize vsp;
   SCOTCH_Strat        stradat;
   SCOTCH_Dgraph       grafdat;
   SCOTCH_Dordering    ordedat;
@@ -97,7 +96,6 @@ int Zoltan_Scotch_Order(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
-  memset(&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
 
   strcpy (alg, "NODEND");
@@ -163,7 +161,8 @@ int Zoltan_Scotch_Order(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
-  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, &vsp);
+  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
+
 
   if (SCOTCH_dgraphInit (&grafdat, comm) != 0) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
@@ -300,7 +299,7 @@ int Zoltan_Scotch_Order(
   ZOLTAN_FREE(&size);
   ZOLTAN_FREE(&children);
 
-  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, &vsp, &ord, NULL);
+  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -320,7 +319,7 @@ int Zoltan_Scotch_Order(
   ZOLTAN_FREE(strat);
 
   /* Free all other "graph" stuff */
-  Zoltan_Third_Exit(&gr, NULL, NULL, &vsp, NULL, NULL);
+  Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, NULL);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 

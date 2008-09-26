@@ -1,0 +1,89 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# This software is distributed under the GNU Lesser General Public License.  #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    Revision: 1.6 $
+##############################################################################
+
+include ./Utilities/Config/Config.$(ZOLTAN_ARCH)
+
+ZTARGET = zdrive
+LIB_NAME = libzoltan.a
+LIB_TARGET = zoltan
+SUBDIRS	= driver ch zz all lb par rcb oct parmetis params timer ha reftree hsfc phg coloring simple
+UTIL_SUBDIRS = Memory Communication DDirectory Timer shared
+ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
+DEFS +=  -DTRILINOS_NO_CONFIG_H
+
+zoltan:	
+	@if [ ! -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) ]; then \
+	cd Utilities; \
+	sh -x zoltan_script \
+	  '$(DEFS)' \
+	  '$(CC)' \
+	  '$(CFLAGS)' \
+	  '$(F90CFLAGS)' \
+	  '$(INCLUDE_PATH)' \
+	  '$(PARMETIS_LIBPATH)' \
+	  '$(PARMETIS_INCPATH)' \
+	  '$(JOSTLE_LIBPATH)' \
+	  '$(JOSTLE_INCPATH)' \
+	  '$(AR)' \
+	  '$(RANLIB)' \
+	  '$(ZOLTAN_ARCH)' \
+	  '$(ZOLTAN_LIB_DIR)' \
+	  '$(MPI_INCPATH)' ;\
+	cd ..;\
+	sh -x zoltan_script \
+	  '$(DEFS)' \
+	  '$(CC)' \
+	  '$(CFLAGS)' \
+	  '$(F90CFLAGS)' \
+	  '$(INCLUDE_PATH)' \
+	  '$(PARMETIS_LIBPATH)' \
+	  '$(PARMETIS_INCPATH)' \
+	  '$(JOSTLE_LIBPATH)' \
+	  '$(JOSTLE_INCPATH)' \
+	  '$(AR)' \
+	  '$(RANLIB)' \
+	  '$(ZOLTAN_ARCH)' \
+	  '$(ZOLTAN_LIB_DIR)' \
+	  '$(MPI_INCPATH)' ;\
+	 fi;
+
+clean:
+	@for a in $(SUBDIRS); do \
+	  cd $$a; \
+	    echo "cleaning in $$a"; \
+	    $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
+	  cd ..; \
+	done;
+	@cd Utilities; \
+	for a in $(UTIL_SUBDIRS); do \
+	  cd $$a; \
+	    echo "cleaning in $$a"; \
+	    $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
+	  cd ..; \
+	done; \
+	cd ..;
+	@cd fort; \
+	  $(MAKE) clean; \
+	cd ..; 
+	@cd fdriver; \
+	  $(MAKE) clean; \
+	cd ..; 
+	@if [ -d Utilities/$(ZOLTAN_OBJ_DIR) ]; then \
+	  $(RM) -rf Utilities/$(ZOLTAN_OBJ_DIR); \
+	fi;
+	@if [ -d $(ZOLTAN_OBJ_DIR) ]; then \
+	  $(RM) -rf $(ZOLTAN_OBJ_DIR); \
+	fi;
+	@$(RM) -f $(LINT_TARGET); 
+	@exit 0;

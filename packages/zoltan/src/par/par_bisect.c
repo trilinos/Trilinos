@@ -119,7 +119,10 @@ int Zoltan_RB_find_bisector(
 {
 /* Local declarations. */
   char    yo[] = "Zoltan_find_bisector";
-  int loopCount = 0;
+  int     proc   = zz->Proc;         /* My proc rank. */
+  int     rank = proc - proclower;   /* rank in partition (Tflops_Special) */
+  int     loopCount = 0;
+  int     ierr = ZOLTAN_OK;          /* error code */
 
 #if (RB_MAX_WGTS <= 1)
 
@@ -146,20 +149,16 @@ int Zoltan_RB_find_bisector(
   double  oldnorm;                   /* temp norm */
   double  eps;                       /* abs. tolerance for imbalance */
   double  temp;                      /* temp variable */
-  int     proc   = zz->Proc;         /* My proc rank. */
   int     nprocs = zz->Num_Proc;     /* Total number of processors */
-  int     ierr = ZOLTAN_OK;          /* error code */
   int     wtflag = 0;                /* (1) no wgts supplied on entry. */
   int     indexlo=0, indexhi=0;      /* indices of dots closest to bisector */
   int     breakflag=0;               /* for breaking out of bisector iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
-  int     rank;                      /* rank in partition (Tflops_Special) */
   int     iteration;                 /* bisection iteration no. */
   int     i, j, k, numlist;
   int     tfs_early_exit = 0;        /* Flag used only with Tflops_Special,
                                         indicating early exit when all weight
                                         is to be put in one partition. */
-
   char  msg[256];                    /* for error messages */
 
   /* MPI data types and user functions */
@@ -364,8 +363,6 @@ int Zoltan_RB_find_bisector(
     for (j=0; j<nwgts; j++)
       localsum[j] += wgts[i*nwgts+j];
   }
-
-  rank = proc - proclower;
 
   if (Tflops_Special) {
      tmp = (double *) ZOLTAN_MALLOC(nprocs*sizeof(double));
@@ -979,12 +976,15 @@ End:
   /* Recompute weightlo/hi. This is only necessary because
      there is a bug so weightlo/hi aren't always correct.
      Remove this step later! */
-  compute_weight_sums(dotnum, dotmark, nwgts, wgts, weightlo, weighthi,
-    local_comm, Tflops_Special, proclower, rank, num_procs);
 
-  /* Evaluate cut quality. */
-  *quality = eval_cut_quality(nwgts, scalelo, scalehi, weightlo, weighthi, 
-             mcnorm);
+  if (ierr == ZOLTAN_OK){
+    compute_weight_sums(dotnum, dotmark, nwgts, wgts, weightlo, weighthi,
+      local_comm, Tflops_Special, proclower, rank, num_procs);
+
+    /* Evaluate cut quality. */
+    *quality = eval_cut_quality(nwgts, scalelo, scalehi, weightlo, weighthi, 
+               mcnorm);
+  }
 
   /* free all memory */
   ZOLTAN_FREE(&med);
@@ -998,9 +998,12 @@ End:
     MPI_Op_free(&med_op);
   }
 
-  par_median_accumulate_counts(nprocs, num_procs, rank, loopCount);
+  if (ierr == ZOLTAN_OK){
+    par_median_accumulate_counts(nprocs, num_procs, rank, loopCount);
+  }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
+fprintf(stderr,"%d) rank %d DONE\n",zz->Proc,rank);
 
   return ierr;
 

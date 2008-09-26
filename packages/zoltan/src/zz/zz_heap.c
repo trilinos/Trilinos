@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include "zz_heap.h"
+#include "zz_const.h"
 
 
 #define INT_SWAP(A,B)         {int    _C_=(A);(A)=(B);(B)=_C_;}

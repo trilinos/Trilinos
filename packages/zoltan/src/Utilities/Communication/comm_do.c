@@ -99,7 +99,7 @@ char *recv_data)		/* array of data I'll own after comm */
 {
     char     *send_buff;	/* space to buffer outgoing data */
     int       my_proc;		/* processor ID */
-    int       self_recv_address;/* where in recv_data self info starts */
+    unsigned int self_recv_address;/* where in recv_data self info starts */
     int       self_num;		/* where in send list my_proc appears */
     int       offset;		/* offset into array I'm copying into */
     int       self_index;	/* send offset for data I'm keeping */
@@ -250,9 +250,14 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 
 	    if (plan->self_msg) {	/* Copy data to self. */
-		memcpy(&plan->recv_buff[self_recv_address],
-		       &send_data[plan->starts_to[self_num] * nbytes],
-		       plan->lengths_to[self_num] * nbytes);
+                char* lrecv = &plan->recv_buff[self_recv_address];
+                char* lsend = &send_data[plan->starts_to[self_num] * nbytes];
+                int sindex = plan->lengths_to[self_num], idx;
+                for (idx=0; idx<nbytes; idx++) {
+                    memcpy(lrecv, lsend, sindex);
+                    lrecv += sindex;
+                    lsend += sindex;
+                }
 	    }
 	}
 
@@ -308,10 +313,17 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 
 	    if (plan->self_msg) {	/* Copy data to self. */
-                if (plan->sizes_to[self_num])
-		    memcpy(&plan->recv_buff[self_recv_address],
-		           &send_data[plan->starts_to_ptr[self_num] * nbytes],
-		           plan->sizes_to[self_num] * nbytes);
+                if (plan->sizes_to[self_num]) {
+                    char* lrecv = &plan->recv_buff[self_recv_address];
+                    char* lsend = &send_data[plan->starts_to_ptr[self_num] 
+                                             * nbytes];
+                    int sindex = plan->sizes_to[self_num], idx;
+                    for (idx=0; idx<nbytes; idx++) {
+                        memcpy(lrecv, lsend, sindex);
+                        lrecv += sindex;
+                        lsend += sindex;
+                    }
+                }
 	    }
 	}
 
@@ -346,10 +358,16 @@ char *recv_data)		/* array of data I'll own after comm */
                 if (plan->sizes_to[self_num]) {
 		    j = plan->starts_to[self_num];
 		    for (k = 0; k < plan->lengths_to[self_num]; k++) {
-		        jj = plan->indices_to_ptr[j];
-		        memcpy(&plan->recv_buff[self_recv_address],
-			       &send_data[jj * nbytes],
-			       plan->sizes[plan->indices_to[j]] * nbytes);
+		        int kk = plan->indices_to_ptr[j];
+                        char* lrecv = &plan->recv_buff[self_recv_address];
+                        unsigned int send_idx = kk * nbytes;
+                        char* lsend = &send_data[send_idx];
+                        int sindex = plan->sizes[plan->indices_to[j]], idx;
+                        for (idx=0; idx<nbytes; idx++) {
+                            memcpy(lrecv, lsend, sindex);
+                            lrecv += sindex;
+                            lsend += sindex;
+                        }
 		        self_recv_address += plan->sizes[plan->indices_to[j]] 
                                            * nbytes;
 		        j++;

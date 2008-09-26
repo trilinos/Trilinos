@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #include "phg.h"
+#include "zz_const.h"
 #include <limits.h>
 
 

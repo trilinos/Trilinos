@@ -42,7 +42,7 @@ maintenance.  Usage examples are in <i>rcb/shared.c</i>.
 
 <p><b><a href="#Zoltan_Get_Obj_List">Zoltan_Get_Obj_List</a></b> can be called
 from any Zoltan algorithm to obtain a list of object IDs, weights, and 
-partition assignments.  
+part assignments.  
 
 <p>Given a list of object IDs,
 <b><a href="#Zoltan_Get_Coordinates">Zoltan_Get_Coordinates</a></b>
@@ -63,7 +63,7 @@ memory for their return lists.</i></b>
 <br>&nbsp;&nbsp;&nbsp; float **<i>objwgts</i>,
 <br>&nbsp;&nbsp;&nbsp; int **<i>parts</i>);
 <hr><b>Zoltan_Get_Obj_List</b> returns arrays of global and local IDs,
-partition assignments, and
+part assignments, and
 object weights (if 
 <b><a href="../ug_html/ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></b>
 is not zero) for all objects on a processor. It is a convenient function
@@ -72,7 +72,7 @@ that frees algorithm developers from calling
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>,
 <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>,
 and 
-<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b>
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b>
 query functions directly.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -130,8 +130,8 @@ be NULL.</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>parts</i></td>
 
-<td>Upon return, an array of partition assignments. Object <i>i</i>
-is currently in partition <i>parts[i]</i>.
+<td>Upon return, an array of part assignments. Object <i>i</i>
+is currently in part <i>parts[i]</i>.
 </td>
 </tr>
 
@@ -174,7 +174,7 @@ pair</td>
 <tr>
 <td></td>
 
-<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b></td>
+<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b></td>
 </tr>
 </table>
 

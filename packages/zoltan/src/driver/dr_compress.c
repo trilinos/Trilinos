@@ -11,11 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-/* #include "zoltan.h" */
-#ifndef __USE_ISOC99
-#define __USE_ISOC99
-#endif
-
 #include <stdarg.h>
 
 #include <stdio.h>
@@ -25,6 +20,7 @@
 #include "dr_compress_const.h"
 #include "dr_util_const.h"
 
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -33,6 +29,13 @@ extern "C" {
 #define BUFF_SIZE 3*1024*1024
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
+#ifndef __USE_ISOC99
+int vfscanf(FILE * stream, const char * format,
+              va_list arg);
+int vscanf(const char * format, va_list arg);
+int vsscanf(const char * s, const char * format,
+	    va_list arg);
+#endif /* __USE_ISOC99 */
 
 ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_FILETYPE type)
 {
@@ -162,7 +165,7 @@ char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file)
     offset = file->size - file->pos;
 
   if (offset > 0) {
-    end = memchr(file->buffer + file->pos, '\n', MIN(offset, len - 1));
+    end = (char *) memchr(file->buffer + file->pos, '\n', MIN(offset, len - 1));
 
   }
   if (end != NULL) {          /* End of line found */
@@ -177,7 +180,7 @@ char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file)
   if (size == 0)
     return (NULL);
   buf[size] = '\0';
-  end = memchr(buf, '\n', size);
+  end = (char *) memchr(buf, '\n', size);
   if (end == NULL) {
     return (buf);
   }
@@ -284,6 +287,26 @@ void ZOLTAN_FILE_rewind(ZOLTAN_FILE* file)
     break;
   }
 }
+
+/*** Implemented as a macro as "vfscanf" or "vsscanf" are C99 only ***/
+int ZOLTAN_FILE_scanf (ZOLTAN_FILE*  stream, const char *  format, ... )
+{
+  int retval = 0;
+  va_list argp;
+
+  va_start(argp, format);
+  if (stream->type == STANDARD) {
+    retval = (vfscanf(stream->strm.fileunc, format, argp));
+  }
+  else {
+    char buff[1024];
+    if (ZOLTAN_FILE_gets(buff, 1024, (stream)) != NULL)
+      retval = vsscanf(buff, format, argp);
+  }
+  va_end(argp);
+  return (retval);
+}
+
 
 
 #ifdef __cplusplus

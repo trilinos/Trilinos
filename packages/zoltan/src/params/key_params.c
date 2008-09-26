@@ -44,8 +44,10 @@ static PARAM_VARS Key_params[] = {
   { "TFLOPS_SPECIAL", NULL, "INT", 0 },
   { "COMM_WEIGHT_DIM", NULL, "INT", 0 }, /* For backward compatibility only. */
                                          /* Prefer use of EDGE_WEIGHT_DIM.   */
-  { "NUM_GLOBAL_PARTITIONS", NULL, "INT", 0 },
-  { "NUM_LOCAL_PARTITIONS", NULL, "INT", 0 },
+  { "NUM_GLOBAL_PARTS", NULL, "INT", 0 },
+  { "NUM_GLOBAL_PARTITIONS", NULL, "INT", 0 }, /* Deprecated */
+  { "NUM_LOCAL_PARTS", NULL, "INT", 0 },
+  { "NUM_LOCAL_PARTITIONS", NULL, "INT", 0 },  /* Deprecated */
   { "MIGRATE_ONLY_PROC_CHANGES", NULL, "INT", 0 },
   { "REMAP", NULL, "INT", 0 },
   { "SEED", NULL, "INT", 0 },
@@ -272,11 +274,12 @@ int  idx 			/* index of vector param, -1 if scalar */
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
-      case 14:          /* Num_Global_Partitions */
+      case 14:          /* Num_Global_Parts */
+      case 15:
         if (result.def)
             result.ival = zz->Num_Proc;
         if (result.ival < 1) {
-	    sprintf(msg, "Invalid Num_Global_Partitions value (%d); "
+	    sprintf(msg, "Invalid Num_Global_Parts value (%d); "
 		"being set to %d.", result.ival,zz->Num_Proc);
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
             result.ival = zz->Num_Proc;
@@ -285,11 +288,12 @@ int  idx 			/* index of vector param, -1 if scalar */
         status = 3;
         break;
 
-      case 15:          /* Num_Local_Partitions */
+      case 16:          /* Num_Local_Parts */
+      case 17:
         if (result.def)
             result.ival = -1;
         if (result.ival < -1) {
-	    sprintf(msg, "Invalid Num_Local_Partitions value (%d); "
+	    sprintf(msg, "Invalid Num_Local_Parts value (%d); "
 		"being set to %d.", result.ival,-1);
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
             result.ival = -1;
@@ -298,28 +302,28 @@ int  idx 			/* index of vector param, -1 if scalar */
         status = 3;
         break;
 
-      case 16:		/* Migrate_Only_Proc_Changes */
+      case 18:		/* Migrate_Only_Proc_Changes */
         if (result.def)
             result.ival = ZOLTAN_MIGRATE_ONLY_PROC_CHANGES_DEF;
 	zz->Migrate.Only_Proc_Changes = result.ival;
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
-      case 17:		/* LB.Remap */
+      case 19:		/* LB.Remap */
         if (result.def)
             result.ival = 0;
 	zz->LB.Remap_Flag = result.ival;
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
-      case 18:          /* Seed */
+      case 20:          /* Seed */
         if (result.def)
             result.ival = Zoltan_Seed();
         Zoltan_Srand(result.ival, NULL);
         status = 3;
         break;
 
-      case 19:          /* LB_APPROACH */
+      case 21:          /* LB_APPROACH */
         if (result.def)
           strcpy(result.sval, ZOLTAN_LB_APPROACH_DEF);
         strcpy(zz->LB.Approach, result.sval);

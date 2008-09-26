@@ -5,7 +5,7 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1376">
    <meta name="author" content="lee ann fisk, lafisk@sandia.gov">
-   <title> Zoltan Developer's Guide: Visualization of Geometric Partitionings</title>
+   <title> Zoltan Developer's Guide: Visualization of Geometric Partitions</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
@@ -27,13 +27,13 @@
 
 
 <h2>
-<a NAME="Visualization"></a>Appendix: Visualization of Geometric Partitionings 
+<a NAME="Visualization"></a>Appendix: Visualization of Geometric Partitions 
 </h2>
 
 Graphical images of partitioned meshes can help you to understand the
 geometric partitioning algorithms of Zoltan and to debug new or existing
 algorithms.  The following sections describe methods for visualizing the
-partitionings computed by the <a href="dev_driver.html">test drivers</a>.
+partitions computed by the <a href="dev_driver.html">test drivers</a>.
 
 <h3>
 <a NAME="Vis_2D"></a>2D problems with <I>gnuplot</I>
@@ -62,7 +62,7 @@ that the xrange is [-0.2,1.2] and the yrange is [-0.3,0.35].
 </h3>
 3D visualization requires downloading and compiling the 
 <a href="http://www.vtk.org">Visualization Toolkit</a> (VTK) library (version
-5.0 or later).  You can then use the Zoltan top level Makefile to build
+5.0 or later).  You can then use the Zoltan top level makefile to build
 the <I>vtk_view</I> application found in the <I>util</I> directory of
 Zoltan.  Build details can be found in the <I>Config.generic</I> file
 in <I>Utilities/Config</I>.  Note that you will have to download and
@@ -83,11 +83,11 @@ if you specify a different file on the command line.
 <LI>It will read in the same input Chaco or Exodus II mesh that the test driver
 read in.
 <LI>It will read in the <i>file_name</i>.out.<i>p</i>.<i>n</i> files that the
-test driver wrote listing the partition assigned to every global ID.
+test driver wrote listing the part assigned to every global ID.
 <LI>It will open a window on your display, showing the input mesh.  For
-Chaco files, the mesh vertices will be colored by the partition into which
+Chaco files, the mesh vertices will be colored by the part into which
 Zoltan placed them.  For Exodus II files, the mesh elements will be so colored.
-A scalar bar in the window indicates the mapping from colors to partition
+A scalar bar in the window indicates the mapping from colors to part
 numbers.  A caption describes the input file name, the decomposition
 method, the Zoltan parameter settings, and so on.  You can use your mouse
 to rotate the volume, pan and zoom in and out. 
@@ -99,7 +99,7 @@ The example below shows how <I>vtk_view</I> displays the mesh in the test direct
 <img src="brack3d.png" alt="[vtk_view 3D view]" border=2 height=466 width=473>
 <p>
 If no test driver output files are found, <I>vtk_view</I> will 
-display the mesh without partition IDs.
+display the mesh without part IDs.
 <p>
 There are a few additional options that can be added to the test driver
 input file, that are specifically for <I>vtk_view</I>.
@@ -134,7 +134,7 @@ output files from <i>file_name</i>.<B>f</B>out.<i>p</i>.<i>n</i> to
 In some situations it is not possible or not convenient to open a window 
 on a display.  In that case, you can compile <I>util/vtk_view.cpp</I> with the flag
 <B>OUTPUT_TO_FILE</B> and it will create a program that renders the image
-to a file instead of opening a window on a display.  (The Zoltan top level Makefile
+to a file instead of opening a window on a display.  (The Zoltan top level makefile
 does exactly this when you use the <I>vtk_write</I> target.)
 <p>
 Note that while
@@ -182,7 +182,7 @@ can use these options to govern the output images.
 only reads Chaco or Exodus II/Nemesis meshes.
 If you are working with a different mesh-based file format, it
 is still possible that you could use <I>vtk_view</I> or <I>vtk_write</I>
-to view the partitions assigned to your mesh by some application using the
+to view the parts assigned to your mesh by some application using the
 Zoltan library.  <a href=http:/www.vtk.org>VTK</a>
 at this point in time has readers for many different file formats.  If VTK
 has a reader for your format, then
@@ -197,8 +197,8 @@ input file</a> in which to specify your file name and other visualization
 parameters.
 <p>
 Finally, you need to create text files listing each global ID you supplied
-to Zoltan, followed by the partition ID assigned by Zoltan, with only
-one global ID/partition ID pair per line.  Name this
+to Zoltan, followed by the part ID assigned by Zoltan, with only
+one global ID/part ID pair per line.  Name this
 file or files using the conventions used by the 
 <a href=dev_driver.html>test drivers</a>.
 

@@ -45,7 +45,7 @@ provided by Zoltan.</li>
 
 <li>
 Implement a <a href="dev_add_lb.html">Load-Balancing Function</a> front-end
-to the algorithm. Note that Zoltan load-balance methods should assign objects both to processors and partitions, which may be different. The recommended strategy is to assign objects to partitions first, then use Zoltan_LB_Part_To_Proc to generate the corresponding processors.</li>
+to the algorithm. Note that Zoltan load-balance methods should assign objects both to processors and parts, which may be different. The recommended strategy is to assign objects to parts first, then use Zoltan_LB_Part_To_Proc to generate the corresponding processors.</li>
 
 <li>
 Add the algorithm to the <a href="dev_add_interface.html">Load-Balancing
@@ -69,7 +69,7 @@ write a routine to copy your load balancing
 <a href="dev_add_struct.html#Copy">data structure</a>. </li>
 
 <li>
-We recommend you add partition remapping to your algorithm using
+We recommend you add part remapping to your algorithm using
 <a href="dev_add_.html"><b>Zoltan_LB_Remap</b></a>.</li>
 
 <li>

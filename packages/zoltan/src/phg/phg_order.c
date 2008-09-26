@@ -20,6 +20,7 @@ extern "C" {
 #include <stdlib.h>
 #include "zz_sort.h"    
 #include "phg.h"
+#include "zz_const.h"
 
 int Zoltan_PHG_Vertex_Visit_Order(
   ZZ *zz, 

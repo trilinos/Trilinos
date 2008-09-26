@@ -217,20 +217,17 @@ struct Zoltan_Struct {
   int Timer;                      /*  Timer type that is currently active */
   struct Zoltan_Timer *ZTime;     /*  Timer structure for persistent timing. */
   /***************************************************************************/
-  ZOLTAN_PARTITION_MULTI_FN *Get_Partition_Multi;
-                                       /* Fn ptr to get objects'
-                                          partition assignments.     */
-  ZOLTAN_PARTITION_MULTI_FORT_FN *Get_Partition_Multi_Fort;
+  ZOLTAN_PART_MULTI_FN *Get_Part_Multi;/* Fn ptr to get objects'
+                                          part assignments.     */
+  ZOLTAN_PART_MULTI_FORT_FN *Get_Part_Multi_Fort;
                                        /* Fortran version            */
-  void *Get_Partition_Multi_Data;      /* Ptr to user defined data to be 
-                                          passed to Get_Partition_Multi()    */
-  ZOLTAN_PARTITION_FN *Get_Partition;          
-                                       /* Fn ptr to get an object's
-                                          partition assignment.      */
-  ZOLTAN_PARTITION_FORT_FN *Get_Partition_Fort;
-                                       /* Fortran version            */
-  void *Get_Partition_Data;            /* Ptr to user defined data
-                                          to be passed to Get_Partition()    */
+  void *Get_Part_Multi_Data;           /* Ptr to user defined data to be 
+                                          passed to Get_Part_Multi()    */
+  ZOLTAN_PART_FN *Get_Part;            /* Fn ptr to get an object's
+                                          part assignment.      */
+  ZOLTAN_PART_FORT_FN *Get_Part_Fort;  /* Fortran version            */
+  void *Get_Part_Data;                 /* Ptr to user defined data
+                                          to be passed to Get_Part()    */
   /***************************************************************************/
   ZOLTAN_NUM_EDGES_FN *Get_Num_Edges;  /* Fn ptr to get an object's
                                           number of edges.           */
@@ -417,28 +414,6 @@ struct Zoltan_Struct {
   void *Get_HG_CS_Data;                /* Ptr to user defined data
                                         to be passed to Get_HG_CS() */
   /***************************************************************************/
-  ZOLTAN_CSC_SIZE_FN *Get_CSC_Size;    /* Get size of compressed matrix columns */
-  /*ZOLTAN_CSC_SIZE_FORT_FN *Get_CSC_Size_Fort;*/
-                                       /* Fortran version            */
-  void *Get_CSC_Size_Data;             /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
-  ZOLTAN_CSR_SIZE_FN *Get_CSR_Size;    /* Get size of compressed matrix rows */
-  /*ZOLTAN_CSR_SIZE_FORT_FN *Get_CSR_Size_Fort;*/
-                                       /* Fortran version            */
-  void *Get_CSR_Size_Data;             /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
-  ZOLTAN_CSC_FN *Get_CSC;                /* Get compressed matrix columns */
-  /*ZOLTAN_CSC_FN *Get_CSC_Fort;*/           /* Fortran version            */
-  void *Get_CSC_Data;                   /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
-  ZOLTAN_CSR_FN *Get_CSR;                /* Get compressed matrix rows */
-  /*ZOLTAN_CSR_FN *Get_CSR_Fort;*/           /* Fortran version            */
-  void *Get_CSR_Data;                   /* Ptr to user defined data
-                                        to be passed to Get_HG_CS() */
-  /***************************************************************************/
   ZOLTAN_HG_SIZE_EDGE_WTS_FN *Get_HG_Size_Edge_Wts;    
                                        /* Fn ptr to get size of hypergraph
                                           edge weights to be returned.  */
@@ -478,14 +453,15 @@ struct Zoltan_Struct {
                                        /* Fortran version             */
   void *Get_Hier_Num_Levels_Data;      /* Ptr to user defined data to be passed
                                           to Get_Hier_Num_Levels() */
-  ZOLTAN_HIER_PARTITION_FN *Get_Hier_Partition;
-                                       /* Function that returns the partition
+  /***************************************************************************/
+  ZOLTAN_HIER_PART_FN *Get_Hier_Part;  /* Function that returns the part
                                           for process at a given level in
                                           hierarchical partitioning */
-  ZOLTAN_HIER_PARTITION_FORT_FN *Get_Hier_Partition_Fort;
+  ZOLTAN_HIER_PART_FORT_FN *Get_Hier_Part_Fort;
                                        /* Fortran version             */
-  void *Get_Hier_Partition_Data;       /* Ptr to user defined data to be passed
-                                          to Get_Hier_Partition() */
+  void *Get_Hier_Part_Data;            /* Ptr to user defined data to be passed
+                                          to Get_Hier_Part() */
+  /***************************************************************************/
   ZOLTAN_HIER_METHOD_FN *Get_Hier_Method;
                                        /* Function that allows app to set the
                                           LB method and params for process 

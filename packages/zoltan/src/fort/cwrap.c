@@ -364,24 +364,24 @@ int Zfw_Get_Comm_Dim(int *addr_lb, int *nbytes)
 /* Reverse wrappers for callbacks                                     */
 /*--------------------------------------------------------------------*/
 
-void Zoltan_Partition_Multi_Fort_Wrapper(void *data, 
+void Zoltan_Part_Multi_Fort_Wrapper(void *data, 
   int num_gid_entries, int num_lid_entries, int num_obj,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *parts,
   int *ierr)
 {
-   Zoltan_Current->Get_Partition_Multi_Fort(data,
+   Zoltan_Current->Get_Part_Multi_Fort(data,
                        &num_gid_entries, &num_lid_entries, &num_obj,
                        global_id, local_id, parts, ierr);
 }
 
 /*****************************************************************************/
 
-int Zoltan_Partition_Fort_Wrapper(void *data, 
+int Zoltan_Part_Fort_Wrapper(void *data, 
   int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
   int *ierr)
 {
-   return Zoltan_Current->Get_Partition_Fort(data,
+   return Zoltan_Current->Get_Part_Fort(data,
                                             &num_gid_entries, &num_lid_entries,
                                             global_id, local_id, ierr);
 }
@@ -957,9 +957,9 @@ int Zoltan_Hier_Num_Levels_Fort_Wrapper(void *data, int *ierr)
 }
 
 /*****************************************************************************/
-int Zoltan_Hier_Partition_Fort_Wrapper(void *data, int level, int *ierr)
+int Zoltan_Hier_Part_Fort_Wrapper(void *data, int level, int *ierr)
 {
-  return Zoltan_Current->Get_Hier_Partition_Fort(data, &level, ierr);
+  return Zoltan_Current->Get_Hier_Part_Fort(data, &level, ierr);
 }
 
 /*****************************************************************************/
@@ -1107,15 +1107,15 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    switch(*type) {
-   case ZOLTAN_PARTITION_MULTI_FN_TYPE:
-      lb->Get_Partition_Multi_Fort = (ZOLTAN_PARTITION_MULTI_FORT_FN *) fn;
+   case ZOLTAN_PART_MULTI_FN_TYPE:
+      lb->Get_Part_Multi_Fort = (ZOLTAN_PART_MULTI_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
-               (void (*)())Zoltan_Partition_Multi_Fort_Wrapper, data);
+               (void (*)())Zoltan_Part_Multi_Fort_Wrapper, data);
       break;
-   case ZOLTAN_PARTITION_FN_TYPE:
-      lb->Get_Partition_Fort = (ZOLTAN_PARTITION_FORT_FN *) fn;
+   case ZOLTAN_PART_FN_TYPE:
+      lb->Get_Part_Fort = (ZOLTAN_PART_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
-               (void (*)())Zoltan_Partition_Fort_Wrapper, data);
+               (void (*)())Zoltan_Part_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_EDGES_MULTI_FN_TYPE:
       lb->Get_Num_Edges_Multi_Fort = (ZOLTAN_NUM_EDGES_MULTI_FORT_FN *) fn;
@@ -1322,10 +1322,10 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Hier_Num_Levels_Fort_Wrapper, data);
       break;
-   case ZOLTAN_HIER_PARTITION_FN_TYPE:
-      lb->Get_Hier_Partition_Fort = (ZOLTAN_HIER_PARTITION_FORT_FN *) fn;
+   case ZOLTAN_HIER_PART_FN_TYPE:
+      lb->Get_Hier_Part_Fort = (ZOLTAN_HIER_PART_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
-               (void (*)())Zoltan_Hier_Partition_Fort_Wrapper, data);
+               (void (*)())Zoltan_Hier_Part_Fort_Wrapper, data);
       break;
    case ZOLTAN_HIER_METHOD_FN_TYPE:
       lb->Get_Hier_Method_Fort = (ZOLTAN_HIER_METHOD_FORT_FN *) fn;
