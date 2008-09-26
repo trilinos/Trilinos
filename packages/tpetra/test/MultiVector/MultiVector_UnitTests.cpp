@@ -333,21 +333,20 @@ namespace {
     // create a Map
     const Ordinal indexBase = ZERO;
     const Ordinal numLocal = TWO;
-    const Ordinal numVecs = TWO;
     // multivector has two vectors, each proc having two values per vector
     Map<Ordinal> map2(NEGONE,numLocal  ,indexBase,platform),
                  map3(NEGONE,numLocal+1,indexBase,platform);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
-    Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const double>(Teuchos::null));
+    Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const Scalar>(Teuchos::null));
+    Array<ArrayView<const Scalar> > emptyArr;
     arrOfarr[0] = values(0,2);
     arrOfarr[1] = values(2,2);
 #ifdef TEUCHOS_DEBUG
-    // arrOfarr.size() == NumVectors
-    TEST_THROW(MV mvec(map2,arrOfarr(),numVecs+1), std::runtime_error);
-    TEST_THROW(MV mvec(map2,arrOfarr(),numVecs-1), std::runtime_error);
+    // arrOfarr.size() == 0
+    TEST_THROW(MV mvec(map2,emptyArr()), std::runtime_error);
     // individual ArrayViews could be too small
-    TEST_THROW(MV mvec(map3,arrOfarr(),numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map3,arrOfarr()), std::runtime_error);
 #endif
   }
 
@@ -816,6 +815,10 @@ namespace {
   }
 
 
+#define PRINT_TYPE_AND_VALUE(val) { out << std::setw(30) << #val << std::setw(30) << Teuchos::typeName(val) << ": " << val << endl; }
+
+
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadCombinations, Ordinal, Scalar )
   {
@@ -913,49 +916,43 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic, ORDINAL, SCALAR )             \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstNumVecs, ORDINAL, SCALAR )   */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstLDA, ORDINAL, SCALAR )       */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstAA, ORDINAL, * SCALAR )      */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyConst, ORDINAL, SCALAR )         */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OrthoDot, ORDINAL, SCALAR )          */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDot, ORDINAL, SCALAR )          */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDotNonTrivLDA, ORDINAL, SCALAR )*/ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadDot, ORDINAL, SCALAR )            */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNorm1, ORDINAL, SCALAR )        */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNormInf, ORDINAL, SCALAR )      */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Norm2, ORDINAL, SCALAR )             */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate, ORDINAL, SCALAR )   */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations, ORDINAL, SCALAR )   */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply, ORDINAL, SCALAR )       */ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply, ORDINAL, SCALAR )          */ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic             , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstNumVecs   , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstLDA       , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstAA        , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyConst         , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OrthoDot          , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDot          , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDotNonTrivLDA, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadDot            , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNorm1        , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNormInf      , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Norm2             , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate   , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations   , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         /*UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)*/ \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
-     UNIT_TEST_GROUP_ORDINAL(int)
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, char) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
+     UNIT_TEST_GROUP_ORDINAL(int)
+
+# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)  \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)  \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
      UNIT_TEST_GROUP_ORDINAL(int)
-
-     typedef short int ShortInt;
-     UNIT_TEST_GROUP_ORDINAL(ShortInt)
-     typedef long int LongInt;
-     UNIT_TEST_GROUP_ORDINAL(LongInt)
+     typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
+     typedef long int LongInt;   UNIT_TEST_GROUP_ORDINAL(LongInt)
 #    ifdef HAVE_TEUCHOS_LONG_LONG_INT
-        typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_ORDINAL(LongLongInt)
+        typedef long long int LongLongInt; UNIT_TEST_GROUP_ORDINAL(LongLongInt)
 #    endif
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD

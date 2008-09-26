@@ -113,7 +113,7 @@ namespace Tpetra
       //! Returns the number of matrix rows owned by the calling image. 
       inline Ordinal getNumMyRows() const;
 
-      //! Returns the number of matrix columns owned by the calling image. 
+      //! Returns the number of matrix columns referenced by the calling image. 
       inline Ordinal getNumMyCols() const;
 
       //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons. 
@@ -434,8 +434,8 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
         "Tpetra::CrsMatrix::submitEntries(): values.size() must equal indices.size().");
-    typename  Teuchos::ArrayView<Scalar>::iterator val =  values.begin();
-    typename Teuchos::ArrayView<Ordinal>::iterator ind = indices.begin();
+    typename  Teuchos::ArrayView<const Scalar>::iterator val =  values.begin();
+    typename Teuchos::ArrayView<const Ordinal>::iterator ind = indices.begin();
     for (; val != values.end(); ++val, ++ind) 
     {
       submitEntry(globalRow, *ind, *val);
@@ -627,9 +627,11 @@ namespace Tpetra
           {
             Ordinal globalRow = rowMap_.getGlobalIndex(i);
             Ordinal rowSize = getNumRowEntries(globalRow);
-            getGlobalRowCopy(globalRow, indices(0,rowSize), values(0,rowSize));
-            for (Ordinal j=OT::zero(); j < rowSize; ++j) {
-              os << "Matrix(" << globalRow << ", " << indices[j] << ") = " << values[j] << endl;
+            if (rowSize > Teuchos::OrdinalTraits<Ordinal>::zero()) {
+              getGlobalRowCopy(globalRow, indices(0,rowSize), values(0,rowSize));
+              for (Ordinal j=OT::zero(); j < rowSize; ++j) {
+                os << "Matrix(" << globalRow << ", " << indices[j] << ") = " << values[j] << endl;
+              }
             }
           }
         }
@@ -669,11 +671,13 @@ namespace Tpetra
     {
       // put them in the map from colinds_,values_
       std::map<Ordinal,Scalar> row;
-      typename Array<Ordinal>::const_iterator cind = colinds_[r].begin();
-      typename  Array<Scalar>::const_iterator val  = values_[r].begin();
-      for (; cind != colinds_[r].end(); ++cind, ++val)
       {
-        row[*cind] += *val;
+        typename Array<Ordinal>::const_iterator cind = colinds_[r].begin();
+        typename  Array<Scalar>::const_iterator val  = values_[r].begin();
+        for (; cind != colinds_[r].end(); ++cind, ++val)
+        {
+          row[*cind] += *val;
+        }
       }
       // get them out of the map, back to colinds_,values_
       typename std::map<Ordinal,Scalar>::size_type count = 0;
@@ -821,10 +825,10 @@ namespace Tpetra
       std::sort(IdsAndRows.begin(),IdsAndRows.end());
       // gather from other nodes to form the full graph
       globalNeighbors.shapeUninitialized(numImages,numImages);
-      Teuchos::gatherAll(*comm_,numImages,localNeighbors.getRawPtr(),numImages,globalNeighbors.values());
+      Teuchos::gatherAll(*comm_,numImages,localNeighbors.getRawPtr(),numImages*numImages,globalNeighbors.values());
       // globalNeighbors at this point contains (on all images) the
       // connectivity between the images. 
-      // globalNeighbors(i,j) != 0 means that j send to i/that i receives from j
+      // globalNeighbors(i,j) != 0 means that j sends to i/that i receives from j
     }
 
     ////////////////////////////////////////////////////////////////////////////////////// 
@@ -864,7 +868,9 @@ namespace Tpetra
         sendSizes[numSends]++;
       }
     }
-    numSends++; // one last increment, to make it a count instead of an index
+    if (IdsAndRows.size() > 0) {
+      numSends++; // one last increment, to make it a count instead of an index
+    }
     TEST_FOR_EXCEPTION(Teuchos::as<typename Array<Ordinal>::size_type>(numSends) != sendIDs.size(), std::logic_error, "Tpetra::CrsMatrix::globalAssemble(): internal logic error. Contact Tpetra team.");
 
     // don't need this data anymore
@@ -888,8 +894,12 @@ namespace Tpetra
       recvRequests.push_back( Teuchos::ireceive(*comm_,rcp(&recvSizes[r],false),recvIDs[r]) );
     }
     // wait on all 
-    Teuchos::waitAll(*comm_,sendRequests());
-    Teuchos::waitAll(*comm_,recvRequests());
+    if (!sendRequests.empty()) {
+      Teuchos::waitAll(*comm_,sendRequests());
+    }
+    if (!recvRequests.empty()) {
+      Teuchos::waitAll(*comm_,recvRequests());
+    }
     Teuchos::barrier(*comm_);
     sendRequests.clear();
     recvRequests.clear();
@@ -934,8 +944,12 @@ namespace Tpetra
       recvRequests.push_back( Teuchos::ireceive<Ordinal,CrsIJV<Ordinal,Scalar> >(*comm_,tmparcp,recvIDs[r]) );
     }
     // perform waits
-    Teuchos::waitAll(*comm_,sendRequests());
-    Teuchos::waitAll(*comm_,recvRequests());
+    if (!sendRequests.empty()) {
+      Teuchos::waitAll(*comm_,sendRequests());
+    }
+    if (!recvRequests.empty()) {
+      Teuchos::waitAll(*comm_,recvRequests());
+    }
     Teuchos::barrier(*comm_);
     sendRequests.clear();
     recvRequests.clear();

@@ -370,6 +370,7 @@ namespace Anasazi {
   void MatOrthoManager<ScalarType,MV,OP>::innerProdMat( 
       const MV& X, const MV& Y, Teuchos::SerialDenseMatrix<int,ScalarType>& Z, Teuchos::RCP<const MV> MX, Teuchos::RCP<const MV> MY) const 
   {
+    (void)MX;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef MultiVecTraits<ScalarType,MV>     MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;

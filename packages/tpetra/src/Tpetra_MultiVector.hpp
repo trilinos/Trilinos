@@ -128,10 +128,29 @@ namespace Tpetra {
 
 
   template <typename Ordinal, typename Scalar> 
-  MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &arrayOfArrays, Ordinal NumVectors)
+  MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &arrayOfArrays)
     : DistObject<Ordinal,Scalar>(map, map.getComm(), "Tpetra::MultiVector")
   {
-    TEST_FOR_EXCEPT(true);
+    using Teuchos::as;
+    const Ordinal myLen = myLength();
+    Ordinal NumVectors = arrayOfArrays.size();
+    TEST_FOR_EXCEPTION(NumVectors < 1, std::runtime_error,
+        "Tpetra::MultiVector::MultiVector(map,arrayOfArrays): arrayOfArrays.size() must be strictly positive.");
+    MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    MVData_->constantStride_ = true;
+    MVData_->stride_ = myLen;
+    MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
+    MVData_->ptrs_.resize(NumVectors,Teuchos::null);
+    for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
+      MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(arrayOfArrays[i].size() != myLength(), std::runtime_error,
+          "Tpetra::MultiVector::MultiVector(map,arrayOfArrays): arrayOfArrays[" << i << "].size() (==" << arrayOfArrays[i].size() 
+          << ") != myLength() (==" << myLength() << ")");
+#endif
+      std::copy(arrayOfArrays[i].begin(),arrayOfArrays[i].end(),MVData_->ptrs_[i].begin());
+    }
+    MVData_->updateConstPointers();
   }
 
 
@@ -345,7 +364,7 @@ namespace Tpetra {
       const MultiVector<Ordinal,Scalar> &A, 
       const Teuchos::ArrayView<Scalar> &dots) const 
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     // compute local dot products of *this and A
@@ -377,7 +396,7 @@ namespace Tpetra {
   void MultiVector<Ordinal,Scalar>::norm1(
       const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
@@ -499,7 +518,7 @@ namespace Tpetra {
   void MultiVector<Ordinal,Scalar>::normInf(
       const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
@@ -557,7 +576,7 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::scale(const Scalar &alpha) 
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     using Teuchos::OrdinalTraits;
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     using Teuchos::ArrayView;
@@ -580,7 +599,7 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::scale(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A) 
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     using Teuchos::OrdinalTraits;
     using Teuchos::ArrayView;
     const Ordinal numVecs = this->numVectors();
@@ -612,7 +631,7 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::reciprocal(const MultiVector<Ordinal,Scalar> &A) 
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     using Teuchos::OrdinalTraits;
     using Teuchos::ScalarTraits;
     using Teuchos::ArrayView;
@@ -639,7 +658,7 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::abs(const MultiVector<Ordinal,Scalar> &A) 
   {
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     using Teuchos::OrdinalTraits;
     using Teuchos::ArrayView;
     const Ordinal numVecs = this->numVectors();
@@ -815,7 +834,7 @@ namespace Tpetra {
   Teuchos::ArrayView<const Scalar> MultiVector<Ordinal,Scalar>::operator[](Ordinal i) const
   {
     // teuchos does the bounds checking here, if TEUCHOS_DEBUG
-    return MVData_->ptrs_[i].getConst();
+    return MVData_->cPtrs_[i];
   }
 
   template<typename Ordinal, typename Scalar>
@@ -933,7 +952,7 @@ namespace Tpetra {
   }
 
   template<typename Ordinal, typename Scalar>
-  void MultiVector<Ordinal,Scalar>::extractCopy(const Teuchos::ArrayView<Scalar> &A, Ordinal &MyLDA) const 
+  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Scalar> A, Ordinal &MyLDA) const 
   {
     TEST_FOR_EXCEPTION(constantStride() == false, std::runtime_error,
       "MultiVector::extractCopy(A,LDA): only supported for constant stride multivectors.");
@@ -947,11 +966,23 @@ namespace Tpetra {
   }
 
   template<typename Ordinal, typename Scalar>
-  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > arrayOfArrays) const
+  void MultiVector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > arrayOfArrays) const
   {
-    (void)arrayOfArrays;
-    // FINISH
-    TEST_FOR_EXCEPT(true);
+#ifdef TEUCHOS_DEBUG 
+    TEST_FOR_EXCEPTION(arrayOfArrays.size() != numVectors(), std::runtime_error,
+        "Tpetra::MultiVector::extractCopy(arrayOfArrays): arrayOfArrays.size() (==" << arrayOfArrays.size() << ") must match"
+        "numVectors() (==" << numVectors() << ")");
+    for (typename Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> >::iterator it=arrayOfArrays.begin(); 
+         it != arrayOfArrays.end(); ++it) {
+      TEST_FOR_EXCEPTION(it->size() != myLength(), std::runtime_error, 
+          "Tpetra::MultiVector::extractCopy(arrayOfArrays): ArrayView's size (==" 
+          << it->size() << ") must match local MultiVector length (==" << myLength() << ")");
+    }
+#endif
+    // copy each multivector into the user provided 2-D array
+    for (Ordinal i=0; i<numVectors(); ++i) {
+      std::copy(MVData_->ptrs_[i].begin(), MVData_->ptrs_[i].end(), arrayOfArrays[i].begin());
+    }
   }
 
   template<typename Ordinal, typename Scalar>
@@ -973,9 +1004,9 @@ namespace Tpetra {
   }
 
   template<typename Ordinal, typename Scalar>
-  Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > MultiVector<Ordinal,Scalar>::extractView()
+  Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > MultiVector<Ordinal,Scalar>::extractView()
   {
-    return MVData_->ptrs_();
+    return MVData_->ptrs_().getConst();
   }
 
   template<typename Ordinal, typename Scalar>
@@ -1091,7 +1122,7 @@ namespace Tpetra {
     Btmp->extractConstView(Bp,ldb);
     Ctmp->extractView(Cp,ldc);
 
-    Teuchos::BLAS<Ordinal,Scalar> blas;
+    Teuchos::BLAS<int,Scalar> blas;
     // do the arithmetic now
     blas.GEMM(transA,transB,m,n,k,alpha,Ap.getRawPtr(),lda,Bp.getRawPtr(),ldb,beta_local,Cp.getRawPtr(),ldc);
 
@@ -1209,6 +1240,30 @@ namespace Tpetra {
   void MultiVector<Ordinal,Scalar>::replaceMap(const Map<Ordinal> &map)
   {
     TEST_FOR_EXCEPT(true);
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::replaceMyValue(Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue)
+  {
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(MyRow < this->getMap().getMinLocalIndex() || MyRow > this->getMap().getMaxLocalIndex(), std::runtime_error,
+        "Tpetra::MultiVector::replaceMyValue(): row index is invalid.");
+    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
+        "Tpetra::MultiVector::replaceMyValue(): vector index is invalid.");
+#endif
+    MVData_->ptrs_[VectorIndex][MyRow] = ScalarValue;
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::sumIntoMyValue(Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue)
+  {
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(MyRow < this->getMap().getMinLocalIndex() || MyRow > this->getMap().getMaxLocalIndex(), std::runtime_error,
+        "Tpetra::MultiVector::sumIntoMyValue(): row index is invalid.");
+    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
+        "Tpetra::MultiVector::sumIntoMyValue(): vector index is invalid.");
+#endif
+    MVData_->ptrs_[VectorIndex][MyRow] += ScalarValue;
   }
 
 } // namespace Tpetra

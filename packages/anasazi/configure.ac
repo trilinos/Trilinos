@@ -499,6 +499,7 @@ AC_CONFIG_FILES([
 		tpetra/src/Makefile
 		tpetra/test/Makefile
 		tpetra/test/MVOPTester/Makefile
+		tpetra/test/BlockKrylovSchur/Makefile
 		])
 		#tpetra/example/Makefile
 

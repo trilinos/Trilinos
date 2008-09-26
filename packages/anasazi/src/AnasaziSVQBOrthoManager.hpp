@@ -340,6 +340,7 @@ namespace Anasazi {
           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
           Teuchos::RCP<MV> MX,
           Teuchos::Array<Teuchos::RCP<const MV> > MQ) const {
+    (void)MQ;
     findBasis(X,MX,C,Teuchos::null,Q,false);
   }
 
@@ -369,6 +370,7 @@ namespace Anasazi {
           Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
           Teuchos::RCP<MV> MX,
           Teuchos::Array<Teuchos::RCP<const MV> > MQ) const {
+    (void)MQ;
     return findBasis(X,MX,C,B,Q,true);
   }
 

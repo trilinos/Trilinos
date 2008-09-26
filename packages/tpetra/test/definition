@@ -2,15 +2,8 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK, INSTALL) {
-    DIRS = Platform;
-    # EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK, INSTALL) {
-    DIRS = Distributor, Map, Directory, ImportExport, MultiVector;
+(FRAMEWORK, INSTALL, TpetraTests) {
+    DIRS = Platform, Distributor, Map, Directory, ImportExport, MultiVector, CrsMatrix;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;

@@ -1,8 +1,8 @@
 #@HEADER
 # ************************************************************************
 # 
-#         	Anasazi: Block Eigensolvers Package
-#	        Copyright (2001) Sandia Corporation
+#          Tpetra: Templated Linear Algebra Services Package
+#                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -26,9 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_ANASAZI_TPETRA
-TPETRA_TEST_SUBDIRS = MVOPTester BlockKrylovSchur
-endif
+include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 
-SUBDIRS = $(TPETRA_TEST_SUBDIRS)
- 
+EXEEXT = .exe
+
+noinst_PROGRAMS = CrsMatrix_UnitTests
+
+CrsMatrix_UnitTests_SOURCES = \
+  $(srcdir)/CrsMatrix_UnitTests.cpp \
+  $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+CrsMatrix_UnitTests_DEPENDENCIES = \
+	$(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+CrsMatrix_UnitTests_LDADD = $(TPETRA_LIBS)
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)

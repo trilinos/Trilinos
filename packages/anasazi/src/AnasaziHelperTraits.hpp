@@ -226,6 +226,7 @@ namespace Anasazi {
             std::vector<Value<ANSZI_CPLX_CLASS<T> > >* RV, 
             std::vector<int>* RO, std::vector<int>* RI )
     {
+        (void)RO;
         int curDim = (int)rRV.size();
         int i = 0;
 
@@ -245,6 +246,7 @@ namespace Anasazi {
             const std::vector<T>& iRV,
             Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<T> >* S )
     {
+      (void)iRV;
       typedef ANSZI_CPLX_CLASS<T> ST;
       ST ST_ONE = Teuchos::ScalarTraits<ST>::one();
 
@@ -266,6 +268,7 @@ namespace Anasazi {
             const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<T> >& S,
             std::vector<T>* RR )
     {
+        (void)iRV;
         Teuchos::BLAS<int,ANSZI_CPLX_CLASS<T> > blas;
 
         int s_stride = S.stride();

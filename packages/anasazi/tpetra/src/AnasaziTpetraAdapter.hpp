@@ -241,7 +241,7 @@ namespace Anasazi {
     { 
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION((unsigned int)mv.numVectors() != norms.size(),std::invalid_argument,
-          "Anasazi::MultiVecTraits<double,Tpetra::MultiVector>::MvNorm(mv,norms): norms must be the same size as mv.");
+          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvNorm(mv,norms): norms must be the same size as mv.");
 #endif
       mv.norm2(Teuchos::arrayViewFromVector(norms));
     }
@@ -256,7 +256,7 @@ namespace Anasazi {
     { 
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION((unsigned int)A.numVectors() != index.size(),std::invalid_argument,
-          "Anasazi::MultiVecTraits<double,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
+          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
       Teuchos::RCP<Tpetra::MultiVector<int,Scalar> > mvsub = mv.subView(Teuchos::arrayViewFromVector(index));
       *mvsub = A;
@@ -265,13 +265,15 @@ namespace Anasazi {
 
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
-    static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, double alpha ) 
+    static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, Scalar alpha ) 
     { mv.scale(alpha); }
 
     /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
      */
-    static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, const std::vector<double>& alpha )
+    static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, const std::vector<Scalar>& alpha )
     { 
+      (void)mv;
+      (void)alpha;
       TEST_FOR_EXCEPT(true);
     }
 
@@ -282,7 +284,7 @@ namespace Anasazi {
 
     /*! \brief Replace each element of the vectors in \c mv with \c alpha.
      */
-    static void MvInit( Tpetra::MultiVector<int,Scalar>& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
+    static void MvInit( Tpetra::MultiVector<int,Scalar>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
     { mv.putScalar(alpha); }
 
     //@}

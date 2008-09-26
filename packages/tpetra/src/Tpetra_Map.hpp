@@ -646,7 +646,7 @@ namespace Tpetra {
     // comparisons and conduct a single communication
     char isSame_lcl = Teuchos::ScalarTraits<char>::one();
 
-    // check number of entries own by this node
+    // check number of entries owned by this node
     if (getNumMyEntries() != map.getNumMyEntries()) {
       isSame_lcl = Teuchos::ScalarTraits<char>::zero();
     }
@@ -657,14 +657,15 @@ namespace Tpetra {
       // if they are contiguous, we can check the ranges easily
       // if they are not contiguous, we must check the individual LID -> GID mappings
       // the latter approach is valid in either case, but the former is faster
-      if (MapData_->contiguous_ == map.MapData_->contiguous_) {
+      if (MapData_->contiguous_ == true && map.MapData_->contiguous_ == true) {
         if (MapData_->minMyGID_ != map.MapData_->minMyGID_ ||
             MapData_->maxMyGID_ != map.MapData_->maxMyGID_) {
           isSame_lcl = Teuchos::ScalarTraits<char>::zero();
         }
       }
       else {
-        if (MapData_->lgMap_ != map.MapData_->lgMap_) {
+        if (!std::equal(    MapData_->lgMap_.begin(),MapData_->lgMap_.end(),
+                        map.MapData_->lgMap_.begin())) {
           isSame_lcl = Teuchos::ScalarTraits<char>::zero();
         }
       }

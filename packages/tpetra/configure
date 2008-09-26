@@ -8524,7 +8524,7 @@ fi
 # ------------------------------------------------------------------------
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile example/Makefile test/Makefile test/Platform/Makefile test/Distributor/Makefile test/Map/Makefile test/Directory/Makefile test/ImportExport/Makefile test/MultiVector/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile example/Makefile test/Makefile test/Platform/Makefile test/Distributor/Makefile test/Map/Makefile test/Directory/Makefile test/ImportExport/Makefile test/MultiVector/Makefile test/CrsMatrix/Makefile"
 
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile
@@ -9229,6 +9229,7 @@ do
     "test/Directory/Makefile") CONFIG_FILES="$CONFIG_FILES test/Directory/Makefile" ;;
     "test/ImportExport/Makefile") CONFIG_FILES="$CONFIG_FILES test/ImportExport/Makefile" ;;
     "test/MultiVector/Makefile") CONFIG_FILES="$CONFIG_FILES test/MultiVector/Makefile" ;;
+    "test/CrsMatrix/Makefile") CONFIG_FILES="$CONFIG_FILES test/CrsMatrix/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

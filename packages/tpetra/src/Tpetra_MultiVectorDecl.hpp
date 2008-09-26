@@ -66,7 +66,7 @@ namespace Tpetra {
     MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Scalar> &A, Ordinal LDA, Ordinal numVectors);
 
     //! Set multi-vector values from array of pointers. (copy)
-    MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &arrayOfArrays, Ordinal numVectors);
+    MultiVector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &arrayOfArrays);
 
     //! MultiVector destructor.
     virtual ~MultiVector();
@@ -132,16 +132,16 @@ namespace Tpetra {
 
 
     //! Return multi-vector values in user-provided two-dimensional array.
-    void extractCopy(const Teuchos::ArrayView<Scalar> &A, Ordinal &MyLDA) const;
+    void extractCopy(Teuchos::ArrayView<Scalar> A, Ordinal &MyLDA) const;
 
     //! Return multi-vector values in user-provided array of pointers.
-    void extractCopy(Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > arrayOfArrays) const;
+    void extractCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > arrayOfArrays) const;
 
     //! Return non-const non-persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
     void extractView(Teuchos::ArrayView<Scalar> &A, Ordinal &MyLDA);
 
     //! Return non-const non-persisting pointers to values. This is a non-persisting view.
-    Teuchos::ArrayView<Teuchos::ArrayView<Scalar> > extractView();
+    Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > extractView();
 
     //! Return const non-persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
     void extractConstView(Teuchos::ArrayView<const Scalar> &A, Ordinal &MyLDA) const;
