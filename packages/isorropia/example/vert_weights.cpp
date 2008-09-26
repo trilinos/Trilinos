@@ -61,7 +61,7 @@
 //Declaration for helper-function that creates epetra rowmatrix objects. This
 //function is implemented at the bottom of this file.
 #ifdef HAVE_EPETRA
-Teuchos::RefCountPtr<const Epetra_RowMatrix>
+Teuchos::RCP<const Epetra_RowMatrix>
   create_epetra_rowmatrix(int numProcs,
                           int localProc,
                           int local_n);
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 
   //Create a Epetra_RowMatrix object.
 
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmatrix;
+  Teuchos::RCP<const Epetra_RowMatrix> rowmatrix;
   try {
     rowmatrix = create_epetra_rowmatrix(numProcs, localProc, local_n);
   }
@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
 
   //Now we're going to create a Epetra_Vector with vertex weights to
   //be used in the repartitioning operation.
-  Teuchos::RefCountPtr<Epetra_Vector> vweights =
+  Teuchos::RCP<Epetra_Vector> vweights =
     Teuchos::rcp(new Epetra_Vector(rowmatrix->RowMatrixRowMap()));
 
   double* vals = vweights->Values();
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
     vals[i] = 1.0*(map.GID(i)+1);
   }
 
-  Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs =
+  Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs =
     Teuchos::rcp(new Isorropia::Epetra::CostDescriber);
 
   costs->setVertexWeights(vweights);
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
 
   //Now create the partitioner object using an Isorropia factory-like
   //'create_partitioner' function...
-  Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner =
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
     Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
 
 
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
 
   Isorropia::Epetra::Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix;
+  Teuchos::RCP<Epetra_CrsMatrix> bal_matrix;
 
   //Use a try-catch block because Isorropia will throw an exception
   //if it encounters an error.
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
 
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-Teuchos::RefCountPtr<const Epetra_RowMatrix>
+Teuchos::RCP<const Epetra_RowMatrix>
  create_epetra_rowmatrix(int numProcs,
                          int localProc,
                          int local_n)
@@ -240,7 +240,7 @@ Teuchos::RefCountPtr<const Epetra_RowMatrix>
   Epetra_Map rowmap(global_num_rows, local_n, 0, comm);
 
   int nnz_per_row = 9;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> matrix =
     Teuchos::rcp(new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row));
 
   // Add  rows one-at-a-time

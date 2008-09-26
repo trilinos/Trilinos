@@ -109,13 +109,13 @@ int main(int argc, char** argv) {
 
 
   Epetra_RowMatrix* rowmatrix = linprob->GetMatrix();
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmat =
+  Teuchos::RCP<const Epetra_RowMatrix> rowmat =
     Teuchos::rcp(rowmatrix, false);
 
 
   //Now create the partitioner object using an Isorropia factory-like
   //function...
-  Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner =
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
     Isorropia::Epetra::create_partitioner(rowmat, paramlist);
 
 
@@ -124,9 +124,9 @@ int main(int argc, char** argv) {
 
   Isorropia::Epetra::Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix;
-  Teuchos::RefCountPtr<Epetra_MultiVector> bal_x;
-  Teuchos::RefCountPtr<Epetra_MultiVector> bal_b;
+  Teuchos::RCP<Epetra_CrsMatrix> bal_matrix;
+  Teuchos::RCP<Epetra_MultiVector> bal_x;
+  Teuchos::RCP<Epetra_MultiVector> bal_b;
 
   //Use a try-catch block because Isorropia will throw an exception
   //if it encounters an error.

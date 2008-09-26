@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   Epetra_Map origmap(global_n, 3, &mynodes[0], 0, comm);
 
-  Teuchos::RefCountPtr<Epetra_FECrsMatrix> matrix =
+  Teuchos::RCP<Epetra_FECrsMatrix> matrix =
     Teuchos::rcp(new Epetra_FECrsMatrix(Copy, origmap, 0));
 
   //We'll assemble elements E0 and E1 on proc 0,
@@ -193,16 +193,16 @@ int main(int argc, char** argv) {
 #endif
 
 
-  Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs =
+  Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs =
     Teuchos::rcp(new Isorropia::Epetra::CostDescriber);
 
   //Next create a matrix which is a copy of the matrix we just
   //assembled, but we'll replace the values with graph edge weights.
 
-  Teuchos::RefCountPtr<Epetra_FECrsMatrix> ge_weights =
+  Teuchos::RCP<Epetra_FECrsMatrix> ge_weights =
     Teuchos::rcp(new Epetra_FECrsMatrix(*matrix));
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> crs_ge_weights;
+  Teuchos::RCP<Epetra_CrsMatrix> crs_ge_weights;
   crs_ge_weights = ge_weights;
 
   //Fill the matrix with a "default" weight of 1.0.
@@ -272,12 +272,12 @@ int main(int argc, char** argv) {
   //Now give the graph edge weights to the CostDescriber:
   costs->setGraphEdgeWeights(crs_ge_weights);
 
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmatrix;
+  Teuchos::RCP<const Epetra_RowMatrix> rowmatrix;
   rowmatrix = matrix;
 
   //Now create the partitioner object using an Isorropia factory-like
   //function...
-  Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner =
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
     Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
 
 
@@ -286,7 +286,7 @@ int main(int argc, char** argv) {
 
   Isorropia::Epetra::Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix;
+  Teuchos::RCP<Epetra_CrsMatrix> bal_matrix;
 
   //Use a try-catch block because Isorropia will throw an exception
   //if it encounters an error.
