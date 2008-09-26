@@ -161,7 +161,7 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
 
   Teuchos::ParameterList paramlist;
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
+  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix;
   try {
     if (verbose) {
       std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsMatrix)..."
@@ -241,7 +241,7 @@ bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
   //is roughly equal. i.e., by default, weights for each row are assumed to
   //be the number of nonzeros in that row.
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix;
+  Teuchos::RCP<Epetra_RowMatrix> balanced_matrix;
   try {
     if (verbose) {
       std::cout << " calling Isorropia::create_balanced_copy(Epetra_RowMatrix)..."
@@ -325,7 +325,7 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   //is roughly equal. i.e., by default, weights for each row are assumed to
   //be the number of nonzeros in that row.
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> balanced_problem;
+  Teuchos::RCP<Epetra_LinearProblem> balanced_problem;
 
   try {
     if (verbose) {
@@ -411,27 +411,27 @@ bool test_rebalance_epetra_linproblem2(int numProcs, int localProc, bool verbose
 
   Teuchos::ParameterList paramlist;
 
-  //Wrap a RefCountPtr around the matrix graph, and specify 'false', meaning
-  //that the RefCountPtr will not take ownership of the graph (will not
+  //Wrap a RCP around the matrix graph, and specify 'false', meaning
+  //that the RCP will not take ownership of the graph (will not
   //delete it).
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> graph =
+  Teuchos::RCP<const Epetra_CrsGraph> graph =
     Teuchos::rcp( &(input_matrix->Graph()), false);
 
-  Teuchos::RefCountPtr<Isorropia::Epetra::Partitioner> partitioner =
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
     Teuchos::rcp(new Isorropia::Epetra::Partitioner(graph, paramlist));
 
   Isorropia::Epetra::Redistributor rd(partitioner);
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> bal_matrix =
     rd.redistribute(*(problem.GetMatrix()));
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> bal_x =
+  Teuchos::RCP<Epetra_MultiVector> bal_x =
     rd.redistribute(*(problem.GetLHS()));
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> bal_b =
+  Teuchos::RCP<Epetra_MultiVector> bal_b =
     rd.redistribute(*(problem.GetRHS()));
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> balanced_problem =
+  Teuchos::RCP<Epetra_LinearProblem> balanced_problem =
     Teuchos::rcp(new Epetra_LinearProblem(bal_matrix.get(),
 					  bal_x.get(), bal_b.get()));
 
@@ -504,7 +504,7 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   //be the number of nonzeros in that row.
 
   Teuchos::ParameterList paramlist;
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
+  Teuchos::RCP<Epetra_CrsGraph> balanced_graph;
   try {
     if (verbose) {
       std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsGraph)..."

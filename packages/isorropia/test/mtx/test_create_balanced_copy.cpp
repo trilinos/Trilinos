@@ -522,10 +522,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     
   // Reference counted pointer to balanced object
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> matrixPtr;
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graphPtr;
-  Teuchos::RefCountPtr<Epetra_RowMatrix> rowMatrixPtr;
-  Teuchos::RefCountPtr<Epetra_LinearProblem> problemPtr;
+  Teuchos::RCP<Epetra_CrsMatrix> matrixPtr;
+  Teuchos::RCP<Epetra_CrsGraph> graphPtr;
+  Teuchos::RCP<Epetra_RowMatrix> rowMatrixPtr;
+  Teuchos::RCP<Epetra_LinearProblem> problemPtr;
 
   // Row map for balanced object
   const Epetra_BlockMap *targetBlockRowMap=NULL;  // for input CrsGraph
@@ -559,7 +559,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
         rc = ispatest::compute_hypergraph_metrics(*matrix, costs,
              myShare, bal1, cn1, cl1);
 
-        Teuchos::RefCountPtr<Epetra_CrsMatrix> comparePtr = 
+        Teuchos::RCP<Epetra_CrsMatrix> comparePtr = 
           Isorropia::Epetra::create_balanced_copy(*matrix, *vptr);
 
         rc = ispatest::compute_hypergraph_metrics(*matrix, costs,

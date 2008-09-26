@@ -195,7 +195,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
 
 #ifdef HAVE_EPETRAEXT
-  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = colorer->generateMapColoring();
+  Teuchos::RCP<Epetra_MapColoring> colorMap = colorer->generateMapColoring();
   int numberColorsExt;
 
   numberColorsExt = colorMap->MaxNumColors();
