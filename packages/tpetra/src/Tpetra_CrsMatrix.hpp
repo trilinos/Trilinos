@@ -530,6 +530,21 @@ namespace Tpetra
         "Tpetra::CrsMatrix: cannot call apply() until fillComplete() has been called.");
     TEST_FOR_EXCEPTION(X.numVectors() != Y.numVectors(), std::runtime_error,
         "Tpetra::CrsMatrix::apply(X,Y): X and Y must have the same number of vectors.");
+
+    // DEBUG
+    /*
+    int myImageID = Teuchos::rank(*comm_);
+    if (myImageID == 0) {
+      std::cerr << "Entering CrsMatrix::apply()" << std::endl
+                << "Column Map: " << std::endl;
+    }
+    std::cerr << this->getColMap() << std::endl;
+    if (myImageID == 0) {
+      std::cerr << "Initial input: " << std::endl;
+    }
+    */
+    // END DEBUG
+
     Ordinal numVectors = X.numVectors();
     // because of Views, it is difficult to determine if X and Y point to the same data. 
     // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)

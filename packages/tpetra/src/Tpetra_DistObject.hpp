@@ -323,13 +323,13 @@ namespace Tpetra {
       const Teuchos::ArrayView<const Ordinal> &exportLIDs,
       Distributor<Ordinal> &distor, bool doReverse) 
   {
-    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     Ordinal packetSize;
     TEST_FOR_EXCEPTION( checkSizes(source,packetSize) == false, std::runtime_error, 
         "Tpetra::DistObject::doTransfer(): checkSizes() indicates that DistOjbects are not size-compatible.");
-    Ordinal bufLen = exportLIDs.size()*packetSize;
-    exports_.resize(bufLen);
-    imports_.resize(bufLen);
+    Ordinal sbufLen = exportLIDs.size()*packetSize;
+    Ordinal rbufLen = remoteLIDs.size()*packetSize;
+    exports_.resize(sbufLen);
+    imports_.resize(rbufLen);
     if (numSameIDs + permuteToLIDs.size()) {
       copyAndPermute(source,numSameIDs,permuteToLIDs,permuteFromLIDs);
     }
@@ -338,10 +338,10 @@ namespace Tpetra {
     {
       // call one of the doPostsAndWaits functions
       if (doReverse) {
-        distor.doReversePostsAndWaits(exports_().getConst(),ONE,imports_());
+        distor.doReversePostsAndWaits(exports_().getConst(),packetSize,imports_());
       }
       else {
-        distor.doPostsAndWaits(exports_().getConst(),ONE,imports_());
+        distor.doPostsAndWaits(exports_().getConst(),packetSize,imports_());
       }
       unpackAndCombine(remoteLIDs,imports_(),distor,CM);
     }

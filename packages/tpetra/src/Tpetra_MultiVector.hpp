@@ -194,7 +194,7 @@ namespace Tpetra {
     Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm = this->getMap().getComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
-    for(int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
       if (myImageID == imageCtr) {
         if (myImageID == 0) {
           os << "Number of vectors: " << numVectors() << endl;
@@ -215,7 +215,27 @@ namespace Tpetra {
   template <typename Ordinal, typename Scalar> 
   void MultiVector<Ordinal,Scalar>::printValues(std::ostream &os) const
   {
-    TEST_FOR_EXCEPT(true);
+    using std::endl;
+    using std::setw;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm = this->getMap().getComm();
+    const Map<Ordinal> &map = this->getMap();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+      if (myImageID == imageCtr) {
+        for (int i=0; i<myLength(); ++i) {
+          os << setw(4) << map.getGlobalIndex(i) << "\t";
+          for (int j=0; j<numVectors(); ++j) {
+            os << setw(20) << MVData_->ptrs_[j][i] << " ";
+          }
+          os << endl;
+        }
+      }
+      // Do a few global ops to give I/O a chance to complete
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
+    }
   }
 
 

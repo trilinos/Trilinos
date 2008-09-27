@@ -161,6 +161,7 @@ namespace {
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getDomainMap()), true);
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getRangeMap()) , true);
     // test the action
+    mvres.random();
     eye.apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
@@ -200,7 +201,6 @@ namespace {
       }
     }
     eye.fillComplete();
-    out << eye << endl;
     // test the properties
     TEST_EQUALITY(eye.getNumGlobalNonzeros()  , numImages*numLocal);
     TEST_EQUALITY(eye.getNumMyNonzeros()      , numLocal);
@@ -216,6 +216,7 @@ namespace {
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getDomainMap()), true);
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getRangeMap()) , true);
     // test the action
+    mvres.random();
     eye.apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
@@ -279,8 +280,6 @@ namespace {
       A.submitEntries(myImageID,cols(),vals());
     }
     A.fillComplete();
-    out << A << endl;
-    out << "ColMap: " << A.getColMap() << endl;
     // test the properties
     TEST_EQUALITY(A.getNumGlobalNonzeros()   , 3*numImages-2);
     TEST_EQUALITY(A.getNumMyNonzeros()       , myNNZ);
@@ -296,6 +295,7 @@ namespace {
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), false);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
     // test the action
+    threes.random();
     A.apply(ones,threes);
     // now, threes should be 3*ones
     threes.update(as<Scalar>(-3.0)*ST::one(),ones,ST::one());
@@ -359,8 +359,6 @@ namespace {
       A.submitEntries(myImageID,cols(),vals());
     }
     A.fillComplete();
-    out << A << endl;
-    out << "ColMap: " << A.getColMap() << endl;
     // test the properties
     TEST_EQUALITY(A.getNumGlobalNonzeros()   , 3*numImages-2);
     TEST_EQUALITY(A.getNumMyNonzeros()       , myNNZ);
@@ -385,12 +383,97 @@ namespace {
       ans.replaceMyValue(0,0, as<Scalar>(3.0));
     }
     // test the action
+    res.random();
     A.apply(fracs,res);
     // now, should res == ans
-    out << res << endl;
     res.update(-ST::one(),ans,ST::one());
     Array<Mag> norms(1), zeros(1,MT::zero());
     res.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, FullMatrix, Ordinal, Scalar )
+  {
+    // do a FEM-type communication, then apply to a MultiVector containing the identity
+    // this will check more difficult communication and test multivector apply
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Ordinal,Scalar> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal  ONE = OrdinalTraits<Ordinal>::one();
+    const Ordinal NEGONE = ZERO - ONE;
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    if (numImages < 3) return;
+    // create a Map
+    const Ordinal indexBase = ZERO;
+    Map<Ordinal> map(NEGONE,ONE,indexBase,platform);
+    /* create the following matrix:
+    0  [1 .5           ]   [1  .5]
+    1  [.5 2 .5        ]   [.5  1] + [1  .5]
+    2  [  .5  2 .5     ]             [.5  1] + 
+    3  [     .5        ] = 
+       [           2 .5]
+   n-1 [          .5  1]
+    */
+    Ordinal myNNZ;
+    CrsMatrix<Ordinal,Scalar> A(map);
+    MV mveye(map,numImages), mvans(map,numImages), mvres(map,numImages,false);
+    if (myImageID != numImages-1) { // last image assigns none
+      Array<Scalar> vals(3); vals[1] = as<Scalar>(0.5); vals[0] = vals[2] = ST::one();
+      Array<Ordinal> cols(2); cols[0] = myImageID; cols[1] = myImageID + 1;
+      A.submitEntries(myImageID  ,cols(),vals(0,2));
+      A.submitEntries(myImageID+1,cols(),vals(1,2));
+    }
+    // divine myNNZ and build multivector with matrix
+    mveye.replaceMyValue(0,myImageID,ST::one());
+    out << "mveye: " << endl; mveye.printValues(out);
+    if (myImageID == 0) {
+      myNNZ = 2;
+      mvans.replaceMyValue(0,0,as<Scalar>(1.0));
+      mvans.replaceMyValue(0,1,as<Scalar>(0.5));
+    }
+    else if (myImageID == numImages-1) {
+      myNNZ = 2;
+      mvans.replaceMyValue(0,numImages-2,as<Scalar>(0.5));
+      mvans.replaceMyValue(0,numImages-1,as<Scalar>(1.0));
+    }
+    else {
+      myNNZ = 3;
+      mvans.replaceMyValue(0,myImageID-1,as<Scalar>(0.5));
+      mvans.replaceMyValue(0,myImageID  ,as<Scalar>(2.0));
+      mvans.replaceMyValue(0,myImageID+1,as<Scalar>(0.5));
+    }
+    A.fillComplete();
+    out << A << endl;
+    out << "ColMap: " << A.getColMap() << endl;
+    // test the properties
+    TEST_EQUALITY(A.getNumGlobalNonzeros()   , 3*numImages-2);
+    TEST_EQUALITY(A.getNumMyNonzeros()       , myNNZ);
+    TEST_EQUALITY(A.getNumGlobalRows()       , numImages);
+    TEST_EQUALITY_CONST(A.getNumMyRows()     , ONE);
+    TEST_EQUALITY(A.getNumMyCols()           , myNNZ);
+    TEST_EQUALITY(A.getNumGlobalDiagonals()  , numImages);
+    TEST_EQUALITY_CONST(A.getNumMyDiagonals(), ONE);
+    TEST_EQUALITY(A.getGlobalMaxNumEntries() , 3);
+    TEST_EQUALITY(A.getMyMaxNumEntries()     , myNNZ);
+    TEST_EQUALITY_CONST(A.getIndexBase()     , ZERO);
+    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
+    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), false);
+    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
+    // test the action
+    A.apply(mveye,mvres);
+    out << "mvres: " << endl; mvres.printValues(out);
+    mvres.update(-ST::one(),mvans,ST::one());
+    Array<Mag> norms(numImages), zeros(numImages,MT::zero());
+    mvres.norm2(norms());
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
@@ -417,11 +500,11 @@ namespace {
     // create the zero matrix
     CrsMatrix<Ordinal,Scalar> zero(map);
     zero.fillComplete();
+    mvres.random();
     zero.apply(mvrand,mvres);
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     mvres.norm2(norms());
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
-    out << zero << endl;
   }
 
 
@@ -451,7 +534,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, ZeroMatrix   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, BadCalls     , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, SimpleEigTest, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, LessSimpleEigTest, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, LessSimpleEigTest, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, FullMatrix   , ORDINAL, SCALAR )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
