@@ -292,7 +292,8 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
-	$(srcdir)/Teuchos_Ptr.hpp $(srcdir)/Teuchos_RCP.hpp \
+	$(srcdir)/Teuchos_Ptr.hpp $(srcdir)/Teuchos_PtrDecl.hpp \
+	$(srcdir)/Teuchos_RCP.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RCPDecl.hpp $(srcdir)/Teuchos_RCPNode.hpp \
@@ -574,6 +575,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Ptr.hpp \
+	$(srcdir)/Teuchos_PtrDecl.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \

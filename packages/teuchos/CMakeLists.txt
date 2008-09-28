@@ -52,3 +52,6 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
 
 # 2008/09/15: rabartl: Above, if this CONFIGURE_FILE(...) function is the same
 # for every package why not just wrap it as a function that gets called?
+
+# 2008/09/25: rabartl: Above, I don't think we even need a PackageConfig.cmake
+# file
