@@ -318,6 +318,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardParameterEntryValidators.hpp \
 	$(srcdir)/Teuchos_StringToIntMap.hpp \
+	$(srcdir)/Teuchos_toString.hpp \
 	$(srcdir)/Teuchos_TableColumn.hpp \
 	$(srcdir)/Teuchos_TableEntry.hpp \
 	$(srcdir)/Teuchos_TableFormat.hpp \
@@ -601,6 +602,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardParameterEntryValidators.hpp \
 	$(srcdir)/Teuchos_StringToIntMap.hpp \
+	$(srcdir)/Teuchos_toString.hpp \
 	$(srcdir)/Teuchos_TableColumn.hpp \
 	$(srcdir)/Teuchos_TableEntry.hpp \
 	$(srcdir)/Teuchos_TableFormat.hpp \

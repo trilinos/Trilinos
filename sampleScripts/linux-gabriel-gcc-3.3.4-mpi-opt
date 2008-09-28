@@ -30,6 +30,7 @@ FLIBS="-lg2c" \
 --enable-ifpack \
 --enable-ml \
 --enable-anasazi \
+--enable-intrepid \
 --enable-meros \
 --enable-nox --enable-nox-epetra --enable-nox-epetraext \
 --enable-stratimikos \

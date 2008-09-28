@@ -111,6 +111,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Ptr.hpp \
+	$(srcdir)/Teuchos_PtrDecl.hpp \
 	$(srcdir)/Teuchos_RCP.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
@@ -139,6 +140,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardParameterEntryValidators.hpp \
 	$(srcdir)/Teuchos_StringToIntMap.hpp \
+	$(srcdir)/Teuchos_toString.hpp \
 	$(srcdir)/Teuchos_TableColumn.hpp \
 	$(srcdir)/Teuchos_TableEntry.hpp \
 	$(srcdir)/Teuchos_TableFormat.hpp \

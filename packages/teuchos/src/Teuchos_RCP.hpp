@@ -43,6 +43,7 @@
 */
 
 #include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_Ptr.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Exceptions.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -50,201 +51,36 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 
-// /////////////////////////////////////////////////////////////////////////
-// Inline implementations below, not for the client to look at.
-
 namespace Teuchos {
 
 
-// /////////////////////////////////////////////////////////////////////////////////
-// Inline member functions for RCP<...>.
+// Constructors/destructors/initializers
 
 
 template<class T>
 inline
 RCP<T>::RCP( ENull )
   : ptr_(NULL)
-  , node_(NULL)
 {}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-RCP<T>::RCP(const RCP<T>& r_ptr)
-  : ptr_(r_ptr.ptr_), node_(r_ptr.node_)
-{
-  if(node_) node_->incr_count();
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-template<class T2>
-RCP<T>::RCP(const RCP<T2>& r_ptr)
-  : ptr_(r_ptr.get()),  // will not compile if T is not base class of T2
-    node_(r_ptr.access_node())
-{
-  if(node_) node_->incr_count();
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-RCP<T>::~RCP()
-{
-  if(node_ && node_->deincr_count() == 0 ) {
-#ifdef TEUCHOS_DEBUG
-    local_printActiveRCPNodes.foo(); // Make sure this object is used!
-    remove_RCPNode(node_);
-#endif
-    delete node_;
-  }
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
-{
-  if( this == &r_ptr )
-    return *this; // Assignment to self
-  if( node_ && !node_->deincr_count() ) {
-#ifdef TEUCHOS_DEBUG
-    remove_RCPNode(node_);
-#endif
-    delete node_;
-  }
-  ptr_  = r_ptr.ptr_;
-  node_ = r_ptr.node_;
-  if(node_) node_->incr_count();
-  return *this;
-}
-
-
-template<class T>
-inline
-T* RCP<T>::operator->() const
-{
-#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-  assert_not_null();
-#endif
-  return ptr_;
-}
-
-
-template<class T>
-inline
-T& RCP<T>::operator*() const
-{
-#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-  assert_not_null();
-#endif
-  return *ptr_;
-}
-
-
-template<class T>
-inline
-T* RCP<T>::get() const
-{
-  return ptr_;
-}
-
-
-template<class T>
-inline
-T* RCP<T>::getRawPtr() const
-{
-  return ptr_;
-}
-
-
-template<class T>
-inline
-Ptr<T> RCP<T>::ptr() const
-{
-  return Ptr<T>(ptr_);
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-Ptr<T> RCP<T>::release() {
-  if(node_)
-    node_->has_ownership(false);
-  return Ptr<T>(ptr_);
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-int RCP<T>::count() const
-{
-  if(node_)
-    return node_->count();
-  return 0;
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-void RCP<T>::set_has_ownership() {
-  if(node_)
-    node_->has_ownership(true);
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-bool RCP<T>::has_ownership() const
-{
-  if(node_)
-    return node_->has_ownership();
-  return false;
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-template <class T2>
-bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const
-{
-  return node_ == r_ptr.access_node();
-  // Note: above, r_ptr is *not* the same class type as *this so we can not
-  // access its node_ member directly!  This is an interesting detail to the
-  // C++ protected/private protection mechanism!
-}
-
-
-template<class T>
-inline
-const RCP<T>& RCP<T>::assert_not_null() const
-{
-  if(!ptr_) throw_null_ptr_error(typeName(*this));
-  return *this;
-}
-
-
-// very bad public functions
 
 
 template<class T>
 inline
 RCP<T>::RCP( T* p, bool has_ownership_in )
-  :ptr_(p),
-  node_(
-    p
-    ? new RCPNodeTmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership_in)
-    : NULL )
+  : ptr_(p)
+#ifndef TEUCHOS_DEBUG
+  , node_(RCP_createNewRCPNodeRawPtr(p, has_ownership_in))
+#endif // TEUCHOS_DEBUG
 {
 #ifdef TEUCHOS_DEBUG
-  if(node_ && isTracingActiveRCPNodes()) {
-    std::ostringstream os;
-    os << "{T=\'"<<typeName(p)<<"\',Concrete T=\'"
-       <<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership_in<<"}";
-    add_new_RCPNode(node_, os.str());
+  if (p) {
+    node_ = RCPNodeHandle(
+      RCP_createNewRCPNodeRawPtr(p, has_ownership_in),
+      p, TypeNameTraits<T>::name(), TypeNameTraits<T>::concreteName(*p),
+      has_ownership_in
+      );
   }
-#endif
+#endif // TEUCHOS_DEBUG
 }
 
 
@@ -253,44 +89,294 @@ REFCOUNTPTR_INLINE
 template<class Dealloc_T>
 RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership_in )
   : ptr_(p)
-  , node_( p ? new RCPNodeTmpl<T,Dealloc_T>(p,dealloc,has_ownership_in) : NULL )
+#ifndef TEUCHOS_DEBUG
+  , node_(RCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in))
+#endif // TEUCHOS_DEBUG
 {
 #ifdef TEUCHOS_DEBUG
-  if(node_ && isTracingActiveRCPNodes()) {
-    std::ostringstream os;
-    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"
-       <<TypeNameTraits<T>::concreteName(*p)<<"\',p="
-       <<p<<",has_ownership="<<has_ownership_in<<"}";
-    add_new_RCPNode(node_, os.str());
+  if (p) {
+    node_ = RCPNodeHandle(
+      RCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
+      p, TypeNameTraits<T>::name(), TypeNameTraits<T>::concreteName(*p),
+      has_ownership_in
+      );
   }
+#endif // TEUCHOS_DEBUG
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+RCP<T>::RCP(const RCP<T>& r_ptr)
+  : ptr_(r_ptr.ptr_), node_(r_ptr.node_)
+{}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+template<class T2>
+RCP<T>::RCP(const RCP<T2>& r_ptr)
+  : ptr_(r_ptr.get()), // will not compile if T is not base class of T2
+    node_(r_ptr.access_private_node())
+{}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+RCP<T>::~RCP()
+{}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
+{
+  if( this == &r_ptr )
+    return *this; // Assignment to self
+  node_ = r_ptr.access_private_node(); // May throw in debug mode!
+  ptr_ = r_ptr.ptr_;
+  return *this;
+  // NOTE: It is critical that the assignment of ptr_ come *after* the
+  // assignment of node_ since node_ might throw an exception!
+}
+
+
+// Object query and access functions
+
+
+template<class T>
+inline
+bool RCP<T>::is_null() const
+{
+  return ptr_ == 0;
+}
+
+
+template<class T>
+inline
+T* RCP<T>::operator->() const
+{
+  debug_assert_not_null();
+  debug_assert_valid_ptr();
+  return ptr_;
+}
+
+
+template<class T>
+inline
+T& RCP<T>::operator*() const
+{
+  debug_assert_not_null();
+  debug_assert_valid_ptr();
+  return *ptr_;
+}
+
+template<class T>
+inline
+T* RCP<T>::get() const
+{
+  debug_assert_valid_ptr();
+  return ptr_;
+}
+
+
+template<class T>
+inline
+T* RCP<T>::getRawPtr() const
+{
+  return this->get();
+}
+
+
+template<class T>
+inline
+Ptr<T> RCP<T>::ptr() const
+{
+#ifdef TEUCHOS_DEBUG
+  return Ptr<T>(this->create_weak());
+#else
+  return Ptr<T>(getRawPtr());
 #endif
 }
 
 
+// Reference counting
+
+
 template<class T>
 inline
-RCP<T>::RCP( T* p, RCPNode* node)
-  : ptr_(p), node_(node)
+ERCPStrength RCP<T>::strength() const
 {
-  if(node_) node_->incr_count();
+  return node_.strength();
 }
 
 
 template<class T>
 inline
-T*& RCP<T>::access_ptr()
+bool RCP<T>::is_valid_ptr() const
+{
+  if (ptr_)
+    return node_.is_valid_ptr();
+  return true;
+}
+
+
+template<class T>
+inline
+int RCP<T>::strong_count() const
+{
+  return node_.strong_count();
+}
+
+
+template<class T>
+inline
+int RCP<T>::weak_count() const
+{
+  return node_.weak_count();
+}
+
+
+template<class T>
+inline
+int RCP<T>::total_count() const
+{
+  return node_.total_count();
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+void RCP<T>::set_has_ownership()
+{
+  node_.has_ownership(true);
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+bool RCP<T>::has_ownership() const
+{
+  return node_.has_ownership();
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+Ptr<T> RCP<T>::release()
+{
+  debug_assert_valid_ptr();
+  node_.has_ownership(false);
+  return Ptr<T>(ptr_);
+}
+
+
+template<class T>
+inline
+RCP<T> RCP<T>::create_weak() const
+{
+  debug_assert_valid_ptr();
+  return RCP<T>(ptr_, node_.create_weak());
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+template <class T2>
+bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const
+{
+  return node_.same_node(r_ptr.access_private_node());
+  // Note: above, r_ptr is *not* the same class type as *this so we can not
+  // access its node_ member directly!  This is an interesting detail to the
+  // C++ protected/private protection mechanism!
+}
+
+
+// Assertions
+
+
+template<class T>
+inline
+const RCP<T>& RCP<T>::assert_not_null() const
+{
+  if (!ptr_)
+    throw_null_ptr_error(typeName(*this));
+  return *this;
+}
+
+
+template<class T>
+inline
+const RCP<T>& RCP<T>::assert_valid_ptr() const
+{
+  if (ptr_)
+    node_.assert_valid_ptr(*this);
+  return *this;
+}
+
+
+// Deprecated
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+int RCP<T>::count() const
+{
+  return node_.count();
+}
+
+
+// very bad public functions
+
+
+template<class T>
+inline
+RCPNode* RCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
+{
+  if (p) {
+    return new RCPNodeTmpl<T,DeallocDelete<T> >(
+      p, DeallocDelete<T>(), has_ownership_in
+      );
+  }
+  return 0;
+}
+
+
+template<class T, class Dealloc_T>
+inline
+RCPNode* RCP_createNewDeallocRCPNodeRawPtr(
+  T* p, Dealloc_T dealloc, bool has_ownership_in
+  )
+{
+  if (p) {
+    return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
+  }
+  return 0;
+}
+
+
+template<class T>
+inline
+RCP<T>::RCP( T* p, const RCPNodeHandle& node)
+  : ptr_(p), node_(node)
+{}
+
+
+template<class T>
+inline
+T* RCP<T>::access_private_ptr() const
 {  return ptr_; }
 
 
 template<class T>
 inline
-RCPNode*& RCP<T>::access_node()
+RCPNodeHandle& RCP<T>::nonconst_access_private_node()
 {  return node_; }
 
 
 template<class T>
 inline
-RCPNode* RCP<T>::access_node() const
+const RCPNodeHandle& RCP<T>::access_private_node() const
 {  return node_; }
 
 
@@ -361,7 +447,7 @@ template<class T>
 REFCOUNTPTR_INLINE
 bool Teuchos::is_null( const RCP<T> &p )
 {
-  return p.get() == NULL;
+  return p.is_null();
 }
 
 
@@ -385,7 +471,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator==( const RCP<T1> &p1, const RCP<T2> &p2 )
 {
-  return p1.access_node() == p2.access_node();
+  return p1.access_private_node().same_node(p2.access_private_node());
 }
 
 
@@ -393,7 +479,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator!=( const RCP<T1> &p1, const RCP<T2> &p2 )
 {
-  return p1.access_node() != p2.access_node();
+  return !p1.access_private_node().same_node(p2.access_private_node());
 }
 
 
@@ -402,14 +488,9 @@ REFCOUNTPTR_INLINE
 Teuchos::RCP<T2>
 Teuchos::rcp_implicit_cast(const RCP<T1>& p1)
 {
-  T2 *check = p1.get();  // Make the compiler check if the conversion is legal
-  RCP<T2> p2;
-  if(p1.access_node()) {
-    p2.access_ptr()  = check;
-    p2.access_node() = const_cast<RCP<T1>&>(p1).access_node();
-    p2.access_node()->incr_count();
-  }
-  return p2;
+  // Make the compiler check if the conversion is legal
+  T2 *check = p1.get();
+  return RCP<T2>(check, p1.access_private_node());
 }
 
 
@@ -418,14 +499,9 @@ REFCOUNTPTR_INLINE
 Teuchos::RCP<T2>
 Teuchos::rcp_static_cast(const RCP<T1>& p1)
 {
-  T2 *check = static_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
-  RCP<T2> p2;
-  if(p1.access_node()) {
-    p2.access_ptr()  = check;
-    p2.access_node() = const_cast<RCP<T1>&>(p1).access_node();
-    p2.access_node()->incr_count();
-  }
-  return p2;
+  // Make the compiler check if the conversion is legal
+  T2 *check = static_cast<T2*>(p1.get());
+  return RCP<T2>(check, p1.access_private_node());
 }
 
 
@@ -434,14 +510,9 @@ REFCOUNTPTR_INLINE
 Teuchos::RCP<T2>
 Teuchos::rcp_const_cast(const RCP<T1>& p1)
 {
-  T2 *check = const_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
-  RCP<T2> p2;
-  if(p1.access_node()) {
-    p2.access_ptr()  = check;
-    p2.access_node() = const_cast<RCP<T1>&>(p1).access_node();
-    p2.access_node()->incr_count();
-  }
-  return p2;
+  // Make the compiler check if the conversion is legal
+  T2 *check = const_cast<T2*>(p1.get());
+  return RCP<T2>(check, p1.access_private_node());
 }
 
 
@@ -450,29 +521,32 @@ REFCOUNTPTR_INLINE
 Teuchos::RCP<T2>
 Teuchos::rcp_dynamic_cast(const RCP<T1>& p1, bool throw_on_fail)
 {
-  RCP<T2> p2; // NULL by default
   if (!is_null(p1)) {
     T2 *p = NULL;
-    if (throw_on_fail)
+    if (throw_on_fail) {
       p = &dyn_cast<T2>(*p1);
-    else
-      p = dynamic_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
+    }
+    else {
+      // Make the compiler check if the conversion is legal
+      p = dynamic_cast<T2*>(p1.get());
+    }
     if (p) {
-      p2.access_ptr() = p;
-      p2.access_node() = p1.access_node();
-      p2.access_node()->incr_count();
+      return RCP<T2>(p, p1.access_private_node());
     }
   }
-  return p2;
+  return null;
 }
 
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RCP<T2> *p, EPrePostDestruction destroy_when, bool force_unique )
+void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name,
+  Teuchos::RCP<T2> *p, EPrePostDestruction destroy_when, bool force_unique )
 {
   p->assert_not_null();
-  p->access_node()->set_extra_data( any(extra_data), name, destroy_when, force_unique );
+  p->nonconst_access_private_node().set_extra_data(
+    any(extra_data), name, destroy_when,
+    force_unique );
 }
 
 
@@ -481,16 +555,24 @@ REFCOUNTPTR_INLINE
 const T1& Teuchos::get_extra_data( const RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
-  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
+  return any_cast<T1>(
+    p.access_private_node().get_extra_data(
+      TypeNameTraits<T1>::name(),name
+      )
+    );
 }
 
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-T1& Teuchos::get_nonconst_extra_data( const RCP<T2>& p, const std::string& name )
+T1& Teuchos::get_nonconst_extra_data( RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
-  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
+  return any_cast<T1>(
+    p.nonconst_access_private_node().get_extra_data(
+      TypeNameTraits<T1>::name(), name
+      )
+    );
 }
 
 
@@ -500,8 +582,10 @@ Teuchos::Ptr<const T1>
 Teuchos::get_optional_extra_data( const RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
-  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
-  if( extra_data ) return Ptr<const T1>(&any_cast<T1>(*extra_data));
+  const any *extra_data = p.access_private_node().get_optional_extra_data(
+    TypeNameTraits<T1>::name(), name);
+  if (extra_data)
+    return Ptr<const T1>(&any_cast<T1>(*extra_data));
   return null;
 }
 
@@ -509,11 +593,13 @@ Teuchos::get_optional_extra_data( const RCP<T2>& p, const std::string& name )
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 Teuchos::Ptr<T1>
-Teuchos::get_optional_nonconst_extra_data( const RCP<T2>& p, const std::string& name )
+Teuchos::get_optional_nonconst_extra_data( RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
-  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
-  if( extra_data ) return Ptr<T1>(&any_cast<T1>(*extra_data));
+  any *extra_data = p.nonconst_access_private_node().get_optional_extra_data(
+    TypeNameTraits<T1>::name(),name);
+  if (extra_data)
+    return Ptr<T1>(&any_cast<T1>(*extra_data));
   return null;
 }
 
@@ -533,12 +619,15 @@ Dealloc_T& Teuchos::get_nonconst_dealloc( const RCP<T>& p )
   typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
   p.assert_not_null();
   RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-    *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+    *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(
+      p.access_private_node().node_ptr());
   TEST_FOR_EXCEPTION(
     dnode==NULL, NullReferenceError
-    ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
+    ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name()
+    << "," << TypeNameTraits<T>::name() << ">(p): "
     << "Error, requested type \'" << TypeNameTraits<requested_type>::name()
-    << "\' does not match actual type of the node \'" << typeName(*p.access_node()) << "!"
+    << "\' does not match actual type of the node \'"
+    << typeName(*p.access_private_node().node_ptr()) << "!"
     );
   return dnode->get_nonconst_dealloc();
 }
@@ -550,8 +639,8 @@ Teuchos::Ptr<Dealloc_T>
 Teuchos::get_optional_nonconst_dealloc( const RCP<T>& p )
 {
   p.assert_not_null();
-  RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-    *dnode = dynamic_cast<RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  typedef RCPNodeTmpl<typename Dealloc_T::ptr_t,Dealloc_T> RCPNT;
+  RCPNT *dnode = dynamic_cast<RCPNT*>(p.access_private_node().node_ptr());
   if(dnode)
     return ptr(&dnode->get_nonconst_dealloc());
   return null;
@@ -589,7 +678,7 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const RCP<T>& p )
   out
     << TypeNameTraits<RCP<T> >::name() << "{"
     << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
-    <<",node="<<p.access_node()
+    <<",node="<<p.access_private_node()
     <<",count="<<p.count()
     <<"}";
   return out;

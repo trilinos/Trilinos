@@ -1,36 +1,21 @@
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_getConst.hpp"
-#include "Teuchos_as.hpp"
+#include "Array_UnitTest_helpers.hpp"
 
 
 namespace {
 
 
-int n = 4;
-
-
-TEUCHOS_STATIC_SETUP()
-{
-  Teuchos::UnitTestRepository::getCLP().setOption(
-    "n", &n, "Number of elements in the array" );
-}
-
-
-template<class T>
-Teuchos::Array<T> generateArray(const int n)
-{
-  Teuchos::Array<T> a(n);
-  for( int i = 0; i < n; ++i )
-    a[i] = i; // tests non-const operator[](i)
-  return a;
-}
+using ArrayUnitTestHelpers::n;
+using ArrayUnitTestHelpers::generateArray;
+using Teuchos::null;
+using Teuchos::Array;
+using Teuchos::ArrayView;
+using Teuchos::as;
+using Teuchos::getConst;
+using Teuchos::DanglingReferenceError;
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, defaultConstruct, T )
 {
-  using Teuchos::Array;
-  using Teuchos::as;
   Array<T> a2;
   TEST_EQUALITY_CONST( as<int>(a2.size()), 0 );
   TEST_EQUALITY_CONST( as<int>(a2.empty()), true );
@@ -41,10 +26,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, defaultConstruct, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, sizedConstruct, T )
 {
-  using Teuchos::Array;
-  using Teuchos::as;
-  using Teuchos::getConst;
-  typedef typename Teuchos::Array<T>::size_type size_type;
+  typedef typename Array<T>::size_type size_type;
   Array<T> a(n);
   TEST_EQUALITY_CONST( a.empty(), false );
   TEST_EQUALITY( a.length(), n );
@@ -58,10 +40,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, sizedConstruct, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, operatorBracket, T )
 {
-  using Teuchos::Array;
-  using Teuchos::as;
   out << "\nTest that a[i] == i ... ";
-  Array<T> a = generateArray<T>(n);;
+  Array<T> a = generateArray<T>(n);
   bool local_success = true;
   for( int i = 0; i < n; ++i ) {
     TEST_ARRAY_ELE_EQUALITY( a, i, as<T>(i) );
@@ -73,10 +53,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, operatorBracket, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constAt, T )
 {
-  using Teuchos::Array;
-  using Teuchos::as;
   out << "\nTest that a.at(i) == i ...\n";
-  Array<T> a = generateArray<T>(n);;
+  Array<T> a = generateArray<T>(n);
   bool local_success = true;
   for( int i = 0; i < n; ++i ) {
     TEUCHOS_TEST_EQUALITY( a.at(i), as<T>(i), out, local_success );
@@ -86,17 +64,169 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constAt, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_before_block_end, T )
+{
+  typedef typename ArrayView<T>::iterator iter_t;
+  typedef Teuchos::NullIteratorTraits<iter_t> NIT;
+  iter_t iter = NIT::getNull();
+  {
+    ECHO(Array<T> a(n, as<T>(0)));
+    ECHO(ArrayView<T> av = a);
+    ECHO(iter = av.begin());
+    ECHO(av = null);
+    TEST_EQUALITY( *iter, a[0] );
+    // Above, the iterator to the ArrayView object is still valid even through
+    // the ArrayView object is was created from is gone now.  This is just
+    // fine since the underlying data is still there in the original Array object.
+    iter = NIT::getNull();
+  }
+}
+
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_implicit, T )
+{
+  ArrayView<T> av;
+  TEST_THROW( { Array<T> a(n); av = a; },
+    DanglingReferenceError );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_implicit_const, T )
+{
+  ArrayView<const T> av;
+  TEST_THROW( { Array<T> a(n); av = getConst(a); },
+    DanglingReferenceError );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_explicit, T )
+{
+  ArrayView<T> av;
+  TEST_THROW( { Array<T> a(n); av = a(); },
+    DanglingReferenceError );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_explicit_const, T )
+{
+  ArrayView<const T> av;
+  TEST_THROW( { Array<T> a(n); av = getConst(a)(); },
+    DanglingReferenceError );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_subview, T )
+{
+  ArrayView<T> av;
+  TEST_THROW( { Array<T> a(n); av = a(0,1); },
+    DanglingReferenceError );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_subview_const, T )
+{
+  ArrayView<const T> av;
+  TEST_THROW( { Array<T> a(n); av = getConst(a)(0,1); },
+    DanglingReferenceError );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter, T )
+{
+  typedef typename ArrayView<T>::iterator iter_t;
+  ECHO(Array<T> a(n));
+  ECHO(ArrayView<T> av = a);
+  ECHO(iter_t iter = av.begin());
+  ECHO(av = null);
+  TEST_THROW( a.resize(0), DanglingReferenceError );
+  // The way that Array::resize() is able to detect that there is still a
+  // dangling iterator comes from the way in which all of this is implemented.
+  // The reason that this throws is that the RCP<std::vector<T> > object
+  // embedded in the Array object gets embedded inside of the dealloc object
+  // which is attached to the node.  Therefore, even though the weak
+  // ArrayRCP<T> object that was created and embedded in the ArrayView<T>
+  // object has gone away, this same weak ArrayRCP<T> object was used to
+  // create another weak ArrayRCP<T> object which *is* the iterator object
+  // iter above.  What this means is that any reference counted object that
+  // gets created for whatever reason based on the underlying
+  // RCP<std::vector<T> > object will result in all the Array functions that
+  // alter the underlying array memory to throw an exception right away.  I
+  // think I really like this "early warning" behavior.  The only disadvantage
+  // is that we don't get a very good error message.  It would be nice to find
+  // a way so that it was the dangling reference object itself that threw the
+  // exception message and was able to provide better debug feedback.
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_const, T )
+{
+  typedef typename ArrayView<const T>::iterator iter_t;
+  ECHO(Array<T> a(n));
+  ECHO(ArrayView<T> av = a);
+  ECHO(iter_t iter = av.begin());
+  ECHO(av = null);
+  TEST_THROW( a.resize(0), DanglingReferenceError );
+  // See comments above.
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView, T )
+{
+  Array<T> a = generateArray<T>(n);
+  ArrayView<T> av = a;
+  TEST_THROW( a.push_back(a[0]), 
+    DanglingReferenceError );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
+{
+  Array<T> a = generateArray<T>(n);
+  ArrayView<const T> av = getConst(a);
+  TEST_THROW( a.push_back(a[0]), 
+    DanglingReferenceError );
+}
+
+
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+
+
 //
 // Instantiations
 //
+
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#  define DEBUG_UNIT_TEST_GROUP( T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit_const, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_explicit, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_explicit_const, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_subview, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_subview_const, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_const, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T )
+
+#else // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+#  define DEBUG_UNIT_TEST_GROUP( T )
+
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
 
 #define UNIT_TEST_GROUP( T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, defaultConstruct, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, sizedConstruct, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, operatorBracket, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, T )
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_before_block_end, T ) \
+  DEBUG_UNIT_TEST_GROUP( T )
 
 UNIT_TEST_GROUP(int)
 UNIT_TEST_GROUP(float)

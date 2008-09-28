@@ -210,6 +210,9 @@ public:
   /** \brief . */
   typedef typename std::vector<T>::const_reference const_reference;
 
+  /** \brief. */
+  typedef Teuchos_Index Ordinal;
+
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   /** \brief . */
   typedef ArrayRCP<T> iterator;
@@ -246,7 +249,7 @@ public:
   /** \brief . */
   Array();
   /** \brief . */
-  explicit Array(size_type n, const value_type& value = value_type());
+  explicit Array(Ordinal n, const value_type& value = value_type());
   /** \brief . */
   Array(const Array<T>& x);
   /** \brief . */
@@ -268,7 +271,7 @@ public:
   //@{
 
   /** \brief . */
-  void assign(size_type n, const value_type& val);
+  void assign(Ordinal n, const value_type& val);
   /** \brief . */
   template<typename InputIterator>
   void assign(InputIterator first, InputIterator last);
@@ -293,21 +296,21 @@ public:
   /** \brief . */
   size_type max_size() const;
   /** \brief . */
-  void resize(size_type new_size, const value_type& x = value_type());
+  void resize(Ordinal new_size, const value_type& x = value_type());
   /** \brief . */
   size_type capacity() const;
   /** \brief . */
   bool empty() const;
   /** \brief . */
-  void reserve(size_type n);
+  void reserve(Ordinal n);
   /** \brief . */
-  reference operator[](size_type i);
+  reference operator[](Ordinal i);
   /** \brief . */
-  const_reference operator[](size_type i) const;
+  const_reference operator[](Ordinal i) const;
   /** \brief . */
-  reference at(size_type i);
+  reference at(Ordinal i);
   /** \brief . */
-  const_reference at(size_type i) const;
+  const_reference at(Ordinal i) const;
   /** \brief . */
   reference front();
   /** \brief . */
@@ -323,7 +326,7 @@ public:
   /** \brief . */
   iterator insert(iterator position, const value_type& x);
   /** \brief . */
-  void insert(iterator position, size_type n, const value_type& x);
+  void insert(iterator position, Ordinal n, const value_type& x);
   /** \brief . */
   template<typename InputIterator>
   void insert(iterator position, InputIterator first, InputIterator last);
@@ -400,7 +403,7 @@ public:
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<T> view( size_type offset, size_type size );
+	ArrayView<T> view( Ordinal offset, Ordinal size );
 
 	/** \brief Return const view of a contiguous range of elements.
 	 *
@@ -413,17 +416,17 @@ public:
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<const T> view( size_type offset, size_type size ) const;
+	ArrayView<const T> view( Ordinal offset, Ordinal size ) const;
 
 	/** \brief Return a non-const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	ArrayView<T> operator()( size_type offset, size_type size );
+	ArrayView<T> operator()( Ordinal offset, Ordinal size );
 
 	/** \brief Return a non-const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	ArrayView<const T> operator()( size_type offset, size_type size ) const;
+	ArrayView<const T> operator()( Ordinal offset, Ordinal size ) const;
 
 	/** \brief Return an non-const ArrayView of *this.
    *
@@ -453,8 +456,8 @@ private:
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   RCP<std::vector<T> > vec_;
-  mutable ArrayRCP<T> arcp_;
-  mutable ArrayRCP<const T> carcp_;
+  mutable ArrayRCP<T> extern_arcp_;
+  mutable ArrayRCP<const T> extern_carcp_;
 #else
   std::vector<T> vec_;
 #endif
@@ -630,7 +633,7 @@ Array<T>::Array()
 
 
 template<typename T> inline
-Array<T>::Array(size_type n, const value_type& value) :
+Array<T>::Array(Ordinal n, const value_type& value) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   vec_(rcp(new std::vector<T>(n,value)))
 #else
@@ -667,10 +670,10 @@ Array<T>::~Array()
     "Error, there must be some client with a dangling reference to this array "
     "object!  This could be a dangling iterator or a dangling view of something "
     "else.";
-  TEST_FOR_EXCEPTION( arcp_.count() > 1, DanglingReferenceError, errorMsg );
-  arcp_ = null;
-  TEST_FOR_EXCEPTION( carcp_.count() > 1, DanglingReferenceError, errorMsg );
-  carcp_ = null;
+  TEST_FOR_EXCEPTION( extern_arcp_.count() > 1, DanglingReferenceError, errorMsg );
+  extern_arcp_ = null;
+  TEST_FOR_EXCEPTION( extern_carcp_.count() > 1, DanglingReferenceError, errorMsg );
+  extern_carcp_ = null;
   TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError, errorMsg );
 #endif
 }
@@ -710,7 +713,7 @@ Array<T>& Array<T>::operator=(const Array& a)
 
 
 template<typename T> inline
-void Array<T>::assign(size_type n, const value_type& val)
+void Array<T>::assign(Ordinal n, const value_type& val)
 {
   vec(true).assign(n,val);
 }
@@ -728,9 +731,9 @@ typename Array<T>::iterator
 Array<T>::begin()
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  if (is_null(arcp_))
-    arcp_ = arcp(vec_);
-  return arcp_;
+  if (is_null(extern_arcp_))
+    extern_arcp_ = arcp(vec_);
+  return extern_arcp_;
 #else
   return vec().begin();
 #endif
@@ -754,9 +757,9 @@ typename Array<T>::const_iterator
 Array<T>::begin() const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  if (is_null(carcp_))
-    carcp_ = arcp(rcp_const_cast<const std::vector<T> >(vec_));
-  return carcp_;
+  if (is_null(extern_carcp_))
+    extern_carcp_ = arcp(rcp_const_cast<const std::vector<T> >(vec_));
+  return extern_carcp_;
 #else
   return vec().begin();
 #endif
@@ -841,7 +844,7 @@ Array<T>::max_size() const
 
 template<typename T> inline
 void
-Array<T>::resize(size_type new_size, const value_type& x)
+Array<T>::resize(Ordinal new_size, const value_type& x)
 {
   vec(true).resize(new_size,x);
 }
@@ -863,7 +866,7 @@ bool Array<T>::empty() const
 
 
 template<typename T> inline
-void Array<T>::reserve(size_type n)
+void Array<T>::reserve(Ordinal n)
 {
   vec(true).reserve(n);
 }
@@ -871,7 +874,7 @@ void Array<T>::reserve(size_type n)
 
 template<typename T> inline
 typename Array<T>::reference
-Array<T>::operator[](size_type i)
+Array<T>::operator[](Ordinal i)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -882,7 +885,7 @@ Array<T>::operator[](size_type i)
 
 template<typename T> inline
 typename Array<T>::const_reference
-Array<T>::operator[](size_type i) const
+Array<T>::operator[](Ordinal i) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -893,7 +896,7 @@ Array<T>::operator[](size_type i) const
 
 template<typename T> inline
 typename Array<T>::reference
-Array<T>::at(size_type i)
+Array<T>::at(Ordinal i)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -904,7 +907,7 @@ Array<T>::at(size_type i)
 
 template<typename T> inline
 typename Array<T>::const_reference
-Array<T>::at(size_type i) const
+Array<T>::at(Ordinal i) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -999,7 +1002,7 @@ Array<T>::insert(iterator position, const value_type& x)
 
 
 template<typename T> inline
-void Array<T>::insert(iterator position, size_type n, const value_type& x)
+void Array<T>::insert(iterator position, Ordinal n, const value_type& x)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
@@ -1167,44 +1170,47 @@ Array<T>& Array<T>::operator=( const std::vector<T> &v )
 
 
 template<typename T> inline
-ArrayView<T> Array<T>::view( size_type offset, size_type size_in )
+ArrayView<T> Array<T>::view( Ordinal offset, Ordinal size_in )
 {
+  if (size_in) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assertIndex(offset);
-  TEUCHOS_ASSERT_INEQUALITY(size_in, >=, 0);
-  if (size_in)
-    assertIndex(offset+size_in-1);
-#endif
-  if (size_in)
+    return ArrayView<T>(this->begin().persistingView(offset, size_in));
+#else
     return arrayView( &vec()[offset], size_in );
-  return Teuchos::null;
-  // ToDo: Add support for detecting dangling references!
-}
-
-
-template<typename T> inline
-ArrayView<const T> Array<T>::view( size_type offset, size_type size_in ) const
-{
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assertIndex(offset);
-  assertIndex(offset+size_in-1);
 #endif
-  return arrayView( &vec()[offset], size_in );
-  //return arrayView( &const_cast<std::vector<T>&>(vec())[offset], size );
+  }
+  return Teuchos::null;
 }
 
 
 template<typename T> inline
-ArrayView<T> Array<T>::operator()( size_type offset, size_type size_in )
+ArrayView<const T> Array<T>::view( Ordinal offset, Ordinal size_in ) const
 {
-  return view(offset,size_in);
+  if (size_in) {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+    return ArrayView<const T>(this->begin().persistingView(offset, size_in));
+#else
+    return arrayView( &vec()[offset], size_in );
+#endif
+  }
+  return Teuchos::null;
+  // NOTE: Above, we use a different implementation to call the const version
+  // of begin() instead of the non-const version.  This sets up a different
+  // ArrayRCP object that gets checked.
 }
 
 
 template<typename T> inline
-ArrayView<const T> Array<T>::operator()( size_type offset, size_type size_in ) const
+ArrayView<T> Array<T>::operator()( Ordinal offset, Ordinal size_in )
 {
-  return view(offset,size_in);
+  return view(offset, size_in);
+}
+
+
+template<typename T> inline
+ArrayView<const T> Array<T>::operator()( Ordinal offset, Ordinal size_in ) const
+{
+  return view(offset, size_in);
 }
 
 
@@ -1213,8 +1219,7 @@ ArrayView<T> Array<T>::operator()()
 {
   if (!size())
     return null;
-  return arrayView( &vec()[0], size() );
-  // ToDo: Add support for detecting dangling references!
+  return this->view(0, size());
 }
 
 
@@ -1223,7 +1228,7 @@ ArrayView<const T> Array<T>::operator()() const
 {
   if (!size())
     return null;
-  return arrayView( &vec()[0], size() );
+  return this->view(0, size());
 }
 
 
@@ -1248,14 +1253,12 @@ template<typename T>
 std::vector<T>&
 Array<T>::vec( bool isStructureBeingModified, bool activeIter )
 {
-(void)isStructureBeingModified; // get rid of "unused parameter" warnings
-(void)activeIter;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   if (isStructureBeingModified) {
     // Give up my ArrayRCPs used for iterator access since the array we be
     // getting modifed!
-    arcp_ = null;
-    carcp_ = null;
+    extern_arcp_ = null;
+    extern_carcp_ = null;
     if (activeIter) {
       // If there is an active iterator in this call, then we need to allow
       // for the existance of one or more other iterators!  We can't know for
@@ -1264,11 +1267,10 @@ Array<T>::vec( bool isStructureBeingModified, bool activeIter )
       // situration in place where the client might access the iterator after
       // this call!
       
-      // 2007/11/08: rabartl: ToDo: I need to add a bool field to RCP_node
-      // that stores if the underlying object is valid or not.  I can then put
-      // in a debug-enabled check that any use of that object will be invalid
-      // and throw!  The WEAK RCP pointer approach might be able to handle
-      // this!
+      // 2007/11/08: rabartl: ToDo: I need to add a bool field to RCPNode that
+      // stores if the underlying object is valid or not.  I can then put in a
+      // debug-enabled check that any use of that object will be invalid and
+      // throw!  The WEAK RCP pointer approach might be able to handle this!
     }
     else {
       // If there is no active iterator, then we don't allow any other
@@ -1279,6 +1281,9 @@ Array<T>::vec( bool isStructureBeingModified, bool activeIter )
   }
   return *vec_;
 #else
+  // get rid of "unused parameter" warnings
+  (void)isStructureBeingModified;
+  (void)activeIter;
   return vec_;
 #endif
 }

@@ -49,22 +49,9 @@ template<class T> class ArrayRCP;
  * size of that array.  In debug mode, it will perform runtime checks of all
  * usage.
  *
- * The <tt>ArrayView</tt> class has bind on construction semantics where once
- * an <tt>ArrayView</tt> object is bound to an array of data, it can not be
- * bound to a different view of data.  Therefore, a <tt>const ArrayView</tt>
- * object means that the data entries are <tt>const</tt> which is similar to
- * the behavior of a <tt>const std::vector</tt> object for instance.
- *
- * Note that once an <tt>ArrayView</tt> object has been constructed, it can
- * not be changed to point to different memory.  This is to help avoid
- * improper usage.  Therefore, an const ArrayView<T> object is no less
- * restrictive than a non-const ArrayView<T> object.  It is the type of T
- * itself that determines if the underying data can be changed or not.
- * Therefore, the only non-const public functions defined on this interface
- * are the constructors and destructor!  This may all seem strange but it is
- * very effective.
- *
- * ToDo: Finish documentation!
+ * The <tt>ArrayView</tt> class has the same shallow copy semantics of the #
+ * <tt>Ptr</tt> class.  <tt>ArrayView</tt> is to <tt>ArrayRCP</tt> as
+ * <tt>Ptr</tt> is to <tt>RCP</tt>.
  *
  * \section Teuchos_ArrayView_DesignDiscussion_sec Design Discussion
  *
@@ -112,15 +99,8 @@ public:
   //! @name Constructors/Destructors
   //@{
 
-	/** \brief Initialize to NULL.
-   *
-   * <b>WARNING!</b> Once you initialize to null, you can not rebind to view!
-   *
-   * Note: A default value is not given for <tt>null_arg</tt> since we want to
-   * avoid mistakes where a view is initalized to null and then can't be reset
-   * to point to something else!
-	 */
-	ArrayView( ENull null_arg );
+	/** \brief Initialize to NULL (implicitly or explicitly). */
+	ArrayView( ENull null_arg = null );
 
 	/** \brief Initialize view from raw memory.
 	 *
@@ -168,6 +148,9 @@ public:
   ArrayView(
     const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
     );
+  
+  /** \brief Shallow copy assignment operator. */
+	ArrayView<T>& operator=(const ArrayView<T>& array);
 
 	/** \brief Destroy the array view object.
 	 */
@@ -177,6 +160,9 @@ public:
 
   //! @name General query functions 
   //@{
+
+  /** \brief Returns true if the underlying pointer is null. */
+  bool is_null() const;
 
   /** \brief The total number of items in the managed array. */
   Ordinal size() const;
@@ -321,6 +307,11 @@ public:
 
   //@}
 
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  // I should make make this public but templated friends are
+  // not very portable.
+	explicit ArrayView( const ArrayRCP<T> &arcp );
+#endif
 
 private:
 
@@ -330,26 +321,48 @@ private:
 	T *ptr_;
   int size_;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  RCPNode *node_;
   ArrayRCP<T> arcp_;
 #endif
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   void setUpIterators();
-#endif
 
   // ///////////////////////
   // Private member functions
 
-  // Not defined and not to be called!
-  ArrayView();
-	ArrayView& operator=(const ArrayView&);
+  void debug_assert_not_null() const
+    {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+      assert_not_null();
+#endif
+    }
+
+  void debug_assert_in_range( Ordinal offset, Ordinal size_in ) const
+    {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+      assert_in_range(offset, size_in);
+#endif
+    }
+
+  void debug_assert_valid_ptr() const
+    {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+      arcp_.access_private_node().assert_valid_ptr(*this);
+#endif
+    }
 
   // Disable dynamic allocation
 	static void* operator new(size_t);
 #ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
 	static void operator delete(void*);
 #endif
+
+public: // Bad bad bad
+
+  // This is a very bad breach of encapsulation but it exists to avoid
+  // problems with portability of tempalted friends
+  T* access_private_ptr() const
+    { return ptr_; }
+
 
 };
 
@@ -395,7 +408,7 @@ ArrayView<const T> arrayViewFromVector( const std::vector<T>& vec );
  * \relates ArrayView
  */
 template<class T>
-std::vector<T> createVector( const ArrayView<T> &ptr );
+std::vector<T> createVector( const ArrayView<T> &av );
 
 
 #endif // __sun
@@ -409,7 +422,15 @@ std::vector<T> createVector( const ArrayView<T> &ptr );
  * \relates ArrayView
  */
 template<class T>
-std::vector<T> createVector( const ArrayView<const T> &ptr );
+std::vector<T> createVector( const ArrayView<const T> &av );
+
+
+/** \brief Returns true if <tt>av.is_null()==true</tt>.
+ *
+ * \relates ArrayView
+ */
+template<class T>
+bool is_null( const ArrayView<T> &av );
 
 
 /** \brief Output stream inserter.
@@ -420,7 +441,7 @@ std::vector<T> createVector( const ArrayView<const T> &ptr );
  * \relates ArrayView
  */
 template<class T>
-std::ostream& operator<<( std::ostream& out, const ArrayView<T>& p );
+std::ostream& operator<<( std::ostream& out, const ArrayView<T>& av );
 
 
 } // end namespace Teuchos

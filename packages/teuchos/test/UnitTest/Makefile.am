@@ -30,7 +30,7 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = UnitTest_UnitTests UnitTest_BadUnitTest teuchosUnitTests
+bin_PROGRAMS = UnitTest_UnitTests UnitTest_BadUnitTest
 
 UnitTest_UnitTests_SOURCES = \
   $(srcdir)/Int_UnitTests.cpp \
@@ -47,12 +47,6 @@ UnitTest_BadUnitTest_SOURCES = \
   $(srcdir)/Teuchos_StandardUnitTestMain.cpp
 UnitTest_BadUnitTest_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 UnitTest_BadUnitTest_LDADD = $(TEUCHOS_LIBS)
-
-teuchosUnitTests_SOURCES = \
-  $(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp \
-  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
-teuchosUnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-teuchosUnitTests_LDADD = $(TEUCHOS_LIBS)
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Used on gabriel.sandia.gov with gcc 3.4.6
 rm config.cache
-$HOME/PROJECTS/Trilinos.base/Trilinos/configure \
+../../../Trilinos/configure \
 --cache-file=config.cache \
 --with-install="/usr/bin/install -p" \
 CXXFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions" \
@@ -37,6 +37,7 @@ FLIBS="-lg2c" \
 --enable-new_package \
 --enable-galeri \
 --enable-moertel \
+--enable-intrepid \
 --enable-anasazi \
 --enable-ctrilinos \
 --enable-sundance \

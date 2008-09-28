@@ -178,6 +178,16 @@ bool compareFloatingArrays(
 } // namespace Teuchos
 
 
+/** \brief Echo a statement and then invoke it.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_ECHO( statement, out ) \
+  (out) << #statement ";\n"; \
+  statement;
+
 /** \brief Test that an object is equal to a given constant.
  *
  * This macro is not complicated so take a look for yourself!
@@ -186,7 +196,7 @@ bool compareFloatingArrays(
  */
 #define TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success ) \
   { \
-    (out) << #v1" = "<<(v1)<<" == "<<(v2)<<" : "; \
+    (out) << #v1" = "<<Teuchos::toString(v1)<<" == "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) == (v2); \
     (out) << Teuchos::passfail(l_result) << "\n"; \
     if (!l_result) (success) = false; \
@@ -201,7 +211,7 @@ bool compareFloatingArrays(
  */
 #define TEUCHOS_TEST_EQUALITY( v1, v2, out, success ) \
   { \
-    (out) << #v1" = "<<(v1)<<" == "#v2" = "<<(v2)<<" : "; \
+    (out) << #v1" = "<<Teuchos::toString(v1)<<" == "#v2" = "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) == (v2); \
     if (!l_result) (success) = false; \
     (out) << Teuchos::passfail(l_result) << "\n"; \
@@ -216,7 +226,7 @@ bool compareFloatingArrays(
  */
 #define TEUCHOS_TEST_INEQUALITY_CONST( v1, v2, out, success ) \
   { \
-    (out) << #v1" = "<<(v1)<<" != "<<(v2)<<" : "; \
+    (out) << #v1" = "<<Teuchos::toString(v1)<<" != "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) != (v2); \
     (out) << Teuchos::passfail(l_result) << "\n"; \
     if (!l_result) (success) = false; \
@@ -231,7 +241,7 @@ bool compareFloatingArrays(
  */
 #define TEUCHOS_TEST_INEQUALITY( v1, v2, out, success ) \
   { \
-    (out) << #v1" = "<<(v1)<<" != "#v2" = "<<(v2)<<" : "; \
+    (out) << #v1" = "<<Teuchos::toString(v1)<<" != "#v2" = "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) != (v2); \
     if (!l_result) (success) = false; \
     (out) << Teuchos::passfail(l_result) << "\n"; \
@@ -281,7 +291,7 @@ bool compareFloatingArrays(
     const bool l_result = ( (a)[i] == (val) ); \
     if (!l_result) (success) = false; \
     if (printPass || !(l_result)) { \
-      out << #a"["<<i<<"] = " << (a)[i] << " == "#val" = " << (val) \
+      out << #a"["<<i<<"] = " << Teuchos::toString((a)[i]) << " == "#val" = " << Teuchos::toString(val) \
           << " : " << Teuchos::passfail(l_result) << "\n"; \
     } \
   }

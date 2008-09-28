@@ -33,7 +33,7 @@
     \brief A utilities class for Teuchos
 */
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_toString.hpp"
 
 /*! \class Teuchos::Utils
     \brief This class provides some basic std::string and floating-point utilities for Teuchos
@@ -95,17 +95,6 @@ namespace Teuchos
       static double chopVal_;
     };
 
-  /** \relates Utils */
-  inline std::string toString(const int& x) {return Utils::toString(x);}
-
-  /** \relates Utils */
-  inline std::string toString(const unsigned int& x) {return Utils::toString(x);}
-
-  /** \relates Utils */
-  inline std::string toString(const double& x) {return Utils::toString(x);}
-
-  /** \relates Utils */
-  inline std::string toString(const std::string& x) {return x;}
 
 } // end namespace Teuchos
 

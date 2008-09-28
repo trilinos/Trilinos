@@ -26,9 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_NULL_ITERATOR_TRAITS_HPP
-#define TEUCHOS_NULL_ITERATOR_TRAITS_HPP
-
+#ifndef TEUCHOS_TO_STRING_HPP
+#define TEUCHOS_TO_STRING_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
 
@@ -36,39 +35,67 @@
 namespace Teuchos {
 
 
-
-/** \brief Base traits class for getting a properly initialized null pointer.
+/** \brief Default traits class for converting objects into strings.
  *
- * This default traits class simply passes in a raw '0' to the constructor.
- * This works for a amazingly large number of classes that can be used a an
- * iterator.
+ * NOTE: This default implementation relies on opeator<<(std::ostream&, ...) 
+ * being defined for the data type T.
  *
- * \ingroup teuchos_mem_mng_grp
+ * \ingroup teuchos_language_support_grp
  */
-template<typename Iter>
-class NullIteratorTraits {
+template<typename T>
+class ToStringTraits {
 public:
-  static Iter getNull() { return Iter(0); }
-};
-
-
-/** \brief Partial specialization for std::reverse_iterator. 
- *
- * \ingroup teuchos_mem_mng_grp
- */
-template<typename Iter>
-class NullIteratorTraits<std::reverse_iterator<Iter> > {
-public:
-  static std::reverse_iterator<Iter> getNull()
+  static std::string toString( const T &t )
     {
-      return std::reverse_iterator<Iter>(
-        NullIteratorTraits<Iter>::getNull()
-        );
+      std::ostringstream oss;
+      oss << t;
+      return oss.str();
     }
 };
 
 
-} // namespace Teuchos
+/** \brief Utility function for returning a pretty string representation of
+ * a object of type T.
+ *
+ * NOTE: This helper function simply returns ToStringTraits<T>::toString(t)
+ * and the right way to speicalize the behavior is to specialize
+ * ToStringTraits.
+ *
+ * \ingroup teuchos_language_support_grp
+ */
+template<typename T>
+inline
+std::string toString(const T& t)
+{
+  return ToStringTraits<T>::toString(t);
+}
 
 
-#endif // TEUCHOS_NULL_ITERATOR_TRAITS_HPP
+/** \brief Specialization for bool. */
+template<>
+class ToStringTraits<bool> {
+public:
+  static std::string toString( const bool &t )
+    {
+      if (t)
+        return "true";
+      return "false";
+    }
+};
+
+
+/** \brief Specialization for std::string. */
+template<>
+class ToStringTraits<std::string> {
+public:
+  static std::string toString( const std::string &t )
+    {
+      return t;
+    }
+};
+
+
+} // end namespace Teuchos
+
+
+#endif // TEUCHOS_TO_STRING_HPP

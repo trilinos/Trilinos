@@ -222,6 +222,10 @@ public:
 	 */
 	const T& operator[](size_t i) const;
   /** \brief Return a non-const array view. */
+  ArrayView<T> operator()(); 
+  /** \brief Return a const array view. */
+  ArrayView<const T> operator()() const; 
+  /** \brief Return a non-const array view. */
   operator ArrayView<T>(); 
   /** \brief Return a const view object. */
   operator ArrayView<const T>() const; 
@@ -396,7 +400,7 @@ const T& Workspace<T>::operator[](size_t i) const
 
 template<class T>
 inline
-Workspace<T>::operator ArrayView<T>()
+ArrayView<T> Workspace<T>::operator()()
 {
   if (size()==0)
     return Teuchos::null;
@@ -405,11 +409,26 @@ Workspace<T>::operator ArrayView<T>()
 
 template<class T>
 inline
-Workspace<T>::operator ArrayView<const T>() const
+ArrayView<const T>
+Workspace<T>::operator()() const
 {
   if (size()==0)
     return Teuchos::null;
   return arrayView<const T>( &(*this)[0], size() );
+}
+
+template<class T>
+inline
+Workspace<T>::operator ArrayView<T>()
+{
+  return (*this)();
+}
+
+template<class T>
+inline
+Workspace<T>::operator ArrayView<const T>() const
+{
+  return (*this)();
 }
 
 #ifdef __PGI // Should not have to define this but pgCC is complaining!

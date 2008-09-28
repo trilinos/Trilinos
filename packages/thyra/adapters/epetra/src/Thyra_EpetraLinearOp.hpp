@@ -384,18 +384,13 @@ private:
  *
  * \relates EpetraLinearOp
  */
-inline
-RCP<EpetraLinearOp> nonconstEpetraLinearOp()
-{
-  return Teuchos::rcp(new EpetraLinearOp());
-}
+RCP<EpetraLinearOp> nonconstEpetraLinearOp();
 
 
 /** \brief Partially initialized EpetraLinearOp
  *
  * \relates EpetraLinearOp
  */
-inline
 RCP<EpetraLinearOp>
 partialNonconstEpetraLinearOp(
   const RCP<const VectorSpaceBase<double> > &range,
@@ -404,14 +399,7 @@ partialNonconstEpetraLinearOp(
   EOpTransp opTrans = NOTRANS,
   EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED
-  )
-{
-  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
-  thyraEpetraOp->partiallyInitialize(
-    range, domain,op,opTrans, applyAs, adjointSupport
-    );
-  return thyraEpetraOp;
-}
+  );
 
 
 /** \brief Dynamically allocate an const EpetraLinearOp to wrap a const
@@ -419,7 +407,6 @@ partialNonconstEpetraLinearOp(
  *
  * \relates EpetraLinearOp
  */
-inline
 RCP<EpetraLinearOp>
 nonconstEpetraLinearOp(
   const RCP<Epetra_Operator> &op,
@@ -428,14 +415,7 @@ nonconstEpetraLinearOp(
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP< const VectorSpaceBase<double> > &range = Teuchos::null,
   const RCP< const VectorSpaceBase<double> > &domain = Teuchos::null
-  )
-{
-  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
-  thyraEpetraOp->initialize(
-    op,opTrans, applyAs, adjointSupport, range, domain
-    );
-  return thyraEpetraOp;
-}
+  );
 
 
 /** \brief Dynamically allocate a nonconst EpetraLinearOp to wrap a const
@@ -443,7 +423,6 @@ nonconstEpetraLinearOp(
  *
  * \relates EpetraLinearOp
  */
-inline
 RCP<const EpetraLinearOp>
 epetraLinearOp(
   const RCP<const Epetra_Operator> &op,
@@ -452,15 +431,7 @@ epetraLinearOp(
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
   const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
-  )
-{
-  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
-  thyraEpetraOp->initialize(
-    Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
-    opTrans, applyAs, adjointSupport, range, domain
-    );
-  return thyraEpetraOp;
-}
+  );
 
 
 /** \brief Dynamically allocate an const EpetraLinearOp to wrap a const
@@ -468,7 +439,6 @@ epetraLinearOp(
  *
  * \relates EpetraLinearOp
  */
-inline
 RCP<EpetraLinearOp>
 nonconstEpetraLinearOp(
   const RCP<Epetra_Operator> &op,
@@ -478,15 +448,7 @@ nonconstEpetraLinearOp(
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
   const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
-  )
-{
-  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
-  thyraEpetraOp->initialize(
-    op,opTrans, applyAs, adjointSupport, range, domain
-    );
-  thyraEpetraOp->setObjectLabel(label);
-  return thyraEpetraOp;
-}
+  );
 
 
 /** \brief Dynamically allocate a nonconst EpetraLinearOp to wrap a const
@@ -494,7 +456,6 @@ nonconstEpetraLinearOp(
  *
  * \relates EpetraLinearOp
  */
-inline
 RCP<const EpetraLinearOp>
 epetraLinearOp(
   const RCP<const Epetra_Operator> &op,
@@ -504,16 +465,7 @@ epetraLinearOp(
   EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
   const RCP< const SpmdVectorSpaceBase<double> > &range = Teuchos::null,
   const RCP< const SpmdVectorSpaceBase<double> > &domain = Teuchos::null
-  )
-{
-  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
-  thyraEpetraOp->initialize(
-    Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
-    opTrans, applyAs, adjointSupport, range, domain
-    );
-  thyraEpetraOp->setObjectLabel(label);
-  return thyraEpetraOp;
-}
+  );
 
 
 }	// end namespace Thyra

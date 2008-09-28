@@ -301,6 +301,12 @@ bool test_ArrayRCP(
   }
 
   {
+    out << "\nTest almost implicit conversion from ArrayRCP<T> to ArrayView<const T> ...\n";
+    const ArrayView<const T> av2 = ptr();
+    TEST_COMPARE_ARRAYS( av2, ptr );
+  }
+
+  {
     out << "\nTest implicit conversion from ArrayRCP<T> to ArrayRCP<const T> ...\n";
     const ArrayRCP<const T> ptr2 = ptr;
     TEST_COMPARE_ARRAYS( ptr2, ptr );

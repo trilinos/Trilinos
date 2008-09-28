@@ -9,51 +9,60 @@
 #include "Teuchos_as.hpp"
 
 namespace std { 
-  template <typename Packet>
-  ostream & operator<< ( ostream& os, const pair<Packet, Packet>& arg)
-  {
-      os << "(" << arg.first << "," << arg.second << ")";
-      return os;
-  }
+
+
+template <typename Packet>
+ostream & operator<< ( ostream& os, const pair<Packet, Packet>& arg)
+{
+  os << "(" << arg.first << "," << arg.second << ")";
+  return os;
 }
+
+
+} // namespace std
+
 
 namespace Teuchos {
-  template<typename Packet>
-    struct ScalarTraits<std::pair<Packet,Packet> >
-    {
-      typedef ScalarTraits<Packet> PST;
-      typedef  std::pair<typename PST::magnitudeType, typename PST::magnitudeType> magnitudeType;
-      static const bool isComplex = PST::isComplex;
-      static const bool isComparable = PST::isComparable;
-      static const bool hasMachineParameters = PST::hasMachineParameters;
-      // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-      static inline magnitudeType magnitude(std::pair<Packet,Packet> a) { return std::pair<Packet,Packet>( PST::magnitude(a.first), PST::magnitude(a.second) ); }
-      static inline std::pair<Packet,Packet> zero()  { return std::pair<Packet,Packet>(PST::zero(),PST::zero()); }
-      static inline std::pair<Packet,Packet> one()   { return std::pair<Packet,Packet>(PST::one(), PST::one()); }
-      static inline std::pair<Packet,Packet> conjugate(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::conjugate(x.first), PST::conjugate(x.second) ); }
-      static inline std::pair<Packet,Packet> real(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::real(x.first), PST::real(x.second) ); }
-      static inline std::pair<Packet,Packet> imag(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::imag(x.first), PST::imag(x.second) ); }
-      static inline bool isnaninf(std::pair<Packet,Packet> x) { return PST::isnaninf(x.first) || PST::isnaninf(x.second); }
-      static inline void seedrandom(unsigned int s) { PST::seedrandom(s); }
-      static inline std::pair<Packet,Packet> random() { return std::pair<Packet,Packet>( PST::random(), PST::random() ); }
-      static inline std::string name() { return "std::pair<" + Teuchos::TypeNameTraits<Packet>::name() + "," + Teuchos::TypeNameTraits<Packet>::name() + ">"; }
-      static inline std::pair<Packet,Packet> squareroot(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::squareroot(x.first), PST::squareroot(x.second)); }
-      static inline std::pair<Packet,Packet> pow(std::pair<Packet,Packet> x, std::pair<Packet,Packet> y) { return std::pair<Packet,Packet>( PST::pow(x.first,y.first), PST::pow(x.second,y.second) ); }
-    };
 
-  template<class Packet, class ConvertToPacket>
-    class ValueTypeConversionTraits<std::pair<Packet,Packet>, ConvertToPacket> {
-      public:
-        static std::pair<Packet,Packet> convert( const ConvertToPacket t )
-        {
-          return std::pair<Packet,Packet>(t,t);
-        }
-        static std::pair<Packet,Packet> safeConvert( const ConvertToPacket t )
-        {
-          return std::pair<Packet,Packet>(t,t);
-        }
-    };
-}
+
+template<typename Packet>
+struct ScalarTraits<std::pair<Packet,Packet> >
+{
+  typedef ScalarTraits<Packet> PST;
+      typedef  std::pair<typename PST::magnitudeType, typename PST::magnitudeType> magnitudeType;
+  static const bool isComplex = PST::isComplex;
+  static const bool isComparable = PST::isComparable;
+  static const bool hasMachineParameters = PST::hasMachineParameters;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(std::pair<Packet,Packet> a) { return std::pair<Packet,Packet>( PST::magnitude(a.first), PST::magnitude(a.second) ); }
+  static inline std::pair<Packet,Packet> zero()  { return std::pair<Packet,Packet>(PST::zero(),PST::zero()); }
+  static inline std::pair<Packet,Packet> one()   { return std::pair<Packet,Packet>(PST::one(), PST::one()); }
+  static inline std::pair<Packet,Packet> conjugate(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::conjugate(x.first), PST::conjugate(x.second) ); }
+  static inline std::pair<Packet,Packet> real(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::real(x.first), PST::real(x.second) ); }
+  static inline std::pair<Packet,Packet> imag(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::imag(x.first), PST::imag(x.second) ); }
+  static inline bool isnaninf(std::pair<Packet,Packet> x) { return PST::isnaninf(x.first) || PST::isnaninf(x.second); }
+  static inline void seedrandom(unsigned int s) { PST::seedrandom(s); }
+  static inline std::pair<Packet,Packet> random() { return std::pair<Packet,Packet>( PST::random(), PST::random() ); }
+  static inline std::string name() { return "std::pair<" + Teuchos::TypeNameTraits<Packet>::name() + "," + Teuchos::TypeNameTraits<Packet>::name() + ">"; }
+  static inline std::pair<Packet,Packet> squareroot(std::pair<Packet,Packet> x) { return std::pair<Packet,Packet>(PST::squareroot(x.first), PST::squareroot(x.second)); }
+  static inline std::pair<Packet,Packet> pow(std::pair<Packet,Packet> x, std::pair<Packet,Packet> y) { return std::pair<Packet,Packet>( PST::pow(x.first,y.first), PST::pow(x.second,y.second) ); }
+};
+
+template<class Packet, class ConvertToPacket>
+class ValueTypeConversionTraits<std::pair<Packet,Packet>, ConvertToPacket> {
+public:
+  static std::pair<Packet,Packet> convert( const ConvertToPacket t )
+    {
+      return std::pair<Packet,Packet>(t,t);
+    }
+  static std::pair<Packet,Packet> safeConvert( const ConvertToPacket t )
+    {
+      return std::pair<Packet,Packet>(t,t);
+    }
+};
+
+
+} // namespace Teuchos
 
 
 namespace {
@@ -67,6 +76,7 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::GlobalMPISession;
 using Teuchos::defaultSmallNumber;
+
 
 bool testMpi = true;
 
@@ -145,7 +155,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_1, Ordina
     TEST_EQUALITY( myGlobalReducts[0], as<Packet>(numProcs) );
   }
   else {
-    const PacketMag local_errorTolSlack = as<PacketMag>(errorTolSlack);
+    const PacketMag local_errorTolSlack = static_cast<PacketMag>(errorTolSlack);
     TEST_FLOATING_EQUALITY( myGlobalReducts[0], as<Packet>(numProcs),
       as<PacketMag>(defaultSmallNumber<PacketMag>() * local_errorTolSlack / numProcs)
       );
@@ -188,7 +198,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordina
     TEST_EQUALITY( myGlobalReducts[0], expectedMyGlobalReduct );
   }
   else {
-    const PacketMag local_errorTolSlack = as<PacketMag>(errorTolSlack);
+    const PacketMag local_errorTolSlack = static_cast<PacketMag>(errorTolSlack);
     TEST_FLOATING_EQUALITY( myGlobalReducts[0], expectedMyGlobalReduct,
       as<PacketMag>(defaultSmallNumber<PacketMag>() * local_errorTolSlack / numProcs)
       );

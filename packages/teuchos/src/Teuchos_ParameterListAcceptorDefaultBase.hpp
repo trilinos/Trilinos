@@ -31,6 +31,7 @@
 
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 
 namespace Teuchos {

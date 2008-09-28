@@ -221,7 +221,7 @@ sample-output:
 
 if USING_EXPORT_MAKEFILES
 
-install-exec-hook:	
+install-exec-hook:
 	cp $(top_builddir)/Makefile.export.thyra $(exec_prefix)/include/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
@@ -231,10 +231,12 @@ install-exec-hook:
 		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/adapters/epetra/src:@abs_top_builddir@/adapters/tpetra/src:@abs_top_builddir@/adapters/epetraext/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../rtop:@abs_top_builddir@/../epetra:@abs_top_builddir@/../tpetra:@abs_top_builddir@/../epetraext
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile THYRA > $(exec_prefix)/include/Makefile.export.thyra.macros
+	cd $(top_builddir)/example/external && $(MAKE) install
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.thyra
 	rm -f $(exec_prefix)/include/Makefile.export.thyra.macros
+	rm -f $(exec_prefix)/example/thyra
 
 else 
 

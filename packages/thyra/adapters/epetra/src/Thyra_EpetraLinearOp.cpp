@@ -604,3 +604,109 @@ const Epetra_Map& EpetraLinearOp::getDomainMap() const
 
 
 }	// end namespace Thyra
+
+
+// Nonmembers
+
+
+Teuchos::RCP<Thyra::EpetraLinearOp>
+Thyra::nonconstEpetraLinearOp()
+{
+  return Teuchos::rcp(new EpetraLinearOp());
+}
+
+
+Teuchos::RCP<Thyra::EpetraLinearOp>
+Thyra::partialNonconstEpetraLinearOp(
+  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &domain,
+  const RCP<Epetra_Operator> &op,
+  EOpTransp opTrans,
+  EApplyEpetraOpAs applyAs,
+  EAdjointEpetraOp adjointSupport
+  )
+{
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->partiallyInitialize(
+    range, domain,op,opTrans, applyAs, adjointSupport
+    );
+  return thyraEpetraOp;
+}
+
+
+Teuchos::RCP<Thyra::EpetraLinearOp>
+Thyra::nonconstEpetraLinearOp(
+  const RCP<Epetra_Operator> &op,
+  EOpTransp opTrans,
+  EApplyEpetraOpAs applyAs,
+  EAdjointEpetraOp adjointSupport,
+  const RCP< const VectorSpaceBase<double> > &range,
+  const RCP< const VectorSpaceBase<double> > &domain
+  )
+{
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    op,opTrans, applyAs, adjointSupport, range, domain
+    );
+  return thyraEpetraOp;
+}
+
+
+Teuchos::RCP<const Thyra::EpetraLinearOp>
+Thyra::epetraLinearOp(
+  const RCP<const Epetra_Operator> &op,
+  EOpTransp opTrans,
+  EApplyEpetraOpAs applyAs,
+  EAdjointEpetraOp adjointSupport,
+  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &domain
+  )
+{
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
+    opTrans, applyAs, adjointSupport, range, domain
+    );
+  return thyraEpetraOp;
+}
+
+
+Teuchos::RCP<Thyra::EpetraLinearOp>
+Thyra::nonconstEpetraLinearOp(
+  const RCP<Epetra_Operator> &op,
+  const std::string &label,
+  EOpTransp opTrans,
+  EApplyEpetraOpAs applyAs,
+  EAdjointEpetraOp adjointSupport,
+  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &domain
+  )
+{
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    op,opTrans, applyAs, adjointSupport, range, domain
+    );
+  thyraEpetraOp->setObjectLabel(label);
+  return thyraEpetraOp;
+}
+
+
+Teuchos::RCP<const Thyra::EpetraLinearOp>
+Thyra::epetraLinearOp(
+  const RCP<const Epetra_Operator> &op,
+  const std::string &label,
+  EOpTransp opTrans,
+  EApplyEpetraOpAs applyAs,
+  EAdjointEpetraOp adjointSupport,
+  const RCP< const SpmdVectorSpaceBase<double> > &range,
+  const RCP< const SpmdVectorSpaceBase<double> > &domain
+  )
+{
+  RCP<EpetraLinearOp> thyraEpetraOp = Teuchos::rcp(new EpetraLinearOp());
+  thyraEpetraOp->initialize(
+    Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
+    opTrans, applyAs, adjointSupport, range, domain
+    );
+  thyraEpetraOp->setObjectLabel(label);
+  return thyraEpetraOp;
+}

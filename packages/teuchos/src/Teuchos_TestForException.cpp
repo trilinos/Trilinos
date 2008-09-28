@@ -56,5 +56,5 @@ void TestForException_break( const std::string &errorMsg )
   // exception!  Typing in a 'p errorMsg' will show you what the error message
   // is.  Also, you should consider adding a conditional breakpoint in this
   // function based on a specific value of 'throwNumber' if the exception you
-  // want to example is not the first.
+  // want to examine is not the first exception thrown.
 }

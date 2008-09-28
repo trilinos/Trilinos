@@ -108,7 +108,7 @@ public:
 
   //@}
 
-  //! @name Constructors/Initializers 
+  //! @name Constructors/Destructors/Initializers 
   //@{
 
 	/** \brief Initialize <tt>ArrayRCP<T></tt> to NULL.
@@ -181,6 +181,9 @@ public:
 
   //! @name Object/Pointer Access Functions 
   //@{
+
+  /** \brief Returns true if the underlying pointer is null. */
+  bool is_null() const;
 
 	/** \brief Pointer (<tt>-></tt>) access to members of underlying object for
 	 * current position.
@@ -342,67 +345,6 @@ public:
 
   //@}
 
-  //! @name Views 
-  //@{
-
-	/** \brief Return object for only const access to data.
-   *
-   * This function should only compile successfully if the type <tt>T</tt> is
-   * not already declared <tt>const</tt>!
-   */
-	ArrayRCP<const T> getConst() const;
-
-	/** \brief Return a persisting view of a contiguous range of elements.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->get() != NULL</tt>
-   * <li><tt>this->lowerOffset() <= lowerOffset</tt>
-   * <li><tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
-	 * </ul>
-	 *
-	 * <b>Postconditions:</b><ul>
-   * <li><tt>return->get() == this->get() + lowerOffset</tt>
-   * <li><tt>return->lowerOffset() == 0</tt>
-   * <li><tt>return->upperOffset() == size-1</tt>
-	 * </ul>
-   */
-	ArrayRCP<T> persistingView( Ordinal lowerOffset, Ordinal size ) const;
-
-  //@}
-
-  //! @name General query functions 
-  //@{
-
-	/** \brief Return the number of <tt>ArrayRCP<></tt> objects that have a reference
-	 * to the underlying pointer that is being shared.
-	 *
-	 * \returns If <tt>this->get() == NULL</tt> then this function returns 0.
-	 * Otherwise, this function returns <tt>> 0</tt>.
-	 */
-	int count() const;
-
-	/** \brief Returns true if the smart pointers share the same underlying reference-counted object.
-	 *
-	 * This method does more than just check if <tt>this->get() == r_ptr.get()</tt>.
-	 * It also checks to see if the underlying reference counting machinery is the
-	 * same.
-	 */
-	template<class T2>
-	bool shares_resource(const ArrayRCP<T2>& r_ptr) const;
-
-  /** \brief Return the lower offset to valid data. */
-  Ordinal lowerOffset() const;
-
-  /** \brief Return the upper offset to valid data. */
-  Ordinal upperOffset() const;
-
-  /** \brief The total number of items in the managed array
-   * (i.e. <tt>upperOffset()-lowerOffset()+1</tt>).
-   */
-  Ordinal size() const;
-
-  //@}
-
   //! @name Standard Container-Like Functions 
   //@{
 
@@ -436,6 +378,50 @@ public:
 
   //@}
 
+  //! @name ArrayRCP Views 
+  //@{
+
+	/** \brief Return object for only const access to data.
+   *
+   * This function should only compile successfully if the type <tt>T</tt> is
+   * not already declared <tt>const</tt>!
+   */
+	ArrayRCP<const T> getConst() const;
+
+	/** \brief Return a persisting view of a contiguous range of elements.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->get() != NULL</tt>
+   * <li><tt>this->lowerOffset() <= lowerOffset</tt>
+   * <li><tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
+	 * </ul>
+	 *
+	 * <b>Postconditions:</b><ul>
+   * <li><tt>return->get() == this->get() + lowerOffset</tt>
+   * <li><tt>return->lowerOffset() == 0</tt>
+   * <li><tt>return->upperOffset() == size-1</tt>
+	 * </ul>
+   */
+	ArrayRCP<T> persistingView( Ordinal lowerOffset, Ordinal size ) const;
+
+  //@}
+
+  //! @name Size and extent query functions 
+  //@{
+
+  /** \brief Return the lower offset to valid data. */
+  Ordinal lowerOffset() const;
+
+  /** \brief Return the upper offset to valid data. */
+  Ordinal upperOffset() const;
+
+  /** \brief The total number of items in the managed array
+   * (i.e. <tt>upperOffset()-lowerOffset()+1</tt>).
+   */
+  Ordinal size() const;
+
+  //@}
+
   //! @name ArrayView views 
   //@{
 
@@ -466,7 +452,7 @@ public:
    */
 	ArrayView<T> operator()() const;
 
-  /** \brief Perform an implicit conversion to a ArrayView (calls
+  /** \brief Perform an implicit conversion to a ArrayView<T> (calls
    * operator()()).
    */
 	operator ArrayView<T>() const;
@@ -476,30 +462,49 @@ public:
 
   //@}
 
-  //! @name Ownership 
+  //! @name Reference counting
   //@{
 
-	/** \brief Release the ownership of the underlying array.
-	 *
-	 * After this function is called then the client is responsible for deleting
-	 * the returned pointer no matter how many <tt>ref_count_ptr<T></tt> objects
-	 * have a reference to it. If <tt>this-></tt>get() <tt>== NULL</tt>, then
-	 * this call is meaningless.
-	 *
-	 * Note that this function does not have the exact same semantics as does
-	 * <tt>auto_ptr<T>::release()</tt>. In <tt>auto_ptr<T>::release()</tt>,
-	 * <tt>this</tt> is set to <tt>NULL</tt> while here in ArrayRCP<T>::
-	 * release() only an ownership flag is set and <tt>this</tt> still points to
-	 * the same array. It would be difficult to duplicate the behavior of
-	 * <tt>auto_ptr<T>::release()</tt> for this class.
-	 *
-	 * <b>Postconditions:</b><ul>
-	 * <li><tt>this->has_ownership() == false</tt>
-	 * </ul>
-	 *
-	 * \returns Returns the value of <tt>this->get()</tt>
-	 */
-	T* release();
+  /** \brief Strength of the pointer.
+   *
+   * Return values:<ul>
+   * <li><tt>RCP_STRONG</tt>: Underlying reference-counted object will be deleted
+   *     when <tt>*this</tt> is destroyed if <tt>strong_count()==1</tt>. 
+   * <li><tt>RCP_WEAK</tt>: Underlying reference-counted object will not be deleted
+   *     when <tt>*this</tt> is destroyed if <tt>strong_count() > 0</tt>. 
+   * <li><tt>RCP_STRENGTH_INVALID</tt>: <tt>*this</tt> is not strong or weak but
+   *     is null.
+   * </ul>
+   */
+  ERCPStrength strength() const;
+
+  /** \brief Return if the underlying object pointer is still valid or not.
+   *
+   * The underlying object will not be valid if the strong count has gone to
+   * zero but the weak count thas not.
+   *
+   * NOTE: Null is a valid object pointer.  If you want to know if there is a
+   * non-null object and it is valid then <tt>!is_null() &&
+   * is_valid_ptr()</tt> will be <tt>true</tt>.
+   */
+  bool is_valid_ptr() const;
+
+  /** \brief Return the number of active <tt>RCP<></tt> objects that have a
+   * "strong" reference to the underlying reference-counted object.
+   *
+   * \return If <tt>this->get() == NULL</tt> then this function returns 0.
+   */
+  int strong_count() const;
+
+  /** \brief Return the number of active <tt>RCP<></tt> objects that have a
+   * "weak" reference to the underlying reference-counted object.
+   *
+   * \return If <tt>this->get() == NULL</tt> then this function returns 0.
+   */
+  int weak_count() const;
+
+  /** \brief Total count (strong_count() + weak_count()). */
+  int total_count() const;
 
 	/** \brief Give <tt>this</tt> and other <tt>ArrayRCP<></tt> objects
 	 * ownership of the underlying referenced array to delete it.
@@ -533,6 +538,55 @@ public:
 	 */
 	bool has_ownership() const;
 
+	/** \brief Release the ownership of the underlying array.
+	 *
+	 * After this function is called then the client is responsible for deleting
+	 * the returned pointer no matter how many <tt>ref_count_ptr<T></tt> objects
+	 * have a reference to it. If <tt>this-></tt>get() <tt>== NULL</tt>, then
+	 * this call is meaningless.
+	 *
+	 * Note that this function does not have the exact same semantics as does
+	 * <tt>auto_ptr<T>::release()</tt>. In <tt>auto_ptr<T>::release()</tt>,
+	 * <tt>this</tt> is set to <tt>NULL</tt> while here in ArrayRCP<T>::
+	 * release() only an ownership flag is set and <tt>this</tt> still points to
+	 * the same array. It would be difficult to duplicate the behavior of
+	 * <tt>auto_ptr<T>::release()</tt> for this class.
+	 *
+	 * <b>Postconditions:</b><ul>
+	 * <li><tt>this->has_ownership() == false</tt>
+	 * </ul>
+	 *
+	 * \returns Returns the value of <tt>this->get()</tt>
+	 */
+	T* release();
+
+  /** \brief Create a new weak RCP object from another RCP object.
+   *
+   * ToDo: Explain this!
+   *
+   * <b>Preconditons:</b> <ul>
+   * <li> <tt>returnVal.is_valid_ptr()==true</tt>
+   * </ul>
+   *
+   * <b>Postconditons:</b> <ul>
+   * <li> <tt>returnVal.get() == this->get()</tt>
+   * <li> <tt>returnVal.strong_count() == this->strong_count()</tt>
+   * <li> <tt>returnVal.weak_count() == this->weak_count()+1</tt>
+   * <li> <tt>returnVal.strength() == RCP_WEAK</tt>
+   * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
+   * </ul>
+   */
+  ArrayRCP<T> create_weak() const;
+
+	/** \brief Returns true if the smart pointers share the same underlying reference-counted object.
+	 *
+	 * This method does more than just check if <tt>this->get() == r_ptr.get()</tt>.
+	 * It also checks to see if the underlying reference counting machinery is the
+	 * same.
+	 */
+	template<class T2>
+	bool shares_resource(const ArrayRCP<T2>& r_ptr) const;
+
   //@}
 
   //! @name Assertion Functions. 
@@ -550,6 +604,25 @@ public:
    */
 	const ArrayRCP<T>& assert_in_range( Ordinal lowerOffset, Ordinal size ) const;
 
+  /** \brief If the object pointer is non-null, assert that it is still valid.
+   *
+   * If <tt>is_null()==false && strong_count()==0</tt>, this will throw
+   * <tt>DanglingReferenceErorr</tt> with a great error message.
+   *
+   * If <tt>is_null()==true</tt>, then this will not throw any exception.
+   *
+   * In this context, null is a valid object.
+   */
+  const ArrayRCP<T>& assert_valid_ptr() const;
+
+  //@}
+
+  /** \name Deprecated */
+  //@{
+
+  /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
+  int count() const;
+
   //@}
 
 private:
@@ -558,40 +631,56 @@ private:
 	// Private data members
 
 	T *ptr_; // NULL if this pointer is null
-	RCPNode	*node_;	// NULL if this pointer is null
-  Ordinal lowerOffset_;
-  Ordinal upperOffset_;
+	RCPNodeHandle node_; // NULL if this pointer is null
+  Ordinal lowerOffset_; // 0 if this pointer is null
+  Ordinal upperOffset_; // -1 if this pointer is null
+
+  void debug_assert_not_null() const
+    {
+#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
+      assert_not_null();
+#endif
+    }
+
+	void debug_assert_in_range( Ordinal lowerOffset, Ordinal size_in ) const
+    {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+      assert_in_range(lowerOffset, size_in);
+#endif
+    }
+
+  void debug_assert_valid_ptr() const
+    {
+#ifdef TEUCHOS_DEBUG
+      assert_valid_ptr();
+#endif
+    }
 
 public:
+
 #ifndef DOXYGEN_COMPILE
 	// These constructors should be private but I have not had good luck making
 	// this portable (i.e. using friendship etc.) in the past
-	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, bool has_ownership );
+	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset,
+    bool has_ownership );
 	template<class Dealloc_T>
-	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc, bool has_ownership );
-	// This is a very bad breach of encapsulation that is needed since MS VC++ 5.0 will
-	// not allow me to declare template functions as friends.
-	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, RCPNode* node);
-	T*& access_ptr();
-	T* access_ptr() const; // No preconditions
-	RCPNode*& access_node();
-	RCPNode* access_node() const;
+	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset,
+    Dealloc_T dealloc, bool has_ownership );
+	// This is a very bad breach of encapsulation that is needed since MS VC++
+	// 5.0 will not allow me to declare template functions as friends.
+	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset,
+    const RCPNodeHandle& node );
+	T* access_private_ptr() const;
+	RCPNodeHandle& nonconst_access_private_node();
+	const RCPNodeHandle& access_private_node() const;
 #endif
 
 };	// end class ArrayRCP<...>
 
 
-/** \brief Traits specialization for ArrayRCP.
- *
- * \relates ArrayRCP
- */
-template<typename T>
-class TypeNameTraits<ArrayRCP<T> > {
-public:
-  static std::string name() { return "ArrayRCP<"+TypeNameTraits<T>::name()+">"; }
-  static std::string concreteName( const ArrayRCP<T>& t2 )
-    { return name(); }
-};
+// 2008/09/22: rabartl: NOTE: I removed the TypeNameTraits<ArrayRCP<T> >
+// specialization since I want to be able to print the type name of an
+// ArrayRCP that does not have the type T fully defined!
 
 
 /** \brief Traits specialization for ArrayRCP.

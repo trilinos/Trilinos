@@ -32,6 +32,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_getConst.hpp"
 #include "Teuchos_Version.hpp"
 
 #ifdef HAVE_TEUCHOS_BOOST
@@ -86,6 +87,7 @@ int main( int argc, char* argv[] ) {
   using Teuchos::rcpWithEmbeddedObjPostDestroy;
   using Teuchos::getEmbeddedObj;
   using Teuchos::getNonconstEmbeddedObj;
+  using Teuchos::getConst;
 	using Teuchos::CommandLineProcessor;
 	
 	bool success = true, verbose = true;
@@ -132,12 +134,14 @@ int main( int argc, char* argv[] ) {
 		// statement in which it was created (see section 10.4.10 in
 		// Stroustroup, 3ed edition). This compiler stinks!!!!!
 		TEST_FOR_EXCEPT( a_ptr1.count() != 1 );
+		TEST_FOR_EXCEPT( !a_ptr1.shares_resource(a_ptr1) );
 #endif // __sun
 		TEST_FOR_EXCEPT( a_ptr1.ptr() == null );
 		TEST_FOR_EXCEPT( a_ptr1 == null );
 		TEST_FOR_EXCEPT( !(a_ptr1 != null) );
 		TEST_FOR_EXCEPT( is_null(a_ptr1) );
 		RCP<D> d_ptr1 = rcp(new E);
+    TEST_FOR_EXCEPT( d_ptr1.shares_resource(a_ptr1) );
 #ifndef __sun
 		TEST_FOR_EXCEPT( d_ptr1.count() != 1 );
 #endif
@@ -158,6 +162,7 @@ int main( int argc, char* argv[] ) {
 			const RCP<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
       TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
       TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
+      TEST_FOR_EXCEPT( !ca_ptr1.shares_resource(a_ptr1) );
 #ifndef __sun
 			TEST_FOR_EXCEPT( a_ptr1.count() != 2 );
 #endif
@@ -371,6 +376,7 @@ int main( int argc, char* argv[] ) {
 		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != null ); // test const version
 		set_extra_data( int(-5), "int", &a_ptr1 );
 		TEST_FOR_EXCEPT( get_extra_data<int>(a_ptr1,"int") != -5 );
+		TEST_FOR_EXCEPT( get_nonconst_extra_data<int>(a_ptr1,"int") != -5 );
 		set_extra_data( rcp(new B1), "B1", &a_ptr1 );
 		TEST_FOR_EXCEPT( get_extra_data<RCP<B1> >(a_ptr1,"B1")->B1_f() != B1_f_return );
 		TEST_FOR_EXCEPT( get_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"int") != -5 ); // test const version
@@ -456,10 +462,11 @@ int main( int argc, char* argv[] ) {
         deallocFunctorHandleDelete<UndefinedType>(destroyOpaque), true );
       TEUCHOS_ASSERT_EQUALITY( getOpaqueValue(&*op_ptr), getOpaqueValue_return );
     }
-    // 2008/08/01: rabartl: Above, we can only wrap an undefined type in debug
-    // mode since there is no TypeNameTraits class defined for it and the
-    // default uses typeid(...) which you can't call on an undefined type.  If
-    // you define a specialization of TypeNameTraits for this class, then
+    // 2008/08/01: rabartl: Above, we can only wrap an undefined type in
+    // nondebug mode since there is no TypeNameTraits class defined for it and
+    // the default uses typeid(...) which you can't call on an undefined type.
+    // If you define a specialization of TypeNameTraits for this class, then
+    // it will compile just fine!  This is related to bug 4016.
 
 #endif // not TEUCHOS_DEBUG
 

@@ -50,7 +50,6 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  using Teuchos::setToNull;
   using Teuchos::outArg;
   using Teuchos::getConst;
   using Teuchos::NullIteratorTraits;
@@ -295,7 +294,8 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     out << "\nTest that an iterator reference set to null does not throw ...\n";
     typedef typename Array<T>::iterator iter_t;
     iter_t iter = NullIteratorTraits<iter_t>::getNull();
-    TEST_NOTHROW( Array<T> a2(n); iter = a2.begin(); setToNull(outArg(iter)) );
+    TEST_NOTHROW( Array<T> a2(n); iter = a2.begin();
+      iter = NullIteratorTraits<iter_t>::getNull() );
   }
 
   {

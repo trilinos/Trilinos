@@ -35,13 +35,14 @@ if HAVE_GCC_CHECKEDSTL
 endif
 
 
-bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test ArrayView_test Tuple_test $(GCC_CHECKEDSTL_EXE_NAME)
+bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test \
+  ArrayView_test Tuple_test MemoryManagement_UnitTests $(GCC_CHECKEDSTL_EXE_NAME)
 
-RCP_test_SOURCES = $(srcdir)/RCP_test.cpp $(srcdir)/TestClasses.cpp
+RCP_test_SOURCES = $(srcdir)/RCP_test.cpp $(common_sources)
 RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 RCP_test_LDADD = $(TEUCHOS_LIBS)
 
-Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp
+Ptr_test_SOURCES = $(srcdir)/Ptr_test.cpp $(common_sources)
 Ptr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Ptr_test_LDADD = $(TEUCHOS_LIBS)
 
@@ -61,11 +62,29 @@ Tuple_test_SOURCES = $(srcdir)/Tuple_test.cpp
 Tuple_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Tuple_test_LDADD = $(TEUCHOS_LIBS)
 
+MemoryManagement_UnitTests_SOURCES = \
+  $(srcdir)/RCP_UnitTests.cpp \
+  $(srcdir)/RCPNodeHandle_UnitTests.cpp \
+  $(srcdir)/Array_UnitTest_helpers.cpp \
+  $(srcdir)/Array_UnitTests.cpp \
+  $(srcdir)/ArrayView_UnitTests.cpp \
+  $(unit_test_common_sources) \
+  $(common_sources)
+MemoryManagement_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+MemoryManagement_UnitTests_LDADD = $(TEUCHOS_LIBS)
+
 if HAVE_GCC_CHECKEDSTL
-  GCC_CheckedSTL_UnitTests_SOURCES = $(srcdir)/GCC_CheckedSTL_UnitTests.cpp $(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  GCC_CheckedSTL_UnitTests_SOURCES = $(srcdir)/GCC_CheckedSTL_UnitTests.cpp \
+  $(common_sources)
   GCC_CheckedSTL_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
   GCC_CheckedSTL_UnitTests_LDADD = $(TEUCHOS_LIBS)
 endif
+
+unit_test_common_sources = \
+  $(top_srcdir)/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+
+common_sources = \
+   $(srcdir)/TestClasses.cpp
 
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 
@@ -73,4 +92,4 @@ AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 LIBS =
 
 
-EXTRA_DIST = TestClasses.hpp
+EXTRA_DIST = TestClasses.hpp Array_UnitTest_helpers.hpp

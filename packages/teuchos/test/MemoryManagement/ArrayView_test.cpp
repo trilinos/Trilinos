@@ -91,7 +91,6 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
   using Teuchos::ArrayView;
   using Teuchos::arrayView;
   using Teuchos::arrayViewFromVector;
-  using Teuchos::setToNull;
   using Teuchos::outArg;
   using Teuchos::NullIteratorTraits;
   using Teuchos::TypeNameTraits;
@@ -115,6 +114,7 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
   {
     out << "\nTesting basic null construction!\n\n";
     ArrayView<T> av2 = Teuchos::null;
+    TEST_EQUALITY_CONST(is_null(av2),true);
     TEST_EQUALITY_CONST(av2.size(),0);
     TEST_EQUALITY_CONST(av2.getRawPtr(),0);
     TEST_ITER_EQUALITY(av2.begin(),av2.end());
@@ -145,6 +145,7 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
   const ArrayView<T> av = arrayViewFromVector(v);
   const ArrayView<const T> cav = arrayViewFromVector(getConst(v));
 
+  TEST_EQUALITY_CONST(is_null(av), false);
   TEST_EQUALITY( as<int>(av.size()), n );
  
   {
@@ -259,9 +260,10 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
     out << "\nTest const forward iterator access ... ";
     bool local_success = true;
     typedef typename ArrayView<const T>::iterator iter_t;
-    iter_t iter = av.getConst().begin();
+    const ArrayView<const T> cav = av.getConst();
+    iter_t iter = cav.begin();
     for ( int i = 0; i < n; ++i, ++iter ) {
-      TEST_ARRAY_ELE_EQUALITY( cav, i, *iter );
+      TEST_ARRAY_ELE_EQUALITY( av, i, *iter );
 
 #ifdef SHOW_INVALID_CONST_ITER_MODIFICATION
       *iter = as<T>(i); // Should not compile!

@@ -62,7 +62,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = UnitTest_UnitTests$(EXEEXT) \
-	UnitTest_BadUnitTest$(EXEEXT) teuchosUnitTests$(EXEEXT)
+	UnitTest_BadUnitTest$(EXEEXT)
 subdir = test/UnitTest
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -109,9 +109,6 @@ am_UnitTest_UnitTests_OBJECTS = Int_UnitTests.$(OBJEXT) \
 	TemplateFunc_UnitTests.$(OBJEXT) vector_UnitTests.$(OBJEXT) \
 	Teuchos_StandardUnitTestMain.$(OBJEXT)
 UnitTest_UnitTests_OBJECTS = $(am_UnitTest_UnitTests_OBJECTS)
-am_teuchosUnitTests_OBJECTS = Array_UnitTests.$(OBJEXT) \
-	Teuchos_StandardUnitTestMain.$(OBJEXT)
-teuchosUnitTests_OBJECTS = $(am_teuchosUnitTests_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -121,9 +118,9 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(UnitTest_BadUnitTest_SOURCES) \
-	$(UnitTest_UnitTests_SOURCES) $(teuchosUnitTests_SOURCES)
+	$(UnitTest_UnitTests_SOURCES)
 DIST_SOURCES = $(UnitTest_BadUnitTest_SOURCES) \
-	$(UnitTest_UnitTests_SOURCES) $(teuchosUnitTests_SOURCES)
+	$(UnitTest_UnitTests_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -269,12 +266,6 @@ UnitTest_BadUnitTest_SOURCES = \
 
 UnitTest_BadUnitTest_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 UnitTest_BadUnitTest_LDADD = $(TEUCHOS_LIBS)
-teuchosUnitTests_SOURCES = \
-  $(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp \
-  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
-
-teuchosUnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
-teuchosUnitTests_LDADD = $(TEUCHOS_LIBS)
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 all: all-am
 
@@ -338,9 +329,6 @@ UnitTest_BadUnitTest$(EXEEXT): $(UnitTest_BadUnitTest_OBJECTS) $(UnitTest_BadUni
 UnitTest_UnitTests$(EXEEXT): $(UnitTest_UnitTests_OBJECTS) $(UnitTest_UnitTests_DEPENDENCIES) 
 	@rm -f UnitTest_UnitTests$(EXEEXT)
 	$(CXXLINK) $(UnitTest_UnitTests_OBJECTS) $(UnitTest_UnitTests_LDADD) $(LIBS)
-teuchosUnitTests$(EXEEXT): $(teuchosUnitTests_OBJECTS) $(teuchosUnitTests_DEPENDENCIES) 
-	@rm -f teuchosUnitTests$(EXEEXT)
-	$(CXXLINK) $(teuchosUnitTests_OBJECTS) $(teuchosUnitTests_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -348,7 +336,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Array_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Failing_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Int_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TemplateFunc_UnitTests.Po@am__quote@
@@ -438,20 +425,6 @@ vector_UnitTests.obj: $(srcdir)/vector_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vector_UnitTests.cpp' object='vector_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o vector_UnitTests.obj `if test -f '$(srcdir)/vector_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/vector_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vector_UnitTests.cpp'; fi`
-
-Array_UnitTests.o: $(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Array_UnitTests.o -MD -MP -MF $(DEPDIR)/Array_UnitTests.Tpo -c -o Array_UnitTests.o `test -f '$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp' || echo '$(srcdir)/'`$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Array_UnitTests.Tpo $(DEPDIR)/Array_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp' object='Array_UnitTests.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Array_UnitTests.o `test -f '$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp' || echo '$(srcdir)/'`$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp
-
-Array_UnitTests.obj: $(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Array_UnitTests.obj -MD -MP -MF $(DEPDIR)/Array_UnitTests.Tpo -c -o Array_UnitTests.obj `if test -f '$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp'; then $(CYGPATH_W) '$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Array_UnitTests.Tpo $(DEPDIR)/Array_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp' object='Array_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Array_UnitTests.obj `if test -f '$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp'; then $(CYGPATH_W) '$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/test/MemoryManagement/Array_UnitTests.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

@@ -214,18 +214,19 @@ Tuple<T,15> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
 
 template<typename T, int N> inline
 Tuple<T,N>::Tuple()
-  : ArrayView<T>(&array_[0],N)
-{}
+{
+  ArrayView<T>::operator=(ArrayView<T>(&array_[0],N));
+}
 
 
 template<typename T, int N>
 Tuple<T,N>::Tuple( const Tuple<T,N> &t )
-  : ArrayView<T>(&array_[0],N)
 {
   for( int i = 0; i < N; ++i )
     array_[i] = t[i];
   // Above, this loop with static N should allow the compiler to unroll this
   // entire loop!
+  ArrayView<T>::operator=(ArrayView<T>(&array_[0],N));
 }
 
 

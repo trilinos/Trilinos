@@ -58,7 +58,7 @@ MultiVectorDefaultBase<Scalar>::clone_mv() const
     &range = *this->range();
   RCP<MultiVectorBase<Scalar> >
     copy = createMembers(range,domain.dim());
-  assign( &*copy, *this );
+  assign( copy.ptr(), *this );
   return copy;
 }
 
@@ -240,28 +240,28 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   // target vectors and reduce each of the reduction objects.
   //
 
-  Workspace< RCP<const VectorBase<Scalar> > > vecs_s(wss,num_multi_vecs);
-  Workspace<const VectorBase<Scalar>*> vecs(wss,num_multi_vecs,false);
-  Workspace< RCP<VectorBase<Scalar> > > targ_vecs_s(wss,num_targ_multi_vecs);
-  Workspace<VectorBase<Scalar>*> targ_vecs(wss,num_targ_multi_vecs,false);
+  Workspace<RCP<const VectorBase<Scalar> > > vecs_s(wss, num_multi_vecs);
+  Workspace<Ptr<const VectorBase<Scalar> > > vecs(wss, num_multi_vecs);
+  Workspace<RCP<VectorBase<Scalar> > > targ_vecs_s(wss, num_targ_multi_vecs);
+  Workspace<Ptr<VectorBase<Scalar> > > targ_vecs(wss, num_targ_multi_vecs);
 
   for(Index j = sec_first_ele_offset_in; j < sec_first_ele_offset_in + sec_sub_dim; ++j) {
     // Fill the arrays of vector arguments
     {for(Index k = 0; k < as<Index>(num_multi_vecs); ++k) {
         vecs_s[k] = multi_vecs[k]->col(j);
-        vecs[k] = vecs_s[k].get();
+        vecs[k] = vecs_s[k].ptr();
       }}
     {for(Index k = 0; k < as<Index>(num_targ_multi_vecs); ++k) {
         targ_vecs_s[k] = targ_multi_vecs[k]->col(j);
-        targ_vecs[k] = targ_vecs_s[k].get();
+        targ_vecs[k] = targ_vecs_s[k].ptr();
       }}
     // Apply the reduction/transformation operator
     Thyra::applyOp(
-      prim_op
-      ,num_multi_vecs, (num_multi_vecs ? &vecs[0] : NULL)
-      ,num_targ_multi_vecs, (num_targ_multi_vecs ? &targ_vecs[0] : NULL)
-      ,reduct_objs.size() ? &*reduct_objs[j] : NULL
-      ,prim_first_ele_offset_in, prim_sub_dim_in, prim_global_offset_in
+      prim_op,
+      vecs().getConst(),
+      targ_vecs().getConst(),
+      reduct_objs.size() ? reduct_objs[j] : Ptr<RTOpPack::ReductTarget>(),
+      prim_first_ele_offset_in, prim_sub_dim_in, prim_global_offset_in
       );
   }
   // At this point all of the designated targ vectors in the target multi-vectors have
@@ -305,10 +305,9 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
 
   // Create a temporary buffer for the reduction objects of the primary reduction
   // so that we can call the companion version of this method.
-  Workspace<RCP<RTOpPack::ReductTarget> >
-    rcp_reduct_objs(wss,!is_null(reduct_obj)?sec_sub_dim:0);
-  Workspace<Ptr<RTOpPack::ReductTarget> >
-    reduct_objs(wss,!is_null(reduct_obj)?sec_sub_dim:0,false);
+  const int reduct_objs_size = (!is_null(reduct_obj) ? sec_sub_dim : 0);
+  Workspace<RCP<RTOpPack::ReductTarget> > rcp_reduct_objs(wss, reduct_objs_size);
+  Workspace<Ptr<RTOpPack::ReductTarget> > reduct_objs(wss, reduct_objs_size);
   if (!is_null(reduct_obj)) {
     for(Index k = 0; k < sec_sub_dim; ++k) {
       rcp_reduct_objs[k] = prim_op.reduct_obj_create();
@@ -327,7 +326,7 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   // into one reduction object and free the intermediate reduction objects.
   if (!is_null(reduct_obj)) {
     for (Index k = 0; k < sec_sub_dim; ++k) {
-      sec_op.reduce_reduct_objs( *reduct_objs[k], &*reduct_obj );
+      sec_op.reduce_reduct_objs( *reduct_objs[k], reduct_obj );
     }
   }
 }

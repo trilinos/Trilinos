@@ -1,5 +1,6 @@
 #include "EpetraExt_MultiPointModelEvaluator.h"
 #include "Epetra_Map.h"
+#include "Teuchos_as.hpp"
 
 EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
@@ -19,6 +20,7 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     q_vec(q_vec_),
     matching_vec(matching_vec_)
 {
+  using Teuchos::as;
   if (globalComm->MyPID()==0) {
      cout  << "----------MultiPoint Partition Info------------"
            << "\n\tNumProcs              = " << globalComm->NumProc()
@@ -115,7 +117,7 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    else matchingProblem = true;
 
    if (matchingProblem) {
-     TEST_FOR_EXCEPT(matching_vec->size()!=timeStepsOnTimeDomain);
+     TEST_FOR_EXCEPT(as<int>(matching_vec->size())!=timeStepsOnTimeDomain);
      TEST_FOR_EXCEPT(!(*matching_vec)[0]->Map().SameAs(*(underlyingME_->get_g_map(0))));
      TEST_FOR_EXCEPT(num_g0 != 1); //This restriction may be lifted later
    }

@@ -13,6 +13,11 @@ OPTION(${PROJECT_NAME}_ENABLE_COMPLEX
   ON
   )
 
+OPTION(${PROJECT_NAME}_ENABLE_DEBUG
+  "Enable a host of runtime debug checking."
+  OFF
+  )
+
 OPTION(${PROJECT_NAME}_ENABLE_GCC_DEMANGLE
   "Enable Teuchos calls to GCC demangle library function."
   OFF

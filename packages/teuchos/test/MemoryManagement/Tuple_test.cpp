@@ -93,7 +93,6 @@ bool testTuple( Teuchos::FancyOStream &out )
   using Teuchos::ArrayView;
   using Teuchos::arrayView;
   using Teuchos::arrayViewFromVector;
-  using Teuchos::setToNull;
   using Teuchos::outArg;
   using Teuchos::NullIteratorTraits;
   using Teuchos::TypeNameTraits;

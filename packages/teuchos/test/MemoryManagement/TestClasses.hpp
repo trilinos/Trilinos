@@ -83,6 +83,7 @@ public:
 	virtual ~A(); // See below
 	virtual int A_g() { return A_g_; }
 	virtual int A_f() const { return A_f_; }
+  int call_C_f();
 private:
   Teuchos::RCP<C> c_;
 public:
@@ -114,20 +115,47 @@ class C : virtual public B1, virtual public B2
 {
 	int C_g_, C_f_;
 public:
-	C() : C_g_(C_g_return),C_f_(C_f_return) {}
-	~C() { C_g_ = -1; C_f_ = -1; }
+	C() : C_g_(C_g_return), C_f_(C_f_return), call_A_on_delete_(false)
+    {
+      A_g_on_delete_ = -2;
+    }
+	~C()
+    {
+      C_g_ = -1; C_f_ = -1;
+      if (call_A_on_delete_) {
+        // VERY BAD THING TO DO!
+        A_g_on_delete_ = call_A_g();
+        // NOTE: If a_ is a weak pointer and the underlying 'A' object has
+        // already been deleted, then this destructor will throw an exception.
+        // This is *never* a good thing to do in production code.  However, I
+        // am allowing this destructor to throw an exception so I can write a
+        // unit test to detect this.
+      }
+    }
 	virtual int C_g() { return C_g_; }
 	virtual int C_f() const { return C_f_; }
+  void call_A_on_delete(bool call_A_on_delete_in)
+    { call_A_on_delete_ = call_A_on_delete_in; }
+  int call_A_g() { return a_->A_g(); }
+  static int get_A_g_on_delete() { return A_g_on_delete_; }
 private:
   Teuchos::RCP<A> a_;
+  bool call_A_on_delete_;
+  static int A_g_on_delete_;
 public:
   void set_A(const Teuchos::RCP<A> &a ) { a_ = a; }
 };
 
 
-// Need to put this here if we have circular references
+// Need to put these here if we have circular references
+
 inline
 A::~A() { A_g_ = -1; A_f_ = -1; }
+
+
+inline
+int A::call_C_f() { return c_->C_f(); }
+
 
 class Get_A_f_return {
   const A *a_;

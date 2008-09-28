@@ -784,7 +784,7 @@ sample-output:
 	cd example/external ; $(MAKE) sample-makefile
 	cd $(top_builddir)/adapters ; $(MAKE) sample-output
 
-@USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
+@USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.thyra $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
@@ -794,10 +794,12 @@ sample-output:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/adapters/epetra/src:@abs_top_builddir@/adapters/tpetra/src:@abs_top_builddir@/adapters/epetraext/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../rtop:@abs_top_builddir@/../epetra:@abs_top_builddir@/../tpetra:@abs_top_builddir@/../epetraext
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile THYRA > $(exec_prefix)/include/Makefile.export.thyra.macros
+@USING_EXPORT_MAKEFILES_TRUE@	cd $(top_builddir)/example/external && $(MAKE) install
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
 @USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.thyra
 @USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.thyra.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/example/thyra
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 

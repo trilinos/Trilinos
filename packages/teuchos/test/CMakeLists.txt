@@ -145,7 +145,13 @@ TRILINOS_ADD_EXECUTABLE(
   DIRECTORY MemoryManagement
   COMM serial mpi  
   SOURCES
+    RCPNodeHandle_UnitTests.cpp
+    RCP_UnitTests.cpp
+    Array_UnitTest_helpers.cpp
     Array_UnitTests.cpp
+    ArrayView_UnitTests.cpp
+    ArrayRCP_UnitTests.cpp
+    TestClasses.cpp
     ../UnitTest/Teuchos_StandardUnitTestMain.cpp
   )
 TRILINOS_ADD_TEST(
@@ -186,19 +192,19 @@ TRILINOS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
   )
 
-TRILINOS_ADD_EXECUTABLE(
-  Handle_test  
-  COMM serial mpi  
-  SOURCES cxx_main.cpp
-  DIRECTORY Handle
-  )
-TRILINOS_ADD_TEST(
-  Handle_test
-  DIRECTORY Handle
-  NAME Handle_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  )
+#TRILINOS_ADD_EXECUTABLE(
+#  Handle_test  
+#  COMM serial mpi  
+#  SOURCES cxx_main.cpp
+#  DIRECTORY Handle
+#  )
+#TRILINOS_ADD_TEST(
+#  Handle_test
+#  DIRECTORY Handle
+#  NAME Handle_test
+#  NUM_MPI_PROCS 1
+#  COMM serial mpi
+#  )
 
 TRILINOS_ADD_EXECUTABLE(
   LAPACK_test  
@@ -216,15 +222,14 @@ TRILINOS_ADD_TEST(
   )
 
 TRILINOS_ADD_EXECUTABLE(
-  ArrayRPC_test  
+  ArrayRCP_test  
   COMM serial mpi  
   SOURCES ArrayRCP_test.cpp
   DIRECTORY MemoryManagement
   )
 TRILINOS_ADD_TEST(
-  ArrayRPC_test
+  ArrayRCP_test
   DIRECTORY MemoryManagement
-  NAME ArrayRPC_test
   NUM_MPI_PROCS 1
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
@@ -263,7 +268,7 @@ TRILINOS_ADD_TEST(
 TRILINOS_ADD_EXECUTABLE(
   Ptr_test  
   COMM serial mpi  
-  SOURCES Ptr_test.cpp
+  SOURCES Ptr_test.cpp TestClasses.cpp
   DIRECTORY MemoryManagement
   )
 TRILINOS_ADD_TEST(

@@ -29,6 +29,9 @@
 #include "TestClasses.hpp"
 
 
+int C::A_g_on_delete_ = -2;
+
+
 void deallocA(A* ptr)
 {
   std::cout << "\nCalled deallocA(...)!\n";

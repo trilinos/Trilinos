@@ -44,6 +44,11 @@
 
 
 /** \brief . */
+#define ECHO( statement ) \
+  TEUCHOS_ECHO( statement, out )
+
+
+/** \brief . */
 #define TEST_EQUALITY_CONST( v1, v2 ) \
   TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success )
 
