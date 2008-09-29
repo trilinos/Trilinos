@@ -36,5 +36,5 @@ STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector C
 
 SUBDIRS = $(STANDARD_SUBDIRS)
 
-EXTRA_DIST = tpetra_test_util.hpp
+EXTRA_DIST =
 

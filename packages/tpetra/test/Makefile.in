@@ -221,7 +221,7 @@ top_srcdir = @top_srcdir@
 STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector CrsMatrix # BasicPerfTest 
 #endif
 SUBDIRS = $(STANDARD_SUBDIRS)
-EXTRA_DIST = tpetra_test_util.hpp
+EXTRA_DIST = 
 all: all-recursive
 
 .SUFFIXES:
