@@ -159,6 +159,9 @@ cd ~/TrilinosBuild
 ../Trilinos/configure PETSC_DIR=/home/joeblow/petsc-2.3.3-p12 PETSC_ARCH=linux-gnu-c-debug --with-petsc
 \endverbatim
 
+The following Trilinos packages must be enabled: Epetra, EpetraExt, and Teuchos.  We also
+suggest that you enable ML, Ifpack, and Amesos.
+
 \section epetraext_petsc_example Example
 
 We now dissect the example Trilinos/packages/epetraext/examples/petsc/\ref epetraext_petsc_cpp.
