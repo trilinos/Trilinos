@@ -71,9 +71,9 @@ int test_VectorSpace::test0()
 
   CHK_ERR( vspace.initComplete() );
 
-  std::vector<int> globalIndexOffsets(numProcs_+1);
+  std::vector<int> globalIndexOffsets;
 
-  CHK_ERR( vspace.getGlobalIndexOffsets(numProcs_+1, &globalIndexOffsets[0]) );
+  vspace.getGlobalIndexOffsets(globalIndexOffsets);
 
   return(0);
 }
@@ -106,13 +106,9 @@ int test_VectorSpace::test1()
 
   fei::VectorSpace& vectorSpace = *vectorSpacePtr;
 
-  int numPart = vectorSpace.getNumPartitions();
+  std::vector<int> globalOffsets;
 
-  if (numPart != numProcs_) return(-1);
-
-  feiArray<int> globalOffsets(numPart+1);
-
-  CHK_ERR( vectorSpace.getGlobalIndexOffsets(numPart+1, globalOffsets.dataPtr()));
+  vectorSpace.getGlobalIndexOffsets(globalOffsets);
 
   if (localProc_ > 0) {
     if (globalOffsets[localProc_] != (localProc_+1)*2*numDOFsPerID) {
@@ -124,9 +120,8 @@ int test_VectorSpace::test1()
     ERReturn(-1);
   }
 
-  feiArray<int> globalBlkOffsets(numPart+1);
-  CHK_ERR( vectorSpace.getGlobalBlkIndexOffsets(numPart+1,
-						globalBlkOffsets.dataPtr()));
+  std::vector<int> globalBlkOffsets;
+  vectorSpace.getGlobalBlkIndexOffsets(globalBlkOffsets);
   if (localProc_ > 0) {
     if (globalBlkOffsets[localProc_] != (localProc_+1)*2) {
       ERReturn(-1);
@@ -345,20 +340,14 @@ int test_VectorSpace::test3()
 
   CHK_ERR( copy->initComplete() );
 
-  int numPart = vectorSpacePtr->getNumPartitions();
+  std::vector<int> globalOffsets;
+  std::vector<int> globalOffsetsCopy;
 
-  if (numPart != numProcs_) return(-1);
+  vectorSpacePtr->getGlobalIndexOffsets(globalOffsets);
 
-  feiArray<int> globalOffsets(numPart+1);
-  feiArray<int> globalOffsetsCopy(numPart+1);
+  copy->getGlobalIndexOffsets(globalOffsetsCopy);
 
-  CHK_ERR( vectorSpacePtr->getGlobalIndexOffsets(numPart+1,
-					       globalOffsets.dataPtr()));
-
-  CHK_ERR( copy->getGlobalIndexOffsets(numPart+1,
-				       globalOffsetsCopy.dataPtr()));
-
-  for(int i=0; i<globalOffsets.length(); ++i) {
+  for(size_t i=0; i<globalOffsets.size(); ++i) {
     if (globalOffsets[i] != globalOffsetsCopy[i]) {
       ERReturn(-1);
     }
@@ -366,8 +355,7 @@ int test_VectorSpace::test3()
 
   CHK_ERR( copy->initComplete() );
 
-  CHK_ERR( copy->getGlobalIndexOffsets(numPart+1,
-				       globalOffsetsCopy.dataPtr()));
+  copy->getGlobalIndexOffsets(globalOffsetsCopy);
 
   if (globalOffsetsCopy[numProcs_] != globalOffsets[numProcs_]) {
     ERReturn(-1);

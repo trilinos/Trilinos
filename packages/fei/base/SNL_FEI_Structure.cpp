@@ -17,7 +17,7 @@
 
 #include "feiArray.hpp"
 #include "fei_TemplateUtils.hpp"
-#include "snl_fei_CommUtils.hpp"
+#include <fei_CommUtils.hpp>
 #include "snl_fei_Constraint.hpp"
 typedef snl_fei::Constraint<GlobalID> ConstraintType;
 
@@ -75,8 +75,6 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
    slaveMatrix_(NULL),
    globalNumNodesVanished_(),
    localVanishedNodeNumbers_(0, 32),
-   commUtilsInt_(NULL),
-   commUtilsDouble_(NULL),
    nodeCommMgr_(NULL),
    eqnCommMgr_(NULL),
    slvCommMgr_(NULL),
@@ -129,21 +127,16 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
 {
   numProcs_ = 1, localProc_ = 0, masterProc_ = 0;
 
-#ifndef FEI_SER
-  MPI_Comm_rank(comm_, &localProc_);
-  MPI_Comm_size(comm_, &numProcs_);
+  localProc_ = fei::localProc(comm_);
+  numProcs_ = fei::numProcs(comm_);
   masterProc_ = 0;
-#endif
 
   slaveVars_ = new feiArray<SlaveVariable*>;
   slaveEqns_ = new EqnBuffer;
 
-  commUtilsInt_ = new snl_fei::CommUtils<int>(comm_);
-  commUtilsDouble_ = new snl_fei::CommUtils<double>(comm_);
-
   nodeCommMgr_ = new NodeCommMgr(comm_);
 
-  eqnCommMgr_ = new EqnCommMgr(*commUtilsInt_);
+  eqnCommMgr_ = new EqnCommMgr(comm_);
   eqnCommMgr_->setNumRHSs(1);
 
   nodeDatabase_ = new NodeDatabase(fieldDatabase_, nodeCommMgr_);
@@ -213,8 +206,6 @@ SNL_FEI_Structure::~SNL_FEI_Structure()
 
   delete nodeCommMgr_;
   delete eqnCommMgr_;
-  delete commUtilsInt_;
-  delete commUtilsDouble_;
   delete blkEqnMapper_;
 
   destroyMatIndices();
@@ -1107,7 +1098,7 @@ int SNL_FEI_Structure::initComplete(bool generateGraph)
   //and establish an EqnBuffer of slave equation numbers, and gather the slave
   //equations initialized on any other processors.
 
-  slvCommMgr_ = new EqnCommMgr(*commUtilsInt_);
+  slvCommMgr_ = new EqnCommMgr(comm_);
   slvCommMgr_->setNumRHSs(1);
 
   CHK_ERR( calculateSlaveEqns(comm_) );
@@ -2710,8 +2701,7 @@ int SNL_FEI_Structure::initializeBlkEqnMapper()
   //Now the element-dofs...
   //
   int numBlocks = getNumElemBlocks();
-  int localProc = commUtilsInt_->localProc();
-  int numLocalNodes = globalNodeOffsets_[localProc+1]-globalNodeOffsets_[localProc];
+  int numLocalNodes = globalNodeOffsets_[localProc_+1]-globalNodeOffsets_[localProc_];
   eqnNumber = localStartRow_ + numLocalNodalEqns_;
   blkEqnNumber = localBlkOffset_ + numLocalNodes;
 
@@ -2767,7 +2757,7 @@ int SNL_FEI_Structure::initializeBlkEqnMapper()
 
   int localMaxBlkEqnSize = blkEqnMapper_->getMaxBlkEqnSize();
   globalMaxBlkSize_ = 0;
-  CHK_ERR( commUtilsInt_->GlobalMax(localMaxBlkEqnSize, globalMaxBlkSize_) );
+  CHK_ERR( fei::GlobalMax(comm_, localMaxBlkEqnSize, globalMaxBlkSize_) );
 
   blkEqnMapper_->setMaxBlkEqnSize(globalMaxBlkSize_);
 
@@ -2780,8 +2770,7 @@ int SNL_FEI_Structure::initializeBlkEqnMapper()
 
   if (numProcs_ > 1) {
     std::vector<int> recvLengths, globalMultEqns;
-    CHK_ERR(commUtilsInt_->Allgatherv(localMultEqns, recvLengths,
-				      globalMultEqns));
+    CHK_ERR(fei::Allgatherv(comm_, localMultEqns, recvLengths, globalMultEqns));
 
     int offset = 0;
     for(int p=0; p<numProcs_; p++) {
@@ -3822,7 +3811,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
   if (debugOutput_) os << "#  calculateSlaveEqns" << FEI_ENDL;
 
   if (eqnCommMgr_ != NULL) delete eqnCommMgr_;
-  eqnCommMgr_ = new EqnCommMgr(*commUtilsInt_);
+  eqnCommMgr_ = new EqnCommMgr(comm_);
   eqnCommMgr_->setNumRHSs(1);
 
   int i;
@@ -3875,7 +3864,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
 #ifndef FEI_SER
   int numLocalSlaves = slaveVars_->length();
   int globalMaxSlaves = 0;
-  CHK_ERR( commUtilsInt_->GlobalMax(numLocalSlaves, globalMaxSlaves) );
+  CHK_ERR( fei::GlobalMax(comm_, numLocalSlaves, globalMaxSlaves) );
 
   if (globalMaxSlaves > 0) {
     CHK_ERR( gatherSlaveEqns(comm, eqnCommMgr_, slaveEqns_) );
@@ -4003,7 +3992,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
 
     std::vector<int> tmp(1), tmp2(numProcs_);
     tmp[0] = numLocalNodesVanished;
-    CHK_ERR( commUtilsInt_->Allgatherv(tmp, tmp2, globalNumNodesVanished_) );
+    CHK_ERR( fei::Allgatherv(comm_, tmp, tmp2, globalNumNodesVanished_) );
 
     if ((int)globalNumNodesVanished_.size() != numProcs_) {
       ERReturn(-1);

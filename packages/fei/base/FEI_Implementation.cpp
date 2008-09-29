@@ -6,6 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_CommUtils.hpp>
 #include <fei_iostream.hpp>
 #include <fei_fstream.hpp>
 #include <fei_sstream.hpp>
@@ -13,8 +14,6 @@
 #include <fei_utils.hpp>
 
 #include <feiArray.hpp>
-#include <snl_fei_CommUtils.hpp>
-
 #include <fei_Data.hpp>
 #include <fei_LinearSystemCore.hpp>
 #include <fei_FiniteElementData.hpp>
@@ -47,7 +46,6 @@ FEI_Implementation::FEI_Implementation(fei::SharedPtr<LibraryWrapper> libWrapper
    haveFEData_(false),
    problemStructure_(NULL),
    filter_(NULL),
-   commUtils_(NULL),
    numInternalFEIs_(0),
    internalFEIsAllocated_(false),
    matrixIDs_(0, 8),
@@ -85,16 +83,8 @@ FEI_Implementation::FEI_Implementation(fei::SharedPtr<LibraryWrapper> libWrapper
    numParams_(0),
    paramStrings_(NULL)
 {
-   // start the wall clock time recording
-
-   commUtils_ = new snl_fei::CommUtils<int>(comm_);
-
-#ifndef FEI_SER
-   // initialize MPI communications info
-   masterRank_ = masterRank;
-   MPI_Comm_rank(comm_, &localRank_);
-   MPI_Comm_size(comm_, &numProcs_);
-#endif
+  localRank_ = fei::localProc(comm);
+  numProcs_ = fei::numProcs(comm);
 
    problemStructure_ = new SNL_FEI_Structure(comm_);
 
@@ -133,62 +123,6 @@ FEI_Implementation::FEI_Implementation(fei::SharedPtr<LibraryWrapper> libWrapper
    //  and the time spent in the constructor is...
 
    return;
-}
-
-//------------------------------------------------------------------------------
-FEI_Implementation::FEI_Implementation(const FEI_Implementation& src)
- : wrapper_(NULL),
-   linSysCore_(NULL),
-   lscArray_(0, 1),
-   haveLinSysCore_(false),
-   haveFEData_(false),
-   problemStructure_(NULL),
-   filter_(NULL),
-   commUtils_(NULL),
-   numInternalFEIs_(0),
-   internalFEIsAllocated_(false),
-   matrixIDs_(0, 8),
-   numRHSIDs_(0, 8),
-   rhsIDs_(0, 8),
-   IDsAllocated_(false),
-   matScalars_(0, 8),
-   matScalarsSet_(false),
-   rhsScalars_(0, 8),
-   rhsScalarsSet_(false),
-   index_soln_filter_(0),
-   index_current_filter_(0),
-   index_current_rhs_row_(0),
-   solveType_(-1),
-   setSolveTypeCalled_(false),
-   initPhaseIsComplete_(false),
-   aggregateSystemFormed_(false),
-   newMatrixDataLoaded_(0),
-   soln_fei_matrix_(NULL),
-   soln_fei_vector_(NULL),
-   comm_(0),
-   masterRank_(0),
-   localRank_(0),
-   numProcs_(1),
-   outputLevel_(0),
-   solveCounter_(1),
-   debugOutput_(0),
-   dbgOStreamPtr_(NULL),
-   dbgFileOpened_(false),
-   dbgFStreamPtr_(NULL),
-   initTime_(0.0),
-   loadTime_(0.0),
-   solveTime_(0.0),
-   solnReturnTime_(0.0),
-   numParams_(0),
-   paramStrings_(NULL)
-{
-}
-
-//------------------------------------------------------------------------------
-FEI_Implementation& FEI_Implementation::operator=(const FEI_Implementation& src)
-{
-  abort();
-  return(*this);
 }
 
 //------------------------------------------------------------------------------
@@ -237,10 +171,6 @@ FEI_Implementation::~FEI_Implementation()
      dbgFStreamPtr_->close(); delete dbgFStreamPtr_;
    }
    else delete dbgOStreamPtr_;
-
-   delete commUtils_;
-
-   return;
 }
 
 
@@ -1759,13 +1689,11 @@ int FEI_Implementation::allocateInternalFEIs(){
       for(int i=0; i<numInternalFEIs_; i++){
 
 	if (haveLinSysCore_) {
-	  filter_[i] = new LinSysCoreFilter(this, comm_, commUtils_,
-					    problemStructure_,
+	  filter_[i] = new LinSysCoreFilter(this, comm_, problemStructure_,
 					    lscArray_[i].get(), masterRank_);
 	}
 	else if (haveFEData_) {
-	  filter_[i] = new FEDataFilter(this, comm_, commUtils_,
-					problemStructure_,
+	  filter_[i] = new FEDataFilter(this, comm_, problemStructure_,
 					wrapper_.get(), masterRank_);
 	}
 	else {

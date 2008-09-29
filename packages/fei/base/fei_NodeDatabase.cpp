@@ -8,7 +8,7 @@
 
 #include <fei_NodeDatabase.hpp>
 
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_NodeDescriptor.hpp>
 #include <fei_NodeCommMgr.hpp>
 

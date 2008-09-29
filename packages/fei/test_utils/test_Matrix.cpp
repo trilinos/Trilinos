@@ -512,9 +512,8 @@ void test_Matrix::matrix_test1(fei::SharedPtr<fei::Matrix> mat)
     throw std::runtime_error("mat reports different num rows than vector-space eqns");
   }
 
-  int num_procs = rspace->getNumPartitions();
-  std::vector<int> global_offsets(num_procs+1);
-  int errcode = rspace->getGlobalIndexOffsets(num_procs+1, &global_offsets[0]);
+  std::vector<int> global_offsets;
+  rspace->getGlobalIndexOffsets(global_offsets);
 
   int my_num_rows = mat->getLocalNumRows();
   if (my_num_rows != global_offsets[localProc_+1]-global_offsets[localProc_]) {
@@ -525,7 +524,7 @@ void test_Matrix::matrix_test1(fei::SharedPtr<fei::Matrix> mat)
   std::vector<int> row_lengths(my_num_rows);
 
   for(i=0; i<my_num_rows; ++i) {
-    errcode = mat->getRowLength(i+my_first_row, row_lengths[i]);
+    int errcode = mat->getRowLength(i+my_first_row, row_lengths[i]);
     if (errcode != 0) {
       throw std::runtime_error("nonzero errcode from mat->getRowLength");
     }

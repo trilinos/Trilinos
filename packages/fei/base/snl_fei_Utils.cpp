@@ -14,13 +14,13 @@
 
 #include <snl_fei_Utils.hpp>
 #include "fei_Record.hpp"
-#include <fei_CommUtilsBase.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_SparseRowGraph.hpp>
 #include <fei_Matrix_Impl.hpp>
 #include <fei_ParameterSet.hpp>
 
 #include <feiArray.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_SSMat.hpp>
 #include <fei_chk_mpi.hpp>
@@ -557,9 +557,7 @@ int snl_fei::gatherRemoteEssBCs(SSVec& essBCs,
           int len = rowOffsPtr[i+1]-rowOffsPtr[i];
           int* colsPtr = &(rcolsPtr[rowOffsPtr[i]]);
 
-          feiArray<int> cols(len, len, colsPtr);
-
-          if (snl_fei::binarySearch(eqn, cols) > -1) {
+          if (snl_fei::binarySearch(eqn, colsPtr, len) > -1) {
             double coef = coefs[j];
             double* coefPtr = &coef;
 
@@ -634,9 +632,8 @@ void snl_fei::globalUnion(MPI_Comm comm, SSMat& localMatrix, SSMat& globalUnionM
   std::vector<int> localintdata;
   std::vector<double> localdoubledata;
 
-  fei::CommUtilsBase cub(comm);
-  unsigned localProc = cub.localProc();
-  int numProcs = cub.numProcs();
+  int localProc = fei::localProc(comm);
+  int numProcs = fei::numProcs(comm);
 
   if (numProcs < 2) {
     return;
@@ -678,7 +675,7 @@ void snl_fei::globalUnion(MPI_Comm comm, SSMat& localMatrix, SSMat& globalUnionM
     int intlen = recvintdatalengths[p];
     int doublelen = recvdoubledatalengths[p];
 
-    if (intlen > 1 && p != localProc) {
+    if (intlen > 1 && (int)p != localProc) {
       std::vector<int> intdata(&recvintdata[ioffset], &recvintdata[ioffset]+intlen);
       std::vector<double> doubledata(&recvdoubledata[doffset], &recvdoubledata[doffset]+doublelen);
 

@@ -10,7 +10,6 @@
 #define _fei_FEI_Impl_hpp_
 
 #include <fei_macros.hpp>
-#include <snl_fei_CommUtils.hpp>
 #include <fei_mpi.h>
 #include <FEI.hpp>
 #include <fei_Factory.hpp>
@@ -536,7 +535,6 @@ namespace fei {
     Data *soln_fei_vector_;
 
     MPI_Comm comm_;
-    snl_fei::CommUtils<int>* commUtils_;
     int masterRank_;
     int localProc_;
     int numProcs_;

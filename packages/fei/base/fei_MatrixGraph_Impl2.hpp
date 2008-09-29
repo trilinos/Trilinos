@@ -17,7 +17,6 @@
 #include <feiArray.hpp>
 #include <snl_fei_Constraint.hpp>
 #include <fei_Record.hpp>
-#include <snl_fei_CommUtils.hpp>
 #include <fei_Logger.hpp>
 #include <fei_SparseRowGraph.hpp>
 #include <fei_MatrixGraph.hpp>
@@ -642,7 +641,7 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
  private:
    int localProc_, numProcs_;
 
-   fei::SharedPtr<snl_fei::CommUtils<int> > commUtilsInt_;
+   MPI_Comm comm_;
 
    fei::SharedPtr<fei::VectorSpace> rowSpace_;
    fei::SharedPtr<fei::VectorSpace> colSpace_;

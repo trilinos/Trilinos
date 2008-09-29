@@ -14,7 +14,7 @@
 #include <fei_EqnComm.hpp>
 #include <fei_fwd.hpp>
 #include <fei_Vector.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_SSMat.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_Logger.hpp>
@@ -138,7 +138,7 @@ class Matrix_core : protected fei::Logger {
 
   virtual int sumIntoMatrix(SSMat& mat) = 0;
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils() { return( intCommUtils_ ); }
+  MPI_Comm getCommunicator() const { return( comm_ ); }
 
   fei::SharedPtr<fei::VectorSpace> vecSpace() { return( vecSpace_ ); }
 
@@ -175,7 +175,7 @@ class Matrix_core : protected fei::Logger {
  private:
   fei::SharedPtr<fei::Vector> rhsVector_;
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > intCommUtils_;
+  MPI_Comm comm_;
 
   int localProc_, numProcs_;
 

@@ -12,7 +12,6 @@
 
 #include <fei_utils.hpp>
 
-#include <snl_fei_CommUtils.hpp>
 #include <snl_fei_Utils.hpp>
 #include <fei_FieldMask.hpp>
 #include <snl_fei_RecordCollection.hpp>
@@ -35,13 +34,13 @@
 //----------------------------------------------------------------------------
 snl_fei::BlkSizeMsgHandler::BlkSizeMsgHandler(fei::VectorSpace* vspace,
 					      fei::Graph* graph,
-					      fei::SharedPtr<snl_fei::CommUtils<int> > commutils)
+					      MPI_Comm comm)
   : remote_colIndices_(NULL),
     local_colIndices_(NULL),
     vecSpace_(vspace),
     ptBlkMap_(NULL),
     graph_(graph),
-    commUtils_(commutils),
+    comm_(comm),
     sendProcs_(0, 64),
     recvProcs_(0, 64),
     firstExchange_(true)
@@ -62,8 +61,8 @@ snl_fei::BlkSizeMsgHandler::~BlkSizeMsgHandler()
 //----------------------------------------------------------------------------
 int snl_fei::BlkSizeMsgHandler::do_the_exchange()
 {
-  int localProc = commUtils_->localProc();
-  if (commUtils_->numProcs() < 2) {
+  int local_proc = fei::localProc(comm_);
+  if (fei::numProcs(comm_) < 2) {
     return(0);
   }
 
@@ -89,7 +88,7 @@ int snl_fei::BlkSizeMsgHandler::do_the_exchange()
       int col = *iter;
       owner = vecSpace_->getOwnerProcBlkIndex(col);
 
-      if (owner != localProc) {
+      if (owner != local_proc) {
 	remote_colIndices_->addIndices(owner, 1, &col);
       }
     }
@@ -100,15 +99,15 @@ int snl_fei::BlkSizeMsgHandler::do_the_exchange()
   //the sizes for those column-indices.
   fei::copyKeysToVector(remote_colIndices_->getMap(), sendProcs_);
 
-  CHK_ERR( commUtils_->mirrorProcs(sendProcs_, recvProcs_) );
+  CHK_ERR( fei::mirrorProcs(comm_, sendProcs_, recvProcs_) );
 
   firstExchange_ = true;
 
-  CHK_ERR( commUtils_->exchange(this) );
+  CHK_ERR( fei::exchange(comm_, this) );
 
   firstExchange_ = false;
 
-  CHK_ERR( commUtils_->exchange(this) );
+  CHK_ERR( fei::exchange(comm_, this) );
 
   return(0);
 }
@@ -158,7 +157,8 @@ int snl_fei::BlkSizeMsgHandler::getSendMessage(int destProc,
   if (firstExchange_) {
     fei::comm_map::row_type* cols = remote_colIndices_->getRow(destProc);
     message.resize(cols->size());
-    return( cols->copy_to_array(message.size(), &message[0]) );
+    fei::copySetToArray(*cols, message.size(), &message[0]);
+    return(0);
   }
   else {
     fei::comm_map::row_type* cols = local_colIndices_->getRow(destProc);

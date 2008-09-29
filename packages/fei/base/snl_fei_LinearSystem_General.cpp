@@ -11,7 +11,6 @@
 
 #include <cmath>
 
-#include <snl_fei_CommUtils.hpp>
 #include <snl_fei_LinearSystem_General.hpp>
 #include <fei_MatrixReducer.hpp>
 #include <fei_Matrix_Impl.hpp>
@@ -34,7 +33,7 @@
 
 //----------------------------------------------------------------------------
 snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGraph>& matrixGraph)
-  : commUtilsInt_(),
+  : comm_(matrixGraph->getRowSpace()->getCommunicator()),
     matrixGraph_(matrixGraph),
     dbcManager_(NULL),
     essBCvalues_(NULL),
@@ -50,23 +49,16 @@ snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGr
     dwork_(),
     dbgprefix_("LinSysG: ")
 {
-  commUtilsInt_ = matrixGraph->getRowSpace()->getCommUtils();
-
-  localProc_ = commUtilsInt_->localProc();
-  numProcs_  = commUtilsInt_->numProcs();
+  localProc_ = fei::localProc(comm_);
+  numProcs_  = fei::numProcs(comm_);
 
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph->getRowSpace();
 
-  int* offsets = new int[numProcs_+1];
-  int err = vecSpace->getGlobalIndexOffsets(numProcs_+1, offsets);
-  if (err != 0) {
-    voidERReturn;
-  }
+  std::vector<int> offsets;
+  vecSpace->getGlobalIndexOffsets(offsets);
 
   firstLocalOffset_ = offsets[localProc_];
   lastLocalOffset_ = offsets[localProc_+1]-1;
-
-  delete [] offsets;
 
   setName("dbg");
 }
@@ -299,7 +291,7 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
 
   if (output_level_ == fei::STATS || output_level_ == fei::ALL) {
     int globalNumSlaveCRs = matrixGraph_->getGlobalNumSlaveConstraints();
-    if (commUtilsInt_->localProc() == 0) {
+    if (localProc_ == 0) {
       FEI_COUT << "Global Neqns: " << matrix_->getGlobalNumRows();
       if (globalNumSlaveCRs > 0) {
 	FEI_COUT << ", Global NslaveCRs: " << globalNumSlaveCRs;
@@ -409,7 +401,8 @@ int extractDBCs(fei::DirichletBCManager* bcManager,
 {
   int numLocalBCs = bcManager->getNumBCRecords();
   int globalNumBCs = 0;
-  matrixGraph->getRowSpace()->getCommUtils()->GlobalSum(numLocalBCs, globalNumBCs);
+  MPI_Comm comm = matrixGraph->getRowSpace()->getCommunicator();
+  fei::GlobalSum(comm, numLocalBCs, globalNumBCs);
   if (globalNumBCs == 0) {
     return(0);
   }
@@ -502,8 +495,7 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
 
   SSVec allEssBCs;
   if (!BCenforcement_no_column_mod_) {
-    snl_fei::globalUnion(commUtilsInt_->getCommunicator(),
-                         *essBCvalues_, allEssBCs);
+    snl_fei::globalUnion(comm_, *essBCvalues_, allEssBCs);
 
     if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
       FEI_OSTREAM& os = *output_stream_;

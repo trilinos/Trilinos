@@ -13,7 +13,6 @@
 #include <fei_mpi.h>
 #include <fei_utils.hpp>
 #include <fei_LinearSystem.hpp>
-#include <snl_fei_CommUtils.hpp>
 #include <fei_Vector.hpp>
 #include <fei_Matrix.hpp>
 #include <fei_fwd.hpp>
@@ -120,7 +119,7 @@ namespace snl_fei {
   private:
     int implementBCs(bool applyBCs);
 
-    fei::SharedPtr<CommUtils<int> > commUtilsInt_;
+    MPI_Comm comm_;
     int localProc_;
     int numProcs_;
     fei::SharedPtr<fei::Matrix> matrix_;

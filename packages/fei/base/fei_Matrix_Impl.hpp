@@ -1180,10 +1180,10 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
     localNNZ += len;
   }
 
-  CHK_MPI( commUtils()->GlobalSum(localNNZ, globalNNZ) );
+  CHK_MPI( GlobalSum(getCommunicator(), localNNZ, globalNNZ) );
 
   for(int p=0; p<numProcs(); ++p) {
-    commUtils()->Barrier();
+    fei::Barrier(getCommunicator());
     if (p != localProc()) continue;
 
     FEI_OFSTREAM* outFile = NULL;
@@ -1270,12 +1270,12 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
     localNNZ += len;
   }
 
-  CHK_MPI( commUtils()->GlobalSum(localNNZ, globalNNZ) );
+  CHK_MPI( fei::GlobalSum(getCommunicator(), localNNZ, globalNNZ) );
 
   IOS_FMTFLAGS oldf = ostrm.setf(IOS_SCIENTIFIC, IOS_FLOATFIELD);
 
   for(int p=0; p<numProcs(); ++p) {
-    commUtils()->Barrier();
+    fei::Barrier(getCommunicator());
     if (p != localProc()) continue;
 
     if (p==0) {

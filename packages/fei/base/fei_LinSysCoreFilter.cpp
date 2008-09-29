@@ -17,7 +17,7 @@
 #include "fei_defs.h"
 
 #include "feiArray.hpp"
-#include "snl_fei_CommUtils.hpp"
+#include "fei_CommUtils.hpp"
 #include "fei_TemplateUtils.hpp"
 #include "snl_fei_Constraint.hpp"
 typedef snl_fei::Constraint<GlobalID> ConstraintType;
@@ -50,7 +50,6 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 //------------------------------------------------------------------------------
 LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
 				   MPI_Comm comm,
-				   snl_fei::CommUtils<int>* commUtils, 
 				   SNL_FEI_Structure* probStruct,
 				   LinearSystemCore* lsc,
 				   int masterRank)
@@ -84,8 +83,6 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    outputLevel_(0),
    comm_(comm),
    masterRank_(masterRank),
-   commUtils_(commUtils),
-   deleteCommUtils_(false),
    problemStructure_(probStruct),
    matrixAllocated_(false),
    workStiff_(NULL),
@@ -108,21 +105,8 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    eStiff1D_(NULL),
    eLoad_(NULL)
 {
-
-#ifndef FEI_SER
-  //  initialize a couple of MPI things
-
-    MPI_Comm_rank(comm_, &localRank_);
-    MPI_Comm_size(comm_, &numProcs_);
-#else
-    localRank_ = 0;
-    numProcs_ = 1;
-#endif
-
-    if (commUtils_ == NULL) {
-      commUtils_ = new snl_fei::CommUtils<int>(comm_);
-      deleteCommUtils_ = true;
-    }
+    localRank_ = fei::localProc(comm_);
+    numProcs_ = fei::numProcs(comm_);
 
     internalFei_ = 0;
 
@@ -173,8 +157,6 @@ LinSysCoreFilter::~LinSysCoreFilter() {
   delete [] eStiff_;
   delete [] eStiff1D_;
   delete [] eLoad_;
-
-  if (deleteCommUtils_) delete commUtils_;
 
   delete workStiff_;
   delete workLoad_;
@@ -372,7 +354,6 @@ int LinSysCoreFilter::initLinSysCore()
   feiArray<int> reducedNodeOffsets(globalNodeOffsets.length());
 
   int numSlaveEqns = problemStructure_->numSlaveEquations();
-  int localProc = commUtils_->localProc();
 
   int reducedNodeNum =
     problemStructure_->getAssociatedNodeNumber(reducedStartRow_);
@@ -380,7 +361,7 @@ int LinSysCoreFilter::initLinSysCore()
   std::vector<int> tmpSend(2), tmpRecv, tmpRecvLengths;
   tmpSend[0] = reducedStartRow_;
   tmpSend[1] = reducedNodeNum;
-  CHK_ERR( commUtils_->Allgatherv(tmpSend, tmpRecvLengths, tmpRecv) );
+  CHK_ERR( fei::Allgatherv(comm_, tmpSend, tmpRecvLengths, tmpRecv) );
 
   for(int ii=0; ii<globalEqnOffsets.length()-1; ++ii) {
     reducedEqnOffsets[ii] = tmpRecv[ii*2];
@@ -397,9 +378,9 @@ int LinSysCoreFilter::initLinSysCore()
     }
   }
 
-  if (localProc == numProcs_-1) {
+  if (localRank_ == numProcs_-1) {
     reducedNodeNum = problemStructure_->
-      translateToReducedNodeNumber(globalNodeOffsets[numProcs_]-1, localProc);
+      translateToReducedNodeNumber(globalNodeOffsets[numProcs_]-1, localRank_);
     int blkEqn = globalBlkEqnOffsets[numProcs_]-1;
     if (numSlaveEqns > 0) {
       blkEqn = reducedNodeNum;
@@ -414,7 +395,7 @@ int LinSysCoreFilter::initLinSysCore()
     tmpSend.resize(3);
   }
 
-  CHK_ERR( commUtils_->Bcast(tmpSend, numProcs_-1) );
+  CHK_ERR( fei::Bcast(comm_, tmpSend, numProcs_-1) );
   reducedEqnOffsets[numProcs_] = tmpSend[0]+1;
   reducedNodeOffsets[numProcs_] = tmpSend[1]+1;
   reducedBlkEqnOffsets[numProcs_] = tmpSend[2]+1;
@@ -1545,7 +1526,7 @@ int LinSysCoreFilter::generalCoefInput(int patternID,
 
   if (assemblyMode == ASSEMBLE_PUT) {
     int globalError = 0;
-    CHK_ERR( commUtils_->GlobalSum(error, globalError) );
+    CHK_ERR( fei::GlobalSum(comm_, error, globalError) );
     if (globalError != 0) {
       return(-1);
     }
@@ -1793,7 +1774,7 @@ int LinSysCoreFilter::exchangeRemoteEquations()
   flags[2] = newConstraintData_ ? 1 : 0;
   flags[3] = newBCData_ ? 1 : 0;
 
-  CHK_ERR( commUtils_->GlobalMax(flags, globalFlags) );
+  CHK_ERR( fei::GlobalMax(comm_, flags, globalFlags) );
 
   newMatrixData_     = globalFlags[0] > 0 ? true : false;
   newVectorData_     = globalFlags[1] > 0 ? true : false;
@@ -2309,14 +2290,12 @@ int LinSysCoreFilter::loadComplete()
   flags[2] = newConstraintData_ ? 1 : 0;
   flags[3] = newBCData_ ? 1 : 0;
 
-  CHK_ERR( commUtils_->GlobalMax(flags, globalFlags) );
+  CHK_ERR( fei::GlobalMax(comm_, flags, globalFlags) );
 
   newMatrixData_     = globalFlags[0] > 0 ? true : false;
   newVectorData_     = globalFlags[1] > 0 ? true : false;
   newConstraintData_ = globalFlags[2] > 0 ? true : false;
   newBCData_         = globalFlags[3] > 0 ? true : false;
-
-  debugOutput("FEI: loadComplete");
 
   bool called_exchange = false;
   if (newMatrixData_ || newVectorData_ || newConstraintData_) {

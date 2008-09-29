@@ -10,12 +10,11 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_iosfwd.hpp>
-#include <fei_mpi.h>
-#include <fei_chk_mpi.hpp>
-#include <fei_mpiTraits.hpp>
 #include <fei_SparseRowGraph.hpp>
 #include <snl_fei_RaggedTable.hpp>
 #include <snl_fei_Utils.hpp>
+
+#include <fei_ErrMacros.hpp>
 
 #include <set>
 #include <vector>
@@ -23,66 +22,7 @@
 
 namespace fei {
 
-  /** Allgatherv function that takes std::vectors of arbitrary
-      type
-  */
-  template<class T>
-    int Allgatherv(MPI_Comm comm,
-                   std::vector<T>& sendbuf,
-		   std::vector<int>& recvLengths,
-		   std::vector<T>& recvbuf)
-    {
-      int numProcs = 1;
-#ifdef FEI_SER
-      //If we're in serial mode, just copy sendbuf to recvbuf and return.
-
-      recvbuf = sendbuf;
-      recvLengths.resize(1);
-      recvLengths[0] = sendbuf.size();
-#else
-      MPI_Comm_size(comm, &numProcs);
-
-      try {
-
-	MPI_Datatype mpi_dtype = fei::mpiTraits<T>::mpi_type();
-
-	std::vector<int> tmpInt(numProcs, 0);
-
-	int len = (int)sendbuf.size();
-	int* tmpBuf = &tmpInt[0];
-
-	recvLengths.resize(numProcs);
-        int* recvLenPtr = &recvLengths[0];
-
-	CHK_MPI( MPI_Allgather(&len, 1, MPI_INT, recvLenPtr, 1, MPI_INT, comm) );
-
-	int displ = 0;
-	for(int i=0; i<numProcs; i++) {
-	  tmpBuf[i] = displ;
-	  displ += recvLenPtr[i];
-	}
-
-	if (displ == 0) {
-	  recvbuf.resize(0);
-	  return(0);
-	}
-
-	recvbuf.resize(displ);
-
-	CHK_MPI( MPI_Allgatherv(&sendbuf[0], len, mpi_dtype,
-				&recvbuf[0], &recvLengths[0], tmpBuf,
-				mpi_dtype, comm) );
-
-      }
-      catch(std::runtime_error& exc) {
-	FEI_CERR << exc.what() << FEI_ENDL;
-	return(-1);
-      }
-#endif
-
-      return(0);
-    }
-
+  //------------------------------------------------------------------------
   /** dangerous function to copy a set to an
    array, assuming the set contents are of type int
   */

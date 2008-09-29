@@ -19,7 +19,7 @@
 #include <feiArray.hpp>
 #include <fei_Pattern.hpp>
 #include <fei_LogManager.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_TemplateUtils.hpp>
 #include <snl_fei_Utils.hpp>
 #include <fei_FieldMask.hpp>
 #include <fei_Record.hpp>
@@ -94,7 +94,7 @@ fei::MatrixGraph_Impl2::Factory::createMatrixGraph(fei::SharedPtr<fei::VectorSpa
 fei::MatrixGraph_Impl2::MatrixGraph_Impl2(fei::SharedPtr<fei::VectorSpace> rowSpace,
 			      fei::SharedPtr<fei::VectorSpace> colSpace,
 			      const char* name)
- : commUtilsInt_(),
+ : comm_(rowSpace->getCommunicator()),
    rowSpace_(rowSpace),
    colSpace_(colSpace),
    haveRowSpace_(false),
@@ -123,10 +123,8 @@ fei::MatrixGraph_Impl2::MatrixGraph_Impl2(fei::SharedPtr<fei::VectorSpace> rowSp
    tmpIntArray1_(),
    tmpIntArray2_()
 {
-  commUtilsInt_ = rowSpace->getCommUtils();
-
-  localProc_ = commUtilsInt_->localProc();
-  numProcs_ = commUtilsInt_->numProcs();
+  localProc_ = fei::localProc(comm_);
+  numProcs_ = fei::numProcs(comm_);
 
   if (rowSpace_.get() == NULL) {
     voidERReturn;
@@ -1066,7 +1064,7 @@ bool
 fei::MatrixGraph_Impl2::newSlaveData()
 {
   bool globalBool = false;
-  commUtilsInt_->Allreduce(newSlaveData_, globalBool);
+  fei::Allreduce(comm_, newSlaveData_, globalBool);
   newSlaveData_ = globalBool;
 
   return(newSlaveData_);
@@ -1135,7 +1133,7 @@ int fei::MatrixGraph_Impl2::initComplete()
   //a slave dependency matrix.
   localNumSlaves_ = slaveConstraints_.size();
   globalNumSlaves_ = 0;
-  CHK_ERR( commUtilsInt_->GlobalSum(localNumSlaves_, globalNumSlaves_) );
+  CHK_ERR( fei::GlobalSum(comm_, localNumSlaves_, globalNumSlaves_) );
 
   if (globalNumSlaves_ > 0) {
     //we need to allocate the slave dependency and reduction matrices too.
@@ -1226,7 +1224,7 @@ int fei::MatrixGraph_Impl2::createAlgebraicGraph(bool blockEntryGraph,
     CHK_ERR( exchangeBlkEqnSizes(graph) );
   }
 
-  if (output_level_ >= fei::FULL_LOGS && commUtilsInt_->numProcs()>1 &&
+  if (output_level_ >= fei::FULL_LOGS && fei::numProcs(comm_)>1 &&
       output_stream_ != NULL && gatherFromOverlap) {
     FEI_OSTREAM& os = *output_stream_;
     os << dbgprefix_<<" after graph->gatherFromOverlap()" << FEI_ENDL;
@@ -1247,27 +1245,23 @@ fei::MatrixGraph_Impl2::createGraph(bool blockEntryGraph,
 {
   fei::SharedPtr<fei::SparseRowGraph> localRows;
 
-  int* globalOffsets = new int[numProcs_+1];
+  std::vector<int> globalOffsets;
 
   if (blockEntryGraph) {
     if (reducer_.get() != NULL) {
       throw std::runtime_error("fei::MatrixGraph_Impl2::createGraph ERROR, can't specify both block-entry assembly and slave-constraint reduction.");
     }
 
-    if (rowSpace_->getGlobalBlkIndexOffsets(numProcs_+1, globalOffsets) != 0) {
-      return(localRows);
-    }
+    rowSpace_->getGlobalBlkIndexOffsets(globalOffsets);
   }
   else {
-    if (rowSpace_->getGlobalIndexOffsets(numProcs_+1, globalOffsets) != 0) {
-      return(localRows);
-    }
+    rowSpace_->getGlobalIndexOffsets(globalOffsets);
   }
+
+  if ((int)globalOffsets.size() < localProc_+2) return localRows;
 
   int firstOffset = globalOffsets[localProc_];
   int lastOffset = globalOffsets[localProc_+1] - 1;
-
-  delete [] globalOffsets;
 
   if (reducer_.get() != NULL) {
     std::vector<int>& reduced_eqns = reducer_->getLocalReducedEqns();
@@ -1275,8 +1269,7 @@ fei::MatrixGraph_Impl2::createGraph(bool blockEntryGraph,
     lastOffset = reduced_eqns[reduced_eqns.size()-1];
   }
 
-  fei::SharedPtr<fei::Graph> inner_graph(new fei::Graph_Impl(commUtilsInt_,
-                                   firstOffset, lastOffset) );
+  fei::SharedPtr<fei::Graph> inner_graph(new fei::Graph_Impl(comm_, firstOffset, lastOffset) );
   fei::SharedPtr<fei::Graph> graph;
 
   if (reducer_.get() == NULL) {
@@ -1320,7 +1313,7 @@ int fei::MatrixGraph_Impl2::exchangeBlkEqnSizes(fei::Graph* graph)
     return(0);
   }
 
-  snl_fei::BlkSizeMsgHandler blkHandler(rowSpace_.get(), graph, commUtilsInt_);
+  snl_fei::BlkSizeMsgHandler blkHandler(rowSpace_.get(), graph, comm_);
 
   CHK_ERR( blkHandler.do_the_exchange() );
 
@@ -1446,8 +1439,8 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
 
 #ifndef FEI_SER
   if (numProcs_ > 1) {
-    snl_fei::globalUnion(commUtilsInt_->getCommunicator(), *local_D, *D_);
-    snl_fei::globalUnion(commUtilsInt_->getCommunicator(), *local_g, *g_);
+    snl_fei::globalUnion(comm_, *local_D, *D_);
+    snl_fei::globalUnion(comm_, *local_g, *g_);
   }
   else {
     *D_ = *local_D;
@@ -1467,7 +1460,7 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
   (void)levelsOfCoupling;
 
   if (reducer_.get() == NULL) {
-    reducer_.reset(new fei::Reducer(D_, g_, commUtilsInt_->getCommunicator()));
+    reducer_.reset(new fei::Reducer(D_, g_, comm_));
 
     int localSize = rowSpace_->getNumIndices_Owned();
     std::vector<int> indices(localSize);
@@ -1674,7 +1667,7 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
   int numBlocks = matrixGraph.getNumConnectivityBlocks();
 
   if (myNumBlocks != numBlocks) {
-    CHK_ERR( commUtilsInt_->GlobalMax(localCode, globalCode) );
+    CHK_ERR( fei::GlobalMax(comm_, localCode, globalCode) );
     equivalent = globalCode > 0 ? false : true;
     return(0);
   }
@@ -1689,7 +1682,7 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
 
     for(int i=0; i<numBlocks; ++i) {
       if (myBlockIDs[i] != blockIDs[i]) {
-	CHK_ERR( commUtilsInt_->GlobalMax(localCode, globalCode) );
+	CHK_ERR( fei::GlobalMax(comm_, localCode, globalCode) );
 	equivalent = globalCode > 0 ? false : true;
 	return(0);
       }
@@ -1702,7 +1695,7 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
 
       if (myNumLists != numLists ||
 	  mycblock->isSymmetric() != cblock->isSymmetric()) {
-	CHK_ERR( commUtilsInt_->GlobalMax(localCode, globalCode) );
+	CHK_ERR( fei::GlobalMax(comm_, localCode, globalCode) );
 	equivalent = globalCode > 0 ? false : true;
 	return(0);
       }
@@ -1711,7 +1704,7 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
       int numIDsPerList = cblock->getRowPattern()->getNumIDs();
 
       if (myNumIDsPerList != numIDsPerList) {
-	CHK_ERR( commUtilsInt_->GlobalMax(localCode, globalCode) );
+	CHK_ERR( fei::GlobalMax(comm_, localCode, globalCode) );
 	equivalent = globalCode > 0 ? false : true;
 	return(0);
       }
@@ -1728,13 +1721,13 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
 
   if (numMyLagrangeConstraints != numLagrangeConstraints ||
       numMySlaveConstraints != numSlaveConstraints) {
-    CHK_ERR( commUtilsInt_->GlobalMax(localCode, globalCode) );
+    CHK_ERR( fei::GlobalMax(comm_, localCode, globalCode) );
     equivalent = globalCode > 0 ? false : true;
     return(0);
   }
 
   localCode = 0;
-  CHK_ERR( commUtilsInt_->GlobalMax(localCode, globalCode) );
+  CHK_ERR( fei::GlobalMax(comm_, localCode, globalCode) );
   equivalent = globalCode > 0 ? false : true;
   return(0);
 }

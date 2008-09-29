@@ -106,16 +106,8 @@ void test_Vector::vector_test1(fei::SharedPtr<fei::Vector> fei_vec)
 
   fei::SharedPtr<fei::VectorSpace> vspace = fei_vec->getVectorSpace();
 
-  //if numProcs_ != getNumPartitions(), something's wrong...
-  if (numProcs_ != vspace->getNumPartitions()) {
-    throw std::runtime_error("numProcs_ != fei_vec->getVectorSpace()->getNumPartitions");
-  }
-
-  std::vector<int> global_offsets(numProcs_+1);
-  int errcode = vspace->getGlobalIndexOffsets(numProcs_+1, &global_offsets[0]);
-  if (errcode != 0) {
-    throw std::runtime_error("nonzero errcode from vspace->getGlobalIndexOffsets");
-  }
+  std::vector<int> global_offsets;
+  vspace->getGlobalIndexOffsets(global_offsets);
 
   int i, my_first_offset = global_offsets[localProc_];
   int my_last_offset = global_offsets[localProc_+1]-1;
@@ -131,7 +123,7 @@ void test_Vector::vector_test1(fei::SharedPtr<fei::Vector> fei_vec)
   if (localProc_==0)
     FEI_COUT << "   testing fei::Vector::copyIn/copyOut...";
 
-  errcode = fei_vec->copyIn(num_local_indices, &indices[0], &coefs[0]);
+  int errcode = fei_vec->copyIn(num_local_indices, &indices[0], &coefs[0]);
   if (errcode != 0) {
     throw std::runtime_error("nonzero errcode from fei_vec->copyIn");
   }

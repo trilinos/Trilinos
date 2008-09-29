@@ -10,7 +10,6 @@
 
 #include <test_utils/test_SSMat.hpp>
 #include <feiArray.hpp>
-#include <snl_fei_CommUtils.hpp>
 #include <fei_defs.h>
 
 #include <fei_ProcEqns.hpp>

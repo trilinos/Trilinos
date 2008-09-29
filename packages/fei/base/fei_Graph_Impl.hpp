@@ -12,7 +12,7 @@
 #include <fei_iosfwd.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_Graph.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_mpi.h>
 #include <fei_EqnComm.hpp>
 
 namespace fei {
@@ -21,9 +21,7 @@ namespace fei {
   class Graph_Impl : public fei::Graph {
   public:
     /** constructor */
-    Graph_Impl(fei::SharedPtr<snl_fei::CommUtils<int> > commUtils,
-	  int firstLocalRow,
-	  int lastLocalRow);
+    Graph_Impl(MPI_Comm comm, int firstLocalRow, int lastLocalRow);
 
     /** destructor */
     virtual ~Graph_Impl();
@@ -83,7 +81,7 @@ namespace fei {
 
     int firstLocalRow_, lastLocalRow_;
     int localProc_, numProcs_;
-    fei::SharedPtr<snl_fei::CommUtils<int> > commUtils_;
+    MPI_Comm comm_;
   };//class Graph_Impl
 
 } //namespace fei

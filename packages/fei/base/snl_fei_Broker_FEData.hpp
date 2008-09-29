@@ -11,7 +11,6 @@
 
 #include <fei_macros.hpp>
 #include <fei_mpi.h>
-#include <snl_fei_CommUtils.hpp>
 #include <snl_fei_Broker.hpp>
 #include <fei_FiniteElementData.hpp>
 #include <fei_VectorSpace.hpp>
@@ -209,7 +208,6 @@ namespace snl_fei {
 	return(0);
       }
 
-    fei::SharedPtr<CommUtils<int> > intCommUtils_;
     fei::SharedPtr<FiniteElementData> feData_;
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
 

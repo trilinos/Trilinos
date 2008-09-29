@@ -11,7 +11,7 @@
 
 #include <fei_macros.hpp>
 #include <fei_mpi.h>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <snl_fei_Broker.hpp>
 #include <fei_LinearSystemCore.hpp>
 #include <fei_VectorSpace.hpp>
@@ -126,46 +126,43 @@ namespace snl_fei {
 
 	if (matrixGraph_.get() == NULL) return(-1);
 
-        fei::SharedPtr<snl_fei::CommUtils<int> > commUtils =
-          matrixGraph_->getRowSpace()->getCommUtils();
-        int numProcs = commUtils->numProcs();
-        int localProc = commUtils->localProc();
+        MPI_Comm comm = matrixGraph_->getRowSpace()->getCommunicator();
+        int num_procs = fei::numProcs(comm);
+        int local_proc = fei::localProc(comm);
 
-	int* globalOffsets = new int[2*(numProcs+1)];
-	int* globalBlkOffsets = globalOffsets+numProcs+1;
+	std::vector<int> globalOffsets;
+	std::vector<int> globalBlkOffsets;
 
         if (reducer_.get() != NULL) {
           int localsize = reducer_->getLocalReducedEqns().size();
           numLocalEqns_ = localsize;
-          std::vector<int> lsizes(numProcs, 0);
-          std::vector<int> gsizes(numProcs, 0);
-          lsizes[localProc] = localsize;
-          commUtils->GlobalMax(lsizes, gsizes);
+          std::vector<int> lsizes(num_procs, 0);
+          std::vector<int> gsizes(num_procs, 0);
+          lsizes[local_proc] = localsize;
+          fei::GlobalMax(comm, lsizes, gsizes);
+          globalOffsets.resize(num_procs+1);
           int offset = 0;
-          for(int p=0; p<numProcs; ++p) {
+          for(int p=0; p<num_procs; ++p) {
             globalOffsets[p] = offset;
             offset += gsizes[p];
           }
-          globalOffsets[numProcs] = offset;
+          globalOffsets[num_procs] = offset;
           globalBlkOffsets = globalOffsets;
         }
         else {
           fei::SharedPtr<fei::VectorSpace> vecSpace = 
             matrixGraph_->getRowSpace();
 
-          CHK_ERR( vecSpace->getGlobalIndexOffsets(numProcs+1, globalOffsets) );
-          CHK_ERR( vecSpace->getGlobalBlkIndexOffsets(numProcs+1,
-                                                     globalBlkOffsets));
+          vecSpace->getGlobalIndexOffsets(globalOffsets);
+          vecSpace->getGlobalBlkIndexOffsets(globalBlkOffsets);
 
-          numLocalEqns_ = globalOffsets[localProc+1]-globalOffsets[localProc];
+          numLocalEqns_ = globalOffsets[local_proc+1]-globalOffsets[local_proc];
         }
 
-        CHK_ERR(linsyscore_->setGlobalOffsets(numProcs+1,
-                                              globalBlkOffsets,
-                                              globalOffsets,
-                                              globalBlkOffsets));
-
-        delete [] globalOffsets;
+        CHK_ERR(linsyscore_->setGlobalOffsets(num_procs+1,
+                                              &globalBlkOffsets[0],
+                                              &globalOffsets[0],
+                                              &globalBlkOffsets[0]));
 
 	setGlobalOffsets_ = true;
 	return(0);
@@ -184,6 +181,8 @@ namespace snl_fei {
 
 	CHK_ERR( setGlobalOffsets() );
 
+        MPI_Comm comm = matrixGraph_->getRowSpace()->getCommunicator();
+
 	fei::SharedPtr<fei::SparseRowGraph> localSRGraph =
 	  matrixGraph_->createGraph(false);
 
@@ -193,7 +192,7 @@ namespace snl_fei {
 	int* nonzeros = &(localSRGraph->packedColumnIndices[0]);
 
 	int numGlobalNonzeros = 0;
-	intCommUtils_->GlobalSum(numLocalNonzeros, numGlobalNonzeros);
+	fei::GlobalSum(comm, numLocalNonzeros, numGlobalNonzeros);
 
 	std::vector<int*> colPtrs(numLocalRows);
 	std::vector<int> ones(numLocalRows, 1);
@@ -217,7 +216,6 @@ namespace snl_fei {
       }
 
 
-    fei::SharedPtr<CommUtils<int> > intCommUtils_;
     fei::SharedPtr<LinearSystemCore> linsyscore_;
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
     fei::SharedPtr<fei::Reducer> reducer_;

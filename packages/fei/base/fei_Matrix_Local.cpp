@@ -284,9 +284,9 @@ Matrix_Local::writeToFile(const char* filename,
 {
   fei::SharedPtr<fei::VectorSpace> vspace = matrixGraph_->getRowSpace();
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils = vspace->getCommUtils();
+  MPI_Comm comm = vspace->getCommunicator();
 
-  int localProc = commUtils->localProc();
+  int localProc = fei::localProc(comm);
 
   FEI_OSTRINGSTREAM osstr;
   osstr << filename << "." << localProc << ".mtx";

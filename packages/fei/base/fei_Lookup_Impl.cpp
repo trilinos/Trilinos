@@ -15,7 +15,7 @@
 #include <snl_fei_Utils.hpp>
 #include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 
 #include <snl_fei_Constraint.hpp>
 
@@ -170,13 +170,12 @@ int fei::Lookup_Impl::buildDatabases()
     }
   }
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils = matGraph_->getRowSpace()->getCommUtils();
+  MPI_Comm comm = matGraph_->getRowSpace()->getCommunicator();
 
   int numLocalLagrangeConstraints = matGraph_->getLagrangeConstraints().size();
 
   int numGlobalLagrangeConstraints = 0;
-  commUtils->GlobalSum(numLocalLagrangeConstraints,
-		       numGlobalLagrangeConstraints);
+  fei::GlobalSum(comm, numLocalLagrangeConstraints, numGlobalLagrangeConstraints);
 
   bool noconstraints = numGlobalLagrangeConstraints<1 ? true : false;
 
@@ -198,7 +197,7 @@ int fei::Lookup_Impl::buildDatabases()
 	(int)vspace_->sharerPatterns_.size() > idx) {
       subdmsghndlr.setSendPattern(vspace_->ownerPatterns_[idx]);
       subdmsghndlr.setRecvPattern(vspace_->sharerPatterns_[idx]);
-      CHK_ERR( commUtils->exchange(&subdmsghndlr) );
+      CHK_ERR( fei::exchange(comm, &subdmsghndlr) );
     }
 
     //Now the subdomainIDs object contains a mapping from each shared ID to a
@@ -210,6 +209,8 @@ int fei::Lookup_Impl::buildDatabases()
   else {
     subdomainIDs = sharedIDs;
   }
+
+  int local_proc = fei::localProc(comm);
 
   fei::SharedIDs::table_type& sdIDTable = subdomainIDs->getSharedIDs();
   fei::SharedIDs::table_type::iterator
@@ -232,7 +233,7 @@ int fei::Lookup_Impl::buildDatabases()
     }
 
     if (node->isInLocalSubdomain_) {
-      snl_fei::sortedListInsert(commUtils->localProc(), *newarray);
+      snl_fei::sortedListInsert(local_proc, *newarray);
     }
 
     nodenumSubdomainDB_.insert(std::pair<int,feiArray<int>*>(node->getNumber(), newarray));

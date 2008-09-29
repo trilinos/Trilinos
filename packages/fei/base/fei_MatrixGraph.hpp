@@ -15,7 +15,6 @@
 #include <fei_Reducer.hpp>
 #include <snl_fei_Constraint.hpp>
 #include <fei_Record.hpp>
-#include <snl_fei_CommUtils.hpp>
 #include <fei_SparseRowGraph.hpp>
 
 namespace fei {

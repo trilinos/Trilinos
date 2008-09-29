@@ -118,12 +118,6 @@ class Vector_core : protected fei::Logger {
       vecSpace_ = vspace;
     }
 
-  /** Return communication-utility object. */
-  fei::SharedPtr<snl_fei::CommUtils<int> > getCommUtils()
-    {
-      return( intCommUtils_ );
-    }
-
   /** Query for first locally-owned vector position. */
   int firstLocalOffset() const { return( firstLocalOffset_ ); }
 
@@ -150,7 +144,7 @@ class Vector_core : protected fei::Logger {
  private:
   fei::SharedPtr<fei::VectorSpace> vecSpace_;
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > intCommUtils_;
+  MPI_Comm comm_;
 
   int firstLocalOffset_, lastLocalOffset_, numLocal_;
 

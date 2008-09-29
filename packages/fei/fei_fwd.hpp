@@ -86,7 +86,6 @@ namespace fei {
 //snl_fei namespace.
 //
 namespace snl_fei {
-  template<class T> class CommUtils;
   template<class RecordType,class RecordType_COMPARE=lessthan<int> > class Constraint;
   class RecordCollection;
 

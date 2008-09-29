@@ -11,7 +11,7 @@
 
 #include <fei_FiniteElementData.hpp>
 
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <snl_fei_LinearSystem_FEData.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_MatrixGraph.hpp>
@@ -31,7 +31,7 @@
 //----------------------------------------------------------------------------
 snl_fei::LinearSystem_FEData::LinearSystem_FEData(fei::SharedPtr<FiniteElementData>& feData,
 						  fei::SharedPtr<fei::MatrixGraph>& matrixGraph)
-  : commUtilsInt_(),
+  : comm_(matrixGraph->getRowSpace()->getCommunicator()),
     localProc_(0),
     numProcs_(1),
     feData_(feData),
@@ -39,10 +39,8 @@ snl_fei::LinearSystem_FEData::LinearSystem_FEData(fei::SharedPtr<FiniteElementDa
     dbcManager_(NULL),
     lookup_(NULL)
 {
-  commUtilsInt_ = matrixGraph->getRowSpace()->getCommUtils();
-
-  localProc_ = commUtilsInt_->localProc();
-  numProcs_  = commUtilsInt_->numProcs();
+  localProc_ = fei::localProc(comm_);
+  numProcs_  = fei::numProcs(comm_);
 }
 
 //----------------------------------------------------------------------------
@@ -137,7 +135,7 @@ int snl_fei::LinearSystem_FEData::loadComplete(bool applyBCs,
     }
   }
 
-  commUtilsInt_->Barrier();
+  fei::Barrier(comm_);
 
   if (rhs_.get() != NULL && globalAssemble) {
     err = rhs_->gatherFromOverlap();
@@ -147,7 +145,7 @@ int snl_fei::LinearSystem_FEData::loadComplete(bool applyBCs,
     }
   }
 
-  commUtilsInt_->Barrier();
+  fei::Barrier(comm_);
 
   CHK_ERR( implementBCs(applyBCs) );
 

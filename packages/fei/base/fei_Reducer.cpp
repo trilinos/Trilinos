@@ -178,7 +178,7 @@ Reducer::Reducer(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
    array_len_(0)
 {
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph->getRowSpace();
-  comm_ = vecSpace->getCommUtils()->getCommunicator();
+  comm_ = vecSpace->getCommunicator();
   initialize();
 
   int num = vecSpace->getNumIndices_Owned();
@@ -517,10 +517,7 @@ Reducer::assembleReducedGraph(fei::SparseRowGraph* srgraph)
     os << dbgprefix_<<"assembleReducedGraph(fei::SparseRowGraph)"<<FEI_ENDL;
   }
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils;
-  commUtils.reset(new snl_fei::CommUtils<int>(comm_));
-  fei::Graph_Impl graph(commUtils, firstLocalReducedEqn_,
-                       lastLocalReducedEqn_);
+  fei::Graph_Impl graph(comm_, firstLocalReducedEqn_, lastLocalReducedEqn_);
   assembleReducedGraph(&graph);
   fei::copyToSparseRowGraph(*(graph.getLocalGraph()), *srgraph);
 }

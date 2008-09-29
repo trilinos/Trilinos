@@ -10,7 +10,7 @@
 #define _snl_fei_RecordMsgHandler_hpp_
 
 #include <fei_macros.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_fwd.hpp>
 
 namespace fei {
@@ -19,7 +19,7 @@ namespace fei {
 
 namespace snl_fei {
   /** Implementation of MessageHandler specialized for Record objects. */
-  class RecordMsgHandler : public MessageHandler<int> {
+  class RecordMsgHandler : public fei::MessageHandler<int> {
   public:
     /** constructor */
     RecordMsgHandler(int localProc,

@@ -10,7 +10,7 @@
 #include <fei_VectorSpace.hpp>
 #include <fei_Vector_core.hpp>
 #include <fei_Vector.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 
 #undef fei_file
 #define fei_file "fei_VectorReducer.cpp"
@@ -27,8 +27,8 @@ VectorReducer::VectorReducer(fei::SharedPtr<fei::Reducer> reducer,
     target_(target),
     isSolution_(isSolutionVector)
 {
-  localProc_ = target->getVectorSpace()->getCommUtils()->localProc();
-  numProcs_ = target->getVectorSpace()->getCommUtils()->numProcs();
+  localProc_ = fei::localProc(target->getVectorSpace()->getCommunicator());
+  numProcs_ = fei::numProcs(target->getVectorSpace()->getCommunicator());
 
   fei::Vector_core* target_core = dynamic_cast<fei::Vector_core*>(target.get());
   if (target_core == NULL) {

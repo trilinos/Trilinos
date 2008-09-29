@@ -18,8 +18,7 @@
 snl_fei::Broker_LinSysCore::Broker_LinSysCore(fei::SharedPtr<LinearSystemCore> lsc,
 			      fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                               fei::SharedPtr<fei::Reducer> reducer)
-  : intCommUtils_(),
-    linsyscore_(lsc),
+  : linsyscore_(lsc),
     matrixGraph_(matrixGraph),
     reducer_(reducer),
     lookup_(NULL),
@@ -27,7 +26,6 @@ snl_fei::Broker_LinSysCore::Broker_LinSysCore(fei::SharedPtr<LinearSystemCore> l
     numLocalEqns_(0),
     setMatrixStructure_(false)
 {
-  intCommUtils_ = matrixGraph->getRowSpace()->getCommUtils();
   int dummyID = -1;
   lsc->setNumRHSVectors(1, &dummyID);
 }

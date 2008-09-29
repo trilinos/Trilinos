@@ -13,7 +13,7 @@
 #include <feiArray.hpp>
 #include <snl_fei_ArrayUtils.hpp>
 #include <fei_utils.hpp>
-#include <fei_CommUtilsBase.hpp>
+#include <fei_CommUtils.hpp>
 #include <snl_fei_Utils.hpp>
 #include <fei_Param.hpp>
 #include <fei_ParameterSet.hpp>
@@ -95,10 +95,8 @@ void test_Utils_globalUnionVec()
 {
   FEI_COUT << "testing snl_fei::globalUnion(SSVec)...";
 
-  fei::CommUtilsBase commUtilsBase(MPI_COMM_WORLD);
-
-  int numProcs = commUtilsBase.numProcs();
-  int localProc = commUtilsBase.localProc();
+  int numProcs = fei::numProcs(MPI_COMM_WORLD);
+  int localProc = fei::localProc(MPI_COMM_WORLD);
 
   int numlocalrows = 5;
 
@@ -117,7 +115,7 @@ void test_Utils_globalUnionVec()
 
   SSVec globalvec;
 
-  snl_fei::globalUnion(commUtilsBase.getCommunicator(), localvec, globalvec);
+  snl_fei::globalUnion(MPI_COMM_WORLD, localvec, globalvec);
 
   if (globalvec.indices() != globalvec0.indices()) {
     throw std::runtime_error("globalUnion vec int test failed");
@@ -134,10 +132,8 @@ void test_Utils_globalUnionMat()
 {
   FEI_COUT << "testing snl_fei::globalUnion(SSMat)...";
 
-  fei::CommUtilsBase commUtilsBase(MPI_COMM_WORLD);
-
-  int numProcs = commUtilsBase.numProcs();
-  int localProc = commUtilsBase.localProc();
+  int numProcs = fei::numProcs(MPI_COMM_WORLD);
+  int localProc = fei::localProc(MPI_COMM_WORLD);
 
   int numlocalrows = 5;
   int rowlen = 5;
@@ -159,7 +155,7 @@ void test_Utils_globalUnionMat()
 
   SSMat globalmat;
 
-  snl_fei::globalUnion(commUtilsBase.getCommunicator(), localmat, globalmat);
+  snl_fei::globalUnion(MPI_COMM_WORLD, localmat, globalmat);
 
   std::vector<int> intdata;
   std::vector<double> doubledata;

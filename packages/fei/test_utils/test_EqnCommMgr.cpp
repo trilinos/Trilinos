@@ -11,7 +11,7 @@
 
 #include <test_utils/test_EqnCommMgr.hpp>
 #include <feiArray.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_defs.h>
 
 #include <fei_ProcEqns.hpp>
@@ -44,13 +44,10 @@ int test_EqnCommMgr::runtests()
 
 int test_EqnCommMgr::test1()
 {
-  snl_fei::CommUtils<int>* commUtils =
-    new snl_fei::CommUtils<int>(comm_);
+  EqnCommMgr* eqnCommMgr = new EqnCommMgr(comm_);
 
-  EqnCommMgr* eqnCommMgr = new EqnCommMgr(*commUtils);
-
-  int numProcs = commUtils->numProcs();
-  int localProc = commUtils->localProc();
+  int numProcs = fei::numProcs(comm_);
+  int localProc = fei::localProc(comm_);
 
 //  int numGlobalEqns = numProcs*5;
   int numLocalEqns = 5;
@@ -108,7 +105,6 @@ int test_EqnCommMgr::test1()
 
   delete eqnCommMgr;
   delete eCopy;
-  delete commUtils;
 
   return(0);
 }

@@ -14,7 +14,7 @@
 
 #include <fei_TemplateUtils.hpp>
 #include <fei_mpiTraits.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_NodeDescriptor.hpp>
 #include <fei_NodeCommMgr.hpp>
 
@@ -26,9 +26,7 @@
 
 //------Constructor-------------------------------------------------------------
 NodeCommMgr::NodeCommMgr(MPI_Comm comm, int sharedNodeOwnership)
-  : commUtilsInt_(NULL),
-    commUtilsID_(NULL),
-    sharedNodes_(NULL),
+  : sharedNodes_(NULL),
     sharedNodesAllocated_(false),
     sharedNodeOwnership_(sharedNodeOwnership),
     localNodeIDs(),
@@ -50,12 +48,9 @@ NodeCommMgr::NodeCommMgr(MPI_Comm comm, int sharedNodeOwnership)
     maxSubdomains_(0),
     initCompleteCalled_(false)
 {
-  commUtilsInt_ = new snl_fei::CommUtils<int>(comm_);
-  commUtilsID_  = new snl_fei::CommUtils<GlobalID>(comm_);
- 
-  numProcs_ = commUtilsInt_->numProcs();
-  localProc_= commUtilsInt_->localProc();
-  trivialSubdomainList[0] = commUtilsInt_->localProc();
+  numProcs_ = fei::numProcs(comm_);
+  localProc_= fei::localProc(comm_);
+  trivialSubdomainList[0] = localProc_;
 }
 
 //-----Destructor---------------------------------------------------------------
@@ -67,9 +62,6 @@ NodeCommMgr::~NodeCommMgr() {
 
    delete [] sharedNodes_;
    sharedNodesAllocated_ = false;
-
-   delete commUtilsInt_;
-   delete commUtilsID_;
 }
 
 //------------------------------------------------------------------------------
@@ -152,7 +144,7 @@ int NodeCommMgr::getGlobalMaxFieldsBlocks(int& maxFields, int& maxBlocks)
     if (numBlks > localMax[1]) localMax[1] = numBlks;
   }
 
-  int err = commUtilsInt_->GlobalMax(localMax, globalMax);
+  int err = fei::GlobalMax(comm_, localMax, globalMax);
   if (err != 0) return(err);
 
   maxFields = globalMax[0];
@@ -177,7 +169,7 @@ int NodeCommMgr::getGlobalMaxFieldsBlocksSubdomains()
     if (numShrd > localMax[2]) localMax[2] = numShrd;
   }
 
-  int err = commUtilsInt_->GlobalMax(localMax, globalMax);
+  int err = fei::GlobalMax(comm_, localMax, globalMax);
   if (err != 0) return(err);
 
   maxFields_     = globalMax[0];
@@ -307,7 +299,7 @@ int NodeCommMgr::exchangeEqnInfo()
 
    CHK_ERR( getGlobalMaxFieldsBlocksSubdomains() );
 
-   CHK_ERR( commUtilsInt_->exchange(this) );
+   CHK_ERR( fei::exchange(comm_, this) );
 
    setNodeNumbersArray();
 
@@ -685,17 +677,17 @@ int NodeCommMgr::checkSharedNodeInfo()
   //First, gather up each processor's list of remote procs and nodes-per-proc
   //onto all other processors...
 
-  CHK_ERR( commUtilsInt_->Allgatherv(remoteOwnerProcs_,
+  CHK_ERR( fei::Allgatherv(comm_, remoteOwnerProcs_,
 				 recvOwnerLengths, globalOwnerProcs) );
 
-  CHK_ERR( commUtilsInt_->Allgatherv(nodesPerOwnerProc_,
+  CHK_ERR( fei::Allgatherv(comm_, nodesPerOwnerProc_,
 				 recvNodesPerOwnerLengths,
 				 globalNodesPerOwnerProcs) );
 
-  CHK_ERR( commUtilsInt_->Allgatherv(remoteSharingProcs_,
+  CHK_ERR( fei::Allgatherv(comm_, remoteSharingProcs_,
 				 recvSharingLengths, globalSharingProcs) );
 
-  CHK_ERR( commUtilsInt_->Allgatherv(nodesPerSharingProc_,
+  CHK_ERR( fei::Allgatherv(comm_, nodesPerSharingProc_,
 				 recvNodesPerSharingLengths,
 				 globalNodesPerSharingProcs) );
 
@@ -715,7 +707,7 @@ int NodeCommMgr::checkSharedNodeInfo()
 
   int globalErr = 0;
 
-  CHK_ERR( commUtilsInt_->GlobalSum(err, globalErr) );
+  CHK_ERR( fei::GlobalSum(comm_, err, globalErr) );
 
   return(globalErr);
 }
@@ -809,7 +801,7 @@ int NodeCommMgr::adjustSharedOwnership()
   std::vector<GlobalID> allRemoteNodeIDs;
   std::vector<int> numPerProc;
 
-  err = commUtilsID_->Allgatherv(remoteNodeIDs, numPerProc, allRemoteNodeIDs);
+  err = fei::Allgatherv(comm_, remoteNodeIDs, numPerProc, allRemoteNodeIDs);
   if (err != 0) return(-1);
 
   //Now we need to run through the global list of 'special' nodes, and for the ones
@@ -842,7 +834,7 @@ int NodeCommMgr::adjustSharedOwnership()
   //now re-gather the remoteNodeIDs list to all processors. This time, we should only
   //receive nodeIDs from processors that can be valid owners. i.e., processors that
   //have those nodes in at least one local element.
-  err = commUtilsID_->Allgatherv(remoteNodeIDs, numPerProc, allRemoteNodeIDs);
+  err = fei::Allgatherv(comm_, remoteNodeIDs, numPerProc, allRemoteNodeIDs);
   if (err != 0) return(-1);
 
   //Now we run the 'allRemoteNodeIDs' list for the last time, setting the owner-proc
@@ -973,7 +965,7 @@ int NodeCommMgr::exchangeSharedRemoteFieldsBlks()
 
   //next, send all outgoing messages.
 
-  commUtilsInt_->Barrier();
+  fei::Barrier(comm_);
 
   for(i=0; i<remoteOwnerProcs_.size(); i++) {
     int numSendNodes = nodesPerOwnerProc_[i];

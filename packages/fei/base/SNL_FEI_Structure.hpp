@@ -554,8 +554,7 @@ class SNL_FEI_Structure : public Lookup {
    int calcTotalNumElemDOF();
    int calcNumMultCREqns();
 
-   snl_fei::CommUtils<int>* getCommUtilsInt() { return( commUtilsInt_ ); }
-   snl_fei::CommUtils<double>* getCommUtilsDouble() {return(commUtilsDouble_);}
+   MPI_Comm getCommunicator() const { return( comm_ ); }
 
 #ifdef FEI_HAVE_IOSFWD
    int setDbgOut(std::ostream& ostr, const char* path, const char* feiName);
@@ -715,9 +714,6 @@ class SNL_FEI_Structure : public Lookup {
    SSMat* slaveMatrix_;
    std::vector<int> globalNumNodesVanished_;
    feiArray<int> localVanishedNodeNumbers_;
-
-   snl_fei::CommUtils<int>* commUtilsInt_;
-   snl_fei::CommUtils<double>* commUtilsDouble_;
 
    NodeCommMgr* nodeCommMgr_;
    EqnCommMgr* eqnCommMgr_;

@@ -536,12 +536,11 @@ int copy_feiMatrix_to_SSMat(fei::Matrix& feimat, SSMat& ssmat)
   fei::SharedPtr<fei::VectorSpace> rowspace =
     feimat.getMatrixGraph()->getRowSpace();
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils = rowspace->getCommUtils();
-  int localProc = commUtils->localProc();
+  MPI_Comm comm = rowspace->getCommunicator();
+  int localProc = fei::localProc(comm);
 
-  int numPartitions = rowspace->getNumPartitions();
-  feiArray<int> globalOffsets(numPartitions+1);
-  rowspace->getGlobalIndexOffsets(numPartitions+1, globalOffsets.dataPtr());
+  std::vector<int> globalOffsets;
+  rowspace->getGlobalIndexOffsets(globalOffsets);
   int numLocalRows = globalOffsets[localProc+1]-globalOffsets[localProc];
   int firstLocalRow = globalOffsets[localProc];
 
@@ -550,12 +549,12 @@ int copy_feiMatrix_to_SSMat(fei::Matrix& feimat, SSMat& ssmat)
     int rowLen;
     feimat.getRowLength(row, rowLen);
 
-    feiArray<int> colindices(rowLen);
-    feiArray<double> coefs(rowLen);
+    std::vector<int> colindices(rowLen);
+    std::vector<double> coefs(rowLen);
 
-    feimat.copyOutRow(row, rowLen, coefs.dataPtr(), colindices.dataPtr());
+    feimat.copyOutRow(row, rowLen, &coefs[0], &colindices[0]);
 
-    ssmat.putRow(row, colindices.dataPtr(), coefs.dataPtr(), rowLen);
+    ssmat.putRow(row, &colindices[0], &coefs[0], rowLen);
   }
 
   return(0);

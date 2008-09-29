@@ -12,7 +12,7 @@
 
 #include <fei_EqnCommMgr.hpp>
 
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 
 #include <fei_ProcEqns.hpp>
 #include <fei_EqnBuffer.hpp>
@@ -28,7 +28,7 @@
 #include <fei_ErrMacros.hpp>
 
 //-----Constructor--------------------------------------------------------------
-EqnCommMgr::EqnCommMgr(snl_fei::CommUtils<int>& commUtils, bool accumulate)
+EqnCommMgr::EqnCommMgr(MPI_Comm comm, bool accumulate)
  : accumulate_(accumulate),
    localProc_(0),
    recvProcEqns_(NULL),
@@ -39,9 +39,9 @@ EqnCommMgr::EqnCommMgr(snl_fei::CommUtils<int>& commUtils, bool accumulate)
    sendEqns_(NULL),
    sendEqnSoln_(0, 2000),
    essBCEqns_(NULL),
-   commUtils_(commUtils)
+   comm_(comm)
 {
-  localProc_ = commUtils_.localProc();
+  localProc_ = fei::localProc(comm_);
   recvEqns_ = new EqnBuffer();
   sendEqns_ = new EqnBuffer();
   recvProcEqns_ = new ProcEqns();
@@ -62,7 +62,7 @@ EqnCommMgr::EqnCommMgr(const EqnCommMgr& src)
    sendEqns_(NULL),
    sendEqnSoln_(0, 2000),
    essBCEqns_(NULL),
-   commUtils_(src.commUtils_)
+   comm_(src.comm_)
 {
   *this = src;
 }
@@ -125,7 +125,7 @@ EqnCommMgr* EqnCommMgr::deepCopy()
 //structural copy of the current object, it copies EVERYTHING, including data
 //contents.
 //
-   EqnCommMgr* dest = new EqnCommMgr(commUtils_);
+   EqnCommMgr* dest = new EqnCommMgr(comm_);
    *dest = *this;
    return(dest);
 }
@@ -190,8 +190,6 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
   sendProcEqns_->setProcEqnLengths(sendEqnNumbers.dataPtr(),
                                    sendEqnLengths.dataPtr(),
                                    numSendEqns);
-
-  MPI_Comm comm = commUtils_.getCommunicator();
 
   CHK_ERR( mirrorProcEqns(*sendProcEqns_, *recvProcEqns_) );
   CHK_ERR( mirrorProcEqnLengths(*sendProcEqns_, *recvProcEqns_) );
@@ -283,7 +281,7 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
 
     //launch the recvs for the indices now.
     if (MPI_Irecv(recvProcEqnIndices[i], totalLength, MPI_INT,
-                  recvProcs[i], indTag, comm, &indRequests[i]) != MPI_SUCCESS) {
+                  recvProcs[i], indTag, comm_, &indRequests[i]) != MPI_SUCCESS) {
        ERReturn(-1);
     }
 
@@ -313,7 +311,7 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
     }
 
     if (MPI_Send(indicesPtr, totalLength, MPI_INT, sendProcs[i],
-                 indTag, comm) != MPI_SUCCESS) ERReturn(-1)
+                 indTag, comm_) != MPI_SUCCESS) ERReturn(-1)
   }
 
   //and finally, we're ready to complete the irecvs for the indices and put
@@ -380,10 +378,10 @@ int EqnCommMgr::consistencyCheck(const char* caller,
   std::vector<int> globalProcSendLengths, globalSendProcs;
   std::vector<int> gatherSizes;
 
-  CHK_ERR( commUtils_.Allgatherv(sendProcTotalLengths,
+  CHK_ERR( fei::Allgatherv(comm_, sendProcTotalLengths,
 				 gatherSizes, globalProcSendLengths) );
 
-  CHK_ERR( commUtils_.Allgatherv(sendProcs,
+  CHK_ERR( fei::Allgatherv(comm_, sendProcs,
 				 gatherSizes, globalSendProcs) );
 
   //Now check the consistency of the global send-lengths against local
@@ -438,7 +436,7 @@ int EqnCommMgr::consistencyCheck(const char* caller,
   }
 
   int globalErr = 0;
-  CHK_ERR( commUtils_.GlobalSum(err, globalErr) );
+  CHK_ERR( fei::GlobalSum(comm_, err, globalErr) );
 
   return(globalErr);
 }
@@ -459,7 +457,7 @@ int EqnCommMgr::exchangeEqns(FEI_OSTREAM* dbgOut)
 //    os << *sendEqns_<<FEI_ENDL;
   }
 
-  CHK_ERR( exchangeEqnBuffers(commUtils_.getCommunicator(), sendProcEqns_,
+  CHK_ERR( exchangeEqnBuffers(comm_, sendProcEqns_,
 			      sendEqns_, recvProcEqns_, recvEqns_, accumulate_));
 
   if (dbgOut != NULL) {
@@ -689,7 +687,7 @@ void EqnCommMgr::exchangeSoln()
       solnBuffer = new double*[numSendProcs];
    }
 
-   MPI_Comm comm = commUtils_.getCommunicator();
+   MPI_Comm comm = comm_;
 
    //let's launch the recv's for the incoming solution values.
    for(unsigned i=0; i<numSendProcs; i++) {
@@ -776,8 +774,7 @@ int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
   (void)inProcEqns;
   (void)outProcEqns;
 #else
-  int numProcs = commUtils_.numProcs();
-  MPI_Comm comm = commUtils_.getCommunicator();
+  int numProcs = fei::numProcs(comm_);
 
   if (numProcs < 2) return(0);
 
@@ -785,7 +782,7 @@ int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
 
   std::vector<int>& inProcs = inProcEqns.procsPtr();
   std::vector<int> outProcs;
-  commUtils_.mirrorProcs(inProcs, outProcs);
+  fei::mirrorProcs(comm_, inProcs, outProcs);
 
   std::vector<int>& eqnsPerInProc = inProcEqns.eqnsPerProcPtr();
 
@@ -802,14 +799,14 @@ int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
   int* outProcsPtr = &outProcs[0];
   for(unsigned i=0; i<numOutProcs; ++i) {
     if (MPI_Irecv(&(recvbuf[i]), 1, MPI_INT, outProcsPtr[i], firsttag,
-		  comm, &requests[offset++]) != MPI_SUCCESS) ERReturn(-1);
+		  comm_, &requests[offset++]) != MPI_SUCCESS) ERReturn(-1);
   }
 
   int* inProcsPtr = &inProcs[0];
   size_t numInProcs = inProcs.size();
   for(unsigned i=0; i<numInProcs; ++i) {
     if (MPI_Send(&(eqnsPerInProc[i]), 1, MPI_INT, inProcsPtr[i], firsttag,
-		 comm) != MPI_SUCCESS) ERReturn(-1);
+		 comm_) != MPI_SUCCESS) ERReturn(-1);
   }
 
   MPI_Waitall((int)numOutProcs, requests, statuses);
@@ -839,7 +836,7 @@ int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
 
   //finally we're ready to exchange lists of equations.
 
-  CHK_ERR( commUtils_.exchangeData(inProcs,
+  CHK_ERR( fei::exchangeData(comm_, inProcs,
 				  inProcEqns.procEqnNumbersPtr(),
 				  outProcs,
 				  true,
@@ -881,9 +878,9 @@ int EqnCommMgr::mirrorProcEqnLengths(ProcEqns& inProcEqns,
   (void)inProcEqns;
   (void)outProcEqns;
 #else
-  if (commUtils_.numProcs() == 1) return(0);
+  if (fei::numProcs(comm_) == 1) return(0);
 
-  CHK_ERR( commUtils_.exchangeData( inProcEqns.procsPtr(),
+  CHK_ERR( fei::exchangeData( comm_, inProcEqns.procsPtr(),
 				    inProcEqns.procEqnLengthsPtr(),
 				    outProcEqns.procsPtr(),
 				    true,
@@ -983,7 +980,7 @@ int EqnCommMgr::gatherSharedBCs(EqnBuffer& bcEqns)
   //equations. The result of this gather will be in recvBCs, which we will then
   //merge into bcEqns.
 
-  if (commUtils_.numProcs() == 1) return(0);
+  if (fei::numProcs(comm_) == 1) return(0);
 
   int i;
   EqnBuffer sendBCs, recvBCs;
@@ -1025,7 +1022,7 @@ int EqnCommMgr::gatherSharedBCs(EqnBuffer& bcEqns)
   //now set up the required mirror info, then perform the exchange among procs.
   CHK_ERR( mirrorProcEqns(sendBCProcEqns, recvBCProcEqns) );
   CHK_ERR( mirrorProcEqnLengths(sendBCProcEqns, recvBCProcEqns) );
-  CHK_ERR( exchangeEqnBuffers(commUtils_.getCommunicator(), &sendBCProcEqns,
+  CHK_ERR( exchangeEqnBuffers(comm_, &sendBCProcEqns,
 			      &sendBCs, &recvBCProcEqns, &recvBCs, false) );
 
   //finally, merge the recvBCs into the bcEqns buffer.
@@ -1222,7 +1219,7 @@ int EqnCommMgr::exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper)
     sendData[i] = &ptBlkInfo;
   }
 
-  CHK_ERR( commUtils_.exchangeData(sendProcs, sendData,
+  CHK_ERR( fei::exchangeData(comm_, sendProcs, sendData,
 				    recvProcs, false, recvData) );
 
   for(unsigned i=0; i<numRecvProcs; ++i) {

@@ -48,7 +48,6 @@ fei::FEI_Impl::FEI_Impl(fei::SharedPtr<LibraryWrapper> wrapper,
     soln_fei_matrix_(NULL),
     soln_fei_vector_(NULL),
     comm_(comm),
-    commUtils_(NULL),
     masterRank_(masterRank),
     localProc_(0),
     numProcs_(1),
@@ -109,7 +108,6 @@ fei::FEI_Impl::FEI_Impl(const fei::Factory* factory,
     soln_fei_matrix_(NULL),
     soln_fei_vector_(NULL),
     comm_(comm),
-    commUtils_(NULL),
     masterRank_(masterRank),
     localProc_(0),
     numProcs_(1),
@@ -162,8 +160,6 @@ fei::FEI_Impl::~FEI_Impl()
   }
   delete [] paramStrings_;
 
-  delete commUtils_;
-
   if (soln_fei_matrix_ != NULL && wrapper_[0].get() != NULL) {
     fei::SharedPtr<LinearSystemCore> lsc = wrapper_[0]->getLinearSystemCore();
     if (lsc.get() != NULL) {
@@ -185,10 +181,8 @@ fei::FEI_Impl::~FEI_Impl()
 
 void fei::FEI_Impl::basic_initializations()
 {
-  commUtils_ = new snl_fei::CommUtils<int>(comm_);
-
-  localProc_ = commUtils_->localProc();
-  numProcs_ = commUtils_->numProcs();
+  localProc_ = fei::localProc(comm_);
+  numProcs_ = fei::numProcs(comm_);
 
   constraintID_ = localProc_*100000;
 
@@ -1209,9 +1203,8 @@ int fei::FEI_Impl::residualNorm(int whichNorm,
   std::vector<double> residValues(numLocalEqns);
   double* residValuesPtr = &residValues[0];
 
-  std::vector<int> globalEqnOffsets(numProcs_+1);
-  CHK_ERR( rowspace->getGlobalIndexOffsets(numProcs_+1,
-					   &globalEqnOffsets[0]) );
+  std::vector<int> globalEqnOffsets;
+  rowspace->getGlobalIndexOffsets(globalEqnOffsets);
   int firstLocalOffset = globalEqnOffsets[localProc_];
 
   if (wrapper_[0].get() == NULL) {
@@ -1297,14 +1290,12 @@ int fei::FEI_Impl::residualNorm(int whichNorm,
     normsArray[i] = norms[i];
   }
 
-  snl_fei::CommUtils<double> commUtilsDbl(commUtils_->getCommunicator());
-
   switch(whichNorm) {
   case 0:
-    CHK_ERR( commUtilsDbl.GlobalMax(tmpNorms, normsArray) );
+    CHK_ERR( fei::GlobalMax(comm_, tmpNorms, normsArray) );
     break;
   default:
-    CHK_ERR( commUtilsDbl.GlobalSum(tmpNorms, normsArray) );
+    CHK_ERR( fei::GlobalSum(comm_, tmpNorms, normsArray) );
   }
 
   for(int i=0; i<numFields; ++i) {

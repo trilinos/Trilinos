@@ -9,7 +9,7 @@
 #include "fei_sstream.hpp"
 
 #include "feiArray.hpp"
-#include "snl_fei_CommUtils.hpp"
+#include "fei_CommUtils.hpp"
 #include "fei_TemplateUtils.hpp"
 
 #include "fei_defs.h"
@@ -258,14 +258,13 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
   //so at this point we have the local norms. We now need to perform the
   //global max or sum, depending on which norm it is.
 
-  snl_fei::CommUtils<double>* commUtils = problemStructure_->getCommUtilsDouble();
-  if (commUtils == NULL) return(-1);
+  MPI_Comm comm = problemStructure_->getCommunicator();
 
   if (whichNorm != 0) {
-    CHK_ERR( commUtils->GlobalSum(tmpNorms, normsArray) );
+    CHK_ERR( fei::GlobalSum(comm, tmpNorms, normsArray) );
   }
   else {
-    CHK_ERR( commUtils->GlobalMax(tmpNorms, normsArray) );
+    CHK_ERR( fei::GlobalMax(comm, tmpNorms, normsArray) );
   }
 
   for(int i=0; i<numFields; ++i) {

@@ -102,9 +102,7 @@ CORE_H = \
 	$(top_srcdir)/base/snl_fei_Broker_FEData.hpp \
 	$(top_srcdir)/base/snl_fei_Broker.hpp \
 	$(top_srcdir)/base/snl_fei_Broker_LinSysCore.hpp \
-	$(top_srcdir)/base/snl_fei_CommUtils.hpp \
-	$(top_srcdir)/base/fei_CommUtilsBase.hpp \
-	$(top_srcdir)/base/fei_CommCore.hpp \
+	$(top_srcdir)/base/fei_CommUtils.hpp \
 	$(top_srcdir)/base/fei_ConnectivityBlock.hpp \
 	$(top_srcdir)/base/snl_fei_Constraint.hpp \
 	$(top_srcdir)/base/snl_fei_Factory.hpp \
@@ -197,8 +195,7 @@ CORE = \
 	$(srcdir)/snl_fei_BlkSizeMsgHandler.cpp \
 	$(srcdir)/snl_fei_Broker_FEData.cpp \
 	$(srcdir)/snl_fei_Broker_LinSysCore.cpp \
-	$(srcdir)/fei_CommCore.cpp \
-	$(srcdir)/fei_CommUtilsBase.cpp \
+	$(srcdir)/fei_CommUtils.cpp \
 	$(srcdir)/fei_ConnectivityBlock.cpp \
 	$(srcdir)/snl_fei_Factory.cpp \
 	$(srcdir)/fei_FieldMask.cpp \

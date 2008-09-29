@@ -936,8 +936,6 @@ class FEI_Implementation : public FEI {
     SNL_FEI_Structure* problemStructure_;
     Filter** filter_;
 
-    snl_fei::CommUtils<int>* commUtils_;
-
     int numInternalFEIs_;
     bool internalFEIsAllocated_;
 

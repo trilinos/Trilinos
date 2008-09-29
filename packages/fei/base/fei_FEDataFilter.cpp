@@ -14,7 +14,7 @@
 #include <fei_defs.h>
 
 #include <feiArray.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <snl_fei_Constraint.hpp>
 typedef snl_fei::Constraint<GlobalID> ConstraintType;
@@ -46,7 +46,7 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 
 //------------------------------------------------------------------------------
 FEDataFilter::FEDataFilter(FEI_Implementation* owner,
-			   MPI_Comm comm, snl_fei::CommUtils<int>* commUtils, 
+			   MPI_Comm comm,
 			   SNL_FEI_Structure* probStruct,
 			   LibraryWrapper* wrapper,
 			   int masterRank)
@@ -69,8 +69,6 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
    outputLevel_(0),
    comm_(comm),
    masterRank_(masterRank),
-   commUtils_(commUtils),
-   deleteCommUtils_(false),
    problemStructure_(probStruct),
    penCRIDs_(0, 1000),
    rowIndices_(),
@@ -88,21 +86,8 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
    constraintNodeOffsets_(0, 16),
    packedFieldSizes_(0, 32)
 {
-
-#ifndef FEI_SER
-  //  initialize a couple of MPI things
-
-  MPI_Comm_rank(comm_, &localRank_);
-  MPI_Comm_size(comm_, &numProcs_);
-#else
-  localRank_ = 0;
-  numProcs_ = 1;
-#endif
-
-  if (commUtils_ == NULL) {
-    commUtils_ = new snl_fei::CommUtils<int>(comm_);
-    deleteCommUtils_ = true;
-  }
+  localRank_ = fei::localProc(comm_);
+  numProcs_ = fei::numProcs(comm_);
 
   internalFei_ = 0;
 
@@ -165,8 +150,6 @@ FEDataFilter::FEDataFilter(const FEDataFilter& src)
    outputLevel_(0),
    comm_(0),
    masterRank_(0),
-   commUtils_(NULL),
-   deleteCommUtils_(false),
    problemStructure_(NULL),
    penCRIDs_(0, 1000),
    rowIndices_(),
@@ -199,8 +182,6 @@ FEDataFilter::~FEDataFilter() {
   delete [] eStiff_;
   delete [] eStiff1D_;
   delete [] eLoad_;
-
-  if (deleteCommUtils_) delete commUtils_;
 
   delete putRHSVec_;
 }
@@ -1142,7 +1123,7 @@ int FEDataFilter::generalCoefInput(int patternID,
 
    if (assemblyMode == ASSEMBLE_PUT) {
      int globalError = 0;
-     CHK_ERR( commUtils_->GlobalSum(error, globalError) );
+     CHK_ERR( fei::GlobalSum(comm_, error, globalError) );
      if (globalError != 0) {
        return(-1);
      }
@@ -1584,17 +1565,6 @@ int FEDataFilter::parameters(int numParams, const char *const* paramStrings)
 //------------------------------------------------------------------------------
 int FEDataFilter::loadComplete()
 {
-//  int flag = newData_ ? 1 : 0;
-//  int globalFlag;
-//  CHK_ERR( commUtils_->GlobalMax(flag, globalFlag) );
-//
-//  newData_ = globalFlag > 0 ? true : false;
-//
-//  if (!newData_) return(0);
-  debugOutput("FEI: loadComplete");
-
-//  CHK_ERR( exchangeRemoteEquations() );
-
   debugOutput("#FEDataFilter calling FEData matrixLoadComplete");
 
   CHK_ERR( feData_->loadComplete() );

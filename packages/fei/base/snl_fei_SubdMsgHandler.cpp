@@ -98,7 +98,7 @@ int snl_fei::SubdMsgHandler::processRecvMessage(int srcProc,
 
   int* msgPtr = &message[0];
 
-  if ((int)message.size() != ids->size()) {
+  if (message.size() != ids->size()) {
     ERReturn(-1);
   }
 

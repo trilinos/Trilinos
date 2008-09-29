@@ -23,7 +23,6 @@
 #include <fei_Logger.hpp>
 #include <fei_Vector.hpp>
 #include <fei_Vector_core.hpp>
-#include <snl_fei_CommUtils.hpp>
 #include <fei_iosfwd.hpp>
 
 #undef fei_file
@@ -238,8 +237,8 @@ fei::Vector_Impl<T>::Vector_Impl(fei::SharedPtr<fei::VectorSpace> vecSpace,
     setFEVector(false);
   }
 
-  localProc_ = getCommUtils()->localProc();
-  numProcs_ = getCommUtils()->numProcs();
+  localProc_ = fei::localProc(vecSpace->getCommunicator());
+  numProcs_ = fei::numProcs(vecSpace->getCommunicator());
 
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;

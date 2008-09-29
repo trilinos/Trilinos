@@ -10,6 +10,7 @@
 
 #include <fei_Graph_Impl.hpp>
 #include <fei_EqnComm.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_VectorSpace.hpp>
 
@@ -18,26 +19,25 @@
 #include <fei_ErrMacros.hpp>
 
 //----------------------------------------------------------------------------
-fei::Graph_Impl::Graph_Impl(fei::SharedPtr<snl_fei::CommUtils<int> > commUtils,
-		      int firstLocalRow,
-		      int lastLocalRow)
+fei::Graph_Impl::Graph_Impl(MPI_Comm comm, int firstLocalRow, int lastLocalRow)
   : localGraphData_(NULL),
     remoteGraphData_(),
     eqnComm_(),
     firstLocalRow_(firstLocalRow),
     lastLocalRow_(lastLocalRow),
-    localProc_(commUtils->localProc()),
-    numProcs_(commUtils->numProcs()),
-    commUtils_(commUtils)
+    localProc_(0),
+    numProcs_(1),
+    comm_(comm)
 {
+  localProc_ = fei::localProc(comm_);
+  numProcs_  = fei::numProcs(comm_);
   //for remoteGraphData_, we don't know what the range of row-numbers will
   //be, so we'll just construct it with -1,-1
   remoteGraphData_.resize(numProcs_);
   for(int p=0; p<numProcs_; ++p) {
     remoteGraphData_[p] = new remote_table_type(-1, -1);
   }
-  eqnComm_.reset(new fei::EqnComm(commUtils_->getCommunicator(),
-                               lastLocalRow-firstLocalRow+1));
+  eqnComm_.reset(new fei::EqnComm(comm_, lastLocalRow-firstLocalRow+1));
   localGraphData_       = new table_type(firstLocalRow_, lastLocalRow_);
 }
 
@@ -213,7 +213,7 @@ int fei::Graph_Impl::gatherFromOverlap()
 
   //now we can find out which procs we'll be receiving from.
   std::vector<int> recvProcs;
-  commUtils_->mirrorProcs(sendProcs, recvProcs);
+  fei::mirrorProcs(comm_, sendProcs, recvProcs);
 
   //next we'll declare arrays to receive into.
   std::vector<std::vector<int> > recv_ints(recvProcs.size());
@@ -228,7 +228,7 @@ int fei::Graph_Impl::gatherFromOverlap()
   unsigned offset = 0;
   for(unsigned i=0; i<recvProcs.size(); ++i) {
     MPI_Irecv(&recv_sizes[i], 1, MPI_INT, recvProcs[i],
-              tag1, commUtils_->getCommunicator(), &mpiReqs[i]);
+              tag1, comm_, &mpiReqs[i]);
   }
 
   //now we'll pack our to-be-sent data into buffers, and send the
@@ -242,7 +242,7 @@ int fei::Graph_Impl::gatherFromOverlap()
 
     int isize = send_ints[i].size();
 
-    MPI_Send(&isize, 1, MPI_INT, proc, tag1, commUtils_->getCommunicator());
+    MPI_Send(&isize, 1, MPI_INT, proc, tag1, comm_);
   }
 
   MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
@@ -254,7 +254,7 @@ int fei::Graph_Impl::gatherFromOverlap()
     recv_ints[i].resize(intsize);
 
     MPI_Irecv(&(recv_ints[i][0]), intsize, MPI_INT, recvProcs[i],
-              tag1, commUtils_->getCommunicator(), &mpiReqs[i]);
+              tag1, comm_, &mpiReqs[i]);
   }
 
   //now send our packed buffers.
@@ -262,7 +262,7 @@ int fei::Graph_Impl::gatherFromOverlap()
     int proc = sendProcs[i];
 
     MPI_Send(&(send_ints[i][0]), send_ints[i].size(), MPI_INT,
-             proc, tag1, commUtils_->getCommunicator());
+             proc, tag1, comm_);
   }
 
   MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);

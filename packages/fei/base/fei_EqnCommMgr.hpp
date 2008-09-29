@@ -15,7 +15,7 @@
 #include "feiArray.hpp"
 #include "snl_fei_PointBlockMap.hpp"
 
-#include "snl_fei_CommUtils.hpp"
+#include <fei_CommUtils.hpp>
 #include "fei_ProcEqns.hpp"
 #include "fei_EqnBuffer.hpp"
 
@@ -105,7 +105,7 @@ class EqnCommMgr {
   /** Constructor.
       @param localProc The MPI rank of 'this' processor.
   */
-   EqnCommMgr(snl_fei::CommUtils<int>& commUtils, bool accumulate = true);
+   EqnCommMgr(MPI_Comm comm, bool accumulate = true);
 
    /** copy constructor */
    EqnCommMgr(const EqnCommMgr& src);
@@ -290,7 +290,7 @@ class EqnCommMgr {
 
    EqnBuffer* essBCEqns_;
 
-   snl_fei::CommUtils<int>& commUtils_;
+   MPI_Comm comm_;
 };
 
 #endif

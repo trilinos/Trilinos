@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_utils.hpp"
-#include "snl_fei_CommUtils.hpp"
+#include "fei_CommUtils.hpp"
 #include "fei_test_utils.hpp"
 
 #include "fei_unit_test_runner.hpp"
@@ -19,8 +19,7 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
-  snl_fei::CommUtils<int> intCommUtils(MPI_COMM_WORLD);
-  if (intCommUtils.localProc() == 0) {
+  if (fei::localProc(MPI_COMM_WORLD) == 0) {
     FEI_COUT << "\nFEI version: " << fei::utils::version() << "\n\n"<<FEI_ENDL;
   }
 

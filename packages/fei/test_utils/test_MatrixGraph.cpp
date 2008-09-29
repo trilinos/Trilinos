@@ -266,10 +266,9 @@ int test_MatrixGraph::test1()
 
   CHK_ERR( matrixGraphPtr->initComplete() );
 
-  feiArray<int> globalIndexOffsets(numProcs_+1);
+  std::vector<int> globalIndexOffsets;
 
-  CHK_ERR( vectorSpace.getGlobalIndexOffsets(numProcs_+1,
-					   globalIndexOffsets.dataPtr()));
+  vectorSpace.getGlobalIndexOffsets(globalIndexOffsets);
 
   int numRowLengths = globalIndexOffsets[localProc_+1] -
      globalIndexOffsets[localProc_];
@@ -382,10 +381,9 @@ int test_MatrixGraph::test3()
 
   CHK_ERR( matrixGraphPtr->initComplete() );
 
-  feiArray<int> globalIndexOffsets(numProcs_+1);
+  std::vector<int> globalIndexOffsets;
 
-  CHK_ERR( vectorSpace.getGlobalIndexOffsets(numProcs_+1,
-					   globalIndexOffsets.dataPtr()));
+  vectorSpace.getGlobalIndexOffsets(globalIndexOffsets);
 
   int numRowLengths = globalIndexOffsets[localProc_+1] -
      globalIndexOffsets[localProc_];
@@ -477,10 +475,9 @@ int test_MatrixGraph::test4()
 
   CHK_ERR( matrixGraphPtr->initComplete() );
 
-  feiArray<int> globalIndexOffsets(numProcs_+1);
+  std::vector<int> globalIndexOffsets;
 
-  CHK_ERR( vectorSpace.getGlobalIndexOffsets(numProcs_+1,
-					   globalIndexOffsets.dataPtr()));
+  vectorSpace.getGlobalIndexOffsets(globalIndexOffsets);
 
   int numRowLengths = globalIndexOffsets[localProc_+1] -
      globalIndexOffsets[localProc_];
@@ -604,10 +601,9 @@ int test_MatrixGraph::test5()
   fei::SharedPtr<fei::VectorSpace> reducedSolnSpacePtr =
     matrixGraphPtr->getRowSpace();
 
-  feiArray<int> globalIndexOffsets(numProcs_+1);
+  std::vector<int> globalIndexOffsets;
 
-  CHK_ERR( reducedSolnSpacePtr->getGlobalIndexOffsets(numProcs_+1,
-					   globalIndexOffsets.dataPtr()));
+  reducedSolnSpacePtr->getGlobalIndexOffsets(globalIndexOffsets);
 
   int numRows_unreduced = globalIndexOffsets[localProc_+1] -
      globalIndexOffsets[localProc_];
@@ -624,20 +620,6 @@ int test_MatrixGraph::test5()
   else {
     if (numReducedRows != numRows_unreduced) ERReturn(-1);
   }
-
-//  int numNonzeros = localgraph->packedColumnIndices.length();
-
-//  feiArray<int>& nonzeros = localgraph->packedColumnIndices;
-//
-//  int offset = 0;
-//  for(int i=0; i<numLocalRows; ++i) {
-//    FEI_COUT << localProc_ << " test_MatrixGraph5: row "
-//	 << i+globalIndexOffsets[localProc_] << ", cols: ";
-//    for(int j=0; j<rowOffsets[i+1]-rowOffsets[i]; ++j) {
-//      FEI_COUT << nonzeros[offset++] << " ";
-//    }
-//    FEI_COUT << FEI_ENDL;
-//  }
 
   delete testdata;
 

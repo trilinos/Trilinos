@@ -12,6 +12,7 @@
 #include "fei_Matrix_core.hpp"
 #include "fei_sstream.hpp"
 #include "fei_fstream.hpp"
+#include <fei_CommUtils.hpp>
 
 namespace fei {
 
@@ -24,7 +25,7 @@ MatrixReducer::MatrixReducer(fei::SharedPtr<fei::Reducer> reducer,
 {
   fei::SharedPtr<fei::VectorSpace> vspace =
     target->getMatrixGraph()->getRowSpace();
-  MPI_Comm comm = vspace->getCommUtils()->getCommunicator();
+  MPI_Comm comm = vspace->getCommunicator();
   int numLocal = reducer_->getLocalReducedEqns().size();
   fei::SharedPtr<fei::EqnComm> eqnComm(new fei::EqnComm(comm, numLocal));
   fei::Matrix_core* target_core =
@@ -231,18 +232,17 @@ int MatrixReducer::writeToFile(const char* filename,
     localNNZ += len;
   }
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils =
-    getMatrixGraph()->getRowSpace()->getCommUtils();
+  MPI_Comm comm = getMatrixGraph()->getRowSpace()->getCommunicator();
 
-  CHK_MPI( commUtils->GlobalSum(localNNZ, globalNNZ) );
+  CHK_MPI( fei::GlobalSum(comm, localNNZ, globalNNZ) );
   int globalNumRows = 0;
-  CHK_MPI( commUtils->GlobalSum(localNumRows, globalNumRows) );
+  CHK_MPI( fei::GlobalSum(comm, localNumRows, globalNumRows) );
 
   int globalNumCols = globalNumRows;
 
-  for(int p=0; p<commUtils->numProcs(); ++p) {
-    commUtils->Barrier();
-    if (p != commUtils->localProc()) continue;
+  for(int p=0; p<fei::numProcs(comm); ++p) {
+    fei::Barrier(comm);
+    if (p != fei::localProc(comm)) continue;
 
     FEI_OFSTREAM* outFile = NULL;
     if (p==0) {

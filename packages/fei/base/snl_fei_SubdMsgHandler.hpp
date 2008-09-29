@@ -10,7 +10,7 @@
 #define _snl_fei_SubdMsgHandler_hpp_
 
 #include <fei_macros.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_fwd.hpp>
 
 #include <vector>
@@ -21,7 +21,7 @@ namespace fei {
 
 namespace snl_fei {
   /** implementation of MessageHandler for subdomain data */
-  class SubdMsgHandler : public MessageHandler<int> {
+  class SubdMsgHandler : public fei::MessageHandler<int> {
   public:
     /** constructor */
     SubdMsgHandler(RecordCollection* recordCollection,

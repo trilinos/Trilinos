@@ -28,7 +28,6 @@ class FEDataFilter : public Filter {
  public:
    // Constructor.
    FEDataFilter(FEI_Implementation* owner, MPI_Comm comm,
-		snl_fei::CommUtils<int>* commUtils,
 		SNL_FEI_Structure* probStruct,
 		LibraryWrapper* wrapper,
 		int masterRank=0);
@@ -391,9 +390,6 @@ class FEDataFilter : public Filter {
 
     MPI_Comm comm_;
     int masterRank_;
-
-    snl_fei::CommUtils<int>* commUtils_;
-    bool deleteCommUtils_;
 
     SNL_FEI_Structure* problemStructure_;
 

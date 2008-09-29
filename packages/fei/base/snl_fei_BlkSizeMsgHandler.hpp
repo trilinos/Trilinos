@@ -13,18 +13,17 @@
 #include <fei_SharedPtr.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_Graph.hpp>
-#include <fei_CommUtilsBase.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 
 namespace snl_fei {
 
 /** MessageHandler implementation for block-size data. */
-class BlkSizeMsgHandler : public snl_fei::MessageHandler<int> {
+class BlkSizeMsgHandler : public fei::MessageHandler<int> {
  public:
   /** constructor */
   BlkSizeMsgHandler(fei::VectorSpace* vspace,
 		    fei::Graph* graph,
-		    fei::SharedPtr<snl_fei::CommUtils<int> > commutils);
+		    MPI_Comm comm);
   /** destructor */
   virtual ~BlkSizeMsgHandler();
 
@@ -49,7 +48,7 @@ class BlkSizeMsgHandler : public snl_fei::MessageHandler<int> {
   fei::VectorSpace* vecSpace_;
   snl_fei::PointBlockMap* ptBlkMap_;
   fei::Graph* graph_;
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils_;
+  MPI_Comm comm_;
   std::vector<int> sendProcs_;
   std::vector<int> recvProcs_;
 

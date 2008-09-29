@@ -42,9 +42,9 @@
 ///////////// end of 'tester' specializations ///////////////
 
 
-#include <base/snl_fei_CommUtils.hpp>
-#include <base/snl_fei_Utils.hpp>
-#include <base/fei_ParameterSet.hpp>
+#include <fei_CommUtils.hpp>
+#include <snl_fei_Utils.hpp>
+#include <fei_ParameterSet.hpp>
 
 #include "test_utils/poisson_beam_mains.hpp"
 
@@ -53,25 +53,19 @@
 
 #include <fei_ErrMacros.hpp>
 
-void execute_benchmarks(const snl_fei::CommUtils<int>& intCommUtils);
+void execute_benchmarks(MPI_Comm comm);
 
-int test_library_plugins(const snl_fei::CommUtils<int>& intCommUtils);
+int test_library_plugins(MPI_Comm comm);
 
 int execute_named_test(const std::string& testname,
-		       int argc,
-		       char** argv,
-		       const snl_fei::CommUtils<int>& intCommUtils);
+		       int argc, char** argv, MPI_Comm comm);
 
 void read_input_and_execute_fullsystem_tests(const std::string& filename,
-                                             int argc,
-                                             char** argv,
-                                             snl_fei::CommUtils<int>& intCommUtils);
+                                             int argc, char** argv, MPI_Comm comm);
 
-void execute_unit_tests(const std::string& path,
-                        const snl_fei::CommUtils<int>& intCommUtils);
+void execute_unit_tests(const std::string& path, MPI_Comm comm);
 
-void execute_fullsystem_tests(snl_fei::CommUtils<int>& intCommUtils,
-                              const std::string& path,
+void execute_fullsystem_tests(MPI_Comm comm, const std::string& path,
                               fei::ParameterSet& name_numproc_pairs);
 
 #ifndef FEI_SER
@@ -90,8 +84,7 @@ int main(int argc, char** argv) {
   int numProcs, localProc;
   CHK_ERR( fei_test_utils::initialize_mpi(argc, argv, localProc, numProcs) );
 
-  snl_fei::CommUtils<int> intCommUtils(MPI_COMM_WORLD);
-  if (intCommUtils.localProc() == 0) {
+  if (localProc == 0) {
     FEI_COUT << "FEI version: " << fei::utils::version() << FEI_ENDL;
   }
 
@@ -103,9 +96,9 @@ int main(int argc, char** argv) {
   int errcode = 0;
 
   if (!testname.empty()) {
-    errcode = execute_named_test(testname, argc, argv, intCommUtils);
+    errcode = execute_named_test(testname, argc, argv, MPI_COMM_WORLD);
 
-    if (intCommUtils.localProc() == 0 && errcode == 0) {
+    if (localProc == 0 && errcode == 0) {
       FEI_COUT << localProc << ": FEI test successful" << FEI_ENDL;
     }
   }
@@ -121,7 +114,7 @@ int main(int argc, char** argv) {
     fei_test_utils::broadcast_string(MPI_COMM_WORLD, 0, filename);
 
     try {
-      read_input_and_execute_fullsystem_tests(filename, argc, argv, intCommUtils);
+      read_input_and_execute_fullsystem_tests(filename, argc, argv, MPI_COMM_WORLD);
     }
     catch(std::runtime_error& exc) {
       FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
@@ -130,7 +123,7 @@ int main(int argc, char** argv) {
   }
 
   int global_err_code = 0;
-  intCommUtils.GlobalSum(errcode, global_err_code);
+  fei::GlobalSum(MPI_COMM_WORLD, errcode, global_err_code);
 
 #ifndef FEI_SER
   if (MPI_Finalize() != MPI_SUCCESS) ERReturn(-1);
@@ -146,7 +139,7 @@ int main(int argc, char** argv) {
 
 void read_input_and_execute_fullsystem_tests(const std::string& filename,
                                              int argc, char** argv,
-                                            snl_fei::CommUtils<int>& intCommUtils)
+                                             MPI_Comm comm)
 {
   //We'll run some 'full-system' FEI tests, if any are contained in the
   //specified filename.
@@ -157,17 +150,17 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
   std::vector<std::string> inputFileNames;
   if (!filename.empty()) {
     const char* filename_c_str = filename.c_str();
-    fei_test_utils::read_input_file(filename_c_str, MPI_COMM_WORLD, inputFileNames);
+    fei_test_utils::read_input_file(filename_c_str, comm, inputFileNames);
     fei::ParameterSet name_numproc_pairs;
     fei::utils::parse_strings(inputFileNames, " ", name_numproc_pairs);
 
     std::string path = fei_test_utils::get_arg_value("-d", argc, argv);
 
     //make sure every processor has the path string.
-    fei_test_utils::broadcast_string(MPI_COMM_WORLD, 0, path);
+    fei_test_utils::broadcast_string(comm, 0, path);
 
     try {
-      execute_fullsystem_tests(intCommUtils, path, name_numproc_pairs);
+      execute_fullsystem_tests(comm, path, name_numproc_pairs);
     }
     catch(std::runtime_error& exc) {
       FEI_CERR << "caught fei test error: "<<exc.what() << FEI_ENDL;
@@ -178,10 +171,10 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
     //Next, if we're running on 4 procs, create two new communicators each
     //representing 2 procs, and run some 2-proc tests using one of those
     //communicators.
-    int numProcs = intCommUtils.numProcs();
-    int localProc = intCommUtils.localProc();
+    int numProcs = fei::numProcs(comm);
+    int localProc = fei::localProc(comm);
     if (numProcs == 4) {
-      intCommUtils.Barrier();
+      fei::Barrier(comm);
       if (localProc == 0) {
         FEI_COUT
          << "*****************************************************************"
@@ -194,21 +187,19 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
       std::string path = fei_test_utils::get_arg_value("-d", argc, argv);
 
       //make sure every processor has the path string.
-      fei_test_utils::broadcast_string(MPI_COMM_WORLD, 0, path);
+      fei_test_utils::broadcast_string(comm, 0, path);
 
       MPI_Comm newcomm1, newcomm2;
       MPI_Group newgroup1, newgroup2;
 
       //newcomm1 and newgroup1 will represent procs 0 and 1, while
       //newcomm2 and newgroup2 will represent procs 2 and 3.
-      split_four_procs_into_two_groups(intCommUtils.getCommunicator(),
+      split_four_procs_into_two_groups(comm,
                                        newcomm1, newgroup1,
                                        newcomm2, newgroup2);
 
-      if (intCommUtils.localProc() < 2) {
-        snl_fei::CommUtils<int> intCommUtils1(newcomm1);
-
-        execute_fullsystem_tests(intCommUtils1, path, name_numproc_pairs);
+      if (localProc < 2) {
+        execute_fullsystem_tests(newcomm1, path, name_numproc_pairs);
       }
 
     }
@@ -216,10 +207,9 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
   }
 }
 
-int test_library_plugins(const snl_fei::CommUtils<int>& intCommUtils)
+int test_library_plugins(MPI_Comm comm)
 {
   int errcode = 0;
-  MPI_Comm comm = intCommUtils.getCommunicator();
 
   //--------- factory test --------------
   {
@@ -267,12 +257,10 @@ int test_library_plugins(const snl_fei::CommUtils<int>& intCommUtils)
 }
 
 int execute_named_test(const std::string& testname,
-		       int argc,
-		       char** argv,
-		       const snl_fei::CommUtils<int>& intCommUtils)
+		       int argc, char** argv, MPI_Comm comm)
 {
-  int numProcs = intCommUtils.numProcs();
-  int localProc = intCommUtils.localProc();
+  int numProcs = fei::numProcs(comm);
+  int localProc = fei::localProc(comm);
 
   std::string path = fei_test_utils::get_arg_value("-d", argc, argv);
 
@@ -281,14 +269,14 @@ int execute_named_test(const std::string& testname,
 
   int errcode = 0;
 
-  intCommUtils.Barrier();
+  fei::Barrier(comm);
 
   bool testname_recognized = false;
 
   if (testname == "unit_tests") {
     testname_recognized = true;
     try {
-      execute_unit_tests(path, intCommUtils);
+      execute_unit_tests(path, comm);
     }
     catch(std::runtime_error& exc) {
       FEI_CERR << "caught unit-test error: "<<exc.what() << FEI_ENDL;
@@ -297,35 +285,35 @@ int execute_named_test(const std::string& testname,
   }
 
   if (testname == "poisson_main") {
-    errcode = poisson_main(argc, argv, MPI_COMM_WORLD, numProcs, localProc);
+    errcode = poisson_main(argc, argv, comm, numProcs, localProc);
     testname_recognized = true;
   }
   if (testname == "poisson3_main") {
-    errcode = poisson3_main(argc, argv, MPI_COMM_WORLD, numProcs, localProc);
+    errcode = poisson3_main(argc, argv, comm, numProcs, localProc);
     testname_recognized = true;
   }
 
   if (testname == "beam_oldfei_main") {
-    errcode = beam_oldfei_main(argc, argv, MPI_COMM_WORLD, numProcs, localProc);
+    errcode = beam_oldfei_main(argc, argv, comm, numProcs, localProc);
     testname_recognized = true;
   }
   if (testname == "beam_main") {
-    errcode = beam_main(argc, argv, MPI_COMM_WORLD, numProcs, localProc);
+    errcode = beam_main(argc, argv, comm, numProcs, localProc);
     testname_recognized = true;
   }
 
   if (testname == "feiDriver_main") {
-    errcode = feiDriver_main(argc, argv, MPI_COMM_WORLD, numProcs, localProc);
+    errcode = feiDriver_main(argc, argv, comm, numProcs, localProc);
     testname_recognized = true;
   }
 
   if (testname == "cFeiTester_main") {
-    errcode = cFeiTester_main(argc, argv, MPI_COMM_WORLD, numProcs, localProc);
+    errcode = cFeiTester_main(argc, argv, comm, numProcs, localProc);
     testname_recognized = true;
   }
 
   if (testname == "library_plugins") {
-    errcode = test_library_plugins(intCommUtils);
+    errcode = test_library_plugins(comm);
     testname_recognized = true;
   }
 
@@ -333,7 +321,7 @@ int execute_named_test(const std::string& testname,
     testname_recognized = true;
     if (localProc == 0) {
       try {
-        execute_benchmarks(intCommUtils);
+        execute_benchmarks(comm);
       }
       catch(std::runtime_error& exc) {
         FEI_CERR <<"caught exception from benchmarks: "<<exc.what()<<FEI_ENDL;
@@ -342,9 +330,9 @@ int execute_named_test(const std::string& testname,
     }
   }
 
-  intCommUtils.Barrier();
+  fei::Barrier(comm);
 
-  if (!testname_recognized && intCommUtils.localProc() == 0) {
+  if (!testname_recognized && localProc == 0) {
     FEI_COUT << "fei_test: '-test' argument used, but value ("<<testname
 	     << ") not recognized. Valid values are:"<<FEI_ENDL
 	     << "    unit_tests"<<FEI_ENDL
@@ -361,9 +349,9 @@ int execute_named_test(const std::string& testname,
   return(errcode);
 }
 
-void execute_benchmarks(const snl_fei::CommUtils<int>& intCommUtils)
+void execute_benchmarks(MPI_Comm comm)
 {
-  test_benchmarks tst(intCommUtils.getCommunicator());
+  test_benchmarks tst(comm);
 
   bool test_failed = false;
   if (tst.runtests() != 0) test_failed = false;
@@ -372,10 +360,9 @@ void execute_benchmarks(const snl_fei::CommUtils<int>& intCommUtils)
 }
 
 void execute_unit_tests(const std::string& path,
-                        const snl_fei::CommUtils<int>& intCommUtils)
+                        MPI_Comm comm)
 {
   std::vector<fei::SharedPtr<tester> > testers;
-  MPI_Comm comm = intCommUtils.getCommunicator();
 
   //Since each of the following classes implement the tester interface,
   //we can simply stick instances of them into an array, then run through
@@ -409,7 +396,7 @@ void execute_unit_tests(const std::string& path,
   std::string failed_test_name;
   bool test_failed = false;
   for(; testers_iter != testers_end; ++testers_iter) {
-    intCommUtils.Barrier();
+    fei::Barrier(comm);
 
     fei::SharedPtr<tester> tst = *testers_iter;
     tst->setPath(path);
@@ -425,11 +412,11 @@ void execute_unit_tests(const std::string& path,
   }
 }
 
-void execute_fullsystem_tests(snl_fei::CommUtils<int>& intCommUtils,
+void execute_fullsystem_tests(MPI_Comm comm,
                               const std::string& path,
                               fei::ParameterSet& name_numproc_pairs)
 {
-  test_FEI test_fei(intCommUtils.getCommunicator());
+  test_FEI test_fei(comm);
 
   if (!path.empty()) {
     test_fei.setPath(path.c_str());
@@ -449,16 +436,16 @@ void execute_fullsystem_tests(snl_fei::CommUtils<int>& intCommUtils,
     const char* fileName = (*n_iter).getName().c_str();
     int numProcsToUse = (*n_iter).getIntValue();
 
-    if (numProcsToUse != intCommUtils.numProcs()) {
+    if (numProcsToUse != fei::numProcs(comm)) {
       continue;
     }
 
-    intCommUtils.Barrier();
-    if (intCommUtils.localProc() == 0) {
+    fei::Barrier(comm);
+    if (fei::localProc(comm) == 0) {
       FEI_COUT << FEI_ENDL << "*****" << FEI_ENDL
            << fileName << FEI_ENDL << "*****"<<FEI_ENDL;
     }
-    intCommUtils.Barrier();
+    fei::Barrier(comm);
 
     test_fei.setFileName(fileName);
 

@@ -14,15 +14,13 @@
 snl_fei::Broker_FEData::Broker_FEData(fei::SharedPtr<FiniteElementData> feData,
 			      fei::SharedPtr<fei::MatrixGraph> matrixGraph,
 				      int nodeIDType)
-  : intCommUtils_(),
-    feData_(feData),
+  : feData_(feData),
     matrixGraph_(matrixGraph),
     nodeIDType_(nodeIDType),
     setStructure_(false),
     setMatrixMatrixGraph_(false),
     lookup_(NULL)
 {
-  intCommUtils_ = matrixGraph->getRowSpace()->getCommUtils();
 }
 
 //----------------------------------------------------------------------------

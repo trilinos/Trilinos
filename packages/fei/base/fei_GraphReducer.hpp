@@ -12,7 +12,7 @@
 #include <fei_iosfwd.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_Graph.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_Reducer.hpp>
 #include <snl_fei_RaggedTable_specialize.hpp>
 

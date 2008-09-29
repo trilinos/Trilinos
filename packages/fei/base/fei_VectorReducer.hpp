@@ -13,7 +13,6 @@
 #include <fei_VectorSpace.hpp>
 #include <fei_Reducer.hpp>
 #include <fei_Vector.hpp>
-#include <snl_fei_CommUtils.hpp>
 
 #undef fei_file
 #define fei_file "fei_VectorReducer.hpp"

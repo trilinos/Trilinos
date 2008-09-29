@@ -110,10 +110,6 @@ void test_Factory::factory_test1(fei::SharedPtr<fei::Factory> factory)
     FEI_COUT << "no"<<FEI_ENDL;
     throw std::runtime_error("vecspace->defineFields/getNumFields failed.");
   }
-  if (vecspace->getNumPartitions() != numProcs_) {
-    FEI_COUT << "no"<<FEI_ENDL;
-    throw std::runtime_error("vecspace->getNumPartitions() failed.");
-  }
 
   if (localProc_==0) FEI_COUT << "ok"<<FEI_ENDL;
 

@@ -53,7 +53,7 @@ create_Epetra_BlockMap(const fei::SharedPtr<fei::VectorSpace>& vecspace)
   }
 
 #ifndef FEI_SER
-  MPI_Comm comm = vecspace->getCommUtils()->getCommunicator();
+  MPI_Comm comm = vecspace->getCommunicator();
   Epetra_MpiComm EComm(comm);
 #else
   Epetra_SerialComm EComm;
@@ -103,7 +103,7 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
   int* packedColumnIndices = &(localSRGraph->packedColumnIndices[0]);
 
   fei::SharedPtr<fei::VectorSpace> vecspace = matgraph->getRowSpace();
-  MPI_Comm comm = vecspace->getCommUtils()->getCommunicator();
+  MPI_Comm comm = vecspace->getCommunicator();
   std::vector<int>& local_eqns = localSRGraph->rowNumbers;
 
   Epetra_BlockMap emap = blockEntries ?

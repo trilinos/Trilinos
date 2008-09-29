@@ -11,7 +11,7 @@
 
 #include <fei_fwd.hpp>
 
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 
 /**
   NodeCommMgr (Node communication manager) is responsible for
@@ -34,7 +34,7 @@
     and equation numbers.
 */
 
-class NodeCommMgr : public snl_fei::MessageHandler<int> {
+class NodeCommMgr : public fei::MessageHandler<int> {
  public:
    enum { STRICTLY_LOW_PROC, PROC_WITH_LOCAL_ELEM };
 
@@ -115,9 +115,6 @@ class NodeCommMgr : public snl_fei::MessageHandler<int> {
    int getGlobalMaxFieldsBlocks(int& maxFields, int& maxBlocks);
 
    int getGlobalMaxFieldsBlocksSubdomains();
-
-   snl_fei::CommUtils<int>* commUtilsInt_;
-   snl_fei::CommUtils<GlobalID>* commUtilsID_;
 
    NodeDescriptor** sharedNodes_;
    bool sharedNodesAllocated_;

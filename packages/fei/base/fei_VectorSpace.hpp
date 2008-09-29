@@ -11,11 +11,10 @@
 
 #include <fei_macros.hpp>
 #include <fei_fwd.hpp>
-#include <snl_fei_CommUtils.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_Logger.hpp>
 #include <fei_utils.hpp>
-#include <fei_CommUtilsBase.hpp>
+#include <fei_CommUtils.hpp>
 #include <fei_ctg_set.hpp>
 #include <snl_fei_RaggedTable.hpp>
 
@@ -224,11 +223,10 @@ namespace fei {
 
     //@{ \name Attribute query methods
 
-    /** Return the CommUtils object held by this vector-space. When built/run in
-	serial mode, the MPI_Comm returned by CommUtils::getCommunicator() is
-	#defined to be int.
+    /** Return the MPI_Comm held by this vector-space. When built/run in
+	serial mode, the MPI_Comm returned is #defined to be int.
     */
-    fei::SharedPtr<snl_fei::CommUtils<int> > getCommUtils();
+    MPI_Comm getCommunicator() const;
 
     /** Given a particular degree-of-freedom, request the corresponding global
 	index. A particular degree-of-freedom is specified as a component of a
@@ -446,44 +444,25 @@ namespace fei {
      */
     void getIDTypes(std::vector<int>& idTypes) const;
 
-    /** Request the number of partitions. (For MPI implementations, partitions
-	is a synonym for processes.) The main purpose of this function is to
-	give the user a way to calculate the length of the list that needs to
-	be allocated before calling 'getGlobalIndexOffsets()'.
-
-	@return number of partitions
-    */
-    int getNumPartitions();
-
     /** Request the global index offsets. Indices are zero-based.
 
-	@param lenGlobalOffsets Input. This value gives the length of the
-	user-allocated array globalOffsets. Should be numPartitions+1.
-	@param globalOffsets Output. Caller-allocated array of length
-	lenGlobalOffsets. On exit, contains global-offsets.<br>
+	@param globalOffsets Output. On exit, contains global-offsets.<br>
 	globalOffsets[i] is first global offset on processor i,
 	for i in 0 .. numPartitions - 1<br>
 	globalOffsets[i+1] - globalOffsets[i] is the number of indices on the
 	i-th processor
-	@return error-code 0 if successful
     */
-    int getGlobalIndexOffsets(int lenGlobalOffsets,
-			      int* globalOffsets);
+    void getGlobalIndexOffsets(std::vector<int>& globalOffsets) const;
 
     /** Request the global block-index offsets. Indices are zero-based.
 
-	@param lenGlobalBlkOffsets Input. This value gives the length of the
-	user-allocated array globalBlkOffsets. Should be numPartitions+1.
-	@param globalBlkOffsets Output. Caller-allocated array of length
-	lenGlobalBlkOffsets. On exit, contains global-block-offsets.<br>
+	@param globalBlkOffsets Output. On exit, contains global-block-offsets.<br>
 	globalBlkOffsets[i] is first global block-offset on processor i,
 	for i in 0 .. numPartitions - 1<br>
 	globalBlkOffsets[i+1] - globalBlkOffsets[i] is the number of
 	block-indices on the i-th processor
-	@return error-code 0 if successful
     */
-    int getGlobalBlkIndexOffsets(int lenGlobalBlkOffsets,
-				 int* globalBlkOffsets);
+    void getGlobalBlkIndexOffsets(std::vector<int>& globalBlkOffsets) const;
 
     /** Given a global index in the point-equation space, return the
 	owning processor. If the global index is not in the equation space,
@@ -714,7 +693,7 @@ namespace fei {
     void setName(const char* name);
 
   private:
-    fei::SharedPtr<snl_fei::CommUtils<int> > intCommUtils_;
+    MPI_Comm comm_;
 
     std::vector<int> idTypes_;
     std::map<int,unsigned> fieldDatabase_;
@@ -745,9 +724,6 @@ namespace fei {
     std::string dbgprefix_;
     bool checkSharedIDs_;
   }; // class fei::VectorSpace
-
-  inline fei::SharedPtr<snl_fei::CommUtils<int> > VectorSpace::getCommUtils()
-    { return( intCommUtils_ ); }
 
   inline std::vector<int>& VectorSpace::getEqnNumbers()
     {

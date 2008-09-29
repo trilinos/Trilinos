@@ -74,10 +74,9 @@ int test_Algebraic::serialtest1()
     ERReturn(-1);
   }
 
-  feiArray<int> globalOffsets(2);
-  globalOffsets = -1;
+  std::vector<int> globalOffsets;
 
-  CHK_ERR( vspace->getGlobalIndexOffsets(2, globalOffsets.dataPtr() ) );
+  vspace->getGlobalIndexOffsets(globalOffsets);
 
   if (globalOffsets[0] != 0) {
     ERReturn(-1);
@@ -163,10 +162,9 @@ int test_Algebraic::serialtest2()
     ERReturn(-1);
   }
 
-  feiArray<int> globalOffsets(2);
-  globalOffsets = -1;
+  std::vector<int> globalOffsets;
 
-  CHK_ERR( vspace->getGlobalIndexOffsets(2, globalOffsets.dataPtr() ) );
+  vspace->getGlobalIndexOffsets(globalOffsets);
 
   if (globalOffsets[0] != 0) {
     ERReturn(-1);

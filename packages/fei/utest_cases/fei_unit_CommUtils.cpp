@@ -1,8 +1,7 @@
 
 #include <fei_iostream.hpp>
-#include "fei_TemplateUtils.hpp"
+#include "fei_CommUtils.hpp"
 
-#include "snl_fei_CommUtils.hpp"
 #include "feiArray.hpp"
 
 #include <fei_unit_CommUtils.hpp>
@@ -18,76 +17,68 @@ void test_fei_Allgatherv(MPI_Comm comm)
 {
   FEI_COUT << "testing fei::Allgatherv...";
 
+  int num_procs = fei::numProcs(comm);
+  int local_proc = fei::localProc(comm);
+
   std::vector<double> send(8, 1.0), recv;
-  std::vector<double> send2(8, 1.0), recv2;
   std::vector<int> recvLengths;
   std::vector<int> recvLengths2;
 
-  snl_fei::CommUtils<double> commUtils(comm);
-
-  if (commUtils.Allgatherv(send, recvLengths, recv) != 0) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 1.");
+  if (fei::Allgatherv(comm, send, recvLengths, recv) != 0) {
+    throw std::runtime_error("fei::Allgatherv test failed 1.");
   }
 
-  if ((int)recvLengths.size() != commUtils.numProcs()) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 2.");
+  if ((int)recvLengths.size() != num_procs) {
+    throw std::runtime_error("fei::Allgatherv test failed 2.");
   }
-  if ((int)recv.size() != 8*commUtils.numProcs()) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 3.");
+  if ((int)recv.size() != 8*num_procs) {
+    throw std::runtime_error("fei::Allgatherv test failed 3.");
   }
 
   for(unsigned i=0; i<recv.size(); i++) {
     if (std::abs(recv[i] - 1.0) > 1.e-49) {
-      throw std::runtime_error("commUtils.Allgatherv test failed 4.");
+      throw std::runtime_error("fei::Allgatherv test failed 4.");
     }
   }
 
-  if (fei::Allgatherv<double>(comm, send2, recvLengths2, recv2) != 0) {
-    throw std::runtime_error("fei::Allgatherv test failed 1.");
-  }
-
-  if (recvLengths2 != recvLengths || recv2 != recv) {
-    throw std::runtime_error("fei::Allgatherv test failed 2.");
-  }
-
   //use a zero-length send-buffer on odd-numbered processors
-  if (commUtils.localProc()%2 != 0) send.resize(0);
+  if (local_proc%2 != 0) send.resize(0);
 
-  if (commUtils.Allgatherv(send, recvLengths, recv) != 0) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 5.");
+  if (fei::Allgatherv(comm, send, recvLengths, recv) != 0) {
+    throw std::runtime_error("fei::Allgatherv test failed 5.");
   }
 
   int expectedLength = 0;
-  for(int p=0; p<commUtils.numProcs(); p++) {
+  for(int p=0; p<num_procs; p++) {
     if (p%2 == 0) expectedLength += 8;
   }
 
-  if ((int)recvLengths.size() != commUtils.numProcs()) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 6.");
+  if ((int)recvLengths.size() != num_procs) {
+    throw std::runtime_error("fei::Allgatherv test failed 6.");
   }
   if ((int)recv.size() != expectedLength) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 7.");
+    throw std::runtime_error("fei::Allgatherv test failed 7.");
   }
 
   for(unsigned j=0; j<recv.size(); j++) {
     if (std::abs(recv[j] - 1.0) > 1.e-49) {
-      throw std::runtime_error("commUtils.Allgatherv test failed 8.");
+      throw std::runtime_error("fei::Allgatherv test failed 8.");
     }
   }
 
-  std::vector<double> local(5, commUtils.localProc()), global;
+  std::vector<double> local(5, fei::localProc(comm)), global;
 
-  if (commUtils.GlobalMax(local, global) != 0) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 9.");
+  if (fei::GlobalMax(comm, local, global) != 0) {
+    throw std::runtime_error("fei::Allgatherv test failed 9.");
   }
 
   if (global.size() != local.size()) {
-    throw std::runtime_error("commUtils.Allgatherv test failed 10.");
+    throw std::runtime_error("fei::Allgatherv test failed 10.");
   }
 
   for(unsigned i=0; i<global.size(); i++) {
-    if (std::abs(global[i] - commUtils.numProcs()+1) > 1.e-49) {
-      throw std::runtime_error("commUtils.Allgatherv test failed 11.");
+    if (std::abs(global[i] - fei::numProcs(comm)+1) > 1.e-49) {
+      throw std::runtime_error("fei::Allgatherv test failed 11.");
     }
   }
 
@@ -101,42 +92,40 @@ int test_CommUtils_test1(MPI_Comm comm)
   std::vector<int> send(8, 1), recv;
   std::vector<int> recvLengths;
 
-  snl_fei::CommUtils<int> commUtils(comm);
+  CHK_ERR( fei::Allgatherv(comm, send, recvLengths, recv) );
 
-  CHK_ERR( commUtils.Allgatherv(send, recvLengths, recv) );
-
-  if ((int)recvLengths.size() != commUtils.numProcs()) ERReturn(-1);
-  if ((int)recv.size() != 8*commUtils.numProcs()) ERReturn(-1);
+  if ((int)recvLengths.size() != fei::numProcs(comm)) ERReturn(-1);
+  if ((int)recv.size() != 8*fei::numProcs(comm)) ERReturn(-1);
 
   for(unsigned i=0; i<recv.size(); i++) {
     if (recv[i] != 1) ERReturn(-1);
   }
 
   //use a zero-length send-buffer on odd-numbered processors
-  if (commUtils.localProc()%2 != 0) send.resize(0);
+  if (fei::localProc(comm)%2 != 0) send.resize(0);
 
-  CHK_ERR( commUtils.Allgatherv(send, recvLengths, recv) );
+  CHK_ERR( fei::Allgatherv(comm, send, recvLengths, recv) );
 
   int expectedLength = 0;
-  for(int p=0; p<commUtils.numProcs(); p++) {
+  for(int p=0; p<fei::numProcs(comm); p++) {
     if (p%2 == 0) expectedLength += 8;
   }
 
-  if ((int)recvLengths.size() != commUtils.numProcs()) ERReturn(-1);
+  if ((int)recvLengths.size() != fei::numProcs(comm)) ERReturn(-1);
   if ((int)recv.size() != expectedLength) ERReturn(-1);
 
   for(unsigned j=0; j<recv.size(); j++) {
     if (recv[j] != 1) ERReturn(-1);
   }
 
-  std::vector<int> local(5, commUtils.localProc()), global;
+  std::vector<int> local(5, fei::localProc(comm)), global;
 
-  CHK_ERR( commUtils.GlobalMax(local, global) );
+  CHK_ERR( fei::GlobalMax(comm, local, global) );
 
   if (global.size() != local.size()) ERReturn(-1);
 
   for(unsigned i=0; i<global.size(); i++) {
-    if (global[i] != commUtils.numProcs()-1) ERReturn(-1);
+    if (global[i] != fei::numProcs(comm)-1) ERReturn(-1);
   }
 
   FEI_COUT << "ok" << FEI_ENDL;

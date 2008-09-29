@@ -109,7 +109,7 @@ namespace snl_fei {
 		     std::vector<double>& coefs,
 		     std::vector<int>& indices);
 
-    fei::SharedPtr<CommUtils<int> > commUtilsInt_;
+    MPI_Comm comm_;
 
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
     fei::DirichletBCManager* dbcManager_;

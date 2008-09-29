@@ -9,8 +9,12 @@
 #include "fei_Vector_Local.hpp"
 #include "fei_sstream.hpp"
 #include "fei_fstream.hpp"
+#include <fei_ErrMacros.hpp>
 
 #include <algorithm>
+
+#undef fei_file
+#define fei_file "fei_Vector_Local.cpp"
 
 namespace fei {
 
@@ -224,9 +228,9 @@ int
 Vector_Local::writeToFile(const char* filename,
                     bool matrixMarketFormat)
 {
-  int localProc = vecSpace_->getCommUtils()->localProc();
+  int local_proc = fei::localProc(vecSpace_->getCommunicator());
   FEI_OSTRINGSTREAM osstr;
-  osstr << filename << "." << localProc;
+  osstr << filename << "." << local_proc;
   std::string fullname = osstr.str();
   FEI_OFSTREAM ofstr(fullname.c_str(), IOS_OUT);
 

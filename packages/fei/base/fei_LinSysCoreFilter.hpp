@@ -33,7 +33,6 @@ class LinSysCoreFilter : public Filter {
  public:
    // Constructor.
    LinSysCoreFilter(FEI_Implementation* owner, MPI_Comm comm,
-		    snl_fei::CommUtils<int>* commUtils,
 		    SNL_FEI_Structure* probStruct,
 		    LinearSystemCore* lsc,
 		    int masterRank=0);
@@ -467,9 +466,6 @@ class LinSysCoreFilter : public Filter {
 
     MPI_Comm comm_;
     int masterRank_;
-
-    snl_fei::CommUtils<int>* commUtils_;
-    bool deleteCommUtils_;
 
     SNL_FEI_Structure* problemStructure_;
     bool matrixAllocated_;

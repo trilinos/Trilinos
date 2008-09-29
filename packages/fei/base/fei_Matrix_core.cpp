@@ -14,7 +14,7 @@
 #include <feiArray.hpp>
 #include <fei_SSVec.hpp>
 #include <fei_TemplateUtils.hpp>
-#include <snl_fei_CommUtils.hpp>
+#include <fei_CommUtils.hpp>
 
 #include <fei_VectorSpace.hpp>
 #include <snl_fei_PointBlockMap.hpp>
@@ -35,7 +35,7 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     work_data2D_(),
     eqnComm_(),
     rhsVector_(),
-    intCommUtils_(),
+    comm_(matrixGraph->getRowSpace()->getCommunicator()),
     localProc_(0),
     numProcs_(1),
     vecSpace_(),
@@ -51,13 +51,10 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     throw std::runtime_error("fei::Matrix_core constructed with NULL fei::MatrixGraph");
   }
 
-  intCommUtils_ = matrixGraph->getRowSpace()->getCommUtils();
+  eqnComm_.reset(new fei::EqnComm(comm_, numLocalEqns));
 
-  eqnComm_.reset(new fei::EqnComm(intCommUtils_->getCommunicator(),
-                                  numLocalEqns));
-
-  localProc_ = intCommUtils_->localProc();
-  numProcs_ = intCommUtils_->numProcs();
+  localProc_ = fei::localProc(comm_);
+  numProcs_ = fei::numProcs(comm_);
 
   vecSpace_ = matrixGraph->getRowSpace();
 
@@ -168,7 +165,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
 
   //now we can find out which procs we'll be receiving from.
   std::vector<int> recvProcs;
-  intCommUtils_->mirrorProcs(sendProcs, recvProcs);
+  fei::mirrorProcs(comm_, sendProcs, recvProcs);
 
   //next we'll declare arrays to receive into.
   std::vector<std::vector<int> > recv_ints(recvProcs.size());
@@ -185,10 +182,10 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   unsigned offset = 0;
   for(unsigned i=0; i<recvProcs.size(); ++i) {
     MPI_Irecv(&recv_sizes[offset], 1, MPI_INT, recvProcs[i],
-              tag1, intCommUtils_->getCommunicator(), &mpiReqs[offset]);
+              tag1, comm_, &mpiReqs[offset]);
     ++offset;
     MPI_Irecv(&recv_sizes[offset], 1, MPI_INT, recvProcs[i],
-              tag2, intCommUtils_->getCommunicator(), &mpiReqs[offset]);
+              tag2, comm_, &mpiReqs[offset]);
     ++offset;
   }
 
@@ -206,8 +203,8 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
     int isize = send_ints[i].size();
     int dsize = send_doubles[i].size();
 
-    MPI_Send(&isize, 1, MPI_INT, proc, tag1, intCommUtils_->getCommunicator());
-    MPI_Send(&dsize, 1, MPI_INT, proc, tag2, intCommUtils_->getCommunicator());
+    MPI_Send(&isize, 1, MPI_INT, proc, tag1, comm_);
+    MPI_Send(&dsize, 1, MPI_INT, proc, tag2, comm_);
 
     remotelyOwned_[proc]->logicalClear();
   }
@@ -226,19 +223,18 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
     recv_doubles[i].resize(doublesize);
 
     MPI_Irecv(&(recv_ints[i][0]), intsize, MPI_INT, recvProcs[i],
-              tag1, intCommUtils_->getCommunicator(), &mpiReqs[offset2++]);
+              tag1, comm_, &mpiReqs[offset2++]);
     MPI_Irecv(&(recv_doubles[i][0]), doublesize, MPI_DOUBLE, recvProcs[i],
-              tag2, intCommUtils_->getCommunicator(), &mpiReqs[offset2++]);
+              tag2, comm_, &mpiReqs[offset2++]);
   }
 
   //now send our packed buffers.
   for(unsigned i=0; i<sendProcs.size(); ++i) {
     int proc = sendProcs[i];
 
-    MPI_Send(&(send_ints[i][0]), send_ints[i].size(), MPI_INT,
-             proc, tag1, intCommUtils_->getCommunicator());
+    MPI_Send(&(send_ints[i][0]), send_ints[i].size(), MPI_INT, proc, tag1, comm_);
     MPI_Send(&(send_doubles[i][0]), send_doubles[i].size(), MPI_DOUBLE,
-             proc, tag2, intCommUtils_->getCommunicator());
+             proc, tag2, comm_);
   }
 
   MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
