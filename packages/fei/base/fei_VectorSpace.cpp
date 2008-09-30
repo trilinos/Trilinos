@@ -145,7 +145,7 @@ fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
     sharedIDTables_(0, 1),
     ownerPatterns_(0, 1),
     sharerPatterns_(0, 1),
-    sharedRecordsSynchronized_(false),
+    sharedRecordsSynchronized_(true),
     ptBlkMap_(NULL),
     globalOffsets_(),
     globalIDOffsets_(),
@@ -169,6 +169,9 @@ fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
   ptBlkMap_ = NULL;
 
   intCommUtils_.reset(new snl_fei::CommUtils<int>(comm));
+
+  globalOffsets_.assign(intCommUtils_->numProcs()+1, 0);
+  globalIDOffsets_.assign(intCommUtils_->numProcs()+1, 0);
 
   setName(name);
 }
