@@ -1,7 +1,7 @@
 
 (FRAMEWORK, FeiTests) {
   TESTS = fei_test.exe;
-  ARGS = -d utest_base -test unit_tests;
+  ARGS = -d . -test unit_tests;
   COMM = SERIAL, MPI(1);
 }
 (FRAMEWORK, FeiTests) {
