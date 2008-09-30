@@ -542,17 +542,17 @@ namespace Tpetra
     // FINISH: or maybe not; I guess this should happen below in the calls to import(), export()
 
     // ******************* DEBUG ******************* 
-    int myImageID = Teuchos::rank(*comm_);
-    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-    if (myImageID == 0) {
-      *out << "Entering CrsMatrix::apply()" << std::endl
-                << "Column Map: " << std::endl;
-    }
-    *out << this->getColMap() << std::endl;
-    if (myImageID == 0) {
-      *out << "Initial input: " << std::endl;
-    }
-    X.print(*out); X.printValues(*out);
+    //int myImageID = Teuchos::rank(*comm_);
+    //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    //if (myImageID == 0) {
+    //  *out << "Entering CrsMatrix::apply()" << std::endl
+    //            << "Column Map: " << std::endl;
+    //}
+    //*out << this->getColMap() << std::endl;
+    //if (myImageID == 0) {
+    //  *out << "Initial input: " << std::endl;
+    //}
+    //X.print(*out); X.printValues(*out);
     // *************** END DEBUG ******************* 
 
     Ordinal numVectors = X.numVectors();
@@ -576,9 +576,9 @@ namespace Tpetra
       Xcopy = Teuchos::rcp(new MultiVector<Ordinal,Scalar>(X));
       Xdata = Xcopy->extractConstView();
       // ******************* DEBUG ******************* 
-      if (myImageID == 0) *out << "X and Y are co-located, duplicating X results in a stride copy" << std::endl;
-      *out << this->getColMap() << std::endl;
-      Xcopy->print(*out); Xcopy->printValues(*out);
+      //if (myImageID == 0) *out << "X and Y are co-located, duplicating X results in a stride copy" << std::endl;
+      //*out << this->getColMap() << std::endl;
+      //Xcopy->print(*out); Xcopy->printValues(*out);
       // *************** END DEBUG ******************* 
     }
     if (importer_ != null) {
@@ -602,10 +602,10 @@ namespace Tpetra
         importMV_->doImport(X, *importer_, INSERT);
         Xdata = importMV_->extractConstView();
         // ******************* DEBUG ******************* 
-        if (myImageID == 0) {
-          *out << "Performed import of X..." << std::endl;
-        }
-        importMV_->print(*out); importMV_->printValues(*out);
+        //if (myImageID == 0) {
+        //  *out << "Performed import of X..." << std::endl;
+        //}
+        //importMV_->print(*out); importMV_->printValues(*out);
         // *************** END DEBUG ******************* 
       }
       // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
@@ -621,28 +621,28 @@ namespace Tpetra
         GeneralMM(Xdata,Ydata);
       }
       // ******************* DEBUG ******************* 
-      if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
-      if (exportMV_ != null) {
-        exportMV_->print(*out); exportMV_->printValues(*out);
-      } else {
-        Y.print(*out); Y.printValues(*out);
-      }
+      //if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
+      //if (exportMV_ != null) {
+      //  exportMV_->print(*out); exportMV_->printValues(*out);
+      //} else {
+      //  Y.print(*out); Y.printValues(*out);
+      //}
       // *************** END DEBUG ******************* 
       // do the export
       if (exporter_ != null) {
         Y.putScalar(0.0);  // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
         Y.doExport(*exportMV_, *exporter_, ADD); // Fill Y with Values from export vector
         // ******************* DEBUG ******************* 
-        if (myImageID == 0) *out << "Output vector after export()..." << std::endl;
-        Y.print(*out); Y.printValues(*out);
+        //if (myImageID == 0) *out << "Output vector after export()..." << std::endl;
+        //Y.print(*out); Y.printValues(*out);
         // *************** END DEBUG ******************* 
       }
       // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
       if (Y.isDistributed() == false) {
         Y.reduce();
         // ******************* DEBUG ******************* 
-        if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
-        Y.print(*out); Y.printValues(*out);
+        //if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
+        //Y.print(*out); Y.printValues(*out);
         // *************** END DEBUG ******************* 
       }
     }
@@ -881,7 +881,7 @@ namespace Tpetra
       std::sort(IdsAndRows.begin(),IdsAndRows.end());
       // gather from other nodes to form the full graph
       globalNeighbors.shapeUninitialized(numImages,numImages);
-      Teuchos::gatherAll(*comm_,numImages,localNeighbors.getRawPtr(),numImages*numImages,globalNeighbors.values());
+      Teuchos::gatherAll<Ordinal>(*comm_,numImages,localNeighbors.getRawPtr(),numImages*numImages,globalNeighbors.values());
       // globalNeighbors at this point contains (on all images) the
       // connectivity between the images. 
       // globalNeighbors(i,j) != 0 means that j sends to i/that i receives from j

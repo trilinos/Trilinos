@@ -39,6 +39,7 @@
 #include <Teuchos_Range1D.hpp>
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_CombineMode.hpp"
 
 namespace Tpetra {
 

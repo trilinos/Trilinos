@@ -291,7 +291,6 @@ namespace Tpetra {
         ImportData_->permuteFromLIDs_.push_back(source.getLocalIndex(*targetIter));
       }
       else {
-        ++ImportData_->numRemoteIDs_;
         ImportData_->remoteLIDs_.push_back(target.getLocalIndex(*targetIter));
         ImportData_->remoteGIDs_.push_back(*targetIter);
       }

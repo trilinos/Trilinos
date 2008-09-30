@@ -35,6 +35,10 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include "Tpetra_Platform.hpp"
 
+// FINISH: this should have a getComm() method; Comm should then have a clone() method
+//         because of MPI tag issues, we want to always use the same Comm, unless the user 
+//         specifies a different Comm
+
 namespace Tpetra {
 
   //! Tpetra::MpiPlatform: MPI Implementation of the Platform class.

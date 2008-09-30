@@ -41,7 +41,6 @@
 
 #include "Tpetra_MultiVectorDecl.hpp"
 #include "Tpetra_MultiVectorData.hpp"
-#include "Tpetra_CombineMode.hpp"
 
 namespace Tpetra {
 
@@ -290,31 +289,26 @@ namespace Tpetra {
       const Teuchos::ArrayView<Scalar> &exports,
       Distributor<Ordinal> &distor)
   {
+    const MultiVector<Ordinal,Scalar> &sourceMV = dynamic_cast<const MultiVector<Ordinal,Scalar> &>(sourceObj);
     typedef Teuchos::OrdinalTraits<Ordinal> OT;
     using Teuchos::ArrayView;
     (void)distor;    // we don't use these, but we don't want unused parameter warnings
-    (void)sourceObj;
-    // The layout in the export for MultiVectors is as follows:
-    /* exports = { all of the data from vector 1; 
-                   all of the data from vector 2;
+    /* The layout in the export for MultiVectors is as follows:
+       exports = { all of the data from row exportLIDs.front() ; 
                    ....
-                   all of the data from vector numVectors() }
-      this has us packing from and unpacking to a single vector at a time, 
-      which will have better spatial locality than the alternative. */
+                   all of the data from row exportLIDs.back() }
+      this doesn't have the best locality, but is necessary because the data for a Packet
+      (all data associated with an LID) is required to be contiguous */
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(exports.size() != numVectors()*exportLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::packAndPrepare(): sizing of exports buffer should be appropriate for the amount of data to be exported.");
 #endif
-    ArrayView<const Scalar> dstView(Teuchos::null);
     typename ArrayView<       Scalar>::iterator  expptr;
     typename ArrayView<const Ordinal>::iterator  idptr;
-    // one vector at a time
     expptr = exports.begin();
-    for (Ordinal j = OT::zero(); j < numVectors(); ++j) {
-      dstView = (*this)[j];
-      for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr)
-      {
-        *expptr++ = dstView[*idptr];
+    for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr) {
+      for (Ordinal j = OT::zero(); j < numVectors(); ++j) {
+        *expptr++ = sourceMV[j][*idptr];
       }
     }
   }
@@ -330,38 +324,31 @@ namespace Tpetra {
     (void)distor; // we don't use this, but we don't want unused parameter warnings
     typedef Teuchos::OrdinalTraits<Ordinal> OT;
     using Teuchos::ArrayView;
-    // The layout in the import for MultiVectors is as follows:
-    /* imports = { all of the data from vector 1; 
-       all of the data from vector 2;
-       ....
-       all of the data from vector numVectors() }
-       this has us packing from and unpacking to a single vector at a time, 
-       which will have better spatial locality than the alternative. */
+    /* The layout in the export for MultiVectors is as follows:
+       imports = { all of the data from row exportLIDs.front() ; 
+                   ....
+                   all of the data from row exportLIDs.back() }
+      this doesn't have the best locality, but is necessary because the data for a Packet
+      (all data associated with an LID) is required to be contiguous */
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(imports.size() != numVectors()*importLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::unpackAndCombine(): sizing of imports buffer should be appropriate for the amount of data to be exported.");
 #endif
-    ArrayView<Scalar> dstView(Teuchos::null);
     typename ArrayView<const  Scalar>::iterator  impptr;
     typename ArrayView<const Ordinal>::iterator  idptr;
-    // one vector at a time
     impptr = imports.begin();
     if (CM == INSERT || CM == REPLACE) 
     {
-      for (Ordinal j = OT::zero(); j < numVectors(); ++j) {
-        dstView = (*this)[j];
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr)
-        {
-          dstView[*idptr] = *impptr++;
+      for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+        for (Ordinal j = OT::zero(); j < numVectors(); ++j) {
+          (*this)[j][*idptr] = *impptr++;
         }
       }
     }
     else if (CM == ADD) {
-      for (Ordinal j = OT::zero(); j < numVectors(); ++j) {
-        dstView = (*this)[j];
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr)
-        {
-          dstView[*idptr] += *impptr++;
+      for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+        for (Ordinal j = OT::zero(); j < numVectors(); ++j) {
+          (*this)[j][*idptr] += *impptr++;
         }
       }
     }

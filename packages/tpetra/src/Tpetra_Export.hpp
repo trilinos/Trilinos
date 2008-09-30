@@ -39,6 +39,8 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_ImportExportData.hpp"
 
+// FINISH: this class is not finished yet
+
 namespace Tpetra {
 
   //! Tpetra::Export: This class builds an export object for efficient exporting of off-processor entries.
@@ -143,6 +145,7 @@ namespace Tpetra {
     : Teuchos::Object("Tpetra::Export")
     , ExportData_()
   {
+    TEST_FOR_EXCEPT(true); // not yet supported
     ExportData_ = Teuchos::rcp(new ImportExportData<Ordinal>(source, target));
     // call subfunctions
     setupSamePermuteExport();
@@ -152,10 +155,12 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  Export<Ordinal>::Export(Export<Ordinal> const& rhs)
+  Export<Ordinal>::Export(const Export<Ordinal> & rhs)
   : Teuchos::Object(rhs.label())
   , ExportData_(rhs.ExportData_)
-  {}
+  {
+    TEST_FOR_EXCEPT(true); // not yet supported
+  }
 
   template <typename Ordinal>
   Export<Ordinal>::~Export() 
@@ -259,51 +264,49 @@ namespace Tpetra {
   template <typename Ordinal>
   void Export<Ordinal>::setupSamePermuteExport() 
   {
-    Ordinal const zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-    Ordinal const one = Teuchos::OrdinalTraits<Ordinal>::one();
-    Ordinal const negOne = zero - one;
-    Map<Ordinal> const& source = getSourceMap();
-    Map<Ordinal> const& target = getTargetMap();
-    std::vector<Ordinal> const& sourceGIDs = source.getMyGlobalMap();
-    std::vector<Ordinal> const& targetGIDs = target.getMyGlobalMap();
+    const Map<Ordinal> & source = getSourceMap();
+    const Map<Ordinal> & target = getTargetMap();
+    Teuchos::ArrayView<const Ordinal> sourceGIDs = source.getMyGlobalEntries();
+    Teuchos::ArrayView<const Ordinal> targetGIDs = target.getMyGlobalEntries();
 
     // -- compute numSameIDs_ ---
     // go through GID lists of source and target. if the ith GID on both is the same, 
     // increment numSameIDs_ and try the next. as soon as you come to a pair that don't
     // match, give up.
-    typename std::vector<Ordinal>::const_iterator sourceIter = sourceGIDs.begin();
-    typename std::vector<Ordinal>::const_iterator targetIter = targetGIDs.begin();
-    while((sourceIter != sourceGIDs.end()) && 
-        (targetIter != targetGIDs.end()) && 
-        (*targetIter == *sourceIter)) {
-      ExportData_->numSameIDs_++;
-      sourceIter++;
-      targetIter++;
+    typename Teuchos::ArrayView<const Ordinal>::iterator sourceIter = sourceGIDs.begin(),
+                                                         targetIter = targetGIDs.begin();
+    while( sourceIter != sourceGIDs.end() && targetIter != targetGIDs.end() && *sourceIter == *targetIter )
+    {
+      ++ExportData_->numSameIDs_;
+      ++sourceIter;
+      ++targetIter;
     }
-    // sourceIter should now point to the GID of the first non-same entry
+    // sourceIter should now point to the GID of the first non-same entry or at the end of targetGIDs
 
     // -- compute numPermuteIDs and numRemoteIDs --
     // -- fill permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and remoteLIDs_ --
     // go through remaining entries in sourceGIDs. if target owns that GID, 
     // increment numPermuteIDs_, and add entries to permuteToLIDs_ and permuteFromLIDs_.
     // otherwise increment numExportIDs_ and add entries to exportLIDs_ and exportGIDs_.
-    for(; sourceIter != sourceGIDs.end(); sourceIter++) {
-      if(target.isMyGID(*sourceIter)) {
-        ExportData_->numPermuteIDs_++;
-        ExportData_->permuteToLIDs_.push_back(target.getLID(*sourceIter));
-        ExportData_->permuteFromLIDs_.push_back(source.getLID(*sourceIter));
+    for(; sourceIter != sourceGIDs.end(); ++sourceIter) {
+      if(target.isMyGlobalIndex(*sourceIter)) {
+        // both source and target list this GID (*targetIter)
+        // determine the LIDs for this GID on both Maps and add them to the permutation lists
+        ExportData_->permuteToLIDs_.push_back(  target.getLocalIndex(*sourceIter));
+        ExportData_->permuteFromLIDs_.push_back(source.getLocalIndex(*sourceIter));
       }
       else {
-        ExportData_->numExportIDs_++;
-        ExportData_->exportLIDs_.push_back(source.getLID(*sourceIter));
+        ExportData_->exportLIDs_.push_back(source.getLocalIndex(*sourceIter));
         ExportData_->exportGIDs_.push_back(*sourceIter);
       }
     }
+    ExportData_->numPermuteIDs_ = Teuchos::as<Ordinal>(ExportData_->permuteToLIDs.size());
+    ExportData_->numExportIDs_  = Teuchos::as<Ordinal>(ExportData_->exportLIDs_.size());
 
-    if((ExportData_->numExportIDs_ > zero) && (!source.isGlobal())) {
-      throw reportError("Source has export LIDs but is not distributed globally.", 1); 
-      //*** what do we do here??? ***
-    }
+    /* FINISH
+    TEST_FOR_EXCEPTION( (ExportData_->numExportIDs_ > zero) && (!source.isDistributed()), std::runtime_error, 
+        "Tpetra::Export<" << Teuchos::OrdinalTraits<Ordinal>::name() 
+        << ">::setupSamePermuteExport(): Source has export LIDs but Source is not distributed globally.");
 
     // -- compute exportImageIDs_ --
     // get list of images that own the GIDs in exportGIDs_ (in the target Map)
@@ -313,6 +316,7 @@ namespace Tpetra {
     if(count > zero) {
       throw reportError("Source has GIDs not found in Target.", 2);
     }
+    */
   }
 
   template <typename Ordinal>
