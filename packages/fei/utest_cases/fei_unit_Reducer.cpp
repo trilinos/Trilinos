@@ -207,7 +207,7 @@ int test_Reducer_test1(MPI_Comm comm)
   int idType = 0;
   vspace->defineIDTypes(1, &idType);
 
-  vspace->initSolutionEntries(fieldID, 1, idType, eqns.size(), &eqns[0]);
+  vspace->addDOFs(fieldID, 1, idType, eqns.size(), &eqns[0]);
 
   mgraph->initComplete();
 

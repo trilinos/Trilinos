@@ -38,14 +38,14 @@ else
 PETSC_DIR=
 endif
 
-if BUILD_EXAMPLES
+if SUB_EXAMPLE
 EXAMPLES=example
 else
 EXAMPLES=
 endif
 
-if BUILD_TESTS
-TESTS=test_utils test utest_cases utest \
+if SUB_TEST
+TESTS=test utest_cases utest \
 	test/elemDOF_Aztec \
 	test/remEssBCs \
 	test/cr_lagrange_20quad \
@@ -56,7 +56,7 @@ else
 TESTS=
 endif
 
-SUBDIRS=base $(TRILINOS_DIR) $(PETSC_DIR) $(TESTS) $(EXAMPLES)
+SUBDIRS=base $(TRILINOS_DIR) $(PETSC_DIR) test_utils $(TESTS) $(EXAMPLES)
 
 EXTRA_DIST = \
 	RELEASE_NOTES.txt
@@ -85,6 +85,14 @@ tests:
 	@echo "Building fei tests."
 	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	cd $(top_builddir)/utest_cases && $(MAKE)
+	cd $(top_builddir)/utest && $(MAKE)
+	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE)
+	cd $(top_builddir)/test/remEssBCs && $(MAKE)
+	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE)
+	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE)
+	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE)
+	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE)
 	@echo ""
 	@echo "Finished building fei tests."
 	@echo ""
@@ -102,10 +110,39 @@ examples:
 	@echo ""
 	@echo "Finished building fei examples."
 	@echo ""
+
+install-examples:
+	cd $(top_builddir)/example && $(MAKE) install
 else
 examples:
 	@echo "fei examples were disabled at configure time"
+
+install-examples:
+	@echo "fei examples were disabled at configure time"
 endif
+
+clean-tests:
+	cd $(top_builddir)/test && $(MAKE) clean
+	cd $(top_builddir)/utest_cases && $(MAKE) clean
+	cd $(top_builddir)/utest && $(MAKE) clean
+	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE) clean
+	cd $(top_builddir)/test/remEssBCs && $(MAKE) clean
+	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE) clean
+	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE) clean
+	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE) clean
+	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/example && $(MAKE) clean
+
+everything:
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+
+install-everything:
+	$(MAKE) install && $(MAKE) install-examples
 
 dist-hook:
 	for file in $(DONT_DISTRIBUTE) ; do \

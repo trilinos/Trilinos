@@ -465,7 +465,7 @@ July 7 2005: version 2.14.00
     the prescribed value is to be imposed. This allows the underlying
     implementation code to be greatly simplified also.
 
- ??? ?? ???? version 2.23.00
+ Sep 10 2008 version 2.23.00
   - Removed API functions (and implementations) for the old boundary-condition
     mechanism that involved the alpha/beta/gamma arguments. Replacement
     functions accept lists of prescribed values along with offsets into the
@@ -477,4 +477,16 @@ July 7 2005: version 2.14.00
     similar to a standard allocator.
   - Fixed a bug in fei_Aztec_LinSysCore.cpp where dirichlet boundary-condition
     enforcement was assuming that the structure of the matrix is symmetric.
+
+ ??? ?? ???? minor version 2.23.01
+  - Fixed a bug where fei::VectorSpace::getGlobalIndexOffsets would seg-fault
+    if called before any initialization data had been input.
+  - Fixed a bug in fei_Reducer.cpp where submatrix contributions were
+    assumed to be symmetric.
+
+ ??? ?? ???? version 2.24.00
+  - 2.23.01 bug-fixes, plus:
+  - Removed classes fei::CommCore, fei::CommUtilsBase, snl_fei::CommUtils. These
+    are replaced by functions in fei_CommUtils.hpp. This is a simplification
+    and cleanup of the communications-code infrastructure.
 

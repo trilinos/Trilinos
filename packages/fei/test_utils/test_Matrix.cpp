@@ -1087,7 +1087,7 @@ int test_Matrix::test4()
     edges[i] = firstLocalEdge+i;
   }
 
-  CHK_ERR( espace->initSolutionEntries(edgeFieldID, 1, edgeIDType,
+  CHK_ERR( espace->addDOFs(edgeFieldID, 1, edgeIDType,
                                        numEdges, edges));
 
   fei::SharedPtr<fei::VectorSpace> dummy;

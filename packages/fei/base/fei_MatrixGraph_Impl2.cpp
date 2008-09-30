@@ -586,7 +586,7 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::VectorSpace* vecSpace,
       records[i] = collection->getRecordWithID(IDs[i]);
     }
     catch(std::runtime_error& exc) {
-      CHK_ERR( vecSpace->initSolutionEntries(idType, 1, &(IDs[i])) );
+      CHK_ERR( vecSpace->addDOFs(idType, 1, &(IDs[i])) );
       records[i] = collection->getRecordWithID(IDs[i]);
     }
   }
@@ -610,7 +610,7 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::VectorSpace* vecSpace,
       records[i] = collection->getRecordWithID(IDs[i]);
     }
     catch(std::runtime_error& exc) {
-      CHK_ERR( vecSpace->initSolutionEntries(fieldID, 1, idType, 1, &(IDs[i])));
+      CHK_ERR( vecSpace->addDOFs(fieldID, 1, idType, 1, &(IDs[i])));
       records[i] = collection->getRecordWithID(IDs[i]);
     }
   }
@@ -637,7 +637,7 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::Pattern* pattern,
       int id = connectedIdentifiers[i];
 
       for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
-        CHK_ERR( vecSpace->initSolutionEntries(fieldIDs[fieldOffset++],
+        CHK_ERR( vecSpace->addDOFs(fieldIDs[fieldOffset++],
                                                1, idTypes[i], 1, &id,
                                                &(recordList[i])));
       }
@@ -656,7 +656,7 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::Pattern* pattern,
 	for(i=0; i<numIDs; ++i) {
 	  int id = connectedIdentifiers[i];
 	  for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
-	    CHK_ERR( vecSpace->initSolutionEntries(fieldIDs[fieldOffset++],
+	    CHK_ERR( vecSpace->addDOFs(fieldIDs[fieldOffset++],
                                                    1, idType, 1, &id,
                                                    &(recordList[i])));
           }
@@ -665,13 +665,13 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::Pattern* pattern,
       break;
     case fei::Pattern::SIMPLE:
       {
-	CHK_ERR( vecSpace->initSolutionEntries(fieldIDs[0], 1, idType,
+	CHK_ERR( vecSpace->addDOFs(fieldIDs[0], 1, idType,
 						numIDs, connectedIdentifiers,
 						recordList) );
       }
       break;
     case fei::Pattern::NO_FIELD:
-      CHK_ERR( vecSpace->initSolutionEntries(idType, numIDs,
+      CHK_ERR( vecSpace->addDOFs(idType, numIDs,
 					     connectedIdentifiers, recordList));
       break;
     case fei::Pattern::GENERAL:
@@ -891,13 +891,13 @@ int fei::MatrixGraph_Impl2::initLagrangeConstraint(int constraintID,
 
   ConstraintType* constraint = getLagrangeConstraint(constraintID);
 
-  CHK_ERR( rowSpace_->initSolutionEntries(constraintIDType, 1, &constraintID) );
+  CHK_ERR( rowSpace_->addDOFs(constraintIDType, 1, &constraintID) );
 
   if (haveColSpace_) {
     if (colSpace_.get() == NULL) {
       ERReturn(-1);
     }
-    CHK_ERR( colSpace_->initSolutionEntries(constraintIDType,
+    CHK_ERR( colSpace_->addDOFs(constraintIDType,
 					    1, &constraintID) );
   }
 

@@ -57,7 +57,7 @@ int test_Algebraic::serialtest1()
     rowNumbers[i] = i;
   }
 
-  CHK_ERR( vspace->initSolutionEntries(idType, numRows, rowNumbers.dataPtr()) );
+  CHK_ERR( vspace->addDOFs(idType, numRows, rowNumbers.dataPtr()) );
 
   CHK_ERR( vspace->initComplete() );
 
@@ -145,7 +145,7 @@ int test_Algebraic::serialtest2()
     rowNumbers[i] = i;
   }
 
-  CHK_ERR( vspace->initSolutionEntries(idType, numRows, rowNumbers.dataPtr()) );
+  CHK_ERR( vspace->addDOFs(idType, numRows, rowNumbers.dataPtr()) );
 
   CHK_ERR( vspace->initComplete() );
 

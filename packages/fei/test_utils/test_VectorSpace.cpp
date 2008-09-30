@@ -54,7 +54,7 @@ int test_VectorSpace::test0()
   vspace.defineIDTypes(1, &idType);
   vspace.defineFields(fieldIDs.size(), &fieldIDs[0], &fieldSizes[0]);
 
-  CHK_ERR( vspace.initSolutionEntries(idType, 1, &ID) );
+  CHK_ERR( vspace.addDOFs(idType, 1, &ID) );
 
   for(i=0; i<numProcs_; ++i) {
     if (i == localProc_) continue;
@@ -66,7 +66,7 @@ int test_VectorSpace::test0()
 				  &numSharingProcsPerID, &sharingProc) );
   }
 
-  CHK_ERR( vspace.initSolutionEntries(fieldIDs[localProc_], 1, idType,
+  CHK_ERR( vspace.addDOFs(fieldIDs[localProc_], 1, idType,
 				      1, &ID) );
 
   CHK_ERR( vspace.initComplete() );
@@ -411,8 +411,8 @@ test_VectorSpace::create_VectorSpace(MPI_Comm comm,
   //
   //defineFields testdata->fieldIDs, testdata->fieldSizes
   //defineIDTypes testdata->idTypes
-  //initSolutionEntries testdata->ids with associated testdata->fieldIDs[0]
-  //initSolutionEntries testdata->ids with testdata->fieldIDs[1] if bothFields
+  //addDOFs testdata->ids with associated testdata->fieldIDs[0]
+  //addDOFs testdata->ids with testdata->fieldIDs[1] if bothFields
   //initSharedIDs  testdata->[shared-id-data] with testdata->idTypes[0]
   //
   fei::SharedPtr<fei::VectorSpace> vsptr;
@@ -452,13 +452,13 @@ test_VectorSpace::create_VectorSpace(MPI_Comm comm,
   vectorSpace.defineIDTypes(idTypes.size(),
 			    &idTypes[0]);
 
-  vectorSpace.initSolutionEntries(fieldIDs[0], 1,
+  vectorSpace.addDOFs(fieldIDs[0], 1,
 				  idTypes[0],
 				  ids.size(),
 				  &ids[0]);
 
   if (initSolnBothFields) {
-    vectorSpace.initSolutionEntries(fieldIDs[1], 1,
+    vectorSpace.addDOFs(fieldIDs[1], 1,
 				    idTypes[0],
 				    ids.size(),
 				    &ids[0]);

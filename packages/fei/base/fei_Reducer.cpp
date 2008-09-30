@@ -835,7 +835,7 @@ Reducer::addMatrixValues(int numRows, const int* rows,
     os << dbgprefix_<<"addMatrixValues(fei::Matrix)"<<FEI_ENDL;
   }
 
-  expand_work_arrays(numCols*2);
+  expand_work_arrays(numCols+numRows);
 
   const double** myvalues = const_cast<const double**>(values);
   if (format != FEI_DENSE_ROW) {

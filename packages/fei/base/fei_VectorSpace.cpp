@@ -145,7 +145,7 @@ fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
     sharedIDTables_(),
     ownerPatterns_(),
     sharerPatterns_(),
-    sharedRecordsSynchronized_(false),
+    sharedRecordsSynchronized_(true),
     ptBlkMap_(NULL),
     globalOffsets_(),
     globalIDOffsets_(),
@@ -169,8 +169,8 @@ fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
   ptBlkMap_ = NULL;
 
   int numProcs = fei::numProcs(comm_);
-  globalOffsets_.assign(numProcs, 0);
-  globalIDOffsets_.assign(numProcs, 0);
+  globalOffsets_.assign(numProcs+1, 0);
+  globalIDOffsets_.assign(numProcs+1, 0);
 
   setName(name);
 }
@@ -300,7 +300,7 @@ void fei::VectorSpace::defineIDTypes(int numIDTypes,
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::initSolutionEntries(int fieldID,
+int fei::VectorSpace::addDOFs(int fieldID,
 					  int numInstancesOfThisFieldPerID,
 					  int idType,
 					  int numIDs,
@@ -308,7 +308,7 @@ int fei::VectorSpace::initSolutionEntries(int fieldID,
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
-    os << dbgprefix_<<"initSolutionEntries, fID=" << fieldID
+    os << dbgprefix_<<"addDOFs, fID=" << fieldID
        <<", idT="<<idType <<", ninst="
        << numInstancesOfThisFieldPerID << " {";
     for(int j=0; j<numIDs; ++j) {
@@ -335,7 +335,7 @@ int fei::VectorSpace::initSolutionEntries(int fieldID,
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::initSolutionEntries(int fieldID,
+int fei::VectorSpace::addDOFs(int fieldID,
 					  int numInstancesOfThisFieldPerID,
 					  int idType,
 					  int numIDs,
@@ -344,7 +344,7 @@ int fei::VectorSpace::initSolutionEntries(int fieldID,
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
-    os << dbgprefix_<<"initSolutionEntries*, fID=" << fieldID
+    os << dbgprefix_<<"addDOFs*, fID=" << fieldID
        <<", idT="<<idType <<", ninst="
        << numInstancesOfThisFieldPerID << " {";
     for(int j=0; j<numIDs; ++j) {
@@ -359,7 +359,7 @@ int fei::VectorSpace::initSolutionEntries(int fieldID,
   int idx = snl_fei::binarySearch(idType, idTypes_);
   if (idx < 0) {
     FEI_OSTRINGSTREAM osstr;
-    osstr << "fei::VectorSpace::initSolutionEntries: error, idType " << idType
+    osstr << "fei::VectorSpace::addDOFs: error, idType " << idType
 	  << " not recognized. (idTypes need to be initialized via the"
 	  << " method VectorSpace::defineIDTypes)";
     throw std::runtime_error(osstr.str());
@@ -378,13 +378,13 @@ int fei::VectorSpace::initSolutionEntries(int fieldID,
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::initSolutionEntries(int idType,
+int fei::VectorSpace::addDOFs(int idType,
 					  int numIDs,
 					  const int* IDs)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
-    os << dbgprefix_<<"initSolutionEntries idT=" <<idType<<" {";
+    os << dbgprefix_<<"addDOFs idT=" <<idType<<" {";
     for(int j=0; j<numIDs; ++j) {
       os << IDs[j] << " ";
       if (j>0 && j%20==0) os << FEI_ENDL << dbgprefix_;
@@ -406,14 +406,14 @@ int fei::VectorSpace::initSolutionEntries(int idType,
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::initSolutionEntries(int idType,
+int fei::VectorSpace::addDOFs(int idType,
 					  int numIDs,
 					  const int* IDs,
 					  fei::Record** records)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
-    os << dbgprefix_<<"initSolutionEntries* idT=" <<idType<<" {";
+    os << dbgprefix_<<"addDOFs* idT=" <<idType<<" {";
     for(int j=0; j<numIDs; ++j) {
       os << IDs[j] << " ";
       if (j>0 && j%20==0) os << FEI_ENDL << dbgprefix_;
@@ -478,7 +478,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
       }
     }
     catch (std::runtime_error& exc) {
-      CHK_ERR( initSolutionEntries(idType, 1, &(sharedIDs[i])) );
+      CHK_ERR( addDOFs(idType, 1, &(sharedIDs[i])) );
     }
   }
 
@@ -528,7 +528,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
       }
     }
     catch (std::runtime_error& exc) {
-      CHK_ERR( initSolutionEntries(idType, 1, &(sharedIDs[i])) );
+      CHK_ERR( addDOFs(idType, 1, &(sharedIDs[i])) );
     }
   }
 

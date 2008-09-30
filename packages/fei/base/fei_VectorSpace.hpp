@@ -129,7 +129,7 @@ namespace fei {
 	@param IDs Input List of identifiers over which 'fieldID' is active.
 	@return error-code 0 if successful
      */
-    int initSolutionEntries(int fieldID,
+    int addDOFs(int fieldID,
 			    int numInstancesOfThisFieldPerID,
 			    int idType,
 			    int numIDs,
@@ -154,7 +154,7 @@ namespace fei {
 	solution-space.
 	@return error-code 0 if successful
     */
-    int initSolutionEntries(int idType,
+    int addDOFs(int idType,
 			    int numIDs,
 			    const int* IDs);
 
@@ -648,14 +648,14 @@ namespace fei {
 			     int* indices,
 			     int& numIndices);
 
-    int initSolutionEntries(int fieldID,
+    int addDOFs(int fieldID,
 			    int numInstancesOfThisFieldPerID,
 			    int idType,
 			    int numIDs,
 			    const int* IDs,
 			    fei::Record** records);
 
-    int initSolutionEntries(int idType,
+    int addDOFs(int idType,
 			    int numIDs,
 			    const int* IDs,
 			    fei::Record** records);

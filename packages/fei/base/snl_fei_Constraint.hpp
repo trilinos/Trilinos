@@ -244,7 +244,7 @@ inline snl_fei::Constraint<fei::Record*,fei::record_lessthan>::Constraint(int id
 
     fei::Record* rec = NULL;
 
-    vspace->initSolutionEntries(fieldIDs[i], 1, idTypes[i], 1, &(IDs[i]));
+    vspace->addDOFs(fieldIDs[i], 1, idTypes[i], 1, &(IDs[i]));
     rec = recordCollection->getRecordWithID(IDs[i]);
 
     unsigned fieldSize = vspace->getFieldSize(fieldIDs[i]);
