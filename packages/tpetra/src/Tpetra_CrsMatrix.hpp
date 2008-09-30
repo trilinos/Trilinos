@@ -33,6 +33,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_VerboseObject.hpp>
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
@@ -155,7 +156,7 @@ namespace Tpetra
 
       //! @name Construction Methods
       //@{ 
-      
+
       //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
       void fillComplete();
 
@@ -230,7 +231,13 @@ namespace Tpetra
       // TODO: consider using a contiguous storage
       // costs are: insertions are more difficult
       mutable Teuchos::RCP<MultiVector<Ordinal,Scalar> > importMV_, exportMV_;
+
+      // importer is needed if DomainMap is not sameas ColumnMap
+      // FINISH: currently, domain map == range map == row map which is typically != column map
+      //         ergo, we will usually have an importer
       Teuchos::RCP<Import<Ordinal> > importer_;
+      // exporter is needed if RowMap is not sameas DomainMap
+      // FINISH: currently, domain map == range map == row map, so that we never have an exporter
       Teuchos::RCP<Export<Ordinal> > exporter_;
 
       // a map between a (non-local) row and a list of (col,val)
@@ -531,19 +538,22 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(X.numVectors() != Y.numVectors(), std::runtime_error,
         "Tpetra::CrsMatrix::apply(X,Y): X and Y must have the same number of vectors.");
 
-    // DEBUG
-    /*
+    // FINISH: in debug mode, we need to establish that X and Y are compatible with (sameas?) DomainMap and RangeMap (respectively)
+    // FINISH: or maybe not; I guess this should happen below in the calls to import(), export()
+
+    // ******************* DEBUG ******************* 
     int myImageID = Teuchos::rank(*comm_);
+    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
     if (myImageID == 0) {
-      std::cerr << "Entering CrsMatrix::apply()" << std::endl
+      *out << "Entering CrsMatrix::apply()" << std::endl
                 << "Column Map: " << std::endl;
     }
-    std::cerr << this->getColMap() << std::endl;
+    *out << this->getColMap() << std::endl;
     if (myImageID == 0) {
-      std::cerr << "Initial input: " << std::endl;
+      *out << "Initial input: " << std::endl;
     }
-    */
-    // END DEBUG
+    X.print(*out); X.printValues(*out);
+    // *************** END DEBUG ******************* 
 
     Ordinal numVectors = X.numVectors();
     // because of Views, it is difficult to determine if X and Y point to the same data. 
@@ -565,6 +575,11 @@ namespace Tpetra
       // generate a copy of X 
       Xcopy = Teuchos::rcp(new MultiVector<Ordinal,Scalar>(X));
       Xdata = Xcopy->extractConstView();
+      // ******************* DEBUG ******************* 
+      if (myImageID == 0) *out << "X and Y are co-located, duplicating X results in a stride copy" << std::endl;
+      *out << this->getColMap() << std::endl;
+      Xcopy->print(*out); Xcopy->printValues(*out);
+      // *************** END DEBUG ******************* 
     }
     if (importer_ != null) {
       if (importMV_ != null && importMV_->numVectors() != numVectors) importMV_ = null;
@@ -586,8 +601,15 @@ namespace Tpetra
       if (importer_ != null) {
         importMV_->doImport(X, *importer_, INSERT);
         Xdata = importMV_->extractConstView();
+        // ******************* DEBUG ******************* 
+        if (myImageID == 0) {
+          *out << "Performed import of X..." << std::endl;
+        }
+        importMV_->print(*out); importMV_->printValues(*out);
+        // *************** END DEBUG ******************* 
       }
       // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+      // We will compute solution into the to-be-exported MV; get a view
       if (exporter_ != null) {
         Ydata = exportMV_->extractView();
       }
@@ -598,12 +620,31 @@ namespace Tpetra
       else {
         GeneralMM(Xdata,Ydata);
       }
+      // ******************* DEBUG ******************* 
+      if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
+      if (exportMV_ != null) {
+        exportMV_->print(*out); exportMV_->printValues(*out);
+      } else {
+        Y.print(*out); Y.printValues(*out);
+      }
+      // *************** END DEBUG ******************* 
+      // do the export
       if (exporter_ != null) {
-        Y.putScalar(0.0);  // Make sure target is zero
+        Y.putScalar(0.0);  // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
         Y.doExport(*exportMV_, *exporter_, ADD); // Fill Y with Values from export vector
+        // ******************* DEBUG ******************* 
+        if (myImageID == 0) *out << "Output vector after export()..." << std::endl;
+        Y.print(*out); Y.printValues(*out);
+        // *************** END DEBUG ******************* 
       }
       // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
-      if (Y.isDistributed() == false) Y.reduce();
+      if (Y.isDistributed() == false) {
+        Y.reduce();
+        // ******************* DEBUG ******************* 
+        if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
+        Y.print(*out); Y.printValues(*out);
+        // *************** END DEBUG ******************* 
+      }
     }
   }
 

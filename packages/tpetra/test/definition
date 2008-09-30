@@ -3,14 +3,14 @@
 #
 
 (FRAMEWORK, INSTALL, TpetraTests) {
-    DIRS = Platform, Distributor, Map, Directory, ImportExport, MultiVector;
+    DIRS = Platform, Distributor, Map, Directory, ImportExport, MultiVector, CrsMatrix;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }
 
 (TpetraInProgress) {
-    DIRS = Vector, CrsMatrix;
+    DIRS = Vector;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
