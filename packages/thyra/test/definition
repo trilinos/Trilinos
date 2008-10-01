@@ -135,7 +135,7 @@
 
 (FRAMEWORK, INSTALL, EpetraExtThyra) {
   TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
-  ARGS = --max-iters=6;
+  ARGS = --max-iters=6, --max-iters=6 --x-scale=2.0 --f-scale=3.0;
   COMM = SERIAL;
 }
 

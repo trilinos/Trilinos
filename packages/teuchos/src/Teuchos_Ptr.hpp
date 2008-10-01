@@ -142,4 +142,15 @@ Ptr<T>::Ptr( const RCP<T> &p )
 } // namespace Teuchos
 
 
+template<class T>
+std::ostream& Teuchos::operator<<( std::ostream& out, const Ptr<T>& p )
+{
+  out
+    << TypeNameTraits<RCP<T> >::name() << "{"
+    << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
+    <<"}";
+  return out;
+}
+
+
 #endif // TEUCHOS_PTR_HPP

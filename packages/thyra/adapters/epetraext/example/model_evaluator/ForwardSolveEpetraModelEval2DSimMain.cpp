@@ -9,11 +9,47 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp"
 
+
+namespace {
+  
+
+const Teuchos::RCP<const Epetra_Vector>
+createScalingVec(const double &scale, const Epetra_Map &map)
+{
+  Teuchos::RCP<Epetra_Vector> scalingVec = Teuchos::rcp(new Epetra_Vector(map));
+  scalingVec->PutScalar(scale);
+  return scalingVec;
+}
+
+
+void scaleEpetraModelEvaluator( const double &s_x, const double &s_f,
+  const Teuchos::Ptr<Thyra::EpetraModelEvaluator> &model
+  )
+{
+  if (s_x != 1.0) {
+    model->setStateVariableScalingVec(
+      createScalingVec(s_x, *model->getEpetraModel()->get_x_map())
+      );
+  }
+  if (s_f != 1.0) {
+    model->setStateFunctionScalingVec(
+      createScalingVec(s_f, *model->getEpetraModel()->get_f_map())
+      );
+  }
+}
+
+
+} // namespace
+
+
 int main( int argc, char* argv[] )
 {
 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::CommandLineProcessor;
-  typedef Teuchos::RCP<Thyra::VectorBase<double> > VectorPtr;
+  using Teuchos::outArg;
+  typedef RCP<Thyra::VectorBase<double> > VectorPtr;
 
   bool success = true;
 
@@ -74,6 +110,10 @@ int main( int argc, char* argv[] )
     bool showGetInvalidArg = false;
     clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg,
       "Determines if an attempt is made to get an invalid/unsupported ModelEvaluator output argument (2DSim only)" );
+    double s_x = 1.0;
+    clp.setOption( "x-scale", &s_x, "State variables scaling." );
+    double s_f = 1.0;
+    clp.setOption( "f-scale", &s_f, "State function scaling." );
   
     CommandLineProcessor::EParseCommandLineReturn
       parse_return = clp.parse(argc,argv,&std::cerr);
@@ -81,12 +121,12 @@ int main( int argc, char* argv[] )
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
       return parse_return;
 
-    Teuchos::RCP<Teuchos::FancyOStream>
+    RCP<Teuchos::FancyOStream>
       out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
     *out << "\nCreating the nonlinear equations object ...\n";
     
-    Teuchos::RCP<EpetraExt::ModelEvaluator> epetraModel;
+    RCP<EpetraExt::ModelEvaluator> epetraModel;
     if(use4DOpt) {
       epetraModel = rcp(new EpetraModelEval4DOpt(0.0,0.0,p0,p1,d,x00,x01,p0,p1));
     }
@@ -98,30 +138,31 @@ int main( int argc, char* argv[] )
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     linearSolverBuilder.setParameterList(Teuchos::parameterList());
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = linearSolverBuilder.createLinearSolveStrategy("Amesos");
     // Above, we are just using the stratimkikos class
     // DefaultLinearSolverBuilder to create a default Amesos solver
     // (typically KLU) with a default set of options.  By setting a parameter
     // list on linearSolverBuilder, you build from a number of solvers.
 
-    Teuchos::RCP<Thyra::EpetraModelEvaluator>
+    RCP<Thyra::EpetraModelEvaluator>
       epetraThyraModel = rcp(new Thyra::EpetraModelEvaluator());
     
-    Teuchos::RCP<Thyra::ModelEvaluator<double> > thyraModel;
+    RCP<Thyra::ModelEvaluator<double> > thyraModel;
     if(externalFactory) {
-      epetraThyraModel->initialize(epetraModel,Teuchos::null);
-      thyraModel = Teuchos::rcp(
+      epetraThyraModel->initialize(epetraModel, Teuchos::null);
+      thyraModel = rcp(
         new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(
-          epetraThyraModel
-          ,lowsFactory
+          epetraThyraModel, lowsFactory
           )
         );
     }
     else {
-      epetraThyraModel->initialize(epetraModel,lowsFactory);
+      epetraThyraModel->initialize(epetraModel, lowsFactory);
       thyraModel = epetraThyraModel;
     }
+
+    scaleEpetraModelEvaluator( s_x, s_f, epetraThyraModel.ptr() );
     
     if( showSetInvalidArg ) {
       *out << "\nAttempting to set an invalid input argument that throws an exception ...\n\n";
@@ -140,7 +181,7 @@ int main( int argc, char* argv[] )
     Thyra::SolveCriteria<double> solveCriteria; // Sets defaults
     solveCriteria.solveMeasureType.set(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_NORM_RHS);
     solveCriteria.requestedTol = tol;
-    solveCriteria.extraParameters = Teuchos::rcp(new Teuchos::ParameterList("Nonlinear Solve"));
+    solveCriteria.extraParameters = Teuchos::parameterList("Nonlinear Solve");
     solveCriteria.extraParameters->set("Max Iters",int(maxIters));
 
     newtonSolver.setModel(thyraModel);

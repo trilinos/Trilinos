@@ -429,9 +429,15 @@ Ptr<T2> ptr_dynamic_cast(
 }
 
 
-// 2008/09/24: rabartl: I have removed the specialization TypeNameTraits<T> since
-// I don't want the type T to have to be fully defined in order to use Ptr<T>.  If
-// name demangling is turned on, the default will be a fine name.
+/** \brief Output stream inserter.
+ *
+ * The implementation of this function just print pointer addresses and
+ * therefore puts no restrictions on the data types involved.
+ *
+ * \relates Ptr
+ */
+template<class T>
+std::ostream& operator<<( std::ostream& out, const Ptr<T>& p );
 
 
 } // namespace Teuchos

@@ -672,6 +672,32 @@ Embedded& Teuchos::getNonconstEmbeddedObj( const RCP<T>& p )
 }
 
 
+template<class TOrig, class Embedded, class T>
+Teuchos::Ptr<const Embedded>
+Teuchos::getOptionalEmbeddedObj( const RCP<T>& p )
+{
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  const Ptr<const Dealloc_t> dealloc = get_optional_dealloc<Dealloc_t>(p);
+  if (!is_null(dealloc)) {
+    return ptr(&dealloc->getObj());
+  }
+  return null;
+}
+
+
+template<class TOrig, class Embedded, class T>
+Teuchos::Ptr<Embedded>
+Teuchos::getOptionalNonconstEmbeddedObj( const RCP<T>& p )
+{
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  const Ptr<Dealloc_t> dealloc = get_optional_nonconst_dealloc<Dealloc_t>(p);
+  if (!is_null(dealloc)) {
+    return ptr(&dealloc->getNonconstObj());
+  }
+  return null;
+}
+
+
 template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const RCP<T>& p )
 {

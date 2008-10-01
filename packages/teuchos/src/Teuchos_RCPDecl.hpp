@@ -1454,8 +1454,8 @@ template<class TOrig, class Embedded, class T>
 const Embedded& getEmbeddedObj( const RCP<T>& p );
 
 
-/** \brief Get a const reference to an embedded object that was set by calling
- * <tt>rcpWithEmbeddedObjPreDestroy()</tt>,
+/** \brief Get a non-const reference to an embedded object that was set by
+ * calling <tt>rcpWithEmbeddedObjPreDestroy()</tt>,
  * <tt>rcpWithEmbeddedObjPostDestory()</tt>, or <tt>rcpWithEmbeddedObj()</tt>.
  *
  * \relates RCP
@@ -1464,10 +1464,30 @@ template<class TOrig, class Embedded, class T>
 Embedded& getNonconstEmbeddedObj( const RCP<T>& p );
 
 
+/** \brief Get an optional Ptr to a const embedded object if it was set by
+ * calling <tt>rcpWithEmbeddedObjPreDestroy()</tt>,
+ * <tt>rcpWithEmbeddedObjPostDestory()</tt>, or <tt>rcpWithEmbeddedObj()</tt>.
+ *
+ * \relates RCP
+ */
+template<class TOrig, class Embedded, class T>
+Ptr<const Embedded> getOptionalEmbeddedObj( const RCP<T>& p );
+
+
+/** \brief Get an optional Ptr to a non-const embedded object if it was set by
+ * calling <tt>rcpWithEmbeddedObjPreDestroy()</tt>,
+ * <tt>rcpWithEmbeddedObjPostDestory()</tt>, or <tt>rcpWithEmbeddedObj()</tt>.
+ *
+ * \relates RCP
+ */
+template<class TOrig, class Embedded, class T>
+Ptr<Embedded> getOptionalNonconstEmbeddedObj( const RCP<T>& p );
+
+
 /** \brief Output stream inserter.
  *
- * The implementation of this function just print pointer addresse<s and
- * therefore puts not restrictions on the data types involved.
+ * The implementation of this function just print pointer addresses and
+ * therefore puts no restrictions on the data types involved.
  *
  * \relates RCP
  */

@@ -109,10 +109,13 @@ void scaleModelVar(
       if ( is_null(scaled_vec) )
         scaled_vec = rcp(new Epetra_Vector(orig_vec->Map()));
       // See if there is a "hidden" forward scaling vector to use
-      Ptr<const RCP<const Epetra_Vector> >
-        fwd_s_vec
-        = Teuchos::get_optional_extra_data<const RCP<const Epetra_Vector> >(
+      Ptr<const RCP<const Epetra_Vector> > fwd_s_vec =
+        Teuchos::getOptionalEmbeddedObj<Epetra_Vector, RCP<const Epetra_Vector> >(
+          inv_s_vec);
+/*
+        Teuchos::get_optional_extra_data<const RCP<const Epetra_Vector> >(
           inv_s_vec, fwdScalingVecName );
+*/
       if ( !is_null(fwd_s_vec) ) {
         // Use the "hidden" forward scaling vector and multiply
         scaled_vec->Multiply( 1.0, **fwd_s_vec, *orig_vec, 0.0 );
@@ -717,14 +720,16 @@ EpetraExt::createInverseModelScalingVector(
   Teuchos::RCP<const Epetra_Vector> const& scalingVector
   )
 {
-  Teuchos::RCP<Epetra_Vector>
-    invScalingVector = Teuchos::rcp(new Epetra_Vector(scalingVector->Map()));
+  Teuchos::RCP<Epetra_Vector> invScalingVector =
+    Teuchos::rcpWithEmbeddedObj(
+      new Epetra_Vector(scalingVector->Map()),
+      scalingVector
+      );
   invScalingVector->Reciprocal(*scalingVector);
-  // Embedd the forward scaling vector.  This is done in order to achieve the
-  // exact same numerics as before this refactoring and to improve runtime
-  // speed and accruacy.
-  Teuchos::set_extra_data( scalingVector, fwdScalingVecName, &invScalingVector );
   return invScalingVector;
+  // Above, we embedd the forward scaling vector.  This is done in order to
+  // achieve the exact same numerics as before this refactoring and to improve
+  // runtime speed and accruacy.
 }
 
 

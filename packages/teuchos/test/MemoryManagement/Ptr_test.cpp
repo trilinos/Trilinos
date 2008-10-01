@@ -79,6 +79,7 @@ int main( int argc, char* argv[] ) {
     {
       // Test null construction
       Ptr<A> a_ptr;
+      *out << "\nNull a_ptr = " << a_ptr << "\n";
       TEUCHOS_ASSERT_EQUALITY( 0, a_ptr.get() );
       TEUCHOS_ASSERT_EQUALITY( 0, a_ptr.getRawPtr() );
 #ifdef TEUCHOS_DEBUG
@@ -108,6 +109,7 @@ int main( int argc, char* argv[] ) {
       // Test basic construction of Ptr
       A a;
       Ptr<A> a_ptr(&a);
+      *out << "\nNon-null a_ptr = " << a_ptr << "\n";
       TEUCHOS_ASSERT_EQUALITY( &a, &*a_ptr );
       TEUCHOS_ASSERT_EQUALITY( &a, a_ptr.get() );
       TEUCHOS_ASSERT_EQUALITY( &a, a_ptr.getRawPtr() );

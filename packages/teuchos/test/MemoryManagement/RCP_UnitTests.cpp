@@ -11,12 +11,49 @@ using Teuchos::null;
 using Teuchos::Ptr;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcp;
+using Teuchos::rcpWithEmbeddedObj;
+using Teuchos::getOptionalEmbeddedObj;
+using Teuchos::getOptionalNonconstEmbeddedObj;
 using Teuchos::getConst;
 using Teuchos::NullReferenceError;
 using Teuchos::DanglingReferenceError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
+
+
+TEUCHOS_UNIT_TEST( RCP, getOptionalEmbeddedObj_null )
+{
+  ECHO(RCP<A> a_rcp = rcp(new A));
+  const Ptr<const RCP<C> > c_ptr_rcp_1 =
+    getOptionalEmbeddedObj<A, RCP<C> >(a_rcp);
+  TEST_EQUALITY_CONST( c_ptr_rcp_1, null );
+  const Ptr<RCP<C> > c_ptr_rcp_2 =
+    getOptionalNonconstEmbeddedObj<A, RCP<C> >(a_rcp);
+  TEST_EQUALITY_CONST( c_ptr_rcp_2, null );
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, getOptionalEmbeddedObj_default )
+{
+
+  ECHO(RCP<C> c_rcp = rcp(new C));
+  ECHO(RCP<A> a_rcp = rcpWithEmbeddedObj(new A, c_rcp));
+
+  Ptr<const RCP<C> > c_ptr_rcp_1 =
+    getOptionalEmbeddedObj<A, RCP<C> >(a_rcp);
+  TEST_EQUALITY_CONST( is_null(c_ptr_rcp_1), false );
+  TEST_EQUALITY( (*c_ptr_rcp_1).getRawPtr(), c_rcp.getRawPtr() );
+  TEST_EQUALITY( (*c_ptr_rcp_1)->C_g(), C_g_return );
+
+  Ptr<RCP<C> > c_ptr_rcp_2 =
+    getOptionalNonconstEmbeddedObj<A, RCP<C> >(a_rcp);
+  TEST_EQUALITY_CONST( is_null(c_ptr_rcp_2), false );
+  TEST_EQUALITY( (*c_ptr_rcp_2).getRawPtr(), c_rcp.getRawPtr() );
+  TEST_EQUALITY( (*c_ptr_rcp_2)->C_f(), C_f_return );
+
+}
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
