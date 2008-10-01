@@ -510,23 +510,37 @@ Document has not been publicly released.  Will add a reference when available.
 
 \section user_guide_step1 Step 1: Configuring, Building, and installing Phalanx
 
+\subsection ug_step1_general A. General Library Requirements
 Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It can be enabled as part of a trilinos build with the configure option "--enable-phalanx".  Phalanx currently has direct dependencies on the following third party libraries:
 
-- Requires the <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a> utilities library, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
+- <b>Requires</b> the <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a> utilities library, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
  
- - Requires the <a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic Differentiation Library</a>, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
+ - <b>Requires</b> the <a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic Differentiation Library</a>, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
 
- - Requires the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>.  You must add the path to the Boost library during Trilinos configuration using the flag "--withincdirs=<path>".
+ - <b>Requires</b> the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>.  You must add the path to the Boost library during Trilinos configuration using the flag "--withincdirs=<path>".
 
- - Optional: Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  Use the configure option "--with-tvmet" to enable the tvmet functionality in the performance tests.  You must add the path to the TVMET library during Trilinos configuration using the flag "--withincdirs=<path>".
+\subsection ug_step1_performance B. Performance Example Requirements
 
-\subsection da A. Install Boost
+ - <b>Optional:</b> Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  Use the configure option "--with-tvmet" to enable the tvmet functionality in the performance tests.  You must add the path to the TVMET library during Trilinos configuration using the flag "--withincdirs=<path>".
+
+\subsection ug_step1_fem C. Nonlinear Finite Element Example Requirements
+
+To build the example problem in "phalanx/example/FEM_Nonlinear", a sparse matrix and corresponding linear solvers are required.  The following <b>Trilinos</b> packages need to be enabled to build the FEM_Nonlinear example:
+
+ - <b>Optional:</b> the <a href="http://trilinos.sandia.gov/packages/epetra">Epetra Library</a>, supplies the linear algebra data structures for spares matrices.  Can be enabled during the Trilinos configure with the flag "--enable-ifpack". 
+
+ - <b>Optional:</b> the <a href="http://trilinos.sandia.gov/packages/ifpack">Ifpack Library</a>, supplies incomplete factorization preconditioners.  Can be enabled during the Trilinos configure with the flag "--enable-ifpack". 
+
+ -  <b>Optional:</b> the <a href="http://trilinos.sandia.gov/packages/belos">Belos Library</a>, supplies block GMRES iterative linear solver.  Can be enabled during the Trilinos configure with the flag "--enable-belos".  
+
+\subsection da D. Install Boost
+
 You must have boost installed on your system.  As we only require the MPL library headers, you only need to untar the source code and should not even need to run the configure script.
 
-\subsection db B. Configure Trilinos/Phalanx
+\subsection db E. Configure Trilinos/Phalanx
 The general instructions for building trilinos can be found at <a href="http://trilinos.sandia.gov/documentation.html">Trilinos Documentation Page</a>.  Of particular importance are the Overview, User Guide, and Tutorial documents.  At a minimum you must enable the Teuchos, Sacado, and Phalanx packages.  An example configure script is:
 
-\verbinclude reconfigure
+\verbinclude reconfigure.linux
 
 Once configure is run, build and install the library with the command:
 

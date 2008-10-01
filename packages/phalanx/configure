@@ -743,6 +743,12 @@ SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
 BUILD_TVMET_TRUE
 BUILD_TVMET_FALSE
+BUILD_PHALANX_EPETRA_TRUE
+BUILD_PHALANX_EPETRA_FALSE
+BUILD_PHALANX_IFPACK_TRUE
+BUILD_PHALANX_IFPACK_FALSE
+BUILD_PHALANX_BELOS_TRUE
+BUILD_PHALANX_BELOS_FALSE
 F77
 FFLAGS
 ac_ct_F77
@@ -1375,6 +1381,17 @@ Optional Features:
   --enable-libcheck       Check for some third-party libraries. (Cannot be
                           disabled unless tests and examples are also
                           disabled.) (default is yes)
+  --enable-epetra         Implicitly build epetra support for phalanx
+                          examples. Can be overridden with
+                          --<en|dis>able-phalanx-epetra.
+  --enable-phalanx-epetra Build epetra support for phalanx examples.
+  --enable-ifpack         Implicitly build ifpack support for phalanx
+                          examples. Can be overridden with
+                          --<en|dis>able-phalanx-ifpack.
+  --enable-phalanx-ifpack Build ifpack support for phalanx examples.
+  --enable-belos          Implicitly build belos support for phalanx examples.
+                          Can be overridden with --<en|dis>able-phalanx-belos.
+  --enable-phalanx-belos  Build belos support for phalanx examples.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5850,6 +5867,152 @@ done
 
 
 
+for ac_header in fstream fstream.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## --------------------------------- ##
+## Report this to rppawlo@sandia.gov ##
+## --------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ break
+fi
+
+done
+
+
+
 for ac_header in iomanip iomanip.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -7032,6 +7195,12 @@ fi
 if test "X$ac_cv_header_cstddef" != "Xyes" && test "X$ac_cv_header_stddef_h" != "Xyes"; then
   { { echo "$as_me:$LINENO: error: Cannot find cstddef or stddef.h.  Phalanx requires at least one or the other." >&5
 echo "$as_me: error: Cannot find cstddef or stddef.h.  Phalanx requires at least one or the other." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+if test "X$ac_cv_header_fstream" != "Xyes" && test "X$ac_cv_header_fstream_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find fstream or fstream.h.  Phalanx requires at least one or the other." >&5
+echo "$as_me: error: Cannot find fstream or fstream.h.  Phalanx requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -8221,7 +8390,6 @@ echo "$as_me: error: Cannot find sacado include directory containing Sacado_mpl_
 # The command below fails to pull in --with-incdirs flags.
 ##AC_CHECK_HEADERS([boost/mpl/at.h],,AC_MSG_ERROR([[Cannot find the Boost MPL library.  Phalanx requires Boost be installed on your machine.  Use --with-incdirs=-I<DIR> to specify the install directory for Boost.]]))
 
-
 ## Optionally require the TVMET Library headers only (don't need a check
 ## for the actual library).
 
@@ -8311,6 +8479,160 @@ else
   BUILD_TVMET_TRUE='#'
   BUILD_TVMET_FALSE=
 fi
+
+
+## Optional dependence on Epetra for example problem
+
+
+# Check whether --enable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_phalanx_using_epetra_default=$ac_cv_implicit_use_epetra
+else
+  ac_cv_phalanx_using_epetra_default=no
+fi
+
+# Check whether --enable-phalanx-epetra was given.
+if test "${enable_phalanx_epetra+set}" = set; then
+  enableval=$enable_phalanx_epetra; ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_phalanx_using_epetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in phalanx" >&5
+echo $ECHO_N "checking whether to build optional epetra dependent code in phalanx... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PHALANX_EPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetra" = "Xyes"; then
+  BUILD_PHALANX_EPETRA_TRUE=
+  BUILD_PHALANX_EPETRA_FALSE='#'
+else
+  BUILD_PHALANX_EPETRA_TRUE='#'
+  BUILD_PHALANX_EPETRA_FALSE=
+fi
+
+
+
+## Optional dependence on Ifpack for example problem
+
+
+# Check whether --enable-ifpack was given.
+if test "${enable_ifpack+set}" = set; then
+  enableval=$enable_ifpack; ac_cv_implicit_use_ifpack=$enableval
+else
+  ac_cv_implicit_use_ifpack=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_phalanx_using_ifpack_default=$ac_cv_implicit_use_ifpack
+else
+  ac_cv_phalanx_using_ifpack_default=no
+fi
+
+# Check whether --enable-phalanx-ifpack was given.
+if test "${enable_phalanx_ifpack+set}" = set; then
+  enableval=$enable_phalanx_ifpack; ac_cv_use_ifpack=$enableval
+else
+  ac_cv_use_ifpack=$ac_cv_phalanx_using_ifpack_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional ifpack dependent code in phalanx" >&5
+echo $ECHO_N "checking whether to build optional ifpack dependent code in phalanx... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_ifpack" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PHALANX_IFPACK 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_ifpack" = "Xyes"; then
+  BUILD_PHALANX_IFPACK_TRUE=
+  BUILD_PHALANX_IFPACK_FALSE='#'
+else
+  BUILD_PHALANX_IFPACK_TRUE='#'
+  BUILD_PHALANX_IFPACK_FALSE=
+fi
+
+
+
+## Optional dependence on Belos for example problem
+
+
+# Check whether --enable-belos was given.
+if test "${enable_belos+set}" = set; then
+  enableval=$enable_belos; ac_cv_implicit_use_belos=$enableval
+else
+  ac_cv_implicit_use_belos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_phalanx_using_belos_default=$ac_cv_implicit_use_belos
+else
+  ac_cv_phalanx_using_belos_default=no
+fi
+
+# Check whether --enable-phalanx-belos was given.
+if test "${enable_phalanx_belos+set}" = set; then
+  enableval=$enable_phalanx_belos; ac_cv_use_belos=$enableval
+else
+  ac_cv_use_belos=$ac_cv_phalanx_using_belos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional belos dependent code in phalanx" >&5
+echo $ECHO_N "checking whether to build optional belos dependent code in phalanx... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_belos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PHALANX_BELOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_belos" = "Xyes"; then
+  BUILD_PHALANX_BELOS_TRUE=
+  BUILD_PHALANX_BELOS_FALSE='#'
+else
+  BUILD_PHALANX_BELOS_TRUE='#'
+  BUILD_PHALANX_BELOS_FALSE=
+fi
+
+
 
 
 
@@ -9144,7 +9466,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile example/MultiDimensionalArray/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/EvaluatorManager/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile test/Performance/AlgebraicTypes/Makefile test/Performance/Allocators/Makefile test/Performance/BracketOperator/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.phalanx doc/Makefile src/Makefile example/Makefile example/EnergyFlux/Makefile example/MultiDimensionalArray/Makefile example/FEM_Nonlinear/Makefile test/Makefile test/Utilities/Makefile test/Allocators/Makefile test/DataContainer/Makefile test/DataLayout/Makefile test/EvaluatorManager/Makefile test/FieldTag/Makefile test/Field/Makefile test/Performance/Makefile test/Performance/AlgebraicTypes/Makefile test/Performance/Allocators/Makefile test/Performance/BracketOperator/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9345,6 +9667,27 @@ if test -z "${BUILD_TVMET_TRUE}" && test -z "${BUILD_TVMET_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TVMET\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TVMET\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PHALANX_EPETRA_TRUE}" && test -z "${BUILD_PHALANX_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PHALANX_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PHALANX_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PHALANX_IFPACK_TRUE}" && test -z "${BUILD_PHALANX_IFPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PHALANX_IFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PHALANX_IFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_PHALANX_BELOS_TRUE}" && test -z "${BUILD_PHALANX_BELOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_PHALANX_BELOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_PHALANX_BELOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9824,6 +10167,7 @@ do
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
     "example/EnergyFlux/Makefile") CONFIG_FILES="$CONFIG_FILES example/EnergyFlux/Makefile" ;;
     "example/MultiDimensionalArray/Makefile") CONFIG_FILES="$CONFIG_FILES example/MultiDimensionalArray/Makefile" ;;
+    "example/FEM_Nonlinear/Makefile") CONFIG_FILES="$CONFIG_FILES example/FEM_Nonlinear/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/Utilities/Makefile") CONFIG_FILES="$CONFIG_FILES test/Utilities/Makefile" ;;
     "test/Allocators/Makefile") CONFIG_FILES="$CONFIG_FILES test/Allocators/Makefile" ;;
@@ -10067,6 +10411,12 @@ SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 BUILD_TVMET_TRUE!$BUILD_TVMET_TRUE$ac_delim
 BUILD_TVMET_FALSE!$BUILD_TVMET_FALSE$ac_delim
+BUILD_PHALANX_EPETRA_TRUE!$BUILD_PHALANX_EPETRA_TRUE$ac_delim
+BUILD_PHALANX_EPETRA_FALSE!$BUILD_PHALANX_EPETRA_FALSE$ac_delim
+BUILD_PHALANX_IFPACK_TRUE!$BUILD_PHALANX_IFPACK_TRUE$ac_delim
+BUILD_PHALANX_IFPACK_FALSE!$BUILD_PHALANX_IFPACK_FALSE$ac_delim
+BUILD_PHALANX_BELOS_TRUE!$BUILD_PHALANX_BELOS_TRUE$ac_delim
+BUILD_PHALANX_BELOS_FALSE!$BUILD_PHALANX_BELOS_FALSE$ac_delim
 F77!$F77$ac_delim
 FFLAGS!$FFLAGS$ac_delim
 ac_ct_F77!$ac_ct_F77$ac_delim
@@ -10076,7 +10426,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

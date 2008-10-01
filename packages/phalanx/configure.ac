@@ -182,6 +182,7 @@ TAC_ARG_CHECK_MPI
 AC_CHECK_HEADERS([algorithm algo.h algorithm.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([cstddef stddef.h], [break],)
+AC_CHECK_HEADERS([fstream fstream.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([iterator iterator.h], [break],)
@@ -201,6 +202,10 @@ fi
 
 if test "X$ac_cv_header_cstddef" != "Xyes" && test "X$ac_cv_header_stddef_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstddef or stddef.h.  Phalanx requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_fstream" != "Xyes" && test "X$ac_cv_header_fstream_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find fstream or fstream.h.  Phalanx requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
@@ -322,7 +327,6 @@ TRILINOS_HEADER(sacado,Sacado_mpl_at.hpp,src/mpl)
 # The command below fails to pull in --with-incdirs flags.  
 ##AC_CHECK_HEADERS([boost/mpl/at.h],,AC_MSG_ERROR([[Cannot find the Boost MPL library.  Phalanx requires Boost be installed on your machine.  Use --with-incdirs=-I<DIR> to specify the install directory for Boost.]]))
 
-
 ## Optionally require the TVMET Library headers only (don't need a check 
 ## for the actual library).
 AC_ARG_WITH(tvmet,
@@ -362,6 +366,13 @@ if test "X${HAVE_TVMET}" != "Xno"; then
   AC_DEFINE([HAVE_PHALANX_TVMET],1,[Define if tvmet is available])
 fi
 AM_CONDITIONAL(BUILD_TVMET, test X${BUILD_TVMET} = Xyes)
+
+## Optional dependence on Epetra for example problem
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(phalanx, epetra, PHALANX_EPETRA, BUILD_PHALANX_EPETRA, yes, [Build epetra support for phalanx examples.], [Implicitly build epetra support for phalanx examples. Can be overridden with --<en|dis>able-phalanx-epetra.])
+## Optional dependence on Ifpack for example problem
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(phalanx, ifpack, PHALANX_IFPACK, BUILD_PHALANX_IFPACK, yes, [Build ifpack support for phalanx examples.], [Implicitly build ifpack support for phalanx examples. Can be overridden with --<en|dis>able-phalanx-ifpack.])
+## Optional dependence on Belos for example problem
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(phalanx, belos, PHALANX_BELOS, BUILD_PHALANX_BELOS, yes, [Build belos support for phalanx examples.], [Implicitly build belos support for phalanx examples. Can be overridden with --<en|dis>able-phalanx-belos.])
 
 
 # ------------------------------------------------------------------------
@@ -447,6 +458,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/EnergyFlux/Makefile
 		example/MultiDimensionalArray/Makefile
+		example/FEM_Nonlinear/Makefile
 		test/Makefile
 		test/Utilities/Makefile
 		test/Allocators/Makefile

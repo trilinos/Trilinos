@@ -17,7 +17,8 @@
 
 (FRAMEWORK,INSTALL,CHECKIN,ALL) {
     DIRS = ../example/EnergyFlux,
-           ../example/MultiDimensionalArray;
+           ../example/MultiDimensionalArray,
+           ../example/FEM_Nonlinear;
     EXIT-STATUS = STRING-COMPARISON(Run has completed successfully!);
     ARGS = -v;
     COMM = SERIAL, MPI;

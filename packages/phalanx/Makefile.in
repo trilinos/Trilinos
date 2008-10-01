@@ -77,6 +77,7 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
@@ -716,7 +717,7 @@ all-local:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_srcdir@/test/Utilities:@abs_top_builddir@/src:@abs_top_srcdir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/test/Utilities:@abs_top_builddir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../sacado:@abs_top_builddir@/../teuchos
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../epetra:@abs_top_builddir@/../sacado:@abs_top_builddir@/../teuchos
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
 @USING_EXPORT_MAKEFILES_TRUE@		PHALANX > $(exec_prefix)/include/Makefile.export.phalanx.macros
 

@@ -7,7 +7,9 @@
 --enable-examples \
 --enable-teuchos --enable-teuchos-complex --enable-teuchos-extended \
 --enable-sacado \
---disable-phdmesh \
+--enable-epetra \
+--enable-ifpack \
+--enable-belos \
 --enable-phalanx --with-tvmet \
 --with-incdirs="-I/home/rppawlo/Libs/Boost/boost_1_35_0 -I/home/rppawlo/junk/include" \
 --with-blas=/home/rppawlo/local/lib/libblas_intel.a \
