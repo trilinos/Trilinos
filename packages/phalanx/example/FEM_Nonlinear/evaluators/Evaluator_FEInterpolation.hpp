@@ -32,9 +32,7 @@
 #ifndef PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
 #define PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
 /** \brief Finite Element Interpolation Evaluator
@@ -43,21 +41,7 @@
     quadrature points for a specific variable.
 
 */
-template<typename EvalT, typename Traits>
-class FEInterpolation : public PHX::EvaluatorWithBaseImpl<Traits>,
-			public PHX::EvaluatorDerived<EvalT, Traits>  {
-  
-public:
-  
-  FEInterpolation(const Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData d);
-  
-private:
-
-  typedef typename EvalT::ScalarT ScalarT;
+PHX_EVALUATOR_CLASS(FEInterpolation)
 
   //! Values at nodes
   PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> val_node;
@@ -72,8 +56,10 @@ private:
   std::size_t num_qp;
   std::size_t num_dim;
 
-};
+PHX_EVALUATOR_CLASS_END
 
+#ifndef PHX_ETI
 #include "Evaluator_FEInterpolation_Def.hpp"
+#endif
 
 #endif

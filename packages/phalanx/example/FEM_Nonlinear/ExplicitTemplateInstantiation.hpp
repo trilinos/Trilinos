@@ -29,32 +29,21 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_EQUATIONS_HPP
-#define PHX_EXAMPLE_EQUATIONS_HPP
+#ifndef PHX_ETI_HPP
+#define PHX_ETI_HPP
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
+#include "Traits.hpp"
 
-/** \brief Evaluates residual of equations at quad points
+// Macros for explicit template instatiation
 
+#define PHX_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL(name) \
+  template class name<PHX::MyTraits::Residual, PHX::MyTraits>; 
 
-*/
-PHX_EVALUATOR_CLASS(Equations)
+#define PHX_INSTANTIATE_TEMPLATE_CLASS_JACOBIAN(name) \
+  template class name<PHX::MyTraits::Jacobian, PHX::MyTraits>; 
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> vel;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> grad_temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> grad_vel;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> residual_temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> residual_vel;
-  
-  std::size_t num_qp;
-  std::size_t num_dim;
-
-PHX_EVALUATOR_CLASS_END
-
-#ifndef PHX_ETI
-#include "Evaluator_Equations_Def.hpp"
-#endif
+#define PHX_INSTANTIATE_TEMPLATE_CLASS(name) \
+  PHX_INSTANTIATE_TEMPLATE_CLASS_RESIDUAL(name) \
+  PHX_INSTANTIATE_TEMPLATE_CLASS_JACOBIAN(name)
 
 #endif

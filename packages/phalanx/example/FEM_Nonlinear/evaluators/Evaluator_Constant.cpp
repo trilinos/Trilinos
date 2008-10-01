@@ -29,32 +29,13 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_EQUATIONS_HPP
-#define PHX_EXAMPLE_EQUATIONS_HPP
+#include "ExplicitTemplateInstantiation.hpp"
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
+#ifdef PHX_ETI
 
-/** \brief Evaluates residual of equations at quad points
+#include "Evaluator_Constant.hpp"
+#include "Evaluator_Constant_Def.hpp"
 
-
-*/
-PHX_EVALUATOR_CLASS(Equations)
-
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> vel;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> grad_temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> grad_vel;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> residual_temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> residual_vel;
-  
-  std::size_t num_qp;
-  std::size_t num_dim;
-
-PHX_EVALUATOR_CLASS_END
-
-#ifndef PHX_ETI
-#include "Evaluator_Equations_Def.hpp"
-#endif
+PHX_INSTANTIATE_TEMPLATE_CLASS(Constant)
 
 #endif

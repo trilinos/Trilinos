@@ -38,6 +38,7 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
@@ -121,7 +122,9 @@ private:
 
 // **************************************************************
 
+#ifndef PHX_ETI
 #include "Evaluator_ScatterResidual_Def.hpp"
+#endif
 
 // **************************************************************
 #endif

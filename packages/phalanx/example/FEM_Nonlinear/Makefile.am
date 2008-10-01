@@ -64,17 +64,25 @@ example_fem_nonlinear_SOURCES = \
 	$(srcdir)/FactoryTraits.hpp \
 	$(srcdir)/Element_Linear2D.hpp \
 	$(srcdir)/Element_Linear2D.cpp \
+	$(srcdir)/ExplicitTemplateInstantiation.hpp \
 	$(srcdir)/Dimension.hpp \
 	$(srcdir)/Dimension.cpp \
 	$(srcdir)/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant.cpp \
+	$(srcdir)/evaluators/Evaluator_Equations.hpp \
+	$(srcdir)/evaluators/Evaluator_Equations_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Equations.cpp \
 	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
 	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation.cpp \
 	$(srcdir)/evaluators/Evaluator_GatherSolution.hpp \
 	$(srcdir)/evaluators/Evaluator_GatherSolution_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_GatherSolution.cpp \
 	$(srcdir)/evaluators/Evaluator_ScatterResidual.hpp \
-	$(srcdir)/evaluators/Evaluator_ScatterResidual_Def.hpp
+	$(srcdir)/evaluators/Evaluator_ScatterResidual_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp
 
 example_fem_nonlinear_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a

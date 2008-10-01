@@ -37,6 +37,7 @@
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 
 /** \brief Gathers solution values from the Newton solution vector into 
@@ -112,7 +113,9 @@ private:
 
 // **************************************************************
 
+#ifndef PHX_ETI
 #include "Evaluator_GatherSolution_Def.hpp"
+#endif
 
 // **************************************************************
 #endif
