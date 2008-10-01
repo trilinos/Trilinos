@@ -528,7 +528,14 @@ int fei::FEI_Impl::initComplete()
   }
 
   A_[0] = factory_[0]->createMatrix(matGraph_);
-  CHK_ERR( A_[0]->parameters(numParams_, paramStrings_) );
+
+  std::vector<std::string> stdstrings;
+  fei::utils::char_ptrs_to_strings(numParams_, paramStrings_, stdstrings);
+  fei::ParameterSet params;
+  fei::utils::parse_strings(stdstrings, " ", params);
+
+  CHK_ERR( A_[0]->parameters(params) );
+
   b_[0] = factory_[0]->createVector(matGraph_);
 
   if (matrixIDs_.size() > 1) {
@@ -558,7 +565,7 @@ int fei::FEI_Impl::initComplete()
       factory = multiple_factories ? factory_[i] : factory_[0];
 
       A_[i] = factory->createMatrix(matGraph_);
-      CHK_ERR( A_[i]->parameters(numParams_, paramStrings_) );
+      CHK_ERR( A_[i]->parameters(params) );
     }
 
     for(unsigned i=1; i<rhsIDs_.size(); ++i) {
@@ -599,7 +606,7 @@ int fei::FEI_Impl::initComplete()
       factory = multiple_factories ? factory_[i] : factory_[0];
 
       A_[i] = factory->createMatrix(matGraph_);
-      CHK_ERR( A_[i]->parameters(numParams_, paramStrings_) );
+      CHK_ERR( A_[i]->parameters(params) );
     }
 
     for(unsigned i=1; i<rhsIDs_.size(); ++i) {
@@ -806,26 +813,16 @@ int fei::FEI_Impl::sumIntoMatrix(int patternID,
   CHK_ERR( matGraph_->getPatternNumIndices(rowPatternID, numRowIndices) );
   CHK_ERR( matGraph_->getPatternNumIndices(colPatternID, numColIndices) );
 
-  feiArray<int> rowIndices(numRowIndices), colIndices(numColIndices);
-  int* rowIndPtr = rowIndices.dataPtr();
-  int* colIndPtr = colIndices.dataPtr();
+  std::vector<int> rowIndices(numRowIndices), colIndices(numColIndices);
 
-  int check;
-  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, rowIDs,
-					rowIndPtr, check) );
-  if (check != numRowIndices) {
-    FEI_CERR << "FEI_Impl::getFromMatrix: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, rowIDs, rowIndices) );
+  int* rowIndPtr = &rowIndices[0];
 
-  CHK_ERR( matGraph_->getPatternIndices(colPatternID, colIDs,
-					colIndPtr, check) );
-  if (check != numColIndices) {
-    FEI_CERR << "FEI_Impl::getFromMatrix: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(colPatternID, colIDs, colIndices) );
+  int* colIndPtr = &colIndices[0];
 
   CHK_ERR( A_[index_current_]->sumIn(numRowIndices, rowIndPtr,
-		      numColIndices, colIndPtr,
-		      matrixEntries) );
+		      numColIndices, colIndPtr, matrixEntries) );
 
   newData_ = true;
 
@@ -842,15 +839,10 @@ int fei::FEI_Impl::sumIntoRHS(int patternID,
   int numRowIndices = 0;
   CHK_ERR( matGraph_->getPatternNumIndices(rowPatternID, numRowIndices) );
 
-  feiArray<int> rowIndices(numRowIndices);
-  int* rowIndPtr = rowIndices.dataPtr();
+  std::vector<int> rowIndices(numRowIndices);
 
-  int check;
-  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, IDs,
-					rowIndPtr, check) );
-  if (check != numRowIndices) {
-    FEI_CERR << "FEI_Impl::getFromRHS: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, IDs, rowIndices) );
+  int* rowIndPtr = &rowIndices[0];
 
   CHK_ERR( b_[index_current_rhs_row_]->sumIn(numRowIndices, rowIndPtr, coefficients) );
 
@@ -873,26 +865,16 @@ int fei::FEI_Impl::putIntoMatrix(int patternID,
   CHK_ERR( matGraph_->getPatternNumIndices(rowPatternID, numRowIndices) );
   CHK_ERR( matGraph_->getPatternNumIndices(colPatternID, numColIndices) );
 
-  feiArray<int> rowIndices(numRowIndices), colIndices(numColIndices);
-  int* rowIndPtr = rowIndices.dataPtr();
-  int* colIndPtr = colIndices.dataPtr();
+  std::vector<int> rowIndices(numRowIndices), colIndices(numColIndices);
 
-  int check;
-  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, rowIDs,
-					rowIndPtr, check) );
-  if (check != numRowIndices) {
-    FEI_CERR << "FEI_Impl::getFromMatrix: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, rowIDs, rowIndices) );
+  int* rowIndPtr = &rowIndices[0];
 
-  CHK_ERR( matGraph_->getPatternIndices(colPatternID, colIDs,
-					colIndPtr, check) );
-  if (check != numColIndices) {
-    FEI_CERR << "FEI_Impl::getFromMatrix: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(colPatternID, colIDs, colIndices) );
+  int* colIndPtr = &colIndices[0];
 
   CHK_ERR( A_[index_current_]->copyIn(numRowIndices, rowIndPtr,
-		      numColIndices, colIndPtr,
-		      matrixEntries) );
+		      numColIndices, colIndPtr, matrixEntries) );
 
   newData_ = true;
 
@@ -909,15 +891,10 @@ int fei::FEI_Impl::putIntoRHS(int patternID,
   int numRowIndices = 0;
   CHK_ERR( matGraph_->getPatternNumIndices(rowPatternID, numRowIndices) );
 
-  feiArray<int> rowIndices(numRowIndices);
-  int* rowIndPtr = rowIndices.dataPtr();
+  std::vector<int> rowIndices(numRowIndices);
 
-  int check;
-  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, IDs,
-					rowIndPtr, check) );
-  if (check != numRowIndices) {
-    FEI_CERR << "FEI_Impl::getFromRHS: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, IDs, rowIndices) );
+  int* rowIndPtr = &rowIndices[0];
 
   CHK_ERR( b_[index_current_rhs_row_]->copyIn(numRowIndices, rowIndPtr, coefficients) );
 
@@ -994,27 +971,35 @@ int fei::FEI_Impl::getFromMatrix(int patternID,
   CHK_ERR( matGraph_->getPatternNumIndices(rowPatternID, numRowIndices) );
   CHK_ERR( matGraph_->getPatternNumIndices(colPatternID, numColIndices) );
 
-  feiArray<int> rowIndices(numRowIndices), colIndices(numColIndices);
-  int* rowIndPtr = rowIndices.dataPtr();
-  int* colIndPtr = colIndices.dataPtr();
+  std::vector<int> rowIndices(numRowIndices), colIndices(numColIndices);
 
-  int check;
-  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, rowIDs,
-					rowIndPtr, check) );
-  if (check != numRowIndices) {
-    FEI_CERR << "FEI_Impl::getFromMatrix: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, rowIDs, rowIndices) );
+  int* rowIndPtr = &rowIndices[0];
 
-  CHK_ERR( matGraph_->getPatternIndices(colPatternID, colIDs,
-					colIndPtr, check) );
-  if (check != numColIndices) {
-    FEI_CERR << "FEI_Impl::getFromMatrix: MatrixGraph disagrees on num-indices."
-            <<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(colPatternID, colIDs, colIndices) );
+
+  std::vector<int> tmpi;
+  std::vector<double> tmpd;
 
   for(int i=0; i<numRowIndices; ++i) {
-    CHK_ERR( A_[index_current_]->copyOutRow(rowIndPtr[i], numColIndices,
-                                            matrixEntries[i], colIndPtr) );
+    int rowlength = 0;
+    CHK_ERR( A_[index_current_]->getRowLength(rowIndPtr[i], rowlength) );
+    if (rowlength > (int)tmpi.size()) {
+      tmpi.resize(rowlength);
+      tmpd.resize(rowlength);
+    }
+
+    CHK_ERR( A_[index_current_]->copyOutRow(rowIndPtr[i], rowlength,
+                                            &tmpd[0], &tmpi[0]) );
+
+    //This is not efficient: we run the row looking for each of the indices
+    //in colIndices. If found, set the corresponding entry in matrixEntries.
+    //(This could be more efficient if arrays of indices were sorted...)
+    for(int k=0; k<numColIndices; ++k) {
+      for(int j=0; j<rowlength; ++j) {
+        if (colIndices[k] == tmpi[j]) matrixEntries[i][k] = tmpd[j];
+      }
+    }
   }
 
   return(0);
@@ -1030,15 +1015,10 @@ int fei::FEI_Impl::getFromRHS(int patternID,
   int numRowIndices = 0;
   CHK_ERR( matGraph_->getPatternNumIndices(rowPatternID, numRowIndices) );
 
-  feiArray<int> rowIndices(numRowIndices);
-  int* rowIndPtr = rowIndices.dataPtr();
+  std::vector<int> rowIndices(numRowIndices);
 
-  int check;
-  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, IDs,
-					rowIndPtr, check) );
-  if (check != numRowIndices) {
-    FEI_CERR << "FEI_Impl::getFromRHS: MatrixGraph disagrees on num-indices."<<FEI_ENDL;
-  }
+  CHK_ERR( matGraph_->getPatternIndices(rowPatternID, IDs, rowIndices) );
+  int* rowIndPtr = &rowIndices[0];
 
   CHK_ERR( b_[index_current_rhs_row_]->copyOut(numRowIndices, rowIndPtr, coefficients) );
 
@@ -1753,7 +1733,7 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
       fei::SharedPtr<LinearSystemCore> linSysCore = wrapper_[0]->getLinearSystemCore();
       if (linSysCore.get() != NULL) {
 	linSysCore->putNodalFieldData(fieldID, fieldSize, 
-				      numbers.dataPtr(), numNodes, nodeData);
+				      &numbers[0], numNodes, nodeData);
 	data_passed = true;
       }
       else {
@@ -1762,7 +1742,7 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
 	fei::SharedPtr<FiniteElementData> fedata = wrapper_[0]->getFiniteElementData();
 	if (fedata.get() != NULL) {
 	  fedata->putNodalFieldData(fieldID, fieldSize, numNodes,
-				    numbers.dataPtr(), nodeData);
+				    &numbers[0], nodeData);
 	  data_passed = true;
 	}
       }

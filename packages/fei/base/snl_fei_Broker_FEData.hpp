@@ -120,15 +120,14 @@ namespace snl_fei {
 
 	int numElemBlocks = matrixGraph_->getNumConnectivityBlocks();
 
-	int* intData = new int[numElemBlocks*4];
-	int* elemBlockIDs =           intData;
-	int* numElemsPerBlock =       intData+numElemBlocks;
-	int* numNodesPerElem =        intData+2*numElemBlocks;
-	int* elemMatrixSizePerBlock = intData+3*numElemBlocks;
-	int i, checkNum;
+	int* intData = new int[numElemBlocks*3];
+	int* numElemsPerBlock =       intData;
+	int* numNodesPerElem =        intData+numElemBlocks;
+	int* elemMatrixSizePerBlock = intData+2*numElemBlocks;
+	int i;
 
-	CHK_ERR( matrixGraph_->getConnectivityBlockIDs(numElemBlocks,
-						       elemBlockIDs, checkNum) );
+        std::vector<int> elemBlockIDs;
+	CHK_ERR( matrixGraph_->getConnectivityBlockIDs( elemBlockIDs) );
 
 	for(i=0; i<numElemBlocks; ++i) {
 	  const fei::ConnectivityBlock* cblock =

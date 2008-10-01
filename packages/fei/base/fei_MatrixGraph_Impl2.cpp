@@ -791,8 +791,7 @@ int fei::MatrixGraph_Impl2::getPatternNumIndices(int patternID,
 //------------------------------------------------------------------------------
 int fei::MatrixGraph_Impl2::getPatternIndices(int patternID,
 					const int* IDs,
-					int* indices,
-					int& numIndices)
+					std::vector<int>& indices)
 {
   std::map<int,fei::Pattern*>::iterator
     p_iter = patterns_.find(patternID);
@@ -800,7 +799,7 @@ int fei::MatrixGraph_Impl2::getPatternIndices(int patternID,
 
   fei::Pattern* pattern = (*p_iter).second;
 
-  numIndices = pattern->getNumIndices();
+  indices.resize(pattern->getNumIndices());
 
   int numIDs                = pattern->getNumIDs();
   const int* idTypes        = pattern->getIDTypes();
@@ -1673,12 +1672,11 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
   }
 
   if (numBlocks > 0) {
-    int* myBlockIDs = new int[numBlocks];
-    int* blockIDs = new int[numBlocks];
+    std::vector<int> myBlockIDs;
+    std::vector<int> blockIDs;
 
-    int chkMyNumBlocks, chkNumBlocks;
-    CHK_ERR( getConnectivityBlockIDs(myNumBlocks, myBlockIDs, chkMyNumBlocks) );
-    CHK_ERR( matrixGraph.getConnectivityBlockIDs(numBlocks, blockIDs, chkNumBlocks));
+    CHK_ERR( getConnectivityBlockIDs(myBlockIDs) );
+    CHK_ERR( matrixGraph.getConnectivityBlockIDs(blockIDs) );
 
     for(int i=0; i<numBlocks; ++i) {
       if (myBlockIDs[i] != blockIDs[i]) {
@@ -1709,9 +1707,6 @@ int fei::MatrixGraph_Impl2::compareStructure(const fei::MatrixGraph& matrixGraph
 	return(0);
       }
     }
-
-    delete [] blockIDs;
-    delete [] myBlockIDs;
   }
 
   int numMyLagrangeConstraints = getLocalNumLagrangeConstraints();
@@ -1739,17 +1734,14 @@ int fei::MatrixGraph_Impl2::getNumConnectivityBlocks() const
 }
 
 //----------------------------------------------------------------------------
-int fei::MatrixGraph_Impl2::getConnectivityBlockIDs(int len, int* blockIDs, 
-						  int& numBlocks) const
+int fei::MatrixGraph_Impl2::getConnectivityBlockIDs(std::vector<int>& blockIDs) const
 {
-  numBlocks = connectivityBlocks_.size();
-  int num = len;
-  if (num > numBlocks) num = numBlocks;
+  blockIDs.resize(connectivityBlocks_.size());
 
   std::map<int,fei::ConnectivityBlock*>::const_iterator
     cdb_iter = connectivityBlocks_.begin();
 
-  for(int i=0; i<num; ++i, ++cdb_iter) {
+  for(size_t i=0; i<blockIDs.size(); ++i, ++cdb_iter) {
     int blockID = (*cdb_iter).first;
     blockIDs[i] = blockID;
   }

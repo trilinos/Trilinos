@@ -136,7 +136,7 @@ void snl_fei_tester::setParameter(const char* param)
   matrixGraph_->setParameters(paramset);
 
   linSys_->parameters(1, &param);
-  A_->parameters(1, &param);
+  A_->parameters(paramset);
 }
 
 //----------------------------------------------------------------------------
@@ -149,7 +149,12 @@ int snl_fei_tester::testLoading()
   b_ = factory_->createVector(matrixGraph_);
 
   CHK_ERR( linSys_->parameters(data_->numParams_, data_->paramStrings_) );
-  CHK_ERR( A_->parameters(data_->numParams_, data_->paramStrings_) );
+
+  std::vector<std::string> stdstrings;
+  fei::utils::char_ptrs_to_strings(data_->numParams_, data_->paramStrings_, stdstrings);
+  fei::ParameterSet paramset;
+  fei::utils::parse_strings(stdstrings, " ", paramset);
+  CHK_ERR( A_->parameters(paramset) );
 
   linSys_->setMatrix(A_);
   linSys_->setRHS(b_);

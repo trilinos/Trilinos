@@ -87,9 +87,6 @@ class Matrix_core : protected fei::Logger {
  protected:
   void parameters(const fei::ParameterSet& paramset);
 
-  virtual int parameters(int numParams,
-			 const char* const* paramStrings);
-
   virtual int giveToUnderlyingMatrix(int numRows, const int* rows,
 				     int numCols, const int* cols,
 				     const double* const* values,

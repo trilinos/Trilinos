@@ -193,7 +193,7 @@ int SNL_FEI_Structure::parameters(int numParams, const char*const* paramStrings)
 SNL_FEI_Structure::~SNL_FEI_Structure()
 {
   int j;
-  for(j=0; j<slaveVars_->length(); j++) {
+  for(j=0; j<slaveVars_->size(); j++) {
     delete (*slaveVars_)[j];
   }
   delete slaveVars_;
@@ -793,7 +793,7 @@ int SNL_FEI_Structure::initSharedNodes(int numSharedNodes,
     for(int i=0; i<numSharedNodes; ++i) {
       for(int nc=0; nc<connTables_.length(); ++nc) {
 	if (connTables_[nc]->elem_conn_ids == NULL) continue;
-	int len = connTables_[nc]->elem_conn_ids->length();
+	int len = connTables_[nc]->elem_conn_ids->size();
 	if (len < 1) continue;
 	GlobalID* conn_ids = connTables_[nc]->elem_conn_ids->dataPtr();
 	NodeDescriptor** nodes = connTables_[nc]->elem_conn_ptrs->dataPtr();
@@ -1229,7 +1229,7 @@ int SNL_FEI_Structure::formMatrixStructure()
       return(-1);
     }
 
-    for(int j=0; j<recvEqns[i]->length(); j++) {
+    for(int j=0; j<recvEqns[i]->size(); j++) {
       CHK_ERR( createMatrixPosition(eqn, recvEqns[i]->indices()[j],
 				    "frmMatStr") );
     }
@@ -1544,7 +1544,7 @@ int SNL_FEI_Structure::initMultCRStructure()
   while(cr_iter != cr_end) {
     ConstraintType& multCR = *((*cr_iter).second);
 
-    int lenList = multCR.getMasters()->length();
+    int lenList = multCR.getMasters()->size();
 
     GlobalID *CRNodePtr = multCR.getMasters()->dataPtr();
     int* CRFieldPtr = multCR.getMasterFieldIDs()->dataPtr();
@@ -1624,7 +1624,7 @@ int SNL_FEI_Structure::initPenCRStructure()
   while(cr_iter != cr_end) {
     ConstraintType& penCR = *((*cr_iter).second);
 
-    int lenList = penCR.getMasters()->length();
+    int lenList = penCR.getMasters()->size();
     GlobalID* CRNodesPtr = penCR.getMasters()->dataPtr();
 
     int* CRFieldPtr = penCR.getMasterFieldIDs()->dataPtr();
@@ -2296,7 +2296,7 @@ int SNL_FEI_Structure::createEqnStructure(SSGraph& mat)
     const int* indPtr = indices[r]->dataPtr();
     if (rSlave_[r]) anySlaves = true;
 
-    for(int j=0; j<indices[r]->length(); j++) {
+    for(int j=0; j<indices[r]->size(); j++) {
       cSlave_.append(isSlaveEqn(indPtr[j]));
       if (cSlave_[cSlave_.length()-1]) anySlaves = true;
     }
@@ -2311,7 +2311,7 @@ int SNL_FEI_Structure::createEqnStructure(SSGraph& mat)
   for(int i=0; i<numRows; i++) {
     int row = rows[i];
 
-    int numCols = indices[i]->length();
+    int numCols = indices[i]->size();
     const int* indicesPtr = indices[i]->dataPtr();
     bool* colSlave = cSlave_.dataPtr() + offset;
     offset += numCols;
@@ -2459,7 +2459,7 @@ int SNL_FEI_Structure::translateToReducedEqns(EqnBuffer& eqnBuf)
     eqnNumbers[i] = reducedEqn;
 
     int* indicesPtr = eqnArray[i]->indices().dataPtr();
-    int numIndices = eqnArray[i]->length();
+    int numIndices = eqnArray[i]->size();
     for(int j=0; j<numIndices; ++j) {
       translateToReducedEqn(indicesPtr[j], reducedEqn);
       indicesPtr[j] = reducedEqn;
@@ -2538,7 +2538,7 @@ int SNL_FEI_Structure::createMatrixPositions(SSMat& mat)
   for(int i=0; i<numRows; i++) {
     int* indicesRow = rows[i]->indices().dataPtr();
 
-    for(int j=0; j<rows[i]->length(); j++) {
+    for(int j=0; j<rows[i]->size(); j++) {
       CHK_ERR( createMatrixPosition(rowNumbers[i], indicesRow[j],
 				    "crtMatPos(SSMat)") );
     }
@@ -3397,7 +3397,7 @@ int SNL_FEI_Structure::finalizeActiveNodes()
     if (numElems > 0) {
       elemConn = conn.elem_conn_ids->dataPtr();
       if (!activeNodesInitialized_) {
-	int elemConnLen = conn.elem_conn_ids->length();
+	int elemConnLen = conn.elem_conn_ids->size();
 	conn.elem_conn_ptrs = new feiArray<NodeDescriptor*>(elemConnLen);
       }
       elemNodeDescPtrs = conn.elem_conn_ptrs->dataPtr();
@@ -3471,7 +3471,7 @@ int SNL_FEI_Structure::finalizeActiveNodes()
     while(cr_iter != cr_end) {
       ConstraintType& cr = *((*cr_iter).second);
       GlobalID* nodeIDs = cr.getMasters()->dataPtr();
-      int numNodes = cr.getMasters()->length();
+      int numNodes = cr.getMasters()->size();
 
       NodeDescriptor* node = NULL;
       for(int k=0; k<numNodes; ++k) {
@@ -3820,7 +3820,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
   feiArray<int> mEqns;
   feiArray<double> mCoefs;
 
-  for(i=0; i<slaveVars_->length(); i++) {
+  for(i=0; i<slaveVars_->size(); i++) {
     int numEqns;
     SlaveVariable* svar = (*slaveVars_)[i];
 
@@ -3836,7 +3836,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
     const feiArray<double>& mWeightsRef = *mWeights;
     int mwOffset = 0;
 
-    for(int j=0; j<mNodes->length(); j++) {
+    for(int j=0; j<mNodes->size(); j++) {
       int mfSize = getFieldSize((*mFields)[j]);
 
       eqns.resize(mfSize);
@@ -3862,7 +3862,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
   }
 
 #ifndef FEI_SER
-  int numLocalSlaves = slaveVars_->length();
+  int numLocalSlaves = slaveVars_->size();
   int globalMaxSlaves = 0;
   CHK_ERR( fei::GlobalMax(comm_, numLocalSlaves, globalMaxSlaves) );
 
@@ -3874,7 +3874,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
   globalNumNodesVanished_.resize(numProcs_+1, 0);
 
   slvEqnNumbers_ = &(slaveEqns_->eqnNumbersPtr());
-  numSlvs_ = slvEqnNumbers_->length();
+  numSlvs_ = slvEqnNumbers_->size();
   if (numSlvs_ > 0) {
     //first, let's remove any 'couplings' among the slave equations. A coupling
     //is where a slave depends on a master which is also a slave that depends on
@@ -3924,7 +3924,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
       NodeDescriptor* node = NULL;
       int reducedSlaveEqn;
       translateToReducedEqn(slvEqns[i], reducedSlaveEqn);
-      int numMasters = mstrEqns[i]->length();
+      int numMasters = mstrEqns[i]->size();
 
       int err = nodeDatabase_->getNodeWithEqn(slvEqns[i], node);
       if (err != 0) {
@@ -4113,7 +4113,7 @@ int SNL_FEI_Structure::gatherSlaveEqns(MPI_Comm comm,
     for(int p=0; p<numProcs; p++) {
       if (p == localProc) continue;
 
-      localProcEqns.addEqn(slvEqnNums[i], slvEqnsPtr[i]->length(), p);
+      localProcEqns.addEqn(slvEqnNums[i], slvEqnsPtr[i]->size(), p);
     }
   }
 
@@ -4159,7 +4159,7 @@ bool SNL_FEI_Structure::translateToReducedEqn(int eqn, int& reducedEqn)
 
   int index = 0;
   int foundOffset = snl_fei::binarySearch(eqn, slvEqnNumbers_->dataPtr(),
-					slvEqnNumbers_->length(), index);
+					slvEqnNumbers_->size(), index);
 
   bool isSlave = false;
 

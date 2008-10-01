@@ -20,6 +20,8 @@
 #include <fei_TemplateUtils.hpp>
 #include <fei_Lookup.hpp>
 
+#include <vector>
+
 namespace fei {
   /** An implementation of the Lookup interface.
    */
@@ -76,11 +78,8 @@ namespace fei {
     /** Implementation of Lookup:: method */
     const GlobalID* getElemBlockIDs()
       {
-	int num = matGraph_->getNumConnectivityBlocks();
-	elemBlockIDs_.resize(num);
-	GlobalID* blkIDs = elemBlockIDs_.dataPtr();
-	int err = matGraph_->getConnectivityBlockIDs(num, blkIDs, num);
-	return(err==0 ? blkIDs : NULL);
+	int err = matGraph_->getConnectivityBlockIDs(elemBlockIDs_);
+	return(err==0 ? &elemBlockIDs_[0] : NULL);
       }
 
     /** Implementation of Lookup:: method */
@@ -275,7 +274,7 @@ namespace fei {
 
     std::vector<int> fieldIDs_;
     feiArray<int> fieldSizes_;
-    feiArray<GlobalID> elemBlockIDs_;
+    std::vector<GlobalID> elemBlockIDs_;
     feiArray<const int*> fieldIDs_2D_;
     feiArray<int> workspace_;
   };//class Lookup_Impl

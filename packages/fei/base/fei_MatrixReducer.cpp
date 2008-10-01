@@ -47,12 +47,6 @@ MatrixReducer::parameters(const fei::ParameterSet& paramset)
   return(target_->parameters(paramset));
 }
 
-int
-MatrixReducer::parameters(int numParams, const char* const* paramStrings)
-{
-  return(target_->parameters(numParams, paramStrings));
-}
-
 void
 MatrixReducer::setMatrixGraph(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
 {

@@ -98,20 +98,6 @@ fei::Matrix_core::parameters(const fei::ParameterSet& paramset)
   }
 }
 
-int fei::Matrix_core::parameters(int numParams,
-				     const char* const* paramStrings)
-{
-  if (numParams == 0 || paramStrings == NULL) return(0);
-
-  std::vector<std::string> stdstrings;
-  fei::utils::char_ptrs_to_strings(numParams, paramStrings, stdstrings);
-  fei::ParameterSet paramset;
-  fei::utils::parse_strings(stdstrings, " ", paramset);
-  parameters(paramset);
-
-  return(0);
-}
-
 void fei::Matrix_core::setName(const char* name)
 {
   if (name == NULL) return;

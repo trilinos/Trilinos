@@ -17,6 +17,8 @@
 #include <fei_Record.hpp>
 #include <fei_SparseRowGraph.hpp>
 
+#include <vector>
+
 namespace fei {
   class ConnectivityBlock;
   class Pattern;
@@ -436,7 +438,7 @@ class MatrixGraph {
     /** Query for the container of connectivity-blocks. */
    virtual std::map<int,fei::ConnectivityBlock*>& getConnectivityBlocks() = 0;
     /** Query for the list of connectivity-block-IDs. */
-   virtual int getConnectivityBlockIDs(int len, int* blockIDs, int& numBlocks) const = 0;
+   virtual int getConnectivityBlockIDs(std::vector<int>& blockIDs) const = 0;
 
    /** Query how many IDs are in each connectivity list in the specified
        connectivity block. */
@@ -484,8 +486,7 @@ class MatrixGraph {
     */
    virtual int getPatternIndices(int patternID,
 			 const int* IDs,
-			 int* indices,
-			 int& numIndices) = 0;
+			 std::vector<int>& indices) = 0;
 
    /** Query number of local lagrange constraints */
    virtual int getLocalNumLagrangeConstraints() const = 0;

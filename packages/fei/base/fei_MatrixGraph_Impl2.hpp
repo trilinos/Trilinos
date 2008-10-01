@@ -443,7 +443,7 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
    std::map<int,fei::ConnectivityBlock*>& getConnectivityBlocks();
 
     /** Query for the list of connectivity-block-IDs. */
-   int getConnectivityBlockIDs(int len, int* blockIDs, int& numBlocks) const;
+   int getConnectivityBlockIDs(std::vector<int>& blockIDs) const;
 
    /** Query how many IDs are in each connectivity list in the specified
        connectivity block. */
@@ -487,12 +487,11 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
    int getPatternNumIndices(int patternID,
 			    int& numIndices);
 
-   /** Query associated with Pattern rather than connectivity-block.
+   /** Given a Pattern and list of IDs, fill output vector with associated indices.
     */
    int getPatternIndices(int patternID,
 			 const int* IDs,
-			 int* indices,
-			 int& numIndices);
+			 std::vector<int>& indices);
 
    /** Query number of local lagrange constraints */
    int getLocalNumLagrangeConstraints() const;

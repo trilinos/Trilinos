@@ -80,10 +80,6 @@ namespace fei {
      */
     int parameters(const fei::ParameterSet& paramset);
 
-    /** Parameters method
-     */
-    int parameters(int numParams, const char* const* paramStrings);
-
     /** Obtain the underlying matrix object. Note that this will generally be
      only the locally-owned portion of the matrix, not including any data
     corresponding to shared-but-not-owned nodes, etc. */
@@ -448,14 +444,6 @@ int fei::Matrix_Impl<T>::parameters(const fei::ParameterSet& paramset)
 {
   Matrix_core::parameters(paramset);
   return 0;
-}
-
-//----------------------------------------------------------------------------
-template<typename T>
-int fei::Matrix_Impl<T>::parameters(int numParams,
-				   const char* const* paramStrings)
-{
-  return( Matrix_core::parameters(numParams, paramStrings) );
 }
 
 //----------------------------------------------------------------------------
