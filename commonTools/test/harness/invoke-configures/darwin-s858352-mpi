@@ -4,12 +4,13 @@ F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 CXXFLAGS="-O0" \
---with-incdirs="-I/sw/include -I/usr/include/malloc" \
+--with-incdirs="-I/sw/include -I/usr/include/malloc -I/Users/jmwille/boost_1_35_0" \
 --with-ldflags="-framework veclib -L/sw/lib/ -L/usr/local/lib" \
 --with-libs="-lsuperlu -lumfpack -lamd -lg2c -lexpat -lSystemStubs" \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
+--with-trilinosdatadir=/Users/jmwille/TrilinosTestHarness/TrilinosData \
 --with-gnumake \
 --disable-default-packages \
 --enable-amesos \
@@ -28,6 +29,8 @@ CXXFLAGS="-O0" \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
 --enable-galeri \
+--enable-external \
+--enable-fei \
 --enable-ifpack \
 --enable-intrepid \
 --enable-isorropia \
@@ -50,19 +53,26 @@ CXXFLAGS="-O0" \
 --enable-nox-tests \
 --enable-nox-thyra \
 --enable-pamgen \
+--enable-phalanx \
+--enable-phdmesh \
 --enable-pliris \
 --enable-pytrilinos \
+--enable-rbgen \
 --enable-rtop \
 --enable-rythmos \
 --enable-sacado \
 --enable-sacado-alltests \
 --with-cppunit-prefix=/Users/etphipp/cppunit-1.10.2/build_osx/install \
 --enable-stratimikos \
+--enable-sundance \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
 --enable-teuchos-expat \
 --enable-teuchos-extended \
+--enable-threadpool \
 --enable-thyra \
+--enable-tpetra \
 --enable-trilinoscouplings \
---enable-triutils
+--enable-triutils \
+--enable-zoltan

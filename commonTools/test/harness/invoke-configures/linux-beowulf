@@ -6,6 +6,7 @@ FFLAGS=-O3 \
 --disable-default-packages \
 --with-libs="-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2 -ltaucs_linux_lam -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4 -lumfpack_linux_lam -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ -lamd_linux_lam -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 -lsuperlu_linux_lam -lexpat -llapack -lcblas -lf77blas -latlas -lgfortran" \
 --with-incdirs="-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ -I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 -I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2 -I/common/boost_1_35_0" \
+--with-trilinosdatadir=/common/TrilinosTestHarness/TrilinosData \
 --enable-amesos \
 --enable-amesos-umfpack \
 --enable-amesos-superlu \
@@ -24,6 +25,7 @@ FFLAGS=-O3 \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
 --enable-external \
+--enable-fei \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
@@ -48,6 +50,7 @@ FFLAGS=-O3 \
 --enable-nox-thyra \
 --enable-pamgen \
 --enable-phalanx \
+--enable-phdmesh \
 --enable-pytrilinos \
 --enable-rbgen \
 --enable-rythmos \
@@ -57,6 +60,7 @@ FFLAGS=-O3 \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
 --enable-teuchos-expat \
+--enable-threadpool \
 --enable-thyra \
 --enable-tpetra \
 --enable-trilinoscouplings \
@@ -65,6 +69,8 @@ FFLAGS=-O3 \
 --enable-rtop \
 --enable-sacado \
 --enable-sacado-alltests \
+--enable-sundance \
 --enable-stratimikos \
 --enable-webtrilinos \
+--enable-zoltan \
 --with-gnumake

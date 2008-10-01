@@ -6,7 +6,7 @@ FFLAGS="-O3 -fPIC" \
 --cache-file=config.cache \
 --disable-default-packages \
 --with-libs="-L/home/jmwille/lib/UMFPACK/Lib -lumfpack -L/home/jmwille/lib/AMD/Lib -lamd -L/home/jmwille/lib/SuperLU_3.0 -lsuperlu_3.0" \
---with-incdirs="-I/home/jmwille/lib/UMFPACK/Include -I/home/jmwille/lib/AMD/Include -I/home/jmwille/lib/UFconfig -I/home/jmwille/lib/SuperLU_3.0/SRC" \
+--with-incdirs="-I/home/jmwille/lib/UMFPACK/Include -I/home/jmwille/lib/AMD/Include -I/home/jmwille/lib/UFconfig -I/home/jmwille/lib/SuperLU_3.0/SRC -I/home/jmwille/boost_1_35_0" \
 --with-trilinosdatadir=/home/jmwille/TrilinosTestHarness/TrilinosData \
 --enable-amesos \
 --enable-amesos-umfpack \
@@ -26,6 +26,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
 --enable-external \
+--enable-fei \
 --enable-galeri \
 --enable-ifpack \
 --enable-intrepid \
@@ -49,15 +50,19 @@ FFLAGS="-O3 -fPIC" \
 --enable-nox-tests \
 --enable-nox-thyra \
 --enable-pamgen \
+--enable-phalanx \
+--enable-phdmesh \
 --enable-pytrilinos \
 --enable-rbgen \
 --enable-rythmos \
 --enable-stokhos \
+--enable-sundance \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
 --enable-teuchos-expat \
+--enable-threadpool \
 --enable-thyra \
 --enable-tpetra \
 --enable-trilinoscouplings \
@@ -68,4 +73,5 @@ FFLAGS="-O3 -fPIC" \
 --enable-sacado-alltests \
 --enable-stratimikos \
 --enable-webtrilinos \
+--enable-zoltan \
 --with-gnumake
