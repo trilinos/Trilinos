@@ -47,7 +47,7 @@
 #include "Dimension.hpp"
 #include "Element_Linear2D.hpp"
 #include "Workset.hpp"
-#include "Phalanx_Allocator_New.hpp"
+#include "Phalanx_Allocator_Contiguous.hpp"
 
 // Debugging information
 #include "Phalanx_TypeStrings.hpp"
@@ -92,7 +92,7 @@ namespace PHX {
     // ******************************************************************
     // *** Allocator Type
     // ******************************************************************
-    typedef PHX::NewAllocator Allocator;
+    typedef PHX::ContiguousAllocator<double> Allocator;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
