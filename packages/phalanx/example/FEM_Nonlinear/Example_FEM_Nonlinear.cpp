@@ -412,7 +412,8 @@ int main(int argc, char *argv[])
 	TimeMonitor::getNewTimer("Post Registration Setup Time");
       {
 	TimeMonitor t(*registration_time);
-	fm.postRegistrationSetup(workset_size);
+	fm.postRegistrationSetupForType<MyTraits::Residual>(workset_size);
+	fm.postRegistrationSetupForType<MyTraits::Jacobian>(workset_size);
       }
     }
 

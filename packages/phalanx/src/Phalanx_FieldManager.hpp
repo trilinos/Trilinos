@@ -83,7 +83,7 @@ namespace PHX {
     
     //! Allows for different size worksets for each evaluation type
     template<typename EvalT>
-    void postRegistrationSetup(std::size_t max_num_cells);
+    void postRegistrationSetupForType(std::size_t max_num_cells);
 
     //! Forces the same size workset for all evaluation types
     void postRegistrationSetup(std::size_t max_num_cells);
