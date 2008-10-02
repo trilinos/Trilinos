@@ -1,9 +1,15 @@
 
 TODOs for the Trilinos/CMake system
 
-Last updated: 2008/09/25
+Last updated: 2008/09/28
 
-(*) Set up our own CDash results for Trilinos serial and mpi
+(*) [Ross] Upgrade TRILINOS_ADD_EXECUTABLE_AND_TEST(...) to include all of the
+arguments needed to call TRILINOS_ADD_EXECUTABLE(...) and
+TRILINOS_ADD_TEST(...).  This is important to reduce duplication.
+
+(*) 
+
+(*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
 - Set up area on software.sandia.gov for to host CDash:
   + https://software.sandia.gov/trilinos/developer/cdash-results
@@ -19,11 +25,12 @@ Last updated: 2008/09/25
   + Look into s858352. Talk with Mary Meinelt (msmeine@sandia.gov).
   + Look for another machine:  Sugesstion: Send reqeust to
 
-(*) Experiment with creating MS Windows Visual Studio project files
+(*) [Esteban] Experiment with creating MS Windows Visual Studio project files
 
-(*) Experiment with using CPack to create a MS Windows binary installer
+(*) [Esteban] Experiment with using CPack to create a MS Windows binary
+installer
 
-(*) Expand TrlinosCMakeQuickstart.txt
+(*) [Everyone] Expand TrlinosCMakeQuickstart.txt
 - Configuring Trilinos to build
 - Getting debug output
 - Building
