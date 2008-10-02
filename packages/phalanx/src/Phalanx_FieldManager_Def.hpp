@@ -33,17 +33,20 @@
 #define PHX_FIELD_MANAGER_DEF_HPP
 
 #include "Sacado_mpl_size.hpp"
+#include "Sacado_mpl_find.hpp"
 #include "boost/mpl/at.hpp"
 #include "Phalanx_EvaluationContainer_TemplateBuilder.hpp"
 
 // **************************************************************
 template<typename Traits>
 inline
-PHX::FieldManager<Traits>::FieldManager() :
-  m_max_num_cells(0)
+PHX::FieldManager<Traits>::FieldManager()
 {
   m_num_evaluation_types = 
     Sacado::mpl::size<typename Traits::EvalTypes>::value;
+  
+  m_max_num_cells.resize(m_num_evaluation_types);
+
   PHX::EvaluationContainer_TemplateBuilder<Traits> builder;
   m_eval_containers.buildObjects(builder);
 }
@@ -150,16 +153,41 @@ registerEvaluator(FieldManager::iterator it,
 
 // **************************************************************
 template<typename Traits>
+template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
 postRegistrationSetup(std::size_t max_num_cells)
 {
-  m_max_num_cells = max_num_cells;
+  std::size_t index = 
+    Sacado::mpl::find<typename Traits::EvalTypes,EvalT>::value;
+  // boost equivalent of above statement:
+  //unsigned index = 
+  //  boost::mpl::find<typename Traits::EvalTypes,EvalT>::type::pos::value;
+
+  m_max_num_cells[index] = max_num_cells;
+
+  m_eval_containers.template 
+    getAsObject<EvalT>().postRegistrationSetup(m_max_num_cells, *this);
 
   typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it)
     it->postRegistrationSetup(m_max_num_cells, *this);
+}
+
+// **************************************************************
+template<typename Traits>
+inline
+void PHX::FieldManager<Traits>::
+postRegistrationSetup(std::size_t max_num_cells)
+{
+  for (std::size_t i = 0; i < m_max_num_cells.size(); ++i)
+    m_max_num_cells[i] = max_num_cells;
+
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+  typename SCTM::iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it)
+    it->postRegistrationSetup(max_num_cells, *this);
 }
 
 // **************************************************************
@@ -194,10 +222,13 @@ postEvaluate(typename Traits::PostEvalData d)
 
 // **************************************************************
 template<typename Traits>
+template<typename EvalT>
 inline
 std::size_t PHX::FieldManager<Traits>::getMaxNumCells() const
 {
-  return m_max_num_cells;
+  std::size_t index = 
+    Sacado::mpl::find<typename Traits::EvalTypes,EvalT>::value;
+  return m_max_num_cells[index];
 }
 
 // **************************************************************

@@ -37,7 +37,8 @@
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
-PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer()
+PHX::EvaluationContainer<EvalT, Traits>::EvaluationContainer() :
+  post_registration_setup_called_(false)
 {
   this->vp_manager_.setEvaluationTypeName( PHX::typeAsString<EvalT>() );
   this->data_container_template_manager_.buildObjects();
@@ -114,6 +115,8 @@ postRegistrationSetup(std::size_t max_num_cells,
 
   // Allow field evaluators to grab pointers to relevant field data
   this->vp_manager_.postRegistrationSetup(fm);
+
+  post_registration_setup_called_ = true;
 }
 
 // *************************************************************************
@@ -121,6 +124,11 @@ template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+		      "You must call post registration setup for each evaluation type before calling the evaluateFields() method for that type!");
+#endif
+
   this->vp_manager_.evaluateFields(d);
 }
 
@@ -129,6 +137,11 @@ template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+		      "You must call post registration setup for each evaluation type before calling the preEvaluate() method for that type!");
+#endif
+
   this->vp_manager_.preEvaluate(d);
 }
 
@@ -137,6 +150,11 @@ template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+		      "You must call post registration setup for each evaluation type before calling the postEvaluate() method for that type!");
+#endif
+
   this->vp_manager_.postEvaluate(d);
 }
 
@@ -151,6 +169,13 @@ PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
   return r;
 }
 
+
+// *************************************************************************
+template <typename EvalT, typename Traits>
+bool PHX::EvaluationContainer<EvalT, Traits>::setupCalled() const
+{
+  return post_registration_setup_called_;
+}
 
 // *************************************************************************
 template <typename EvalT, typename Traits>

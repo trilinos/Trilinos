@@ -72,6 +72,9 @@ namespace PHX {
 
     void postEvaluate(typename Traits::PostEvalData d);
 
+    //! Return true if the postRegistrationSetupMethod has been called
+    bool setupCalled() const;
+
     void print(std::ostream& os) const;
 
   protected:
@@ -82,6 +85,8 @@ namespace PHX {
     data_container_template_manager_;
     
     typename Traits::Allocator allocator_;
+
+    bool post_registration_setup_called_;
 
   };
   

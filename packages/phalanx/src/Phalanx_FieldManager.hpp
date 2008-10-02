@@ -81,6 +81,11 @@ namespace PHX {
     template<typename DataT, typename EvalT> 
     void getFieldData(const PHX::FieldTag& t, Teuchos::ArrayRCP<DataT>& d);
     
+    //! Allows for different size worksets for each evaluation type
+    template<typename EvalT>
+    void postRegistrationSetup(std::size_t max_num_cells);
+
+    //! Forces the same size workset for all evaluation types
     void postRegistrationSetup(std::size_t max_num_cells);
 
     template<typename EvalT>
@@ -92,6 +97,7 @@ namespace PHX {
     template<typename EvalT>
     void postEvaluate(typename Traits::PostEvalData d);
 
+    template<typename EvalT>
     std::size_t getMaxNumCells() const;
 
     //! Return iterator to first EvaluationContainer
@@ -110,7 +116,7 @@ namespace PHX {
 
     PHX::EvaluationContainer_TemplateManager<Traits> m_eval_containers;
 
-    std::size_t m_max_num_cells;
+    std::vector<std::size_t> m_max_num_cells;
 
   };
 
