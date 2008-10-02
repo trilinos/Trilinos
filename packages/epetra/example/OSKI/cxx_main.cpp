@@ -1,5 +1,18 @@
 /*
-This comment includes my makefile I used to compile this example.  It is ugly but this is what I had to do to get things to work.  Good luck if you try.  IK 08-06-2008
+This example compares OSKI matrix operations to native Epetra operations.  To invoke this example, use
+
+  cxx_main.exe filename
+
+where filename is a Matrix Market formatted data file.  The first two lines *must* be of the form
+
+%%MatrixMarket matrix coordinate real general
+XX YY ZZ
+
+where the triplet XX YY ZZ contains the number of global rows, columns, and nonzeros, respectively.
+
+To compile this example, use a makefile similar to that below:
+
+### start of makefile ####
 
 include /home/ikarlin/Trilinos/build_mpi/packages/epetraext/Makefile.export.epetraext
 
@@ -30,6 +43,9 @@ ${ROOT}.exe: ${ROOT}.o
 
 ${ROOT}.o: ${ROOT}.cpp
         mpicxx -g -O0 -c -I/include -DHAVE_CONFIG_H ${EPETRAEXT_INCLUDES} ${ROOT}.cpp
+
+### end of makefile
+
 */
 
 //@HEADER
@@ -104,31 +120,48 @@ int main(int argc, char *argv[])
 
   ParameterList List;
   ParameterList List2;
-  string matrixfile = "A.dat";
-  const char *datafile = matrixfile.c_str();
+
+  const char *datafile;
+  if (argc > 1) datafile = argv[1];
+  else          datafile = "A.dat";
 
   // ===================================================== //
   // READ IN MATRICES FROM FILE                            //
   // ===================================================== //
 
-  if (!mypid) printf("reading %s\n",datafile); fflush(stdout);
   Epetra_CrsMatrix *Amat=NULL;
   int errCode=0;
+
+  const int lineLength = 1025;
+  char line[lineLength];
+  int Nrows,Ncols,NZ;
+  FILE *handle = fopen(datafile,"r");
+  if (handle == 0) {
+    if (mypid==0) {
+      printf("Cannot open file \"%s\" for reading.\n",datafile);
+      printf("usage: cxx_main.exe <filename>, where filename defaults to \"A.dat\".\n");
+    }
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
+    exit(EXIT_FAILURE);
+  }
+    
+  // Strip off header lines (which start with "%")
+  do {
+    if(fgets(line, lineLength, handle)==0) {if (handle!=0) fclose(handle);}
+  } while (line[0] == '%');
+  // Get problem dimensions: #global rows, #global cols, #global nonzeros
+  if(sscanf(line,"%d %d %d", &Nrows, &Ncols, &NZ)==0) {if (handle!=0) fclose(handle);}
+  fclose(handle);
   
-  int N[1];
-  int NZ[1];
-
-  N[0] = 90;
-  NZ[0] = 90;
-
-  std::ifstream inFile("A.dat", std::ios::in);
-
   Epetra_Map* rowmap;
   Epetra_Map* colmap;
 
-  rowmap = new Epetra_Map (N[0], 0, Comm);
-  colmap = new Epetra_Map (NZ[0], 0, Comm);
+  rowmap = new Epetra_Map (Nrows, 0, Comm);
+  colmap = new Epetra_Map (Ncols, 0, Comm);
 
+  if (mypid==0) printf("Reading matrix with %d rows, %d columns, %d nonzeros from file \"%s\".\n",Nrows,Ncols,NZ,datafile);
   errCode=EpetraExt::MatrixMarketFileToCrsMatrix(datafile, *rowmap, *colmap, Amat);
   Amat->OptimizeStorage();
 
@@ -234,7 +267,7 @@ int main(int argc, char *argv[])
   delete OskiAmat; 
   object.Close(); //close the OSKI object allows OSKI to do any garbage collection or freeing it needs.
   delete rowmap;
-  delete [] trans;
+  free(trans);
   delete colmap;
   delete Amat;
 
