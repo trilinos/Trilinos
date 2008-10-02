@@ -51,6 +51,7 @@
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_VbrRowMatrix.h"
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_Util.h"
 
 // Linear solver
 #include "BelosConfigDefs.hpp"
@@ -202,16 +203,18 @@ int main(int argc, char *argv[])
 
       RCP<Epetra_VbrMatrix> Jac_vbr = rcp(new Epetra_VbrMatrix(copy,graph));
 
+      Epetra_Util util;
+
       e = cells.begin();
       for (; e != cells.end(); ++e) {
 	for (std::size_t row = 0; row < e->numNodes(); ++row) {
 	  
 	  int global_row = e->globalNodeId(row);
 	  
-	  block_matrix(0,0) = static_cast<double>(global_row+1);
-	  block_matrix(0,1) = static_cast<double>(global_row+1);
-	  block_matrix(1,0) = static_cast<double>(global_row+1);
-	  block_matrix(1,1) = static_cast<double>(global_row+1);
+	  block_matrix(0,0) = util.RandomDouble();
+	  block_matrix(0,1) = util.RandomDouble();
+	  block_matrix(1,0) = util.RandomDouble();
+	  block_matrix(1,1) = util.RandomDouble();
 	  
 	  for (std::size_t col = 0; col < e->numNodes(); ++col) {
 	    int global_col = e->globalNodeId(col);
