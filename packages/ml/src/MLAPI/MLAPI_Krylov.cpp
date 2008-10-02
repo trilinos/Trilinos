@@ -14,7 +14,9 @@
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_RowMatrix.h"
+#ifdef HAVE_ML_AZTECOO
 #include "AztecOO.h"
+#endif
 #include "Teuchos_ParameterList.hpp"
 
 namespace MLAPI {
@@ -24,7 +26,11 @@ void Krylov(const Operator& A, const MultiVector& LHS,
             const MultiVector& RHS, const BaseOperator& Prec, 
             Teuchos::ParameterList& List)
 {
-
+#ifndef HAVE_ML_AZTECOO
+      cerr << "Please configure ML with --enable-aztecoo to use" << endl;
+      cerr << "MLAPI Krylov solvers" << endl;
+      exit(EXIT_FAILURE);
+#else
   if (LHS.GetNumVectors() != 1)
     ML_THROW("FIXME: only one vector is currently supported", -1);
 
@@ -70,6 +76,7 @@ void Krylov(const Operator& A, const MultiVector& LHS,
       
   solver.SetAztecOption(AZ_output, output);
   solver.Iterate(NumIters, Tol);
+#endif
 
 }
 
