@@ -82,7 +82,7 @@ endif
 if BUILD_TESTS
 tests:
 	@echo ""
-	@echo "Building fei tests."
+	@echo "Now building fei tests."
 	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
 	cd $(top_builddir)/utest_cases && $(MAKE)
@@ -104,7 +104,7 @@ endif
 if BUILD_EXAMPLES
 examples:
 	@echo ""
-	@echo "Building fei examples."
+	@echo "Now building fei examples."
 	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
 	@echo ""
