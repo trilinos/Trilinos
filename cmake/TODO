@@ -3,9 +3,41 @@ TODOs for the Trilinos/CMake system
 
 Last updated: 2008/09/28
 
-(*) [Ross] Upgrade TRILINOS_ADD_EXECUTABLE_AND_TEST(...) to include all of the
-arguments needed to call TRILINOS_ADD_EXECUTABLE(...) and
-TRILINOS_ADD_TEST(...).  This is important to reduce duplication.
+(*) [Ross] Create a macro TRILINOS_PACKAGES(...) that will do a bunch of stuff
+needed to declare a new pacakge.
+
+- Define some package-specific variables:
+  PACKAGE_NAME
+  PACKAGE_SOURCE_DIR
+  PACKAGE_BINARY_DIR
+
+- Check that certain variables have been defined correctly
+
+(*) [Ross] Add support for package dependanices and all the goodies
+
+- Create a stub file like Trilinos/pacakges/PACKAGE/cmake/Dependencies.cmake
+that gets read before processing any of the packages.  This file will define
+variables like:
+
+   ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACAKGES
+   ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES
+   ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES
+   ${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACAKGES
+
+- Add enable/disable option for each optional library pacakge dependence
+(i.e. ${PACAKGE_NAME}_ENABLE_${DEP_PACAKGE}).
+
+- When Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES is defined, enable all
+packages that depend on the current set of explicitly enabled packages.
+
+- When Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES is enabled, then enable all
+optional packages that currently enabled packages can use (i.e. every pacakges
+listed in ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES and, if tests or exmaples
+are enabled, those in ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES)
+
+- Enable all required dependent library packages (i.e. those specified in
+{PACAKGE_NAME}_LIB_REQUIRED_DEP_PACKAGES and, if tests or examples are enabled,
+those in ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES)
 
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 

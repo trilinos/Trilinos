@@ -1,7 +1,8 @@
-(*) Viewing available configure-time options
-with documentation
+(*) Viewing available configure-time options with documentation
 
-
+  $ cd $BUILD_DIR
+  $ rm CmakeCache.txt
+  $ cmake -LAH $TRILINOS_BASE_DIR
 
 (*) How to configure Trilinos to build
 
