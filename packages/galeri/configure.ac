@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(Galeri, 1.2d, trilinos-help@software.sandia.gov)
+AC_INIT(Galeri, 1.3d, trilinos-help@software.sandia.gov)
 
 # Hello World!
 #  #auto np# - package name below
