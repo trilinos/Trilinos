@@ -35,9 +35,11 @@ bin_PROGRAMS = Rythmos_UnitTest
 # Actual programs
 #
 
-Rythmos_UnitTest_INCLUDES =\
+EXTRA_DIST =\
   $(srcdir)/Rythmos_UnitTestHelpers.hpp\
-	$(srcdir)/Rythmos_UnitTestModels.hpp
+	$(srcdir)/Rythmos_UnitTestModels.hpp \
+	$(srcdir)/../SinCos/SinCosModel.hpp
+
 Rythmos_UnitTest_SOURCES =\
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
 	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
