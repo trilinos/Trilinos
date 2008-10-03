@@ -113,6 +113,7 @@ class Epetra_CrsGraphData : public Epetra_Data {
   bool NoDiagonal_;
   bool GlobalConstantsComputed_;
   bool StaticProfile_;
+  bool SortGhostsAssociatedWithEachProcessor_;
 
   int IndexBase_;
 

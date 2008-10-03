@@ -1046,6 +1046,25 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap,
   SortLists[0] = RemoteColIndices;
   SortLists[1] = RemoteSizeList;
   Util.Sort(true, NumRemoteColGIDs, PIDList.Values(), 0, 0, NLists, SortLists);
+  if (CrsGraphData_->SortGhostsAssociatedWithEachProcessor_) {
+    // Sort external column indices so that columns from a given remote processor are not only contiguous
+    // but also in ascending order. NOTE: I don't know if the number of externals associated
+    // with a given remote processor is known at this point ... so I count them here.
+
+    NLists--;
+    int StartCurrent, StartNext;
+    StartCurrent = 0; StartNext = 1;
+    while ( StartNext < NumRemoteColGIDs ) {
+      if ((PIDList.Values())[StartNext]==(PIDList.Values())[StartNext-1]) StartNext++;
+      else {
+        if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
+        Util.Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,NLists,SortLists);
+        StartCurrent = StartNext; StartNext++;
+      }
+    }
+    if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
+    Util.Sort(true, StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]), 0, 0, NLists, SortLists);
+  }
 
   // Now fill front end. Two cases:
   // (1) If the number of Local column GIDs is the same as the number of Local domain GIDs, we

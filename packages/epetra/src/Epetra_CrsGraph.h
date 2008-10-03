@@ -827,6 +827,18 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	/*! (Intended for developer use only for testing purposes.) */
 	const Epetra_CrsGraphData* DataPtr() const {return(CrsGraphData_);}
 
+        //! Forces FillComplete() to locally order ghostnodes associated with each remote processor in ascending order.
+        /*! To be compliant with AztecOO, FillComplete() already locally orders ghostnodes such that
+            information received from processor k has a lower local numbering than information received
+            from processor j if k is less than j.  SortGhostsAssociatedWithEachProcessor(True) further
+            forces FillComplete() to locally number all ghostnodes received from processor k in ascending
+            order. That is, the local numbering of b is less than c if the global numbering of b is less
+            than c and if both b and c are owned by the same processor. This is done to be compliant with
+            some limited block features within ML. In particular, some ML features require that a block
+            structure of the matrix be maintained even within the ghost variables.
+         */
+        void SortGhostsAssociatedWithEachProcessor(bool Flag) {CrsGraphData_->SortGhostsAssociatedWithEachProcessor_ = Flag;}
+
   //@}	
 
 	// functions listed in protected are the ones used by CrsMatrix and VbrMatrix.
@@ -872,6 +884,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	void SetIndicesAreLocal(bool Flag) {CrsGraphData_->IndicesAreLocal_ = Flag;}
 	void SetIndicesAreGlobal(bool Flag) {CrsGraphData_->IndicesAreGlobal_ = Flag;}
 	void SetSorted(bool Flag) {CrsGraphData_->Sorted_ = Flag;}
+
 
   //! Sort column indices, row-by-row, in ascending order.
   /*!
