@@ -1,17 +1,15 @@
-# $Header$
+
+
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 
 #
 # A) Basic top-level Trilinos stuff
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-
 PROJECT(Trilinos)
+
 SET(Trilinos_VERSION "9.0d")
-
-FIND_PACKAGE(Perl)
-
 SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(TRILINOS_TEST_CATEGORY "FRAMEWORK")
@@ -23,7 +21,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # B) Define the list of all Trilinos packages
 #
 
-# Setup paqckages to include ...
+# Setup packages in their order of dependencies.
 SET( Trilinos_PACKAGES
  Teuchos
  RTOp
@@ -34,7 +32,16 @@ SET( Trilinos_PACKAGES
 
 
 #
-# C) Set up user options and global variables that will be used throughout
+# C) Read in the package dependancies
+#
+
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
+  INCLUDE(packages/${PACKAGE_DIR}/cmake/Dependencies.cmake)
+ENDFOREACH()
+
+#
+# D) Set up user options and global variables that will be used throughout
 #
 
 INCLUDE(TrilinosGlobalHelpers)
@@ -42,14 +49,14 @@ INCLUDE(TrilinosGlobalHelpers)
 OPTION(VERBOSE_CONFIGURE "Make the configure process verbose." OFF)
 
 SET( Trilinos_ENABLE_ALL_PACKAGES "" CACHE BOOL
-  "Enable all packages (set to ON, OFF, or leave DEFAULT)." )
+  "Enable all packages (set to ON, OFF, or leave empty)." )
 SET( Trilinos_ENABLE_TESTS "" CACHE BOOL
-  "Enable tests in all packages  (set to ON, OFF, or leave DEFAULT)." )
+  "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
 SET( ${PROJECT_NAME}_ENABLE_EXAMPLES "" CACHE BOOL
-  "Enable examples in all packages  (set to ON, OFF, or leave DEFAULT)." )
+  "Enable examples in all packages  (set to ON, OFF, or leave empty)." )
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  TRILINOS_INSERT_STANDARD_PACAKGE_VARIABLES(${PACKAGE})
+  TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS(${PACKAGE})
 ENDFOREACH()
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
@@ -57,10 +64,6 @@ OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 
 SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${Trilinos_VERSION}")
 SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${Trilinos_VERSION}/include")
-
-SET(Trilinos_INCLUDE_DIRS "" CACHE INTERNAL "Trilinos include directories")
-SET(Trilinos_LIBRARY_DIRS "" CACHE INTERNAL "Trilinos library directories")
-SET(Trilinos_LIBRARIES "" CACHE INTERNAL "Trilinos libraries")
 
 MARK_AS_ADVANCED(BUILD_SHARED_LIBS)
 MARK_AS_ADVANCED(BUILD_TESTING)
@@ -79,13 +82,23 @@ MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 # LAPACK libraries advanced since you almost always have to specify these and
 # we don't want to hide that from users.
 
+#
+# E) Apply logic to enable Trilinos pacakges and tests
+#
+
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  TRILINOS_POSTPROCESS_STANDARD_PACAKGE_VARIABLES(${PACKAGE})
+  TRILINOS_APPLY_ALL_PACKAGE_ENABLES(${PACKAGE})
 ENDFOREACH()
+
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  TRILINOS_APPLY_TEST_EXAMPLE_EANBLES(${PACKAGE})
+ENDFOREACH()
+
+# ToDo: Implement!
 
 
 #
-# D) Probe the environment on this computer
+# F) Probe the environment on this computer
 #
 
 INCLUDE(TrilinosProbeEnv)
@@ -94,7 +107,7 @@ INCLUDE(TrilinosFortranMangling)
 
 
 #
-# E) Set up for testing with CTest and Trilinos test harness
+# G) Set up for testing with CTest and Trilinos test harness
 #
 
 INCLUDE(CTest)
@@ -123,7 +136,7 @@ ADD_CUSTOM_TARGET(
 
 
 #
-# F) Setup for packaging and distribution
+# H) Setup for packaging and distribution
 #
 
 SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
@@ -144,12 +157,16 @@ INCLUDE(CPack)
 
 
 #
-# G) Configure the individual pacakges
+# I) Configure the individual pacakges
 # 
 
 MESSAGE("")
 MESSAGE("Configuring individual Trilinos packages ...")
 MESSAGE("")
+
+SET(Trilinos_INCLUDE_DIRS "" CACHE INTERNAL "")
+SET(Trilinos_LIBRARY_DIRS "" CACHE INTERNAL "")
+SET(Trilinos_LIBRARIES "" CACHE INTERNAL "")
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
   IF(Trilinos_ENABLE_${PACKAGE})
@@ -157,9 +174,8 @@ FOREACH(PACKAGE ${Trilinos_PACKAGES})
     # 2008/06/09: rabartl: Above, you can not assume that all package names are lower
     #   case.  This will not work for PyTrilinos, ForTrilinos, ThreadPool, etc.  You should
     #   just name the packages with their directory names!
-    MESSAGE(STATUS "Trilinos_ENABLE_${PACKAGE}=${Trilinos_ENABLE_${PACKAGE}}")
+    SET(PACKAGE_NAME_GLOBAL ${PACKAGE}) # For checking
     ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
-    #INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/packages/${PACKAGE_DIR}/${PACKAGE}Config.cmake)
     LIST(APPEND Trilinos_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
     LIST(APPEND Trilinos_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
     LIST(APPEND Trilinos_LIBRARIES ${${PACKAGE}_LIBRARIES})
@@ -172,10 +188,8 @@ LIST(REMOVE_DUPLICATES Trilinos_LIBRARIES)
 
 
 #
-# H) Install commands
+# J) Install-related commands
 #
 
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake )
-
-

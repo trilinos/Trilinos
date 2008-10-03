@@ -13,7 +13,8 @@ cmake \
 -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
 -D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
 -D Epetra_ENABLE_FORTRAN:BOOL=ON \
--D RBGen_ENABLE_EPETRA:BOOL=ON \
 -D F77_FUNC_:STRING="(name,NAME) name ## __" \
 $EXTRA_ARGS \
 ../../../Trilinos
+
+#-D RBGen_ENABLE_EPETRA:BOOL=ON \

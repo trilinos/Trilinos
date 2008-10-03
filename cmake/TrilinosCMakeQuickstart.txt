@@ -4,32 +4,66 @@
   $ rm CmakeCache.txt
   $ cmake -LAH $TRILINOS_BASE_DIR
 
-(*) How to configure Trilinos to build
+(*) Viewing available configure-time options without documentation
 
-  a) Use ccmake $TRILINOS_BASE_DIR
+  $ cd $BUILD_DIR
+  $ rm CmakeCache.txt
+  $ cmake -LA $TRILINOS_BASE_DIR
 
-  b) [Recommened] Create a do_configure scripts like:
+(*) Configuring Trilinos to build
 
-      EXTRA_ARGS=$@
-      
-      cmake \
-      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-      -D Trilinos_ENABLE_TESTS:BOOL=ON \
-      -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
-      -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
-      -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
-      -D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
-      -D Epetra_ENABLE_FORTRAN:BOOL=ON \
-      -D CMAKE_CXX_FLAGS:STRING="-DTEUCHOS_DEBUG -g -O0 -ansi -pedantic -Wall" \
-      -D F77_FUNC_:STRING="(name,NAME) name ## __" \
-      -D DART_TESTING_TIMEOUT:STRING=600 \
-      -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
-      $EXTRA_ARGS \
-      ../../../Trilinos
+  a) Use ccmake:
+
+    $ ccmake $TRILINOS_BASE_DIR
+
+  b) [Recommened] Create a 'do_configure' scripts like:
+
+        EXTRA_ARGS=$@
+        
+        cmake \
+        -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+        -D Trilinos_ENABLE_TESTS:BOOL=ON \
+        -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+        -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
+        -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
+        -D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
+        -D Epetra_ENABLE_FORTRAN:BOOL=ON \
+        -D CMAKE_CXX_FLAGS:STRING="-DTEUCHOS_DEBUG -g -O0 -ansi -pedantic -Wall" \
+        -D F77_FUNC_:STRING="(name,NAME) name ## __" \
+        -D DART_TESTING_TIMEOUT:STRING=600 \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+        $EXTRA_ARGS \
+        ../../../Trilinos
+
+      and then run it as:
+
+        $ ./do-configure [OTHER_OPTIONS]
+
+      See Trilinos/sampleScripts/*cmake for real examples.
+
+(*) Configuring Trilinos to test all effects of changing a given package(s):
+
+  $ do-configure \
+     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+     -D Trilinos_ENABLE_Epetra:BOOL=ON \
+     -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON \
+     -D Trilinos_ENABLE_TESTS:BOOL=ON \
+     -D Trilinos_ENABLE_EXAMPLES:BOOL=ON
+
+(*) Configuring a package(s) along with all of the packages it can use
+
+  $ do-configure \
+     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+     -D Trilinos_ENABLE_NOX:BOOL=ON \
+     -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
 
 (*) Getting verbose output from configure
 
   $ ./do_configure -D VERBOSE_CONFIGURE:BOOL=ON
+
+(*) Viewing current values of cache variables
+
+  $ cmake -LA $TRILINOS_BASE_DIR
 
 (*) Discovering what targets are available to build after configuration:
 
@@ -59,17 +93,19 @@
 
   c) Only running tests for a single package
 
-    $ ctest -R Epetra
+    $ ctest -R PACKAGE_NAME
 
+    (e.g. PACKAGE_NAME = Teuchos, Epetra, etc.)
     (see output in Testing/Temporary/LastTest.log)
 
   d) Runing memory checking
 
     $ ctest -R Epetra -T memcheck
 
-    (see the detailed output in ./Testing/Temporary/LastDynamicAnalysis_20080925-1648.log)
+    (see the detailed output in
+    ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
   
-(*) Running the perl-based runtest tests
+(*) Running the perl-based runtest tests from global level
 
   a) Serial tests
 
@@ -78,5 +114,17 @@
   b) MPI tests
 
     $ make runtests-mpi
+
+    (NOTE: No need to specify MPIGO or anything else!)
+  
+(*) Running the perl-based runtest tests from package level
+
+  a) Serial tests
+
+    $ make runtests-serial-PACKAGE_SOURCE_DIR
+
+  b) MPI tests
+
+    $ make runtests-mpi-PACKAGE_SOURCE_DIR
 
     (NOTE: No need to specify MPIGO or anything else!)

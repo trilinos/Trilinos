@@ -1,0 +1,159 @@
+Last updated 2008/10/30
+
+Here we describe how package dependencies are set up and managed in Trilinos.
+
+---------------------------------
+A) Top-level user cache varibles
+---------------------------------
+
+Set PACKAGE_NAME be a Trilinos package name such as Teuchos, Epetra, Thyra
+etc.
+
+The following public cache varibles are set by users to define what packages
+and tests/examples get enabled:
+
+Trilinos_ENABLE_${PACKAGE_NAME}
+
+  Set by the user to 'ON' or 'OFF' or left empty.  If left empty, the package
+  will be enabled if Trilinos_ENABLE_ALL_PACKAGES=ON..
+
+${PACKAGE_NAME}_ENABLE_TESTS
+
+  Set by the user to 'ON', 'OFF', or left empty.  If left empty, the tests for
+  ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
+  and Trilinos_ENABLE_TESTS=ON.
+
+${PACKAGE_NAME}_ENABLE_EXAMPLES
+
+  Set by the user to 'ON', 'OFF', or left empty.  If left empty, the examples for
+  ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
+  and Trilinos_ENABLE_EXAMPLES=ON.
+
+Trilinos_ENABLE_ALL_PACKAGES
+
+  Enables all packages that are not explicitly disabled.  Setting
+  Trilinos_ENABLE_ALL_PACKAGES=OFF has the same effect as leaving it empty.
+
+Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES
+
+  If set to ON, then all packages that depend the set of packages enabled by the
+  cache varaibles Trilinos_ENABLE_${PACKAGE_NAME}=ON and/or
+  Trilinos_ENABLE_ALL_PACKAGES=ON will also be enabled.  This option is used
+  primarily to aid in testing all affects for changes in a given packages
+  source code affecting the package's library(s).
+
+Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES
+
+  If set to ON, the all packages that are optionally used by the library or tests/examples
+  of all of the packages enabled by the options Trilinos_ENABLE_${PACKAGE_NAME}=ON will
+  be enabled.  This option is turned on automatically if
+  Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES=ON.  This is done because this is needed
+  to fully test the effects of changing the given set of packages.
+  NOTE: If Trilinos_ENABLE_ALL_PACKAGES=ON then this option is meaningless
+  because all packages will be enabled anyway.
+
+Trilinos_ENABLE_TESTS
+
+  Enables or disabled all tests in all enabled packages (after all of the
+  above logic is applied) that are not explicitly enabled or disabled.  For
+  example, if Teuchos_ENABLE_TESTS=ON, then it will stay that way independent
+  what this variable is.
+
+Trilinos_ENABLE_EXAMPLES
+
+  Same as for Trilinos_ENABLE_TESTS except enables and disable examples
+  in all packages.
+
+The way that packages are enabled depending on the above user cache varaibles
+is now described.
+
+1) The set of package enables is first adjusted based based on
+Trilinos_ENABLE_ALL_PACKAGES.  This is the set of packages that the user
+really wants to directly work with or has modified and wants to fully test
+changes for.
+
+2) If Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES=ON, then the current set of
+enabled packages is augmented with the list of all packages that depend
+(either required or optional) on these user enabled packages.  This set of
+packages represents all of the packages that depend on the packages that the
+user has explicitly enabled.  This is the set of packages, for instance, that
+need to be tested before changes to the explicitly enabled packages are
+commited to the version control repository.
+
+3) The set of package test/example enables in ${PACKAGE_NAME}_ENABLE_TESTS and
+${PACKAGE_NAME}_ENABLE_EXAMPLES is then modified for the current set of
+enabled packages and also the values of Trilinos_ENABLE_TESTS and
+Trilinos_ENABLE_EXAMPLES.  The reason that test/examples enables/disables are
+defined at this point in the process is that this is the set of tests/examples
+that need to be turned on to throughly test the set of given packages.
+
+4) If Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON, then all of the packages that
+can be used that are currently enabled packages will be turned on.  NOTE: The
+tests and examples for these packages will not be enabled by
+Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES but only if they are
+explicitly turned on by the user.
+
+5) Finally, all of the required packages for the current set of enabled
+packages are also enabled.  NOTE: The tests and examples for these packages
+will *not* be enabled by Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES
+but only if they are explicitly turned on by the user.
+
+--------------------------------------------------------------------------------
+B) Top-level internal non-cache varibles defining direct package dependencies
+--------------------------------------------------------------------------------
+
+The following top-level non-cache variables are defined by each packages
+Dependencies.cmake file and they are used to define the basic dependenices
+that exist between packages to support the package enable and disable logic
+described above.
+
+${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACAKGES
+
+  The list of *direct* package dependencies that are required for the
+  libraries built by ${PACKAGE_NAME}.  These should not include indiect
+  dependencies but it is harmless to list these also.
+
+${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES
+
+  The list of *direct* package dependencies that are only optional for the
+  libraries built by ${PACKAGE_NAME}.  These should not include indiect
+  dependencies but it is harmless to list these also.
+
+${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES
+
+  The list of *direct* package dependencies that are required for the
+  tests/examples built by ${PACKAGE_NAME}.  This list should not contain
+  any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACAKGES.
+  These should not include indiect dependencies but it is harmless to list
+  these also.
+
+${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACAKGES
+
+  The list of *direct* package dependencies that are optional for the
+  tests/examples built by ${PACKAGE_NAME}.  This list should not contain
+  any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACAKGES,
+  ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES, or
+  ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES.  These should not include
+  indiect dependencies but it is harmless to list these also.
+
+--------------------------------------------------------------------------------
+C) Top-level internal cache varibles defining header and library dependencies
+--------------------------------------------------------------------------------
+
+The following top-level internal cache varibles are used to communicate the
+required header directory paths and libraries needed to build and link against
+a given package's capabilities.
+
+${PROJECT_NAME}_INCLUDE_DIRS
+
+  Contains the list of directory paths needed to find PACAKGE_NAME's
+  header files.
+
+${PROJECT_NAME}_LIBRARY_DIRS
+
+  Contains the list of directory paths needed to find PACKAGE_NAMES's build
+  libraries.
+
+${PROJECT_NAME}_LIBRARIES
+
+  Contains the list of unadorned libraries that are needed to link to.

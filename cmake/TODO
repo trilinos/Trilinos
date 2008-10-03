@@ -24,8 +24,10 @@ variables like:
    ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES
    ${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACAKGES
 
-- Add enable/disable option for each optional library pacakge dependence
-(i.e. ${PACAKGE_NAME}_ENABLE_${DEP_PACAKGE}).
+- For each optional dependent library package, add the global cache option
+${PACAKGE_NAME}_ENABLE_${DEP_PACAKGE_NAME}.  In addition, this option will be
+set to ON if Trilinos_ENABLE_${PACKAGE_NAME}=ON and
+Trilinos_ENABLE_${DEP_PACKAGE_NAME}=ON
 
 - When Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES is defined, enable all
 packages that depend on the current set of explicitly enabled packages.

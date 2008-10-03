@@ -1,3 +1,4 @@
+
 # Note: we should really be probing for these values, but will hard-code them
 # in the short-term.  Most of these should be fine for all but ridiculously
 # out-of-date C++ compilers, but you never know.
@@ -30,6 +31,10 @@ SET(HAVE_SSTREAM TRUE)
 SET(HAVE_STDEXCEPT TRUE)
 SET(HAVE_STRING TRUE)
 SET(HAVE_VECTOR TRUE)
+
+# Find Perl
+
+FIND_PACKAGE(Perl)
 
 # Find the hostname used in selecting or deselecting tests by
 # TRILINOS_ADD_TEST(...) function.
