@@ -1,28 +1,21 @@
 
-
-# 2008/07/09: rabartl: ToDo:
-#
-# (*) Support optional DIRECTORY argument
-#
-# (*) Support multiple ARGS keywords
-#
-# (*) Support an optional POSTFIX argument for naming tests with different
-# ARGS keywords
-
-#INCLUDE(Trilinos_Add_Executable)
 INCLUDE(Parse_Variable_Arguments)
 
-FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
+FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
    
   #
   # A) Parse the input arguments
   #
 
   PARSE_ARGUMENTS(
-     PARSE   #prefix
-     "NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;NAME;PASS_REGULAR_EXPRESSION;HOST;XHOST;FAIL_REGULAR_EXPRESSION"  #lists
-     "DESEND_INTO_DIR"   #options
-     ${ARGN} )
+     #prefix
+     PARSE
+     #lists
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;NAME;HOST;XHOST;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
+     #options
+     ""
+     ${ARGN}
+     )
 
   IF(PARSE_ARGS)
     LIST(LENGTH PARSE_ARGS NUM_PARSE_ARGS)
@@ -256,7 +249,6 @@ FUNCTION (TRILINOS_ADD_TEST EXE_NAME)
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES FAIL_REGULAR_EXPRESSION
      ${PARSE_FAIL_REGULAR_EXPRESSION})
   ENDIF()
-
   
-ENDFUNCTION(TRILINOS_ADD_TEST)
+ENDFUNCTION()
 

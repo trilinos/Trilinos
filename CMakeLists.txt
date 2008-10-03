@@ -26,6 +26,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Setup paqckages to include ...
 SET( Trilinos_PACKAGES
  Teuchos
+ RTOp
  Epetra
  #Anasazi
  RBGen
@@ -158,7 +159,7 @@ FOREACH(PACKAGE ${Trilinos_PACKAGES})
     #   just name the packages with their directory names!
     MESSAGE(STATUS "Trilinos_ENABLE_${PACKAGE}=${Trilinos_ENABLE_${PACKAGE}}")
     ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
-    INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/packages/${PACKAGE_DIR}/${PACKAGE}Config.cmake)
+    #INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/packages/${PACKAGE_DIR}/${PACKAGE}Config.cmake)
     LIST(APPEND Trilinos_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
     LIST(APPEND Trilinos_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
     LIST(APPEND Trilinos_LIBRARIES ${${PACKAGE}_LIBRARIES})
