@@ -279,6 +279,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_aristos" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
+        test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_sundance" != "Xno" ||
@@ -705,7 +706,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_CTRILINOS, test "X$BUILD_CTRILINOS" != "Xno")
 
-if test "X$ac_cv_use_zoltan" != "Xno"; then
+if test "X$ac_cv_use_zoltan" != "Xno" ||
+        test "X$ac_cv_use_isorropia" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/zoltan])
   BUILD_ZOLTAN=yes
   if test "X$ac_cv_use_zoltan_explicit" != "Xyes"; then
