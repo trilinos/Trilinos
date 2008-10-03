@@ -220,10 +220,15 @@ top_srcdir = @top_srcdir@
 @FEI_HAVE_FETI_TRUE@FETIDP_CPPFLAGS = $(FETIDP_INCLUDES)
 DEFAULT_INCLUDES = -I$(top_srcdir)/utest_cases $(FEI_INCLUDES) $(HYPRE_CPPFLAGS) $(PETSC_CPPFLAGS) $(PROMETHEUS_CPPFLAGS) $(FETIDP_CPPFLAGS)
 CORE_H = \
+	$(top_srcdir)/utest_cases/fei_unit_CommUtils.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_CSRMat_CSVec.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_DirBC.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_Reducer.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcase.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcontainer.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_register_tests.hpp \
-	$(top_srcdir)/utest_cases/fei_unit_test_runner.hpp
+	$(top_srcdir)/utest_cases/fei_unit_test_runner.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_utils.hpp
 
 CORE = \
 	$(srcdir)/fei_unit_testcase.cpp \
