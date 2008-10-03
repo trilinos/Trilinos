@@ -7,8 +7,6 @@ Last updated: 2008/09/28
 arguments needed to call TRILINOS_ADD_EXECUTABLE(...) and
 TRILINOS_ADD_TEST(...).  This is important to reduce duplication.
 
-(*) 
-
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
 - Set up area on software.sandia.gov for to host CDash:
@@ -18,7 +16,7 @@ TRILINOS_ADD_TEST(...).  This is important to reduce duplication.
     rabartl and ejguill)
 
 - Set up a MS Windows test machine feeding into Trilinos dashbaord
-  + Talk with Danny D. and Bill G.
+  + Talk with Danny D. and Bill Goldman
   + Get automated builds/tests with CTest/CDash running
 
 - Set up a MAC test machine feeding into Trilinos dashboard

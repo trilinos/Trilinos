@@ -1,3 +1,6 @@
+(*) Viewing available configure-time options
+with documentation
+
 
 
 (*) How to configure Trilinos to build
