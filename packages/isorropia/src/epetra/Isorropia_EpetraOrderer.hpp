@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraOrderer_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -62,11 +62,11 @@ namespace Epetra {
 class Orderer : virtual public Isorropia::Orderer, public Isorropia::Epetra::Operator {
 public:
 
-  Orderer(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+  Orderer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	  const Teuchos::ParameterList& paramlist,
 	  bool compute_now=true);
 
-  Orderer(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+  Orderer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	  const Teuchos::ParameterList& paramlist,
 	  bool compute_now=true);
 
@@ -88,6 +88,7 @@ public:
         will force a new partitioning to be computed.
    */
   void order(bool force_ordering=false);
+
 
   void compute(bool forceOrdering=false) {
     return (order(forceOrdering));

@@ -35,7 +35,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraZoltanLib.hpp>
@@ -75,27 +75,27 @@ namespace Isorropia {
 
 namespace Epetra {
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph):
   Library(input_graph)
 {
   setInputType("HYPERGRAPH");
 }
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-			  Teuchos::RefCountPtr<CostDescriber> costs):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			  Teuchos::RCP<CostDescriber> costs):
   Library(input_graph, costs)
 {
   setInputType("HYPERGRAPH");
 }
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix):
   Library(input_matrix)
 {
   setInputType("HYPERGRAPH");
 }
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-			  Teuchos::RefCountPtr<CostDescriber> costs):
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			  Teuchos::RCP<CostDescriber> costs):
   Library(input_matrix, costs)
 {
   setInputType("HYPERGRAPH");
@@ -109,8 +109,7 @@ int ZoltanLibClass::precompute()
 
   //MMW  bool isHypergraph = true;
   std::string lb_method_str("LB_METHOD");
-  if (zoltanParamList_.isParameter(lb_method_str))
-  {
+  if (zoltanParamList_.isParameter(lb_method_str)){
     std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
 
     if (lb_meth == "GRAPH")
@@ -229,8 +228,7 @@ int ZoltanLibClass::precompute()
     iter = zoltanParamList_.begin(),
     iter_end = zoltanParamList_.end();
 
-  for(; iter != iter_end; ++iter) 
-  {
+  for(; iter != iter_end; ++iter) {
     const std::string& name = iter->first;
     const std::string& value = Teuchos::getValue<std::string>(iter->second);
     zz_->Set_Param(name, value);
@@ -243,7 +241,6 @@ int ZoltanLibClass::precompute()
 
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
-
 
   if (inputType_ == "HGRAPH2D_FINEGRAIN")
   {
@@ -258,8 +255,7 @@ int ZoltanLibClass::precompute()
 				 (void *)queryObject_.get());
     zz_->Set_HG_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Edge_Weights, (void *)queryObject_.get());
   }
-  else
-  {
+  else{
     zz_->Set_Num_Edges_Multi_Fn(ZoltanLib::QueryObject::Number_Edges_Multi, (void *)queryObject_.get());
     zz_->Set_Edge_List_Multi_Fn(ZoltanLib::QueryObject::Edge_List_Multi, (void *)queryObject_.get());
   }
@@ -386,10 +382,10 @@ void ZoltanLibClass::preCheckPartition()
   int localProc = comm.MyPID();
   int nprocs = comm.NumProc();
 
-  // Checks for Zoltan parameters NUM_GLOBAL_PARTITIONS and NUM_LOCAL_PARTITIONS.
+  // Checks for Zoltan parameters NUM_GLOBAL_PARTS and NUM_LOCAL_PARTS.
 
-  std::string gparts_str("NUM_GLOBAL_PARTITIONS");
-  std::string lparts_str("NUM_LOCAL_PARTITIONS");
+  std::string gparts_str("NUM_GLOBAL_PARTS");
+  std::string lparts_str("NUM_LOCAL_PARTS");
   std::string gparts("0");
   std::string lparts("0");
 
@@ -416,7 +412,7 @@ void ZoltanLibClass::preCheckPartition()
   maxLparts = maxParts[1];
 
   // Fix problem if the number of rows is less than the number
-  // of processes.  We need to set NUM_GLOBAL_PARTITIONS to
+  // of processes.  We need to set NUM_GLOBAL_PARTS to
   // the number of rows, unless it was already set to something
   // greater than 0 but less than the number of rows.
 
@@ -442,18 +438,18 @@ void ZoltanLibClass::preCheckPartition()
     if (maxGparts > 0){
       if (maxGparts > numrows){
 	// This is an error because we can't split rows among partitions
-	str2 = "NUM_GLOBAL_PARTITIONS exceeds number of rows (objects to be partitioned)";
+	str2 = "NUM_GLOBAL_PARTS exceeds number of rows (objects to be partitioned)";
 	throw Isorropia::Exception(str1+str2);
       }
 
       if ((sumLparts > 0) && (sumLparts != maxGparts)){
 	// This is an error because local partitions must sum to number of global
-	str2 = "NUM_GLOBAL_PARTITIONS not equal to sum of NUM_LOCAL_PARTITIONS";
+	str2 = "NUM_GLOBAL_PARTS not equal to sum of NUM_LOCAL_PARTS";
 	throw Isorropia::Exception(str1+str2);
       }
 
       if ((sumLparts == 0) && (maxGparts < nprocs)){
-	// Set NUM_LOCAL_PARTITIONS to 1 or 0, because Zoltan will divide
+	// Set NUM_LOCAL_PARTS to 1 or 0, because Zoltan will divide
 	// a partition across 2 or more processes when the number of
 	// partitions is less than the number of processes.  This doesn't
 	// work for Epetra matrices, where rows are not owned by more than
@@ -464,8 +460,8 @@ void ZoltanLibClass::preCheckPartition()
     }
     else if (maxLparts > 0){
 
-      // Set NUM_GLOBAL_PARTITIONS to sum of local partitions.  It's possible
-      // that Zoltan does this already, but just to be safe...
+      // Set NUM_GLOBAL_PARTS to sum of local partitions.  
+      // Zoltan does this already, but just to be safe...
 
       fixGparts = sumLparts;
     }
@@ -505,17 +501,10 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
   preCheckPartition();
 
-  // Avoid to construct import list.
-  // Perhaps "PARTITION ASSIGNMENTS" will be better in term of performance.
-  zoltanParamList_.set("RETURN_LISTS", "EXPORT AND IMPORT");
-
-  preCheckPartition();
-
   precompute();
 
   std::string lb_approach_str("LB_APPROACH");
-  if (!zoltanParamList_.isParameter(lb_approach_str)) 
-  {
+  if (!zoltanParamList_.isParameter(lb_approach_str)) {
     zoltanParamList_.set(lb_approach_str, "PARTITION");
   }
 

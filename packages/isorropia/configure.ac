@@ -37,6 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
+
 AC_INIT(isorropia, 3.1d, egboman@sandia.gov)
 
 echo "----------------------------------------"
@@ -193,11 +194,15 @@ AC_CXX_STD_SPRINTF
 # The following section is required to decide if Epetra and/or Zoltan support
 # should be built.
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetra, EPETRA, HAVE_EPETRA, yes, [Build Epetra support in Isorropia.], [Build Epetra support in Isorropia.  Can be overridden with --disable-isorropia-epetra.])
-AM_CONDITIONAL(BUILD_EPETRA, [test "X$ac_cv_use_epetra" != "Xno"])
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetra, EPETRA, HAVE_EPETRA, yes, [Build Epetra support in Isorropia.], [Build Epetra support in Isorropia.  Can be overridden with --disable-isorropia-epetra.])
+#This will always be true
+#AM_CONDITIONAL(BUILD_EPETRA, [test "X$ac_cv_use_epetra" != "Xno"])
+AC_DEFINE(HAVE_EPETRA,,[define unconditionally since Isorropia depends on Epetra])
 
-TAC_ARG_ENABLE_FEATURE_SUB( isorropia, zoltan, [Enable Isorropia interface support for Zoltan], ISORROPIA_ZOLTAN, no)
-AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_isorropia_zoltan" != "Xno"])
+#Isorropia now depends on Zoltan
+#TAC_ARG_ENABLE_FEATURE_SUB( isorropia, zoltan, [Enable Isorropia interface support for Zoltan], ISORROPIA_ZOLTAN, no)
+#AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_isorropia_zoltan" != "Xno"])
+AC_DEFINE(HAVE_ISORROPIA_ZOLTAN,,[define unconditionally since Isorropia depends on Zoltan])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext, EPETRAEXT, HAVE_EPETRAEXT, yes, [Use EpetraExt in Isorropia.], [Use EpetraExt in Isorropia.  Can be overridden with --disable-isorropia-epetraext.])
 AM_CONDITIONAL(BUILD_EPETRAEXT, [test "X$ac_cv_use_epetraext" != "Xno"])

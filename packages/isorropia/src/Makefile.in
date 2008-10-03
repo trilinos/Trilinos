@@ -70,9 +70,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = src
-DIST_COMMON = $(am__include_HEADERS_DIST) \
-	$(srcdir)/Isorropia_config.h.in $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Isorropia_config.h.in \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -113,20 +112,6 @@ AR = ar
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libisorropia_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__libisorropia_a_SOURCES_DIST = $(srcdir)/Isorropia_Utils.cpp \
-	$(srcdir)/Isorropia_Exception.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraOperator.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraColorer.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp \
-	$(srcdir)/epetra/Isorropia_Epetra.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp \
-	$(srcdir)/epetra/zoltanLib/QueryObject.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraPartitioner2D.cpp \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.cpp
 am__objects_1 = Isorropia_Utils.$(OBJEXT) \
 	Isorropia_Exception.$(OBJEXT)
 am__objects_2 = Isorropia_EpetraCostDescriber.$(OBJEXT) \
@@ -137,12 +122,11 @@ am__objects_2 = Isorropia_EpetraCostDescriber.$(OBJEXT) \
 	Isorropia_EpetraRedistributor.$(OBJEXT) \
 	Isorropia_EpetraLibrary.$(OBJEXT) \
 	Isorropia_EpetraInternalPartitioner.$(OBJEXT)
-@BUILD_EPETRA_TRUE@am__objects_3 = $(am__objects_2)
+am__objects_3 = $(am__objects_2)
 am__objects_4 = QueryObject.$(OBJEXT) \
 	Isorropia_EpetraPartitioner2D.$(OBJEXT) \
 	Isorropia_EpetraZoltanLib.$(OBJEXT)
-@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_5 =  \
-@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_4)
+am__objects_5 = $(am__objects_4)
 am_libisorropia_a_OBJECTS = $(am__objects_1) $(am__objects_3) \
 	$(am__objects_5)
 libisorropia_a_OBJECTS = $(am_libisorropia_a_OBJECTS)
@@ -154,29 +138,7 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(libisorropia_a_SOURCES)
-DIST_SOURCES = $(am__libisorropia_a_SOURCES_DIST)
-am__include_HEADERS_DIST = $(srcdir)/Isorropia_CostDescriber.hpp \
-	$(srcdir)/Isorropia_Operator.hpp \
-	$(srcdir)/Isorropia_Partitioner.hpp \
-	$(srcdir)/Isorropia_Partitioner2D.hpp \
-	$(srcdir)/Isorropia_Colorer.hpp \
-	$(srcdir)/Isorropia_Orderer.hpp \
-	$(srcdir)/Isorropia_Redistributor.hpp \
-	$(srcdir)/Isorropia_Utils.hpp \
-	$(srcdir)/Isorropia_Exception.hpp \
-	$(srcdir)/Isorropia_ConfigDefs.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraOperator.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraColorer.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraOrderer.hpp \
-	$(srcdir)/epetra/Isorropia_Epetra.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.hpp \
-	$(srcdir)/epetra/zoltanLib/QueryObject.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraPartitioner2D.hpp \
-	$(srcdir)/epetra/Isorropia_EpetraZoltanLib.hpp
+DIST_SOURCES = $(libisorropia_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -309,7 +271,8 @@ CORE_H = \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp \
-	$(srcdir)/Isorropia_ConfigDefs.hpp
+	$(srcdir)/Isorropia_ConfigDefs.hpp \
+	$(srcdir)/Isorropia_Version.hpp
 
 EPETRA = \
 	$(srcdir)/epetra/Isorropia_EpetraCostDescriber.cpp \
@@ -346,13 +309,22 @@ EPETRA_ZOLTAN_H = \
 
 #	$(srcdir)/epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp 
 DEFAULT_INCLUDES = $(ISORROPIA_INCLUDES)
-@BUILD_EPETRA_TRUE@EPETRA_SOURCES = $(EPETRA)
-@BUILD_EPETRA_TRUE@EPETRA_HEADERFILES = $(EPETRA_H)
-@BUILD_EPETRA_TRUE@EPETRA_INC = -I$(srcdir)/epetra
-@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@EPETRA_ZOLTAN_SOURCES = $(EPETRA_ZOLTAN)
-@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@EPETRA_ZOLTAN_HEADERFILES = $(EPETRA_ZOLTAN_H)
-@BUILD_EPETRA_TRUE@@BUILD_ZOLTAN_TRUE@ZOLTAN_INC = -I$(srcdir)/epetra/zoltanLib
+
+#Isorropia now depends on Epetra
+#if BUILD_EPETRA
+EPETRA_SOURCES = $(EPETRA)
+EPETRA_HEADERFILES = $(EPETRA_H)
+EPETRA_INC = -I$(srcdir)/epetra
+
+#Isorropia now depends on Zoltan
+#if BUILD_ZOLTAN
+EPETRA_ZOLTAN_SOURCES = $(EPETRA_ZOLTAN)
+EPETRA_ZOLTAN_HEADERFILES = $(EPETRA_ZOLTAN_H)
+ZOLTAN_INC = -I$(srcdir)/epetra/zoltanLib
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ISORROPIA_INCLUDES)
+#endif
+
+#endif
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ISORROPIA_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_INC) $(ZOLTAN_INC)
 

@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraZoltanLib_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -60,12 +60,12 @@ namespace Epetra {
 class ZoltanLibClass : public Library {
 public:
 
-  ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph);
-  ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-	    Teuchos::RefCountPtr<CostDescriber> costs);
-  ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix);
-  ZoltanLibClass(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-	    Teuchos::RefCountPtr<CostDescriber> costs);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+	    Teuchos::RCP<CostDescriber> costs);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	    Teuchos::RCP<CostDescriber> costs);
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
@@ -95,7 +95,7 @@ private:
   Teuchos::ParameterList zoltanParamList_;
   std::string partMethod_; // stores partitioning method used, perhaps should be in EpetraLibrary?
   Zoltan *zz_;
-  Teuchos::RefCountPtr<ZoltanLib::QueryObject> queryObject_;
+  Teuchos::RCP<ZoltanLib::QueryObject> queryObject_;
   int num_obj_;
 };//class ZoltanLibClass
 

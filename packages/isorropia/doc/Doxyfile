@@ -173,6 +173,8 @@ JAVADOC_AUTOBRIEF      = YES
 
 INHERIT_DOCS           = YES
 
+INLINE_INHERITED_MEMB  = YES
+
 # If the INLINE_INFO tag is set to YES (the default) then a tag [inline] 
 # is inserted in the documentation for inline members. 
 

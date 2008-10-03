@@ -32,7 +32,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
@@ -63,7 +63,7 @@ namespace Isorropia {
 namespace Epetra {
 
 Operator::
-Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 const Teuchos::ParameterList& paramlist)
   : input_map_(),
     input_graph_(input_graph),
@@ -77,8 +77,8 @@ Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 }
 
 Operator::
-Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-	 Teuchos::RefCountPtr<CostDescriber> costs,
+Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+	 Teuchos::RCP<CostDescriber> costs,
 	 const Teuchos::ParameterList& paramlist)
   : input_map_(),
     input_graph_(input_graph),
@@ -93,7 +93,7 @@ Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 }
 
 Operator::
-Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	 const Teuchos::ParameterList& paramlist)
   : input_map_(),
     input_graph_(),
@@ -107,8 +107,8 @@ Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 }
 
 Operator::
-Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-	 Teuchos::RefCountPtr<CostDescriber> costs,
+Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	 Teuchos::RCP<CostDescriber> costs,
 	 const Teuchos::ParameterList& paramlist)
   : input_map_(),
     input_graph_(),
@@ -224,6 +224,7 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
   }
 
   // Change parameter names and values to upper case
+
   for (unsigned int i=0; i < paramNames.size(); i++){
 
     std::string origName(paramNames[i]);

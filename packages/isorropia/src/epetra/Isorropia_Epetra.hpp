@@ -31,7 +31,7 @@ USA
 #define _Isorropia_Epetra_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
@@ -77,8 +77,8 @@ namespace Epetra {
     include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
     0 to 10, default is 1), etc.
 */
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		   const Teuchos::ParameterList& paramlist);
 
 /** create_partitioner(), a function which is part of the Isorropia API, 
@@ -102,9 +102,9 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
     0 to 10, default is 1), etc.
 */
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-		   Teuchos::RefCountPtr<CostDescriber> costs,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+		   Teuchos::RCP<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist);
 
 /** create_partitioner(), a function which is part of the Isorropia API, 
@@ -128,8 +128,8 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
     0 to 10, default is 1), etc.
 */
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		   const Teuchos::ParameterList& paramlist);
 
 /** create_partitioner(), a function which is part of the Isorropia API, 
@@ -153,9 +153,9 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
     include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
     0 to 10, default is 1), etc.
 */
-Teuchos::RefCountPtr<Partitioner>
-create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-		   Teuchos::RefCountPtr<CostDescriber> costs,
+Teuchos::RCP<Partitioner>
+create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+		   Teuchos::RCP<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist);
 
 /** create_target_map() is an internal function used by Isorropia.
@@ -165,7 +165,7 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
    This function calls partitioner.compute_partitioning() if it has not
    already been called.
 */
-// Teuchos::RefCountPtr<Epetra_Map>
+// Teuchos::RCP<Epetra_Map>
 // create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -186,7 +186,7 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
   each row.
 
 */
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -205,7 +205,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -234,7 +234,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      const Teuchos::ParameterList& paramlist);
 
@@ -270,7 +270,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
@@ -293,7 +293,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   each row.
 
 */
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -312,7 +312,7 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -342,7 +342,7 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
   each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      const Teuchos::ParameterList& paramlist);
 
@@ -377,7 +377,7 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
@@ -400,7 +400,7 @@ Teuchos::RefCountPtr<Epetra_RowMatrix>
   each row.
 
 */
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -420,7 +420,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -449,7 +449,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
   each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      const Teuchos::ParameterList& paramlist);
 
@@ -483,7 +483,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
@@ -507,7 +507,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 
 */
 
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem & input_problem);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -526,7 +526,7 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -556,7 +556,7 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
   attempt to minimize cuts in the hyperedges.
 */
 
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      const Teuchos::ParameterList& paramlist);
 
@@ -590,7 +590,7 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
@@ -612,7 +612,7 @@ Teuchos::RefCountPtr<Epetra_LinearProblem>
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   redistribute_rows(const Epetra_CrsMatrix& input_matrix,
                     const Epetra_Map& target_rowmap,
                     Epetra_Import* importer=0);
@@ -634,7 +634,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   redistribute_rows(const Epetra_RowMatrix& input_matrix,
                     const Epetra_Map& target_rowmap,
                     Epetra_Import* importer=0);
@@ -651,7 +651,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
   redistribute_rows(const Epetra_CrsGraph& input_graph,
                     const Epetra_Map& target_rowmap,
                     Epetra_Import* importer=0);
@@ -671,7 +671,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
   redistribute(const Epetra_MultiVector& input,
                const Epetra_BlockMap& target_map,
                Epetra_Import* importer=0);
@@ -691,7 +691,7 @@ Teuchos::RefCountPtr<Epetra_MultiVector>
      used to perform the import operation. Otherwise, a temporary importer
      will be created and used.
 */
-Teuchos::RefCountPtr<Epetra_Vector>
+Teuchos::RCP<Epetra_Vector>
   redistribute(const Epetra_Vector& input,
                const Epetra_Map& target_map,
                Epetra_Import* importer=0);

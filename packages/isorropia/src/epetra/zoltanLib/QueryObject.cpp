@@ -48,9 +48,9 @@ namespace Epetra {
 
 namespace ZoltanLib{
 
-QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
-	   Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
-				     const std::string &inputType)
+QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
+			  Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
+			  const std::string &inputType)
   : graph_(graph),
     matrix_(0),
     rowMap_(&(graph->RowMap())),
@@ -92,9 +92,9 @@ QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
   }
 }
 
-QueryObject::QueryObject( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
-	     Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
-				 const std::string &inputType)
+QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
+			  Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
+			  const std::string &inputType)
   : graph_(0),
     matrix_(matrix),
     rowMap_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
@@ -187,8 +187,7 @@ int QueryObject::Number_Objects(void *data, int *ierr)
 
   QueryObject *zq = (QueryObject *)data;
 
-  if (zq)
-  {
+  if (zq){
     numObj = zq->My_Number_Objects(ierr);
   }
   else{
@@ -690,8 +689,7 @@ void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int 
     *num_lists = graph_->NumMyRows();       // Number of rows
     *num_pins = graph_->NumMyNonzeros();    // Total nonzeros in these rows
   }
-  else
-  {
+  else{
     *num_lists = matrix_->NumMyRows();       // Number of rows
     *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
   }
@@ -813,8 +811,7 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   {
     npins = graph_->NumMyNonzeros();
   }
-  else
-  {
+  else{
     npins = matrix_->NumMyNonzeros();
     int maxrow = matrix_->MaxNumEntries();
     if (maxrow > 0){
@@ -828,8 +825,7 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
 
   if ((format != ZOLTAN_COMPRESSED_VERTEX) ||
       (num_row_or_col != rowMap_->NumMyElements()) ||
-      (num_pins != npins))
-  {
+      (num_pins != npins)){
     *ierr = ZOLTAN_FATAL;
     std::cout << "Proc:" << myProc_ << " Error: ";
     std::cout << "QueryObject::My_HG_CS, bad arguments" << std::endl;
@@ -840,13 +836,11 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   int pin_start_pos = 0;
   int *gids = (int *)pin_GID;
 
-  for (int i=0; i<num_row_or_col; i++)
-  {
+  for (int i=0; i<num_row_or_col; i++){ 
     vtxedge_GID[i] = rowMap_->GID(i);
     vtxedge_ptr[i] = pin_start_pos;
 
-    if (haveGraph_)
-    {
+    if (haveGraph_){
       rc = graph_->ExtractMyRowCopy(i, npins, num_indices, gids + pin_start_pos);
     }
     else{
@@ -894,8 +888,7 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   }
 #endif
 
-  if (tmp)
-  {
+  if (tmp){
     delete [] tmp;
   }
 }

@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraOperator_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -65,7 +65,7 @@ public:
         API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RefCountPtr is used here because a
+        is to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -84,14 +84,14 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Operator(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               const Teuchos::ParameterList& paramlist);
 
   /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
         API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RefCountPtr is used here because a
+        is to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -113,8 +113,8 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Operator (Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-              Teuchos::RefCountPtr<CostDescriber> costs,
+  Operator (Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+              Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist);
 
   /**
@@ -122,7 +122,7 @@ public:
        API function create_partitioner().
 
      \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RefCountPtr is used here because a
+        to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -141,7 +141,7 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	   const Teuchos::ParameterList& paramlist);
 
   /**
@@ -149,7 +149,7 @@ public:
      CostDescriber, called by API function create_partitioner(). 
 
      \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RefCountPtr is used here because a
+        to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -171,8 +171,8 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Operator(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-	   Teuchos::RefCountPtr<CostDescriber> costs,
+  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	   Teuchos::RCP<CostDescriber> costs,
 	   const Teuchos::ParameterList& paramlist);
 
   /** Destructor */
@@ -232,11 +232,11 @@ private:
   std::vector<int> numberElemsByProperties_;
 
 protected:
-  Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix_;
-  Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs_;
-  Teuchos::RefCountPtr<Epetra_Vector> weights_;
+  Teuchos::RCP<const Epetra_BlockMap> input_map_;
+  Teuchos::RCP<const Epetra_CrsGraph> input_graph_;
+  Teuchos::RCP<const Epetra_RowMatrix> input_matrix_;
+  Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs_;
+  Teuchos::RCP<Epetra_Vector> weights_;
 
   Teuchos::ParameterList paramlist_;
 
@@ -251,7 +251,7 @@ protected:
   int global_num_graph_edge_weights_;
   int global_num_hg_edge_weights_;
 
-  Teuchos::RefCountPtr<Library> lib_;
+  Teuchos::RCP<Library> lib_;
 
   void computeNumberOfProperties();
 };//class Operator

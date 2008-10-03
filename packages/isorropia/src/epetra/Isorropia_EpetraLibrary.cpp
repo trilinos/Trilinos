@@ -32,7 +32,7 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
@@ -60,7 +60,7 @@ namespace Isorropia {
 namespace Epetra {
 
 Library::
-Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph)
+Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph)
   : input_map_(),
     input_graph_(input_graph),
     input_matrix_(),
@@ -70,8 +70,8 @@ Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph)
 }
 
 Library::
-Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-	 Teuchos::RefCountPtr<CostDescriber> costs)
+Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+	 Teuchos::RCP<CostDescriber> costs)
   : input_map_(),
     input_graph_(input_graph),
     input_matrix_(),
@@ -82,7 +82,7 @@ Library(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 }
 
 Library::
-Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix)
+Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix)
   : input_map_(),
     input_graph_(),
     input_matrix_(input_matrix),
@@ -92,8 +92,8 @@ Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix)
 }
 
 Library::
-Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-	Teuchos::RefCountPtr<CostDescriber> costs)
+Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	Teuchos::RCP<CostDescriber> costs)
   : input_map_(),
     input_graph_(),
     input_matrix_(input_matrix),
@@ -103,15 +103,15 @@ Library(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 }
 
 void Library::
-setInput(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph)
+setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph)
 {
   input_graph_ = input_graph;
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
 }
 
 void Library::
-setInput(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-	 Teuchos::RefCountPtr<CostDescriber> costs)
+setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+	 Teuchos::RCP<CostDescriber> costs)
 {
   input_graph_ = input_graph;
   costs_ = costs;
@@ -119,15 +119,15 @@ setInput(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 }
 
 void Library::
-setInput(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix)
+setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix)
 {
   input_matrix_ = input_matrix;
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
 }
 
 void Library::
-setInput(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-	 Teuchos::RefCountPtr<CostDescriber> costs)
+setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	 Teuchos::RCP<CostDescriber> costs)
 {
   input_matrix_ = input_matrix;
   costs_ = costs;

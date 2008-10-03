@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraInternal_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -61,12 +61,12 @@ namespace Epetra {
 class InternalPartitioner : public Library {
 public:
 
-  InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph);
-  InternalPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-		      Teuchos::RefCountPtr<CostDescriber> costs);
-  InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix);
-  InternalPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-		      Teuchos::RefCountPtr<CostDescriber> costs);
+  InternalPartitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
+  InternalPartitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+		      Teuchos::RCP<CostDescriber> costs);
+  InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
+  InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+		      Teuchos::RCP<CostDescriber> costs);
 
   virtual ~InternalPartitioner();
 
