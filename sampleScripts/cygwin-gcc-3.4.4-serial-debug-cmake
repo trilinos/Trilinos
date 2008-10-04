@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# This is the script that I (Ross Bartlett) use to build Trilinos on
+# my Windows XP laptop using cygwin.  I keep a symbolic link to this
+# file so this is very likely to be kept up to date.
+#
+
+EXTRA_ARGS=$@
+
+cmake \
+-D CMAKE_CXX_FLAGS:STRING="-g -O0 -ansi -pedantic -Wall" \
+-D F77_FUNC_:STRING="(name,NAME) name ## __" \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+-D Teuchos_ENABLE_DEBUG:BOOL=ON \
+-D Teuchos_ENABLE_COMPLEX:BOOL=ON \
+-D Teuchos_ENABLE_EXTENDED:BOOL=ON \
+-D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
+-D Epetra_ENABLE_FORTRAN:BOOL=ON \
+$EXTRA_ARGS \
+../../../Trilinos
+
+#-D RBGen_ENABLE_EPETRA:BOOL=ON \
