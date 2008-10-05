@@ -1,0 +1,11 @@
+MACRO(TRILINOS_ADD_OPTION USER_OPTION_NAME MACRO_DEFINE_NAME DOCSTRING DEFAULT_VALUE)
+  #MESSAGE("TRILINOS_ADD_OPTION: '${USER_OPTION_NAME}' '${MACRO_DEFINE_NAME}' '${DEFAULT_VALUE}'")
+  SET( ${USER_OPTION_NAME} ${DEFAULT_VALUE} CACHE BOOL ${DOCSTRING} )
+  IF(NOT ${MACRO_DEFINE_NAME} STREQUAL "")
+    #MESSAGE("${USER_OPTION_NAME}_MACRO_DEFINE_NAME = ${MACRO_DEFINE_NAME}")
+    SET(${USER_OPTION_NAME}_MACRO_DEFINE_NAME ${MACRO_DEFINE_NAME})
+  ENDIF()
+  # NOTE: We can't set the actual macro define name here because the value of the
+  # user option may change and therefore we must just remember the name and
+  # set it later.
+ENDMACRO()

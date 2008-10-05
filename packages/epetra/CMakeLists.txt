@@ -1,34 +1,9 @@
-#
-# A) Define the package
-#
 
 INCLUDE(TrilinosPackageHelpers)
+
 TRILINOS_PACKAGE(Epetra LANGUAGES CXX C)
 
 SET(${PACKAGE_NAME}_VERSION "3.7d")
-
-#
-# B) Set up package-specific options
-#
-
-IF(WIN32 AND NOT CYGWIN)
-  SET(${PACKAGE_NAME}_ENABLE_FORTRAN_DEFAULT OFF)
-ELSE()
-  SET(${PACKAGE_NAME}_ENABLE_FORTRAN_DEFAULT ON)
-ENDIF()
-
-OPTION(${PACKAGE_NAME}_ENABLE_FORTRAN
-  "Build Fortran library for this package."
-  ${${PACKAGE_NAME}_ENABLE_FORTRAN_DEFAULT}
-  )
-
-IF(${PACKAGE_NAME}_ENABLE_FORTRAN)
-  ENABLE_LANGUAGE(Fortran)
-ENDIF()
-
-#
-# C) Add the libraries and examples
-#
 
 ADD_SUBDIRECTORY(src)
 
@@ -39,9 +14,5 @@ ENDIF()
 IF(${PACKAGE_NAME}_ENABLE_EXAMPLES)
   ADD_SUBDIRECTORY(example)
 ENDIF()
-
-#
-# D) Do standard postprocessing
-#
 
 TRILINOS_PACKAGE_POSTPROCESS()

@@ -59,6 +59,17 @@ FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS(${PACKAGE})
 ENDFOREACH()
 
+IF(WIN32 AND NOT CYGWIN)
+  SET(Trilinos_ENABLE_FORTRAN_DEFAULT OFF)
+ELSE()
+  SET(Trilinos_ENABLE_FORTRAN_DEFAULT ON)
+ENDIF()
+
+OPTION(Trilinos_ENABLE_FORTRAN
+  "Build Fortran library for this package."
+  ${Trilinos_ENABLE_FORTRAN_DEFAULT}
+  )
+
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 
@@ -86,12 +97,20 @@ MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 # E) Apply logic to enable Trilinos pacakges and tests
 #
 
+MESSAGE("")
+MESSAGE("Adjusting package enables ...")
+MESSAGE("")
+
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_APPLY_ALL_PACKAGE_ENABLES(${PACKAGE})
 ENDFOREACH()
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_APPLY_TEST_EXAMPLE_EANBLES(${PACKAGE})
+ENDFOREACH()
+
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  TRILINOS_SET_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
 ENDFOREACH()
 
 # ToDo: Implement!
@@ -101,7 +120,15 @@ ENDFOREACH()
 # F) Probe the environment on this computer
 #
 
+MESSAGE("")
+MESSAGE("Probing the environment ...")
+MESSAGE("")
+
 INCLUDE(TrilinosProbeEnv)
+
+IF(Trilinos_ENABLE_FORTRAN)
+  ENABLE_LANGUAGE(Fortran)
+ENDIF()
 
 INCLUDE(TrilinosFortranMangling)
 

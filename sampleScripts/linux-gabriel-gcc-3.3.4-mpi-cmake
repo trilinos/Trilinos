@@ -4,10 +4,10 @@ cmake \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+-D Trilinos_ENABLE_FORTRAN:BOOL=OFF \
 -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
 -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
 -D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
--D Epetra_ENABLE_FORTRAN:BOOL=OFF \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/mpi/bin/mpiCC \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/local/mpi/bin/mpicc \
 -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/local/mpi/bin/mpif77 \
@@ -17,7 +17,3 @@ cmake \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 $EXTRA_ARGS \
 ../../../Trilinos
-
-
-# -D Epetra_ENABLE_FORTRAN:BOOL=ON \
-# -D F77_FUNC_:STRING="(name,NAME) name ## __" \

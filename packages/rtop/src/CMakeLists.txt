@@ -1,4 +1,3 @@
-# $Header$ 
 
 INCLUDE(TrilinosPackageLibraryHelpers)
 
@@ -11,10 +10,6 @@ TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_Config.h)
 #
 # B) Define the header and source files (and directories)
 #
-
-INCLUDE_DIRECTORIES(${Teuchos_INCLUDE_DIRS})
-# 2008/09/27: rabartl: Do the above automatically based on the list of
-# dependent packages!
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -151,10 +146,6 @@ TRILINOS_PACKAGE_ADD_LIBRARY(
     ${RTOP_SUPPORT}
     ${RTOP_OPS_LIB}
     ${RTOP_LAPACK}
-  DEPLIBS
-    ${Teuchos_LIBRARIES}
-    # 2008/09/27: rabartl: Add the above libraries automatically based on the
-    # list of dependent packages!
   )
 
 #

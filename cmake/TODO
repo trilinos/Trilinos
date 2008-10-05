@@ -41,6 +41,10 @@ are enabled, those in ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES)
 {PACAKGE_NAME}_LIB_REQUIRED_DEP_PACKAGES and, if tests or examples are enabled,
 those in ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES)
 
+(*) [Ross] Have TRILINOS_ADD_OPTION(...) and
+TRILINOS_PACKAGE_CONFIGURE_FILE(...) work together to automatically add the
+macro defines to the configure file if they don't already exist!
+
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
 - Set up area on software.sandia.gov for to host CDash:

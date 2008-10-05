@@ -1,4 +1,3 @@
-# $Header$
 
 INCLUDE(TrilinosPackageLibraryHelpers)
 
@@ -6,7 +5,7 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-IF(${PROJECT_NAME}_ENABLE_FORTRAN)
+IF(Trilinos_ENABLE_FORTRAN)
   SET(HAVE_FORTRAN_SUPPORT TRUE)
 ELSE()
   SET(HAVE_FORTRAN_SUPPORT FALSE)
@@ -196,7 +195,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-IF(${PROJECT_NAME}_ENABLE_FORTRAN)  
+IF(Trilinos_ENABLE_FORTRAN)  
   SET(EPETRA_FORTRAN_LIB epetra_fortran)  
   TRILINOS_PACKAGE_ADD_LIBRARY(
     ${EPETRA_FORTRAN_LIB}
