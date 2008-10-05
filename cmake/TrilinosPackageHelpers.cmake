@@ -26,7 +26,7 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   #
 
   SET(PACKAGE_NAME "${PACKAGE_NAME_IN}")
-  MESSAGE(STATUS "Enabling Trilinos Package: ${PACKAGE_NAME}")
+  MESSAGE(STATUS "Processing enabled Trilinos package: ${PACKAGE_NAME}")
 
   # Set up a new CMake "project" for this Trilinos "package"
   IF (PARSE_LANGUAGES)
