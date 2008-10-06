@@ -59,10 +59,10 @@
 //Declarations for helper-functions that create epetra objects. These
 //functions are implemented at the bottom of this file.
 #ifdef HAVE_EPETRA
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
   create_epetra_graph(int numProcs, int localProc);
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   create_epetra_matrix(int numProcs, int localProc);
 #endif
 
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
   //Create a Epetra_CrsGraph object. This graph will be the input to
   //the Isorropia rebalancing function...
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> crsgraph;
+  Teuchos::RCP<Epetra_CrsGraph> crsgraph;
   try {
     crsgraph = create_epetra_graph(numProcs, localProc);
   }
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
   //No parameters. By default, Isorropia will use Zoltan for the
   //partitioning.
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
+  Teuchos::RCP<Epetra_CrsGraph> balanced_graph;
   try {
     balanced_graph =
       Isorropia::Epetra::create_balanced_copy(*crsgraph, paramlist);
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
   //and then have Isorropia::create_balanced_copy create a copy which is
   //balanced so that the number of nonzeros are equal on each processor.
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> crsmatrix;
+  Teuchos::RCP<Epetra_CrsMatrix> crsmatrix;
   try {
     crsmatrix = create_epetra_matrix(numProcs, localProc);
   }
@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
         << std::endl;
   }
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
+  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix;
   try {
     balanced_matrix =
       Isorropia::Epetra::create_balanced_copy(*crsmatrix, paramlist);
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
 
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
   create_epetra_matrix(int numProcs, int localProc)
 {
   if (localProc == 0) {
@@ -275,7 +275,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   Epetra_Map rowmap(global_num_rows, local_num_rows, 0, comm);
 
   //create a matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> matrix =
+  Teuchos::RCP<Epetra_CrsMatrix> matrix =
     Teuchos::rcp(new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row));
 
   std::vector<int> indices(nnz_per_row);
@@ -318,7 +318,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   return(matrix);
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
+Teuchos::RCP<Epetra_CrsGraph>
   create_epetra_graph(int numProcs, int localProc)
 {
   if (localProc == 0) {
@@ -358,7 +358,7 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
   Epetra_Map rowmap(global_num_rows, local_num_rows, 0, comm);
 
   //create a graph
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graph =
+  Teuchos::RCP<Epetra_CrsGraph> graph =
     Teuchos::rcp(new Epetra_CrsGraph(Copy, rowmap, nnz_per_row));
 
   std::vector<int> indices(nnz_per_row);
