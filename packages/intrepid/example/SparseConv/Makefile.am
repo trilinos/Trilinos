@@ -45,42 +45,44 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_SACADO
-  INTREPID_BASIS_EX1 = example_01
-  INTREPID_BASIS_EX2 = example_02
-  INTREPID_BASIS_EX3 = example_03
+if BUILD_EPETRA
+if BUILD_EPETRAEXT
+if BUILD_AMESOS
+if BUILD_AMESOS_UMFPACK
+  INTREPID_SPARSECONV_EX1 = example_01
+endif
+endif
+endif
+endif
 endif
 
-noinst_PROGRAMS = $(INTREPID_BASIS_EX1) $(INTREPID_BASIS_EX2) $(INTREPID_BASIS_EX3)
+noinst_PROGRAMS = $(INTREPID_SPARSECONV_EX1)
 
 # Dependencies used when rebuilding examples without building everything from scratch.
 
 if BUILD_SACADO
+if BUILD_EPETRA
+if BUILD_EPETRAEXT
+if BUILD_AMESOS
+if BUILD_AMESOS_UMFPACK
   include $(top_builddir)/../sacado/Makefile.export.sacado
+  include $(top_builddir)/../epetra/Makefile.export.epetra
+  include $(top_builddir)/../epetraext/Makefile.export.epetraext
+  include $(top_builddir)/../amesos/Makefile.export.amesos
+endif
+endif
+endif
+endif
 endif
 
 example_01_DEPENDENCIES = \
-	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../sacado/src/libsacado.a
+  $(top_builddir)/src/libintrepid.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
+  $(top_builddir)/../sacado/src/libsacado.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../epetraext/src/libepetraext.a \
+  $(top_builddir)/../amesos/src/libamesos.a
 
 example_01_SOURCES = example_01.cpp
-example_01_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS)
-example_01_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
-
-example_02_DEPENDENCIES = \
-	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../sacado/src/libsacado.a
-
-example_02_SOURCES = example_02.cpp
-example_02_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS)
-example_02_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
-
-example_03_DEPENDENCIES = \
-	$(top_builddir)/src/libintrepid.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../sacado/src/libsacado.a
-
-example_03_SOURCES = example_03.cpp
-example_03_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS)
-example_03_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES)
+example_01_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS) $(EPETRA_LIBS) $(EPETRAEXT_LIBS) $(AMESOS_LIBS)
+example_01_CXXFLAGS = -I$(srcdir) $(SACADO_INCLUDES) $(EPETRA_INCLUDES) $(EPETRAEXT_INCLUDES) $(AMESOS_INCLUDES)

@@ -326,6 +326,21 @@ TAC_ARG_ENABLE_FEATURE_SUB( intrepid, debug, [Enable intrepid debug mode],
 TAC_ARG_ENABLE_FEATURE_SUB( intrepid, fiatvho, [Enable intrepid FIAT very high order bases],
                 INTREPID_FIAT_VERY_HIGH_ORDER, no)
 
+# ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: Teuchos
+# Optional: Epetra, EpetraExt, Sacado, Amesos (w/ Umfpack)
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(intrepid, sacado, INTREPID_SACADO, BUILD_SACADO, yes, [Build examples which use Sacado.], [Build examples which use Sacado. Can be overridden with --disable-intrepid-sacado.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(intrepid, epetra, INTREPID_EPETRA, BUILD_EPETRA, yes, [Build examples which use Epetra.], [Build examples which use Epetra. Can be overridden with --disable-intrepid-epetra.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(intrepid, epetraext, INTREPID_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build examples which use EpetraExt.], [Build examples which use EpetraExt. Can be overridden with --disable-intrepid-epetraext.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(intrepid, amesos, INTREPID_AMESOS, BUILD_AMESOS, yes, [Build examples which use Amesos.], [Build examples which use Amesos. Can be overridden with --disable-intrepid-amesos.])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(amesos, umfpack, INTREPID_AMESOS_UMFPACK, BUILD_AMESOS_UMFPACK, yes, [Build examples which use Amesos interface to Umfpack. Can be overridden with --disable-intrepid-amesos-umfpack.], [Build examples which use Amesos interface to Umfpack.])
 
 # ------------------------------------------------------------------------
 # Specify other directories
@@ -369,6 +384,7 @@ AC_CONFIG_FILES([
   example/RealSpace/Makefile
   example/FieldContainer/Makefile
   example/Basis/Makefile
+  example/SparseConv/Makefile
   test/Basis/F0_TRI_C1_FEM_FIAT/Makefile
   test/Basis/F0_TRI_C2_FEM_FIAT/Makefile
   test/Basis/F0_TRI_C3_FEM_FIAT/Makefile
@@ -437,74 +453,3 @@ AC_OUTPUT()
 echo "------------------------------------------"
 echo "Finished Running Intrepid Configure Script"
 echo "------------------------------------------"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

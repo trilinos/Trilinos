@@ -162,11 +162,12 @@ int main(int argc, char *argv[]) {
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
   double                                   reltol = 1.0e+04 * INTREPID_TOL;
-  int                                      numPoly = (INTREPID_MAX_CUBATURE_DEGREE_EDGE+1)*
-                                                     (INTREPID_MAX_CUBATURE_DEGREE_EDGE+2)*
-                                                     (INTREPID_MAX_CUBATURE_DEGREE_EDGE+3)/6;
+  int maxDeg                             = 20; // can be as large as INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D, but runtime is excessive
+  int maxOffset                          = INTREPID_MAX_CUBATURE_DEGREE_EDGE;
+  int numPoly                            = (maxDeg+1)*(maxDeg+2)*(maxDeg+3)/6;
+  int numAnalytic                        = (maxOffset+1)*(maxOffset+2)*(maxOffset+3)/6;
   testInt.assign(numPoly, tmparray);
-  analyticInt.assign(numPoly, tmparray);
+  analyticInt.assign(numAnalytic, tmparray);
 
   // get names of files with analytic values
   std::string basedir = "./data";
@@ -182,11 +183,10 @@ int main(int argc, char *argv[]) {
 
   // compute and compare integrals
   try {
-    //for (int cellCt=0; cellCt < 3; cellCt++) {
       *outStream << "\nIntegrals of monomials on a reference " << MultiCell<double>::getCellName(testType) << ":\n";
       std::ifstream filecompare(&filename[0]);
       // compute integrals
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= maxDeg; cubDeg++) {
         int numMonomials = (cubDeg+1)*(cubDeg+2)*(cubDeg+3)/6; 
         testInt[cubDeg].resize(numMonomials);
         computeIntegral(testInt[cubDeg], testType, cubDeg);
@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
         filecompare.close();
       }
       // perform comparison
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= maxDeg; cubDeg++) {
         polyCt = 0;
         offset = 0;
         int oldErrorFlag = errorFlag;
@@ -219,9 +219,9 @@ int main(int argc, char *argv[]) {
               }
               polyCt++;
             }
-            offset = offset + INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg;
+            offset = offset + maxOffset - cubDeg;
           }
-          offset = offset + (INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg)*(INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg + 1)/2;
+          offset = offset + (maxOffset - cubDeg)*(maxOffset - cubDeg + 1)/2;
         }
         *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg;
         if (errorFlag == oldErrorFlag)
@@ -230,7 +230,6 @@ int main(int argc, char *argv[]) {
          *outStream << " failed.\n";
       }
       *outStream << "\n";
-    //}  // end for cellCt
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

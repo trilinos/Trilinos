@@ -64,8 +64,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = example_01$(EXEEXT) example_02$(EXEEXT) \
-	example_03$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 subdir = example/Basis
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -77,10 +76,12 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
@@ -93,6 +94,9 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Intrepid_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_SACADO_TRUE@am__EXEEXT_1 = example_01$(EXEEXT)
+@BUILD_SACADO_TRUE@am__EXEEXT_2 = example_02$(EXEEXT)
+@BUILD_SACADO_TRUE@am__EXEEXT_3 = example_03$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_example_01_OBJECTS = example_01-example_01.$(OBJEXT)
 example_01_OBJECTS = $(am_example_01_OBJECTS)
@@ -241,10 +245,13 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(INTREPID_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(INTREPID_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
+@BUILD_SACADO_TRUE@INTREPID_BASIS_EX1 = example_01
+@BUILD_SACADO_TRUE@INTREPID_BASIS_EX2 = example_02
+@BUILD_SACADO_TRUE@INTREPID_BASIS_EX3 = example_03
 example_01_DEPENDENCIES = \
 	$(top_builddir)/src/libintrepid.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
-    $(top_builddir)/../sacado/src/libsacado.a
+	$(top_builddir)/../sacado/src/libsacado.a
 
 example_01_SOURCES = example_01.cpp
 example_01_LDADD = $(EXPORT_LIBS) $(SACADO_LIBS)
@@ -556,7 +563,7 @@ include $(top_builddir)/Makefile.export.intrepid
 
 # Dependencies used when rebuilding examples without building everything from scratch.
 
-include $(top_builddir)/../sacado/Makefile.export.sacado
+@BUILD_SACADO_TRUE@  include $(top_builddir)/../sacado/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

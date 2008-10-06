@@ -27,11 +27,26 @@
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
+/* Define if want to build with intrepid enabled */
+#undef HAVE_INTREPID_AMESOS
+
+/* Define if want to build with amesos enabled */
+#undef HAVE_INTREPID_AMESOS_UMFPACK
+
 /* Define if want to build intrepid-debug */
 #undef HAVE_INTREPID_DEBUG
 
+/* Define if want to build with intrepid enabled */
+#undef HAVE_INTREPID_EPETRA
+
+/* Define if want to build with intrepid enabled */
+#undef HAVE_INTREPID_EPETRAEXT
+
 /* Define if want to build intrepid-fiatvho */
 #undef HAVE_INTREPID_FIAT_VERY_HIGH_ORDER
+
+/* Define if want to build with intrepid enabled */
+#undef HAVE_INTREPID_SACADO
 
 /* Define if want to build intrepid-tests */
 #undef HAVE_INTREPID_TESTS

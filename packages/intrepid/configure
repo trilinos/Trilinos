@@ -741,6 +741,16 @@ SUB_TEST_TRUE
 SUB_TEST_FALSE
 SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
+BUILD_SACADO_TRUE
+BUILD_SACADO_FALSE
+BUILD_EPETRA_TRUE
+BUILD_EPETRA_FALSE
+BUILD_EPETRAEXT_TRUE
+BUILD_EPETRAEXT_FALSE
+BUILD_AMESOS_TRUE
+BUILD_AMESOS_FALSE
+BUILD_AMESOS_UMFPACK_TRUE
+BUILD_AMESOS_UMFPACK_FALSE
 ac_aux_dir
 LIBOBJS
 LTLIBOBJS'
@@ -1365,6 +1375,29 @@ Optional Features:
   --enable-intrepid-fiatvho
                           Enable intrepid FIAT very high order bases (default
                           is no)
+  --enable-sacado         Build examples which use Sacado. Can be overridden
+                          with --disable-intrepid-sacado.
+  --enable-intrepid-sacado
+                          Build examples which use Sacado.
+  --enable-epetra         Build examples which use Epetra. Can be overridden
+                          with --disable-intrepid-epetra.
+  --enable-intrepid-epetra
+                          Build examples which use Epetra.
+  --enable-epetraext      Build examples which use EpetraExt. Can be
+                          overridden with --disable-intrepid-epetraext.
+  --enable-intrepid-epetraext
+                          Build examples which use EpetraExt.
+  --enable-amesos         Build examples which use Amesos. Can be overridden
+                          with --disable-intrepid-amesos.
+  --enable-intrepid-amesos
+                          Build examples which use Amesos.
+  --enable-amesos         Build examples which use Amesos interface to
+                          Umfpack.
+  --enable-umfpack        Build examples which use Amesos interface to
+                          Umfpack.
+  --enable-amesos-umfpack Build examples which use Amesos interface to
+                          Umfpack. Can be overridden with
+                          --disable-intrepid-amesos-umfpack.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -8055,6 +8088,278 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+# ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: Teuchos
+# Optional: Epetra, EpetraExt, Sacado, Amesos (w/ Umfpack)
+# ------------------------------------------------------------------------
+
+
+
+# Check whether --enable-sacado was given.
+if test "${enable_sacado+set}" = set; then
+  enableval=$enable_sacado; ac_cv_implicit_use_sacado=$enableval
+else
+  ac_cv_implicit_use_sacado=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_intrepid_using_sacado_default=$ac_cv_implicit_use_sacado
+else
+  ac_cv_intrepid_using_sacado_default=no
+fi
+
+# Check whether --enable-intrepid-sacado was given.
+if test "${enable_intrepid_sacado+set}" = set; then
+  enableval=$enable_intrepid_sacado; ac_cv_use_sacado=$enableval
+else
+  ac_cv_use_sacado=$ac_cv_intrepid_using_sacado_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional sacado dependent code in intrepid" >&5
+echo $ECHO_N "checking whether to build optional sacado dependent code in intrepid... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_sacado" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_INTREPID_SACADO 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_sacado" = "Xyes"; then
+  BUILD_SACADO_TRUE=
+  BUILD_SACADO_FALSE='#'
+else
+  BUILD_SACADO_TRUE='#'
+  BUILD_SACADO_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_intrepid_using_epetra_default=$ac_cv_implicit_use_epetra
+else
+  ac_cv_intrepid_using_epetra_default=no
+fi
+
+# Check whether --enable-intrepid-epetra was given.
+if test "${enable_intrepid_epetra+set}" = set; then
+  enableval=$enable_intrepid_epetra; ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_intrepid_using_epetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in intrepid" >&5
+echo $ECHO_N "checking whether to build optional epetra dependent code in intrepid... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_INTREPID_EPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetra" = "Xyes"; then
+  BUILD_EPETRA_TRUE=
+  BUILD_EPETRA_FALSE='#'
+else
+  BUILD_EPETRA_TRUE='#'
+  BUILD_EPETRA_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval=$enable_epetraext; ac_cv_implicit_use_epetraext=$enableval
+else
+  ac_cv_implicit_use_epetraext=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_intrepid_using_epetraext_default=$ac_cv_implicit_use_epetraext
+else
+  ac_cv_intrepid_using_epetraext_default=no
+fi
+
+# Check whether --enable-intrepid-epetraext was given.
+if test "${enable_intrepid_epetraext+set}" = set; then
+  enableval=$enable_intrepid_epetraext; ac_cv_use_epetraext=$enableval
+else
+  ac_cv_use_epetraext=$ac_cv_intrepid_using_epetraext_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetraext dependent code in intrepid" >&5
+echo $ECHO_N "checking whether to build optional epetraext dependent code in intrepid... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_INTREPID_EPETRAEXT 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetraext" = "Xyes"; then
+  BUILD_EPETRAEXT_TRUE=
+  BUILD_EPETRAEXT_FALSE='#'
+else
+  BUILD_EPETRAEXT_TRUE='#'
+  BUILD_EPETRAEXT_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval=$enable_amesos; ac_cv_implicit_use_amesos=$enableval
+else
+  ac_cv_implicit_use_amesos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_intrepid_using_amesos_default=$ac_cv_implicit_use_amesos
+else
+  ac_cv_intrepid_using_amesos_default=no
+fi
+
+# Check whether --enable-intrepid-amesos was given.
+if test "${enable_intrepid_amesos+set}" = set; then
+  enableval=$enable_intrepid_amesos; ac_cv_use_amesos=$enableval
+else
+  ac_cv_use_amesos=$ac_cv_intrepid_using_amesos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional amesos dependent code in intrepid" >&5
+echo $ECHO_N "checking whether to build optional amesos dependent code in intrepid... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_INTREPID_AMESOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_amesos" = "Xyes"; then
+  BUILD_AMESOS_TRUE=
+  BUILD_AMESOS_FALSE='#'
+else
+  BUILD_AMESOS_TRUE='#'
+  BUILD_AMESOS_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval=$enable_amesos; ac_cv_implicit_use_amesos=$enableval
+else
+  ac_cv_implicit_use_amesos=no
+fi
+
+
+# Check whether --enable-umfpack was given.
+if test "${enable_umfpack+set}" = set; then
+  enableval=$enable_umfpack; ac_cv_implicit_use_umfpack=$enableval
+else
+  ac_cv_implicit_use_umfpack=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_amesos" != "Xno"; then
+    ac_cv_amesos_using_umfpack_default=$ac_cv_implicit_use_umfpack
+  else
+    ac_cv_amesos_using_umfpack_default=no
+  fi
+else
+  ac_cv_amesos_using_umfpack_default=no
+fi
+
+# Check whether --enable-amesos-umfpack was given.
+if test "${enable_amesos_umfpack+set}" = set; then
+  enableval=$enable_amesos_umfpack; ac_cv_use_umfpack=$enableval
+else
+  ac_cv_use_umfpack=$ac_cv_amesos_using_umfpack_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional umfpack dependent code in amesos" >&5
+echo $ECHO_N "checking whether to build optional umfpack dependent code in amesos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_umfpack" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_INTREPID_AMESOS_UMFPACK 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_umfpack" = "Xyes"; then
+  BUILD_AMESOS_UMFPACK_TRUE=
+  BUILD_AMESOS_UMFPACK_FALSE='#'
+else
+  BUILD_AMESOS_UMFPACK_TRUE='#'
+  BUILD_AMESOS_UMFPACK_FALSE=
+fi
+
+
+
 
 # ------------------------------------------------------------------------
 # Specify other directories
@@ -8113,7 +8418,7 @@ fi
 # List all necessary Makefiles here.
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/Basis/Makefile test/Basis/F0_TRI_C1_FEM_FIAT/Makefile test/Basis/F0_TRI_C2_FEM_FIAT/Makefile test/Basis/F0_TRI_C3_FEM_FIAT/Makefile test/Basis/F0_TRI_C4_FEM_FIAT/Makefile test/Basis/F0_TRI_C5_FEM_FIAT/Makefile test/Basis/F0_TRI_C6_FEM_FIAT/Makefile test/Basis/F0_TRI_C7_FEM_FIAT/Makefile test/Basis/F0_TRI_C8_FEM_FIAT/Makefile test/Basis/F0_TRI_C9_FEM_FIAT/Makefile test/Basis/F0_TRI_C10_FEM_FIAT/Makefile test/Basis/F0_TET_C1_FEM_FIAT/Makefile test/Basis/F0_TET_C2_FEM_FIAT/Makefile test/Basis/F0_TET_C3_FEM_FIAT/Makefile test/Basis/F0_TET_C4_FEM_FIAT/Makefile test/Basis/F0_TET_C5_FEM_FIAT/Makefile test/Basis/F0_TET_C6_FEM_FIAT/Makefile test/Basis/F0_TET_C7_FEM_FIAT/Makefile test/Basis/F0_TET_C8_FEM_FIAT/Makefile test/Basis/F0_TET_C9_FEM_FIAT/Makefile test/Basis/F0_TET_C10_FEM_FIAT/Makefile test/Basis/F2_TRI_I1_FEM_FIAT/Makefile test/Basis/F2_TRI_I2_FEM_FIAT/Makefile test/Basis/F2_TRI_I3_FEM_FIAT/Makefile test/Basis/F2_TRI_I4_FEM_FIAT/Makefile test/Basis/F2_TRI_I5_FEM_FIAT/Makefile test/Basis/F2_TRI_I6_FEM_FIAT/Makefile test/Basis/F2_TRI_I7_FEM_FIAT/Makefile test/Basis/F2_TRI_I8_FEM_FIAT/Makefile test/Basis/F2_TRI_I9_FEM_FIAT/Makefile test/Basis/F2_TRI_I10_FEM_FIAT/Makefile test/Basis/F2_TET_I1_FEM_FIAT/Makefile test/Basis/F2_TET_I2_FEM_FIAT/Makefile test/Basis/F2_TET_I3_FEM_FIAT/Makefile test/Basis/F2_TET_I4_FEM_FIAT/Makefile test/Basis/F2_TET_I5_FEM_FIAT/Makefile test/Basis/F2_TET_I6_FEM_FIAT/Makefile test/Basis/F2_TET_I7_FEM_FIAT/Makefile test/Basis/F2_TET_I8_FEM_FIAT/Makefile test/Basis/F2_TET_I9_FEM_FIAT/Makefile test/Basis/F2_TET_I10_FEM_FIAT/Makefile test/Basis/F1_TRI_I1_FEM_FIAT/Makefile test/Basis/F1_TRI_I2_FEM_FIAT/Makefile test/Basis/F1_TRI_I3_FEM_FIAT/Makefile test/Basis/F1_TRI_I4_FEM_FIAT/Makefile test/Basis/F1_TRI_I5_FEM_FIAT/Makefile test/Basis/F1_TRI_I6_FEM_FIAT/Makefile test/Basis/F1_TRI_I7_FEM_FIAT/Makefile test/Basis/F1_TRI_I8_FEM_FIAT/Makefile test/Basis/F1_TRI_I9_FEM_FIAT/Makefile test/Basis/F1_TRI_I10_FEM_FIAT/Makefile test/Basis/F1_TET_I1_FEM_FIAT/Makefile test/Basis/F1_TET_I2_FEM_FIAT/Makefile test/Basis/F1_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I4_FEM_FIAT/Makefile test/Basis/F1_TET_I5_FEM_FIAT/Makefile test/Basis/F1_TET_I6_FEM_FIAT/Makefile test/Basis/F1_TET_I7_FEM_FIAT/Makefile test/Basis/F1_TET_I8_FEM_FIAT/Makefile test/Basis/F1_TET_I9_FEM_FIAT/Makefile test/Basis/F1_TET_I10_FEM_FIAT/Makefile test/Basis/FIAT/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/Basis/Makefile example/SparseConv/Makefile test/Basis/F0_TRI_C1_FEM_FIAT/Makefile test/Basis/F0_TRI_C2_FEM_FIAT/Makefile test/Basis/F0_TRI_C3_FEM_FIAT/Makefile test/Basis/F0_TRI_C4_FEM_FIAT/Makefile test/Basis/F0_TRI_C5_FEM_FIAT/Makefile test/Basis/F0_TRI_C6_FEM_FIAT/Makefile test/Basis/F0_TRI_C7_FEM_FIAT/Makefile test/Basis/F0_TRI_C8_FEM_FIAT/Makefile test/Basis/F0_TRI_C9_FEM_FIAT/Makefile test/Basis/F0_TRI_C10_FEM_FIAT/Makefile test/Basis/F0_TET_C1_FEM_FIAT/Makefile test/Basis/F0_TET_C2_FEM_FIAT/Makefile test/Basis/F0_TET_C3_FEM_FIAT/Makefile test/Basis/F0_TET_C4_FEM_FIAT/Makefile test/Basis/F0_TET_C5_FEM_FIAT/Makefile test/Basis/F0_TET_C6_FEM_FIAT/Makefile test/Basis/F0_TET_C7_FEM_FIAT/Makefile test/Basis/F0_TET_C8_FEM_FIAT/Makefile test/Basis/F0_TET_C9_FEM_FIAT/Makefile test/Basis/F0_TET_C10_FEM_FIAT/Makefile test/Basis/F2_TRI_I1_FEM_FIAT/Makefile test/Basis/F2_TRI_I2_FEM_FIAT/Makefile test/Basis/F2_TRI_I3_FEM_FIAT/Makefile test/Basis/F2_TRI_I4_FEM_FIAT/Makefile test/Basis/F2_TRI_I5_FEM_FIAT/Makefile test/Basis/F2_TRI_I6_FEM_FIAT/Makefile test/Basis/F2_TRI_I7_FEM_FIAT/Makefile test/Basis/F2_TRI_I8_FEM_FIAT/Makefile test/Basis/F2_TRI_I9_FEM_FIAT/Makefile test/Basis/F2_TRI_I10_FEM_FIAT/Makefile test/Basis/F2_TET_I1_FEM_FIAT/Makefile test/Basis/F2_TET_I2_FEM_FIAT/Makefile test/Basis/F2_TET_I3_FEM_FIAT/Makefile test/Basis/F2_TET_I4_FEM_FIAT/Makefile test/Basis/F2_TET_I5_FEM_FIAT/Makefile test/Basis/F2_TET_I6_FEM_FIAT/Makefile test/Basis/F2_TET_I7_FEM_FIAT/Makefile test/Basis/F2_TET_I8_FEM_FIAT/Makefile test/Basis/F2_TET_I9_FEM_FIAT/Makefile test/Basis/F2_TET_I10_FEM_FIAT/Makefile test/Basis/F1_TRI_I1_FEM_FIAT/Makefile test/Basis/F1_TRI_I2_FEM_FIAT/Makefile test/Basis/F1_TRI_I3_FEM_FIAT/Makefile test/Basis/F1_TRI_I4_FEM_FIAT/Makefile test/Basis/F1_TRI_I5_FEM_FIAT/Makefile test/Basis/F1_TRI_I6_FEM_FIAT/Makefile test/Basis/F1_TRI_I7_FEM_FIAT/Makefile test/Basis/F1_TRI_I8_FEM_FIAT/Makefile test/Basis/F1_TRI_I9_FEM_FIAT/Makefile test/Basis/F1_TRI_I10_FEM_FIAT/Makefile test/Basis/F1_TET_I1_FEM_FIAT/Makefile test/Basis/F1_TET_I2_FEM_FIAT/Makefile test/Basis/F1_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I4_FEM_FIAT/Makefile test/Basis/F1_TET_I5_FEM_FIAT/Makefile test/Basis/F1_TET_I6_FEM_FIAT/Makefile test/Basis/F1_TET_I7_FEM_FIAT/Makefile test/Basis/F1_TET_I8_FEM_FIAT/Makefile test/Basis/F1_TET_I9_FEM_FIAT/Makefile test/Basis/F1_TET_I10_FEM_FIAT/Makefile test/Basis/FIAT/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8307,6 +8612,41 @@ if test -z "${SUB_EXAMPLE_TRUE}" && test -z "${SUB_EXAMPLE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"SUB_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_SACADO_TRUE}" && test -z "${BUILD_SACADO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_SACADO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_SACADO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRA_TRUE}" && test -z "${BUILD_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRAEXT_TRUE}" && test -z "${BUILD_EPETRAEXT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_AMESOS_TRUE}" && test -z "${BUILD_AMESOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_AMESOS_UMFPACK_TRUE}" && test -z "${BUILD_AMESOS_UMFPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_AMESOS_UMFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_AMESOS_UMFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8797,6 +9137,7 @@ do
     "example/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES example/RealSpace/Makefile" ;;
     "example/FieldContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/FieldContainer/Makefile" ;;
     "example/Basis/Makefile") CONFIG_FILES="$CONFIG_FILES example/Basis/Makefile" ;;
+    "example/SparseConv/Makefile") CONFIG_FILES="$CONFIG_FILES example/SparseConv/Makefile" ;;
     "test/Basis/F0_TRI_C1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C1_FEM_FIAT/Makefile" ;;
     "test/Basis/F0_TRI_C2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C2_FEM_FIAT/Makefile" ;;
     "test/Basis/F0_TRI_C3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C3_FEM_FIAT/Makefile" ;;
@@ -9087,12 +9428,22 @@ SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
 SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
+BUILD_SACADO_TRUE!$BUILD_SACADO_TRUE$ac_delim
+BUILD_SACADO_FALSE!$BUILD_SACADO_FALSE$ac_delim
+BUILD_EPETRA_TRUE!$BUILD_EPETRA_TRUE$ac_delim
+BUILD_EPETRA_FALSE!$BUILD_EPETRA_FALSE$ac_delim
+BUILD_EPETRAEXT_TRUE!$BUILD_EPETRAEXT_TRUE$ac_delim
+BUILD_EPETRAEXT_FALSE!$BUILD_EPETRAEXT_FALSE$ac_delim
+BUILD_AMESOS_TRUE!$BUILD_AMESOS_TRUE$ac_delim
+BUILD_AMESOS_FALSE!$BUILD_AMESOS_FALSE$ac_delim
+BUILD_AMESOS_UMFPACK_TRUE!$BUILD_AMESOS_UMFPACK_TRUE$ac_delim
+BUILD_AMESOS_UMFPACK_FALSE!$BUILD_AMESOS_UMFPACK_FALSE$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 32; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -9694,74 +10045,3 @@ fi
 echo "------------------------------------------"
 echo "Finished Running Intrepid Configure Script"
 echo "------------------------------------------"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

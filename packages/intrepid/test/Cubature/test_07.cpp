@@ -79,7 +79,7 @@ double computeIntegral(ECell cellType, int cubDegree, int xDeg, int yDeg) {
     default:
       TEST_FOR_EXCEPTION((cellType != CELL_QUAD),
                           std::invalid_argument,
-                          ">>> ERROR (Unit Test -- Cubature -- 2D Monomial): Invalid cell type.");
+                          ">>> ERROR (Unit Test -- CubatureSparse -- 2D Monomial): Invalid cell type.");
   } // end switch
 
   int numCubPoints = myCub->getNumPoints();
@@ -145,10 +145,12 @@ int main(int argc, char *argv[]) {
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
   double                                   reltol = 1.0e+03 * INTREPID_TOL;
-  int                                      numPoly = (INTREPID_MAX_CUBATURE_DEGREE_EDGE+1)*
-                                                     (INTREPID_MAX_CUBATURE_DEGREE_EDGE+2)/2;
+  int maxDeg                             = 30; // can be as large as INTREPID_MAX_CUBATURE_DEGREE_SPARSE2D, but runtime is excessive
+  int maxOffset                          = INTREPID_MAX_CUBATURE_DEGREE_EDGE;
+  int numPoly                            = (maxDeg+1)*(maxDeg+2)/2;
+  int numAnalytic                        = (maxOffset+1)*(maxOffset+2)/2;
   testInt.assign(numPoly, tmparray);
-  analyticInt.assign(numPoly, tmparray);
+  analyticInt.assign(numAnalytic, tmparray);
 
   // get names of files with analytic values
   std::string basedir = "./data";
@@ -161,12 +163,11 @@ int main(int argc, char *argv[]) {
 
   // compute and compare integrals
   try {
-    //for (int cellCt=0; cellCt < 2; cellCt++) {
       *outStream << "\nIntegrals of monomials on a reference " << MultiCell<double>::getCellName(testType) << ":\n";
 	
-	std::ifstream filecompare(&filename[0]);
+      std::ifstream filecompare(&filename[0]);
       // compute integrals
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_SPARSE2D; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= maxDeg; cubDeg++) {
         polyCt = 0;
         testInt[cubDeg].resize((cubDeg+1)*(cubDeg+2)/2);
         for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
@@ -176,8 +177,6 @@ int main(int argc, char *argv[]) {
           }
         }
       }
-	*outStream << "Do I get out? Yes\n";
-
 	
       // get analytic values
       if (filecompare.is_open()) {
@@ -186,7 +185,7 @@ int main(int argc, char *argv[]) {
         filecompare.close();
       }
       // perform comparison
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_SPARSE2D; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= maxDeg; cubDeg++) {
         polyCt = 0;
         offset = 0;
         for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
@@ -203,12 +202,11 @@ int main(int argc, char *argv[]) {
             }
             polyCt++;
           }
-          offset = offset + INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg;
+          offset = offset + maxOffset - cubDeg;
         }
         *outStream << "\n";
       }
       *outStream << "\n";
-    //}  // end for cellCt
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

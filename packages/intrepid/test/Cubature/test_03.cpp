@@ -138,8 +138,6 @@ int main(int argc, char *argv[]) {
   << "| TEST 1: integrals of monomials in 2D                                        |\n"\
   << "===============================================================================\n";
 
-  // >>> ASSUMPTION: max polynomial degree integrated exactly is the same for
-  // >>>             quads (i.e. edges) and triangles !!!
   // internal variables:
   int                                      errorFlag = 0;
   int                                      polyCt = 0;
@@ -148,10 +146,12 @@ int main(int argc, char *argv[]) {
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
   double                                   reltol = 1.0e+03 * INTREPID_TOL;
-  int                                      numPoly = (INTREPID_MAX_CUBATURE_DEGREE_EDGE+1)*
-                                                     (INTREPID_MAX_CUBATURE_DEGREE_EDGE+2)/2;
-  testInt.assign(numPoly, tmparray);
-  analyticInt.assign(numPoly, tmparray);
+  int                                      maxDeg[2];
+  int                                      numPoly[2];
+  maxDeg[0]  = INTREPID_MAX_CUBATURE_DEGREE_TRI;
+  maxDeg[1]  = INTREPID_MAX_CUBATURE_DEGREE_EDGE;
+  numPoly[0] = (INTREPID_MAX_CUBATURE_DEGREE_TRI+1)*(INTREPID_MAX_CUBATURE_DEGREE_TRI+2)/2;
+  numPoly[1] = (INTREPID_MAX_CUBATURE_DEGREE_EDGE+1)*(INTREPID_MAX_CUBATURE_DEGREE_EDGE+2)/2;
 
   // get names of files with analytic values
   std::string basedir = "./data";
@@ -167,10 +167,12 @@ int main(int argc, char *argv[]) {
   // compute and compare integrals
   try {
     for (int cellCt=0; cellCt < 2; cellCt++) {
+      testInt.assign(numPoly[cellCt], tmparray);
+      analyticInt.assign(numPoly[cellCt], tmparray);
       *outStream << "\nIntegrals of monomials on a reference " << MultiCell<double>::getCellName(testType[cellCt]) << ":\n";
       std::ifstream filecompare(&filename[cellCt][0]);
       // compute integrals
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= maxDeg[cellCt]; cubDeg++) {
         polyCt = 0;
         testInt[cubDeg].resize((cubDeg+1)*(cubDeg+2)/2);
         for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
@@ -187,7 +189,7 @@ int main(int argc, char *argv[]) {
         filecompare.close();
       }
       // perform comparison
-      for (int cubDeg=0; cubDeg <= INTREPID_MAX_CUBATURE_DEGREE_EDGE; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= maxDeg[cellCt]; cubDeg++) {
         polyCt = 0;
         offset = 0;
         for (int xDeg=0; xDeg <= cubDeg; xDeg++) {
@@ -204,7 +206,7 @@ int main(int argc, char *argv[]) {
             }
             polyCt++;
           }
-          offset = offset + INTREPID_MAX_CUBATURE_DEGREE_EDGE - cubDeg;
+          offset = offset + maxDeg[cellCt] - cubDeg;
         }
         *outStream << "\n";
       }

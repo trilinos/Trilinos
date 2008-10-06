@@ -12,8 +12,8 @@
 namespace Intrepid{
 
 //Need to talk to Denis about
-int INTREPID_MAX_CUBATURE_DEGREE_SPARSE2D = 15;
-int INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D = 13;
+int INTREPID_MAX_CUBATURE_DEGREE_SPARSE2D = 59;
+int INTREPID_MAX_CUBATURE_DEGREE_SPARSE3D = 57;
 
 template<class Scalar, int dimension_>
 class CubatureSparse : public Intrepid::Cubature<Scalar> {

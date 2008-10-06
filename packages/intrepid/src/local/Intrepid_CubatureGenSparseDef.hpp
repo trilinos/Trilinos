@@ -76,12 +76,12 @@ SGNodes<int, dimension_> list;
 		}
 	}
 
-	std::cout << "List:\n";
+	/*std::cout << "List:\n";
 
 	for(int i = 0; i<list.size(); i++)
 	{
 		std::cout << list.nodes[i] << "\n";
-	}
+	}*/
 
 	while(more_bigger_rules)
 	{
