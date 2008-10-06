@@ -6,27 +6,6 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-IF(${PROJECT_NAME}_ENABLE_COMPLEX)
-  SET(HAVE_TEUCHOS_COMPLEX TRUE)
-ENDIF()
-
-IF(${PROJECT_NAME}_ENABLE_EXTENDED)
-  SET(HAVE_TEUCHOS_EXTENDED TRUE)
-ENDIF()
-
-IF(${PROJECT_NAME}_ENABLE_DEBUG)
-  SET(HAVE_TEUCHOS_DEBUG TRUE)
-ENDIF()
-
-IF(${PROJECT_NAME}_ENABLE_GCC_DEMANGLE)
-  SET(HAVE_TEUCHOS_DEMANGLE TRUE)
-  SET(HAVE_GCC_ABI_DEMANGLE TRUE)
-ENDIF()
-
-# 2008/09/25: rabartl: Consider directly using the user option
-# (e.g. ${PROJECT_NAME}_ENABLE_COMPLEX) as the C++ define (i.e. in place of
-# HAVE_TEUCHOS_COMPLEX).  Then you can get rid of the above translation code.
-
 TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_config.h)
 
 #

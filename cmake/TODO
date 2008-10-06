@@ -3,47 +3,34 @@ TODOs for the Trilinos/CMake system
 
 Last updated: 2008/09/28
 
-(*) [Ross] Create a macro TRILINOS_PACKAGES(...) that will do a bunch of stuff
-needed to declare a new pacakge.
+(*) [Ross] Clean up tests and examples:
 
-- Define some package-specific variables:
-  PACKAGE_NAME
-  PACKAGE_SOURCE_DIR
-  PACKAGE_BINARY_DIR
+- Combine all separate calls to TRILINOS_ADD_EXECUTABLE(...) and
+TRILNOS_ADD_TEST(...) to a single TRILINOS_ADD_EXECUTABLE_AND_TEST(...) that
+you can.
 
-- Check that certain variables have been defined correctly
+- Move (almost) all tests into subdirectories since that is the right thing to
+do.
 
 (*) [Ross] Add support for package dependanices and all the goodies
 
-- Create a stub file like Trilinos/pacakges/PACKAGE/cmake/Dependencies.cmake
-that gets read before processing any of the packages.  This file will define
-variables like:
+- Loop through right away and disable all packages that must be disabled due
+to required dependent packages being disabled.
 
-   ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACAKGES
-   ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES
-   ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES
-   ${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACAKGES
+- After all other enables/disables have been performed, enable all required
+dependent packages (i.e. those specified in
+{PACAKGE_NAME}_LIB_REQUIRED_DEP_PACKAGES and, if tests or examples are
+enabled, those in ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES)
 
-- For each optional dependent library package, add the global cache option
-${PACAKGE_NAME}_ENABLE_${DEP_PACAKGE_NAME}.  In addition, this option will be
-set to ON if Trilinos_ENABLE_${PACKAGE_NAME}=ON and
-Trilinos_ENABLE_${DEP_PACKAGE_NAME}=ON
+- When Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES is defined, for the set of
+pacakges directly enabled by the user, enable all packages that depend these
+pacakges (all required and optional, library and test/example dependencies).
 
-- When Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES is defined, enable all
-packages that depend on the current set of explicitly enabled packages.
-
-- When Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES is enabled, then enable all
-optional packages that currently enabled packages can use (i.e. every pacakges
-listed in ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES and, if tests or exmaples
-are enabled, those in ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES)
-
-- Enable all required dependent library packages (i.e. those specified in
-{PACAKGE_NAME}_LIB_REQUIRED_DEP_PACKAGES and, if tests or examples are enabled,
-those in ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES)
-
-(*) [Ross] Have TRILINOS_ADD_OPTION(...) and
-TRILINOS_PACKAGE_CONFIGURE_FILE(...) work together to automatically add the
-macro defines to the configure file if they don't already exist!
+- When Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES is enabled, for the set of
+packages directly enabled by the user, enable all optional packages can use
+these packages (i.e. every packge listed in
+${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES and, if tests or exmaples are
+enabled, those in ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES)
 
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
@@ -71,7 +58,7 @@ installer
 - Getting debug output
 - Building
 - Running tests (cmake and runtests-[serial,mpi])
-- Will lead into 
+- Will lead into a rewriting of the Trilinos Developers Guide
 
 
 Completed:

@@ -1,3 +1,7 @@
+(*) Getting CMake help
+
+    http://http://www.cmake.org/cmake/help/cmake2.6docs.html
+
 (*) Viewing available configure-time options with documentation
 
   $ cd $BUILD_DIR
@@ -12,7 +16,7 @@
 
 (*) Configuring Trilinos to build
 
-  a) Use ccmake:
+  a) Using ccmake:
 
     $ ccmake $TRILINOS_BASE_DIR
 

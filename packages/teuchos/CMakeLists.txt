@@ -1,8 +1,11 @@
+
+INCLUDE(TrilinosPackageHelpers)
+INCLUDE(Trilinos_Add_Option)
+
 #
 # A) Define the package
 #
 
-INCLUDE(TrilinosPackageHelpers)
 TRILINOS_PACKAGE(Teuchos)
 
 SET(${PACKAGE_NAME}_VERSION "1.5d")
@@ -11,17 +14,30 @@ SET(${PACKAGE_NAME}_VERSION "1.5d")
 # B) Set up package-specific options
 #
 
-OPTION(${PACKAGE_NAME}_ENABLE_COMPLEX
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_COMPLEX
+  HAVE_TEUCHOS_COMPLEX
   "Enable Teuchos features for complex arithmetic."
   ON
   )
 
-OPTION(${PACKAGE_NAME}_ENABLE_DEBUG
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_EXTENDED
+  HAVE_TEUCHOS_EXTENDED
+  "Enable extended Teuchos features."
+  ON
+  )
+
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_DEBUG
+  HAVE_TEUCHOS_DEBUG
   "Enable a host of runtime debug checking."
   OFF
   )
 
-OPTION(${PACKAGE_NAME}_ENABLE_GCC_DEMANGLE
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_GCC_DEMANGLE
+  HAVE_TEUCHOS_DEMANGLE
   "Enable Teuchos calls to GCC demangle library function."
   OFF
   )

@@ -18,7 +18,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
     "--echo-command-line --num-cols=3"
   COMM serial mpi
   NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  STANDARD_PASS_OUTPUT
   )
 
 
@@ -29,5 +29,5 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
     ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi  
   NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  STANDARD_PASS_OUTPUT
   )

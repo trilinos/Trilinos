@@ -1,8 +1,5 @@
 
-# Required modules
-#INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Trilinos_Add_Executable)
-INCLUDE(Trilinos_Add_Test)
+INCLUDE(Trilinos_Add_Executable_And_Test)
 
 TRILINOS_ADD_EXECUTABLE(
   BLAS_example

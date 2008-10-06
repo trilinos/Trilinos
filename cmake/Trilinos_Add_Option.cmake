@@ -2,10 +2,15 @@ MACRO(TRILINOS_ADD_OPTION USER_OPTION_NAME MACRO_DEFINE_NAME DOCSTRING DEFAULT_V
   #MESSAGE("TRILINOS_ADD_OPTION: '${USER_OPTION_NAME}' '${MACRO_DEFINE_NAME}' '${DEFAULT_VALUE}'")
   SET( ${USER_OPTION_NAME} ${DEFAULT_VALUE} CACHE BOOL ${DOCSTRING} )
   IF(NOT ${MACRO_DEFINE_NAME} STREQUAL "")
-    #MESSAGE("${USER_OPTION_NAME}_MACRO_DEFINE_NAME = ${MACRO_DEFINE_NAME}")
-    SET(${USER_OPTION_NAME}_MACRO_DEFINE_NAME ${MACRO_DEFINE_NAME})
+    IF(${USER_OPTION_NAME})
+      SET(${MACRO_DEFINE_NAME} ON)
+    ELSE()
+      SET(${MACRO_DEFINE_NAME} OFF)
+    ENDIF()
   ENDIF()
-  # NOTE: We can't set the actual macro define name here because the value of the
-  # user option may change and therefore we must just remember the name and
-  # set it later.
 ENDMACRO()
+
+# 2008/10/05: rabartl: ToDo: Add an option to automatically add the macro
+# define to any XXX_config.h file that gets configured by
+# TRILINOS_PACKAGE_CONFIGURE_FILE(...).  This will help to eliminate
+# duplication.

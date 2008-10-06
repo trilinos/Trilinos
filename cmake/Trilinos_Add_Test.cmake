@@ -1,6 +1,30 @@
 
 INCLUDE(Parse_Variable_Arguments)
 
+
+MACRO(TRILINOS_PRIVATE_ADD_TEST_SET_PASS_PROPERTY TEST_NAME_IN)
+
+  IF (PARSE_PASS_REGULAR_EXPRESSION)
+    SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES PASS_REGULAR_EXPRESSION
+      ${PARSE_PASS_REGULAR_EXPRESSION})
+  ENDIF()
+
+  IF (PARSE_FAIL_REGULAR_EXPRESSION)
+    SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES FAIL_REGULAR_EXPRESSION
+      ${PARSE_FAIL_REGULAR_EXPRESSION})
+  ENDIF()
+
+  IF (PARSE_STANDARD_PASS_OUTPUT)
+    SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES PASS_REGULAR_EXPRESSION
+      "End Result: TEST PASSED")
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Main function for adding a test
+#
 FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
    
   #
@@ -13,16 +37,18 @@ FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
      #lists
      "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;NAME;HOST;XHOST;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
      #options
-     ""
+     "STANDARD_PASS_OUTPUT"
      ${ARGN}
      )
 
-  IF(PARSE_ARGS)
+  IF (PARSE_ARGS)
     LIST(LENGTH PARSE_ARGS NUM_PARSE_ARGS)
-    #MESSAGE(STATUS "NUM_PARSE_ARGS = ${NUM_PARSE_ARGS}")
+  ELSE()
+    SET(PARSE_ARGS " ")
+    SET(NUM_PARSE_ARGS 1)
   ENDIF()
 
-  IF(VERBOSE_CONFIGURE)
+  IF (VERBOSE_CONFIGURE)
     MESSAGE("")
     MESSAGE("TRILINOS_ADD_TEST: EXE_NAME = ${EXE_NAME}")
   ENDIF()
@@ -78,8 +104,30 @@ FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
   ENDIF()
   
   SET(ADDED_THE_TEST OFF)
+
+  IF (PARSE_COMM)
+    SET(ADD_MPI_TEST OFF)
+    SET(ADD_SERIAL_TEST OFF)
+    FOREACH(COMM ${PARSE_COMM})
+      IF (COMM STREQUAL "mpi")
+        SET(ADD_MPI_TEST ON)
+      ELSEIF(COMM STREQUAL "serial")
+        SET(ADD_SERIAL_TEST ON)
+      ELSE()
+        MESSAGE(SEND_ERROR "Error, the COMM value '${COMM}' is not valid!.  Only 'mpi' and 'serial' are allowed.")
+      ENDIF()
+    ENDFOREACH()
+  ELSE()
+    SET(ADD_MPI_TEST ON)
+    SET(ADD_SERIAL_TEST ON)
+  ENDIF()
+
+  #
+  # D) Get teh MPI options
+  #
     
   IF(TRILINOS_ENABLE_MPI)
+
     SET(NP)
     SET(NUM_PROCS_USED 1)
     IF(PARSE_NUM_MPI_PROCS)
@@ -109,145 +157,73 @@ FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
     ENDIF()
 
     SET(NP ${MPI_NUMPROCS_FLAG} ${NUM_PROCS_USED})
+
+  ENDIF()
     
-    #
-    # E) Add the tests
-    #
-   
-    IF (NOT PARSE_COMM)
-      # If no COMM is given assume we will add the test
-      SET(DO_MPI_INDEX 0)
-    ELSE()
-      # Else, if COMM is defined we have to find 'mpi'
-      LIST (FIND PARSE_COMM "mpi" DO_MPI_INDEX)
-    ENDIF()
+  #
+  # E) Add the tests
+  #
 
-    IF(NOT ${DO_MPI_INDEX} EQUAL -1)
+  IF(TRILINOS_ENABLE_MPI AND ADD_MPI_TEST)
 
-      SET(TEST_NAME "${TEST_NAME}_MPI_${NUM_PROCS_USED}")
+    SET(TEST_NAME "${TEST_NAME}_MPI_${NUM_PROCS_USED}")
+    
+    SET(COUNTER 0)
+
+    FOREACH(PARSE_ARG ${PARSE_ARGS})
+
+      IF(${NUM_PARSE_ARGS} EQUAL 1)
+        SET(TEST_NAME_COUNTER "${TEST_NAME}")
+      ELSE()
+        SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
+      ENDIF()
+      IF(VERBOSE_CONFIGURE)
+        MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
+      ENDIF()
       
-      IF(PARSE_ARGS)
+      #This is a little bit of a hack
+      #If the argument string has multiple arguments then the white space will need 
+      #to replaced by a semicolin.  If this is not done the add_test command will
+      #add a slash to each white space in the argument string.
+      STRING(REPLACE " " ";" MYARG ${PARSE_ARG}) 
 
-        SET(COUNTER 0)
+      ADD_TEST(${TEST_NAME_COUNTER} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} ${MYARG})
+      SET(ADDED_THE_TEST ON)    
+      
+      TRILINOS_PRIVATE_ADD_TEST_SET_PASS_PROPERTY(${TEST_NAME_COUNTER})
 
-        FOREACH(PARSE_ARG ${PARSE_ARGS})
+      MATH(EXPR COUNTER ${COUNTER}+1 )
 
-          IF(${NUM_PARSE_ARGS} EQUAL 1)
-            SET(TEST_NAME_COUNTER "${TEST_NAME}")
-          ELSE()
-            SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
-          ENDIF()
-          IF(VERBOSE_CONFIGURE)
-            MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
-          ENDIF()
-          
-          #This is a little bit of a hack
-          #If the argument string has multiple arguments then the white space will need 
-          #to replaced by a semicolin.  If this is not done the add_test command will
-          #add a slash to each white space in the argument string.
-          STRING(REPLACE " " ";" MYARG ${PARSE_ARG}) 
-          ADD_TEST(${TEST_NAME_COUNTER} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} ${MYARG})
-          SET(ADDED_THE_TEST ON)    
-          
-          IF (PARSE_PASS_REGULAR_EXPRESSION)
-            SET_TESTS_PROPERTIES(${TEST_NAME_COUNTER} PROPERTIES PASS_REGULAR_EXPRESSION
-              ${PARSE_PASS_REGULAR_EXPRESSION})
-          ENDIF()
-  
-          IF (PARSE_FAIL_REGULAR_EXPRESSION)
-            SET_TESTS_PROPERTIES(${TEST_NAME_COUNTER} PROPERTIES FAIL_REGULAR_EXPRESSION
-            ${PARSE_FAIL_REGULAR_EXPRESSION})
-          ENDIF()
-
-          MATH(EXPR COUNTER ${COUNTER}+1 )
-
-        ENDFOREACH()
-
-      ELSE()
-
-        IF(VERBOSE_CONFIGURE)
-          MESSAGE(STATUS "TEST_NAME = ${TEST_NAME}")
-        ENDIF()
-
-        ADD_TEST(${TEST_NAME} ${MPI_EXECUTABLE} ${NP} ${EXECUTABLE_PATH} )
-        SET(ADDED_THE_TEST ON)    
-        
-      ENDIF()
-
-    ENDIF()
-
-  ELSE()
-    
-    IF (NOT PARSE_COMM)
-      # If no COMM is given assume we will add the test
-      SET(DO_SERIAL_INDEX 0)
-    ELSE()
-      # Else, if COMM is defined we have to find 'serial'
-      LIST (FIND PARSE_COMM "serial" DO_SERIAL_INDEX)
-    ENDIF()
-    
-    IF(NOT ${DO_SERIAL_INDEX} EQUAL -1)
-
-      IF(PARSE_ARGS)
-
-        SET(COUNTER 0)
-
-        FOREACH(PARSE_ARG ${PARSE_ARGS})
-
-          IF(${NUM_PARSE_ARGS} EQUAL 1)
-            SET(TEST_NAME_COUNTER "${TEST_NAME}")
-          ELSE()
-            SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
-          ENDIF()
-          IF(VERBOSE_CONFIGURE)
-            MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
-          ENDIF()
-       
-          # See above about this hack
-          STRING(REPLACE " " ";" MYARG ${PARSE_ARG})
-          ADD_TEST(${TEST_NAME_COUNTER} ${EXECUTABLE_PATH} ${MYARG})
-          SET(ADDED_THE_TEST ON)    
-          
-          IF (PARSE_PASS_REGULAR_EXPRESSION)
-            SET_TESTS_PROPERTIES( ${TEST_NAME_COUNTER}
-              PROPERTIES PASS_REGULAR_EXPRESSION ${PARSE_PASS_REGULAR_EXPRESSION})
-          ENDIF()
-  
-          IF (PARSE_FAIL_REGULAR_EXPRESSION)
-            SET_TESTS_PROPERTIES( ${TEST_NAME_COUNTER}
-              PROPERTIES FAIL_REGULAR_EXPRESSION ${PARSE_FAIL_REGULAR_EXPRESSION})
-          ENDIF()
-
-          MATH(EXPR COUNTER ${COUNTER}+1 )
-        
-        ENDFOREACH()
-
-      ELSE()
-
-        IF(VERBOSE_CONFIGURE)
-           MESSAGE(STATUS "TEST_NAME = ${TEST_NAME}")
-        ENDIF()
-
-        ADD_TEST(${TEST_NAME} ${EXECUTABLE_PATH} )
-        SET(ADDED_THE_TEST ON)    
-
-      ENDIF()
-
-    ENDIF()
+    ENDFOREACH()
 
   ENDIF()
-
-  # 2008/07/09: rabartl: ToDo: Above, create a macho called
-  # ???ITEM_EXITS_IN_LIST??(...) to simplify logic!
-    
-  IF (PARSE_PASS_REGULAR_EXPRESSION AND ${ADDED_THE_TEST} AND NOT PARSE_ARGS)
-   SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION
-     ${PARSE_PASS_REGULAR_EXPRESSION})
-  ENDIF()
   
-  IF (PARSE_FAIL_REGULAR_EXPRESSION AND ADDED_THE_TEST AND NOT PARSE_ARGS)
-   SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES FAIL_REGULAR_EXPRESSION
-     ${PARSE_FAIL_REGULAR_EXPRESSION})
+  IF(ADD_SERIAL_TEST)
+
+    SET(COUNTER 0)
+
+    FOREACH(PARSE_ARG ${PARSE_ARGS})
+
+      IF(${NUM_PARSE_ARGS} EQUAL 1)
+        SET(TEST_NAME_COUNTER "${TEST_NAME}")
+      ELSE()
+        SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
+      ENDIF()
+      IF(VERBOSE_CONFIGURE)
+        MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
+      ENDIF()
+    
+      # See above about this hack
+      STRING(REPLACE " " ";" MYARG ${PARSE_ARG})
+      ADD_TEST(${TEST_NAME_COUNTER} ${EXECUTABLE_PATH} ${MYARG})
+      SET(ADDED_THE_TEST ON)    
+
+      TRILINOS_PRIVATE_ADD_TEST_SET_PASS_PROPERTY(${TEST_NAME_COUNTER})
+
+      MATH(EXPR COUNTER ${COUNTER}+1 )
+    
+    ENDFOREACH()
+
   ENDIF()
   
 ENDFUNCTION()
