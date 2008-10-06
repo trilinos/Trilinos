@@ -116,12 +116,18 @@ namespace Tpetra {
     Ordinal getGlobalIndex(Ordinal localIndex) const;
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    void getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
+    /*! 
+      \returns \c true signifies at least one specified global entry was not present in the directory.
+     */
+    bool getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
                             const Teuchos::ArrayView<Ordinal> & imageIDList, 
                             const Teuchos::ArrayView<Ordinal> & LIDList) const;
 
     //! Returns the node IDs for a given list of global indices.
-    void getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
+    /*! 
+      \returns \c true signifies at least one specified global entry was not present in the directory.
+     */
+    bool getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
                             const Teuchos::ArrayView<Ordinal> & imageIDList) const;
 
     //! Return a list of the global entries owned by this image

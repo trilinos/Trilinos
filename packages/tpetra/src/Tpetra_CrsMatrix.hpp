@@ -541,23 +541,24 @@ namespace Tpetra
     // FINISH: in debug mode, we need to establish that X and Y are compatible with (sameas?) DomainMap and RangeMap (respectively)
     // FINISH: or maybe not; I guess this should happen below in the calls to import(), export()
 
-    // ******************* DEBUG ******************* 
-    //int myImageID = Teuchos::rank(*comm_);
-    //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-    //if (myImageID == 0) {
-    //  *out << "Entering CrsMatrix::apply()" << std::endl
-    //            << "Column Map: " << std::endl;
-    //}
-    //*out << this->getColMap() << std::endl;
-    //if (myImageID == 0) {
-    //  *out << "Initial input: " << std::endl;
-    //}
-    //X.print(*out); X.printValues(*out);
-    // *************** END DEBUG ******************* 
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+    int myImageID = Teuchos::rank(*comm_);
+    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    if (myImageID == 0) {
+      *out << "Entering CrsMatrix::apply()" << std::endl
+                << "Column Map: " << std::endl;
+    }
+    *out << this->getColMap() << std::endl;
+    if (myImageID == 0) {
+      *out << "Initial input: " << std::endl;
+    }
+    X.print(*out); X.printValues(*out);
+#   endif
 
     Ordinal numVectors = X.numVectors();
     // because of Views, it is difficult to determine if X and Y point to the same data. 
     // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
+    // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
     Teuchos::RCP<const MultiVector<Ordinal,Scalar> > Xcopy;
     ArrayView<const ArrayView<const Scalar> > Xdata = X.extractConstView();
     ArrayView<const ArrayView<      Scalar> > Ydata = Y.extractView();
@@ -575,11 +576,11 @@ namespace Tpetra
       // generate a copy of X 
       Xcopy = Teuchos::rcp(new MultiVector<Ordinal,Scalar>(X));
       Xdata = Xcopy->extractConstView();
-      // ******************* DEBUG ******************* 
-      //if (myImageID == 0) *out << "X and Y are co-located, duplicating X results in a stride copy" << std::endl;
-      //*out << this->getColMap() << std::endl;
-      //Xcopy->print(*out); Xcopy->printValues(*out);
-      // *************** END DEBUG ******************* 
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+      if (myImageID == 0) *out << "X and Y are co-located, duplicating X results in a stride copy" << std::endl;
+      *out << this->getColMap() << std::endl;
+      Xcopy->print(*out); Xcopy->printValues(*out);
+#   endif
     }
     if (importer_ != null) {
       if (importMV_ != null && importMV_->numVectors() != numVectors) importMV_ = null;
@@ -601,12 +602,12 @@ namespace Tpetra
       if (importer_ != null) {
         importMV_->doImport(X, *importer_, INSERT);
         Xdata = importMV_->extractConstView();
-        // ******************* DEBUG ******************* 
-        //if (myImageID == 0) {
-        //  *out << "Performed import of X..." << std::endl;
-        //}
-        //importMV_->print(*out); importMV_->printValues(*out);
-        // *************** END DEBUG ******************* 
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+        if (myImageID == 0) {
+          *out << "Performed import of X..." << std::endl;
+        }
+        importMV_->print(*out); importMV_->printValues(*out);
+#   endif
       }
       // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
       // We will compute solution into the to-be-exported MV; get a view
@@ -620,30 +621,30 @@ namespace Tpetra
       else {
         GeneralMM(Xdata,Ydata);
       }
-      // ******************* DEBUG ******************* 
-      //if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
-      //if (exportMV_ != null) {
-      //  exportMV_->print(*out); exportMV_->printValues(*out);
-      //} else {
-      //  Y.print(*out); Y.printValues(*out);
-      //}
-      // *************** END DEBUG ******************* 
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+      if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
+      if (exportMV_ != null) {
+        exportMV_->print(*out); exportMV_->printValues(*out);
+      } else {
+        Y.print(*out); Y.printValues(*out);
+      }
+#   endif
       // do the export
       if (exporter_ != null) {
         Y.putScalar(0.0);  // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
         Y.doExport(*exportMV_, *exporter_, ADD); // Fill Y with Values from export vector
-        // ******************* DEBUG ******************* 
-        //if (myImageID == 0) *out << "Output vector after export()..." << std::endl;
-        //Y.print(*out); Y.printValues(*out);
-        // *************** END DEBUG ******************* 
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+        if (myImageID == 0) *out << "Output vector after export()..." << std::endl;
+        Y.print(*out); Y.printValues(*out);
+#   endif
       }
       // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
       if (Y.isDistributed() == false) {
         Y.reduce();
-        // ******************* DEBUG ******************* 
-        //if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
-        //Y.print(*out); Y.printValues(*out);
-        // *************** END DEBUG ******************* 
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+        if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
+        Y.print(*out); Y.printValues(*out);
+#   endif
       }
     }
   }
@@ -660,10 +661,10 @@ namespace Tpetra
       os << "Number of global rows    = " << getNumGlobalRows() << endl;
       if (isFillCompleted())
       {
-        os << "Number of global columns = " << getNumGlobalCols() << endl;
+        os << "Number of global columns    = " << getNumGlobalCols() << endl;
         os << "Status = fillCompleted" << endl;
-        os << "MyMaxNumEntries = " << getMyMaxNumEntries() << endl;
-        os << "GlobalMaxNumEntries = " << getGlobalMaxNumEntries() << endl;
+        os << "Number of global nonzeros   = " << getNumGlobalNonzeros() << endl;
+        os << "Global max nonzeros per row = " << getGlobalMaxNumEntries() << endl;
       }
       else
       {
@@ -714,7 +715,13 @@ namespace Tpetra
     // =============================== //
     // Part 0: send off-image elements //
     // =============================== //
-    if (comm_->getSize() > 1) globalAssemble();
+    if (comm_->getSize() > 1) {
+      globalAssemble();
+    }
+    else {
+      TEST_FOR_EXCEPTION(nonlocals_.size() > 0, std::runtime_error,
+          "Tpetra::CrsMatrix::fillComplete(): cannot have non-local entries on a serial run. Invalid entry was submitted to the CrsMatrix.");
+    }
 
     // =============================== //
     // Part I: remove repeated indices //
@@ -858,7 +865,15 @@ namespace Tpetra
 
       // get a list of ImageIDs for the non-local rows (NLRs)
       Array<Ordinal> NLRIds(NLRs.size());
-      rowMap_.getRemoteIndexList(NLRs(),NLRIds());
+      {
+        bool invalidGIDs = rowMap_.getRemoteIndexList(NLRs(),NLRIds());
+        char lclerror = ( invalidGIDs ? OrdinalTraits<char>::one() : OrdinalTraits<char>::zero() );
+        char gblerror;
+        Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,lclerror,&gblerror);
+        TEST_FOR_EXCEPTION(gblerror, std::runtime_error,
+            "Tpetra::CrsMatrix::globalAssemble(): non-local entries correspond to invalid rows.");
+      }
+
       // build up a list of neighbors, as well as a map between NLRs and Ids
       // localNeighbors[i] != 0 iff I have data to send to image i
       // put NLRs,Ids into an array of pairs

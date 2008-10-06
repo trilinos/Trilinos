@@ -2,20 +2,26 @@
 ## Required dependence on teuchos
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
+# Optional dependencies on triutils
+@ENABLE_TPETRA_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
+
 _TPETRA_INCLUDES = \
 	-I@abs_top_srcdir@/../kokkos/src \
 	-I@abs_top_builddir@/../kokkos/src \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_builddir@/src \
-        $(TEUCHOS_INCLUDES)
+	$(TEUCHOS_INCLUDES) \
+	$(TRIUTILS_INCLUDES)
 
 # ToDo: Give kokkos its own export makefile and remove the explicit paths above!
 
 _TPETRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -ltpetra \
-  -L@abs_top_builddir@/../kokkos/src -lkokkos \
-  $(TEUCHOS_LIBS)
+	-L@abs_top_builddir@/../kokkos/src -lkokkos \
+	$(TEUCHOS_LIBS) \
+	$(TRIUTILS_LIBS)
 
 @USING_GNUMAKE_TRUE@TPETRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_TPETRA_INCLUDES))
 @USING_GNUMAKE_TRUE@TPETRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_TPETRA_LIBS))
 @USING_GNUMAKE_FALSE@TPETRA_INCLUDES = $(_TPETRA_INCLUDES)
 @USING_GNUMAKE_FALSE@TPETRA_LIBS     = $(_TPETRA_LIBS)
+

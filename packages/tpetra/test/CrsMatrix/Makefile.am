@@ -31,7 +31,7 @@ include $(top_builddir)/../teuchos/Makefile.export.teuchos
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = CrsMatrix_UnitTests
+noinst_PROGRAMS = CrsMatrix_UnitTests Dummy
 
 CrsMatrix_UnitTests_SOURCES = \
   $(srcdir)/CrsMatrix_UnitTests.cpp \
@@ -41,3 +41,9 @@ CrsMatrix_UnitTests_DEPENDENCIES = \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 CrsMatrix_UnitTests_LDADD = $(TPETRA_LIBS)
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/west0067.rua west0067.rua
+	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
+
+Dummy_SOURCES = Dummy

@@ -124,6 +124,7 @@ int main(int argc, char *argv[])
   }
   Teuchos::broadcast(*comm,0,&info);
   Teuchos::broadcast(*comm,0,&nnz);
+  Teuchos::broadcast(*comm,0,&dim);
   if (info == 0 || nnz < 0) {
     if (verbose && MyPID == 0) {
       cout << "Error reading '" << filename << "'" << endl
@@ -136,17 +137,18 @@ int main(int argc, char *argv[])
   RCP<CrsMatrix<int,ST> > K = rcp(new CrsMatrix<int,ST>(map));
   if (MyPID == 0) {
     // Convert interleaved doubles to complex values
-    // HB format is compressed column. CrsMatrix is compressed fow.
+    // HB format is compressed column. CrsMatrix is compressed row.
     const double *dptr = dvals;
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        K->submitEntry(*rptr++,c,ST(dptr[0],dptr[1]));
+        K->submitEntry(*rptr++ - 1,c,ST(dptr[0],dptr[1]));
         dptr += 2;
       }
     }
   }
   K->fillComplete();
+  cout << *K << endl;
 
   // Create initial vectors
   int blockSize = 5;
@@ -159,7 +161,7 @@ int main(int argc, char *argv[])
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
-  problem->setHermitian(true);
+  problem->setHermitian(false);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );

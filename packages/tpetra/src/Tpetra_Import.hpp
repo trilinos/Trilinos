@@ -311,23 +311,10 @@ namespace Tpetra {
 
     // create remoteImageID list: for each entry remoteGIDs[i],
     // remoteImageIDs[i] will contain the ImageID of the image that owns that GID.
+    // check for GIDs that exist in target but not in source: we see this if getRemoteIndexList returns true
     Teuchos::Array<Ordinal> remoteImageIDs(ImportData_->remoteGIDs_.size());
-    source.getRemoteIndexList(ImportData_->remoteGIDs_(), remoteImageIDs());
-
-    // check for GIDs that exist in target but not in source
-    // getRemoteIndexList will return -1 for the ImageID for any GIDs where this is the case
-    if(ImportData_->numRemoteIDs_ > Teuchos::OrdinalTraits<Ordinal>::zero()) {
-      const Ordinal negOne = Teuchos::OrdinalTraits<Ordinal>::zero() - Teuchos::OrdinalTraits<Ordinal>::one();
-#ifdef HAVE_STD_NEW_COUNT_SYNTAX
-      Ordinal count = std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne);
-#else
-      Ordinal count = 0;
-      std::count(remoteImageIDs.begin(), remoteImageIDs.end(), negOne, count);
-#endif
-      if(count > Teuchos::OrdinalTraits<Ordinal>::zero()) {
-        throw reportError("Target has GIDs not found in Source.", 1);
-      }
-    }
+    TEST_FOR_EXCEPTION( source.getRemoteIndexList(ImportData_->remoteGIDs_(), remoteImageIDs()) == true, std::runtime_error,
+        "Tpetra::Import::setupExport(): Target has GIDs not found in Source.");
 
     // sort remoteImageIDs in ascending order
     // apply same permutation to remoteGIDs_

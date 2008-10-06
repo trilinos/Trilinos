@@ -73,9 +73,11 @@ namespace Tpetra {
       \param In
       globalEntries - List of Global IDs being passed in.
       \param Out
-      images - On return contains list of Image IDs owning the Global IDs in question.
+      images - On return contains list of Image IDs owning the Global IDs in question. 
+      -1 correspond to global entries not present in the directory.
+      \returns \c true signifies at least one specified global entry was not present in the directory.
     */
-    void getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+    bool getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
                              const Teuchos::ArrayView<Ordinal> &images) const;
     
     //! getDirectoryEntries : Returns image and local id info for non-local Map entries
@@ -86,10 +88,13 @@ namespace Tpetra {
       globalEntries - List of Global IDs being passed in.
       \param Out
       images - On return contains list of Image IDs owning the Global IDs in question.
+      -1 correspond to global entries not present in the directory.
       \param Out
       localEntries - On return contains the local ID of the global on the owning image. 
+      -1 correspond to global entries not present in the directory.
+      \returns \c true signifies at least one specified global entry was not present in the directory.
     */
-    void getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+    bool getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
                              const Teuchos::ArrayView<Ordinal> &images, 
                              const Teuchos::ArrayView<Ordinal> &localEntries) const;
     //@}
@@ -106,7 +111,7 @@ namespace Tpetra {
     Directory<Ordinal>& operator = (const Directory<Ordinal> & Source);
 
     // common code for both versions of getDirectoryEntries
-    void getEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
+    bool getEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
                     const Teuchos::ArrayView<Ordinal> &images, 
                     const Teuchos::ArrayView<Ordinal> &localEntries, 
                           bool computeLIDs) const;

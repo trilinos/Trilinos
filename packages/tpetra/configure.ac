@@ -242,10 +242,10 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_tpetra_examples" != "Xno")
 
 # Check to see if we should build the EpetraTpetraProfile example. This should only be done if
 # both Epetra and TriUtils are enabled.
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, epetra, EPETRA, HAVE_EPETRA, yes, 
-[Enable examples that require Epetra.], 
-[Enable examples that require Epetra.  Can be overridden with --disable-tpetra-epetra.])
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, triutils, TRIUTILS, HAVE_TRIUTILS, yes, 
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, epetra, EPETRA, HAVE_EPETRA, yes, 
+#[Enable examples that require Epetra.], 
+#[Enable examples that require Epetra.  Can be overridden with --disable-tpetra-epetra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, triutils, TPETRA_TRIUTILS, ENABLE_TPETRA_TRIUTILS, yes, 
 [Enable examples that require Triutils.],
 [Enable examples that require Triutils.  Can be overridden with --disable-tpetra-triutils.])
 AM_CONDITIONAL(BUILD_PROFILE_EXAMPLE, test "X$ac_cv_use_epetra" != "Xno" && test "X$ac_cv_use_triutils" != "Xno")

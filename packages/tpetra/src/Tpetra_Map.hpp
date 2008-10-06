@@ -44,11 +44,6 @@
 // so we explicitly check    : isCont, numGlobal, indexBase
 // then we explicitly compute: MinAllGID, MaxAllGID
 // Data explicitly checks    : isDistributed
-//
-// FINISH:
-// might consider allowing user to specify isDistributed, for supporting local maps.
-// the question is, why not just get rid of local map? think about this, and ask mike.
-// the point is, we would like to be able to create a local map that does not require any communication
 
 namespace Tpetra {
 
@@ -702,8 +697,8 @@ namespace Tpetra {
     if (MapData_->lgMap_ == Teuchos::null && MapData_->numMyEntries_ > ZERO) {
       // this would have been set up for a non-contiguous map
 #ifdef TEUCHOS_DEBUG
-      SHARED_TEST_FOR_EXCEPTION(MapData_->contiguous_ != true, std::logic_error,
-          "Tpetra::Map::getMyGlobalEntries: logic error. Please notify the Tpetra team.",*MapData_->comm_);
+      TEST_FOR_EXCEPTION(MapData_->contiguous_ != true, std::logic_error,
+          "Tpetra::Map::getMyGlobalEntries: logic error. Please notify the Tpetra team.");
 #endif
       Teuchos::ArrayRCP<Ordinal> lgMap = Teuchos::arcp<Ordinal>(MapData_->numMyEntries_);
       MapData_->lgMap_ = lgMap;
@@ -774,28 +769,28 @@ namespace Tpetra {
   }
 
   template<typename Ordinal>
-  void Map<Ordinal>::getRemoteIndexList(
+  bool Map<Ordinal>::getRemoteIndexList(
       const Teuchos::ArrayView<const Ordinal> & GIDList, 
       const Teuchos::ArrayView<Ordinal> & imageIDList, 
       const Teuchos::ArrayView<Ordinal> & LIDList) const 
   {
-    if (GIDList.size() == 0) return;
+    if (GIDList.size() == 0) return false;
     TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
         "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
         + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.");
-    MapData_->directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
+    return MapData_->directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
   }
 
   template<typename Ordinal>
-  void Map<Ordinal>::getRemoteIndexList(
+  bool Map<Ordinal>::getRemoteIndexList(
       const Teuchos::ArrayView<const Ordinal> & GIDList, 
       const Teuchos::ArrayView<Ordinal> & imageIDList) const 
   {
-    if (GIDList.size() == 0) return;
+    if (GIDList.size() == 0) return false;
     TEST_FOR_EXCEPTION(getNumGlobalEntries() == 0, std::runtime_error,
         "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
         + ">::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries on node.");
-    MapData_->directory_->getDirectoryEntries(GIDList, imageIDList);
+    return MapData_->directory_->getDirectoryEntries(GIDList, imageIDList);
   }
 
 

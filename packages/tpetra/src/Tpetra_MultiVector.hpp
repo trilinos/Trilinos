@@ -55,13 +55,15 @@ namespace Tpetra {
     MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
     MVData_->constantStride_ = true;
     MVData_->stride_ = myLen;
-    MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
-    if (zeroOut) {
-      std::fill(MVData_->values_.begin(),MVData_->values_.end(),Teuchos::ScalarTraits<Scalar>::zero());
-    }
     MVData_->ptrs_.resize(NumVectors,Teuchos::null);
-    for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
-      MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
+    if (myLen > as<Ordinal>(0)) {
+      MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
+      if (zeroOut) {
+        std::fill(MVData_->values_.begin(),MVData_->values_.end(),Teuchos::ScalarTraits<Scalar>::zero());
+      }
+      for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
+        MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
+      }
     }
     MVData_->updateConstPointers();
   }
@@ -79,11 +81,13 @@ namespace Tpetra {
     MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
     MVData_->constantStride_ = true;
     MVData_->stride_ = myLen;
-    MVData_->values_ = Teuchos::arcp<Scalar>(numVecs*myLen);
     MVData_->ptrs_.resize(numVecs,Teuchos::null);
-    for (Ordinal i = as<Ordinal>(0); i < numVecs; ++i) {
-      MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
-      std::copy( source.MVData_->ptrs_[i].begin(), source.MVData_->ptrs_[i].end(), MVData_->ptrs_[i].begin() );
+    if (myLen > as<Ordinal>(0)) {
+      MVData_->values_ = Teuchos::arcp<Scalar>(numVecs*myLen);
+      for (Ordinal i = as<Ordinal>(0); i < numVecs; ++i) {
+        MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
+        std::copy( source.MVData_->ptrs_[i].begin(), source.MVData_->ptrs_[i].end(), MVData_->ptrs_[i].begin() );
+      }
     }
     MVData_->updateConstPointers();
   }
@@ -108,13 +112,15 @@ namespace Tpetra {
     MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
     MVData_->constantStride_ = true;
     MVData_->stride_ = myLen;
-    MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
     MVData_->ptrs_.resize(NumVectors,Teuchos::null);
-    for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
-      MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
-      // copy data from A to my internal data structure
-      ArrayView<const Scalar> Aptr = A(i*LDA,myLen);
-      std::copy(Aptr.begin(),Aptr.end(),MVData_->ptrs_[i].begin());
+    if (myLen > as<Ordinal>(0)) {
+      MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
+      for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
+        MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
+        // copy data from A to my internal data structure
+        ArrayView<const Scalar> Aptr = A(i*LDA,myLen);
+        std::copy(Aptr.begin(),Aptr.end(),MVData_->ptrs_[i].begin());
+      }
     }
     MVData_->updateConstPointers();
   }
@@ -138,16 +144,18 @@ namespace Tpetra {
     MVData_ = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
     MVData_->constantStride_ = true;
     MVData_->stride_ = myLen;
-    MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
     MVData_->ptrs_.resize(NumVectors,Teuchos::null);
-    for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
-      MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
+    if (myLen > as<Ordinal>(0)) {
+      MVData_->values_ = Teuchos::arcp<Scalar>(NumVectors*myLen);
+      for (Ordinal i = as<Ordinal>(0); i < NumVectors; ++i) {
+        MVData_->ptrs_[i] = MVData_->values_(i*myLen,myLen);
 #ifdef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(arrayOfArrays[i].size() != myLength(), std::runtime_error,
-          "Tpetra::MultiVector::MultiVector(map,arrayOfArrays): arrayOfArrays[" << i << "].size() (==" << arrayOfArrays[i].size() 
-          << ") != myLength() (==" << myLength() << ")");
+        TEST_FOR_EXCEPTION(arrayOfArrays[i].size() != myLength(), std::runtime_error,
+            "Tpetra::MultiVector::MultiVector(map,arrayOfArrays): arrayOfArrays[" << i << "].size() (==" << arrayOfArrays[i].size() 
+            << ") != myLength() (==" << myLength() << ")");
 #endif
-      std::copy(arrayOfArrays[i].begin(),arrayOfArrays[i].end(),MVData_->ptrs_[i].begin());
+        std::copy(arrayOfArrays[i].begin(),arrayOfArrays[i].end(),MVData_->ptrs_[i].begin());
+      }
     }
     MVData_->updateConstPointers();
   }
@@ -1270,6 +1278,32 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
         "Tpetra::MultiVector::sumIntoMyValue(): vector index is invalid.");
 #endif
+    MVData_->ptrs_[VectorIndex][MyRow] += ScalarValue;
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::replaceGlobalValue(Ordinal GlobalRow, Ordinal VectorIndex, const Scalar &ScalarValue)
+  {
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(!this->getMap().isMyGlobalIndex(GlobalRow), std::runtime_error,
+        "Tpetra::MultiVector::replaceGlobalValue(): row index is not present on this processor.");
+    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
+        "Tpetra::MultiVector::replaceGlobalValue(): vector index is invalid.");
+#endif
+    Ordinal MyRow = this->getMap().getLocalIndex(GlobalRow);
+    MVData_->ptrs_[VectorIndex][MyRow] = ScalarValue;
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::sumIntoGlobalValue(Ordinal GlobalRow, Ordinal VectorIndex, const Scalar &ScalarValue)
+  {
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(!this->getMap().isMyGlobalIndex(GlobalRow), std::runtime_error,
+        "Tpetra::MultiVector::sumIntoGlobalValue(): row index is not present on this processor.");
+    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
+        "Tpetra::MultiVector::sumIntoGlobalValue(): vector index is invalid.");
+#endif
+    Ordinal MyRow = this->getMap().getLocalIndex(GlobalRow);
     MVData_->ptrs_[VectorIndex][MyRow] += ScalarValue;
   }
 

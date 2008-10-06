@@ -737,10 +737,8 @@ BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
 BUILD_EXAMPLES_FALSE
-HAVE_EPETRA_TRUE
-HAVE_EPETRA_FALSE
-HAVE_TRIUTILS_TRUE
-HAVE_TRIUTILS_FALSE
+ENABLE_TPETRA_TRIUTILS_TRUE
+ENABLE_TPETRA_TRIUTILS_FALSE
 BUILD_PROFILE_EXAMPLE_TRUE
 BUILD_PROFILE_EXAMPLE_FALSE
 SUB_TEST_TRUE
@@ -1369,9 +1367,6 @@ Optional Features:
                           Make Tpetra examples buildable with 'make examples'
                           (default is yes if --disable-examples is not
                           specified)
-  --enable-epetra         Enable examples that require Epetra. Can be
-                          overridden with --disable-tpetra-epetra.
-  --enable-tpetra-epetra  Enable examples that require Epetra.
   --enable-triutils       Enable examples that require Triutils. Can be
                           overridden with --disable-tpetra-triutils.
   --enable-tpetra-triutils
@@ -8099,56 +8094,9 @@ fi
 
 # Check to see if we should build the EpetraTpetraProfile example. This should only be done if
 # both Epetra and TriUtils are enabled.
-
-
-# Check whether --enable-epetra was given.
-if test "${enable_epetra+set}" = set; then
-  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
-else
-  ac_cv_implicit_use_epetra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_tpetra_using_epetra_default=$ac_cv_implicit_use_epetra
-else
-  ac_cv_tpetra_using_epetra_default=no
-fi
-
-# Check whether --enable-tpetra-epetra was given.
-if test "${enable_tpetra_epetra+set}" = set; then
-  enableval=$enable_tpetra_epetra; ac_cv_use_epetra=$enableval
-else
-  ac_cv_use_epetra=$ac_cv_tpetra_using_epetra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in tpetra" >&5
-echo $ECHO_N "checking whether to build optional epetra dependent code in tpetra... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_epetra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_EPETRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_epetra" = "Xyes"; then
-  HAVE_EPETRA_TRUE=
-  HAVE_EPETRA_FALSE='#'
-else
-  HAVE_EPETRA_TRUE='#'
-  HAVE_EPETRA_FALSE=
-fi
-
-
-
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, epetra, EPETRA, HAVE_EPETRA, yes,
+#[Enable examples that require Epetra.],
+#[Enable examples that require Epetra.  Can be overridden with --disable-tpetra-epetra.])
 
 
 # Check whether --enable-triutils was given.
@@ -8181,7 +8129,7 @@ if test "X$ac_cv_use_triutils" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_TRIUTILS 1
+#define HAVE_TPETRA_TRIUTILS 1
 _ACEOF
 
 else
@@ -8190,11 +8138,11 @@ echo "${ECHO_T}no" >&6; }
 fi
 
  if test "X$ac_cv_use_triutils" = "Xyes"; then
-  HAVE_TRIUTILS_TRUE=
-  HAVE_TRIUTILS_FALSE='#'
+  ENABLE_TPETRA_TRIUTILS_TRUE=
+  ENABLE_TPETRA_TRIUTILS_FALSE='#'
 else
-  HAVE_TRIUTILS_TRUE='#'
-  HAVE_TRIUTILS_FALSE=
+  ENABLE_TPETRA_TRIUTILS_TRUE='#'
+  ENABLE_TPETRA_TRIUTILS_FALSE=
 fi
 
 
@@ -8714,17 +8662,10 @@ echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_EPETRA_TRUE}" && test -z "${HAVE_EPETRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_EPETRA\" was never defined.
+if test -z "${ENABLE_TPETRA_TRIUTILS_TRUE}" && test -z "${ENABLE_TPETRA_TRIUTILS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_TPETRA_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_EPETRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_TRIUTILS_TRUE}" && test -z "${HAVE_TRIUTILS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_TRIUTILS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_TRIUTILS\" was never defined.
+echo "$as_me: error: conditional \"ENABLE_TPETRA_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9455,10 +9396,8 @@ BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
 BUILD_EXAMPLES_FALSE!$BUILD_EXAMPLES_FALSE$ac_delim
-HAVE_EPETRA_TRUE!$HAVE_EPETRA_TRUE$ac_delim
-HAVE_EPETRA_FALSE!$HAVE_EPETRA_FALSE$ac_delim
-HAVE_TRIUTILS_TRUE!$HAVE_TRIUTILS_TRUE$ac_delim
-HAVE_TRIUTILS_FALSE!$HAVE_TRIUTILS_FALSE$ac_delim
+ENABLE_TPETRA_TRIUTILS_TRUE!$ENABLE_TPETRA_TRIUTILS_TRUE$ac_delim
+ENABLE_TPETRA_TRIUTILS_FALSE!$ENABLE_TPETRA_TRIUTILS_FALSE$ac_delim
 BUILD_PROFILE_EXAMPLE_TRUE!$BUILD_PROFILE_EXAMPLE_TRUE$ac_delim
 BUILD_PROFILE_EXAMPLE_FALSE!$BUILD_PROFILE_EXAMPLE_FALSE$ac_delim
 SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
@@ -9470,7 +9409,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 36; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
