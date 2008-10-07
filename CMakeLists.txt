@@ -22,6 +22,8 @@ SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 INCLUDE(TrilinosGlobalHelpers)
 
+OPTION(VERBOSE_CONFIGURE "Make the configure process verbose." OFF)
+
 
 #
 # B) Define the list of all Trilinos packages
@@ -29,6 +31,8 @@ INCLUDE(TrilinosGlobalHelpers)
 
 OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING "" OFF)
 MARK_AS_ADVANCED(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
+
+# Define the Trilinos packages
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
 
@@ -54,6 +58,10 @@ ELSE()
 
 ENDIF()
 
+# Create a reverse list for later use
+SET(Trilinos_REVERSE_PACKAGES ${Trilinos_PACKAGES})
+LIST(REVERSE Trilinos_REVERSE_PACKAGES)
+
 SET( Trilinos_PACKAGE_DIRS "")
 FOREACH( PACKAGE ${Trilinos_PACKAGES})
   STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
@@ -68,10 +76,6 @@ LIST(LENGTH Trilinos_PACKAGES Trilinos_NUM_PACKAGES)
 #
 # C) Read in the package dependancies
 #
-
-MESSAGE("")
-MESSAGE("Reading package dependencies ...")
-MESSAGE("")
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
 
@@ -93,38 +97,40 @@ FOREACH(PACKAGE ${Trilinos_PACKAGES})
   SET(${PACKAGE}_TEST_REQUIRED_DEP_PACKAGES ${TEST_REQUIRED_DEP_PACKAGES})
   SET(${PACKAGE}_TEST_OPTIONAL_DEP_PACKAGES ${TEST_OPTIONAL_DEP_PACKAGES})
 
-  IF (VERBOSE_CONFIGURE)
-    MESSAGE("${PACKAGE}_LIB_REQUIRED_DEP_PACKAGES = ${${PACKAGE}_LIB_REQUIRED_DEP_PACKAGES}")
-    MESSAGE("${PACKAGE}_LIB_OPTIONAL_DEP_PACKAGES = ${${PACKAGE}_LIB_OPTIONAL_DEP_PACKAGES}")
-    MESSAGE("${PACKAGE}_TEST_REQUIRED_DEP_PACKAGES = ${${PACKAGE}_TEST_REQUIRED_DEP_PACKAGES}")
-    MESSAGE("${PACKAGE}_TEST_OPTIONAL_DEP_PACKAGES = ${${PACKAGE}_TEST_OPTIONAL_DEP_PACKAGES}")
-    MESSAGE("")
-  ENDIF()
-
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} LIB_REQUIRED_DEP_PACKAGES)
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} LIB_OPTIONAL_DEP_PACKAGES)
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} TEST_REQUIRED_DEP_PACKAGES)
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} TEST_OPTIONAL_DEP_PACKAGES)
 
+  # 2008/10/07: rabartl: ToDo: Wrap the above in a macro TRILINOS_READ_PACKAGE_DEPENDENCIES(${PACAKGE})
+
+
 ENDFOREACH()
 
-IF (VERBOSE_CONFIGURE)
+OPTION(DUMP_PACKAGE_DEPENDENCIES "Dump the package dependency information." OFF)
+
+IF (VERBOSE_CONFIGURE OR DUMP_PACKAGE_DEPENDENCIES)
 
   MESSAGE("")
-  MESSAGE("Printing forward package dependenies ...")
+  MESSAGE("Printing package dependenies ...")
   MESSAGE("")
 
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
 
-    MESSAGE("Forward dependencies: ${PACKAGE}")
+    PRINT_NONEMPTY_VAR(${PACKAGE}_LIB_REQUIRED_DEP_PACKAGES)
+    PRINT_NONEMPTY_VAR(${PACKAGE}_LIB_OPTIONAL_DEP_PACKAGES)
+    PRINT_NONEMPTY_VAR(${PACKAGE}_TEST_REQUIRED_DEP_PACKAGES)
+    PRINT_NONEMPTY_VAR(${PACKAGE}_TEST_OPTIONAL_DEP_PACKAGES)
 
-    MESSAGE("${PACKAGE}_FORWARD_LIB_REQUIRED_DEP_PACKAGES = ${${PACKAGE}_FORWARD_LIB_REQUIRED_DEP_PACKAGES}")
-    MESSAGE("${PACKAGE}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES = ${${PACKAGE}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES}")
-    MESSAGE("${PACKAGE}_FORWARD_TEST_REQUIRED_DEP_PACKAGES = ${${PACKAGE}_FORWARD_TEST_REQUIRED_DEP_PACKAGES}")
-    MESSAGE("${PACKAGE}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES = ${${PACKAGE}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES}")
+    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_LIB_REQUIRED_DEP_PACKAGES)
+    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES)
+    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_TEST_REQUIRED_DEP_PACKAGES)
+    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES)
     MESSAGE("")
 
   ENDFOREACH()
+
+  # 2008/10/07: rabartl: ToDo: Wrap the above in a macro TRILINOS_PRINT_PACKAGE_DEPENDENCIES()
 
 ENDIF()
 
@@ -133,12 +139,18 @@ ENDIF()
 # D) Set up user options and global variables that will be used throughout
 #
 
-OPTION(VERBOSE_CONFIGURE "Make the configure process verbose." OFF)
-
-SET( Trilinos_ENABLE_ALL_PACKAGES "" CACHE BOOL
+SET( Trilinos_ENABLE_ALL_PACKAGES OFF CACHE BOOL
   "Enable all packages (set to ON, OFF, or leave empty)." )
+
+SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
+  "Recursively enable all packages that have required or optional dependencies for set of enabled packages." )
+
+SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL
+  "Recursively enable all optional packages for set of enabled packages." )
+
 SET( Trilinos_ENABLE_TESTS "" CACHE BOOL
   "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
+
 SET( ${PROJECT_NAME}_ENABLE_EXAMPLES "" CACHE BOOL
   "Enable examples in all packages  (set to ON, OFF, or leave empty)." )
 
@@ -186,23 +198,27 @@ MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
 # E) Apply logic to enable Trilinos pacakges and tests
 #
 
-# Disable all forward packages and features based on package disables
-# explicitly set by the user
+SET(Trilinos_EXPLICIT_INPUT_ENABLED_PACKAGES "")
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  IF (Trilinos_ENABLE_${PACKAGE})
+    LIST(APPEND Trilinos_EXPLICIT_INPUT_ENABLED_PACKAGES ${PACKAGE})
+  ENDIF()
+ENDFOREACH()
+MESSAGE("Explicitly enabled packages on input:")
+MESSAGE("  ${Trilinos_EXPLICIT_INPUT_ENABLED_PACKAGES}")
+
+# 2008/10/07: rabartl: ToDo: Above: Replace with a function TRILINOS_PRINT_CURRENT_ENABLED_PACAKGES(...)
+
+# 2008/10/07: rabartl: ToDo: Below: Wrap all of the below in macro TRILNOS_ADJUST_PACKAGE_ENABLES()
 
 MESSAGE("")
 MESSAGE("Disabling forward pacakges that have a required dependancy on explicitly disabled packages ...")
 MESSAGE("")
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  IF (VERBOSE_CONFIGURE)
-     MESSAGE(STATUS "Status: Trilinos_ENABLE_${PACKAGE} = ${Trilinos_ENABLE_${PACKAGE}}")
-  ENDIF()
-  IF (NOT ${Trilinos_ENABLE_${PACKAGE}})
-    #MESSAGE(STATUS "Disabling packages depending on ${PACKAGE} ...")
-    TRILINOS_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${PACKAGE})
-  ENDIF()
+  TRILINOS_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${PACKAGE})
 ENDFOREACH()
 
-IF(Trilinos_ENABLE_ALL_PACKAGES)
+IF (Trilinos_ENABLE_ALL_PACKAGES)
   MESSAGE("")
   MESSAGE("Enabling all packages that are not currently disabled ...")
   MESSAGE("")
@@ -211,40 +227,63 @@ IF(Trilinos_ENABLE_ALL_PACKAGES)
   ENDFOREACH()
 ENDIF()
 
-# Enable all optional forward packages if asked
-IF(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES)
-  # ToDo: Implement!
+IF (Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES)
+  MESSAGE("")
+  MESSAGE("Enabling all forward dependent packages ...")
+  MESSAGE("")
+  FOREACH(PACKAGE ${Trilinos_PACKAGES})
+    TRILINOS_ENABLE_FORWARD_PACKAGE_ENABLES(${PACKAGE})
+  ENDFOREACH()
   SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
 ENDIF()
 
-# Enable all optional packages in the current set of enabled Trilinos packages
-IF(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES)
-  # ToDo: Implement!
-ENDIF()
-
-IF (Trilinos_ENABLE_TESTS OR Trilinos_EANBLE_EXAMPLES)
+IF (Trilinos_ENABLE_TESTS OR Trilinos_ENABLE_EXAMPLES)
   MESSAGE("")
   MESSAGE("Enabling all tests and examples that can be enabled ...")
   MESSAGE("")
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
-    TRILINOS_APPLY_TEST_EXAMPLE_EANBLES(${PACKAGE})
+    TRILINOS_APPLY_TEST_EXAMPLE_ENABLES(${PACKAGE})
   ENDFOREACH()
 ENDIF()
 # NOTE: Above, we enable tests and examples here, before the remaining required
 # packages so that we don't enable tests that don't need to be enabled based
 # on the use of the option Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES.
 
-# Enable all required dependent packages for the current set of enabled
-# packages.
-
-# ToDo: Implement!
+IF (Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES)
+  MESSAGE("")
+  MESSAGE("Enabling all optional packages for current set of enabled packages ...")
+  MESSAGE("")
+  FOREACH(PACKAGE ${Trilinos_REVERSE_PACKAGES})
+    TRILINOS_ENABLE_OPTIONAL_PACKAGES(${PACKAGE})
+  ENDFOREACH()
+ENDIF()
+# NOTE: Above, we have to loop through the packages backward to enable all the
+# pacakges that feed into these packages.
+# NOTE Above, we don't have to enable the required packages because that will
+# come next
 
 MESSAGE("")
-MESSAGE("Enabling all optional package dependencies that can be if both sets of packages are enabled ...")
+MESSAGE("Enabling all remaining required packages for the current set of enabled packages ...")
+MESSAGE("")
+FOREACH(PACKAGE ${Trilinos_REVERSE_PACKAGES})
+  TRILINOS_ENABLE_REQUIRED_PACKAGES(${PACKAGE})
+ENDFOREACH()
+
+MESSAGE("")
+MESSAGE("Enabling all optional package intrapackage enables that can be if both sets of packages are enabled ...")
 MESSAGE("")
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
 ENDFOREACH()
+
+SET(Trilinos_FINAL_ENABLED_PACKAGES "")
+FOREACH(PACKAGE ${Trilinos_PACKAGES})
+  IF (Trilinos_ENABLE_${PACKAGE})
+    LIST(APPEND Trilinos_FINAL_ENABLED_PACKAGES ${PACKAGE})
+  ENDIF()
+ENDFOREACH()
+MESSAGE("Final set of enabled packages:")
+MESSAGE("  ${Trilinos_FINAL_ENABLED_PACKAGES}")
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   MESSAGE("")
