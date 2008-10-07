@@ -12,6 +12,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package fei subdirectory support-Trilinos built successfully."
+	@echo ""
+
 include $(top_builddir)/Makefile.export.fei
 
 # ------------------------------------------------------------------------

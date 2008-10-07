@@ -19,6 +19,13 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package fei subdirectory base built successfully."
+	@echo ""
+
 DEFS = 
 DEFAULT_INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/base -I$(top_builddir)
 
