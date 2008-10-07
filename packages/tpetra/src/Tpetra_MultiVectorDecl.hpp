@@ -169,6 +169,9 @@ namespace Tpetra {
     //! Scale the current values of a multi-vector, this = alpha*this.
     void scale(const Scalar &alpha);
 
+    //! Scale the current values of a multi-vector, this = alpha*this.
+    void scale(Teuchos::ArrayView<const Scalar> alpha);
+
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
     void scale(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A);
 

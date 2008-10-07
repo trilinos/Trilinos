@@ -42,7 +42,7 @@
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziRTRSolMgr.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
+#include <Teuchos_CommandLineProcessor.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+           << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -262,7 +262,6 @@ int main(int argc, char *argv[])
     if (verbose && MyPID==0) {
       cout << endl << os.str() << endl;
     }
-
   }
 
 #ifdef HAVE_MPI
@@ -276,7 +275,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+      cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
@@ -288,4 +287,4 @@ int main(int argc, char *argv[])
   }
   return 0;
 
-}	
+}

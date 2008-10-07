@@ -272,9 +272,7 @@ namespace Anasazi {
      */
     static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, const std::vector<Scalar>& alpha )
     { 
-      (void)mv;
-      (void)alpha;
-      TEST_FOR_EXCEPT(true);
+      mv.scale(alpha);
     }
 
     /*! \brief Replace the vectors in \c mv with random vectors.

@@ -43,8 +43,8 @@
 #include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
-
 #include <Teuchos_CommandLineProcessor.hpp>
+
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -64,6 +64,15 @@ int main(int argc, char *argv[])
   using std::cout;
   using std::endl;
 
+  typedef std::complex<double>                ST;
+  typedef ScalarTraits<ST>                   SCT;
+  typedef SCT::magnitudeType                  MT;
+  typedef MultiVector<int,ST>         MV;
+  typedef Operator<int,ST>            OP;
+  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
+  ST ONE  = SCT::one();
+
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
   int info = 0;
@@ -78,36 +87,31 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
-  bool shortrun = false;
   bool insitu = false;
-  std::string which("LM");
   std::string filename("mhd1280b.cua");
+  std::string which("LM");
+  int nev = 4;
+  int blockSize = 4;
+  MT tol = 1.0e-6;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
-  cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
+  cmdp.setOption("tol",&tol,"Tolerance for convergence.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
   if (debug) verbose = true;
 
-  typedef std::complex<double>                ST;
-  typedef ScalarTraits<ST>                   SCT;
-  typedef SCT::magnitudeType                  MT;
-  typedef MultiVector<int,ST>         MV;
-  typedef Operator<int,ST>            OP;
-  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
-
-  if (verbose && MyPID == 0) {
+  if (MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
-  
+
   // Get the data from the HB file
   int dim,dim2,nnz;
   double *dvals;
@@ -126,7 +130,7 @@ int main(int argc, char *argv[])
   Teuchos::broadcast(*comm,0,&nnz);
   Teuchos::broadcast(*comm,0,&dim);
   if (info == 0 || nnz < 0) {
-    if (verbose && MyPID == 0) {
+    if (MyPID == 0) {
       cout << "Error reading '" << filename << "'" << endl
            << "End Result: TEST FAILED" << endl;
     }
@@ -147,21 +151,25 @@ int main(int argc, char *argv[])
       }
     }
   }
+  if (MyPID == 0) {
+    // Clean up.
+    free( dvals );
+    free( colptr );
+    free( rowind );
+  }
   K->fillComplete();
-  cout << *K << endl;
+  // cout << *K << endl;
 
   // Create initial vectors
-  int blockSize = 5;
   RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );
   ivec->random();
 
   // Create eigenproblem
-  const int nev = 4;
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
-  problem->setHermitian(false);
+  problem->setHermitian(true);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );
@@ -169,34 +177,28 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   boolret = problem->setProblem();
   if (boolret != true) {
-    if (verbose && MyPID == 0) {
+    if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
            << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
 
+
   // Set verbosity level
-  int verbosity = Anasazi::Errors + Anasazi::Warnings;
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary + Anasazi::TimingDetails;
   if (verbose) {
-    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+    verbosity += Anasazi::IterationDetails;
   }
   if (debug) {
     verbosity += Anasazi::Debug;
   }
 
+
+
   // Eigensolver parameters
-  int numBlocks;
-  int maxRestarts;
-  if (shortrun) {
-    maxRestarts = 25;
-    numBlocks = 5;
-  }
-  else {
-    maxRestarts = 50;
-    numBlocks = 10;
-  }
-  MT tol = 1.0e-6;
+  int numBlocks = 8;
+  int maxRestarts = 10;
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
@@ -214,7 +216,7 @@ int main(int argc, char *argv[])
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Converged && shortrun==false) {
+  if (returnCode != Anasazi::Converged) {
     testFailed = true;
   }
 
@@ -224,7 +226,6 @@ int main(int argc, char *argv[])
   int numev = sol.numVecs;
 
   if (numev > 0) {
-
     std::ostringstream os;
     os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
@@ -241,7 +242,7 @@ int main(int argc, char *argv[])
 
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
-  
+
     os << "Direct residual norms computed in BlockKrylovSchurComplex_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
@@ -254,20 +255,13 @@ int main(int argc, char *argv[])
         testFailed = true;
       }
     }
-    if (verbose && MyPID==0) {
+    if (MyPID==0) {
       cout << endl << os.str() << endl;
     }
   }
 
-  if (MyPID == 0) {
-    // Clean up.
-    free( dvals );
-    free( colptr );
-    free( rowind );
-  }
-
   if (testFailed) {
-    if (verbose && MyPID==0) {
+    if (MyPID==0) {
       cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
@@ -275,7 +269,7 @@ int main(int argc, char *argv[])
   //
   // Default return value
   //
-  if (verbose && MyPID==0) {
+  if (MyPID==0) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return 0;

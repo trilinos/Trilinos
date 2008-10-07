@@ -13,8 +13,17 @@
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziTpetraTests,COVERAGE) {
-    TESTS = ../tpetra/test/MVOPTester/TpetraMVOPTester_test.exe;
+    TESTS = ../tpetra/test/MVOPTester/Tpetra_MVOPTester_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziTpetraTests,COVERAGE) {
+    TESTS = ../tpetra/test/BlockDavidson/Tpetra_BlockDavidson_complex_test.exe, 
+            ../tpetra/test/IRTR/Tpetra_IRTR_complex_test.exe, 
+            ../tpetra/test/LOBPCG/Tpetra_LOBPCG_complex_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
     COMM = SERIAL, MPI;
 }
 

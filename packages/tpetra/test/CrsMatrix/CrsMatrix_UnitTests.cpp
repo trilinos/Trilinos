@@ -62,9 +62,11 @@ namespace {
   using Tpetra::CrsMatrix;
   using Tpetra::INSERT;
   using Tpetra::Import;
+  using std::string;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
+  string filedir;
 
 #define PRINT_VECTOR(v) \
    { \
@@ -76,6 +78,8 @@ namespace {
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+    clp.setOption(
+        "filedir",&filedir,"Directory of expected matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
         "test-mpi", "test-serial", &testMpi,
@@ -426,8 +430,9 @@ namespace {
     double *dvals;
     int *colptr,*rowind;
     nnz = -1;
+    string fn = filedir + "mhd1280b.cua";
     if (myImageID == 0) {
-      info = readHB_newmat_double("mhd1280b.cua",&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+      info = readHB_newmat_double(fn.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
     }
     else {
       // address uninitialized data warnings
@@ -440,7 +445,7 @@ namespace {
     Teuchos::broadcast(*comm,0,&dim);
     if (info == 0 || nnz < 0) {
       success = false;
-      out << "Error reading \"mhd1280b.cua\"" << endl;
+      out << "Error reading \"" << fn << "\"" << endl;
       return;
     }
     // create map: partition matrix equally among all procs
@@ -498,6 +503,91 @@ namespace {
 
   ////
 #ifdef HAVE_TPETRA_TRIUTILS
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, PowerComplex, Ordinal, Scalar )
+  {
+    // assumes that Scalar has a constructor of the form: Scalar(realpart,imagpart)
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Ordinal,Scalar> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    // hack to quit for integral Scalar (like, maybe, complex<int>)
+    if (as<Scalar>(1) / as<Scalar>(3) == as<Scalar>(0)) return;
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    const int myImageID = comm->getRank();
+
+    int dim,dim2,nnz,info;
+    double *dvals;
+    int *colptr,*rowind;
+    nnz = -1;
+    string fn = filedir + "mhd1280b.cua";
+    if (myImageID == 0) {
+      info = readHB_newmat_double(fn.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+    }
+    else {
+      // address uninitialized data warnings
+      dvals = NULL;
+      colptr = NULL;
+      rowind = NULL;
+    }
+    Teuchos::broadcast(*comm,0,&info);
+    Teuchos::broadcast(*comm,0,&nnz);
+    Teuchos::broadcast(*comm,0,&dim);
+    if (info == 0 || nnz < 0) {
+      success = false;
+      out << "Error reading \"" << fn << "\"" << endl;
+      return;
+    }
+    // create map: partition matrix equally among all procs
+    Map<Ordinal> map_shared(dim,0,platform);
+    CrsMatrix<Ordinal,Scalar> A_crs(map_shared);
+    if (myImageID == 0) {
+      // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
+      // HB format is compressed column. CrsMatrix is compressed row. Convert.
+      const double *dptr = dvals;
+      const int *rptr = rowind;
+      for (int c=0; c<dim; ++c) {
+        for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
+          A_crs.submitEntry(*rptr-1,c,Scalar(dptr[0],dptr[1]));
+          ++rptr;
+          dptr += 2;
+        }
+      }
+    }
+    // fillComplete() will distribute matrix entries from Root to all other procs
+    A_crs.fillComplete();
+    // doExport() will distribute MV entries from Root to all other procs
+
+    if (myImageID == 0) {
+      // Clean up allocated memory.
+      free( dvals );
+      free( colptr );
+      free( rowind );
+    }
+    // simple power method
+    RCP<MV> x = rcp(new MV(map_shared,1)), 
+            r = rcp(new MV(map_shared,1));
+    Scalar lam;
+    Mag nrm;
+    x->random(); x->norm2(arrayView<Mag>(&nrm,1)); x->scale(MT::one()/nrm);
+    for (int i=0; i<20; ++i) {
+      A_crs.apply(*x,*r);                                         // r = A*x
+      x->dot(*r,arrayView<Scalar>(&lam,1));                       // lambda = x'*A*x = x'*r
+      x->update(ST::one(),*r,-lam);                               // x = A*x - x*lam
+      r->norm2(arrayView<Mag>(&nrm,1)); r->scale(MT::one()/nrm);  // r = |A*x|/|A*x|
+      swap(x,r);                                                  // x = |A*x|/|A*x| = newx   r = A*oldx - oldx*lam
+      r->norm2(arrayView<Mag>(&nrm,1));                           // nrm = |r| = |A*oldx - oldx*lam|
+      out << "i: " << i << "\t\tlambda: " << lam << "\t\t|r|: " << nrm << endl;
+    }
+    TEST_FLOATING_EQUALITY(lam, Scalar(70.322f,0.0f), as<Mag>(0.01f));
+  }
+#endif
+
+
+  ////
+#ifdef HAVE_TPETRA_TRIUTILS
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, FullMatrix, Ordinal, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
@@ -517,8 +607,9 @@ namespace {
     double *dvals;
     int *colptr,*rowind;
     nnz = -1;
+    string fn = filedir + "west0067.rua";
     if (myImageID == 0) {
-      info = readHB_newmat_double("west0067.rua",&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+      info = readHB_newmat_double(fn.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
     }
     else {
       // address uninitialized data warnings
@@ -531,7 +622,7 @@ namespace {
     Teuchos::broadcast(*comm,0,&dim);
     if (info == 0 || nnz < 0) {
       success = false;
-      out << "Error reading \"west0067.rua\"" << endl;
+      out << "Error reading \"" << fn << "\"" << endl;
       return;
     }
     // create map: partition matrix equally among all procs
@@ -582,22 +673,6 @@ namespace {
     Array<Mag> norms(dim), zeros(dim,MT::zero());
     mvres.norm2(norms());
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
-
-    //  // use the power method to compute a single eigenvector of A
-    //  RCP<MV> x = rcp(new MV(map_shared,1)), 
-    //          r = rcp(new MV(map_shared,1));
-    //  Scalar lam;
-    //  Mag nrm;
-    //  x->random(); x->norm2(arrayView<Mag>(&nrm,1)); x->scale(MT::one()/nrm);
-    //  for (int i=0; i<100; ++i) {
-    //    A_crs.apply(*x,*r);                                         // r = A*x
-    //    x->dot(*r,arrayView<Scalar>(&lam,1));                       // lambda = x'*A*x = x'*r
-    //    x->update(ST::one(),*r,-lam);                               // x = A*x - x*lam
-    //    r->norm2(arrayView<Mag>(&nrm,1)); r->scale(MT::one()/nrm);  // r = |A*x|/|A*x|
-    //    swap(x,r);                                                  // x = |A*x|/|A*x| = newx   r = A*oldx - oldx*lam
-    //    r->norm2(arrayView<Mag>(&nrm,1));                           // nrm = |r| = |A*oldx - oldx*lam|
-    //    out << "i: " << i << "\t\tlambda: " << lam << "\t\t|r|: " << nrm << endl;
-    //  }
   }
 #endif
 
@@ -686,7 +761,8 @@ namespace {
 
 #ifdef HAVE_TPETRA_TRIUTILS
 # define COMPLEX_TRIUTILS_USING_TESTS(ORDINAL,SCALAR) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, FullMatrixComplex, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, FullMatrixComplex, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, PowerComplex, ORDINAL, SCALAR )
 #else
 # define COMPLEX_TRIUTILS_USING_TESTS(ORDINAL,SCALAR)
 #endif
@@ -721,7 +797,7 @@ namespace {
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
      UNIT_TEST_GROUP_ORDINAL(int)
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD

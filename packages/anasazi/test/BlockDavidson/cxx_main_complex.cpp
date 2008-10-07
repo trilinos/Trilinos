@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+           << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
 
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
-  
+
     os << "Direct residual norms computed in BlockDavidsonComplex_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
        << "----------------------------------------" << endl;
@@ -293,7 +293,6 @@ int main(int argc, char *argv[])
     if (verbose && MyPID==0) {
       cout << endl << os.str() << endl;
     }
-
   }
 
 #ifdef HAVE_MPI
@@ -307,7 +306,7 @@ int main(int argc, char *argv[])
   
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+      cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }

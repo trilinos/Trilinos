@@ -500,8 +500,10 @@ AC_CONFIG_FILES([
 		tpetra/test/Makefile
 		tpetra/test/MVOPTester/Makefile
 		tpetra/test/BlockKrylovSchur/Makefile
+		tpetra/test/IRTR/Makefile
+		tpetra/test/LOBPCG/Makefile
+		tpetra/test/BlockDavidson/Makefile
 		])
-		#tpetra/example/Makefile
 
 AC_OUTPUT()
 

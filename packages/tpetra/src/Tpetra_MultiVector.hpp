@@ -610,6 +610,31 @@ namespace Tpetra {
     }
   }
 
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::scale(Teuchos::ArrayView<const Scalar> alphas)
+  {
+    Teuchos::BLAS<int,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    using Teuchos::ArrayView;
+    const Ordinal numVecs = this->numVectors();
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(alphas.size() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::scale(alphas): alphas.size() must be as large as the number of vectors in *this.");
+#endif
+    for (Ordinal i = OrdinalTraits<Ordinal>::zero(); i < numVecs; ++i) {
+      if (alphas[i] == Teuchos::ScalarTraits<Scalar>::one()) {
+        // do nothing
+      }
+      else if (alphas[i] == Teuchos::ScalarTraits<Scalar>::zero()) {
+        putScalar(alphas[i]);
+      }
+      else {
+        ArrayView<Scalar> &curpos = MVData_->ptrs_[i];
+        blas.SCAL(curpos.size(),alphas[i],curpos.getRawPtr(),ONE);
+      }
+    }
+  }
 
   template<typename Ordinal, typename Scalar>
   void MultiVector<Ordinal,Scalar>::scale(const Scalar &alpha, const MultiVector<Ordinal,Scalar> &A) 

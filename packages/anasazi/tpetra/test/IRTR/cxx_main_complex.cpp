@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for LOBPCG solving a standard (Ax=xl) complex Hermitian
-// eigenvalue problem, using the LOBPCGSolMgr solver manager.
+// This test is for SIRTR/IRTR solving a standard (Ax=xl) complex Hermitian
+// eigenvalue problem.
 //
 // The matrix used is from MatrixMarket:
 // Name: MHD1280B: Alfven Spectra in Magnetohydrodynamics
@@ -40,134 +40,136 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
+#include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
+#include "AnasaziRTRSolMgr.hpp"
+#include <Teuchos_CommandLineProcessor.hpp>
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
-#ifdef HAVE_ANASAZI_TRIUTILS
-#include "iohb.h"
-#endif
-
-// templated multivector and sparse matrix classes
-#include "MyMultiVec.hpp"
-#include "MyBetterOperator.hpp"
+#include <iohb.h>
 
 using namespace Teuchos;
+using Tpetra::Platform;
+using Tpetra::Operator;
+using Tpetra::CrsMatrix;
+using Tpetra::MultiVector;
+using Tpetra::Map;
 
 int main(int argc, char *argv[]) 
 {
   using std::cout;
   using std::endl;
 
+  typedef std::complex<double>                ST;
+  typedef ScalarTraits<ST>                   SCT;
+  typedef SCT::magnitudeType                  MT;
+  typedef MultiVector<int,ST>         MV;
+  typedef Operator<int,ST>            OP;
+  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
+  ST ONE  = SCT::one();
+
+  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+
   int info = 0;
   bool boolret;
-  int MyPID;
+  int MyPID = 0;
 
-#ifdef HAVE_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  MPI_Comm_rank( MPI_COMM_WORLD, &MyPID );
-#else
-  MyPID = 0;
-#endif
+  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
+  RCP<Comm<int> > comm = platform->createComm();
+
+  MyPID = rank(*comm);
 
   bool testFailed;
   bool verbose = false;
   bool debug = false;
+  bool skinny = true;
   std::string filename("mhd1280b.cua");
-  std::string which("LM");
+  std::string which("LR");
+  int nev = 4;
+  int blockSize = 4;
+  MT tol = 1.0e-6;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
+  cmdp.setOption("tol",&tol,"Tolerance for convergence.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
     return -1;
   }
-
-#ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-  if (verbose && MyPID == 0) {
-    cout << "End Result: TEST FAILED" << endl;	
+  if (debug) verbose = true;
+  if (blockSize < nev) {
+    blockSize = nev;
   }
-  return -1;
-#endif
 
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ScalarType;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<double> ScalarType;
-#else
-  typedef double ScalarType;
-  // no complex. quit with failure.
-  if (verbose && MyPID == 0) {
-    cout << "Not compiled with complex support." << endl;
-    cout << "End Result: TEST FAILED" << endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-#endif
-  typedef ScalarTraits<ScalarType>                   SCT;
-  typedef SCT::magnitudeType               MagnitudeType;
-  typedef Anasazi::MultiVec<ScalarType>               MV;
-  typedef Anasazi::Operator<ScalarType>               OP;
-  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
-  const ScalarType ONE  = SCT::one();
-
-  if (verbose && MyPID == 0) {
+  if (MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
 
-  //  Problem information
+  // Get the data from the HB file
   int dim,dim2,nnz;
   double *dvals;
   int *colptr,*rowind;
   nnz = -1;
-  info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
-                              &colptr,&rowind,&dvals);
+  if (MyPID == 0) {
+    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+  }
+  else {
+    // address uninitialized data warnings
+    dvals = NULL;
+    colptr = NULL;
+    rowind = NULL;
+  }
+  Teuchos::broadcast(*comm,0,&info);
+  Teuchos::broadcast(*comm,0,&nnz);
+  Teuchos::broadcast(*comm,0,&dim);
   if (info == 0 || nnz < 0) {
-    if (verbose && MyPID == 0) {
+    if (MyPID == 0) {
       cout << "Error reading '" << filename << "'" << endl
            << "End Result: TEST FAILED" << endl;
     }
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
     return -1;
   }
-  // Convert interleaved doubles to complex values
-  std::vector<ScalarType> cvals(nnz);
-  for (int ii=0; ii<nnz; ii++) {
-    cvals[ii] = ScalarType(dvals[ii*2],dvals[ii*2+1]);
+  // create map
+  Map<int> map(dim,0,*platform);
+  RCP<CrsMatrix<int,ST> > K = rcp(new CrsMatrix<int,ST>(map));
+  if (MyPID == 0) {
+    // Convert interleaved doubles to complex values
+    // HB format is compressed column. CrsMatrix is compressed row.
+    const double *dptr = dvals;
+    const int *rptr = rowind;
+    for (int c=0; c<dim; ++c) {
+      for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
+        K->submitEntry(*rptr++ - 1,c,ST(dptr[0],dptr[1]));
+        dptr += 2;
+      }
+    }
   }
-  // Build the problem matrix
-  RCP< const MyBetterOperator<ScalarType> > K 
-    = rcp( new MyBetterOperator<ScalarType>(dim,colptr,nnz,rowind,&cvals[0]) );
+  if (MyPID == 0) {
+    // Clean up.
+    free( dvals );
+    free( colptr );
+    free( rowind );
+  }
+  K->fillComplete();
+  // cout << *K << endl;
 
   // Create initial vectors
-  int blockSize = 5;
-  RCP<MyMultiVec<ScalarType> > ivec = rcp( new MyMultiVec<ScalarType>(dim,blockSize) );
-  ivec->MvRandom();
+  RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );
+  ivec->random();
 
   // Create eigenproblem
-  const int nev = 4;
-  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
-    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,ivec) );
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
   problem->setHermitian(true);
@@ -178,65 +180,57 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   boolret = problem->setProblem();
   if (boolret != true) {
-    if (verbose && MyPID == 0) {
+    if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
            << "End Result: TEST FAILED" << endl;
     }
-#ifdef HAVE_MPI
-    MPI_Finalize() ;
-#endif
     return -1;
   }
 
   // Set verbosity level
-  int verbosity = Anasazi::Errors + Anasazi::Warnings;
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary + Anasazi::TimingDetails;
   if (verbose) {
-    verbosity += Anasazi::IterationDetails + Anasazi::FinalSummary + Anasazi::TimingDetails;
+    verbosity += Anasazi::IterationDetails;
   }
   if (debug) {
     verbosity += Anasazi::Debug;
   }
 
-
   // Eigensolver parameters
   int maxIters = 450;
-  MagnitudeType tol = 1.0e-6;
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
+  MyPL.set( "Skinny Solver", skinny);
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", true );
-  MyPL.set( "Locking Tolerance", tol/10 );
-  MyPL.set( "Full Ortho", true );
   //
   // Create the solver manager
-  Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+  Anasazi::RTRSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  Anasazi::ReturnType returnCode = MySolverMan.solve();
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
   testFailed = false;
   if (returnCode != Anasazi::Converged) {
     testFailed = true;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
+  Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
   RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
-
     std::ostringstream os;
     os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
 
     // Compute the direct residual
-    std::vector<MagnitudeType> normV( numev );
-    SerialDenseMatrix<int,ScalarType> T(numev,numev);
+    std::vector<MT> normV( numev );
+    SerialDenseMatrix<int,ST> T(numev,numev);
     for (int i=0; i<numev; i++) {
       T(i,i) = sol.Evals[i].realpart;
     }
@@ -246,9 +240,9 @@ int main(int argc, char *argv[])
 
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
-  
-os << "Direct residual norms computed in LOBPCGComplex_test.exe" << endl
-       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
+
+    os << "Direct residual norms computed in Tpetra_IRTR_complex_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
       if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
@@ -259,33 +253,23 @@ os << "Direct residual norms computed in LOBPCGComplex_test.exe" << endl
         testFailed = true;
       }
     }
-    if (verbose && MyPID==0) {
+    if (MyPID==0) {
       cout << endl << os.str() << endl;
     }
-
   }
 
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-
-  // Clean up.
-  free( dvals );
-  free( colptr );
-  free( rowind );
-
   if (testFailed) {
-    if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+    if (MyPID==0) {
+      cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0) {
+  if (MyPID==0) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return 0;
 
-}	
+}
