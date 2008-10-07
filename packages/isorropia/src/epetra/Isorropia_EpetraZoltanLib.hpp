@@ -63,9 +63,14 @@ public:
   ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
   ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	    Teuchos::RCP<CostDescriber> costs);
+
   ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
   ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	    Teuchos::RCP<CostDescriber> costs);
+
+  ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> coords);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> coords,
+                 Teuchos::RCP<const Epetra_MultiVector> weights);
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,

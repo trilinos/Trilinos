@@ -65,11 +65,7 @@ namespace Epetra {
 Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 const Teuchos::ParameterList& paramlist)
-  : input_map_(),
-    input_graph_(input_graph),
-    input_matrix_(),
-    costs_(),
-    paramlist_(),
+  : input_graph_(input_graph),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
@@ -80,11 +76,8 @@ Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 Teuchos::RCP<CostDescriber> costs,
 	 const Teuchos::ParameterList& paramlist)
-  : input_map_(),
-    input_graph_(input_graph),
-    input_matrix_(),
+  : input_graph_(input_graph),
     costs_(costs),
-    paramlist_(),
     operation_already_computed_(false)
 {
 
@@ -95,11 +88,7 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 Operator::
 Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	 const Teuchos::ParameterList& paramlist)
-  : input_map_(),
-    input_graph_(),
-    input_matrix_(input_matrix),
-    costs_(),
-    paramlist_(),
+  : input_matrix_(input_matrix),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
@@ -110,14 +99,34 @@ Operator::
 Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	 Teuchos::RCP<CostDescriber> costs,
 	 const Teuchos::ParameterList& paramlist)
-  : input_map_(),
-    input_graph_(),
-    input_matrix_(input_matrix),
+  : input_matrix_(input_matrix),
     costs_(costs),
-    paramlist_(),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
+  setParameters(paramlist);
+}
+
+Operator::
+Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
+	 const Teuchos::ParameterList& paramlist)
+  : input_coords_(input_coords),
+    operation_already_computed_(false)
+{
+  input_map_ = Teuchos::rcp(&(input_coords->Map()),false);
+  weights_ = Teuchos::rcp(new Epetra_MultiVector(*input_map_, 0));
+  setParameters(paramlist);
+}
+
+Operator::
+Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
+         Teuchos::RCP<const Epetra_MultiVector> weights,
+	 const Teuchos::ParameterList& paramlist)
+  : input_coords_(input_coords),
+    weights_(weights),
+    operation_already_computed_(false)
+{
+  input_map_ = Teuchos::rcp(&(input_coords->Map()),false);
   setParameters(paramlist);
 }
 

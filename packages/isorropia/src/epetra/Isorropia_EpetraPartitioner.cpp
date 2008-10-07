@@ -63,30 +63,6 @@ namespace Isorropia {
 
 namespace Epetra {
 
-
-  /** Constructor that accepts an Epetra_CrsGraph object, called by
-        API function create_partitioner().
-
-     \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
@@ -96,32 +72,6 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     partition(true);
 }
 
-  /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
-        API function create_partitioner().
-
-     \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
@@ -132,31 +82,6 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     partition(true);
 }
 
-
-  /**
-     Constructor that accepts an Epetra_RowMatrix object, called by
-       API function create_partitioner().
-
-     \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
@@ -166,34 +91,6 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     partition(true);
 }
 
-
-  /**
-     Constructor that accepts an Epetra_RowMatrix object and a
-     CostDescriber, called by API function create_partitioner(). 
-
-     \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
@@ -204,43 +101,33 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     partition(true);
 }
 
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (coords, paramlist)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
 
-  /** Destructor */
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+                         Teuchos::RCP<const Epetra_MultiVector> weights,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (coords, weights, paramlist)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
 Partitioner::~Partitioner(){}
 
-  /** setParameters() is an internal Partitioner method which handles
-      the parameters from a Teuchos::ParameterList object. 
-
-      The input
-      ParameterList object is copied into an internal ParameterList
-      attribute, and no reference to the input object is held after
-      this function returns. (Thus, the input paramlist object may be
-      altered or destroyed as soon as this method returns.)<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-   */
-
-  /**  compute_partitioning is an internal method that computes 
-       a rebalanced partitioning for the data in the object
-      that this class was constructed with.
-
-      \param force_repartitioning Optional argument defaults to false. By
-         default, compute_partitioning() only does anything the first time
-         it is called, and subsequent repeated calls are no-ops. If the user's
-         intent is to re-compute the partitioning (e.g., if parameters
-         or other inputs have been changed), then setting this flag to
-         true will force a new partitioning to be computed.
-   */
 void Partitioner::
 partition(bool force_repartitioning)
 {
 
   bool use_zoltan = false;
+  int input_type;
   Teuchos::ParameterList sublist = paramlist_;
 
   std::string partitioning_method_str("PARTITIONING_METHOD");
@@ -260,9 +147,36 @@ partition(bool force_repartitioning)
   if (use_zoltan) {
     if (input_graph_.get() != 0)
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
-    else
+    else if (input_matrix_.get() != 0)
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
+    else if (input_coords_.get() != 0)
+      lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
+    else{
+      throw Isorropia::Exception("Partitioner::partition - no input object.");
+    }
     sublist = (paramlist_.sublist(zoltan));
+
+    if (input_coords_.get() != 0){
+      input_type = Isorropia::Epetra::Library::geometric_input_;
+    }
+    else{
+      std::string lb_method_str("LB_METHOD");
+      if (sublist.isParameter(lb_method_str)){
+        std::string lb_meth = sublist.get(lb_method_str, "HYPERGRAPH");
+        if (lb_meth == "GRAPH"){
+          input_type = Isorropia::Epetra::Library::graph_input_;
+        }
+        else if (lb_meth == "HYPERGRAPH"){
+          input_type = Isorropia::Epetra::Library::hypergraph_input_;
+        }
+        else{
+          throw Isorropia::Exception("Valid LB_METHOD parameters for input type are HYPERGRAPH or GRAPH");
+        }
+      }
+      else{
+        input_type = Isorropia::Epetra::Library::hypergraph_input_;
+      }
+    }
   }
 
 #else /* HAVE_ISORROPIA_ZOLTAN */
@@ -272,13 +186,19 @@ partition(bool force_repartitioning)
 #endif /* HAVE_ISORROPIA_ZOLTAN */
 
   if (use_zoltan == false) {
-    if (input_graph_.get() == 0)
+    input_type = Isorropia::Epetra::Library::unspecified_input_;   // doesn't matter
+    if (input_matrix_.get() != 0)
       lib_ = Teuchos::rcp(new InternalPartitioner(input_matrix_, costs_));
-    else
+    else if (input_graph_.get() != 0)
       lib_ = Teuchos::rcp(new InternalPartitioner(input_graph_, costs_));
+    else if (input_coords_.get() != 0)
+      lib_ = Teuchos::rcp(new InternalPartitioner(input_coords_, weights_));
+    else{
+      throw Isorropia::Exception("Partitioner::partition - no input object.");
+    }
   }
 
-//   lib_->repartition(sublist, myNewElements_, exports_, imports_);
+  lib_->input_type_ = input_type;
   lib_->repartition(sublist, properties_, exportsSize_, imports_);
   computeNumberOfProperties();
   operation_already_computed_ = true;
@@ -290,15 +210,9 @@ compute(bool force_repartitioning)
   partition(force_repartitioning);
 }
 
-  /** An internal method which determines whether the 
-      method compute_partitioning() has already been
-      called on this class instance.
-  */
 bool Partitioner::partitioning_already_computed() const {
   return (alreadyComputed());
 }
-
-
 
 Teuchos::RCP<Epetra_Map>
 Partitioner::createNewMap()

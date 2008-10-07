@@ -63,18 +63,16 @@ public:
   Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
   Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	  Teuchos::RCP<CostDescriber> costs);
+
   Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
   Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
  	  Teuchos::RCP<CostDescriber> costs);
 
-  virtual ~Library();
+  Library(Teuchos::RCP<const Epetra_MultiVector> input_coords);
+  Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
+          Teuchos::RCP<const Epetra_MultiVector> weights);
 
-  void setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
-  void setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-		Teuchos::RCP<CostDescriber> costs);
-  void setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
-  void setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-		Teuchos::RCP<CostDescriber> costs);
+  virtual ~Library();
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
@@ -92,20 +90,28 @@ public:
   order(Teuchos::ParameterList& paramlist,
 	std::vector<int>& myNewElements) = 0 ;
 
-  void setInputType(std::string inputType) {
-    inputType_ = inputType;
-  }
+  /** Object on which library acts - does it represent a graph,
+      a hypergraph, or a collection of geometric coordinates?
+    */
+
+  static const int hypergraph_input_ = 1;
+  static const int graph_input_ = 2;
+  static const int geometric_input_ = 3;
+  static const int unspecified_input_ = 4;
+
+  int input_type_;
 
 protected:
-  std::string inputType_;
 
   Teuchos::RCP<const Epetra_BlockMap> input_map_;
   Teuchos::RCP<const Epetra_CrsGraph> input_graph_;
   Teuchos::RCP<const Epetra_RowMatrix> input_matrix_;
+  Teuchos::RCP<const Epetra_MultiVector> input_coords_;
   Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs_;
-  Teuchos::RCP<Epetra_Vector> weights_;
+  Teuchos::RCP<const Epetra_MultiVector> weights_;
 
   virtual int precompute();
+
   virtual int postcompute() = 0;
 
 };//class Library

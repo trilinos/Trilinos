@@ -69,27 +69,33 @@ namespace Epetra {
 InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph):
   Library(input_graph)
  {
-   setInputType("HYPERGRAPH");
  }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			  Teuchos::RCP<CostDescriber> costs):
   Library(input_graph, costs)
 {
-   setInputType("HYPERGRAPH");
 }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix):
   Library(input_matrix)
 {
-   setInputType("HYPERGRAPH");
 }
 
 InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			  Teuchos::RCP<CostDescriber> costs):
   Library(input_matrix, costs)
 {
-   setInputType("HYPERGRAPH");
+}
+
+InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_MultiVector> coords):
+  Library(coords)
+{
+}
+InternalPartitioner::InternalPartitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+                                         Teuchos::RCP<const Epetra_MultiVector> weights):
+  Library(coords, weights)
+{
 }
 
 InternalPartitioner::~InternalPartitioner() {}
@@ -99,22 +105,16 @@ int InternalPartitioner::precompute()
   std::string str1("Isorropia::InternalPartitioner::precompute ");
   std::string str2;
 
-
   Library::precompute();
 
   return (0);
 }
-
-
-
 
 int InternalPartitioner::
 repartition(Teuchos::ParameterList& paramList,
 	    std::vector<int>& myNewElements,
 	      int& exportsSize,
 	      std::vector<int>& imports)
-// 	    std::map<int,int>& exports,
-// 	    std::map<int,int>& imports)
 {
   precompute();
 
@@ -135,7 +135,10 @@ repartition(Teuchos::ParameterList& paramList,
 	}
 	vals[i] = (double)iter->second;
       }
-      weights_ = Teuchos::rcp(new Epetra_Vector(Copy, *input_map_, vals));
+      if (weights_.get()){
+        weights_.release();
+      }
+      weights_ = Teuchos::rcp(new Epetra_MultiVector(Copy, *input_map_, vals, nrows, 1));
 
       delete [] vals;
     }
@@ -145,15 +148,14 @@ repartition(Teuchos::ParameterList& paramList,
     if (input_graph_.get() != 0) {
       weights_ = Teuchos::rcp(create_row_weights_nnz(*input_graph_));
     }
-    else {
+    else if (input_matrix_.get() != 0){
       weights_ = Teuchos::rcp(create_row_weights_nnz(*input_matrix_));
+    }
+    else{
+      weights_ = Teuchos::rcp(create_unit_weights(*input_coords_));
     }
   }
 
-//   int err = Isorropia::Epetra::repartition(*input_map_,
-// 					   *weights_,
-// 					   myNewElements,
-// 					   exports, imports);
   int err = Isorropia::Epetra::repartition(*input_map_,
 					   *weights_,
 					   myNewElements,

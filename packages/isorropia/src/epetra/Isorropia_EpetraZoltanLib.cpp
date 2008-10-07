@@ -78,76 +78,89 @@ namespace Epetra {
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph):
   Library(input_graph)
 {
-  setInputType("HYPERGRAPH");
 }
 
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			  Teuchos::RCP<CostDescriber> costs):
   Library(input_graph, costs)
 {
-  setInputType("HYPERGRAPH");
 }
 
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix):
   Library(input_matrix)
 {
-  setInputType("HYPERGRAPH");
 }
 
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			  Teuchos::RCP<CostDescriber> costs):
   Library(input_matrix, costs)
 {
-  setInputType("HYPERGRAPH");
+}
+
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords):
+  Library(input_coords)
+{
+}
+
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
+                               Teuchos::RCP<const Epetra_MultiVector> weights):
+  Library(input_coords, weights)
+{
+  int weightDim = 0;
+
+  if (weights.get()){
+    weightDim = weights->NumVectors();
+  }
+
+  if (weightDim > 1){
+    if (input_coords->Comm().MyPID() == 0){
+      std::cout << "WARNING: Zoltan will only use the first weight of the "<< weightDim << " supplied for each object" << std::endl;
+    }
+  }
 }
 
 int ZoltanLibClass::precompute()
 {
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
-  std::string str2;
-  MPI_Comm mpicomm;
+  MPI_Comm mpicomm = MPI_COMM_WORLD;
 
-  bool isHypergraph = true;
-  std::string lb_method_str("LB_METHOD");
-  if (zoltanParamList_.isParameter(lb_method_str)){
-    std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
-    if (lb_meth == "GRAPH"){
-      isHypergraph = false;
-      setInputType("GRAPH");
-    }
+  Library::precompute();  // assumes input_type_ has been set
+
+  if (input_type_ == graph_input_ || input_type_ == hypergraph_input_){
+    computeCost();   // graph or hypergraph weights
   }
 
-
-  Library::precompute();
-
-  computeCost();
-
-  if (input_matrix_.get() == 0) {
-    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, isHypergraph));
+  if (input_graph_.get() != 0) {
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, 
+                      (input_type_ == hypergraph_input_)));
+#ifdef HAVE_MPI
     const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
-#ifdef HAVE_MPI
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
     mpicomm = empicomm.Comm();
-
-#else /* HAVE_MPI */
-    mpicomm = MPI_COMM_WORLD;
-#endif /* HAVE_MPI */
+#endif
   }
-  else {
-    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, isHypergraph));
-    const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
+  else if (input_matrix_.get() != 0){
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, 
+                      (input_type_ == hypergraph_input_)));
 #ifdef HAVE_MPI
+    const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
     const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
-
     mpicomm = empicomm.Comm();
-#else /* HAVE_MPI */
-    mpicomm = MPI_COMM_WORLD;
-#endif /* HAVE_MPI */
+#endif
+  }
+  else{
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_coords_, weights_));
+#ifdef HAVE_MPI
+    const Epetra_Comm &ecomm = input_coords_->Map().Comm();
+    const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
+    mpicomm = empicomm.Comm();
+#endif
   }
 
   float version;
   int argcTmp=0;
   char *argvTmp[1];
+  std::string lb_method_str("LB_METHOD");
 
   // create a Zoltan problem
 
@@ -169,21 +182,23 @@ int ZoltanLibClass::precompute()
   }
 
   if (!zoltanParamList_.isParameter(lb_method_str)) {
-    std::string lb_meth = zoltanParamList_.get(lb_method_str, "HYPERGRAPH");
-    zoltanParamList_.set(lb_method_str, lb_meth);  // set to HYPERGRAPH
+    if (input_type_ == hypergraph_input_){
+      zoltanParamList_.set(lb_method_str, "HYPERGRAPH");
+    }
+    else if (input_type_ == graph_input_){
+      zoltanParamList_.set(lb_method_str, "GRAPH");
+    }
+    else{
+      zoltanParamList_.set(lb_method_str, "RCB");
+    }
   }
 
-  // If no process set vertex weights, let Zoltan default to
-  // unit weights for vertices
-
-  if (queryObject_->haveVertexWeights()) {
+  if (queryObject_->haveVertexWeights() || 
+      ((weights_.get() != 0) && (weights_->NumVectors() > 0)) ){
     if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
       zoltanParamList_.set("OBJ_WEIGHT_DIM", "1");
     }
   }
-
-  // If no process set graph or hypergraph edge weights,
-  // let Zoltan default to unit weights for edges
 
   if (queryObject_->haveGraphEdgeWeights() ||
       queryObject_->haveHypergraphEdgeWeights()) {
@@ -191,7 +206,6 @@ int ZoltanLibClass::precompute()
       zoltanParamList_.set("EDGE_WEIGHT_DIM", "1");
     }
   }
-
 
   Teuchos::ParameterList::ConstIterator
     iter = zoltanParamList_.begin(),
@@ -211,16 +225,20 @@ int ZoltanLibClass::precompute()
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
 
-  if (isHypergraph){
+  if (input_type_ == hypergraph_input_){
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
     zz_->Set_HG_Size_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Size_Edge_Weights,
 				 (void *)queryObject_.get());
     zz_->Set_HG_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Edge_Weights, (void *)queryObject_.get());
   }
-  else{
+  else if (input_type_ == graph_input_){
     zz_->Set_Num_Edges_Multi_Fn(ZoltanLib::QueryObject::Number_Edges_Multi, (void *)queryObject_.get());
     zz_->Set_Edge_List_Multi_Fn(ZoltanLib::QueryObject::Edge_List_Multi, (void *)queryObject_.get());
+  }
+  else{
+    zz_->Set_Num_Geom_Fn(ZoltanLib::QueryObject::Number_Geom, (void *)queryObject_.get());
+    zz_->Set_Geom_Multi_Fn(ZoltanLib::QueryObject::Geom_Multi, (void *)queryObject_.get());
   }
 
   return (ierr);
@@ -235,103 +253,102 @@ void ZoltanLibClass::computeCost()
 
   const Epetra_Comm &comm = input_map_->Comm();
 
-    // If vertex/edge costs have been set, do a global operation to find
-    // out how many weights were given.  Some processes may provide no
-    // weights - they need to be informed that weights are being provided
-    // by the application.  Do some sanity checks.
+  // If vertex/edge costs have been set, do a global operation to find
+  // out how many weights were given.  Some processes may provide no
+  // weights - they need to be informed that weights are being provided
+  // by the application.  Do some sanity checks.
 
-    int err = 0;
-    int gerr = 0;
-    int base = input_map_->IndexBase();
+  int err = 0;
+  int gerr = 0;
+  int base = input_map_->IndexBase();
 
-    int numMyVWeights = 0;
-    int numMyGWeights = 0;
-    int numMyHGWeights = 0;
-    int globalNumCols = 0;
-    int myNZ = 0;
-    int globalNZ = 0;
-    int mySelfEdges = 0;
-    int globalSelfEdges = 0;
+  int numMyVWeights = 0;
+  int numMyGWeights = 0;
+  int numMyHGWeights = 0;
+  int globalNumCols = 0;
+  int myNZ = 0;
+  int globalNZ = 0;
+  int mySelfEdges = 0;
+  int globalSelfEdges = 0;
 
-    int myRows = input_map_->NumMyElements();
-    int globalNumRows = input_map_->NumGlobalElements();
+  int myRows = input_map_->NumMyElements();
+  int globalNumRows = input_map_->NumGlobalElements();
 
-    if (input_graph_.get() == 0) {
-      myNZ = input_matrix_->NumMyNonzeros();
-      mySelfEdges = input_matrix_->NumMyDiagonals();
-      globalNZ = input_matrix_->NumGlobalNonzeros();
-      globalSelfEdges = input_matrix_->NumGlobalDiagonals();
-      globalNumCols = input_matrix_->NumGlobalCols();
-    }
-    else{
-      myNZ = input_graph_->NumMyNonzeros();
-      mySelfEdges = input_graph_->NumMyDiagonals();
-      globalNZ = input_graph_->NumGlobalNonzeros();
-      globalSelfEdges = input_graph_->NumGlobalDiagonals();
-      globalNumCols = input_graph_->NumGlobalCols();
-    }
+  if (input_graph_.get() == 0) {
+    myNZ = input_matrix_->NumMyNonzeros();
+    mySelfEdges = input_matrix_->NumMyDiagonals();
+    globalNZ = input_matrix_->NumGlobalNonzeros();
+    globalSelfEdges = input_matrix_->NumGlobalDiagonals();
+    globalNumCols = input_matrix_->NumGlobalCols();
+  }
+  else{
+    myNZ = input_graph_->NumMyNonzeros();
+    mySelfEdges = input_graph_->NumMyDiagonals();
+    globalNZ = input_graph_->NumGlobalNonzeros();
+    globalSelfEdges = input_graph_->NumGlobalDiagonals();
+    globalNumCols = input_graph_->NumGlobalCols();
+  }
 
-    if (costs_.get() != 0) {
+  if (costs_.get() != 0) {
 
-      numMyVWeights = costs_->getNumVertices();
+    numMyVWeights = costs_->getNumVertices();
 
-      if (costs_->haveGraphEdgeWeights()){
+    if (costs_->haveGraphEdgeWeights()){
 	for (int i=0; i<numMyVWeights; i++){
 	  int gid = input_map_->GID(i);
 	  if (gid >= base){
 	    numMyGWeights += costs_->getNumGraphEdges(gid);
 	  }
 	}
-      }
-      numMyHGWeights = costs_->getNumHypergraphEdgeWeights();
+    }
+    numMyHGWeights = costs_->getNumHypergraphEdgeWeights();
 
-      if ((numMyVWeights > 0) && (numMyVWeights != myRows)){
+    if ((numMyVWeights > 0) && (numMyVWeights != myRows)){
 	str2 = "Number of my vertex weights != number of my rows";
 	err = 1;
-      }
-      else if ((numMyGWeights > 0) && (numMyGWeights != (myNZ - mySelfEdges))){
+    }
+    else if ((numMyGWeights > 0) && (numMyGWeights != (myNZ - mySelfEdges))){
 	str2 = "Number of my graph edge weights != number of my nonzeros";
 	err = 1;
-      }
     }
-    else{
-      costs_ = Teuchos::rcp(new CostDescriber());
-    }
+  }
+  else{
+    costs_ = Teuchos::rcp(new CostDescriber());
+  }
 
-    comm.SumAll(&err, &gerr ,1);
+  comm.SumAll(&err, &gerr ,1);
 
-    if (gerr > 0){
-      throw Isorropia::Exception(str1+str2);
-    }
+  if (gerr > 0){
+    throw Isorropia::Exception(str1+str2);
+  }
 
-    int lval[4], gval[4];
-    lval[0] = numMyVWeights;
-    lval[1] = numMyGWeights;
-    lval[2] = numMyHGWeights;
+  int lval[4], gval[4];
+  lval[0] = numMyVWeights;
+  lval[1] = numMyGWeights;
+  lval[2] = numMyHGWeights;
 
-    comm.SumAll(lval, gval, 3);
+  comm.SumAll(lval, gval, 3);
 
-    int numVWeights = gval[0];
-    int numGWeights = gval[1];
-    int numHGWeights = gval[2];
+  int numVWeights = gval[0];
+  int numGWeights = gval[1];
+  int numHGWeights = gval[2];
 
-    if ((numVWeights > 0) && (numVWeights != globalNumRows)){
-      str2 = "Number of vertex weights supplied by application != number of rows";
-      throw Isorropia::Exception(str1+str2);
-    }
-    if ((numGWeights > 0) && (numGWeights != (globalNZ - globalSelfEdges))){
-      str2 = "Number of graph edge weights supplied by application != number of edges";
-      throw Isorropia::Exception(str1+str2);
-    }
-    if ((numHGWeights > 0) && (numHGWeights < globalNumCols)){
-      str2 = "Number of hyperedge weights supplied by application < number of columns";
-      throw Isorropia::Exception(str1+str2);
-    }
+  if ((numVWeights > 0) && (numVWeights != globalNumRows)){
+    str2 = "Number of vertex weights supplied by application != number of rows";
+    throw Isorropia::Exception(str1+str2);
+  }
+  if ((numGWeights > 0) && (numGWeights != (globalNZ - globalSelfEdges))){
+    str2 = "Number of graph edge weights supplied by application != number of edges";
+    throw Isorropia::Exception(str1+str2);
+  }
+  if ((numHGWeights > 0) && (numHGWeights < globalNumCols)){
+    str2 = "Number of hyperedge weights supplied by application < number of columns";
+    throw Isorropia::Exception(str1+str2);
+  }
 
-    costs_->setNumGlobalVertexWeights(numVWeights);
-    costs_->setNumGlobalGraphEdgeWeights(numGWeights);
-    costs_->setNumGlobalHypergraphEdgeWeights(numHGWeights);
-
+  costs_->setNumGlobalVertexWeights(numVWeights);
+  costs_->setNumGlobalGraphEdgeWeights(numGWeights);
+  costs_->setNumGlobalHypergraphEdgeWeights(numHGWeights);
 }
 
 
@@ -459,9 +476,12 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
   precompute();
 
-  std::string lb_approach_str("LB_APPROACH");
-  if (!zoltanParamList_.isParameter(lb_approach_str)) {
-    zoltanParamList_.set(lb_approach_str, "PARTITION");
+  if ((input_type_ == hypergraph_input_) || (input_type_ == graph_input_) ){
+
+    std::string lb_approach_str("LB_APPROACH");
+    if (!zoltanParamList_.isParameter(lb_approach_str)) {
+      zoltanParamList_.set(lb_approach_str, "PARTITION");
+    }
   }
 
   //Generate Load Balance

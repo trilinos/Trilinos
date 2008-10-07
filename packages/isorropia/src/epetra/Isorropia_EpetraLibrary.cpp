@@ -61,117 +61,95 @@ namespace Epetra {
 
 Library::
 Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph)
-  : input_map_(),
-    input_graph_(input_graph),
-    input_matrix_(),
-    costs_()
+  : input_graph_(input_graph)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+  input_type_ = unspecified_input_;
 }
 
 Library::
 Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 Teuchos::RCP<CostDescriber> costs)
-  : input_map_(),
-    input_graph_(input_graph),
-    input_matrix_(),
+  : input_graph_(input_graph),
     costs_(costs)
 {
 
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+  input_type_ = unspecified_input_;
 }
 
 Library::
 Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix)
-  : input_map_(),
-    input_graph_(),
-    input_matrix_(input_matrix),
-    costs_()
+  : input_matrix_(input_matrix)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
+  input_type_ = unspecified_input_;
 }
 
 Library::
 Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	Teuchos::RCP<CostDescriber> costs)
-  : input_map_(),
-    input_graph_(),
-    input_matrix_(input_matrix),
+  : input_matrix_(input_matrix),
     costs_(costs)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
+  input_type_ = unspecified_input_;
 }
 
-void Library::
-setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph)
+Library::
+Library(Teuchos::RCP<const Epetra_MultiVector> input_coords)
+  : input_coords_(input_coords)
 {
-  input_graph_ = input_graph;
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+  input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
+  input_type_ = geometric_input_;
 }
 
-void Library::
-setInput(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-	 Teuchos::RCP<CostDescriber> costs)
+Library::
+Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
+        Teuchos::RCP<const Epetra_MultiVector> weights)
+  : input_coords_(input_coords)
 {
-  input_graph_ = input_graph;
-  costs_ = costs;
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+  input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
+  if (weights.get() && (weights->NumVectors() > 0)){
+    weights_ = weights;
+  }
+  input_type_ = geometric_input_;
 }
-
-void Library::
-setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix)
-{
-  input_matrix_ = input_matrix;
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-}
-
-void Library::
-setInput(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-	 Teuchos::RCP<CostDescriber> costs)
-{
-  input_matrix_ = input_matrix;
-  costs_ = costs;
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-}
-
 
 Library::~Library()
 {
 }
-
 
 int Library::precompute()
 {
   std::string str1("Isorropia::Epetra::Operator::precompute ");
   std::string str2;
 
-  if ((input_graph_.get() == 0 && input_matrix_.get() == 0)
-      || (input_graph_.get() != 0 && input_matrix_.get() != 0)) {
-    str2 = "ERROR: not holding valid input graph (x)OR matrix.";
+  int inputCount = ((input_graph_.get() == 0) ? 0 : 1);
+  inputCount += ((input_matrix_.get() == 0) ? 0 : 1);
+  inputCount += ((input_coords_.get() == 0) ? 0 : 1);
+
+  if (inputCount != 1){
+    str2 = "ERROR: not holding valid input.";
     throw Isorropia::Exception(str1+str2);
-    return (-1);
   }
 
-  if (inputType_ == "GRAPH") {
+  if (input_type_ == graph_input_) {
     bool square = false;
-    bool symmetric = false;
+    bool symmetric = true;  // no easy way to test for this ?? TODO
     if (input_graph_.get() != 0){
       if (input_graph_->NumGlobalRows() == input_graph_->NumGlobalCols()){
 	square = true;
-	// TODO - is there a quick way to figure out if the graph is
-	// symmetric?  I can't see a way to do it.  For now we let
-	// Zoltan figure this out.
-	symmetric = true;
+      }
+    }
+    else if (input_matrix_.get() != 0){
+      if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
+	square = true;
       }
     }
     else{
-      if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
-	square = true;
-	// TODO - is there a quick way to figure out if the matrix is
-	// symmetric?  I can't see a way to do it.  For now we let
-	// Zoltan figure this out.
-	symmetric = true;
-      }
+      str2 = "Library requires graph or matrix input";
+      throw Isorropia::Exception(str1+str2);
     }
     if (!square){
       str2 = "LB_METHOD=GRAPH, matrix or graph must be square";
@@ -182,6 +160,28 @@ int Library::precompute()
       str2 = "LB_METHOD=GRAPH, matrix or graph must be symmetric";
       throw Isorropia::Exception(str1+str2);
       return (-1);
+    }
+  }
+  else if (input_type_ == hypergraph_input_) {
+
+    if ((input_graph_.get() == 0) || (input_matrix_.get() == 0)){
+      str2 = "Library requires graph or matrix input";
+      throw Isorropia::Exception(str1+str2);
+    }
+  }
+  else if (input_type_ == geometric_input_){
+
+    if ((input_coords_.get() == 0) ||
+        (input_coords_->NumVectors() < 1) || (input_coords_->NumVectors() > 3)){
+      str2 = "Operation requires 1, 2 or 3 dimensional coordinate input";
+      throw Isorropia::Exception(str1+str2);
+    }
+
+    if (weights_.get() != 0 && (weights_->NumVectors() > 0)){
+      if (weights_->MyLength() != input_coords_->MyLength()){
+        str2 = "Number of weights does not equal number of coordinates";
+        throw Isorropia::Exception(str1+str2);
+      }
     }
   }
 
