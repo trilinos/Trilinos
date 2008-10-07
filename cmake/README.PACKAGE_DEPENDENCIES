@@ -19,7 +19,7 @@ Trilinos_ENABLE_${PACKAGE_NAME}:BOOL
   Can be set by the user to 'ON' or 'OFF' or left empty.  If left empty, the
   package will be enabled if Trilinos_ENABLE_ALL_PACKAGES=ON.  If
   Trilinos_ENABLE_${PACKAGE_NAME} is set to OFF by the user, then all packages
-  that have a required dependence on this package and all optional interpackage
+  that have a required dependence on this package and all optional intrapackage
   enables will be disabled. The enable status of a package can also be changed
   in by Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON and
   Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON.
@@ -80,7 +80,7 @@ is now described.
 
 1) All packages that have required dependencies on packages that are
 explicitly turned off with Trilinos_ENABLE_${PACKAGE_NANE}=OFF are also set to
-'OFF'.  In addition, all optional interpackage dependencies
+'OFF'.  In addition, all optional intrapackage dependencies
 ${FORWARD_PACKAGE_NANE}_ENBLE_${PACKAGE_NANE} are also set to 'OFF'.
 
 2) The set of package enables is then adjusted based if

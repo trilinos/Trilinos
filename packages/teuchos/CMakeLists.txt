@@ -42,22 +42,15 @@ TRILINOS_ADD_OPTION(
   OFF
   )
 
-# 2008/10/02: rabartl: ToDo: Above: I need to add a macro like
-# TRILINOS_DECLARE_OPTION(OPTION_NAME DEFINE_NAME DOCUMENTATION)
-
 #
-# C) Add the libraries and examples
+# C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
 
-IF(${PACKAGE_NAME}_ENABLE_TESTS)
-  ADD_SUBDIRECTORY(test)
-ENDIF()
+TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-IF(${PACKAGE_NAME}_ENABLE_EXAMPLES)
-  ADD_SUBDIRECTORY(example)
-ENDIF()
+TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # D) Do standard postprocessing

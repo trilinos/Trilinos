@@ -1,10 +1,12 @@
 
 INCLUDE(Parse_Variable_Arguments)
 
+
 #
 # Macro called at the very beginning of a Trilinos package's top-level
 # CMakeLists.txt file
 #
+
 MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
 
   # Assert that the global and local package names are the same!
@@ -91,9 +93,64 @@ ENDMACRO()
 
 
 #
+# Macro called to add a set of test directories for a package
+#
+# This macro only needs to be called from the top most CMakeList.txt file for
+# which all subdirectories area all "tests".
+#
+# This macro can be called several times within a package and it will have the
+# right effect.
+#
+# This macro defines hooks for inserting certain types of behavior in a
+# uniform way.
+#
+
+MACRO(TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES)
+
+  IF(${PACKAGE_NAME}_ENABLE_TESTS)
+    FOREACH(TEST_DIR ${ARGN})
+      ADD_SUBDIRECTORY(${TEST_DIR})
+    ENDFOREACH()
+  ENDIF()
+
+  # 2008/10/07: rabartl: ToDo: Put in hooks for defining the make target
+  # 'tests'
+
+ENDMACRO()
+
+
+#
+# Macro called to add a set of example directories for a package
+#
+# This macro only needs to be called from the top most CMakeList.txt file for
+# which all subdirectories area all "examples".
+#
+# This macro can be called several times within a package and it will have the
+# right effect.
+#
+# This macro defines hooks for inserting certain types of behavior in a
+# uniform way.
+#
+
+MACRO(TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES)
+
+  IF(${PACKAGE_NAME}_ENABLE_EXAMPLES)
+    FOREACH(EXAMPLE_DIR ${ARGN})
+      ADD_SUBDIRECTORY(${EXAMPLE_DIR})
+    ENDFOREACH()
+  ENDIF()
+
+  # 2008/10/07: rabartl: ToDo: Put in hooks for defining the make target
+  # 'examples'
+
+ENDMACRO()
+
+
+#
 # Macro called at the very end of a Trilinos package's top-level
 # CMakeLists.txt file
 #
+
 MACRO(TRILINOS_PACKAGE_POSTPROCESS)
 
   LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)

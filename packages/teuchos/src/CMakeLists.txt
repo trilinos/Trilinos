@@ -1,4 +1,3 @@
-# $Header$ 
 
 INCLUDE(TrilinosPackageLibraryHelpers)
 

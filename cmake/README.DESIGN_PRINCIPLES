@@ -1,0 +1,38 @@
+
+
+Last Modified: 2008/10/07
+
+
+----------------------------------------------------------------
+Design Principles for CMake build & testing system for Trilinos
+----------------------------------------------------------------
+
+(*) Make it exceedingly easy to define CMake files for new packages and to
+define libraries and tests and examples in those packages.
+
+(*) Create a design for building individual package CMake files that
+automatically results in uniformity of how things are do.  This is needed to
+support a number of important features and support maintenance.  Use standard
+macros to define every package's main features to facilitate this.
+
+(*) Allow changes to logic and functionality that apply to all Trilinos
+packages without having to touch each individual Trilinos package's CMake
+files.
+
+(*) Automate intrapackage dependencies 100% automatically.  This helps to
+avoid mistakes, avoid duplication, and robustify a number of important
+features.
+
+(*) Provide built-in automated support for a many critical software
+engineering practices a possible.  This includes proper and complete
+pre-checkin testing when continuous integration is being performed.
+
+(*) Avoid duplication of all kinds as much as possible.  This is just a
+fundamental software maintenance issue.
+
+(*) Aggregate as much common functionality as possible to the top-level CMake
+files but allow individual CMake packages to refine the logic if they really
+need to.
+
+(*) Allow Trilinos packages that want/need to be built separately from
+Trilinos to be but don't force this on all Trilinos packages.
