@@ -43,7 +43,7 @@ EXAMPLE_LIBS     = $(PHALANX_LIBS)
 EXAMPLE_INCLUDES = $(PHALANX_INCLUDES)
 endif
 
-AM_CPPFLAGS = -I$(srcdir)/evaluators $(EXAMPLE_INCLUDES)
+AM_CPPFLAGS = -I$(srcdir)/evaluators -I$(srcdir)/../FEM_Nonlinear $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -51,23 +51,23 @@ if BUILD_PHALANX_BELOS
 if BUILD_PHALANX_IFPACK
 if BUILD_PHALANX_EPETRA
 if BUILD_EXAMPLES
-noinst_PROGRAMS = example_fem_nonlinear example_element_linear_2D
+noinst_PROGRAMS = example_fem_nonlinear_vbr example_epetra_vbr_test
 endif
 endif
 endif
 endif
 
-example_fem_nonlinear_SOURCES = \
-	$(srcdir)/Example_FEM_Nonlinear.cpp \
-	$(srcdir)/Traits.hpp \
-	$(srcdir)/Traits.cpp \
-	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/Element_Linear2D.hpp \
-	$(srcdir)/Element_Linear2D.cpp \
-	$(srcdir)/ExplicitTemplateInstantiation.hpp \
-	$(srcdir)/Dimension.hpp \
-	$(srcdir)/Dimension.cpp \
-	$(srcdir)/Workset.hpp \
+example_fem_nonlinear_vbr_SOURCES = \
+	$(srcdir)/Example_FEM_Nonlinear_VBR.cpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.cpp \
+	$(srcdir)/../FEM_Nonlinear/FactoryTraits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp \
+	$(srcdir)/../FEM_Nonlinear/ExplicitTemplateInstantiation.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.cpp \
+	$(srcdir)/../FEM_Nonlinear/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.cpp \
@@ -84,16 +84,39 @@ example_fem_nonlinear_SOURCES = \
 	$(srcdir)/evaluators/Evaluator_ScatterResidual_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp
 
-example_fem_nonlinear_DEPENDENCIES = \
+example_fem_nonlinear_vbr_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
-example_fem_nonlinear_LDADD = $(EXAMPLE_LIBS)
+example_fem_nonlinear_vbr_LDADD = $(EXAMPLE_LIBS)
 
-example_element_linear_2D_SOURCES = \
-	$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp \
-	$(srcdir)/Element_Linear2D.hpp \
-	$(srcdir)/Element_Linear2D.cpp
+example_epetra_vbr_test_SOURCES = \
+	$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.cpp \
+	$(srcdir)/../FEM_Nonlinear/FactoryTraits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp \
+	$(srcdir)/../FEM_Nonlinear/ExplicitTemplateInstantiation.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.cpp \
+	$(srcdir)/../FEM_Nonlinear/Workset.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant.cpp \
+	$(srcdir)/evaluators/Evaluator_Equations.hpp \
+	$(srcdir)/evaluators/Evaluator_Equations_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Equations.cpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation.cpp \
+	$(srcdir)/evaluators/Evaluator_GatherSolution.hpp \
+	$(srcdir)/evaluators/Evaluator_GatherSolution_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_GatherSolution.cpp \
+	$(srcdir)/evaluators/Evaluator_ScatterResidual.hpp \
+	$(srcdir)/evaluators/Evaluator_ScatterResidual_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp
 
-example_element_linear_2D_DEPENDENCIES =
+example_epetra_vbr_test_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
 
-example_element_linear_2D_LDADD = $(EXAMPLE_LIBS)
+example_epetra_vbr_test_LDADD = $(EXAMPLE_LIBS)

@@ -459,6 +459,7 @@ AC_CONFIG_FILES([
 		example/EnergyFlux/Makefile
 		example/MultiDimensionalArray/Makefile
 		example/FEM_Nonlinear/Makefile
+		example/FEM_Nonlinear_VBR/Makefile
 		test/Makefile
 		test/Utilities/Makefile
 		test/Allocators/Makefile

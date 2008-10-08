@@ -1,0 +1,27 @@
+../configure \
+--disable-shared \
+--enable-debug \
+--prefix=/home/rppawlo/junk/TrilinosInstall \
+--disable-default-packages \
+--enable-tests \
+--enable-examples \
+--enable-teuchos --enable-teuchos-complex --enable-teuchos-extended \
+--enable-sacado \
+--enable-phalanx --with-tvmet \
+--enable-ifpack \
+--enable-belos \
+--enable-epetra \
+--with-incdirs="-I/home/rppawlo/Libs/Boost/boost_1_36_0 -I/home/rppawlo/junk/include" \
+--with-blas=/home/rppawlo/local/lib/libblas.a \
+--with-lapack=/home/rppawlo/local/lib/liblapack.a \
+--enable-mpi \
+--with-mpi-compilers \
+CXX=mpiCC \
+CC=mpicc \
+F77=mpif77 \
+CXXFLAGS="-O3 -DPHX_ETI -g -ansi -Wall -ftrapv -pedantic -Wno-long-long" \
+CFLAGS="-O3 -g -ansi -Wall" \
+FFLAGS="-O3 -g -ansi -Wall" \
+--cache-file=config.cache \
+--with-gnumake \
+--enable-export-makefiles

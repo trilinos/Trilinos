@@ -60,6 +60,9 @@
 #include "BelosBlockGmresSolMgr.hpp"
 
 // Preconditioner
+#ifdef HAVE_MPI 
+#include <mpi.h>
+#endif
 #include "Ifpack.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,7 +72,11 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  
+
+#ifdef HAVE_MPI  
+  MPI_Init(&argc, &argv);
+#endif
+
   try {
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
@@ -200,6 +207,7 @@ int main(int argc, char *argv[])
       graph.Print(cout);
       
       Epetra_SerialDenseMatrix block_matrix(2,2);
+      Epetra_SerialDenseMatrix diag_block_matrix(2,2);
 
       RCP<Epetra_VbrMatrix> Jac_vbr = rcp(new Epetra_VbrMatrix(copy,graph));
 
@@ -215,16 +223,24 @@ int main(int argc, char *argv[])
 	  block_matrix(0,1) = util.RandomDouble();
 	  block_matrix(1,0) = util.RandomDouble();
 	  block_matrix(1,1) = util.RandomDouble();
+
+	  diag_block_matrix(0,0) = 100.0*util.RandomDouble();
+	  diag_block_matrix(0,1) = util.RandomDouble();
+	  diag_block_matrix(1,0) = util.RandomDouble();
+	  diag_block_matrix(1,1) = 100.0*util.RandomDouble();
 	  
 	  for (std::size_t col = 0; col < e->numNodes(); ++col) {
 	    int global_col = e->globalNodeId(col);
 	    Jac_vbr->BeginReplaceMyValues(global_row, 1, &global_col);
-	    Jac_vbr->SubmitBlockEntry(block_matrix);
+	    if (global_row==global_col) 
+	      Jac_vbr->SubmitBlockEntry(diag_block_matrix);
+	    else
+	      Jac_vbr->SubmitBlockEntry(block_matrix);
 	    Jac_vbr->EndSubmitEntries();
 	  }
 	}
       }
-      
+      Jac_vbr->FillComplete();
       x = rcp(new Epetra_Vector(map));
       delta_x = rcp(new Epetra_Vector(map));
       f = rcp(new Epetra_Vector(map));
@@ -241,7 +257,7 @@ int main(int argc, char *argv[])
     if (print_debug_info) {
       x->Print(cout);
       Jac->Print(cout);
-      f->Print(cout);
+      f->Print(cout); 
     }
 
     // *********************************************************
@@ -256,9 +272,11 @@ int main(int argc, char *argv[])
     ParameterList ifpackList;
     ifpackList.set("fact: drop tolerance", 1e-9);
     ifpackList.set("fact: level-of-fill", 1);
-    ifpackList.set("schwarz: combine mode", "Add");
+    ifpackList.set("schwarz: combine mode", "Add"); 
     IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
     IFPACK_CHK_ERR(Prec->Initialize());
+    IFPACK_CHK_ERR(Prec->Compute());
+    IFPACK_CHK_ERR(Prec->Condest());
     RCP<Belos::EpetraPrecOp> belosPrec = 
       rcp( new Belos::EpetraPrecOp( Prec ) );
 
@@ -301,7 +319,7 @@ int main(int argc, char *argv[])
     RCP<Belos::LinearProblem<double,MV,OP> > problem =
       rcp(new Belos::LinearProblem<double,MV,OP>(Jac, DX, F) );
     
-    //problem->setRightPrec( belosPrec );
+    problem->setRightPrec( belosPrec );
 
     RCP< Belos::SolverManager<double,MV,OP> > gmres_solver = 
       rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosList) );
@@ -365,7 +383,11 @@ int main(int argc, char *argv[])
   }
 
   TimeMonitor::summarize();
-    
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
   return 0;
 }
 

@@ -11,13 +11,13 @@
 --enable-ifpack \
 --enable-belos \
 --enable-phalanx --with-tvmet \
---with-incdirs="-I/home/rppawlo/Libs/Boost/boost_1_35_0 -I/home/rppawlo/junk/include" \
+--with-incdirs="-I/home/rppawlo/Libs/Boost/boost_1_36_0 -I/home/rppawlo/junk/include" \
 --with-blas=/home/rppawlo/local/lib/libblas.a \
 --with-lapack=/home/rppawlo/local/lib/liblapack.a \
 CXX=g++ \
 CC=gcc \
 F77=gfortran \
-CXXFLAGS="-O3 -g -ansi -Wall -ftrapv -pedantic -Wno-long-long" \
+CXXFLAGS="-DPHX_DEBUG -DPHX_ETI -O3 -g -ansi -Wall -ftrapv -pedantic -Wno-long-long" \
 CFLAGS="-O3 -g -ansi -Wall" \
 FFLAGS="-O3 -g -ansi -Wall" \
 --cache-file=config.cache \

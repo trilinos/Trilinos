@@ -46,7 +46,9 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_VbrRowMatrix.h"
 
 // Linear solver
 #include "BelosConfigDefs.hpp"
@@ -82,56 +84,65 @@ void checkConvergence(const int num_newton_steps, const Epetra_Vector& f,
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void applyBoundaryConditions(const double& T_left, const double& Vx_left,
-			     const Epetra_Vector& x, Epetra_CrsMatrix& Jac, 
+			     const Epetra_Vector& x, Epetra_VbrMatrix& Jac, 
 			     Epetra_Vector& f)
 {
   // This function assumes a serial run.  It will not check process rank.
   // Assumes two equations.
 
   // Left edge includes global nodes 0 and 1, dofs 0,1,2,3
-  int num_nonzero_entries_in_row = 0;
-  int* row_indices;
-  double* row_values;
+  int num_eqns = 0;
+  int num_block_col = 0;
+  int* block_col_indices = 0;
+  Epetra_SerialDenseMatrix* values = 0;
 
-  // Temp @ node 0
-  Jac.ExtractMyRowView(0, num_nonzero_entries_in_row, row_values, row_indices);
-  for (int i=0; i < num_nonzero_entries_in_row; ++i) {
-    if (row_indices[i] == 0)
-      row_values[i] = 1.0;
-    else
-      row_values[i] = 0.0;
+  // Temp and Vx @ node 0
+  Jac.BeginExtractMyBlockRowView(0, num_eqns, num_block_col, 
+				 block_col_indices);
+  
+  for (int i=0; i < num_block_col; ++i) {
+    Jac.ExtractEntryView(values);
+    Epetra_SerialDenseMatrix& val = *values;
+    if (block_col_indices[i] == 0) {
+      val(0,0) = 1.0;
+      val(0,1) = 0.0;
+      val(1,0) = 0.0;
+      val(1,1) = 1.0;
+      
+    } else {
+      val(0,0) = 0.0;
+      val(0,1) = 0.0;
+      val(1,0) = 0.0;
+      val(1,1) = 0.0;
+    }
   }
   f[0] = T_left - x[0];
-
-  // Vx @ node 0
-  Jac.ExtractMyRowView(1, num_nonzero_entries_in_row, row_values, row_indices);
-  for (int i=0; i < num_nonzero_entries_in_row; ++i) {
-    if (row_indices[i] == 1)
-      row_values[i] = 1.0;
-    else
-      row_values[i] = 0.0;
-  }
   f[1] = Vx_left - x[1];
 
-  // Temp @ node 1
-  Jac.ExtractMyRowView(2, num_nonzero_entries_in_row, row_values, row_indices);
-  for (int i=0; i < num_nonzero_entries_in_row; ++i) {
-    if (row_indices[i] == 2)
-      row_values[i] = 1.0;
-    else
-      row_values[i] = 0.0;
+
+  // Temp and Vx @ node 1
+  Jac.BeginExtractMyBlockRowView(1, num_eqns, num_block_col, 
+				 block_col_indices);
+  
+  for (int i=0; i < num_block_col; ++i) {
+    Jac.ExtractEntryView(values);
+    Epetra_SerialDenseMatrix& val = *values;
+    if (block_col_indices[i] == 1) {
+      val(0,0) = 1.0;
+      val(0,1) = 0.0;
+      val(1,0) = 0.0;
+      val(1,1) = 1.0;
+      
+    } else {
+      val(0,0) = 0.0;
+      val(0,1) = 0.0;
+      val(1,0) = 0.0;
+      val(1,1) = 0.0;
+    }
   }
   f[2] = T_left - x[2];
-
-  // Vx @ node 1
-  Jac.ExtractMyRowView(3, num_nonzero_entries_in_row, row_values, row_indices);
-  for (int i=0; i < num_nonzero_entries_in_row; ++i) {
-    if (row_indices[i] == 3)
-      row_values[i] = 1.0;
-    else
-      row_values[i] = 0.0;
-  }
   f[3] = Vx_left - x[3];
+
 
 }
 
@@ -265,34 +276,56 @@ int main(int argc, char *argv[])
     RCP<Epetra_Vector> x;
     RCP<Epetra_Vector> delta_x;
     RCP<Epetra_Vector> f;
-    RCP<Epetra_CrsMatrix> Jac;
+    RCP<Epetra_VbrMatrix> Jac;
     
     {
       Epetra_SerialComm comm;
-      Epetra_Map map(num_dof, num_dof, 0, comm);      
+      Epetra_BlockMap map(num_nodes, num_eq, 0, comm);
       x = rcp(new Epetra_Vector(map, true));         
       delta_x = rcp(new Epetra_Vector(map, true)); 
       f = rcp(new Epetra_Vector(map, true));
       
       Epetra_DataAccess d = ::Copy;
-      const std::size_t approximate_indices_per_row = 6 * num_eq;
-      Epetra_CrsGraph graph(d, map, approximate_indices_per_row);
-      std::vector<Element_Linear2D>::iterator cell_it = cells.begin();
-      for (; cell_it != cells.end(); ++cell_it) {
-	
-	std::vector<int> col_indices(0);
-	for (std::size_t node = 0; node < cell_it->numNodes(); ++node)
-	  for (std::size_t eq = 0; eq < num_eq; ++eq)
-	    col_indices.push_back(cell_it->globalNodeId(node)*num_eq + eq);
-	
-	for (std::size_t node = 0; node < cell_it->numNodes(); ++node)
-	  for (std::size_t eq = 0; eq < num_eq; ++eq)
-	    graph.InsertGlobalIndices(cell_it->globalNodeId(node)*num_eq+eq, 
-				      col_indices.size(), &col_indices[0]);
-	
+      const std::size_t approximate_blocks_per_row = 6;
+      Epetra_CrsGraph graph(d, map, approximate_blocks_per_row);
+
+      std::vector<Element_Linear2D>::iterator e = cells.begin();
+      for (; e != cells.end(); ++e) {
+	for (std::size_t row = 0; row < e->numNodes(); ++row) {
+	  for (std::size_t col = 0; col < e->numNodes(); ++col) {
+	    int global_row = e->globalNodeId(row);
+	    int global_col = e->globalNodeId(col);
+	    graph.InsertGlobalIndices(global_row, 1, &global_col);
+	  }
+	}
       }
       graph.FillComplete();
-      Jac = rcp(new Epetra_CrsMatrix(d,graph));
+
+      Jac = rcp(new Epetra_VbrMatrix(d,graph));
+      
+      Epetra_SerialDenseMatrix block_matrix(2,2);
+      
+      // Create entries
+      e = cells.begin();
+      for (; e != cells.end(); ++e) {
+	for (std::size_t row = 0; row < e->numNodes(); ++row) {
+	  
+	  int global_row = e->globalNodeId(row);
+	  
+	  block_matrix(0,0) = 0.0;
+	  block_matrix(0,1) = 1.0;
+	  block_matrix(1,0) = 2.0;
+	  block_matrix(1,1) = 3.0;
+
+	  for (std::size_t col = 0; col < e->numNodes(); ++col) {
+	    int global_col = e->globalNodeId(col);
+	    Jac->BeginReplaceMyValues(global_row, 1, &global_col);
+	    Jac->SubmitBlockEntry(block_matrix);
+	    Jac->EndSubmitEntries();
+	  }
+	}
+      }
+      Jac->FillComplete();
       
     }
 
@@ -389,7 +422,7 @@ int main(int argc, char *argv[])
 
       p->set< RCP< vector<string> > >("Residual Names", res_names);
       p->set< RCP<Epetra_Vector> >("Residual Vector", f);
-      p->set< RCP<Epetra_CrsMatrix> >("Jacobian Matrix", Jac);
+      p->set< RCP<Epetra_VbrMatrix> >("Jacobian Matrix", Jac);
       p->set< RCP<DataLayout> >("Dummy Data Layout", dummy);
       p->set< RCP<DataLayout> >("Data Layout", node_scalar);
       evaluators_to_build["Scatter Residual"] = p;
@@ -433,6 +466,13 @@ int main(int argc, char *argv[])
       cout << fm << endl;
 
     // *********************************************************
+    // * Wrapper to allow VBR matrix to be used as a row matrix
+    // *********************************************************
+    RCP<Epetra_VbrRowMatrix> JacRowMatrix =
+      rcpWithEmbeddedObjPostDestroy(new Epetra_VbrRowMatrix(Jac.get()),
+				    Jac);
+
+    // *********************************************************
     // * Build Preconditioner (Ifpack)
     // *********************************************************
     
@@ -440,7 +480,7 @@ int main(int argc, char *argv[])
     std::string PrecType = "ILU";
     int OverlapLevel = 1;
     RCP<Ifpack_Preconditioner> Prec = 
-      Teuchos::rcp( Factory.Create(PrecType, &*Jac, OverlapLevel) );
+      Teuchos::rcp( Factory.Create(PrecType, &*JacRowMatrix, OverlapLevel) );
     ParameterList ifpackList;
     ifpackList.set("fact: drop tolerance", 1e-9);
     ifpackList.set("fact: level-of-fill", 1);
@@ -487,7 +527,7 @@ int main(int argc, char *argv[])
       Teuchos::rcp_implicit_cast<Epetra_MultiVector>(delta_x);
     
     RCP<Belos::LinearProblem<double,MV,OP> > problem =
-      rcp(new Belos::LinearProblem<double,MV,OP>(Jac, DX, F) );
+      rcp(new Belos::LinearProblem<double,MV,OP>(JacRowMatrix, DX, F) );
     
     problem->setRightPrec( belosPrec );
 

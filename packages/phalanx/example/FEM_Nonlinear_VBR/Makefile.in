@@ -64,9 +64,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BUILD_EXAMPLES_TRUE@@BUILD_PHALANX_BELOS_TRUE@@BUILD_PHALANX_EPETRA_TRUE@@BUILD_PHALANX_IFPACK_TRUE@noinst_PROGRAMS = example_fem_nonlinear$(EXEEXT) \
-@BUILD_EXAMPLES_TRUE@@BUILD_PHALANX_BELOS_TRUE@@BUILD_PHALANX_EPETRA_TRUE@@BUILD_PHALANX_IFPACK_TRUE@	example_element_linear_2D$(EXEEXT)
-subdir = example/FEM_Nonlinear
+@BUILD_EXAMPLES_TRUE@@BUILD_PHALANX_BELOS_TRUE@@BUILD_PHALANX_EPETRA_TRUE@@BUILD_PHALANX_IFPACK_TRUE@noinst_PROGRAMS = example_fem_nonlinear_vbr$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@@BUILD_PHALANX_BELOS_TRUE@@BUILD_PHALANX_EPETRA_TRUE@@BUILD_PHALANX_IFPACK_TRUE@	example_epetra_vbr_test$(EXEEXT)
+subdir = example/FEM_Nonlinear_VBR
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
@@ -89,22 +89,28 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_example_element_linear_2D_OBJECTS =  \
-	Example_Element_Linear_2D.$(OBJEXT) Element_Linear2D.$(OBJEXT)
-example_element_linear_2D_OBJECTS =  \
-	$(am_example_element_linear_2D_OBJECTS)
+am_example_epetra_vbr_test_OBJECTS =  \
+	Example_Epetra_VBR_Test.$(OBJEXT) Traits.$(OBJEXT) \
+	Element_Linear2D.$(OBJEXT) Dimension.$(OBJEXT) \
+	Evaluator_Constant.$(OBJEXT) Evaluator_Equations.$(OBJEXT) \
+	Evaluator_FEInterpolation.$(OBJEXT) \
+	Evaluator_GatherSolution.$(OBJEXT) \
+	Evaluator_ScatterResidual.$(OBJEXT)
+example_epetra_vbr_test_OBJECTS =  \
+	$(am_example_epetra_vbr_test_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
-am_example_fem_nonlinear_OBJECTS = Example_FEM_Nonlinear.$(OBJEXT) \
-	Traits.$(OBJEXT) Element_Linear2D.$(OBJEXT) \
-	Dimension.$(OBJEXT) Evaluator_Constant.$(OBJEXT) \
-	Evaluator_Equations.$(OBJEXT) \
+am_example_fem_nonlinear_vbr_OBJECTS =  \
+	Example_FEM_Nonlinear_VBR.$(OBJEXT) Traits.$(OBJEXT) \
+	Element_Linear2D.$(OBJEXT) Dimension.$(OBJEXT) \
+	Evaluator_Constant.$(OBJEXT) Evaluator_Equations.$(OBJEXT) \
 	Evaluator_FEInterpolation.$(OBJEXT) \
 	Evaluator_GatherSolution.$(OBJEXT) \
 	Evaluator_ScatterResidual.$(OBJEXT)
-example_fem_nonlinear_OBJECTS = $(am_example_fem_nonlinear_OBJECTS)
+example_fem_nonlinear_vbr_OBJECTS =  \
+	$(am_example_fem_nonlinear_vbr_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -117,10 +123,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(example_element_linear_2D_SOURCES) \
-	$(example_fem_nonlinear_SOURCES)
-DIST_SOURCES = $(example_element_linear_2D_SOURCES) \
-	$(example_fem_nonlinear_SOURCES)
+SOURCES = $(example_epetra_vbr_test_SOURCES) \
+	$(example_fem_nonlinear_vbr_SOURCES)
+DIST_SOURCES = $(example_epetra_vbr_test_SOURCES) \
+	$(example_fem_nonlinear_vbr_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -243,18 +249,18 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
 @USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(PHALANX_INCLUDES)
 @USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
-AM_CPPFLAGS = -I$(srcdir)/evaluators $(EXAMPLE_INCLUDES)
-example_fem_nonlinear_SOURCES = \
-	$(srcdir)/Example_FEM_Nonlinear.cpp \
-	$(srcdir)/Traits.hpp \
-	$(srcdir)/Traits.cpp \
-	$(srcdir)/FactoryTraits.hpp \
-	$(srcdir)/Element_Linear2D.hpp \
-	$(srcdir)/Element_Linear2D.cpp \
-	$(srcdir)/ExplicitTemplateInstantiation.hpp \
-	$(srcdir)/Dimension.hpp \
-	$(srcdir)/Dimension.cpp \
-	$(srcdir)/Workset.hpp \
+AM_CPPFLAGS = -I$(srcdir)/evaluators -I$(srcdir)/../FEM_Nonlinear $(EXAMPLE_INCLUDES)
+example_fem_nonlinear_vbr_SOURCES = \
+	$(srcdir)/Example_FEM_Nonlinear_VBR.cpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.cpp \
+	$(srcdir)/../FEM_Nonlinear/FactoryTraits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp \
+	$(srcdir)/../FEM_Nonlinear/ExplicitTemplateInstantiation.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.cpp \
+	$(srcdir)/../FEM_Nonlinear/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.cpp \
@@ -271,17 +277,41 @@ example_fem_nonlinear_SOURCES = \
 	$(srcdir)/evaluators/Evaluator_ScatterResidual_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp
 
-example_fem_nonlinear_DEPENDENCIES = \
+example_fem_nonlinear_vbr_DEPENDENCIES = \
 	$(top_builddir)/src/libphalanx.a
 
-example_fem_nonlinear_LDADD = $(EXAMPLE_LIBS)
-example_element_linear_2D_SOURCES = \
-	$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp \
-	$(srcdir)/Element_Linear2D.hpp \
-	$(srcdir)/Element_Linear2D.cpp
+example_fem_nonlinear_vbr_LDADD = $(EXAMPLE_LIBS)
+example_epetra_vbr_test_SOURCES = \
+	$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Traits.cpp \
+	$(srcdir)/../FEM_Nonlinear/FactoryTraits.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.hpp \
+	$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp \
+	$(srcdir)/../FEM_Nonlinear/ExplicitTemplateInstantiation.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.hpp \
+	$(srcdir)/../FEM_Nonlinear/Dimension.cpp \
+	$(srcdir)/../FEM_Nonlinear/Workset.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant.cpp \
+	$(srcdir)/evaluators/Evaluator_Equations.hpp \
+	$(srcdir)/evaluators/Evaluator_Equations_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Equations.cpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation.hpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_FEInterpolation.cpp \
+	$(srcdir)/evaluators/Evaluator_GatherSolution.hpp \
+	$(srcdir)/evaluators/Evaluator_GatherSolution_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_GatherSolution.cpp \
+	$(srcdir)/evaluators/Evaluator_ScatterResidual.hpp \
+	$(srcdir)/evaluators/Evaluator_ScatterResidual_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp
 
-example_element_linear_2D_DEPENDENCIES = 
-example_element_linear_2D_LDADD = $(EXAMPLE_LIBS)
+example_epetra_vbr_test_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+example_epetra_vbr_test_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -295,9 +325,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/FEM_Nonlinear/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/FEM_Nonlinear_VBR/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/FEM_Nonlinear/Makefile
+	  $(AUTOMAKE) --foreign  example/FEM_Nonlinear_VBR/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -318,12 +348,12 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-example_element_linear_2D$(EXEEXT): $(example_element_linear_2D_OBJECTS) $(example_element_linear_2D_DEPENDENCIES) 
-	@rm -f example_element_linear_2D$(EXEEXT)
-	$(CXXLINK) $(example_element_linear_2D_OBJECTS) $(example_element_linear_2D_LDADD) $(LIBS)
-example_fem_nonlinear$(EXEEXT): $(example_fem_nonlinear_OBJECTS) $(example_fem_nonlinear_DEPENDENCIES) 
-	@rm -f example_fem_nonlinear$(EXEEXT)
-	$(CXXLINK) $(example_fem_nonlinear_OBJECTS) $(example_fem_nonlinear_LDADD) $(LIBS)
+example_epetra_vbr_test$(EXEEXT): $(example_epetra_vbr_test_OBJECTS) $(example_epetra_vbr_test_DEPENDENCIES) 
+	@rm -f example_epetra_vbr_test$(EXEEXT)
+	$(CXXLINK) $(example_epetra_vbr_test_OBJECTS) $(example_epetra_vbr_test_LDADD) $(LIBS)
+example_fem_nonlinear_vbr$(EXEEXT): $(example_fem_nonlinear_vbr_OBJECTS) $(example_fem_nonlinear_vbr_DEPENDENCIES) 
+	@rm -f example_fem_nonlinear_vbr$(EXEEXT)
+	$(CXXLINK) $(example_fem_nonlinear_vbr_OBJECTS) $(example_fem_nonlinear_vbr_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -338,8 +368,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Evaluator_FEInterpolation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Evaluator_GatherSolution.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Evaluator_ScatterResidual.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_Element_Linear_2D.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_FEM_Nonlinear.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_Epetra_VBR_Test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_FEM_Nonlinear_VBR.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Traits.Po@am__quote@
 
 .cpp.o:
@@ -356,75 +386,61 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Example_Element_Linear_2D.o: $(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_Element_Linear_2D.o -MD -MP -MF $(DEPDIR)/Example_Element_Linear_2D.Tpo -c -o Example_Element_Linear_2D.o `test -f '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp' || echo '$(srcdir)/'`$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_Element_Linear_2D.Tpo $(DEPDIR)/Example_Element_Linear_2D.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp' object='Example_Element_Linear_2D.o' libtool=no @AMDEPBACKSLASH@
+Example_Epetra_VBR_Test.o: $(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_Epetra_VBR_Test.o -MD -MP -MF $(DEPDIR)/Example_Epetra_VBR_Test.Tpo -c -o Example_Epetra_VBR_Test.o `test -f '$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp' || echo '$(srcdir)/'`$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_Epetra_VBR_Test.Tpo $(DEPDIR)/Example_Epetra_VBR_Test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp' object='Example_Epetra_VBR_Test.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_Element_Linear_2D.o `test -f '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp' || echo '$(srcdir)/'`$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_Epetra_VBR_Test.o `test -f '$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp' || echo '$(srcdir)/'`$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp
 
-Example_Element_Linear_2D.obj: $(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_Element_Linear_2D.obj -MD -MP -MF $(DEPDIR)/Example_Element_Linear_2D.Tpo -c -o Example_Element_Linear_2D.obj `if test -f '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; then $(CYGPATH_W) '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_Element_Linear_2D.Tpo $(DEPDIR)/Example_Element_Linear_2D.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp' object='Example_Element_Linear_2D.obj' libtool=no @AMDEPBACKSLASH@
+Example_Epetra_VBR_Test.obj: $(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_Epetra_VBR_Test.obj -MD -MP -MF $(DEPDIR)/Example_Epetra_VBR_Test.Tpo -c -o Example_Epetra_VBR_Test.obj `if test -f '$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp'; then $(CYGPATH_W) '$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_Epetra_VBR_Test.Tpo $(DEPDIR)/Example_Epetra_VBR_Test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp' object='Example_Epetra_VBR_Test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_Element_Linear_2D.obj `if test -f '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; then $(CYGPATH_W) '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_Epetra_VBR_Test.obj `if test -f '$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp'; then $(CYGPATH_W) '$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/auxiliary_tests/Example_Epetra_VBR_Test.cpp'; fi`
 
-Element_Linear2D.o: $(srcdir)/Element_Linear2D.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Element_Linear2D.o -MD -MP -MF $(DEPDIR)/Element_Linear2D.Tpo -c -o Element_Linear2D.o `test -f '$(srcdir)/Element_Linear2D.cpp' || echo '$(srcdir)/'`$(srcdir)/Element_Linear2D.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Element_Linear2D.Tpo $(DEPDIR)/Element_Linear2D.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Element_Linear2D.cpp' object='Element_Linear2D.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Element_Linear2D.o `test -f '$(srcdir)/Element_Linear2D.cpp' || echo '$(srcdir)/'`$(srcdir)/Element_Linear2D.cpp
-
-Element_Linear2D.obj: $(srcdir)/Element_Linear2D.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Element_Linear2D.obj -MD -MP -MF $(DEPDIR)/Element_Linear2D.Tpo -c -o Element_Linear2D.obj `if test -f '$(srcdir)/Element_Linear2D.cpp'; then $(CYGPATH_W) '$(srcdir)/Element_Linear2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Element_Linear2D.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Element_Linear2D.Tpo $(DEPDIR)/Element_Linear2D.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Element_Linear2D.cpp' object='Element_Linear2D.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Element_Linear2D.obj `if test -f '$(srcdir)/Element_Linear2D.cpp'; then $(CYGPATH_W) '$(srcdir)/Element_Linear2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Element_Linear2D.cpp'; fi`
-
-Example_FEM_Nonlinear.o: $(srcdir)/Example_FEM_Nonlinear.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_FEM_Nonlinear.o -MD -MP -MF $(DEPDIR)/Example_FEM_Nonlinear.Tpo -c -o Example_FEM_Nonlinear.o `test -f '$(srcdir)/Example_FEM_Nonlinear.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_FEM_Nonlinear.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_FEM_Nonlinear.Tpo $(DEPDIR)/Example_FEM_Nonlinear.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_FEM_Nonlinear.cpp' object='Example_FEM_Nonlinear.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_FEM_Nonlinear.o `test -f '$(srcdir)/Example_FEM_Nonlinear.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_FEM_Nonlinear.cpp
-
-Example_FEM_Nonlinear.obj: $(srcdir)/Example_FEM_Nonlinear.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_FEM_Nonlinear.obj -MD -MP -MF $(DEPDIR)/Example_FEM_Nonlinear.Tpo -c -o Example_FEM_Nonlinear.obj `if test -f '$(srcdir)/Example_FEM_Nonlinear.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_FEM_Nonlinear.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_FEM_Nonlinear.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_FEM_Nonlinear.Tpo $(DEPDIR)/Example_FEM_Nonlinear.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_FEM_Nonlinear.cpp' object='Example_FEM_Nonlinear.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_FEM_Nonlinear.obj `if test -f '$(srcdir)/Example_FEM_Nonlinear.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_FEM_Nonlinear.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_FEM_Nonlinear.cpp'; fi`
-
-Traits.o: $(srcdir)/Traits.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.o -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+Traits.o: $(srcdir)/../FEM_Nonlinear/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.o -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.o `test -f '$(srcdir)/../FEM_Nonlinear/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/Traits.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/Traits.cpp' object='Traits.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.o `test -f '$(srcdir)/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/Traits.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.o `test -f '$(srcdir)/../FEM_Nonlinear/Traits.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/Traits.cpp
 
-Traits.obj: $(srcdir)/Traits.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.obj -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
+Traits.obj: $(srcdir)/../FEM_Nonlinear/Traits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Traits.obj -MD -MP -MF $(DEPDIR)/Traits.Tpo -c -o Traits.obj `if test -f '$(srcdir)/../FEM_Nonlinear/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/Traits.cpp'; fi`
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Traits.Tpo $(DEPDIR)/Traits.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/Traits.cpp' object='Traits.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.obj `if test -f '$(srcdir)/../FEM_Nonlinear/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/Traits.cpp'; fi`
 
-Dimension.o: $(srcdir)/Dimension.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.o -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.o `test -f '$(srcdir)/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/Dimension.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Dimension.cpp' object='Dimension.o' libtool=no @AMDEPBACKSLASH@
+Element_Linear2D.o: $(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Element_Linear2D.o -MD -MP -MF $(DEPDIR)/Element_Linear2D.Tpo -c -o Element_Linear2D.o `test -f '$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Element_Linear2D.Tpo $(DEPDIR)/Element_Linear2D.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp' object='Element_Linear2D.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.o `test -f '$(srcdir)/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/Dimension.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Element_Linear2D.o `test -f '$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp
 
-Dimension.obj: $(srcdir)/Dimension.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.obj -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.obj `if test -f '$(srcdir)/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Dimension.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Dimension.cpp' object='Dimension.obj' libtool=no @AMDEPBACKSLASH@
+Element_Linear2D.obj: $(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Element_Linear2D.obj -MD -MP -MF $(DEPDIR)/Element_Linear2D.Tpo -c -o Element_Linear2D.obj `if test -f '$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Element_Linear2D.Tpo $(DEPDIR)/Element_Linear2D.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp' object='Element_Linear2D.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.obj `if test -f '$(srcdir)/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Dimension.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Element_Linear2D.obj `if test -f '$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/Element_Linear2D.cpp'; fi`
+
+Dimension.o: $(srcdir)/../FEM_Nonlinear/Dimension.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.o -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.o `test -f '$(srcdir)/../FEM_Nonlinear/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/Dimension.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/Dimension.cpp' object='Dimension.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.o `test -f '$(srcdir)/../FEM_Nonlinear/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/Dimension.cpp
+
+Dimension.obj: $(srcdir)/../FEM_Nonlinear/Dimension.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.obj -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.obj `if test -f '$(srcdir)/../FEM_Nonlinear/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/Dimension.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/Dimension.cpp' object='Dimension.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.obj `if test -f '$(srcdir)/../FEM_Nonlinear/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/Dimension.cpp'; fi`
 
 Evaluator_Constant.o: $(srcdir)/evaluators/Evaluator_Constant.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Evaluator_Constant.o -MD -MP -MF $(DEPDIR)/Evaluator_Constant.Tpo -c -o Evaluator_Constant.o `test -f '$(srcdir)/evaluators/Evaluator_Constant.cpp' || echo '$(srcdir)/'`$(srcdir)/evaluators/Evaluator_Constant.cpp
@@ -495,6 +511,20 @@ Evaluator_ScatterResidual.obj: $(srcdir)/evaluators/Evaluator_ScatterResidual.cp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp' object='Evaluator_ScatterResidual.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Evaluator_ScatterResidual.obj `if test -f '$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp'; then $(CYGPATH_W) '$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/evaluators/Evaluator_ScatterResidual.cpp'; fi`
+
+Example_FEM_Nonlinear_VBR.o: $(srcdir)/Example_FEM_Nonlinear_VBR.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_FEM_Nonlinear_VBR.o -MD -MP -MF $(DEPDIR)/Example_FEM_Nonlinear_VBR.Tpo -c -o Example_FEM_Nonlinear_VBR.o `test -f '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_FEM_Nonlinear_VBR.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_FEM_Nonlinear_VBR.Tpo $(DEPDIR)/Example_FEM_Nonlinear_VBR.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_FEM_Nonlinear_VBR.cpp' object='Example_FEM_Nonlinear_VBR.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_FEM_Nonlinear_VBR.o `test -f '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_FEM_Nonlinear_VBR.cpp
+
+Example_FEM_Nonlinear_VBR.obj: $(srcdir)/Example_FEM_Nonlinear_VBR.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_FEM_Nonlinear_VBR.obj -MD -MP -MF $(DEPDIR)/Example_FEM_Nonlinear_VBR.Tpo -c -o Example_FEM_Nonlinear_VBR.obj `if test -f '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_FEM_Nonlinear_VBR.Tpo $(DEPDIR)/Example_FEM_Nonlinear_VBR.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_FEM_Nonlinear_VBR.cpp' object='Example_FEM_Nonlinear_VBR.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_FEM_Nonlinear_VBR.obj `if test -f '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
