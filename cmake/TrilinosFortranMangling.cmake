@@ -12,7 +12,7 @@ ENDIF()
 IF(WIN32)
   SET(F77_FUNC_DEFAULT "(name,NAME) name ## _" )
   SET(F77_FUNC__DEFAULT "(name,NAME) NAME")
-  SET(F77_BLAS__DEFAULTMANGLE "(name,NAME) name ## _" )
+  SET(F77_BLAS_MANGLE_DEFAULT "(name,NAME) name ## _" )
 ENDIF()
 
 IF(UNIX AND NOT APPLE)

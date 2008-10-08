@@ -37,6 +37,7 @@ SET( Trilinos_PACKAGES
  Teuchos
  RTOp
  Epetra
+ Triutils
  #Anasazi
  RBGen
 )
