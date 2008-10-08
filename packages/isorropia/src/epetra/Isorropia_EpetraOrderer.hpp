@@ -54,7 +54,7 @@ namespace Isorropia {
 
 namespace Epetra {
 
-/** An implementation of the Orderer interface that operates on
+/** An implementation of the Partitioner interface that operates on
     Epetra matrices and linear systems.
 
 */

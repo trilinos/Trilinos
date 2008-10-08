@@ -179,15 +179,6 @@ public:
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
-  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-              const Teuchos::ParameterList& paramlist,
-              bool compute_partitioning_now=true);
-
-  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-              Teuchos::RCP<const Epetra_MultiVector> weights,
-              const Teuchos::ParameterList& paramlist,
-              bool compute_partitioning_now=true);
-
   /** Destructor */
   virtual ~Partitioner();
 

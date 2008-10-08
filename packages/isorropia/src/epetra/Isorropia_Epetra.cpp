@@ -98,13 +98,12 @@ create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 }
 
 
-Epetra_MultiVector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix)
+Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix)
 {
-  int stride;
   const Epetra_BlockMap& input_rowmap = input_matrix.RowMatrixRowMap();
-  Epetra_MultiVector* weights = new Epetra_MultiVector(input_rowmap, 1);
+  Epetra_Vector* weights = new Epetra_Vector(input_rowmap);
   double* weights_ptr = 0;
-  weights->ExtractView(&weights_ptr, &stride);
+  weights->ExtractView(&weights_ptr);
   int local_num_rows = input_rowmap.NumMyElements();
 
   for(int i=0; i<local_num_rows; ++i) {
@@ -120,34 +119,18 @@ Epetra_MultiVector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix)
   return( weights );
 }
 
-Epetra_MultiVector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
+Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
 {
-  int stride;
   const Epetra_BlockMap& input_rowmap = input_graph.RowMap();
-  Epetra_MultiVector* weights = new Epetra_MultiVector(input_rowmap, 1);
+  Epetra_Vector* weights = new Epetra_Vector(input_rowmap);
   double* weights_ptr = 0;
-  weights->ExtractView(&weights_ptr, &stride);
+  weights->ExtractView(&weights_ptr);
   int local_num_rows = input_rowmap.NumMyElements();
 
   for(int i=0; i<local_num_rows; ++i) {
     int nnz = input_graph.NumMyIndices(i);
 
     weights_ptr[i] = 1.0*nnz;
-  }
-
-  return( weights );
-}
-
-Epetra_MultiVector* create_unit_weights(const Epetra_MultiVector& input_coords)
-{
-  int stride;
-  double* weights_ptr = 0;
-
-  Epetra_MultiVector* weights = new Epetra_MultiVector(input_coords.Map(), 1);
-  weights->ExtractView(&weights_ptr, &stride);
-
-  for(int i=0; i<input_coords.MyLength(); ++i) {
-    weights_ptr[i] = 1.0;
   }
 
   return( weights );
@@ -180,10 +163,12 @@ double compute_imbalance(int nprocs, std::vector<int> &offsets, double *wgts, do
 
 int
 repartition(const Epetra_BlockMap& input_map,
-	    const Epetra_MultiVector& weights,
+	    const Epetra_Vector& weights,
 	    std::vector<int>& myNewElements,
 	    int& exportsSize,
 	    std::vector<int>& imports)
+//             std::map<int,int>& exports,
+//             std::map<int,int>& imports)
 {
   if (!input_map.PointSameAs(weights.Map())) {
     std::string str1("Epetra::repartition ERROR, input_map not ");
@@ -201,12 +186,12 @@ repartition(const Epetra_BlockMap& input_map,
   int global_num_rows = input_map.NumGlobalElements();
   int local_num_rows = myPID == 0 ? global_num_rows : 0;
   Epetra_BlockMap proc0_rowmap(global_num_rows, local_num_rows, 1,0,input_comm);
-  Epetra_MultiVector proc0_weights(proc0_rowmap, 1);
+  Epetra_Vector proc0_weights(proc0_rowmap);
 
   Epetra_Import importer(proc0_rowmap, input_map);
   proc0_weights.Import(weights, importer, Insert);
 
-  double total_weight;       // there's only one weight vector
+  double total_weight;
   weights.Norm1(&total_weight);
 
   std::vector<int> all_proc_old_offsets;
@@ -217,8 +202,8 @@ repartition(const Epetra_BlockMap& input_map,
     double avg_weight = total_weight/numProcs;
 
     double* proc0_weights_ptr;
-    int weights_length;
-    proc0_weights.ExtractView(&proc0_weights_ptr, &weights_length);
+    proc0_weights.ExtractView(&proc0_weights_ptr);
+    int weights_length = proc0_weights.MyLength();
 
     double old_imbalance = 
       compute_imbalance(numProcs, all_proc_old_offsets, proc0_weights_ptr, avg_weight);
@@ -678,41 +663,6 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
 
   return( linprob );
 }
-
-Teuchos::RCP<Epetra_MultiVector>
-create_balanced_copy(const Epetra_MultiVector &coords,
-		   const Teuchos::ParameterList& paramlist)
-{
-  // TODO make sure weights list with 0 vectors doesn't cause something
-  // to crash
-  Epetra_MultiVector noWeights(coords.Map(), 0);
-  return create_balanced_copy(coords, noWeights, paramlist);
-}
-
-Teuchos::RCP<Epetra_MultiVector>
-create_balanced_copy(const Epetra_MultiVector &coords,
-                     const Epetra_MultiVector &weights,
-		   const Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RCP<const Epetra_MultiVector> coordRcp = Teuchos::rcp(&coords, false);
-  Teuchos::RCP<const Epetra_MultiVector> weightRcp = Teuchos::rcp(&weights, false);
-
-  Teuchos::RCP<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(coordRcp, weightRcp, paramlist));
-
-#if 0
-  Redistributor rd(partitioner);
-
-  Teuchos::RCP<Epetra_MultiVector> newVec = rd.redistribute(coords);
-
-  return newVec;
-#else
-  // for now - so we compile
-  Teuchos::RCP<Epetra_MultiVector> newVec = Teuchos::rcp(new Epetra_MultiVector(coords));
-  return newVec;
-#endif
-}
-
 #endif
 }//namespace Epetra
 }//namespace Isorropia

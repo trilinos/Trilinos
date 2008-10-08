@@ -67,10 +67,6 @@ public:
   InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
   InternalPartitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		      Teuchos::RCP<CostDescriber> costs);
-  InternalPartitioner(Teuchos::RCP<const Epetra_MultiVector> coords);
-  InternalPartitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-                      Teuchos::RCP<const Epetra_MultiVector> weights);
-
 
   virtual ~InternalPartitioner();
 

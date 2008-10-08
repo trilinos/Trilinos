@@ -68,6 +68,7 @@ Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   Operator (input_graph, paramlist) {
 #ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph));
+  lib_->setInputType("GRAPH");
 #else /* HAVE_ISORROPIA_ZOLTAN */
   throw Isorropia::Exception("Coloring only available in Zoltan");
   return ;
@@ -83,6 +84,7 @@ Colorer::Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix));
+  lib_->setInputType("GRAPH");
 #else /* HAVE_ISORROPIA_ZOLTAN */
   throw Isorropia::Exception("Coloring only available in Zoltan");
   return ;
@@ -101,7 +103,6 @@ Colorer::color(bool force_coloring)
   std::string zoltan("ZOLTAN");
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
 
-  lib_->input_type_ = Isorropia::Epetra::Library::graph_input_;
   lib_->color(sublist, properties_);
   operation_already_computed_ = true;
   computeNumberOfProperties();
