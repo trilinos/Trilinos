@@ -12,6 +12,7 @@
 
 #include <fei_Solver_Amesos.hpp>
 #include <fei_ParameterSet.hpp>
+#include <snl_fei_Utils.hpp>
 #include <fei_utils.hpp>
 
 //fei_Include_Trilinos.hpp includes the actual Trilinos headers (epetra, aztecoo, ml ...)

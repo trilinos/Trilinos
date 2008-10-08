@@ -54,18 +54,18 @@ void RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::addIndices(i
   }
 }
 
-void RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::addIndices(int numRows,
+void
+RaggedTable<MapContig<fei::ctg_set<int>*>,fei::ctg_set<int> >::addIndices(int numRows,
                              const int* rows,
                              int numIndices,
                              const int* indices)
 {
   iterator m_end = map_.end();
-  iterator m_iter;
   map_type::mapped_type mapped_indices = NULL;
 
   for(int i=0; i<numRows; ++i) {
     int row = rows[i];
-    m_iter = map_.lower_bound(row);
+    iterator m_iter = map_.lower_bound(row);
 
     mapped_indices = (*m_iter).second;
     if (mapped_indices == NULL) {

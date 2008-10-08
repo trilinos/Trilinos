@@ -323,9 +323,6 @@ class ctg_set {
   /** insert2 -- power-users only */
   void insert2(const T& item)
   {
-    if (len_ > highwatermark_) {
-      FEI_COUT << "fei::ctg_set internal error"<<FEI_ENDL;
-    }
     if (len_ < 1) {
       highwatermark_ = alloc_incr_;
       expand_dataptr(highwatermark_);
