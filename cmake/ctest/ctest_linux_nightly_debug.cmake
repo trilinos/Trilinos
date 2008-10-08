@@ -2,7 +2,7 @@
 # Experimental LINUX tests
 # Debug with Coverage and MemoryCheck
 #------------------------------------------------
-SET (CTEST_SOURCE_NAME Trilinos-CMake)
+SET (CTEST_SOURCE_NAME Trilinos)
 SET (TEST_TYPE nightly)
 SET (BUILD_TYPE debug)
 

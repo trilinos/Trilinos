@@ -2,7 +2,7 @@
 # Nightly LINUX tests
 # Debug-MPI
 #------------------------------------------------
-SET (CTEST_SOURCE_NAME Trilinos-CMake)
+SET (CTEST_SOURCE_NAME Trilinos)
 SET (TEST_TYPE nightly)
 SET (BUILD_TYPE debug)
 

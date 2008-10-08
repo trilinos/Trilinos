@@ -2,7 +2,7 @@
 # Nightly LINUX tests
 # Release
 #------------------------------------------------
-SET (CTEST_SOURCE_NAME Trilinos-CMake)
+SET (CTEST_SOURCE_NAME Trilinos)
 SET (TEST_TYPE nightly)
 SET (BUILD_TYPE release)
 
