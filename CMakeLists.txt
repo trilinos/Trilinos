@@ -33,9 +33,17 @@ OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING "" OFF)
 MARK_AS_ADVANCED(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
 
 # Define the Trilinos packages
+SET( Trilinos_PACKAGES
+ Teuchos
+ RTOp
+ Epetra
+ #Anasazi
+ RBGen
+)
 
-IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
-
+# Hack to allow me to set the exact list of packages so that I can have stable
+# unit tests as packages are added and dependencies change
+IF (DEFINED Trilinos_PACKAGES_OVERRIDE)
   SET( Trilinos_PACKAGES
    Teuchos
    RTOp
@@ -45,17 +53,6 @@ IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
    Thyra
    RBGen
   )
-
-ELSE()
-
-  SET( Trilinos_PACKAGES
-   Teuchos
-   RTOp
-   Epetra
-   #Anasazi
-   RBGen
-  )
-
 ENDIF()
 
 # Create a reverse list for later use
@@ -78,60 +75,20 @@ LIST(LENGTH Trilinos_PACKAGES Trilinos_NUM_PACKAGES)
 #
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
-
-  IF (VERBOSE_CONFIGURE)
-    MESSAGE("Reading package dependencies: ${PACKAGE}")
-  ENDIF()
-
-  SET(${PACKAGE}_FORWARD_LIB_REQUIRED_DEP_PACKAGES "")
-  SET(${PACKAGE}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES "")
-  SET(${PACKAGE}_FORWARD_TEST_REQUIRED_DEP_PACKAGES "")
-  SET(${PACKAGE}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES "")
-
   STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
-
-  INCLUDE(packages/${PACKAGE_DIR}/cmake/Dependencies.cmake)
-
-  SET(${PACKAGE}_LIB_REQUIRED_DEP_PACKAGES ${LIB_REQUIRED_DEP_PACKAGES})
-  SET(${PACKAGE}_LIB_OPTIONAL_DEP_PACKAGES ${LIB_OPTIONAL_DEP_PACKAGES})
-  SET(${PACKAGE}_TEST_REQUIRED_DEP_PACKAGES ${TEST_REQUIRED_DEP_PACKAGES})
-  SET(${PACKAGE}_TEST_OPTIONAL_DEP_PACKAGES ${TEST_OPTIONAL_DEP_PACKAGES})
-
-  TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} LIB_REQUIRED_DEP_PACKAGES)
-  TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} LIB_OPTIONAL_DEP_PACKAGES)
-  TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} TEST_REQUIRED_DEP_PACKAGES)
-  TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE} TEST_OPTIONAL_DEP_PACKAGES)
-
-  # 2008/10/07: rabartl: ToDo: Wrap the above in a macro TRILINOS_READ_PACKAGE_DEPENDENCIES(${PACAKGE})
-
-
+  TRILINOS_READ_PACKAGE_DEPENDENCIES(${PACKAGE} ${PACKAGE_DIR})
 ENDFOREACH()
 
 OPTION(DUMP_PACKAGE_DEPENDENCIES "Dump the package dependency information." OFF)
 
 IF (VERBOSE_CONFIGURE OR DUMP_PACKAGE_DEPENDENCIES)
-
   MESSAGE("")
   MESSAGE("Printing package dependenies ...")
   MESSAGE("")
-
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
-
-    PRINT_NONEMPTY_VAR(${PACKAGE}_LIB_REQUIRED_DEP_PACKAGES)
-    PRINT_NONEMPTY_VAR(${PACKAGE}_LIB_OPTIONAL_DEP_PACKAGES)
-    PRINT_NONEMPTY_VAR(${PACKAGE}_TEST_REQUIRED_DEP_PACKAGES)
-    PRINT_NONEMPTY_VAR(${PACKAGE}_TEST_OPTIONAL_DEP_PACKAGES)
-
-    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_LIB_REQUIRED_DEP_PACKAGES)
-    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES)
-    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_TEST_REQUIRED_DEP_PACKAGES)
-    PRINT_NONEMPTY_VAR(${PACKAGE}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES)
+    TRILINOS_PRINT_PACKAGE_DEPENDENCIES(${PACKAGE})
     MESSAGE("")
-
   ENDFOREACH()
-
-  # 2008/10/07: rabartl: ToDo: Wrap the above in a macro TRILINOS_PRINT_PACKAGE_DEPENDENCIES()
-
 ENDIF()
 
 
@@ -186,104 +143,19 @@ MARK_AS_ADVANCED(EXECUTABLE_OUTPUT_PATH)
 MARK_AS_ADVANCED(LIBRARY_OUTPUT_PATH)
 MARK_AS_ADVANCED(CMAKE_OSX_ARCHITECTURES)
 MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
-#MARK_AS_ADVANCED(TRILINOS_BLAS_LIBRARY)
-#MARK_AS_ADVANCED(TRILINOS_LAPACK_LIBRARY)
-
-# 2008/09/25: rabartl: Above: I have not made the options for the BLAS and
-# LAPACK libraries advanced since you almost always have to specify these and
-# we don't want to hide that from users.
+MARK_AS_ADVANCED(TRILINOS_BLAS_LIBRARY)
+MARK_AS_ADVANCED(TRILINOS_LAPACK_LIBRARY)
 
 
 #
 # E) Apply logic to enable Trilinos pacakges and tests
 #
 
-SET(Trilinos_EXPLICIT_INPUT_ENABLED_PACKAGES "")
-FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  IF (Trilinos_ENABLE_${PACKAGE})
-    LIST(APPEND Trilinos_EXPLICIT_INPUT_ENABLED_PACKAGES ${PACKAGE})
-  ENDIF()
-ENDFOREACH()
-MESSAGE("Explicitly enabled packages on input:")
-MESSAGE("  ${Trilinos_EXPLICIT_INPUT_ENABLED_PACKAGES}")
+TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nExplicitly enabled packages on input")
 
-# 2008/10/07: rabartl: ToDo: Above: Replace with a function TRILINOS_PRINT_CURRENT_ENABLED_PACAKGES(...)
+TRILNOS_ADJUST_PACKAGE_ENABLES()
 
-# 2008/10/07: rabartl: ToDo: Below: Wrap all of the below in macro TRILNOS_ADJUST_PACKAGE_ENABLES()
-
-MESSAGE("")
-MESSAGE("Disabling forward pacakges that have a required dependancy on explicitly disabled packages ...")
-MESSAGE("")
-FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  TRILINOS_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${PACKAGE})
-ENDFOREACH()
-
-IF (Trilinos_ENABLE_ALL_PACKAGES)
-  MESSAGE("")
-  MESSAGE("Enabling all packages that are not currently disabled ...")
-  MESSAGE("")
-  FOREACH(PACKAGE ${Trilinos_PACKAGES})
-    TRILINOS_APPLY_ALL_PACKAGE_ENABLES(${PACKAGE})
-  ENDFOREACH()
-ENDIF()
-
-IF (Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES)
-  MESSAGE("")
-  MESSAGE("Enabling all forward dependent packages ...")
-  MESSAGE("")
-  FOREACH(PACKAGE ${Trilinos_PACKAGES})
-    TRILINOS_ENABLE_FORWARD_PACKAGE_ENABLES(${PACKAGE})
-  ENDFOREACH()
-  SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
-ENDIF()
-
-IF (Trilinos_ENABLE_TESTS OR Trilinos_ENABLE_EXAMPLES)
-  MESSAGE("")
-  MESSAGE("Enabling all tests and examples that can be enabled ...")
-  MESSAGE("")
-  FOREACH(PACKAGE ${Trilinos_PACKAGES})
-    TRILINOS_APPLY_TEST_EXAMPLE_ENABLES(${PACKAGE})
-  ENDFOREACH()
-ENDIF()
-# NOTE: Above, we enable tests and examples here, before the remaining required
-# packages so that we don't enable tests that don't need to be enabled based
-# on the use of the option Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES.
-
-IF (Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES)
-  MESSAGE("")
-  MESSAGE("Enabling all optional packages for current set of enabled packages ...")
-  MESSAGE("")
-  FOREACH(PACKAGE ${Trilinos_REVERSE_PACKAGES})
-    TRILINOS_ENABLE_OPTIONAL_PACKAGES(${PACKAGE})
-  ENDFOREACH()
-ENDIF()
-# NOTE: Above, we have to loop through the packages backward to enable all the
-# pacakges that feed into these packages.
-# NOTE Above, we don't have to enable the required packages because that will
-# come next
-
-MESSAGE("")
-MESSAGE("Enabling all remaining required packages for the current set of enabled packages ...")
-MESSAGE("")
-FOREACH(PACKAGE ${Trilinos_REVERSE_PACKAGES})
-  TRILINOS_ENABLE_REQUIRED_PACKAGES(${PACKAGE})
-ENDFOREACH()
-
-MESSAGE("")
-MESSAGE("Enabling all optional package intrapackage enables that can be if both sets of packages are enabled ...")
-MESSAGE("")
-FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  TRILINOS_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
-ENDFOREACH()
-
-SET(Trilinos_FINAL_ENABLED_PACKAGES "")
-FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  IF (Trilinos_ENABLE_${PACKAGE})
-    LIST(APPEND Trilinos_FINAL_ENABLED_PACKAGES ${PACKAGE})
-  ENDIF()
-ENDFOREACH()
-MESSAGE("Final set of enabled packages:")
-MESSAGE("  ${Trilinos_FINAL_ENABLED_PACKAGES}")
+TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nFinal set of enabled packages")
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   MESSAGE("")
@@ -336,6 +208,15 @@ ADD_CUSTOM_TARGET(
   --category=${TRILINOS_TEST_CATEGORY}
   --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
   )
+
+
+IF(NOT WIN32)
+  OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS "Enable dependency unit tests." ON)
+ENDIF()
+
+IF (Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS)
+  ADD_SUBDIRECTORY(cmake/DependencyUnitTests)
+ENDIF()
 
 
 #
