@@ -88,8 +88,9 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
   bool insitu = false;
-  std::string filename("mhd1280b.cua");
+  bool herm = false;
   std::string which("LM");
+  std::string filename;
   int nev = 4;
   int blockSize = 4;
   MT tol = 1.0e-6;
@@ -98,8 +99,9 @@ int main(int argc, char *argv[])
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("herm","nonherm",&herm,"Solve Hermitian or non-Hermitian problem.");
+  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix (assumes non-Hermitian unless specified otherwise).");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
@@ -107,6 +109,15 @@ int main(int argc, char *argv[])
     return -1;
   }
   if (debug) verbose = true;
+  if (filename == "") {
+    // get default based on herm
+    if (herm) {
+      filename = "mhd1280b.cua";
+    }
+    else {
+      filename = "mhd1280a.cua";
+    }
+  }
 
   if (MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
@@ -169,7 +180,7 @@ int main(int argc, char *argv[])
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
-  problem->setHermitian(true);
+  problem->setHermitian(herm);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );
@@ -234,7 +245,7 @@ int main(int argc, char *argv[])
     std::vector<MT> normV( numev );
     SerialDenseMatrix<int,ST> T(numev,numev);
     for (int i=0; i<numev; i++) {
-      T(i,i) = sol.Evals[i].realpart;
+      T(i,i) = ST(sol.Evals[i].realpart,sol.Evals[i].imagpart);
     }
     RCP<MV> Kvecs = MVT::Clone( *evecs, numev );
 
@@ -247,10 +258,10 @@ int main(int argc, char *argv[])
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
-      if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
-        normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
+      if ( SCT::magnitude(T(i,i)) != SCT::zero() ) {
+        normV[i] = SCT::magnitude(normV[i]/T(i,i));
       }
-      os << std::setw(20) << sol.Evals[i].realpart << std::setw(20) << normV[i] << endl;
+      os << std::setw(20) << T(i,i) << std::setw(20) << normV[i] << endl;
       if ( normV[i] > tol ) {
         testFailed = true;
       }

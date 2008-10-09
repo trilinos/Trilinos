@@ -127,7 +127,7 @@ namespace Tpetra {
 
 
   template <typename Ordinal, typename Scalar> 
-  MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata) 
+  MultiVector<Ordinal,Scalar>::MultiVector(const Map<Ordinal> &map, const Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata) 
     : DistObject<Ordinal,Scalar>(map, map.getComm(), "Tpetra::MultiVector"), MVData_(mvdata)
   {}
 
@@ -627,7 +627,8 @@ namespace Tpetra {
         // do nothing
       }
       else if (alphas[i] == Teuchos::ScalarTraits<Scalar>::zero()) {
-        putScalar(alphas[i]);
+        ArrayView<Scalar> &curpos = MVData_->ptrs_[i];
+        std::fill(curpos.begin(),curpos.end(),Teuchos::ScalarTraits<Scalar>::zero());
       }
       else {
         ArrayView<Scalar> &curpos = MVData_->ptrs_[i];
@@ -726,6 +727,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     if (alpha == ST::zero()) {
       scale(beta);
+      return;
     }
     const Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
@@ -778,9 +780,11 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     if (alpha == ST::zero()) {
       update(beta,B,gamma);
+      return;
     }
     else if (beta == ST::zero()) {
       update(alpha,A,gamma);
+      return;
     }
     const Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()) || !this->getMap().isCompatible(B.getMap()),
@@ -949,9 +953,10 @@ namespace Tpetra {
     using Teuchos::as;
     const Ordinal numVecs = cols.size();
     Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > mvdata = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    // FINISH: if cols are contiguous, we keep constantStride. in that case, values_ needs to point at the beginning.
     mvdata->constantStride_ = false;
-    mvdata->stride_ = stride();
     mvdata->values_ = MVData_->values_;
+    mvdata->stride_ = stride();
     mvdata->ptrs_.resize(numVecs,Teuchos::null);
     for (Ordinal j = as<Ordinal>(0); j < numVecs; ++j) {
       mvdata->ptrs_[j] = MVData_->ptrs_[cols[j]];

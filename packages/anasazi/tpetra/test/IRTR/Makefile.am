@@ -45,7 +45,7 @@ AM_CPPFLAGS = \
 EXEEXT = .exe
 
 if BUILD_TEUCHOS_COMPLEX
-IRTR_COMPLEX_LAP_TEST = # IRTR_complex_lap_test
+IRTR_COMPLEX_LAP_TEST = Tpetra_IRTR_complex_lap_test
 if BUILD_TRIUTILS
 IRTR_COMPLEX_TEST = Tpetra_IRTR_complex_test Dummy
 endif
@@ -61,7 +61,7 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 Tpetra_IRTR_complex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
-#IRTR_complex_lap_test_SOURCES = $(srcdir)/cxx_main_complex_lap.cpp
+Tpetra_IRTR_complex_lap_test_SOURCES = $(srcdir)/cxx_main_complex_lap.cpp
 
 Dummy_SOURCES = Dummy
 
@@ -72,23 +72,23 @@ Tpetra_IRTR_complex_test_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-#IRTR_complex_lap_test_DEPENDENCIES = \
-#	$(top_builddir)/src/libanasazi.a \
-#	$(top_builddir)/../teuchos/src/libteuchos.a
+Tpetra_IRTR_complex_lap_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
 Tpetra_IRTR_complex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
-#IRTR_complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+Tpetra_IRTR_complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 Tpetra_IRTR_complex_test_LDADD = \
 	$(EXPORT_LIBS)
 
-#IRTR_complex_lap_test_LDADD = \
-#	$(EXPORT_LIBS)
+Tpetra_IRTR_complex_lap_test_LDADD = \
+	$(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 

@@ -26,31 +26,21 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for BlockKrylovSchur solving a standard (Ax=xl) complex Hermitian
-// eigenvalue problem.
-//
-// The matrix used is from MatrixMarket:
-// Name: MHD1280B: Alfven Spectra in Magnetohydrodynamics
-// Source: Source: A. Booten, M.N. Kooper, H.A. van der Vorst, S. Poedts and J.P. Goedbloed University of Utrecht, the Netherlands
-// Discipline: Plasma physics
-// URL: http://math.nist.gov/MatrixMarket/data/NEP/mhd/mhd1280b.html
-// Size: 1280 x 1280
-// NNZ: 22778 entries
+// This test is for SIRTR/IRTR solving a standard (Ax=xl) complex Hermitian
+// eigenvalue problem where the operator (A) is the 1D finite-differenced Laplacian
+// operator.
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
 #include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziRTRSolMgr.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-
-// I/O for Harwell-Boeing files
-#include <iohb.h>
 
 using namespace Teuchos;
 using Tpetra::Platform;
@@ -64,7 +54,7 @@ int main(int argc, char *argv[])
   using std::cout;
   using std::endl;
 
-  typedef std::complex<double>                ST;
+  typedef double                              ST;
   typedef ScalarTraits<ST>                   SCT;
   typedef SCT::magnitudeType                  MT;
   typedef MultiVector<int,ST>         MV;
@@ -75,30 +65,32 @@ int main(int argc, char *argv[])
 
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
-  int info = 0;
   bool boolret;
   int MyPID = 0;
+  int NumImages = 1;
 
   RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
   RCP<Comm<int> > comm = platform->createComm();
 
   MyPID = rank(*comm);
+  NumImages = size(*comm);
 
   bool testFailed;
   bool verbose = false;
   bool debug = false;
+  bool skinny = true;
   std::string filename("mhd1280b.cua");
-  std::string which("LM");
+  std::string which("LR");
   int nev = 4;
   int blockSize = 4;
   MT tol = 1.0e-6;
 
-//sync
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
@@ -106,58 +98,39 @@ int main(int argc, char *argv[])
     return -1;
   }
   if (debug) verbose = true;
+  if (blockSize < nev) {
+    blockSize = nev;
+  }
 
   if (MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
 
-  // Get the data from the HB file
-  int dim,dim2,nnz;
-  double *dvals;
-  int *colptr,*rowind;
-  nnz = -1;
-  if (MyPID == 0) {
-    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-  }
-  else {
-    // address uninitialized data warnings
-    dvals = NULL;
-    colptr = NULL;
-    rowind = NULL;
-  }
-  Teuchos::broadcast(*comm,0,&info);
-  Teuchos::broadcast(*comm,0,&nnz);
-  Teuchos::broadcast(*comm,0,&dim);
-  if (info == 0 || nnz < 0) {
-    if (MyPID == 0) {
-      cout << "Error reading '" << filename << "'" << endl
-           << "End Result: TEST FAILED" << endl;
-    }
-    return -1;
-  }
+  // -- Set finite difference grid
+  const int ROWS_PER_PROC = 10;
+  int dim = ROWS_PER_PROC * NumImages;
+
   // create map
   Map<int> map(dim,0,*platform);
   RCP<CrsMatrix<int,ST> > K = rcp(new CrsMatrix<int,ST>(map));
-  if (MyPID == 0) {
-    // Convert interleaved doubles to complex values
-    // HB format is compressed column. CrsMatrix is compressed row.
-    const double *dptr = dvals;
-    const int *rptr = rowind;
-    for (int c=0; c<dim; ++c) {
-      for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        K->submitEntry(*rptr++ - 1,c,ST(dptr[0],dptr[1]));
-        dptr += 2;
-      }
+  int base = MyPID*ROWS_PER_PROC;
+  if (MyPID != NumImages-1) {
+    for (int i=0; i<ROWS_PER_PROC; ++i) {
+      K->submitEntry(base+i  ,base+i  , 2);
+      K->submitEntry(base+i  ,base+i+1,-1);
+      K->submitEntry(base+i+1,base+i  ,-1);
+      K->submitEntry(base+i+1,base+i+1, 2);
     }
   }
-  if (MyPID == 0) {
-    // Clean up.
-    free( dvals );
-    free( colptr );
-    free( rowind );
+  else {
+    for (int i=0; i<ROWS_PER_PROC-1; ++i) {
+      K->submitEntry(base+i  ,base+i  , 2);
+      K->submitEntry(base+i  ,base+i+1,-1);
+      K->submitEntry(base+i+1,base+i  ,-1);
+      K->submitEntry(base+i+1,base+i+1, 2);
+    }
   }
   K->fillComplete();
-  // cout << *K << endl;
 
   // Create initial vectors
   RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );
@@ -197,17 +170,15 @@ int main(int argc, char *argv[])
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
+  MyPL.set( "Skinny Solver", skinny);
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", true );
-  MyPL.set( "Locking Tolerance", tol/10 );
-  MyPL.set( "Full Ortho", true );
   //
   // Create the solver manager
-  Anasazi::LOBPCGSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
+  Anasazi::RTRSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
@@ -239,7 +210,7 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
 
-    os << "Direct residual norms computed in Tpetra_LOBPCG_complex_test.exe" << endl
+    os << "Direct residual norms computed in Tpetra_IRTR_complex_lap_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {

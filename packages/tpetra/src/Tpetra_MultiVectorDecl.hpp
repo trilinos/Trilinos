@@ -300,7 +300,7 @@ namespace Tpetra {
     Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > MVData_;
 
     // Advanced MultiVector constuctor for creating views.
-    MultiVector(const Map<Ordinal> &map, Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata);
+    MultiVector(const Map<Ordinal> &map, const Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata);
 
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Ordinal,Scalar> &sourceObj, Ordinal &packetSize);

@@ -161,7 +161,6 @@ int main(int argc, char *argv[])
     free( rowind );
   }
   K->fillComplete();
-  // cout << *K << endl;
 
   // Create initial vectors
   RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );

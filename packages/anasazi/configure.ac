@@ -503,6 +503,7 @@ AC_CONFIG_FILES([
 		tpetra/test/IRTR/Makefile
 		tpetra/test/LOBPCG/Makefile
 		tpetra/test/BlockDavidson/Makefile
+		tpetra/test/OrthoManager/Makefile
 		])
 
 AC_OUTPUT()

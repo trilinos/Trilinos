@@ -521,7 +521,7 @@ namespace Anasazi {
     else {
       MX = Teuchos::rcpFromRef(X);
     }
-    std::vector<MagnitudeType> normX(xc), invnormX(xc);
+    std::vector<ScalarType> normX(xc), invnormX(xc);
     Teuchos::SerialDenseMatrix<int,ScalarType> XtMX(xc,xc), workU(1,1);
     Teuchos::LAPACK<int,ScalarType> lapack;
     /**********************************************************************
@@ -570,21 +570,18 @@ namespace Anasazi {
         numGS++;
 
         // Compute the norms of the vectors
-        normMat(X,normX,MX);
-        // normalize the vectors
-        Teuchos::RCP<MV> Xi,MXi;
-        std::vector<int> ind(1);
-        for (int i=0; i<xc; i++) {
-          invnormX[i] = (normX[i] == ZERO) ? ZERO : MONE/normX[i];
-          ind[0] = i;
-          Xi = MVT::CloneView(X,ind);
-          MVT::MvAddMv(ZERO,*Xi,invnormX[i],*Xi,*Xi);
-          Xi = Teuchos::null;
-          if (this->_hasOp) {
-            MXi = MVT::CloneView(*MX,ind);
-            MVT::MvAddMv(ZERO,*MXi,invnormX[i],*MXi,*MXi);
-            MXi = Teuchos::null;
+        {
+          std::vector<MagnitudeType> normX_mag(xc);
+          normMat(X,normX_mag,MX);
+          for (int i=0; i<xc; ++i) {
+            normX[i] = normX_mag[i];
+            invnormX[i] = (normX_mag[i] == ZERO) ? ZERO : MONE/normX_mag[i]; 
           }
+        }
+        // normalize the vectors
+        MVT::MvScale(X,invnormX);
+        if (this->_hasOp) {
+          MVT::MvScale(*MX,invnormX);
         }
         // check that vectors are normalized now
         if (debug_) {
@@ -610,12 +607,7 @@ namespace Anasazi {
           MVT::MvTimesMatAddMv(-ONE,*Q[i],*newC[i],ONE,X);
         }
         // un-scale the vectors 
-        for (int i=0; i<xc; i++) {
-          ind[0] = i;
-          Xi = MVT::CloneView(X,ind);
-          MVT::MvAddMv(ZERO,*Xi,normX[i],*Xi,*Xi);
-          Xi = Teuchos::null;
-        }
+        MVT::MvScale(X,normX);
         // Recompute the vectors in MX
         if (this->_hasOp) {
           OPT::Apply(*(this->_Op),X,*MX);

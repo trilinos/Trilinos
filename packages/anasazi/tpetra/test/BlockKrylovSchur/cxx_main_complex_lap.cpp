@@ -36,70 +36,111 @@
 #include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
-
 #include <Teuchos_CommandLineProcessor.hpp>
+
+#include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 using namespace Teuchos;
+using Tpetra::Platform;
+using Tpetra::Operator;
+using Tpetra::CrsMatrix;
+using Tpetra::MultiVector;
+using Tpetra::Map;
 
 int main(int argc, char *argv[]) 
 {
   using std::cout;
   using std::endl;
-  int MyPID = 0;
-  bool boolret;
 
-  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<Comm<Ordinal> > comm = platform->createComm();
-
-  bool testFailed;
-  bool verbose = false;
-  bool debug = false;
-  std::string which("LM");
-
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-
-  typedef std::complex<double> ST;
+  typedef double                              ST;
   typedef ScalarTraits<ST>                   SCT;
   typedef SCT::magnitudeType                  MT;
-  typedef Anasazi::MultiVec<ST>               MV;
-  typedef Anasazi::Operator<ST>               OP;
+  typedef MultiVector<int,ST>         MV;
+  typedef Operator<int,ST>            OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   ST ONE  = SCT::one();
 
-  if (verbose && MyPID == 0) {
+  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+
+  bool boolret;
+  int MyPID = 0;
+  int NumImages = 1;
+
+  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
+  RCP<Comm<int> > comm = platform->createComm();
+
+  MyPID = rank(*comm);
+  NumImages = size(*comm);
+
+  bool testFailed;
+  bool verbose = false;
+  bool debug = false;
+  bool insitu = false;
+  std::string which("LM");
+  int nev = 4;
+  int blockSize = 2;
+  MT tol = 1.0e-6;
+  int numBlocks = 3 * NumImages;
+  int maxRestarts = 50;
+
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
+  cmdp.setOption("numBlocks",&numBlocks,"Number of blocks in Krylov basis.");
+  cmdp.setOption("maxRestarts",&maxRestarts,"Number of restarts allowed.");
+  cmdp.setOption("tol",&tol,"Tolerance for convergence.");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+    return -1;
+  }
+  if (debug) verbose = true;
+
+  if (MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
 
   // -- Set finite difference grid
-  int dim = 10;
+  const int ROWS_PER_PROC = 10;
+  int dim = ROWS_PER_PROC * NumImages;
 
-  // Build the problem matrix
-  RCP< const MyOperator<ST> > K 
-    = rcp( new MyOperator<ST>(dim) );
+  // create map
+  Map<int> map(dim,0,*platform);
+  RCP<CrsMatrix<int,ST> > K = rcp(new CrsMatrix<int,ST>(map));
+  int base = MyPID*ROWS_PER_PROC;
+  if (MyPID != NumImages-1) {
+    for (int i=0; i<ROWS_PER_PROC; ++i) {
+      K->submitEntry(base+i  ,base+i  , 2);
+      K->submitEntry(base+i  ,base+i+1,-1);
+      K->submitEntry(base+i+1,base+i  ,-1);
+      K->submitEntry(base+i+1,base+i+1, 2);
+    }
+  }
+  else {
+    for (int i=0; i<ROWS_PER_PROC-1; ++i) {
+      K->submitEntry(base+i  ,base+i  , 2);
+      K->submitEntry(base+i  ,base+i+1,-1);
+      K->submitEntry(base+i+1,base+i  ,-1);
+      K->submitEntry(base+i+1,base+i+1, 2);
+    }
+  }
+  K->fillComplete();
 
   // Create initial vectors
-  int blockSize = 2;
-  RCP<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
-  ivec->MvRandom();
+  RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );
+  ivec->random();
 
   // Create eigenproblem
-  const int nev = 1;
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
-  // Inform the eigenproblem that the operator K is non-Hermitian (even when it truly is Hermitian)
-  problem->setHermitian(false);
+  // Inform the eigenproblem that the operator K is symmetric
+  problem->setHermitian(true);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );
@@ -107,29 +148,23 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   boolret = problem->setProblem();
   if (boolret != true) {
-    if (verbose && MyPID == 0) {
+    if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+           << "End Result: TEST FAILED" << endl;
     }
-#ifdef HAVE_MPI
-    MPI_Finalize() ;
-#endif
     return -1;
   }
 
   // Set verbosity level
-  int verbosity = Anasazi::Errors + Anasazi::Warnings;
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary + Anasazi::TimingDetails;
   if (verbose) {
-    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+    verbosity += Anasazi::IterationDetails;
   }
   if (debug) {
     verbosity += Anasazi::Debug;
   }
 
   // Eigensolver parameters
-  int numBlocks = 3;
-  int maxRestarts = 100;
-  MT tol = 1.0e-6;
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
@@ -139,6 +174,8 @@ int main(int argc, char *argv[])
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "In Situ Restarting", insitu );
+  // MyPL.set( "Orthogonalization", "DGKS");
   //
   // Create the solver manager
   Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
@@ -156,7 +193,6 @@ int main(int argc, char *argv[])
   int numev = sol.numVecs;
 
   if (numev > 0) {
-
     std::ostringstream os;
     os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
@@ -173,8 +209,8 @@ int main(int argc, char *argv[])
 
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, normV );
-  
-    os << "Direct residual norms computed in BlockKrylovSchurComplex_test.exe" << endl
+
+    os << "Direct residual norms computed in Tpetra_BlockKrylovSchur_complex_lap_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
@@ -186,28 +222,23 @@ int main(int argc, char *argv[])
         testFailed = true;
       }
     }
-    if (verbose && MyPID==0) {
+    if (MyPID==0) {
       cout << endl << os.str() << endl;
     }
-
   }
-  
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
 
   if (testFailed) {
-    if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+    if (MyPID==0) {
+      cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;	
-  } 
+  if (MyPID==0) {
+    cout << "End Result: TEST PASSED" << endl;
+  }
   return 0;
 
-}	
+}

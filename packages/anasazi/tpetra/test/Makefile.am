@@ -27,7 +27,7 @@
 #@HEADER
 
 if BUILD_ANASAZI_TPETRA
-TPETRA_TEST_SUBDIRS = MVOPTester BlockKrylovSchur IRTR LOBPCG BlockDavidson
+TPETRA_TEST_SUBDIRS = MVOPTester BlockKrylovSchur IRTR LOBPCG BlockDavidson OrthoManager
 endif
 
 SUBDIRS = $(TPETRA_TEST_SUBDIRS)

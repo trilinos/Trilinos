@@ -2,6 +2,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -49,6 +50,10 @@ namespace {
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
   using Teuchos::CONJ_TRANS;
+  using Teuchos::SerialDenseMatrix;
+  using Teuchos::arrayView;
+  using std::copy;
+  using std::ostream_iterator;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -244,6 +249,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Multiply, Ordinal, Scalar )
   {
+    using Teuchos::View;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
@@ -263,6 +269,7 @@ namespace {
                 SZERO = ScalarTraits<Scalar>::zero();
     const Mag   MZERO = ScalarTraits<Mag>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
+    // deterministic input/output
     {
       MV mv3x2l(lmap3,2*ONE),
          mv2x3l(lmap2,3*ONE),
@@ -284,6 +291,48 @@ namespace {
       mv2x2l.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,MZERO);
       mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mv2x3l,mv3x2l,SZERO);
       mv3x3l.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,MZERO);
+    }
+    // case 1: C(local) = A^X(local) * B^X(local)  : four of these
+    // random input/output
+    {
+      ArrayView<Scalar> tmvView(Teuchos::null), sdmView(Teuchos::null);
+      Ordinal stride;
+      MV tmv3x2(lmap3,2*ONE),
+         tmv2x3(lmap2,3*ONE),
+         tmv2x2(lmap2,2*ONE),
+         tmv3x3(lmap3,3*ONE);
+      // setup serial dense matrices 
+      tmv3x2.extractView(tmvView,stride); SerialDenseMatrix<Ordinal,Scalar> sdm3x2(View,tmvView.getRawPtr(),stride,3*ONE,2*ONE);
+      tmv2x3.extractView(tmvView,stride); SerialDenseMatrix<Ordinal,Scalar> sdm2x3(View,tmvView.getRawPtr(),stride,2*ONE,3*ONE);
+      SerialDenseMatrix<Ordinal,Scalar> sdm2x2(2*ONE,2*ONE), sdm3x3(3*ONE,3*ONE);
+      // fill multivectors with ones (fills sdm3x3 and sdm2x3 as well, because of view semantics)
+      tmv3x2.random();
+      tmv2x3.random();
+      // test: perform MV multiply and SDM multiply, then check that answers are equivalent
+      {
+        tmv3x3.multiply(NO_TRANS,NO_TRANS,SONE,tmv3x2,tmv2x3,SZERO);
+        sdm3x3.multiply(NO_TRANS,NO_TRANS,SONE,sdm3x2,sdm2x3,SZERO);
+        tmv3x3.extractView(tmvView,stride); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+      }
+      {
+        tmv2x2.multiply(NO_TRANS,CONJ_TRANS,SONE,tmv2x3,tmv2x3,SZERO);
+        sdm2x2.multiply(NO_TRANS,CONJ_TRANS,SONE,sdm2x3,sdm2x3,SZERO);
+        tmv2x2.extractView(tmvView,stride); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+      }
+      {
+        tmv2x2.multiply(CONJ_TRANS,NO_TRANS,SONE,tmv3x2,tmv3x2,SZERO);
+        sdm2x2.multiply(CONJ_TRANS,NO_TRANS,SONE,sdm3x2,sdm3x2,SZERO);
+        tmv2x2.extractView(tmvView,stride); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+      }
+      {
+        tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,SONE,tmv2x3,tmv3x2,SZERO);
+        sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,SONE,sdm2x3,sdm3x2,SZERO);
+        tmv3x3.extractView(tmvView,stride); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+      }
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
@@ -550,6 +599,64 @@ namespace {
       TEST_ARRAY_ELE_EQUALITY( ncopy2, i, as<Scalar>(2) );
     }
     success &= local_success;
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, SingleVecNormalize, Ordinal, Scalar )
+  {
+    // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
+    // error turned out to be a neglected return in both implementations of update(), 
+    // after passing to buck to scale() in the case of alpha==0 or beta==0 or gamma=0
+    if (as<Scalar>(1.0) / as<Scalar>(3.0) == ScalarTraits<Scalar>::zero()) return;
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    const Ordinal NEGONE = ZERO - ONE;
+    const Magnitude MONE  = ScalarTraits<Magnitude>::one();
+    const Magnitude MZERO = ScalarTraits<Magnitude>::zero();
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a Map
+    const Ordinal indexBase = ZERO;
+    const Ordinal numLocal = as<Ordinal>(10);
+    const Ordinal numVectors = as<Ordinal>(6);
+    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform);
+    // create random MV
+    MV mv(map,numVectors);
+    mv.random();
+    // compute the norms
+    Array<Magnitude> norms(numVectors);
+    mv.norm2(norms());
+    for (Ordinal j=ZERO; j<numVectors; ++j) {
+      // get a view of column j, normalize it using update()
+      Array<Ordinal> ind(1,j);
+      RCP<MV> mvj = mv.subView(ind());
+      switch (j){
+      case 0:
+        mvj->scale( MONE/norms[j] );
+        break;
+      case 1:
+        mvj->update( MONE/norms[j], *mvj, MZERO );
+        break;
+      case 2:
+        mvj->update( MZERO        , *mvj, MONE/norms[j] );
+        break;
+      case 3:
+        mvj->update( MZERO        , *mvj, MONE/norms[j], *mvj, MZERO );
+        break;
+      case 4:
+        mvj->update( MONE/norms[j], *mvj, MZERO        , *mvj, MZERO );
+        break;
+      case 5:
+        mvj->update( MZERO        , *mvj, MZERO        , *mvj, MONE/norms[j] );
+        break;
+      }
+    }
+    mv.norm2(norms()); // should be all one now
+    Array<Magnitude> ones(numVectors,MONE);
+    TEST_COMPARE_FLOATING_ARRAYS(norms,ones,ScalarTraits<Magnitude>::eps()*as<Magnitude>(10.));
   }
 
 
@@ -916,7 +1023,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic             , ORDINAL, SCALAR ) \
@@ -934,12 +1041,14 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR )
+
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
+         /*UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)*/
      UNIT_TEST_GROUP_ORDINAL(int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
