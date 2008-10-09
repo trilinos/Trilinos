@@ -60,12 +60,15 @@ namespace Epetra {
 class ZoltanLibClass : public Library {
 public:
 
-  ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int inputType=unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-	    Teuchos::RCP<CostDescriber> costs);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix);
+	    Teuchos::RCP<CostDescriber> costs, int inputType=unspecified_input_);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int inputType=unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-	    Teuchos::RCP<CostDescriber> costs);
+	    Teuchos::RCP<CostDescriber> costs, int inputType=unspecified_input_);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType=unspecified_input_);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
+            Teuchos::RCP<const Epetra_MultiVector> weights, int inputType=unspecified_input_);
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,

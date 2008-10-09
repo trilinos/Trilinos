@@ -40,6 +40,7 @@
 class Epetra_BlockMap;
 class Epetra_CrsGraph;
 class Epetra_RowMatrix;
+class Epetra_MultiVector;
 
 namespace Isorropia {
 
@@ -59,26 +60,55 @@ namespace ZoltanLib {
 /** QueryObject is a class that contains the query functions required
     by the Zoltan library.
 
-    These fuctions (actually QueryObject methods), when called by Zoltan,
-    provide the objects to be balanced (the row IDs), the graph or hypergraph
-    edges, and object and edge weights.
-
     These methods are not part of the Isorropia API (except to Zoltan).
     They are called by Isorropia itself and by Zoltan.
  */
 class QueryObject
 {
+  /** The CrsGraph.  If supplied, we will perform graph or hypergraph partitioning.
+    */
   Teuchos::RCP<const Epetra_CrsGraph> graph_;
+
+  /** The CrsMatrix.  If supplied, we will perform graph or hypergraph partitioning.
+    */
   Teuchos::RCP<const Epetra_RowMatrix> matrix_;
+
+  /** The MultiVector containing 1, 2 or 3 dimensional coordinates.  If
+      supplied, we will perform geometric partitioning.
+    */
+  Teuchos::RCP<const Epetra_MultiVector> coords_;
+
+  /** The graph or matrix row map
+    */
   const Epetra_BlockMap *rowMap_;
+
+  /** The graph or matrix column map
+    */
   const Epetra_BlockMap *colMap_;
 
+  /** The multivector map
+    */
+  const Epetra_BlockMap *map_;
+
+  /** The CostDescriber contains optional vertex and/or edge weights for
+      graph and hypergraph partitioning.
+    */
+
   Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs_;
+
+  /** The MultiVector contains optional object (point) weights for
+      geometric partitioning.  Zoltan currently will use only the
+      weights in the first vector (1 dimensional point weights).
+    */
+
+  Teuchos::RCP<const Epetra_MultiVector> weights_;
 
   std::map<int,int> procmap_;
   std::set<int> graph_self_edges_;
 
-  const std::string &inputType_;
+  /** haveGraph is true if we have CrsGraph, and not a CrsMatrix or
+      a MultiVector.
+    */
   const bool haveGraph_;
   int myProc_;
   int base_;
@@ -131,7 +161,13 @@ class QueryObject
   /** to do
    */
   void My_HG_Edge_Weights(int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
-	ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr);
+        ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr);
+
+  int My_Number_Geom(int *ierr);
+
+  void My_Geom_Multi(int num_gid_entries, int num_lid_entries,
+        int num_obj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int num_dim,
+        double *geom_vec, int *ierr);
 
  public:
 
@@ -139,18 +175,35 @@ class QueryObject
    */
   QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
 	       Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
-	       const std::string &inputType);
+	       int inputType);
 
 
   /** Constructor
    */
   QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
 	       Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
-	       const std::string &inputType);
+	       int inputType);
+
+  /** Constructor
+   */
+  QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
+               Teuchos::RCP<const Epetra_MultiVector> weights);
 
   /** Destructor
    */
   virtual ~QueryObject();
+
+  /** Object which queries describe - does it represent a graph,
+      a hypergraph, or a collection of geometric coordinates?
+    */
+
+  static const int hgraph_input_ = 1;
+  static const int hgraph2d_finegrain_input_ = 2;
+  static const int graph_input_ = 3;
+  static const int geometric_input_ = 4;
+  static const int unspecified_input_ = 5;
+
+  int input_type_;
 
   /** to do
    */
@@ -210,8 +263,14 @@ class QueryObject
   /** to do
    */
   static void HG_Edge_Weights(void * data,
-	int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
-	ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr);
+        int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
+        ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr);
+
+  static int Number_Geom(void *data, int *ierr);
+
+  static void Geom_Multi(void *data, int num_gid_entries, int num_lid_entries,
+        int num_obj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int num_dim,
+        double *geom_vec, int *ierr);
 
 };
 

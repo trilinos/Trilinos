@@ -258,11 +258,17 @@ partition(bool force_repartitioning)
 
   // Determine whether graph input or matrix input is used
   if (input_graph_.get() != 0)
-    lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
+    lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_, 
+             Library::hgraph2d_finegrain_input_));
   else
-    lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
+    lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_, 
+             Library::hgraph2d_finegrain_input_));
 
-  lib_->repartition(paramlist_, properties_, exportsSize_, imports_);
+
+  std::string zoltan("ZOLTAN");
+  Teuchos::ParameterList &sublist = paramlist_.sublist(zoltan);
+
+  lib_->repartition(sublist, properties_, exportsSize_, imports_);
 
   computeNumberOfProperties();
 

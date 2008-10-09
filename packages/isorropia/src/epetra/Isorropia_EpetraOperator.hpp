@@ -175,6 +175,13 @@ public:
 	   Teuchos::RCP<CostDescriber> costs,
 	   const Teuchos::ParameterList& paramlist);
 
+  Operator(Teuchos::RCP<const Epetra_MultiVector> coords,
+	   const Teuchos::ParameterList& paramlist);
+
+  Operator(Teuchos::RCP<const Epetra_MultiVector> coords,
+           Teuchos::RCP<const Epetra_MultiVector> weights,
+	   const Teuchos::ParameterList& paramlist);
+
   /** Destructor */
   virtual ~Operator();
 
@@ -235,8 +242,9 @@ protected:
   Teuchos::RCP<const Epetra_BlockMap> input_map_;
   Teuchos::RCP<const Epetra_CrsGraph> input_graph_;
   Teuchos::RCP<const Epetra_RowMatrix> input_matrix_;
+  Teuchos::RCP<const Epetra_MultiVector> input_coords_;
   Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs_;
-  Teuchos::RCP<Epetra_Vector> weights_;
+  Teuchos::RCP<const Epetra_MultiVector> weights_;
 
   Teuchos::ParameterList paramlist_;
 

@@ -58,6 +58,9 @@ namespace ZoltanLib {
 
 static int me = 0;
 
+//TODO do we need to add these functions for geometric partitioning? 
+// Are these being used?
+
 int
 repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 	    Teuchos::RefCountPtr<const Isorropia::Epetra::CostDescriber> costs,
@@ -66,17 +69,17 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
             std::map<int,int>& exports,
             std::map<int,int>& imports)
 {
-  bool isHypergraph = true;
+  int inputType = QueryObject::hgraph_input_;
   std::string lb_method_str("LB_METHOD");
   if (paramlist.isParameter(lb_method_str)){
     std::string lb_meth = paramlist.get(lb_method_str, "HYPERGRAPH");
     if (lb_meth == "GRAPH"){
-      isHypergraph = false;
+      inputType = QueryObject::graph_input_;
     }
   }
 
   Teuchos::RefCountPtr<QueryObject> queryObject = 
-      Teuchos::rcp(new QueryObject(input_graph, costs, isHypergraph));
+      Teuchos::rcp(new QueryObject(input_graph, costs, inputType));
 
   const Epetra_Comm &ecomm = input_graph->RowMap().Comm();
 #ifdef HAVE_MPI
@@ -99,17 +102,17 @@ repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
             std::map<int,int>& exports,
             std::map<int,int>& imports)
 {
-  bool isHypergraph = true;
+  int inputType = QueryObject::hgraph_input_;
   std::string lb_method_str("LB_METHOD");
   if (paramlist.isParameter(lb_method_str)){
     std::string lb_meth = paramlist.get(lb_method_str, "HYPERGRAPH");
     if (lb_meth == "GRAPH"){
-      isHypergraph = false;
+      inputType = QueryObject::graph_input_;
     }
   }
 
   Teuchos::RefCountPtr<QueryObject> queryObject = 
-    Teuchos::rcp(new QueryObject(input_matrix, costs, isHypergraph));
+    Teuchos::rcp(new QueryObject(input_matrix, costs, inputType));
 
   const Epetra_Comm &ecomm = input_matrix->RowMatrixRowMap().Comm();
 #ifdef HAVE_MPI

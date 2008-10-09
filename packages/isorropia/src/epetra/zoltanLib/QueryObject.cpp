@@ -49,22 +49,21 @@ namespace Epetra {
 namespace ZoltanLib{
 
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
-			  Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
-			  const std::string &inputType)
+	   Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
+                                     int inputType) 
   : graph_(graph),
-    matrix_(0),
     rowMap_(&(graph->RowMap())),
     colMap_(&(graph->ColMap())),
     costs_(costs),
-    inputType_(inputType),
-    haveGraph_(true)
+    haveGraph_(true) ,
+    input_type_(inputType) 
 {
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
   int rc = 0;
+ 
+  if (input_type_ == graph_input_){
 
-  if (inputType == "GRAPH" )
-  {
     // graph queries need to know processes owning my column entries
     fill_procmap();
 
@@ -93,21 +92,20 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
 }
 
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
-			  Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
-			  const std::string &inputType)
-  : graph_(0),
-    matrix_(matrix),
+	     Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
+                                 int inputType) 
+  : matrix_(matrix),
     rowMap_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
     colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
     costs_(costs),
-    inputType_(inputType),
-    haveGraph_(false)
+    haveGraph_(false),
+    input_type_(inputType) 
 {
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
-  if (inputType == "GRAPH")
-  {
+  if (input_type_ == graph_input_){
+
     // graph queries need to know processes owning my column entries
     fill_procmap();
 
@@ -130,6 +128,21 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
       }
     }
   }
+  else{
+    input_type_ = hgraph_input_;
+  }
+}
+
+QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
+                          Teuchos::RCP<const Epetra_MultiVector> weights)
+  : coords_(coords),
+    weights_(weights),
+    map_(&(coords->Map())),
+    haveGraph_(false)
+{
+  myProc_ = map_->Comm().MyPID();
+  base_ = map_->IndexBase();
+  input_type_ = geometric_input_;
 }
 
 QueryObject::~QueryObject()
@@ -297,8 +310,37 @@ void QueryObject::HG_Edge_Weights(void * data,
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
-    zq->My_HG_Edge_Weights(num_gid_entries, num_lid_entries, num_edges,
-	 edge_weight_dim, edge_GID, edge_LID, edge_weights, ierr);
+    zq->My_HG_Edge_Weights(num_gid_entries, num_lid_entries, num_edges, 
+         edge_weight_dim, edge_GID, edge_LID, edge_weights, ierr);
+  }
+  else{
+    *ierr = ZOLTAN_FATAL;
+  }
+}
+
+int QueryObject::Number_Geom(void *data, int *ierr)
+{
+  int dim=0;
+  QueryObject *zq = (QueryObject *)data;
+
+  if (zq){
+    dim = zq->My_Number_Geom(ierr);
+  }
+  else{
+    *ierr = ZOLTAN_FATAL;
+  }
+  return dim;
+}
+
+void QueryObject::Geom_Multi(void *data, int num_gid_entries, int num_lid_entries,
+        int num_obj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int num_dim,
+        double *geom_vec, int *ierr)
+{
+  QueryObject *zq = (QueryObject *)data;
+
+  if (zq){
+    zq->My_Geom_Multi(num_gid_entries, num_lid_entries,
+        num_obj, gids, lids, num_dim, geom_vec, ierr);
   }
   else{
     *ierr = ZOLTAN_FATAL;
@@ -311,15 +353,10 @@ int QueryObject::My_Number_Objects(int * ierr )
 {
   *ierr = ZOLTAN_OK;
 
-#if DEBUG_QUERIES
-  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
-    std::cout << myProc_ << ": in My_Number_Objects, return " << rowMap_->NumMyElements() << std::endl;
+  if (input_type_ == geometric_input_){
+    return coords_->MyLength();
   }
-#endif
-
-  // if statement for now, maybe set function pointer for different function instead
-  if(inputType_ == "HGRAPH2D_FINEGRAIN")
-  {
+  else if (input_type_ == hgraph2d_finegrain_input_){
     if (!haveGraph_)
     {
       return matrix_->NumMyNonzeros();
@@ -329,8 +366,9 @@ int QueryObject::My_Number_Objects(int * ierr )
       return graph_->NumMyNonzeros();
     }
   }
-
-  return rowMap_->NumMyElements();
+  else{
+    return rowMap_->NumMyElements();  // graph or hypergraph
+  }
 }
 
 void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
@@ -338,45 +376,46 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 		  int weight_dim, float * object_weights, int * ierr )
 {
   *ierr = ZOLTAN_OK;
+  int ngids = 0;
 
-  int numRows = rowMap_->NumMyElements();
-
-  if (numRows < 1){
-#if DEBUG_QUERIES
-    if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
-      std::cout << myProc_ << ": in My_Object_List, return due to no objects" << std::endl;
-    }
-#endif
-    return;
+  if (input_type_ == geometric_input_){
+    ngids = map_->NumMyElements();
+    map_->MyGlobalElements( ((int *) global_ids) );
   }
-
-  // if statement for now, maybe set function pointer for different function instead
-  if(inputType_ == "HGRAPH2D_FINEGRAIN")
+  else if ((input_type_ == hgraph_input_) || (input_type_ == graph_input_)){
+    ngids = rowMap_->NumMyElements();
+    rowMap_->MyGlobalElements( ((int *) global_ids) );
+  }
+  else if(input_type_ == hgraph2d_finegrain_input_)
   {
+    // if statement for now, maybe set function pointer for different function instead
+
+    int numRows = rowMap_->NumMyElements();
+
     object_weights = 0;
 
     if (!haveGraph_) //matrix
     {
-      int globIDindx = 0;
+      int ngids = 0;
       for (int rowNum=0; rowNum<numRows; rowNum++)
       {
-	int rowSize;
-	matrix_->NumMyRowEntries(rowNum,rowSize);
+        int rowSize;
+        matrix_->NumMyRowEntries(rowNum,rowSize);
 
-	//MMW need to make this memory allocation more efficient
-	int *tmprowCols = new int[rowSize];
-	double *tmprowVals = new double[rowSize];
-	int numEntries;
+        //MMW need to make this memory allocation more efficient
+        int *tmprowCols = new int[rowSize];
+        double *tmprowVals = new double[rowSize];
+        int numEntries;
 
-	matrix_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowVals, tmprowCols);
+        matrix_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowVals, tmprowCols);
 
-	for(int colIndx=0; colIndx<rowSize; colIndx++)
-	{
-	  global_ids[globIDindx] = rowMap_->GID(rowNum);
-	  globIDindx++;
-	  global_ids[globIDindx]= colMap_->GID(tmprowCols[colIndx]);
-	  globIDindx++;
-	}
+        for(int colIndx=0; colIndx<rowSize; colIndx++)
+        {
+          global_ids[ngids] = rowMap_->GID(rowNum);
+          ngids++;
+          global_ids[ngids]= colMap_->GID(tmprowCols[colIndx]);
+          ngids++;
+        }
 
 	delete [] tmprowCols;
 	delete [] tmprowVals;
@@ -384,79 +423,84 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     }
     else // graph
     {
-      int globIDindx = 0;
+      int ngids = 0;
       for (int rowNum=0; rowNum<numRows; rowNum++)
       {
-	int rowSize;
-	rowSize = graph_->NumMyIndices(rowNum);
+        int rowSize;
+        rowSize = graph_->NumMyIndices(rowNum);
 
-	int *tmprowCols = new int[rowSize];
-	int numEntries;
+        int *tmprowCols = new int[rowSize];
+        int numEntries;
 
-	graph_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowCols);
+        graph_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowCols);
 
-	for(int colIndx=0;colIndx<rowSize;colIndx++)
-	{
-	  global_ids[globIDindx] = rowMap_->GID(rowNum);
-	  globIDindx++;
-	  global_ids[globIDindx]= colMap_->GID(tmprowCols[colIndx]);
-	  globIDindx++;
-	}
+        for(int colIndx=0;colIndx<rowSize;colIndx++)
+        {
+          global_ids[ngids] = rowMap_->GID(rowNum);
+          ngids++;
+          global_ids[ngids]= colMap_->GID(tmprowCols[colIndx]);
+          ngids++;
+        }
 
-	delete [] tmprowCols;
+        delete [] tmprowCols;
       }
     }
     return;
   } // fine-grain hypergraph case
 
-  rowMap_->MyGlobalElements( ((int *) global_ids) );
-  for (int i=0; i<numRows; i++)
-  {
+
+  if (ngids < 1){
+    return;
+  }
+
+  for (int i=0; i<ngids; i++){
     local_ids[i] = i;
   }
 
-  if ((weight_dim >= 1) && costs_->haveVertexWeights()){
-    std::map<int, float> weightMap;
-    std::map<int, float>::iterator curr;
-    std::map<int, float>::iterator end = weightMap.end();
-
-    int mapSize = costs_->getVertexWeights(weightMap);
-    if (mapSize != numRows){
-      *ierr = ZOLTAN_FATAL;
-      std::cout << "Proc:" << myProc_ << " Error: ";
-      std::cout << "QueryObject::My_Object_List, number of vertex weights" << std::endl;
-      return;
-    }
-    for (int i=0; i < numRows; i++){
-      curr = weightMap.find(global_ids[i]);
-      if (curr == end){
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_Object_List, missing vertex weight" << std::endl;
-	return;
+  if (weight_dim >= 1){          // Note we only supply 1-D weights
+    float *to_wgts = object_weights;
+    if (input_type_ == geometric_input_){
+      double *wgts=NULL;
+      int ld=0;
+      if (weights_.get() && (weights_->NumVectors() > 0)){
+        weights_->ExtractView(&wgts, &ld);
+        if (ld < ngids){
+          *ierr = ZOLTAN_FATAL;
+          std::cerr << "Proc:" << myProc_ << " Error: ";
+          std::cerr << "My_Object_List: not enough object weights" << std::endl;
+          return;
+        }
+        for (int i=0; i < ngids; i++){
+          *to_wgts= static_cast<float>(wgts[i]);
+          to_wgts += weight_dim;
+        }
       }
-      object_weights[i] = curr->second;
+    }
+    else if (costs_->haveVertexWeights()){
+      std::map<int, float> weightMap;
+      std::map<int, float>::iterator curr;
+      std::map<int, float>::iterator end = weightMap.end();
+  
+      int mapSize = costs_->getVertexWeights(weightMap);
+      if (mapSize != ngids){
+        *ierr = ZOLTAN_FATAL;
+        std::cout << "Proc:" << myProc_ << " Error: ";
+        std::cout << "QueryObject::My_Object_List, number of vertex weights" << std::endl;
+        return;
+      }
+      for (int i=0; i < ngids; i++){
+        curr = weightMap.find(global_ids[i]);
+        if (curr == end){
+          *ierr = ZOLTAN_FATAL;
+          std::cout << "Proc:" << myProc_ << " Error: ";
+          std::cout << "QueryObject::My_Object_List, missing vertex weight" << std::endl;
+          return;
+        }
+        *to_wgts = curr->second;
+        to_wgts += weight_dim;
+      }
     }
   }
-#if DEBUG_QUERIES
-  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
-    std::ostringstream msg;
-
-    msg << myProc_ << ": in My_Object_List, num_obj " << numRows << ", weight_dim " << weight_dim;
-    msg << std::endl;
-
-    for (int i=0; i<numRows; i++){
-      if (weight_dim){
-	msg << "   obj gid " << global_ids[i] << ", weight " << object_weights[i] << std::endl;
-      }
-      else{
-	msg << "   obj gid " << global_ids[i] << std::endl;
-      }
-    }
-    std::string s = msg.str();
-    std::cout << s;
-  }
-#endif
   return;
 }
 
@@ -506,18 +550,6 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
       }
     }
   }
-#if DEBUG_QUERIES
-  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
-    std::ostringstream msg;
-
-    msg << myProc_ << ": in My_Number_Edges_Multi, num_objs " << num_obj << std::endl;
-    for (int i=0; i<num_obj; i++){
-      msg << "   obj gid " << global_ids[i] << ", num edges " << num_edges[i] << std::endl;
-    }
-    std::string s = msg.str();
-    std::cout << s;
-  }
-#endif
   return;
 }
 
@@ -533,11 +565,6 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
   *ierr = ZOLTAN_OK;
 
   if (num_obj < 1) {
-#if DEBUG_QUERIES
-    if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
-      std::cout << myProc_ << ": in My_Edge_List_Multi, return due to no objects" << std::endl;
-    }
-#endif
     return;
   }
 
@@ -624,37 +651,17 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
       *nborProc++ = procIter->second;        // Process owning neighbor
 
       if (use_weights){
-	wgtIter = wgtMap.find(gids[j]);
-	if (wgtIter == wgtMap.end()){
-	  *ierr = ZOLTAN_FATAL;
-	  std::cout << "Proc:" << myProc_ << " Error: ";
-	  std::cout << "QueryObject::My_Edge_List_Multi, weight map" << std::endl;
-	  break;
-	}
-	*wgt++ = (float)wgtIter->second;    // edge weight
+        wgtIter = wgtMap.find(gids[j]); 
+        if (wgtIter == wgtMap.end()){
+          *ierr = ZOLTAN_FATAL;
+          std::cout << "Proc:" << myProc_ << " Error: ";
+          std::cout << "QueryObject::My_Edge_List_Multi, weight map" << std::endl;
+          break;
+        }
+        *wgt++ = (float)wgtIter->second;    // edge weight
       }
     }
   }
-#if DEBUG_QUERIES
-  if ((DEBUG_PROC < 0) || (myProc_ == DEBUG_PROC)){
-    std::ostringstream msg;
-
-    int k = 0;
-    msg << myProc_ << ": in My_Edge_List_Multi, num_objs " << num_obj << std::endl;
-    for (int i=0; i<num_obj; i++){
-      msg << "   obj gid " << global_ids[i] << ", num edges " << num_edges[i] << std::endl;
-      for (int j=0; j<num_edges[i]; j++,k++){
-	msg << "      n'bor gid " << neighbor_global_ids[k] << ", n'bor proc " << neighbor_procs[k];
-	for (int w=0; w < weight_dim ; w++) {
-	  msg << " edge weight " << edge_weights[k*weight_dim + w];
-	}
-	msg << std::endl;
-      }
-    }
-    std::string s = msg.str();
-    std::cout << s;
-  }
-#endif
   if (gids) delete [] gids;
   if (tmp) delete [] tmp;
 
@@ -669,23 +676,7 @@ void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int 
 
   *format = ZOLTAN_COMPRESSED_VERTEX;   // We will return row (vertex) lists
 
-  if(inputType_ == "HGRAPH2D_FINEGRAIN")
-  {
-    if (!haveGraph_)
-    {
-      *num_lists = matrix_->NumMyNonzeros();
-      *num_pins = 2*matrix_->NumMyNonzeros();
-    }
-    else
-    {
-      *num_lists = graph_->NumMyNonzeros();
-      *num_pins = 2*graph_->NumMyNonzeros();
-    }
-    return;
-  }
-
-  if (haveGraph_)
-  {
+  if (haveGraph_){
     *num_lists = graph_->NumMyRows();       // Number of rows
     *num_pins = graph_->NumMyNonzeros();    // Total nonzeros in these rows
   }
@@ -693,13 +684,6 @@ void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int 
     *num_lists = matrix_->NumMyRows();       // Number of rows
     *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
   }
-
-#if DEBUG_QUERIES
-  if (myProc_ == DEBUG_PROC){
-    std::cout << "in My_HG_Size_CS" << std::endl;
-    std::cout << "  num_lists and num_pins " << *num_lists << " " << *num_pins << std::endl;
-  }
-#endif
 
   return;
 }
@@ -714,101 +698,7 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
 
   *ierr = ZOLTAN_OK;
 
-
-  /////////////////////////////////////////////////////////////
-  if(inputType_ == "HGRAPH2D_FINEGRAIN")
-  {
-    int vIdx=0;
-    vtxedge_ptr[0] = 0;
-    int nzCnt = 1;
-    int gNumRows;
-
-    if ((format != ZOLTAN_COMPRESSED_VERTEX) ||  (num_gid_entries != 2) )
-    {
-      *ierr = ZOLTAN_FATAL;
-      std::cout << "Proc:" << myProc_ << " Error: ";
-      std::cout << "QueryObject::My_HG_CS, bad arguments" << std::endl;
-      return;
-    }
-
-
-    int maxrow;
-    int *tmpCols;
-
-    if (haveGraph_)
-    {
-      gNumRows = graph_->NumGlobalRows();
-      maxrow=graph_->MaxNumIndices();
-    }
-    else
-    {
-      gNumRows = matrix_->NumGlobalRows();
-      maxrow = matrix_->MaxNumEntries();
-      tmp = new double [maxrow];
-      if (!tmp)
-      {
-	*ierr = ZOLTAN_MEMERR;
-	return;
-      }
-    }
-
-    tmpCols = new int[maxrow];
-    if (!tmpCols)
-    {
-      *ierr = ZOLTAN_MEMERR;
-      return;
-    }
-
-    for (int rownum=0; rownum<num_row_or_col; rownum++)
-    {
-
-      if (haveGraph_)
-      {
-	rc = graph_->ExtractMyRowCopy(rownum, num_pins, num_indices, tmpCols);
-      }
-      else
-      {
-	rc = matrix_->ExtractMyRowCopy(rownum, num_pins, num_indices, tmp, tmpCols);
-      }
-      if (rc != 0)
-      {
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_HG_CS, extracting row" << std::endl;
-	break;
-      }
-
-      for(int nzIdx=0;nzIdx < num_indices; nzIdx++)
-      {
-	vtxedge_GID[vIdx] = rowMap_->GID(rownum);
-	vIdx++;
-	vtxedge_GID[vIdx] = colMap_->GID(tmpCols[nzIdx]);
-	vIdx++;
-
-	// Each vertex belongs to exactly 2 hyperedges.
-	// Row hyperedge
-	vtxedge_GID[vtxedge_ptr[nzCnt]] = rowMap_->GID(rownum);
-	// Column hyperedge
-	vtxedge_GID[vtxedge_ptr[nzCnt]+1] = gNumRows + colMap_->GID(tmpCols[nzIdx]);
-
-	vtxedge_ptr[nzCnt] = vtxedge_ptr[nzCnt-1] + 2;
-	nzCnt++;
-      }
-
-    }
-
-    if (tmp) delete [] tmp;
-    if (tmpCols) delete [] tmpCols;
-
-    return;
-
-  }
-  /////////////////////////////////////////////////////////////
-
-
-
-  if (haveGraph_)
-  {
+  if (haveGraph_){
     npins = graph_->NumMyNonzeros();
   }
   else{
@@ -867,26 +757,6 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     pin_start_pos += num_indices;
     npins -= num_indices;
   }
-#if DEBUG_QUERIES
-  if (myProc_ == DEBUG_PROC){
-    std::cout << "in My_HG_CS" << std::endl;
-    std::cout << "  num rows and num pins " << num_row_or_col << " " << num_pins << std::endl;
-    int idx = 0;
-    int len = 0;
-    for (int i=0; i < num_row_or_col; i++){
-      if (i == (num_row_or_col - 1)) len = num_pins - idx;
-      else                           len = vtxedge_ptr[i+1] - vtxedge_ptr[i];
-
-      std::cout <<   "  vtx/row " << vtxedge_GID[i] << std::endl;
-      std::cout <<   "    " ;
-      for (int j=0; j < len; j++){
-	std::cout << pin_GID[idx+j] << " ";
-      }
-      std::cout << std::endl;
-      idx += len;
-    }
-  }
-#endif
 
   if (tmp){
     delete [] tmp;
@@ -897,11 +767,6 @@ void QueryObject::My_HG_Size_Edge_Weights( int* num_edges, int* ierr)
 {
   *num_edges = costs_->getNumHypergraphEdgeWeights();
 
-#if DEBUG_QUERIES
- if (myProc_ == DEBUG_PROC){
-   std::cout << "in My_HG_Size_Edge_Weights " << *num_edges << std::endl;
- }
-#endif
   *ierr = ZOLTAN_OK;
 }
 
@@ -915,8 +780,8 @@ void QueryObject::My_HG_Edge_Weights(
 
   if (num_edges != costs_->getNumHypergraphEdgeWeights()){
     *ierr = ZOLTAN_FATAL;
-    std::cout << "Proc:" << myProc_ << " Error: ";
-    std::cout << "QueryObject::My_HG_Edge_Weights, bad arguments" << std::endl;
+    std::cerr << "Proc:" << myProc_ << " Error: ";
+    std::cerr << "QueryObject::My_HG_Edge_Weights, bad arguments" << std::endl;
     return;
   }
 
@@ -926,15 +791,63 @@ void QueryObject::My_HG_Edge_Weights(
     }
   }
 
-#if DEBUG_QUERIES
-  if (myProc_ == DEBUG_PROC){
-    std::cout << "in My_HG_Edge_Weights, num edges " << num_edges << std::endl;
-    for (int j=0; j < num_edges; j++)
-      std::cout << "Edge " << edge_GID[j] << " (local " << edge_LID[j] << " weight " << edge_weights[j] << std::endl;
-}
-#endif
-
   costs_->getHypergraphEdgeWeights(num_edges, (int *)edge_GID, edge_weights);
+}
+
+// member geometric query functions
+
+int QueryObject::My_Number_Geom(int *ierr)
+{
+  int dim = 0;
+  *ierr = ZOLTAN_FATAL;
+
+  if (coords_.get()){
+    dim = coords_->NumVectors();
+    *ierr = ZOLTAN_OK;
+  }
+  else{
+    std::cerr << "in My_Number_Geom, no MultiVector present" << std::endl;
+  }
+
+  return dim;
+}
+
+void QueryObject::My_Geom_Multi(int num_gid_entries, int num_lid_entries,
+        int num_obj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int num_dim,
+        double *geom_vec, int *ierr)
+{
+  if ((num_obj < 1) || (num_dim < 1)){
+    *ierr = ZOLTAN_OK;
+    return;
+  }
+
+  if (coords_.get() && 
+      (coords_->MyLength() >= num_obj) && 
+      (coords_->NumVectors() >= num_dim)){
+
+    double *coords;
+    int stride;
+
+    coords_->ExtractView(&coords, &stride);
+
+    double **v = new double * [num_dim];
+    for (int j=0; j < num_dim; j++){
+      v[j] = coords + (stride * j);
+    }
+
+    for (int i=0; i<num_obj; i++){
+      for (int j=0; j<num_dim; j++){
+        *geom_vec++ = v[j][i];
+      }
+    }
+
+    delete [] v;
+    *ierr = ZOLTAN_OK;
+  }
+  else{
+    std::cerr << "Error in My_Geom_Multi" << std::endl;
+    *ierr = ZOLTAN_FATAL;
+  }
 }
 
 } // end namespace ZoltanLib

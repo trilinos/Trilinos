@@ -595,6 +595,23 @@ Teuchos::RCP<Epetra_LinearProblem>
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
 
+Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords,
+                   const Teuchos::ParameterList& paramlist);
+
+Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords,
+                     const Epetra_MultiVector &weights,
+                   const Teuchos::ParameterList& paramlist);
+
+
+Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords);
+
+Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords,
+                     const Epetra_MultiVector &weights);
+
 /** redistribute_rows() is an internal Isorropia function, not part
     of the API.
 
@@ -705,7 +722,7 @@ Teuchos::RCP<Epetra_Vector>
   nonzeros per row in the input_matrix. The returned vector will have
   the same size and distribution as input_matrix's row-map.
 */
-Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
+Epetra_MultiVector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
 
 /**  create_row_weights_nnz() is an internal Isorropia function, not
      part of the API.
@@ -714,7 +731,10 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
   nonzeros per row in the input_graph. The returned vector will have
   the same size and distribution as input_graph's row-map.
 */
-Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
+Epetra_MultiVector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
+
+Epetra_MultiVector* create_unit_weights(const Epetra_MultiVector& input_coords);
+
 
 /**  repartition() is an internal Isorropia function, not
      part of the API.
@@ -743,13 +763,10 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
 */
 int
 repartition(const Epetra_BlockMap& input_map,
-	    const Epetra_Vector& weights,
+	    const Epetra_MultiVector& weights,
 	    std::vector<int>& myNewElements,
 	    int& exportsSize,
 	    std::vector<int>& imports);
-//             std::vector<int>& myNewElements,
-//             std::map<int,int>& exports,
-//             std::map<int,int>& imports);
 
 /**  gather_all_proc_global_offsets() is an internal Isorropia function, not
      part of the API.
