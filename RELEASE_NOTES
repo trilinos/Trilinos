@@ -1,5 +1,308 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 9.0 Release Notes                                          #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling 
+technologies within an object-oriented software framework for the solution of 
+large-scale, complex multi-physics engineering and scientific problems. All 
+packages are self-contained, with the Trilinos top layer providing a common 
+look-and-feel and infrastructure.
+
+Packages:
+
+The version 9.0 general release contains 37 packages: Amesos, Anasazi, Aztecoo,
+Belos, Didasko, Epetra, Epetraext, Fei*, Galeri, Ifpack, Isorropia, Kokkos,
+Komplex, Loca, Meros, ML, Moertel, Moocho, New_Package, NOX, Pamgen*, Phalanx*,
+PhdMesh*, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, Stratimikos,
+Sundance*, Teuchos, ThreadPool*, Thyra, Trilinoscouplings, Triutils,
+WebTrilinos, and Zoltan*
+
+(* denotes packages that are being released as a part of Trilinos for the
+first time.)
+
+The limited release contains an additional 4 packages that are available in
+special situations by request. These are: Claps, Intrepid, RBGen, and Tpetra.
+
+More information:
+
+Trilinos website: http://trilinos.sandia.gov
+
+
+===============================================================================
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+
+Amesos
+
+(*) Amesos now includes Paraklete version 0.3.
+
+(*) Amesos 2.4 in Trilinos 9.0 is compatible with Tim Davis' SuiteSparse
+    version 3.0.0 (not the latest version).
+
+(*) Known bug: Paraklete does not currently work on 64-bit machines.
+
+-------------------------------------------------------------------------------
+
+Anasazi
+
+(*) The Anasazi package released in Trilinos 9.0 includes a new type of
+    eigensolver.
+
+(*) The IRTR solvers are implicit versions of the Riemannian Trust-Region
+    eigensolvers (Absil, Baker, Gallivan 2007).
+
+(*) Two implementations are provided, which balance computation/memory
+    trade-offs via the ability to disable caching of operator applications.
+
+-------------------------------------------------------------------------------
+
+Epetra
+
+Epetra support for PETSc matrices: The Epetra_PETScAIJMatrix class is a
+lightweight wrapper class for encapsulating PETSc serial and parallel AIJ
+matrices. Its intended audience is PETSc users who would like to build and
+apply Trilinos preconditioners and solvers. This class derives from the
+Epetra_RowMatrix class.
+
+-------------------------------------------------------------------------------
+
+Isorropia
+
+Isorropia has expanded its scope from partitioning and load-balancing to
+include other algorithms for combinatorial scientific computing. The primary
+focus is still on partitioning and load-balancing of matrices and vectors.
+Version 3.0 includes a significant code refactoring compared to earlier
+versions to improve efficiency and robustness.
+
+(*) Isorropia now depends on Zoltan, which is available as a package in
+    Trilinos 9.0.  (Zoltan is automatically enabled by Isorropia.)
+
+(*) The default partitioning method for sparse matrices is Zoltan's hypergraph
+    partitioner, which is significantly better than the internal method.
+
+(*) New features: Graph/matrix coloring and graph/matrix ordering (nested
+    dissection).
+
+(*) Redesign of the class structure to support new features. An
+    Isorropia::Operator is the parent class of Partitioner, Colorer, and
+    Orderer.
+
+(*) Significant improvement in the efficiency (run time and memory usage) of
+    redistributing Epetra matrices due to improved memory allocation.
+
+(*) New redistribute_reverse() method in the Redistributor to support moving
+    vectors back and forth between two distributions.
+
+(*) When redistributing Epetra matrices, improved default choices for the maps.
+    The call to FillComplete() is now optional, allowing the application to
+    supply its own range and domain maps.
+
+(*) Several minor changes in interface to enforce more consistent naming
+    schemes, but version 3.0 is fully backwards compatible.
+
+-------------------------------------------------------------------------------
+
+Komplex
+
+The Komplex package includes a new class that provide equivalent real
+formulation capabilities to Epetra users called Komplex_LinearProblem.This is
+the newest capability and should be used if at all possible.
+Komplex_LinearProblem constructs an Epetra_LinearProblem from existing matrix
+and coefficient data. A real matrix of twice the dimension of the original
+complex-valued problem is explicitly constructed as an Epetra_CrsMatrix. Given
+this matrix and the user-supplied RHS (and possibly an initial guess), the
+Komplex_LinearProblem object is ready for use with any Trilinos solver and
+preconditioner.
+
+-------------------------------------------------------------------------------
+
+ML
+
+(*) New support for PETSc smoothers in the case when the fine grid matrix is
+    really a PETSc data structure.  This is meant to be used in conjunction
+    with the Epetra_PETScAIJMatrix class.
+
+(*) New use of MPI subcommunicators for direct solves with KLU on the coarsest
+    level.  This will mainly impact large scale simulations (>1K processors).
+
+(*) New restart capability to ensure behavior can be reproduced exactly from
+    solve to solve.
+
+(*) New interfaces to Zoltan's hypergraph repartioning algorithms.
+
+-------------------------------------------------------------------------------
+
+MOOCHO
+
+Mostly minor changes which include:
+
+(*) Added response-only DiagonalQuadraticResponseOnlyOpt exampled based on an
+    EpetraExt::ModelEvaluator.  This is to show users how to run MOOCHO on an
+    unconstrained problem in parallel.
+
+(*) Cleaned out some junk
+
+-------------------------------------------------------------------------------
+
+Phalanx
+
+Phalanx is a local field evaluation kernel specifically designed for general
+partial differential equation solvers.  The main goal of Phalanx is to
+decompose a complex problem into a number of simpler problems with managed
+dependencies to support rapid development and extensibility of the PDE code.
+Through the use of template metaprogramming concepts, Phalanx supports
+arbitrary user defined data types and evaluation types.  This allows for
+unprecedented flexibility for direct integration with user applications and
+provides extensive support for embedded technology such as automatic
+differentiation for sensitivity analysis and uncertainty quantification.
+
+-------------------------------------------------------------------------------
+
+RTOp
+
+Major refactoring of all code.
+
+(*) All interfaces in rtop/src/interfaces are now "memory safe" using Teuchos
+    memory management classes
+
+(*) Support code in rtop/src/support has been significantly changed to remove
+    duplication and bloat, provide for memory safely, and make it infinitely
+    easier to create simple RTOp subclasses.
+
+(*) All of the concrete RTOp classes in rtop/src/ops_lib have been updated.
+
+(*) All of the simpler RTOps now use a simple set of macros and provide good
+    examples for users on how to create their own RTOp classes.  This includes
+    very detailed unit tests for all of the code.
+
+(*) Old MPI junk that was not needed anymore was removed.
+
+(*) Removed SUNDIAL RTOp subclasses since these are not being used and there
+    was no unit tests for them.
+
+With few exceptions, all changes should be backward compatible for clients of
+the RTOpPack::RTOpT abstract interface (search for "deprecated" comments).
+
+-------------------------------------------------------------------------------
+
+Stratimikos
+
+Mostly minor changes which include:
+
+(*) Changed the name of Thyra::DefaultRealLinearSolverBuilder to
+    Stratimikos::DefaultLinearSolverBuilder.
+
+(*) Added some better unit tests, especially for adjoint solves.
+
+-------------------------------------------------------------------------------
+
+Teuchos
+
+The Teuchos package released in Trilinos 9.0 has some additional tools to
+assist users and developers with memory management and unit testing:
+
+(*) Memory Management Classes:  The suite of debug-checking memory management
+    classes has been extended to include the Ptr, ArrayView, and Tuple classes.
+    Together with the existing classes RCP, ArrayRCP, and Array, these form a
+    complete memory management system to replace all raw pointers to single
+    objects and contiguous arrays of value-type objects in all
+    application-level code.  For a few details on how these should be used, see:
+
+     http://www.cs.sandia.gov/~rabartl/ThyraCodingGuideLines.pdf
+
+(*) xUnit-like Unit Testing Infrastructure:  Full featured support for native
+    unit testing has been developed.  See examples in teuchos/test/UnitTest.
+
+-------------------------------------------------------------------------------
+
+Thyra
+
+(*) Added new templated Thyra::DefaultSerialDenseLinearOp[WithSolve]Factory
+    subclasses to allow use of LAPACK for solving linear systems using
+    Thyra::MultiVector objects as input.  This was mostly just to allow for
+    better, more independent unit tests.
+
+(*) Some refactorings to replace raw C++ pointers with safe Teuchos memory
+    management classes (but a lot of work still needs to be done here)
+
+(*) Removed the SUNDIALS RTOp wrappers since they no longer exist in RTOp
+
+(*) Changed from Thyra::ETransp to Thyra::EOpTransp to avoid doxygen conflicts
+    with Teuchos::ETransp.  A backward-compatible typedef to Thyra::ETransp
+    still exists to not break existing external code.
+
+With few exceptions, all changes should be backward compatible
+(search for "deprecated" comments).
+
+-------------------------------------------------------------------------------
+
+Zoltan
+
+The Zoltan Toolkit provides critical data-management services to a wide range
+of parallel applications.  Zoltan includes many utilities needed by
+unstructured and/or adaptive parallel applications. These utilities include
+
+  (*) a suite of dynamic load-balancing and parallel partitioning tools
+      (including geometric, hypergraph-based and graph-based algorithms) that
+      distribute data over sets of processors for balanced computation
+      with low interprocessor communication costs,
+  (*) data migration tools that simplify movement of data to new parts,
+  (*) parallel graph/matrix ordering algorithms for fill-reducing matrix
+      ordering, including interfaces to PT-Scotch (LaBRI/INRIA-Bordeaux) and
+      ParMETIS (U. Minnesota),
+  (*) parallel graph coloring including distance-1 and distance-2 coloring,
+  (*) distributed data directories that efficiently locate off-processor data,
+      and
+  (*) an unstructured communication package that greatly simplifies
+      interprocessor communication.
+
+Zoltan's native interface is object-oriented and easy-to-use;
+it enables Zoltan to be used by a wide range of different applications.
+Zoltan is designed to be flexible and extensible, so different algorithms
+can be used, compared and added easily.
+Zoltan has been used in particle simulations, finite element methods with
+adaptive mesh refinement, linear solvers and preconditioners, circuit
+simulations, crash simulations and contact detection, and
+biological cell simulations.
+
+The Zoltan toolkit was first released in 2001; this release is Zoltan v3.1.
+New features in Zoltan v3.1 include
+  (*) Graph/Matrix ordering interface to PT-Scotch, a high-quality graph
+      ordering and partitioning library from LaBRI/INRIA-Bordeaux;
+  (*) New matrix ordering interface that returns ordering information such as
+      permutations and separators to the application;
+  (*) New hypergraph partitioning options for inexpensively refining
+      partitions;
+  (*) Robustness improvements to Zoltan's parallel hypergraph partitioner and
+      repartitioner;
+  (*) New Autotools build environment;
+  (*) Serial, non-MPI builds enabled through the Autotools build environment;
+      and
+  (*) Tight integration with the Trilinos project, including Trilinos package
+      Isorropia, a matrix-based interface to Zoltan.
+
+Many applications use both Zoltan and Trilinos.  Zoltan's
+inclusion in Trilinos simplifies the configuration and build process for
+those applications.  It also enables tighter coupling between Trilinos
+packages that use Zoltan, such as the Isorropia package of Epetra-based
+interfaces to Zoltan's partitioning, ordering and coloring capabilities.
+
+Zoltan can still be built as a stand-alone toolkit separate from Trilinos,
+as backward compatibility with previous Zoltan releases has been maintained.
+
+Please visit the Zoltan Home Page (http://www.cs.sandia.gov/Zoltan) for
+more information on Zoltan.
+
+-------------------------------------------------------------------------------
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 8.0 Release Notes                                          #
 #                                                                             #
 ###############################################################################
