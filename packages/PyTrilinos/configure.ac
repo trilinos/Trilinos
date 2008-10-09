@@ -241,6 +241,20 @@ AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 AC_PREREQ(2.61)
 
 # ------------------------------------------------------------------------
+# Checks for extra flags
+# ------------------------------------------------------------------------
+# Check if --with-flags present, prepend any specs to FLAGS
+
+TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
+TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+if test "X$ac_cv_use_fortran" != "Xno"; then
+TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+fi
+TAC_ARG_WITH_LIBS
+TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
+
+# ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
 TAC_ARG_CONFIG_MPI

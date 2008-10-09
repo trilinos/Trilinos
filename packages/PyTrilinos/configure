@@ -1552,6 +1552,19 @@ Optional Packages:
                           Use the installation program INSTALL_PROGRAM rather
                           the default that is provided. For example
                           --with-install="/path/install -p"
+  --with-ccflags          additional CCFLAGS flags to be added: will prepend
+                          to CCFLAGS
+  --with-cxxflags         additional CXXFLAGS flags to be added: will
+                          prepend to CXXFLAGS
+  --with-cflags           additional CFLAGS flags to be added: will prepend
+                          to CFLAGS
+  --with-fflags           additional FFLAGS flags to be added: will prepend
+                          to FFLAGS
+  --with-libs             List additional libraries here. For example,
+                          --with-libs=-lsuperlu or
+                          --with-libs=/path/libsuperlu.a
+  --with-ldflags          additional LDFLAGS flags to be added: will prepend
+                          to LDFLAGS
   --with-mpi-compilers=PATH
                           use MPI compilers mpicc, mpif77, and mpicxx, mpic++
                           or mpiCC in the specified path or in the default
@@ -4225,6 +4238,123 @@ echo "${ECHO_T}$am_cv_prog_tar_ustar" >&6; }
 
 
 
+
+
+
+# ------------------------------------------------------------------------
+# Checks for extra flags
+# ------------------------------------------------------------------------
+# Check if --with-flags present, prepend any specs to FLAGS
+
+
+{ echo "$as_me:$LINENO: checking whether additional CCFLAGS flags should be added" >&5
+echo $ECHO_N "checking whether additional CCFLAGS flags should be added... $ECHO_C" >&6; }
+
+# Check whether --with-ccflags was given.
+if test "${with_ccflags+set}" = set; then
+  withval=$with_ccflags;
+CCFLAGS="${withval} ${CCFLAGS}"
+{ echo "$as_me:$LINENO: result: CCFLAGS = ${CCFLAGS}" >&5
+echo "${ECHO_T}CCFLAGS = ${CCFLAGS}" >&6; }
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
+
+
+
+{ echo "$as_me:$LINENO: checking whether additional CXXFLAGS flags should be added" >&5
+echo $ECHO_N "checking whether additional CXXFLAGS flags should be added... $ECHO_C" >&6; }
+
+# Check whether --with-cxxflags was given.
+if test "${with_cxxflags+set}" = set; then
+  withval=$with_cxxflags;
+CXXFLAGS="${withval} ${CXXFLAGS}"
+{ echo "$as_me:$LINENO: result: CXXFLAGS = ${CXXFLAGS}" >&5
+echo "${ECHO_T}CXXFLAGS = ${CXXFLAGS}" >&6; }
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
+
+
+
+{ echo "$as_me:$LINENO: checking whether additional CFLAGS flags should be added" >&5
+echo $ECHO_N "checking whether additional CFLAGS flags should be added... $ECHO_C" >&6; }
+
+# Check whether --with-cflags was given.
+if test "${with_cflags+set}" = set; then
+  withval=$with_cflags;
+CFLAGS="${withval} ${CFLAGS}"
+{ echo "$as_me:$LINENO: result: CFLAGS = ${CFLAGS}" >&5
+echo "${ECHO_T}CFLAGS = ${CFLAGS}" >&6; }
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
+
+
+if test "X$ac_cv_use_fortran" != "Xno"; then
+
+{ echo "$as_me:$LINENO: checking whether additional FFLAGS flags should be added" >&5
+echo $ECHO_N "checking whether additional FFLAGS flags should be added... $ECHO_C" >&6; }
+
+# Check whether --with-fflags was given.
+if test "${with_fflags+set}" = set; then
+  withval=$with_fflags;
+FFLAGS="${withval} ${FFLAGS}"
+{ echo "$as_me:$LINENO: result: FFLAGS = ${FFLAGS}" >&5
+echo "${ECHO_T}FFLAGS = ${FFLAGS}" >&6; }
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
+
+
+fi
+
+{ echo "$as_me:$LINENO: checking whether additional libraries are needed" >&5
+echo $ECHO_N "checking whether additional libraries are needed... $ECHO_C" >&6; }
+
+# Check whether --with-libs was given.
+if test "${with_libs+set}" = set; then
+  withval=$with_libs;
+LIBS="${withval} ${LIBS}"
+{ echo "$as_me:$LINENO: result: LIBS = ${LIBS}" >&5
+echo "${ECHO_T}LIBS = ${LIBS}" >&6; }
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
+
+
+
+
+{ echo "$as_me:$LINENO: checking whether additional LDFLAGS flags should be added" >&5
+echo $ECHO_N "checking whether additional LDFLAGS flags should be added... $ECHO_C" >&6; }
+
+# Check whether --with-ldflags was given.
+if test "${with_ldflags+set}" = set; then
+  withval=$with_ldflags;
+LDFLAGS="${withval} ${LDFLAGS}"
+{ echo "$as_me:$LINENO: result: LDFLAGS = ${LDFLAGS}" >&5
+echo "${ECHO_T}LDFLAGS = ${LDFLAGS}" >&6; }
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+
+fi
 
 
 
