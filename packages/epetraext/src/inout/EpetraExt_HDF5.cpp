@@ -1,11 +1,16 @@
 #include "EpetraExt_ConfigDefs.h"
+
+
 #ifdef HAVE_EPETRAEXT_HDF5
+
+
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#include "mpi.h"
+#  include "Epetra_MpiComm.h"
+#  include "mpi.h"
 #else
-#include "Epetra_SerialComm.h"
+#  include "Epetra_SerialComm.h"
 #endif
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Map.h"
@@ -1572,4 +1577,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
   H5Dclose(dataset_id);  
 //  H5Dclose(filespace_id);  
 }
-#endif
+
+
+#endif  // HAVE_EPETRAEXT_HDF5
+

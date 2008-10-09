@@ -38,6 +38,7 @@ SET( Trilinos_PACKAGES
  RTOp
  Epetra
  Triutils
+ EpetraExt
  #Anasazi
  RBGen
 )
