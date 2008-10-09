@@ -236,6 +236,7 @@ CrsMatrix_UnitTests_DEPENDENCIES = \
 CrsMatrix_UnitTests_LDADD = $(TPETRA_LIBS)
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)
 Dummy_SOURCES = Dummy
+EXTRA_DIST = west0067.rua  mhd1280b.cua
 all: all-am
 
 .SUFFIXES:

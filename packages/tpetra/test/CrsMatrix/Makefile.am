@@ -47,3 +47,6 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
 
 Dummy_SOURCES = Dummy
+
+EXTRA_DIST = west0067.rua  mhd1280b.cua
+ 
