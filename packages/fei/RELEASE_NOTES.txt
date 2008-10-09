@@ -469,7 +469,7 @@ July 7 2005: version 2.14.00
   - Fixed a bug in fei_Aztec_LinSysCore.cpp where dirichlet boundary-condition
     enforcement was assuming that the structure of the matrix is symmetric.
 
- ??? ?? ???? minor version 2.23.01
+ Oct 09 2008 minor version 2.23.01
   - Fixed a bug where fei::VectorSpace::getGlobalIndexOffsets would seg-fault
     if called before any initialization data had been input.
   - Fixed a bug in fei_Reducer.cpp where submatrix contributions were
