@@ -9,6 +9,9 @@
 /* Define to 1 if you have the <algo.h> header file. */
 #undef HAVE_ALGO_H
 
+/* Define to 1 if you have the <boost/mpl/at.hpp> header file. */
+#undef HAVE_BOOST_MPL_AT_HPP
+
 /* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
 

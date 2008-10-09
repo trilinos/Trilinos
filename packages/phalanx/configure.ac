@@ -323,9 +323,7 @@ TRILINOS_HEADER(sacado,Sacado_mpl_at.hpp,src/mpl)
 
 ## Require the Boost MPL Library headers only (don't need a check 
 ## for the actual library).
-
-# The command below fails to pull in --with-incdirs flags.  
-##AC_CHECK_HEADERS([boost/mpl/at.h],,AC_MSG_ERROR([[Cannot find the Boost MPL library.  Phalanx requires Boost be installed on your machine.  Use --with-incdirs=-I<DIR> to specify the install directory for Boost.]]))
+AC_CHECK_HEADERS([boost/mpl/at.hpp],,AC_MSG_ERROR([[Cannot find the Boost MPL library.  Phalanx requires Boost be installed on your machine.  Use --with-incdirs=-I<DIR> to specify the install directory for Boost.  For example: --with-incdirs="-I/home/rppawlo/Libs/Boost/boost_1_36_0"]]))
 
 ## Optionally require the TVMET Library headers only (don't need a check 
 ## for the actual library).
