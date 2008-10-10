@@ -84,7 +84,7 @@
 #endif
 
 #ifdef _MSC_VER 
-#  define TEUCHOS_ZERO_ITERATOR_CONVERSION
+#  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif
 
 #include <cstdio>

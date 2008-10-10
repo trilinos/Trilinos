@@ -50,10 +50,10 @@ class NullIteratorTraits {
 public:
   static Iter getNull()
   {
-#ifdef TEUCHOS_ZERO_ITERATOR_CONVERSION
-    return Iter(0);
-#else
+#ifdef TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
     return Iter();
+#else
+    return Iter(0);
 #endif
   }
 };
