@@ -1039,7 +1039,7 @@ Array<T> getArrayFromStringParameter(
   try {
     a = fromStringToArray<T>(arrayStr);
   }
-  catch( const InvalidArrayStringRepresentation &except ) {
+  catch( const InvalidArrayStringRepresentation&) {
     TEST_FOR_EXCEPTION_PURE_MSG(
       true, Exceptions::InvalidParameterValue
       ,"Error!  The parameter \""<<paramName<<"\"\n"

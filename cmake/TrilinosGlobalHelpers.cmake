@@ -124,12 +124,12 @@ MACRO(TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS PACKAGE_NAME)
 
   #MESSAGE("TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS: ${PACKAGE_NAME}")
 
-  SET( Trilinos_ENABLE_${PACKAGE_NAME} "" CACHE BOOL
-    "Enable the ${PACKAGE_NAME} package.")
-  SET( ${PACKAGE_NAME}_ENABLE_TESTS "" CACHE BOOL
-    "Build ${PACKAGE_NAME} tests." )
-  SET( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" CACHE BOOL
-    "Build ${PACKAGE} examples." )
+  SET( Trilinos_ENABLE_${PACKAGE_NAME} "" CACHE STRING
+    "Enable the ${PACKAGE_NAME} package.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide.")
+  SET( ${PACKAGE_NAME}_ENABLE_TESTS "" CACHE STRING
+    "Build ${PACKAGE_NAME} tests.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide." )
+  SET( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" CACHE STRING
+    "Build ${PACKAGE} examples.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide." )
 
 ENDMACRO()
 
@@ -164,8 +164,8 @@ ENDFUNCTION()
 
 MACRO(TRILINOS_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE PACKAGE_NAME OPTIONAL_DEP_PACKAGE)
 
-  SET( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE} "" CACHE BOOL
-    "Enable optional support for ${OPTIONAL_DEP_PACKAGE} in ${PACKAGE_NAME}" )
+  SET( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE} "" CACHE STRING
+    "Enable optional support for ${OPTIONAL_DEP_PACKAGE} in ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide" )
 
 ENDMACRO()
 

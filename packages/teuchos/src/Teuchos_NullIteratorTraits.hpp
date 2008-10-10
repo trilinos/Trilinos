@@ -48,7 +48,14 @@ namespace Teuchos {
 template<typename Iter>
 class NullIteratorTraits {
 public:
-  static Iter getNull() { return Iter(0); }
+  static Iter getNull()
+  {
+#ifdef TEUCHOS_ZERO_ITERATOR_CONVERSION
+    return Iter(0);
+#else
+    return Iter();
+#endif
+  }
 };
 
 

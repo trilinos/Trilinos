@@ -321,7 +321,8 @@ void PREFIX ZROT_F77(const int* n, std::complex<double>* dx, const int* incx, st
 double PREFIX ZASUM_F77(const int* n, const std::complex<double> x[], const int* incx);
 void PREFIX ZAXPY_F77(const int* n, const std::complex<double>* alpha, const std::complex<double> x[], const int* incx, std::complex<double> y[], const int* incy);
 void PREFIX ZCOPY_F77(const int* n, const std::complex<double> *x, const int* incx, std::complex<double> *y, const int* incy);
-std::complex<double> PREFIX ZDOT_F77(const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
+std::complex<double>
+PREFIX ZDOT_F77(const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
 double PREFIX ZNRM2_F77(const int* n, const std::complex<double> x[], const int* incx); 
 void PREFIX ZSCAL_F77(const int* n, const std::complex<double>* alpha, std::complex<double> *x, const int* incx);
 int PREFIX IZAMAX_F77(const int* n, const std::complex<double> *x, const int* incx);

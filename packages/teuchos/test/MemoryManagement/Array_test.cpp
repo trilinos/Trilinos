@@ -86,7 +86,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   {
     out << "\nInitializing data ...\n";
     for( int i = 0; i < n; ++i )
-      a[i] = i; // tests non-const operator[](i)
+      a[i] = as<T>(i); // tests non-const operator[](i)
   }
 
   {
@@ -117,7 +117,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     out << "\nTest default constructor ...\n";
     Array<T> a2;
     TEST_EQUALITY_CONST( as<int>(a2.size()), 0 );
-    TEST_EQUALITY_CONST( as<int>(a2.empty()), true );
+    TEST_EQUALITY_CONST( as<bool>(a2.empty()), true );
     TEST_EQUALITY_CONST( a2.getRawPtr(), 0 );
     TEST_EQUALITY_CONST( getConst(a2).getRawPtr(), 0 );
   }
@@ -315,7 +315,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     out << "\nTest push_back(x) ...\n";
     Array<T> a2;
     for ( int i = 0; i < n; ++i ) {
-      a2.push_back(i);
+      a2.push_back(as<T>(i));
       TEST_EQUALITY_CONST(a2.front(),as<T>(0));
       TEST_EQUALITY_CONST(getConst(a2).front(),as<T>(0));
       TEST_EQUALITY(a2.back(),as<T>(i));
@@ -337,7 +337,8 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     out << "\nTest insert(iter,x) ...\n";
     Array<T> a2;
     for ( int i = 0; i < n; ++i ) {
-      const typename Array<T>::iterator iter = a2.insert(a2.end(),i);
+      const typename Array<T>::iterator
+        iter = a2.insert(a2.end(),as<T>(i));
       TEST_EQUALITY(*iter,as<T>(i));
     }
     TEST_COMPARE_ARRAYS( a2, a );
@@ -363,7 +364,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     out << "\nTest append(x) ...\n";
     Array<T> a2;
     for ( int i = 0; i < n; ++i )
-      a2.append(i);
+      a2.append(as<T>(i));
     TEST_COMPARE_ARRAYS( a2, a );
   }
 

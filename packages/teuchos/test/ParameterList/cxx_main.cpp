@@ -322,7 +322,7 @@ int main( int argc, char *argv[] )
       max_iters_again = Teuchos::getConst(PL_My_Polynomial).INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<std::string>("Nonlinear Solver");
     }
-    catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }  
+    catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }  
     if (verbose) {
       cout<< "Is the templated 'get' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
@@ -346,7 +346,7 @@ int main( int argc, char *argv[] )
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
       FailedTests++;
     }
-    catch( const Teuchos::Exceptions::InvalidParameter& e ) {
+    catch( const Teuchos::Exceptions::InvalidParameter&) {
       tempMeth = true;
     }
     if (verbose) {
@@ -365,7 +365,7 @@ int main( int argc, char *argv[] )
       max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<std::string>("Nonlinear Solver");
     }
-    catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }  
+    catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }  
     if (verbose) {
       cout<< "Is the templated 'get' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
@@ -381,7 +381,7 @@ int main( int argc, char *argv[] )
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
       FailedTests++;
     }
-    catch( const Teuchos::Exceptions::InvalidParameter& e ) {
+    catch( const Teuchos::Exceptions::InvalidParameter&) {
       tempMeth = true;
     }
     if (verbose) {
@@ -492,7 +492,7 @@ int main( int argc, char *argv[] )
       def_step = Teuchos::getParameter<int>(PL_Polynomial, "Default Step");
       alpha_fact = Teuchos::getParameter<double>(PL_Polynomial, "Alpha Factor");
     }
-    catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }
+    catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }
     if (verbose && def_step==1) {
       cout<< "Is the helper function 'getParameter' functional ... ";
     }

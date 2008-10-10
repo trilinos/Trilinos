@@ -54,7 +54,7 @@ namespace Teuchos
         comm.allReduce((void*) &myBad, (void*) &anyBad, 1, MPIComm::INT,
                        MPIComm::SUM);
       }
-    catch(std::exception& ex)
+    catch(const std::exception&)
       {
         return true;
       }

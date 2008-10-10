@@ -107,10 +107,10 @@ SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
 SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL
   "Recursively enable all optional packages for set of enabled packages." )
 
-SET( Trilinos_ENABLE_TESTS "" CACHE BOOL
+SET( Trilinos_ENABLE_TESTS "" CACHE STRING
   "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
 
-SET( ${PROJECT_NAME}_ENABLE_EXAMPLES "" CACHE BOOL
+SET( ${PROJECT_NAME}_ENABLE_EXAMPLES "" CACHE STRING
   "Enable examples in all packages  (set to ON, OFF, or leave empty)." )
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
@@ -189,28 +189,41 @@ INCLUDE(TrilinosFortranMangling)
 
 INCLUDE(CTest)
 
-ADD_CUSTOM_TARGET(
-  runtests-serial
-   ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-  --trilinos-dir=${TRILINOS_HOME_DIR}
-  --comm=serial
-  --build-dir=${TRILINOS_BUILD_DIR}
-  --category=${TRILINOS_TEST_CATEGORY}
-  --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-  )
+IF (WIN32)
+  SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT OFF)
+ELSE()
+  SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT ON)
+ENDIF()
 
-ADD_CUSTOM_TARGET(
-  runtests-mpi
-   ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-  --trilinos-dir=${TRILINOS_HOME_DIR}
-  --comm=mpi
-  --mpi-go="${TRILINOS_MPI_GO}"
-  --max-proc=${MPIEXEC_MAX_NUMPROCS}
-  --build-dir=${TRILINOS_BUILD_DIR}
-  --category=${TRILINOS_TEST_CATEGORY}
-  --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-  )
+OPTION(Trilinos_ENABLE_NATIVE_TEST_HARNESS
+  "Enable the native Trilinos perl-based test harness."
+  Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT )
 
+IF (Trilinos_ENABLE_NATIVE_TEST_HARNESS)
+
+  ADD_CUSTOM_TARGET(
+    runtests-serial
+     ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
+    --trilinos-dir=${TRILINOS_HOME_DIR}
+    --comm=serial
+    --build-dir=${TRILINOS_BUILD_DIR}
+    --category=${TRILINOS_TEST_CATEGORY}
+    --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
+    )
+  
+  ADD_CUSTOM_TARGET(
+    runtests-mpi
+     ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
+    --trilinos-dir=${TRILINOS_HOME_DIR}
+    --comm=mpi
+    --mpi-go="${TRILINOS_MPI_GO}"
+    --max-proc=${MPIEXEC_MAX_NUMPROCS}
+    --build-dir=${TRILINOS_BUILD_DIR}
+    --category=${TRILINOS_TEST_CATEGORY}
+    --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
+    )
+
+ENDIF()
 
 IF(NOT WIN32)
   OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS "Enable dependency unit tests." ON)

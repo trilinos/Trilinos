@@ -39,11 +39,16 @@ FIND_PACKAGE(Perl)
 # Find the hostname used in selecting or deselecting tests by
 # TRILINOS_ADD_TEST(...) function.
 
-EXECUTE_PROCESS(
-  COMMAND uname -n
-  OUTPUT_VARIABLE TRILINOS_HOSTNAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+SITE_NAME(TRILINOS_HOSTNAME_DEFAULT)
+
+SET(TRILINOS_HOSTNAME ${TRILINOS_HOSTNAME_DEFAULT}
+  CACHE STRING "The name of the computer used to enabled or disable specific tests." )
+
+#EXECUTE_PROCESS(
+#  COMMAND uname -n
+#  OUTPUT_VARIABLE TRILINOS_HOSTNAME
+#  OUTPUT_STRIP_TRAILING_WHITESPACE
+#  )
 
 # Look for BLAS and LAPACK
 

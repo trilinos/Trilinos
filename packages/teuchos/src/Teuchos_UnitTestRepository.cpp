@@ -98,10 +98,15 @@ bool strMatch( const std::string &fullMatchStr, const std::string &str )
   const int strLen = str.length();
   const int fullMatchStrLen = fullMatchStr.length();
 
+  if (fullMatchStrLen == 0) {
+    return true;
+  }
+
   const bool beginGlob = fullMatchStr[0] == '*';
   const bool endGlob = fullMatchStr[fullMatchStrLen-1] == '*';
 
-  const int matchStrLen = fullMatchStrLen + (beginGlob ? -1 : 0) + (endGlob ? -1 : 0);
+  const int matchStrLen =
+	fullMatchStrLen + (beginGlob ? -1 : 0) + (endGlob ? -1 : 0);
 
   if (matchStrLen == 0) {
     return true;

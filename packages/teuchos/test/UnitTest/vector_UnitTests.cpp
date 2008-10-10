@@ -20,9 +20,10 @@ TEUCHOS_STATIC_SETUP()
 template<class T>
 std::vector<T> generatevector(const int n)
 {
+  using Teuchos::as;
   std::vector<T> a(n);
   for( int i = 0; i < n; ++i )
-    a[i] = i; // tests non-const operator[](i)
+    a[i] = as<T>(i); // tests non-const operator[](i)
   return a;
 }
 
@@ -33,7 +34,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( vector, defaultConstruct, T )
   using Teuchos::as;
   vector<T> a2;
   TEST_EQUALITY_CONST( as<int>(a2.size()), 0 );
-  TEST_EQUALITY_CONST( as<int>(a2.empty()), true );
+  TEST_EQUALITY_CONST( a2.empty(), true );
 }
 
 

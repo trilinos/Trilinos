@@ -311,7 +311,7 @@ struct ScalarTraits<float>
   }
   static inline float base()  {
 #ifdef HAVE_NUMERIC_LIMITS
-    return std::numeric_limits<float>::radix;
+    return static_cast<float>(std::numeric_limits<float>::radix);
 #else
     LAPACK<int, float> lp; return lp.LAMCH('B');
 #endif
@@ -325,7 +325,7 @@ struct ScalarTraits<float>
   }
   static inline float t()     {
 #ifdef HAVE_NUMERIC_LIMITS
-    return std::numeric_limits<float>::digits;
+    return static_cast<float>(std::numeric_limits<float>::digits);
 #else
     LAPACK<int, float> lp; return lp.LAMCH('N');
 #endif
@@ -339,7 +339,7 @@ struct ScalarTraits<float>
   }
   static inline float emin()  {
 #ifdef HAVE_NUMERIC_LIMITS
-    return std::numeric_limits<float>::min_exponent;
+    return static_cast<float>(std::numeric_limits<float>::min_exponent);
 #else
     LAPACK<int, float> lp; return lp.LAMCH('M');
 #endif
@@ -353,7 +353,7 @@ struct ScalarTraits<float>
   }
   static inline float emax()  {
 #ifdef HAVE_NUMERIC_LIMITS
-    return std::numeric_limits<float>::max_exponent;
+    return static_cast<float>(std::numeric_limits<float>::max_exponent);
 #else
     LAPACK<int, float> lp; return lp.LAMCH('L');
 #endif
@@ -386,9 +386,9 @@ struct ScalarTraits<float>
 #endif
   }
   static inline bool isnaninf(float x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
-    const float tol = 1e-6; // Any (bounded) number should do!
+    const float tol = 1e-6f; // Any (bounded) number should do!
     if( !(x <= tol) && !(x > tol) ) return true;                 // IEEE says this should fail for NaN
-    float z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
+    float z=0.0f*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
     return false;
   }
   static inline void seedrandom(unsigned int s) { 

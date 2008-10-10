@@ -83,6 +83,10 @@
 #  define _GLIBCXX_DEBUG
 #endif
 
+#ifdef _MSC_VER 
+#  define TEUCHOS_ZERO_ITERATOR_CONVERSION
+#endif
+
 #include <cstdio>
 #include <cstdarg>
 #include <cerrno>

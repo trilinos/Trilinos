@@ -62,7 +62,7 @@ TRILINOS_ADD_OPTION(${PACKAGE_NAME}_BUILD_BLOCK
   "Enable support for blocked Epetra objects"
   ON )
 
-TRILINOS_ADD_OPTION({${PACKAGE_NAME}_BUILD_RESTRICT
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_BUILD_RESTRICT
   HAVE_RESTRICT
   "Enable support for creating restricted Epetra objects"
   ON )

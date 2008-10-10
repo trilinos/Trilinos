@@ -156,7 +156,8 @@ XMLObject XMLParser::parse()
         // we have: </
         // try to get an ETag
         getETag(tag);
-        TEST_FOR_EXCEPTION( handler->endElement(tag) , std::runtime_error , "XMLParser::getETag(): document not well-formed: end element tag did not match start element");
+        TEST_FOR_EXCEPTION( handler->endElement(tag)!=0, std::runtime_error,
+          "XMLParser::getETag(): document not well-formed: end element tag did not match start element");
         curopen--;
       }
       else if (isLetter(c2) || c2==':' || c2=='_') {
@@ -165,12 +166,14 @@ XMLObject XMLParser::parse()
         getSTag(c2, tag, attrs, emptytag);
         handler->startElement(tag,attrs);
         if (curopen == 0) {
-          TEST_FOR_EXCEPTION(gotRoot == true, std::runtime_error , "XMLParser::getETag(): document not well-formed: more than one root element specified");
+          TEST_FOR_EXCEPTION(gotRoot == true, std::runtime_error,
+            "XMLParser::getETag(): document not well-formed: more than one root element specified");
           gotRoot = true;
         }
         curopen++;
         if (emptytag) {
-          TEST_FOR_EXCEPTION( handler->endElement(tag) , std::runtime_error , "XMLParser::getETag(): document not well-formed: end element tag did not match start element");
+          TEST_FOR_EXCEPTION( handler->endElement(tag)!=0, std::runtime_error,
+            "XMLParser::getETag(): document not well-formed: end element tag did not match start element");
           curopen--;
         }
       }
@@ -180,8 +183,10 @@ XMLObject XMLParser::parse()
         // * the document is not well-formed
         // * the document employs a feature not supported by this parser, 
         //   e.g. <!ELEMENT...  <!ATTLIST...  <!DOCTYPE...  <![CDATA[...
-        TEST_FOR_EXCEPTION( assertChar('-') , std::runtime_error , "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
-        TEST_FOR_EXCEPTION( assertChar('-') , std::runtime_error , "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
+        TEST_FOR_EXCEPTION( assertChar('-')!=0, std::runtime_error,
+            "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
+        TEST_FOR_EXCEPTION( assertChar('-')!=0 , std::runtime_error,
+            "XMLParser::parse(): element not well-formed or exploits unsupported feature" );
         getComment();
       }
       else {
@@ -294,7 +299,8 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
     // if space, consume the whitespace
     if ( isSpace(c) ) {
       hadspace = true;
-      TEST_FOR_EXCEPTION( getSpace(c) , std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
+      TEST_FOR_EXCEPTION( getSpace(c)!=0, std::runtime_error,
+        "XMLParser::getSTag(): EOF before start element was terminated");
     }
     
     // now, either Attribute | '>' | '/>'
@@ -378,7 +384,8 @@ void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<
       break;
     }
     else if (c == '/') {
-      TEST_FOR_EXCEPTION(assertChar('>'), std::runtime_error , "XMLParser::getSTag(): empty element tag not well-formed: expected '>'");
+      TEST_FOR_EXCEPTION(assertChar('>')!=0, std::runtime_error,
+        "XMLParser::getSTag(): empty element tag not well-formed: expected '>'");
       emptytag = true;
       break;
     }
@@ -411,7 +418,8 @@ void XMLParser::getComment()
       TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getComment(): EOF before comment was terminated");
       if (c=='-') {
         // this had better be leading to the end of the comment
-        TEST_FOR_EXCEPTION( assertChar('>') , std::runtime_error , "XMLParser::getComment(): comment not well-formed: expected '>'");
+        TEST_FOR_EXCEPTION( assertChar('>')!=0, std::runtime_error,
+            "XMLParser::getComment(): comment not well-formed: expected '>'");
         break;
       }
       else if (!isChar(c)) {
