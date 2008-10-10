@@ -54,16 +54,31 @@
      -D Trilinos_ENABLE_TESTS:BOOL=ON \
      -D Trilinos_ENABLE_EXAMPLES:BOOL=ON
 
+  NOTE: The above set of argument will result in Epetra and all packages
+  that depend on Epetra to be enabled and have all of their tests turned
+  on.  Tests will not be enabled in packages that do not depend on
+  Epetra in this case.  This speeds up and robustifies pre-checkin testing.
+
 (*) Configuring a package(s) along with all of the packages it can use
 
   $ do-configure \
      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
      -D Trilinos_ENABLE_NOX:BOOL=ON \
-     -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+     -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+     -D Trilinos_ENABLE_TESTS:BOOL=ON \
+     -D Trilinos_ENABLE_EXAMPLES:BOOL=ON
+
+  NOTE: This set of arguments allows a user to turn on NOX
+  as well as all packages that NOX can use.  However, tests
+  and examples will only be turned on for NOX.
 
 (*) Getting verbose output from configure
 
   $ ./do_configure -D VERBOSE_CONFIGURE:BOOL=ON
+
+(*) Getting very verbose output from configure
+
+  $ ./do_configure -D VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
 
 (*) Viewing current values of cache variables
 
@@ -73,7 +88,7 @@
 
   $ make help
 
-(*) Figuring out how to build an object file:
+(*) Figuring out how to build a single object file:
 
   a) Look for the name of the object file to build source file SomeSourceFile.cpp:
 
@@ -83,7 +98,7 @@
 
     $ make WHATEVER_WAS_RETURNED_ABOVE
 
-(*) Running the ctest tests:
+(*) Running the CTest tests:
 
   a) Using 'make test'
 

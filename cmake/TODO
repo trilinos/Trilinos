@@ -5,53 +5,40 @@ Last updated: 2008/09/28
 
 (*) [Ross] Clean up tests and examples:
 
-- Combine all separate calls to TRILINOS_ADD_EXECUTABLE(...) and
-TRILNOS_ADD_TEST(...) to a single TRILINOS_ADD_EXECUTABLE_AND_TEST(...) that
-you can.
-
 - Move (almost) all tests into subdirectories since that is the right thing to
 do.
 
-(*) [Ross] Add support for package dependanices and all the goodies
+(*) [Ross] Add CMake support for Thyra
 
-- Loop through right away and disable all packages that must be disabled due
-to required dependent packages being disabled.
+(*) [Ross] Add mock dependency files for all packages that feed into
+Stratimikos
 
-- After all other enables/disables have been performed, enable all required
-dependent packages (i.e. those specified in
-{PACAKGE_NAME}_LIB_REQUIRED_DEP_PACKAGES and, if tests or examples are
-enabled, those in ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACAKGES)
+(*) [Ross] Add a 'libs' target to rebuild only libraries so that we can skip
+unecessary relinking when shared libraries are used
 
-- When Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES is defined, for the set of
-pacakges directly enabled by the user, enable all packages that depend these
-pacakges (all required and optional, library and test/example dependencies).
-
-- When Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES is enabled, for the set of
-packages directly enabled by the user, enable all optional packages can use
-these packages (i.e. every packge listed in
-${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES and, if tests or exmaples are
-enabled, those in ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACAKGES)
+(*) [Ross] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
+to replace the silly numeric numbering.  This will be important for keeping
+track of test results for different enables/disables.
 
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
-- Set up area on software.sandia.gov for to host CDash:
-  + https://software.sandia.gov/trilinos/developer/cdash-results
-  + Meet with Danny D. to get this set up
-  + See about getting some type of email alerts set out (at least to
-    rabartl and ejguill)
-
 - Set up a MS Windows test machine feeding into Trilinos dashbaord
-  + Talk with Danny D. and Bill Goldman
-  + Get automated builds/tests with CTest/CDash running
+  + Get automated builds/tests with CTest/CDash running on Esteban
+
+- Set up a linux machine to do nightly builds of serial debug and mpi optimized
+  to send to dashboard
 
 - Set up a MAC test machine feeding into Trilinos dashboard
   + Look into s858352. Talk with Mary Meinelt (msmeine@sandia.gov).
   + Look for another machine:  Sugesstion: Send reqeust to
 
-(*) [Esteban] Experiment with creating MS Windows Visual Studio project files
+- Add 'serial' and 'mpi' categories to dashboard on trilinos.sandia.gov
 
 (*) [Esteban] Experiment with using CPack to create a MS Windows binary
-installer
+installer (NSIS)
+
+- Post a installer exe file on software.sandia.gov (hidden) and send out link
+to Trilinos devleopers (before TUG).
 
 (*) [Everyone] Expand TrlinosCMakeQuickstart.txt
 - Configuring Trilinos to build
@@ -59,6 +46,9 @@ installer
 - Building
 - Running tests (cmake and runtests-[serial,mpi])
 - Will lead into a rewriting of the Trilinos Developers Guide
+
+(*) [Ross and Esteban] Write unit tests for all important Trilinos Cmake
+macros (like TRILINOS_ADD_[EXECUTABLE,TEST,EXECUTABLE_AND_TEST)(...) etc.)
 
 
 Completed:
