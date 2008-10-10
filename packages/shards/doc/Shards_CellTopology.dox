@@ -1,0 +1,53 @@
+
+/** \ingroup shards_package
+ *
+ *  \defgroup shards_package_cell_topology  Polytope Cell Topology Descriptions
+ *
+ *  \brief  Topological description of polytope <em> cells </em>
+ *          (polygons and polyhedrons) in terms of their subcells.
+ *
+ *  \section polytope  Polytope (2D polygon or 3D polyhedron)
+ *
+ *  A cell topology defines a polytope in terms of its vertex,
+ *  edge, and side connectivity.  However, a cell topology
+ *  does not define a geometric realization of that polytope -
+ *  it does not associate spatial coordinates with any of the
+ *  vertices.
+ *
+ *  \section dimension  Dimension (of the polytope)
+ *
+ *  The dimension of cell topology is the smallest spatial dimension
+ *  in which that cell can be realized.  For example, a tetrahedron
+ *  can only be realized in a 3D space.
+ *
+ *  \section base_and_extended  Base and Extended Cell Topologies
+ *
+ *  The base cell topology of a polytope associates exactly
+ *  one Cell^0 subcell with each vertex of the polytope.
+ *  These vertices are given a canonical ordering from which
+ *  vertex-ordinals are defined.  For example, the vertex-ordinals
+ *  for quadrilateral are defined counter-clockwise around the
+ *  quadrilateral as (0,1,2,3).
+ *  An extended cell topology is defined associating additional
+ *  Cell^0 subcells with the polytope's edges, sides, or interior.
+ *  These additional Cell^0 subcells are always ordered after
+ *  the vertex subcells.
+ *
+ *  \section fem_cells Node, Edge, Side, and Element Cells
+ *
+ *  - A <b> Node </b> is a Cell^0 subcell
+ *  - An <b> Edge </b> is a Cell^1 subcell (Line) of a Cell^D parent, where 1 < D
+ *  - A <b> Side </b> is a Cell^(D-1) subcell of a Cell^D parent, where 1 < D
+ *  - An <b> Element </b> is a Cell^D in an D-dimensional space
+ *
+ *  \section subcell_orientation Subcell Orientation
+ *
+ *  A subcell Cell^d of a parent Cell^D, where 0 < d < D,
+ *  has vertices that are associated with the parent cell's vertices.
+ *  This association defines a map from the subcell's
+ *  vertex-ordinals to the parent's vertex-ordinals.
+ *  For example, the four edge subcells of a quadrilateral
+ *  have a vertex-ordinal map of ( (0,1), (1,2), (2,3), (3,0) ).
+ *
+ */
+

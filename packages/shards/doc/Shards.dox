@@ -1,0 +1,7 @@
+
+
+/** \defgroup shards_package  Shards : Shared Discretization Tools
+ *  \brief  A collection of small, discretization-oriented
+ *          functions, classes, and templates.
+ */
+

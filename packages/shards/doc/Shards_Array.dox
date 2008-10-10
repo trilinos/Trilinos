@@ -1,0 +1,63 @@
+
+/** \ingroup shards_package
+ *  \defgroup shards_package_array  Multidimensional Array with Tagged Dimensions
+ *  \brief  Multi-dimensional array view of a contiguous block
+ *          of member data with the array dimension ordinates
+ *          documented by "tags".
+ *
+ *  \author H. Carter Edwards  hcedwar@sandia.gov
+ *
+ *  <b> Trivial Example of a Function accepting a 2D Array </b>
+ *
+ *  Given the user-defined array dimension tags
+ *  <b> Cartesian3D </b> and <b> Points </b>
+ *  define a function to find the centroid of an array of points.
+ *  <PRE>
+ *  void centroid( const Array<double,FortranOrder,Cartesian3D,Points> points ,
+ *                 const Array<double,FortranOrder,Cartesian3D> x )
+ *  {
+ *    const unsigned nspace  = points.dimension<0>();
+ *    const unsigned npoints = points.dimension<1>();
+ *
+ *    for ( unsigned id = 0 ; ip < nspace ; ++id ) {
+ *      x(id) = 0 ;
+ *    }
+ *    for ( unsigned ip = 0 ; ip < npoints ; ++ip ) {
+ *      for ( unsigned id = 0 ; id < nspace ; ++id ) {
+ *        x(id) += points( id , ip );
+ *      }
+ *    }
+ *    for ( unsigned id = 0 ; ip < nspace ; ++id ) {
+ *      x(id) /= npoints ;
+ *    }
+ *  }
+ *  </PRE>
+ *
+ *  <b> Example of User-defined \ref ArrayDimTag "Array Dimension Tags" </b>
+ *  <PRE>
+ *  struct Cartesian3D : public ArrayDimTag {
+ *    enum { Size = 3 };                // Default size for this dimension.
+ *    const char * name() const ;       // Supply the pure-virtual function.
+ *    static const Cartesian3D & tag(); // Runtime singleton for this tag.
+ *  };
+ *
+ *  // Simple tag without a default dimension size:
+ *  SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Points )
+ *
+ *  // And then in a source file:
+ *  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Points )
+ *  </PRE>
+ *
+ *  <b> Example of Creating an Array </b> <br>
+ *  Given a block of memory for the collection of points, wrap it in an Array.
+ *  <PRE>
+ *  double * chunk   = ... ; // Chunk of memory from somewhere
+ *  unsigned npoints = ... ; // containing a number of points
+ *
+ *  Array<double,FortranOrder,Cartesian3D,Points> points( chunk , npoints );
+ *  </PRE>
+ *  The <b> points </b> array has dimension<0> set to Cartesian3D::Size 
+ *  and dimension<1> set to npoints.  If the npoints argument
+ *  where omitted then a compilation error would be generated due to
+ *  the missing Points::Size enumeration.
+ */

@@ -1,0 +1,551 @@
+/*------------------------------------------------------------------------*/
+/*                  shards : Shared Discretization Tools                  */
+/*                Copyright (2008) Sandia Corporation                     */
+/*                                                                        */
+/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
+/*  license for use of this work by or on behalf of the U.S. Government.  */
+/*                                                                        */
+/*  This library is free software; you can redistribute it and/or modify  */
+/*  it under the terms of the GNU Lesser General Public License as        */
+/*  published by the Free Software Foundation; either version 2.1 of the  */
+/*  License, or (at your option) any later version.                       */
+/*                                                                        */
+/*  This library is distributed in the hope that it will be useful,       */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of        */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     */
+/*  Lesser General Public License for more details.                       */
+/*                                                                        */
+/*  You should have received a copy of the GNU Lesser General Public      */
+/*  License along with this library; if not, write to the Free Software   */
+/*  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307   */
+/*  USA                                                                   */
+/*------------------------------------------------------------------------*/
+
+#define SHARDS_ARRAY_BOUNDS_CHECKING
+
+#include <iostream>
+#include <stdexcept>
+#include <Shards_Array.hpp>
+
+template< class T1 , class T2 > struct AssertSameType ;
+template< class T > struct AssertSameType<T,T> {};
+
+namespace {
+
+//----------------------------------------------------------------------
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( TagA )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( TagA )
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( TagB )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( TagB )
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( TagC )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( TagC )
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( TagD )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( TagD )
+
+//----------------------------------------------------------------------
+
+using namespace shards ;
+
+void myfortranfunc( const Array<double,FortranOrder> xf )
+{
+  std::cout << "myfortranfunc( Array<double,FortranOrder" ;
+
+  if ( xf.rank() && NULL != xf.tag(0) ) {
+    for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+      std::cout << "," << xf.tag(i)->name();
+    }
+  }
+
+  std::cout << ">( " ;
+  std::cout << (void*) xf.contiguous_data();
+  for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+    std::cout << " , " << xf.dimension(i);
+  }
+  std::cout << " ) )" << std::endl ;
+}
+
+void mynaturalfunc( const Array<double,NaturalOrder> xf )
+{
+  std::cout << "mynaturalfunc( Array<double,NaturalOrder" ;
+
+  if ( xf.rank() && NULL != xf.tag(0) ) {
+    for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+      std::cout << "," << xf.tag(i)->name();
+    }
+  }
+
+  std::cout << ">( " ;
+  std::cout << (void*) xf.contiguous_data();
+  for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+    std::cout << " , " << xf.dimension(i);
+  }
+  std::cout << " ) )" << std::endl ;
+}
+
+//----------------------------------------------------------------------
+
+void myfortranA( const Array<double,FortranOrder,TagA> ) {}
+
+void myfortranAB( const Array<double,FortranOrder,TagA,TagB> ) {}
+
+void myfortranABC( const Array<double,FortranOrder,TagA,TagB,TagC> ) {}
+
+void myfortranABCD( const Array<double,FortranOrder,TagA,TagB,TagC,TagD> ) {}
+
+//----------------------------------------------------------------------
+
+void local_test_array()
+{
+  typedef Array<double,FortranOrder,TagA> AF1 ;
+  typedef Array<double,FortranOrder,TagA,TagB> AF2 ;
+  typedef Array<double,FortranOrder,TagA,TagB,TagC> AF3 ;
+  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD> AF4 ;
+  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA> AF5 ;
+  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB> AF6 ;
+  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC> AF7 ;
+  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC,TagD> AF8 ;
+
+  typedef Array<double,NaturalOrder,TagA> AN1 ;
+  typedef Array<double,NaturalOrder,TagA,TagB> AN2 ;
+  typedef Array<double,NaturalOrder,TagA,TagB,TagC> AN3 ;
+  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD> AN4 ;
+  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA> AN5 ;
+  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB> AN6 ;
+  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC> AN7 ;
+  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC,TagD> AN8 ;
+
+  AssertSameType< AF2::TruncateType , AF1 >();
+  AssertSameType< AF3::TruncateType , AF2 >();
+  AssertSameType< AF4::TruncateType , AF3 >();
+  AssertSameType< AF5::TruncateType , AF4 >();
+  AssertSameType< AF6::TruncateType , AF5 >();
+  AssertSameType< AF7::TruncateType , AF6 >();
+  AssertSameType< AF8::TruncateType , AF7 >();
+
+  AssertSameType< ArrayAppend< AF1 , TagB >::type , AF2 >();
+  AssertSameType< ArrayAppend< AF2 , TagC >::type , AF3 >();
+  AssertSameType< ArrayAppend< AF3 , TagD >::type , AF4 >();
+  AssertSameType< ArrayAppend< AF4 , TagA >::type , AF5 >();
+  AssertSameType< ArrayAppend< AF5 , TagB >::type , AF6 >();
+  AssertSameType< ArrayAppend< AF6 , TagC >::type , AF7 >();
+  AssertSameType< ArrayAppend< AF7 , TagD >::type , AF8 >();
+
+  AssertSameType< AF8 , AF8::ReverseType::ReverseType >();
+  AssertSameType< AF7 , AF7::ReverseType::ReverseType >();
+  AssertSameType< AF6 , AF6::ReverseType::ReverseType >();
+  AssertSameType< AF5 , AF5::ReverseType::ReverseType >();
+  AssertSameType< AF4 , AF4::ReverseType::ReverseType >();
+  AssertSameType< AF3 , AF3::ReverseType::ReverseType >();
+  AssertSameType< AF2 , AF2::ReverseType::ReverseType >();
+  AssertSameType< AF1 , AF1::ReverseType::ReverseType >();
+
+  // AssertSameType< AF8 , AN8 >(); // Correctly fails to compile
+
+  double storage[100000];
+
+  AF1 af1( storage , 2 );
+  AF2 af2( storage , 2 , 3 );
+  AF3 af3( storage , 2 , 3 , 4 );
+  AF4 af4( storage , 2 , 3 , 4 , 5 );
+  AF5 af5( storage , 2 , 3 , 4 , 5 , 6 );
+  AF6 af6( storage , 2 , 3 , 4 , 5 , 6 , 7 );
+  AF7 af7( storage , 2 , 3 , 4 , 5 , 6 , 7 , 8 );
+  AF8 af8( storage , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 );
+
+  AN1 an1( storage , 2 );
+  AN2 an2( storage , 2 , 3 );
+  AN3 an3( storage , 2 , 3 , 4 );
+  AN4 an4( storage , 2 , 3 , 4 , 5 );
+  AN5 an5( storage , 2 , 3 , 4 , 5 , 6 );
+  AN6 an6( storage , 2 , 3 , 4 , 5 , 6 , 7 );
+  AN7 an7( storage , 2 , 3 , 4 , 5 , 6 , 7 , 8 );
+  AN8 an8( storage , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 );
+
+  //--------------------------------
+
+  ArrayAppend< Array<double,FortranOrder,TagA,TagB,TagC> , TagD >::type
+    aaf4( af4 );
+
+  Array<double,FortranOrder,TagA,TagB,TagC,TagD> atf4( af5.truncate(0) );
+
+  //--------------------------------
+
+  std::cout << std::endl << "FORTRAN ARRAYS:" << std::endl ;
+
+  myfortranfunc( af1 );
+  myfortranfunc( af2 );
+  myfortranfunc( af3 );
+  myfortranfunc( af4 );
+  myfortranfunc( af5 );
+  myfortranfunc( af6 );
+  myfortranfunc( af7 );
+  myfortranfunc( af8 );
+
+  mynaturalfunc( af1 );
+  mynaturalfunc( af2 );
+  mynaturalfunc( af3 );
+  mynaturalfunc( af4 );
+  mynaturalfunc( af5 );
+  mynaturalfunc( af6 );
+  mynaturalfunc( af7 );
+  mynaturalfunc( af8 );
+
+  myfortranfunc( af8.truncate(0) );
+
+  std::cout << std::endl << "NATURAL ARRAYS:" << std::endl ;
+
+  mynaturalfunc( an1 );
+  mynaturalfunc( an2 );
+  mynaturalfunc( an3 );
+  mynaturalfunc( an4 );
+  mynaturalfunc( an5 );
+  mynaturalfunc( an6 );
+  mynaturalfunc( an7 );
+  mynaturalfunc( an8 );
+
+  myfortranfunc( an1 );
+  myfortranfunc( an2 );
+  myfortranfunc( an3 );
+  myfortranfunc( an4 );
+  myfortranfunc( an5 );
+  myfortranfunc( an6 );
+  myfortranfunc( an7 );
+  myfortranfunc( an8 );
+
+  mynaturalfunc( an8.truncate(0) );
+
+  //------------------------------
+
+  myfortranA( af1 );
+  myfortranA( an1 ); // Implicit conversion-construction is good
+
+  // myfortranA( af2 ); // Compile error catches correctly
+  // myfortranA( af3 ); // Compile error catches correctly
+  // myfortranA( af4 ); // Compile error catches correctly
+
+  myfortranAB( af2 );
+
+  // myfortranAB( an2 ); // Compile error catches correctly
+  // myfortranAB( af3 ); // Compile error catches correctly
+  // myfortranAB( af4 ); // Compile error catches correctly
+
+  myfortranABC( af3 );
+  myfortranABCD( af4 );
+
+  //------------------------------
+
+  {
+    {
+      bool caught_it = false ;
+      try { af8( af8.dimension<0>() ,0,0,0,0,0,0,0); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+    {
+      bool caught_it = false ;
+      try { af8(0, af8.dimension<1>() ,0,0,0,0,0,0); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+    {
+      bool caught_it = false ;
+      try { af8(0,0, af8.dimension<2>() ,0,0,0,0,0); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+    {
+      bool caught_it = false ;
+      try { af8(0,0,0, af8.dimension<3>() ,0,0,0,0); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+    {
+      bool caught_it = false ;
+      try { af8(0,0,0,0, af8.dimension<4>() ,0,0,0); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+    {
+      bool caught_it = false ;
+      try { af8(0,0,0,0,0, af8.dimension<5>() ,0,0); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+    {
+      bool caught_it = false ;
+      try { af8(0,0,0,0,0,0, af8.dimension<6>() ,0); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+    {
+      bool caught_it = false ;
+      try { af8(0,0,0,0,0,0,0, af8.dimension<7>() ); }
+      catch( ... ) { caught_it = true ; }
+      if ( ! caught_it ) {
+        throw std::runtime_error(
+          std::string("Array index bounds check failed") );
+      }
+    }
+  }
+
+  //------------------------------
+
+  {
+  AF8::ReverseType rf8( af8 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i7 = 0 ; i7 < af8.dimension<7>() ; ++i7 ) {
+    for ( unsigned i6 = 0 ; i6 < af8.dimension<6>() ; ++i6 ) {
+      for ( unsigned i5 = 0 ; i5 < af8.dimension<5>() ; ++i5 ) {
+        for ( unsigned i4 = 0 ; i4 < af8.dimension<4>() ; ++i4 ) {
+          for ( unsigned i3 = 0 ; i3 < af8.dimension<3>() ; ++i3 ) {
+            for ( unsigned i2 = 0 ; i2 < af8.dimension<2>() ; ++i2 ) {
+              for ( unsigned i1 = 0 ; i1 < af8.dimension<1>() ; ++i1 ) {
+                for ( unsigned i0 = 0 ; i0 < af8.dimension<0>() ; ++i0 ) {
+                  ++count ;
+                  if ( & af8(i0,i1,i2,i3,i4,i5,i6,i7) !=
+                       & rf8(i7,i6,i5,i4,i3,i2,i1,i0) ) {
+                    throw std::runtime_error(std::string("Failed index check"));
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if ( af8.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+  {
+  AF7::ReverseType rf7( af7 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i6 = 0 ; i6 < af7.dimension<6>() ; ++i6 ) {
+    for ( unsigned i5 = 0 ; i5 < af7.dimension<5>() ; ++i5 ) {
+      for ( unsigned i4 = 0 ; i4 < af7.dimension<4>() ; ++i4 ) {
+        for ( unsigned i3 = 0 ; i3 < af7.dimension<3>() ; ++i3 ) {
+          for ( unsigned i2 = 0 ; i2 < af7.dimension<2>() ; ++i2 ) {
+            for ( unsigned i1 = 0 ; i1 < af7.dimension<1>() ; ++i1 ) {
+              for ( unsigned i0 = 0 ; i0 < af7.dimension<0>() ; ++i0 ) {
+                ++count ;
+                if ( & af7(i0,i1,i2,i3,i4,i5,i6) !=
+                     & rf7(i6,i5,i4,i3,i2,i1,i0) ) {
+                  throw std::runtime_error(std::string("Failed index check"));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if ( af7.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+  {
+  AF6::ReverseType rf6( af6 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i5 = 0 ; i5 < af6.dimension<5>() ; ++i5 ) {
+    for ( unsigned i4 = 0 ; i4 < af6.dimension<4>() ; ++i4 ) {
+      for ( unsigned i3 = 0 ; i3 < af6.dimension<3>() ; ++i3 ) {
+        for ( unsigned i2 = 0 ; i2 < af6.dimension<2>() ; ++i2 ) {
+          for ( unsigned i1 = 0 ; i1 < af6.dimension<1>() ; ++i1 ) {
+            for ( unsigned i0 = 0 ; i0 < af6.dimension<0>() ; ++i0 ) {
+              ++count ;
+              if ( & af6(i0,i1,i2,i3,i4,i5) !=
+                   & rf6(i5,i4,i3,i2,i1,i0) ) {
+                throw std::runtime_error(std::string("Failed index check"));
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if ( af6.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+  {
+  AF5::ReverseType rf5( af5 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i4 = 0 ; i4 < af5.dimension<4>() ; ++i4 ) {
+    for ( unsigned i3 = 0 ; i3 < af5.dimension<3>() ; ++i3 ) {
+      for ( unsigned i2 = 0 ; i2 < af5.dimension<2>() ; ++i2 ) {
+        for ( unsigned i1 = 0 ; i1 < af5.dimension<1>() ; ++i1 ) {
+          for ( unsigned i0 = 0 ; i0 < af5.dimension<0>() ; ++i0 ) {
+            ++count ;
+            if ( & af5(i0,i1,i2,i3,i4) !=
+                 & rf5(i4,i3,i2,i1,i0) ) {
+              throw std::runtime_error(std::string("Failed index check"));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if ( af5.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+  {
+  AF4::ReverseType rf4( af4 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i3 = 0 ; i3 < af4.dimension<3>() ; ++i3 ) {
+    for ( unsigned i2 = 0 ; i2 < af4.dimension<2>() ; ++i2 ) {
+      for ( unsigned i1 = 0 ; i1 < af4.dimension<1>() ; ++i1 ) {
+        for ( unsigned i0 = 0 ; i0 < af4.dimension<0>() ; ++i0 ) {
+          ++count ;
+          if ( & af4(i0,i1,i2,i3) !=
+               & rf4(i3,i2,i1,i0) ) {
+            throw std::runtime_error(std::string("Failed index check"));
+          }
+        }
+      }
+    }
+  }
+
+  if ( af4.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+  {
+  AF3::ReverseType rf3( af3 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i2 = 0 ; i2 < af3.dimension<2>() ; ++i2 ) {
+    for ( unsigned i1 = 0 ; i1 < af3.dimension<1>() ; ++i1 ) {
+      for ( unsigned i0 = 0 ; i0 < af3.dimension<0>() ; ++i0 ) {
+        ++count ;
+        if ( & af3(i0,i1,i2) !=
+             & rf3(i2,i1,i0) ) {
+          throw std::runtime_error(std::string("Failed index check"));
+        }
+      }
+    }
+  }
+
+  if ( af3.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+  {
+  AF2::ReverseType rf2( af2 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i1 = 0 ; i1 < af2.dimension<1>() ; ++i1 ) {
+    for ( unsigned i0 = 0 ; i0 < af2.dimension<0>() ; ++i0 ) {
+      ++count ;
+      if ( & af2(i0,i1) !=
+           & rf2(i1,i0) ) {
+        throw std::runtime_error(std::string("Failed index check"));
+      }
+    }
+  }
+
+  if ( af2.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+  {
+  AF1::ReverseType rf1( af1 );
+
+  unsigned count = 0 ;
+
+  for ( unsigned i0 = 0 ; i0 < af1.dimension<0>() ; ++i0 ) {
+    ++count ;
+    if ( & af1(i0) != & rf1(i0) ) {
+      throw std::runtime_error(std::string("Failed index check"));
+    }
+  }
+
+  if ( af1.size() != count ) {
+    throw std::runtime_error( std::string("Failed loop check" ) );
+  }
+  }
+
+  //------------------------------
+
+}
+
+}
+
+void test_shards_array()
+{
+  static const char method[] = "test_shards_array" ;
+
+  try {
+    local_test_array();
+    std::cout << method << " PASSED" << std::endl ;
+  }
+  catch( const std::exception & x ) {
+    std::cout << method << " FAILED: " << x.what() << std::endl ;
+  }
+  catch( ... ) {
+    std::cout << method << " FAILED: <unknown>" << std::endl ;
+  }
+}
+
