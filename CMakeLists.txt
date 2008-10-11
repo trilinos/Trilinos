@@ -48,12 +48,21 @@ SET( Trilinos_PACKAGES
 IF (DEFINED Trilinos_PACKAGES_OVERRIDE)
   SET( Trilinos_PACKAGES
    Teuchos
-   RTOp
    Epetra
+   Zoltan
+   RTOp
    Triutils
    EpetraExt
+   Isorropia
    Thyra
+   AztecOO
+   Galeri
+   Amesos
+   Ifpack
+   ML
+   Belos
    RBGen
+   Stratimikos
   )
 ENDIF()
 
