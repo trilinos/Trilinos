@@ -168,7 +168,8 @@ runtests-mpi :
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.isorropia $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.isorropia $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.isorropia \
@@ -176,11 +177,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../epetraext
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ISORROPIA > $(exec_prefix)/include/Makefile.export.isorropia.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ISORROPIA > $(DESTDIR)$(includedir)/Makefile.export.isorropia.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.isorropia
-	rm -f $(exec_prefix)/include/Makefile.export.isorropia.macros
+	rm -f $(includedir)/Makefile.export.isorropia
+	rm -f $(includedir)/Makefile.export.isorropia.macros
 
 else 
 

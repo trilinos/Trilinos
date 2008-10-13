@@ -185,7 +185,7 @@ include_HEADERS = $(PHALANX_HPP)
 # special.
 
 # All Trilinos headers are now installed in the same directory
-execincludedir = $(exec_prefix)/include
+execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
 nodist_execinclude_HEADERS = Phalanx_config.hpp
 

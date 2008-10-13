@@ -890,18 +890,19 @@ runtests-mpi :
   --packages=zoltan
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
-@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.zoltan $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	mkdir -p $(DESTDIR)$(includedir)
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.zoltan $(DESTDIR)$(includedir)/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.zoltan \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src
-@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ZOLTAN > $(exec_prefix)/include/Makefile.export.zoltan.macros
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ZOLTAN > $(DESTDIR)$(includedir)/Makefile.export.zoltan.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.zoltan
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.zoltan.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.zoltan
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.zoltan.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 

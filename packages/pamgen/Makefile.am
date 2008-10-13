@@ -101,7 +101,8 @@ all-local:
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:
-	cp $(top_builddir)/Makefile.export.pamgen $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.pamgen $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.pamgen \
@@ -109,11 +110,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src 
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-		PAMGEN > $(exec_prefix)/include/Makefile.export.pamgen.macros
+		PAMGEN > $(DESTDIR)$(includedir)/Makefile.export.pamgen.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.pamgen
-	rm -f $(exec_prefix)/include/Makefile.export.pamgen.macros
+	rm -f $(includedir)/Makefile.export.pamgen
+	rm -f $(includedir)/Makefile.export.pamgen.macros
 
 else
 

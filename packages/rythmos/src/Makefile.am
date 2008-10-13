@@ -235,7 +235,7 @@ include_HEADERS = $(RYTHMOS_H)
 # ------------------------------------------------------------------------
 
 # All Trilinos headers are now installed in the same directory
-execincludedir = $(exec_prefix)/include
+execincludedir = $(includedir)
 
 nodist_execinclude_HEADERS = Rythmos_config.h
 

@@ -102,7 +102,8 @@ all-local:
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:
-	cp $(top_builddir)/Makefile.export.trilinoscouplings $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.trilinoscouplings $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.trilinoscouplings \
@@ -111,11 +112,11 @@ install-exec-hook:
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-		TRILINOSCOUPLINGS > $(exec_prefix)/include/Makefile.export.trilinoscouplings.macros
+		TRILINOSCOUPLINGS > $(DESTDIR)$(includedir)/Makefile.export.trilinoscouplings.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.trilinoscouplings
-	rm -f $(exec_prefix)/include/Makefile.export.trilinoscouplings.macros
+	rm -f $(includedir)/Makefile.export.trilinoscouplings
+	rm -f $(includedir)/Makefile.export.trilinoscouplings.macros
 
 else
 

@@ -109,7 +109,8 @@ all-local:
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:
-	cp $(top_builddir)/Makefile.export.phalanx $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.phalanx $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.phalanx \
@@ -118,11 +119,11 @@ install-exec-hook:
 		--my-abs-lib-dirs=@abs_top_builddir@/test/Utilities:@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../sacado:@abs_top_builddir@/../teuchos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-		PHALANX > $(exec_prefix)/include/Makefile.export.phalanx.macros
+		PHALANX > $(DESTDIR)$(includedir)/Makefile.export.phalanx.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.phalanx
-	rm -f $(exec_prefix)/include/Makefile.export.phalanx.macros
+	rm -f $(includedir)/Makefile.export.phalanx
+	rm -f $(includedir)/Makefile.export.phalanx.macros
 
 else
 

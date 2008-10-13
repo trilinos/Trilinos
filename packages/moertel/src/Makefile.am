@@ -155,7 +155,7 @@ include_HEADERS = $(MOERTEL_H)
 # special.
 
 # All Trilinos headers are now installed in the same directory
-execincludedir = $(exec_prefix)/include
+execincludedir = $(includedir)
 nodist_execinclude_HEADERS = Moertel_config.h
 
 # ------------------------------------------------------------------------

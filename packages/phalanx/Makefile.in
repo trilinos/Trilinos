@@ -709,7 +709,8 @@ all-local:
 	@echo "Trilinos package phalanx built successfully"
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.phalanx $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	mkdir -p $(DESTDIR)$(includedir)
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.phalanx $(DESTDIR)$(includedir)/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.phalanx \
@@ -718,11 +719,11 @@ all-local:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/test/Utilities:@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../sacado:@abs_top_builddir@/../teuchos
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-@USING_EXPORT_MAKEFILES_TRUE@		PHALANX > $(exec_prefix)/include/Makefile.export.phalanx.macros
+@USING_EXPORT_MAKEFILES_TRUE@		PHALANX > $(DESTDIR)$(includedir)/Makefile.export.phalanx.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.phalanx
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.phalanx.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.phalanx
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.phalanx.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 

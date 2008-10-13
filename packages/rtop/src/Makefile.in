@@ -398,7 +398,7 @@ include_HEADERS = $(RTOP_H)
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
-execincludedir = $(exec_prefix)/include
+execincludedir = $(includedir)
 nodist_execinclude_HEADERS = RTOp_Config.h
 
 # --------------------------------------------------------------------

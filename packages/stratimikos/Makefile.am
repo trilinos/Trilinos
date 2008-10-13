@@ -194,7 +194,8 @@ runtests-mpi :
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.stratimikos $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.stratimikos $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.stratimikos \
@@ -202,11 +203,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/adapters/amesos/src:@abs_top_srcdir@/adapters/aztecoo/src:@abs_top_srcdir@/adapters/belos/src:@abs_top_srcdir@/adapters/ifpack/src:@abs_top_srcdir@/adapters/ml/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/adapters/amesos/src:@abs_top_builddir@/adapters/aztecoo/src:@abs_top_builddir@/adapters/belos/src:@abs_top_builddir@/adapters/ifpack/src:@abs_top_builddir@/adapters/ml/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../ml:@abs_top_builddir@/../triutils
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile STRATIMIKOS > $(exec_prefix)/include/Makefile.export.stratimikos.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile STRATIMIKOS > $(DESTDIR)$(includedir)/Makefile.export.stratimikos.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.stratimikos
-	rm -f $(exec_prefix)/include/Makefile.export.stratimikos.macros
+	rm -f $(includedir)/Makefile.export.stratimikos
+	rm -f $(includedir)/Makefile.export.stratimikos.macros
 
 else 
 

@@ -292,7 +292,7 @@ include_HEADERS = $(TRILINOSCOUPLINGS_H)
 # special.
 
 # All Trilinos headers are now installed in the same directory
-execincludedir = $(exec_prefix)/include
+execincludedir = $(includedir)
 nodist_execinclude_HEADERS = TrilinosCouplings_config.h
 
 # ------------------------------------------------------------------------
