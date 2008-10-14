@@ -168,7 +168,7 @@ int Zoltan_Preprocess_Graph(
 
   /* If reorder is true, we already have the id lists. Ignore weights. */
   if ((*global_ids == NULL) || (!gr->id_known)){
-    int * input_part;
+    int *input_part = NULL;
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
     if (prt) {
