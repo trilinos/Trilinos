@@ -108,8 +108,9 @@ int Zoltan_Scatter_Graph(
           use_graph, use_vsize);
 
   /* Reset all data pointers to NULL for now */
-  *xadj = *adjncy = *vwgt = *vsize = *adjwgt = NULL;
+  *xadj = *adjncy = *vwgt = *adjwgt = NULL;
   *xyz = NULL;
+  if (use_vsize) *vsize = NULL;
 
   /* Convert the xdj array so that it contains the degree of each vertex */
   if (use_graph){

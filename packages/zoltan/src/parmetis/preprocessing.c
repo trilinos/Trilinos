@@ -539,12 +539,16 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
   if (gr->scatter){
 
     if (geo)
-      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->vwgt, &vsp->vsize,
-				  &gr->ewgts, &geo->xyz, geo->ndims, gr->obj_wgt_dim, zz, &gr->comm_plan);
+      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, 
+                                  &gr->vwgt, (vsp ? &vsp->vsize : NULL),
+				  &gr->ewgts, &geo->xyz, geo->ndims, 
+                                  gr->obj_wgt_dim, zz, &gr->comm_plan);
     else {
       float* xyz = NULL;
-      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->vwgt, &vsp->vsize,
-				  &gr->ewgts, &xyz, 0, gr->obj_wgt_dim, zz, &gr->comm_plan);
+      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, 
+                                  &gr->vwgt, (vsp ? &vsp->vsize : NULL),
+				  &gr->ewgts, &xyz, 0, 
+                                  gr->obj_wgt_dim, zz, &gr->comm_plan);
     }
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       ZOLTAN_THIRD_ERROR(ierr, "Zoltan_Scatter_Graph returned error.");
