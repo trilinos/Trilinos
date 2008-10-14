@@ -47,7 +47,7 @@ extern "C" {
  */
 int Zoltan_Get_Distribution(ZZ *zz, int **vtxdist)
 {
-  int ierr, num_obj;
+  int ierr = ZOLTAN_OK, num_obj;
   char *yo = "Zoltan_Get_Distribution";
 
   num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
