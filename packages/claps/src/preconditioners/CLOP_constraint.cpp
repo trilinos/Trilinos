@@ -43,7 +43,7 @@ CLOP_constraint::CLOP_constraint(const Epetra_CrsMatrix* A_,
   // initialize and load data into variables
   //
   blocksize = 5000;
-  max_nnz_con = 50;
+  max_nnz_con = 500;
   nrow = A->NumMyRows();
   ncol = A->NumMyCols();
   ncol_global = A->NumGlobalCols();
@@ -587,6 +587,9 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
       ConMat_Loc.ExtractMyRowView(i, NumEntries, Values, Indices);
       for (j=0; j<NumEntries; j++) {
 	ierr = E2T->InsertMyValues(Indices[j], 1, &Values[j], &nc2_all);
+        if ( ierr != 0 ){
+           *fout << "exceeded memory buffer for max_nnz_con in CLOP.\n";
+        }
 	assert (ierr == 0);
       }
       nc2_all++;
