@@ -316,8 +316,8 @@ public:
     const EConj conj,
     const MultiVectorBase<DomainScalar> &X,
     MultiVectorBase<RangeScalar> *Y,
-    const RangeScalar alpha = Teuchos::ScalarTraits<RangeScalar>::one(),
-    const RangeScalar beta = Teuchos::ScalarTraits<RangeScalar>::zero()
+    const RangeScalar alpha = static_cast<RangeScalar>(1.0),
+    const RangeScalar beta = static_cast<RangeScalar>(0.0)
     ) const = 0;
 
   //@}
@@ -395,8 +395,8 @@ public:
     const EConj conj,
     const MultiVectorBase<RangeScalar> &X,
     MultiVectorBase<DomainScalar> *Y,
-    const DomainScalar alpha = Teuchos::ScalarTraits<DomainScalar>::one(),
-    const DomainScalar beta = Teuchos::ScalarTraits<DomainScalar>::zero()
+    const DomainScalar alpha = static_cast<DomainScalar>(1.0),
+    const DomainScalar beta = static_cast<DomainScalar>(0.0)
     ) const;
 
   /** \brief Clone the linear operator object (if supported).
@@ -467,8 +467,8 @@ void apply(
   const EConj conj,
   const MultiVectorBase<DomainScalar> &X,
   MultiVectorBase<RangeScalar> *Y,
-  const RangeScalar alpha = ScalarTraits<RangeScalar>::one(),
-  const RangeScalar beta = ScalarTraits<RangeScalar>::zero()
+  const RangeScalar alpha = static_cast<RangeScalar>(1.0),
+  const RangeScalar beta = static_cast<RangeScalar>(0.0)
   );
 
 
@@ -486,8 +486,8 @@ void applyTranspose(
   const EConj conj,
   const MultiVectorBase<RangeScalar> &X,
   MultiVectorBase<DomainScalar> *Y,
-  const DomainScalar alpha = ScalarTraits<DomainScalar>::one(),
-  const DomainScalar beta = ScalarTraits<DomainScalar>::zero()
+  const DomainScalar alpha = static_cast<DomainScalar>(1.0),
+  const DomainScalar beta = static_cast<DomainScalar>(0.0)
   );
 
 
@@ -506,8 +506,8 @@ void apply(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha = ScalarTraits<Scalar>::one(),
-  const Scalar beta = ScalarTraits<Scalar>::zero()
+  const Scalar alpha = static_cast<Scalar>(1.0),
+  const Scalar beta = static_cast<Scalar>(0.0)
   );
 
 
@@ -518,8 +518,8 @@ void apply(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   MultiVectorBase<Scalar> *Y,
-  const Scalar alpha = ScalarTraits<Scalar>::one(),
-  const Scalar beta = ScalarTraits<Scalar>::zero()
+  const Scalar alpha = static_cast<Scalar>(1.0),
+  const Scalar beta = static_cast<Scalar>(0.0)
   );
 
 

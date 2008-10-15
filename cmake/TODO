@@ -20,6 +20,13 @@ unecessary relinking when shared libraries are used
 to replace the silly numeric numbering.  This will be important for keeping
 track of test results for different enables/disables.
 
+(*) [Ross] Add the package name as a prefix to all test and example
+executables.  This will require changes to the
+TRILINOS_ADD_EXECUTABLE(..) and TRILINOS_ADD_TEST(...) functions.  It
+will also require changes to all of the existing Makefile.am files
+that create these tests in the autotools system and in the
+test/definition files.
+
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
 - Set up a MS Windows test machine feeding into Trilinos dashbaord

@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(operator_vector)
+ADD_SUBDIRECTORY(operator_solve)

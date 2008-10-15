@@ -5,7 +5,7 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_Config.h)
+TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
 
 #
 # B) Define the header and source files (and directories)

@@ -452,11 +452,11 @@ private:
  *
  * \relates basic_FancyOStream
  */
-template <typename CharT, typename Traits>
-RCP<basic_FancyOStream<CharT,Traits> >
+inline
+RCP<basic_FancyOStream<char> >
 fancyOStream(
-  const RCP< std::basic_ostream<CharT,Traits> >& oStream,
-  const std::basic_string<CharT,Traits>& tabIndentStr = " ",
+  const RCP< std::basic_ostream<char> >& oStream,
+  const std::basic_string<char>& tabIndentStr = " ",
   const int startingTab = 0,
   const bool showLinePrefix = false,
   const int maxLenLinePrefix = 10,
@@ -465,7 +465,7 @@ fancyOStream(
   )
 {
   return rcp(
-    new basic_FancyOStream<CharT,Traits>(
+    new basic_FancyOStream<char>(
       oStream,tabIndentStr,startingTab,showLinePrefix,
       maxLenLinePrefix,showTabCount,showProcRank
       )
@@ -480,17 +480,17 @@ fancyOStream(
  *
  * \relates basic_FancyOStream
  */
-template <typename CharT, typename Traits>
-RCP<basic_FancyOStream<CharT,Traits> >
-getFancyOStream( const RCP<std::basic_ostream<CharT,Traits> > &out )
+inline
+RCP<basic_FancyOStream<char> >
+getFancyOStream( const RCP<std::basic_ostream<char> > &out )
 {
   if(out.get()==NULL)
     return Teuchos::null;
-  RCP<basic_FancyOStream<CharT,Traits> >
-    fancyOut = rcp_dynamic_cast<basic_FancyOStream<CharT,Traits> >(out);
+  RCP<basic_FancyOStream<char> >
+    fancyOut = rcp_dynamic_cast<basic_FancyOStream<char> >(out);
   if(fancyOut.get())
     return fancyOut;
-  return rcp(new basic_FancyOStream<CharT,Traits>(out));
+  return rcp(new basic_FancyOStream<char>(out));
 }
 
 /** \brief Tabbing class for helping to create formated, indented output for a

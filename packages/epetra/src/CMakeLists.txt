@@ -11,7 +11,7 @@ ELSE()
   SET(HAVE_FORTRAN_SUPPORT FALSE)
 ENDIF()
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_config.h)
+TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -173,20 +173,20 @@ IF(TRILINOS_ENABLE_MPI)
 
 ENDIF()
 
-IF(${PROJECT_NAME}_ENABLE_TESTS)
+IF(${PACKAGE_NAME}_ENABLE_TESTS)
 
-  INCLUDE_DIRECTORIES(${${PROJECT_NAME}_SOURCE_DIR}/test/src)
+  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/test/src)
 
   SET(HEADERS
     ${HEADERS}
-    ${${PROJECT_NAME}_SOURCE_DIR}/test/src/Epetra_test_functions.h
-    ${${PROJECT_NAME}_SOURCE_DIR}/test/src/Epetra_matrix_data.h
+    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_test_functions.h
+    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_matrix_data.h
   )
 
   SET(SOURCES
     ${SOURCES}
-    ${${PROJECT_NAME}_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
-    ${${PROJECT_NAME}_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
   )
 
 ENDIF()

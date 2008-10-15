@@ -5,7 +5,7 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_config.h)
+TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -180,7 +180,7 @@ SET(SOURCES
 # Set addition headers and source based on package-specific
 # configuration options
 
-IF(${PROJECT_NAME}_ENABLE_EXTENDED)
+IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
 
   SET(HEADERS
     ${HEADERS}
@@ -228,7 +228,7 @@ IF(${PROJECT_NAME}_ENABLE_EXTENDED)
     Teuchos_XMLParser.cpp
     )
 
-ENDIF(${PROJECT_NAME}_ENABLE_EXTENDED)
+ENDIF(${PACKAGE_NAME}_ENABLE_EXTENDED)
 
 IF(TRILINOS_ENABLE_MPI)
 

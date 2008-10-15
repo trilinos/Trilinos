@@ -51,12 +51,13 @@ bool run_product_space_tests(
 
   using Thyra::relErr;
   using Teuchos::OSTab;
+  using Teuchos::rcp;
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
   Teuchos::RCP<Teuchos::FancyOStream>
-    out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
+    out = Teuchos::fancyOStream(rcp(out_arg,false));
 
   if(out.get()) *out << "\n*** Entering run_product_space_tests<"<<ST::name()<<">(...) ...\n";
 
