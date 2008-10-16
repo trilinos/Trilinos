@@ -239,11 +239,13 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
 # Required: Epetra, Teuchos, Triutils
-# Optional: Ifpack, TSFCore, ML
+# Optional: Ifpack, TSFCore, ML, Tpetra
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
 AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, tpetra, BELOS_TPETRA, BUILD_TPETRA, no, [Build tests that use Tpetra. Can be overridden with --disable-belos-tpetra.], [Build tests that use Tpetra.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
 
@@ -353,6 +355,10 @@ AC_CONFIG_FILES([
 		test/BlockGmres/Makefile
 		test/GCRODR/Makefile
 		test/MVOPTester/Makefile
+                tpetra/Makefile
+                tpetra/src/Makefile
+                tpetra/test/Makefile
+                tpetra/test/MVOPTester/Makefile
 		])
 
 AC_OUTPUT()

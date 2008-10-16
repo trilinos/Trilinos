@@ -743,6 +743,8 @@ SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
 BUILD_TEUCHOS_COMPLEX_TRUE
 BUILD_TEUCHOS_COMPLEX_FALSE
+BUILD_TPETRA_TRUE
+BUILD_TPETRA_FALSE
 BUILD_TRIUTILS_TRUE
 BUILD_TRIUTILS_FALSE
 BUILD_IFPACK_TRUE
@@ -1376,6 +1378,9 @@ Optional Features:
   --enable-teuchos-complex
                           Build examples/tests which use complex scalar type
                           (default is yes)
+  --enable-tpetra         Build tests that use Tpetra.
+  --enable-belos-tpetra   Build tests that use Tpetra. Can be overridden with
+                          --disable-belos-tpetra.
   --enable-triutils       Build tests that use Triutils.
   --enable-belos-triutils Build tests that use Triutils. Can be overridden
                           with --disable-belos-triutils.
@@ -7889,7 +7894,7 @@ fi
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
 # Required: Epetra, Teuchos, Triutils
-# Optional: Ifpack, TSFCore, ML
+# Optional: Ifpack, TSFCore, ML, Tpetra
 # ------------------------------------------------------------------------
 
 
@@ -7924,6 +7929,57 @@ else
   BUILD_TEUCHOS_COMPLEX_TRUE='#'
   BUILD_TEUCHOS_COMPLEX_FALSE=
 fi
+
+
+
+
+# Check whether --enable-tpetra was given.
+if test "${enable_tpetra+set}" = set; then
+  enableval=$enable_tpetra; ac_cv_implicit_use_tpetra=$enableval
+else
+  ac_cv_implicit_use_tpetra=no
+fi
+
+
+if test "Xno" != "Xno"; then
+  ac_cv_belos_using_tpetra_default=$ac_cv_implicit_use_tpetra
+else
+  ac_cv_belos_using_tpetra_default=no
+fi
+
+# Check whether --enable-belos-tpetra was given.
+if test "${enable_belos_tpetra+set}" = set; then
+  enableval=$enable_belos_tpetra; ac_cv_use_tpetra=$enableval
+else
+  ac_cv_use_tpetra=$ac_cv_belos_using_tpetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional tpetra dependent code in belos" >&5
+echo $ECHO_N "checking whether to build optional tpetra dependent code in belos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_tpetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_TPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_tpetra" = "Xyes"; then
+  BUILD_TPETRA_TRUE=
+  BUILD_TPETRA_FALSE='#'
+else
+  BUILD_TPETRA_TRUE='#'
+  BUILD_TPETRA_FALSE=
+fi
+
+
 
 
 
@@ -8423,7 +8479,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/MVOPTester/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/MVOPTester/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8624,6 +8680,13 @@ if test -z "${BUILD_TEUCHOS_COMPLEX_TRUE}" && test -z "${BUILD_TEUCHOS_COMPLEX_F
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TPETRA_TRUE}" && test -z "${BUILD_TPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9136,6 +9199,10 @@ do
     "test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
     "test/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES test/GCRODR/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
+    "tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/Makefile" ;;
+    "tpetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/src/Makefile" ;;
+    "tpetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/Makefile" ;;
+    "tpetra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/MVOPTester/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -9367,6 +9434,8 @@ SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 BUILD_TEUCHOS_COMPLEX_TRUE!$BUILD_TEUCHOS_COMPLEX_TRUE$ac_delim
 BUILD_TEUCHOS_COMPLEX_FALSE!$BUILD_TEUCHOS_COMPLEX_FALSE$ac_delim
+BUILD_TPETRA_TRUE!$BUILD_TPETRA_TRUE$ac_delim
+BUILD_TPETRA_FALSE!$BUILD_TPETRA_FALSE$ac_delim
 BUILD_TRIUTILS_TRUE!$BUILD_TRIUTILS_TRUE$ac_delim
 BUILD_TRIUTILS_FALSE!$BUILD_TRIUTILS_FALSE$ac_delim
 BUILD_IFPACK_TRUE!$BUILD_IFPACK_TRUE$ac_delim
@@ -9380,7 +9449,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
