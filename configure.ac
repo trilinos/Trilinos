@@ -7,7 +7,7 @@
 #
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Trilinos, 9.0.0, maherou@sandia.gov)
+AC_INIT(Trilinos, 9.0.1, maherou@sandia.gov)
 AC_CONFIG_SRCDIR([packages/epetra/src/Epetra_Object.h])
 AM_CONFIG_HEADER([Trilinos_config.h:Trilinos_config.h.in])
 

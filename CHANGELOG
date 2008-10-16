@@ -1,0 +1,38 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 9.0 Changelog                                              #
+#                                                                             #
+###############################################################################
+
+Release Update 9.0.1 October 16, 2008
+
+Change number.  Package(s) affected - description
+
+1. AztecOO - Bug 4204.  Fixing link error on purple.sandia.gov.
+
+2. Isorropia - Bug 4205.  replace RefCountPtr (which is deprecated) with RCP.
+
+3. FEI - Fixed a minor bug encountered by a Sierra test.
+
+4. PyTrilinos - Fixed bug in __init__.py, when dl module is imported, reported
+                by John Floyd.
+
+5. PyTrilinos - Added --with-*flags options to configure script. 
+
+6. PyTrilinos - Fixed bug whereby the command to re-link a Trilinos library as
+                shared might result in trying to link to the package library
+                itself.
+
+7. Several - Applying build system patch submitted by Deji Akingunola for RPM
+             creation.
+
+8. Zoltan - Bug 4220.  Initialized array pointer to NULL to prevent segfault
+            in ordering interface.
+
+9. Zoltan - Bug 4220.  Initialized error code that is supposed to be set in
+            callbacks (but could easily be overlooked by a user).
+
+10. Zoltan - Bug 4220.  Fixed memory access error when vsp struct is NULL.
+
+11. Zoltan - Bug 4223.  Request for TACC Ranger support.
+
