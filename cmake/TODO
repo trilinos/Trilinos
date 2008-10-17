@@ -8,11 +8,6 @@ Last updated: 2008/09/28
 - Move (almost) all tests into subdirectories since that is the right thing to
 do.
 
-(*) [Ross] Add CMake support for Thyra
-
-(*) [Ross] Add mock dependency files for all packages that feed into
-Stratimikos
-
 (*) [Ross] Add a 'libs' target to rebuild only libraries so that we can skip
 unecessary relinking when shared libraries are used
 
@@ -31,9 +26,11 @@ test/definition files.
 
 - Set up a MS Windows test machine feeding into Trilinos dashbaord
   + Get automated builds/tests with CTest/CDash running on Esteban
+  + Get CVS update working
 
 - Set up a linux machine to do nightly builds of serial debug and mpi optimized
   to send to dashboard
+  + Set up SSH tunnelling to SSG
 
 - Set up a MAC test machine feeding into Trilinos dashboard
   + Look into s858352. Talk with Mary Meinelt (msmeine@sandia.gov).
@@ -45,7 +42,7 @@ test/definition files.
 installer (NSIS)
 
 - Post a installer exe file on software.sandia.gov (hidden) and send out link
-to Trilinos devleopers (before TUG).
+to Trilinos developers in an email (before TUG).
 
 (*) [Everyone] Expand TrlinosCMakeQuickstart.txt
 - Configuring Trilinos to build
@@ -54,9 +51,16 @@ to Trilinos devleopers (before TUG).
 - Running tests (cmake and runtests-[serial,mpi])
 - Will lead into a rewriting of the Trilinos Developers Guide
 
+(*) [Esteban] Add the Trilinos LGPL license to the NSIS installer
+
 (*) [Ross and Esteban] Write unit tests for all important Trilinos Cmake
 macros (like TRILINOS_ADD_[EXECUTABLE,TEST,EXECUTABLE_AND_TEST)(...) etc.)
 
 
 Completed:
 ----------
+
+(*) [Ross] Add CMake support for Thyra [Done]
+
+(*) [Ross] Add mock dependency files for all packages that feed into
+Stratimikos [Done]
