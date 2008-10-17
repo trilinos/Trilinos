@@ -354,7 +354,9 @@ NOX::Thyra::MultiVector::
 print(std::ostream& stream) const
 {
   //stream << *thyraMultiVec;
-  thyraMultiVec->describe(*Teuchos::fancyOStream<char>(Teuchos::rcp(&stream,false)), Teuchos::VERB_EXTREME);
+  thyraMultiVec->describe(
+    *Teuchos::getFancyOStream(Teuchos::rcpFromRef(stream)),
+    Teuchos::VERB_EXTREME);
   return;
 }
 

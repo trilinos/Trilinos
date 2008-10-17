@@ -305,7 +305,9 @@ NOX::Thyra::Vector::
 print(std::ostream& stream) const
 {
   //stream << *thyraVec;
-  thyraVec->describe(*Teuchos::fancyOStream<char>(Teuchos::rcp(&stream,false)), Teuchos::VERB_HIGH);
+  thyraVec->describe(
+    *Teuchos::getFancyOStream(Teuchos::rcpFromRef(stream)),
+    Teuchos::VERB_HIGH);
   return;
 }
 
