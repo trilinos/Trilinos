@@ -39,10 +39,7 @@ FIND_PACKAGE(Perl)
 # Find the hostname used in selecting or deselecting tests by
 # TRILINOS_ADD_TEST(...) function.
 
-SITE_NAME(TRILINOS_HOSTNAME_DEFAULT)
-
-SET(TRILINOS_HOSTNAME ${TRILINOS_HOSTNAME_DEFAULT}
-  CACHE STRING "The name of the computer used to enabled or disable specific tests." )
+SITE_NAME(TRILINOS_HOSTNAME)
 
 #EXECUTE_PROCESS(
 #  COMMAND uname -n

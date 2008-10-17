@@ -8,16 +8,26 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
-# B) Define the header and source files (and directories)
+# B) Define the header and source files (and include directories)
 #
 
-# Setup directories for this package's libraries
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+SET(HEADERS "")
+SET(SOURCES "")
 
 # Set headers (for IDEs and installing)
-SET(HEADERS
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/Teuchos_config.h
+  )
+
+# NOTE: Above, we add the XXX_config.h file so tht MS Visual Studio
+# will know to include this file in the dependency analysis
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(HEADERS ${HEADERS}
   Teuchos_AbstractFactory.hpp
   Teuchos_AbstractFactoryStd.hpp
   Teuchos_Array.hpp
@@ -133,7 +143,8 @@ SET(HEADERS
   )
 
 # Set sources
-SET(SOURCES
+
+SET(SOURCES ${SOURCES}
   Teuchos_BLAS.cpp
   Teuchos_CTimeMonitor.cpp
   Teuchos_CommandLineProcessor.cpp

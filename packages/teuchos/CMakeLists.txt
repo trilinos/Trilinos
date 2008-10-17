@@ -42,6 +42,20 @@ TRILINOS_ADD_OPTION(
   OFF
   )
 
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
+  HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+  "Turn on explicit instantiation in Teuchos."
+  OFF
+  )
+
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_BOOST
+  HAVE_TEUCHOS_BOOST
+  "Enable Teuchos boost support."
+  OFF
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #

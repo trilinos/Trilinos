@@ -48,6 +48,15 @@ MACRO(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     ${ARGN} # Remaining arguments passed in
     )
 
+  # Add the link directory for this library.
+
+  LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+  # NOTE: Above , this link path not really used here for anything.
+  # Instead it is just added to the other set link library directories
+  # that are already set.  These link directories are then extracted
+  # and stored into stored in ${PACKAGE_NAME}_LIBRARY_DIRS.
+
   # Add whatever include directories have been defined so far
 
   INCLUDE_DIRECTORIES(AFTER ${${PACKAGE_NAME}_INCLUDE_DIRS})

@@ -76,20 +76,24 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
       --verbosity=1
       --packages=${PACKAGE_DIR_NAME}
       )
+
+    IF (TRILINOS_ENABLE_MPI)
     
-    ADD_CUSTOM_TARGET(
-      runtests-mpi-${PACKAGE_DIR_NAME}
-       ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-      --trilinos-dir=${TRILINOS_HOME_DIR}
-      --comm=mpi
-      --mpi-go="${TRILINOS_MPI_GO}"
-      --max-proc=${MPIEXEC_MAX_NUMPROCS}
-      --build-dir=${TRILINOS_BUILD_DIR}
-      --category=${TRILINOS_TEST_CATEGORY}
-      --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-      --verbosity=1
-      --packages=${PACKAGE_DIR_NAME}
-      )
+      ADD_CUSTOM_TARGET(
+        runtests-mpi-${PACKAGE_DIR_NAME}
+         ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
+        --trilinos-dir=${TRILINOS_HOME_DIR}
+        --comm=mpi
+        --mpi-go="${TRILINOS_MPI_GO}"
+        --max-proc=${MPIEXEC_MAX_NUMPROCS}
+        --build-dir=${TRILINOS_BUILD_DIR}
+        --category=${TRILINOS_TEST_CATEGORY}
+        --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
+        --verbosity=1
+        --packages=${PACKAGE_DIR_NAME}
+        )
+
+    ENDIF()
 
   ENDIF()
 
