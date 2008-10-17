@@ -766,7 +766,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	    // Set the remaining indices after deflation.
 	    problem_->setLSIndex( currRHSIdx );
 
-	    // Get the current residual std::vector.
+	    // Get the current residual vector.
 	    std::vector<MagnitudeType> norms;
             R_0 = MVT::CloneCopy( *(block_cg_iter->getNativeResiduals(&norms)),currIdx2 );
 	    for (int i=0; i<have; ++i) { currIdx2[i] = i; }

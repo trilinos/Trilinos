@@ -213,12 +213,12 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   // For the implications of the state of initialized_, please see documentation for initialize()
   bool initialized_;
 
-  // stateStorageInitialized_ specified that the state storage has be initialized.
+  // stateStorageInitialized_ specifies that the state storage has been initialized.
   // This initialization may be postponed if the linear problem was generated without 
   // the right-hand side or solution vectors.
   bool stateStorageInitialized_;
 
-  // Current subspace dimension, and number of iterations performed.
+  // Current number of iterations performed.
   int iter_;
   
   // 
@@ -230,10 +230,10 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   // Preconditioned residual
   Teuchos::RCP<MV> Z_;
   //
-  // Direction std::vector
+  // Direction vector
   Teuchos::RCP<MV> P_;
   //
-  // Operator applied to direction std::vector
+  // Operator applied to direction vector
   Teuchos::RCP<MV> AP_;
 
 };

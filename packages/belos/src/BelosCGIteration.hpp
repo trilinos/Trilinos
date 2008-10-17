@@ -55,10 +55,10 @@ namespace Belos {
     /*! \brief The current preconditioned residual. */
     Teuchos::RCP<const MV> Z;
 
-    /*! \brief The current decent direction std::vector */
+    /*! \brief The current decent direction vector */
     Teuchos::RCP<const MV> P;
 
-    /*! \brief The matrix A applied to current decent direction std::vector */
+    /*! \brief The matrix A applied to current decent direction vector */
     Teuchos::RCP<const MV> AP;
     
     CGIterationState() : R(Teuchos::null), Z(Teuchos::null), 

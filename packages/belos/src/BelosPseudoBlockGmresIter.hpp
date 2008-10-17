@@ -309,7 +309,7 @@ namespace Belos {
     //! \brief Set the blocksize.
     void setBlockSize(int blockSize) { 
       TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
-			 "Belos::CGIter::setBlockSize(): Cannot use a block size that is not one.");
+			 "Belos::PseudoBlockGmresIter::setBlockSize(): Cannot use a block size that is not one.");
     }
     
     //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.

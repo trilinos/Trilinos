@@ -120,7 +120,7 @@ public:
    *
    * This constructor accepts the LinearProblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
-   *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
+   *   - "Block Size" - a \c int specifying the block size to be used by the underlying block GMRES solver. Default: 1
    *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 300
    *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 1000
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
