@@ -67,15 +67,21 @@ class SolverManager : virtual public Teuchos::Describable {
   //! @name Accessor methods
   //@{ 
 
+  //! Return a reference to the linear problem being solved by this solver manager.
   virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const = 0;
 
+  //! Return the valid parameters for this solver manager.
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 
+  //! Return the current parameters being used for this solver manager.
   virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const = 0;
 
   //! Get the iteration count for the most recent call to \c solve().
   virtual int getNumIters() const = 0;
 
+  /*! \brief Returns whether a loss of accuracy was detected in the solver. 
+   *  \note This method is normally applicable to GMRES-type solvers.
+  */
   virtual bool isLOADetected() const = 0;
  
   //@}
@@ -83,10 +89,21 @@ class SolverManager : virtual public Teuchos::Describable {
   //! @name Set methods
   //@{
 
+  //! Set the linear problem that needs to be solved. 
   virtual void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) = 0;
 
+  //! Set the parameters the solver manager should use to solve the linear problem.
   virtual void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) = 0;
 
+  //@}
+
+  //! @name Reset methods
+  //@{
+  /*! \brief Performs a reset of the solver manager specified by the \c ResetType.  This informs the
+   *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
+   *  of the iterative solver strategy.
+  */ 
+  virtual void reset( const ResetType type ) = 0;
   //@}
 
   //! @name Solver application methods

@@ -168,9 +168,43 @@ int main(int argc, char *argv[]) {
     }
   }
   //
+  // -----------------------------------------------------------------
+  // Resolve the first problem by just resetting the solver manager.
+  // -----------------------------------------------------------------
+  X->PutScalar( 0.0 );  
+  solver->reset( Belos::Problem );
   //
+  // Perform solve (again)
+  //
+  ret = solver->solve();
+  //
+  // Get the number of iterations for this solve.
+  //
+  numIters = solver->getNumIters();
+  std::cout << "Number of iterations performed for this solve (manager reset): " << numIters << std::endl;
+
+  if (ret!=Belos::Converged) {
+    if (proc_verbose)
+      std::cout << "End Result: TEST FAILED" << std::endl;	
+    return -1;
+  }
+  //
+  // Compute actual residuals.
+  //
+  OPT::Apply( *A, *X, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
+  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( *B, rhs_norm );
+  if (proc_verbose) {
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+    for ( int i=0; i<numrhs; i++) {
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
+    }
+  }
+  //
+  // -------------------------------------------------------------
   // Construct a second unpreconditioned linear problem instance.
-  //
+  // -------------------------------------------------------------
   RCP<Epetra_MultiVector> X2 = MVT::Clone(*X, numrhs); 
   MVT::MvInit( *X2, 0.0 );
   Belos::LinearProblem<double,MV,OP> problem2( A, X2, B );
@@ -210,7 +244,7 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   //
   numIters = solver->getNumIters();
-  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+  std::cout << "Number of iterations performed for this solve (new solver): " << numIters << std::endl;
 
   //
   // Compute actual residuals.

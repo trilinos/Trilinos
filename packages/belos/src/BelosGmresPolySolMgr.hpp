@@ -175,13 +175,24 @@ public:
     
   //! @name Set methods
   //@{
-    
+  
+  //! Set the linear problem that needs to be solved.  
   void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; isSTSet_ = false; }
-    
+
+  //! Set the parameters the solver manager should use to solve the linear problem.  
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
     
   //@}
-    
+  
+  //! @name Reset methods
+  //@{
+  /*! \brief Performs a reset of the solver manager specified by the \c ResetType.  This informs the
+   *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
+   *  of the iterative solver strategy.
+  */
+  void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+  //@}
+  
   //! @name Solver application methods
   //@{ 
     

@@ -105,6 +105,10 @@ namespace Belos {
 			Undefined = 0x4    /*!< Status test has not been checked yet. */
   };
 
+  enum ResetType  {     Problem = 0x1,           /*!< Reset the linear problem inside the solver. */
+                        RecycleSubspace = 0x2    /*!< Destroy any existing subspace inside the solver. */
+  };
+
   /*!
     Return a std::string name for a StatusType object.
   */
