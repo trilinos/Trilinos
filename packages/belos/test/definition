@@ -102,6 +102,6 @@
 (FRAMEWORK,INSTALL,BelosTpetraTests,BelosComplexTests) {
     TESTS = ../tpetra/test/MVOPTester/Tpetra_MVOPComplexTester_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="../tpetra/test/MVOPTester/mhd1280b.cua";
+    #ARGS = --verbose --filename="../tpetra/test/MVOPTester/mhd1280b.cua";
     COMM = SERIAL, MPI;
 }

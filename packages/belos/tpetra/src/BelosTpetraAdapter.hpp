@@ -37,6 +37,7 @@
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_Map.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_TestForException.hpp>
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
@@ -57,33 +58,74 @@ namespace Belos {
   public:
 
     static Teuchos::RCP<Tpetra::MultiVector<int,Scalar> > Clone( const Tpetra::MultiVector<int,Scalar>& mv, const int numvecs )
-    { TEST_FOR_EXCEPT(true); }
+    { return Teuchos::rcp( new Tpetra::MultiVector<int,Scalar>(mv.getMap(),numvecs)); }
 
     static Teuchos::RCP<Tpetra::MultiVector<int,Scalar> > CloneCopy( const Tpetra::MultiVector<int,Scalar>& mv )
-    { TEST_FOR_EXCEPT(true); }
+    {
+      return Teuchos::rcp( new Tpetra::MultiVector<int,Scalar>( mv ) ); 
+    }
 
     static Teuchos::RCP<Tpetra::MultiVector<int,Scalar> > CloneCopy( const Tpetra::MultiVector<int,Scalar>& mv, const std::vector<int>& index )
-    { TEST_FOR_EXCEPT(true); }
+    { 
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(index.size() == 0,std::runtime_error,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::Clone(mv,index): numvecs must be greater than zero.");
+      TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::runtime_error,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::Clone(mv,index): indices must be >= zero.");
+      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.numVectors(), std::runtime_error,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::Clone(mv,index): indices must be < mv.numVectors().");
+#endif
+      // TODO: check to see if index is contiguous, if so, use Teuchos::Range1D
+      return mv.subCopy(Teuchos::arrayViewFromVector(index));
+    }
 
     static Teuchos::RCP<Tpetra::MultiVector<int,Scalar> > CloneView( Tpetra::MultiVector<int,Scalar>& mv, const std::vector<int>& index )
-    {  TEST_FOR_EXCEPT(true); }
+    {  
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+      TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
+      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.numVectors(), std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be < mv.numVectors().");
+#endif
+      return mv.subView(Teuchos::arrayViewFromVector(index));
+    }
 
     static Teuchos::RCP<const Tpetra::MultiVector<int,Scalar> > CloneView( const Tpetra::MultiVector<int,Scalar>& mv, const std::vector<int>& index )
-    { TEST_FOR_EXCEPT(true); }
+    {
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+      TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
+      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.numVectors(), std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be < mv.numVectors().");
+#endif
+      return mv.subViewConst(Teuchos::arrayViewFromVector(index));
+    }
 
     static int GetVecLength( const Tpetra::MultiVector<int,Scalar>& mv )
-    { TEST_FOR_EXCEPT(true); }
+    { mv.globalLength(); }
 
     static int GetNumberVecs( const Tpetra::MultiVector<int,Scalar>& mv )
-    { TEST_FOR_EXCEPT(true); }
+    { return mv.numVectors(); }
 
     static void MvTimesMatAddMv( const Scalar alpha, const Tpetra::MultiVector<int,Scalar>& A, 
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  const Scalar beta, Tpetra::MultiVector<int,Scalar>& mv )
-    { TEST_FOR_EXCEPT(true); }
+    {
+      Tpetra::Map<int> LocalMap(B.numRows(), 0, *A.getMap().getPlatform(),true);
+      // TODO: this multivector should be a view of the data of B, not a copy
+      Teuchos::ArrayView<const Scalar> Bvalues(B.values(),B.stride()*B.numCols());
+      Tpetra::MultiVector<int,Scalar> B_mv(LocalMap,Bvalues,B.stride(),B.numCols());
+      mv.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, B_mv, beta);
+    }
 
     static void MvAddMv( const Scalar alpha, const Tpetra::MultiVector<int,Scalar>& A, const Scalar beta, const Tpetra::MultiVector<int,Scalar>& B, Tpetra::MultiVector<int,Scalar>& mv )
-    { TEST_FOR_EXCEPT(true); }
+    {
+      mv.update(alpha,A,beta,B,Teuchos::ScalarTraits<Scalar>::zero());
+    }
 
     static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, Scalar alpha )
     { TEST_FOR_EXCEPT(true); }
@@ -92,22 +134,74 @@ namespace Belos {
     { TEST_FOR_EXCEPT(true); }
 
     static void MvTransMv( const Scalar alpha, const Tpetra::MultiVector<int,Scalar>& A, const Tpetra::MultiVector<int,Scalar>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B )
-    { TEST_FOR_EXCEPT(true); }
+    { 
+      Tpetra::Map<int> LocalMap(B.numRows(), 0, *A.getMap().getPlatform(),true);
+      // TODO: this multivector should be a view of the data of B, so we don't have to perform the copy afterwards
+      Tpetra::MultiVector<int,Scalar> B_mv(LocalMap,B.numCols(),true);
+      B_mv.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,alpha,A,mv,Teuchos::ScalarTraits<Scalar>::zero());
+      // copy the data from B_mv to B
+      if (B.stride() == B.numRows()) {
+        // data in B_mv,B is packed, so we can perform a single copy
+        int dummy;
+        Teuchos::ArrayView<Scalar> av(B.values(),B.numRows()*B.numCols());
+        B_mv.extractCopy(av,dummy);
+      }
+      else {
+        // data in B is not-packed, must perform multiple copies
+        // build an array of views into B
+        Teuchos::Array<Teuchos::ArrayView<Scalar> > aoa(B.numCols(),Teuchos::null);
+        for (int j=0; j<B.numCols(); ++j) {
+          aoa[j] = Teuchos::arrayView(B[j],B.numRows());
+        }
+        // get Tpetra::MultiVector to put data at these addresses
+        B_mv.extractCopy(aoa);
+      }
+    }
 
-    static void MvDot( const Tpetra::MultiVector<int,Scalar>& mv, const Tpetra::MultiVector<int,Scalar>& A, std::vector<Scalar>& b )
-    { TEST_FOR_EXCEPT(true); }
+    static void MvDot( const Tpetra::MultiVector<int,Scalar>& A, const Tpetra::MultiVector<int,Scalar>& B, std::vector<Scalar>& dots)
+    { 
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION(A.numVectors() != B.numVectors(),std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
+      TEST_FOR_EXCEPTION(dots.size() < (unsigned int)A.numVectors(),std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvDot(A,B,dots): dots must have room for all dot products.");
+#endif
+      Teuchos::ArrayView<Scalar> av(dots);
+      A.dot(B,av(0,A.numVectors()));
+    }
 
     static void MvNorm( const Tpetra::MultiVector<int,Scalar>& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm )
-    { TEST_FOR_EXCEPT(true); }
+    { 
+      Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av(normvec);
+      switch (type) {
+        case OneNorm:
+          mv.norm1(av(0,mv.numVectors()));
+          break;
+        case TwoNorm:
+          mv.norm2(av(0,mv.numVectors()));
+          break;
+        case InfNorm:
+          mv.normInf(av(0,mv.numVectors()));
+          break;
+      }
+    }
 
     static void SetBlock( const Tpetra::MultiVector<int,Scalar>& A, const std::vector<int>& index, Tpetra::MultiVector<int,Scalar>& mv )
-    { TEST_FOR_EXCEPT(true); }
+    {
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.numVectors() < index.size(),std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
+#endif
+      Teuchos::RCP<Tpetra::MultiVector<int,Scalar> > mvsub = mv.subView(Teuchos::arrayViewFromVector(index));
+      *mvsub = A;
+      mvsub = Teuchos::null;
+    }
 
     static void MvRandom( Tpetra::MultiVector<int,Scalar>& mv )
-    { TEST_FOR_EXCEPT(true); }
+    { mv.random(); }
 
     static void MvInit( Tpetra::MultiVector<int,Scalar>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
-    { TEST_FOR_EXCEPT(true); }
+    { mv.putScalar(alpha); }
 
     static void MvPrint( const Tpetra::MultiVector<int,Scalar>& mv, std::ostream& os )
     { TEST_FOR_EXCEPT(true); }
@@ -127,7 +221,10 @@ namespace Belos {
                         const Tpetra::MultiVector<int,Scalar>& X,
                               Tpetra::MultiVector<int,Scalar>& Y,
                         ETrans trans=NOTRANS )
-    { TEST_FOR_EXCEPT(true); }
+    { 
+      TEST_FOR_EXCEPTION(trans != NOTRANS, std::logic_error, "Feature not yet implemented.");
+      Op.apply(X,Y,Teuchos::NO_TRANS);
+    }
   };
 
 } // end of Belos namespace 
