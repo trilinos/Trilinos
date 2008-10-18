@@ -562,16 +562,16 @@ class EpetraVectorTestCase(unittest.TestCase):
         ev = Epetra.Vector(self.map,self.numPyArray1)
         self.assertEquals(ev.GlobalLength(), self.length*self.comm.NumProc())
 
-#     def testConstantStride(self):
-#         "Test Epetra.Vector ConstantStride method"
-#         squareArray = [[-1.2,  3.4, -5.6],
-#                        [ 7.8, -9.0,  1.2],
-#                        [-3.4,  5.6, -7.8]]
-#         multiArray = [squareArray] * 8
-#         emv  = Epetra.Vector(self.map,multiArray)
-#         ev   = Epetra.Vector(Epetra.View,emv,3)
-#         self.assertEquals(emv.ConstantStride(), True)
-#         self.assertEquals( ev.ConstantStride(), True)
+    def testConstantStride(self):
+        "Test Epetra.Vector ConstantStride method"
+        squareArray = [[-1.2,  3.4, -5.6],
+                       [ 7.8, -9.0,  1.2],
+                       [-3.4,  5.6, -7.8]]
+        multiArray = [squareArray] * 8
+        emv  = Epetra.MultiVector(self.map,multiArray)
+        ev   = Epetra.Vector(Epetra.View,emv,3)
+        self.assertEquals(emv.ConstantStride(), True)
+        self.assertEquals( ev.ConstantStride(), True)
 
     def testStride(self):
         "Test Epetra.Vector Stride method"
@@ -607,6 +607,8 @@ class EpetraVectorTestCase(unittest.TestCase):
 
     def testPrint(self):
         "Test Epetra.Vector Print method"
+        # This does not work under MPI on my MacBook Pro yet...
+        if not isinstance(self.comm, Epetra.SerialComm): return
         output = ""
         if self.comm.MyPID() == 0:
             output += "%10s%14s%20s  \n" % ("MyPID","GID","Value")
@@ -633,14 +635,14 @@ class EpetraVectorTestCase(unittest.TestCase):
         result = -100*self.comm.NumProc()
         self.assertEqual(dot, result)
 
-#     def testAbs(self):
-#         "Test Epetra.Vector Abs method"
-#         ev1 = Epetra.Vector(self.map,self.numPyArray1)
-#         ev2 = Epetra.Vector(self.map)
-#         self.assertEquals(ev2[:],0.0)
-#         result = ev2.Abs(ev1)
-#         self.assertEquals(result,0)
-#         self.assertEquals(ev2[:],abs(self.numPyArray1))
+    def testAbs(self):
+        "Test Epetra.Vector Abs method"
+        ev1 = Epetra.Vector(self.map,self.numPyArray1)
+        ev2 = Epetra.Vector(self.map)
+        self.failUnless((ev2[:] == 0.0).all())
+        result = ev2.Abs(ev1)
+        self.assertEquals(result,0)
+        self.failUnless((ev2[:] == abs(self.numPyArray1)).all())
 
     def testReciprocal(self):
         "Test Epetra.Vector Reciprocal method"

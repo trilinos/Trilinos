@@ -86,11 +86,18 @@ def buildInitFile(filename,depfile,pyTrilinosModules,
             print "   ", module
         print
         content = """
+dl = None
 try:
     import dl
+except SystemError, ImportError:
+    try:
+        import DLFCN as dl
+    except SystemError, ImportError:
+        pass
+if dl:
     dlopenflags = dl.RTLD_NOW | dl.RTLD_GLOBAL
     del dl
-except SystemError, ImportError:
+else:
     dlopenflags = 258
 import sys
 sys.setdlopenflags(dlopenflags)

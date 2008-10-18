@@ -55,6 +55,8 @@ EXTRA_DIST = Amesos.i                             \
 	     Epetra_RowMatrix_Utils.i             \
 	     Epetra_SerialDense.i                 \
 	     Epetra_Vectors.i                     \
+             FILEstream.cpp                       \
+             FILEstream.h                         \
 	     Galeri.i                             \
 	     IFPACK.i                             \
 	     Komplex.i                            \
@@ -148,8 +150,8 @@ ENABLE_KOMPLEX=
 @HAVE_PYTRILINOS_NOX_EPETRA_TRUE@ENABLE_NOX_EPETRA=true
 @HAVE_PYTRILINOS_NOX_EPETRA_FALSE@ENABLE_NOX_EPETRA=
 
-#@HAVE_PYTRILINOS_LOCA_TRUE@ENABLE_LOCA=true
-#@HAVE_PYTRILINOS_LOCA_FALSE@ENABLE_LOCA=
+@HAVE_PYTRILINOS_LOCA_TRUE@ENABLE_LOCA=true
+@HAVE_PYTRILINOS_LOCA_FALSE@ENABLE_LOCA=
 ENABLE_LOCA=
 
 # Default make target

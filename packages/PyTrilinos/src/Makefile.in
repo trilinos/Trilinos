@@ -270,6 +270,8 @@ EXTRA_DIST = Amesos.i                             \
 	     Epetra_RowMatrix_Utils.i             \
 	     Epetra_SerialDense.i                 \
 	     Epetra_Vectors.i                     \
+             FILEstream.cpp                       \
+             FILEstream.h                         \
 	     Galeri.i                             \
 	     IFPACK.i                             \
 	     Komplex.i                            \
@@ -632,7 +634,7 @@ include $(DEPFILES)
 # Wrapper and proxy targets
 %_wrap.cpp: $(srcdir)/%.i
 	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
-	sed 's/\(int\|bool\|double\) \(c_\|\)result;/\1 \2result = 0;/' $@ > $@.temp
+	sed 's/\(int\|bool\|double\) \(result\|c_result\|swig_val\);/\1 \2 = 0;/' $@ > $@.temp
 	mv $@.temp $@
 
 swigclean:

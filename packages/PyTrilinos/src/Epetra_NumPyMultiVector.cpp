@@ -156,7 +156,8 @@ Epetra_Map & Epetra_NumPyMultiVector::getMap(PyObject * pyObject)
   if (!tmp_map)
   {
     const int totalLength = PyArray_Size((PyObject *)tmp_array);
-    tmp_map = new Epetra_Map(totalLength,0,defaultComm);
+    const int numVectors  = tmp_array->dimensions[0];
+    tmp_map = new Epetra_Map(totalLength/numVectors,0,defaultComm);
   }
   return *tmp_map;
 }

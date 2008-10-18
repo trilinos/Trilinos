@@ -446,29 +446,44 @@ class MultiVector(UserArray,NumPyMultiVector):
         Initialize the underlying numpy array.
         """
         UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
+    def __expand_index__(self, index):
+        result = [slice(None, None, None)] * len(self.shape)
+        if isinstance(index, tuple):
+            for i in range(len(index)):
+                result[i] = index[i]
+        else:
+            result[0] = index
+        return tuple(result)
     def __getitem__(self,index):
         """
         x.__getitem__(y) <==> x[y]
         """
         result = UserArray.__getitem__(self,index)
-        # If we are in parallel and result is not a scalar, then the index is
-        # non-trivial and we need to create a new BlockMap for the returned
-        # MultiVector
-        if self.Comm().NumProc() > 1 and hasattr(index,"__len__") and \
-               len(numpy.shape(result)) > 0:
+        # If the result is an array (not a scalar), then we must take steps to
+        # ensure that the resulting MultiVector has an accurate BlockMap
+        if hasattr(result,"__len__"):
             # Obtain the new global IDs by getting a slice (based on index) from
             # an array of the old global IDs.  Use the new global IDs to build a
             # new BlockMap, upon which the new result will be based.
+            index           = self.__expand_index__(index)
+            newIndex        = index[1:]
+            oldShape        = self.shape[1:]
             oldMap          = self.Map()
             gids            = oldMap.MyGlobalElements()
-            gids.shape      = self.shape[1:]
+            gids.shape      = oldShape
             elemSizes       = oldMap.ElementSizeList()
-            elemSizes.shape = self.shape[1:]
-            newMap          = BlockMap(-1, gids[index[1:]], elemSizes[index[1:]],
-                                       oldMap.IndexBase(), self.Comm())
+            elemSizes.shape = oldShape
+            newMap          = BlockMap(-1,
+                                       gids[newIndex].ravel(),
+                                       elemSizes[newIndex].ravel(),
+                                       oldMap.IndexBase(),
+                                       self.Comm())
             newShape        = result.shape
-            result          = MultiVector(newMap, result.array)
-            result.shape    = newShape
+            if not (isinstance(index[0],slice) or hasattr(index[0],"__len__")):
+                newShape = (1,) + newShape
+            rarray       = result.array.ravel()
+            rarray.shape = newShape
+            result       = MultiVector(newMap, rarray)
         return result
     def __getslice__(self, i, j):
         """
@@ -750,6 +765,37 @@ class Vector(UserArray,NumPyVector):
         Initialize the underlying numpy array.
         """
         UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
+    def __getitem__(self,index):
+        """
+        x.__getitem__(y) <==> x[y]
+        """
+        result = UserArray.__getitem__(self,index)
+        # If the result is an array (not a scalar) then we must take steps to
+        # ensure that the resulting Vector has an accurate BlockMap
+        if hasattr(result,"__len__"):
+            # Obtain the new global IDs by getting a slice (based on index) from
+            # an array of the old global IDs.  Use the new global IDs to build a
+            # new BlockMap, upon which the new result will be based.
+            oldMap          = self.Map()
+            gids            = oldMap.MyGlobalElements()
+            gids.shape      = self.shape
+            elemSizes       = oldMap.ElementSizeList()
+            elemSizes.shape = self.shape
+            newMap          = BlockMap(-1,
+                                       gids[index].ravel(),
+                                       elemSizes[index].ravel(),
+                                       oldMap.IndexBase(),
+                                       self.Comm())
+            newShape        = result.shape
+            rarray          = result.array.ravel()
+            rarray.shape    = newShape
+            result          = Vector(newMap, rarray)
+        return result
+    def __getslice__(self, i, j):
+        """
+        x.__getslice__(i,j) <==> x[i:j]
+        """
+        return self.__getitem__(slice(i,j))
     def __str__(self):
         """
         __str__(self) -> string

@@ -1,0 +1,329 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+# Imports.  Users importing an installed version of PyTrilinos should use the
+# "from PyTrilinos import ..." syntax.  Here, the setpath module adds the build
+# directory, including "PyTrilinos", to the front of the search path.  We thus
+# use "import ..." for Trilinos modules.  This prevents us from accidentally
+# picking up a system-installed version and ensures that we are testing the
+# build module.
+#from   numpy    import *
+from   optparse import *
+import sys
+import unittest
+
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
+    import setpath
+    if options.boost: setpath.setpath("src-boost")
+    else:             setpath.setpath()
+    import Epetra
+    import ML
+else:
+    try:
+        import setpath
+        if options.boost: setpath.setpath("src-boost")
+        else:             setpath.setpath()
+        import Epetra
+        import ML
+    except ImportError:
+        from PyTrilinos import Epetra
+        from PyTrilinos import ML
+        print >>sys.stderr, "Using system-installed Epetra, ML"
+
+##########################################################################
+
+class MLSpaceTestCase(unittest.TestCase):
+    "TestCase for ML.Space objects"
+
+    def setUp(self):
+        self.comm = Epetra.PyComm()
+        self.dataname = "testSpace%d.dat" % comm.MyPID()
+        self.comm.Barrier()
+
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testConstructor0(self):
+        "Test ML.Space default constructor"
+        space = ML.Space()
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), 0)
+        self.assertEqual(space.GetNumMyElements(), 0)
+        self.assertEqual(space.GetOffset(), 0)
+        self.assertEqual(space.IsLinear(), False)
+
+    def testConstructor1(self):
+        "Test ML.Space (int) constructor"
+        numMyEl = 10
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        space = ML.Space(numGlobalEl)
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        self.assertEqual(space.GetOffset(), 10*self.comm.MyPID())
+        self.assertEqual(space.IsLinear(), True)
+
+    def testConstructor2(self):
+        "Test ML.Space (int,int) constructor"
+        numMyEl = self.comm.MyPID() + 5
+        n = self.comm.NumProc()
+        numGlobalEl = n * (n-1) / 2 + 5*n
+        space = ML.Space(numGlobalEl, numMyEl)
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        p = self.comm.MyPID()
+        self.assertEqual(space.GetOffset(), (p*p + 9*p)/2)
+        self.assertEqual(space.IsLinear(), True)
+
+    def testConstructor3(self):
+        "Test ML.Space (Epetra.Map) constructor"
+        numMyEl = 12
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        map = Epetra.Map(numGlobalEl, 0, self.comm)
+        space = ML.Space(map)
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        self.assertEqual(space.GetOffset(), -1)  # distribution not linear
+        self.assertEqual(space.IsLinear(), False)
+
+    def testConstructor4(self):
+        "Test ML.Space (int, sequence) constructor"
+        numMyEl = 8
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        myGlobalEl = range(self.comm.MyPID(), numGlobalEl, self.comm.NumProc())
+        space = ML.Space(numGlobalEl, myGlobalEl)
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        self.assertEqual(space.GetOffset(), -1)  # distribution not linear
+        self.assertEqual(space.IsLinear(), False)
+
+    def testConstructor5(self):
+        "Test ML.Space copy constructor"
+        numMyEl = self.comm.MyPID() + 5
+        n = self.comm.NumProc()
+        numGlobalEl = n * (n-1) / 2 + 5*n
+        space1 = ML.Space(numGlobalEl, numMyEl)
+        space2 = ML.Space(space1)
+        self.assertEqual(space1.GetNumGlobalElements(), space2.GetNumGlobalElements())
+        self.assertEqual(space1.GetNumMyElements(),     space2.GetNumMyElements())
+        self.assertEqual(space1.GetOffset(),            space2.GetOffset())
+        self.assertEqual(space1.IsLinear(),             space2.IsLinear())
+
+    def testSetGetLabel(self):
+        "Test ML.Space SetLabel/GetLabel methods"
+        space = ML.Space()
+        label = "Space"
+        space.SetLabel(label)
+        self.assertEqual(space.GetLabel(), label)
+
+    def testPrint(self):
+        "Test ML.Space Print method"
+        # This does not work under MPI on my MacBook Pro yet...
+        if not isinstance(self.comm, Epetra.SerialComm): return
+        space = ML.Space()
+        space.Print(open(self.dataname,"w"))
+        data = "\n*** MLAPI::Space ***\n" + \
+               "Label               = obj_?\n" + \
+               "NumMyElements()     = 0\n" + \
+               "NumGlobalElements() = 0\n" + \
+               "Offset              = 0\n" + \
+               "Distribution is not linear\n\n" + \
+               "    ProcID                 LID                 GID\n\n\n"
+        result = open(self.dataname,"r").read()
+        self.assertEqual(result[  :48], data[  :48])
+        self.assertEqual(result[-154:], data[-154:])
+
+    def testStr(self):
+        "Test ML.Space __str__ method"
+        # This does not work under MPI on my MacBook Pro yet...
+        if not isinstance(self.comm, Epetra.SerialComm): return
+        space = ML.Space()
+        data = "\n*** MLAPI::Space ***\n" + \
+               "Label               = obj_?\n" + \
+               "NumMyElements()     = 0\n" + \
+               "NumGlobalElements() = 0\n" + \
+               "Offset              = 0\n" + \
+               "Distribution is not linear\n\n" + \
+               "    ProcID                 LID                 GID\n\n"
+        result = str(space)
+        self.assertEqual(result[  :48], data[  :48])
+        self.assertEqual(result[-153:], data[-153:])
+
+    def testReshape0(self):
+        "Test ML.Space Reshape method, no arguments"
+        numMyEl = 10
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        space = ML.Space(numGlobalEl)
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        self.assertEqual(space.GetOffset(), 10*self.comm.MyPID())
+        self.assertEqual(space.IsLinear(), True)
+        space.Reshape()
+        self.assertEqual(space.GetNumGlobalElements(), 0)
+        self.assertEqual(space.GetNumMyElements(), 0)
+        self.assertEqual(space.GetOffset(), -1)
+        self.assertEqual(space.IsLinear(), True)
+
+    def testReshape1(self):
+        "Test ML.Space Reshape method, (int) argument"
+        space = ML.Space()
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), 0)
+        self.assertEqual(space.GetNumMyElements(), 0)
+        self.assertEqual(space.GetOffset(), 0)
+        self.assertEqual(space.IsLinear(), False)
+        numMyEl = 10
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        space.Reshape(numGlobalEl)
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        self.assertEqual(space.GetOffset(), 10*self.comm.MyPID())
+        self.assertEqual(space.IsLinear(), True)
+
+    def testReshape2(self):
+        "Test ML.Space Reshape method, (int,int) arguments"
+        space = ML.Space()
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), 0)
+        self.assertEqual(space.GetNumMyElements(), 0)
+        self.assertEqual(space.GetOffset(), 0)
+        self.assertEqual(space.IsLinear(), False)
+        numMyEl = self.comm.MyPID() + 5
+        n = self.comm.NumProc()
+        numGlobalEl = n * (n-1) / 2 + 5*n
+        space.Reshape(numGlobalEl, numMyEl)
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        p = self.comm.MyPID()
+        self.assertEqual(space.GetOffset(), (p*p + 9*p)/2)
+        self.assertEqual(space.IsLinear(), True)
+
+    def testReshape3(self):
+        "Test ML.Space Reshape method, (int,sequence) arguments"
+        space = ML.Space()
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), 0)
+        self.assertEqual(space.GetNumMyElements(), 0)
+        self.assertEqual(space.GetOffset(), 0)
+        self.assertEqual(space.IsLinear(), False)
+        numMyEl = 8
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        myGlobalEl = range(self.comm.MyPID(), numGlobalEl, self.comm.NumProc())
+        space.Reshape(numGlobalEl, myGlobalEl)
+        self.assertEqual(space.GetLabel()[:4], "obj_")
+        self.assertEqual(space.GetNumGlobalElements(), numGlobalEl)
+        self.assertEqual(space.GetNumMyElements(), numMyEl)
+        self.assertEqual(space.GetOffset(), -1)  # distribution not linear
+        self.assertEqual(space.IsLinear(), False)
+
+    def testEqualTrue(self):
+        "Test ML.Space == operator, for equal spaces"
+        n = self. comm.NumProc()
+        space1 = ML.Space(n*10)
+        space2 = ML.Space(space1)
+        self.failUnless(space1 == space2)
+
+    def testEqualFalse(self):
+        "Test ML.Space == operator, for unequal spaces"
+        n = self. comm.NumProc()
+        space1 = ML.Space(n*10)
+        space2 = ML.Space(n*12)
+        self.failIf(space1 == space2)
+
+    def testNotEqualFalse(self):
+        "Test ML.Space != operator, for equal spaces"
+        n = self. comm.NumProc()
+        space1 = ML.Space(n*10)
+        space2 = ML.Space(space1)
+        self.failIf(space1 != space2)
+
+    def testNotEqualTrue(self):
+        "Test ML.Space != operator, for unequal spaces"
+        n = self. comm.NumProc()
+        space1 = ML.Space(n*10)
+        space2 = ML.Space(n*12)
+        self.failUnless(space1 != space2)
+
+    def testGetGlobalID(self):
+        "Test ML.Space __call__ method to get global ID"
+        numMyEl = 8
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        myGlobalEl = range(self.comm.MyPID(), numGlobalEl, self.comm.NumProc())
+        space = ML.Space(numGlobalEl, myGlobalEl)
+        for i in range(numMyEl):
+            self.assertEqual(space(i), myGlobalEl[i])
+
+    def testGetMyGlobalElements(self):
+        "Test ML.Space GetMyGlobalElements method"
+        numMyEl = 8
+        numGlobalEl = numMyEl * self.comm.NumProc()
+        myGlobalEl = range(self.comm.MyPID(), numGlobalEl, self.comm.NumProc())
+        space = ML.Space(numGlobalEl, myGlobalEl)
+        self.failUnless((space.GetMyGlobalElements() == myGlobalEl).all())
+
+##########################################################################
+
+if __name__ == "__main__":
+
+    # Create the test suite object
+    suite = unittest.TestSuite()
+
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite(MLSpaceTestCase))
+
+    # Create a communicator
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
+
+    # Run the test suite
+    if iAmRoot: print >>sys.stderr, \
+          "\n****************\nTesting ML.Space\n****************\n"
+    verbosity = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(errsPlusFails)

@@ -35,6 +35,14 @@
 // raised but a C++ exception should be thrown in order to ensure
 // proper cleanup of a failed operation.
 
+// When a python error is detected, or if the code sets a python
+// error, this should be followed with
+//
+//     throw PythonException();
+//
+// The PythonException will extract the information it needs directly
+// from the python API.
+
 // Typically, the wrapper code should catch this exception and convert
 // it back to a python error, using the restore() method.  Using SWIG,
 // this can be done with the %exception directive:
