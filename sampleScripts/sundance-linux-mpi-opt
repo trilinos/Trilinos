@@ -28,6 +28,8 @@ CXXFLAGS="-O3 -Wall  -finline-functions -funroll-loops" \
 --enable-amesos-thyra \
 --enable-ifpack-thyra \
 --enable-ml-thyra \
+--enable-anasazi-thyra \
+--enable-anasazi \
 --enable-stratimikos \
 --enable-epetra \
 --enable-epetraext \

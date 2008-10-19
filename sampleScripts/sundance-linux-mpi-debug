@@ -29,8 +29,10 @@ CXXFLAGS="-g -O0 -Wall" \
 --disable-thyra-examples \
 --enable-aztecoo-thyra \
 --enable-epetra-thyra \
+--enable-anasazi-thyra \
 --enable-amesos-thyra \
 --enable-ifpack-thyra \
+--enable-anasazi \ 
 --enable-ml-thyra \
 --enable-stratimikos \
 --enable-epetra \
