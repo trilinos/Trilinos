@@ -19,9 +19,18 @@ SET (CTEST_CVS_COMMAND
 )
 
 SET (CTEST_CVS_CHECKOUT
-  "${CTEST_CVS_COMMAND} -Q -d :ext:$ENV{USER}@software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
+  "cvs -Q -d :ext:$ENV{USER}@software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
 )
 
+# which ctest command to use for running the dashboard
+SET (CTEST_COMMAND 
+  "C:/Program Files/CMake 2.6/bin/ctest.exe -D Nightly"
+  )
+
+# what cmake command to use for configuring this dashboard
+SET (CTEST_CMAKE_COMMAND 
+  "C:/Program Files/CMake 2.6/bin/cmake.exe"
+  )
 
 SET (CTEST_BINARY_NAME ${CTEST_SOURCE_NAME}-Build)
 SET (CTEST_SOURCE_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}")
@@ -60,9 +69,9 @@ CMAKE_C_FLAGS:STRING=-fexceptions
 CMAKE_EXE_LINKER_FLAGS:STRING=-lpthread
 
 
-MAKECOMMAND:STRING=nmake -i
-CMAKE_MAKE_PROGRAM:FILEPATH=nmake
-CMAKE_GENERATOR:INTERNAL=NMake Makefiles
+#MAKECOMMAND:STRING=nmake -i
+#CMAKE_MAKE_PROGRAM:FILEPATH=nmake
+#CMAKE_GENERATOR:INTERNAL=NMake Makefiles
 
 
 ")
