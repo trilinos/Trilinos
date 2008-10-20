@@ -46,6 +46,16 @@ FADFAD_EXAMPLES =
 
 endif
 
+if ENABLE_SACADO_TEUCHOS
+
+PCE_EXAMPLES = pce_example
+
+else
+
+PCE_EXAMPLES = 
+
+endif
+
 noinst_PROGRAMS = \
 	ad_example \
 	dfad_example \
@@ -59,7 +69,7 @@ noinst_PROGRAMS = \
 	dfad_taylor_example \
 	dfad_sfc_example \
 	trad_sfc_example \
-	pce_example \
+	$(PCE_EXAMPLES) \
 	sparse_example
 
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp

@@ -100,7 +100,7 @@ noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
 	trad_example$(EXEEXT) tradvec_example$(EXEEXT) \
 	trad_dfad_example$(EXEEXT) taylor_example$(EXEEXT) \
 	dfad_taylor_example$(EXEEXT) dfad_sfc_example$(EXEEXT) \
-	trad_sfc_example$(EXEEXT) pce_example$(EXEEXT) \
+	trad_sfc_example$(EXEEXT) $(am__EXEEXT_2) \
 	sparse_example$(EXEEXT)
 DIST_COMMON = $(srcdir)/FEApp/MakefileFEAppStub.am \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -129,6 +129,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_NESTED_FAD_TRUE@am__EXEEXT_1 = dfad_dfad_example$(EXEEXT)
+@ENABLE_SACADO_TEUCHOS_TRUE@am__EXEEXT_2 = pce_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_ad_example_OBJECTS = ad_example-ad_example.$(OBJEXT)
 ad_example_OBJECTS = $(am_ad_example_OBJECTS)
@@ -341,6 +342,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @BUILD_NESTED_FAD_FALSE@FADFAD_EXAMPLES = 
 @BUILD_NESTED_FAD_TRUE@FADFAD_EXAMPLES = dfad_dfad_example
+@ENABLE_SACADO_TEUCHOS_FALSE@PCE_EXAMPLES = 
+@ENABLE_SACADO_TEUCHOS_TRUE@PCE_EXAMPLES = pce_example
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = $(SACADO_INCLUDES)
 dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
