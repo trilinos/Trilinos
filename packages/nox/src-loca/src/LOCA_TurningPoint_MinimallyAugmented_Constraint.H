@@ -168,6 +168,14 @@ namespace LOCA {
 	virtual Teuchos::RCP<const NOX::Abstract::Vector>
 	getRightNullVec() const;
 
+	//! Returns a vector
+	virtual Teuchos::RCP<const NOX::Abstract::Vector>
+	getAVec() const;
+
+	//! Returns b vector
+	virtual Teuchos::RCP<const NOX::Abstract::Vector>
+	getBVec() const;
+
 	//! Returns sigma
 	virtual double getSigma() const;
 

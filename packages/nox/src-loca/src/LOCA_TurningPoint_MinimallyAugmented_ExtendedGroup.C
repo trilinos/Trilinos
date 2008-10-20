@@ -662,6 +662,20 @@ getRightNullVec() const
   return constraint->getRightNullVec();
 }
 
+Teuchos::RCP<const NOX::Abstract::Vector>
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getAVec() const
+{
+  return constraint->getAVec();
+}
+
+Teuchos::RCP<const NOX::Abstract::Vector>
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getBVec() const
+{
+  return constraint->getBVec();
+}
+
 void
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
 setBifParam(double param)

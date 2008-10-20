@@ -552,6 +552,14 @@ namespace LOCA {
 	Teuchos::RCP<const NOX::Abstract::Vector>
 	getRightNullVec() const;
 
+	//! Returns "A" vector
+	Teuchos::RCP<const NOX::Abstract::Vector>
+	getAVec() const;
+
+	//! Returns "B" 
+	Teuchos::RCP<const NOX::Abstract::Vector>
+	getBVec() const;
+
       protected:
 
 	//! Set bifurcation parameter

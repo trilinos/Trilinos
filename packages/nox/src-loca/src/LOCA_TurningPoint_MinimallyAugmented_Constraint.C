@@ -167,6 +167,20 @@ getRightNullVec() const
   return Teuchos::rcp(&(*v_vector)[0], false);
 }
 
+Teuchos::RCP<const NOX::Abstract::Vector>
+LOCA::TurningPoint::MinimallyAugmented::Constraint::
+getAVec() const
+{
+  return Teuchos::rcp(&(*a_vector)[0], false);
+}
+
+Teuchos::RCP<const NOX::Abstract::Vector>
+LOCA::TurningPoint::MinimallyAugmented::Constraint::
+getBVec() const
+{
+  return Teuchos::rcp(&(*b_vector)[0], false);
+}
+
 double
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 getSigma() const

@@ -188,11 +188,34 @@ namespace LOCA {
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
            LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const;
 
+	/*! 
+	 * \brief Solves the transpose of the extended system as defined above
+	 */
+	/*!
+	 * The \em params argument is the linear solver parameters. 
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	solveTranspose(
+	  Teuchos::ParameterList& params,
+	  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
+	  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const;
+
       protected:
 
 	//! Solves equations with contiguous arguments
 	NOX::Abstract::Group::ReturnType 
 	solveContiguous(
+	          Teuchos::ParameterList& params,
+		  const NOX::Abstract::MultiVector& input_x,
+		  const NOX::Abstract::MultiVector& input_null,
+	          const NOX::Abstract::MultiVector::DenseMatrix& input_param,
+		  NOX::Abstract::MultiVector& result_x,
+		  NOX::Abstract::MultiVector& result_null,
+	          NOX::Abstract::MultiVector::DenseMatrix& result_param) const;
+
+	//! Solves equations with contiguous arguments
+	NOX::Abstract::Group::ReturnType 
+	solveTransposeContiguous(
 	          Teuchos::ParameterList& params,
 		  const NOX::Abstract::MultiVector& input_x,
 		  const NOX::Abstract::MultiVector& input_null,
@@ -238,14 +261,26 @@ namespace LOCA {
 	//! Bordered solver for solving (n+1)x(n+1) sets of equations
 	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
+	//! Bordered solver for solving transpose (n+1)x(n+1) sets of equations
+	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> transposeBorderedSolver;
+
 	//! Null vector as a multivector
 	Teuchos::RCP<NOX::Abstract::MultiVector> nullMultiVector;
 
 	//! Jacobian times null vector as a multivector
 	Teuchos::RCP<NOX::Abstract::MultiVector> JnMultiVector;
 
+	//! u vector
+	Teuchos::RCP<const NOX::Abstract::Vector> uVector;
+
+	//! u multi vector
+	Teuchos::RCP<const NOX::Abstract::MultiVector> uMultiVector;
+
 	//! Norm of JnVector
 	double s;
+
+	//! Norm of J^T*u
+	double st;
 
       }; // Class PhippsBordering
       
