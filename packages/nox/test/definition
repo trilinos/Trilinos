@@ -135,7 +135,7 @@
     DIRS= ../examples/epetra/LOCA_ContinuationManager;
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = ../examples/epetra/LOCA_ContinuationManager/task.xml;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-2);
 }
 
 # LOCA Epetra examples
@@ -143,7 +143,7 @@
     DIRS= ../examples/epetra/LOCA_ContinuationManager_xyzt;
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = ../examples/epetra/LOCA_ContinuationManager_xyzt/task.xml;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-2);
 }
 
 # LOCA Epetra examples (one processor)
