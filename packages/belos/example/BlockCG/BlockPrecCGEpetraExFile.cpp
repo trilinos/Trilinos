@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   }
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+		   Belos::TimingDetails + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
   }

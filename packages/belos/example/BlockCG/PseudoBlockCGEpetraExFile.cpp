@@ -36,7 +36,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_Map.h"
@@ -76,10 +76,9 @@ int main(int argc, char *argv[]) {
 
   bool verbose = false, proc_verbose = false;
   int frequency = -1;        // frequency of status test output.
-  int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  std::string filename("bcsstk14.hb");
+  std::string filename("bcsstk14.hb"); // example matrix
   MT tol = 1.0e-5;           // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
@@ -88,7 +87,6 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by CG.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
@@ -125,10 +123,9 @@ int main(int argc, char *argv[]) {
   //
   const int NumGlobalElements = B->GlobalLength();
   if (maxiters == -1)
-    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+    maxiters = NumGlobalElements - 1; // maximum number of iterations to run
   //
   ParameterList belosList;
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   if (verbose) {
@@ -150,10 +147,16 @@ int main(int argc, char *argv[]) {
     return -1;
   }
   //
-  // Create an iterative solver manager.
+  // *******************************************************************
+  // **************Start the block CG iteration*************************
+  // *******************************************************************
   //
+  Belos::OutputManager<double> My_OM();
+ 
+  // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > newSolver
-    = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
+    = rcp( new Belos::PseudoBlockCGSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
+
   //
   // **********Print out information about problem*******************
   //
@@ -161,8 +164,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Max number of iterations allowed: " << maxiters << std::endl;
-    std::cout << "Block size used by solver: " << blocksize << std::endl;
+    std::cout << "Max number of CG iterations: " << maxiters << std::endl; 
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -170,11 +172,6 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   Belos::ReturnType ret = newSolver->solve();
-  //
-  // Get the number of iterations for this solve.
-  //
-  int numIters = newSolver->getNumIters();
-  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
   //
   // Compute actual residuals.
   //

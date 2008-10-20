@@ -18,9 +18,9 @@ EXEEXT = .exe
 if BUILD_TRIUTILS
 if BUILD_EPETRAEXT
 if BUILD_IFPACK
-BELOS_BCG_IFPACK_EX = BlockPrecCGEpetraExFile
+BELOS_BCG_IFPACK_EX = BlockPrecCGEpetraExFile PseudoBlockPrecCGEpetraExFile
 endif
-BELOS_BCG_NOPREC_EX = BlockCGEpetraExFile Dummy 
+BELOS_BCG_NOPREC_EX = BlockCGEpetraExFile PseudoBlockCGEpetraExFile Dummy 
 endif
 endif
 
@@ -36,6 +36,10 @@ BlockPrecCGEpetraExFile_SOURCES = $(srcdir)/BlockPrecCGEpetraExFile.cpp
 
 BlockCGEpetraExFile_SOURCES = $(srcdir)/BlockCGEpetraExFile.cpp 
 
+PseudoBlockPrecCGEpetraExFile_SOURCES = $(srcdir)/PseudoBlockPrecCGEpetraExFile.cpp
+
+PseudoBlockCGEpetraExFile_SOURCES = $(srcdir)/PseudoBlockCGEpetraExFile.cpp
+
 BlockCGEpetraExFile_DEPENDENCIES = \
 			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
@@ -47,13 +51,32 @@ BlockPrecCGEpetraExFile_DEPENDENCIES = \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
+PseudoBlockCGEpetraExFile_DEPENDENCIES = \
+                        $(top_builddir)/../epetraext/src/libepetraext.a \
+                        $(top_builddir)/../epetra/src/libepetra.a \
+                        $(top_builddir)/../teuchos/src/libteuchos.a
+
+PseudoBlockPrecCGEpetraExFile_DEPENDENCIES = \
+                        $(top_builddir)/../ifpack/src/libifpack.a \
+                        $(top_builddir)/../epetraext/src/libepetraext.a \
+                        $(top_builddir)/../epetra/src/libepetra.a \
+                        $(top_builddir)/../teuchos/src/libteuchos.a
+
 BlockCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
 BlockPrecCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
+PseudoBlockCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src
+
+PseudoBlockPrecCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src
+
 BlockCGEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 BlockPrecCGEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+PseudoBlockCGEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+PseudoBlockPrecCGEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 
