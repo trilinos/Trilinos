@@ -6,7 +6,7 @@ SET (CTEST_SOURCE_NAME Trilinos)
 SET (TEST_TYPE nightly)
 SET (BUILD_TYPE debug)
 
-SET (CTEST_DASHBOARD_ROOT C:/dashboards)
+SET (CTEST_DASHBOARD_ROOT "C:/dashboards")
 SET (CTEST_CMAKE_COMMAND "\"${CMAKE_EXECUTABLE_NAME}\"")
 
 # Options for Nightly builds
