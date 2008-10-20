@@ -366,12 +366,12 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     
-    // Get the current solution std::vector.
+    // Get the current solution vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
-    // Check that the current solution std::vector only has one column. 
+    // Check that the current solution vector only has one column. 
     TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterateFailure,
-                        "Belos::CGIter::iterate(): current linear system has more than one std::vector!" );
+                        "Belos::CGIter::iterate(): current linear system has more than one vector!" );
 
     // Compute first <r,z> a.k.a. rHz
     MVT::MvTransMv( one, *R_, *Z_, rHz );
@@ -384,7 +384,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Increment the iteration
       iter_++;
 
-      // Multiply the current direction std::vector by A and store in AP_
+      // Multiply the current direction vector by A and store in AP_
       lp_->applyOp( *P_, *AP_ );
       
       // Compute alpha := <R_,Z_> / <P_,AP_>
@@ -395,7 +395,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
 			  "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       //
-      // Update the solution std::vector x := x + alpha * P_
+      // Update the solution vector x := x + alpha * P_
       //
       MVT::MvAddMv( one, *cur_soln_vec, alpha(0,0), *P_, *cur_soln_vec );
       lp_->updateSolution();
@@ -409,7 +409,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       MVT::MvAddMv( one, *R_, -alpha(0,0), *AP_, *R_ );
       //
       // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ], 
-      // and the new direction std::vector p.
+      // and the new direction vector p.
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
 	lp_->applyLeftPrec( *R_, *Z_ );
