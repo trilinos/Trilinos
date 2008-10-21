@@ -212,7 +212,10 @@ failure:
 
 
 done:
+#ifdef HAVE_MPI
   MPI_Finalize();
+#endif
+
   return fail;
 }
 
