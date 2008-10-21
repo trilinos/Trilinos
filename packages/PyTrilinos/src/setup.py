@@ -89,10 +89,10 @@ def buildInitFile(filename,depfile,pyTrilinosModules,
 dl = None
 try:
     import dl
-except SystemError, ImportError:
+except (SystemError, ImportError):
     try:
         import DLFCN as dl
-    except SystemError, ImportError:
+    except (SystemError, ImportError):
         pass
 if dl:
     dlopenflags = dl.RTLD_NOW | dl.RTLD_GLOBAL
