@@ -74,11 +74,11 @@ all-local:
 #tarball.
 
 if SUB_TEST
-TEST_SUBDIR=test
+TEST_SUBDIR=utils test
 endif
 
 if SUB_EXAMPLE
-EXAMPLE_SUBDIR=example
+EXAMPLE_SUBDIR=utils example
 endif
 
 if BUILD_TESTS
@@ -86,6 +86,7 @@ tests:
 	@echo ""
 	@echo "Now building isorropia tests."
 	@echo ""
+	cd $(top_builddir)/utils && $(MAKE)
 	cd $(top_builddir)/test && $(MAKE)
 	@echo ""
 	@echo "Finished building isorropia tests."
@@ -100,6 +101,7 @@ examples:
 	@echo ""
 	@echo "Now building isorropia examples."
 	@echo ""
+	cd $(top_builddir)/utils && $(MAKE)
 	cd $(top_builddir)/example && $(MAKE)
 	@echo ""
 	@echo "Finished building isorropia examples."
@@ -121,11 +123,14 @@ clean-tests:
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
 
+clean-utils:
+	cd $(top_builddir)/utils && $(MAKE) clean
+
 everything:
-	$(MAKE) && $(MAKE) examples && $(MAKE) tests
+	$(MAKE) && $(MAKE) utils && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-utils && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples

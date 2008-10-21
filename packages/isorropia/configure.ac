@@ -301,12 +301,14 @@ AC_CONFIG_FILES([
     Makefile.export.isorropia
     src/Makefile
     example/Makefile
+    example/geometric/Makefile
     test/Makefile
     test/rebalance_1d_default/Makefile
     test/zoltan/Makefile
     test/utest/Makefile
-    test/utils/Makefile
     test/mtx/Makefile
+    test/geometric/Makefile
+    utils/Makefile
     ])
 
 AC_OUTPUT

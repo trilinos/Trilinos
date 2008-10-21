@@ -106,7 +106,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src example test
+DIST_SUBDIRS = src utils example test
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -249,8 +249,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
 #defined, so that the tests and examples are included in the distribution
 #tarball.
-@SUB_TEST_TRUE@TEST_SUBDIR = test
-@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
+@SUB_TEST_TRUE@TEST_SUBDIR = utils test
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = utils example
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
@@ -688,6 +688,7 @@ all-local:
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Now building isorropia tests."
 @BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/utils && $(MAKE)
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Finished building isorropia tests."
@@ -699,6 +700,7 @@ all-local:
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	@echo "Now building isorropia examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/utils && $(MAKE)
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	@echo "Finished building isorropia examples."
@@ -718,11 +720,14 @@ clean-tests:
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
 
+clean-utils:
+	cd $(top_builddir)/utils && $(MAKE) clean
+
 everything:
-	$(MAKE) && $(MAKE) examples && $(MAKE) tests
+	$(MAKE) && $(MAKE) utils && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-utils && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
