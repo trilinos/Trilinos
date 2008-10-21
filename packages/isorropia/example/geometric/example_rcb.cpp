@@ -199,7 +199,9 @@ int main(int argc, char** argv) {
     std::cout << min2 << " max " << max2 << " average " << avg2 << std::endl;
   }
 
+#ifdef HAVE_MPI
   MPI_Finalize();
+#endif
 
   return fail;
 }
