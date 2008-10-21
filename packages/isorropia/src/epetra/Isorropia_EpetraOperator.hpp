@@ -248,7 +248,6 @@ protected:
 
   Teuchos::ParameterList paramlist_;
 
-//   std::map<int,int> exports_, imports_;
   int exportsSize_;
   std::vector<int> imports_;
   std::vector<int> properties_;

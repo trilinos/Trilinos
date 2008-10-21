@@ -78,17 +78,13 @@ class QueryObject
     */
   Teuchos::RCP<const Epetra_MultiVector> coords_;
 
-  /** The graph or matrix row map
+  /** The graph or matrix row map, or the MultiVector map
     */
   const Epetra_BlockMap *rowMap_;
 
   /** The graph or matrix column map
     */
   const Epetra_BlockMap *colMap_;
-
-  /** The multivector map
-    */
-  const Epetra_BlockMap *map_;
 
   /** The CostDescriber contains optional vertex and/or edge weights for
       graph and hypergraph partitioning.

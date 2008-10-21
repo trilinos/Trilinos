@@ -48,6 +48,8 @@ namespace Epetra {
 
 namespace ZoltanLib{
 
+
+
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
 	   Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                                      int inputType) 
@@ -56,6 +58,9 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
     colMap_(&(graph->ColMap())),
     costs_(costs),
     haveGraph_(true) ,
+    matrix_(0),
+    coords_(0),
+    weights_(0),
     input_type_(inputType) 
 {
   myProc_ = graph->Comm().MyPID();
@@ -99,6 +104,9 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
     colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
     costs_(costs),
     haveGraph_(false),
+    graph_(0),
+    coords_(0),
+    weights_(0),
     input_type_(inputType) 
 {
   myProc_ = matrix->Comm().MyPID();
@@ -137,11 +145,14 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
                           Teuchos::RCP<const Epetra_MultiVector> weights)
   : coords_(coords),
     weights_(weights),
-    map_(&(coords->Map())),
+    rowMap_(&(coords->Map())),
+    graph_(0),
+    matrix_(0),
+    costs_(0),
     haveGraph_(false)
 {
-  myProc_ = map_->Comm().MyPID();
-  base_ = map_->IndexBase();
+  myProc_ = rowMap_->Comm().MyPID();
+  base_ = rowMap_->IndexBase();
   input_type_ = geometric_input_;
 }
 
@@ -379,8 +390,8 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
   int ngids = 0;
 
   if (input_type_ == geometric_input_){
-    ngids = map_->NumMyElements();
-    map_->MyGlobalElements( ((int *) global_ids) );
+    ngids = rowMap_->NumMyElements();
+    rowMap_->MyGlobalElements( ((int *) global_ids) );
   }
   else if ((input_type_ == hgraph_input_) || (input_type_ == graph_input_)){
     ngids = rowMap_->NumMyElements();
