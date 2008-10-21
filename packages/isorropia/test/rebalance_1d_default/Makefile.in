@@ -231,13 +231,11 @@ rebalance_1d_default_SOURCES = $(srcdir)/rebalance_1d_default.cpp
 copyfiles_SOURCES = $(top_srcdir)/test/rebalance_1d_default/src_rebalance_1d_dist.2
 rebalance_1d_default_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a \
-	$(top_builddir)/test/utils/libisorropia_test_utils.a
+	$(top_builddir)/utils/libisorropia_test_utils.a
 
-rebalance_1d_default_CXXFLAGS = -I$(top_srcdir)/test/utils \
-   $(ISORROPIA_INCLUDES) 
-
+rebalance_1d_default_CXXFLAGS = -I$(top_srcdir)/utils $(ISORROPIA_INCLUDES) 
 rebalance_1d_default_LDADD = \
-   -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
+   -L$(top_builddir)/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
 EXTRA_DIST = \
 	src_rebalance_1d_dist.2

@@ -89,6 +89,16 @@
 #include <ispatest_lbeval_utils.hpp>
 #include <ispatest_epetra_utils.hpp>
 
+static int tmp=0;
+#define CHECK_FAILED() {      \
+  Comm.SumAll(&fail, &tmp, 1);      \
+  if (tmp){     \
+    failures++;      \
+    if (!runAll) goto Report;      \
+  }     \
+  fail = 0;     \
+  }
+
 #ifdef HAVE_EPETRA
 #ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
@@ -123,8 +133,6 @@
 #define EPETRA_CRSMATRIX              2  
 #define EPETRA_ROWMATRIX              3  
 #define EPETRA_LINEARPROBLEM          4  
-
-#define FAILED() { failures++; if (!runAll) goto Report; fail = 0;}
 
 #define ERROREXIT(v, s) \
   if (v){               \
@@ -976,7 +984,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  failures = (fail ? 1 : 0);
+  CHECK_FAILED();
   goto Report;
 
 #else
@@ -991,7 +999,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,  // supply equal edge weights
                EPETRA_LINEARPROBLEM); // use linear problem interface of isorropia
   
-    if (fail) FAILED();
+    CHECK_FAILED();
 
     fail = run_test(testm,
                verbose,            // draw graph before and after partitioning?
@@ -1001,7 +1009,7 @@ int main(int argc, char** argv) {
                NO_APPLICATION_SUPPLIED_WEIGHTS,  // go for default weights
                EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
 
-    if (fail) FAILED();
+    CHECK_FAILED();
 
     fail = run_test(testm,
                verbose,
@@ -1011,7 +1019,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_CRSMATRIX);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
   
     fail = run_test(testm,
                verbose,
@@ -1021,7 +1029,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_LINEARPROBLEM);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
 
     fail = run_test(testm,
                verbose,
@@ -1031,7 +1039,7 @@ int main(int argc, char** argv) {
                NO_APPLICATION_SUPPLIED_WEIGHTS,
                EPETRA_ROWMATRIX);
 
-    if (fail) FAILED();
+    CHECK_FAILED();
 #else
   fail = 0;
   if (localProc == 0){
@@ -1047,7 +1055,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_CRSMATRIX);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
   
     fail = run_test(testm,
                verbose,
@@ -1057,7 +1065,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_LINEARPROBLEM);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
   }
 
   fail = run_test(testm,
@@ -1068,7 +1076,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,
              EPETRA_CRSMATRIX);
 
-  if (fail) FAILED();
+   CHECK_FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -1078,7 +1086,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  if (fail) FAILED();
+   CHECK_FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -1088,7 +1096,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_CRSMATRIX);
 
-  if (fail) FAILED();
+   CHECK_FAILED();
 
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
@@ -1101,7 +1109,7 @@ int main(int argc, char** argv) {
              SUPPLY_UNEQUAL_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  if (fail) FAILED();
+   CHECK_FAILED();
 
   fail = run_test(testm,
              verbose, 
@@ -1111,7 +1119,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,
              EPETRA_ROWMATRIX);
 
-  if (fail) FAILED();
+   CHECK_FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -1121,7 +1129,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_LINEARPROBLEM);
 
-  if (fail) FAILED();
+   CHECK_FAILED();
 
 #endif
 

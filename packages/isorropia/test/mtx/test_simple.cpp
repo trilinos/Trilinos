@@ -120,7 +120,16 @@
 #define EPETRA_CRSGRAPH               1
 #define EPETRA_CRSMATRIX              2  
 
-#define FAILED() { failures++; if (!runAll) goto Report; fail = 0;}
+static int tmp=0;
+
+#define CHECK_FAILED() {      \
+  Comm.SumAll(&fail, &tmp, 1);      \
+  if (tmp){     \
+    failures++;      \
+    if (!runAll) goto Report;      \
+  }     \
+  fail = 0;     \
+  }
 
 #define ERROREXIT(v, s) \
   if (v){               \
@@ -277,6 +286,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   Teuchos::RCP<Epetra_CrsMatrix> eptr; 
 
   Teuchos::RCP<Epetra_Vector> hyperEdgeWeights; 
+
 
   if (edgeWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS){
 
@@ -554,6 +564,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   else{
     rc = ispatest::compute_graph_metrics(newMatrix->Graph(), *costs, 
              myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
+
   }
   if (rc){ 
     ERRORRETURN((localProc==0), "Error in computing partitioning metrics after rebalancing")
@@ -637,7 +648,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     }
   }
   if (fail){
-    if (localProc == 0) std::cout << "ERROR: "+why << std::endl;
+    //if (localProc == 0) std::cout << "ERROR: "+why << std::endl;
+    std::cout << "ERROR: "+why << std::endl;
   }
 
   // Try multiplying the rebalanced matrix and its transpose by a vector,
@@ -646,7 +658,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   valid = ispatest::test_matrix_vector_multiply(*newMatrix);
 
   if (!valid){
-    if (localProc == 0) std::cout << "Rebalanced matrix is not a valid Epetra matrix" << std::endl;
+    std::cout << "Rebalanced matrix is not a valid Epetra matrix" << std::endl;
+    //if (localProc == 0) std::cout << "Rebalanced matrix is not a valid Epetra matrix" << std::endl;
     fail = 1;
   }
   else{
@@ -761,7 +774,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,
              EPETRA_CRSMATRIX);
 
-    failures = (fail ? 1 : 0);
+    CHECK_FAILED();
     goto Report;
 #else
 
@@ -775,7 +788,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
                EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
 
-    if (fail) FAILED();
+    CHECK_FAILED();
     
     fail = run_test(testm,
                verbose,
@@ -785,7 +798,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_CRSMATRIX);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
   
     fail = run_test(testm,
                verbose,
@@ -795,7 +808,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,
                EPETRA_CRSGRAPH);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
 
     fail = run_test(testm,
                verbose,
@@ -805,7 +818,7 @@ int main(int argc, char** argv) {
                NO_APPLICATION_SUPPLIED_WEIGHTS,
                EPETRA_CRSGRAPH);
 
-    if (fail) FAILED();
+    CHECK_FAILED();
 
 #endif
 
@@ -817,7 +830,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
                EPETRA_CRSMATRIX);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
   
     fail = run_test(testm,
                verbose,
@@ -827,7 +840,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
                EPETRA_CRSGRAPH);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
 
     fail = run_test(testm,
                verbose,
@@ -837,7 +850,7 @@ int main(int argc, char** argv) {
                SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
                EPETRA_CRSGRAPH);
   
-    if (fail) FAILED();
+    CHECK_FAILED();
   } // end if square
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
@@ -850,7 +863,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,
              EPETRA_CRSMATRIX);
 
-  if (fail) FAILED();
+  CHECK_FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -860,7 +873,7 @@ int main(int argc, char** argv) {
              SUPPLY_UNEQUAL_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  if (fail) FAILED();
+  CHECK_FAILED();
 
   fail = run_test(testm,
              verbose, 
@@ -870,7 +883,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,
              EPETRA_CRSMATRIX);
 
-  if (fail) FAILED();
+  CHECK_FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -880,7 +893,7 @@ int main(int argc, char** argv) {
              NO_APPLICATION_SUPPLIED_WEIGHTS,
              EPETRA_CRSGRAPH);
 
-  if (fail) FAILED();
+  CHECK_FAILED();
 #endif
 
   // Default row weight is number of non zeros in the row
@@ -892,7 +905,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
              EPETRA_CRSGRAPH);
 
-  if (fail) FAILED();
+  CHECK_FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -902,7 +915,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
              EPETRA_CRSGRAPH);
 
-  if (fail) FAILED();
+  CHECK_FAILED();
 
   fail = run_test(testm,
              verbose,
@@ -912,7 +925,7 @@ int main(int argc, char** argv) {
              SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
              EPETRA_CRSGRAPH);
 
-  if (fail) FAILED();
+  CHECK_FAILED();
 #endif // SHORT_TEST
 
 #else

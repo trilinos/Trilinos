@@ -3,6 +3,42 @@
 #
 
 (FRAMEWORK, IsorropiaTests) {
+   DIRS = geometric;
+   ARGS = --f=geometric/brack_3D.coords;
+   COMM = SERIAL, MPI;
+}
+
+(INSTALL, IsorropiaTests) {
+   DIRS = geometric;
+   ARGS = --f=geometric/brack_3D.coords;
+   COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, IsorropiaTests) {
+   DIRS = geometric;
+   ARGS = --f=geometric/hammond_2D.coords;
+   COMM = SERIAL, MPI;
+}
+
+(INSTALL, IsorropiaTests) {
+   DIRS = geometric;
+   ARGS = --f=geometric/hammond_2D.coords;
+   COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, IsorropiaTests) {
+   DIRS = geometric;
+   ARGS = --f=geometric/simple.coords;
+   COMM = SERIAL, MPI;
+}
+
+(INSTALL, IsorropiaTests) {
+   DIRS = geometric;
+   ARGS = --f=geometric/simple.coords;
+   COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, IsorropiaTests) {
    DIRS = utest,
           rebalance_1d_default,
           zoltan;

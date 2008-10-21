@@ -43,12 +43,10 @@ MTX_TEST_DIR = mtx
 MTX_TESTS = test_simple.exe test_colorer.exe
 endif
 
-#
-# Note: utils must be built first, before the other subdirs
-#
-SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
+SUBDIRS = geometric utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
 
 TESTS = \
+geometric/test_geometric.exe \
 utest/utest.exe \
 rebalance_1d_default/rebalance_1d_default.exe \
 $(ZOLTAN_TEST) $(MTX_TESTS)

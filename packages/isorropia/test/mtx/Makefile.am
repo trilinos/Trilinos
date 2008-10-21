@@ -29,9 +29,12 @@ include $(top_builddir)/Makefile.export.isorropia
 
 EXEEXT = .exe
 
-AM_CPPFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES)
+UTIL_INCLUDE=-I$(top_srcdir)/utils
+UTIL_LIB=$(top_builddir)/utils/libisorropia_test_utils.a
 
-LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
+AM_CPPFLAGS = $(UTIL_INCLUDE) $(ISORROPIA_INCLUDES)
+
+LDADD = $(UTIL_LIB) $(ISORROPIA_LIBS)
 
 test_simple_SOURCES = $(srcdir)/test_simple.cpp
 test_create_balanced_copy_SOURCES = $(srcdir)/test_create_balanced_copy.cpp

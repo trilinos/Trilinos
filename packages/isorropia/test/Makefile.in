@@ -61,8 +61,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-TESTS = utest/utest.exe rebalance_1d_default/rebalance_1d_default.exe \
-	$(am__EXEEXT_1) $(MTX_TESTS)
+TESTS = geometric/test_geometric.exe utest/utest.exe \
+	rebalance_1d_default/rebalance_1d_default.exe $(am__EXEEXT_1) \
+	$(MTX_TESTS)
 subdir = test
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,7 +106,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
 ETAGS = etags
 CTAGS = ctags
 @HAVE_MPI_TRUE@am__EXEEXT_1 = rebalance_zoltan.exe
-DIST_SUBDIRS = utils utest rebalance_1d_default zoltan mtx
+DIST_SUBDIRS = geometric utest rebalance_1d_default zoltan mtx
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -227,11 +228,7 @@ top_srcdir = @top_srcdir@
 @HAVE_MPI_TRUE@ZOLTAN_TEST = rebalance_zoltan.exe
 @BUILD_EPETRAEXT_TRUE@MTX_TEST_DIR = mtx
 @BUILD_EPETRAEXT_TRUE@MTX_TESTS = test_simple.exe test_colorer.exe
-
-#
-# Note: utils must be built first, before the other subdirs
-#
-SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
+SUBDIRS = geometric utest rebalance_1d_default $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
 EXTRA_DIST = definition README
 all: all-recursive
 

@@ -37,10 +37,10 @@ copyfiles_SOURCES = $(top_srcdir)/test/utest/src_utest_dist1
 
 utest_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a \
-	$(top_builddir)/test/utils/libisorropia_test_utils.a
+	$(top_builddir)/utils/libisorropia_test_utils.a
 
-utest_CXXFLAGS = -I$(top_srcdir)/test/utils $(ISORROPIA_INCLUDES) 
-utest_LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils \
+utest_CXXFLAGS = -I$(top_srcdir)/utils $(ISORROPIA_INCLUDES) 
+utest_LDADD = -L$(top_builddir)/utils -lisorropia_test_utils \
      $(ISORROPIA_LIBS) 
 
 EXTRA_DIST = \
