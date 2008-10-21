@@ -271,6 +271,7 @@ int Zoltan_Scotch_Order(
     }
     /* TODO : check if there is a normalized sort in Zoltan */
     qsort(zz->Order.leaves, zz->Order.nbr_blocks, sizeof(int), compar_int);
+    zz->Order.nbr_leaves = 0;
     for (numbloc = 0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) {
       if (zz->Order.leaves[numbloc] > zz->Order.nbr_blocks) {
 	zz->Order.leaves[numbloc] = -1;
@@ -278,6 +279,11 @@ int Zoltan_Scotch_Order(
 	break;
       }
     }
+    if (zz->Order.nbr_leaves == 0) {
+      zz->Order.leaves[zz->Order.nbr_blocks] = -1;
+      zz->Order.nbr_leaves = zz->Order.nbr_blocks;
+    }
+
   }
   else{
     /* Compute permutation */
@@ -380,6 +386,9 @@ int Zoltan_Scotch_Order(
   if (use_timers)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_p, zz->Communicator);
 
+  if ((ord.iperm != NULL) && (iperm != NULL))
+    memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
+  if (ord.iperm != NULL)  ZOLTAN_FREE(&ord.iperm);
   if (order_opt->return_args&RETURN_RANK)
     memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
   ZOLTAN_FREE(&ord.rank);
