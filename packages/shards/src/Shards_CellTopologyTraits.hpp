@@ -38,7 +38,7 @@ namespace shards {
  *  \brief  Return a CellTopology singleton for the given cell topology traits.
  */
 template< class Traits >
-const CellTopologyData * cell_topology();
+const CellTopologyData * getCellTopologyData();
 
 template< unsigned Dimension ,
           unsigned Number_Vertex ,
@@ -78,6 +78,8 @@ template< unsigned SubcellDim , unsigned SubcellOrd , unsigned NodeIndex ,
           class FaceList , class FaceMaps >
 struct SubcellTopologyTraits ;
 
+template< class ListType > struct TypeListHomogeneous ;
+
 //----------------------------------------------------------------------
 // Self-subcell reference
 
@@ -90,6 +92,7 @@ struct SubcellTopologyTraits<0,0,NodeIndex, 0,NV,NN,EList,EMaps,FList,FMaps>
   typedef CellTopologyTraits<0,NV,NN,EList,EMaps,FList,FMaps> topology ;
   enum { count = 1 };
   enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { homogeneity = true };
 };
 
 template< unsigned NodeIndex ,
@@ -101,6 +104,7 @@ struct SubcellTopologyTraits<1,0,NodeIndex, 1,NV,NN,EList,EMaps,FList,FMaps>
   typedef CellTopologyTraits<1,NV,NN,EList,EMaps,FList,FMaps> topology ;
   enum { count = 1 };
   enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { homogeneity = true };
 };
 
 template< unsigned NodeIndex ,
@@ -112,6 +116,7 @@ struct SubcellTopologyTraits<2,0,NodeIndex, 2,NV,NN,EList,EMaps,FList,FMaps>
   typedef CellTopologyTraits<2,NV,NN,EList,EMaps,FList,FMaps> topology ;
   enum { count = 1 };
   enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { homogeneity = true };
 };
 
 template< unsigned NodeIndex ,
@@ -123,6 +128,7 @@ struct SubcellTopologyTraits<3,0,NodeIndex, 3,NV,NN,EList,EMaps,FList,FMaps>
   typedef CellTopologyTraits<3,NV,NN,EList,EMaps,FList,FMaps> topology ;
   enum { count = 1 };
   enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { homogeneity = true };
 };
 
 //----------------------------------------------------------------------
@@ -137,6 +143,7 @@ struct SubcellTopologyTraits<0,SubcellOrd,0, D,NV,NN,EList,EMaps,FList,FMaps>
   typedef CellTopologyTraits<0,0,0> topology ;
   enum { count = NN };
   enum { node = SubcellOrd < NN ? (int) SubcellOrd : -1 };
+  enum { homogeneity = true };
 };
 
 // Edge-subcell reference:
@@ -158,6 +165,8 @@ public:
 
   enum { node = SubcellNodeIndex< topology , node_map , NodeIndex ,
                                   SubcellOrd < count >::value };
+
+  enum { homogeneity = TypeListHomogeneous<EList>::value };
 };
 
 // Face-subcell reference:
@@ -179,6 +188,8 @@ public:
 
   enum { node = SubcellNodeIndex< topology , node_map , NodeIndex ,
                                   SubcellOrd < count >::value };
+
+  enum { homogeneity = TypeListHomogeneous<FList>::value };
 };
 
 //----------------------------------------------------------------------
@@ -194,11 +205,10 @@ struct SubcellTopologyTraits
   typedef void topology ;
   enum { count = 0 };
   enum { node = -1 };
+  enum { homogeneity = false };
 };
 
 //----------------------------------------------------------------------
-
-template< class ListType > struct TypeListHomogeneous ;
 
 template<>
 struct TypeListHomogeneous<TypeListEnd> {
@@ -261,20 +271,23 @@ struct CellTopologyTraits
     side_count   = Dimension == 3 ? face_count : (
                    Dimension == 2 ? edge_count : 0 ),
 
-    /** \brief  Unique key for this topology */
-    key          = ( dimension    << 28 /*  4 bits, max    7 */ ) |
-                   ( face_count   << 22 /*  6 bits, max   63 */ ) |
-                   ( edge_count   << 16 /*  6 bits, max   63 */ ) |
-                   ( vertex_count << 10 /*  6 bits, max   63 */ ) |
-                   ( node_count         /* 10 bits, max 1023 */ ) };
-
-  /** \brief Flag if the subcells of a given dimension are homogeneous */
-  enum { subcell_homogeneity = TypeListHomogeneous<EdgeList>::value &&
-                               TypeListHomogeneous<FaceList>::value };
+    /** \brief  Unique key for this topology.
+     *
+     *  Uniqueness assumes that extended topology nodes (non-vertex nodes)
+     *  are placed regularly throughout the cell topology.  For example,
+     *  if any edge has an interior node then all edges have an interior node.
+     *  If this assumption is violated then the key cannot guarantee uniqueness.
+     */
+    key  = ( dimension    << 28 /*  4 bits, max    7 */ ) |
+           ( face_count   << 22 /*  6 bits, max   63 */ ) |
+           ( edge_count   << 16 /*  6 bits, max   63 */ ) |
+           ( vertex_count << 10 /*  6 bits, max   63 */ ) |
+           ( node_count         /* 10 bits, max 1023 */ ) };
 
   /** \brief Subcell information
    *
    *  - <b> subcell<Dim>::count        </b> Number of subcells of this dimension
+   *  - <b> subcell<Dim>::homogeneity  </b> Homogeneous subcells of this dim
    *  - <b> subcell<Dim,Ord>::topology </b> topology of the subcell
    *  - <b> subcell<Dim,Ord,J>::node   </b> node ordinal of subcell's node J
    */
@@ -288,6 +301,7 @@ struct CellTopologyTraits
   /** \brief Side subcell information
    *
    *  - <b> side<>::count       </b> Number of sides
+   *  - <b> side<>::homogeneity </b> Homogeneous sides
    *  - <b> side<Ord>::topology </b> topology of the side
    *  - <b> side<Ord,J>::node   </b> node ordinal of side's node J
    */
@@ -302,6 +316,7 @@ struct CellTopologyTraits
   /** \brief Edge subcell information
    *
    *  - <b> edge<>::count       </b> Number of edge
+   *  - <b> edge<>::homogeneity </b> Homogeneous edges
    *  - <b> edge<Ord>::topology </b> topology of the edge
    *  - <b> edge<Ord,J>::node   </b> node ordinal of edge's node J
    */

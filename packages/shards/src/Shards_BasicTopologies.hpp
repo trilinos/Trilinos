@@ -42,7 +42,7 @@ struct Node : public CellTopologyTraits<0,0,0>
 };
 
 /** \brief  Singleton for Node topology */
-template<> const CellTopologyData * cell_topology< Node >();
+template<> const CellTopologyData * getCellTopologyData< Node >();
 
 //----------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ struct Particle : public CellTopologyTraits<1,1,1>
 };
 
 /** \brief  Singleton for Particle topology */
-template<> const CellTopologyData * cell_topology< Particle >();
+template<> const CellTopologyData * getCellTopologyData< Particle >();
 
 //----------------------------------------------------------------------
 
@@ -67,10 +67,10 @@ template<> const CellTopologyData * cell_topology< Particle >();
 template< unsigned Nodes = 2 > struct Line {};
 
 /** \brief  Singleton for line topology with two nodes.  */
-template<> const CellTopologyData * cell_topology< Line<2> >();
+template<> const CellTopologyData * getCellTopologyData< Line<2> >();
 
 /** \brief  Singleton for line topology with three nodes.  */
-template<> const CellTopologyData * cell_topology< Line<3> >();
+template<> const CellTopologyData * getCellTopologyData< Line<3> >();
 
 //----------------------------------------------------------------------
 
@@ -82,10 +82,10 @@ template<> const CellTopologyData * cell_topology< Line<3> >();
 template< unsigned Nodes = 2 > struct Beam {};
 
 /** \brief  Singleton for beam topology with two nodes.  */
-template<> const CellTopologyData * cell_topology< Beam<2> >();
+template<> const CellTopologyData * getCellTopologyData< Beam<2> >();
 
 /** \brief  Singleton for beam topology with three nodes.  */
-template<> const CellTopologyData * cell_topology< Beam<3> >();
+template<> const CellTopologyData * getCellTopologyData< Beam<3> >();
 
 //----------------------------------------------------------------------
 
@@ -97,10 +97,10 @@ template<> const CellTopologyData * cell_topology< Beam<3> >();
 template< unsigned Nodes = 2 > struct ShellLine {};
 
 /** \brief  Singleton for shell-line topology with two nodes.  */
-template<> const CellTopologyData * cell_topology< ShellLine<2> >();
+template<> const CellTopologyData * getCellTopologyData< ShellLine<2> >();
 
 /** \brief  Singleton for shell-line topology with three nodes.  */
-template<> const CellTopologyData * cell_topology< ShellLine<3> >();
+template<> const CellTopologyData * getCellTopologyData< ShellLine<3> >();
 
 //----------------------------------------------------------------------
 
@@ -129,10 +129,10 @@ template<> const CellTopologyData * cell_topology< ShellLine<3> >();
 template< unsigned NodeCount = 3 > struct Triangle {};
 
 /** \brief  Return CellTopologyData singleton for the Triangle<3> */
-template<> const CellTopologyData * cell_topology< Triangle<3> >();
+template<> const CellTopologyData * getCellTopologyData< Triangle<3> >();
 
 /**  \brief  Return CellTopologyData singleton for the Triangle<6> */
-template<> const CellTopologyData * cell_topology< Triangle<6> >();
+template<> const CellTopologyData * getCellTopologyData< Triangle<6> >();
 
 //----------------------------------------------------------------------
 
@@ -144,10 +144,10 @@ template<> const CellTopologyData * cell_topology< Triangle<6> >();
 template< unsigned NodeCount = 3 > struct ShellTriangle {};
 
 /** \brief  Return CellTopologyData singleton for the ShellTriangle<3> */
-template<> const CellTopologyData * cell_topology< ShellTriangle<3> >();
+template<> const CellTopologyData * getCellTopologyData< ShellTriangle<3> >();
 
 /** \brief  Return CellTopologyData singleton for the ShellTriangle<6> */
-template<> const CellTopologyData * cell_topology< ShellTriangle<6> >();
+template<> const CellTopologyData * getCellTopologyData< ShellTriangle<6> >();
 
 //----------------------------------------------------------------------
 /** \brief Topological traits: Dimension = 2, Edges = 4, Vertices = 4,
@@ -175,13 +175,13 @@ template<> const CellTopologyData * cell_topology< ShellTriangle<6> >();
 template< unsigned NodeCount = 4 > struct Quadrilateral {};
 
 /** \brief  Return CellTopologyData singleton for the Quadrilateral<4> */
-template<> const CellTopologyData * cell_topology< Quadrilateral<4> >();
+template<> const CellTopologyData * getCellTopologyData< Quadrilateral<4> >();
 
 /** \brief  Return CellTopologyData singleton for the Quadrilateral<8> */
-template<> const CellTopologyData * cell_topology< Quadrilateral<8> >();
+template<> const CellTopologyData * getCellTopologyData< Quadrilateral<8> >();
 
 /** \brief  Return CellTopologyData singleton for the Quadrilateral<9> */
-template<> const CellTopologyData * cell_topology< Quadrilateral<9> >();
+template<> const CellTopologyData * getCellTopologyData< Quadrilateral<9> >();
 
 //----------------------------------------------------------------------
 
@@ -193,13 +193,13 @@ template<> const CellTopologyData * cell_topology< Quadrilateral<9> >();
 template< unsigned NodeCount = 4 > struct ShellQuadrilateral {};
 
 /** \brief  Return CellTopologyData singleton for the ShellQuadrilateral<4> */
-template<> const CellTopologyData * cell_topology< ShellQuadrilateral<4> >();
+template<> const CellTopologyData * getCellTopologyData< ShellQuadrilateral<4> >();
 
 /** \brief  Return CellTopologyData singleton for the ShellQuadrilateral<8> */
-template<> const CellTopologyData * cell_topology< ShellQuadrilateral<8> >();
+template<> const CellTopologyData * getCellTopologyData< ShellQuadrilateral<8> >();
 
 /** \brief  Return CellTopologyData singleton for the ShellQuadrilateral<9> */
-template<> const CellTopologyData * cell_topology< ShellQuadrilateral<9> >();
+template<> const CellTopologyData * getCellTopologyData< ShellQuadrilateral<9> >();
 
 //----------------------------------------------------------------------
 
@@ -209,10 +209,10 @@ template<> const CellTopologyData * cell_topology< ShellQuadrilateral<9> >();
 template< unsigned NodeCount = 4 > struct Tetrahedron ;
 
 /** \brief  Return CellTopologyData singleton for the Tetrahedron<4> */
-template<> const CellTopologyData * cell_topology< Tetrahedron<4> >();
+template<> const CellTopologyData * getCellTopologyData< Tetrahedron<4> >();
 
 /** \brief  Return CellTopologyData singleton for the Tetrahedron<10> */
-template<> const CellTopologyData * cell_topology< Tetrahedron<10> >();
+template<> const CellTopologyData * getCellTopologyData< Tetrahedron<10> >();
 
 //----------------------------------------------------------------------
 
@@ -222,13 +222,13 @@ template<> const CellTopologyData * cell_topology< Tetrahedron<10> >();
 template< unsigned NodeCount = 5 > struct Pyramid {};
 
 /**  \brief  Return CellTopologyData singleton for the Pyramid<5> */
-template<> const CellTopologyData * cell_topology< Pyramid<5> >();
+template<> const CellTopologyData * getCellTopologyData< Pyramid<5> >();
 
 /** \brief  Return CellTopologyData singleton for the Pyramid<13> */
-template<> const CellTopologyData * cell_topology< Pyramid<13> >();
+template<> const CellTopologyData * getCellTopologyData< Pyramid<13> >();
 
 /** \brief  Return CellTopologyData singleton for the Pyramid<14> */
-template<> const CellTopologyData * cell_topology< Pyramid<14> >();
+template<> const CellTopologyData * getCellTopologyData< Pyramid<14> >();
 
 //----------------------------------------------------------------------
 
@@ -238,13 +238,13 @@ template<> const CellTopologyData * cell_topology< Pyramid<14> >();
 template< unsigned NodeCount = 6 > struct Wedge {};
 
 /** \brief  Return CellTopologyData singleton for the Wedge<6> */
-template<> const CellTopologyData * cell_topology< Wedge<6> >();
+template<> const CellTopologyData * getCellTopologyData< Wedge<6> >();
 
 /** \brief  Return CellTopologyData singleton for the Wedge<15> */
-template<> const CellTopologyData * cell_topology< Wedge<15> >();
+template<> const CellTopologyData * getCellTopologyData< Wedge<15> >();
 
 /** \brief  Return CellTopologyData singleton for the Wedge<18> */
-template<> const CellTopologyData * cell_topology< Wedge<18> >();
+template<> const CellTopologyData * getCellTopologyData< Wedge<18> >();
 
 //----------------------------------------------------------------------
 
@@ -329,13 +329,13 @@ template<> const CellTopologyData * cell_topology< Wedge<18> >();
 template< unsigned NodeCount = 8 > struct Hexahedron {};
 
 /** \brief  Return CellTopologyData singleton for the Hexahedron<8> */
-template<> const CellTopologyData * cell_topology< Hexahedron<8> >();
+template<> const CellTopologyData * getCellTopologyData< Hexahedron<8> >();
 
 /** \brief  Return CellTopologyData singleton for the Hexahedron<20> */
-template<> const CellTopologyData * cell_topology< Hexahedron<20> >();
+template<> const CellTopologyData * getCellTopologyData< Hexahedron<20> >();
 
 /** \brief  Return CellTopologyData singleton for the Hexahedron<27> */
-template<> const CellTopologyData * cell_topology< Hexahedron<27> >();
+template<> const CellTopologyData * getCellTopologyData< Hexahedron<27> >();
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -831,6 +831,10 @@ template<> struct Hexahedron<27> : public
 };
 
 //------------------------------------------------------------------------
+
+const unsigned * index_identity_array();
+
+const CellTopologyData::Subcell * subcell_nodes_array();
 
 #endif /* DOXYGEN_COMPILE */
 

@@ -31,11 +31,9 @@ typedef CellTopologyData::Subcell  Subcell ;
 
 namespace shards {
 
-namespace {
-
 enum { MAXIMUM_INDICES = 256 };
 
-const unsigned * index_identity()
+const unsigned * index_identity_array()
 {
   static unsigned self[ MAXIMUM_INDICES ];
   static int init = 1 ;
@@ -48,15 +46,15 @@ const unsigned * index_identity()
   return self ;
 }
 
-const Subcell * subcell_nodes()
+const Subcell * subcell_nodes_array()
 {
   static Subcell self[ MAXIMUM_INDICES ];
   static int init = 1 ;
 
   if ( init ) {
 
-    const CellTopologyData * const top = cell_topology<Node>();
-    const unsigned     * const ident = index_identity();
+    const CellTopologyData * const top = getCellTopologyData<Node>();
+    const unsigned     * const ident = index_identity_array();
 
     for ( int i = 0 ; i < MAXIMUM_INDICES ; ++i ) {
       self[i].topology = top ;
@@ -68,6 +66,8 @@ const Subcell * subcell_nodes()
 
   return self ;
 }
+
+namespace {
 
 template< class IList >
 const unsigned * index_list( const IList & )
@@ -125,7 +125,7 @@ struct SubcellValue {
     {
       enum { I = N - 1 };
       SubcellValue<TList,IList,I>::assign( s );
-      s[I].topology = cell_topology< typename TypeListAt<TList,I>::type >();
+      s[I].topology = getCellTopologyData< typename TypeListAt<TList,I>::type >();
       s[I].node     = index_list( typename TypeListAt<IList,I>::type() );
     }
 };
@@ -171,8 +171,13 @@ struct Descriptor<
   Descriptor( const CellTopologyData * base , const char * name )
     : edges(), faces()
     {
+      typedef typename Traits::template subcell<0> subcell_0 ;
+      typedef typename Traits::template subcell<1> subcell_1 ;
+      typedef typename Traits::template subcell<2> subcell_2 ;
+      typedef typename Traits::template subcell<3> subcell_3 ;
+
       self.topology = & top ;
-      self.node     = index_identity();
+      self.node     = index_identity_array();
 
       top.base             = base ? base : & top ;
       top.name             = name ;
@@ -182,12 +187,15 @@ struct Descriptor<
       top.node_count       = Number_Node ;
       top.edge_count       = EdgeArray::N ;
       top.side_count       = Traits::side_count ;
-      top.subcell_homogeneity = Traits::subcell_homogeneity ;
+      top.subcell_homogeneity[0] = subcell_0::homogeneity ;
+      top.subcell_homogeneity[1] = subcell_1::homogeneity ;
+      top.subcell_homogeneity[2] = subcell_2::homogeneity ;
+      top.subcell_homogeneity[3] = subcell_3::homogeneity ;
       top.subcell_count[0] = Number_Node ;
       top.subcell_count[1] = EdgeArray::N ;
       top.subcell_count[2] = FaceArray::N ;
       top.subcell_count[3] = 1 ;
-      top.subcell[0]       = subcell_nodes();
+      top.subcell[0]       = subcell_nodes_array();
       top.subcell[1]       = edges.array ;
       top.subcell[2]       = faces.array ;
       top.subcell[3]       = & self ;
@@ -218,8 +226,13 @@ struct Descriptor<
 
   Descriptor( const CellTopologyData * base , const char * name ) : edges()
     {
+      typedef typename Traits::template subcell<0> subcell_0 ;
+      typedef typename Traits::template subcell<1> subcell_1 ;
+      typedef typename Traits::template subcell<2> subcell_2 ;
+      typedef typename Traits::template subcell<3> subcell_3 ;
+
       self.topology = & top ;
-      self.node     = index_identity();
+      self.node     = index_identity_array();
 
       top.base             = base ? base : & top ;
       top.name             = name ;
@@ -229,12 +242,15 @@ struct Descriptor<
       top.node_count       = Number_Node ;
       top.edge_count       = EdgeArray::N ;
       top.side_count       = Traits::side_count ;
-      top.subcell_homogeneity = Traits::subcell_homogeneity ;
+      top.subcell_homogeneity[0] = subcell_0::homogeneity ;
+      top.subcell_homogeneity[1] = subcell_1::homogeneity ;
+      top.subcell_homogeneity[2] = subcell_2::homogeneity ;
+      top.subcell_homogeneity[3] = subcell_3::homogeneity ;
       top.subcell_count[0] = Number_Node ;
       top.subcell_count[1] = EdgeArray::N ;
       top.subcell_count[2] = 1 ;
       top.subcell_count[3] = 0 ;
-      top.subcell[0]       = subcell_nodes();
+      top.subcell[0]       = subcell_nodes_array();
       top.subcell[1]       = edges.array ;
       top.subcell[2]       = & self ;
       top.subcell[3]       = NULL ;
@@ -259,8 +275,13 @@ struct Descriptor<
 
   Descriptor( const CellTopologyData * base , const char * name )
     {
+      typedef typename Traits::template subcell<0> subcell_0 ;
+      typedef typename Traits::template subcell<1> subcell_1 ;
+      typedef typename Traits::template subcell<2> subcell_2 ;
+      typedef typename Traits::template subcell<3> subcell_3 ;
+
       self.topology = & top ;
-      self.node     = index_identity();
+      self.node     = index_identity_array();
 
       top.base             = base ? base : & top ;
       top.name             = name ;
@@ -270,12 +291,15 @@ struct Descriptor<
       top.node_count       = Number_Node ;
       top.edge_count       = 0 ;
       top.side_count       = 0 ;
-      top.subcell_homogeneity = Traits::subcell_homogeneity ;
+      top.subcell_homogeneity[0] = subcell_0::homogeneity ;
+      top.subcell_homogeneity[1] = subcell_1::homogeneity ;
+      top.subcell_homogeneity[2] = subcell_2::homogeneity ;
+      top.subcell_homogeneity[3] = subcell_3::homogeneity ;
       top.subcell_count[0] = Number_Node ;
       top.subcell_count[1] = 1 ;
       top.subcell_count[2] = 0 ;
       top.subcell_count[3] = 0 ;
-      top.subcell[0]       = subcell_nodes();
+      top.subcell[0]       = subcell_nodes_array();
       top.subcell[1]       = & self ;
       top.subcell[2]       = NULL ;
       top.subcell[3]       = NULL ;
@@ -301,7 +325,7 @@ struct Descriptor<
   Descriptor( const CellTopologyData * base , const char * name )
     {
       self.topology = & top ;
-      self.node     = index_identity();
+      self.node     = index_identity_array();
 
       top.base             = base ? base : & top ;
       top.name             = name ;
@@ -311,7 +335,10 @@ struct Descriptor<
       top.node_count       = 0 ;
       top.edge_count       = 0 ;
       top.side_count       = Traits::side_count ;
-      top.subcell_homogeneity = Traits::subcell_homogeneity ;
+      top.subcell_homogeneity[0] = true ;
+      top.subcell_homogeneity[1] = false ;
+      top.subcell_homogeneity[2] = false ;
+      top.subcell_homogeneity[3] = false ;
       top.subcell_count[0] = 1 ;
       top.subcell_count[1] = 0 ;
       top.subcell_count[2] = 0 ;
@@ -335,7 +362,6 @@ std::ostream & operator << ( std::ostream & s , const CellTopologyData & t )
   s << " { D = " << t.dimension ;
   s << " , NV = " << t.vertex_count ;
   s << " , K = 0x" << std::hex << t.key << std::dec ;
-  s << " , H = " << t.subcell_homogeneity ;
   s << std::endl ;
 
   for ( unsigned d = 0 ; d < 4 ; ++d ) {
@@ -361,7 +387,7 @@ std::ostream & operator << ( std::ostream & s , const CellTopologyData & t )
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Node>()
+const CellTopologyData * getCellTopologyData<Node>()
 {
   static const char name[] = "Node" ;
   static const Descriptor< Node::Traits > self( NULL , name );
@@ -371,7 +397,7 @@ const CellTopologyData * cell_topology<Node>()
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology< Particle >()
+const CellTopologyData * getCellTopologyData< Particle >()
 {
   static const char name[] = "Particle" ;
   static const Descriptor< Particle::Traits > self( NULL , name );
@@ -381,7 +407,7 @@ const CellTopologyData * cell_topology< Particle >()
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Line<2> >()
+const CellTopologyData * getCellTopologyData<Line<2> >()
 {
   static const char name[] = "Line" ;
   static const Descriptor< Line<2>::Traits > self( NULL , name );
@@ -389,16 +415,16 @@ const CellTopologyData * cell_topology<Line<2> >()
 }
 
 template<>
-const CellTopologyData * cell_topology< Line<3> >()
+const CellTopologyData * getCellTopologyData< Line<3> >()
 {
   static const char name[] = "Line_3" ;
   static const Descriptor< Line<3>::Traits >
-    self( cell_topology<Line<2> >() , name );
+    self( getCellTopologyData<Line<2> >() , name );
   return & self.top ;
 }
 
 template<>
-const CellTopologyData * cell_topology< Beam<2> >()
+const CellTopologyData * getCellTopologyData< Beam<2> >()
 {
   static const char name[] = "Beam" ;
   static const Descriptor< Beam<2>::Traits > self( NULL , name );
@@ -406,7 +432,7 @@ const CellTopologyData * cell_topology< Beam<2> >()
 }
 
 template<>
-const CellTopologyData * cell_topology< Beam<3> >()
+const CellTopologyData * getCellTopologyData< Beam<3> >()
 {
   static const char name[] = "Beam_3" ;
   static const Descriptor< Beam<3>::Traits > self( NULL , name );
@@ -414,7 +440,7 @@ const CellTopologyData * cell_topology< Beam<3> >()
 }
 
 template<>
-const CellTopologyData * cell_topology< ShellLine<2> >()
+const CellTopologyData * getCellTopologyData< ShellLine<2> >()
 {
   static const char name[] = "ShellLine" ;
   static const Descriptor< ShellLine<2>::Traits > self( NULL , name );
@@ -422,18 +448,18 @@ const CellTopologyData * cell_topology< ShellLine<2> >()
 }
 
 template<>
-const CellTopologyData * cell_topology< ShellLine<3> >()
+const CellTopologyData * getCellTopologyData< ShellLine<3> >()
 {
   static const char name[] = "ShellLine_3" ;
   static const Descriptor< ShellLine<3>::Traits >
-    self( cell_topology< ShellLine<2> >() , name );
+    self( getCellTopologyData< ShellLine<2> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Triangle<3> >()
+const CellTopologyData * getCellTopologyData<Triangle<3> >()
 {
   static const char name[] = "Triangle" ;
   static const Descriptor< Triangle<3>::Traits > self( NULL , name );
@@ -441,18 +467,18 @@ const CellTopologyData * cell_topology<Triangle<3> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<Triangle<6> >()
+const CellTopologyData * getCellTopologyData<Triangle<6> >()
 {
   static const char name[] = "Triangle_6" ;
   static const Descriptor< Triangle<6>::Traits >
-    self( cell_topology< Triangle<3> >() , name );
+    self( getCellTopologyData< Triangle<3> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<ShellTriangle<3> >()
+const CellTopologyData * getCellTopologyData<ShellTriangle<3> >()
 {
   static const char name[] = "ShellTriangle" ;
   static const Descriptor< ShellTriangle<3>::Traits > self( NULL , name );
@@ -460,18 +486,18 @@ const CellTopologyData * cell_topology<ShellTriangle<3> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<ShellTriangle<6> >()
+const CellTopologyData * getCellTopologyData<ShellTriangle<6> >()
 {
   static const char name[] = "ShellTriangle_6" ;
   static const Descriptor< ShellTriangle<6>::Traits >
-    self( cell_topology< ShellTriangle<3> >() , name );
+    self( getCellTopologyData< ShellTriangle<3> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Quadrilateral<4> >()
+const CellTopologyData * getCellTopologyData<Quadrilateral<4> >()
 {
   static const char name[] = "Quadrilateral" ;
   static const Descriptor< Quadrilateral<4>::Traits > self( NULL , name );
@@ -479,27 +505,27 @@ const CellTopologyData * cell_topology<Quadrilateral<4> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<Quadrilateral<8> >()
+const CellTopologyData * getCellTopologyData<Quadrilateral<8> >()
 {
   static const char name[] = "Quadrilateral_8" ;
   static const Descriptor< Quadrilateral<8>::Traits >
-    self( cell_topology<Quadrilateral<4> >() , name );
+    self( getCellTopologyData<Quadrilateral<4> >() , name );
   return & self.top ;
 }
 
 template<>
-const CellTopologyData * cell_topology<Quadrilateral<9> >()
+const CellTopologyData * getCellTopologyData<Quadrilateral<9> >()
 {
   static const char name[] = "Quadrilateral_9" ;
   static const Descriptor< Quadrilateral<9>::Traits >
-    self( cell_topology<Quadrilateral<4> >() , name );
+    self( getCellTopologyData<Quadrilateral<4> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<ShellQuadrilateral<4> >()
+const CellTopologyData * getCellTopologyData<ShellQuadrilateral<4> >()
 {
   static const char name[] = "ShellQuadrilateral" ;
   static const Descriptor< ShellQuadrilateral<4>::Traits > self( NULL , name );
@@ -507,27 +533,27 @@ const CellTopologyData * cell_topology<ShellQuadrilateral<4> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<ShellQuadrilateral<8> >()
+const CellTopologyData * getCellTopologyData<ShellQuadrilateral<8> >()
 {
   static const char name[] = "ShellQuadrilateral_8" ;
   static const Descriptor< ShellQuadrilateral<8>::Traits >
-    self( cell_topology<ShellQuadrilateral<4> >() , name );
+    self( getCellTopologyData<ShellQuadrilateral<4> >() , name );
   return & self.top ;
 }
 
 template<>
-const CellTopologyData * cell_topology<ShellQuadrilateral<9> >()
+const CellTopologyData * getCellTopologyData<ShellQuadrilateral<9> >()
 {
   static const char name[] = "ShellQuadrilateral_9" ;
   static const Descriptor< ShellQuadrilateral<9>::Traits >
-    self( cell_topology<ShellQuadrilateral<4> >() , name );
+    self( getCellTopologyData<ShellQuadrilateral<4> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Hexahedron<8> >()
+const CellTopologyData * getCellTopologyData<Hexahedron<8> >()
 {
   static const char name[] = "Hexahedron" ;
   static const Descriptor< Hexahedron<8>::Traits > self( NULL , name );
@@ -535,27 +561,27 @@ const CellTopologyData * cell_topology<Hexahedron<8> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<Hexahedron<20> >()
+const CellTopologyData * getCellTopologyData<Hexahedron<20> >()
 {
   static const char name[] = "Hexahedron_20" ;
   static const Descriptor< Hexahedron<20>::Traits >
-    self( cell_topology<Hexahedron<8> >() , name );
+    self( getCellTopologyData<Hexahedron<8> >() , name );
   return & self.top ;
 }
 
 template<>
-const CellTopologyData * cell_topology<Hexahedron<27> >()
+const CellTopologyData * getCellTopologyData<Hexahedron<27> >()
 {
   static const char name[] = "Hexahedron_27" ;
   static const Descriptor< Hexahedron<27>::Traits >
-    self( cell_topology<Hexahedron<8> >() , name );
+    self( getCellTopologyData<Hexahedron<8> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Tetrahedron<4> >()
+const CellTopologyData * getCellTopologyData<Tetrahedron<4> >()
 {
   static const char name[] = "Tetrahedron" ;
   static const Descriptor< Tetrahedron<4>::Traits > self( NULL , name );
@@ -563,18 +589,18 @@ const CellTopologyData * cell_topology<Tetrahedron<4> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<Tetrahedron<10> >()
+const CellTopologyData * getCellTopologyData<Tetrahedron<10> >()
 {
   static const char name[] = "Tetrahedron_10" ;
   static const Descriptor< Tetrahedron<10>::Traits >
-    self( cell_topology<Tetrahedron<4> >() , name );
+    self( getCellTopologyData<Tetrahedron<4> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Pyramid<5> >()
+const CellTopologyData * getCellTopologyData<Pyramid<5> >()
 {
   static const char name[] = "Pyramid" ;
   static const Descriptor< Pyramid<5>::Traits > self( NULL , name );
@@ -582,27 +608,27 @@ const CellTopologyData * cell_topology<Pyramid<5> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<Pyramid<13> >()
+const CellTopologyData * getCellTopologyData<Pyramid<13> >()
 {
   static const char name[] = "Pyramid_13" ;
   static const Descriptor< Pyramid<13>::Traits >
-    self( cell_topology<Pyramid<5> >() , name );
+    self( getCellTopologyData<Pyramid<5> >() , name );
   return & self.top ;
 }
 
 template<>
-const CellTopologyData * cell_topology<Pyramid<14> >()
+const CellTopologyData * getCellTopologyData<Pyramid<14> >()
 {
   static const char name[] = "Pyramid_14" ;
   static const Descriptor< Pyramid<14>::Traits >
-    self( cell_topology<Pyramid<5> >() , name );
+    self( getCellTopologyData<Pyramid<5> >() , name );
   return & self.top ;
 }
 
 //----------------------------------------------------------------------
 
 template<>
-const CellTopologyData * cell_topology<Wedge<6> >()
+const CellTopologyData * getCellTopologyData<Wedge<6> >()
 {
   static const char name[] = "Wedge" ;
   static const Descriptor< Wedge<6>::Traits > self( NULL , name );
@@ -610,20 +636,20 @@ const CellTopologyData * cell_topology<Wedge<6> >()
 }
 
 template<>
-const CellTopologyData * cell_topology<Wedge<15> >()
+const CellTopologyData * getCellTopologyData<Wedge<15> >()
 {
   static const char name[] = "Wedge_15" ;
   static const Descriptor< Wedge<15>::Traits >
-    self( cell_topology<Wedge<6> >() , name );
+    self( getCellTopologyData<Wedge<6> >() , name );
   return & self.top ;
 }
 
 template<>
-const CellTopologyData * cell_topology<Wedge<18> >()
+const CellTopologyData * getCellTopologyData<Wedge<18> >()
 {
   static const char name[] = "Wedge_18" ;
   static const Descriptor< Wedge<18>::Traits >
-    self( cell_topology<Wedge<6> >() , name );
+    self( getCellTopologyData<Wedge<6> >() , name );
   return & self.top ;
 }
 

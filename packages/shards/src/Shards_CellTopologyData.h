@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                  shards : Shared Discretization Tools                  */
+/*                shards : Shared Discretization Tools                    */
 /*                Copyright (2008) Sandia Corporation                     */
 /*                                                                        */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
@@ -68,14 +68,14 @@ struct CellTopologyData {
    */
   unsigned node_count ;
 
-  /** \brief Number of edges (a.k.a. Cell^1 subcells). */
+  /** \brief Number of edges (a.k.a. Cell^1 boundary subcells). */
   unsigned edge_count ;
 
-  /** \brief Number of sides (a.k.a. Cell^(D-1) subcells). */
+  /** \brief Number of sides (a.k.a. Cell^(D-1) boundary subcells). */
   unsigned side_count ;
 
   /** \brief Flag if the subcells of a given dimension are homogeneous */
-  unsigned subcell_homogeneity ;
+  unsigned subcell_homogeneity[4] ;
 
   /** \brief Number of subcells of each dimension. */
   unsigned subcell_count[4] ;

@@ -46,9 +46,9 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
-if BUILD_TESTS
-noinst_PROGRAMS = test_all
-endif
+## if BUILD_TESTS
+bin_PROGRAMS = test_all
+## endif
 
 test_all_SOURCES = \
 	$(srcdir)/Test_Main.cpp	\

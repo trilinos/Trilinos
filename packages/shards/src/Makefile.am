@@ -140,7 +140,7 @@ include_HEADERS = $(SHARDS_H) $(SHARDS_HPP)
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
 #np# replace new_package with the name of the package being autotool'ed here
-nodist_execinclude_HEADERS = Shards_config.hpp
+nodist_execinclude_HEADERS = Shards_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
