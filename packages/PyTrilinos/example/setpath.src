@@ -39,11 +39,18 @@ from   distutils.util import get_platform
 
 # The following logic is in PyTrilinos/__init__.py, but that file does not get
 # executed by the test scripts
+dl = None
 try:
     import dl
+except (SystemError, ImportError):
+    try:
+        import DLFCN as dl
+    except (SystemError, ImportError):
+        pass
+if dl:
     dlopenflags = dl.RTLD_NOW | dl.RTLD_GLOBAL
     del dl
-except SystemError:
+else:
     dlopenflags = 258
 import sys
 sys.setdlopenflags(dlopenflags)
