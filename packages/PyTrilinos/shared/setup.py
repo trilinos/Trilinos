@@ -95,7 +95,10 @@ def main(command, destdir):
     # Determine the installation information
     mkdir      = makeMacros["mkdir_p"]
     libDir     = makeMacros["libdir"]
-    installDir = os.path.join(destdir,libDir)
+    if destdir:
+        installDir = os.path.join(destdir,libDir.split(os.sep))
+    else:
+        installDir = libDir
 
     ######################################################
     # Build/clean/install/uninstall the shared libraries #
