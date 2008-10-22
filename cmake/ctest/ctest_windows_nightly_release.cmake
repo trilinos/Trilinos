@@ -1,10 +1,10 @@
 #------------------------------------------------
-# Nightly LINUX tests
-# Debug-MPI
+# Nightly WINDOWS tests
+# Release
 #------------------------------------------------
 SET (CTEST_SOURCE_NAME Trilinos)
 SET (TEST_TYPE nightly)
-SET (BUILD_TYPE debug)
+SET (BUILD_TYPE release)
 
 SET (CTEST_DASHBOARD_ROOT "C:/dashboards")
 SET (CTEST_CMAKE_COMMAND "\"${CMAKE_EXECUTABLE_NAME}\"")
@@ -22,14 +22,18 @@ SET (CTEST_CVS_CHECKOUT
   "cvs -Q -d :ext:$ENV{USER}@software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
 )
 
+<<<<<<< ctest_windows_nightly_release.cmake
+
+=======
+>>>>>>> 1.6
 
 SET (CTEST_BINARY_NAME ${CTEST_SOURCE_NAME}-Build)
 SET (CTEST_SOURCE_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}")
 SET (CTEST_BINARY_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_BINARY_NAME}")
 
 SET (CTEST_COMMAND 
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyStart"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyConfigure"
+  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyStart"
+  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyConfigure"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyBuild"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyTest -E MPI"
