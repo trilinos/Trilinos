@@ -22,15 +22,6 @@ SET (CTEST_CVS_CHECKOUT
   "cvs -Q -d :ext:$ENV{USER}@software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
 )
 
-# which ctest command to use for running the dashboard
-SET (CTEST_COMMAND 
-  "C:/Program Files/CMake 2.6/bin/ctest.exe -D Nightly"
-  )
-
-# what cmake command to use for configuring this dashboard
-SET (CTEST_CMAKE_COMMAND 
-  "C:/Program Files/CMake 2.6/bin/cmake.exe"
-  )
 
 SET (CTEST_BINARY_NAME ${CTEST_SOURCE_NAME}-Build)
 SET (CTEST_SOURCE_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}")
@@ -47,14 +38,14 @@ SET (CTEST_COMMAND
 
 SET (CTEST_INITIAL_CACHE "
 
-#Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
-#Trilinos_ENABLE_TESTS::BOOL=ON
-#Trilinos_ENABLE_EXAMPLES::BOOL=ON
+Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+Trilinos_ENABLE_TESTS::BOOL=ON
+Trilinos_ENABLE_EXAMPLES::BOOL=ON
+Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS::BOOL=OFF
 #Trilinos_ENABLE_FORTRAN:BOOL=ON
 #Teuchos_ENABLE_COMPLEX:BOOL=ON
 #Teuchos_ENABLE_EXTENDED:BOOL=ON
-Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
-Epetra_ENABLE_TESTS:BOOL=ON
+
 
 
 TRILINOS_ENABLE_MPI:BOOL=OFF
