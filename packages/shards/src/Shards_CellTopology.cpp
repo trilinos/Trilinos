@@ -119,22 +119,27 @@ void CellTopology::requireCell() const
   }
 }
 
+void CellTopology::requireDimension( const unsigned subcellDim ) const
+{
+  if ( 3 < subcellDim ) {
+    std::ostringstream msg ;
+    msg << "shards::CellTopology::requireDimension( ERROR: dim = "
+        << subcellDim << " > 3 )" ;
+    throw std::invalid_argument( msg.str() );
+  }
+}
+
 void CellTopology::requireSubcell( const unsigned subcellDim ,
                                    const unsigned subcellOrd ) const
 {
-  const bool bad_dim = 3 < subcellDim ;
-  const bool bad_ord = ! bad_dim && 
-                       m_cell->subcell_count[ subcellDim ] <= subcellOrd ;
-
-  if ( bad_dim || bad_ord ) {
+  if ( m_cell->subcell_count[ subcellDim ] <= subcellOrd ) {
     std::ostringstream msg ;
-    msg << "shards::CellTopology::requireSubcell( dim = " << subcellDim ;
-    if ( bad_dim ) { msg << " > 3  ERROR" ; }
-    msg << " , ord = " << subcellOrd ;
-    if ( bad_ord ) {
-      msg << " > '" << m_cell->name << "'.subcell_count[" << subcellDim
-          << "] = " << m_cell->subcell_count[ subcellDim ];
-    }
+    msg << "shards::CellTopology::requireSubcell( dim = "
+        << subcellDim << " , ERROR: ord = " << subcellOrd
+        << " > '" << m_cell->name
+        << "'.subcell_count[" << subcellDim
+        << "] = " << m_cell->subcell_count[ subcellDim ]
+        << " )" ;
     throw std::invalid_argument( msg.str() );
   }
 }
@@ -151,13 +156,13 @@ void CellTopology::requireNodeMap( const unsigned subcellDim ,
     msg << "shards::CellTopology::requireNodeMap( " 
         << " , " << subcellDim
         << " , " << subcellOrd
-        << " , " << nodeOrd
+        << " , ERROR: " << nodeOrd
         << " >= '"
         << m_cell->name 
         << "'.subcell[" << subcellDim
         << "][" << subcellOrd
         << "].topology->node_count = "
-        << n << "  ERROR )" ;
+        << n << " )" ;
     throw std::invalid_argument( msg.str() );
   }
 }

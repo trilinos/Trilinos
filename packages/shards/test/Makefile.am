@@ -52,6 +52,7 @@ bin_PROGRAMS = test_all
 
 test_all_SOURCES = \
 	$(srcdir)/Test_Main.cpp	\
+	$(srcdir)/Test_Shards_CellTopology.cpp 
 	$(srcdir)/Test_Shards_Array.cpp 
 
 test_all_DEPENDENCIES = \

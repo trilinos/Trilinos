@@ -409,7 +409,7 @@ const CellTopologyData * getCellTopologyData< Particle >()
 template<>
 const CellTopologyData * getCellTopologyData<Line<2> >()
 {
-  static const char name[] = "Line" ;
+  static const char name[] = "Line_2" ;
   static const Descriptor< Line<2>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -426,7 +426,7 @@ const CellTopologyData * getCellTopologyData< Line<3> >()
 template<>
 const CellTopologyData * getCellTopologyData< Beam<2> >()
 {
-  static const char name[] = "Beam" ;
+  static const char name[] = "Beam_2" ;
   static const Descriptor< Beam<2>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -442,7 +442,7 @@ const CellTopologyData * getCellTopologyData< Beam<3> >()
 template<>
 const CellTopologyData * getCellTopologyData< ShellLine<2> >()
 {
-  static const char name[] = "ShellLine" ;
+  static const char name[] = "ShellLine_2" ;
   static const Descriptor< ShellLine<2>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -461,7 +461,7 @@ const CellTopologyData * getCellTopologyData< ShellLine<3> >()
 template<>
 const CellTopologyData * getCellTopologyData<Triangle<3> >()
 {
-  static const char name[] = "Triangle" ;
+  static const char name[] = "Triangle_3" ;
   static const Descriptor< Triangle<3>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -480,7 +480,7 @@ const CellTopologyData * getCellTopologyData<Triangle<6> >()
 template<>
 const CellTopologyData * getCellTopologyData<ShellTriangle<3> >()
 {
-  static const char name[] = "ShellTriangle" ;
+  static const char name[] = "ShellTriangle_3" ;
   static const Descriptor< ShellTriangle<3>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -499,7 +499,7 @@ const CellTopologyData * getCellTopologyData<ShellTriangle<6> >()
 template<>
 const CellTopologyData * getCellTopologyData<Quadrilateral<4> >()
 {
-  static const char name[] = "Quadrilateral" ;
+  static const char name[] = "Quadrilateral_4" ;
   static const Descriptor< Quadrilateral<4>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -527,7 +527,7 @@ const CellTopologyData * getCellTopologyData<Quadrilateral<9> >()
 template<>
 const CellTopologyData * getCellTopologyData<ShellQuadrilateral<4> >()
 {
-  static const char name[] = "ShellQuadrilateral" ;
+  static const char name[] = "ShellQuadrilateral_4" ;
   static const Descriptor< ShellQuadrilateral<4>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -555,7 +555,7 @@ const CellTopologyData * getCellTopologyData<ShellQuadrilateral<9> >()
 template<>
 const CellTopologyData * getCellTopologyData<Hexahedron<8> >()
 {
-  static const char name[] = "Hexahedron" ;
+  static const char name[] = "Hexahedron_8" ;
   static const Descriptor< Hexahedron<8>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -583,7 +583,7 @@ const CellTopologyData * getCellTopologyData<Hexahedron<27> >()
 template<>
 const CellTopologyData * getCellTopologyData<Tetrahedron<4> >()
 {
-  static const char name[] = "Tetrahedron" ;
+  static const char name[] = "Tetrahedron_4" ;
   static const Descriptor< Tetrahedron<4>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -602,7 +602,7 @@ const CellTopologyData * getCellTopologyData<Tetrahedron<10> >()
 template<>
 const CellTopologyData * getCellTopologyData<Pyramid<5> >()
 {
-  static const char name[] = "Pyramid" ;
+  static const char name[] = "Pyramid_5" ;
   static const Descriptor< Pyramid<5>::Traits > self( NULL , name );
   return & self.top ;
 }
@@ -630,7 +630,7 @@ const CellTopologyData * getCellTopologyData<Pyramid<14> >()
 template<>
 const CellTopologyData * getCellTopologyData<Wedge<6> >()
 {
-  static const char name[] = "Wedge" ;
+  static const char name[] = "Wedge_6" ;
   static const Descriptor< Wedge<6>::Traits > self( NULL , name );
   return & self.top ;
 }

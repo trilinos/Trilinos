@@ -49,6 +49,8 @@ template< unsigned Dimension ,
           class    FaceMaps = TypeListEnd >
 struct CellTopologyTraits ;
 
+struct Node ;
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Implementation details for a much of this file ...
@@ -72,8 +74,7 @@ struct SubcellNodeIndex< CellTop , CellMap , Index , true >
 //----------------------------------------------------------------------
 
 template< unsigned SubcellDim , unsigned SubcellOrd , unsigned NodeIndex ,
-          unsigned Dimension ,
-          unsigned Number_Vertex , unsigned Number_Node ,
+          unsigned Dimension , unsigned Number_Vertex , unsigned Number_Node ,
           class EdgeList , class EdgeMaps ,
           class FaceList , class FaceMaps >
 struct SubcellTopologyTraits ;
@@ -83,15 +84,13 @@ template< class ListType > struct TypeListHomogeneous ;
 //----------------------------------------------------------------------
 // Self-subcell reference
 
-template< unsigned NodeIndex ,
-          unsigned NV , unsigned NN ,
-          class EList , class EMaps ,
-          class FList , class FMaps >
-struct SubcellTopologyTraits<0,0,NodeIndex, 0,NV,NN,EList,EMaps,FList,FMaps>
+template<>
+struct SubcellTopologyTraits<0,0,0,0,0,0,TypeListEnd,TypeListEnd,
+                                         TypeListEnd,TypeListEnd>
 {
-  typedef CellTopologyTraits<0,NV,NN,EList,EMaps,FList,FMaps> topology ;
+  typedef CellTopologyTraits<0,0,0> topology ;
   enum { count = 1 };
-  enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { node = -1 };
   enum { homogeneity = true };
 };
 

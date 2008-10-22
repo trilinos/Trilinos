@@ -32,7 +32,7 @@ namespace shards {
  *  \{
  */
 //----------------------------------------------------------------------
-
+ 
 /** \brief Topological traits: Dimension = 0, Vertices = 0, Nodes = 0. */
 struct Node : public CellTopologyTraits<0,0,0>
 {
@@ -40,7 +40,7 @@ struct Node : public CellTopologyTraits<0,0,0>
   typedef Node base ;
 #endif /* DOXYGEN_COMPILE */
 };
-
+ 
 /** \brief  Singleton for Node topology */
 template<> const CellTopologyData * getCellTopologyData< Node >();
 
@@ -829,6 +829,124 @@ template<> struct Hexahedron<27> : public
 {
   typedef Hexahedron<8> base ;
 };
+
+//------------------------------------------------------------------------
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Node::Traits >()
+{ return getCellTopologyData< Node >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Particle::Traits >()
+{ return getCellTopologyData< Particle >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Line<2>::Traits >()
+{ return getCellTopologyData< Line<2> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Line<3>::Traits >()
+{ return getCellTopologyData< Line<3> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Beam<2>::Traits >()
+{ return getCellTopologyData< Beam<2> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Beam<3>::Traits >()
+{ return getCellTopologyData< Beam<3> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< ShellLine<2>::Traits >()
+{ return getCellTopologyData< ShellLine<2> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< ShellLine<3>::Traits >()
+{ return getCellTopologyData< ShellLine<3> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Triangle<3>::Traits >()
+{ return getCellTopologyData< Triangle<3> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Triangle<6>::Traits >()
+{ return getCellTopologyData< Triangle<6> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< ShellTriangle<3>::Traits >()
+{ return getCellTopologyData< ShellTriangle<3> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< ShellTriangle<6>::Traits >()
+{ return getCellTopologyData< ShellTriangle<6> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Quadrilateral<4>::Traits >()
+{ return getCellTopologyData< Quadrilateral<4> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Quadrilateral<8>::Traits >()
+{ return getCellTopologyData< Quadrilateral<8> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Quadrilateral<9>::Traits >()
+{ return getCellTopologyData< Quadrilateral<9> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< ShellQuadrilateral<4>::Traits >()
+{ return getCellTopologyData< ShellQuadrilateral<4> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< ShellQuadrilateral<8> ::Traits>()
+{ return getCellTopologyData< ShellQuadrilateral<8> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< ShellQuadrilateral<9>::Traits >()
+{ return getCellTopologyData< ShellQuadrilateral<9> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Tetrahedron<4>::Traits >()
+{ return getCellTopologyData< Tetrahedron<4> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Tetrahedron<10>::Traits >()
+{ return getCellTopologyData< Tetrahedron<10> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Pyramid<5>::Traits >()
+{ return getCellTopologyData< Pyramid<5> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Pyramid<13>::Traits >()
+{ return getCellTopologyData< Pyramid<13> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Pyramid<14>::Traits >()
+{ return getCellTopologyData< Pyramid<14> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Wedge<6>::Traits >()
+{ return getCellTopologyData< Wedge<6> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Wedge<15>::Traits >()
+{ return getCellTopologyData< Wedge<15> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Wedge<18>::Traits >()
+{ return getCellTopologyData< Wedge<18> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Hexahedron<8>::Traits >()
+{ return getCellTopologyData< Hexahedron<8> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Hexahedron<20>::Traits >()
+{ return getCellTopologyData< Hexahedron<20> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Hexahedron<27>::Traits >()
+{ return getCellTopologyData< Hexahedron<27> >(); }
 
 //------------------------------------------------------------------------
 

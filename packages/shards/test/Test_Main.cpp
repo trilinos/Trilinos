@@ -22,10 +22,11 @@
 /*------------------------------------------------------------------------*/
 
 extern void test_shards_array();
+extern void test_shards_cell_topology();
 
 int main( int , char ** )
 {
   test_shards_array();
-
+  test_shards_cell_topology();
 }
 

@@ -65,6 +65,7 @@ class CellTopology {
 private:
   void deleteOwned();
   void requireCell() const ;
+  void requireDimension( const unsigned subcell_dim ) const ;
   void requireSubcell( const unsigned subcell_dim ,
                        const unsigned subcell_ord ) const ;
   void requireNodeMap( const unsigned subcell_dim ,
@@ -95,6 +96,13 @@ public:
     {
       SHARDS_REQUIRE( requireCell() );
       return m_cell->key ;
+    }
+  
+  /** \brief  Node count of this cell topology */
+  unsigned getNodeCount() const
+    {
+      SHARDS_REQUIRE( requireCell() );
+      return m_cell->node_count ;
     }
   
   /** \brief  Vertex count of this cell topology */
@@ -139,6 +147,7 @@ public:
                                         const unsigned subcell_ord ) const
     {
       SHARDS_REQUIRE( requireCell() );
+      SHARDS_REQUIRE( requireDimension(subcell_dim) );
       SHARDS_REQUIRE( requireSubcell(subcell_dim,subcell_ord) );
       return m_cell->subcell[subcell_dim][subcell_ord].topology ;
     }
@@ -152,6 +161,20 @@ public:
       return getTopology(subcell_dim,subcell_ord)->base ;
     }
 
+
+  /** \brief  Key of a subcell of the given dimension and ordinal. */
+  unsigned getKey( const unsigned subcell_dim ,
+                   const unsigned subcell_ord ) const
+    {
+      return getTopology(subcell_dim,subcell_ord)->key ;
+    }
+
+  /** \brief  Node count of a subcell of the given dimension and ordinal. */
+  unsigned getNodeCount( const unsigned subcell_dim ,
+                         const unsigned subcell_ord ) const
+    {
+      return getTopology(subcell_dim,subcell_ord)->node_count ;
+    }
 
   /** \brief  Vertex count of a subcell of the given dimension and ordinal. */
   unsigned getVertexCount( const unsigned subcell_dim ,
@@ -178,7 +201,7 @@ public:
   unsigned getSubcellCount( const unsigned subcell_dim ) const
     {
       SHARDS_REQUIRE( requireCell() );
-      SHARDS_REQUIRE( requireSubcell(subcell_dim,0) );
+      SHARDS_REQUIRE( requireDimension(subcell_dim) );
       return m_cell->subcell_count[subcell_dim] ;
     }
   
@@ -188,7 +211,7 @@ public:
   bool getSubcellHomogeneity( const unsigned subcell_dim ) const
     {
       SHARDS_REQUIRE( requireCell() );
-      SHARDS_REQUIRE( requireSubcell(subcell_dim,0) );
+      SHARDS_REQUIRE( requireDimension(subcell_dim) );
       return m_cell->subcell_homogeneity[subcell_dim] ;
     }
   
@@ -200,6 +223,7 @@ public:
                        const unsigned  subcell_node_ord ) const
     {
       SHARDS_REQUIRE( requireCell() );
+      SHARDS_REQUIRE( requireDimension(subcell_dim) );
       SHARDS_REQUIRE( requireSubcell(subcell_dim,subcell_ord) );
       SHARDS_REQUIRE( requireNodeMap(subcell_dim,subcell_ord,subcell_node_ord));
       return m_cell->subcell[subcell_dim][subcell_ord].node[subcell_node_ord];
