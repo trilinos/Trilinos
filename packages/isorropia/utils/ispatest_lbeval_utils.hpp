@@ -90,6 +90,8 @@ void compute_balance(const Epetra_Vector &wgts, double myGoalWeight,
 
 /** Compute Zoltan-style hypergraph metrics given a partitioned
     CrsGraph and a CostDescriber (weight) object.
+    If the CostDescriber has no weights in it, reasonable defaults
+    will be used. 
  */
 int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,
@@ -98,6 +100,8 @@ int compute_hypergraph_metrics(const Epetra_CrsGraph &graph,
 
 /** Compute Zoltan-style hypergraph metrics given a partitioned
     RowMatrix and a CostDescriber (weight) object.
+    If the CostDescriber has no weights in it, reasonable defaults
+    will be used. 
  */
 int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
@@ -115,6 +119,9 @@ int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
     all processes are to get an equal proportion of the weight, set this 
     value to (1.0 / #processes).  This value is needed in order to compute
     how close the repartitioning is to being perfectly balanced.
+
+    If the CostDescriber has no weights in it, reasonable defaults
+    will be used. 
   */
 int compute_graph_metrics(const Epetra_RowMatrix &matrix,
             Isorropia::Epetra::CostDescriber &costs,
@@ -132,6 +139,9 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
     all processes are to get an equal proportion of the weight, set this 
     value to (1.0 / #processes).  This value is needed in order to compute
     how close the repartitioning is to being perfectly balanced.
+
+    If the CostDescriber has no weights in it, reasonable defaults
+    will be used. 
   */
 int compute_graph_metrics(const Epetra_CrsGraph &graph,
             Isorropia::Epetra::CostDescriber &costs,

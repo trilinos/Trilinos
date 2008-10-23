@@ -128,7 +128,7 @@ bool test_matrix_vector_multiply(Epetra_LinearProblem &LP);
 Epetra_Map *map_from_blockmap(const Epetra_BlockMap &b);
 
 /** Read in the file "fname".  It should be a text file with a list of
-    1, 2 or 3-dimensional floating point coordinates.  Each point is
+    1, 2 or 3-dimensional floating point coordinates.  Each is
     on one line of the file, and coordinates are separated by white space.
     Blank lines are allowed.
 
