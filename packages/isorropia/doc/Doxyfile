@@ -248,11 +248,12 @@ WARN_FORMAT            = "$file:$line: $text"
 
 INPUT                  = index.doc \
                          matrix_1.doc \
+                         example_rcb.doc \
                          vert_weights.doc \
                          graphedge_weights.doc \
                          hgedge_weights.doc \
                          part_redist.doc \
-                         ../src ../test
+                         ../src ../utils ../test
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

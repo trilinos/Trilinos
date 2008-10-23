@@ -7,6 +7,9 @@
 Isorropia is a package for combinatorial scientific computing, with focus on partitioning (load balancing), but also supports coloring and ordering. Its main purpose is to assist with redistributing objects such as matrices and matrix-graphs in a parallel execution setting, to allow for more efficient computations. Isorropia produces good maps for Epetra matrices/graphs. Isorropia should be called after the matrix/graph is filled, so the sparsity pattern is known.
 <br>
 
+      In addition to matrix/graph partitioning, Isorropia has the capability to partition 1, 2 or 3-dimensional real coordinates into balanced spatial regions.  The coordinates are represented as an Epetra_MultiVector.
+<br>
+
       Isorropia is primarily an interface to the Zoltan toolkit, which is now required. Zoltan became a Trilinos package in 9.0 and is automatically enabled by
 Isorropia.
 To enable Isorropia in your Trilinos build, provide the argument
@@ -24,14 +27,15 @@ If you wish to use third-party libraries (such as ParMetis or PT-Scotch) with Is
 <a name="overview"> </a>
 \section isorropia_overview Overview of Isorropia.
 
-Isorropia currently contains algorithms for three separate problems, all of which can be viewed as a combinatorial problem based on graphs:
+Isorropia currently contains algorithms for three separate problems.  In the case
+of sparse matrices, these problems can each be viewed as a combinatorial problem based on graphs:
 <ul>
-<li> Partitioning (load-balancing) and data redistribution. 
+<li> Partitioning (load-balancing) and subsequent data redistribution. 
 <li> Graph coloring.
 <li> Fill-reducing ordering (for sparse direct solvers).
 </ul>
 
-Isorropia contains separate classes to solve each of these problems, all of which derive from Isorropia::Operator and Isorropia::EpetraOperator. Note that an operator in Isorropia is different from an operator in Epetra!
+Isorropia contains separate classes to solve each of these problems, all of which derive from Isorropia::Operator and Isorropia::Epetra::Operator. Note that an operator in Isorropia is different from an operator in Epetra!
 
 <a name="partitioning"> </a>
 \section partitioning  Partitioning and Load Balancing
@@ -39,10 +43,10 @@ Isorropia contains separate classes to solve each of these problems, all of whic
 We focus on the partitioning (load balancing), which is the most heavily used feature.
 Isorropia's load balancing user interface consists primarily of the Isorropia::Partitioner, Isorropia::Redistributor and Isorropia::CostDescriber classes, as well as the Isorropia::Epetra::create_balanced_copy functions.
 
-The Isorropia::create_balanced_copy functions are free-standing functions
+The Isorropia::Epetra::create_balanced_copy functions are free-standing functions
 (not class members) which simply take an input object (Epetra_CrsGraph,
 Epetra_CrsMatrix, etc.) and return a copy which is balanced across
-processes (parts). The reference-counter pointer class Teuchos::RCP is used. 
+processes (parts). The reference-counted pointer class Teuchos::RCP is used. 
 
 In many use cases, such as performing one partitioning
 and then using it to redistribute multiple objects, it is more
@@ -63,7 +67,9 @@ Isorropia was designed such that these steps can usually be done in three lines 
 
 Isorropia currently supports  partitioning/redistributing of several
 Epetra objects, including Epetra_CrsGraph, Epetra_RowMatrix (which includes
-Epetra_CrsMatrix and Epetra_VbrMatrix) and Epetra_MultiVector.
+Epetra_CrsMatrix and Epetra_VbrMatrix) and Epetra_MultiVector.  
+(The Epetra_MultiVector
+is interpreted as 1, 2 or 3 dimensional coordinates and is partitioned into balanced spatial regions using Zoltan's geometric partitioning methods.)
 
 Several Isorropia classes and methods accept Teuchos::ParameterList
 objects, allowing the user to control certain behavior.
@@ -72,7 +78,12 @@ Isorropia parameters can be either lower or upper case.
 <li>Choice of partitioner<br>
 By default Zoltan is used as the partitioner (with hypergraph model of 
 sparse matrices). In rare cases one may wish to use the simple built-in 
-linear partitioner instead.  Set the following parameter:
+linear partitioner instead.  
+In the case of a matrix, the simple linear partitioner will balance the 
+number of nonzeros in a matrix, not the rows.  In the case of real coordinates, it 
+will balance the weights of the coordinates.
+
+Set the following parameter:
 \verbatim
   Teuchos::ParameterList params;
   params.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
@@ -94,7 +105,7 @@ Refer to the Zoltan User's guide (available at
 for available Zoltan parameters.
 In many cases, no parameters are necessary.
 Note that Isorropia will override a few default Zoltan settings:
-The default method (LB_METHOD) is HYPERGRAPH. The default approach (LB_APPROACH) is PARTITION. Isorropia will balance the number of nonzeros in a matrix, not the rows.
+For graphs and matrices, the default method (LB_METHOD) is HYPERGRAPH. The default approach (LB_APPROACH) is PARTITION.  For coordinates the default LB_METHOD is RCB (recursive coordinate bisection).
 </ul>
 
 <a name="example_programs"> </a>
@@ -115,6 +126,8 @@ user-specified weights/costs.
 Other programs in the example subdirectory demonstrate the use of
 weights/costs data to influence the partitioner.
 See \ref vert_weights, \ref graphedge_weights and \ref hgedge_weights.
+
+\ref example_rcb demonstrates the use of Isorropia to partition spatial coordinates using Zoltan's Recursive Coordinate Bisection algorithm.
 
 <a name="coloring"> </a>
 \section coloring  Coloring 
