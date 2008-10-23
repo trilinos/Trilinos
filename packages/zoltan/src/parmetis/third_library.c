@@ -117,6 +117,11 @@ char *val)                      /* value of variable */
       for (i=0; valid_methods[i] != NULL; i++){
 	if (strcmp(val, valid_methods[i]) == 0){
 	  status = 0;
+#ifndef ZOLTAN_PARMETIS
+          if (strcmp(val, "PARMETIS") == 0){
+            status = 2;
+          }
+#endif
 	  break;
 	}
       }
