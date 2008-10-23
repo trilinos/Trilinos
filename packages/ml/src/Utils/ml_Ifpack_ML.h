@@ -122,7 +122,8 @@ public:
   virtual int ApplyInverse(const Epetra_MultiVector& X,
                            Epetra_MultiVector& Y) const
   {
-    ML_RETURN(MLPrec_->ApplyInverse(X, Y));
+    int i = MLPrec_->ApplyInverse(X, Y);
+    ML_RETURN(i);
   }
 
   //! Returns a pointer to the matrix to be preconditioned.

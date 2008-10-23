@@ -33,7 +33,7 @@ int ML_Self_Gen(ML *ml, int Overlap, int curr_level,
 // ====================================================================== 
 
 int ML_Gen_Smoother_Self(ML *ml, int Overlap, int nl, int pre_or_post,
-                         Teuchos::ParameterList& List,
+                         int niters, Teuchos::ParameterList& List,
                          const Epetra_Comm& Comm)
 {
 
@@ -54,23 +54,23 @@ int ML_Gen_Smoother_Self(ML *ml, int Overlap, int nl, int pre_or_post,
    if (pre_or_post == ML_PRESMOOTHER) {
      sprintf(str,"self_pre%d",nl);
      status = ML_Smoother_Set(&(ml->pre_smoother[nl]), (void*)Self_Handle,
-			      fun, 1, 0.0, str);
+			      fun, niters, 0.0, str);
      ml->pre_smoother[nl].data_destroy = ML_Smoother_Clean_Self;
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
      sprintf(str,"self_post%d",nl);
      status = ML_Smoother_Set(&(ml->post_smoother[nl]), 
-			      (void*)Self_Handle, fun, 1, 0.0, str);
+			      (void*)Self_Handle, fun, niters, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Self;
    }
    else if (pre_or_post == ML_BOTH) {
      sprintf(str,"self_pre%d",nl);
      status = ML_Smoother_Set(&(ml->pre_smoother[nl]),
 			      (void*)Self_Handle,
-			      fun, 1,  0.0, str);
+			      fun, niters,  0.0, str);
      sprintf(str,"self_post%d",nl);
      status = ML_Smoother_Set(&(ml->post_smoother[nl]),
-			      (void*)Self_Handle, fun, 1, 0.0, str);
+			      (void*)Self_Handle, fun, niters, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Self;
    }
    else 

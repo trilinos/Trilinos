@@ -31,7 +31,7 @@ void ML_Smoother_Clean_Self(void * Self_Handle);
 #endif
 
 int ML_Gen_Smoother_Self(ML *ml, int Overlap, int nl, int pre_or_post, 
-                         Teuchos::ParameterList& List,
+                         int niters, Teuchos::ParameterList& List,
                          const Epetra_Comm& Comm);
 
 #endif

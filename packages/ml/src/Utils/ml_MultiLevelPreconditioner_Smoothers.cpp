@@ -40,6 +40,7 @@
 #include "Ifpack_Chebyshev.h"
 #endif
 #include "ml_petsc.h"
+
 extern "C" {
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
                                                ML_Smoother* Smoother,
@@ -663,29 +664,32 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         MyIfpackOverlap = List_.get("smoother: self overlap",0);
       
       if( verbose_ ) {
-	cout << msg << "ML as self-smoother, " << endl
-	     << msg << MyPreOrPostSmoother
-	     << ", Overlap = " << MyIfpackOverlap << endl;
+        cout << msg << "ML as self-smoother ("
+             << "cycles=" << Mynum_smoother_steps
+             << ",overlap=" << MyIfpackOverlap << ","
+             << MyPreOrPostSmoother << ")" << endl;
       }
 
-      Teuchos::ParameterList& SelfList = List_.sublist("smoother: self list");
+      Teuchos::ParameterList IfpackList;
+      Teuchos::ParameterList& SelfList = IfpackList.sublist("ML list");
+      Teuchos::ParameterList& tmpList = List_.sublist("smoother: self list");
+      SelfList.setParameters(tmpList);
+      SelfList.set("zero starting solution", false);  
       string xxx = SelfList.get("SetDefaults", "not-set");
       if (xxx != "not-set") {
         if (verbose_ && Comm().MyPID() == 0)
-          cout << "***" << " Setting self-smoother default values to type `" << xxx << "'" << endl;
+          cout << msg << "Setting default values to type `" << xxx << "'" << endl;
         SetDefaults(xxx, SelfList,0,0,false);
       }
 
-      if (verbose_ && Comm().MyPID() == 0)
-        cout << "*************" << endl
-             << "Start of self-smoother generation" << endl
-             << "*************" << endl;
+      if (verbose_ && SelfList.get("ML output",0) > 0)
+        cout << msg << "*** * Start of self-smoother generation * ***" << endl;
+      int currentPrintLevel = ML_Get_PrintLevel();
       ML_Gen_Smoother_Self(ml_, MyIfpackOverlap, currentLevel, pre_or_post,
-                           SelfList,*Comm_);
-      if (verbose_ && Comm().MyPID() == 0)
-        cout << "*************" << endl
-             << "End of self-smoother generation" << endl
-             << "*************" << endl;
+                           Mynum_smoother_steps, IfpackList,*Comm_);
+      ML_Set_PrintLevel(currentPrintLevel);
+      if (verbose_ && SelfList.get("ML output",0) > 0)
+        cout << msg << "*** * End of self-smoother generation * ***" << endl;
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
