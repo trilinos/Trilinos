@@ -34,7 +34,7 @@ static PARAM_VARS Scotch_params[] = {
   { "SCOTCH_STRAT_FILE", NULL, "STRING", 0 },
   { NULL, NULL, NULL, 0 } };
 
-static int Zotlan_Scotch_Bind_Param(ZZ * zz, char *alg, char **strat);
+static int Zoltan_Scotch_Bind_Param(ZZ * zz, char *alg, char **strat);
 
 static int
 Zoltan_Scotch_Construct_Offset(ZOS *order,
@@ -107,7 +107,7 @@ int Zoltan_Scotch_Order(
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
 
   strcpy (alg, "NODEND");
-  ierr = Zotlan_Scotch_Bind_Param(zz, alg, &strat);
+  ierr = Zoltan_Scotch_Bind_Param(zz, alg, &strat);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
@@ -376,7 +376,7 @@ int Zoltan_Scotch_Order(
     SCOTCH_dgraphExit (&grafdat);
   }
   else {
-    SCOTCH_graphExit (&grafdat);
+    SCOTCH_graphExit (&cgrafdat);
   }
   SCOTCH_stratExit (&stradat);
 
@@ -433,11 +433,170 @@ Zoltan_Scotch_Construct_Offset(ZOS *order, indextype *children, int root,
 
 
 
+  /**********************************************************/
+  /* Interface routine for PT-Scotch: Partitioning          */
+  /**********************************************************/
+
+int Zoltan_Scotch(
+		    ZZ *zz,               /* Zoltan structure */
+		    float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
+					     containing the percentage of work to be
+					     assigned to each partition.               */
+		    int *num_imp,         /* number of objects to be imported */
+		    ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
+		    ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
+		    int **imp_procs,      /* list of processors to import from */
+		    int **imp_to_part,    /* list of partitions to which imported objects are
+					     assigned.  */
+		    int *num_exp,         /* number of objects to be exported */
+		    ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
+		    ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
+		    int **exp_procs,      /* list of processors to export to */
+		    int **exp_to_part     /* list of partitions to which exported objects are
+					     assigned. */
+		    )
+{
+  char *yo = "Zoltan_Scotch";
+  int ierr;
+  ZOLTAN_Third_Graph gr;
+  ZOLTAN_Third_Geom  *geo = NULL;
+  ZOLTAN_Third_Vsize vsp;
+  ZOLTAN_Third_Part  prt;
+  ZOLTAN_Output_Part part;
+
+  ZOLTAN_ID_PTR global_ids = NULL;
+  ZOLTAN_ID_PTR local_ids = NULL;
+
+  SCOTCH_Strat        stradat;
+  SCOTCH_Dgraph       grafdat;
+
+  int use_timers = 0;
+  int timer_p = -1;
+  int get_times = 0;
+  double times[5];
+
+  char alg[MAX_PARAM_STRING_LEN+1];
+  char *strat = NULL;
+  int edgelocnbr = 0;
+
+  int i;
+  float *imb_tols;
+  int  ncon;
+  int edgecut;
+  int wgtflag;
+  int   numflag = 0;
+  int num_part = zz->LB.Num_Global_Parts;    /* passed to PT-Scotch. Don't             */
+  MPI_Comm comm = zz->Communicator;          /* want to risk letting external packages */
+                                             /* change our zz struct.                  */
+
+
+#ifndef ZOLTAN_SCOTCH
+  ZOLTAN_PRINT_ERROR(zz->Proc, __func__,
+		     "Scotch requested but not compiled into library.");
+  return ZOLTAN_FATAL;
+
+#endif /* ZOLTAN_SCOTCH */
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  Zoltan_Third_Init(&gr, &prt, &vsp, &part,
+		    imp_gids, imp_lids, imp_procs, imp_to_part,
+		    exp_gids, exp_lids, exp_procs, exp_to_part);
+
+  prt.input_part_sizes = prt.part_sizes = part_sizes;
+
+  strcpy (alg, "RBISECT");
+  ierr = Zoltan_Scotch_Bind_Param(zz, alg, &strat);
+
+  timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
+
+    /* Start timer */
+  get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
+  if (get_times){
+    MPI_Barrier(zz->Communicator);
+    times[0] = Zoltan_Time(zz->Timer);
+  }
+
+  /* TODO : take care about multidimensional weights */
+
+  ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
+
+  /* Get a time here */
+  if (get_times) times[1] = Zoltan_Time(zz->Timer);
+
+  wgtflag = 2*(gr.obj_wgt_dim>0) + (gr.edge_wgt_dim>0);
+  ncon = (gr.obj_wgt_dim > 0 ? gr.obj_wgt_dim : 1);
+
+
+  if (SCOTCH_dgraphInit (&grafdat, comm) != 0) {
+    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot initialize Scotch graph.");
+  }
+
+  edgelocnbr =  gr.xadj[gr.num_obj];
+  if (SCOTCH_dgraphBuild (&grafdat, 0, gr.num_obj, gr.num_obj, gr.xadj, gr.xadj + 1,
+			  gr.vwgt, NULL,edgelocnbr, edgelocnbr, gr.adjncy, NULL, gr.ewgts) != 0) {
+    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
+  }
+
+  SCOTCH_stratInit (&stradat);
+  if (strat != NULL) {
+    if (SCOTCH_stratDgraphOrder (&stradat, strat) != 0) {
+      Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Invalid Scotch strat.");
+    }
+  }
+
+
+  if (!prt.part_sizes){
+    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"Input parameter part_sizes is NULL.");
+  }
+
+  ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
+  if (SCOTCH_dgraphPart (&grafdat, num_part, &stradat, prt.part) != 0) {
+    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"PT-Scotch partitioning internal error.");
+  }
+  ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the PT-Scotch library");
+
+  /* Get a time here */
+  if (get_times) times[2] = Zoltan_Time(zz->Timer);
+
+  ierr = Zoltan_Postprocess_Graph(zz, global_ids, local_ids, &gr, geo, &prt, &vsp, NULL, &part);
+
+  Zoltan_Third_Export_User(&part, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+			   num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
+
+  /* Get a time here */
+  if (get_times) times[3] = Zoltan_Time(zz->Timer);
+
+  if (get_times) Zoltan_Third_DisplayTime(zz, times);
+
+  if (use_timers && timer_p >= 0)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_p, zz->Communicator);
+
+  if (gr.final_output) {
+    ierr = Zoltan_Postprocess_FinalOutput (zz, &gr, &prt, &vsp,
+					   use_timers, 0);
+  }
+
+  Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+  ZOLTAN_FREE(&global_ids);
+  ZOLTAN_FREE(&local_ids);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
+  return (ierr);
+}
+
+
 /************************
  * Auxiliary function used to parse scotch specific parameters
  ***************************************/
 
-static int Zotlan_Scotch_Bind_Param(ZZ* zz, char *alg, char **strat)
+static int Zoltan_Scotch_Bind_Param(ZZ* zz, char *alg, char **strat)
 {
   char stratsmall[MAX_PARAM_STRING_LEN+1];
   char stratfilename[MAX_PARAM_STRING_LEN+1];

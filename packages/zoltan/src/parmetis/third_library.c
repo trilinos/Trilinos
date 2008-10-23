@@ -72,6 +72,14 @@ int rc;
   }
   else
 #endif /* ZOLTAN_PARMETIS */
+#ifdef ZOLTAN_SCOTCH
+  if (!strcasecmp(package, "SCOTCH")){
+    rc = Zoltan_Scotch(zz, part_sizes, num_imp, imp_gids, imp_lids,
+                         imp_procs, imp_to_part,
+                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
+  }
+  else
+#endif /* ZOLTAN_SCOTCH */
  if (!strcasecmp(package, "ZOLTAN") ||
            !strcasecmp(package, "PHG")) {
 
@@ -170,6 +178,54 @@ void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
   }
 }
 
+int Zoltan_Third_Init(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Part  *prt, ZOLTAN_Third_Vsize *vsp, ZOLTAN_Output_Part *part,
+		      ZOLTAN_ID_PTR *imp_gids, ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int **imp_to_part,
+		      ZOLTAN_ID_PTR *exp_gids, ZOLTAN_ID_PTR *exp_lids, int **exp_procs, int **exp_to_part)
+{
+
+  memset (gr, 0, sizeof(ZOLTAN_Third_Graph));
+  memset (prt, 0, sizeof(ZOLTAN_Third_Part));
+  memset (vsp, 0, sizeof(ZOLTAN_Third_Vsize));
+  memset (part, 0, sizeof(ZOLTAN_Output_Part));
+
+  /* Initialize return-argument arrays to return arguments so that F90 works. */
+  part->imp_gids = imp_gids;
+  part->imp_lids = imp_lids;
+  part->imp_procs = imp_procs;
+  part->imp_part = imp_to_part;
+
+  part->exp_gids = exp_gids;
+  part->exp_lids = exp_lids;
+  part->exp_procs = exp_procs;
+  part->exp_part = exp_to_part;
+
+  part->num_imp = part->num_exp = -1;
+
+  /* Most ParMetis methods use only graph data */
+  gr->get_data = 1;
+
+  return (ZOLTAN_OK);
+}
+
+/* export to user variables */
+int Zoltan_Third_Export_User(ZOLTAN_Output_Part *part,
+			     int *num_imp, ZOLTAN_ID_PTR *imp_gids, ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int **imp_to_part,
+			     int *num_exp, ZOLTAN_ID_PTR *exp_gids, ZOLTAN_ID_PTR *exp_lids, int **exp_procs, int **exp_to_part)
+{
+  /* Write results in user variables */
+  *num_imp = part->num_imp;
+  *imp_gids = *(part->imp_gids);
+  *imp_lids = *(part->imp_lids);
+  *imp_procs = *(part->imp_procs);
+  *imp_to_part = *(part->imp_part);
+  *num_exp = part->num_exp;
+  *exp_gids = *(part->exp_gids);
+  *exp_lids = *(part->exp_lids);
+  *exp_procs = *(part->exp_procs);
+  *exp_to_part = *(part->exp_part);
+
+  return (ZOLTAN_OK);
+}
 
 
 #ifdef __cplusplus

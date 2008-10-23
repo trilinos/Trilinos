@@ -131,6 +131,19 @@ int Zoltan_Preprocess_Timer(ZZ *zz, int *use_timer);
 /* Display timing informations */
 void Zoltan_Third_DisplayTime(ZZ* zz, double* times);
 
+/* Initialize Zoltan internal structures */
+int Zoltan_Third_Init(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Part  *prt, ZOLTAN_Third_Vsize *vsp, ZOLTAN_Output_Part *part,
+		      ZOLTAN_ID_PTR *imp_gids, ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int **imp_to_part,
+		      ZOLTAN_ID_PTR *exp_gids, ZOLTAN_ID_PTR *exp_lids, int **exp_procs, int **exp_to_part);
+
+
+/* export to user variables */
+int Zoltan_Third_Export_User(ZOLTAN_Output_Part *part,
+		     int *num_imp, ZOLTAN_ID_PTR *imp_gids, ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int **imp_to_part,
+		     int *num_exp, ZOLTAN_ID_PTR *exp_gids, ZOLTAN_ID_PTR *exp_lids, int **exp_procs, int **exp_to_part);
+
+
+
 /* Free temporary datas */
 void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
 		       ZOLTAN_Third_Part *prt, ZOLTAN_Third_Vsize *vsp,
