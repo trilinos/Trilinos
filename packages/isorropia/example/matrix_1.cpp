@@ -35,6 +35,7 @@
 //the bottom of this file (which create the epetra objects) can
 //potentially throw exceptions.
 #include <Isorropia_Exception.hpp>
+#include <Isorropia_EpetraCostDescriber.hpp>
 
 //The Isorropia user-interface functions being demonstrated are declared
 //in Isorropia_Epetra.hpp.
@@ -55,6 +56,8 @@
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 #endif
+
+#include "ispatest_lbeval_utils.hpp"
 
 //Declarations for helper-functions that create epetra objects. These
 //functions are implemented at the bottom of this file.
@@ -97,12 +100,13 @@ int main(int argc, char** argv) {
   //copy of crsgraph. 
 
   if (localProc == 0) {
-    std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
+    std::cout << "Hypergraph partitioning" << std::endl;
   }
 
   Teuchos::ParameterList paramlist;
-  //No parameters. By default, Isorropia will use Zoltan for the
-  //partitioning.
+  //No parameters. By default, Isorropia will use Zoltan hypergraph 
+  //partitioning, treating the graph columns as hyperedges and the
+  //graph rows as vertices.
 
   Teuchos::RCP<Epetra_CrsGraph> balanced_graph;
   try {
@@ -117,35 +121,33 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
-  //Now query and print out information regarding the local sizes
-  //of the input graph and the resulting balanced graph.
+  // Results
 
-  int graphrows1 = crsgraph->NumMyRows();
-  int bal_graph_rows = balanced_graph->NumMyRows();
-  int graphnnz1 = crsgraph->NumMyNonzeros();
-  int bal_graph_nnz = balanced_graph->NumMyNonzeros();
+  Isorropia::Epetra::CostDescriber emptyCostObject;
+  double goalWeight = 1.0 / (double)numProcs;
+  double bal0, bal1, cutn0, cutn1, cutl0, cutl1;
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  // Balance and cut quality before partitioning
 
-    if (p != localProc) continue;
+  ispatest::compute_hypergraph_metrics(*crsgraph, emptyCostObject, goalWeight,
+                     bal0, cutn0, cutl0);
 
-    std::cout << "proc " << p << ": input graph local rows: " << graphrows1
-       << ", local NNZ: " << graphnnz1 << std::endl;
-  }
+  // Balance and cut quality after partitioning
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  ispatest::compute_hypergraph_metrics(*balanced_graph, emptyCostObject, goalWeight,
+                     bal1, cutn1, cutl1);
 
-    if (p != localProc) continue;
+  if (localProc == 0){
+    std::cout << "Before partitioning hypergraph: ";
+    std::cout << "Balance " << bal0 << " cutN " << cutn0 << " cutL " << cutl0;
+    std::cout << std::endl;
 
-    std::cout << "proc " << p << ": balanced graph local rows: "
-       << bal_graph_rows << ", local NNZ: " << bal_graph_nnz << std::endl;
-  }
-
-  if (localProc == 0) {
+    std::cout << "After partitioning hypergraph:  ";
+    std::cout << "Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
+    std::cout << std::endl;
     std::cout << std::endl;
   }
+
 
   //Next, do a similar exercise with a Epetra_CrsMatrix. Like the
   //Epetra_CrsGraph example above, we'll create a matrix to use as input,
@@ -179,9 +181,7 @@ int main(int argc, char** argv) {
 
 
   if (localProc == 0) {
-    std::cout << " calling Isorropia::Epetra::create_balanced_copy...\n"
-            << "Specifying GRAPH partitioning."
-        << std::endl;
+    std::cout << "Specifying GRAPH partitioning." << std::endl;
   }
 
   Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix;
@@ -196,28 +196,29 @@ int main(int argc, char** argv) {
     MPI_Finalize();
     return(-1);
   }
+  // Results
 
-  int matrows1 = crsmatrix->NumMyRows();
-  int bal_mat_rows = balanced_matrix->NumMyRows();
-  int matnnz1 = crsmatrix->NumMyNonzeros();
-  int bal_mat_nnz = balanced_matrix->NumMyNonzeros();
+  double cutWgt0, cutWgt1;
+  int numCuts0, numCuts1;
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  // Balance and cut quality before partitioning
 
-    if (p != localProc) continue;
+  ispatest::compute_graph_metrics(*crsmatrix, emptyCostObject, goalWeight,
+                     bal0, numCuts0, cutWgt0, cutn0, cutl0);
 
-    std::cout << "proc " << p << ": input matrix local rows: " << matrows1
-       << ", local NNZ: " << matnnz1 << std::endl;
-  }
+  // Balance and cut quality after partitioning
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  ispatest::compute_graph_metrics(*balanced_matrix, emptyCostObject, goalWeight,
+                     bal1, numCuts1, cutWgt1, cutn1, cutl1);
 
-    if (p != localProc) continue;
+  if (localProc == 0){
+    std::cout << "Before partitioning graph: Number of cuts " << numCuts0 << " Cut weight " << cutWgt0 << std::endl;
+    std::cout << "                     Balance " << bal0 << " cutN " << cutn0 << " cutL " << cutl0;
+    std::cout << std::endl;
 
-    std::cout << "proc " << p << ": balanced matrix local rows: "
-        << bal_mat_rows << ", local NNZ: " << bal_mat_nnz << std::endl;
+    std::cout << "After partitioning graph:  Number of cuts " << numCuts1 << " Cut weight " << cutWgt1 << std::endl;
+    std::cout << "                     Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
+    std::cout << std::endl;
   }
 
   MPI_Finalize();
@@ -238,11 +239,6 @@ int main(int argc, char** argv) {
 Teuchos::RCP<Epetra_CrsMatrix>
   create_epetra_matrix(int numProcs, int localProc)
 {
-  if (localProc == 0) {
-    std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
-            << std::endl;
-  }
-
   //create an Epetra_CrsMatrix with rows spread un-evenly over
   //processors.
   Epetra_MpiComm comm(MPI_COMM_WORLD);

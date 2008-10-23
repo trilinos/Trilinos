@@ -41,6 +41,7 @@
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_EpetraRedistributor.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -57,6 +58,8 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 #endif
+
+#include "ispatest_lbeval_utils.hpp"
 
 //Declaration for helper-function that creates epetra rowmatrix objects. This
 //function is implemented at the bottom of this file.
@@ -145,8 +148,7 @@ int main(int argc, char** argv) {
   //Now create the partitioner object using an Isorropia factory-like
   //'create_partitioner' function...
   Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
-    Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
-
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(rowmatrix, costs, paramlist));
 
   //Next create a Redistributor object and use it to create a repartitioned
   //copy of the matrix.
@@ -174,34 +176,34 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
+  // Results
 
-  //Now query and print out information regarding the local sizes
-  //of the original problem and the resulting balanced problem.
+  double goalWeight = 1.0 / (double)numProcs;
+  double bal0, bal1, cutn0, cutn1, cutl0, cutl1, cutWgt0, cutWgt1;
+  int numCuts0, numCuts1;
 
-  int rows1 = rowmatrix->NumMyRows();
-  int bal_rows = bal_matrix->NumMyRows();
-  int nnz1 = rowmatrix->NumMyNonzeros();
-  int bal_nnz = bal_matrix->NumMyNonzeros();
+  // Balance and cut quality before partitioning
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  ispatest::compute_graph_metrics(*rowmatrix, *costs, goalWeight,
+                     bal0, numCuts0, cutWgt0, cutn0, cutl0);
 
-    if (p != localProc) continue;
+  // Balance and cut quality after partitioning
 
-    std::cout << "proc " << p << ": original local rows: " << rows1
-       << ", local NNZ: " << nnz1 << std::endl;
-  }
+  Teuchos::RCP<Epetra_Vector> new_weights = rd.redistribute(*vweights);
+  Isorropia::Epetra::CostDescriber new_costs;
+  new_costs.setVertexWeights(new_weights);
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  ispatest::compute_graph_metrics(*bal_matrix, new_costs, goalWeight,
+                     bal1, numCuts1, cutWgt1, cutn1, cutl1);
 
-    if (p != localProc) continue;
+  if (localProc == 0){
+    std::cout << "Before partitioning: Number of cuts " << numCuts0 << " Cut weight " << cutWgt0 << std::endl;
+    std::cout << "                     Balance " << bal0 << " cutN " << cutn0 << " cutL " << cutl0;
+    std::cout << std::endl;
 
-    std::cout << "proc " << p << ": repartitioned matrix local rows: "
-       << bal_rows << ", local NNZ: " << bal_nnz << std::endl;
-  }
-
-  if (localProc == 0) {
+    std::cout << "After partitioning:  Number of cuts " << numCuts1 << " Cut weight " << cutWgt1 << std::endl;
+    std::cout << "                     Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
+    std::cout << std::endl;
     std::cout << std::endl;
   }
 

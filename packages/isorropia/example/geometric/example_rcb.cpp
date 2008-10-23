@@ -119,7 +119,9 @@ int main(int argc, char** argv) {
 
 
   // =============================================================
-  // Create weights for coordinates
+  // Create weights for coordinates - there are three different
+  // functions in src/utils/ispatest_epetra_utils.cpp that can
+  // create weights for the coordinates.
   // =============================================================
 
   //Epetra_MultiVector *wgts = ispatest::makeWeights(mv->Map(), &ispatest::unitWeights);

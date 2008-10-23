@@ -41,6 +41,7 @@
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_EpetraRedistributor.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -57,6 +58,8 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
 #endif
+
+#include "ispatest_lbeval_utils.hpp"
 
 int main(int argc, char** argv) {
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
@@ -183,8 +186,12 @@ int main(int argc, char** argv) {
 
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   sublist.set("LB_METHOD", "GRAPH");
-  sublist.set("PARMETIS_METHOD", "PARTKWAY");
-  //sublist.set("PARMETIS_ITR", "1000");
+  sublist.set("GRAPH_PACKAGE", "PHG");
+
+  //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
+  //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
+  //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
+
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
@@ -278,8 +285,7 @@ int main(int argc, char** argv) {
   //Now create the partitioner object using an Isorropia factory-like
   //function...
   Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
-    Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
-
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(rowmatrix, costs, paramlist));
 
   //Next create a Redistributor object and use it to create a
   //repartitioned copy of the matrix
@@ -306,25 +312,37 @@ int main(int argc, char** argv) {
     MPI_Finalize();
     return(-1);
   }
+  // Results
 
+  double goalWeight = 1.0 / (double)numProcs;
+  double bal0, bal1, cutn0, cutn1, cutl0, cutl1, cutWgt0, cutWgt1;
+  int numCuts0, numCuts1;
 
-  //Now print out the original map and then the map of the balanced
-  //matrix, to show that the rows have been migrated to different
-  //processors.
+  // Balance and cut quality before partitioning
 
-  std::cout << "origmap: " << std::endl;
-  std::cout << origmap << std::endl;
+  ispatest::compute_graph_metrics(*rowmatrix, *costs, goalWeight,
+                     bal0, numCuts0, cutWgt0, cutn0, cutl0);
 
-  comm.Barrier();
+  // Balance and cut quality after partitioning
 
-  std::cout << std::endl;
+  Teuchos::RCP<Epetra_CrsMatrix> new_weights = rd.redistribute(*crs_ge_weights);
+  Isorropia::Epetra::CostDescriber new_costs;
+  new_costs.setGraphEdgeWeights(new_weights);
 
-  std::cout << "bal_matrix->RowMap(): " << std::endl;
-  std::cout << bal_matrix->RowMap() << std::endl;
+  ispatest::compute_graph_metrics(*bal_matrix, new_costs, goalWeight,
+                     bal1, numCuts1, cutWgt1, cutn1, cutl1);
 
-  if (localProc == 0) {
+  if (localProc == 0){
+    std::cout << "Before partitioning: Number of cuts " << numCuts0 << " Cut weight " << cutWgt0 << std::endl;
+    std::cout << "                     Balance " << bal0 << " cutN " << cutn0 << " cutL " << cutl0;
+    std::cout << std::endl;
+
+    std::cout << "After partitioning:  Number of cuts " << numCuts1 << " Cut weight " << cutWgt1 << std::endl;
+    std::cout << "                     Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
     std::cout << std::endl;
   }
+
+
 
   MPI_Finalize();
 

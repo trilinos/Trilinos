@@ -42,6 +42,7 @@
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_EpetraRedistributor.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -58,6 +59,8 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 #endif
+
+#include "ispatest_lbeval_utils.hpp"
 
 //Declaration for helper-function that creates epetra rowmatrix objects. This
 //function is implemented at the bottom of this file.
@@ -120,6 +123,12 @@ int main(int argc, char** argv) {
 
   //Now we're going to create a Epetra_Vector with weights to
   //be used as hypergraph edge weights in the repartitioning operation.
+  //
+  // We think of the rows as vertices of the hypergraph, and the columns
+  // as hyperedges.  Our row matrix is square, so we can use the
+  // the row map to indicate how the column weights should be
+  // distributed.
+
   Teuchos::RCP<Epetra_Vector> hge_weights =
     Teuchos::rcp(new Epetra_Vector(rowmatrix->RowMatrixRowMap()));
 
@@ -142,11 +151,10 @@ int main(int argc, char** argv) {
 
   costs->setHypergraphEdgeWeights(hge_weights);
 
-  //Now create the partitioner object using an Isorropia factory-like
-  //function...
-  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
-    Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
+  //Now create the partitioner
 
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(rowmatrix, costs, paramlist));
 
   //Next create a Redistributor object and use it to create a repartitioned
   //copy of the matrix.
@@ -174,36 +182,35 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
+  // Results
 
-  //Now query and print out information regarding the local sizes
-  //of the original problem and the resulting balanced problem.
+  double goalWeight = 1.0 / (double)numProcs; 
+  double bal0, bal1, cutn0, cutn1, cutl0, cutl1;
 
-  int rows1 = rowmatrix->NumMyRows();
-  int bal_rows = bal_matrix->NumMyRows();
-  int nnz1 = rowmatrix->NumMyNonzeros();
-  int bal_nnz = bal_matrix->NumMyNonzeros();
+  // Balance and cut quality before partitioning
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  ispatest::compute_hypergraph_metrics(*rowmatrix, *costs, goalWeight,
+                     bal0, cutn0, cutl0);
 
-    if (p != localProc) continue;
+  // Balance and cut quality after partitioning
 
-    std::cout << "proc " << p << ": original local rows: " << rows1
-       << ", local NNZ: " << nnz1 << std::endl;
-  }
+  Teuchos::RCP<Epetra_Vector> new_weights = rd.redistribute(*hge_weights);
+  Isorropia::Epetra::CostDescriber new_costs;
+  new_costs.setHypergraphEdgeWeights(new_weights);
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  ispatest::compute_hypergraph_metrics(*bal_matrix, new_costs, goalWeight,
+                     bal1, cutn1, cutl1);
 
-    if (p != localProc) continue;
+  if (localProc == 0){
+    std::cout << "Before partitioning: ";
+    std::cout << "Balance " << bal0 << " cutN " << cutn0 << " cutL " << cutl0;
+    std::cout << std::endl;
 
-    std::cout << "proc " << p << ": repartitioned matrix local rows: "
-       << bal_rows << ", local NNZ: " << bal_nnz << std::endl;
-  }
-
-  if (localProc == 0) {
+    std::cout << "After partitioning:  ";
+    std::cout << "Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
     std::cout << std::endl;
   }
+
 
   MPI_Finalize();
 

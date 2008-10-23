@@ -27,6 +27,9 @@
 
 include $(top_builddir)/Makefile.export.isorropia
 
+UTIL_INCLUDE=-I$(top_srcdir)/utils
+UTIL_LIB=$(top_builddir)/utils/libisorropia_test_utils.a
+
 EXEEXT = .exe
 
 SUBDIRS=geometric
@@ -42,38 +45,38 @@ matrix_1_SOURCES = $(srcdir)/matrix_1.cpp
 matrix_1_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a
 
-matrix_1_CXXFLAGS = $(ISORROPIA_INCLUDES)
-matrix_1_LDADD = $(ISORROPIA_LIBS)
+matrix_1_CXXFLAGS = $(ISORROPIA_INCLUDES) $(UTIL_INCLUDE)
+matrix_1_LDADD = $(ISORROPIA_LIBS) $(UTIL_LIB)
 
 part_redist_SOURCES = $(srcdir)/part_redist.cpp
 
 part_redist_DEPENDENCIES = \
         $(top_builddir)/src/libisorropia.a
 
-part_redist_CXXFLAGS = $(ISORROPIA_INCLUDES) 
-part_redist_LDADD = $(ISORROPIA_LIBS)
+part_redist_CXXFLAGS = $(ISORROPIA_INCLUDES) $(UTIL_INCLUDE)
+part_redist_LDADD = $(ISORROPIA_LIBS) $(UTIL_LIB)
 
 vert_weights_SOURCES = $(srcdir)/vert_weights.cpp
 
 vert_weights_DEPENDENCIES = \
         $(top_builddir)/src/libisorropia.a
 
-vert_weights_CXXFLAGS = $(ISORROPIA_INCLUDES)
-vert_weights_LDADD = $(ISORROPIA_LIBS)
+vert_weights_CXXFLAGS = $(ISORROPIA_INCLUDES) $(UTIL_INCLUDE)
+vert_weights_LDADD = $(ISORROPIA_LIBS) $(UTIL_LIB)
 
 graphedge_weights_SOURCES = $(srcdir)/graphedge_weights.cpp
 
 graphedge_weights_DEPENDENCIES = \
         $(top_builddir)/src/libisorropia.a
 
-graphedge_weights_CXXFLAGS = $(ISORROPIA_INCLUDES)
-graphedge_weights_LDADD = $(ISORROPIA_LIBS)
+graphedge_weights_CXXFLAGS = $(ISORROPIA_INCLUDES) $(UTIL_INCLUDE)
+graphedge_weights_LDADD = $(ISORROPIA_LIBS) $(UTIL_LIB)
 
 hgedge_weights_SOURCES = $(srcdir)/hgedge_weights.cpp
 
 hgedge_weights_DEPENDENCIES = \
         $(top_builddir)/src/libisorropia.a
 
-hgedge_weights_CXXFLAGS = $(ISORROPIA_INCLUDES) 
-hgedge_weights_LDADD = $(ISORROPIA_LIBS)
+hgedge_weights_CXXFLAGS = $(ISORROPIA_INCLUDES) $(UTIL_INCLUDE)
+hgedge_weights_LDADD = $(ISORROPIA_LIBS) $(UTIL_LIB)
 

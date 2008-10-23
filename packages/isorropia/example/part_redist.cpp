@@ -39,6 +39,8 @@
 //in these headers:
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraRedistributor.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
+#include <Isorropia_EpetraCostDescriber.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -55,6 +57,8 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 #endif
+
+#include "ispatest_lbeval_utils.hpp"
 
 //Declaration for helper-function that creates epetra objects. This
 //function is implemented at the bottom of this file.
@@ -113,11 +117,10 @@ int main(int argc, char** argv) {
     Teuchos::rcp(rowmatrix, false);
 
 
-  //Now create the partitioner object using an Isorropia factory-like
-  //function...
-  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
-    Isorropia::Epetra::create_partitioner(rowmat, paramlist);
+  //Now create the partitioner 
 
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(rowmat, paramlist));
 
   //Next create a Redistributor object and use it to create balanced
   //copies of the objects in linprob.
@@ -153,30 +156,30 @@ int main(int argc, char** argv) {
                                         bal_x.get(), bal_b.get());
 
 
-  //Now query and print out information regarding the local sizes
-  //of the original problem and the resulting balanced problem.
+  // Results
 
-  int rows1 = linprob->GetMatrix()->NumMyRows();
-  int bal_rows = balanced_problem.GetMatrix()->NumMyRows();
-  int nnz1 = linprob->GetMatrix()->NumMyNonzeros();
-  int bal_nnz = balanced_problem.GetMatrix()->NumMyNonzeros();
+  double goalWeight = 1.0 / (double)numProcs;
+  double bal0, bal1, cutn0, cutn1, cutl0, cutl1;
+  Isorropia::Epetra::CostDescriber default_costs;
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  // Balance and cut quality before partitioning
 
-    if (p != localProc) continue;
+  ispatest::compute_hypergraph_metrics(*(linprob->GetMatrix()), default_costs, goalWeight,
+                     bal0, cutn0, cutl0);
 
-    std::cout << "proc " << p << ": original local rows: " << rows1
-       << ", local NNZ: " << nnz1 << std::endl;
-  }
+  // Balance and cut quality after partitioning
 
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
+  ispatest::compute_hypergraph_metrics(*bal_matrix, default_costs, goalWeight,
+                     bal1, cutn1, cutl1);
 
-    if (p != localProc) continue;
+  if (localProc == 0){
+    std::cout << "Before partitioning: ";
+    std::cout << "Balance " << bal0 << " cutN " << cutn0 << " cutL " << cutl0;
+    std::cout << std::endl;
 
-    std::cout << "proc " << p << ": balanced prob local rows: "
-       << bal_rows << ", local NNZ: " << bal_nnz << std::endl;
+    std::cout << "After partitioning:  ";
+    std::cout << "Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
+    std::cout << std::endl;
   }
 
   //Finally, delete the pointer objects that we asked to be created.
