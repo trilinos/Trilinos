@@ -192,6 +192,9 @@
 /* Define if want to build teuchos-expat */
 #cmakedefine HAVE_TEUCHOS_EXPAT
 
+/* Define if want to build teuchos-explicit_instantiation */
+#cmakedefine HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+
 /* Define if want to build teuchos-extended */
 #cmakedefine HAVE_TEUCHOS_EXTENDED
 
