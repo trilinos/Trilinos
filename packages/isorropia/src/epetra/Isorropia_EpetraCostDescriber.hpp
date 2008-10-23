@@ -134,7 +134,10 @@ public:
   friend std::ostream& operator <<(std::ostream &, const Isorropia::Epetra::CostDescriber &cd);
 
   /** setVertexWeights is called by a process to supply the
-      weight of each vertex that it owns in the matrix.
+      weight of each vertex (row) in the graph or hypergraph.
+      If the object to be partitioned is instead an Epetra_MultiVector 
+      representing real
+      coordinates, then the weights represent the weight assigned to each coordinate.
 
       \param vwgts  vector of weights, one for each vertex
    */
