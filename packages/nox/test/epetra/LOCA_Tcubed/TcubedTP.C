@@ -76,7 +76,8 @@
 using namespace std;
 
 int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
-		bool includeUV, bool useP, const std::string& prec)
+		bool includeUV, bool useP, const std::string& prec,
+		const std::string& prec_method)
 {
   int ierr = 0;
   int MyPID = Comm.MyPID();
@@ -85,6 +86,7 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     cout << "********** " 
 	 << "Testing includeUV = " << includeUV << " useP = " << useP
 	 << " Preconditioner = " << prec 
+	 << " Preconditioner method = " << prec_method
 	 << " **********" << endl;
   }
 
@@ -150,6 +152,7 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     bifurcationList.set("Update Null Vectors Every Nonlinear Iteration", 
 			false);
     bifurcationList.set("Transpose Solver Method",prec);
+    bifurcationList.set("Multiply Null Vectors by Mass Matrix", true);
 
     // The others don't seem to work with "Solve df/dp"
     if (prec == "Explicit Transpose")
@@ -162,6 +165,7 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     bifurcationList.set("Bordered Solver Method", "Householder");
     bifurcationList.set("Include UV In Preconditioner", includeUV);
     bifurcationList.set("Use P For Preconditioner", useP);
+    bifurcationList.set("Preconditioner Method", prec_method);
 
     //bifurcationList.set("Formulation", "Moore-Spence");
     //bifurcationList.set("Solver Method", "Phipps Bordering");
@@ -230,7 +234,7 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     // This is created by the user using inheritance of the abstract base class
     Teuchos::RCP<Problem_Interface> interface = 
       Teuchos::rcp(new Problem_Interface(Problem));
-    Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iReq = interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
     
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
@@ -277,7 +281,7 @@ int tcubed_test(int NumGlobalElements, bool verbose, Epetra_Comm& Comm,
     // Create the Group
     Teuchos::RCP<LOCA::Epetra::Group> grp = 
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq, 
-					   locaSoln, linsys,
+					   locaSoln, linsys, linsys,
 					   pVector));
     grp->computeF();
   
@@ -428,58 +432,130 @@ int main(int argc, char *argv[])
 
   // Test includeUV = true, useP = true, prec = "Transpose Preconditioner"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Transpose Preconditioner");
+		      true, true, "Transpose Preconditioner",
+		      "Jacobian");
 
   // Test includeUV = true, useP = false, prec = "Transpose Preconditioner"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Transpose Preconditioner");
+		      true, false, "Transpose Preconditioner",
+		      "Jacobian");
+
+  // Test includeUV = false, useP = true, prec = "Transpose Preconditioner"
+  ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+   		      true, true, "Transpose Preconditioner",
+   		      "SMW");
+
+  // Test includeUV = false, useP = false, prec = "Transpose Preconditioner"
+  ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+   		      true, false, "Transpose Preconditioner",
+  		      "SMW");
 
   if (NumProc > 1) {
     // Test includeUV = false, useP = true, prec = "Transpose Preconditioner"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Transpose Preconditioner");
+			false, true, "Transpose Preconditioner",
+			"Jacobian");
 
     // Test includeUV = false, useP = false, prec = "Transpose Preconditioner"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Transpose Preconditioner");
+			false, false, "Transpose Preconditioner",
+			"Jacobian");
+
+    // Test includeUV = false, useP = true, prec = "Transpose Preconditioner"
+    ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+			false, true, "Transpose Preconditioner",
+			"SMW");
+
+    // Test includeUV = false, useP = false, prec = "Transpose Preconditioner"
+    ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+			false, false, "Transpose Preconditioner",
+			"SMW");
   }
 
   // Test includeUV = true, useP = true, prec = "Left Preconditioning"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Left Preconditioning");
+		      true, true, "Left Preconditioning",
+		      "Jacobian");
 
   // Test includeUV = true, useP = false, prec = "Left Preconditioning"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Left Preconditioning");
+		      true, false, "Left Preconditioning",
+		      "Jacobian");
+
+  // Test includeUV = true, useP = true, prec = "Left Preconditioning"
+  ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+		      true, true, "Left Preconditioning",
+		      "SMW");
+
+  // Test includeUV = true, useP = false, prec = "Left Preconditioning"
+  ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+		      true, false, "Left Preconditioning",
+		      "SMW");
 
   if (NumProc > 1) {
     // Test includeUV = false, useP = true, prec = "Left Preconditioning"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Left Preconditioning");
+			false, true, "Left Preconditioning",
+			"Jacobian");
 
     // Test includeUV = false, useP = false, prec = "Left Preconditioning"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Left Preconditioning");
+			false, false, "Left Preconditioning",
+			"Jacobian");
+
+    // Test includeUV = false, useP = true, prec = "Left Preconditioning"
+    ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+			false, true, "Left Preconditioning",
+			"SMW");
+
+    // Test includeUV = false, useP = false, prec = "Left Preconditioning"
+    ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+			false, false, "Left Preconditioning",
+			"SMW");
   }
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Test includeUV = true, useP = true, prec = "Explicit Transpose"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, true, "Explicit Transpose");
+		      true, true, "Explicit Transpose",
+		      "Jacobian");
 
   // Test includeUV = true, useP = false, prec = "Explicit Transpose"
   ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-		      true, false, "Explicit Transpose");
+		      true, false, "Explicit Transpose",
+		      "Jacobian");
 
   if (NumProc > 1) {
     // Test includeUV = false, useP = true, prec = "Explicit Transpose"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, true, "Explicit Transpose");
+			false, true, "Explicit Transpose",
+			"Jacobian");
 
     // Test includeUV = false, useP = false, prec = "Explicit Transpose"
     ierr += tcubed_test(NumGlobalElements, verbose, Comm,
-			false, false, "Explicit Transpose");
+			false, false, "Explicit Transpose",
+			"Jacobian");
+
+    // Test includeUV = false, useP = true, prec = "Explicit Transpose"
+    ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+			false, true, "Explicit Transpose",
+			"SMW");
+
+    // Test includeUV = false, useP = false, prec = "Explicit Transpose"
+    ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+			false, false, "Explicit Transpose",
+			"SMW");
   }
+
+  // Test includeUV = false, useP = false, prec = "Explicit Transpose"
+  ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+		      true, true, "Explicit Transpose",
+		      "SMW");
+
+  // Test includeUV = false, useP = false, prec = "Explicit Transpose"
+  ierr += tcubed_test(NumGlobalElements, verbose, Comm,
+		      true, false, "Explicit Transpose",
+		      "SMW");
 #endif
 
   if (MyPID == 0) {
