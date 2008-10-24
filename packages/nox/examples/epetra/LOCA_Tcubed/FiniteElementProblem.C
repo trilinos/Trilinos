@@ -175,7 +175,9 @@ FiniteElementProblem::~FiniteElementProblem()
 bool FiniteElementProblem::evaluate(FillType f, 
 				    const Epetra_Vector* soln, 
 				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+				    Epetra_RowMatrix* tmp_matrix,
+				    double jac_coeff, 
+				    double mass_coeff)
 {
   flag = f;
 
@@ -255,10 +257,10 @@ bool FiniteElementProblem::evaluate(FillType f,
 	  for(j=0;j < 2; j++) {
 	    if (StandardMap->MyGID(row)) {
 	      column=OverlapMap->GID(ne+j);
-	      jac=basis.wt*basis.dx*((-1.0/(basis.dx*basis.dx))*
-				     basis.dphide[j]*basis.dphide[i]
-				     +3.0*factor*basis.uu*basis.uu*basis.phi[j]*
-				     basis.phi[i]);  
+	      jac=jac_coeff*basis.wt*basis.dx*
+		((-1.0/(basis.dx*basis.dx))*basis.dphide[j]*basis.dphide[i] + 
+		 3.0*factor*basis.uu*basis.uu*basis.phi[j]*basis.phi[i]) + 
+		mass_coeff*basis.wt*basis.dx*basis.phi[j]*basis.phi[i];
 	      ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
 	    }
 	  }
@@ -274,10 +276,10 @@ bool FiniteElementProblem::evaluate(FillType f,
       (*rhs)[0]= (*soln)[0] - leftBC;
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
       column=0;
-      jac=1.0;
+      jac=1.0*jac_coeff;
       A->ReplaceGlobalValues(0, 1, &jac, &column);
       column=1;
-      jac=0.0;
+      jac=0.0*jac_coeff;
       A->ReplaceGlobalValues(0, 1, &jac, &column);
     }
   }
@@ -289,10 +291,10 @@ bool FiniteElementProblem::evaluate(FillType f,
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
        int row = StandardMap->MaxAllGID();
        column = row;
-      jac=1.0;
+      jac=1.0*jac_coeff;
       A->ReplaceGlobalValues(row, 1, &jac, &column);
       column=row-1;
-      jac=0.0;
+      jac=0.0*jac_coeff;
       A->ReplaceGlobalValues(row, 1, &jac, &column);
     }
   }

@@ -148,6 +148,7 @@ int main(int argc, char *argv[])
   nestedList.set("Bordered Solver Method", "Householder");
   nestedList.set("Include UV In Preconditioner", true);
   //nestedList.set("Use P For Preconditioner", true);
+  nestedList.set("Preconditioner Method", "SMW");
 
   // Create bifurcation sublist
   Teuchos::ParameterList& bifurcationList = 
@@ -166,10 +167,10 @@ int main(int argc, char *argv[])
   bifurcationList.set("Initial A Vector", nullVec);
   bifurcationList.set("Initial B Vector", nullVec);
   
- 
   bifurcationList.set("Bordered Solver Method", "Householder");
   bifurcationList.set("Include UV In Preconditioner", true);
   //bifurcationList.set("Use P For Preconditioner", true);
+  bifurcationList.set("Preconditioner Method", "SMW");
 
   //bifurcationList.set("Formulation", "Moore-Spence");
   //bifurcationList.set("Solver Method", "Phipps Bordering");
@@ -222,9 +223,8 @@ int main(int argc, char *argv[])
   lsParams.set("Ifpack Preconditioner", "ILU");
 
   //lsParams.set("Preconditioner", "New Ifpack");
-  //Teuchos::ParameterList ifpackParams;
+  //Teuchos::ParameterList& ifpackParams = lsParams.sublist("Ifpack");
   //ifpackParams.set("fact: level-of-fill", 1);
-  //lsParams.set("Ifpack", &ifpackParams);
 
   // Create and initialize the parameter vector
   LOCA::ParameterVector pVector;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
   // This is created by the user using inheritance of the abstract base class:
   Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));
-  Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iReq = interface;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
   
   // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
   // Create the Group
   Teuchos::RCP<LOCA::Epetra::Group> grp = 
     Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq, 
-					 locaSoln, linsys,
+					 locaSoln, linsys, linsys,
 					 pVector));
   grp->computeF();
 

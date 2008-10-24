@@ -59,8 +59,9 @@ namespace LOCA {
 
 
 class  Problem_Interface : 
-  public LOCA::Epetra::Interface::Required,
+  public LOCA::Epetra::Interface::TimeDependent,
   public NOX::Epetra::Interface::Jacobian
+  
 {
 public:
   Problem_Interface(FiniteElementProblem& Problem);
@@ -71,6 +72,15 @@ public:
 
   //! Compute an explicit Jacobian
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
+
+ /*! 
+  * \brief Call user routine for computing the shifted matrix
+  * \f$\alpha J + \beta M\f$ where \f$J\f$ is the Jacobian matrix
+  * and \f$M\f$ is the mass matrix.
+  */
+  bool computeShiftedMatrix(double alpha, double beta, 
+			    const Epetra_Vector& x,
+			     Epetra_Operator& A); 
 
   //! Set a parameter in the user's code.
   void setParameters(const LOCA::ParameterVector& params);
