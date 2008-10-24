@@ -3,6 +3,30 @@ TODOs for the Trilinos/CMake system
 
 Last updated: 2008/09/28
 
+(*) [Ross] Make Trilinos_ENABLE_TESTS automatically turn on
+Trilinos_ENABLE_EXAMPLES
+
+(*) [Ross] Add Trilinos_ and change TRILINOS_ to Trilinos_ for all
+top-level Trilinos options.
+
+(*) [Ross] Add automatic Fortran 77 name mangling
+
+(*) [Ross] Add automatic demangle checking
+
+(*) [Ross] Add nightly cron job on thumper.sandia.gov to test
+Trilinos/CMake serial debug and MPI optimized and submit to dashboard.
+
+(*) [Ross] Add unit testing infrastructure for
+TRILINOS_ADD_EXECUTABLE(...), TRILINOS_ADD_TEST(...).  These unit
+tests will serve both as tests and as documentation.
+
+(*) [Ross] Add the package name as a prefix to all test and example
+executables.  This will require changes to the
+TRILINOS_ADD_EXECUTABLE(..) and TRILINOS_ADD_TEST(...) functions.  It
+will also require changes to all of the existing Makefile.am files
+that create these tests in the autotools system and in the
+test/definition files.
+
 (*) [Ross] Clean up tests and examples:
 
 - Move (almost) all tests into subdirectories since that is the right thing to
@@ -14,13 +38,6 @@ unecessary relinking when shared libraries are used
 (*) [Ross] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
 track of test results for different enables/disables.
-
-(*) [Ross] Add the package name as a prefix to all test and example
-executables.  This will require changes to the
-TRILINOS_ADD_EXECUTABLE(..) and TRILINOS_ADD_TEST(...) functions.  It
-will also require changes to all of the existing Makefile.am files
-that create these tests in the autotools system and in the
-test/definition files.
 
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
@@ -41,8 +58,9 @@ test/definition files.
 (*) [Esteban] Experiment with using CPack to create a MS Windows binary
 installer (NSIS)
 
-- Post a installer exe file on software.sandia.gov (hidden) and send out link
-to Trilinos developers in an email (before TUG).
+- Post a installer exe file on software.sandia.gov (hidden) and send
+out link in an email to Trilinos-Announce allowing others to get
+Trilinos.
 
 (*) [Everyone] Expand TrlinosCMakeQuickstart.txt
 - Configuring Trilinos to build
@@ -59,8 +77,3 @@ macros (like TRILINOS_ADD_[EXECUTABLE,TEST,EXECUTABLE_AND_TEST)(...) etc.)
 
 Completed:
 ----------
-
-(*) [Ross] Add CMake support for Thyra [Done]
-
-(*) [Ross] Add mock dependency files for all packages that feed into
-Stratimikos [Done]

@@ -1,17 +1,17 @@
 (*) Getting CMake help
 
-    http://http://www.cmake.org/cmake/help/cmake2.6docs.html
+    http://www.cmake.org
 
 (*) Viewing available configure-time options with documentation
 
   $ cd $BUILD_DIR
-  $ rm CmakeCache.txt
+  $ rm CMakeCache.txt
   $ cmake -LAH $TRILINOS_BASE_DIR
 
 (*) Viewing available configure-time options without documentation
 
   $ cd $BUILD_DIR
-  $ rm CmakeCache.txt
+  $ rm CMakeCache.txt
   $ cmake -LA $TRILINOS_BASE_DIR
 
 (*) Configuring Trilinos to build
@@ -20,7 +20,7 @@
 
     $ ccmake $TRILINOS_BASE_DIR
 
-  b) [Recommened] Create a 'do_configure' scripts like:
+  b) [Recommended] Create a 'do_configure' scripts like:
 
         EXTRA_ARGS=$@
         

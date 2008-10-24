@@ -1,4 +1,4 @@
-Last updated 2008/10/30
+Last updated 2008/10/21
 
 Here we describe how package dependencies are set up and managed in Trilinos
 with the CMake build system.
@@ -14,66 +14,65 @@ etc.
 The following public cache varibles are set by users to define what packages
 and tests/examples get enabled:
 
-Trilinos_ENABLE_${PACKAGE_NAME}:BOOL
-
-  Can be set by the user to 'ON' or 'OFF' or left empty.  If left empty, the
-  package will be enabled if Trilinos_ENABLE_ALL_PACKAGES=ON.  If
-  Trilinos_ENABLE_${PACKAGE_NAME} is set to OFF by the user, then all packages
-  that have a required dependence on this package and all optional intrapackage
-  enables will be disabled. The enable status of a package can also be changed
-  in by Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON and
-  Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON.
-
-${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:BOOL
-
-  Can be set by the user to 'ON' or 'OFF' or left empty.  If left empty, then
-  this may be explicitly enabled or disabled in a variety of ways.
-
-${PACKAGE_NAME}_ENABLE_TESTS:BOOL
-
-  Set by the user to 'ON', 'OFF', or left empty.  If left empty, the tests for
-  ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
-  and Trilinos_ENABLE_TESTS=ON.
-
-${PACKAGE_NAME}_ENABLE_EXAMPLES:BOOL
-
-  Set by the user to 'ON', 'OFF', or left empty.  If left empty, the examples for
-  ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
-  and Trilinos_ENABLE_EXAMPLES=ON.
-
-Trilinos_ENABLE_ALL_PACKAGES:BOOL
-
-  Enables all packages that are not explicitly disabled.  Setting
-  Trilinos_ENABLE_ALL_PACKAGES=OFF has the same effect as leaving it empty.
-
-Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL
-
-  If set to 'ON', then all packages that depend the set of packages enabled by
-  the cache varaibles Trilinos_ENABLE_${PACKAGE_NAME}=ON will also be enabled.
-  This option is used primarily to aid in testing all affects for changes in a
-  given packages source code affecting the package's library(s).
-
-Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL
-
-  If set to 'ON', then all packages that are optionally used by the library or
-  tests/examples of all of the packages enabled by the options
-  Trilinos_ENABLE_${PACKAGE_NAME}=ON will also be enabled.  This option is
-  turned on automatically if Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON.
-  This is done because this is needed to fully test the effects of changing
-  the given set of packages. NOTE: If Trilinos_ENABLE_ALL_PACKAGES=ON then
-  this option is meaningless because all packages will be enabled anyway.
-
-Trilinos_ENABLE_TESTS:BOOL
-
-  Enables or disabled all tests in all enabled packages (after all of the
-  above logic is applied) that are not explicitly enabled or disabled.  For
-  example, if Teuchos_ENABLE_TESTS=ON, then it will stay that way independent
-  of what value this variable takes.
-
-Trilinos_ENABLE_EXAMPLES:BOOL
-
-  Same as for Trilinos_ENABLE_TESTS except enables and disable examples
-  in all packages.
+  Trilinos_ENABLE_${PACKAGE_NAME}:BOOL
+  
+    Can be set by the user to 'ON' or 'OFF' or left empty.  If left empty, the
+    package will be enabled if Trilinos_ENABLE_ALL_PACKAGES=ON.  If
+    Trilinos_ENABLE_${PACKAGE_NAME} is set to OFF by the user, then all packages
+    that have a required dependence on this package and all optional intrapackage
+    enables will be disabled. The enable status of a package can also be changed
+    in by Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON and
+    Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON.
+  
+  ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:BOOL
+  
+    Can be set by the user to 'ON' or 'OFF' or left empty.  If left empty, then
+    this may be explicitly enabled or disabled in a variety of ways.
+  
+  ${PACKAGE_NAME}_ENABLE_TESTS:BOOL
+  
+    Set by the user to 'ON', 'OFF', or left empty.  If left empty, the tests for
+    ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
+    and Trilinos_ENABLE_TESTS=ON.
+  
+  ${PACKAGE_NAME}_ENABLE_EXAMPLES:BOOL
+  
+    Set by the user to 'ON', 'OFF', or left empty.  If left empty, the examples for
+    ${PACKAGE_NAME} will be enabled if Trilinos_ENABLE_${PACKAGE_NAME}=ON
+    and Trilinos_ENABLE_EXAMPLES=ON.
+  
+  Trilinos_ENABLE_ALL_PACKAGES:BOOL
+  
+    Enable all packages that are not explicitly disabled.
+  
+  Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL
+  
+    If set to 'ON', then all packages that depend the set of packages enabled by
+    the cache varaibles Trilinos_ENABLE_${PACKAGE_NAME}=ON will also be enabled.
+    This option is used primarily to aid in testing all affects for changes in a
+    given packages source code affecting the package's library(s).
+  
+  Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL
+  
+    If set to 'ON', then all packages that are optionally used by the library or
+    tests/examples of all of the packages enabled by the options
+    Trilinos_ENABLE_${PACKAGE_NAME}=ON will also be enabled.  This option is
+    turned on automatically if Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON.
+    This is done because this is needed to fully test the effects of changing
+    the given set of packages. NOTE: If Trilinos_ENABLE_ALL_PACKAGES=ON then
+    this option is meaningless because all packages will be enabled anyway.
+  
+  Trilinos_ENABLE_TESTS:BOOL
+  
+    Enables or disabled all tests in all enabled packages (after all of the
+    above logic is applied) that are not explicitly enabled or disabled.  For
+    example, if Teuchos_ENABLE_TESTS=ON, then it will stay that way independent
+    of what value this variable takes.
+  
+  Trilinos_ENABLE_EXAMPLES:BOOL
+  
+    Same as for Trilinos_ENABLE_TESTS except enables and disable examples
+    in all packages.
 
 The way that packages are enabled depending on the above user cache varaibles
 is now described.
@@ -125,60 +124,60 @@ Dependencies.cmake file and they are used to define the basic dependenices
 that exist between Trilinos packages to support the package enable and disable
 logic described above.
 
-${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES
-
-  The list of *direct* package dependencies that are required for the
-  libraries built by ${PACKAGE_NAME}.  These should not include indiect
-  dependencies but it is harmless to list these also.
-
-${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES
-
-  The list of *direct* package dependencies that are only optional for the
-  libraries built by ${PACKAGE_NAME}.  These should not include indiect
-  dependencies but it is harmless to list these also.
-
-${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES
-
-  The list of *direct* package dependencies that are required for the
-  tests/examples built by ${PACKAGE_NAME}.  This list should not contain
-  any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES.
-  These should not include indiect dependencies but it is harmless to list
-  these also.
-
-${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES
-
-  The list of *direct* package dependencies that are optional for the
-  tests/examples built by ${PACKAGE_NAME}.  This list should not contain
-  any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES,
-  ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES, or
-  ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES.  These should not include
-  indiect dependencies but it is harmless to list these also.
+  ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES
+  
+    The list of *direct* package dependencies that are required for the
+    libraries built by ${PACKAGE_NAME}.  These should not include indiect
+    dependencies but it is harmless to list these also.
+  
+  ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES
+  
+    The list of *direct* package dependencies that are only optional for the
+    libraries built by ${PACKAGE_NAME}.  These should not include indiect
+    dependencies but it is harmless to list these also.
+  
+  ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES
+  
+    The list of *direct* package dependencies that are required for the
+    tests/examples built by ${PACKAGE_NAME}.  This list should not contain
+    any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES.
+    These should not include indiect dependencies but it is harmless to list
+    these also.
+  
+  ${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES
+  
+    The list of *direct* package dependencies that are optional for the
+    tests/examples built by ${PACKAGE_NAME}.  This list should not contain
+    any of the packages listed in ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES,
+    ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES, or
+    ${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES.  These should not include
+    indiect dependencies but it is harmless to list these also.
 
 Given the above variables, the following derived variable is then set:
 
-${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES
-
-  For a given package ${PACKAGE_NAME}, gives the names of all of the forward
-  packages that list this package in their
-  ${FORWARD_PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES varible.
-
-${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES
-
-  For a given package ${PACKAGE_NAME}, gives the names of all of the forward
-  packages that list this package in their
-  ${FORWARD_PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES varible.
-
-${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES
-
-  For a given package ${PACKAGE_NAME}, gives the names of all of the forward
-  packages that list this package in their
-  ${FORWARD_PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES varible.
-
-${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES
-
-  For a given package ${PACKAGE_NAME}, gives the names of all of the forward
-  packages that list this package in their
-  ${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES varible.
+  ${PACKAGE_NAME}_FORWARD_LIB_REQUIRED_DEP_PACKAGES
+  
+    For a given package ${PACKAGE_NAME}, gives the names of all of the forward
+    packages that list this package in their
+    ${FORWARD_PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES varible.
+  
+  ${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES
+  
+    For a given package ${PACKAGE_NAME}, gives the names of all of the forward
+    packages that list this package in their
+    ${FORWARD_PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES varible.
+  
+  ${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES
+  
+    For a given package ${PACKAGE_NAME}, gives the names of all of the forward
+    packages that list this package in their
+    ${FORWARD_PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES varible.
+  
+  ${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES
+  
+    For a given package ${PACKAGE_NAME}, gives the names of all of the forward
+    packages that list this package in their
+    ${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES varible.
 
 
 --------------------------------------------------------------------------------
@@ -189,16 +188,16 @@ The following top-level internal cache varibles are used to communicate the
 required header directory paths and libraries needed to build and link against
 a given package's capabilities.
 
-${PROJECT_NAME}_INCLUDE_DIRS
-
-  Contains the list of directory paths needed to find PACKAGE_NAME's
-  header files.
-
-${PROJECT_NAME}_LIBRARY_DIRS
-
-  Contains the list of directory paths needed to find PACKAGE_NAMES's build
-  libraries.
-
-${PROJECT_NAME}_LIBRARIES
-
-  Contains the list of unadorned libraries that are needed to link to.
+  ${PROJECT_NAME}_INCLUDE_DIRS
+  
+    Contains the list of directory paths needed to find PACKAGE_NAME's
+    header files.
+  
+  ${PROJECT_NAME}_LIBRARY_DIRS
+  
+    Contains the list of directory paths needed to find PACKAGE_NAMES's build
+    libraries.
+  
+  ${PROJECT_NAME}_LIBRARIES
+  
+    Contains the list of unadorned libraries that are needed to link to.
