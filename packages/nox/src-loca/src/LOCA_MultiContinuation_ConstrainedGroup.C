@@ -61,7 +61,8 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
        const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints,
        const vector<int>& paramIDs,
        bool skip_dfdp)
-  : globalData(global_data),
+  : LOCA::Abstract::Group(global_data),
+    globalData(global_data),
     parsedParams(topParams),
     constraintParams(conParams),
     grpPtr(g),
@@ -118,7 +119,8 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
 LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
 		     const LOCA::MultiContinuation::ConstrainedGroup& source,
 		     NOX::CopyType type)
-  : globalData(source.globalData),
+  : LOCA::Abstract::Group(source),
+    globalData(source.globalData),
     parsedParams(source.parsedParams),
     constraintParams(source.constraintParams),
     grpPtr(Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractGroup>(source.grpPtr->clone(type))),
@@ -301,7 +303,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeF()
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ConstrainedGroup::computeJacobian() 
 {
-  if (isValidJacobian)
+  if (isValidJacobian && grpPtr->isJacobian())
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
@@ -628,6 +630,8 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
 {
   string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
   
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
@@ -652,9 +656,18 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
     c_result.getScalars();
 
   // Call bordered solver applyInverse method
-  NOX::Abstract::Group::ReturnType status = 
+  status = borderedSolver->initForSolve();
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+  status = 
     borderedSolver->applyInverse(params, input_x.get(), input_param.get(), 
 				 *result_x, *result_param);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
 
   return status;
 }
@@ -1474,6 +1487,8 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverseMultiVec
 {
   string callingFunction = 
     "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverseMultiVector()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
   
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
@@ -1498,8 +1513,7 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeInverseMultiVec
     c_result.getScalars();
 
   // Call bordered solver applyInverseTranspose method
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-  NOX::Abstract::Group::ReturnType status = 
+  status = 
     borderedSolver->initForTransposeSolve();
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 

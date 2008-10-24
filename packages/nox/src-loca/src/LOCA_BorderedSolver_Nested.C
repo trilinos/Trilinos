@@ -236,7 +236,7 @@ LOCA::BorderedSolver::Nested::initForSolve()
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Nested::initForTransposeSolve()
 {
-  return solver->initForSolve();
+  return solver->initForTransposeSolve();
 }
 
 NOX::Abstract::Group::ReturnType 

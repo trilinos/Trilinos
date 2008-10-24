@@ -56,17 +56,13 @@ ModifiedConstraint(
     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
     const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
     const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
-    bool is_symmetric,
-    const NOX::Abstract::Vector& a,
-    const NOX::Abstract::Vector* b,
     int bif_param) :
-  Constraint(global_data, topParams, tpParams, g, is_symmetric, a, b, 
-	     bif_param),
-  w_vector_update(a.createMultiVector(1, NOX::ShapeCopy)),
-  v_vector_update(a.createMultiVector(1, NOX::ShapeCopy)),
-  w_residual(a.createMultiVector(1, NOX::ShapeCopy)),
-  v_residual(a.createMultiVector(1, NOX::ShapeCopy)),
-  deltaX(a.createMultiVector(1, NOX::ShapeCopy)),
+  Constraint(global_data, topParams, tpParams, g, bif_param),
+  w_vector_update(a_vector->clone(NOX::ShapeCopy)),
+  v_vector_update(a_vector->clone(NOX::ShapeCopy)),
+  w_residual(a_vector->clone(NOX::ShapeCopy)),
+  v_residual(a_vector->clone(NOX::ShapeCopy)),
+  deltaX(a_vector->clone(NOX::ShapeCopy)),
   sigma1(1, 1),
   sigma2(1, 1),
   deltaP(0),
@@ -171,7 +167,10 @@ computeConstraints()
 
     // Create RHS
     NOX::Abstract::MultiVector::DenseMatrix one(1,1);
-    one(0,0) = dn;
+    if (nullVecScaling == NVS_OrderN)
+      one(0,0) = dn;
+    else
+      one(0,0) = 1.0;
 
     // Compute sigma_1 and right null vector v
     status = borderedSolver->initForSolve();
@@ -233,7 +232,10 @@ computeConstraints()
     // Compute b^T*v - n
     NOX::Abstract::MultiVector::DenseMatrix sigma1_residual(1,1);
     v_vector->multiply(1.0, *b_vector, sigma1_residual);
-    sigma1_residual(0,0) -= dn;
+    if (nullVecScaling == NVS_OrderN)
+      sigma1_residual(0,0) -= dn;
+    else
+      sigma1_residual(0,0) -= 1.0;
 
     if (includeNewtonTerms) {
 
@@ -309,7 +311,10 @@ computeConstraints()
       // Compute a^T*w - n
       NOX::Abstract::MultiVector::DenseMatrix sigma2_residual(1,1);
       w_vector->multiply(1.0, *a_vector, sigma2_residual);
-      sigma2_residual(0,0) -= dn;
+      if (nullVecScaling == NVS_OrderN)
+	sigma2_residual(0,0) -= dn;
+      else
+	sigma2_residual(0,0) -= 1.0;
 
       if (includeNewtonTerms) {
 
@@ -386,27 +391,46 @@ computeConstraints()
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							   finalStatus,
 							   callingFunction);
+  if (!isSymmetric) {
+    status = grpPtr->applyJacobianTransposeMultiVector(*w_vector, *Jtw_vector);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+  else
+    *Jtw_vector = *Jv_vector;
   Jv_vector->multiply(-1.0, *w_vector, constraints);
 
   // Scale sigma
-//   double w_norm = (*w_vector)[0].norm();
-//   double v_norm = (*v_vector)[0].norm();
-//   sigma_scale = w_norm*v_norm;
-  sigma_scale = dn;
+  double w_norm = (*w_vector)[0].norm();
+  double v_norm = (*v_vector)[0].norm();
+  double Jv_norm = (*Jv_vector)[0].norm();
+  double Jtw_norm = (*Jtw_vector)[0].norm();
+  if (nullVecScaling == NVS_OrderN)
+    sigma_scale = dn;
+  else
+    sigma_scale = 1.0;
   constraints.scale(1.0/sigma_scale);
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
+    globalData->locaUtils->out() << "\n\t||Right null vector v|| = " 
+				 << globalData->locaUtils->sciformat(v_norm);
+    globalData->locaUtils->out() << "\n\t||Left null vector w|| = " 
+				 << globalData->locaUtils->sciformat(w_norm);
+    globalData->locaUtils->out() << "\n\t||Jv|| = " 
+				 << globalData->locaUtils->sciformat(Jv_norm);
+    globalData->locaUtils->out() << "\n\t||J^T*w|| = " 
+				 << globalData->locaUtils->sciformat(Jtw_norm);
     globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Jacobian (sigma1) = " << 
+      "\n\tRight estimate for singularity of Jacobian (sigma1) = " << 
       globalData->locaUtils->sciformat(sigma1(0,0));
     globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Jacobian (sigma2) = " << 
+      "\n\tLeft estimate for singularity of Jacobian (sigma2) = " << 
       globalData->locaUtils->sciformat(sigma2(0,0));
     globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Jacobian (sigma) = " << 
-      globalData->locaUtils->sciformat(constraints(0,0)) << std::endl <<
-      "\tScale factor = " <<
-      globalData->locaUtils->sciformat(sigma_scale) << std::endl;
+      "\n\tFinal Estimate for singularity of Jacobian (sigma) = " << 
+      globalData->locaUtils->sciformat(constraints(0,0)) << std::endl;
   }
 
   isValidConstraints = true;
@@ -421,8 +445,7 @@ computeConstraints()
     *a_vector = *w_vector;
     *b_vector = *v_vector;
 
-    a_vector->scale(std::sqrt(dn) / (*a_vector)[0].norm());
-    b_vector->scale(std::sqrt(dn) / (*b_vector)[0].norm());
+    scaleNullVectors((*a_vector)[0],(*b_vector)[0]);
   }
 
   return finalStatus;

@@ -189,6 +189,15 @@ namespace LOCA {
        *      <li> "Solve df/dp" - Compute \f$a = J^{-T}df/dp\f$ and 
        *           \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation
        *           parameter.
+       *      <li> "Constant" - Entries of $a$ and $b$ are set to 1.0
+       *      </ul>
+       * <li> "Null Vector Scaling Method" -- [string] (default:  "Order N") - 
+       *      Method to scale \f$a\f$ and \f$b\f$.  This determines the norm of
+       *      these vectors and the scaling of \f$\sigma\f$.  Valid choices are:
+       *      <ul>
+       *      <li> "None" -- Use initial scaling
+       *      <li> "Order 1" -- Scale to unit norm
+       *      <li> "Order N" -- Use vector length scaling
        *      </ul>
        * <li> "Update Null Vectors Every Continuation Step"  -- 
        *    [bool] (default: true) - 
@@ -198,6 +207,14 @@ namespace LOCA {
        *    [bool] (default: false) - 
        *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
        *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
+       * <li> "Multiply Null Vectors by Mass Matrix"  -- 
+       *    [bool] (default: false) - 
+       *    Flag indicating whether to multiply \f$a\f$ and \f$b\f$ vectors by
+       *    the mass matrix \f$M = \partial f/\partial\dot{x}\f$ at the strart
+       *    of a turning point calculation, and each time \f$a\f$ and \f$b\f$
+       *    are updated.  This can improve the scaling of these vectors, and
+       *    may orthogonalize them against structural null spaces (i.e., 
+       *    pressure null space for incompressible Navier-Stokes).
        * </ul>
        */
       class ExtendedGroup 
@@ -564,12 +581,6 @@ namespace LOCA {
 
 	//! Set bifurcation parameter
 	void setBifParam(double param);
-
-	//! Computes initial "a" and "b" vectors
-	void getInitialVectors(
-			 Teuchos::RCP<NOX::Abstract::Vector>& aVecPtr,
-			 Teuchos::RCP<NOX::Abstract::Vector>& bVecPtr,
-			 bool isSymmetric);
 
       private:
 

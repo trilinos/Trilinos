@@ -108,9 +108,6 @@ namespace LOCA {
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
 	 const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
-	 bool is_symmetric,
-	 const NOX::Abstract::Vector& a,
-	 const NOX::Abstract::Vector* b,
 	 int bif_param);
 
 	//! Copy constructor

@@ -59,6 +59,9 @@ namespace LOCA {
   namespace BorderedSolver {
     class AbstractStrategy;
   }
+  namespace TimeDependent {
+    class AbstractGroup;
+  }
 }
 
 namespace LOCA { 
@@ -119,6 +122,40 @@ namespace LOCA {
        * The class is intialized via the \c tpParams parameter list argument 
        * to the constructor.  The parameters this class recognizes are:
        * <ul>
+       * <li> "Symmetric Jacobian"  -- [bool] (default: false) - 
+       *    Flag indicating whether Jacobian matrix \f$J\f$ is symmetric,
+       *    in which case we force \f$a = b\f$ and therefore the second
+       *    tranpose solve for \f$w\f$ is unnecessary
+       * <li> "Initial Null Vector Compuation" -- [string] 
+       *      (default: "User Provided") - Method to compute initial \f$a\f$ 
+       *      and \f$b\f$ vectors.  Valid choices are:
+       *      <ul>
+       *      <li> "User Provided" - Initial vectors are provided in the
+       *           parameter list, in which case the following parameters
+       *           are relevant:
+       *           <ul>
+       *           <li> "Initial A Vector"  -- 
+       *                [Teuchos::RCP<NOX::Abstract::Vector>] 
+       *                (Must be supplied) - 
+       *                 Vector storing initial value for \f$a\f$ vector
+       *           <li> "Initial B Vector"  -- 
+       *                 [Teuchos::RCP<NOX::Abstract::Vector>] 
+       *                 (Must be supplied for nonsymmetric Jacobians) - 
+       *                 Vector storing initial value for \f$b\f$ vector
+       *           </ul>
+       *      <li> "Solve df/dp" - Compute \f$a = J^{-T}df/dp\f$ and 
+       *           \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation
+       *           parameter.
+       *      <li> "Constant" - Entries of \f$a\f$ and \f$b\f$ are set to 1.0
+       *      </ul>
+       * <li> "Null Vector Scaling" -- [string] (default:  "Order N") - 
+       *      Method to scale \f$a\f$ and \f$b\f$.  This determines the norm of
+       *      these vectors and the scaling of \f$\sigma\f$.  Valid choices are:
+       *      <ul>
+       *      <li> "None" -- Use initial scaling
+       *      <li> "Order 1" -- Scale to unit norm
+       *      <li> "Order N" -- Use vector length scaling
+       *      </ul>
        * <li> "Update Null Vectors Every Continuation Step"  -- 
        *    [bool] (default: true) - 
        *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
@@ -127,6 +164,14 @@ namespace LOCA {
        *    [bool] (default: false) - 
        *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
        *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
+       * <li> "Multiply Null Vectors by Mass Matrix"  -- 
+       *    [bool] (default: false) - 
+       *    Flag indicating whether to multiply \f$a\f$ and \f$b\f$ vectors by
+       *    the mass matrix \f$M = \partial f/\partial\dot{x}\f$ at the strart
+       *    of a turning point calculation, and each time \f$a\f$ and \f$b\f$
+       *    are updated.  This can improve the scaling of these vectors, and
+       *    may orthogonalize them against structural null spaces (i.e., 
+       *    pressure null space for incompressible Navier-Stokes).
        * </ul>
        */
       class Constraint : 
@@ -140,9 +185,6 @@ namespace LOCA {
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
 	 const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
-	 bool is_symmetric,
-	 const NOX::Abstract::Vector& a,
-	 const NOX::Abstract::Vector* b,
 	 int bif_param);
 
 	//! Copy constructor
@@ -259,6 +301,23 @@ namespace LOCA {
 
 	//@}
 
+      protected:
+
+	//! Enumerated type determining type of scaling
+	enum NullVectorScaling {
+	  NVS_None,      //! No scaling
+	  NVS_OrderOne,  //! Scale to O(1)
+	  NVS_OrderN     //! Scale to O(N) when N is the vector length
+	};
+
+	//! Scale a & b vectors
+	virtual void scaleNullVectors(NOX::Abstract::Vector& a,
+				      NOX::Abstract::Vector& b);
+
+	//! Get initial a & b vectors
+	virtual void getInitialVectors(NOX::Abstract::Vector& a,
+				       NOX::Abstract::Vector& b);
+
       private:
 
 	//! Prohibit generation and use of operator=()
@@ -292,6 +351,9 @@ namespace LOCA {
 
 	//! Stores J*v
 	Teuchos::RCP<NOX::Abstract::MultiVector> Jv_vector;
+
+	//! Stores J^T*w
+	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_vector;
 
 	//! Stores sigma_x
 	Teuchos::RCP<NOX::Abstract::MultiVector> sigma_x;
@@ -333,6 +395,18 @@ namespace LOCA {
 	 * every nonlinear iteration.
 	 */
 	bool updateVectorsEveryIteration;
+
+	//! Null vector scaling method
+	NullVectorScaling nullVecScaling;
+
+	//! Multiply null vectors by mass matrix
+	bool multiplyMass;
+
+	//! Time dependent group interface for multiplying by mass matrix
+	Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp;
+
+	//! Temporary vector for mulplying null vectors by mass matrix
+	Teuchos::RCP<NOX::Abstract::Vector> tmp_mass;
 
       }; // Class Constraint
 

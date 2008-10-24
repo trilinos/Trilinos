@@ -49,6 +49,8 @@
 #include "NOX_Utils.H"
 #include "Teuchos_ParameterList.hpp"
 #include "LOCA_BorderedSolver_JacobianOperator.H"
+#include "LOCA_Abstract_TransposeSolveGroup.H"
+#include "LOCA_TimeDependent_AbstractGroup.H"
 
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 Constraint(
@@ -56,51 +58,72 @@ Constraint(
     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
     const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
     const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
-    bool is_symmetric,
-    const NOX::Abstract::Vector& a,
-    const NOX::Abstract::Vector* b,
     int bif_param) :
   globalData(global_data),
   parsedParams(topParams),
   turningPointParams(tpParams),
   grpPtr(g),
-  a_vector(a.createMultiVector(1, NOX::DeepCopy)),
-  b_vector(),
-  w_vector(a.createMultiVector(1, NOX::ShapeCopy)),
-  v_vector(a.createMultiVector(1, NOX::ShapeCopy)),
-  Jv_vector(a.createMultiVector(1, NOX::ShapeCopy)),
-  sigma_x(a.createMultiVector(1, NOX::ShapeCopy)),
+  a_vector(grpPtr->getX().createMultiVector(1, NOX::ShapeCopy)),
+  b_vector(a_vector->clone(NOX::ShapeCopy)),
+  w_vector(a_vector->clone(NOX::ShapeCopy)),
+  v_vector(a_vector->clone(NOX::ShapeCopy)),
+  Jv_vector(a_vector->clone(NOX::ShapeCopy)),
+  Jtw_vector(a_vector->clone(NOX::ShapeCopy)),
+  sigma_x(a_vector->clone(NOX::ShapeCopy)),
   constraints(1, 1),
   borderedSolver(),
   dn(static_cast<double>(a_vector->length())),
   sigma_scale(1.0),
-  isSymmetric(is_symmetric),
+  isSymmetric(false),
   isValidConstraints(false),
   isValidDX(false),
   bifParamID(1),
   updateVectorsEveryContinuationStep(true),
-  updateVectorsEveryIteration(false)
+  updateVectorsEveryIteration(false),
+  nullVecScaling(NVS_OrderN),
+  multiplyMass(false),
+  tdGrp(Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grpPtr)),
+  tmp_mass(grpPtr->getX().clone(NOX::ShapeCopy))
 {
   // Instantiate bordered solvers
   borderedSolver = 
     globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
 							  turningPointParams);
-  if (!isSymmetric) {
-    b_vector = b->createMultiVector(1, NOX::DeepCopy);
-  }
-  else {
-    b_vector = a_vector->clone(NOX::DeepCopy);
-  }
+
+  // Get symmetric flag
+  isSymmetric = turningPointParams->get("Symmetric Jacobian", false);
+
+  bifParamID[0] = bif_param;
+
+  // Compute/get initial "a" & "b" vectors
+  getInitialVectors((*a_vector)[0], (*b_vector)[0]);
 
   // Options
   updateVectorsEveryContinuationStep = 
-    turningPointParams->get(
-			       "Update Null Vectors Every Continuation Step", 
-			       true);
+    turningPointParams->get("Update Null Vectors Every Continuation Step", 
+			    true);
   updateVectorsEveryIteration = 
-    turningPointParams->get(
-			      "Update Null Vectors Every Nonlinear Iteration", 
-			      false);
+    turningPointParams->get("Update Null Vectors Every Nonlinear Iteration", 
+			    false);
+  std::string nullVecScalingMethod = 
+    turningPointParams->get("Null Vector Scaling", "Order N");
+  if (nullVecScalingMethod == "None")
+    nullVecScaling = NVS_None;
+  else if (nullVecScalingMethod == "Order 1")
+    nullVecScaling = NVS_OrderOne;
+  else if (nullVecScalingMethod == "Order N")
+    nullVecScaling = NVS_OrderN;
+  else
+    globalData->locaErrorCheck->throwError(
+       "LOCA::TurningPoint::MinimallyAugmented::Constraint::Constraint()",
+       string("Unknown null vector scaling method:  ") + nullVecScalingMethod);
+  multiplyMass = 
+    turningPointParams->get("Multiply Null Vectors by Mass Matrix", false);
+  if (multiplyMass && tdGrp == Teuchos::null) {
+    globalData->locaErrorCheck->throwError(
+       "LOCA::TurningPoint::MinimallyAugmented::Constraint::Constraint()",
+       "Group must be derived from LOCA::TimeDependent::AbstractGroup to multiply null vectors by mass matrix");
+  }
 }
 
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
@@ -115,6 +138,7 @@ Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source,
   w_vector(source.w_vector->clone(type)),
   v_vector(source.v_vector->clone(type)),
   Jv_vector(source.Jv_vector->clone(type)),
+  Jtw_vector(source.Jtw_vector->clone(type)),
   sigma_x(source.sigma_x->clone(type)),
   constraints(source.constraints),
   borderedSolver(),
@@ -125,7 +149,11 @@ Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source,
   isValidDX(false),
   bifParamID(source.bifParamID),
   updateVectorsEveryContinuationStep(source.updateVectorsEveryContinuationStep),
-  updateVectorsEveryIteration(source.updateVectorsEveryIteration)
+  updateVectorsEveryIteration(source.updateVectorsEveryIteration),
+  nullVecScaling(source.nullVecScaling),
+  multiplyMass(source.multiplyMass),
+  tdGrp(source.tdGrp),
+  tmp_mass(source.tmp_mass)
 {
   if (source.isValidConstraints && type == NOX::DeepCopy)
     isValidConstraints = true;
@@ -204,6 +232,7 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
     *w_vector = *(source.w_vector);
     *v_vector = *(source.v_vector);
     *Jv_vector = *(source.Jv_vector);
+    *Jtw_vector = *(source.Jtw_vector);
     *sigma_x = *(source.sigma_x);
     constraints.assign(source.constraints);
     dn = source.dn;
@@ -216,6 +245,9 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
       source.updateVectorsEveryContinuationStep;
     updateVectorsEveryIteration = 
       source.updateVectorsEveryIteration;
+    nullVecScaling = source.nullVecScaling;
+    multiplyMass = source.multiplyMass;
+    tdGrp = source.tdGrp;
 
     // Instantiate bordered solvers
     borderedSolver = 
@@ -299,7 +331,10 @@ computeConstraints()
 
   // Create RHS
   NOX::Abstract::MultiVector::DenseMatrix one(1,1);
-  one(0,0) = dn;
+  if (nullVecScaling == NVS_OrderN)
+    one(0,0) = dn;
+  else
+    one(0,0) = 1.0;
 
   // Get linear solver parameters
   Teuchos::RCP<Teuchos::ParameterList> linear_solver_params =
@@ -352,24 +387,45 @@ computeConstraints()
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							   finalStatus,
 							   callingFunction);
+  if (!isSymmetric) {
+    status = grpPtr->applyJacobianTransposeMultiVector(*w_vector, *Jtw_vector);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+  else
+    *Jtw_vector = *Jv_vector;
   Jv_vector->multiply(-1.0, *w_vector, constraints);
 
   // Scale sigma
-//   double w_norm = (*w_vector)[0].norm();
-//   double v_norm = (*v_vector)[0].norm();
-//   sigma_scale = w_norm*v_norm;
-  sigma_scale = dn;
+  double w_norm = (*w_vector)[0].norm();
+  double v_norm = (*v_vector)[0].norm();
+  double Jv_norm = (*Jv_vector)[0].norm();
+  double Jtw_norm = (*Jtw_vector)[0].norm();
+  if (nullVecScaling == NVS_OrderN)
+    sigma_scale = dn;
+  else
+    sigma_scale = 1.0;
   constraints.scale(1.0/sigma_scale);
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
+    globalData->locaUtils->out() << "\n\t||Right null vector v|| = " 
+				 << globalData->locaUtils->sciformat(v_norm);
+    globalData->locaUtils->out() << "\n\t||Left null vector w|| = " 
+				 << globalData->locaUtils->sciformat(w_norm);
+    globalData->locaUtils->out() << "\n\t||Jv|| = " 
+				 << globalData->locaUtils->sciformat(Jv_norm);
+    globalData->locaUtils->out() << "\n\t||J^T*w|| = " 
+				 << globalData->locaUtils->sciformat(Jtw_norm);
     globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Jacobian (sigma1) = " << 
+      "\n\tRight estimate for singularity of Jacobian (sigma1) = " << 
       globalData->locaUtils->sciformat(s1(0,0));
     globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Jacobian (sigma2) = " << 
+      "\n\tLeft estimate for singularity of Jacobian (sigma2) = " << 
       globalData->locaUtils->sciformat(s2(0,0));
     globalData->locaUtils->out() << 
-      "\n\tEstimate for singularity of Jacobian (sigma) = " << 
+      "\n\tFinal Estimate for singularity of Jacobian (sigma) = " << 
       globalData->locaUtils->sciformat(constraints(0,0)) << std::endl;
   }
 
@@ -385,8 +441,7 @@ computeConstraints()
     *a_vector = *w_vector;
     *b_vector = *v_vector;
 
-    a_vector->scale(std::sqrt(dn) / (*a_vector)[0].norm());
-    b_vector->scale(std::sqrt(dn) / (*b_vector)[0].norm());
+    scaleNullVectors((*a_vector)[0],(*b_vector)[0]);
   }
 
   return finalStatus;
@@ -510,7 +565,153 @@ postProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
     *a_vector = *w_vector;
     *b_vector = *v_vector;
 
-    a_vector->scale(std::sqrt(dn) / (*a_vector)[0].norm());
-    b_vector->scale(std::sqrt(dn) / (*b_vector)[0].norm());
+    scaleNullVectors((*a_vector)[0],(*b_vector)[0]);
   }
+}
+
+void
+LOCA::TurningPoint::MinimallyAugmented::Constraint::
+scaleNullVectors(NOX::Abstract::Vector& a, NOX::Abstract::Vector& b)
+{
+  string callingFunction = 
+    "LOCA::TurningPoint::MinimallyAugmented::Constraint::scaleNullVectors()";
+  NOX::Abstract::Group::ReturnType status;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+
+  if (multiplyMass && tdGrp != Teuchos::null) {
+    status = tdGrp->computeShiftedMatrix(0.0, 1.0);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+    *tmp_mass = a;
+    status = tdGrp->applyShiftedMatrix(*tmp_mass, a);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+    *tmp_mass = b;
+    status = tdGrp->applyShiftedMatrix(*tmp_mass, b);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+    status = tdGrp->computeJacobian();
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+  if (nullVecScaling == NVS_OrderOne) {
+    a.scale(1.0 / a.norm());
+    b.scale(1.0 / b.norm());
+  }
+  else if (nullVecScaling == NVS_OrderN) {
+    a.scale(std::sqrt(dn) / a.norm());
+    b.scale(std::sqrt(dn) / b.norm());
+  }
+}
+
+void
+LOCA::TurningPoint::MinimallyAugmented::Constraint::
+getInitialVectors(NOX::Abstract::Vector& aVec,
+		  NOX::Abstract::Vector& bVec)
+{
+  string callingFunction = 
+    "LOCA::TurningPoint::MinimallyAugmented::Constraint::getIntitialVectors()";
+
+  // Get method
+  string method = 
+    turningPointParams->get("Initial Null Vector Computation",
+			    "User Provided");
+  if (method == "Solve df/dp") {
+    NOX::Abstract::Group::ReturnType status;
+    NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+    std::vector<int> paramID(1);
+    paramID[0] = bifParamID[0];
+    Teuchos::RCP<NOX::Abstract::MultiVector> fdfdp = 
+      grpPtr->getX().createMultiVector(2);
+    aVec.init(0.0);
+    bVec.init(0.0);
+
+    // Compute df/dp
+    status = grpPtr->computeDfDpMulti(paramID, *fdfdp, false);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Compute J
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Compute b = J^-1*dfdp
+    Teuchos::RCP<Teuchos::ParameterList> lsParams =
+      parsedParams->getSublist("Linear Solver");
+    status = grpPtr->applyJacobianInverse(*lsParams, (*fdfdp)[1], bVec);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Compute a = J^-T*dfdp if necessary
+    if (!isSymmetric) {
+      // Cast group to one that can solve J^T
+      Teuchos::RCP<LOCA::Abstract::TransposeSolveGroup> ts_grp = 
+	Teuchos::rcp_dynamic_cast<LOCA::Abstract::TransposeSolveGroup>(grpPtr);
+      if (ts_grp == Teuchos::null)
+	globalData->locaErrorCheck->throwError(
+	   callingFunction,
+	   string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
+	   string(" to compute initial left null vector"));
+      
+      Teuchos::RCP<Teuchos::ParameterList> lsParams =
+	parsedParams->getSublist("Linear Solver");
+      status = 
+	ts_grp->applyJacobianTransposeInverse(*lsParams, (*fdfdp)[1], aVec);
+      finalStatus = 
+	globalData->locaErrorCheck->combineAndCheckReturnTypes(
+							     status, 
+							     finalStatus,
+							     callingFunction);
+    }
+    else
+      aVec = bVec;
+  }
+  else if (method == "Constant") {
+    aVec.init(1.0);
+    bVec.init(1.0);
+  }
+
+  else {
+
+    // Get initial "a" vector
+    if (!turningPointParams->isParameter("Initial A Vector")) {
+      globalData->locaErrorCheck->throwError(callingFunction,
+					 "\"Initial A Vector\" is not set!");
+    }
+    Teuchos::RCP<NOX::Abstract::Vector> aVecPtr = 
+      (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
+      get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial A Vector");
+    aVec = *aVecPtr;
+
+    // Get initial "b" vector
+    if (!isSymmetric) {
+      if (!turningPointParams->isParameter("Initial B Vector")) {
+	globalData->locaErrorCheck->throwError(callingFunction,
+					   "\"Initial B Vector\" is not set!");
+      }
+      Teuchos::RCP<NOX::Abstract::Vector> bVecPtr = 
+	(*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
+        get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial B Vector");
+      bVec = *bVecPtr;
+    }
+    else
+      bVec = aVec;
+  }
+
+  scaleNullVectors(aVec, bVec);
 }

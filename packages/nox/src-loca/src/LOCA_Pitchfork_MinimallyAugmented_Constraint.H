@@ -124,9 +124,6 @@ namespace LOCA {
 	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RCP<Teuchos::ParameterList>& pfParams,
 	 const Teuchos::RCP<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& g,
-	 bool is_symmetric,
-	 const NOX::Abstract::Vector& a,
-	 const NOX::Abstract::Vector* b,
 	 const Teuchos::RCP<const NOX::Abstract::Vector>& psi,
 	 int bif_param);
 

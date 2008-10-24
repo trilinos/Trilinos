@@ -113,14 +113,6 @@ ExtendedGroup(
     (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
     get< Teuchos::RCP<NOX::Abstract::Vector> >("Antisymmetric Vector");
 
-  // Get symmetric flag
-  bool isSymmetric = pitchforkParams->get("Symmetric Jacobian", false);
-
-  // Compute/get initial "a" & "b" vectors
-  Teuchos::RCP<NOX::Abstract::Vector> aVecPtr;
-  Teuchos::RCP<NOX::Abstract::Vector> bVecPtr;
-  getInitialVectors(aVecPtr, bVecPtr, isSymmetric);
-
   // Create constraint equation
   constraintsPtr = 
     Teuchos::rcp(new LOCA::Pitchfork::MinimallyAugmented::Constraint(
@@ -128,9 +120,6 @@ ExtendedGroup(
 							       parsedParams,
 							       pfParams,
 							       grpPtr,
-							       isSymmetric,
-							       *aVecPtr,
-							       bVecPtr.get(),
 							       psiVec,
 							       bifParamID));
 
@@ -1387,103 +1376,3 @@ setBifParam(double val)
   resetIsValid();
 }
 
-void
-LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
-getInitialVectors(Teuchos::RCP<NOX::Abstract::Vector>& aVecPtr,
-		  Teuchos::RCP<NOX::Abstract::Vector>& bVecPtr,
-		  bool isSymmetric)
-{
-  string callingFunction = 
-    "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::getIntitialVectors()";
-
-  // Get method
-  string method = 
-    pitchforkParams->get("Initial Null Vector Computation", "User Provided");
-  if (method == "Solve df/dp") {
-    NOX::Abstract::Group::ReturnType status;
-    NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-    std::vector<int> paramID(1);
-    paramID[0] = bifParamID;
-    Teuchos::RCP<NOX::Abstract::MultiVector> fdfdp = 
-      grpPtr->getX().createMultiVector(2);
-    aVecPtr = grpPtr->getX().clone(NOX::ShapeCopy);
-    bVecPtr = grpPtr->getX().clone(NOX::ShapeCopy);
-    aVecPtr->init(0.0);
-    bVecPtr->init(0.0);
-
-    // Compute df/dp
-    status = grpPtr->computeDfDpMulti(paramID, *fdfdp, false);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-
-    // Compute J
-    status = grpPtr->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-
-    // Compute b = J^-1*dfdp
-    Teuchos::RCP<Teuchos::ParameterList> lsParams =
-      parsedParams->getSublist("Linear Solver");
-    status = grpPtr->applyJacobianInverse(*lsParams, (*fdfdp)[1], *bVecPtr);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-
-    // Compute a = J^-T*dfdp if necessary
-    if (!isSymmetric) {
-      // Cast group to one that can solve J^T
-      Teuchos::RCP<LOCA::Abstract::TransposeSolveGroup> ts_grp = 
-	Teuchos::rcp_dynamic_cast<LOCA::Abstract::TransposeSolveGroup>(grpPtr);
-      if (ts_grp == Teuchos::null)
-	globalData->locaErrorCheck->throwError(
-	   callingFunction,
-	   string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
-	   string(" to compute initial left null vector"));
-      
-      Teuchos::RCP<Teuchos::ParameterList> lsParams =
-	parsedParams->getSublist("Linear Solver");
-      status = 
-	ts_grp->applyJacobianTransposeInverse(*lsParams, (*fdfdp)[1], 
-					      *aVecPtr);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
-    }
-    else
-      *aVecPtr = *bVecPtr;
-
-    // Scale a and b to unit norm
-    aVecPtr->scale(std::sqrt(static_cast<double>(aVecPtr->length())) / aVecPtr->norm());
-    bVecPtr->scale(std::sqrt(static_cast<double>(bVecPtr->length())) / bVecPtr->norm());
-  }
-
-  else {
-
-    // Get initial "a" vector
-    if (!pitchforkParams->isParameter("Initial A Vector")) {
-      globalData->locaErrorCheck->throwError(callingFunction,
-					 "\"Initial A Vector\" is not set!");
-    }
-    aVecPtr = 
-      (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-      get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial A Vector");
-
-    // Get initial "b" vector
-    if (!isSymmetric) {
-      if (!pitchforkParams->isParameter("Initial B Vector")) {
-	globalData->locaErrorCheck->throwError(callingFunction,
-					   "\"Initial B Vector\" is not set!");
-      }
-      bVecPtr = 
-	(*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-        get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial B Vector");
-    }
-  }
-}

@@ -48,6 +48,7 @@
 #include "LOCA_MultiContinuation_AbstractGroup.H"       // base class
 #include "LOCA_BorderedSystem_AbstractGroup.H"          // base class
 #include "LOCA_Abstract_TransposeSolveGroup.H"          // base class
+#include "LOCA_Abstract_Group.H"                        // base class
 #include "LOCA_MultiContinuation_ExtendedVector.H"      // class data element
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H" // class data element
 
@@ -95,7 +96,7 @@ namespace LOCA {
      */
     class ConstrainedGroup : 
       public virtual LOCA::Extended::MultiAbstractGroup,
-      public virtual LOCA::MultiContinuation::AbstractGroup,
+      public virtual LOCA::Abstract::Group,
       public virtual LOCA::BorderedSystem::AbstractGroup,
       public virtual LOCA::Abstract::TransposeSolveGroup {
 
