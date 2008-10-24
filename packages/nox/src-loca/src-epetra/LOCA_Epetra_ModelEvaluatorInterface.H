@@ -94,6 +94,8 @@ namespace LOCA {
 					const Epetra_Vector& x,
 					Epetra_Operator& A);
 
+      virtual void setXdot(const Epetra_Vector& xdot, const double time);
+
       // LOCA::DerivUtils interface
 
       //! Copy constructor

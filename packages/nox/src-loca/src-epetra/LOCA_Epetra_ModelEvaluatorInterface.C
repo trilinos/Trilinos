@@ -221,6 +221,19 @@ computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
   return true;
 }
 
+// *****************************************************************
+// *****************************************************************
+void LOCA::Epetra::ModelEvaluatorInterface::
+setXdot(const Epetra_Vector& xdot_, const double time_)
+{
+  if (x_dot == NULL)
+    x_dot = new Epetra_Vector(xdot_.Map());
+  *x_dot = xdot_;
+}
+
+// *****************************************************************
+// *****************************************************************
+
 LOCA::Epetra::ModelEvaluatorInterface::
 ModelEvaluatorInterface(const LOCA::Epetra::ModelEvaluatorInterface& m) :
   NOX::Epetra::ModelEvaluatorInterface(m),
