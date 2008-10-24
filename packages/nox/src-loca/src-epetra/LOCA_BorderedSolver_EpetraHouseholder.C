@@ -679,13 +679,14 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   Teuchos::RCP<Epetra_RowMatrix> jac_rowmatrix = 
     Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(epetraOp);
   Teuchos::RCP<Epetra_Operator> op;
-  if (jac_rowmatrix != Teuchos::null) 
+  if (jac_rowmatrix != Teuchos::null) {
     op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateRowMatrix(globalData, 
 							       jac_rowmatrix, 
 							       epetra_U, 
 							       epetra_V,
 							       false,
 							       includeUV));
+  }
   else
     op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData, 
 							epetraOp, 
@@ -696,7 +697,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   // Overwrite J with J + U*V^T if it's a CRS matrix and we aren't
   // using P for the preconditioner
   Teuchos::RCP<Epetra_CrsMatrix> jac_crs;
-  if (precMethod == JACOBIAN && includeUV && !use_P_For_Prec) {
+  if (includeUV && !use_P_For_Prec) {
     jac_crs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(epetraOp);
     if (jac_crs != Teuchos::null) {
       updateJacobianForPreconditioner(*U, *V, *jac_crs);
@@ -704,7 +705,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   }
 
   // Set operator in solver to compute preconditioner
-  if (precMethod == JACOBIAN && use_P_For_Prec)
+  if (use_P_For_Prec)
     linSys->setJacobianOperatorForSolve(op);
   else
     linSys->setJacobianOperatorForSolve(epetraOp);
@@ -714,8 +715,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   linSys->createPreconditioner(solution_vec, params, false);
    
   // Now recompute J if we modified it
-  if (precMethod == JACOBIAN && includeUV && !use_P_For_Prec && 
-      jac_crs != Teuchos::null) {
+  if (includeUV && !use_P_For_Prec && jac_crs != Teuchos::null) {
     grp->setX(solution_vec);
     if (isComplex)
       grp->computeComplex(omega);
@@ -896,13 +896,14 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
    // Set operator in solver to compute preconditioner
   if (use_P_For_Prec)
     tls_strategy->setJacobianTransposeOperator(op);
+  else
+    tls_strategy->setJacobianTransposeOperator(jac_trans);
        
   // Now compute preconditioner
   tls_strategy->createTransposePreconditioner(solution_vec, params);
   
   // Now recompute J^T if we modified it
   if (includeUV && !use_P_For_Prec && jac_trans_crs != Teuchos::null) {
-    //linSys->computeJacobian(solution_vec);
     grp->setX(solution_vec);
     if (isComplex)
       grp->computeComplex(omega);
@@ -912,8 +913,20 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
   }
        
   // Set operator for P in transpose solver
-  if (!use_P_For_Prec)
-    tls_strategy->setJacobianTransposeOperator(op);
+  tls_strategy->setJacobianTransposeOperator(op);
+
+  // Set preconditioner
+  Teuchos::RCP<Epetra_Operator> prec_op;
+  Teuchos::RCP<Epetra_Operator> epetraPrecOp;
+  if (precMethod == SMW) {
+    epetraPrecOp = tls_strategy->getTransposePreconditioner();
+    prec_op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData, 
+							     epetraPrecOp, 
+							     epetra_U, 
+							     epetra_V,
+							     true));
+    tls_strategy->setTransposePreconditioner(prec_op);
+  }
   
   // Solve for each RHS
   int m = X.numVectors();

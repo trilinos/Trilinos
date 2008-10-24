@@ -125,7 +125,7 @@ LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input,
   else {
 
     // Compute U^T*Input
-    tmpMat->Multiply('T', 'N', 1.0/n, *U, Input, 0.0);
+    tmpMat->Multiply('T', 'N', 1.0, *U, Input, 0.0);
 
     // Compute J^T*Input + V*(U^T*input)
     Result.Multiply('N', 'N', 1.0, *V, *tmpMat, 1.0);
