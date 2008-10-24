@@ -108,7 +108,7 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
   }
 #endif
 
-  Trilinos_Helpers::copy_parameters(parameterSet, paramlist);
+  Trilinos_Helpers::copy_parameterset(parameterSet, paramlist);
 
   fei::SharedPtr<fei::Matrix> feiA = linearSystem->getMatrix();
   fei::SharedPtr<fei::Vector> feix = linearSystem->getSolutionVector();

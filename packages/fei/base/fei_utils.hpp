@@ -14,6 +14,8 @@
 #include "fei_fwd.hpp"
 #include "fei_version.h"
 
+#include <Teuchos_ParameterList.hpp>
+
 #include <string>
 #include <vector>
 

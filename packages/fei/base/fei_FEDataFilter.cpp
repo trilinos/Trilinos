@@ -328,7 +328,7 @@ int FEDataFilter::initLinSysCore()
   while(cr_iter != cr_end) {
     penCRIDsPtr[counter++] = (*cr_iter).first;
     ConstraintType& cr = *((*cr_iter).second);
-    int numNodes = cr.getMasters()->length();
+    int numNodes = cr.getMasters()->size();
 
     int insertPoint = -1;
     int offset = snl_fei::binarySearch(numNodes, constraintBlocks_, insertPoint);
@@ -352,7 +352,8 @@ int FEDataFilter::initLinSysCore()
       continue;
     }
 
-    int* fieldIDs = cr.getMasterFieldIDs()->dataPtr();
+    std::vector<int>* fieldIDsvec = cr.getMasterFieldIDs();
+    int* fieldIDs = &(*fieldIDsvec)[0];
     for(int k=0; k<numNodes; ++k) {
       int fieldSize = problemStructure_->getFieldSize(fieldIDs[k]);
       packedFieldSizes_.insert(fieldSize, nodeOffset+k);
@@ -431,8 +432,9 @@ int FEDataFilter::initLinSysCore()
   i = 0;
   while(cr_iter != cr_end) {
     ConstraintType& cr = *((*cr_iter).second);
-    GlobalID* nodeIDs = cr.getMasters()->dataPtr();
-    int numNodes = cr.getMasters()->length();
+    std::vector<GlobalID>* nodeIDsvec = cr.getMasters();
+    GlobalID* nodeIDs = &(*nodeIDsvec)[0];
+    int numNodes = cr.getMasters()->size();
     int index = snl_fei::binarySearch(numNodes, constraintBlocks_);
     if (index < 0) {
       ERReturn(-1);

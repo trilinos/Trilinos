@@ -60,6 +60,7 @@ CORE_H = \
 	$(top_srcdir)/utest_cases/fei_unit_CommUtils.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_CSRMat_CSVec.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_DirBC.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_Params.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_Reducer.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcase.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcontainer.hpp \
@@ -76,6 +77,7 @@ CORE = \
 	$(srcdir)/fei_unit_utils.cpp \
 	$(srcdir)/fei_unit_CommUtils.cpp \
 	$(srcdir)/fei_unit_DirBC.cpp \
+	$(srcdir)/fei_unit_Params.cpp \
 	$(srcdir)/fei_unit_Reducer.cpp
 
 # ------------------------------------------------------------------------

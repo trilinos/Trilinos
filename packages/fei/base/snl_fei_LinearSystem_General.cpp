@@ -863,7 +863,7 @@ int snl_fei::LinearSystem_General::loadLagrangeConstraint(int constraintID,
     os << "loadLagrangeConstraint crID: "<<constraintID<<FEI_ENDL;
   }
 
-  Constraint<fei::Record*,fei::record_lessthan>* cr =
+  Constraint<fei::Record*>* cr =
     matrixGraph_->getLagrangeConstraint(constraintID);
   if (cr == NULL) {
     return(-1);
@@ -872,10 +872,10 @@ int snl_fei::LinearSystem_General::loadLagrangeConstraint(int constraintID,
   CHK_ERR( matrixGraph_->getConstraintConnectivityIndices(cr, iwork_) );
 
   //Let's attach the weights to the constraint-record now.
-  feiArray<double>* cr_weights = cr->getMasterWeights();
+  std::vector<double>* cr_weights = cr->getMasterWeights();
   cr_weights->resize(iwork_.size());
   for(unsigned i=0; i<iwork_.size(); ++i) {
-    cr_weights->append(weights[i]);
+    cr_weights->push_back(weights[i]);
   }
 
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph_->getRowSpace();
@@ -913,7 +913,7 @@ int snl_fei::LinearSystem_General::loadPenaltyConstraint(int constraintID,
     os << "loadPenaltyConstraint crID: "<<constraintID<<FEI_ENDL;
   }
 
-  Constraint<fei::Record*,fei::record_lessthan>* cr =
+  Constraint<fei::Record*>* cr =
     matrixGraph_->getPenaltyConstraint(constraintID);
   if (cr == NULL) {
     return(-1);

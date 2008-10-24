@@ -673,7 +673,7 @@ loadLagrangeConstraints(fei::SharedPtr<fei::LinearSystem> linsys)
   for(; iter != iter_end; ++iter) {
     ConstraintType* cr = (*iter).second;
     int crID = cr->getConstraintID();
-    feiArray<double>& weights = *(cr->getMasterWeights());
+    std::vector<double>& weights = *(cr->getMasterWeights());
     double rhsValue = cr->getRHSValue();
 
     int errcode = linsys->loadLagrangeConstraint(crID, &weights[0], rhsValue);

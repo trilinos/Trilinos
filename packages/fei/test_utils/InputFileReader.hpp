@@ -100,8 +100,7 @@ class InputFileReader : public feitester {
   std::string checkFileName_;
   int solveCounter_;
 
-  typedef snl_fei::Constraint<fei::Record*,fei::record_lessthan>
-    ConstraintType;
+  typedef snl_fei::Constraint<fei::Record*> ConstraintType;
 
   std::map<int,ConstraintType*> lagrangeConstraints_;
   int crID_;

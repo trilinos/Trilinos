@@ -240,7 +240,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-DEFAULT_INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/base -I$(top_builddir)
+DEFAULT_INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/base -I$(top_builddir) $(TEUCHOS_INCLUDES)
 CORE_H = \
 	$(top_srcdir)/base/fei_Data.hpp \
 	$(top_srcdir)/base/fei_defs.h \
@@ -1760,6 +1760,8 @@ all-local:
 	@echo ""
 	@echo "Trilinos package fei subdirectory base built successfully."
 	@echo ""
+
+include $(top_builddir)/Makefile.export.fei
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

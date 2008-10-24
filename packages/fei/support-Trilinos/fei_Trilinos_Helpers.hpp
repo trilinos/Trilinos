@@ -61,8 +61,14 @@ namespace Trilinos_Helpers {
   /** Copies parameters from fei::ParameterSet to Teuchos::ParameterList.
     Does not clear any pre-existing contents from the Teuchos:ParameterList.
   */
-  void copy_parameters(const fei::ParameterSet& paramset,
-                       Teuchos::ParameterList& paramlist);
+  void copy_parameterset(const fei::ParameterSet& paramset,
+                         Teuchos::ParameterList& paramlist);
+
+  /** Copies parameters from Teuchos::ParameterList to fei::ParameterSet.
+    Does not clear any pre-existing contents from the fei:ParameterSet.
+  */
+  void copy_parameterlist(const Teuchos::ParameterList& paramlist,
+                          fei::ParameterSet& paramset);
 
   /** Extracts a pointer to a Epetra_MultiVector from a fei::Vector. Throws
     an exception if unsuccessful.

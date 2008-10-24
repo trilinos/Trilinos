@@ -292,8 +292,8 @@ create_from_LPM_EpetraBasic(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
   return(feimat);
 }
 
-void copy_parameters(const fei::ParameterSet& paramset,
-                     Teuchos::ParameterList& paramlist)
+void copy_parameterset(const fei::ParameterSet& paramset,
+                       Teuchos::ParameterList& paramlist)
 {
   fei::ParameterSet::const_iterator
     iter = paramset.begin(),
@@ -317,6 +317,30 @@ void copy_parameters(const fei::ParameterSet& paramset,
       break;
     default:
       break;
+    }
+  }
+}
+
+void copy_parameterlist(const Teuchos::ParameterList& paramlist,
+                        fei::ParameterSet& paramset)
+{
+  Teuchos::ParameterList::ConstIterator
+    iter = paramlist.begin(),
+    iter_end = paramlist.end();
+
+  for(; iter != iter_end; ++iter) {
+    const Teuchos::ParameterEntry& param = paramlist.entry(iter);
+    if (param.isType<std::string>()) {
+      paramset.add(fei::Param(paramlist.name(iter).c_str(), Teuchos::getValue<std::string>(param).c_str()));
+    }
+    else if (param.isType<double>()) {
+      paramset.add(fei::Param(paramlist.name(iter).c_str(), Teuchos::getValue<double>(param)));
+    }
+    else if (param.isType<int>()) {
+      paramset.add(fei::Param(paramlist.name(iter).c_str(), Teuchos::getValue<int>(param)));
+    }
+    else if (param.isType<bool>()) {
+      paramset.add(fei::Param(paramlist.name(iter).c_str(), Teuchos::getValue<bool>(param)));
     }
   }
 }

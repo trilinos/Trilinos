@@ -14,10 +14,12 @@
 #include <fei_VectorSpace.hpp>
 #include <snl_fei_RecordCollection.hpp>
 
+#include <vector>
+
 namespace snl_fei {
 
   /** container for constraint attributes */
-  template<class RecordType, class RecordType_COMPARE>
+  template<class RecordType>
   class Constraint {
   public:
     /** constructor */
@@ -104,16 +106,16 @@ namespace snl_fei {
 
 
     /** get master mesh-objects */
-    feiArray<RecordType,RecordType_COMPARE>* getMasters() { return( masters_ ); }
+    std::vector<RecordType>* getMasters() { return( masters_ ); }
 
     /** get identifier-types of master mesh-objects */
-    feiArray<int>* getMasterIDTypes() { return( masterIDTypes_ ); }
+    std::vector<int>* getMasterIDTypes() { return( masterIDTypes_ ); }
 
     /** get field-identifiers of master mesh-objects */
-    feiArray<int>* getMasterFieldIDs() { return( masterFields_ ); }
+    std::vector<int>* getMasterFieldIDs() { return( masterFields_ ); }
 
     /** get weight-coefficients of master mesh-objects */
-    feiArray<double>* getMasterWeights() { return( masterWeights_ ); }
+    std::vector<double>* getMasterWeights() { return( masterWeights_ ); }
 
 
     /** get right-hand-side value of constraint */
@@ -123,14 +125,14 @@ namespace snl_fei {
     void setRHSValue(double rhs) { rhsValue_ = rhs; }
  
     /** operator!= */
-    bool operator!=(const Constraint<RecordType,RecordType_COMPARE>& rhs);
+    bool operator!=(const Constraint<RecordType>& rhs);
 
     /** query whether connectivity is the same as specified constraint */
-    bool structurallySame(const Constraint<RecordType,RecordType_COMPARE>& rhs);
+    bool structurallySame(const Constraint<RecordType>& rhs);
 
   private:
-    Constraint(const Constraint<RecordType,RecordType_COMPARE>& src);
-    Constraint<RecordType,RecordType_COMPARE>& operator=(const Constraint<RecordType,RecordType_COMPARE>& src)
+    Constraint(const Constraint<RecordType>& src);
+    Constraint<RecordType>& operator=(const Constraint<RecordType>& src)
       {
 	return(*this);
       }
@@ -146,10 +148,10 @@ namespace snl_fei {
     int slaveField_;
     int offsetIntoSlaveField_;
 
-    feiArray<RecordType,RecordType_COMPARE>* masters_;
-    feiArray<int>* masterIDTypes_;
-    feiArray<int>* masterFields_;
-    feiArray<double>* masterWeights_;
+    std::vector<RecordType>* masters_;
+    std::vector<int>* masterIDTypes_;
+    std::vector<int>* masterFields_;
+    std::vector<double>* masterWeights_;
 
     double rhsValue_;
 
@@ -158,11 +160,9 @@ namespace snl_fei {
 
 #include <snl_fei_Constraint.hpp>
 
-#include <feiArray.hpp>
-
 //----------------------------------------------------------------------------
-template<class RecordType,class RecordType_COMPARE>
-inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::Constraint(int id, bool isPenalty)
+template<class RecordType>
+inline snl_fei::Constraint<RecordType>::Constraint(int id, bool isPenalty)
   : constraintID_(id),
     idType_(0),
     isPenalty_(isPenalty),
@@ -177,8 +177,8 @@ inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::Constraint(int id, bo
 }
 
 //----------------------------------------------------------------------------
-template<class RecordType,class RecordType_COMPARE>
-inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::Constraint(int id,
+template<class RecordType>
+inline snl_fei::Constraint<RecordType>::Constraint(int id,
 					    int constraintIDType,
 					    bool isSlave,
 					    bool isPenalty,
@@ -209,7 +209,7 @@ inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::Constraint(int id,
 //----------------------------------------------------------------------------
 namespace snl_fei {
 template<>
-inline snl_fei::Constraint<fei::Record*,fei::record_lessthan>::Constraint(int id,
+inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
 					    int constraintIDType,
 					    bool isSlave,
 					    bool isPenalty,
@@ -257,13 +257,13 @@ inline snl_fei::Constraint<fei::Record*,fei::record_lessthan>::Constraint(int id
       weightsOffset += fieldSize;
     }
     else {
-      getMasters()->append(rec);
-      getMasterIDTypes()->append(idTypes[i]);
-      getMasterFieldIDs()->append(fieldIDs[i]);
+      getMasters()->push_back(rec);
+      getMasterIDTypes()->push_back(idTypes[i]);
+      getMasterFieldIDs()->push_back(fieldIDs[i]);
 
       if (weights != NULL) {
 	for(unsigned j=0; j<fieldSize; ++j) {
-	  masterWeights_->append(weights[weightsOffset++]);
+	  masterWeights_->push_back(weights[weightsOffset++]);
 	}
       }
     }
@@ -273,8 +273,8 @@ inline snl_fei::Constraint<fei::Record*,fei::record_lessthan>::Constraint(int id
 }//namespace snl_fei
 
 //----------------------------------------------------------------------------
-template<class RecordType,class RecordType_COMPARE>
-inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::Constraint(const Constraint<RecordType,RecordType_COMPARE>& src)
+template<class RecordType>
+inline snl_fei::Constraint<RecordType>::Constraint(const Constraint<RecordType>& src)
   : constraintID_(-1),
     idType_(0),
     isPenalty_(false),
@@ -291,8 +291,8 @@ inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::Constraint(const Cons
 }
 
 //----------------------------------------------------------------------------
-template<class RecordType,class RecordType_COMPARE>
-inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::~Constraint()
+template<class RecordType>
+inline snl_fei::Constraint<RecordType>::~Constraint()
 {
   delete masters_;
   delete masterIDTypes_;
@@ -301,27 +301,27 @@ inline snl_fei::Constraint<RecordType,RecordType_COMPARE>::~Constraint()
 }
 
 //----------------------------------------------------------------------------
-template<class RecordType,class RecordType_COMPARE>
-inline int snl_fei::Constraint<RecordType,RecordType_COMPARE>::allocate()
+template<class RecordType>
+inline int snl_fei::Constraint<RecordType>::allocate()
 {
   if (masters_ != NULL) delete masters_;
-  masters_ = new feiArray<RecordType,RecordType_COMPARE>(0, 5);
+  masters_ = new std::vector<RecordType>;
 
   if (masterIDTypes_ != NULL) delete masterIDTypes_;
-  masterIDTypes_ = new feiArray<int>(0, 5);
+  masterIDTypes_ = new std::vector<int>;
 
   if (masterFields_ != NULL) delete masterFields_;
-  masterFields_ = new feiArray<int>(0, 5);
+  masterFields_ = new std::vector<int>;
 
   if (masterWeights_ != NULL) delete masterWeights_;
-  masterWeights_ = new feiArray<double>;
+  masterWeights_ = new std::vector<double>;
 
   return(0);
 }
 
 //----------------------------------------------------------------------------
-template<class RecordType,class RecordType_COMPARE>
-inline bool snl_fei::Constraint<RecordType,RecordType_COMPARE>::operator!=(const snl_fei::Constraint<RecordType,RecordType_COMPARE>& rhs)
+template<class RecordType>
+inline bool snl_fei::Constraint<RecordType>::operator!=(const snl_fei::Constraint<RecordType>& rhs)
 {
   if (constraintID_ != rhs.constraintID_ ||
       idType_ != rhs.idType_ ||
@@ -358,8 +358,8 @@ inline bool snl_fei::Constraint<RecordType,RecordType_COMPARE>::operator!=(const
 }
 
 //----------------------------------------------------------------------------
-template<class RecordType,class RecordType_COMPARE>
-inline bool snl_fei::Constraint<RecordType,RecordType_COMPARE>::structurallySame(const Constraint<RecordType,RecordType_COMPARE>& rhs)
+template<class RecordType>
+inline bool snl_fei::Constraint<RecordType>::structurallySame(const Constraint<RecordType>& rhs)
 {
   if (constraintID_ != rhs.constraintID_ ||
       idType_ != rhs.idType_ ||

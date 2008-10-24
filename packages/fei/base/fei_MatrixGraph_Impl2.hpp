@@ -14,7 +14,6 @@
 #include <fei_VectorSpace.hpp>
 #include <fei_Reducer.hpp>
 #include <fei_Graph.hpp>
-#include <feiArray.hpp>
 #include <snl_fei_Constraint.hpp>
 #include <fei_Record.hpp>
 #include <fei_Logger.hpp>
@@ -604,10 +603,6 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
 				      int indicesAllocLen,
 				      int* indices,
 				      int& numIndices);
-
-   int getRecordCollections(fei::Pattern* pattern,
-			    fei::VectorSpace* solnSpace,
-			    feiArray<snl_fei::RecordCollection*>& recordColls);
 
    int getConnectivityRecords(fei::VectorSpace* vecSpace,
 			      int idType,

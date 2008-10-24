@@ -26,8 +26,10 @@ all-local:
 	@echo "Trilinos package fei subdirectory base built successfully."
 	@echo ""
 
+include $(top_builddir)/Makefile.export.fei
+
 DEFS = 
-DEFAULT_INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/base -I$(top_builddir)
+DEFAULT_INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/base -I$(top_builddir) $(TEUCHOS_INCLUDES)
 
 CORE_H = \
 	$(top_srcdir)/base/fei_Data.hpp \

@@ -478,7 +478,7 @@ July 7 2005: version 2.14.00
   - Fixed a bug in fei_Aztec_LinSysCore.cpp where dirichlet boundary-condition
     enforcement was assuming that the structure of the matrix is symmetric.
 
- ??? ?? ???? minor version 2.23.01
+ Oct 09 2008 minor version 2.23.01
   - Fixed a bug where fei::VectorSpace::getGlobalIndexOffsets would seg-fault
     if called before any initialization data had been input.
   - Fixed a bug in fei_Reducer.cpp where submatrix contributions were
@@ -489,4 +489,11 @@ July 7 2005: version 2.14.00
   - Removed classes fei::CommCore, fei::CommUtilsBase, snl_fei::CommUtils. These
     are replaced by functions in fei_CommUtils.hpp. This is a simplification
     and cleanup of the communications-code infrastructure.
+  - Changed several method APIs in fei::VectorSpace and fei::MatrixGraph,
+    to replace the three-argument pattern
+    (..., int alloc_len, int* array, int& used_len, ...)
+    with simply passing in a reference to a std::vector. This is a much
+    better mechanism for filling an array to return to the caller.
+    There are still occurrences of the cumbersome three-argument pattern in
+    various fei API's, but all of them will eventually be replaced.
 

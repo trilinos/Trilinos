@@ -16,7 +16,6 @@
 #include <fei_utils.hpp>
 #include "fei_TemplateUtils.hpp"
 
-#include <feiArray.hpp>
 #include <fei_Pattern.hpp>
 #include <fei_LogManager.hpp>
 #include <fei_TemplateUtils.hpp>
@@ -852,33 +851,6 @@ int fei::MatrixGraph_Impl2::initConnectivity(int idType,
 }
 
 //------------------------------------------------------------------------------
-int fei::MatrixGraph_Impl2::getRecordCollections(fei::Pattern* pattern,
-			    fei::VectorSpace* vecSpace,
-			    feiArray<snl_fei::RecordCollection*>& recordColls)
-{
-  fei::Pattern::PatternType pType = pattern->getPatternType();
-  int numIDs = pattern->getNumIDs();
-  const int* idTypes = pattern->getIDTypes();
-
-  if (pType == fei::Pattern::GENERAL) {
-    recordColls.resize(numIDs);
-
-    for(int i=0; i<numIDs; ++i) {
-      CHK_ERR( vecSpace->getRecordCollection(idTypes[i],
-					      recordColls[i]));
-    }
-  }
-  else {
-    recordColls.resize(1);
-
-    CHK_ERR( vecSpace->getRecordCollection(idTypes[0],
-					    recordColls[0]));
-  }
-
-  return(0);
-}
-
-//------------------------------------------------------------------------------
 int fei::MatrixGraph_Impl2::initLagrangeConstraint(int constraintID,
 					       int constraintIDType,
 					       int numIDs,
@@ -1360,20 +1332,21 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
 				       slaveFieldID, 0, offsetIntoSlaveField,
 				       slaveEqn) );
 
-    fei::Record** masterRecords = cr->getMasters()->dataPtr();
-    feiArray<int>& masterIDTypes = *(cr->getMasterIDTypes());
-    feiArray<int>& masterFieldIDs = *(cr->getMasterFieldIDs());
-    feiArray<double>& masterWeights = *(cr->getMasterWeights());
-    double* masterWtPtr = masterWeights.dataPtr();
+    std::vector<fei::Record*>& masterRecords_vec = *(cr->getMasters());
+    fei::Record** masterRecords = &masterRecords_vec[0];
+    std::vector<int>& masterIDTypes = *(cr->getMasterIDTypes());
+    std::vector<int>& masterFieldIDs = *(cr->getMasterFieldIDs());
+    std::vector<double>& masterWeights = *(cr->getMasterWeights());
+    double* masterWtPtr = &masterWeights[0];
 
-    masterEqns.resize(masterWeights.length());
-    masterCoefs.resize(masterWeights.length());
+    masterEqns.resize(masterWeights.size());
+    masterCoefs.resize(masterWeights.size());
 
     int* masterEqnsPtr = &(masterEqns[0]);
     double* masterCoefsPtr = &(masterCoefs[0]);
 
     int offset = 0;
-    for(int j=0; j<masterIDTypes.length(); ++j) {
+    for(size_t j=0; j<masterIDTypes.size(); ++j) {
       int* eqnNumbers = vspcEqnPtr_+masterRecords[j]->getOffsetIntoEqnNumbers();
       fei::FieldMask* mask = masterRecords[j]->getFieldMask();
       int eqnOffset = 0, numInst = 0;
@@ -1392,7 +1365,7 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
     double fei_eps = 1.e-49;
 
     offset = 0;
-    for(unsigned jj=0; jj<masterEqns.size(); ++jj) {
+    for(size_t jj=0; jj<masterEqns.size(); ++jj) {
       if (std::abs(masterWtPtr[jj]) > fei_eps) {
 	masterCoefsPtr[offset] = masterWtPtr[jj];
 	masterEqnsPtr[offset++] = masterEqnsPtr[jj];
@@ -1594,10 +1567,10 @@ getConstraintConnectivityIndices(ConstraintType* cr,
   std::vector<int>& fieldSizes = tmpIntArray1_;
   std::vector<int>& ones = tmpIntArray2_;
 
-  feiArray<fei::Record*,fei::record_lessthan>* constrainedRecords = cr->getMasters();
-  feiArray<int>& constrainedFieldIDs = *(cr->getMasterFieldIDs());
+  std::vector<fei::Record*>& constrainedRecords = *(cr->getMasters());
+  std::vector<int>& constrainedFieldIDs = *(cr->getMasterFieldIDs());
 
-  int len = constrainedRecords->length();
+  int len = constrainedRecords.size();
   fieldSizes.resize(len);
 
   ones.assign(len, 1);
@@ -1617,11 +1590,11 @@ getConstraintConnectivityIndices(ConstraintType* cr,
   globalIndices.resize(numIndices);
 
   int checkNum;
-  CHK_ERR( getConnectivityIndices_multiField(constrainedRecords->dataPtr(),
+  CHK_ERR( getConnectivityIndices_multiField(&constrainedRecords[0],
 					     len, &ones[0],
-					     constrainedFieldIDs.dataPtr(),
+					     &constrainedFieldIDs[0],
 					     &fieldSizes[0],
-					     numIndices, &(globalIndices[0]),
+					     numIndices, &globalIndices[0],
 					     checkNum) );
   if (numIndices != checkNum) {
     ERReturn(-1);
@@ -2220,12 +2193,12 @@ int fei::MatrixGraph_Impl2::addSSMatToGraph(SSMat& mat, fei::Graph* graph)
   //
   //PointBlockMap* ptBlkMap = rowSpace_->getPointBlockMap();
 
-  int numRows = mat.getRowNumbers().length();
+  int numRows = mat.getRowNumbers().size();
   int* rowNumbers = mat.getRowNumbers().dataPtr();
   SSVec** rows = mat.getRows().dataPtr();
 
   for(int i=0; i<numRows; i++) {
-    int rowLen = rows[i]->length();
+    int rowLen = rows[i]->size();
     int* indicesRow = rows[i]->indices().dataPtr();
 
     for(int j=0; j<rowLen; ++j) {
