@@ -95,9 +95,6 @@ Constraint(
 
   bifParamID[0] = bif_param;
 
-  // Compute/get initial "a" & "b" vectors
-  getInitialVectors((*a_vector)[0], (*b_vector)[0]);
-
   // Options
   updateVectorsEveryContinuationStep = 
     turningPointParams->get("Update Null Vectors Every Continuation Step", 
@@ -124,6 +121,9 @@ Constraint(
        "LOCA::TurningPoint::MinimallyAugmented::Constraint::Constraint()",
        "Group must be derived from LOCA::TimeDependent::AbstractGroup to multiply null vectors by mass matrix");
   }
+
+  // Compute/get initial "a" & "b" vectors
+  getInitialVectors((*a_vector)[0], (*b_vector)[0]);
 }
 
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
