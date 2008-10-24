@@ -103,7 +103,6 @@ LOCA::Epetra::LowRankUpdateOp::Apply(const Epetra_MultiVector& Input,
 {
   // Number of input vectors
   int m = Input.NumVectors();
-  double n = Input.GlobalLength();
 
   // Compute J*Input or J^T*input
   int res = J->Apply(Input, Result);
