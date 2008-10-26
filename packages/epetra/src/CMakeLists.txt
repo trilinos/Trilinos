@@ -155,7 +155,7 @@ SET(FORTRAN_SOURCES
 # Set addition headers and source based on package-specific 
 # configuration options
 
-IF(TRILINOS_ENABLE_MPI)
+IF(Trilinos_ENABLE_MPI)
 
   SET(HEADERS
     ${HEADERS}
@@ -209,7 +209,7 @@ TRILINOS_PACKAGE_ADD_LIBRARY(
   epetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS ${EPETRA_FORTRAN_LIB} ${TRILINOS_LAPACK_LIBRARY} ${TRILINOS_BLAS_LIBRARY}
+  DEPLIBS ${EPETRA_FORTRAN_LIB} ${Trilinos_LAPACK_LIBRARY} ${Trilinos_BLAS_LIBRARY}
   )
 
 #

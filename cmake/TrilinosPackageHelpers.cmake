@@ -77,7 +77,7 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
       --packages=${PACKAGE_DIR_NAME}
       )
 
-    IF (TRILINOS_ENABLE_MPI)
+    IF (Trilinos_ENABLE_MPI)
     
       ADD_CUSTOM_TARGET(
         runtests-mpi-${PACKAGE_DIR_NAME}

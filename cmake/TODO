@@ -6,9 +6,6 @@ Last updated: 2008/09/28
 (*) [Ross] Create python script to checkout, untar, build, and install CMake
 in one shot.
 
-(*) [Ross] Add Trilinos_ and change TRILINOS_ to Trilinos_ for all
-top-level Trilinos options.
-
 (*) [Ross] Add automatic Fortran 77 name mangling
 
 (*) [Ross] Add automatic demangle checking

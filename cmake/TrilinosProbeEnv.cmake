@@ -39,24 +39,24 @@ FIND_PACKAGE(Perl)
 # Find the hostname used in selecting or deselecting tests by
 # TRILINOS_ADD_TEST(...) function.
 
-SITE_NAME(TRILINOS_HOSTNAME)
+SITE_NAME(Trilinos_HOSTNAME)
 
 #EXECUTE_PROCESS(
 #  COMMAND uname -n
-#  OUTPUT_VARIABLE TRILINOS_HOSTNAME
+#  OUTPUT_VARIABLE Trilinos_HOSTNAME
 #  OUTPUT_STRIP_TRAILING_WHITESPACE
 #  )
 
 # Look for BLAS and LAPACK
 
-FIND_LIBRARY(TRILINOS_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
-FIND_LIBRARY(TRILINOS_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
+FIND_LIBRARY(Trilinos_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
+FIND_LIBRARY(Trilinos_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
 
 # Find MPI
 
-IF(TRILINOS_ENABLE_MPI)
+IF(Trilinos_ENABLE_MPI)
   INCLUDE(ConfigureMPI)
-ENDIF(TRILINOS_ENABLE_MPI)
+ENDIF(Trilinos_ENABLE_MPI)
 
 # Set some other options (NOTE: These should be handed in XXX_config.h files!
 

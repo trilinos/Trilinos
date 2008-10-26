@@ -21,7 +21,7 @@ FUNCTION(TRILINOS_ADD_EXECUTABLE EXE_NAME)
 
   SET(ADD_THE_EXE OFF)
 
-  IF(TRILINOS_ENABLE_MPI)
+  IF(Trilinos_ENABLE_MPI)
    
     IF (NOT PARSE_COMM)
       # If no COMM is given assume we will add the exe

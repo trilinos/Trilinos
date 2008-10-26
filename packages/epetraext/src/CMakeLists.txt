@@ -324,7 +324,7 @@ IF (${PACKAGE_NAME}_BUILD_BLOCK)
     block/EpetraExt_MultiSerialComm.cpp
     )
   
-  IF(TRILINOS_ENABLE_MPI)
+  IF(Trilinos_ENABLE_MPI)
   
     SET(HEADERS ${HEADERS}
       block/EpetraExt_MultiMpiComm.h
