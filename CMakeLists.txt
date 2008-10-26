@@ -121,8 +121,13 @@ SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL
 SET( Trilinos_ENABLE_TESTS "" CACHE STRING
   "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
 
-SET( ${PROJECT_NAME}_ENABLE_EXAMPLES "" CACHE STRING
-  "Enable examples in all packages  (set to ON, OFF, or leave empty)." )
+SET(Trilinos_ENABLE_EXAMPLES "" CACHE STRING
+  "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if Trilinos_ENABLE_TESTS=ON" )
+
+IF (Trilinos_ENABLE_TESTS AND Trilinos_ENABLE_EXAMPLES STREQUAL "")
+  MESSAGE(STATUS "Setting Trilinos_ENABLE_EXAMPLES=ON because Trilinos_ENABLE_TESTS=ON")
+  SET(Trilinos_ENABLE_EXAMPLES ON)
+ENDIF()
 
 FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS(${PACKAGE})
