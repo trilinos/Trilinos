@@ -146,7 +146,7 @@ OPTION(Trilinos_ENABLE_FORTRAN
   )
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
-OPTION(Trilinos_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
+OPTION(TRILINOS_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 
 SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${Trilinos_VERSION}")
 SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${Trilinos_VERSION}/include")
@@ -161,8 +161,8 @@ MARK_AS_ADVANCED(EXECUTABLE_OUTPUT_PATH)
 MARK_AS_ADVANCED(LIBRARY_OUTPUT_PATH)
 MARK_AS_ADVANCED(CMAKE_OSX_ARCHITECTURES)
 MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
-MARK_AS_ADVANCED(Trilinos_BLAS_LIBRARY)
-MARK_AS_ADVANCED(Trilinos_LAPACK_LIBRARY)
+MARK_AS_ADVANCED(TRILINOS_BLAS_LIBRARY)
+MARK_AS_ADVANCED(TRILINOS_LAPACK_LIBRARY)
 
 
 #
@@ -191,12 +191,6 @@ MESSAGE("Probing the environment ...")
 MESSAGE("")
 
 INCLUDE(TrilinosProbeEnv)
-
-IF(Trilinos_ENABLE_FORTRAN)
-  ENABLE_LANGUAGE(Fortran)
-ENDIF()
-
-INCLUDE(TrilinosFortranMangling)
 
 
 #
@@ -227,7 +221,7 @@ IF (Trilinos_ENABLE_NATIVE_TEST_HARNESS)
     --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
     )
 
-  IF (Trilinos_ENABLE_MPI)
+  IF (TRILINOS_ENABLE_MPI)
   
     ADD_CUSTOM_TARGET(
       runtests-mpi

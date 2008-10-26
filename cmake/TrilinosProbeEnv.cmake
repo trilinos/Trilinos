@@ -68,3 +68,14 @@ IF(WIN32)
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
 ENDIF()
 
+# Do Fortran stuff
+
+IF(Trilinos_ENABLE_FORTRAN)
+  ENABLE_LANGUAGE(Fortran)
+ENDIF()
+
+INCLUDE(TrilinosFortranMangling)
+
+# Get BLAS name mangling
+ 
+INCLUDE(TrilinosBLASMangling)
