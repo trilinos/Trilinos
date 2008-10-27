@@ -1,7 +1,11 @@
 #!/bin/bash
 
+# Source the 
 cd $HOME
 source .bash_profile
+
+cd /scratch/rabartl/dashboards/Trilinos/cmake/ctest
+cvs -q update -dP
 
 ctest -S /scratch/rabartl/dashboards/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_thumper.cmake
 
