@@ -116,7 +116,7 @@ endif
 # link SCOTCH into zdrive.
 ifdef SCOTCH_LIBPATH
   GDEFINES     += -DZOLTAN_SCOTCH
-  THIRD_PARTY_LIBS +=  -lptscotch -lscotch -lscotcherr
+  THIRD_PARTY_LIBS +=  -lptscotch  -lptscotcherr -lptscotcherrexit
   THIRD_PARTY_LIBPATH += $(SCOTCH_LIBPATH)
   THIRD_PARTY_INCPATH += $(SCOTCH_INCPATH)
 endif	

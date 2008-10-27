@@ -188,9 +188,9 @@ int main(int argc, char *argv[])
   // the storage allocated for the Zoltan structure and the mesh.
   ////////////////////////////////////////////////////////////////
 
-  zz->LB_Free_Part(&importGlobalIds, &importLocalIds, &importProcs,
+  Zoltan::LB_Free_Part(&importGlobalIds, &importLocalIds, &importProcs,
                    &importToPart);
-  zz->LB_Free_Part(&exportGlobalIds, &exportLocalIds, &exportProcs,
+  Zoltan::LB_Free_Part(&exportGlobalIds, &exportLocalIds, &exportProcs,
                    &exportToPart);
 
   delete zz;

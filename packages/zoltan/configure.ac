@@ -189,7 +189,7 @@ TAC_ARG_WITH_PACKAGE(scotch, [Enable Scotch support.], SCOTCH, no)
 AM_CONDITIONAL(BUILD_SCOTCH, [test "X$ac_cv_use_scotch" != "Xno"])
 TAC_ARG_WITH_3PL_SUB(scotch, libdir, [Specify where the Scotch library is located.  Ex. /path/to/library])
 if test "X$tac_with_scotch_libdir" != "Xno"; then
-  LIBS="-L${tac_with_scotch_libdir} -lptscotch -lscotch -lscotcherr ${LIBS}"
+  LIBS="-L${tac_with_scotch_libdir} -lptscotch  -lptscotcherr -lptscotcherrexit ${LIBS}"
 fi
 TAC_ARG_WITH_3PL_SUB(scotch, incdir, [Specify where the Scotch header files are located.  Ex. /path/to/headers])
 if test "X$tac_with_scotch_incdir" != "Xno"; then

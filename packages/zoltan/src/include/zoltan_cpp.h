@@ -93,6 +93,14 @@ public:
 
   // Wrappers for Zoltan functions
 
+  static int LB_Free_Part( ZOLTAN_ID_PTR *global_ids,
+                    ZOLTAN_ID_PTR *local_ids,
+                    int **procs,
+                    int **to_part )
+  {
+    return Zoltan_LB_Free_Part( global_ids, local_ids, procs, to_part );
+  }
+
   int Set_Param( const std::string & param, const std::string & value )
   {
     return Zoltan_Set_Param( ZZ_Ptr, param.c_str(), value.c_str() );
@@ -225,14 +233,6 @@ public:
                 double &zmax )
   {
     return Zoltan_RCB_Box( ZZ_Ptr,part,&ndim,&xmin,&ymin,&zmin,&xmax,&ymax,&zmax);
-  }
-
-  int LB_Free_Part( ZOLTAN_ID_PTR *global_ids,
-                    ZOLTAN_ID_PTR *local_ids,
-                    int **procs,
-                    int **to_part )
-  {
-    return Zoltan_LB_Free_Part( global_ids, local_ids, procs, to_part );
   }
 
   int Set_Fn  ( const ZOLTAN_FN_TYPE &fn_type,

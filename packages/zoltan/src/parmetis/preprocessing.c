@@ -168,7 +168,7 @@ int Zoltan_Preprocess_Graph(
 
   /* If reorder is true, we already have the id lists. Ignore weights. */
   if ((*global_ids == NULL) || (!gr->id_known)){
-    int * input_part;
+    int *input_part = NULL;
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
     if (prt) {
@@ -539,12 +539,16 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
   if (gr->scatter){
 
     if (geo)
-      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->vwgt, &vsp->vsize,
-				  &gr->ewgts, &geo->xyz, geo->ndims, gr->obj_wgt_dim, zz, &gr->comm_plan);
+      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, 
+                                  &gr->vwgt, (vsp ? &vsp->vsize : NULL),
+				  &gr->ewgts, &geo->xyz, geo->ndims, 
+                                  gr->obj_wgt_dim, zz, &gr->comm_plan);
     else {
       float* xyz = NULL;
-      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->vwgt, &vsp->vsize,
-				  &gr->ewgts, &xyz, 0, gr->obj_wgt_dim, zz, &gr->comm_plan);
+      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, 
+                                  &gr->vwgt, (vsp ? &vsp->vsize : NULL),
+				  &gr->ewgts, &xyz, 0, 
+                                  gr->obj_wgt_dim, zz, &gr->comm_plan);
     }
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       ZOLTAN_THIRD_ERROR(ierr, "Zoltan_Scatter_Graph returned error.");

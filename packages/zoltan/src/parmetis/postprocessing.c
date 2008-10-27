@@ -83,7 +83,7 @@ int Zoltan_Postprocess_Graph(
 
   if (ord) {                                /* We have done ordering  */
       ierr = Zoltan_Postprocess_Order (zz, gr, ord);
-      if (ierr) {
+      if (ierr == ZOLTAN_FATAL) {
 	ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
 			      "Error returned from Zoltan_Postprocess_Order");
       }
@@ -91,7 +91,7 @@ int Zoltan_Postprocess_Graph(
 
   if (part) {                               /* We have done partitioning */
       ierr = Zoltan_Postprocess_Partition (zz, gr, prt, part, global_ids, local_ids);
-      if (ierr) {
+      if (ierr == ZOLTAN_FATAL) {
 	ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
 			      "Error returned from Zoltan_Postprocess_Partition");
       }

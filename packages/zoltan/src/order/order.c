@@ -186,7 +186,7 @@ int Zoltan_Order(
     Order_fn = Zoltan_Scotch_Order;
     /* Set ORDER_METHOD to NODEND and ORDER_TYPE to LOCAL */
     strcpy(opt.method, "NODEND");
-    strcpy(opt.order_type, "GLOBAL");
+/*     strcpy(opt.order_type, "GLOBAL"); */
   }
 #endif /* ZOLTAN_SCOTCH */
   else {

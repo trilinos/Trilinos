@@ -6038,7 +6038,7 @@ fi
 
 
 if test "X$tac_with_scotch_libdir" != "Xno"; then
-  LIBS="-L${tac_with_scotch_libdir} -lptscotch -lscotch -lscotcherr ${LIBS}"
+  LIBS="-L${tac_with_scotch_libdir} -lptscotch  -lptscotcherr -lptscotcherrexit ${LIBS}"
 fi
 
 

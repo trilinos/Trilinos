@@ -53,9 +53,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg, float* itr, double *pmv3_
 
 
   /**********************************************************/
-  /* Interface routine for ParMetis. This is just a simple  */
-  /* wrapper that sets the options etc and then calls       */
-  /* Zoltan_ParMetis_Jostle, where the real action is.      */
+  /* Interface routine for ParMetis: Partitioning           */
   /**********************************************************/
 
 int Zoltan_ParMetis(
@@ -129,28 +127,12 @@ int Zoltan_ParMetis(
   ierr = ZOLTAN_WARN;
 #endif
 
-  memset (&gr, 0, sizeof(ZOLTAN_Third_Graph));
-  memset (&prt, 0, sizeof(ZOLTAN_Third_Part));
-  memset (&vsp, 0, sizeof(ZOLTAN_Third_Vsize));
-  memset (&part, 0, sizeof(ZOLTAN_Output_Part));
 
-  /* Initialize return-argument arrays to return arguments so that F90 works. */
-  part.imp_gids = imp_gids;
-  part.imp_lids = imp_lids;
-  part.imp_procs = imp_procs;
-  part.imp_part = imp_to_part;
+  Zoltan_Third_Init(&gr, &prt, &vsp, &part,
+		    imp_gids, imp_lids, imp_procs, imp_to_part,
+		    exp_gids, exp_lids, exp_procs, exp_to_part);
 
-  part.exp_gids = exp_gids;
-  part.exp_lids = exp_lids;
-  part.exp_procs = exp_procs;
-  part.exp_part = exp_to_part;
-
-  part.num_imp = part.num_exp = -1;
   prt.input_part_sizes = prt.part_sizes = part_sizes;
-
-  /* Most ParMetis methods use only graph data */
-  gr.get_data = 1;
-
 
   ierr = Zoltan_Parmetis_Parse(zz, options, alg, &itr, &pmv3_itr, NULL);
 
@@ -350,18 +332,8 @@ int Zoltan_ParMetis(
 
   ierr = Zoltan_Postprocess_Graph(zz, global_ids, local_ids, &gr, geo, &prt, &vsp, NULL, &part);
 
-  /* Write results in user variables */
-  *num_imp = part.num_imp;
-  *imp_gids = *(part.imp_gids);
-  *imp_lids = *(part.imp_lids);
-  *imp_procs = *(part.imp_procs);
-  *imp_to_part = *(part.imp_part);
-  *num_exp = part.num_exp;
-  *exp_gids = *(part.exp_gids);
-  *exp_lids = *(part.exp_lids);
-  *exp_procs = *(part.exp_procs);
-  *exp_to_part = *(part.exp_part);
-
+  Zoltan_Third_Export_User(&part, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+			   num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
