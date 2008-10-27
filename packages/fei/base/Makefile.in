@@ -37,6 +37,11 @@
 
 # The following line helps the test harness recover from build errors.
 
+#all-local:
+#	@echo ""
+#	@echo "Trilinos package fei subdirectory base built successfully."
+#	@echo ""
+
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -1652,7 +1657,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS) all-local
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -1741,12 +1746,12 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libLIBRARIES ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-libLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
 	install-libLIBRARIES install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
@@ -1755,11 +1760,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
 
-
-all-local:
-	@echo ""
-	@echo "Trilinos package fei subdirectory base built successfully."
-	@echo ""
 
 include $(top_builddir)/Makefile.export.fei
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
