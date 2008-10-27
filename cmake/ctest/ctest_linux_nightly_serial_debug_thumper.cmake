@@ -30,10 +30,11 @@ SET (CTEST_COMMAND
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyBuild"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyTest"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyCoverage"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyMemCheck"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\" "
+  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
+  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyCoverage"
+  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
+  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyMemCheck"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\""
 )
 
 SET (CTEST_INITIAL_CACHE "
