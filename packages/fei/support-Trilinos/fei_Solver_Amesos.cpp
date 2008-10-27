@@ -62,7 +62,7 @@ int Solver_Amesos::solve(fei::LinearSystem* linearSystem,
 			  int& iterationsTaken,
 			  int& status)
 {
-  Trilinos_Helpers::copy_parameters(parameterSet, *paramlist_);
+  Trilinos_Helpers::copy_parameterset(parameterSet, *paramlist_);
 
   int numParams = 0;
   const char** paramStrings = NULL;
