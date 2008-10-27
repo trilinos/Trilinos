@@ -715,7 +715,8 @@ all-local:
 	@echo "Trilinos package trilinoscouplings built successfully"
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.trilinoscouplings $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	mkdir -p $(DESTDIR)$(includedir)
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.trilinoscouplings $(DESTDIR)$(includedir)/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.trilinoscouplings \
@@ -724,11 +725,11 @@ all-local:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-@USING_EXPORT_MAKEFILES_TRUE@		TRILINOSCOUPLINGS > $(exec_prefix)/include/Makefile.export.trilinoscouplings.macros
+@USING_EXPORT_MAKEFILES_TRUE@		TRILINOSCOUPLINGS > $(DESTDIR)$(includedir)/Makefile.export.trilinoscouplings.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.trilinoscouplings
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.trilinoscouplings.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.trilinoscouplings
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.trilinoscouplings.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
