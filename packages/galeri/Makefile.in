@@ -770,7 +770,8 @@ install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.galeri $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	mkdir -p $(DESTDIR)$(includedir)
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.galeri $(DESTDIR)$(includedir)/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@                --exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@                --my-export-makefile=Makefile.export.galeri \
@@ -778,11 +779,11 @@ install-everything:
 @USING_EXPORT_MAKEFILES_TRUE@                --my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/Maps:@abs_top_srcdir@/FiniteElements:@abs_top_srcdir@/CrsMatrices \
 @USING_EXPORT_MAKEFILES_TRUE@                --my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@                --dep-package-abs-builddirs=@abs_top_builddir@/../teuchos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../epetraext
-@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile GALERI > $(exec_prefix)/include/Makefile.export.galeri.macros
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile GALERI > $(DESTDIR)$(includedir)/Makefile.export.galeri.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.galeri
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.galeri.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.galeri
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.galeri.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 

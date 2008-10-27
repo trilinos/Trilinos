@@ -182,7 +182,8 @@ TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:
-	cp $(top_builddir)/Makefile.export.galeri $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.galeri $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
                 --exec-prefix=$(exec_prefix) \
                 --my-export-makefile=Makefile.export.galeri \
@@ -190,11 +191,11 @@ install-exec-hook:
                 --my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/Maps:@abs_top_srcdir@/FiniteElements:@abs_top_srcdir@/CrsMatrices \
                 --my-abs-lib-dirs=@abs_top_builddir@/src \
                 --dep-package-abs-builddirs=@abs_top_builddir@/../teuchos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../epetraext
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile GALERI > $(exec_prefix)/include/Makefile.export.galeri.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile GALERI > $(DESTDIR)$(includedir)/Makefile.export.galeri.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.galeri
-	rm -f $(exec_prefix)/include/Makefile.export.galeri.macros
+	rm -f $(includedir)/Makefile.export.galeri
+	rm -f $(includedir)/Makefile.export.galeri.macros
 
 else
 
