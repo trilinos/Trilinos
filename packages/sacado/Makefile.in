@@ -755,7 +755,8 @@ runtests-mpi :
   --packages=sacado
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
-@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.sacado $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	mkdir -p $(DESTDIR)$(includedir)
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.sacado $(DESTDIR)$(includedir)/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.sacado \
@@ -763,11 +764,11 @@ runtests-mpi :
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos
-@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile SACADO > $(exec_prefix)/include/Makefile.export.sacado.macros
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile SACADO > $(DESTDIR)$(includedir)/Makefile.export.sacado.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.sacado
-@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.sacado.macros
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.sacado
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(includedir)/Makefile.export.sacado.macros
 
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
