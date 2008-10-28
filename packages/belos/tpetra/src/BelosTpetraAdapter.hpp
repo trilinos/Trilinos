@@ -128,10 +128,10 @@ namespace Belos {
     }
 
     static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, Scalar alpha )
-    { TEST_FOR_EXCEPT(true); }
+    { mv.scale(alpha); }
 
     static void MvScale ( Tpetra::MultiVector<int,Scalar>& mv, const std::vector<Scalar>& alpha )
-    { TEST_FOR_EXCEPT(true); }
+    { mv.scale(alpha); }
 
     static void MvTransMv( const Scalar alpha, const Tpetra::MultiVector<int,Scalar>& A, const Tpetra::MultiVector<int,Scalar>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B )
     { 
@@ -204,7 +204,9 @@ namespace Belos {
     { mv.putScalar(alpha); }
 
     static void MvPrint( const Tpetra::MultiVector<int,Scalar>& mv, std::ostream& os )
-    { TEST_FOR_EXCEPT(true); }
+    { 
+      mv.print(os);
+    }
   };        
 
   ////////////////////////////////////////////////////////////////////
