@@ -18,6 +18,9 @@ setenv FFLAGS -m64
   --with-parmetis \
   --with-parmetis-incdir="/Net/local/proj/zoltan/arch/all/src/ParMETIS3_1" \
   --with-parmetis-libdir="/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3_1" \
+  --with-scotch \
+  --with-scotch-incdir="/Net/local/proj/zoltan/arch/all/src/Scotch5" \
+  --with-scotch-libdir="/Net/local/proj/zoltan/arch/linux64/lib/openmpi/Scotch5" \
   --with-gnumake |& tee OUTPUT.C
 make everything |& tee OUTPUT.M
 make install |& tee OUTPUT.I
