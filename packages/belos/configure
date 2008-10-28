@@ -8479,7 +8479,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/MVOPTester/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/MVOPTester/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockCG/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9203,6 +9203,7 @@ do
     "tpetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/src/Makefile" ;;
     "tpetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/Makefile" ;;
     "tpetra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/MVOPTester/Makefile" ;;
+    "tpetra/test/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/BlockCG/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

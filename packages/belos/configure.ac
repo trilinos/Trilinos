@@ -359,6 +359,7 @@ AC_CONFIG_FILES([
                 tpetra/src/Makefile
                 tpetra/test/Makefile
                 tpetra/test/MVOPTester/Makefile
+                tpetra/test/BlockCG/Makefile
 		])
 
 AC_OUTPUT()
