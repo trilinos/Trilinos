@@ -15,12 +15,12 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
-BELOS_BCG_HB_EX = # tpetra_bl_cg_hb Dummy #resolve_cg_hb 
+BELOS_BCG_HB_EX = Tpetra_bl_cg_hb Dummy
 endif
 
 if BUILD_TRIUTILS
 if BUILD_TEUCHOS_COMPLEX
-BELOS_BCG_COMPLEX_TEST = tpetra_bl_cg_complex_hb ComplexDummy
+BELOS_BCG_COMPLEX_TEST = Tpetra_bl_cg_complex_hb ComplexDummy
 endif
 endif
 
@@ -37,39 +37,38 @@ ComplexDummy$(EXEEXT): $(srcdir)/Dummy
 
 ComplexDummy_SOURCES = Dummy
 
-tpetra_bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
+Tpetra_bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp 
 
-resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
+#resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createTpetraProblem.cpp
 
-tpetra_bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp $(srcdir)/createEpetraProblem.cpp
+Tpetra_bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp 
 
-tpetra_bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
+Tpetra_bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../tpetra/src/libtpetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
-			$(top_builddir)/../teuchos/src/libteuchos.a
+#resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+#			$(top_builddir)/../tpetra/src/libtpetra.a \
+#			$(top_builddir)/../teuchos/src/libteuchos.a
 
-tpetra_bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
+Tpetra_bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
 			$(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../tpetra/src/libtpetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-tpetra_bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
+Tpetra_bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
-resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
+#resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
-tpetra_bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+Tpetra_bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
-tpetra_bl_cg_hb_LDADD = $(EXPORT_LIBS)
+Tpetra_bl_cg_hb_LDADD = $(EXPORT_LIBS)
 
-resolve_cg_hb_LDADD = $(EXPORT_LIBS)
+#resolve_cg_hb_LDADD = $(EXPORT_LIBS)
 
-tpetra_bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
+Tpetra_bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 
 
-EXTRA_DIST = \
-	$(srcdir)/createEpetraProblem.hpp
+EXTRA_DIST = # $(srcdir)/createTpetraProblem.hpp

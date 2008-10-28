@@ -64,25 +64,32 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 =
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = tpetra_bl_cg_complex_hb$(EXEEXT) \
+@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = Tpetra_bl_cg_hb$(EXEEXT) \
+@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = Tpetra_bl_cg_complex_hb$(EXEEXT) \
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	ComplexDummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_ComplexDummy_OBJECTS =
 ComplexDummy_OBJECTS = $(am_ComplexDummy_OBJECTS)
 ComplexDummy_LDADD = $(LDADD)
-am_tpetra_bl_cg_complex_hb_OBJECTS =  \
-	tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.$(OBJEXT) \
-	tpetra_bl_cg_complex_hb-createEpetraProblem.$(OBJEXT)
-tpetra_bl_cg_complex_hb_OBJECTS =  \
-	$(am_tpetra_bl_cg_complex_hb_OBJECTS)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
+am_Tpetra_bl_cg_complex_hb_OBJECTS =  \
+	Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.$(OBJEXT)
+Tpetra_bl_cg_complex_hb_OBJECTS =  \
+	$(am_Tpetra_bl_cg_complex_hb_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
-tpetra_bl_cg_complex_hb_LINK = $(CXXLD) \
-	$(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+Tpetra_bl_cg_complex_hb_LINK = $(CXXLD) \
+	$(Tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_Tpetra_bl_cg_hb_OBJECTS = Tpetra_bl_cg_hb-test_bl_cg_hb.$(OBJEXT)
+Tpetra_bl_cg_hb_OBJECTS = $(am_Tpetra_bl_cg_hb_OBJECTS)
+Tpetra_bl_cg_hb_LINK = $(CXXLD) $(Tpetra_bl_cg_hb_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -95,9 +102,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(ComplexDummy_SOURCES) $(tpetra_bl_cg_complex_hb_SOURCES)
-DIST_SOURCES = $(ComplexDummy_SOURCES) \
-	$(tpetra_bl_cg_complex_hb_SOURCES)
+SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
+	$(Tpetra_bl_cg_complex_hb_SOURCES) $(Tpetra_bl_cg_hb_SOURCES)
+DIST_SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
+	$(Tpetra_bl_cg_complex_hb_SOURCES) $(Tpetra_bl_cg_hb_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -219,35 +227,36 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = # tpetra_bl_cg_hb Dummy #resolve_cg_hb 
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_COMPLEX_TEST = tpetra_bl_cg_complex_hb ComplexDummy
+@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = Tpetra_bl_cg_hb Dummy
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_COMPLEX_TEST = Tpetra_bl_cg_complex_hb ComplexDummy
 Dummy_SOURCES = Dummy
 ComplexDummy_SOURCES = Dummy
-tpetra_bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
-resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
-tpetra_bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp $(srcdir)/createEpetraProblem.cpp
-tpetra_bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
+Tpetra_bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp 
+
+#resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createTpetraProblem.cpp
+Tpetra_bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp 
+Tpetra_bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../tpetra/src/libtpetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
-			$(top_builddir)/../teuchos/src/libteuchos.a
 
-tpetra_bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
+#resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+#			$(top_builddir)/../tpetra/src/libtpetra.a \
+#			$(top_builddir)/../teuchos/src/libteuchos.a
+Tpetra_bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
 			$(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../tpetra/src/libtpetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-tpetra_bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
-resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
-tpetra_bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
-tpetra_bl_cg_hb_LDADD = $(EXPORT_LIBS)
-resolve_cg_hb_LDADD = $(EXPORT_LIBS)
-tpetra_bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
-EXTRA_DIST = \
-	$(srcdir)/createEpetraProblem.hpp
+Tpetra_bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
+#resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
+Tpetra_bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+Tpetra_bl_cg_hb_LDADD = $(EXPORT_LIBS)
+
+#resolve_cg_hb_LDADD = $(EXPORT_LIBS)
+Tpetra_bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
+EXTRA_DIST = # $(srcdir)/createTpetraProblem.hpp
 all: all-am
 
 .SUFFIXES:
@@ -284,9 +293,12 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-tpetra_bl_cg_complex_hb$(EXEEXT): $(tpetra_bl_cg_complex_hb_OBJECTS) $(tpetra_bl_cg_complex_hb_DEPENDENCIES) 
-	@rm -f tpetra_bl_cg_complex_hb$(EXEEXT)
-	$(tpetra_bl_cg_complex_hb_LINK) $(tpetra_bl_cg_complex_hb_OBJECTS) $(tpetra_bl_cg_complex_hb_LDADD) $(LIBS)
+Tpetra_bl_cg_complex_hb$(EXEEXT): $(Tpetra_bl_cg_complex_hb_OBJECTS) $(Tpetra_bl_cg_complex_hb_DEPENDENCIES) 
+	@rm -f Tpetra_bl_cg_complex_hb$(EXEEXT)
+	$(Tpetra_bl_cg_complex_hb_LINK) $(Tpetra_bl_cg_complex_hb_OBJECTS) $(Tpetra_bl_cg_complex_hb_LDADD) $(LIBS)
+Tpetra_bl_cg_hb$(EXEEXT): $(Tpetra_bl_cg_hb_OBJECTS) $(Tpetra_bl_cg_hb_DEPENDENCIES) 
+	@rm -f Tpetra_bl_cg_hb$(EXEEXT)
+	$(Tpetra_bl_cg_hb_LINK) $(Tpetra_bl_cg_hb_OBJECTS) $(Tpetra_bl_cg_hb_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -294,8 +306,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpetra_bl_cg_complex_hb-createEpetraProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -311,33 +323,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o: $(srcdir)/test_bl_cg_complex_hb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o -MD -MP -MF $(DEPDIR)/tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo -c -o tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o `test -f '$(srcdir)/test_bl_cg_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_complex_hb.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo $(DEPDIR)/tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_complex_hb.cpp' object='tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o' libtool=no @AMDEPBACKSLASH@
+Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o: $(srcdir)/test_bl_cg_complex_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o -MD -MP -MF $(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo -c -o Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o `test -f '$(srcdir)/test_bl_cg_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_complex_hb.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo $(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_complex_hb.cpp' object='Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o `test -f '$(srcdir)/test_bl_cg_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_complex_hb.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.o `test -f '$(srcdir)/test_bl_cg_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_complex_hb.cpp
 
-tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj: $(srcdir)/test_bl_cg_complex_hb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj -MD -MP -MF $(DEPDIR)/tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo -c -o tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj `if test -f '$(srcdir)/test_bl_cg_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_complex_hb.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo $(DEPDIR)/tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_complex_hb.cpp' object='tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj' libtool=no @AMDEPBACKSLASH@
+Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj: $(srcdir)/test_bl_cg_complex_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj -MD -MP -MF $(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo -c -o Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj `if test -f '$(srcdir)/test_bl_cg_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_complex_hb.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo $(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_complex_hb.cpp' object='Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj `if test -f '$(srcdir)/test_bl_cg_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_complex_hb.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.obj `if test -f '$(srcdir)/test_bl_cg_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_complex_hb.cpp'; fi`
 
-tpetra_bl_cg_complex_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT tpetra_bl_cg_complex_hb-createEpetraProblem.o -MD -MP -MF $(DEPDIR)/tpetra_bl_cg_complex_hb-createEpetraProblem.Tpo -c -o tpetra_bl_cg_complex_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_bl_cg_complex_hb-createEpetraProblem.Tpo $(DEPDIR)/tpetra_bl_cg_complex_hb-createEpetraProblem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='tpetra_bl_cg_complex_hb-createEpetraProblem.o' libtool=no @AMDEPBACKSLASH@
+Tpetra_bl_cg_hb-test_bl_cg_hb.o: $(srcdir)/test_bl_cg_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_bl_cg_hb-test_bl_cg_hb.o -MD -MP -MF $(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Tpo -c -o Tpetra_bl_cg_hb-test_bl_cg_hb.o `test -f '$(srcdir)/test_bl_cg_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_hb.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Tpo $(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_hb.cpp' object='Tpetra_bl_cg_hb-test_bl_cg_hb.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_bl_cg_complex_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_bl_cg_hb-test_bl_cg_hb.o `test -f '$(srcdir)/test_bl_cg_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_hb.cpp
 
-tpetra_bl_cg_complex_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT tpetra_bl_cg_complex_hb-createEpetraProblem.obj -MD -MP -MF $(DEPDIR)/tpetra_bl_cg_complex_hb-createEpetraProblem.Tpo -c -o tpetra_bl_cg_complex_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_bl_cg_complex_hb-createEpetraProblem.Tpo $(DEPDIR)/tpetra_bl_cg_complex_hb-createEpetraProblem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='tpetra_bl_cg_complex_hb-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
+Tpetra_bl_cg_hb-test_bl_cg_hb.obj: $(srcdir)/test_bl_cg_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_bl_cg_hb-test_bl_cg_hb.obj -MD -MP -MF $(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Tpo -c -o Tpetra_bl_cg_hb-test_bl_cg_hb.obj `if test -f '$(srcdir)/test_bl_cg_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_hb.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Tpo $(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_hb.cpp' object='Tpetra_bl_cg_hb-test_bl_cg_hb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_bl_cg_complex_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_bl_cg_hb-test_bl_cg_hb.obj `if test -f '$(srcdir)/test_bl_cg_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_hb.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
