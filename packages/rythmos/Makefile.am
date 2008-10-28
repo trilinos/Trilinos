@@ -184,7 +184,8 @@ SUBDIRS = src adapters $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
-	cp $(top_builddir)/Makefile.export.rythmos $(exec_prefix)/include/.
+	mkdir -p $(DESTDIR)$(includedir)
+	cp $(top_builddir)/Makefile.export.rythmos $(DESTDIR)$(includedir)/.
 	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.rythmos \
@@ -192,11 +193,11 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../stratimikos:@abs_top_builddir@/../nox:@abs_top_builddir@/../sacado
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile RYTHMOS > $(exec_prefix)/include/Makefile.export.rythmos.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile RYTHMOS > $(DESTDIR)$(includedir)/Makefile.export.rythmos.macros
 
 uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.rythmos
-	rm -f $(exec_prefix)/include/Makefile.export.rythmos.macros
+	rm -f $(includedir)/Makefile.export.rythmos
+	rm -f $(includedir)/Makefile.export.rythmos.macros
 
 else 
 
