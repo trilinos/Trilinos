@@ -177,51 +177,103 @@ double compute_imbalance(int nprocs, std::vector<int> &offsets, double *wgts, do
 
   return imbalance;
 }
-
 int
 repartition(const Epetra_BlockMap& input_map,
 	    const Epetra_MultiVector& weights,
-	    std::vector<int>& myNewElements,
-	    int& exportsSize,
-	    std::vector<int>& imports)
+	    std::vector<int>& newPartition,    // new partition for each of my objects
+	    int& exportsSize,                  // how many of my objects are exports
+	    std::vector<int>& imports)         // list of gids I will import
 {
   if (!input_map.PointSameAs(weights.Map())) {
     std::string str1("Epetra::repartition ERROR, input_map not ");
     std::string str2("equivalent size/layout to weights.Map()");
     throw Isorropia::Exception(str1+str2);
   }
+  int stride=0;
+  double *vals = NULL;
 
-  const Epetra_Comm& input_comm = input_map.Comm();
+  const Epetra_Comm& comm = input_map.Comm();
+  int base = input_map.IndexBase();
+  int myPID = comm.MyPID();
+  int numProcs = comm.NumProc();
 
-  imports.clear();
+  int globalSize = input_map.NumGlobalElements();
+  int localSize = input_map.NumMyElements();
+  int mySize = ((myPID==0) ? globalSize : 0);
+  int myCountSize = ((myPID==0) ? numProcs: 0);
 
-  //first we're going to collect weights onto proc 0.
-  int myPID = input_comm.MyPID();
-  int numProcs = input_comm.NumProc();
-  int global_num_rows = input_map.NumGlobalElements();
-  int local_num_rows = myPID == 0 ? global_num_rows : 0;
-  Epetra_BlockMap proc0_rowmap(global_num_rows, local_num_rows, 1,0,input_comm);
-  Epetra_MultiVector proc0_weights(proc0_rowmap, 1);
+  // Create some maps.  The weight vector is not necessarily contiguous by
+  // process rank, so we need to reorganize it.
 
-  Epetra_Import importer(proc0_rowmap, input_map);
-  proc0_weights.Import(weights, importer, Insert);
+  // Distributed map of objects that are contiguous by process rank, and those
+  //  objects gathered onto process zero
 
-  double total_weight;       // there's only one weight vector
-  weights.Norm1(&total_weight);
+  Epetra_BlockMap distMap(globalSize, localSize, 1, base, comm);
+  Epetra_BlockMap procZeroMap(globalSize, mySize, 1, base, comm);
 
-  std::vector<int> all_proc_old_offsets;
-  gather_all_proc_global_offsets(input_map, all_proc_old_offsets);
-  std::vector<int> all_proc_new_offsets(numProcs+1);
+  // Map of counts for each process, and counts gathered on process 0
 
-  if (myPID == 0) {
+  Epetra_BlockMap distCountMap(numProcs, 1, 1, base, comm);
+  Epetra_BlockMap procZeroCountMap(numProcs, myCountSize, 1, base, comm);
+
+  // Some importers
+
+  Epetra_Import DistToProcZero(procZeroMap, distMap);
+  Epetra_Import ProcZeroToDist(distMap, procZeroMap);
+  Epetra_Import CountsToProcZero(procZeroCountMap, distCountMap);
+  Epetra_Import CountsToProcs(distCountMap, procZeroCountMap);
+
+  // Move all weights to process 0
+
+  weights.ExtractView(&vals, &stride);
+  Epetra_Vector distWeights(Copy, distMap, vals);
+  Epetra_Vector weightVal(procZeroMap);
+  weightVal.Import(distWeights, DistToProcZero, Insert);
+
+  // Move the count of weights for each process to process 0
+
+  Epetra_Vector distCount(distCountMap);
+  distCount[0] = localSize;
+  Epetra_Vector weightCount(procZeroCountMap);
+  weightCount.Import(distCount, CountsToProcZero, Insert);
+
+  // Move all global IDs to process 0
+
+  double *myGIDs = new double [localSize];
+  for (int i=0; i<localSize; i++){
+    myGIDs[i] = input_map.GID(i);
+  }
+  Epetra_Vector localGIDs(View, distMap, myGIDs);
+  Epetra_Vector gids(procZeroMap);
+  gids.Import(localGIDs, DistToProcZero, Insert);
+  delete [] myGIDs;
+
+  // Process zero computes a new balance
+
+  double *numImports = new double [numProcs];
+  int totalImports=0;
+  double *importGIDs = NULL;
+  double *ids = NULL;
+
+  if (myPID == 0){
+
+    double total_weight=0.0; 
+    weightVal.ExtractView(&vals);
+    for (int i=0; i<globalSize; i++){
+      total_weight += vals[i];
+    }
+
     double avg_weight = total_weight/numProcs;
 
-    double* proc0_weights_ptr;
-    int weights_length;
-    proc0_weights.ExtractView(&proc0_weights_ptr, &weights_length);
+    std::vector<int> all_proc_old_offsets(numProcs+1, globalSize);
+    std::vector<int> all_proc_new_offsets(numProcs+1, globalSize);
 
-    double old_imbalance = 
-      compute_imbalance(numProcs, all_proc_old_offsets, proc0_weights_ptr, avg_weight);
+    for (int i=numProcs-1; i >= 0 ; i--){
+      all_proc_old_offsets[i] = all_proc_old_offsets[i+1] - static_cast<int>(weightCount[i]);
+    }
+
+    double old_imbalance =
+      compute_imbalance(numProcs, all_proc_old_offsets, vals, avg_weight);
 
     int offset = 0;
     for(int p=0; p<numProcs; ++p) {
@@ -229,178 +281,113 @@ repartition(const Epetra_BlockMap& input_map,
 
       double tmp_weight = 0.0;
 
-      while(offset < weights_length && tmp_weight < avg_weight) {
-        tmp_weight += proc0_weights_ptr[offset++];
+      while(offset < globalSize && tmp_weight < avg_weight) {
+        tmp_weight += vals[offset++];
       }
     }
-    all_proc_new_offsets[numProcs] = weights_length;
 
-    double new_imbalance = 
-      compute_imbalance(numProcs, all_proc_new_offsets, proc0_weights_ptr, avg_weight);
+    double new_imbalance =
+      compute_imbalance(numProcs, all_proc_new_offsets, vals, avg_weight);
 
     // Because this is a quick and dirty partitioning, it is possible that
     // if the balance was good to begin with, that we have just created a
     // slightly worse balance.  In that case, return to the old partitioning.
 
-    if (new_imbalance > old_imbalance){
+    if (new_imbalance >= old_imbalance){
       for (int proc=0; proc <= numProcs; proc++){
         all_proc_new_offsets[proc] = all_proc_old_offsets[proc];
       }
     }
 
-#ifdef HAVE_MPI
-    if (numProcs > 1) {
-      //now broadcast the new offsets
-      input_comm.Broadcast(&all_proc_new_offsets[0], numProcs+1, 0);
+    // Fill weight vector with the new process ID (partition ID) for each object
+
+    for (int proc=0; proc < numProcs; proc++){
+      int len = all_proc_new_offsets[proc+1] - all_proc_new_offsets[proc];
+      for (int j=0; j<len; j++){
+        *vals++ = static_cast<double>(proc);
+      }
     }
-#endif
+
+    // Count the number of imports for each process, and create a list of
+    // gids to be imported to each process
+
+    totalImports = 0;
+    importGIDs = new double [globalSize];
+    double *curr = importGIDs;
+    gids.ExtractView(&ids);
+
+    for (int proc=0; proc < numProcs; proc++){
+      numImports[proc] = 0;
+      int from = all_proc_new_offsets[proc];
+      int to =  all_proc_new_offsets[proc+1];
+      int old_from = all_proc_old_offsets[proc];
+      int old_to =  all_proc_old_offsets[proc+1];
+
+      for (int i=from; i<to ; i++){
+        if ((i< old_from) || (i >= old_to)){
+          *curr++ = ids[i];
+          numImports[proc]++;
+        }
+      }
+      totalImports += static_cast<int>(numImports[proc]);
+    }
   }
-  else { //myPID != 0
-#ifdef HAVE_MPI
-    input_comm.Broadcast(&all_proc_new_offsets[0], numProcs+1, 0);
-#endif
+
+  // The new partition IDs are in the weightVal vector on process zero
+
+  distWeights.Import(weightVal, ProcZeroToDist, Insert);
+
+  newPartition.resize(localSize);
+  for (int i=0; i<localSize; i++){
+    newPartition[i] = static_cast<int>(distWeights[i]);
   }
 
-  //Now we need to figure out which elements we need to send/recv
-  //to/from neighboring processors.
+  // Get the count of my imports - reuse the weightCount vector
 
-  std::vector<int> send_info;
-  std::vector<int> recv_info;
-  Isorropia::Utils::create_comm_plan(myPID, all_proc_old_offsets,
-                                     all_proc_new_offsets,
-                                     send_info, recv_info);
-
-  //Create the list to hold local elements for the new map.
-  myNewElements.assign(all_proc_old_offsets[myPID+1]-all_proc_old_offsets[myPID], myPID);
-//   myNewElements.resize(new_num_local);
-
-  const int* old_gids = input_map.MyGlobalElements();
-
-#ifdef HAVE_MPI
-
-  int tag = 1212121;
-  const Epetra_MpiComm* mpiComm =
-    dynamic_cast<const Epetra_MpiComm*>(&input_comm);
-  if (mpiComm == 0) {
-    throw Isorropia::Exception("dynamic_cast to MpiComm failed.");
+  int *indices = new int [numProcs];
+  for (int i=0; i<numProcs; i++){
+    indices[i] = i + base;
   }
-  int num_reqs = recv_info.size()/3;
 
-  MPI_Comm mpicomm = mpiComm->GetMpiComm();
-  MPI_Request* reqs = num_reqs > 0 ? new MPI_Request[num_reqs] : 0;
+  weightCount.ReplaceGlobalValues(((myPID==0) ? numProcs : 0), numImports, indices);
+  distCount.Import(weightCount, CountsToProcs, Insert);
+  delete [] indices;
+  if (numImports) delete [] numImports;
 
-  unsigned i=0;
-  unsigned int base_offset = (num_reqs > 0)?(recv_info[1]):0;
+  // Get the list of my imports
 
-  int num_import = 0;
-  while(i<recv_info.size()) {
-    num_import += recv_info[i+2];
-    i+=3;
+  int numMyImports = static_cast<int>(distCount[0]);
+  double n1;
+  distCount.Norm1(&n1);
+  totalImports = static_cast<int>(n1);
+  int myImportSize = ((myPID==0) ? totalImports : 0);
+
+  Epetra_BlockMap distImportMap(totalImports, numMyImports, 1, base, comm);
+  Epetra_BlockMap proc0ImportMap(totalImports, myImportSize, 1, base, comm);
+  Epetra_Import importer(distImportMap, proc0ImportMap);
+
+  Epetra_Vector proc0imports(View, proc0ImportMap, importGIDs);
+  Epetra_Vector distImports(distImportMap);
+
+  distImports.Import(proc0imports, importer, Insert);
+
+  if (importGIDs) delete [] importGIDs;
+
+  imports.resize(numMyImports);
+  for (int i=0; i<numMyImports; i++){
+    imports[i] = static_cast<int>(distImports[i]);
   }
-  imports.resize(num_import);
 
-  for (i = 0 ;  i<recv_info.size(); i+=3) {
-    int proc = recv_info[i];
-    int recv_offset = recv_info[i+1];
-    int num_recv = recv_info[i+2];
-
-    MPI_Irecv(&imports[recv_offset-base_offset], num_recv, MPI_INT, proc,
-             tag, mpicomm, &reqs[i/3]);
-  }
+  // Finally, the number of exports
 
   exportsSize = 0;
-  for (i = 0 ;  i<send_info.size(); i+=3) {
-    int proc = send_info[i];
-    int send_offset = send_info[i+1];
-    int num_send = send_info[i+2];
-
-    MPI_Send((void*)&old_gids[send_offset], num_send, MPI_INT,
-             proc, tag, mpicomm);
-
-    exportsSize += num_send;
-    for(int j=0; j<num_send; ++j) {
-      myNewElements[send_offset+j] = proc;
-    }
-  }
-  //make sure the recvs are finished...
-  if (recv_info.size() > 0) {
-    MPI_Waitall(recv_info.size()/3, reqs, MPI_STATUSES_IGNORE);
-  }
-  delete [] reqs;
-
-#else /* HAVE_MPI */
-
-  imports.clear();
-  unsigned int i=0;
-  while(i<send_info.size()) {
-    int proc = send_info[i];
-    int send_offset = send_info[i+1];
-    int num_send = send_info[i+2];
-
-    for(int j=0; j<num_send; ++j) {
-      myNewElements[send_offset+j] = proc;
-    }
-
-    i += 3;
-  }
-
-  exportsSize = 0;
-  for (i = 0 ;  i<send_info.size(); i+=3)
-    exportsSize += send_info[i+2];
-
-  int num_import = 0;
-  while(i<recv_info.size()) {
-    num_import += recv_info[i+2];
-    i+=3;
-  }
-  imports.resize(num_import);
-
-  int num_reqs = recv_info.size()/3;
-  unsigned int base_offset = (num_reqs > 0)?(recv_info[1]):0;
-  for (i = 0 ;  i<recv_info.size(); i+=3) {
-    int proc = recv_info[i];
-    int recv_offset = recv_info[i+1];
-    int num_recv = recv_info[i+2];
-
-    for (int j = 0 ;  i<send_info.size(); i+=3) {
-      if (recv_info[i] != myPID)
-	continue;
-      memcpy(&imports[recv_offset-base_offset], &old_gids[send_info[j+1]],
-	     num_recv*sizeof(int));
+  for (int i=0; i<localSize; i++){
+    if (newPartition[i] != myPID){
+      exportsSize++;
     }
   }
 
-#endif /* HAVE_MPI */
-
-  return(0);
-}
-
-void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
-                                    std::vector<int>& all_proc_offsets)
-{
-  const Epetra_Comm& comm = blkmap.Comm();
-  int numProcs = comm.NumProc();
-  int myPID = comm.MyPID();
-
-  all_proc_offsets.resize(numProcs+1);
-  for(int i=0; i<numProcs+1; ++i) {
-    all_proc_offsets[0] = 0;
-  }
-
-  //first put num-local-elements in position myPID, and gather-all so
-  //that each proc has all entries.
-  all_proc_offsets[myPID] = blkmap.NumMyElements();
-  int tmpOffset = all_proc_offsets[myPID];
-  comm.GatherAll(&tmpOffset, &all_proc_offsets[0], 1);
-
-  //now run the list and turn the local-sizes into global offsets.
-  int offset = 0;
-  for(int p=0; p<numProcs; ++p) {
-    int tmp = all_proc_offsets[p];
-    all_proc_offsets[p] = offset;
-    offset += tmp;
-  }
-  all_proc_offsets[numProcs] = offset;
+  return 0;
 }
 
 Teuchos::RCP<Epetra_RowMatrix>
