@@ -299,7 +299,7 @@ include_HEADERS = $(srcdir)/Stratimikos_ConfigDefs.hpp $(STRATIMIKOS_H)
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
-execincludedir = $(exec_prefix)/include
+execincludedir = $(includedir)
 nodist_execinclude_HEADERS = Stratimikos_Config.h
 
 # ------------------------------------------------------------------------
