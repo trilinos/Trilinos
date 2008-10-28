@@ -29,15 +29,23 @@
 // Read in the file "simple.coords" and perform geometric partitioning
 // with Zoltan's RCB method.
 //
-// Use --f={filename} to process a different file.  File should be a
+// --f={filename} will read a different coordinate file
+// --v will print out the partitioning (small coordinate files only)
+// --internal-partitioning will run Isorropia's internal linear partitioner
+//                         instead of Zoltan
+//
+// The input ile should be a
 // text file containing 1, 2 or 3-dimensional coordinates, one per line,
 // with white space separating coordinate values.
 //
+// There are a few other coordinate files in the test/geometric directory.
 
 #include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 #include <Isorropia_EpetraRedistributor.hpp>
+
+#define PRINTLIMIT 5000
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Import.h>
@@ -83,9 +91,16 @@ int main(int argc, char** argv) {
   Teuchos::CommandLineProcessor clp(false,true);
 
   std::string *inputFile = new std::string("simple.coords");
+  bool verbose = false;
+  bool internal = false;
 
-  clp.setOption( "f", inputFile, 
-                "Name of input matrix market file");
+  clp.setOption( "f", inputFile, "Name of coordinate input file");
+
+  clp.setOption( "v", "q", &verbose,
+                "Display coordinates and weights before and after partitioning.");
+
+  clp.setOption( "internal-partitioning", "zoltan-partitioning", &internal,
+                "Run Isorropia's simple linear partitioner instead of Zoltan");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
     clp.parse(argc,argv);
@@ -115,8 +130,20 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  ispatest::printMultiVector(*mv, std::cout, "Coordinates");
+  int vsize = mv->GlobalLength();
 
+  if (verbose){
+    if (vsize < PRINTLIMIT){
+      ispatest::printMultiVector(*mv, std::cout, "Coordinates",PRINTLIMIT);
+    }
+    else{
+      if (localProc == 0){
+        std::cerr << "--v requested, but input file is larger than " << PRINTLIMIT << " coordinates." << std::endl;
+        std::cerr << "Partitioning will be performed but will not be displayed." << std::endl;
+        verbose = false;
+      }
+    }
+  }
 
   // =============================================================
   // Create weights for coordinates - there are three different
@@ -128,7 +155,7 @@ int main(int argc, char** argv) {
   Epetra_MultiVector *wgts = ispatest::makeWeights(mv->Map(), &ispatest::alternateWeights);
   //Epetra_MultiVector *wgts = ispatest::makeWeights(mv->Map(), &ispatest::veeWeights);
 
-  Epetra_Vector * &w1 = (*wgts)(1);
+  Epetra_Vector * &w1 = (*wgts)(0);
 
   if (!wgts || ((dim = wgts->NumVectors()) != 1)){
     if (localProc == 0)
@@ -136,22 +163,39 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  ispatest::printMultiVector(*wgts, std::cout, "Weights");
+  if (verbose){ 
+    ispatest::printMultiVector(*wgts, std::cout, "Weights",PRINTLIMIT);
+  }
 
   // =============================================================
   //  Create a parameter list for Zoltan
   // =============================================================
 
   Teuchos::ParameterList params;
-  Teuchos::ParameterList &sublist = params.sublist("ZOLTAN");
 
-  //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
-  //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
-  //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
+  if (internal){
+
+   // This parameter specifies that partitioning should be performed
+   // by a simple linear partitioner in Isorropia, rather than calling
+   // upon Zoltan.
+
+   params.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
+  }
+  else{
+
+    // To use Zoltan, which is preferable, create a sublist titled "ZOLTAN"
+    // that Zoltan parameters in it.  See the Zoltan Users' Guide for
+    // Zoltan parameters.  http://www.cs.sandia.gov/Zoltan
+
+    Teuchos::ParameterList &sublist = params.sublist("ZOLTAN");
   
-  sublist.set("LB_METHOD", "RCB");
-  sublist.set("OBJ_WEIGHT_DIM", "1");
-
+    //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
+    //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
+    //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
+    
+    sublist.set("LB_METHOD", "RCB");
+    sublist.set("OBJ_WEIGHT_DIM", "1");
+  }
   // =============================================================
   // Create a partitioner, by default this will perform the partitioning as well
   // =============================================================
@@ -170,15 +214,19 @@ int main(int argc, char** argv) {
 
   Teuchos::RCP<Epetra_MultiVector> new_mv = rd.redistribute(*mv);
 
-  ispatest::printMultiVector(*new_mv, std::cout, "New Coordinates");
+  if (verbose){
+    ispatest::printMultiVector(*new_mv, std::cout, "New Coordinates", PRINTLIMIT);
+  }
 
   // Redistribute the weights
 
   Teuchos::RCP<Epetra_MultiVector> new_wgts = rd.redistribute(*wgts);
 
-  Epetra_Vector * &new_w1 = (*new_wgts)(1);
+  Epetra_Vector * &new_w1 = (*new_wgts)(0);
 
-  ispatest::printMultiVector(*new_wgts, std::cout, "New Weights");
+  if (verbose){
+    ispatest::printMultiVector(*new_wgts, std::cout, "New Weights", PRINTLIMIT);
+  }
 
   // =============================================================
   // Compute balance both before and after partitioning
