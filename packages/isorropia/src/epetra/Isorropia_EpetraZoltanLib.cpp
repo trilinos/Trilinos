@@ -112,11 +112,7 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coor
                                int inputType):
   Library(input_coords, weights, inputType)
 {
-  int weightDim = 0;
-
-  if (weights.get()){
-    weightDim = weights->NumVectors();
-  }
+  int weightDim = weights->NumVectors();
 
   if (weightDim > 1){
     if (input_coords->Comm().MyPID() == 0){
@@ -224,9 +220,12 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set("EDGE_WEIGHT_DIM", "0");
   }
   else if (input_type_ == geometric_input_){
-    if (weights_.get() && (weights_->NumVectors() > 0)){
-      if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
+    if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
+      if (weights_.get()){
         zoltanParamList_.set("OBJ_WEIGHT_DIM", "1");
+      }
+      else{
+        zoltanParamList_.set("OBJ_WEIGHT_DIM", "0");
       }
     }
   }

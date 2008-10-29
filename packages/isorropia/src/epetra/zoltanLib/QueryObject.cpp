@@ -473,7 +473,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     if (input_type_ == geometric_input_){
       double *wgts=NULL;
       int ld=0;
-      if (weights_.get() && (weights_->NumVectors() > 0)){
+      if (weights_.get()){
         weights_->ExtractView(&wgts, &ld);
         if (ld < ngids){
           *ierr = ZOLTAN_FATAL;

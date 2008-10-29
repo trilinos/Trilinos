@@ -673,10 +673,7 @@ Teuchos::RCP<Epetra_CrsGraph>
                     const Epetra_Map& target_rowmap,
                     Epetra_Import* importer=0);
 
-/** redistribute() is an internal Isorropia function(), not part
-    of the Isorropia API.
-
-    Return a new Epetra_MultiVector object constructed with target_map,
+/** Return a new Epetra_MultiVector object constructed with target_map,
   and with the contents of 'input' imported into it.
 
   param input Source/input object.
@@ -693,10 +690,7 @@ Teuchos::RCP<Epetra_MultiVector>
                const Epetra_BlockMap& target_map,
                Epetra_Import* importer=0);
 
-/** redistribute() is an internal Isorropia function(), not part
-    of the Isorropia API.
-
-    Return a new Epetra_Vector object constructed with target_map,
+/** Return a new Epetra_Vector object constructed with target_map,
   and with the contents of 'input' imported into it.
 
   param input Source/input object.
@@ -715,19 +709,13 @@ Teuchos::RCP<Epetra_Vector>
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-/**  create_row_weights_nnz() is an internal Isorropia function, not
-     part of the API.
-
-  Return a vector containing weights that are equal to the number of
+/** Return a vector containing weights that are equal to the number of
   nonzeros per row in the input_matrix. The returned vector will have
   the same size and distribution as input_matrix's row-map.
 */
 Epetra_MultiVector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
 
-/**  create_row_weights_nnz() is an internal Isorropia function, not
-     part of the API.
-
-    Return a vector containing weights that are equal to the number of
+/** Return a vector containing weights that are equal to the number of
   nonzeros per row in the input_graph. The returned vector will have
   the same size and distribution as input_graph's row-map.
 */
@@ -736,26 +724,25 @@ Epetra_MultiVector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
 Epetra_MultiVector* create_unit_weights(const Epetra_MultiVector& input_coords);
 
 
-/**  repartition() is an internal Isorropia function, not
-     part of the API.
-
-    Calculate a new partitioning, and fill output containers with new
+/** Calculate a new partitioning, and fill output containers with new
     elements for the local partition, as well as export and import lists.
     This is a simple linear partitioning that does not use Zoltan.
 
-    \param input_map Input map describing the existing or 'old' partitioning.
+    \param[in] input_map Input map describing the existing or 'old' partitioning.
 
-    \param weights Input vector giving a weight for each element in input_map.
+    \param[in] weights Input vector giving a weight for each element in input_map.
     weights.Map() is required to be the same size and layout as input_map.
 
-    \param myNewElements Output vector containing all elements that will
-    reside on the local partition in the new partitioning.
+    \param[out] newPartitions contains the new partition for each element,
+                    in input_map local ID order.  Partition numbers go from
+                    0 to numProcs - 1
+         
+    \param[out] exports the number of exports, that is, the number of
+                  elements in newPartitions that are not equal to my
+                  process rank
 
-    \param exports Output map contains set of export elements, and maps them
-    to the processors that they are to be exported to.
-
-    \param imports Output map contains set of import elements, and maps them
-    to the processors that they are to be imported from.
+    \param[out] imports the list of global IDs of the elements I will
+                   import under the new partitioning
 
     \return Error-code, 0 if successful. This probably should be a void
     function, since a serious error will result in an exception-throw

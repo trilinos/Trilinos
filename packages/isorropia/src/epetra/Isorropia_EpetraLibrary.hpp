@@ -79,8 +79,6 @@ public:
 	      std::vector<int>& myNewElements,
 	      int& exportsSize,
 	      std::vector<int>& imports) = 0;
-// 	      std::map<int,int>& exports,
-// 	      std::map<int,int>& imports) = 0;
 
   virtual int
   color(Teuchos::ParameterList& paramlist,
@@ -90,14 +88,37 @@ public:
   order(Teuchos::ParameterList& paramlist,
 	std::vector<int>& myNewElements) = 0 ;
 
-  /** Object on which library acts - does it represent a graph,
-      a hypergraph, or a collection of geometric coordinates?
+  /** input_type_ == hgraph_input_
+      This indicates that the matrix or graph represents a hypergraph.  Columns
+      represent hyperedges, and row (vertex) partitioning is to be performed.
     */
 
   static const int hgraph_input_ = 1;
+
+  /** input_type_ == hgraph2d_finegrain_input_
+      This indicates that the matrix or graph represents a hypergraph.  Columns
+      represent hyperedges, and non-zeroes are to be partitioned.
+    */
   static const int hgraph2d_finegrain_input_ = 2;
+
+  /** input_type_ == graph_input_ 
+      This indicates that the square symmetric matrix or graph represents a graph
+      in the sense that row/column IDs are vertices and non-zeroes represent
+      edges.  The vertices are to be partitioned.
+    */
   static const int graph_input_ = 3;
+
+  /** input_type_ == geometric_input_
+      This indicates that the Epetra_MultiVector represents geometric
+      coordinates.  The MultiVector should have 1, 2 or 3 vectors,
+      representing 1, 2 or 3 dimensional coordinates.  The coordinates
+      are to be partitioned.
+    */
   static const int geometric_input_ = 4;
+
+  /** input_type_ == unspecified_input_ 
+      This value is the "unset" state for the input_type_ instance variable.
+    */
   static const int unspecified_input_ = 5;
 
   int input_type_;

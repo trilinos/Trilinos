@@ -149,34 +149,18 @@ partition(bool force_repartitioning)
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
     else if (input_matrix_.get() != 0)
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
-    else if (input_coords_.get() != 0)
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
+    else if (input_coords_.get() != 0){
+      if (weights_.get()){
+        lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
+      }
+      else{
+        lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_));
+      }
+    }
     else{
       throw Isorropia::Exception("Partitioner::partition - no input object.");
     }
     sublist = (paramlist_.sublist(zoltan));
-
-    if (input_coords_.get() != 0){
-      input_type = Library::geometric_input_;
-    }
-    else{
-      std::string lb_method_str("LB_METHOD");
-      if (sublist.isParameter(lb_method_str)){
-        std::string lb_meth = sublist.get(lb_method_str, "HYPERGRAPH");
-        if (lb_meth == "GRAPH"){
-          input_type = Library::graph_input_;
-        }
-        else if (lb_meth == "HYPERGRAPH"){
-          input_type = Library::hgraph_input_;
-        }
-        else{
-          throw Isorropia::Exception("Valid LB_METHOD parameters for input type are HYPERGRAPH or GRAPH");
-        }
-      }
-      else{
-        input_type = Library::hgraph_input_;
-      }
-    }
   }
 
 #else /* HAVE_ISORROPIA_ZOLTAN */
@@ -186,15 +170,41 @@ partition(bool force_repartitioning)
 #endif /* HAVE_ISORROPIA_ZOLTAN */
 
   if (use_zoltan == false) {
-    input_type = Library::unspecified_input_;   // doesn't matter
     if (input_matrix_.get() != 0)
       lib_ = Teuchos::rcp(new InternalPartitioner(input_matrix_, costs_));
     else if (input_graph_.get() != 0)
       lib_ = Teuchos::rcp(new InternalPartitioner(input_graph_, costs_));
     else if (input_coords_.get() != 0)
-      lib_ = Teuchos::rcp(new InternalPartitioner(input_coords_, weights_));
+      if (weights_.get()){
+        lib_ = Teuchos::rcp(new InternalPartitioner(input_coords_, weights_));
+      }
+      else{
+        lib_ = Teuchos::rcp(new InternalPartitioner(input_coords_));
+      }
     else{
       throw Isorropia::Exception("Partitioner::partition - no input object.");
+    }
+  }
+
+  if (input_coords_.get() != 0){
+    input_type = Library::geometric_input_;
+  }
+  else{
+    std::string lb_method_str("LB_METHOD");
+    if (sublist.isParameter(lb_method_str)){
+      std::string lb_meth = sublist.get(lb_method_str, "HYPERGRAPH");
+      if (lb_meth == "GRAPH"){
+        input_type = Library::graph_input_;
+      }
+      else if (lb_meth == "HYPERGRAPH"){
+        input_type = Library::hgraph_input_;
+      }
+      else{
+        throw Isorropia::Exception("Valid LB_METHOD parameters for input type are HYPERGRAPH or GRAPH");
+      }
+    }
+    else{
+      input_type = Library::hgraph_input_;
     }
   }
 

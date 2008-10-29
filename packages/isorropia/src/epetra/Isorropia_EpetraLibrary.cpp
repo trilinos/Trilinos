@@ -130,12 +130,9 @@ Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
     input_graph_(0),
     input_matrix_(0),
     costs_(0) ,
-    weights_(0)
+    weights_(weights)
 {
   input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
-  if (weights.get() && (weights->NumVectors() > 0)){
-    weights_ = weights;
-  }
 }
 
 Library::~Library()
@@ -199,7 +196,7 @@ int Library::precompute()
       throw Isorropia::Exception(str1+str2);
     }
 
-    if (weights_.get() != 0 && (weights_->NumVectors() > 0)){
+    if (weights_.get() != 0){
       if (weights_->MyLength() != input_coords_->MyLength()){
         str2 = "Number of weights does not equal number of coordinates";
         throw Isorropia::Exception(str1+str2);

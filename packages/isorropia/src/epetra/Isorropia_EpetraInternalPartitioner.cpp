@@ -120,40 +120,46 @@ repartition(Teuchos::ParameterList& paramList,
 
   int nrows = input_map_->NumMyElements();
 
-  if (nrows && costs_.get()){
+  if (costs_.get()){
     if (costs_->haveVertexWeights()){
-      std::map<int, float> vwgts;
-      costs_->getVertexWeights(vwgts);
+      double *vals = NULL;
 
-      double *vals = new double [nrows];
-
-      for (int i=0; i<nrows; i++){
-	int gid = input_map_->GID(i);
-	std::map<int, float>::iterator iter = vwgts.find(gid);
-	if (iter == vwgts.end()){
-	  throw Isorropia::Exception("error 1 in simple linear repartitioning");
-	}
-	vals[i] = (double)iter->second;
+      if (nrows){
+        vals = new double [nrows];
+        std::map<int, float> vwgts;
+        costs_->getVertexWeights(vwgts);
+  
+        for (int i=0; i<nrows; i++){
+  	  int gid = input_map_->GID(i);
+  	  std::map<int, float>::iterator iter = vwgts.find(gid);
+  	  if (iter == vwgts.end()){
+  	    throw Isorropia::Exception("error 1 in simple linear repartitioning");
+  	  }
+  	  vals[i] = (double)iter->second;
+        }
       }
       if (weights_.get()){
         weights_.release();
       }
       weights_ = Teuchos::rcp(new Epetra_MultiVector(Copy, *input_map_, vals, nrows, 1));
 
-      delete [] vals;
+      if (vals) delete [] vals;
     }
   }
 
-  if (nrows && !weights_.get()){
+  if (!weights_.get()){
+    Epetra_MultiVector *mv = NULL;
     if (input_graph_.get() != 0) {
-      weights_ = Teuchos::rcp(create_row_weights_nnz(*input_graph_));
+      mv = create_row_weights_nnz(*input_graph_);
     }
     else if (input_matrix_.get() != 0){
-      weights_ = Teuchos::rcp(create_row_weights_nnz(*input_matrix_));
+      mv = create_row_weights_nnz(*input_matrix_);
     }
     else{
-      weights_ = Teuchos::rcp(create_unit_weights(*input_coords_));
+      mv = create_unit_weights(*input_coords_);
     }
+    weights_ = Teuchos::rcp(new const Epetra_MultiVector(*mv));
+    delete mv;
   }
 
   int err = Isorropia::Epetra::repartition(*input_map_,

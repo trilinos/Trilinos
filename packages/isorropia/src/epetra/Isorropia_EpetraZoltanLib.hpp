@@ -70,18 +70,48 @@ public:
   ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
             Teuchos::RCP<const Epetra_MultiVector> weights, int inputType=unspecified_input_);
 
+  /** Method to partition the object that the ZoltanLibClass was contructed with.
+
+      \param[in] paramlist  Parameters to govern partitioning. 
+
+      \param[out]  myNewElements  The new partition for each of my objects, in
+                                   local ID order.  The objects may be rows or
+                               non-zeroes (for
+                               CrsGraph and RowMatrix input) or coordinates (for
+                               MultiVector input).  Partition numbers can range from
+                               zero to numProcs-1.
+      \param[out]  exportsSize  The number of my objects that will be exported to
+                              another process under the new partitioning.  This is
+                             also the number of elements in myNewElements that are
+                             not equal to my process rank.
+      \param[out]  imports   A list of the global IDs of the objects that will be
+                            imported to my process under the new partitioning
+   */
+
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
 	      std::vector<int>& myNewElements,
 	      int& exportsSize,
 	      std::vector<int>& imports);
-// 	      std::map<int,int>& exports,
-// 	      std::map<int,int>& imports);
 
+  /** Method to color the object that the ZoltanLibClass was contructed with.
+
+      \param[in] paramlist  Parameters to govern coloring. 
+
+      \param[out]  myNewElements  A list of integers indicating the coloring of
+                              the object, in local ID order.
+  */
   virtual int
   color(Teuchos::ParameterList& paramlist,
 	std::vector<int>& myNewElements);
 
+  /** Method to order the object that the ZoltanLibClass was contructed with.
+
+      \param[in] paramlist  Parameters to govern ordering . 
+
+      \param[out]  myNewElements  A list of integers indicating the ordering of
+                              the object, in local ID order.
+  */
   virtual int
   order(Teuchos::ParameterList& paramlist,
 	std::vector<int>& myNewElements);

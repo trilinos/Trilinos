@@ -129,6 +129,7 @@ Operator::
 Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
 	 const Teuchos::ParameterList& paramlist)
   : input_coords_(input_coords),
+    weights_(0),
     input_graph_(0),
     input_matrix_(0),
     costs_(0),
@@ -136,7 +137,6 @@ Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_coords->Map()),false);
-  weights_ = Teuchos::rcp(new Epetra_MultiVector(*input_map_, 0));
   setParameters(paramlist);
 }
 
