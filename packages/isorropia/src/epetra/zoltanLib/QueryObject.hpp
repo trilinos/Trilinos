@@ -119,15 +119,16 @@ class QueryObject
 
   void fill_procmap();
 
-  /** My_Number_Objects() returns the number of rows currently
-      assigned to this process.  (The rows are interpreted as
-      graph vertices for Graph partitioning, and as hypergraph
-      vertices for hypergraph partitioning.)
+  /** My_Number_Objects() returns the number of objects currently
+      assigned to this process.  (The objects are interpreted as
+      graph vertices for Graph partitioning, as hypergraph
+      vertices for hypergraph partitioning, or as coordinates for
+      geometric partitioning.)
    */
   int My_Number_Objects(int *ierr);
 
   /** My_ObjectList() returns to Zoltan the global ID and weight of the
-      rows currently assigned to this process.
+      objects currently assigned to this process.
    */
   void My_Object_List  (int num_gid_entries, int num_lid_entries,
 		     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
@@ -212,27 +213,27 @@ class QueryObject
    */
   virtual ~QueryObject();
 
-  /** input_type_ == hgraph_input_
+  /** input_type_ == hgraph_input_.
       This indicates that the matrix or graph represents a hypergraph.  Columns
       represent hyperedges, and row (vertex) partitioning is to be performed.
     */
 
   static const int hgraph_input_ = 1;
 
-  /** input_type_ == hgraph2d_finegrain_input_
+  /** input_type_ == hgraph2d_finegrain_input_.
       This indicates that the matrix or graph represents a hypergraph.  Columns
       represent hyperedges, and non-zeroes are to be partitioned.
     */
   static const int hgraph2d_finegrain_input_ = 2;
 
-  /** input_type_ == graph_input_
+  /** input_type_ == graph_input_.
       This indicates that the square symmetric matrix or graph represents a graph
       in the sense that row/column IDs are vertices and non-zeroes represent
       edges.  The vertices are to be partitioned.
     */
   static const int graph_input_ = 3;
 
-  /** input_type_ == geometric_input_
+  /** input_type_ == geometric_input_.
       This indicates that the Epetra_MultiVector represents geometric
       coordinates.  The MultiVector should have 1, 2 or 3 vectors,
       representing 1, 2 or 3 dimensional coordinates.  The coordinates
@@ -240,7 +241,7 @@ class QueryObject
     */
   static const int geometric_input_ = 4;
 
-  /** input_type_ == unspecified_input_
+  /** input_type_ == unspecified_input_.
       This value is the "unset" state for the input_type_ instance variable.
     */
   static const int unspecified_input_ = 5;
