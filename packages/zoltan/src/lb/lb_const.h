@@ -284,7 +284,7 @@ extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
 extern ZOLTAN_LB_FN Zoltan_Graph;
 extern ZOLTAN_LB_FN Zoltan_ParMetis;
-extern ZOLTAN_LB_FN Zoltan_Jostle;
+extern ZOLTAN_LB_FN Zoltan_Scotch;
 extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
