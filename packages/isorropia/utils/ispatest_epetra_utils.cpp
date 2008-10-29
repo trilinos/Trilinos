@@ -310,7 +310,7 @@ int readCoordFile(const std::string &fname,
   }
 
   int dim = 0;
-  double vals[3];
+  double vals[3], v;
   char line[128];
 
   x.clear();
@@ -329,12 +329,24 @@ int readCoordFile(const std::string &fname,
     is.setf(std::ios::skipws);
 
     if (!dim){
-      is >> vals[dim++];
-      if (is.good()){
-        is >> vals[dim++];
-        if (is.good()){
-          is >> vals[dim++];
+      is >> v;
+      if (!is.fail()){
+        is.clear();
+        vals[dim++] = v;
+        is >> v;
+        if (!is.fail()){
+          is.clear();
+          vals[dim++] = v;
+          is >> v;
+          if (!is.fail()){
+            is.clear();
+            vals[dim++] = v;
+          }
         }
+      }
+      else{
+        std::cerr << fname << " does not seem to contain coordinates" << std::endl;
+        return 0;
       }
     }
     else{
@@ -423,7 +435,7 @@ Epetra_MultiVector *file2multivector(const Epetra_Comm &comm, const std::string 
 }
  
 
-int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, const char *s)
+int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, const char *s, int max)
 {
   const Epetra_Comm &comm = mv.Comm();
   int me = comm.MyPID();
@@ -435,7 +447,7 @@ int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, const char *
   int globalSize = map.NumGlobalElements();
   int base = map.IndexBase();
 
-  if (globalSize > 1000){
+  if (globalSize > max){
     if (me == 0){
       os << std::endl << s << std::endl;
       os << "  " << globalSize << " values" << std::endl;

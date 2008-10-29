@@ -173,7 +173,7 @@ Epetra_MultiVector *file2multivector(const Epetra_Comm &comm, const std::string 
     This is more compact the Epetra_MultiVector::Print().
   */
 int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, 
-                     const char *s="MultiVector contents");
+                     const char *s, int max=1000);
 
 } //namespace ispatest
 
