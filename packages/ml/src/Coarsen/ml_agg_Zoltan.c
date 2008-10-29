@@ -797,7 +797,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   Nghost;
    int                   allocated = 0, *rowi_col = NULL, rowi_N;
    double                *rowi_val = NULL;
-   int Nnonzeros2 = 0;
+   double Nnonzeros2 = 0;
    int optimal_value;
    ML_Operator * Pmatrix2 = NULL;
    ML_Aggregate_Viz_Stats *grid_info;
@@ -1172,10 +1172,10 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* compute operator complexity                                            */
    /* ********************************************************************** */
    
-   Nnonzeros2 = ML_Comm_GsumInt( comm, Nnonzeros2);
+   Nnonzeros2 = ML_Comm_GsumDouble( comm, Nnonzeros2);
 
    if ( mypid == 0 && 7 < ML_Get_PrintLevel())
-     printf("%s Total (block) nnz = %d ( = %5.2f/(block)row)\n",
+     printf("%s Total (block) nnz = %g ( = %5.2f/(block)row)\n",
 	    str,
 	    Nnonzeros2,1.0*Nnonzeros2/Nrows_global);
    
