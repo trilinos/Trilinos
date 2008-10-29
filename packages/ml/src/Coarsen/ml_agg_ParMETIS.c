@@ -917,7 +917,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double                *starting_amalg_bdry, *reordered_amalg_bdry;
    char                  *amalg_bdry;
    int                   Nghost;
-   int Nnonzeros2 = 0;
+   double Nnonzeros2 = 0;
    int optimal_value;
    ML_Operator * Pmatrix2 = NULL;
    
@@ -1211,7 +1211,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      ML_DecomposeGraph_with_ParMETIS( Amatrix, starting_aggr_count,
 				      starting_decomposition,
 				      starting_amalg_bdry,
-				      Nnonzeros2, ml_ag->cur_level );
+				      (int)Nnonzeros2, ml_ag->cur_level );
    
    if( starting_aggr_count <= 0 ) {
      fprintf( stderr,
@@ -1239,10 +1239,10 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* compute operator complexity                                            */
    /* ********************************************************************** */
    
-   Nnonzeros2 = ML_Comm_GsumInt(comm, Nnonzeros2 + N_bdry_nodes);
+   Nnonzeros2 = ML_Comm_GsumDouble(comm, Nnonzeros2 + N_bdry_nodes);
 
    if ( mypid == 0 && 7 < ML_Get_PrintLevel())
-     printf("%s Total (block) nnz = %d ( = %5.2f/(block)row)\n",
+     printf("%s Total (block) nnz = %g ( = %5.2f/(block)row)\n",
 	    str,
 	    Nnonzeros2,1.0*Nnonzeros2/Nrows_global);
    
