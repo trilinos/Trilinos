@@ -287,14 +287,15 @@ Epetra_MultiVector *makeWeights(const Epetra_BlockMap &map, double (*wFunc)(cons
 {
   Epetra_MultiVector *w = new Epetra_MultiVector(map, 1, false);
 
-  double *v;
-  int stride;
+  if (map.NumMyElements() > 0){
+    double *v;
+    int stride;
+    w->ExtractView(&v, &stride);
 
-  w->ExtractView(&v, &stride);
-
-  for (int i=0; i<map.NumMyElements(); i++){
-    v[i] = wFunc(map.GID(i), map.Comm().MyPID(), 
-                 map.NumGlobalElements(), map.Comm().NumProc());
+    for (int i=0; i<map.NumMyElements(); i++){
+      v[i] = wFunc(map.GID(i), map.Comm().MyPID(), 
+                   map.NumGlobalElements(), map.Comm().NumProc());
+    }
   }
 
   return w;
