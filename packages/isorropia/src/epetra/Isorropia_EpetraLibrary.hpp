@@ -82,11 +82,11 @@ public:
 
   virtual int
   color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements) = 0 ;
+	std::vector<int>& colorAssignment) = 0 ;
 
   virtual int
   order(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements) = 0 ;
+	std::vector<int>& orderAssignment) = 0 ;
 
   /** input_type_ == hgraph_input_
       This indicates that the matrix or graph represents a hypergraph.  Columns

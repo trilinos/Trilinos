@@ -93,21 +93,21 @@ public:
       \param[in] paramlist  Parameters to govern partitioning.  At this point in
                             time the parameter list is ignored.
 
-      \param[out]  myNewElements  The new partition for each of my objects, in
+      \param[out]  newPartition The new partition for each of my objects, in
                                    local ID order.  The objects may be rows (for
                                CrsGraph and RowMatrix input) or coordinates (for
                                MultiVector input).  Partition numbers can range from
                                zero to numProcs-1.
       \param[out]  exportsSize  The number of my objects that will be exported to
                               another process under the new partitioning.  This is
-                             also the number of elements in myNewElements that are
+                             also the number of elements in newPartition that are
                              not equal to my process rank.
       \param[out]  imports   A list of the global IDs of the objects that will be
                             imported to my process under the new partitioning
    */
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
-	      std::vector<int>& myNewElements,
+	      std::vector<int>& newPartition,
 	      int& exportsSize,
 	      std::vector<int>& imports);
 
@@ -115,13 +115,13 @@ public:
     */
   virtual int
   color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements);
+	std::vector<int>& colorAssignment);
 
   /** Ordering is not implemented in InternalPartitioner
     */
   virtual int
   order(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements);
+	std::vector<int>& orderAssignment);
 
 protected:
 

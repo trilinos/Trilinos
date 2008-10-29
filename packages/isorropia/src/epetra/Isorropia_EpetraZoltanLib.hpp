@@ -74,7 +74,7 @@ public:
 
       \param[in] paramlist  Parameters to govern partitioning. 
 
-      \param[out]  myNewElements  The new partition for each of my objects, in
+      \param[out]  newPartitions The new partition for each of my objects, in
                                    local ID order.  The objects may be rows or
                                non-zeroes (for
                                CrsGraph and RowMatrix input) or coordinates (for
@@ -82,7 +82,7 @@ public:
                                zero to numProcs-1.
       \param[out]  exportsSize  The number of my objects that will be exported to
                               another process under the new partitioning.  This is
-                             also the number of elements in myNewElements that are
+                             also the number of elements in newPartitions that are
                              not equal to my process rank.
       \param[out]  imports   A list of the global IDs of the objects that will be
                             imported to my process under the new partitioning
@@ -90,7 +90,7 @@ public:
 
   virtual int
   repartition(Teuchos::ParameterList& paramlist,
-	      std::vector<int>& myNewElements,
+	      std::vector<int>& newPartitions,
 	      int& exportsSize,
 	      std::vector<int>& imports);
 
@@ -98,23 +98,23 @@ public:
 
       \param[in] paramlist  Parameters to govern coloring. 
 
-      \param[out]  myNewElements  A list of integers indicating the coloring of
+      \param[out]  colorAssignment A list of integers indicating the coloring of
                               the object, in local ID order.
   */
   virtual int
   color(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements);
+	std::vector<int>& colorAssignment);
 
   /** Method to order the object that the ZoltanLibClass was contructed with.
 
       \param[in] paramlist  Parameters to govern ordering . 
 
-      \param[out]  myNewElements  A list of integers indicating the ordering of
+      \param[out]  orderAssignment A list of integers indicating the ordering of
                               the object, in local ID order.
   */
   virtual int
   order(Teuchos::ParameterList& paramlist,
-	std::vector<int>& myNewElements);
+	std::vector<int>& orderAssignment);
 
 protected:
   virtual int precompute();
