@@ -133,6 +133,8 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 			global_node_list.size(),
 			dim);
 
+  imd->Display_Class(imd->info_stream,"");
+
 
   std::list < PG_BC_Specification *> ::iterator setit;
   int nsct = 0;

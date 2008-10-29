@@ -281,7 +281,9 @@ $(srcdir)/test_files/run_test_script_39 \
 $(srcdir)/test_files/run_test_script_40 \
 $(srcdir)/test_files/run_test_script_41 \
 $(srcdir)/test_files/run_test_script_42 \
+$(srcdir)/test_files/run_test_script_43 \
 $(srcdir)/test_files/ur.txt \
+$(srcdir)/test_files/uded.txt \
 $(srcdir)/test_files/report3.txt \
 $(srcdir)/test_files/trisect_multi_theta.txt \
 $(srcdir)/test_files/ui2d.txt \
@@ -352,6 +354,7 @@ $(srcdir)/test_files/run_test_script_21.res \
 $(srcdir)/test_files/run_test_script_28.res \
 $(srcdir)/test_files/run_test_script_25.res \
 $(srcdir)/test_files/run_test_script_42.res \
+$(srcdir)/test_files/run_test_script_43.res \
 $(srcdir)/test_files/run_test_script_07.res \
 $(srcdir)/test_files/run_test_script_20.res \
 $(srcdir)/test_files/run_test_script_10.res \
@@ -704,6 +707,7 @@ pamgen_test_driver$(EXEEXT): $(srcdir)/test_files/run_test_script_01
 	cp $(srcdir)/test_files/run_test_script_40 run_test_script_40$(EXEEXT)
 	cp $(srcdir)/test_files/run_test_script_41 run_test_script_41$(EXEEXT)
 	cp $(srcdir)/test_files/run_test_script_42 run_test_script_42$(EXEEXT)
+	cp $(srcdir)/test_files/run_test_script_43 run_test_script_43$(EXEEXT)
 	cp $(srcdir)/test_files/*.txt .
 	cp $(srcdir)/test_files/*.res .
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

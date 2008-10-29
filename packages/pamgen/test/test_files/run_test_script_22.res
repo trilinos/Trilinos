@@ -11,6 +11,39 @@ Number of mesh segments in directions I/X/R 		1
 Number of mesh segments in directions J/Y/THETA 	2
 Number of mesh segments in directions K/Z/PHI 	2
 
+Evaluation information for user defined run-time compiled 
+Element Density Function
+For Direction J
+Maximum function value = 3
+Minimum function value = 1
+Ratio  = 3
+Function integrates to 2 over mesh range.
+
+3.00e+00	|     ****                            ****                     
+2.89e+00	|    *    *                          *    *                    
+2.79e+00	|   *      *                        *      *                   
+2.68e+00	|           *                      *                           
+2.58e+00	|  *                                        *                  
+2.47e+00	| *          *                    *          *                 
+2.37e+00	|                                                              
+2.26e+00	|*            *                  *            *                
+2.16e+00	|                                                              
+2.05e+00	|              *                *              *               
+1.95e+00	|               *              *                *              
+1.84e+00	|                                                              
+1.74e+00	|                *            *                  *            *
+1.63e+00	|                                                              
+1.53e+00	|                 *          *                    *          * 
+1.42e+00	|                  *                                        *  
+1.32e+00	|                           *                      *           
+1.21e+00	|                   *      *                        *      *   
+1.11e+00	|                    *    *                          *    *    
+1.00e+00	|                     ****                            ****     
+		--------------------------------------------------------------
+		Plot of function across mesh range.
+
+
+
 Exodus header info:
 Title: PAMGEN Inline Mesh
 Dimension 3 
@@ -616,6 +649,39 @@ Number of elements/segment in directions K/Z/PHI 	6
 Number of mesh segments in directions I/X/R 		1
 Number of mesh segments in directions J/Y/THETA 	2
 Number of mesh segments in directions K/Z/PHI 	2
+
+Evaluation information for user defined run-time compiled 
+Element Density Function
+For Direction J
+Maximum function value = 3
+Minimum function value = 1
+Ratio  = 3
+Function integrates to 2 over mesh range.
+
+3.00e+00	|     ****                            ****                     
+2.89e+00	|    *    *                          *    *                    
+2.79e+00	|   *      *                        *      *                   
+2.68e+00	|           *                      *                           
+2.58e+00	|  *                                        *                  
+2.47e+00	| *          *                    *          *                 
+2.37e+00	|                                                              
+2.26e+00	|*            *                  *            *                
+2.16e+00	|                                                              
+2.05e+00	|              *                *              *               
+1.95e+00	|               *              *                *              
+1.84e+00	|                                                              
+1.74e+00	|                *            *                  *            *
+1.63e+00	|                                                              
+1.53e+00	|                 *          *                    *          * 
+1.42e+00	|                  *                                        *  
+1.32e+00	|                           *                      *           
+1.21e+00	|                   *      *                        *      *   
+1.11e+00	|                    *    *                          *    *    
+1.00e+00	|                     ****                            ****     
+		--------------------------------------------------------------
+		Plot of function across mesh range.
+
+
 
 Exodus header info:
 Title: PAMGEN Inline Mesh
@@ -1223,6 +1289,39 @@ Number of mesh segments in directions I/X/R 		1
 Number of mesh segments in directions J/Y/THETA 	2
 Number of mesh segments in directions K/Z/PHI 	2
 
+Evaluation information for user defined run-time compiled 
+Element Density Function
+For Direction J
+Maximum function value = 3
+Minimum function value = 1
+Ratio  = 3
+Function integrates to 2 over mesh range.
+
+3.00e+00	|     ****                            ****                     
+2.89e+00	|    *    *                          *    *                    
+2.79e+00	|   *      *                        *      *                   
+2.68e+00	|           *                      *                           
+2.58e+00	|  *                                        *                  
+2.47e+00	| *          *                    *          *                 
+2.37e+00	|                                                              
+2.26e+00	|*            *                  *            *                
+2.16e+00	|                                                              
+2.05e+00	|              *                *              *               
+1.95e+00	|               *              *                *              
+1.84e+00	|                                                              
+1.74e+00	|                *            *                  *            *
+1.63e+00	|                                                              
+1.53e+00	|                 *          *                    *          * 
+1.42e+00	|                  *                                        *  
+1.32e+00	|                           *                      *           
+1.21e+00	|                   *      *                        *      *   
+1.11e+00	|                    *    *                          *    *    
+1.00e+00	|                     ****                            ****     
+		--------------------------------------------------------------
+		Plot of function across mesh range.
+
+
+
 Exodus header info:
 Title: PAMGEN Inline Mesh
 Dimension 3 
@@ -1828,6 +1927,39 @@ Number of elements/segment in directions K/Z/PHI 	6
 Number of mesh segments in directions I/X/R 		1
 Number of mesh segments in directions J/Y/THETA 	2
 Number of mesh segments in directions K/Z/PHI 	2
+
+Evaluation information for user defined run-time compiled 
+Element Density Function
+For Direction J
+Maximum function value = 3
+Minimum function value = 1
+Ratio  = 3
+Function integrates to 2 over mesh range.
+
+3.00e+00	|     ****                            ****                     
+2.89e+00	|    *    *                          *    *                    
+2.79e+00	|   *      *                        *      *                   
+2.68e+00	|           *                      *                           
+2.58e+00	|  *                                        *                  
+2.47e+00	| *          *                    *          *                 
+2.37e+00	|                                                              
+2.26e+00	|*            *                  *            *                
+2.16e+00	|                                                              
+2.05e+00	|              *                *              *               
+1.95e+00	|               *              *                *              
+1.84e+00	|                                                              
+1.74e+00	|                *            *                  *            *
+1.63e+00	|                                                              
+1.53e+00	|                 *          *                    *          * 
+1.42e+00	|                  *                                        *  
+1.32e+00	|                           *                      *           
+1.21e+00	|                   *      *                        *      *   
+1.11e+00	|                    *    *                          *    *    
+1.00e+00	|                     ****                            ****     
+		--------------------------------------------------------------
+		Plot of function across mesh range.
+
+
 
 Exodus header info:
 Title: PAMGEN Inline Mesh

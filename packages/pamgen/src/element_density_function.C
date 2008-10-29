@@ -45,20 +45,24 @@ void Element_Density_Function::Display_Class(std::ostream& s, const std::string 
       else{
         gchars[ict][jct] = ' ';
       }
-
     }
   }
 
   for(int jct = Y_POINTS-1; jct >= 0; jct --){  
     input_var = min_eval_range + (double)(jct)*gdelta;
     _function.execute();
-    s <<  min_eval+ydelta*(double)jct  << "\t|";
+    char char_array[10];
+    char_array[0] = '\0';
+    double var = min_eval+ydelta*(double)jct;
+    sprintf(char_array,"%6.2e",var);
+    
+    s <<  char_array  << "\t|";
     for(int ict = 0; ict < X_POINTS; ict ++){
       s << gchars[ict][jct];
     }
     s << std::endl;
-  }s << "\t--------------------------------------------------------------" << std::endl;
-  s << "\tPlot of function across mesh range." << std::endl << std::endl << std::endl;
+  }s << "\t\t--------------------------------------------------------------" << std::endl;
+  s << "\t\tPlot of function across mesh range." << std::endl << std::endl << std::endl;
 
 }
 
