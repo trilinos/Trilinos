@@ -25,6 +25,6 @@ echo
 echo "Doing mpi optimized build"
 echo
 
-time /usr/local/bin/ctest -S $BASEDIR/scripts/ctest_linux_nightly_mpi_opt_godel.cmake -VV
+time /usr/local/bin/ctest -S $BASEDIR/scripts/ctest_linux_nightly_mpi_optimized_godel.cmake -VV
 
 /home/rabartl/mailmsg.py "Trilinos mpi opt on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
