@@ -106,7 +106,7 @@ namespace Belos {
     }
 
     static int GetVecLength( const Tpetra::MultiVector<int,Scalar>& mv )
-    { mv.globalLength(); }
+    { return mv.globalLength(); }
 
     static int GetNumberVecs( const Tpetra::MultiVector<int,Scalar>& mv )
     { return mv.numVectors(); }
