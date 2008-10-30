@@ -149,7 +149,7 @@ int main( int argc, char* argv[] )
     double  max_rel_err          = 1e-13;
     double  max_rel_warn         = 1e-15;
     double  scalar               = 1.5;
-    double  max_flop_rate        = 2.0e8;
+    double  max_flop_rate        = 1.0; // Turn off by default!
 #ifdef RTOp_USE_MPI
     bool    useMPI               = true;
 #endif

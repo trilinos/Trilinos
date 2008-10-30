@@ -10,8 +10,11 @@ FUNCTION(CREATE_DEPENCENCY_HANDLING_TEST_CASE TEST_NAME TEST_ARGUMENTS TEST_PASS
     "  then rm CMakeCache.txt\n"
     "fi\n"
     "${CMAKE_COMMAND}"
+    "  -C ${TRILINOS_BUILD_DIR}/CMakeCache.txt"
     "  -D Trilinos_PACKAGES_OVERRIDE:BOOL=ON"
     "  -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON"
+    "  -D Trilinos_ENABLE_CXX:BOOL=OFF"
+    "  -D Trilinos_ENABLE_Fortran:BOOL=OFF"
     "   ${TEST_ARGUMENTS}"
     "  ${TRILINOS_HOME_DIR}\n"
     )

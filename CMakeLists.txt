@@ -11,7 +11,7 @@ MESSAGE("")
 MESSAGE("Configuring Trilinos build directory")
 MESSAGE("")
 
-PROJECT(Trilinos)
+PROJECT(Trilinos C)
 
 SET(Trilinos_VERSION "9.0d")
 SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -134,6 +134,11 @@ FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_ADD_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
 ENDFOREACH()
 
+OPTION(Trilinos_ENABLE_CXX
+  "Enable the C++ compiler and related code"
+  ON
+  )
+
 IF(WIN32 AND NOT CYGWIN)
   SET(Trilinos_ENABLE_FORTRAN_DEFAULT OFF)
 ELSE()
@@ -141,7 +146,7 @@ ELSE()
 ENDIF()
 
 OPTION(Trilinos_ENABLE_FORTRAN
-  "Build Fortran library for this package."
+  "Enable the Fortran compiler and related code"
   ${Trilinos_ENABLE_FORTRAN_DEFAULT}
   )
 
@@ -183,7 +188,7 @@ ENDIF()
 
 
 #
-# F) Probe the environment on this computer
+# F) Set up the environment on this computer
 #
 
 MESSAGE("")

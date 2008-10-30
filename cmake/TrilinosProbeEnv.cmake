@@ -32,6 +32,16 @@ SET(HAVE_STDEXCEPT TRUE)
 SET(HAVE_STRING TRUE)
 SET(HAVE_VECTOR TRUE)
 
+# Enable compilers
+
+IF(Trilinos_ENABLE_CXX)
+  ENABLE_LANGUAGE(CXX)
+ENDIF()
+
+IF(Trilinos_ENABLE_FORTRAN)
+  ENABLE_LANGUAGE(Fortran)
+ENDIF()
+
 # Find Perl
 
 FIND_PACKAGE(Perl)
@@ -69,10 +79,6 @@ IF(WIN32)
 ENDIF()
 
 # Do Fortran stuff
-
-IF(Trilinos_ENABLE_FORTRAN)
-  ENABLE_LANGUAGE(Fortran)
-ENDIF()
 
 INCLUDE(TrilinosFortranMangling)
 
