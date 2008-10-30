@@ -4,9 +4,27 @@
 cd $HOME
 source .bash_profile
 
-cd /home/rabartl/PROJECTS/dashboards/Trilinos/SERIAL_DEBUG/Trilinos/cmake/ctest
-cvs -q update -dP
+echo
+echo "Checking out just the drivers"
+echo
 
-ctest -S /home/rabartl/PROJECTS/dashboards/Trilinos/SERIAL_DEBUG/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_godel.cmake
+BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos
 
-$HOME/mailmsg.py "Trilinos serial debug on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
+cd $BASEDIR
+cvs -q -d :ext:@software.sandia.gov:/space/CVS co -d scripts Trilinos/cmake/ctest
+
+echo
+echo "Doing serial debug build"
+echo
+
+ctest -S $BASEDIR/scripts/ctest_linux_nightly_serial_debug_godel.cmake -VV
+
+/home/rabartl/mailmsg.py "Trilinos serial debug on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
+
+echo
+echo "Doing mpi optimized build"
+echo
+
+ctest -S $BASEDIR/scripts/ctest_linux_nightly_mpi_opt_godel.cmake -VV
+
+/home/rabartl/mailmsg.py "Trilinos mpi opt on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
