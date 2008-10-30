@@ -9343,11 +9343,8 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile test/Makefile test/ARPACKExamples/Makefile test/MVOPTester/Makefile test/LOBPCG/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/OrthoManager/Makefile test/StatusTest/Makefile test/SortManager/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile example/Makefile epetra/Makefile epetra/src/Makefile epetra/util/Makefile epetra/util/ModeLaplace/Makefile epetra/example/Makefile epetra/example/BlockDavidson/Makefile epetra/example/BlockKrylovSchur/Makefile epetra/example/LOBPCG/Makefile epetra/example/MVOPTester/Makefile epetra/test/Makefile epetra/test/MVOPTester/Makefile epetra/test/ModalSolverUtils/Makefile epetra/test/BlockDavidson/Makefile epetra/test/BlockKrylovSchur/Makefile epetra/test/LOBPCG/Makefile epetra/test/OrthoManager/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/example/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.anasazi src/Makefile test/Makefile test/ARPACKExamples/Makefile test/MVOPTester/Makefile test/IRTR/Makefile test/LOBPCG/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/OrthoManager/Makefile test/StatusTest/Makefile test/SortManager/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile example/Makefile epetra/Makefile epetra/src/Makefile epetra/util/Makefile epetra/util/ModeLaplace/Makefile epetra/example/Makefile epetra/example/BlockDavidson/Makefile epetra/example/BlockKrylovSchur/Makefile epetra/example/LOBPCG/Makefile epetra/example/MVOPTester/Makefile epetra/test/Makefile epetra/test/MVOPTester/Makefile epetra/test/ModalSolverUtils/Makefile epetra/test/BlockDavidson/Makefile epetra/test/BlockKrylovSchur/Makefile epetra/test/LOBPCG/Makefile epetra/test/OrthoManager/Makefile epetra/test/IRTR/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile thyra/example/MVOPTester/Makefile thyra/test/MVOPTester/Makefile thyra/test/IRTR/Makefile thyra/test/LOBPCG/Makefile thyra/test/BlockKrylovSchur/Makefile thyra/test/BlockDavidson/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockKrylovSchur/Makefile tpetra/test/IRTR/Makefile tpetra/test/LOBPCG/Makefile tpetra/test/BlockDavidson/Makefile tpetra/test/OrthoManager/Makefile"
 
-#		test/IRTR/Makefile
-#                epetra/test/IRTR/Makefile
-#		thyra/test/IRTR/Makefile
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -10102,6 +10099,7 @@ do
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/ARPACKExamples/Makefile") CONFIG_FILES="$CONFIG_FILES test/ARPACKExamples/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
+    "test/IRTR/Makefile") CONFIG_FILES="$CONFIG_FILES test/IRTR/Makefile" ;;
     "test/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES test/LOBPCG/Makefile" ;;
     "test/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockDavidson/Makefile" ;;
     "test/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockKrylovSchur/Makefile" ;;
@@ -10129,20 +10127,26 @@ do
     "epetra/test/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/BlockKrylovSchur/Makefile" ;;
     "epetra/test/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/LOBPCG/Makefile" ;;
     "epetra/test/OrthoManager/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/OrthoManager/Makefile" ;;
+    "epetra/test/IRTR/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/IRTR/Makefile" ;;
     "thyra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
     "thyra/src/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
     "thyra/example/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
     "thyra/test/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/Makefile" ;;
     "thyra/example/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/MVOPTester/Makefile" ;;
     "thyra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/MVOPTester/Makefile" ;;
+    "thyra/test/IRTR/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/IRTR/Makefile" ;;
     "thyra/test/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/LOBPCG/Makefile" ;;
     "thyra/test/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/BlockKrylovSchur/Makefile" ;;
     "thyra/test/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/BlockDavidson/Makefile" ;;
     "tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/Makefile" ;;
     "tpetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/src/Makefile" ;;
-    "tpetra/example/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/example/Makefile" ;;
     "tpetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/Makefile" ;;
     "tpetra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/MVOPTester/Makefile" ;;
+    "tpetra/test/BlockKrylovSchur/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/BlockKrylovSchur/Makefile" ;;
+    "tpetra/test/IRTR/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/IRTR/Makefile" ;;
+    "tpetra/test/LOBPCG/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/LOBPCG/Makefile" ;;
+    "tpetra/test/BlockDavidson/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/BlockDavidson/Makefile" ;;
+    "tpetra/test/OrthoManager/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/OrthoManager/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ $TRILINOS_HOME ]; then
   echo "TRILINOS_HOME has already been set!"
@@ -11,16 +11,4 @@ echo
 echo "Generating main tpetra doxygen documentation ..."
 echo
 
-doxygen DoxyfileWeb
-
-echo
-echo "Generating tpetra/thyra doxygen documentation ..."
-echo
-
-#doxygen ../thyra/doc/Doxyfile
-
-echo
-echo "Generating doxygen browser documentation for all of tpetra ..."
-echo
-
-doxygen ../browser/doc/Doxyfile
+doxygen Doxyfile

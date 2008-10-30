@@ -353,7 +353,13 @@ private:
   // Disable dynamic allocation
 	static void* operator new(size_t);
 #ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
-	static void operator delete(void*);
+	//static void operator delete(void*);
+  // 2008/09/19: rabartl: Above, I commented this out to address bug 4191.
+  // Making operator delete() private is just meant to help users avoid bad
+  // coding practices but there is nothing fundamentally illegal about
+  // dynamically creating an ArrayView object (but it is never advised to do
+  // so).  Even with this change, Chris Baker is not going to be dynamically
+  // allocateding ArrayView objects.
 #endif
 
 public: // Bad bad bad

@@ -5854,7 +5854,8 @@ done
 
 
 
-for ac_header in cerrno climits cstdlib cassert cmath iomanip iostream string  cstring complex algorithm map list set vector sstream stdexcept cstdarg typeinfo memory utility
+
+for ac_header in cerrno climits cstdlib cassert cmath iomanip iostream string  cstring complex algorithm numeric map list set vector sstream stdexcept cstdarg typeinfo memory utility
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then

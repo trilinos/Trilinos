@@ -41,6 +41,7 @@ all-local:
 # ------------------------------------------------------------------------
 
 CORE_H = \
+	$(srcdir)/Tpetra_DefaultPlatform.hpp \
 	$(srcdir)/Tpetra_DistObject.hpp \
 	$(srcdir)/Tpetra_Platform.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \
@@ -52,12 +53,10 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_Version.hpp \
-	$(srcdir)/Tpetra_Util.hpp \
-	$(srcdir)/Tpetra_TBB_TaskScheduler.hpp
+	$(srcdir)/Tpetra_Util.hpp
 
 UTIL = \
-	$(srcdir)/Tpetra_Version.cpp \
-	$(srcdir)/Tpetra_TBB_TaskScheduler.cpp
+	$(srcdir)/Tpetra_Version.cpp
 
 ENUM_H = \
 	$(srcdir)/Tpetra_CombineMode.hpp
@@ -102,10 +101,9 @@ DIST_H = \
 	$(srcdir)/Tpetra_Map.hpp \
 	$(srcdir)/Tpetra_MapDataDecl.hpp \
 	$(srcdir)/Tpetra_MapData.hpp \
+	$(srcdir)/Tpetra_ImportExportData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
-	$(srcdir)/Tpetra_ImportData.hpp \
-	$(srcdir)/Tpetra_Export.hpp \
-	$(srcdir)/Tpetra_ExportData.hpp
+	$(srcdir)/Tpetra_Export.hpp
 
 DIST = 
 
@@ -114,10 +112,11 @@ COMP_H = \
 	$(srcdir)/Tpetra_Vector.hpp \
 	$(srcdir)/Tpetra_VectorDataDecl.hpp \
 	$(srcdir)/Tpetra_VectorData.hpp \
-	$(srcdir)/Tpetra_CisMatrix.hpp \
-	$(srcdir)/Tpetra_CisMatrixData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
+	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
+	$(srcdir)/Tpetra_MultiVectorData.hpp \
 	$(srcdir)/Tpetra_Operator.hpp 
 
 COMP = 

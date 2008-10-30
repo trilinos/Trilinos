@@ -107,8 +107,7 @@ AR = ar
 ARFLAGS = cru
 libtpetra_a_DEPENDENCIES =
 am__objects_1 =
-am__objects_2 = Tpetra_Version.$(OBJEXT) \
-	Tpetra_TBB_TaskScheduler.$(OBJEXT)
+am__objects_2 = Tpetra_Version.$(OBJEXT)
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_1)
 am_libtpetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
@@ -128,25 +127,26 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
 DIST_SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/Tpetra_DistObject.hpp \
-	$(srcdir)/Tpetra_Platform.hpp $(srcdir)/Tpetra_Distributor.hpp \
+am__include_HEADERS_DIST = $(srcdir)/Tpetra_DefaultPlatform.hpp \
+	$(srcdir)/Tpetra_DistObject.hpp $(srcdir)/Tpetra_Platform.hpp \
+	$(srcdir)/Tpetra_Distributor.hpp \
 	$(srcdir)/Tpetra_DirectoryDecl.hpp \
 	$(srcdir)/Tpetra_Directory.hpp $(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_Version.hpp $(srcdir)/Tpetra_Util.hpp \
-	$(srcdir)/Tpetra_TBB_TaskScheduler.hpp \
 	$(srcdir)/Tpetra_CombineMode.hpp \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
 	$(srcdir)/Tpetra_MapDecl.hpp $(srcdir)/Tpetra_Map.hpp \
 	$(srcdir)/Tpetra_MapDataDecl.hpp $(srcdir)/Tpetra_MapData.hpp \
-	$(srcdir)/Tpetra_Import.hpp $(srcdir)/Tpetra_ImportData.hpp \
-	$(srcdir)/Tpetra_Export.hpp $(srcdir)/Tpetra_ExportData.hpp \
+	$(srcdir)/Tpetra_ImportExportData.hpp \
+	$(srcdir)/Tpetra_Import.hpp $(srcdir)/Tpetra_Export.hpp \
 	$(srcdir)/Tpetra_VectorDecl.hpp $(srcdir)/Tpetra_Vector.hpp \
 	$(srcdir)/Tpetra_VectorDataDecl.hpp \
-	$(srcdir)/Tpetra_VectorData.hpp $(srcdir)/Tpetra_CisMatrix.hpp \
-	$(srcdir)/Tpetra_CisMatrixData.hpp \
-	$(srcdir)/Tpetra_CrsMatrix.hpp \
-	$(srcdir)/Tpetra_MultiVector.hpp $(srcdir)/Tpetra_Operator.hpp \
-	$(srcdir)/Tpetra_MpiPlatform.hpp
+	$(srcdir)/Tpetra_VectorData.hpp $(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
+	$(srcdir)/Tpetra_MultiVector.hpp \
+	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
+	$(srcdir)/Tpetra_MultiVectorData.hpp \
+	$(srcdir)/Tpetra_Operator.hpp $(srcdir)/Tpetra_MpiPlatform.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -272,6 +272,7 @@ top_srcdir = @top_srcdir@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 CORE_H = \
+	$(srcdir)/Tpetra_DefaultPlatform.hpp \
 	$(srcdir)/Tpetra_DistObject.hpp \
 	$(srcdir)/Tpetra_Platform.hpp \
 	$(srcdir)/Tpetra_Distributor.hpp \
@@ -282,12 +283,10 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp \
 	$(srcdir)/Tpetra_Version.hpp \
-	$(srcdir)/Tpetra_Util.hpp \
-	$(srcdir)/Tpetra_TBB_TaskScheduler.hpp
+	$(srcdir)/Tpetra_Util.hpp
 
 UTIL = \
-	$(srcdir)/Tpetra_Version.cpp \
-	$(srcdir)/Tpetra_TBB_TaskScheduler.cpp
+	$(srcdir)/Tpetra_Version.cpp
 
 ENUM_H = \
 	$(srcdir)/Tpetra_CombineMode.hpp
@@ -318,10 +317,9 @@ DIST_H = \
 	$(srcdir)/Tpetra_Map.hpp \
 	$(srcdir)/Tpetra_MapDataDecl.hpp \
 	$(srcdir)/Tpetra_MapData.hpp \
+	$(srcdir)/Tpetra_ImportExportData.hpp \
 	$(srcdir)/Tpetra_Import.hpp \
-	$(srcdir)/Tpetra_ImportData.hpp \
-	$(srcdir)/Tpetra_Export.hpp \
-	$(srcdir)/Tpetra_ExportData.hpp
+	$(srcdir)/Tpetra_Export.hpp
 
 DIST = 
 COMP_H = \
@@ -329,10 +327,11 @@ COMP_H = \
 	$(srcdir)/Tpetra_Vector.hpp \
 	$(srcdir)/Tpetra_VectorDataDecl.hpp \
 	$(srcdir)/Tpetra_VectorData.hpp \
-	$(srcdir)/Tpetra_CisMatrix.hpp \
-	$(srcdir)/Tpetra_CisMatrixData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
+	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
+	$(srcdir)/Tpetra_MultiVectorData.hpp \
 	$(srcdir)/Tpetra_Operator.hpp 
 
 COMP = 
@@ -510,7 +509,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_TBB_TaskScheduler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_Version.Po@am__quote@
 
 .cpp.o:
@@ -540,20 +538,6 @@ Tpetra_Version.obj: $(srcdir)/Tpetra_Version.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tpetra_Version.cpp' object='Tpetra_Version.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_Version.obj `if test -f '$(srcdir)/Tpetra_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Tpetra_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tpetra_Version.cpp'; fi`
-
-Tpetra_TBB_TaskScheduler.o: $(srcdir)/Tpetra_TBB_TaskScheduler.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_TBB_TaskScheduler.o -MD -MP -MF $(DEPDIR)/Tpetra_TBB_TaskScheduler.Tpo -c -o Tpetra_TBB_TaskScheduler.o `test -f '$(srcdir)/Tpetra_TBB_TaskScheduler.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_TBB_TaskScheduler.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_TBB_TaskScheduler.Tpo $(DEPDIR)/Tpetra_TBB_TaskScheduler.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tpetra_TBB_TaskScheduler.cpp' object='Tpetra_TBB_TaskScheduler.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_TBB_TaskScheduler.o `test -f '$(srcdir)/Tpetra_TBB_TaskScheduler.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_TBB_TaskScheduler.cpp
-
-Tpetra_TBB_TaskScheduler.obj: $(srcdir)/Tpetra_TBB_TaskScheduler.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_TBB_TaskScheduler.obj -MD -MP -MF $(DEPDIR)/Tpetra_TBB_TaskScheduler.Tpo -c -o Tpetra_TBB_TaskScheduler.obj `if test -f '$(srcdir)/Tpetra_TBB_TaskScheduler.cpp'; then $(CYGPATH_W) '$(srcdir)/Tpetra_TBB_TaskScheduler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tpetra_TBB_TaskScheduler.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_TBB_TaskScheduler.Tpo $(DEPDIR)/Tpetra_TBB_TaskScheduler.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tpetra_TBB_TaskScheduler.cpp' object='Tpetra_TBB_TaskScheduler.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_TBB_TaskScheduler.obj `if test -f '$(srcdir)/Tpetra_TBB_TaskScheduler.cpp'; then $(CYGPATH_W) '$(srcdir)/Tpetra_TBB_TaskScheduler.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tpetra_TBB_TaskScheduler.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

@@ -30,12 +30,14 @@
 #define TPETRA_DISTOBJECT_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_RCP.hpp>
-#include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
+#include "Tpetra_Distributor.hpp"
+
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
@@ -44,7 +46,7 @@ namespace Tpetra {
 
   /*! The DistObject is a base class for all Tpetra distributed global objects.  It provides the basic
       mechanisms and interface specifications for importing and exporting operations using Tpetra::Import and
-    Tpetra::Export objects.
+      Tpetra::Export objects.
     
     <b> Distributed Global vs. Replicated Local.</b>
     
@@ -59,268 +61,95 @@ namespace Tpetra {
     functions produce small dense matrices that are required by all images.  
     Replicated local objects handle these types of situation.
     </ul>
-
-    DistObject error codes (positive for non-fatal, negative for fatal):
-    <ol>
-    <li> -1  importer's target ElementSpace does not match my ElementSpace
-    <li> -2  importer's source ElementSpace does not match sourceObj's ElementSpace
-    <li> -99 Internal DistObject error. Contact developer.
-    </ol>
-    
   */
 
-  template<typename OrdinalType, typename ScalarType>
-  class DistObject: public Teuchos::Object {
+  template<typename Ordinal, typename Scalar>
+  class DistObject : public Teuchos::Object {
 
   public:
 
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! constructor
-    DistObject(const ElementSpace<OrdinalType>& elementspace, 
-           Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm)
-      : Teuchos::Object("Tpetra::DistObject")
-      , ElementSpace_(elementspace)
-      , Comm_(comm)
-      , imports_()
-      , exports_()
-      , sizes_()
-    {}
+    DistObject(const Map<Ordinal>& map, Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm);
 
     //! constructor, taking label
-    DistObject(const ElementSpace<OrdinalType>& elementspace, 
-           Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm,
-           const std::string & label)
-      : Teuchos::Object(label.c_str())
-      , ElementSpace_(elementspace)
-      , Comm_(comm)
-      , imports_()
-      , exports_()
-      , sizes_()
-    {}
+    DistObject(const Map<Ordinal>& map, 
+           Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm,
+           const std::string & Label);
 
     //! copy constructor
-    DistObject(const DistObject<OrdinalType, ScalarType>& DistObject)
-      : Teuchos::Object(DistObject.label())
-      , ElementSpace_(DistObject.ElementSpace_)
-      , Comm_(DistObject.Comm_)
-      , imports_(DistObject.imports_)
-      , exports_(DistObject.exports_)
-      , sizes_(DistObject.sizes_)
-    {}
+    DistObject(const DistObject<Ordinal, Scalar>& source);
 
     //! destructor
-    virtual ~DistObject() {}
+    virtual ~DistObject();
 
     //@}
 
-    //@{ \name Import/Export Methods
+    //! @name Import/Export Methods
+    //@{ 
 
     //! Import
-    int doImport(DistObject<OrdinalType, ScalarType> const& sourceObj, 
-           Import<OrdinalType> const& importer, CombineMode CM) 
-    {
-      // throw exception -1 if my ElementSpace != importer.getTargetSpace()
-      if(elementspace() != importer.getTargetSpace())
-        throw reportError("Target ElementSpaces don't match", -1);
-      // throw exception -2 if sourceObj's ElementSpace != importer.getSourceSpace()
-      if(sourceObj.elementspace() != importer.getSourceSpace())
-        throw reportError("Source ElementSpaces don't match", -2);
-
-      // copy variables from importer
-      OrdinalType numSameIDs = importer.getNumSameIDs();
-      OrdinalType numPermuteIDs = importer.getNumPermuteIDs();
-      OrdinalType numRemoteIDs = importer.getNumRemoteIDs();
-      OrdinalType numExportIDs = importer.getNumExportIDs();
-      std::vector<OrdinalType> const& exportLIDs = importer.getExportLIDs();
-      std::vector<OrdinalType> const& remoteLIDs = importer.getRemoteLIDs();
-      std::vector<OrdinalType> const& permuteToLIDs = importer.getPermuteToLIDs();
-      std::vector<OrdinalType> const& permuteFromLIDs = importer.getPermuteFromLIDs();
-
-      // call doTransfer
-      doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-             permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-             exports_, imports_, importer.getDistributor(), false);
-
-      return(0);
-    }
+    void doImport(const DistObject<Ordinal, Scalar> & source, 
+                  const Import<Ordinal> & importer, CombineMode CM);
 
     //! Export
-    int doExport(DistObject<OrdinalType, ScalarType> const& sourceObj, 
-           Export<OrdinalType> const& exporter, CombineMode CM) 
-    {
-      // throw exception -1 if my ElementSpace != exporter.getTargetSpace()
-      if(elementspace() != exporter.getTargetSpace())
-        throw reportError("Target ElementSpaces don't match", -1);
-      // throw exception -2 if sourceObj's ElementSpace != exporter.getSourceSpace()
-      if(sourceObj.elementspace() != exporter.getSourceSpace())
-        throw reportError("Source ElementSpaces don't match", -2);
-
-      // copy variables from exporter
-      OrdinalType numSameIDs = exporter.getNumSameIDs();
-      OrdinalType numPermuteIDs = exporter.getNumPermuteIDs();
-      OrdinalType numRemoteIDs = exporter.getNumRemoteIDs();
-      OrdinalType numExportIDs = exporter.getNumExportIDs();
-      std::vector<OrdinalType> const& exportLIDs = exporter.getExportLIDs();
-      std::vector<OrdinalType> const& remoteLIDs = exporter.getRemoteLIDs();
-      std::vector<OrdinalType> const& permuteToLIDs = exporter.getPermuteToLIDs();
-      std::vector<OrdinalType> const& permuteFromLIDs = exporter.getPermuteFromLIDs();
-
-      // call doTransfer
-      doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-             permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-             exports_, imports_, exporter.getDistributor(), false);
-
-      return(0);
-    }
+    void doExport(const DistObject<Ordinal, Scalar> & dest, 
+                  const Export<Ordinal> & exporter, CombineMode CM);
 
     //! Import (using an Exporter)
-    int doImport(DistObject<OrdinalType, ScalarType> const& sourceObj,
-           Export<OrdinalType> const& exporter, CombineMode CM)
-    {
-      // throw exception -1 if my ElementSpace != exporter.getSourceSpace()
-      if(elementspace() != exporter.getSourceSpace())
-        throw reportError("Target ElementSpaces don't match", -1);
-      // throw exception -2 if sourceObj's ElementSpace != exporter.getTargetSpace()
-      if(sourceObj.elementspace() != exporter.getTargetSpace())
-        throw reportError("Source ElementSpaces don't match", -2);
-
-      // copy variables from exporter
-      // note that some of them are swapped
-      OrdinalType numSameIDs = exporter.getNumSameIDs();
-      OrdinalType numPermuteIDs = exporter.getNumPermuteIDs();
-      OrdinalType numRemoteIDs = exporter.getNumExportIDs();
-      OrdinalType numExportIDs = exporter.getNumRemoteIDs();
-      std::vector<OrdinalType> const& exportLIDs = exporter.getRemoteLIDs();
-      std::vector<OrdinalType> const& remoteLIDs = exporter.getExportLIDs();
-      std::vector<OrdinalType> const& permuteToLIDs = exporter.getPermuteFromLIDs();
-      std::vector<OrdinalType> const& permuteFromLIDs = exporter.getPermuteToLIDs();
-
-      // call doTransfer
-      doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-             permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-             imports_, exports_, exporter.getDistributor(), true);
-
-      return(0);
-    }
+    void doImport(const DistObject<Ordinal, Scalar> & source,
+                  const Export<Ordinal> & exporter, CombineMode CM);
 
     //! Export (using an Importer)
-    int doExport(DistObject<OrdinalType, ScalarType> const& sourceObj,
-           Import<OrdinalType> const& importer, CombineMode CM)
-    {
-      // throw exception -1 if my ElementSpace != importer.getSourceSpace()
-      if(elementspace() != importer.getSourceSpace())
-        throw reportError("Target ElementSpaces don't match", -1);
-      // throw exception -2 if sourceObj's ElementSpace != importer.getTargetSpace()
-      if(sourceObj.elementspace() != importer.getTargetSpace())
-        throw reportError("Source ElementSpaces don't match", -2);
-
-      // copy variables from importer
-      // note that some of them are swapped
-      OrdinalType numSameIDs = importer.getNumSameIDs();
-      OrdinalType numPermuteIDs = importer.getNumPermuteIDs();
-      OrdinalType numRemoteIDs = importer.getNumExportIDs();
-      OrdinalType numExportIDs = importer.getNumRemoteIDs();
-      std::vector<OrdinalType> const& exportLIDs = importer.getRemoteLIDs();
-      std::vector<OrdinalType> const& remoteLIDs = importer.getExportLIDs();
-      std::vector<OrdinalType> const& permuteToLIDs = importer.getPermuteFromLIDs();
-      std::vector<OrdinalType> const& permuteFromLIDs = importer.getPermuteToLIDs();
-
-      // call doTransfer
-      doTransfer(sourceObj, CM, numSameIDs, numPermuteIDs, numRemoteIDs, numExportIDs,
-             permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-             imports_, exports_, importer.getDistributor(), true);
-
-      return(0);
-    }
+    void doExport(const DistObject<Ordinal, Scalar> & dest,
+                  const Import<Ordinal> & importer, CombineMode CM);
 
     //@}
 
-    //@{ \name I/O methods
-
-    //! print method
-    virtual void print(ostream& os) const {
-      // ...
-    }
-
-    //@}
-
-    //@{ \name Attribute Accessor Methods
+    //! @name Attribute Accessor Methods
+    //@{ 
 
     //! Accessor for whether or not this is a global object
-    bool isGlobal() const {
-      return(ElementSpace_.isGlobal());
-    }
+    inline bool isDistributed() const;
 
-    //! Access function for the Tpetra::ElementSpace this DistObject was constructed with.
-    ElementSpace<OrdinalType> const& elementspace() const {
-      return(ElementSpace_);
-    }
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    inline const Map<Ordinal> & getMap() const;
 
     //@}
 
+    //! @name I/O methods
+    //@{ 
+
+    //! Print method.
+
+    void print(std::ostream &os) const;
+
+    //@} 
+
   protected:
- 
-    //! Perform actual transfer (redistribution) of data across memory images.
-    virtual int doTransfer(DistObject<OrdinalType, ScalarType> const& sourceObj,
-                 CombineMode const CM,
-                 OrdinalType const numSameIDs,
-                 OrdinalType const numPermuteIDs,
-                 OrdinalType const numRemoteIDs,
-                 OrdinalType const numExportIDs,
-                 std::vector<OrdinalType> const& permuteToLIDs,
-                 std::vector<OrdinalType> const& permuteFromLIDs,
-                 std::vector<OrdinalType> const& remoteLIDs,
-                 std::vector<OrdinalType> const& exportLIDs,
-                 std::vector<ScalarType>& exports,
-                 std::vector<ScalarType>& imports,
-                 Distributor<OrdinalType> const& distor,
-                 bool doReverse) 
-    {
-      OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 
-      checkSizes(sourceObj);
-
-      if(numSameIDs + numPermuteIDs > zero)
-        copyAndPermute(sourceObj, numSameIDs, numPermuteIDs, permuteToLIDs, permuteFromLIDs);
-
-      // we don't have a "Zero" CombineMode like Epetra does, so we don't have to check for that
-
-      OrdinalType packetSize = zero; // dummy value
-      bool varSizes = false;
-      if((!sizes_.empty()) && (numExportIDs > zero))
-        sizes_.resize(numExportIDs);
-      packAndPrepare(sourceObj, numExportIDs, exportLIDs, exports, packetSize, distor);
-
-      if((isGlobal() && doReverse) || (sourceObj.elementspace().isGlobal() && !doReverse)) {
-        // call one of the doPostsAndWaits functions
-        if(doReverse) {
-          if(varSizes)
-            throw reportError("var-sized doReversePostsAndWaits not implemented yet", -99);
-          else
-            Comm_->doReversePostsAndWaits(distor, exports, packetSize, imports);
-        }
-        else {
-          if(varSizes)
-            throw reportError("var-sized doPostsAndWaits not implemented yet", -99);
-          else
-            Comm_->doPostsAndWaits(distor, exports, packetSize, imports);
-        }
-        unpackAndCombine(numRemoteIDs, remoteLIDs, imports, distor, CM);
-      }
-
-      return(0);
-    }
+    //! Perform transfer (redistribution) of data across memory images.
+    virtual void doTransfer(const DistObject<Ordinal,Scalar> &source,
+                            CombineMode CM,
+                            Ordinal numSameIDs,
+                            const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+                            const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs,
+                            const Teuchos::ArrayView<const Ordinal> &remoteLIDs,
+                            const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+                            Distributor<Ordinal> &distor,
+                            bool doReverse);
 
     // The following four methods must be implemented by the derived class
 
     //! Allows the source and target (\e this) objects to be compared for compatibility.
-    /*! Return true if they are compatible, return false if they aren't. */ 
-    virtual bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) = 0;
+    /*! Return true if they are compatible, return false if they aren't. Also return the number of Scalar variables representing an entry. */ 
+    virtual bool checkSizes(const DistObject<Ordinal, Scalar> & source, Ordinal &packetSize) = 0;
 
     //! Perform copies and permutations that are local to this image.
     /*!
-      \param sourceObj In
+      \param source In
              On entry, the DistObject that we are importing from.
       \param numSameIDs In
              On entry, the number of elements that are the same on the source and dest objects.
@@ -335,66 +164,199 @@ namespace Tpetra {
              On entry, contains a list of the elements that are permuted. (Listed by their LID in the
          source DistObject.)
     */
-    virtual int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
-                   OrdinalType const numSameIDs,
-                   OrdinalType const numPermuteIDs,
-                   std::vector<OrdinalType> const& permuteToLIDs,
-                   std::vector<OrdinalType> const& permuteFromLIDs) = 0;
+    virtual void copyAndPermute(const DistObject<Ordinal, Scalar> & source,
+                                      Ordinal numSameIDs,
+                                const Teuchos::ArrayView<const Ordinal> &permuteToLIDs,
+                                const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs) = 0;
 
     //! Perform any packing or preparation required for communication.
     /*!
-      \param sourceObj In
+      \param source In
              On entry, the DistObject that we are importing from.
-      \param numExportIDs In
-             On entry, the number of elements we will be sending to other images.
       \param exportLIDs In
-             On entry, a list of the elements we will be sending to other images.
-         (Listed by their LID in the source DistObject.)
+             On entry, a list of the entries we will be sending to other images.
+             (Listed by their LID in the source DistObject.)
       \param exports Out
              On exit, buffer for data we will be sending out.
-      \param packetSize Out
-             On exit, will contain the number of ScalarType variables used to pack
-         a single element.
       \param distor In
              On entry, contains the Distributor object we are using.         
     */
-    virtual int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
-                   OrdinalType const numExportIDs,
-                   std::vector<OrdinalType> const& exportLIDs,
-                   std::vector<ScalarType>& exports,
-                   OrdinalType& packetSize,
-                   Distributor<OrdinalType> const& distor) = 0;
-  
+    virtual void packAndPrepare(const DistObject<Ordinal,Scalar> & source,
+                                const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+                                const Teuchos::ArrayView<Scalar> &exports,
+                                Distributor<Ordinal> &distor) = 0;
+
     //! Perform any unpacking and combining after communication.
     /*!
-      \param numImportIDs In
-             The number of elements we received from other images.
       \param importLIDs In
-             On entry, a list of the elements we received from other images.
-         (Listed by their LID in the target DistObject.)
+             On entry, a list of the entries we received from other images.
+             (Listed by their LID in the target DistObject.)
       \param imports In
-             Buffer for data we received.
+             Buffer containing data we received.
       \param distor In
              The Distributor object we are using.
       \param CM In
-             The Tpetra::CombineMode to use when combining the imported
-         entries with existing entries.
+             The Tpetra::CombineMode to use when combining the imported entries with existing entries.
     */
-    virtual int unpackAndCombine(OrdinalType const numImportIDs,
-                   std::vector<OrdinalType> const& importLIDs,
-                   std::vector<ScalarType> const& imports,
-                   Distributor<OrdinalType> const& distor,
-                   CombineMode const CM) = 0;
+    virtual void unpackAndCombine(const Teuchos::ArrayView<const Ordinal> &importLIDs,
+                                  const Teuchos::ArrayView<const Scalar> &imports,
+                                  Distributor<Ordinal> &distor,
+                                  CombineMode CM) = 0;
 
   private:
-    
-    ElementSpace<OrdinalType> const ElementSpace_;
-    Teuchos::RCP< Teuchos::Comm<OrdinalType> > Comm_;
-    std::vector<ScalarType> imports_;
-    std::vector<ScalarType> exports_;
-    std::vector<OrdinalType> sizes_;
+
+    const Map<Ordinal> map_;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm_;
+    // buffers into which packed data is imported
+    Teuchos::Array<Scalar> imports_;
+    // buffers from which packed data is exported
+    Teuchos::Array<Scalar> exports_;
 
   }; // class DistObject
+
+  template <typename Ordinal, typename Scalar>
+  DistObject<Ordinal,Scalar>::DistObject(const Map<Ordinal>& map, Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm)
+  : Teuchos::Object("Tpetra::DistObject")
+  , map_(map)
+  , Comm_(comm)
+  {}
+
+  template <typename Ordinal, typename Scalar>
+  DistObject<Ordinal,Scalar>::DistObject(const Map<Ordinal>& map, 
+      Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm, const std::string & Label)
+  : Teuchos::Object(Label.c_str())
+  , map_(map)
+  , Comm_(comm)
+  {}
+
+  template <typename Ordinal, typename Scalar>
+  DistObject<Ordinal,Scalar>::DistObject(const DistObject<Ordinal, Scalar>& source)
+  : Teuchos::Object(source.label())
+  , map_(source.map_)
+  , Comm_(source.Comm_)
+  {}
+
+  template <typename Ordinal, typename Scalar>
+  DistObject<Ordinal,Scalar>::~DistObject() 
+  {}
+
+  template <typename Ordinal, typename Scalar>
+  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source, 
+                                            const Import<Ordinal> & importer, CombineMode CM) 
+  {
+    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    Ordinal numSameIDs = importer.getNumSameIDs();
+    const Teuchos::ArrayView<const Ordinal> exportLIDs      = importer.getExportLIDs();
+    const Teuchos::ArrayView<const Ordinal> remoteLIDs      = importer.getRemoteLIDs();
+    const Teuchos::ArrayView<const Ordinal> permuteToLIDs   = importer.getPermuteToLIDs();
+    const Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteFromLIDs();
+    this->doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+                     importer.getDistributor(), false);
+  }
+
+  template <typename Ordinal, typename Scalar>
+  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & dest, 
+                                            const Export<Ordinal> & exporter, CombineMode CM) 
+  {
+    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( dest.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    Ordinal numSameIDs = exporter.getNumSameIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs      = exporter.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs      = exporter.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs   = exporter.getPermuteToLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteFromLIDs();
+    doTransfer(dest, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+               exporter.getDistributor(), false);
+  }
+
+  template <typename Ordinal, typename Scalar>
+  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source,
+                                            const Export<Ordinal> & exporter, CombineMode CM)
+  {
+    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    Ordinal numSameIDs = exporter.getNumSameIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs      = exporter.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs      = exporter.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs   = exporter.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteToLIDs();
+    doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+               exporter.getDistributor(), true);
+  }
+
+  template <typename Ordinal, typename Scalar>
+  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & dest,
+                                            const Import<Ordinal> & importer, CombineMode CM)
+  {
+    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( dest.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    Ordinal numSameIDs = importer.getNumSameIDs();
+    Teuchos::ArrayView<const Ordinal> exportLIDs      = importer.getRemoteLIDs();
+    Teuchos::ArrayView<const Ordinal> remoteLIDs      = importer.getExportLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteToLIDs   = importer.getPermuteFromLIDs();
+    Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteToLIDs();
+    doTransfer(dest, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+               importer.getDistributor(), true);
+  }
+
+  template <typename Ordinal, typename Scalar>
+  bool DistObject<Ordinal,Scalar>::isDistributed() const 
+  {
+    return map_.isDistributed();
+  }
+
+  template <typename Ordinal, typename Scalar>
+  const Map<Ordinal> & DistObject<Ordinal,Scalar>::getMap() const 
+  {
+    return map_;
+  }
+
+  template <typename Ordinal, typename Scalar>
+  void DistObject<Ordinal,Scalar>::doTransfer(
+      const DistObject<Ordinal, Scalar> & source,
+      CombineMode CM,
+      Ordinal numSameIDs, 
+      const Teuchos::ArrayView<const Ordinal> &permuteToLIDs, 
+      const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs,
+      const Teuchos::ArrayView<const Ordinal> &remoteLIDs,    
+      const Teuchos::ArrayView<const Ordinal> &exportLIDs,
+      Distributor<Ordinal> &distor, bool doReverse) 
+  {
+    Ordinal packetSize;
+    TEST_FOR_EXCEPTION( checkSizes(source,packetSize) == false, std::runtime_error, 
+        "Tpetra::DistObject::doTransfer(): checkSizes() indicates that DistOjbects are not size-compatible.");
+    Ordinal sbufLen = exportLIDs.size()*packetSize;
+    Ordinal rbufLen = remoteLIDs.size()*packetSize;
+    exports_.resize(sbufLen);
+    imports_.resize(rbufLen);
+    if (numSameIDs + permuteToLIDs.size()) {
+      copyAndPermute(source,numSameIDs,permuteToLIDs,permuteFromLIDs);
+    }
+    packAndPrepare(source,exportLIDs,exports_(),distor);
+    if ((isDistributed() && doReverse) || (source.isDistributed() && !doReverse)) 
+    {
+      // call one of the doPostsAndWaits functions
+      if (doReverse) {
+        distor.doReversePostsAndWaits(exports_().getConst(),packetSize,imports_());
+      }
+      else {
+        distor.doPostsAndWaits(exports_().getConst(),packetSize,imports_());
+      }
+      unpackAndCombine(remoteLIDs,imports_(),distor,CM);
+    }
+  }
+
+  template <typename Ordinal, typename Scalar>
+  void DistObject<Ordinal,Scalar>::print(std::ostream &os) const
+  {
+    using std::endl;
+    os << "Tpetra::DistObject" << endl
+       << " export buffer size: " << exports_.size() << endl
+       << " import buffer size: " << imports_.size() << endl
+       << "Map:" << endl
+       << map_;
+  }
 
 } // namespace Tpetra
 

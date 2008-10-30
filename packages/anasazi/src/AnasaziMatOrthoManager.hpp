@@ -348,10 +348,10 @@ namespace Anasazi {
         OPT::Apply(*_Op,X,*R);
         _OpCounter += MVT::GetNumberVecs(X);
         P = R;
-        Q = Teuchos::rcp( &Y, false );
+        Q = Teuchos::rcpFromRef(Y);
       }
       else {
-        P = Teuchos::rcp( &X, false );
+        P = Teuchos::rcpFromRef(X);
         R = MVT::Clone(Y,MVT::GetNumberVecs(Y));
         OPT::Apply(*_Op,Y,*R);
         _OpCounter += MVT::GetNumberVecs(Y);
@@ -359,8 +359,8 @@ namespace Anasazi {
       }
     }
     else {
-      P = Teuchos::rcp( &X, false );
-      Q = Teuchos::rcp( &Y, false );
+      P = Teuchos::rcpFromRef(X);
+      Q = Teuchos::rcpFromRef(Y);
     }
 
     MVT::MvTransMv(SCT::one(),*P,*Q,Z);
@@ -370,6 +370,7 @@ namespace Anasazi {
   void MatOrthoManager<ScalarType,MV,OP>::innerProdMat( 
       const MV& X, const MV& Y, Teuchos::SerialDenseMatrix<int,ScalarType>& Z, Teuchos::RCP<const MV> MX, Teuchos::RCP<const MV> MY) const 
   {
+    (void)MX;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef MultiVecTraits<ScalarType,MV>     MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
@@ -416,7 +417,7 @@ namespace Anasazi {
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
     if (!_hasOp) {
-      MX = Teuchos::rcp(&X,false);
+      MX = Teuchos::rcpFromRef(X);
     }
     else if (MX == Teuchos::null) {
       Teuchos::RCP<MV> R = MVT::Clone(X,MVT::GetNumberVecs(X));

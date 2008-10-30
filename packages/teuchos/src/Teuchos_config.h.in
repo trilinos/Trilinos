@@ -116,6 +116,9 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
+/* Define to 1 if you have the <numeric> header file. */
+#undef HAVE_NUMERIC
+
 /* define if the compiler supports numeric_limits<> */
 #undef HAVE_NUMERIC_LIMITS
 

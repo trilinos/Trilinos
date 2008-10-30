@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(tpetra, 1.1d, maherou@sandia.gov)
+AC_INIT(tpetra, 1.2, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -242,10 +242,10 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_tpetra_examples" != "Xno")
 
 # Check to see if we should build the EpetraTpetraProfile example. This should only be done if
 # both Epetra and TriUtils are enabled.
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, epetra, EPETRA, HAVE_EPETRA, yes, 
-[Enable examples that require Epetra.], 
-[Enable examples that require Epetra.  Can be overridden with --disable-tpetra-epetra.])
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, triutils, TRIUTILS, HAVE_TRIUTILS, yes, 
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, epetra, EPETRA, HAVE_EPETRA, yes, 
+#[Enable examples that require Epetra.], 
+#[Enable examples that require Epetra.  Can be overridden with --disable-tpetra-epetra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, triutils, TPETRA_TRIUTILS, ENABLE_TPETRA_TRIUTILS, yes, 
 [Enable examples that require Triutils.],
 [Enable examples that require Triutils.  Can be overridden with --disable-tpetra-triutils.])
 AM_CONDITIONAL(BUILD_PROFILE_EXAMPLE, test "X$ac_cv_use_epetra" != "Xno" && test "X$ac_cv_use_triutils" != "Xno")
@@ -324,25 +324,26 @@ AC_SUBST(ac_aux_dir)
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
 AC_CONFIG_FILES([
-		Makefile 
-		Makefile.export.tpetra
-		src/Makefile
-		example/Makefile
-		test/Makefile
-		test/Platform/Makefile
-		test/Distributor/Makefile
+        Makefile 
+        Makefile.export.tpetra
+        src/Makefile
+        example/Makefile
+        test/Makefile
+        test/Platform/Makefile
+        test/Distributor/Makefile
         test/Map/Makefile
-		test/Directory/Makefile
-		])
+        test/Directory/Makefile
+        test/ImportExport/Makefile
+        test/MultiVector/Makefile
+        test/CrsMatrix/Makefile
+        ])
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile
 # example/TpetraOPs/Makefile
-# test/ImportExport/Makefile
-# test/BlockElementSpace/Makefile
-# test/Vector/Makefile
-# test/CisMatrix/Makefile
-# test/DistObject/Makefile
 # test/BasicPerfTest/Makefile
+# test/DistObject/Makefile
+# test/CrsMatrix/Makefile
+# test/Vector/Makefile
 
 AC_OUTPUT()
 

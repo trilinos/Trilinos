@@ -31,10 +31,10 @@
 all-local:
 
 #if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Distributor # Directory Map ImportExport BlockElementSpace Vector CisMatrix DistObject BasicPerfTest
+STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector CrsMatrix # BasicPerfTest 
 #endif
 
 SUBDIRS = $(STANDARD_SUBDIRS)
 
-EXTRA_DIST = tpetra_test_util.hpp
+EXTRA_DIST =
 

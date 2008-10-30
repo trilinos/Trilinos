@@ -255,7 +255,7 @@ inline
 ParameterEntry::ParameterEntry(
   T value_in,
   bool isDefault_in,
-  bool isList_in, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
+  bool /*isList_in*/, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
   const std::string &docString_in,
   RCP<const ParameterEntryValidator> const& validator_in
   )
@@ -291,7 +291,7 @@ void ParameterEntry::setValue(
 
 template<typename T>
 inline
-T& ParameterEntry::getValue(T *ptr) const
+T& ParameterEntry::getValue(T * /*ptr*/) const
 {
   isUsed_ = true;
   return const_cast<T&>(Teuchos::any_cast<T>( val_ ));

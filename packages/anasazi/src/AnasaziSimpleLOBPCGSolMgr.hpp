@@ -368,7 +368,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // sort the eigenvalues and permute the eigenvectors appropriately
   if (numfound > 0) {
     std::vector<int> order(sol.numVecs);
-    sorter->sort(vals,Teuchos::rcp(&order,false),sol.numVecs);
+    sorter->sort(vals,Teuchos::rcpFromRef(order),sol.numVecs);
     // store the values in the Eigensolution
     for (int i=0; i<sol.numVecs; i++) {
       sol.Evals[i].realpart = vals[i];

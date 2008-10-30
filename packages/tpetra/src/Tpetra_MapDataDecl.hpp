@@ -34,30 +34,44 @@
 
 namespace Tpetra {
 
-	//! Tpetra::MapData:  The data class for Tpetra::Map
-  /*! 
+  /* Don't document this class
+   * 
    * Like all data classes, Tpetra::MapData provides no functionality. It's sole purpose is to store 
    * the data associated with a Tpetra::Map object.
    */
-  template <typename OrdinalType>
+  template <typename Ordinal>
   class MapData : public Teuchos::Object {
-    friend class Map<OrdinalType>;
+    friend class Map<Ordinal>;
 
   public:
     /*! \brief Default constructor
      */
-    MapData(OrdinalType indexBase, 
-            OrdinalType numGlobalEntries,
-            OrdinalType numMyEntries,
-            OrdinalType minAllGID,
-            OrdinalType maxAllGID,
-            OrdinalType minMyGID,
-            OrdinalType maxMyGID,
-            const std::vector<OrdinalType> & lgMap,
-            const std::map<OrdinalType, OrdinalType> & glMap,
+    MapData(Ordinal indexBase, 
+            Ordinal numGlobalEntries,
+            Ordinal numMyEntries,
+            Ordinal minAllGID,
+            Ordinal maxAllGID,
+            Ordinal minMyGID,
+            Ordinal maxMyGID,
+            const Teuchos::ArrayRCP<Ordinal> &lgMap,
+            const std::map<Ordinal,Ordinal> &glMap,
             bool contiguous,
-            Teuchos::RCP< Platform<OrdinalType> > platform,
-            Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm);
+            Teuchos::RCP< Platform<Ordinal> > platform,
+            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm);
+
+  MapData(Ordinal indexBase, 
+          Ordinal numGlobalEntries,
+          Ordinal numMyEntries,
+          Ordinal minAllGID,
+          Ordinal maxAllGID,
+          Ordinal minMyGID,
+          Ordinal maxMyGID,
+          const Teuchos::ArrayRCP<Ordinal> &lgMap,
+          const std::map<Ordinal,Ordinal>  &glMap,
+          bool contiguous,
+          Teuchos::RCP< Platform<Ordinal> > platform,
+          Teuchos::RCP< Teuchos::Comm<Ordinal> > comm,
+          bool isLocal);
 
 		//! Destructor.
 		~MapData();
@@ -65,28 +79,25 @@ namespace Tpetra {
   private:
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
-    Teuchos::RCP< const Platform<OrdinalType> > platform_;
-		Teuchos::RCP< Teuchos::Comm<OrdinalType> > comm_;
-		const OrdinalType numGlobalEntries_;
-		const OrdinalType indexBase_;
-		const OrdinalType numMyEntries_;
-    const OrdinalType minMyGID_;
-    const OrdinalType maxMyGID_;
-    const OrdinalType minAllGID_;
-    const OrdinalType maxAllGID_;
+    Teuchos::RCP< const Platform<Ordinal> > platform_;
+		Teuchos::RCP< Teuchos::Comm<Ordinal> > comm_;
+		const Ordinal numGlobalEntries_;
+		const Ordinal indexBase_;
+		const Ordinal numMyEntries_;
+    const Ordinal minMyGID_;
+    const Ordinal maxMyGID_;
+    const Ordinal minAllGID_;
+    const Ordinal maxAllGID_;
     const bool contiguous_;
     const bool distributed_;
-    // FINISH: why is lgMap_ const but glMap_ non-const? let's make both const for now, see what breaks
-    // FINISH: it seems that lgMap_ requires only direct access, a std::vector should suffice
-    // const std::map<OrdinalType, OrdinalType> lgMap_;
-    const std::vector<OrdinalType> lgMap_;
-    const std::map<OrdinalType, OrdinalType> glMap_;
-    Teuchos::RCP< Directory<OrdinalType> > directory_;
+    Teuchos::ArrayRCP<Ordinal> lgMap_;
+    std::map<Ordinal, Ordinal> glMap_;
+    Teuchos::RCP< Directory<Ordinal> > directory_;
 
 		//! Copy constructor (declared but not defined, do not use)
-		MapData(MapData<OrdinalType> const& source);
+		MapData(MapData<Ordinal> const& source);
 		//! Assignment operator (declared but not defined, do not use)
-		MapData<OrdinalType>& operator = (MapData<OrdinalType> const& source);
+		MapData<Ordinal>& operator = (MapData<Ordinal> const& source);
 
     bool checkIsDist();
     

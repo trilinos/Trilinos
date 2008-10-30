@@ -29,34 +29,31 @@
 #ifndef TPETRA_VECTORDATA_DECL_HPP
 #define TPETRA_VECTORDATA_DECL_HPP
 
-#include <Teuchos_BLAS.hpp>
-#include <Tpetra_VectorSpace.hpp>
 #include <Teuchos_Object.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 namespace Tpetra {
 
-  template<typename OrdinalType, typename ScalarType>
+  template<typename Ordinal, typename Scalar>
   class VectorData : public Teuchos::Object {
 
-  friend class Vector<OrdinalType, ScalarType>;
+  friend class Vector<Ordinal, Scalar>;
 
   public:
-    VectorData(VectorSpace<OrdinalType, ScalarType> const& VectorSpace, 
-           OrdinalType length, ScalarType seed); 
+    VectorData(const Map<Ordinal> & map, Scalar seed); 
 
     ~VectorData();
 
   protected:
-    Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
-    VectorSpace<OrdinalType, ScalarType> VectorSpace_;
-    std::vector<ScalarType> scalarArray_;
-    ScalarType seed_;
+    Map<Ordinal> map_;
+    Teuchos::ArrayRCP<Scalar> values_;
+    Scalar seed_;
   
   private:
     //! Copy constructor (declared but not defined, do not use)
-    VectorData(VectorData<OrdinalType, ScalarType> const& Source);
+    VectorData(const VectorData<Ordinal,Scalar> &source);
     //! Assignment operator (declared but not defined, do not use)
-    VectorData<OrdinalType, ScalarType>& operator = (VectorData<OrdinalType, ScalarType> const& Source);
+    VectorData<Ordinal,Scalar>& operator=(const VectorData<Ordinal,Scalar> &source);
 
   }; // class VectorData
 

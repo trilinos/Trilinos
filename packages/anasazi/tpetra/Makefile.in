@@ -104,7 +104,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = src test
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -219,8 +219,8 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @SUB_TEST_TRUE@TEST_SUBDIR = test
-@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
-SUBDIRS = # src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = #example
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 all: all-recursive
 
 .SUFFIXES:

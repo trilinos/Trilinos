@@ -600,10 +600,12 @@ namespace Anasazi {
         // Treat error messages
         if (info != 0) {
           std::cerr << std::endl;
-          if (info < 0) 
+          if (info < 0) {
             std::cerr << "Anasazi::SolverUtils::directSolver(): In DHEEV, argument " << -info << " has an illegal value\n";
-          else
+          }
+          else {
             std::cerr << "Anasazi::SolverUtils::directSolver(): In DHEEV, the algorithm failed to converge (" << info << ").\n";
+          }
           std::cerr << std::endl;
           info = -20;
           break;

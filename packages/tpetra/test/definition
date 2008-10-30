@@ -2,28 +2,24 @@
 # FRAMEWORK group
 #
 
-# (FRAMEWORK, INSTALL) {
-#     DIRS = Platform,
-#            Distributor,
-#            Directory,
-#            DistObject,
-#            ElementSpace,
-#            ImportExport,
-#            VectorSpace,
-#            Vector,
-#            CisMatrix;
-#     ARGS = -v;
-#     COMM = SERIAL, MPI;
-# }
-
-(FRAMEWORK, INSTALL) {
-    DIRS = Platform;
-    ARGS = --verbose;
+(FRAMEWORK, INSTALL, TpetraTests) {
+    DIRS = Platform, Distributor, Map, Directory, ImportExport, MultiVector;
+    EXIT-STATUS = STRING-COMPARISON;
+    #ARGS = ;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK, INSTALL) {
-    DIRS = Distributor;
+(FRAMEWORK, INSTALL, TpetraTests) {
+    DIRS = CrsMatrix;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --filedir="$ABS_TOP_SRCDIR/packages/tpetra/test/CrsMatrix/";
+    COMM = SERIAL, MPI;
+}
+
+
+(TpetraInProgress) {
+    DIRS = Vector;
+    EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
 }

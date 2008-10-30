@@ -632,7 +632,7 @@ void ParameterList::updateSubListNames(int depth)
 
 
 void ParameterList::validateEntryExists(
-  const std::string &funcName, const std::string &name_in,
+  const std::string & /*funcName*/, const std::string &name_in,
   const ParameterEntry *entry_in
   ) const
 {

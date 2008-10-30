@@ -84,6 +84,11 @@
 
 
 /** \brief . */
+#define TEST_ARRAY_ELE_INEQUALITY( a, i, val ) \
+   TEUCHOS_TEST_ARRAY_ELE_INEQUALITY( a, i, val, false, out, local_success )
+
+
+/** \brief . */
 #define TEST_COMPARE( v1, comp, v2 ) \
   TEUCHOS_TEST_COMPARE( v1, comp, v2, out, success )
 

@@ -413,12 +413,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   if (fntemplate != "") {
     osp = Teuchos::rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
     if (!*osp) {
-      osp = Teuchos::rcp(&std::cout,false);
+      osp = Teuchos::rcpFromRef(std::cout);
       std::cout << "Anasazi::BlockDavidsonSolMgr::constructor(): Could not open file for write: " << fntemplate << std::endl;
     }
   }
   else {
-    osp = Teuchos::rcp(&std::cout,false);
+    osp = Teuchos::rcpFromRef(std::cout);
   }
   // Output manager
   int verbosity = Anasazi::Errors;
@@ -451,7 +451,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
 #ifdef TEUCHOS_DEBUG
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&printer_->stream(Debug),false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(printer_->stream(Debug)));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::BlockDavidsonSolMgr::solve()\n";
 #endif
@@ -720,7 +720,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // sort the eigenvalues (so that we can order the eigenvectors)
           {
             std::vector<int> order(curdim);
-            sorter->sort(theta,Teuchos::rcp(&order,false),curdim);
+            sorter->sort(theta,Teuchos::rcpFromRef(order),curdim);
             //
             // apply the same ordering to the primitive ritz vectors
             msutils::permuteVectors(order,S);
@@ -780,7 +780,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // prepare new state
           BlockDavidsonState<ScalarType,MV> rstate;
           rstate.curDim = newdim;
-          rstate.KK = Teuchos::rcp( &newKK, false );
+          rstate.KK = Teuchos::rcpFromRef(newKK);
           // 
           // we know that newX = newV*Sr(:,1:bS) = oldV*S(:1:bS) = oldX
           // the restarting preserves the Ritz vectors and residual
@@ -932,7 +932,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             // 
             // sort the eigenvalues (so that we can order the eigenvectors)
             std::vector<int> order(curdim);
-            sorter->sort(theta,Teuchos::rcp(&order,false),curdim);
+            sorter->sort(theta,Teuchos::rcpFromRef(order),curdim);
             //
             // apply the same ordering to the primitive ritz vectors
             msutils::permuteVectors(order,S);
@@ -1149,7 +1149,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             // data is in workspace and will be copied to solver memory
             rstate.V = workMV;
           }
-          rstate.KK = Teuchos::rcp( &newKK, false );
+          rstate.KK = Teuchos::rcpFromRef(newKK);
           //
           // pass new state to the solver
           bd_solver->initialize(rstate);
@@ -1236,7 +1236,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       // sort the eigenvalues and permute the eigenvectors appropriately
       {
         std::vector<int> order(sol.numVecs);
-        sorter->sort(vals,Teuchos::rcp(&order,false),sol.numVecs);
+        sorter->sort(vals,Teuchos::rcpFromRef(order),sol.numVecs);
         // store the values in the Eigensolution
         for (int i=0; i<sol.numVecs; i++) {
           sol.Evals[i].realpart = vals[i];

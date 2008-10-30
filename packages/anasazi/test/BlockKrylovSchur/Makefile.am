@@ -55,6 +55,7 @@ endif
 noinst_PROGRAMS = $(BKS_COMPLEX_TEST) $(BKS_COMPLEX_LAP_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/../MVOPTester/mhd1280a.cua mhd1280a.cua
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 

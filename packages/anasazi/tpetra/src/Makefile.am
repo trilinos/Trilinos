@@ -45,8 +45,7 @@
 CORE_H = \
 	$(srcdir)/AnasaziTpetraAdapter.hpp 
 
-CORE = \
-	$(srcdir)/AnasaziTpetraAdapter.cpp
+CORE = 
 
 #
 #np#  Files which are included in select builds are typically have
@@ -96,7 +95,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # New_Package library specifications
 # ------------------------------------------------------------------------
 #np# replace new_package with the name of the package being autotool'ed here
-ANASAZI_TPETRA_LIB = libanasazitpetra.a
+#ANASAZI_TPETRA_LIB = libanasazitpetra.a
 
 #np# replace new_package with the name of the package being autotool'ed here
 ANASAZI_TPETRA_H = \
@@ -105,9 +104,9 @@ ANASAZI_TPETRA_H = \
 	$(MPI_H) 
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazitpetra_a_SOURCES = \
-	$(CORE) \
-	$(MPI)
+#libanasazitpetra_a_SOURCES = \
+#	$(CORE) \
+#	$(MPI)
 
 #np# replace new_package with the name of the package being autotool'ed here
 #EXTRA_libanasazitpetra_a_SOURCES = \
@@ -125,17 +124,16 @@ libanasazitpetra_a_SOURCES = \
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
 
-if USE_ALTERNATE_AR
+#if USE_ALTERNATE_AR
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazitpetra_a_AR = $(ALTERNATE_AR)
-
-else
+#libanasazitpetra_a_AR = $(ALTERNATE_AR)
+#else
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazitpetra_a_AR = $(AR) cru
+#libanasazitpetra_a_AR = $(AR) cru
 
-endif
+#endif
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
@@ -143,14 +141,14 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazitpetra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+#libanasazitpetra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(ANASAZI_TPETRA_LIB)
+#lib_LIBRARIES = $(ANASAZI_TPETRA_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)

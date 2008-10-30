@@ -239,7 +239,7 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
 # Required: Epetra, Teuchos, Triutils
-# Optional: Ifpack, TSFCore, ML
+# Optional: Ifpack, TSFCore, ML, Tpetra
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
@@ -252,6 +252,9 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ml, BELOS_ML, BUILD_ML, yes, [Build the tests that use ML. Can override with --disable-belos-ml.], [Build the tests that use Ml.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetraext, BELOS_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build tests that use EpetraExt. Can be overridden with --disable-belos-epetraext.], [Build tests that use EpetraExt.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, tpetra, BELOS_TPETRA, BUILD_TPETRA, no, [Build tests that use Tpetra. Can be overridden with --disable-belos-tpetra.], [Build tests that use Tpetra.])
+
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -355,7 +358,12 @@ AC_CONFIG_FILES([
 		test/GCRODR/Makefile
 		test/PCPG/Makefile
 		test/MVOPTester/Makefile
-		])
+		tpetra/Makefile
+		tpetra/src/Makefile
+		tpetra/test/Makefile
+		tpetra/test/MVOPTester/Makefile
+		tpetra/test/BlockCG/Makefile
+        ])
 
 AC_OUTPUT()
 

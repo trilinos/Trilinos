@@ -48,7 +48,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
 #  include <Teuchos_FancyOStream.hpp>
 #endif
 
@@ -557,10 +557,10 @@ namespace Anasazi {
     // X,Y: Bases to orthogonalize against/via.
     //
 
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::ICGSOrthoManager::projectGen(...)\n";
 #endif
@@ -578,7 +578,7 @@ namespace Anasazi {
     std::vector<int> xyc(numxy);
     // short-circuit
     if (numxy == 0 || sc == 0 || sr == 0) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
       *out << "Leaving Anasazi::ICGSOrthoManager::projectGen(...)\n";
 #endif
       return;
@@ -723,7 +723,7 @@ namespace Anasazi {
 
       // produce MS
       if (MS == Teuchos::null) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     *out << "Allocating MS...\n";
 #endif
         MS = MVT::Clone(S,MVT::GetNumberVecs(S));
@@ -736,7 +736,7 @@ namespace Anasazi {
         // allocate and compute missing MX
         for (int i=0; i<numxy; i++) {
           if (MX[i] == Teuchos::null) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
             *out << "Allocating MX[" << i << "]...\n";
 #endif
             Teuchos::RCP<MV> tmpMX = MVT::Clone(*X[i],xyc[i]);
@@ -749,7 +749,7 @@ namespace Anasazi {
     }
     else {
       // Op == I  -->  MS == S 
-      MS = Teuchos::rcp( &S, false );
+      MS = Teuchos::rcpFromRef(S);
       updateMS = 0;
     }
     TEST_FOR_EXCEPTION(updateMS == -1,std::logic_error,
@@ -765,12 +765,12 @@ namespace Anasazi {
     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > YMX(numxy);
     if (isBiortho == false) {
       for (int i=0; i<numxy; i++) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         *out << "Computing YMX[" << i << "] and its Cholesky factorization...\n";
 #endif
         YMX[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xyc[i],xyc[i]) );
         innerProdMat(*Y[i],*X[i],*YMX[i],MY[i],MX[i]);
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         // YMX should be symmetric positive definite
         // the cholesky will check the positive definiteness, but it looks only at the upper half
         // we will check the symmetry by removing the upper half from the lower half, which should 
@@ -796,7 +796,7 @@ namespace Anasazi {
     }
 
     // Compute the initial Op-norms
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     std::vector<MagnitudeType> oldNorms(sc);
     normMat(S,oldNorms,MS);
     *out << "oldNorms = { ";
@@ -813,7 +813,7 @@ namespace Anasazi {
     }
 
     for (int iter=0; iter < numIters_; iter++) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
       *out << "beginning iteration " << iter+1 << "\n";
 #endif
 
@@ -832,7 +832,7 @@ namespace Anasazi {
         }
 
         // Multiply by X[i] and subtract the result in S
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         *out << "Applying projector P_{X[" << i << "],Y[" << i << "]}...\n";
 #endif
         MVT::MvTimesMatAddMv( -ONE, *X[i], Ccur[i], ONE, S );
@@ -842,14 +842,14 @@ namespace Anasazi {
 
         // Update MS as required
         if (updateMS == 1) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
           *out << "Updating MS...\n";
 #endif
           OPT::Apply( *(this->_Op), S, *MS);
           this->_OpCounter += sc;
         }
         else if (updateMS == 2) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
           *out << "Updating MS...\n";
 #endif
           MVT::MvTimesMatAddMv( -ONE, *MX[i], Ccur[i], ONE, *MS );
@@ -857,7 +857,7 @@ namespace Anasazi {
       }
 
       // Compute new Op-norms
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
       std::vector<MagnitudeType> newNorms(sc);
       normMat(S,newNorms,MS);
       *out << "newNorms = { ";
@@ -866,7 +866,7 @@ namespace Anasazi {
 #endif
     }
 
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     *out << "Leaving Anasazi::ICGSOrthoManager::projectGen(...)\n";
 #endif
   }
@@ -903,10 +903,10 @@ namespace Anasazi {
     // X,Y: Bases to orthogonalize against/via.
     //
 
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::ICGSOrthoManager::projectAndNormalizeGen(...)\n";
 #endif
@@ -920,7 +920,7 @@ namespace Anasazi {
     std::vector<int> xyc(numxy);
     // short-circuit
     if (sc == 0 || sr == 0) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
       *out << "Leaving Anasazi::ICGSOrthoManager::projectGen(...)\n";
 #endif
       return 0;
@@ -1066,7 +1066,7 @@ namespace Anasazi {
 
       // produce MS
       if (MS == Teuchos::null) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     *out << "Allocating MS...\n";
 #endif
         MS = MVT::Clone(S,MVT::GetNumberVecs(S));
@@ -1079,7 +1079,7 @@ namespace Anasazi {
         // allocate and compute missing MX
         for (int i=0; i<numxy; i++) {
           if (MX[i] == Teuchos::null) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
             *out << "Allocating MX[" << i << "]...\n";
 #endif
             Teuchos::RCP<MV> tmpMX = MVT::Clone(*X[i],xyc[i]);
@@ -1092,7 +1092,7 @@ namespace Anasazi {
     }
     else {
       // Op == I  -->  MS == S 
-      MS = Teuchos::rcp( &S, false );
+      MS = Teuchos::rcpFromRef(S);
       updateMS = 0;
     }
     TEST_FOR_EXCEPTION(updateMS == -1,std::logic_error,
@@ -1125,7 +1125,7 @@ namespace Anasazi {
       // orthonormalize S, but quit if it is rank deficient
       // we can't let findBasis generated random vectors to complete the basis,
       // because it doesn't know about Q; we will do this ourselves below
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
       *out << "Attempting to find orthonormal basis for X...\n";
 #endif
       rank = findBasis(S,MS,*B,false,curssize);
@@ -1158,7 +1158,7 @@ namespace Anasazi {
 
       if (rank == sc) {
         // we are done
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         *out << "Finished computing basis.\n";
 #endif
         break;
@@ -1183,7 +1183,7 @@ namespace Anasazi {
         numTries--;
 
         // randomize troubled direction
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         *out << "Inserting random vector in X[" << rank << "]. Attempt " << 10-numTries << ".\n";
 #endif
         Teuchos::RCP<MV> curS, curMS;
@@ -1192,7 +1192,7 @@ namespace Anasazi {
         curS  = MVT::CloneView(S,ind);
         MVT::MvRandom(*curS);
         if (this->_hasOp) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
           *out << "Applying operator to random vector.\n";
 #endif
           curMS = MVT::CloneView(*MS,ind);
@@ -1215,7 +1215,7 @@ namespace Anasazi {
     TEST_FOR_EXCEPTION( rank > sc || rank < 0, std::logic_error, 
                         "Anasazi::ICGSOrthoManager::projectAndNormalizeGen(): Debug error in rank variable." );
 
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     *out << "Returning " << rank << " from Anasazi::ICGSOrthoManager::projectAndNormalizeGen(...)\n";
 #endif
 
@@ -1248,10 +1248,10 @@ namespace Anasazi {
     // Op  : Pointer to the operator for the inner product
     //
 
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     // Get a FancyOStream from out_arg or create a new one ...
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::ICGSOrthoManager::findBasis(...)\n";
 #endif
@@ -1323,7 +1323,7 @@ namespace Anasazi {
        * not be stored in B
        */
       for (int numTrials = 0; numTrials < 10; numTrials++) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         *out << "Trial " << numTrials << " for vector " << j << "\n";
 #endif
 
@@ -1336,7 +1336,7 @@ namespace Anasazi {
         //
         Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
         normMat(*Xj,origNorm,MXj);
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         *out << "origNorm = " << origNorm[0] << "\n";
 #endif
 
@@ -1348,7 +1348,7 @@ namespace Anasazi {
 
           // Xj <- Xj - prevX prevX^T MXj   
           //     = Xj - prevX product
-#ifdef TEUCHOS_DEBUG 
+#ifdef ANASAZI_ICGS_DEBUG
           *out << "Orthogonalizing X[" << j << "]...\n";
 #endif
           MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *Xj );
@@ -1358,7 +1358,7 @@ namespace Anasazi {
             // MXj <- Op*Xj_new
             //      = Op*(Xj_old - prevX prevX^T MXj)
             //      = MXj - prevMX product
-#ifdef TEUCHOS_DEBUG 
+#ifdef ANASAZI_ICGS_DEBUG
             *out << "Updating MX[" << j << "]...\n";
 #endif
             MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *MXj );
@@ -1368,14 +1368,14 @@ namespace Anasazi {
           normMat(*Xj,newNorm,MXj);
           MagnitudeType product_norm = product.normOne();
           
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
           *out << "newNorm = " << newNorm[0] << "\n";
           *out << "prodoct_norm = " << product_norm << "\n";
 #endif
 
           // Check if a correction is needed.
           if ( product_norm/newNorm[0] >= tol_ || newNorm[0] < eps_*origNorm[0]) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
             if (product_norm/newNorm[0] >= tol_) {
               *out << "product_norm/newNorm == " << product_norm/newNorm[0] << "... another step of Gram-Schmidt.\n";
             }
@@ -1388,12 +1388,12 @@ namespace Anasazi {
             Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
             innerProdMat(*prevX,*Xj,P2,Teuchos::null,MXj);
             product += P2;
-#ifdef TEUCHOS_DEBUG 
+#ifdef ANASAZI_ICGS_DEBUG
             *out << "Orthogonalizing X[" << j << "]...\n";
 #endif
             MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
             if ((this->_hasOp)) {
-#ifdef TEUCHOS_DEBUG 
+#ifdef ANASAZI_ICGS_DEBUG
               *out << "Updating MX[" << j << "]...\n";
 #endif
               MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
@@ -1401,13 +1401,13 @@ namespace Anasazi {
             // Compute new Op-norms
             normMat(*Xj,newNorm2,MXj);
             product_norm = P2.normOne();
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
             *out << "newNorm2 = " << newNorm2[0] << "\n";
             *out << "product_norm = " << product_norm << "\n";
 #endif
             if ( product_norm/newNorm2[0] >= tol_ || newNorm2[0] < eps_*origNorm[0] ) {
               // we don't do another GS, we just set it to zero.
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
               if (product_norm/newNorm2[0] >= tol_) {
                 *out << "product_norm/newNorm2 == " << product_norm/newNorm2[0] << "... setting vector to zero.\n";
               }
@@ -1420,7 +1420,7 @@ namespace Anasazi {
 #endif
               MVT::MvInit(*Xj,ZERO);
               if ((this->_hasOp)) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
                 *out << "Setting MX[" << j << "] to zero as well.\n";
 #endif
                 MVT::MvInit(*MXj,ZERO);
@@ -1439,14 +1439,14 @@ namespace Anasazi {
         // Check if Xj has any directional information left after the orthogonalization.
         normMat(*Xj,newNorm,MXj);
         if ( newNorm[0] != ZERO && newNorm[0] > SCT::sfmin() ) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
           *out << "Normalizing X[" << j << "], norm(X[" << j << "]) = " << newNorm[0] << "\n";
 #endif
           // Normalize Xj.
           // Xj <- Xj / norm
           MVT::MvScale( *Xj, ONE/newNorm[0]);
           if (this->_hasOp) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
             *out << "Normalizing M*X[" << j << "]...\n";
 #endif
             // Update MXj.
@@ -1463,7 +1463,7 @@ namespace Anasazi {
           break;
         }
         else {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
           *out << "Not normalizing M*X[" << j << "]...\n";
 #endif
           // There was nothing left in Xj after orthogonalizing against previous columns in X.
@@ -1473,12 +1473,12 @@ namespace Anasazi {
 
           if (completeBasis) {
             // Fill it with random information and keep going.
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
             *out << "Inserting random vector in X[" << j << "]...\n";
 #endif
             MVT::MvRandom( *Xj );
             if (this->_hasOp) {
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
               *out << "Updating M*X[" << j << "]...\n";
 #endif
               OPT::Apply( *(this->_Op), *Xj, *MXj );
@@ -1496,7 +1496,7 @@ namespace Anasazi {
       if (rankDef == true) {
         TEST_FOR_EXCEPTION( rankDef && completeBasis, OrthoError, 
                             "Anasazi::ICGSOrthoManager::findBasis(): Unable to complete basis" );
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
         *out << "Returning early, rank " << j << " from Anasazi::ICGSOrthoManager::findBasis(...)\n";
 #endif
         return j;
@@ -1504,7 +1504,7 @@ namespace Anasazi {
 
     } // for (j = 0; j < xc; ++j)
 
-#ifdef TEUCHOS_DEBUG
+#ifdef ANASAZI_ICGS_DEBUG
     *out << "Returning " << xc << " from Anasazi::ICGSOrthoManager::findBasis(...)\n";
 #endif
     return xc;

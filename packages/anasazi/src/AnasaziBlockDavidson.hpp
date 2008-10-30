@@ -1099,7 +1099,7 @@ namespace Anasazi {
         std::vector<int> order(curDim_);
         //
         // sort the first curDim_ values in theta_
-        sm_->sort(theta_, Teuchos::rcp(&order,false), curDim_);   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcpFromRef(order), curDim_);   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);

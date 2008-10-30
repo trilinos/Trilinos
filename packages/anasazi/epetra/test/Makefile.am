@@ -27,7 +27,7 @@
 #@HEADER
 
 if BUILD_ANASAZI_EPETRA
-EPETRA_TEST_SUBDIRS = MVOPTester ModalSolverUtils LOBPCG BlockDavidson BlockKrylovSchur OrthoManager #IRTR
+EPETRA_TEST_SUBDIRS = MVOPTester ModalSolverUtils LOBPCG BlockDavidson BlockKrylovSchur OrthoManager IRTR
 endif
 
 SUBDIRS = $(EPETRA_TEST_SUBDIRS)

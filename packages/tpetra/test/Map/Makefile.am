@@ -27,17 +27,17 @@
 #@HEADER
 
 include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = Map_test
+noinst_PROGRAMS = Map_UnitTests
 
-Map_test_SOURCES = $(srcdir)/cxx_main.cpp
-
-Map_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+Map_UnitTests_SOURCES = \
+  $(srcdir)/Map_UnitTests.cpp \
+  $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+Map_UnitTests_DEPENDENCIES = \
+	$(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
-
-Map_test_CXXFLAGS = $(TPETRA_INCLUDES)
-
-Map_test_LDADD = $(TPETRA_LIBS)
-
+Map_UnitTests_LDADD = $(TPETRA_LIBS)
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)

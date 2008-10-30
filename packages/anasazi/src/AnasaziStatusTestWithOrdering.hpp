@@ -271,7 +271,7 @@ TestStatus StatusTestWithOrdering<ScalarType,MV,OP>::checkStatus( Eigensolver<Sc
 
   // sort all values
   std::vector<int> perm(numallval);
-  sorter_->sort(allvalr,allvali,Teuchos::rcp(&perm,false),numallval);
+  sorter_->sort(allvalr,allvali,Teuchos::rcpFromRef(perm),numallval);
 
   // make the set of passing values: allpass = {cwhch -1 ... -numauxval}
   std::vector<int> allpass(cwhch.size() + numauxval);

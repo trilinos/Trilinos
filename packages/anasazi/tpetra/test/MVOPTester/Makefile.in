@@ -61,7 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = MVOPTester_test$(EXEEXT)
+noinst_PROGRAMS = Tpetra_MVOPTester_test$(EXEEXT)
 subdir = tpetra/test/MVOPTester
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -92,14 +92,17 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_MVOPTester_test_OBJECTS = MVOPTester_test-cxx_main.$(OBJEXT)
-MVOPTester_test_OBJECTS = $(am_MVOPTester_test_OBJECTS)
+am_Tpetra_MVOPTester_test_OBJECTS =  \
+	Tpetra_MVOPTester_test-cxx_main.$(OBJEXT) \
+	Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.$(OBJEXT)
+Tpetra_MVOPTester_test_OBJECTS = $(am_Tpetra_MVOPTester_test_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
-MVOPTester_test_LINK = $(CXXLD) $(MVOPTester_test_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+Tpetra_MVOPTester_test_LINK = $(CXXLD) \
+	$(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -108,8 +111,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(MVOPTester_test_SOURCES)
-DIST_SOURCES = $(MVOPTester_test_SOURCES)
+SOURCES = $(Tpetra_MVOPTester_test_SOURCES)
+DIST_SOURCES = $(Tpetra_MVOPTester_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -236,11 +239,14 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-MVOPTester_test_SOURCES = $(srcdir)/cxx_main.cpp
+Tpetra_MVOPTester_test_SOURCES = \
+  $(srcdir)/cxx_main.cpp \
+  $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-MVOPTester_test_DEPENDENCIES = \
+Tpetra_MVOPTester_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../tpetra/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
@@ -248,12 +254,14 @@ MVOPTester_test_DEPENDENCIES = \
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-MVOPTester_test_CXXFLAGS = -I$(top_srcdir)/src
+Tpetra_MVOPTester_test_CXXFLAGS = \
+	-I$(top_srcdir)/tpetra/src \
+	-I$(top_srcdir)/src
+
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-MVOPTester_test_LDADD = $(EXPORT_LIBS) 
-EXTRA_DIST = 
+Tpetra_MVOPTester_test_LDADD = $(EXPORT_LIBS) 
 all: all-am
 
 .SUFFIXES:
@@ -290,9 +298,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-MVOPTester_test$(EXEEXT): $(MVOPTester_test_OBJECTS) $(MVOPTester_test_DEPENDENCIES) 
-	@rm -f MVOPTester_test$(EXEEXT)
-	$(MVOPTester_test_LINK) $(MVOPTester_test_OBJECTS) $(MVOPTester_test_LDADD) $(LIBS)
+Tpetra_MVOPTester_test$(EXEEXT): $(Tpetra_MVOPTester_test_OBJECTS) $(Tpetra_MVOPTester_test_DEPENDENCIES) 
+	@rm -f Tpetra_MVOPTester_test$(EXEEXT)
+	$(Tpetra_MVOPTester_test_LINK) $(Tpetra_MVOPTester_test_OBJECTS) $(Tpetra_MVOPTester_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -300,7 +308,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPTester_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_MVOPTester_test-cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -316,19 +325,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-MVOPTester_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.o -MD -MP -MF $(DEPDIR)/MVOPTester_test-cxx_main.Tpo -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MVOPTester_test-cxx_main.Tpo $(DEPDIR)/MVOPTester_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+Tpetra_MVOPTester_test-cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_MVOPTester_test-cxx_main.o -MD -MP -MF $(DEPDIR)/Tpetra_MVOPTester_test-cxx_main.Tpo -c -o Tpetra_MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_MVOPTester_test-cxx_main.Tpo $(DEPDIR)/Tpetra_MVOPTester_test-cxx_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='Tpetra_MVOPTester_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-MVOPTester_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.obj -MD -MP -MF $(DEPDIR)/MVOPTester_test-cxx_main.Tpo -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MVOPTester_test-cxx_main.Tpo $(DEPDIR)/MVOPTester_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+Tpetra_MVOPTester_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_MVOPTester_test-cxx_main.obj -MD -MP -MF $(DEPDIR)/Tpetra_MVOPTester_test-cxx_main.Tpo -c -o Tpetra_MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_MVOPTester_test-cxx_main.Tpo $(DEPDIR)/Tpetra_MVOPTester_test-cxx_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='Tpetra_MVOPTester_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+
+Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.o: $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.o -MD -MP -MF $(DEPDIR)/Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.Tpo -c -o Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.Tpo $(DEPDIR)/Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' object='Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+
+Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.obj: $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.obj -MD -MP -MF $(DEPDIR)/Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.Tpo -c -o Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.obj `if test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.Tpo $(DEPDIR)/Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' object='Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_MVOPTester_test-Teuchos_StandardUnitTestMain.obj `if test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

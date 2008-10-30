@@ -29,21 +29,22 @@
 #ifndef TPETRA_VECTOR_DECL_HPP
 #define TPETRA_VECTOR_DECL_HPP
 
+#include <Teuchos_Object.hpp>
+#include <Teuchos_ArrayView.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
-#include "Tpetra_OutputObject.hpp" // for STL vector, algorithm, numeric
-#include "Tpetra_VectorSpace.hpp"
-#include <Teuchos_CompObject.hpp>
-#include <Teuchos_BLAS.hpp>
+#include "Tpetra_Map.hpp"
 
 namespace Tpetra {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of VectorData, needed to prevent circular inclusions
-  template<typename OrdinalType, typename ScalarType> class VectorData;
+  template<typename Ordinal, typename Scalar> class VectorData;
+#endif
 
   //! Tpetra::Vector: A class for constructing and using sparse vectors.
 
-  /*! Vector is templated on ScalarType for the vector entries, and on OrdinalType 
+  /*! Vector is templated on Scalar for the vector entries, and on Ordinal 
       for the vector indices. A VectorSpace object is needed for all Vector objects.
 
     Vector entries can only be accessed through their local index values. 
@@ -63,35 +64,38 @@ namespace Tpetra {
     <li> -99 Internal Vector error. Contact developer.
     </ol>
   */
-  
-  template<typename OrdinalType, typename ScalarType>
-  class Vector : public Teuchos::CompObject, public DistObject<OrdinalType, ScalarType>, public virtual OutputObject {
+
+  template<typename Ordinal, typename Scalar>
+  class Vector : public DistObject<Ordinal,Scalar> {
 
   public:
   
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! Sets all vector entries to zero.
-    Vector(VectorSpace<OrdinalType, ScalarType> const& VectorSpace);
+    Vector(const Map<Ordinal> &map);
   
     //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
-    Vector(const ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace);
+    Vector(const Teuchos::ArrayView<const Scalar> &values, const Map<Ordinal> & map);
 
     //! Copy constructor.
-    Vector(Vector<OrdinalType, ScalarType> const& Source);
+    Vector(const Vector<Ordinal,Scalar> &source);
 
     //! Destructor.  
     ~Vector();
 
     //@}
 
-    //@{ \name Post-Construction Modification Routines
+    //! @name Post-Construction Modification Routines
+    //@{ 
 
     //! Submit entries. Values submitted will be summed with existing values.
-    void submitEntries(OrdinalType numEntries, OrdinalType const* indices, ScalarType const* values);
+    void submitEntries(const Teuchos::ArrayView<const Ordinal> &indices,
+                       const Teuchos::ArrayView<const Scalar>  &values);
 
     //! Set all entries to scalarValue.
-    void setAllToScalar(ScalarType const value);
+    void setAllToScalar(const Scalar &value);
 
     //! Set all entries to random values.
     void setAllToRandom();
@@ -99,170 +103,169 @@ namespace Tpetra {
     //@}
 
 
-    //@{ \name Extraction Methods
+    //! @name Extraction Methods
+    //@{ 
 
     //! Put vector entries into user array (copy)
-    void extractCopy(ScalarType* userArray) const;
+    // void extractCopy(Scalar* userArray) const;
 
     //! Put pointers to vector entries into user array (view)
-    void extractView(ScalarType** userPointerArray) const;
+    // void extractView(Scalar** userPointerArray) const;
 
     //@}
 
 
-    //@{ \name Mathematical Methods
+    //! @name Mathematical Methods
+    //@{ 
 
     //! Returns result of dot product, \e result = this.x
-    ScalarType dotProduct(Vector<OrdinalType, ScalarType> const& x) const;
+    Scalar dotProduct(const Vector<Ordinal, Scalar> &x) const;
 
     //! Changes this vector to elementwise absolute values of x.
-    void absoluteValue(Vector<OrdinalType, ScalarType> const& x);
+    void absoluteValue(const Vector<Ordinal,Scalar> &x);
 
     //! Changes this vector to element-wise reciprocal values of x.
-    void reciprocal(Vector<OrdinalType, ScalarType> const& x);
+    void reciprocal(const Vector<Ordinal,Scalar> &x);
 
     //! Scale the current values of a vector, \e this = scalarThis*\e this.
-    void scale(ScalarType scalarThis);
+    void scale(const Scalar &scalarThis);
 
     //! Replace vector values with scaled values of x, \e this = scalarX*x.
-    void scale(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x);
+    void scale(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x);
 
     //! Update vector values with scaled values of x, \e this = scalarThis*\e this + scalarX*x.
-    void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis);
+    void update(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x, const Scalar &scalarThis);
 
     //! Update vector with scaled values of x and y, \e this = scalarThis*\e this + scalarX*x + scalarY*y.
-    void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarY, 
-          Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+    void update(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x, 
+                const Scalar &scalarY, const Vector<Ordinal,Scalar> &y, 
+                const Scalar &scalarThis);
 
     //! Compute 1-norm of vector.
-    ScalarType norm1() const;
+    Scalar norm1() const;
 
     //! Compute 2-norm of vector.
-    ScalarType norm2() const;
+    Scalar norm2() const;
 
     //! Compute Infinity-norm of vector.
-    ScalarType normInf() const;
+    Scalar normInf() const;
 
     //! Compute Weighted 2-norm (RMS Norm) of vector.
-    ScalarType normWeighted(Vector<OrdinalType, ScalarType> const& weights) const;
+    Scalar normWeighted(const Vector<Ordinal,Scalar> &weights) const;
 
     //! Compute minimum value of vector.
-    ScalarType minValue() const;
+    Scalar minValue() const;
 
     //! Compute maximum value of vector.
-    ScalarType maxValue() const;
+    Scalar maxValue() const;
 
     //! Compute mean (average) value of vector.
-    ScalarType meanValue() const;
+    Scalar meanValue() const;
 
     //! Vector multiplication (elementwise) 
     /*! \e this = scalarThis*\e this + scalarXY*x@y, where @ represents elementwise multiplication. */
-    void elementwiseMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
-                 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+    void elementwiseMultiply(const Scalar &scalarXY, const Vector<Ordinal,Scalar> &x, const Vector<Ordinal,Scalar> &y, 
+                             const Scalar &scalarThis);
 
     //! Reciprocal multiply (elementwise)
     /*! \e this = scalarThis*\e this + scalarXY*y@x, where @ represents elementwise division. */
-    void elementwiseReciprocalMultiply(ScalarType scalarXY, 
-                       Vector<OrdinalType, ScalarType> const& x, 
-                       Vector<OrdinalType, ScalarType> const& y, 
-                       ScalarType scalarThis);
+    void elementwiseReciprocalMultiply(Scalar scalarXY, const Vector<Ordinal, Scalar> &x, const Vector<Ordinal, Scalar> &y, 
+                                       const Scalar &scalarThis);
 
     //@}
 
 
-    //@{ \name Random number utilities
+    //! @name Random number utilities
+    //@{ 
 
     //! Get seed
-    ScalarType getSeed() const;
+    const Scalar & getSeed() const;
 
     //! Set seed
-    void setSeed(ScalarType seed);
+    void setSeed(const Scalar &seed);
 
     //@}
 
 
-    //@{ \name Element access methods
+    //! @name Element access methods
+    //@{ 
 
     //! [] operator, nonconst version
-    ScalarType& operator[](OrdinalType index);
+    Scalar& operator[](Ordinal index);
 
     //! [] operator, const version
-    ScalarType const& operator[](OrdinalType index) const;
+    const Scalar & operator[](Ordinal index) const;
 
     //@}
 
 
-    //@{ \name Attribute access methods
+    //! @name Attribute access methods
+    //@{ 
 
     //! Returns number of vector entries owned by this image.
-    OrdinalType getNumMyEntries() const;
+    Ordinal getNumMyEntries() const;
 
     //! Returns number of vector entries across all images.
-    OrdinalType getNumGlobalEntries() const;
+    Ordinal getNumGlobalEntries() const;
 
     //@}
 
-
-    //@{ \name I/O methods
+    //! @name I/O methods
+    //@{ 
 
     //! Print method, used by overloaded << operator.
-    void print(ostream& os) const;
-  
-    void printValues(ostream& os) const;
+    void print(std::ostream &os) const;
+
+    void printValues(std::ostream &os) const;
 
     //@}
 
-    //@{ \name Misc. 
+    //! @name Misc. 
+    //@{ 
 
     //! Returns a const reference to the VectorSpace this Vector belongs to.
-    VectorSpace<OrdinalType, ScalarType> const& vectorSpace() const;
+    const Map<Ordinal> & getMap() const;
 
     //! Assignment Operator
-    Vector<OrdinalType, ScalarType>& operator = (Vector<OrdinalType, ScalarType> const& Source);
+    Vector<Ordinal,Scalar> & operator=(const Vector<Ordinal,Scalar> &source);
 
     //@}
 
-    //@{ \name Expert/Developer Use Only.
+    //! @name Expert/Developer Use Only.
+    //@{ 
 
-    // Returns pointer to ScalarType array inside of scalarArray
-    ScalarType* scalarPointer();
+    // Returns pointer to Scalar array inside of scalarArray
+    Teuchos::ArrayView<Scalar> scalarPointer();
 
-    ScalarType const* scalarPointer() const;
+    Teuchos::ArrayView<const Scalar> scalarPointer() const;
 
     //@}
 
   private:
 
-    // Accessor for BLAS
-    Teuchos::BLAS<OrdinalType, ScalarType> const& BLAS() const;
-
-    // Accessors for scalarArray
-    std::vector<ScalarType>& scalarArray();
-    std::vector<ScalarType>const & scalarArray() const;
-
-    Teuchos::RCP< VectorData<OrdinalType, ScalarType> > VectorData_;
+    Teuchos::RCP<VectorData<Ordinal,Scalar> > VectorData_;
 
     // four functions needed for DistObject derivation
-    bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj);
+    bool checkSizes(const DistObject<Ordinal,Scalar> & sourceObj);
 
-    int copyAndPermute(DistObject<OrdinalType, ScalarType> const& sourceObj,
-               OrdinalType const numSameIDs,
-               OrdinalType const numPermuteIDs,
-               std::vector<OrdinalType> const& permuteToLIDs,
-               std::vector<OrdinalType> const& permuteFromLIDs);
+    void copyAndPermute(const DistObject<Ordinal,Scalar> & sourceObj,
+               Ordinal numSameIDs,
+               Ordinal numPermuteIDs,
+               const Teuchos::ArrayView<const Ordinal> & permuteToLIDs,
+               const Teuchos::ArrayView<const Ordinal> & permuteFromLIDs);
 
-    int packAndPrepare(DistObject<OrdinalType, ScalarType> const& sourceObj,
-               OrdinalType const numExportIDs,
-               std::vector<OrdinalType> const& exportLIDs,
-               std::vector<ScalarType>& exports,
-               OrdinalType& packetSize,
-               Distributor<OrdinalType> const& distor);
+    void packAndPrepare(const DistObject<Ordinal,Scalar> & sourceObj,
+               Ordinal numExportIDs,
+               const Teuchos::ArrayView<const Ordinal> & exportLIDs,
+               const Teuchos::ArrayView<Scalar> & exports,
+               Ordinal &packetSize,
+               Distributor<Ordinal> &distor);
   
-    int unpackAndCombine(OrdinalType const numImportIDs,
-               std::vector<OrdinalType> const& importLIDs,
-               std::vector<ScalarType> const& imports,
-               Distributor<OrdinalType> const& distor,
-               CombineMode const CM);
+    void unpackAndCombine(Ordinal numImportIDs,
+               const Teuchos::ArrayView<const Ordinal> & importLIDs,
+               const Teuchos::ArrayView<const Scalar> & imports,
+               Distributor<Ordinal> &distor,
+               CombineMode CM);
 
   }; // class Vector
 

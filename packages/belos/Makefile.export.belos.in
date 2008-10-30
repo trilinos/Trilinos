@@ -8,13 +8,19 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 @BUILD_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 @BUILD_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 
+# Optional dependance on tpetra for the belos/tpetra adapters
+@BUILD_TPETRA_TRUE@include @abs_top_builddir@/../tpetra/Makefile.export.tpetra
+@BUILD_TPETRA_TRUE@BELOS_TPETRA_INCLUDES = -I@abs_top_srcdir@/tpetra/src $(TPETRA_INCLUDES)
+@BUILD_TPETRA_TRUE@BELOS_TPETRA_LIBS = $(TPETRA_LIBS)
+
 _BELOS_INCLUDES = \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_builddir@/src \
         $(EPETRA_INCLUDES) \
-        $(TEUCHOS_INCLUDES)
+        $(TEUCHOS_INCLUDES) \
+   $(BELOS_TPETRA_INCLUDES)
 
-_BELOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@
+_BELOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(BELOS_TPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@
 
 @USING_GNUMAKE_TRUE@BELOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_BELOS_INCLUDES))
 @USING_GNUMAKE_TRUE@BELOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_BELOS_LIBS))
@@ -32,11 +38,11 @@ _BELOS_TEST_INCLUDES = \
         $(ML_INCLUDES) \
         $(EPETRAEXT_INCLUDES) \
         $(EPETRA_INCLUDES) \
-        $(TPETRA_INCLUDES) \
+        $(BELOS_TPETRA_INCLUDES) \
         $(TRIUTILS_INCLUDES) \
         $(TEUCHOS_INCLUDES)
 
-_BELOS_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(ML_LIBS) $(IFPACK_LIBS) $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@
+_BELOS_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(ML_LIBS) $(IFPACK_LIBS) $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(BELOS_TPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@
 
 @USING_GNUMAKE_TRUE@BELOS_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_BELOS_TEST_INCLUDES))
 @USING_GNUMAKE_TRUE@BELOS_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_BELOS_TEST_LIBS))

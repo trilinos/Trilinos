@@ -31,7 +31,7 @@
 
 /*! \file AnasaziRTRSolMgr.hpp
   \brief The Anasazi::RTRSolMgr provides a simple solver manager over the IRTR 
-  eigensolver.
+  eigensolvers.
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -52,11 +52,12 @@
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#include "Teuchos_TimeMonitor.hpp"
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_FancyOStream.hpp>
 
 /*! \class Anasazi::RTRSolMgr
   \brief The Anasazi::RTRSolMgr provides a simple solver
-  manager over the RTR eigensolver. 
+  manager over the RTR eigensolver. For more information, see the discussion for RTRBase.
 
   \ingroup anasazi_solver_framework
 
@@ -85,7 +86,8 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
    *   - Solver parameters
-   *      - \c "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. NOTE: Currently only "SR" supported.
+   *      - \c "Skinny Solver" - a \c bool specifying whether a non-caching ("skinny") solver implementation is used. Determines whether the underlying solver is IRTR or SIRTR.
+   *      - \c "Which" - a \c string specifying the desired eigenvalues: SR or LR, i.e., smallest or largest algebraic eigenvalues.
    *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying RTR solver. Default: problem->getNEV()
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
    *   - Convergence parameters 
@@ -113,7 +115,6 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
    *
    * The timers are ordered as follows:
    *   - time spent in solve() routine
-   *   - time spent locking converged eigenvectors
    */
    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
      return tuple(_timerSolve);
@@ -182,8 +183,8 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
   std::string strtmp;
 
   whch_ = pl_.get("Which","SR");
-  TEST_FOR_EXCEPTION(whch_ != "SR", AnasaziError,
-                     "RTRSolMgr: \"Which\" parameter must be SR, that is all the RTR/IRTR can currently approach.");
+  TEST_FOR_EXCEPTION(whch_ != "SR" && whch_ != "LR",
+      std::invalid_argument, "Anasazi::RTRSolMgr: Invalid sorting string. RTR solvers compute only LR or SR.");
 
   // convergence tolerance
   convtol_ = pl_.get("Convergence Tolerance",convtol_);
@@ -242,12 +243,12 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
   if (fntemplate != "") {
     osp = Teuchos::rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
     if (!*osp) {
-      osp = Teuchos::rcp(&std::cout,false);
+      osp = Teuchos::rcpFromRef(std::cout);
       std::cout << "Anasazi::RTRSolMgr::constructor(): Could not open file for write: " << fntemplate << std::endl;
     }
   }
   else {
-    osp = Teuchos::rcp(&std::cout,false);
+    osp = Teuchos::rcpFromRef(std::cout);
   }
   // Output manager
   int verbosity = Anasazi::Errors;
@@ -274,6 +275,8 @@ template<class ScalarType, class MV, class OP>
 ReturnType 
 RTRSolMgr<ScalarType,MV,OP>::solve() {
 
+  using std::endl;
+
   typedef SolverUtils<ScalarType,MV,OP> msutils;
 
   const int nev = problem_->getNEV();
@@ -283,14 +286,14 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
 
 #ifdef TEUCHOS_DEBUG
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::getFancyOStream(Teuchos::rcp(&printer_->stream(Debug),false));
+      out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(printer_->stream(Debug)));
     out->setShowAllFrontMatter(false).setShowProcRank(true);
     *out << "Entering Anasazi::RTRSolMgr::solve()\n";
 #endif
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
-  Teuchos::RCP<BasicSort<ScalarType> > sorter = Teuchos::rcp( new BasicSort<ScalarType>(whch_) );
+  Teuchos::RCP<BasicSort<MagnitudeType> > sorter = Teuchos::rcp( new BasicSort<MagnitudeType>(whch_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
@@ -333,6 +336,12 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // create an RTR solver
+  // leftmost or rightmost?
+  bool leftMost = true;
+  if (whch_ == "LR" || whch_ == "LM") {
+    leftMost = false;
+  }
+  pl_.set<bool>("Leftmost",leftMost);
   Teuchos::RCP<RTRBase<ScalarType,MV,OP> > rtr_solver;
   if (skinny_ == false) {
     // "hefty" IRTR
@@ -348,8 +357,8 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
     rtr_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
-  TEST_FOR_EXCEPTION(rtr_solver->getBlockSize() != problem_->getNEV(),std::logic_error,
-            "Anasazi::RTRSolMgr requires block size == requested number of eigenvalues.");
+  TEST_FOR_EXCEPTION(rtr_solver->getBlockSize() < problem_->getNEV(),std::logic_error,
+            "Anasazi::RTRSolMgr requires block size >= requested number of eigenvalues.");
 
   int numfound = 0;
   Teuchos::RCP<MV> foundvecs;

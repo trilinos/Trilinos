@@ -29,6 +29,10 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_BLAS_wrappers.hpp"
 
+#ifdef TEUCHOS_BLAS_APPLE_VECLIB_ERROR
+#include <vecLib/cblas.h>
+#endif
+
 const char Teuchos::ESideChar[] = {'L' , 'R' };
 const char Teuchos::ETranspChar[] = {'N' , 'T' , 'C' };
 const char Teuchos::EUploChar[] = {'U' , 'L' };
@@ -175,7 +179,15 @@ namespace Teuchos {
   { CCOPY_F77(&n, x, &incx, y, &incy); }
   
   std::complex<float> BLAS<int, std::complex<float> >::DOT(const int n, const std::complex<float>* x, const int incx, const std::complex<float>* y, const int incy) const
-  { return CDOT_F77(&n, x, &incx, y, &incy); }
+  { 
+#ifdef TEUCHOS_BLAS_APPLE_VECLIB_ERROR
+    std::complex<float> z;
+    cblas_cdotc_sub(n,x,incx,y,incy,&z);
+    return z;
+#else
+    return CDOT_F77(&n, x, &incx, y, &incy); 
+#endif
+  }
   
   int BLAS<int, std::complex<float> >::IAMAX(const int n, const std::complex<float>* x, const int incx) const
   { return ICAMAX_F77(&n, x, &incx); }
@@ -227,7 +239,15 @@ namespace Teuchos {
   { ZCOPY_F77(&n, x, &incx, y, &incy); }
   
   std::complex<double> BLAS<int, std::complex<double> >::DOT(const int n, const std::complex<double>* x, const int incx, const std::complex<double>* y, const int incy) const
-  { return ZDOT_F77(&n, x, &incx, y, &incy); }
+  { 
+#ifdef TEUCHOS_BLAS_APPLE_VECLIB_ERROR
+    std::complex<double> z;
+    cblas_zdotc_sub(n,x,incx,y,incy,&z);
+    return z;
+#else
+    return ZDOT_F77(&n, x, &incx, y, &incy); 
+#endif
+  }
   
   int BLAS<int, std::complex<double> >::IAMAX(const int n, const std::complex<double>* x, const int incx) const
   { return IZAMAX_F77(&n, x, &incx); }

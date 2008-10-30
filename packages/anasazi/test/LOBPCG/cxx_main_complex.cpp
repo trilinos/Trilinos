@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+           << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -188,11 +188,10 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
-    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+    verbosity += Anasazi::IterationDetails + Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
   if (debug) {
     verbosity += Anasazi::Debug;

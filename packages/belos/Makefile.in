@@ -111,7 +111,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src example test
+DIST_SUBDIRS = src example test tpetra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -270,7 +270,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #tarball.
 @SUB_TEST_TRUE@TEST_SUBDIR = test
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+@BUILD_TPETRA_TRUE@TPETRA_SUBDIR = tpetra
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(TPETRA_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_MPI_MAX_PROC = 4
@@ -707,7 +708,8 @@ all-local:
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Now building belos tests."
 @BUILD_TESTS_TRUE@	@echo ""
-@BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE) && \
+@BUILD_TESTS_TRUE@			cd $(abs_top_builddir)/tpetra/test && $(MAKE)
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Finished building belos tests."
 @BUILD_TESTS_TRUE@	@echo ""
@@ -732,7 +734,8 @@ all-local:
 @BUILD_EXAMPLES_FALSE@	@echo "belos examples were disabled at configure time"
 
 clean-tests:
-	cd $(top_builddir)/test && $(MAKE) clean
+	cd $(top_builddir)/test && $(MAKE) clean && \
+			cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
 
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean

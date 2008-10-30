@@ -1,12 +1,34 @@
+// @HEADER
+// ***********************************************************************
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+
 /*! \file AnasaziRTRBase.hpp
-  \brief finish
+  \brief Base class for Implicit Riemannian Trust-Region solvers
 */
-
-/*
-    RTRBase
-    
- */
-
 
 // FINISH: make sure that cloneview(const) is called where appropriate
 
@@ -31,7 +53,49 @@
 
 /*!     \class Anasazi::RTRBase
 
-        \brief This class is an abstract base class for Riemannian Trust-Region based eigensolvers without subspace acceleration.
+        \brief This class is an abstract base class for Implicit Riemannian Trust-Region
+        based eigensolvers. The class provides the interfaces shared by the %IRTR
+        solvers (e.g., getState() and initialize()) as well as the shared
+        implementations (e.g., inner products). 
+
+        %IRTR eigensolvers are capable of solving symmetric/Hermitian
+        %eigenvalue problems. These solvers may be used to compute
+        either the leftmost (smallest real, "SR") or rightmost (largest real,
+        "LR") eigenvalues.  For more information, see the publications at the
+        <a href="https://people.scs.fsu.edu/~cbaker/RTRESGEV/">RTR eigensolvers
+        page</a>.
+
+        This class is abstract and objects cannot be instantiated. Instead,
+        instantiate one of the concrete derived classes: IRTR and SIRTR, 
+        the caching and non-caching implementations of this solver. The main difference between
+        these solver is the memory allocated by the solvers in support of the %IRTR iteration.
+
+        The reduction in memory usage is effected by eliminating the caching of
+        operator applications. This also results in a reduction in vector
+        arithmetic required to maintain these caches. The cost is an increase
+        in the number of operator applications. For inexpensive operator
+        applications, SIRTR should provide better performance over IRTR. As the
+        operator applications becomes more expensive, the performance scale
+        tips towards the IRTR solver. <b>Note</b>, the trajectory of both
+        solvers is identical in exact arithmetic. However, the effects of
+        round-off error in the cached results mean that some difference between
+        the solvers may exist. This effect is seen when a large number of
+        iterations are required to solve the trust-region subproblem in
+        solveTRSubproblem(). <b>Also note</b>, the inclusion of auxiliary
+        vectors increases the memory requirements of these solvers linearly
+        with the number of auxiliary vectors. The required storage is listed in
+        the following table:
+
+        <center>
+        <table>
+        <tr><td align=center colspan=5>Number of vectors (bS == blockSize())</td></tr>
+        <tr><td>Solver</td><td>Base requirement</td><td>Generalized/B != null</td><td>Preconditioned</td><td>Generalized and Preconditioned</td></tr>
+        <tr><td>IRTR</td><td>10*bS</td><td>11*bS</td><td>12*bS</td><td>13*bS</td></tr>
+        <tr><td>SIRTR</td><td>6*bS</td><td>7*bS</td><td>7*bS</td><td>8*bS</td></tr>
+        </table>
+        </center>
+
+        \ingroup anasazi_solver_framework
 
         \author Chris Baker
 */
@@ -57,7 +121,9 @@ namespace Anasazi {
     Teuchos::RCP<const MV> R;
     //! The current Ritz values.
     Teuchos::RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
-    //! The current rho value
+    /*! \brief The current rho value.
+     *  This is only valid if the debugging level of verbosity is enabled.
+     */ 
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType rho;
     RTRState() : X(Teuchos::null),AX(Teuchos::null),BX(Teuchos::null),
                  R(Teuchos::null),T(Teuchos::null),rho(0) {};
@@ -71,13 +137,13 @@ namespace Anasazi {
   /** \brief RTRRitzFailure is thrown when the RTR solver is unable to
    *  continue a call to RTRBase::iterate() due to a failure of the algorithm.
    *
-   *  This signals that the Rayleigh-Ritz analysis over the subspace \c
-   *  colsp([X H P]) detected ill-conditioning of the projected mass matrix
+   *  This signals that the Rayleigh-Ritz analysis of <tt>X + Eta</tt>
+   *  detected ill-conditioning of the projected mass matrix
    *  and the inability to generate a set of orthogonal eigenvectors for 
-   *  the projected problem.
+   *  the projected problem (if thrown from iterate()) or that the analysis of 
+   *  the initial iterate failed in RTRBase::initialize().
    *
-   *  This exception is only thrown from the RTRBase::iterate() routine. After
-   *  catching this exception, the user can recover the subspace via
+   *  After catching this exception, the user can recover the subspace via
    *  RTRBase::getState(). This information can be used to restart the solver.
    *
    */
@@ -130,12 +196,11 @@ namespace Anasazi {
 
     /*! \brief %RTRBase constructor with eigenproblem, solver utilities, and parameter list of solver options.
      *
-     * This constructor takes pointers required by the eigensolver, in addition
-     * to a parameter list of options for the eigensolver. These options include the following:
-     *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
+     * The RTRBase class is abstract and cannot be instantiated; this constructor is called by derived classes
+     * IRTR and RTR.
      */
     RTRBase(const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-            const Teuchos::RCP<SortManager<ScalarType> > &sorter,
+            const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
             const Teuchos::RCP<OutputManager<ScalarType> > &printer,
             const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
             const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -162,8 +227,9 @@ namespace Anasazi {
      * caller.
      *
      * The %RTR iteration proceeds as follows:
-     * -# 
-     * -# 
+     * -# the trust-region subproblem at \c X is solved for update \c Eta via a call to solveTRSubproblem()
+     * -# the new iterate is the Ritz vectors with respect to <tt>X+Eta</tt>
+     * -# the eigenproblem residuals are formed with respect to the new iterate
      *
      * The status test is queried at the beginning of the iteration.
      *
@@ -194,7 +260,7 @@ namespace Anasazi {
      *
      * If the Ritz values relative to <tt>newstate.X</tt> are passed in <tt>newstate.T</tt>,
      * then <tt>newstate.X</tt> is assume to contain Ritz vectors, i.e., <tt>newstate.T</tt> 
-     * must be B-orthonormal and it must diagonal A.
+     * must be B-orthonormal and it must partially diagonalize A.
      *
      */
     void initialize(RTRState<ScalarType,MV> newstate);
@@ -216,7 +282,7 @@ namespace Anasazi {
      *   - getRitzValues() returns the sorted Ritz values with respect to X
      *   - getResidualVecs() returns the residual vectors with respect to X
      */
-    bool isInitialized() const { return initialized_; }
+    bool isInitialized() const;
 
     /*! \brief Get the current state of the eigensolver.
      * 
@@ -225,21 +291,7 @@ namespace Anasazi {
      * \returns An RTRState object containing const pointers to the current
      * solver state.
      */
-    RTRState<ScalarType,MV> getState() const {
-      RTRState<ScalarType,MV> state;
-      state.X = X_;
-      state.AX = AX_;
-      if (hasBOp_) {
-        state.BX = BX_;
-      }
-      else {
-        state.BX = Teuchos::null;
-      }
-      state.rho = rho_;
-      state.R = R_;
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
-      return state;
-    }
+    RTRState<ScalarType,MV> getState() const;
 
     //@}
 
@@ -247,10 +299,10 @@ namespace Anasazi {
     //@{
 
     //! \brief Get the current iteration count.
-    int getNumIters() const { return(iter_); };
+    int getNumIters() const;
 
     //! \brief Reset the iteration count.
-    void resetNumIters() { iter_=0; };
+    void resetNumIters();
 
     /*! \brief Get the Ritz vectors from the previous iteration.
       
@@ -259,21 +311,14 @@ namespace Anasazi {
         The i-th vector of the return corresponds to the i-th Ritz vector; there is no need to use
         getRitzIndex().
      */
-    Teuchos::RCP<const MV> getRitzVectors() {return X_;}
+    Teuchos::RCP<const MV> getRitzVectors();
 
     /*! \brief Get the Ritz values from the previous iteration.
      *
      *  \return A vector of length getCurSubspaceDim() containing the Ritz values from the
      *  previous projected eigensolve.
      */
-    std::vector<Value<ScalarType> > getRitzValues() { 
-      std::vector<Value<ScalarType> > ret(nevLocal_);
-      for (int i=0; i<nevLocal_; i++) {
-        ret[i].realpart = theta_[i];
-        ret[i].imagpart = ZERO;
-      }
-      return ret;
-    }
+    std::vector<Value<ScalarType> > getRitzValues();
 
     /*! \brief Get the index used for extracting Ritz vectors from getRitzVectors().
      *
@@ -282,11 +327,7 @@ namespace Anasazi {
      *
      * \return An \c int vector of size getCurSubspaceDim() composed of zeros.
      */
-    std::vector<int> getRitzIndex() {
-      std::vector<int> ret(nevLocal_,0);
-      return ret;
-    }
-
+    std::vector<int> getRitzIndex();
 
     /*! \brief Get the current residual norms
      *
@@ -308,11 +349,7 @@ namespace Anasazi {
      *
      *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the Ritz residuals.
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {
-      std::vector<MagnitudeType> ret = ritz2norms_;
-      ret.resize(nevLocal_);
-      return ret;
-    }
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms();
 
 
     /*! \brief Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
@@ -323,15 +360,11 @@ namespace Anasazi {
      *  \return An integer specifying the rank of the subspace generated by the eigensolver. If isInitialized() == \c false, 
      *  the return is 0. Otherwise, the return will be getBlockSize().
      */
-    int getCurSubspaceDim() const {
-      if (!initialized_) return 0;
-      return nevLocal_;
-    }
-
+    int getCurSubspaceDim() const;
 
     /*! \brief Get the maximum dimension allocated for the search subspace. For %RTR, this always returns getBlockSize().
      */
-    int getMaxSubspaceDim() const {return blockSize_;}
+    int getMaxSubspaceDim() const;
 
     //@}
 
@@ -345,7 +378,7 @@ namespace Anasazi {
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getStatusTest() const;
 
     //! Get a constant reference to the eigenvalue problem.
-    const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*problem_); };
+    const Eigenproblem<ScalarType,MV,OP>& getProblem() const;
 
 
     /*! \brief Set the blocksize to be used by the iterative solver in solving
@@ -360,37 +393,41 @@ namespace Anasazi {
 
 
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-    int getBlockSize() const { return(blockSize_); }
+    int getBlockSize() const;
 
 
     /*! \brief Set the auxiliary vectors for the solver.
      *
-     *  Because the current iterate X cannot be assumed
-     *  orthogonal to the new auxiliary vectors, a call to setAuxVecs() with a
-     *  non-empty argument will reset the solver to the uninitialized state.
+     *  Because the current iterate X cannot be assumed orthogonal to the new
+     *  auxiliary vectors, a call to setAuxVecs() with a non-empty argument
+     *  will reset the solver to the uninitialized state.
      *
      *  In order to preserve the current state, the user will need to extract
      *  it from the solver using getState(), orthogonalize it against the new
      *  auxiliary vectors, and manually reinitialize the solver using
      *  initialize().
+     *
+     *  <b>NOTE:</b> The requirements of the %IRTR solvers is such that the 
+     *  auxiliary vectors must be moved into contiguous storage with the 
+     *  current iterate. As a result, the multivector data in \c auxvecs will be copied,
+     *  and the multivectors in \c auxvecs will no longer be referenced. The (unchanged) 
+     *  internal copies of the auxilliary vectors will be made available to the caller
+     *  by the getAuxVecs() routine. This allows the caller to delete the caller's copies and
+     *  instead use the copies owned by the solver, avoiding the duplication of data. This 
+     *  is not necessary, however. The partitioning of the auxiliary vectors passed to setAuxVecs() will be preserved.
      */
     void setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs);
 
     //! Get the current auxiliary vectors.
-    Teuchos::Array<Teuchos::RCP<const MV> > getAuxVecs() const {return auxVecs_;}
+    Teuchos::Array<Teuchos::RCP<const MV> > getAuxVecs() const;
 
     //@}
 
-    //!  @name %RTR-specific accessor routines
-    //@{
-
-    //@}
-    
     //!  @name Output methods
     //@{
 
     //! This method requests that the solver print out its current status to screen.
-    virtual void currentStatus(ostream &os);
+    virtual void currentStatus(std::ostream &os);
 
     //@}
 
@@ -425,19 +462,19 @@ namespace Anasazi {
     //
     // Internal methods
     //
-    string accuracyCheck(const CheckList &chk, const string &where) const;
+    std::string accuracyCheck(const CheckList &chk, const std::string &where) const;
     // solves the model minimization
     virtual void solveTRSubproblem() = 0;
     // Riemannian metric
-    MagnitudeType ginner(const MV &xi) const;
-    MagnitudeType ginner(const MV &xi, const MV &zeta) const;
-    void ginnersep(const MV &xi, std::vector<MagnitudeType> &d) const;
-    void ginnersep(const MV &xi, const MV &zeta, std::vector<MagnitudeType> &d) const;
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType ginner(const MV &xi) const;
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType ginner(const MV &xi, const MV &zeta) const;
+    void ginnersep(const MV &xi, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > &d) const;
+    void ginnersep(const MV &xi, const MV &zeta, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > &d) const;
     //
     // Classes input through constructor that define the eigenproblem to be solved.
     //
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RCP<SortManager<ScalarType> >            sm_;
+    const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> >           sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> >             tester_;
     const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> >  orthman_;
@@ -481,13 +518,16 @@ namespace Anasazi {
     // 
     // are we implementing a skinny solver? (SkinnyIRTR)
     bool isSkinny_;
+    // 
+    // are we computing leftmost or rightmost eigenvalue?
+    bool leftMost_;
     //
     // State Multivecs
     //
     // if we are implementing a skinny solver (SkinnyIRTR), 
     // then some of these will never be allocated
     // 
-    // In order to handle auxilliary vectors, we need to handle the projector
+    // In order to handle auxiliary vectors, we need to handle the projector
     //   P_{[BQ BX],[BQ BX]}
     // Using an orthomanager with B-inner product, this requires calling with multivectors
     // [BQ,BX] and [Q,X].
@@ -555,12 +595,12 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   RTRBase<ScalarType,MV,OP>::RTRBase(
-        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RCP<SortManager<ScalarType> >        &sorter,
-        const Teuchos::RCP<OutputManager<ScalarType> >      &printer,
-        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >   &tester,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >    &problem, 
+        const Teuchos::RCP<SortManager<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > &sorter,
+        const Teuchos::RCP<OutputManager<ScalarType> >         &printer,
+        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >      &tester,
         const Teuchos::RCP<GenOrthoManager<ScalarType,MV,OP> > &ortho,
-        Teuchos::ParameterList &params,
+        Teuchos::ParameterList                                 &params,
         const std::string &solverLabel, bool skinnySolver
         ) :
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
@@ -591,6 +631,7 @@ namespace Anasazi {
     initialized_(false),
     nevLocal_(0),
     isSkinny_(skinnySolver),
+    leftMost_(true),
     auxVecs_( Teuchos::Array<Teuchos::RCP<const MV> >(0) ), 
     numAuxVecs_(0),
     iter_(0),
@@ -631,6 +672,9 @@ namespace Anasazi {
     // set the block size and allocate data
     int bs = params.get("Block Size", problem_->getNEV());
     setBlockSize(bs);
+
+    // leftmost or rightmost?
+    leftMost_ = params.get("Leftmost",leftMost_);
 
     conv_kappa_ = params.get("Kappa Convergence",conv_kappa_);
     TEST_FOR_EXCEPTION(conv_kappa_ <= 0 || conv_kappa_ >= 1,std::invalid_argument,
@@ -682,7 +726,7 @@ namespace Anasazi {
     BX_ = Teuchos::null;
 
     // regardless of whether we preserve any data, any content in V, BV and PBV corresponding to the
-    // auxilliary vectors must be retained
+    // auxiliary vectors must be retained
     // go ahead and do these first
     // 
     // two cases here: 
@@ -936,13 +980,14 @@ namespace Anasazi {
   // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
   void RTRBase<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs) {
-    typedef typename Teuchos::Array<Teuchos::RCP<const MV> >::iterator tarcpmv;
+    typedef typename Teuchos::Array<Teuchos::RCP<const MV> >::const_iterator tarcpmv;
 
     // set new auxiliary vectors
-    auxVecs_ = auxvecs;
+    auxVecs_.resize(0);
+    auxVecs_.reserve(auxvecs.size());
 
     numAuxVecs_ = 0;
-    for (tarcpmv v=auxVecs_.begin(); v != auxVecs_.end(); ++v) {
+    for (tarcpmv v=auxvecs.begin(); v != auxvecs.end(); ++v) {
       numAuxVecs_ += MVT::GetNumberVecs(**v);
     }
 
@@ -958,15 +1003,16 @@ namespace Anasazi {
     V_   = Teuchos::null;
     BV_  = Teuchos::null;
     PBV_ = Teuchos::null;
-  
+
     // put auxvecs into V, update BV and PBV if necessary
     if (numAuxVecs_ > 0) {
       V_ = MVT::Clone(*R_,numAuxVecs_ + blockSize_);
       int numsofar = 0;
-      for (tarcpmv v=auxVecs_.begin(); v != auxVecs_.end(); ++v) {
+      for (tarcpmv v=auxvecs.begin(); v != auxvecs.end(); ++v) {
         std::vector<int> ind(MVT::GetNumberVecs(**v));
         for (unsigned int j=0; j<ind.size(); j++) ind[j] = numsofar++;
         MVT::SetBlock(**v,ind,*V_);
+        auxVecs_.push_back(MVT::CloneView(*Teuchos::rcp_static_cast<const MV>(V_),ind));
       }
       TEST_FOR_EXCEPTION(numsofar != numAuxVecs_, std::logic_error,
           "Anasazi::RTRBase::setAuxVecs(): Logic error. Please contact Anasazi team.");
@@ -1216,14 +1262,15 @@ namespace Anasazi {
       int ret;
       if (hasBOp_) {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
-        ret = Utils::directSolver(blockSize_,AA,Teuchos::rcp(&BB,false),S,theta_,nevLocal_,1);
+        ret = Utils::directSolver(blockSize_,AA,Teuchos::rcpFromRef(BB),S,theta_,nevLocal_,1);
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         ret = Utils::directSolver(blockSize_,AA,Teuchos::null,S,theta_,nevLocal_,10);
       }
-      TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::RTRBase::initialize(): failure solving projected eigenproblem after retraction.");
-      TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,RTRRitzFailure,"Anasazi::RTRBase::initialize(): retracted iterate failed in Ritz analysis.");
+      TEST_FOR_EXCEPTION(ret != 0,RTRInitFailure,
+          "Anasazi::RTRBase::initialize(): failure solving projected eigenproblem after retraction. LAPACK returns " << ret);
+      TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,RTRInitFailure,"Anasazi::RTRBase::initialize(): retracted iterate failed in Ritz analysis.");
 
       // We only have blockSize_ ritz pairs, ergo we do not need to select.
       // However, we still require them to be ordered correctly
@@ -1233,7 +1280,7 @@ namespace Anasazi {
         std::vector<int> order(blockSize_);
         // 
         // sort the first blockSize_ values in theta_
-        sm_->sort(theta_, Teuchos::rcp(&order,false), blockSize_);   // don't catch exception
+        sm_->sort(theta_, Teuchos::rcpFromRef(order), blockSize_);   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
@@ -1247,7 +1294,7 @@ namespace Anasazi {
         int info;
         if (hasBOp_) {
           info = RR.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,BB,S,ZERO);
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         }
         else {
           RR.assign(S);
@@ -1256,7 +1303,7 @@ namespace Anasazi {
           blas.SCAL(blockSize_,theta_[i],RR[i],1);
         }
         info = RR.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,AA,S,-ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::RTRBase::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         for (int i=0; i<blockSize_; i++) {
           ritz2norms_[i] = blas.NRM2(blockSize_,RR[i],1);
         }
@@ -1408,11 +1455,12 @@ namespace Anasazi {
   //  add checkTheta 
   //
   template <class ScalarType, class MV, class OP>
-  std::string RTRBase<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const string &where ) const 
+  std::string RTRBase<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const std::string &where ) const 
   {
     using std::setprecision;
     using std::scientific;
     using std::setw;
+    using std::endl;
     std::stringstream os;
     MagnitudeType tmp;
 
@@ -1421,7 +1469,7 @@ namespace Anasazi {
     // X and friends
     if (chk.checkX && initialized_) {
       tmp = orthman_->orthonormError(*X_);
-      os << " >> Error in X^H B X == I : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B X == I :    " << scientific << setprecision(10) << tmp << endl;
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*X_,*auxVecs_[i]);
         os << " >> Error in X^H B Q[" << i << "] == 0 : " << scientific << setprecision(10) << tmp << endl;
@@ -1429,31 +1477,31 @@ namespace Anasazi {
     }
     if (chk.checkAX && !isSkinny_ && initialized_) {
       tmp = Utils::errorEquality(*X_, *AX_, AOp_);
-      os << " >> Error in AX == A*X    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in AX == A*X    :    " << scientific << setprecision(10) << tmp << endl;
     }
     if (chk.checkBX && hasBOp_ && initialized_) {
       Teuchos::RCP<MV> BX = MVT::Clone(*this->X_,this->blockSize_);
       OPT::Apply(*BOp_,*this->X_,*BX);
       tmp = Utils::errorEquality(*BX, *BX_);
-      os << " >> Error in BX == B*X    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in BX == B*X    :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // Eta and friends
     if (chk.checkEta && initialized_) {
       tmp = orthman_->orthogError(*X_,*eta_);
-      os << " >> Error in X^H B Eta == 0   : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B Eta == 0 :  " << scientific << setprecision(10) << tmp << endl;
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*eta_,*auxVecs_[i]);
-        os << " >> Error in Eta^H B Q[" << i << "] == 0 : " << scientific << setprecision(10) << tmp << endl;
+        os << " >> Error in Eta^H B Q[" << i << "]==0 : " << scientific << setprecision(10) << tmp << endl;
       }
     }
     if (chk.checkAEta && !isSkinny_ && initialized_) {
       tmp = Utils::errorEquality(*eta_, *Aeta_, AOp_);
-      os << " >> Error in AEta == A*Eta    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in AEta == A*Eta    :    " << scientific << setprecision(10) << tmp << endl;
     }
     if (chk.checkBEta && !isSkinny_ && hasBOp_ && initialized_) {
       tmp = Utils::errorEquality(*eta_, *Beta_, BOp_);
-      os << " >> Error in BEta == B*Eta    : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in BEta == B*Eta    :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // R: this is not B-orthogonality, but standard euclidean orthogonality
@@ -1461,7 +1509,7 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*X_,*R_,xTx);
       tmp = xTx.normFrobenius();
-      os << " >> Error in X^H R == 0   : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H R == 0   :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // BR: this is B-orthogonality: this is only valid inside and immediately after solveTRSubproblem 
@@ -1470,7 +1518,7 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*BX_,*R_,xTx);
       tmp = xTx.normFrobenius();
-      os << " >> Error in X^H B R == 0 : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B R == 0 :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // Z: Z is preconditioned R, should be on tangent plane
@@ -1478,17 +1526,17 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*BX_,*Z_,xTx);
       tmp = xTx.normFrobenius();
-      os << " >> Error in X^H B Z == 0 : " << scientific << setprecision(10) << tmp << endl;
+      os << " >> Error in X^H B Z == 0 :    " << scientific << setprecision(10) << tmp << endl;
     }
 
     // Q
     if (chk.checkQ) {
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthonormError(*auxVecs_[i]);
-        os << " >> Error in Q[" << i << "]^H B Q[" << i << "] == I : " << scientific << setprecision(10) << tmp << endl;
+        os << " >> Error in Q[" << i << "]^H B Q[" << i << "]==I: " << scientific << setprecision(10) << tmp << endl;
         for (unsigned int j=i+1; j<auxVecs_.size(); j++) {
           tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
-          os << " >> Error in Q[" << i << "]^H B Q[" << j << "] == 0 : " << scientific << setprecision(10) << tmp << endl;
+          os << " >> Error in Q[" << i << "]^H B Q[" << j << "]==0: " << scientific << setprecision(10) << tmp << endl;
         }
       }
     }
@@ -1501,11 +1549,12 @@ namespace Anasazi {
   // Print the current status of the solver
   template <class ScalarType, class MV, class OP>
   void 
-  RTRBase<ScalarType,MV,OP>::currentStatus(ostream &os) 
+  RTRBase<ScalarType,MV,OP>::currentStatus(std::ostream &os) 
   {
     using std::setprecision;
     using std::scientific;
     using std::setw;
+    using std::endl;
 
     os <<endl;
     os <<"================================================================================" << endl;
@@ -1601,7 +1650,106 @@ namespace Anasazi {
       (*iR) = SCT::real(*iS);
     }
   }
-  
+
+  template <class ScalarType, class MV, class OP>
+  Teuchos::Array<Teuchos::RCP<const MV> > RTRBase<ScalarType,MV,OP>::getAuxVecs() const {
+    return auxVecs_;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  int RTRBase<ScalarType,MV,OP>::getBlockSize() const { 
+    return(blockSize_); 
+  }
+
+  template <class ScalarType, class MV, class OP>
+  const Eigenproblem<ScalarType,MV,OP>& RTRBase<ScalarType,MV,OP>::getProblem() const { 
+    return(*problem_); 
+  }
+
+  template <class ScalarType, class MV, class OP>
+  int RTRBase<ScalarType,MV,OP>::getMaxSubspaceDim() const {
+    return blockSize_;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  int RTRBase<ScalarType,MV,OP>::getCurSubspaceDim() const 
+  {
+    if (!initialized_) return 0;
+    return nevLocal_;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> 
+  RTRBase<ScalarType,MV,OP>::getRitzRes2Norms() 
+  {
+    std::vector<MagnitudeType> ret = ritz2norms_;
+    ret.resize(nevLocal_);
+    return ret;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  std::vector<Value<ScalarType> > 
+  RTRBase<ScalarType,MV,OP>::getRitzValues() 
+  {
+    std::vector<Value<ScalarType> > ret(nevLocal_);
+    for (int i=0; i<nevLocal_; i++) {
+      ret[i].realpart = theta_[i];
+      ret[i].imagpart = ZERO;
+    }
+    return ret;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<const MV> 
+  RTRBase<ScalarType,MV,OP>::getRitzVectors() 
+  {
+    return X_;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  void RTRBase<ScalarType,MV,OP>::resetNumIters() 
+  { 
+    iter_=0; 
+  }
+
+  template <class ScalarType, class MV, class OP>
+  int RTRBase<ScalarType,MV,OP>::getNumIters() const 
+  { 
+    return iter_; 
+  }
+
+  template <class ScalarType, class MV, class OP>
+  RTRState<ScalarType,MV> RTRBase<ScalarType,MV,OP>::getState() const 
+  {
+    RTRState<ScalarType,MV> state;
+    state.X = X_;
+    state.AX = AX_;
+    if (hasBOp_) {
+      state.BX = BX_;
+    }
+    else {
+      state.BX = Teuchos::null;
+    }
+    state.rho = rho_;
+    state.R = R_;
+    state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
+    return state;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  bool RTRBase<ScalarType,MV,OP>::isInitialized() const 
+  { 
+    return initialized_; 
+  }
+
+  template <class ScalarType, class MV, class OP>
+  std::vector<int> RTRBase<ScalarType,MV,OP>::getRitzIndex() 
+  {
+    std::vector<int> ret(nevLocal_,0);
+    return ret;
+  }
+
+
 } // end Anasazi namespace
 
 #endif // ANASAZI_RTRBASE_HPP

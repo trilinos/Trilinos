@@ -50,7 +50,6 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -100,34 +99,15 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
+SOURCES =
+DIST_SOURCES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
-libLIBRARIES_INSTALL = $(INSTALL_DATA)
-LIBRARIES = $(lib_LIBRARIES)
-AR = ar
-ARFLAGS = cru
-am__DEPENDENCIES_1 =
-libanasazitpetra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = AnasaziTpetraAdapter.$(OBJEXT)
-am__objects_2 =
-@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
-am_libanasazitpetra_a_OBJECTS = $(am__objects_1) $(am__objects_3)
-libanasazitpetra_a_OBJECTS = $(am_libanasazitpetra_a_OBJECTS)
-DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-SOURCES = $(libanasazitpetra_a_SOURCES)
-DIST_SOURCES = $(libanasazitpetra_a_SOURCES)
+am__installdirs = "$(DESTDIR)$(includedir)"
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -257,9 +237,7 @@ top_srcdir = @top_srcdir@
 CORE_H = \
 	$(srcdir)/AnasaziTpetraAdapter.hpp 
 
-CORE = \
-	$(srcdir)/AnasaziTpetraAdapter.cpp
-
+CORE = 
 
 #
 #np#  Files which are included in select builds are typically have
@@ -290,7 +268,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # New_Package library specifications
 # ------------------------------------------------------------------------
 #np# replace new_package with the name of the package being autotool'ed here
-ANASAZI_TPETRA_LIB = libanasazitpetra.a
+#ANASAZI_TPETRA_LIB = libanasazitpetra.a
 
 #np# replace new_package with the name of the package being autotool'ed here
 ANASAZI_TPETRA_H = \
@@ -300,13 +278,9 @@ ANASAZI_TPETRA_H = \
 
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazitpetra_a_SOURCES = \
-	$(CORE) \
-	$(MPI)
-
-
-#np# replace new_package with the name of the package being autotool'ed here
-@USE_ALTERNATE_AR_FALSE@libanasazitpetra_a_AR = $(AR) cru
+#libanasazitpetra_a_SOURCES = \
+#	$(CORE) \
+#	$(MPI)
 
 #np# replace new_package with the name of the package being autotool'ed here
 #EXTRA_libanasazitpetra_a_SOURCES = \
@@ -324,8 +298,16 @@ libanasazitpetra_a_SOURCES = \
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
 
+#if USE_ALTERNATE_AR
+
 #np# replace new_package with the name of the package being autotool'ed here
-@USE_ALTERNATE_AR_TRUE@libanasazitpetra_a_AR = $(ALTERNATE_AR)
+#libanasazitpetra_a_AR = $(ALTERNATE_AR)
+#else
+
+#np# replace new_package with the name of the package being autotool'ed here
+#libanasazitpetra_a_AR = $(AR) cru
+
+#endif
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
@@ -333,14 +315,14 @@ libanasazitpetra_a_SOURCES = \
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazitpetra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+#libanasazitpetra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(ANASAZI_TPETRA_LIB)
+#lib_LIBRARIES = $(ANASAZI_TPETRA_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
@@ -366,7 +348,6 @@ MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -396,75 +377,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libLIBRARIES: $(lib_LIBRARIES)
-	@$(NORMAL_INSTALL)
-	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f=$(am__strip_dir) \
-	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
-	  else :; fi; \
-	done
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    p=$(am__strip_dir) \
-	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
-	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
-	  else :; fi; \
-	done
-
-uninstall-libLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  p=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
-	done
-
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libanasazitpetra.a: $(libanasazitpetra_a_OBJECTS) $(libanasazitpetra_a_DEPENDENCIES) 
-	-rm -f libanasazitpetra.a
-	$(libanasazitpetra_a_AR) libanasazitpetra.a $(libanasazitpetra_a_OBJECTS) $(libanasazitpetra_a_LIBADD)
-	$(RANLIB) libanasazitpetra.a
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziTpetraAdapter.Po@am__quote@
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-AnasaziTpetraAdapter.o: $(srcdir)/AnasaziTpetraAdapter.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziTpetraAdapter.o -MD -MP -MF $(DEPDIR)/AnasaziTpetraAdapter.Tpo -c -o AnasaziTpetraAdapter.o `test -f '$(srcdir)/AnasaziTpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziTpetraAdapter.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziTpetraAdapter.Tpo $(DEPDIR)/AnasaziTpetraAdapter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziTpetraAdapter.cpp' object='AnasaziTpetraAdapter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziTpetraAdapter.o `test -f '$(srcdir)/AnasaziTpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziTpetraAdapter.cpp
-
-AnasaziTpetraAdapter.obj: $(srcdir)/AnasaziTpetraAdapter.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziTpetraAdapter.obj -MD -MP -MF $(DEPDIR)/AnasaziTpetraAdapter.Tpo -c -o AnasaziTpetraAdapter.obj `if test -f '$(srcdir)/AnasaziTpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/AnasaziTpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziTpetraAdapter.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziTpetraAdapter.Tpo $(DEPDIR)/AnasaziTpetraAdapter.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziTpetraAdapter.cpp' object='AnasaziTpetraAdapter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziTpetraAdapter.obj `if test -f '$(srcdir)/AnasaziTpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/AnasaziTpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziTpetraAdapter.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
@@ -559,9 +471,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS)
+all-am: Makefile $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -591,13 +503,11 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+clean-am: clean-generic mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-generic distclean-tags
 
 dvi: dvi-am
 
@@ -613,7 +523,7 @@ install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-am
 
-install-exec-am: install-libLIBRARIES
+install-exec-am:
 
 install-html: install-html-am
 
@@ -628,13 +538,12 @@ install-ps: install-ps-am
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-generic
 
 pdf: pdf-am
 
@@ -644,23 +553,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
+uninstall-am: uninstall-includeHEADERS
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am \
+	ctags distclean distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
+	uninstall uninstall-am uninstall-includeHEADERS
 
 
 # ------------------------------------------------------------------------

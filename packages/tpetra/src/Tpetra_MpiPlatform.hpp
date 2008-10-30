@@ -35,6 +35,10 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include "Tpetra_Platform.hpp"
 
+// FINISH: this should have a getComm() method; Comm should then have a clone() method
+//         because of MPI tag issues, we want to always use the same Comm, unless the user 
+//         specifies a different Comm
+
 namespace Tpetra {
 
   //! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
@@ -42,7 +46,8 @@ namespace Tpetra {
   class MpiPlatform : public virtual Platform<Ordinal> {
   public:
 
-    //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
     //! Constructor
     MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
@@ -58,7 +63,8 @@ namespace Tpetra {
 
     //@}
 
-    //@{ \name Class Creation and Accessor Methods
+    //! @name Class Creation and Accessor Methods
+    //@{ 
 
     //! Comm Instance
     Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const;

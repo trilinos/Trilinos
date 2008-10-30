@@ -31,21 +31,20 @@
 
 #include "Tpetra_VectorDataDecl.hpp"
 #include <Teuchos_Object.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 namespace Tpetra {
 
-  template<typename OrdinalType, typename ScalarType>
-  VectorData<OrdinalType,ScalarType>::VectorData(VectorSpace<OrdinalType, ScalarType> const& VectorSpace, 
-        OrdinalType length, ScalarType seed) 
+  template<typename Ordinal, typename Scalar>
+  VectorData<Ordinal,Scalar>::VectorData(const Map<Ordinal> & map, Scalar seed) 
     : Teuchos::Object("Tpetra::VectorData")
-      , BLAS_()
-      , VectorSpace_(VectorSpace)
-      , scalarArray_(length, Teuchos::ScalarTraits<ScalarType>::zero())
+      , map_(map)
+      , values_( Teuchos::arcp<Scalar>(map.getNumMyEntries()) )
       , seed_(seed)
   {}
 
-  template<typename OrdinalType, typename ScalarType>
-  VectorData<OrdinalType,ScalarType>::~VectorData() {}
+  template<typename Ordinal, typename Scalar>
+  VectorData<Ordinal,Scalar>::~VectorData() {}
 
 } // namespace Tpetra
 

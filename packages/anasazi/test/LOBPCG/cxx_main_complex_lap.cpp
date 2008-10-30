@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 {
   using std::cout;
   using std::endl;
+
   int MyPID = 0;
   bool boolret;
 
@@ -60,7 +61,6 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
 #endif
-
 
   bool testFailed;
   bool verbose = false;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     = rcp( new MyOperator<ST>(dim) );
 
   // Create initial vectors
-  int blockSize = 2;
+  const int blockSize = 2;
   RCP<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   ivec->MvRandom();
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
-    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+    verbosity += Anasazi::IterationDetails + Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
   if (debug) {
     verbosity += Anasazi::Debug;
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
     }
 
   }
-  
+
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
@@ -230,8 +230,8 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;	
-  } 
+    cout << "End Result: TEST PASSED" << endl;
+  }
   return 0;
 
 }	

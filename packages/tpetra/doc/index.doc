@@ -59,10 +59,10 @@ Tpetra contains a number of classes.  They can be categorized as follows:
      Contain information used to distribute vectors, matrices and other objects.
 
 <li> Vector class: Tpetra::Vector - Provides vector services such as 
-     scaling, norms, and dot products. Is also used in conjunction with Tpetra::CisMatrix
+     scaling, norms, and dot products. Is also used in conjunction with Tpetra::CrsMatrix
      for matrix-vector computations.
 
-<li> Sparse matrix class: Tpetra::CisMatrix - Compressed Index Space Matrix. Can be either
+<li> Sparse matrix class: Tpetra::CrsMatrix - Compressed Index Space Matrix. Can be either
      row-oriented or column-oriented. 
 
 <li> Import/Export classes:  Tpetra::Import and Tpetra::Export - Constructed from two

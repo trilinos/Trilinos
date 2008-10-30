@@ -102,7 +102,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur
+DIST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur IRTR
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -216,7 +216,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_ANASAZI_THYRA_TRUE@@BUILD_EPETRA_THYRA_TRUE@THYRA_TEST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur #IRTR
+@BUILD_ANASAZI_THYRA_TRUE@@BUILD_EPETRA_THYRA_TRUE@THYRA_TEST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur IRTR
 SUBDIRS = $(THYRA_TEST_SUBDIRS)
 all: all-recursive
 

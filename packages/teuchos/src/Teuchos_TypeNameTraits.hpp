@@ -103,7 +103,7 @@ class TypeNameTraits<T*> {
 public:
   typedef T* T_ptr;
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
-  static std::string concreteName( T_ptr& t2 ) { return name(); }
+  static std::string concreteName( T_ptr& /*t2*/ ) { return name(); }
 };
 
 
@@ -111,8 +111,8 @@ template<>
 class TypeNameTraits<std::string> {
 public:
   static std::string name() { return "string"; }
-  static std::string concreteName( const std::string& t2 )
-    { (void)t2; return name(); }
+  static std::string concreteName( const std::string& /*t2*/ )
+    { return name(); }
 };
 
 
@@ -133,7 +133,7 @@ class TypeNameTraits<std::complex<T> > {
 public:
   static std::string name()
     { return "complex<"+TypeNameTraits<T>::name()+">"; }
-  static std::string concreteName( const std::complex<T>& t2 )
+  static std::string concreteName( const std::complex<T>& /*t2*/ )
     { return name(); }
 };
 

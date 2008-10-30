@@ -102,7 +102,8 @@ tests:
 	@echo ""
 	@echo "Now building belos tests."
 	@echo ""
-	cd $(top_builddir)/test && $(MAKE)
+	cd $(top_builddir)/test && $(MAKE) && \
+			cd $(abs_top_builddir)/tpetra/test && $(MAKE)
 	@echo ""
 	@echo "Finished building belos tests."
 	@echo ""
@@ -132,7 +133,8 @@ install-examples:
 endif
 
 clean-tests:
-	cd $(top_builddir)/test && $(MAKE) clean
+	cd $(top_builddir)/test && $(MAKE) clean && \
+			cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
 
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
@@ -146,7 +148,12 @@ clean-everything:
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+
+if BUILD_TPETRA
+TPETRA_SUBDIR = tpetra
+endif
+
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(TPETRA_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

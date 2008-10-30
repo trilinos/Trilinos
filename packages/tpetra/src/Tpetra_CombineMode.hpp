@@ -31,12 +31,8 @@
 
 /*! \file Tpetra_CombineMode.hpp 
     \brief Tpetra::Combine Mode enumerable type
-*/
 
-namespace Tpetra {
-	
-	/*! \enum CombineMode
-        If set to Add, existing values will be summed with new values.
+    If set to Add, existing values will be summed with new values.
 		If set to Insert, new values will be inserted that don't currently exist.
 		If set to Replace, existing values will be replaced with new values.
 
@@ -44,12 +40,14 @@ namespace Tpetra {
 		but it will function correctly if those values don't already exist. (i.e.
 		zero will be inserted, and then summed with or replaced by the new value.)
 		However, performance may suffer. (The same goes for Insert.)
-	*/
+*/
+namespace Tpetra {
 	
+  /*! Combine mode */
 	enum CombineMode {
-		Add,    /*!< Existing values will be summed with new values. */
-		Insert, /*!< Insert new values that don't currently exist. */
-		Replace /*!< Existing values will be replaced with new values. */
+		ADD,    /*!< Existing values will be summed with new values. */
+		INSERT, /*!< Insert new values that don't currently exist. */
+		REPLACE /*!< Existing values will be replaced with new values. */
 	};
 
 } // namespace Tpetra
