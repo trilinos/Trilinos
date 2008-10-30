@@ -32,6 +32,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
+#include "Epetra_Map.h"
 
 // **********************************************************************
 // Specialization: Residual
@@ -88,12 +89,14 @@ evaluateFields(typename Traits::EvalData workset)
     for (std::size_t node = 0; node < num_nodes; node++) {
       unsigned node_GID = element->globalNodeId(node);
       int firstDOF = f->Map().LID(node_GID * num_eq);
-      for (std::size_t eq = 0; eq < val.size(); eq++)
+      for (std::size_t eq = 0; eq < val.size(); eq++) {
 	(*f)[firstDOF + eq] += (val[eq])(cell,node);
+      }
     }
+    
 
   }
-
+  
 }
 
 // **********************************************************************
@@ -150,46 +153,41 @@ evaluateFields(typename Traits::EvalData workset)
   std::size_t cell = 0;
   for (; element != workset.end; ++element,++cell) {
     
-    
     // Sum element residual and Jacobian into global residual, Jacobian
     // Loop over nodes in element
-    int row, col;
-    unsigned int lrow, lcol;
-    for (unsigned int node_row = 0; node_row < num_nodes; node_row++) {
+    for (unsigned int node = 0; node < num_nodes; node++) {
       
+      unsigned node_GID = element->globalNodeId(node);
+      int firstDOF = Jac->RowMap().LID(node_GID * num_eq);
+
       // Loop over equations per node
-      for (unsigned int eq_row = 0; eq_row < num_eq; eq_row++) {
+      for (unsigned int eq = 0; eq < num_eq; eq++) {
 	
-	lrow = num_eq * node_row + eq_row;
-	
-	// Global row
-	row = static_cast<int>(element->globalNodeId(node_row) * num_eq + eq_row);
+	int row = firstDOF + eq;
 	
 	// Sum residual
 	if (f != Teuchos::null)
-	  f->SumIntoGlobalValue(row, 0, val[eq_row](cell,node_row).val());
+	  f->SumIntoMyValue(row, 0, val[eq](cell,node).val());
 	
-// 	std::cout << "val[" << eq_row << "](" << cell << "," << node_row << ") = " 
-// 		  << val[eq_row](cell,node_row).val() << std::endl;
-
 
 	// Check derivative array is nonzero
-	if (val[eq_row](cell,node_row).hasFastAccess()) {
+	if (val[eq](cell,node).hasFastAccess()) {
 	  
 	  // Loop over nodes in element
+	  int firstcol = -1;
 	  for (unsigned int node_col=0; node_col<num_nodes; node_col++){
+	    firstcol =  Jac->RowMap().LID(element->globalNodeId(node_col) * num_eq);
 	    
 	    // Loop over equations per node
 	    for (unsigned int eq_col=0; eq_col<num_eq; eq_col++) {
-	      lcol = num_eq * node_col + eq_col;
 	      
-	      // Global column
-	      col = static_cast<int>(element->globalNodeId(node_col) * num_eq + eq_col);
+              int lcol = num_eq * node_col + eq_col;
+	      int col = firstcol + eq_col;
 	      
 	      // Sum Jacobian
-	      Jac->SumIntoGlobalValues(row, 1, 
-				       &(val[eq_row](cell,node_row).fastAccessDx(lcol)),
-				       &col);
+	      Jac->SumIntoMyValues(row, 1, 
+				   &(val[eq](cell,node).fastAccessDx(lcol)),
+				   &col);
 	      
 	    } // column equations
 	    

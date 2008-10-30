@@ -83,7 +83,7 @@ evaluateFields(typename Traits::EvalData workset)
     for (std::size_t node = 0; node < num_nodes; node++) {
       unsigned node_GID = element->globalNodeId(node);
       //int firstDOF = x->Map().LID(node_GID * num_eq);
-      int firstDOF = node_GID * num_eq;
+      int firstDOF = x->Map().LID(node_GID) * num_eq;
       for (std::size_t eq = 0; eq < val.size(); eq++)
 	(val[eq])(cell,node) = (*x)[firstDOF + eq];
     }

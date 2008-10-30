@@ -34,22 +34,25 @@
 
 //**********************************************************************
 Element_Linear2D::Element_Linear2D(std::vector<unsigned> global_node_ids,
+				   std::size_t global_element_index,
 				   std::size_t local_element_index,
 				   std::vector<double> x_node_coords,
 				   std::vector<double> y_node_coords) :
+  m_global_element_index(global_element_index),
   m_local_element_index(local_element_index),
   m_global_node_ids(global_node_ids),
+  m_owns_node(4, false),
   m_coords_mem(Teuchos::arcp<double>(4*2)),
   m_phi_mem(Teuchos::arcp<double>(4*4)),
   m_grad_phi_mem(Teuchos::arcp<double>(4*4*2)),
   m_grad_phi_xy_mem(Teuchos::arcp<double>(4*4*2)),
-  m_jacobian_transform_mem(Teuchos::arcp<double>(4)),
+  m_det_jacobian_mem(Teuchos::arcp<double>(4)),
   m_weights_mem(Teuchos::arcp<double>(4)),
   m_coords(&(m_coords_mem[0]),4,2),
   m_phi(&(m_phi_mem[0]),4,4),
   m_grad_phi(&(m_grad_phi_mem[0]),4,4,2),
   m_grad_phi_xy(&(m_grad_phi_xy_mem[0]),4,4,2),
-  m_jacobian_transform(&(m_jacobian_transform_mem[0]),4),
+  m_det_jacobian(&(m_det_jacobian_mem[0]),4),
   m_weights(&(m_weights_mem[0]),4)
 { 
   // Set node coordinatates
@@ -81,51 +84,59 @@ Element_Linear2D::Element_Linear2D(std::vector<unsigned> global_node_ids,
   m_weights[2] = 1.0;
   m_weights[3] = 1.0;
 
-  for (std::size_t i=0; i < 4; ++i) {
+  for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp) {
     // Phi
-    PHX::Array<double,PHX::NaturalOrder,Node> phi_qp = m_phi.truncate(i);
-    evaluatePhi(chi[i], eta[i], phi_qp);
+    PHX::Array<double,PHX::NaturalOrder,Node> phi_qp = m_phi.truncate(qp);
+    evaluatePhi(chi[qp], eta[qp], phi_qp);
     
-    // Grad Phi
+    // Grad Phi in local element coordinates
     PHX::Array<double,PHX::NaturalOrder,Node,Dim> grad_phi_qp = 
-      m_grad_phi.truncate(i);
-    evaluateGradPhi(chi[i], eta[i], grad_phi_qp);
+      m_grad_phi.truncate(qp);
+    evaluateGradPhi(chi[qp], eta[qp], grad_phi_qp);
     
-    // |J|
-    evaluateJacobianTransform(chi[i], eta[i], m_jacobian_transform(i));
+    // Determinant of Jacobian and basis function gradients in 
+    // real space
+    PHX::Array<double,PHX::NaturalOrder,Node,Dim> grad_phi_xy_qp = 
+      m_grad_phi_xy.truncate(qp);
+    evaluateDetJacobianAndGradients(chi[qp], eta[qp], m_det_jacobian(qp),
+				    grad_phi_qp, grad_phi_xy_qp);
   }
   
   
-  for (std::size_t i=0; i < m_grad_phi_xy.size(); ++i)
-    m_grad_phi_xy[i] = 0.0;
+//   for (std::size_t i=0; i < m_grad_phi_xy.size(); ++i)
+//     m_grad_phi_xy[i] = 0.0;
 
-  for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
-    for (std::size_t node=0; node < this->numNodes(); ++node)
-      for (std::size_t dim=0; dim < 2; ++dim)
-	m_grad_phi_xy(qp,node,dim) = 
-	  (1.0 / m_jacobian_transform(qp)) * m_grad_phi(qp,node,dim);
+//   for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
+//     for (std::size_t node=0; node < this->numNodes(); ++node)
+//       for (std::size_t dim=0; dim < 2; ++dim)
+// 	m_grad_phi_xy(qp,node,dim) = 
+// 	  (1.0 / m_det_jacobian(qp)) * m_grad_phi(qp,node,dim);
 
 }
 
 //**********************************************************************
 Element_Linear2D& Element_Linear2D::operator=(const Element_Linear2D& right)
 {
+  m_global_element_index = right.m_global_element_index;
+
   m_local_element_index = right.m_local_element_index;
 
   m_global_node_ids = right.m_global_node_ids;
+
+  m_owns_node = right.m_owns_node;
 
   m_coords_mem = right.m_coords_mem;
   m_phi_mem = m_phi_mem;
   m_grad_phi_mem = right.m_grad_phi_mem;
   m_grad_phi_xy_mem = right.m_grad_phi_xy_mem;
-  m_jacobian_transform_mem = right.m_jacobian_transform_mem;
+  m_det_jacobian_mem = right.m_det_jacobian_mem;
   m_weights_mem = right.m_weights_mem;
 
   m_coords = right.m_coords;
   m_phi = right.m_phi;
   m_grad_phi = right.m_grad_phi;
   m_grad_phi_xy = right.m_grad_phi_xy;
-  m_jacobian_transform = right.m_jacobian_transform;
+  m_det_jacobian = right.m_det_jacobian;
   m_weights = right.m_weights;
 
   return *this;
@@ -156,9 +167,28 @@ unsigned Element_Linear2D::globalNodeId(std::size_t local_node_index) const
 }
 
 //**********************************************************************
+std::size_t Element_Linear2D::globalElementIndex() const
+{
+  return m_global_element_index;
+}
+
+//**********************************************************************
 std::size_t Element_Linear2D::localElementIndex() const
 {
   return m_local_element_index;
+}
+
+//**********************************************************************
+bool Element_Linear2D::ownsNode(std::size_t local_node_index) const
+{
+  return m_owns_node[local_node_index];
+}
+
+//**********************************************************************
+void 
+Element_Linear2D::setOwnsNode(std::size_t local_node_index, bool owns_node)
+{
+  m_owns_node[local_node_index] = owns_node;
 }
 
 //**********************************************************************
@@ -191,9 +221,9 @@ Element_Linear2D::basisFunctionGradientsRealSpace() const
 
 //**********************************************************************
 const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& 
-Element_Linear2D::jacobianTransforms() const
+Element_Linear2D::detJacobian() const
 {
-  return m_jacobian_transform;
+  return m_det_jacobian;
 }
 
 //**********************************************************************
@@ -231,8 +261,10 @@ void Element_Linear2D::evaluateGradPhi(double chi, double eta,
 }
 
 //**********************************************************************
-void Element_Linear2D::evaluateJacobianTransform(double chi, double eta,
-						 double& jac)
+void Element_Linear2D::
+evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
+	       const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi,
+	       PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi_xy)
 {
   double
   dx_dchi = 0.25 * ( ( m_coords(1,0) - m_coords(0,0) ) * (1.0 - eta) +
@@ -254,25 +286,40 @@ void Element_Linear2D::evaluateJacobianTransform(double chi, double eta,
 		     ( m_coords(2,1) - m_coords(1,1) ) * (1.0 + chi) 
 		   );
 
-  jac = dx_dchi * dy_deta - dx_deta * dy_dchi;
+  det_jac = dx_dchi * dy_deta - dx_deta * dy_dchi;
+
+  double inv_det_jac = 1.0 / det_jac;
+
+  for (std::size_t node = 0; node < this->numNodes(); ++node) {
+
+    grad_phi_xy(node,0) = inv_det_jac * 
+      (dy_deta * grad_phi(node, 0) - dy_dchi * grad_phi(node, 1));
+
+    grad_phi_xy(node,1) = inv_det_jac * 
+      (-dx_deta * grad_phi(node, 0) + dx_dchi * grad_phi(node, 1));
+  }
 }
 
 //**********************************************************************
 void Element_Linear2D::print(std::ostream& os) const
 {
-  os << "Element:" << std::endl;
+  os << "Element: gid = " << m_global_element_index << ", lid = " 
+     << m_local_element_index << std::endl;
   os << "  coords: " << std::endl;
   for (std::size_t i=0; i < this->numNodes(); ++i)
-    os << "    node[" << i << "] = (" << m_coords(i,0) << ","
-       << m_coords(i,1) << ")" << std::endl;
+    os << "    node[" << i << "]: gid = " << m_global_node_ids[i] 
+       << "  coords =  (" << m_coords(i,0) << "," << m_coords(i,1) 
+       << "), owns = " << m_owns_node[i] << std::endl;
 
-  os << "\n  m_grad_phi_xy(QP,Node,Dim):" << std::endl;
-  for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
-    for (std::size_t node=0; node < this->numNodes(); ++node)
-      for (std::size_t dim=0; dim < 2; ++dim) {
-	os << "    m_grad_phi_xy(" << qp << "," << node << "," << dim
-	   << ") = " << m_grad_phi_xy(qp,node,dim) << std::endl;
-      }
+  if (false) {
+    os << "\n  m_grad_phi_xy(QP,Node,Dim):" << std::endl;
+    for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
+      for (std::size_t node=0; node < this->numNodes(); ++node)
+	for (std::size_t dim=0; dim < 2; ++dim) {
+	  os << "    m_grad_phi_xy(" << qp << "," << node << "," << dim
+	     << ") = " << m_grad_phi_xy(qp,node,dim) << std::endl;
+	}
+  }
   
 }
 

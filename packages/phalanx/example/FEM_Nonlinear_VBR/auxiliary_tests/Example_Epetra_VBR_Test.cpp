@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
       y_coords[2] = 1.0;
       y_coords[3] = 1.0;
       
-      Element_Linear2D e(global_id, i, x_coords, y_coords);
+      Element_Linear2D e(global_id, i, i, x_coords, y_coords);
       cells.push_back(e);
       
       // update global indices for next element

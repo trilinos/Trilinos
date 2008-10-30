@@ -94,7 +94,7 @@ PHX_EVALUATE_FIELDS(Equations,workset)
       element->basisFunctionGradientsRealSpace();
 
     const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& jac = 
-      element->jacobianTransforms();
+      element->detJacobian();
 
     const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& weights = 
       element->quadratureWeights();
@@ -104,14 +104,14 @@ PHX_EVALUATE_FIELDS(Equations,workset)
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
 
 	residual_temp(cell,node) += jac(qp) * weights(qp) *
-	  ( grad_phi(qp,node,0) * grad_temp(cell,qp,0) + 
-	    grad_phi(qp,node,1) * grad_temp(cell,qp,1) -
-	    phi(qp,node) * temp(cell,qp) * vel(cell,qp) );
+	  ( grad_phi(qp,node,0) * grad_temp(cell,qp,0) 
+	    + grad_phi(qp,node,1) * grad_temp(cell,qp,1)
+	    + 1000.0 * phi(qp,node) * temp(cell,qp) * vel(cell,qp) );
 	
 	residual_vel(cell,node) += jac(qp) * weights(qp) *
-	  ( grad_phi(qp,node,0) * grad_vel(cell,qp,0) + 
-	    grad_phi(qp,node,1) * grad_vel(cell,qp,1) -
-	    phi(qp,node) * temp(cell,qp) * vel(cell,qp) );
+	  ( grad_phi(qp,node,0) * grad_vel(cell,qp,0)
+	    + grad_phi(qp,node,1) * grad_vel(cell,qp,1)
+	    + 1000.0 * phi(qp,node) * temp(cell,qp) * vel(cell,qp) );
 	
       }
       

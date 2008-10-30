@@ -103,9 +103,11 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
 am_example_fem_nonlinear_vbr_OBJECTS =  \
-	Example_FEM_Nonlinear_VBR.$(OBJEXT) Traits.$(OBJEXT) \
+	Example_FEM_Nonlinear_VBR.$(OBJEXT) \
+	LinearObjectFactoryVBR.$(OBJEXT) Traits.$(OBJEXT) \
 	Element_Linear2D.$(OBJEXT) Dimension.$(OBJEXT) \
-	Evaluator_Constant.$(OBJEXT) Evaluator_Equations.$(OBJEXT) \
+	MeshBuilder.$(OBJEXT) Evaluator_Constant.$(OBJEXT) \
+	Evaluator_Equations.$(OBJEXT) \
 	Evaluator_FEInterpolation.$(OBJEXT) \
 	Evaluator_GatherSolution.$(OBJEXT) \
 	Evaluator_ScatterResidual.$(OBJEXT)
@@ -252,6 +254,8 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(srcdir)/evaluators -I$(srcdir)/../FEM_Nonlinear $(EXAMPLE_INCLUDES)
 example_fem_nonlinear_vbr_SOURCES = \
 	$(srcdir)/Example_FEM_Nonlinear_VBR.cpp \
+	$(srcdir)/LinearObjectFactoryVBR.hpp \
+	$(srcdir)/LinearObjectFactoryVBR.cpp \
 	$(srcdir)/../FEM_Nonlinear/Traits.hpp \
 	$(srcdir)/../FEM_Nonlinear/Traits.cpp \
 	$(srcdir)/../FEM_Nonlinear/FactoryTraits.hpp \
@@ -260,6 +264,8 @@ example_fem_nonlinear_vbr_SOURCES = \
 	$(srcdir)/../FEM_Nonlinear/ExplicitTemplateInstantiation.hpp \
 	$(srcdir)/../FEM_Nonlinear/Dimension.hpp \
 	$(srcdir)/../FEM_Nonlinear/Dimension.cpp \
+	$(srcdir)/../FEM_Nonlinear/MeshBuilder.hpp \
+	$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp \
 	$(srcdir)/../FEM_Nonlinear/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
@@ -370,6 +376,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Evaluator_ScatterResidual.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_Epetra_VBR_Test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_FEM_Nonlinear_VBR.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearObjectFactoryVBR.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Traits.Po@am__quote@
 
 .cpp.o:
@@ -525,6 +533,34 @@ Example_FEM_Nonlinear_VBR.obj: $(srcdir)/Example_FEM_Nonlinear_VBR.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Example_FEM_Nonlinear_VBR.cpp' object='Example_FEM_Nonlinear_VBR.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_FEM_Nonlinear_VBR.obj `if test -f '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; then $(CYGPATH_W) '$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Example_FEM_Nonlinear_VBR.cpp'; fi`
+
+LinearObjectFactoryVBR.o: $(srcdir)/LinearObjectFactoryVBR.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearObjectFactoryVBR.o -MD -MP -MF $(DEPDIR)/LinearObjectFactoryVBR.Tpo -c -o LinearObjectFactoryVBR.o `test -f '$(srcdir)/LinearObjectFactoryVBR.cpp' || echo '$(srcdir)/'`$(srcdir)/LinearObjectFactoryVBR.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearObjectFactoryVBR.Tpo $(DEPDIR)/LinearObjectFactoryVBR.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearObjectFactoryVBR.cpp' object='LinearObjectFactoryVBR.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearObjectFactoryVBR.o `test -f '$(srcdir)/LinearObjectFactoryVBR.cpp' || echo '$(srcdir)/'`$(srcdir)/LinearObjectFactoryVBR.cpp
+
+LinearObjectFactoryVBR.obj: $(srcdir)/LinearObjectFactoryVBR.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearObjectFactoryVBR.obj -MD -MP -MF $(DEPDIR)/LinearObjectFactoryVBR.Tpo -c -o LinearObjectFactoryVBR.obj `if test -f '$(srcdir)/LinearObjectFactoryVBR.cpp'; then $(CYGPATH_W) '$(srcdir)/LinearObjectFactoryVBR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearObjectFactoryVBR.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearObjectFactoryVBR.Tpo $(DEPDIR)/LinearObjectFactoryVBR.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearObjectFactoryVBR.cpp' object='LinearObjectFactoryVBR.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearObjectFactoryVBR.obj `if test -f '$(srcdir)/LinearObjectFactoryVBR.cpp'; then $(CYGPATH_W) '$(srcdir)/LinearObjectFactoryVBR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearObjectFactoryVBR.cpp'; fi`
+
+MeshBuilder.o: $(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MeshBuilder.o -MD -MP -MF $(DEPDIR)/MeshBuilder.Tpo -c -o MeshBuilder.o `test -f '$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MeshBuilder.Tpo $(DEPDIR)/MeshBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp' object='MeshBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MeshBuilder.o `test -f '$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp
+
+MeshBuilder.obj: $(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MeshBuilder.obj -MD -MP -MF $(DEPDIR)/MeshBuilder.Tpo -c -o MeshBuilder.obj `if test -f '$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MeshBuilder.Tpo $(DEPDIR)/MeshBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp' object='MeshBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MeshBuilder.obj `if test -f '$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

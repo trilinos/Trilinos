@@ -68,6 +68,10 @@ example_fem_nonlinear_SOURCES = \
 	$(srcdir)/Dimension.hpp \
 	$(srcdir)/Dimension.cpp \
 	$(srcdir)/Workset.hpp \
+	$(srcdir)/MeshBuilder.hpp \
+	$(srcdir)/MeshBuilder.cpp \
+	$(srcdir)/LinearObjectFactory.hpp \
+	$(srcdir)/LinearObjectFactory.cpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.cpp \
@@ -92,7 +96,9 @@ example_fem_nonlinear_LDADD = $(EXAMPLE_LIBS)
 example_element_linear_2D_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp \
 	$(srcdir)/Element_Linear2D.hpp \
-	$(srcdir)/Element_Linear2D.cpp
+	$(srcdir)/Element_Linear2D.cpp \
+	$(srcdir)/MeshBuilder.hpp \
+	$(srcdir)/MeshBuilder.cpp
 
 example_element_linear_2D_DEPENDENCIES =
 

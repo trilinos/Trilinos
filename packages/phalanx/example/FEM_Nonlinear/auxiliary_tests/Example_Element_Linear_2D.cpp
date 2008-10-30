@@ -37,6 +37,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Element_Linear2D.hpp"
+#include "MeshBuilder.hpp"
+#include "Epetra_SerialComm.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,13 +74,13 @@ int main(int argc, char *argv[])
       gid[2] = 2;
       gid[3] = 3;
 
-      Element_Linear2D e(gid, 0, xc,yc);
+      Element_Linear2D e(gid, 0, 0, xc,yc);
       
       // Integrate the area to test jacobian transform
       double area = 0.0;
       for (std::size_t qp=0; qp < e.numQuadraturePoints(); ++qp) {
-	area += e.quadratureWeights()[qp] * e.jacobianTransforms()[qp];
-	cout << "|J| = " << e.jacobianTransforms()[qp] << endl;
+	area += e.quadratureWeights()[qp] * e.detJacobian()[qp];
+	cout << "|J| = " << e.detJacobian()[qp] << endl;
 	
       }
       cout.setf(ios::scientific);
@@ -111,7 +113,7 @@ int main(int argc, char *argv[])
       gid[2] = 2;
       gid[3] = 3;
       
-      Element_Linear2D e(gid, 0, xc,yc);
+      Element_Linear2D e(gid, 0, 0, xc,yc);
       
       std::vector<double> u(4);
       // values give a slope of 1.0 in x direction
@@ -171,7 +173,28 @@ int main(int argc, char *argv[])
     }
     cout << "  **Gradient interpolation passed!" << endl;
     
+    cout << "\nTesting mesh integration..." << endl;
+    {
+      RCP<Epetra_Comm> comm = rcp(new Epetra_SerialComm);
+      MeshBuilder mb(comm, 100, 200, 3.0, 5.0, 8);
+      
+      std::vector<Element_Linear2D>& cells = *(mb.myElements());
+
+      double area = 0.0;
+      for (std::vector<Element_Linear2D>::iterator cell = cells.begin();
+	   cell != cells.end(); ++cell) {
+	for (std::size_t qp = 0; qp < cell->numQuadraturePoints(); ++qp) {
+	  area += 
+	    cell->quadratureWeights()[qp] * cell->detJacobian()[qp];
+	}
+      }
+      cout << "    area = " << area << ", should be " << 15.0 << endl;
+      TEST_FOR_EXCEPTION( ((area - 15.0) > 1.0e-12), std::logic_error,
+			  "Mesh area integration failed!");
+    }
+    cout << "  **Mesh Integration passed!" << endl;
     
+
     // *********************************************************************
     // Finished all testing
     // *********************************************************************

@@ -90,7 +90,8 @@ CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_example_element_linear_2D_OBJECTS =  \
-	Example_Element_Linear_2D.$(OBJEXT) Element_Linear2D.$(OBJEXT)
+	Example_Element_Linear_2D.$(OBJEXT) Element_Linear2D.$(OBJEXT) \
+	MeshBuilder.$(OBJEXT)
 example_element_linear_2D_OBJECTS =  \
 	$(am_example_element_linear_2D_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -99,7 +100,8 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(PHALANX_LIBS))
 am_example_fem_nonlinear_OBJECTS = Example_FEM_Nonlinear.$(OBJEXT) \
 	Traits.$(OBJEXT) Element_Linear2D.$(OBJEXT) \
-	Dimension.$(OBJEXT) Evaluator_Constant.$(OBJEXT) \
+	Dimension.$(OBJEXT) MeshBuilder.$(OBJEXT) \
+	LinearObjectFactory.$(OBJEXT) Evaluator_Constant.$(OBJEXT) \
 	Evaluator_Equations.$(OBJEXT) \
 	Evaluator_FEInterpolation.$(OBJEXT) \
 	Evaluator_GatherSolution.$(OBJEXT) \
@@ -255,6 +257,10 @@ example_fem_nonlinear_SOURCES = \
 	$(srcdir)/Dimension.hpp \
 	$(srcdir)/Dimension.cpp \
 	$(srcdir)/Workset.hpp \
+	$(srcdir)/MeshBuilder.hpp \
+	$(srcdir)/MeshBuilder.cpp \
+	$(srcdir)/LinearObjectFactory.hpp \
+	$(srcdir)/LinearObjectFactory.cpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.cpp \
@@ -278,7 +284,9 @@ example_fem_nonlinear_LDADD = $(EXAMPLE_LIBS)
 example_element_linear_2D_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp \
 	$(srcdir)/Element_Linear2D.hpp \
-	$(srcdir)/Element_Linear2D.cpp
+	$(srcdir)/Element_Linear2D.cpp \
+	$(srcdir)/MeshBuilder.hpp \
+	$(srcdir)/MeshBuilder.cpp
 
 example_element_linear_2D_DEPENDENCIES = 
 example_element_linear_2D_LDADD = $(EXAMPLE_LIBS)
@@ -340,6 +348,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Evaluator_ScatterResidual.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_Element_Linear_2D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_FEM_Nonlinear.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearObjectFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Traits.Po@am__quote@
 
 .cpp.o:
@@ -384,6 +394,20 @@ Element_Linear2D.obj: $(srcdir)/Element_Linear2D.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Element_Linear2D.obj `if test -f '$(srcdir)/Element_Linear2D.cpp'; then $(CYGPATH_W) '$(srcdir)/Element_Linear2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Element_Linear2D.cpp'; fi`
 
+MeshBuilder.o: $(srcdir)/MeshBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MeshBuilder.o -MD -MP -MF $(DEPDIR)/MeshBuilder.Tpo -c -o MeshBuilder.o `test -f '$(srcdir)/MeshBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/MeshBuilder.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MeshBuilder.Tpo $(DEPDIR)/MeshBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MeshBuilder.cpp' object='MeshBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MeshBuilder.o `test -f '$(srcdir)/MeshBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/MeshBuilder.cpp
+
+MeshBuilder.obj: $(srcdir)/MeshBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MeshBuilder.obj -MD -MP -MF $(DEPDIR)/MeshBuilder.Tpo -c -o MeshBuilder.obj `if test -f '$(srcdir)/MeshBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/MeshBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MeshBuilder.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/MeshBuilder.Tpo $(DEPDIR)/MeshBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MeshBuilder.cpp' object='MeshBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MeshBuilder.obj `if test -f '$(srcdir)/MeshBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/MeshBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MeshBuilder.cpp'; fi`
+
 Example_FEM_Nonlinear.o: $(srcdir)/Example_FEM_Nonlinear.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_FEM_Nonlinear.o -MD -MP -MF $(DEPDIR)/Example_FEM_Nonlinear.Tpo -c -o Example_FEM_Nonlinear.o `test -f '$(srcdir)/Example_FEM_Nonlinear.cpp' || echo '$(srcdir)/'`$(srcdir)/Example_FEM_Nonlinear.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Example_FEM_Nonlinear.Tpo $(DEPDIR)/Example_FEM_Nonlinear.Po
@@ -425,6 +449,20 @@ Dimension.obj: $(srcdir)/Dimension.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Dimension.cpp' object='Dimension.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.obj `if test -f '$(srcdir)/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Dimension.cpp'; fi`
+
+LinearObjectFactory.o: $(srcdir)/LinearObjectFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearObjectFactory.o -MD -MP -MF $(DEPDIR)/LinearObjectFactory.Tpo -c -o LinearObjectFactory.o `test -f '$(srcdir)/LinearObjectFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/LinearObjectFactory.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearObjectFactory.Tpo $(DEPDIR)/LinearObjectFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearObjectFactory.cpp' object='LinearObjectFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearObjectFactory.o `test -f '$(srcdir)/LinearObjectFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/LinearObjectFactory.cpp
+
+LinearObjectFactory.obj: $(srcdir)/LinearObjectFactory.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearObjectFactory.obj -MD -MP -MF $(DEPDIR)/LinearObjectFactory.Tpo -c -o LinearObjectFactory.obj `if test -f '$(srcdir)/LinearObjectFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/LinearObjectFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearObjectFactory.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearObjectFactory.Tpo $(DEPDIR)/LinearObjectFactory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearObjectFactory.cpp' object='LinearObjectFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearObjectFactory.obj `if test -f '$(srcdir)/LinearObjectFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/LinearObjectFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearObjectFactory.cpp'; fi`
 
 Evaluator_Constant.o: $(srcdir)/evaluators/Evaluator_Constant.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Evaluator_Constant.o -MD -MP -MF $(DEPDIR)/Evaluator_Constant.Tpo -c -o Evaluator_Constant.o `test -f '$(srcdir)/evaluators/Evaluator_Constant.cpp' || echo '$(srcdir)/'`$(srcdir)/evaluators/Evaluator_Constant.cpp

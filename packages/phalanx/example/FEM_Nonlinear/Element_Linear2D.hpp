@@ -86,6 +86,7 @@ public:
   Element_Linear2D() {}
   
   Element_Linear2D(std::vector<unsigned> global_node_ids,
+		   std::size_t global_element_index,
 		   std::size_t local_element_index,
 		   std::vector<double> x_node_coords,
 		   std::vector<double> y_node_coords);
@@ -104,8 +105,17 @@ public:
   //! Returns the global node id, given the local node index
   unsigned globalNodeId(std::size_t local_node_index) const;
 
+  //! Returns the global index for this element
+  std::size_t globalElementIndex() const;
+
   //! Returns the local processor index for this element
   std::size_t localElementIndex() const;
+
+  //! Returns true if the node is owned by the calling process
+  bool ownsNode(std::size_t local_node_index) const;
+
+  //! Set to true if this node is owned by calling process
+  void setOwnsNode(std::size_t local_node_index, bool owns_node=true);
 
   //! Returns nodal coordinates
   const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& 
@@ -125,9 +135,9 @@ public:
   const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
   basisFunctionGradientsRealSpace() const;
   
-  //! Returns jacobian transform values at the quadrature points
+  //! Returns determinant of jacobian transform values at quadrature points
   const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& 
-  jacobianTransforms() const;
+  detJacobian() const;
 
   //! Returns jacobian transform values at the quadrature points
   const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& 
@@ -143,13 +153,19 @@ private:
   void evaluateGradPhi(double chi, double eta, 
 		    PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi);
 
-  void evaluateJacobianTransform(double chi, double eta, double& jac);
+  void evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
+	         const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi,
+	         PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi_xy);
   
 private:
   
+  std::size_t m_global_element_index;
+
   std::size_t m_local_element_index;
 
   std::vector<unsigned> m_global_node_ids;
+
+  std::vector<bool> m_owns_node;
 
   Teuchos::ArrayRCP<double> m_coords_mem;
   
@@ -159,7 +175,7 @@ private:
 
   Teuchos::ArrayRCP<double> m_grad_phi_xy_mem;
 
-  Teuchos::ArrayRCP<double> m_jacobian_transform_mem;
+  Teuchos::ArrayRCP<double> m_det_jacobian_mem;
 
   Teuchos::ArrayRCP<double> m_weights_mem;
 
@@ -171,7 +187,7 @@ private:
 
   PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi_xy;
 
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint> m_jacobian_transform;
+  PHX::Array<double,PHX::NaturalOrder,QuadPoint> m_det_jacobian;
 
   PHX::Array<double,PHX::NaturalOrder,QuadPoint> m_weights;
 

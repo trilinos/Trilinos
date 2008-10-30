@@ -59,6 +59,8 @@ endif
 
 example_fem_nonlinear_vbr_SOURCES = \
 	$(srcdir)/Example_FEM_Nonlinear_VBR.cpp \
+	$(srcdir)/LinearObjectFactoryVBR.hpp \
+	$(srcdir)/LinearObjectFactoryVBR.cpp \
 	$(srcdir)/../FEM_Nonlinear/Traits.hpp \
 	$(srcdir)/../FEM_Nonlinear/Traits.cpp \
 	$(srcdir)/../FEM_Nonlinear/FactoryTraits.hpp \
@@ -67,6 +69,8 @@ example_fem_nonlinear_vbr_SOURCES = \
 	$(srcdir)/../FEM_Nonlinear/ExplicitTemplateInstantiation.hpp \
 	$(srcdir)/../FEM_Nonlinear/Dimension.hpp \
 	$(srcdir)/../FEM_Nonlinear/Dimension.cpp \
+	$(srcdir)/../FEM_Nonlinear/MeshBuilder.hpp \
+	$(srcdir)/../FEM_Nonlinear/MeshBuilder.cpp \
 	$(srcdir)/../FEM_Nonlinear/Workset.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant.hpp \
 	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
