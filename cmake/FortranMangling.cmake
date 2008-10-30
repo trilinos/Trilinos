@@ -28,7 +28,7 @@ FUNCTION(FORTRAN_MANGLING)
 
   IF(NOT DEFINED FC_FN_CASE)
 
-    IF (VERBOSE_CONFIGURE)
+    IF (Trilinos_VERBOSE_CONFIGURE)
       MESSAGE("FORTRAN_MANGLING: Testing name Mangling Schemes!\n")
     ENDIF()
 
@@ -45,7 +45,7 @@ FUNCTION(FORTRAN_MANGLING)
 
       FOREACH(udef UNDER NO_UNDER SECOND_UNDER)
 
-        IF (VERBOSE_CONFIGURE)
+        IF (Trilinos_VERBOSE_CONFIGURE)
           MESSAGE("FORTRAN_MANGLING: Testing ${cdef} ${udef}\n\n")
         ENDIF()
 
@@ -57,12 +57,12 @@ FUNCTION(FORTRAN_MANGLING)
           CMAKE_FLAGS "-DMANGLE_FLAGS:STRING=-DFC_FN_${cdef};-DFC_FN_${udef}"
           OUTPUT_VARIABLE _fcmngl_output
           )
-        IF (VERBOSE_CONFIGURE)
+        IF (Trilinos_VERBOSE_CONFIGURE)
           MESSAGE("${_fcmngl_output}\n\n")
         ENDIF()
 
         IF(_fcmngl)
-          IF (VERBOSE_CONFIGURE)
+          IF (Trilinos_VERBOSE_CONFIGURE)
             MESSAGE("FORTRAN_MANGLING: Bingo!  ${cdef} ${udef} is the correct fortran name mangling!\n")
           ENDIF()
           SET(FC_FN_CASE ${cdef} CACHE INTERNAL

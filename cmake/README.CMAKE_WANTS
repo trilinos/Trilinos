@@ -1,0 +1,36 @@
+
+
+Desired features for CMake:
+
+(*) ???
+
+
+
+Desired features for CTest:
+
+(*) Echo the console output to a summay file
+Testing/Temporary/LastTestSummary.log.  That way, we can get the same
+information later given what is printed to the console.  In C++, this
+can be implemented with a spliting stream.  We don't have one in
+Teuchos yet but we could create one and then copy it over to the CTest
+sources.  Actually, I think boost has one that could be extracted,
+renamed, simplified and then moved into the CTest sources.
+
+
+Desired features for CDash:
+
+(*) Show the total runtime for "Dynamic Analysis" and "Coverage"
+tests.  Right now we can only see the total runtime for the build and
+the regular tests on the CDash dashboard.
+
+(*) Show the checkout times on the dashboard in some way.  This can be
+significant on some systems and we want to know this!
+
+(*) Increase the threshold of 1024 characters for passed test output
+saved.  We need to see the full results of a test for many purposes.
+
+(*) Implement a tool that will go back in time and delete older test
+results from the SQL database and/or reduce the size of files stored
+in the SQL database.  However, we would want to save all data for
+important events like a test going from passing to failing or failing
+to passing.

@@ -1,3 +1,11 @@
+(*) Installing CMake
+
+  $ $TRILINOS_HOME/cmake/python/install-cmake.phy --install-dir=INSTALL_BASE_DIR
+
+  This will result in cmake and related tools being installed in
+  INSTALL_BASE_DIR/bin.
+
+
 (*) Getting CMake help
 
     http://www.cmake.org
@@ -7,6 +15,9 @@
   $ cd $BUILD_DIR
   $ rm CMakeCache.txt
   $ cmake -LAH $TRILINOS_BASE_DIR
+
+  NOTE: You can also just look at the text file CMakeCache.txt which
+  has all of the cache variables and documentation.
 
 (*) Viewing available configure-time options without documentation
 
@@ -84,11 +95,11 @@
 
 (*) Getting verbose output from configure
 
-  $ ./do_configure -D VERBOSE_CONFIGURE:BOOL=ON
+  $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON
 
 (*) Getting very verbose output from configure
 
-  $ ./do_configure -D VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
+  $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
 
 (*) Viewing current values of cache variables
 
@@ -150,10 +161,12 @@
 
   a) Serial tests
 
-    $ make runtests-serial-PACKAGE_SOURCE_DIR
+    $ make runtests-serial-PACKAGE_DIR
+
+    Where PACKAGE_DIR = epetra, thyra, nox, etc.
 
   b) MPI tests
 
-    $ make runtests-mpi-PACKAGE_SOURCE_DIR
+    $ make runtests-mpi-PACKAGE_DIR
 
     (NOTE: No need to specify MPIGO or anything else!)

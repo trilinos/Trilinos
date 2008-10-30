@@ -47,8 +47,7 @@ track of test results for different enables/disables.
   + Set up SSH tunnelling to SSG
 
 - Set up a MAC test machine feeding into Trilinos dashboard
-  + Look into s858352. Talk with Mary Meinelt (msmeine@sandia.gov).
-  + Look for another machine:  Sugesstion: Send reqeust to
+  + Look into 
 
 - Add 'serial' and 'mpi' categories to dashboard on trilinos.sandia.gov
 
@@ -68,9 +67,20 @@ Trilinos.
 
 (*) [Esteban] Add the Trilinos LGPL license to the NSIS installer
 
-(*) [Ross and Esteban] Write unit tests for all important Trilinos Cmake
+(*) [???] Write unit tests for all important Trilinos Cmake
 macros (like TRILINOS_ADD_[EXECUTABLE,TEST,EXECUTABLE_AND_TEST)(...) etc.)
 
+(*) [???] Create separate dashboards for each Trilinos package.  For
+now, we could write an advanced ctest script that would loop through
+all of the enabled Trilinos packages and then build and run the tests
+just for that package.  We would therefore have each Trilinos package
+as a separate "project".  For the purpose of testing, we could do this
+by setting Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON for each
+package.  This would allow us to get around the more complex problems
+with CDash.  This would require some more disk space for the results
+but at least we would get the information that we need.  We can also
+run a full rebuild and retest in the end to give a an overall package
+for Trilinos.
 
 Completed:
 ----------
