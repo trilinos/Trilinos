@@ -17,7 +17,7 @@ echo
 echo "Doing serial debug build"
 echo
 
-ctest -S $BASEDIR/scripts/ctest_linux_nightly_serial_debug_godel.cmake -VV
+time /usr/local/bin/ctest -S $BASEDIR/scripts/ctest_linux_nightly_serial_debug_godel.cmake -VV
 
 /home/rabartl/mailmsg.py "Trilinos serial debug on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
 
@@ -25,6 +25,6 @@ echo
 echo "Doing mpi optimized build"
 echo
 
-ctest -S $BASEDIR/scripts/ctest_linux_nightly_mpi_opt_godel.cmake -VV
+time /usr/local/bin/ctest -S $BASEDIR/scripts/ctest_linux_nightly_mpi_opt_godel.cmake -VV
 
 /home/rabartl/mailmsg.py "Trilinos mpi opt on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
