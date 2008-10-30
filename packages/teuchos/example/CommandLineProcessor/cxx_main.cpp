@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     std::string Solver = "GMRES";
     My_CLP.setOption("solver", &Solver, "Linear solver");
     // Set a boolean command line option.    
-    bool Precondition;
+    bool Precondition = true;
     My_CLP.setOption("precondition","no-precondition",
                      &Precondition,"Preconditioning flag");
     // Set an enumeration command line option

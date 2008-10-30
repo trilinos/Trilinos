@@ -16,6 +16,16 @@ Teuchos yet but we could create one and then copy it over to the CTest
 sources.  Actually, I think boost has one that could be extracted,
 renamed, simplified and then moved into the CTest sources.
 
+(*) Define the number of processors to be used when running a parallel
+test.  Currently, ctest has no way of knowing how many processors a
+test will use when it runs.  For example, it has no way of knowing
+that an MPI run will use 8 processors.  This is important information
+for ctest to know if it is going to be doing a good job of launching
+tests to run on multiple processors at the same time.  The optimal job
+scheduling would be difficult but all we need is some basic
+non-optimal logic to do a good job of using the machine to its fullest
+when running lots of test simultaneously.
+
 
 Desired features for CDash:
 
