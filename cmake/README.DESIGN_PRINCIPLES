@@ -1,6 +1,6 @@
 
 
-Last Modified: 2008/10/21
+Last Modified: 2008/10/27
 
 
 ----------------------------------------------------------------
@@ -11,10 +11,8 @@ Design Principles for CMake build & testing system for Trilinos
 and to define libraries, tests, and examples in those packages.
 
 (*) Create a design for building individual package CMake files that
-automatically results in uniformity of how things are done.  This is
-needed to support a number of important features and support
-maintenance.  Use standard macros to define every package's main
-features to facilitate this.
+automatically results in uniformity of how things are done to support
+maintenance.
 
 (*) Allow changes to logic and functionality that apply to all Trilinos
 packages without having to touch each individual Trilinos package's CMake
@@ -26,15 +24,16 @@ of important features.
 
 (*) Provide built-in automated support for as many critical software
 engineering practices a possible.  This includes proper and complete
-pre-checkin testing when continuous integration is being performed.
+pre-checkin testing when synchronous continuous integration is being
+performed.
 
 (*) Avoid duplication of all kinds as much as possible.  This is just a
 fundamental software maintenance issue.
 
-(*) The build system should be able to reproduce 100% update-to-date
-output by simply typing make.  We will endeavor to provide 100%
-correct dependency management in all situations (e.g. coping test
-input files to binary directory).
+(*) The build system should be able to reproduce 100% update-to-date output by
+simply rebuilding (i.e. typing 'make').  We will endeavor to provide 100%
+correct dependency management in all situations (e.g. coping test input files
+to binary directory).
 
 (*) Aggregate as much common functionality as possible to the
 top-level CMake files but allow individual CMake packages to refine
@@ -46,5 +45,9 @@ greater complexity at the framework level where we can apply solid
 software engineering design principles to manage the complexity and
 spare package developers.
 
-(*) Allow Trilinos packages that want/need to be built separately from
-Trilinos to do so but don't force this on all Trilinos packages.
+(*) Allow Trilinos packages that want/need to be built independently from
+other Trilinos packages.
+
+(*) Maintain the Trilinos CMake build system in such a way that the SIERRA
+BJAM build sytem for Trilinos will break less often and require less
+maintenance.  This is critical for SIERRA + Trilinos Integration.

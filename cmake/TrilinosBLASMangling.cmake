@@ -12,6 +12,6 @@ ENDIF()
 # Set options so that users can change these!
 
 SET(F77_BLAS_MANGLE ${F77_BLAS_MANGLE_DEFAULT} CACHE STRING
-  "Name mangling to call functions in the provide BLAS library")
+  "Name mangling to call functions in the provided BLAS library")
 
 MARK_AS_ADVANCED(F77_BLAS_MANGLE)

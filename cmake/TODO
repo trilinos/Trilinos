@@ -6,8 +6,6 @@ Last updated: 2008/09/28
 (*) [Ross] Create python script to checkout, untar, build, and install CMake
 in one shot.
 
-(*) [Ross] Add automatic Fortran 77 name mangling
-
 (*) [Ross] Add automatic demangle checking
 
 (*) [Ross] Add nightly cron job on thumper.sandia.gov to test
@@ -35,6 +33,10 @@ unecessary relinking when shared libraries are used
 (*) [Ross] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
 track of test results for different enables/disables.
+
+(*) [???] Change all source files to be globbed and use internal ifdefs to
+control what gets built.  This will make it easier to maintain the BJAM build
+system.
 
 (*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
 
@@ -84,3 +86,5 @@ for Trilinos.
 
 Completed:
 ----------
+
+(*) [Ross] Add automatic Fortran 77 name mangling [Done]
