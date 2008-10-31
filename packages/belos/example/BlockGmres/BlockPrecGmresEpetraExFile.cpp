@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  std::string PrecType = "ILU"; // incomplete LU
+  std::string PrecType = "ILUT"; // incomplete LU
   int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 
   // specify parameters for ILU
   ifpackList.set("fact: drop tolerance", 1e-9);
-  ifpackList.set("fact: level-of-fill", 1);
+  ifpackList.set("fact: ilut level-of-fill", 1.0);
   // the combine mode is on the following:
   // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
   // Their meaning is as defined in file Epetra_CombineMode.h
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
       belosList.set( "Output Frequency", frequency );
   }
   else
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
   // *******Construct a preconditioned linear problem********
   //
