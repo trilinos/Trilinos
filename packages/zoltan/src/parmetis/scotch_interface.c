@@ -35,7 +35,7 @@ static PARAM_VARS Scotch_params[] = {
   { "SCOTCH_STRAT_FILE", NULL, "STRING", 0 },
   { NULL, NULL, NULL, 0 } };
 
-static int Zoltan_Scotch_Bind_Param(ZZ * zz, char *alg, char **strat);
+static int Zoltan_Scotch_Bind_Param(ZZ * zz, char *alg, char* graph_type, char **strat);
 
 static int
 Zoltan_Scotch_Construct_Offset(ZOS *order,
@@ -89,7 +89,6 @@ int Zoltan_Scotch_Order(
   SCOTCH_Dgraph       grafdat;
   SCOTCH_Graph        cgrafdat;
   SCOTCH_Dordering    ordedat;
-  int edgelocnbr = 0;
 
   /* The following are used to convert elimination tree in Zoltan format */
   indextype          *tree;
@@ -107,6 +106,7 @@ int Zoltan_Scotch_Order(
   double times[5];
 
   char alg[MAX_PARAM_STRING_LEN+1];
+  char graph_type[MAX_PARAM_STRING_LEN+1];
   char *strat = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -115,7 +115,7 @@ int Zoltan_Scotch_Order(
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
 
   strcpy (alg, "NODEND");
-  ierr = Zoltan_Scotch_Bind_Param(zz, alg, &strat);
+  ierr = Zoltan_Scotch_Bind_Param(zz, alg, graph_type, &strat);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
@@ -416,6 +416,8 @@ Zoltan_Scotch_Construct_Offset(ZOS *order, indextype *children, int root,
   /* Interface routine for PT-Scotch: Partitioning          */
   /**********************************************************/
 
+/* TODO: convert multi-weighted vertices to 1 weight */
+
 int Zoltan_Scotch(
 		    ZZ *zz,               /* Zoltan structure */
 		    float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
@@ -449,6 +451,7 @@ int Zoltan_Scotch(
   SCOTCH_Strat        stradat;
   SCOTCH_Dgraph       grafdat;
   SCOTCH_Graph        cgrafdat;
+  SCOTCH_Arch         archdat;
 
   int use_timers = 0;
   int timer_p = -1;
@@ -458,14 +461,12 @@ int Zoltan_Scotch(
   char alg[MAX_PARAM_STRING_LEN+1];
   char graph_type[MAX_PARAM_STRING_LEN+1];
   char *strat = NULL;
-  int edgelocnbr = 0;
+  weighttype * goal_sizes=NULL;
+  weighttype velosum=0;
 
+
+  int retval=ZOLTAN_OK;
   int i;
-  float *imb_tols;
-  int  ncon;
-  int edgecut;
-  int wgtflag;
-  int   numflag = 0;
   int num_part = zz->LB.Num_Global_Parts;    /* passed to PT-Scotch. Don't             */
   MPI_Comm comm = zz->Communicator;          /* want to risk letting external packages */
                                              /* change our zz struct.                  */
@@ -487,12 +488,8 @@ int Zoltan_Scotch(
   prt.input_part_sizes = prt.part_sizes = part_sizes;
 
   strcpy (alg, "RBISECT");
-  ierr = Zoltan_Scotch_Bind_Param(zz, alg, &strat);
-
   strcpy (graph_type, "GLOBAL");
-  Zoltan_Bind_Param(Scotch_params, "SCOTCH_TYPE",
-		    (void *) graph_type);
-
+  ierr = Zoltan_Scotch_Bind_Param(zz, alg, graph_type, &strat);
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
@@ -506,21 +503,27 @@ int Zoltan_Scotch(
   /* TODO : take care about multidimensional weights */
   ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
 
-
+  /* Fix type of graph, negative because we impose them */
   if (strcmp (graph_type, "GLOBAL") == 0) {
-    gr.graph_type = GLOBAL_GRAPH;
+    gr.graph_type = - GLOBAL_GRAPH;
   }
   else {
-    gr.graph_type = LOCAL_GRAPH;
+    gr.graph_type = - LOCAL_GRAPH;
   }
 
+  if ((gr.graph_type != GLOBAL_GRAPH)&&(zz->Num_Proc > 1)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, __func__, "Distributed graph: cannot call serial Scotch, switching to PT-Scotch");
+    gr.graph_type = GLOBAL_GRAPH;
+    retval = ZOLTAN_WARN;
+  }
 
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-/*   wgtflag = 2*(gr.obj_wgt_dim>0) + (gr.edge_wgt_dim>0); */
-/*   ncon = (gr.obj_wgt_dim > 0 ? gr.obj_wgt_dim : 1); */
-
+  if (gr.obj_wgt_dim > 1) {
+    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Scotch cannot deal with more than 1 weight.");
+  }
 
   if (Zoltan_Scotch_Build_Graph(&gr, comm, strat, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
@@ -532,9 +535,35 @@ int Zoltan_Scotch(
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"Input parameter part_sizes is NULL.");
   }
 
+  if ((goal_sizes = (weighttype *) ZOLTAN_MALLOC(num_part * sizeof(weighttype))) == NULL) {
+    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,"Part_sizes cannot be allocated.");
+  }
+
+
+  /* Compute size we want for each part */
+  if (gr.graph_type == GLOBAL_GRAPH)
+    SCOTCH_dgraphSize (&grafdat, NULL, &velosum, NULL, NULL);
+  else
+    SCOTCH_graphStat (&cgrafdat, NULL, NULL, &velosum, NULL, NULL,
+		      NULL, NULL, NULL, NULL,
+		      NULL, NULL, NULL, NULL, NULL);
+
+  for (i=0; i < num_part ; ++i) {
+    goal_sizes[i] = ceil(prt.part_sizes[i]*velosum);
+  }
+
+  /* Construct a complete-graph like */
+  SCOTCH_archInit(&archdat);
+  SCOTCH_archCmpltw(&archdat, num_part, goal_sizes);
+
+  /* Really Call PT-Scotch or Scotch) */
   if (gr.graph_type == GLOBAL_GRAPH) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
-    if (SCOTCH_dgraphPart (&grafdat, num_part, &stradat, prt.part) != 0) {
+    if (SCOTCH_dgraphMap(&grafdat, &archdat, &stradat, prt.part) != 0) {
+      SCOTCH_archExit(&archdat);
+      ZOLTAN_FREE(&goal_sizes);
+      SCOTCH_dgraphExit(&grafdat);
       Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"PT-Scotch partitioning internal error.");
     }
@@ -542,7 +571,10 @@ int Zoltan_Scotch(
   }
   else {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the Scotch library");
-    if (SCOTCH_graphPart (&cgrafdat, num_part, &stradat, prt.part) != 0) {
+    if (SCOTCH_graphMap(&cgrafdat, &archdat, &stradat, prt.part) != 0) {
+      SCOTCH_archExit(&archdat);
+      ZOLTAN_FREE(&goal_sizes);
+      SCOTCH_graphExit(&cgrafdat);
       Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"Scotch partitioning internal error.");
     }
@@ -558,6 +590,8 @@ int Zoltan_Scotch(
   else {
     SCOTCH_graphExit(&cgrafdat);
   }
+  SCOTCH_archExit(&archdat);
+  ZOLTAN_FREE(&goal_sizes);
 
   ierr = Zoltan_Postprocess_Graph(zz, global_ids, local_ids, &gr, geo, &prt, &vsp, NULL, &part);
 
@@ -583,6 +617,9 @@ int Zoltan_Scotch(
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
+  if (ierr == ZOLTAN_OK)
+    return (retval);
+
   return (ierr);
 }
 
@@ -591,7 +628,7 @@ int Zoltan_Scotch(
  * Auxiliary function used to parse scotch specific parameters
  ***************************************/
 
-static int Zoltan_Scotch_Bind_Param(ZZ* zz, char *alg, char **strat)
+static int Zoltan_Scotch_Bind_Param(ZZ* zz, char *alg, char *graph_type, char **strat)
 {
   char stratsmall[MAX_PARAM_STRING_LEN+1];
   char stratfilename[MAX_PARAM_STRING_LEN+1];
@@ -600,6 +637,8 @@ static int Zoltan_Scotch_Bind_Param(ZZ* zz, char *alg, char **strat)
   stratsmall[0] = stratfilename[0] = '\0';
   Zoltan_Bind_Param(Scotch_params, "SCOTCH_METHOD",
 		    (void *) alg);
+  Zoltan_Bind_Param(Scotch_params, "SCOTCH_TYPE",
+		    (void *) graph_type);
   Zoltan_Bind_Param(Scotch_params, "SCOTCH_STRAT",
 		    (void *) stratsmall);
   Zoltan_Bind_Param(Scotch_params, "SCOTCH_STRAT_FILE",
@@ -711,7 +750,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 
     if (SCOTCH_graphBuild (cgrafptr, 0, gr->num_obj, gr->xadj, gr->xadj + 1,
 			   gr->vwgt, NULL,edgelocnbr, gr->adjncy, gr->ewgts) != 0) {
-      SCOTCH_dgraphExit(cgrafptr);
+      SCOTCH_graphExit(cgrafptr);
       return (ZOLTAN_FATAL);
     }
   }
@@ -720,7 +759,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
   if (strat != NULL) {
     if (((gr->graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphOrder (stratptr, strat)) != 0) ||
 	(SCOTCH_stratGraphOrder (stratptr, strat) != 0)) {
-      SCOTCH_dgraphExit(cgrafptr);
+      SCOTCH_graphExit(cgrafptr);
       return (ZOLTAN_FATAL);
     }
   }
