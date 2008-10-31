@@ -53,10 +53,10 @@ and then using it to redistribute multiple objects, it is more
 efficient to use the Isorropia::Partitioner and Isorropia::Redistributor
 classes. The general usage model is to:
 <ol>
-<li> Create a Isorropia::Partitioner instance (providing as input the
- matrix-graph or row-matrix object that is to be partitioned, and
- optionally a Isorropia::CostDescriber instance with weights/costs to
- influence the partitioning).
+<li> Create a Isorropia::Partitioner instance, providing the objects to be partitioned, and
+ optionally weights for those objects.  Weights can be defined with an 
+Isorropia::CostDescriber for graphs and hypergraphs, or with an Epetra_MultiVector for
+geometric coordinates.
 <li> Create a Isorropia::Redistributor object (providing as input a
 Isorropia::Partitioner instance)
 <li> Use the Isorropia::Redistributor to redistribute one or more objects
