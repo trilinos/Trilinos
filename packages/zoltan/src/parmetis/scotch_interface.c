@@ -30,6 +30,7 @@ extern "C" {
   /**********  parameters structure for Scotch methods **********/
 static PARAM_VARS Scotch_params[] = {
   { "SCOTCH_METHOD", NULL, "STRING", 0 },
+  { "SCOTCH_TYPE", NULL, "STRING", 0 },
   { "SCOTCH_STRAT", NULL, "STRING", 0 },
   { "SCOTCH_STRAT_FILE", NULL, "STRING", 0 },
   { NULL, NULL, NULL, 0 } };
@@ -49,6 +50,13 @@ static int compar_int (const void * a, const void * b)
   return ( *(int*)a - *(int*)b );
 }
 
+static int
+Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
+			  MPI_Comm             comm,
+			  char *               strat,
+			  SCOTCH_Dgraph *      dgrafptr,
+			  SCOTCH_Graph *       cgrafptr,
+			  SCOTCH_Strat *       stratptr);
 
 
 
@@ -171,30 +179,10 @@ int Zoltan_Scotch_Order(
 
   ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
 
-  edgelocnbr =  gr.xadj[gr.num_obj];
-  if (gr.graph_type==GLOBAL_GRAPH){
-    if (SCOTCH_dgraphInit (&grafdat, comm) != 0) {
-      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot initialize Scotch graph.");
-    }
 
-    if (SCOTCH_dgraphBuild (&grafdat, 0, gr.num_obj, gr.num_obj, gr.xadj, gr.xadj + 1,
-			    NULL, NULL,edgelocnbr, edgelocnbr, gr.adjncy, NULL, NULL) != 0) {
-      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
-    }
-  }
-  else {/* gr.graph_type==GLOBAL_GRAPH */
-    if (SCOTCH_graphInit (&cgrafdat) != 0) {
-      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot initialize Scotch graph.");
-    }
-
-    if (SCOTCH_graphBuild (&cgrafdat, 0, gr.num_obj, gr.xadj, gr.xadj + 1,
-			   NULL, NULL,edgelocnbr, gr.adjncy, NULL) != 0) {
-      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
-    }
+  if (Zoltan_Scotch_Build_Graph(&gr, comm, strat, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
+    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch Graph");
   }
 
   /* Allocate space for rank array */
@@ -215,15 +203,6 @@ int Zoltan_Scotch_Order(
   }
   else
     ord.iperm = NULL;
-
-  SCOTCH_stratInit (&stradat);
-  if (strat != NULL) {
-    if (((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphOrder (&stradat, strat)) != 0) ||
-	(SCOTCH_stratGraphOrder (&stradat, strat) != 0)) {
-      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Invalid Scotch strat.");
-    }
-  }
 
   if (gr.graph_type != GLOBAL_GRAPH) { /* Allocate separators tree */
     if (Zoltan_Order_Init_Tree (&zz->Order, gr.num_obj + 1, gr.num_obj) != ZOLTAN_OK) {
@@ -469,6 +448,7 @@ int Zoltan_Scotch(
 
   SCOTCH_Strat        stradat;
   SCOTCH_Dgraph       grafdat;
+  SCOTCH_Graph        cgrafdat;
 
   int use_timers = 0;
   int timer_p = -1;
@@ -476,6 +456,7 @@ int Zoltan_Scotch(
   double times[5];
 
   char alg[MAX_PARAM_STRING_LEN+1];
+  char graph_type[MAX_PARAM_STRING_LEN+1];
   char *strat = NULL;
   int edgelocnbr = 0;
 
@@ -508,6 +489,11 @@ int Zoltan_Scotch(
   strcpy (alg, "RBISECT");
   ierr = Zoltan_Scotch_Bind_Param(zz, alg, &strat);
 
+  strcpy (graph_type, "GLOBAL");
+  Zoltan_Bind_Param(Scotch_params, "SCOTCH_TYPE",
+		    (void *) graph_type);
+
+
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
     /* Start timer */
@@ -518,51 +504,60 @@ int Zoltan_Scotch(
   }
 
   /* TODO : take care about multidimensional weights */
-
   ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
+
+
+  if (strcmp (graph_type, "GLOBAL") == 0) {
+    gr.graph_type = GLOBAL_GRAPH;
+  }
+  else {
+    gr.graph_type = LOCAL_GRAPH;
+  }
+
 
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-  wgtflag = 2*(gr.obj_wgt_dim>0) + (gr.edge_wgt_dim>0);
-  ncon = (gr.obj_wgt_dim > 0 ? gr.obj_wgt_dim : 1);
+/*   wgtflag = 2*(gr.obj_wgt_dim>0) + (gr.edge_wgt_dim>0); */
+/*   ncon = (gr.obj_wgt_dim > 0 ? gr.obj_wgt_dim : 1); */
 
 
-  if (SCOTCH_dgraphInit (&grafdat, comm) != 0) {
-    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot initialize Scotch graph.");
-  }
-
-  edgelocnbr =  gr.xadj[gr.num_obj];
-  if (SCOTCH_dgraphBuild (&grafdat, 0, gr.num_obj, gr.num_obj, gr.xadj, gr.xadj + 1,
-			  gr.vwgt, NULL,edgelocnbr, edgelocnbr, gr.adjncy, NULL, gr.ewgts) != 0) {
+  if (Zoltan_Scotch_Build_Graph(&gr, comm, strat, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
   }
-
-  SCOTCH_stratInit (&stradat);
-  if (strat != NULL) {
-    if (SCOTCH_stratDgraphOrder (&stradat, strat) != 0) {
-      Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Invalid Scotch strat.");
-    }
-  }
-
 
   if (!prt.part_sizes){
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"Input parameter part_sizes is NULL.");
   }
 
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
-  if (SCOTCH_dgraphPart (&grafdat, num_part, &stradat, prt.part) != 0) {
-    Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"PT-Scotch partitioning internal error.");
+  if (gr.graph_type == GLOBAL_GRAPH) {
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
+    if (SCOTCH_dgraphPart (&grafdat, num_part, &stradat, prt.part) != 0) {
+      Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"PT-Scotch partitioning internal error.");
+    }
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the PT-Scotch library");
   }
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the PT-Scotch library");
+  else {
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the Scotch library");
+    if (SCOTCH_graphPart (&cgrafdat, num_part, &stradat, prt.part) != 0) {
+      Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,"Scotch partitioning internal error.");
+    }
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the Scotch library");
+  }
 
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
+
+  if (gr.graph_type == GLOBAL_GRAPH) {
+    SCOTCH_dgraphExit(&grafdat);
+  }
+  else {
+    SCOTCH_graphExit(&cgrafdat);
+  }
 
   ierr = Zoltan_Postprocess_Graph(zz, global_ids, local_ids, &gr, geo, &prt, &vsp, NULL, &part);
 
@@ -664,6 +659,7 @@ char *val)                      /* value of variable */
   int index;                  /* index returned from Check_Param */
   char *valid_methods[] = {
     "NODEND", /* for nested dissection ordering */
+    "RBISECT",
     NULL };
 
   status = Zoltan_Check_Param(name, val, Scotch_params, &result, &index);
@@ -682,6 +678,81 @@ char *val)                      /* value of variable */
   }
   return(status);
 }
+
+
+/** Function to construct scotch graph, in sequential or in parallel
+ */
+static int
+Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
+			  MPI_Comm             comm,
+			  char *               strat,
+			  SCOTCH_Dgraph *      dgrafptr,
+			  SCOTCH_Graph *       cgrafptr,
+			  SCOTCH_Strat *       stratptr)
+{
+  int edgelocnbr;
+
+  edgelocnbr =  gr->xadj[gr->num_obj];
+  if (gr->graph_type==GLOBAL_GRAPH){
+    if (SCOTCH_dgraphInit (dgrafptr, comm) != 0) {
+      return (ZOLTAN_FATAL);
+    }
+
+  if (SCOTCH_dgraphBuild (dgrafptr, 0, gr->num_obj, gr->num_obj, gr->xadj, gr->xadj + 1,
+			  gr->vwgt, NULL,edgelocnbr, edgelocnbr, gr->adjncy, NULL, gr->ewgts) != 0) {
+      SCOTCH_dgraphExit(dgrafptr);
+      return (ZOLTAN_FATAL);
+    }
+  }
+  else {/* gr->graph_type==GLOBAL_GRAPH */
+    if (SCOTCH_graphInit (cgrafptr) != 0) {
+      return (ZOLTAN_FATAL);
+    }
+
+    if (SCOTCH_graphBuild (cgrafptr, 0, gr->num_obj, gr->xadj, gr->xadj + 1,
+			   gr->vwgt, NULL,edgelocnbr, gr->adjncy, gr->ewgts) != 0) {
+      SCOTCH_dgraphExit(cgrafptr);
+      return (ZOLTAN_FATAL);
+    }
+  }
+
+  SCOTCH_stratInit (stratptr);
+  if (strat != NULL) {
+    if (((gr->graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphOrder (stratptr, strat)) != 0) ||
+	(SCOTCH_stratGraphOrder (stratptr, strat) != 0)) {
+      SCOTCH_dgraphExit(cgrafptr);
+      return (ZOLTAN_FATAL);
+    }
+  }
+
+  return (ZOLTAN_OK);
+}
+
+/*   { */
+/*     if (SCOTCH_dgraphCheck(&grafdat) != 0) { */
+/*       Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL); */
+/*       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Scotch graph not correct."); */
+/*     } */
+
+/*     FILE * graphfile; */
+/*     char name[80]; */
+
+/*     sprintf(name, "cage10.%d.src", zz->Proc); */
+/*     graphfile = fopen(name, "w+"); */
+/*     SCOTCH_dgraphSave(&grafdat, graphfile); */
+/*     fclose(graphfile); */
+/*   } */
+
+/*   SCOTCH_stratInit (&stradat); */
+/*   if (strat != NULL) { */
+/*     if (SCOTCH_stratDgraphOrder (&stradat, strat) != 0) { */
+/*       Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL); */
+/*       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Invalid Scotch strat."); */
+/*     } */
+/*   } */
+
+
+
 
 #ifdef __cplusplus
 }
