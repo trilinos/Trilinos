@@ -1,0 +1,6 @@
+Decomposition Method 	= none
+Zoltan Parameters	= order_method=scotch
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+zdrive action = 2
