@@ -27,9 +27,95 @@
 |&nbsp; <a href="ug_alg_hier.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_parmetis.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="PT-Scotch"></a>Graph partitioning: PT-Scotch</h2>
+<a NAME="PT-Scotch"></a>Graph partitioning: Scotch/PT-Scotch</h2>
 
-<a href="http://www.labri.fr/perso/pelegrin/scotch/">PT-Scotch</a> is currently only supported for ordering. Partitioning support in Zoltan for PT-Scotch will be added later.  Read more about <a href="ug_order_ptscotch.html">ordering with PT-Scotch</a> in Zoltan.
+<p>
+For more information about graph partitioning, see <a href="ug_alg_parmetis.html">ParMetis</a>.
+</p>
+<p>
+Scotch is a library for ordering and partitioning, developed at LaBRI in Bordeaux, France. PT-Scotch is the parallel module in Scotch. (We use the names Scotch and PT-Scotch interchangeably.) Scotch is a third-party library in Zoltan and should be obtained separately from the <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch web site</a>. Currently, Zoltan supports version 5.1 of Scotch, compiled with the support of PT-Scotch and <i>int</i> coding for vertices, not <i>long</i> (on architectures where <i>sizeof(int) != sizeof(long)</i>).
+<p>
+If the parameter <a href="#SCOTCH_TYPE">SCOTCH_TYPE</a> is set to LOCAL and the number of processor is 1, it's the sequential version of Scotch which is called, not the parallel.
+</p>
+<p>
+Both the serial (Scotch) and the parallel (PT-Scotch) compute k-way partitioning by doing recursive bisection. 
+</p>
+<p>
+Scotch must be used in the context LB_APPROACH=partition, to balance poorly distributed data. Unlike ParMetis, Scotch doesn't support the multiconstraint partitioning feature. However, for single constraint partitioning it seems to produce better results than ParMetis although it requires less memory.
+</p>
+
+
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP><b>Order_Method String:</b></td>
+
+<td><b>SCOTCH</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; SCOTCH_METHOD</td>
+<td>For now, always set to RBISECT</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; SCOTCH_STRAT</td>
+<td>The Scotch strategy string; see the Scotch documentation.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; SCOTCH_STRAT_FILE</td>
+<td>A file that contains an arbitrary long Scotch strategy string; see the Scotch documentation.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <a NAME="SCOTCH_TYPE"></a>SCOTCH_TYPE</td>
+<td>Whether or not the parallel library is used. The default value is
+<i>GLOBAL</i> and if not set to <i>LOCAL</i>, the parallel graph
+partitioning is used.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+
+<td></td>
+<td NOSAVE>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_F
+N</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br>
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_F
+N</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</td>
+
+</tr>
+
+</table>
+
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_hier.html">Next:&nbsp;

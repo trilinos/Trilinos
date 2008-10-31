@@ -34,7 +34,7 @@ Note: See also <a href="ug_alg_hypergraph.html">hypergraph partitioning</a>. <p>
 parameter is set to GRAPH.
 Zoltan provides three packages capable of partitioning a graph.  The
 package is chosen by setting the GRAPH_PACKAGE parameter.  
-Two packages (ParMetis and Jostle) are external packages and not
+Two packages (ParMetis and Scotch) are external packages and not
 part of Zoltan but accessible via Zoltan. The last package is
 PHG, Zoltan's native hypergraph partitioner. PHG will treat
 the graph as a regular hypergraph with edge size two. 
@@ -61,6 +61,7 @@ slower than graph partitioners but often produces better quality.
 <td>The software package to use in partitioning the graph.&nbsp;
 <br><i><a href=ug_alg_phg.html>PHG</a> (default)</i>&nbsp;
 <br><i><a href=ug_alg_parmetis.html>ParMETIS</a></i>&nbsp;
+<br><i><a href=ug_alg_ptscotch.html>Scotch/PT-Scotch</a></i>&nbsp;
 </tr>
 </table>
 

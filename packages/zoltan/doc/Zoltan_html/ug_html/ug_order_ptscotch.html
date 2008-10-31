@@ -35,6 +35,9 @@ orders the nodes in the two subsets first, and nodes in the separator last.
 <p>
 Scotch is a library for ordering and partitioning, developed at LaBRI in Bordeaux, France. PT-Scotch is the parallel module in Scotch. (We use the names Scotch and PT-Scotch interchangeably.) Scotch is a third-party library in Zoltan and should be obtained separately from the <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch web site</a>. Currently, Zoltan supports version 5.1 of Scotch, compiled with the support of PT-Scotch and <i>int</i> coding for vertices, not <i>long</i> (on architectures where <i>sizeof(int) != sizeof(long)</i>).
 <p>
+If the parameter <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a> is set to LOCAL, it's the sequential version of Scotch which is called, not the parallel.
+</p>
+
 
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -51,7 +54,7 @@ Scotch is a library for ordering and partitioning, developed at LaBRI in Bordeau
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; SCOTCH_METHOD</td>
-<td>The Scotch method; see the Scotch documentation.</td>
+<td>For now, always set to NODEND</td>
 </tr>
 
 <tr>

@@ -30,7 +30,7 @@
 The following graph (sparse matrix) ordering algorithms are currently included in the Zoltan toolkit:
 <blockquote>
 <a href="ug_order_parmetis.html">Nested dissection by METIS/ParMETIS </a><br>
-<a href="ug_order_ptscotch.html">Nested dissection by PT-Scotch</a>
+<a href="ug_order_ptscotch.html">Nested dissection by Scotch/PT-Scotch</a>
 </blockquote>
 These methods produce orderings that reduce fill in sparse matrix factorizations (Cholesky).
 Ordering is accessed through calls to 
@@ -69,7 +69,7 @@ Valid values are&nbsp;
 dissection by ParMETIS or METIS</a>),
 <br>"METIS" (same as NODEND with ORDER_TYPE = local),
 <br>"PARMETIS" (same as NODEND with ORDER_TYPE = global), 
-<br>"SCOTCH", and
+<br>"SCOTCH", (parallel or sequential depending of the value of ORDER_TYPE) and
 <br>"NONE" (for no ordering).
 </blockquote>
 </td>
@@ -78,14 +78,16 @@ dissection by ParMETIS or METIS</a>),
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a NAME="ORDER_TYPE"></a>&nbsp;&nbsp; <i>ORDER_TYPE</i></td>
 
-<td>"LOCAL" or "GLOBAL". If LOCAL is selected, then each processor constructs
-a local (sub-)graph. All inter-processor edges are simply ignored.&nbsp;
-The ordering arrays returned, <i>rank</i> and <i>iperm,</i> are local permutation
-vectors in this case.</td>
-</tr>
+<td>"LOCAL" or "GLOBAL". If LOCAL is selected, then each processor
+constructs a local (sub-)graph. All inter-processor edges are simply
+ignored.&nbsp; The ordering arrays returned, <i>rank</i> and
+<i>iperm,</i> are local permutation vectors in this case. If LOCAL is
+selected, the serial version of the ordering routine is used,
+i.e. Metis for ParMetis or Scotch for PT-Scotch.</td> </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="ORDER_START_INDEX"></a><i>ORDER_START_INDEX</i></td>
+<td NOSAVE><a
+NAME="ORDER_START_INDEX"></a><i>ORDER_START_INDEX</i></td>
 
 <td>The start index for the permutation vectors <i>rank</i> and <i>iperm</i>.
 Valid values are 0 and 1.</td>
