@@ -1,0 +1,1398 @@
+\documentclass[pdf,ps2pdf,11pt]{SANDreport}
+\usepackage{pslatex}
+%Local stuff
+\usepackage{graphicx}
+\usepackage{latexsym}
+%\usepackage{color}
+\usepackage[all]{draftcopy}
+\input{rab_commands}
+
+\raggedright
+
+% If you want to relax some of the SAND98-0730 requirements, use the "relax"
+% option. It adds spaces and boldface in the table of contents, and does not
+% force the page layout sizes.
+% e.g. \documentclass[relax,12pt]{SANDreport}
+%
+% You can also use the "strict" option, which applies even more of the
+% SAND98-0730 guidelines. It gets rid of section numbers which are often
+% useful; e.g. \documentclass[strict]{SANDreport}
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+
+\title{\center
+Trilinos Software Engineering Improvement Ideas}
+\author{
+Roscoe A. Bartlett \\ Department of Optimization and Uncertainty Estimation \\ \\
+Jim M. Willenbring \\ Department of Scalable Algorithms \\ \\
+Sandia National Laboratories, Albuquerque NM 87185-1318 USA \\ }
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2008-xxx}
+\SANDprintDate{October 2008}
+\SANDauthor{Roscoe A. Bartlett and Jim M. Willenbring}
+
+% ---------------------------------------------------------------------------- %
+% The following definitions are optional. The values shown are the default
+% ones provided by SANDreport.cls
+%
+\SANDreleaseType{Unlimited Release}
+%\SANDreleaseType{Not approved for general release}
+
+% ---------------------------------------------------------------------------- %
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%
+%\SANDsupersed{SAND1901-0001}{January 1901}
+
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
+\begin{document}
+
+\maketitle
+
+%% ------------------------------------------------------------------------ %
+%% An Abstract is required for SAND reports
+%%
+%
+%%\clearpage
+%
+%%
+%\begin{abstract}
+%%
+%
+%Blah blah blah ...
+%
+%%
+%\end{abstract}
+%%
+
+%% ------------------------------------------------------------------------ %
+%% An Acknowledgement section is optional but important, if someone made
+%% contributions or helped beyond the normal part of a work assignment.
+%% Use \section* since we don't want it in the table of context
+%%
+%\clearpage
+%\section*{Acknowledgments}
+%
+%Blah blah blah ...
+
+%
+%The format of this report is based on information found
+%in~\cite{Sand98-0730}.
+
+% ------------------------------------------------------------------------ %
+% The table of contents and list of figures and tables
+% Comment out \listoffigures and \listoftables if there are no
+% figures or tables. Make sure this starts on an odd numbered page
+%
+\clearpage
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+% ---------------------------------------------------------------------- %
+% An optional preface or Foreword
+%\clearpage
+%\section{Preface}
+%Although muggles usually have only limited experience with
+%magic, and many even dispute its existence, it is worthwhile
+%to be open minded and explore the possibilities.
+
+% ---------------------------------------------------------------------- %
+% An optional executive summary
+
+%\clearpage
+
+%\section{Executive Summary}
+
+% ---------------------------------------------------------------------- %
+% An optional glossary. We don't want it to be numbered
+%\clearpage
+%\section*{Nomenclature}
+%\addcontentsline{toc}{section}{Nomenclature}
+%\begin{itemize}
+%\item[alohomora]
+%spell to open locked doors and containers
+%\end{itemize}
+
+% ---------------------------------------------------------------------- %
+% This is where the body of the report begins; usually with an Introduction
+%
+
+
+\SANDmain % Start the main part of the report
+
+
+%
+{}\section{Introduction}
+%
+
+Here we outline a series of issues and suggestions for improving the
+software engineering structure and practices of Trilinos to improve
+day-to-day development and releases of Trilinos.
+
+
+%
+{}\section{Goals of Principles and Practices}
+%
+
+The goal of these principles and practices are to:
+
+\begin{itemize}
+
+{}\item Facilitate the rapid development of deep stacks of vertically
+integrated Trilinos packages within a product application code using
+all development sources
+
+{}\item Improve the overall speed and productivity of Trilinos
+development
+
+{}\item Improve the overall release process to allow for faster, lower
+risk, more predictable releases of Trilinos taken off of the main
+development branch with greater frequency
+
+{}\item Still allow the Trilinos software engineering infrastructure
+to support very informal (from a software perspective) algorithmic
+research efforts with low overhead and low impact on other Trilinos
+development
+
+{}\item Do all of this while still allowing Trilinos growth to
+continue in a scalable way
+
+\end{itemize}
+
+
+%
+{}\section{General Lean/Agile Software Engineering Principles}
+%
+
+\begin{itemize}
+ 
+{}\item High quality software is developed in short fixed-time
+iterations.
+
+{}\item Software requirements should be constantly re-evaluated and
+re-prioritized between iterations driven by real (customer) needs.
+
+{}\item Software should be delivered to real (or as real as we can
+make them) customers is short intervals.
+
+{}\item The best software solutions are found through research and
+experimentation and not primarily through ``planning ahead''
+(i.e. see the ´Wicked Problem'' in ´Code Complete: 2nd Edition'').
+
+{}\item High quality software is developed in small increments and
+tested thoroughly between changes.
+
+{}\item High quality defect-free software is most effectively
+developed by not putting defects into the software in the first place
+(i.e. code reviews, pair programming etc.).
+
+{}\item High quality software is proceeded by and protected by very
+though, automated tests (i.e. TDD).
+
+{}\item Critical software pieces that must work together in a final
+release should be integrated and tested together early and often
+(i.e. daily and continuous integration).
+
+{}\item Working software should never be allowed to be broken for any
+period of time (i.e. don't introduce defects in working software or
+in new software).  The idea that we develop shaky software and then
+``harden'' it is not consistent with Lean/Agile best practices.
+
+{}\item Pay down ´technical debt'' when it accumulates and employ
+constant refactoring to pay down this ´debt'' and to avoid its
+accumulation.  This avoids the common increase of software ´entropy''.
+
+{}\item Most mistakes that people make are due to a faulty
+process/system (W. Edwards Deming).
+
+{}\item Automation is needed to avoid mistakes and improve software
+quality.
+
+{}\item Avoid points of synchronization.  Allow people to work as
+independently as possible and have the system set up to automatically
+support this.
+
+\end{itemize}
+
+
+%
+{}\section{Key Concepts and Defintions}
+%
+
+
+%
+{}\subsection{``Primary'' verses ``Secondary'' Platforms}
+%
+
+\begin{itemize}
+
+{}\item\textit{``Primary'' Platforms}: These are platforms where
+developers do their day-to-day development work.  It is important to
+identify these platforms because a certain set of issues must be
+addressed for the primary development platforms.  Possible candidates
+for ``Primary'' development platforms for Trilinos include:
+
+  \begin{itemize}
+  {}\item Linux + gcc 4.x (high warning levels and warnings as errors)
+  {}\item Mac OSS + gcc 4.x (lesser warning levels)
+  \end{itemize}
+
+{}\item\textit{``Secondary'' Platforms}: These are platforms where
+developers do not typically do their day-to-day development work but
+instead primarily represent platforms that must be supported in the
+release of the software.  Because day-to-day development is not
+typically done on these platforms, a different set of issues arise and
+different practices should be considered as compared to those for the
+``Primary'' development platforms.  Examples of ``Secondary''
+platforms include:
+
+  \begin{itemize}
+  {}\item Intel compilers on Linux
+  {}\item PGI compilers on Linux
+  {}\item IBM compilers on AIX
+  {}\item Pathscale compilers on Linux
+  {}\item SUN compilers on IRIS
+  {}\item ...
+  \end{itemize}
+
+\end{itemize}
+
+
+%
+{}\subsection{``Stable'' verses ``Experimental'' Code and Tests}
+%
+
+
+%
+{}\subsubsection{``Stable'' Code and Tests}
+%
+
+\begin{itemize}
+
+{}\item\textit{``Stable'' Code} meets one or more of the following
+criteria:
+
+  \begin{itemize}
+
+  {}\item Represents an important capability being used by an existing
+  customer in a release of Trilinos, or
+
+  {}\item Represents a new capability that the authors are willing to
+  stand behind (as defined below) and is being targeted for the next
+  release
+
+  \end{itemize}
+
+{}\item Sub-categorizations of ``Stable'' code based on
+dependencies:
+
+  \begin{itemize}
+
+  {}\item\textit{``Primary Stable'' Code} is ``Stable'' code that only
+  depends on:
+  
+    \begin{itemize}
+    {}\item C, and C++ compilers
+    {}\item Fortran 77 compiler
+    {}\item BLAS and LAPACK
+    {}\item MPI
+    \end{itemize}
+
+  {}\item\textit{``Secondary Stable'' Code} is ``Stable'' code with
+  additional dependencies such as:
+
+    \begin{itemize}
+    {}\item SWIG/Python (i.e. PyTrilinos)
+    {}\item Fortran 2003+ (i.e. ForTrilinos)
+    {}\item External direct sparse solvers like UMFPACK, SuperLU,
+    etc. (i.e. Amesos adapters)
+    {}\item ...
+    \end{itemize}
+
+  \end{itemize}
+
+{}\item ``Stable'' code/tests are expected to be kept working at all
+times.  There should be little excuse for breaking ``Stable'' code on
+the primary development platform(s).
+
+{}\item ``Stable'' code in one package can only depend on ``Stable''
+code in other packages.
+
+{}\item ``Stable'' code should by default only build ``Primary
+Stable'' code.  Enabling ``Secondary Stable'' code should require
+explicit configure-time options.
+
+{}\item ``Stable'' code should be developed from the start and
+maintained to be highly portable.
+
+{}\item ``Stable'' code should be maintained at the highest quality as
+defined by Lean/Agile software engineering principles.
+
+\end{itemize}
+
+
+%
+{}\subsubsection{``Experimental'' Code and Tests}
+%
+
+\begin{itemize}
+
+{}\item By definition, {}\textit{`Experimental'' Code} is all
+remaining code that is not ``Stable'' code.
+
+{}\item ``Experimental'' code may represent fundamental research and
+may be developed with informal low-quality software practices.
+
+{}\item Any code that has a direct and mandatory dependency on any
+``Experimental'' code must also be considered to be ``Experimental''
+code.
+
+{}\item Developers of one collection of ``Experimental'' code should
+try to avoid depending on other ``Experimental'' code because it is
+likely to be unstable and break frequently.  One exception to this
+is in close research collaborations that seek to build new
+vertically integrated capabilities.
+
+{}\item ``Experimental'' code should be protected behind ifdefs with
+macos that must be defined in order to be built.  All
+``Experimental'' code and tests are disabled by default and must be
+explicitly enabled.
+
+\end{itemize}
+
+
+%
+{}\subsection{Synchronous verses Asynchronous Continuous Integration}
+%
+
+
+%
+{}\subsubsection{Synchronous Continuous Integration}
+%
+
+{}\textit{``Synchronous Continuous Integration''} is an engineering
+process where software is integrated and tested locally *before* it is
+checked in by performing the following in rapid succession:
+
+\begin{itemize}
+
+{}\item Do a VC update to get all current changes in the version
+control repository
+
+{}\item Rebuild all affected code and rerun the ``precheckin'' test
+suite (whatever we define that to be).  If there are *any* failing
+tests, fix the code, investigate why the code fails, or do something
+else to make sure it is okay to check in.  Don't just check in
+broken code!
+
+{}\item If all the affected code and tests build and pass, quickly
+check in the changes.
+
+\end{itemize}
+
+
+%
+{}\subsubsection{Asynchronous Continuous Integration}
+%
+
+{}\textit{``Asynchronous Continuous Integration''} is and engineering
+process where woftware is integrated and tested on a CI server
+{}\underline{after} it is checked in by performing the following:
+
+\begin{itemize}
+
+{}\item Developers do a reasonable amount of testing for changes in
+code they have made but don't bring in all changes from the
+version control repository and don't run all of the required
+``integration'' tests.
+
+{}\item Developers check in code without going through all of the
+steps of full ``synchronous continuous integration''.
+
+{}\item A continuous integration (CI) server periodically checks out
+the code (on a fixed schedule or when changes are detected) and does
+a full integration build and runs the integration test suite.
+
+{}\item If the build or any tests fail, an email notification is
+sent out to some group of people alerting them to the problem.
+Ideally, everyone who checked in code since the last successful CI
+build should get an email.
+
+\end{itemize}
+
+
+%
+{}\section{Goals for Partioning of Code, Platforms, and Continuous
+Integration Testing}
+%
+
+
+%
+{}\subsection{Goals for Partitioning into ``Primary'' and
+``Secondary'' Platforms}
+%
+
+The goal of formally partitioning platforms into ``Primary''
+development platforms and other remaining ``Secondary'' platforms is
+to allow us to define a different set of practices and expectations
+for or code for each.  For example, since day-to-day development
+occurs on ``Primary'' development platforms, we need to ensure that
+the code always builds and all of the tests run in order to facilite
+fast development cycles with frequent checkins.  Also, we need to
+ensure that developers are writing and checking code that is very
+portable so we want to use high warning levels and elevate warnings to
+errors (see {}\cite[Item 1]{C++CodingStandards05}).  However, because
+day-to-day development is not conducted on the ``Secondary''
+platforms, we can legitimately reduce our intolerance a little for
+broken builds and failing tests.
+
+
+%
+{}\subsection{Goals for Partitioning into ``Stable'' and
+``Experimental'' Code and Tests}
+%
+
+\begin{itemize}
+
+{}\item By explicitly partitioning off ``Experimental'' code, we allow
+a great deal of crazy and impulsive algorithms research to be
+conducted within Trilinos, have that work benefit from ready to use
+``Stable'' building blocks (represented by the other ``Stable'' code),
+and take advantage of everything the Trilinos environment has to
+offer.
+
+{}\item By maintaining a ``Stable'' core of code developed with a high
+degree of software engineering discipline, other ``Experimental''
+research efforts can remain highly productive because their foundation
+is not constantly breaking.  At the same time, new requirements from
+``Stable'' code needed to drive ``Experimental'' research code
+development can be rapidly developed and integrated in real time.
+This is *not* possible if ``Experimental'' efforts are based on a
+static release of Trilinos.
+
+{}\item By specifically partitioning off ``Experimental'' code from
+``Stable'' code, we avoid the problem of a top-heavy overly strict
+environment that is only geared toward immediate production needs and
+does not allow for rapid research investigations.
+
+{}\item By keeping ``Stable'' code in a near releasable state, we
+allow for fast and frequent releases of Trilinos.
+
+{}\item Summary: We can have our cake and eat it too!
+
+\end{itemize}
+
+
+%
+{}\section{General Practices Related to ``Stable'' and
+``Experimental'' Code}
+%
+
+
+%
+{}\subsection{General practices related to ``Stable'' code}
+
+\begin{itemize}
+
+{}\item All ``Stable'' code should be developed and maintained with
+stability and portability as the highest goals.
+
+{}\item All ``Stable'' code should be maintained in a ``done''
+(i.e. close-to-releasable) state with up-to-date tests, examples,
+documentation (which are critical for allowing for fast \& frequent
+releases).
+
+{}\item All ``Stable'' code should be compiled with high warning
+levels and treat warnings as errors (this improves the portability
+of the software).
+
+{}\item Backward compatibility for ``Stable'' code (for at least one
+major release or more) is a high priority (this is critical to
+successfully developing capabilities against production application
+codes).
+
+{}\item It is every Trilinos developer's responsibility to help
+maintain the stability and integrity of ``Stable'' code.
+
+{}\item All ``Stable'' code should be built every night on a variety
+of different platforms \& compilers and developers should place a
+high priority on fixing broken builds first and then on fixing
+broken tests.
+
+{}\item We must have a 100\% passing test policy for all ``Stable''
+code on our primary development platforms.
+
+{}\item We endeavor to have a 100\% passing test goal for all
+``Stable'' code on other Secondary nightly testing platforms as
+well.  However, we recognize that it is unrealistic and prohibitive
+to ``stop the line'' for failures on Secondary test platforms.
+Therefore, efforts to fix failing builds and tests on Secondary
+platforms will take place in an Secondary development loop that runs
+behind the efforts on the primary development platforms.  NOTE:
+Requiring all ``Stable'' code to build and run with high warning
+levels and warnings as errors massively improves the portability of
+C/C++ code so we expect few problems porting to these Secondary
+platforms.  Examples of secondary platforms include:
+
+\end{itemize}
+
+
+%
+{}\subsection{General practices related to ``Experimental'' code}
+%
+
+\begin{itemize}
+
+{}\item While other Trilinos developers have no direct
+responsibility to maintain ``Experimental'' code, they should still
+consider the impact their changes will have *before* they check in
+and they should make the most basic attempts to keep
+``Experimental'' code working if they know that they will break
+something and not maintain backward compatibility.
+
+Example: If you are changing the name of a ``Stable'' class, use a
+script to automatically change the name in all source files in all
+dependent packages, including ``Experimental'' code.  Don't just
+``lean on the compiler'' when making changes.
+
+{}\item The code and build system should be set up so that all
+``Experimental'' code segments and even entire files can be removed
+by an automated set of scripts.  We must test that after we have
+removed ``Experimental'' code that we can still build the ``Stable''
+code.  We must do this type of ``Experimental'' code removal
+followed by testing of ``Stable'' code on a routine automated basis.
+
+{}\item At least one central testing platform should be available
+with *all* of the dependencies required to build all ``Secondary
+Stable'' code that all Trilinos developers can access and build on
+during normal business hours.  This is needed to allow detailed
+testing of changes that might affect ``Secondary Stable'' code
+either before a checkin is performed or after a checkin has been
+performed and the ``asynchronous continuous integration'' test fails
+and a developer needs to quickly diagnose and fix the problem.
+
+\end{itemize}
+
+
+%
+{}\subsection{Promotion of ``Experimental'' code to ``Stable'' code}
+%
+
+TBD
+
+
+%
+{}\section{Continuous integration Testing of ``Stable'' code}
+%
+
+
+%
+{}\subsection{Synchronous continuous integration for ``Primary
+Stable'' code}
+%
+
+Use ``synchronous continuous integration'' as the defacto standard for
+testing ``Primary Stable'' code before every checkin by applying the
+following process:
+
+\begin{itemize}
+
+{}\item A) Start filling out the checkin checklist message in a
+temporary text file (i.e. in a text file {}\texttt{checkin\_message}) copied
+from the official Trilinos checkin checklist message template.
+
+{}\item B) Do a VC update to get all current changes in the
+version control repository
+
+{}\item C) Configure Trilinos to enable all ``Primary Stable''
+code that depends on your code:
+
+  \begin{itemize}
+
+  {}\item Exception: If the developer is very confident that the
+  changes they are making will not break other ``Stable'' code,
+  then they can chose not to enable and test all dependant
+  ``Stable'' code.  However, when in doubt, enable *all* dependent
+  code and tests!
+
+  {}\item Configurations that should be tested:
+
+    \begin{itemize}
+    {}\item Without any ``Secondary Stable'' or ``Experimental''
+    code enabled
+    {}\item With and without MPI enabled
+    {}\item With and without debug checking
+    {}\item NOTE: testing serial + debug and then mpi + optimized
+    should be sufficient
+    \end{itemize}
+
+  \end{itemize}
+
+{}\item D) Rebuild and rerun the ``pre-checkin'' test suite
+(whatever we define that to be).  If there are *any* tests fail,
+fix the code, investigate why the tests are failing (Are the
+failures your fault or not?  Are your changes are related or not?) 
+to make sure it is okay to check in.  Don't just check in broken
+tests.  DO NOT UNDER ANY CIRCUMSTANCE EVER CHECK IN CODE THAT DOES
+NOT BUILD!
+
+{}\item E) While the rebuild and retest is going on, finish
+filling out the checkin checklist message
+(i.e. {}\texttt{checkin\_message}).
+
+{}\item F) If the rebuild/restest all passes and you are sure you
+have not created any regressions (i.e. all tests pass, 0 test
+fail), then:
+
+  \begin{itemize}
+
+  {}\item Quickly do a {}\texttt{cvs nq update dP} to see if there
+  are any new changes checked into the CVS repository that might
+  conflict with your changes.  If you see changes that are
+  worrisome, go back to step {}\texttt{B} and repeat.
+
+  {}\item Otherwise, if there are no new updates or if you are
+  pretty sure that the updates do not conflict with your changes,
+  then go ahead and check in the code in one global atomic checkin
+  using the checkin checklist temporary text file you have been
+  filling out with {}\texttt{cvs commit F
+  {}\texttt{checkin\_message}}.
+
+  NOTE: Do not check in your changes is different sets because you
+  can (and will) make the VC repository inconsistent during your
+  checkins.
+
+  \end{itemize}
+
+{}\item G) Otherwise, abort the checkin and then do either:
+
+  \begin{itemize}
+
+  {}\item Backup your changes to keep them safe (e.g. using
+  {}\texttt{tar czvf Trilinos.date.tar.gz Trilinos} or something
+  and {}\texttt{scp} the file to another machine).
+
+  {}\item Or, Try to resolve the problems and get the code to
+  build and get all of the tests to pass.
+
+  \end{itemize}
+
+{}\item NOTE \#1: Any and all of the above steps can be bypassed by
+the developer based on their judgment but the safest approach is
+to do them all.
+
+{}\item NOTE \#2: A tool (or set of tools) must be available to
+perform all of the above steps in order to help avoid human error.
+This can be built into the Cmake build system run as a single
+command.
+
+A tool that will automatically enable all affected ``Primary
+Stable'' code for a given set of changes will remove the
+guess-work from the ``synchronous continuous integration'' testing
+process => This is already supported in the current Cmake build
+system for Trilinos!
+
+{}\item NOTE \#3: The code and tests suites many need to be cleaned
+up to allow for faster rebuilds and tests to make this feasible
+(see the books ``Implementing Lean Software Development'' and
+``Continuous Integration'')
+
+{}\item NOTE \#4: The fallback to doing complete ``synchronous
+continuous integration'' is ``synchronous continuous integration''
+(see below).
+
+{}\item NOTE \#5: The big advantage of ``synchronous continuous
+integration'' is that any changes that break down-stream ``Primary
+Stable'' code will be immediately obvious and caught *before* a
+checkin.
+
+\end{itemize}
+
+
+%
+{}\subsection{Asynchronous continuous integration for ``Secondary Stable'' code}
+%
+
+Use ``Asynchronous continuous integration'' as the primary means to
+test ``Secondary Stable'' code while following the ``synchronous
+continuous integration'' procedure should be used for any ``Primary
+Stable'' code involved:
+
+\begin{itemize}
+
+{}\item Only ``Secondary Stable'' code that is being is locally
+modified needs to be enabled and tested prior to checkin.
+
+{}\item Use the process of ``synchronous continuous integration''
+described above to protect all ``Primary Stable'' code.
+
+{}\item Trilinos must be configured and tested for both of the
+following separate configurations:
+
+  \begin{itemize}
+
+  {}\item With the ``Secondary Stable'' code being modified
+  enabled along with the rest of the ``Primary Stable'' code
+  
+  {}\item Only ``Primary Stable'' code without the ``Secondary
+  Stable'' code enabled
+
+  \end{itemize}
+
+{}\item The developer checks in the code according to the criteria
+for ``synchronous continuous integration'' described above only
+strictly followed w.r.t. to ``Primary Stable'' code.
+
+{}\item One or more Continuous Integration (CI) Servers checkout
+the code and build all ``Primary and Secondary Stable'' code and
+send email alerts if any build or test failures are detected.
+
+{}\item NOTE \#1: All Trilinos developers should get an email when
+any aspect of the ``asynchronous continuous integration''
+build/tests fail.
+
+{}\item NOTE \#2: Before getting updated source from the version
+control repository, developers should check the ``asynchronous
+continuous integration'' results dashboard to make sure that the
+build is not broken.  A stable recent version of the code can be
+obtained by using the date stamp for a recent successful
+continuous integration build:
+
+{}\item NOTE \#3: The big disadvantage of ``asynchronous continuous
+integration'' is that it will be hard for a people who break
+down-stream ``Primary Stable'' code to realize that they have and
+get it reported correctly.
+
+\end{itemize}
+
+
+%
+{}\section{Daily integration testing of ``Stable'' and
+``Experimental'' code}
+%
+
+
+%
+{}\subsection{Nightly testing and portability testing of ``Stable''
+code}
+%
+
+\begin{itemize}
+
+{}\item In nightly testing, we will test *all* ``Primary Stable''
+and ``Secondary Stable'' code.
+
+{}\item Is the primary responsibility of Trilinos Framework team
+to test ``Stable'' code
+
+{}\item Testing ``Stable'' code will dominate the time of the
+central Trilinos testing machines
+
+\end{itemize}
+
+
+%
+{}\subsection{Nightly (and any other kind of) testing of
+``Experimental'' code}
+%
+
+\begin{itemize}
+
+{}\item Is the primary responsibility of each package team
+
+{}\item Is done (primarily) on Secondary computers associated with
+each package team
+
+{}\item Uses the testing tools and infrastructure of Trilinos to
+make it easy to set up nightly cron jobs to drive testing of
+``Experimental'' code (this can be made *very* easy using the
+Cmake build system)
+
+{}\item Posts results to the central Trilinos test repositories
+but not in the main testing results category
+
+\end{itemize}
+
+
+%
+{}\section{Testing Maintenance Issues}
+%
+
+\begin{itemize}
+
+{}\item All ``Stable'' code should have 100\% passing tests 100\% of
+the time on the primary development platforms as the norm instead of
+the exception.
+
+{}\item Achieving 100\% passing tests on secondary platforms is also a
+priority but is done in a lagged secondary development loop.
+
+{}\item A failing test on any testing platform should be addressed and
+be made to pass or be disabled using the following algorithm:
+
+  \begin{itemize}
+
+  {}\item Fix the test in the strongest way possible
+
+  {}\item Or, loosen the ``strength'' of test to get it pass on that
+  specific platform (i.e. by loosing a platform-specific tolerance)
+
+  {}\item Or, disable the test and submit a new item to the sprint or
+  product backlog (e.g. Buzilla bug report) so that it can be
+  prioritized and fixed later
+
+  {}\item Or, remove the test and all of the associated code related
+  to it
+
+  \end{itemize}
+
+{}\item What is significant about 100\% passing tests (i.e. 0 failing
+tests)?  Mentally and in every other way, there is a massive
+singularity between {}\texttt{0} failing tests an {}\texttt{X} failing
+tests.  The number {}\texttt{0} failing tests == ``all passed'' and
+gets everyone's attention.  When the number of failing tests goes from
+{}\texttt{X} to {}\texttt{Y}, few people will pay attention to this.
+This is related to the ``broken window'' phenomenon.
+
+{}\item A 100\% passing test suite is critical for the following reasons:
+
+  \begin{itemize}
+
+  {}\item A 100\% passing test suite is an clear measure of the health
+  of a code.
+
+  Example: You look at the nightly test results and see 53 failing
+  tests on a platform for Trilinos in what should be ``Stable'' code.
+  Is the code base broken in a significant way or have these tests
+  been failing for some time and someone has silently ``blessed'' them
+  as minor failures?  To objectively determine the exact nature of the
+  code base, you have to go back and look at test results from several
+  days on various machines.  This is no way to be productive!
+
+  {}\item Code coverage results are less meaningful when there are
+  failing tests
+
+  Example: Code coverage for package X says that there is 95\% line
+  coverage.  However, there are 5 failing tests that account for a
+  large percentage of the line coverage.  To really get an accurate
+  code coverage count, you need to disable all of the failing tests.
+
+  {}\item A 100\% passing test suite is an unbiased criteria for if it
+  is safe to check in code
+
+  Example: You change code in your local project, do a cvs update, and
+  do a rebuild/retest before you check in and you see 5 failing tests
+  in package X that depend on your package.  Were those tests already
+  failing or did your change break those tests?  Without a 100\%
+  passing policy, you will have to do a lot of work to determine if
+  those tests pass or fail without your local changes.  This is no way
+  to be productive!
+
+  {}\item A 100\% passing test suite is an unbiased measure for if any
+  code has been broken after a checkin (for example, in an
+  ``asynchronous continuous integration'' build)
+
+  Example: You just checked in code yesterday and you want to know if
+  you broke any tests.  You look at the test results page and you see
+  there are 8 failing tests in package X that depend on the code you
+  changed.  Were those tests already failing or did you break them?
+  If there is not a 100\% passing policy in strict enforcement, then
+  you have to go and investigate to figure out if those test failures
+  are new or if they have been present for several days.  This is no
+  way to be productive!
+
+  {}\item A 100\% passing test suite for a Trilinos package is
+  important for developers of upstream packages that feed into
+  downstream packages and also for developers of downstream packages
+  that depend on upstream packages:
+
+    \begin{itemize}
+
+    {}\item A 100\% passing test suite for a Trilinos package is
+    important for developers of upstream packages that feed into a
+    downstream package because that provides a clear means to
+    determine if changes they are making are negatively affecting
+    downstream packages.  If there is even one failing test,
+    developers of upstream packages will have to expend a lot of extra
+    effort to determine if the failing tests are supposed to be
+    failing (i.e. are old failures) or are new failures that their
+    changes are causing.
+
+    Example: You change code in your local project, do a cvs update,
+    and do a rebuild/retest before you checkin and you see 5 failing
+    tests in package X.  Where those tests that were already failing
+    or did your change break those tests?  Without a 100\% passing
+    policy, you will have to do a lot of work to determine if those
+    tests pass or fail without your local changes.  This is no way to
+    be productive!
+
+    {}\item A 100\% passing test suite for a Trilinos package is
+    important for developers of downstream packages in that it gives
+    downstream package developers confidence that they can depend on
+    and trust the upstream package developers and code in order to
+    base their work on.
+
+    Example: You do a cvs update and rebuild/retest Trilinos and you
+    notice that there are now 10 failing tests in package X that your
+    package Y depends on. Can you trust that package X is still
+    working well enough to support your development work in package Y?
+    If the developers of package X can't keep their test suites
+    working, what confidence do you have that the will keep their
+    library code working as well?  An environment of mistrust is very
+    destructive to a development effort.
+
+  \end{itemize}
+
+  {}\item A 100\% passing test suite reduces the need for unnecessary
+  communication within and between development teams.
+
+  Example: There are three failing tests in package X.  You will need
+  to talk with someone on the package X development team to see a) if
+  they know that these tests are failing, b) if they know, then why
+  they are failing and how they could be related to the code that I am
+  changing.
+
+  {}\item Running a failing test day after day is damaging to the most
+  basic functions of a test suite:
+
+    \begin{itemize}
+
+    {}\item Chronically failing tests day after day increase the
+    signal-to-noise ratio and make it very difficult to spot *new*
+    regressions.
+
+    Example: For several days in a row, the Trilinos test results
+    emails say there are 5 failing test for package X.  The next day,
+    it comes back with 6 failing tests.  You watch the emails and are
+    expecting to see failing tests but you forget the number of
+    ``expected'' failures in 5 and not 6 and this new regression goes
+    unnoticed for days or weeks of time.  However, if there were
+    {}\texttt{0} failing tests and then the email came back with
+    {}\texttt{1} failing test, you can not help but notice that and
+    can then take action.
+
+    {}\item The presences of failing tests encourages people to check
+    in more failing tests (i.e. the ``broken window'' phenomenon).
+
+    \end{itemize}
+
+  \end{itemize}
+
+\end{itemize}
+
+
+%
+{}\section{Other Specific Areas of Possible Improvement}
+%
+
+\begin{itemize}
+
+{}\item Reduce compilation times to speed rebuilds
+
+  \begin{itemize}
+
+  {}\item Take all standard C++ headers out of
+  {}\texttt{PACKAGE\_ConfigDefs.hpp} and disperse them only where
+  needed
+
+  NOTE: We don't need lots of ifdefs anymore for what headers are
+  present.  Instead, just include the standard $<$x$>$ C++ headers and
+  the $<$cX$>$ forms of standard C headers $<$X.h$>$.
+
+  {}\item Make greater use of forward class declarations
+
+  {}\item Take greater advantage of the pImpl idiom for many more
+  classes to:
+
+    \begin{itemize}
+
+    {}\item Speed builds from scratch
+
+    {}\item Reduce recompilation
+
+    \end{itemize}
+
+  {}\item Use explicit instantiation for as much templated C++ code as we can:
+
+    \begin{itemize}
+
+    {}\item Teuchos SenseDense[Matrix,Vector] classes
+
+    {}\item All of Thyra
+
+    {}\item Anasazi
+
+    {}\item Belos
+
+    {}\item Tpetra
+
+    {}\item ...
+
+    \end{itemize}
+
+  NTE : The overhead of implicit instantiation is likely causing
+  segfaults on a number of compilers and is becoming a portability
+  issue.
+
+  \end{itemize}
+
+{}\item Create different categories of tests that get built and run
+for different purposes:
+
+  \begin{itemize}
+
+  {}\item ``Unit'' tests (i.e. TDD tests)
+
+    \begin{itemize}
+
+    {}\item Tests that are specific to just a single package's
+
+    {}\item Not designed test the integration with dependent packages
+    but yet will use some features from required dependent packages
+    (like Teuchos)
+
+    {}\item Build very fast
+
+    {}\item Run very fast
+
+    \end{itemize}
+
+  {}\item ``Basic integration'' tests (i.e. pre-checkin tests)
+
+    \begin{itemize}
+
+    {}\item Includes the unit test suite (since it will test some
+    integration with required packages)
+
+    {}\item Designed to test basic integration with all required and
+    optional package dependencies
+
+    {}\item Build somewhat fast
+
+    {}\item Run somewhat fast
+
+    {}\item Should be run before every checkin
+
+    {}\item Run buy the asynchronous continuous integration several
+
+    \end{itemize}
+
+  {}\item ``Regression'' tests (i.e. nightly tests)
+
+    \begin{itemize}
+
+    {}\item Includes the ``unit'' and ``basic integration'' tests
+
+    {}\item Fully tests the functionality of all code
+
+    {}\item Not designed primarily to address performance issues
+
+    {}\item Takes longer to build
+
+    {}\item Takes longer to run
+
+    {}\item Will be run mostly at night and perhaps might also be run
+    on a longer continuous integration cycle
+
+    \end{itemize}
+
+  {}\item ``User'' tests
+
+    \begin{itemize}
+
+    {}\item Similar to code that a client would write to use Trilinos code
+
+    {}\item Does not usually include ``unit'' tests
+
+    {}\item Provides the foundation for installation and backward
+    compatibly testing
+
+    \end{itemize}
+
+  {}\item ``Performance'' tests
+
+    \begin{itemize}
+
+    {}\item Does *not* usually include the ``unit'', ``basic
+    integration'', or ``regression'' tests but some test executables
+    built for regression testing can also be used to drive performance
+    tests.
+
+    {}\item Designed to stress the software in terms of memory and CPU
+    time on a single processor
+
+    {}\item Takes much longer to run
+
+    {}\item Mostly run every weekend
+
+    \end{itemize}
+
+  {}\item ``Scalability'' tests
+
+    \begin{itemize}
+
+    {}\item Does *not* usually include the other categories for tests
+    but might use test executables built for other categories like
+    ``performance'' tests
+
+    {}\item Designed to run on more than one processors and to assess
+    the parallel scalability of given algorithms
+
+    {}\item Should focus on timers that time the serial work, parallel
+    work, and communication overhead as separately as possible.
+
+    \end{itemize}
+
+  \end{itemize}
+
+{}\item Improve the exception safety of our C++ codes (See Item 29
+``Strive for exception-safe code'' in ``Effective C++ 3rd Edition'')
+
+  \begin{itemize}
+
+  {}\item All code should satisfy the ``basic guarantee'' (i.e. leave
+  code in a valid state without leaking memory after throwing an
+  exception).
+
+    \begin{itemize}
+
+    {}\item You can not have *any* raw calls to {}\texttt{delete} in
+    your code!
+
+    \end{itemize}
+
+  {}\item When redos and transactioning are needed, support the
+  ``strong guarantee'' (i.e. leave the code in exact same state it was
+  after an exception is thrown).
+
+  {}\item Provide the ``no thrown guarantee'' when practical or
+  needed.
+
+    \begin{itemize}
+
+    {}\item Destructors should never be allowed to throw exceptions in
+    production code
+
+    \end{itemize}
+
+  {}\item If code can't provide the ``basic guarantee'' as defined
+  above, it should immediately abort the program.
+
+  \end{itemize}
+
+{}\item Improve installation testing:
+
+  \begin{itemize}
+
+  {}\item Configure, build and install Trilinos, then reconfigure
+  Trilinos tests and examples to build against installed Trilinos
+  headers
+
+    \begin{itemize}
+
+    {}\item In the test/example builds, only enable ``user-like''
+    tests and examples (because some headers will be missing)
+
+    {}\item Use autotools to build and install, then use Cmake to
+    configure, build, and run tests/examples
+
+    {}\item Use Cmake to build and install, then use Cmake to
+    configure, build, and run tests/examples
+
+    {}\item Cmake configuration of ``user-like'' tests and examples
+    would automatically exclude source/build headers of Trilinos and
+    would delete build libraries
+
+    \end{itemize}
+
+  \end{itemize}
+
+\end{itemize}
+
+
+%
+{}\subsection{Trilinos Release Process Improvements}
+%
+
+The primary purpose to put out a ``release'' of Trilinos is to support
+a client application's release to their customers.  We should not put
+out releases as a way to interact with our real customers.  We should
+be interacting with our customers primarily through the development
+version of Trilinos to develop capabilities.
+
+The general philosophy of the process outline below is to spread out
+the work of creating a release throughout the year so that when the
+branch for a release is actually created, we can do the minimal work
+possible to put out the release.  The ``Stable'' code should always be
+in such a close to ``releasable'' state that we should be able to
+decide in a few weeks that we want to put out a release and we should
+be able to get it done.
+
+\begin{itemize}
+
+{}\item Things to do {}\underline{before} the branch for the release
+is created:
+
+  \begin{itemize}
+
+  {}\item Implement all functionality for the upcoming release
+
+  {}\item Keep all documentation and examples for ``Stable'' code up
+  to date after each change (i.e. definition of ``done'').  This
+  includes appending the release notes and other bits of documentation
+
+  {}\item Do all code ``clean ups''
+
+  {}\item All non-releasable code should be confined to
+  ``Experimental'' ifdefs so that it will not be included in the next
+  release.
+
+  {}\item The ``Stable'' code for each package should almost always be
+  in a releasable state each and every day, regardless of when a
+  release will take place.  Therefore, there should be no reason to
+  branch or tag individual packages separately before the entire
+  release branch is created.
+
+  {}\item The ``Stable'' code in all of the packages to be released
+  should produce clean tests on all of the test platforms well before
+  the release date.  In fact, the ``Stable'' code should almost never
+  show any test failures on any day of the year, regardless of when a
+  release will take place.
+
+  {}\item Perform at least one round of ports and acceptance tests
+  with Trilinos Dev against all major customer platforms and
+  applications a few weeks before the targeted release branch date.
+  Fix any problems that are encountered.
+
+  \end{itemize}
+
+{}\item Things to do {}\underline{after} the branch for the release is
+created:
+
+  \begin{itemize}
+
+  {}\item Run automated scripts to automatically strip out all
+  ``Experimental'' code and tests (This removes a lot of the need for
+  complex tarball logic).
+
+  {}\item No changes are made to the branch except what are absolutely
+  necessary to address serious defects.
+
+  {}\item Do (what should be) a final round of ports and acceptance
+  tests against all major customer platforms and applications.
+  Resolve any new problems that have come up since the previous round
+  of ports and tests conducted a few weeks prior.  (Experience with
+  SIERRA + Trilinos Integration shows that very few new issues come
+  up.)
+
+  {}\item Change the version numbers inside of Trilinos. (NOTE: We
+  need a more automated and uniform way of updating version numbers.)
+
+  {}\item Create the final tag.
+
+  {}\item Release the code.
+
+  \end{itemize}
+
+\end{itemize}
+
+If the above process is done well, we should be able to do a release
+of Trilinos in a week or less after the branch is created.
+
+
+%
+{}\section{Other Miscellaneous outstanding issues}
+%
+
+\begin{itemize}
+
+{}\item What do we do about all of the orphaned packages in Trilinos
+like Amesos, Meros, Galeri, Moertel.  Jim Willembring can not and
+should not be in a position to own all of these packages.  How in the
+world is Jim going to know enough about all of these packages to be
+able to complete the package checklist?
+
+{}\item Jim Willembring should not own process checklists for so many
+packages ...
+
+\end{itemize}
+
+
+% ---------------------------------------------------------------------- %
+% References
+%
+\clearpage
+\bibliographystyle{plain}
+\bibliography{references}
+\addcontentsline{toc}{section}{References}
+
+
+% ---------------------------------------------------------------------- %
+% Appendices should be stand-alone for SAND reports. If there is only
+% one appendix, put \setcounter{secnumdepth}{0} after \appendix
+%
+\appendix
+
+%
+{}\section{Problems with the current Trilinos build system and test
+harness}
+%
+
+\begin{itemize}
+
+{}\item The perl runtests script does not allow not differentiate
+tests with the same test name but different argument lists.
+
+  \begin{itemize}
+
+  {}\item This makes it very hard to figure out exactly what the test
+  is testing from looking at the results output.
+
+  {}\item It makes it hard to track down exactly what test output to
+  look at locally (i.e. you have to count 0, 1, 2, 3, ...).
+
+  {}\item This can result in a significant under reporting of errors
+  in the emails for instance (e.g. it says that only the
+  {}\texttt{Rythmos\_ConvergenceTest.exe} is failing on exetazo when
+  in actuality, all 5 runs with different input arguments are failing.
+
+  \end{itemize}
+
+{}\item The build failure detection and disabling feature is very
+fragile and requires specific modifications in each and every package
+to work.
+
+NOTE:We need a system that will automatically handle that does not
+require any changes to specific packages ...
+
+\end{itemize}
+
+
+\begin{SANDdistribution}[NM]
+% \SANDdistCRADA	% If this report is about CRADA work
+% \SANDdistPatent	% If this report has a Patent Caution or Patent Interest
+% \SANDdistLDRD	% If this report is about LDRD work
+% External Address Format: {num copies}{Address}
+%\SANDdistExternal{}{}
+%\bigskip
+%% The following MUST BE between the external and internal distributions!
+%\SANDdistClassified % If this report is classified
+% Internal Address Format: {num copies}{Mail stop}{Name}{Org}
+%\SANDdistInternal{}{}{}{}
+% Mail Channel Address Format: {num copies}{Mail Channel}{Name}{Org}
+%\SANDdistInternalM{}{}{}{}
+%\SANDdistInternal{2}{MS 9018}{Central Technical Files}{8944}
+%\SANDdistInternal{2}{MS 0899}{Technical Library}{4536}
+\end{SANDdistribution}
+
+\end{document}
