@@ -1,12 +1,63 @@
 
 
-Desired features for CMake:
+Desired/missing features for CMake:
+------------------------------------
 
-(*) ???
+(*) Generate error messages for missing source files that have line
+numbers in the corresponding CMakeLists.txt file.  Currently, it just
+lists the entire CMakeLists.txt file and nothing else.
+Workaround: Just add files slowly and re-run CMake each
+time to debug the problem.
+
+(*) checking for variables that are not defined.  Just letting
+undefined variables be empty is a bad practice (used by Make and bad
+Fortran).  This practice is well known to result in higher rates of
+software defects.  Workaround: Use a user-defined ASSERT_DEFINED(...)
+macro (which is being done right now and is somewhat effective).
+
+(*) Strong checking for user input misspelling CMake cache variables:
+Currently, if a user misspells the name of a defined user cache
+variable, the default for that variable will be used instead and the
+misspelled user variable will be ignored.  This is very bad behavior
+that is carried over from the autotools world and should not be
+repeated with the CMake system.  It would be very useful if the cmake
+executable could take a new option (e.g. --validate-cache-variables)
+that would force the validation of all user-set cache variables to
+make sure that they had a matching internally defined cache variable.
+Workaround: We could create a new VALIDATED_OPTION(...)  command that
+would store a list of all defined options and then we could devise a
+system that would validate that all cache variables set were expected.
+However, this would only work for Trilinos-defined variables and not
+other cache variables defined by built-in CMake commands like
+SITE_NAME(...) and FIND_FILE(...).  Another approach would be to
+create a default CMakeCache.txt file first, then accept the user
+options and compared the options in the default CMakeCache.txt file
+and the new CMakeCache.txt file.  This is not a full proof option
+because based on new user varibles, other variables with default
+values could pop up and these would be flagged as invalid variables.
+Only a built-in capability to CMake can address this issue fully.  I
+can't believe that CMake went the same route as Fortran 77 and Make
+with respect to undefined variables being interpreted as zero or
+empty!  Note that Python, for instance, will screem bloody murder if
+you try to use a varaible that has not been set yet.  User input
+checking is a serious software verification issue that needs to be
+addressed.
 
 
+Desired/missing features for CTest:
+-----------------------------------
 
-Desired features for CTest:
+(*) Support for keywords for tests.  This could be added with a
+KEYWORDS property for the set_tests_properties(...) command.  Work
+around: Simply append all of the keywords to the name of the test.
+
+(*) Direct support for running (multiple) programs to post-process the
+output from a test (both the console and any output files).
+Workaround: This can be emulated within the TRILINOS_ADD_TEST(...)
+function by writing script files that combine everything but it will
+be hard to make this portable and might make it confusing to trace
+what is happening. Workaround: Write your own scripts that are then
+submitted to ADD_TEST(...).
 
 (*) Echo the console output to a summay file
 Testing/Temporary/LastTestSummary.log.  That way, we can get the same
@@ -21,26 +72,76 @@ test.  Currently, ctest has no way of knowing how many processors a
 test will use when it runs.  For example, it has no way of knowing
 that an MPI run will use 8 processors.  This is important information
 for ctest to know if it is going to be doing a good job of launching
-tests to run on multiple processors at the same time.  The optimal job
+tests to run on multiple processors at the same time (a new feature
+being implemented in the development branch).  The optimal job
 scheduling would be difficult but all we need is some basic
 non-optimal logic to do a good job of using the machine to its fullest
-when running lots of test simultaneously.
+when running lots of test simultaneously.  This is a significant issue
+in fully utilizing our overloaded testing machines.
+
+(*) When a test fails it is not clear at all why the test failed.  For
+example, the test criteria is not sent to or displayed on the CDash
+dashboard.  For instance, if a test fails because a regular expression
+match failed, this information is nowhere to be found in the local
+output log file or on the CDash dashbaord.
+
+(*) Print the CPU time for each test (not just the start and end times
+in the log file).  The test run time helps to determine what tests are
+taking too long and need to be revised.  This feature will be easy to
+add to the CTest C++ source code and we can do this ourselves.
+
+(*) Automatically widen the main summary output to show the full test
+names.  Currently, only the first 30 characters of the name are shown.
+The option -W was added to the CVS version of CTest to allow the width
+to be manually set but this is a hassle and does not interact well
+with MS Visual C++ projects.  This will be fairly easy to add to the
+CTest C++ source code.
 
 
-Desired features for CDash:
+Desired/missing features for CDash:
+-----------------------------------
 
-(*) Show the total runtime for "Dynamic Analysis" and "Coverage"
-tests.  Right now we can only see the total runtime for the build and
-the regular tests on the CDash dashboard.
+(*) Show the total runtime for "Dynamic Analysis" and "Coverage" tests
+on the dashbaord in some way.  Right now we can only see the total
+runtime for the build and the regular tests on the CDash dashboard.
 
-(*) Show the checkout times on the dashboard in some way.  This can be
-significant on some systems and we want to know this!
+(*) Show the checkout times on the dashboard in some way.  Checkout
+times for Trilinos can be significant on some systems and we need to
+keep track of this.
 
 (*) Increase the threshold of 1024 characters for passed test output
-saved.  We need to see the full results of a test for many purposes.
+saved.  We need to see the full results of a test for many purposes
+(such as comparing a what the test looked like when it passed to what
+it currently looks like when it fails).  We then would need to thin
+out older test output data based on various criteria.
+
+(*) General handling of data files in different test directories:
+Right now Ctest/Cdash only handle STDOUT for tests and not any other
+files that might get written.  Therefore, currently, we have to
+manually handle copying test directories and data over to a central
+server where it can be accessed.  It would make a lot of sense if
+Ctest/Cdash could be extended to deal with test data related to a
+specific test and handle copying it over to some system where it would
+be stored and put in links to it from the dashboard test results
+pages.
+
+(*) General querying of the SQL database and display results in the
+dashboard.  This could be used, for instance, to see data for only a
+single Trilinos package, a single SIERRA product, or a single solver
+(used by Salinas)
 
 (*) Implement a tool that will go back in time and delete older test
-results from the SQL database and/or reduce the size of files stored
-in the SQL database.  However, we would want to save all data for
-important events like a test going from passing to failing or failing
-to passing.
+results from the SQL database and/or reduce the size of files
+referenced in the SQL database.  However, we would want to save all
+data for important events like a test going from passing to failing or
+failing to passing.  You can get quite sophisticated with this but
+implementing the basic types of logic is not easy.
+
+(*) General keyword support that pervades everything (used to build
+queries for display)
+
+(*) Flexible targeted email notifications (i.e. based on specific
+types of queries): Currently, Cdash will only let you sign up to get
+emails for failed builds/tests for entire products.  We need a lot
+more flexibility to define who gets notification emails based on much
+more flexible criteria.

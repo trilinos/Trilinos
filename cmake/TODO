@@ -8,9 +8,6 @@ in one shot.
 
 (*) [Ross] Add automatic demangle checking
 
-(*) [Ross] Add nightly cron job on thumper.sandia.gov to test
-Trilinos/CMake serial debug and MPI optimized and submit to dashboard.
-
 (*) [Ross] Add unit testing infrastructure for
 TRILINOS_ADD_EXECUTABLE(...), TRILINOS_ADD_TEST(...).  These unit
 tests will serve both as tests and as documentation.
@@ -43,10 +40,6 @@ system.
 - Set up a MS Windows test machine feeding into Trilinos dashbaord
   + Get automated builds/tests with CTest/CDash running on Esteban
   + Get CVS update working
-
-- Set up a linux machine to do nightly builds of serial debug and mpi optimized
-  to send to dashboard
-  + Set up SSH tunnelling to SSG
 
 - Set up a MAC test machine feeding into Trilinos dashboard
   + Look into 
@@ -87,4 +80,10 @@ for Trilinos.
 Completed:
 ----------
 
+
 (*) [Ross] Add automatic Fortran 77 name mangling [Done]
+
+
+(*) [Ross] Set up a linux machine to do nightly builds of serial debug
+and mpi optimized to send to dashboard.  These are done on new machine
+godel.sandia.gov.  See 
