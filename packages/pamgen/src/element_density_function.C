@@ -1,5 +1,6 @@
 #include "element_density_function.h"
 #include <sstream>
+#include <stdio.h>
 namespace PAMGEN_NEVADA {
 
 
