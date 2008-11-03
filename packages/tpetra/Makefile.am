@@ -41,7 +41,8 @@ ACLOCAL_AMFLAGS = -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = config/strip_dup_incl_paths.pl    config/strip_dup_libs.pl \
-             config/token-replace.pl
+             config/token-replace.pl config/replace-install-prefix.pl \
+             config/generate-makeoptions.pl
 
 ## #######################################################################
 ## Tools in the auxillary directory 

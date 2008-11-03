@@ -233,7 +233,8 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
 EXTRA_DIST = config/strip_dup_incl_paths.pl    config/strip_dup_libs.pl \
-             config/token-replace.pl
+             config/token-replace.pl config/replace-install-prefix.pl \
+             config/generate-makeoptions.pl
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
