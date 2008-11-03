@@ -154,7 +154,7 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.amesos \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src/klu_btf:@abs_top_srcdir@/src/klu_kernel:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/AMD:@abs_top_srcdir@/src/AMD/Include:@abs_top_srcdir@/src/AMD/Source:@abs_top_srcdir@/src/colamd:@abs_top_srcdir@/src/ksparse \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src/SuiteSparse/BTF/Include:@abs_top_srcdir@/src/SuiteSparse/AMD/Include:@abs_top_srcdir@/src/SuiteSparse/UFconfig:@abs_top_srcdir@/src:@abs_top_srcdir@/src/klu_btf:@abs_top_srcdir@/src/klu_kernel:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/AMD:@abs_top_srcdir@/src/AMD/Include:@abs_top_srcdir@/src/AMD/Source:@abs_top_srcdir@/src/colamd:@abs_top_srcdir@/src/ksparse \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../triutils:@abs_top_builddir@/../galeri
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile AMESOS > $(DESTDIR)$(includedir)/Makefile.export.amesos.macros
