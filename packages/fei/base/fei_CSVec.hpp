@@ -34,6 +34,11 @@ class CSVec {
   std::vector<int> indices_;
   std::vector<double> coefs_;
 };//class CSVec
+
+void add_entry(CSVec& vec, int eqn, double coef);
+
+void put_entry(CSVec& vec, int eqn, double coef);
+
 }//namespace fei
 
 #endif

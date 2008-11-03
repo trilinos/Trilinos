@@ -320,6 +320,47 @@ void test_multiply_CSRMat_CSRMat()
   FEI_COUT << "ok"<<FEI_ENDL;
 }
 
+void test_csvec_add_entry()
+{
+  FEI_COUT << "testing fei::add_entry(CSVec& ...)...";
+
+  std::vector<int> ind(3);
+  std::vector<double> coef(3);
+
+  ind[0] = 2; ind[1] = 5; ind[2] = 8;
+  coef[0] = 2.0; coef[1] = 5.0; coef[2] = 8.0;
+
+  fei::CSVec csv;
+
+  for(int i=ind.size()-1; i>=0; --i) {
+    fei::add_entry(csv, ind[i], coef[i]);
+  }
+
+  if (csv.indices() != ind) {
+    throw std::runtime_error("add_entry(CSVec... failed 1.");
+  }
+
+  if (csv.coefs() != coef) {
+    throw std::runtime_error("add_entry(CSVec... failed 2.");
+  }
+
+  FEI_COUT << "ok" << FEI_ENDL;
+  FEI_COUT << "testing fei::put_entry(CSVec& ...)...";
+
+  coef[1] = 7.0;
+  fei::put_entry(csv, ind[1], 7.0);
+
+  if (csv.indices() != ind) {
+    throw std::runtime_error("put_entry(CSVec... failed 1.");
+  }
+
+  if (csv.coefs() != coef) {
+    throw std::runtime_error("put_entry(CSVec... failed 2.");
+  }
+
+  FEI_COUT << "ok" << FEI_ENDL;
+}
+
 bool test_csvec::run(MPI_Comm comm)
 {
   FEI_COUT <<"testing CSRMat,CSVec constructors...";
@@ -381,6 +422,8 @@ bool test_csvec::run(MPI_Comm comm)
   test_multiply_CSRMat_CSVec();
 
   test_multiply_CSRMat_CSRMat();
+
+  test_csvec_add_entry();
 
   return true;
 }

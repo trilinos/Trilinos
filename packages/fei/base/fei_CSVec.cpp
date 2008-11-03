@@ -44,5 +44,43 @@ CSVec::operator=(const FillableVec& invec)
   return *this;
 }
 
+void add_entry(CSVec& vec, int eqn, double coef)
+{
+  std::vector<int>& v_ind = vec.indices();
+  std::vector<double>& v_coef = vec.coefs();
+
+  std::vector<int>::iterator
+    iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
+
+  size_t offset = iter - v_ind.begin();
+
+  if (iter == v_ind.end() || *iter != eqn) {
+    v_ind.insert(iter, eqn);
+    v_coef.insert(v_coef.begin()+offset, coef);
+  }
+  else {
+    v_coef[offset] += coef;
+  }
+}
+
+void put_entry(CSVec& vec, int eqn, double coef)
+{
+  std::vector<int>& v_ind = vec.indices();
+  std::vector<double>& v_coef = vec.coefs();
+
+  std::vector<int>::iterator
+    iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
+
+  size_t offset = iter - v_ind.begin();
+
+  if (iter == v_ind.end() || *iter != eqn) {
+    v_ind.insert(iter, eqn);
+    v_coef.insert(v_coef.begin()+offset, coef);
+  }
+  else {
+    v_coef[offset] = coef;
+  }
+}
+
 }//namespace fei
 

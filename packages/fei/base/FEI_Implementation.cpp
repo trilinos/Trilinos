@@ -13,7 +13,6 @@
 
 #include <fei_utils.hpp>
 
-#include <feiArray.hpp>
 #include <fei_Data.hpp>
 #include <fei_LinearSystemCore.hpp>
 #include <fei_FiniteElementData.hpp>

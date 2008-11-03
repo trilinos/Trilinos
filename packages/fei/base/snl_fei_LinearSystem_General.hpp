@@ -11,6 +11,7 @@
 
 #include <fei_macros.hpp>
 #include <fei_mpi.h>
+#include <fei_CSVec.hpp>
 #include <fei_LinearSystem.hpp>
 #include <fei_Matrix.hpp>
 #include <fei_Vector.hpp>
@@ -101,9 +102,9 @@ namespace snl_fei {
 
     int enforceEssentialBC_LinSysCore();
 
-    void enforceEssentialBC_step_1(SSVec& essBCs);
+    void enforceEssentialBC_step_1(fei::CSVec& essBCs);
 
-    void enforceEssentialBC_step_2(SSVec& essBCs);
+    void enforceEssentialBC_step_2(fei::CSVec& essBCs);
 
     int getMatrixRow(fei::Matrix* matrix, int row,
 		     std::vector<double>& coefs,
@@ -113,8 +114,8 @@ namespace snl_fei {
 
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
     fei::DirichletBCManager* dbcManager_;
-    SSVec* essBCvalues_;
-    SSVec* allEssBCs_;
+    fei::CSVec* essBCvalues_;
+    fei::CSVec* allEssBCs_;
 
     bool resolveConflictRequested_;
     bool bcs_trump_slaves_;

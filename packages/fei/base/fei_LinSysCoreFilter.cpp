@@ -349,9 +349,9 @@ int LinSysCoreFilter::initLinSysCore()
   problemStructure_->translateToReducedEqn(endRow, reducedEndRow_);
   numReducedRows_ = reducedEndRow_ - reducedStartRow_ + 1;
 
-  feiArray<int> reducedEqnOffsets(globalEqnOffsets.length());
-  feiArray<int> reducedBlkEqnOffsets(globalBlkEqnOffsets.length());
-  feiArray<int> reducedNodeOffsets(globalNodeOffsets.length());
+  std::vector<int> reducedEqnOffsets(globalEqnOffsets.length());
+  std::vector<int> reducedBlkEqnOffsets(globalBlkEqnOffsets.length());
+  std::vector<int> reducedNodeOffsets(globalNodeOffsets.length());
 
   int numSlaveEqns = problemStructure_->numSlaveEquations();
 
@@ -402,9 +402,9 @@ int LinSysCoreFilter::initLinSysCore()
 
   debugOutput("#LinSysCoreFilter calling lsc_->setGlobalOffsets");
   CHK_ERR( lsc_->setGlobalOffsets(numProcs_+1,
-				  reducedNodeOffsets.dataPtr(),
-				  reducedEqnOffsets.dataPtr(),
-				  reducedBlkEqnOffsets.dataPtr()) );
+				  &reducedNodeOffsets[0],
+				  &reducedEqnOffsets[0],
+				  &reducedBlkEqnOffsets[0]) );
 
   if (connectivitiesInitialized_) return(0);
 
@@ -417,9 +417,9 @@ int LinSysCoreFilter::initLinSysCore()
                          nodeCommMgr.getLocalNodeIDs().size();
   numNodes -= numRemoteNodes;
 
-  feiArray<int> numElemsPerBlock(numBlocks);
-  feiArray<int> numNodesPerElem(numBlocks);
-  feiArray<int> numDofPerNode(0,1);
+  std::vector<int> numElemsPerBlock(numBlocks);
+  std::vector<int> numNodesPerElem(numBlocks);
+  std::vector<int> numDofPerNode(0,1);
 
   for(int blk=0; blk<numBlocks; blk++) {
     BlockDescriptor* block = NULL;
@@ -433,8 +433,8 @@ int LinSysCoreFilter::initLinSysCore()
 
     for(int nn=0; nn<numNodesPerElem[blk]; nn++) {
       if (fieldsPerNode[nn] <= 0) ERReturn(-1);
-      numDofPerNode.append(0);
-      int indx = numDofPerNode.length()-1;
+      numDofPerNode.push_back(0);
+      int indx = numDofPerNode.size()-1;
       
       for(int nf=0; nf<fieldsPerNode[nn]; nf++) {
 	numDofPerNode[indx] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
@@ -459,8 +459,8 @@ int LinSysCoreFilter::initLinSysCore()
     numDofPerNode.resize(0);
     for(int nn=0; nn<numNodesPerElem[i]; nn++) {
       if (fieldsPerNode[nn] <= 0) ERReturn(-1);
-      numDofPerNode.append(0);
-      int indx = numDofPerNode.length()-1;
+      numDofPerNode.push_back(0);
+      int indx = numDofPerNode.size()-1;
 
       for(int nf=0; nf<fieldsPerNode[nn]; nf++) {
 	numDofPerNode[indx] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);

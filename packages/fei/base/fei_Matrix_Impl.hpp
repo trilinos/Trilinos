@@ -944,11 +944,9 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 
   snl_fei::PointBlockMap* pointBlockMap = vecSpace()->getPointBlockMap();
 
-  int i, j;
-
   if (sumInto) {
-    feiArray<int> temp((numRows+numCols)*2);
-    int* tempPtr = temp.dataPtr();
+    std::vector<int> temp((numRows+numCols)*2);
+    int* tempPtr = &temp[0];
     int* blkRows = tempPtr;
     int* blkRowOffsets = tempPtr+numRows;
     int* blkCols = blkRowOffsets+numRows;
@@ -958,57 +956,57 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 			    blkRows, blkRowOffsets,
 			    blkCols, blkColOffsets) );
 
-    feiArray<int> blockRows, blockRowSizes;
-    feiArray<int> blockCols, blockColSizes;
-    for(i=0; i<numRows; ++i) snl_fei::sortedListInsert(blkRows[i], blockRows);
-    for(i=0; i<numCols; ++i) snl_fei::sortedListInsert(blkCols[i], blockCols);
+    std::vector<int> blockRows, blockRowSizes;
+    std::vector<int> blockCols, blockColSizes;
+    for(int i=0; i<numRows; ++i) snl_fei::sortedListInsert(blkRows[i], blockRows);
+    for(int i=0; i<numCols; ++i) snl_fei::sortedListInsert(blkCols[i], blockCols);
 
     int rowSizeTotal = 0, colSizeTotal = 0;
 
-    for(i=0; i<blockRows.length(); ++i) {
+    for(size_t i=0; i<blockRows.size(); ++i) {
       int size = pointBlockMap->getBlkEqnSize(blockRows[i]);
-      blockRowSizes.append(size);
+      blockRowSizes.push_back(size);
       rowSizeTotal += size;
     }
-    for(i=0; i<blockCols.length(); ++i) {
+    for(size_t i=0; i<blockCols.size(); ++i) {
       int size = pointBlockMap->getBlkEqnSize(blockCols[i]);
-      blockColSizes.append(size);
+      blockColSizes.push_back(size);
       colSizeTotal += size;
     }
-    feiArray<double> coefs_1d(rowSizeTotal*colSizeTotal);
-    double* coefs1dPtr = coefs_1d.dataPtr();
-    coefs_1d = 0.0;
-    feiArray<double*> coefs_2d(blockRows.length()*blockCols.length());
-    double** coefs2dPtr = coefs_2d.dataPtr();
+    std::vector<double> coefs_1d(rowSizeTotal*colSizeTotal);
+    double* coefs1dPtr = &coefs_1d[0];
+    std::fill(coefs_1d.begin(), coefs_1d.end(), 0.0);
+    std::vector<double*> coefs_2d(blockRows.size()*blockCols.size());
+    double** coefs2dPtr = &coefs_2d[0];
 
     int blkCounter = 0;
     int offset = 0;
-    for(i=0; i<blockRows.length(); ++i) {
-      for(j=0; j<blockCols.length(); ++j) {
+    for(size_t i=0; i<blockRows.size(); ++i) {
+      for(size_t j=0; j<blockCols.size(); ++j) {
 	coefs2dPtr[blkCounter++] = &(coefs1dPtr[offset]);
 	offset += blockRowSizes[i]*blockColSizes[j];
       }
     }
 
-    for(i=0; i<numRows; ++i) {
+    for(int i=0; i<numRows; ++i) {
       int rowind = snl_fei::binarySearch(blkRows[i], blockRows);
       int rowsize = blockRowSizes[rowind];
 
-      for(j=0; j<numCols; ++j) {
+      for(int j=0; j<numCols; ++j) {
 	int colind = snl_fei::binarySearch(blkCols[j], blockCols);
 	int pos = blkColOffsets[j]*rowsize + blkRowOffsets[i];
 
-	coefs2dPtr[rowind*blockCols.length()+colind][pos] += values[i][j];
+	coefs2dPtr[rowind*blockCols.size()+colind][pos] += values[i][j];
       }
     }
 
-    for(i=0; i<blockRows.length(); ++i) {
+    for(size_t i=0; i<blockRows.size(); ++i) {
       CHK_ERR( giveToUnderlyingBlockMatrix(blockRows[i],
 					   blockRowSizes[i],
-					   blockCols.length(),
-					   blockCols.dataPtr(),
-					   blockColSizes.dataPtr(),
-					   blockColSizes.dataPtr(),
+					   blockCols.size(),
+					   &blockCols[0],
+					   &blockColSizes[0],
+					   &blockColSizes[0],
 					   coefs2dPtr,
 					   true) );
     }
@@ -1021,7 +1019,7 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
   int maxBlkEqnSize = pointBlockMap->getMaxBlkEqnSize();
   int coefBlkLen = maxBlkEqnSize*maxBlkEqnSize*2;
 
-  for(i=0; i<numRows; ++i) {
+  for(int i=0; i<numRows; ++i) {
     int row = rows[i];
 
     if (row < firstLocalOffset() || row > lastLocalOffset()) {
@@ -1045,19 +1043,19 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::getRowLength(matrix_.get(), blockRow,
 						blockRowLength) );
 
-    feiArray<int> blkCols(blockRowLength);
-    int* blkCols_ptr = blkCols.dataPtr();
-    feiArray<int> blkColDims(blockRowLength);
-    int* blkColDims_ptr = blkColDims.dataPtr();
-    feiArray<double> coefs_1D(blockRowLength*coefBlkLen);
-    double* coefs_1D_ptr = coefs_1D.dataPtr();
-    int coefsLen = coefs_1D.length();
-    feiArray<double*> coefs_2D(blockRowLength);
-    double** coefs_2D_ptr = coefs_2D.dataPtr();
+    std::vector<int> blkCols(blockRowLength);
+    int* blkCols_ptr = &blkCols[0];
+    std::vector<int> blkColDims(blockRowLength);
+    int* blkColDims_ptr = &blkColDims[0];
+    std::vector<double> coefs_1D(blockRowLength*coefBlkLen);
+    double* coefs_1D_ptr = &coefs_1D[0];
+    int coefsLen = coefs_1D.size();
+    std::vector<double*> coefs_2D(blockRowLength);
+    double** coefs_2D_ptr = &coefs_2D[0];
 
-    feiArray<int> LDAs(blockRowLength);
-    LDAs = blockRowSize;
-    coefs_1D = 0.0;
+    std::vector<int> LDAs(blockRowLength);
+    std::fill(LDAs.begin(), LDAs.end(), blockRowSize);
+    std::fill(coefs_1D.begin(), coefs_1D.end(), 0.0);
 
     int checkRowLen = 0;
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::copyOutRow(matrix_.get(),
@@ -1069,12 +1067,12 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 					      coefsLen,
 					      checkRowLen) );
     int coefs_1D_offset = 0;
-    for(j=0; j<checkRowLen; ++j) {
+    for(int j=0; j<checkRowLen; ++j) {
       coefs_2D_ptr[j] = &(coefs_1D_ptr[coefs_1D_offset]);
       coefs_1D_offset += blockRowSize*blkColDims_ptr[j];
     }
 
-    for(j=0; j<numCols; ++j) {
+    for(int j=0; j<numCols; ++j) {
       int blockCol = pointBlockMap->eqnToBlkEqn(cols[j]);
       int blkOffset= pointBlockMap->getBlkEqnOffset(blockCol, cols[j]);
 
@@ -1096,7 +1094,7 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     //Now put the block-row back into the matrix
     CHK_ERR( giveToUnderlyingBlockMatrix(blockRow, blockRowSize,
 					 blockRowLength, blkCols_ptr,
-					 LDAs.dataPtr(),
+					 &LDAs[0],
 					 blkColDims_ptr,
 					 coefs_2D_ptr,
 					 false) );
@@ -1158,10 +1156,10 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
     globalNumCols = cspace->getGlobalNumIndices();
   }
 
-  feiArray<int> indices_owned(localNumRows);
+  std::vector<int> indices_owned(localNumRows);
   int chkNum, localNNZ = 0;
-  CHK_ERR( vspace->getIndices_Owned(localNumRows, indices_owned.dataPtr(), chkNum));
-  int* rowsPtr = indices_owned.dataPtr();
+  CHK_ERR( vspace->getIndices_Owned(localNumRows, &indices_owned[0], chkNum));
+  int* rowsPtr = &indices_owned[0];
   for(int i=0; i<localNumRows; ++i) {
     int len;
     CHK_ERR( getRowLength(rowsPtr[i], len) );
@@ -1248,10 +1246,10 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
 
   int globalNNZ = 0;
   int localNumRows = vspace->getNumIndices_Owned();
-  feiArray<int> indices_owned(localNumRows);
+  std::vector<int> indices_owned(localNumRows);
   int chkNum, localNNZ = 0;
-  CHK_ERR( vspace->getIndices_Owned(localNumRows, indices_owned.dataPtr(), chkNum));
-  int* rowsPtr = indices_owned.dataPtr();
+  CHK_ERR( vspace->getIndices_Owned(localNumRows, &indices_owned[0], chkNum));
+  int* rowsPtr = &indices_owned[0];
   for(int i=0; i<localNumRows; ++i) {
     int len;
     CHK_ERR( getRowLength(rowsPtr[i], len) );

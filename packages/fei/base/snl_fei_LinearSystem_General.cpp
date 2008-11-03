@@ -350,9 +350,13 @@ int snl_fei::LinearSystem_General::setBCValuesOnVector(fei::Vector* vector)
     return(0);
   }
 
-  CHK_ERR( vector->copyIn(essBCvalues_->length(),
-			  essBCvalues_->indices().dataPtr(),
-			  essBCvalues_->coefs().dataPtr()) );
+  if (essBCvalues_->size() == 0) {
+    return(0);
+  }
+
+  CHK_ERR( vector->copyIn(essBCvalues_->size(),
+			  &(essBCvalues_->indices())[0],
+			  &(essBCvalues_->coefs())[0]) );
 
   return(0);
 }
@@ -362,7 +366,7 @@ bool snl_fei::LinearSystem_General::eqnIsEssentialBC(int globalEqnIndex) const
 {
   if (essBCvalues_ == NULL) return(false);
 
-  feiArray<int>& indices = essBCvalues_->indices();
+  std::vector<int>& indices = essBCvalues_->indices();
   int offset = snl_fei::binarySearch(globalEqnIndex, indices);
   return( offset < 0 ? false : true);
 }
@@ -375,11 +379,11 @@ void snl_fei::LinearSystem_General::getEssentialBCs(std::vector<int>& bcEqns,
   bcVals.clear();
   if (essBCvalues_ == NULL) return;
 
-  int num = essBCvalues_->length();
+  int num = essBCvalues_->size();
   bcEqns.resize(num);
   bcVals.resize(num);
-  int* essbcs = essBCvalues_->indices().dataPtr();
-  double* vals = essBCvalues_->coefs().dataPtr();
+  int* essbcs = &(essBCvalues_->indices())[0];
+  double* vals = &(essBCvalues_->coefs())[0];
   for(int i=0; i<num; ++i) {
     bcEqns[i] = essbcs[i];
     bcVals[i] = vals[i];
@@ -395,7 +399,7 @@ void snl_fei::LinearSystem_General::getConstrainedEqns(std::vector<int>& crEqns)
 //----------------------------------------------------------------------------
 int extractDBCs(fei::DirichletBCManager* bcManager,
                 fei::SharedPtr<fei::MatrixGraph> matrixGraph,
-                SSVec* essBCvalues,
+                fei::CSVec* essBCvalues,
                 bool resolveConflictRequested,
                 bool bcs_trump_slaves)
 {
@@ -455,7 +459,7 @@ int extractDBCs(fei::DirichletBCManager* bcManager,
     for(unsigned i=0; i<essEqns.size(); ++i) {
       int eqn = essEqnsPtr[i];
       double value = valuesPtr[i];
-      CHK_ERR( essBCvalues->putEntry(eqn, value) );
+      fei::put_entry(*essBCvalues, eqn, value);
     }
   }
 
@@ -469,7 +473,7 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
     delete essBCvalues_;
   }
 
-  essBCvalues_ = new SSVec;
+  essBCvalues_ = new fei::CSVec;
 
   CHK_ERR( extractDBCs(dbcManager_, matrixGraph_,
                        essBCvalues_,  resolveConflictRequested_,
@@ -477,9 +481,9 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
 
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
-    feiArray<int>& indices = essBCvalues_->indices();
-    feiArray<double>& coefs= essBCvalues_->coefs();
-    for(int i=0; i<essBCvalues_->length(); ++i) {
+    std::vector<int>& indices = essBCvalues_->indices();
+    std::vector<double>& coefs= essBCvalues_->coefs();
+    for(size_t i=0; i<essBCvalues_->size(); ++i) {
       os << "essBCeqns["<<i<<"]: "<<indices[i]<<", "<<coefs[i]<<FEI_ENDL;
     }
   }
@@ -493,22 +497,22 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
     return(0);
   }
 
-  SSVec allEssBCs;
+  fei::CSVec allEssBCs;
   if (!BCenforcement_no_column_mod_) {
     snl_fei::globalUnion(comm_, *essBCvalues_, allEssBCs);
 
     if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
       FEI_OSTREAM& os = *output_stream_;
-      os << "  implementBCs, essBCvalues_.length(): "<<essBCvalues_->length()
-         << ", allEssBCs.length(): " << allEssBCs.length()<<FEI_ENDL;
+      os << "  implementBCs, essBCvalues_.size(): "<<essBCvalues_->size()
+         << ", allEssBCs.size(): " << allEssBCs.size()<<FEI_ENDL;
     }
   }
 
-  if (essBCvalues_->length() > 0) {
+  if (essBCvalues_->size() > 0) {
     enforceEssentialBC_step_1(*essBCvalues_);
   }
 
-  if (!BCenforcement_no_column_mod_ && allEssBCs.length() > 0) {
+  if (!BCenforcement_no_column_mod_ && allEssBCs.size() > 0) {
     enforceEssentialBC_step_2(allEssBCs);
   }
 
@@ -557,22 +561,22 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
   if (rowNumbers.length() > 0) {
     feiArray<SSVec*>& rows    = inner->getRows();
 
-    feiArray<int*> colIndices(rows.size());
-    feiArray<double*> coefs(rows.size());
-    feiArray<int> colIndLengths(rows.size());
+    std::vector<int*> colIndices(rows.size());
+    std::vector<double*> coefs(rows.size());
+    std::vector<int> colIndLengths(rows.size());
 
     for(int i=0; i<rows.size(); ++i) {
       SSVec* row = rows[i];
-      colIndices[i] = row->indices().dataPtr();
-      coefs[i] = row->coefs().dataPtr();
+      colIndices[i] = &(row->indices())[0];
+      coefs[i] = &(row->coefs())[0];
       colIndLengths[i] = row->indices().size();
     }
 
-    int numEqns = rows.length();
-    int* eqns = rowNumbers.dataPtr();
-    int** colInds = colIndices.dataPtr();
-    int* colIndLens = colIndLengths.dataPtr();
-    double** BCcoefs = coefs.dataPtr();
+    int numEqns = rows.size();
+    int* eqns = &rowNumbers[0];
+    int** colInds = &colIndices[0];
+    int* colIndLens = &colIndLengths[0];
+    double** BCcoefs = &coefs[0];
 
     if (output_stream_ != NULL) {
       if (output_level_ > fei::BRIEF_LOGS) {
@@ -597,9 +601,9 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
     }
   }
 
-  int numEqns = essBCvalues_->length();
-  int* eqns = essBCvalues_->indices().dataPtr();
-  double* bccoefs = essBCvalues_->coefs().dataPtr();
+  int numEqns = essBCvalues_->size();
+  int* eqns = &(essBCvalues_->indices())[0];
+  double* bccoefs = &(essBCvalues_->coefs())[0];
   std::vector<double> ones(numEqns, 1.0);
 
   return(lscmatrix->getMatrix()->enforceEssentialBC(eqns, &ones[0],
@@ -607,7 +611,7 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
 }
 
 //----------------------------------------------------------------------------
-void snl_fei::LinearSystem_General::enforceEssentialBC_step_1(SSVec& essBCs)
+void snl_fei::LinearSystem_General::enforceEssentialBC_step_1(fei::CSVec& essBCs)
 {
   //to enforce essential boundary conditions, we do the following:
   //
@@ -627,9 +631,9 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_1(SSVec& essBCs)
   //
   //This function performs step 1.
 
-  int numEqns = essBCs.length();
-  int* eqns = essBCs.indices().dataPtr();
-  double* bcCoefs = essBCs.coefs().dataPtr();
+  int numEqns = essBCs.size();
+  int* eqns = &(essBCs.indices())[0];
+  double* bcCoefs = &(essBCs.coefs())[0];
 
   std::vector<double> coefs;
   std::vector<int> indices;
@@ -698,7 +702,7 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_1(SSVec& essBCs)
 }
 
 //----------------------------------------------------------------------------
-void snl_fei::LinearSystem_General::enforceEssentialBC_step_2(SSVec& essBCs)
+void snl_fei::LinearSystem_General::enforceEssentialBC_step_2(fei::CSVec& essBCs)
 {
   //to enforce essential boundary conditions, we do the following:
   //
@@ -718,13 +722,13 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_2(SSVec& essBCs)
   //
   //This function performs step 2.
 
-  int numBCeqns = essBCs.length();
+  int numBCeqns = essBCs.size();
   if (numBCeqns < 1) {
     return;
   }
 
-  int* bcEqns = essBCs.indices().dataPtr();
-  double* bcCoefs = essBCs.coefs().dataPtr();
+  int* bcEqns = &(essBCs.indices())[0];
+  double* bcCoefs = &(essBCs.coefs())[0];
 
   fei::SharedPtr<fei::Reducer> reducer = matrixGraph_->getReducer();
   bool haveSlaves = reducer.get()!=NULL;

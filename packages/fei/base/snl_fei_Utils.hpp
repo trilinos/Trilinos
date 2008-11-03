@@ -15,6 +15,7 @@
 #include <fei_SharedPtr.hpp>
 
 namespace fei {
+  class CSVec;
   class Matrix;
 }
 
@@ -246,7 +247,7 @@ namespace snl_fei {
   /** Do appropriate communications to gather column-portions of remotely-held
       essential BCs onto local processor.
   */
-  int gatherRemoteEssBCs(SSVec& essBCs,
+  int gatherRemoteEssBCs(fei::CSVec& essBCs,
 			 fei::SparseRowGraph* remoteGraph,
 			 fei::Matrix& matrix);
 
@@ -255,6 +256,12 @@ namespace snl_fei {
       processor.
   */
   void globalUnion(MPI_Comm comm, SSVec& localVec, SSVec& globalUnionVec);
+
+  /** Input CSVec object may be different on each processor. Output CSVec object
+      is the global union of all input CSVec objects and is the same on each
+      processor.
+  */
+  void globalUnion(MPI_Comm comm, fei::CSVec& localVec, fei::CSVec& globalUnionVec);
 
   /** Input SSMat object may be different on each processor. Output SSMat object
       is the global union of all input SSMat objects and is the same on each
