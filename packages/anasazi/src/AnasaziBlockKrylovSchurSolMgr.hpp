@@ -232,6 +232,8 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
+
+  int _printNum;
 };
 
 
@@ -257,7 +259,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _verbosity(Anasazi::Errors),
   _inSituRestart(false),
   _timerSolve(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr::solve()")),
-  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr restarting"))
+  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr restarting")),
+  _printNum(-1)
 {
   TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
@@ -339,6 +342,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
       _inSituRestart = (bool)Teuchos::getParameter<int>(pl,"In Situ Restarting");
     }
   }
+
+  _printNum = pl.get<int>("Print Number of Ritz Values",-1);
 }
 
 
@@ -411,7 +416,12 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   plist.set("Block Size",_blockSize);
   plist.set("Num Blocks",_numBlocks);
   plist.set("Step Size",_stepSize);
-  plist.set("Print Number of Ritz Values",_nevBlocks*_blockSize);
+  if (_printNum == -1) {
+    plist.set("Print Number of Ritz Values",_nevBlocks*_blockSize);
+  }
+  else {
+    plist.set("Print Number of Ritz Values",_printNum);
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockKrylovSchur solver
