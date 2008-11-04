@@ -981,8 +981,6 @@ namespace Anasazi {
       // this is used for orthogonalization and for computing V^H K H
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
       Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
-      om_->stream(Debug) << "Vprev: " << std::endl;
-      MVT::MvPrint(*Vprev,om_->stream(Debug));
 
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
       {
@@ -990,8 +988,6 @@ namespace Anasazi {
         OPT::Apply(*Op_,*Vprev,*Vnext);
         count_ApplyOp_ += blockSize_;
       }
-      om_->stream(Debug) << "Vnext: " << std::endl;
-      MVT::MvPrint(*Vnext,om_->stream(Debug));
       Vprev = Teuchos::null;
       
       // Remove all previous Krylov-Schur basis vectors and auxVecs from Vnext
@@ -1020,17 +1016,10 @@ namespace Anasazi {
         }
         
         // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-        om_->stream(Debug) << "V before ortho: " << std::endl;
-        MVT::MvPrint(*Vprev,om_->stream(Debug));
         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
           subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
                                ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
         int rank = orthman_->projectAndNormalize(*Vnext,AVprev,AsubH,subR);
-        om_->stream(Debug) << "Vnext after ortho: " << std::endl;
-        MVT::MvPrint(*Vnext,om_->stream(Debug));
-        om_->stream(Debug) << "subH: " << std::endl << *subH << std::endl;
-        om_->stream(Debug) << "subR: " << std::endl << *subR << std::endl;
-        om_->stream(Debug) << "H:    " << std::endl << *H_ << std::endl;
         TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurOrthoFailure,
                            "Anasazi::BlockKrylovSchur::iterate(): couldn't generate basis of full rank.");
       }
@@ -1295,7 +1284,7 @@ namespace Anasazi {
           lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
                         copyQ.values(), copyQ.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
           TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC returned info != 0.");
+                             "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC(n==" << curDim_ << ") returned info " << info << " != 0.");
 
           // Get a view into the eigenvectors of the Schur form
           Teuchos::SerialDenseMatrix<int,ScalarType> subCopyQ( Teuchos::View, copyQ, curDim_, numRitzVecs_ );
@@ -1429,7 +1418,7 @@ namespace Anasazi {
                        &rwork[0], &bwork[0], &info );
           
           TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Anasazi::BlockKrylovSchur::computeSchurForm(): GEES returned info != 0.");
+                             "Anasazi::BlockKrylovSchur::computeSchurForm(): GEES(n==" << curDim_ << ") returned info " << info << " != 0.");
           //
           //---------------------------------------------------
           // Use the Krylov-Schur factorization to compute the current Ritz residuals 
@@ -1477,7 +1466,7 @@ namespace Anasazi {
                           S.values(), S.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
             
             TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                               "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC returned info != 0.");
+                               "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC(n==" << curDim_ << ") returned info " << info << " != 0.");
             //
             // Scale the eigenvectors so that their Euclidean norms are all one.
             //
@@ -1631,7 +1620,7 @@ namespace Anasazi {
       lapack.TREXC( compq, curDim_, ptr_h, ldh, ptr_q, ldq, order2[i]+1+offset2[i], 
                     1, &work[0], &info );
       TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                         "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC returned info != 0.");
+                         "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC(n==" << curDim_ << ") returned info " << info << " != 0.");
     }
   }
 
