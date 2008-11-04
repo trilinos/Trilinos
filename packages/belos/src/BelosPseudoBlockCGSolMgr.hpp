@@ -709,7 +709,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
 	  }
 	}	
-	catch (std::exception e) {
+	catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockCGIter::iterate() at iteration " 
 				   << block_cg_iter->getNumIters() << std::endl 
 				   << e.what() << std::endl;

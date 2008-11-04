@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
       cpoint = Teuchos::null;
     }
   }
-  catch (get_out go) {
+  catch (const get_out &go) {
     if (verbose && MyPID==0) {
       cout << go.what() << endl;
     }

@@ -829,7 +829,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
                                "Belos::PCPGSolMgr::solve(): Invalid return from PCPGIter::iterate().");
           } // end if
         } // end try
-        catch (PCPGIterOrthoFailure e) {
+        catch (const PCPGIterOrthoFailure &e) {
 
           // Check to see if the most recent solution yielded convergence.
           sTest_->checkStatus( &*pcpg_iter );
@@ -837,7 +837,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
             isConverged = false;
           break;
         }
-        catch (std::exception e) {
+        catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught exception in PCPGIter::iterate() at iteration "
                                    << pcpg_iter->getNumIters() << endl
                                    << e.what() << endl;

@@ -172,7 +172,7 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
     solver = rcp( new BlockDavidson<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
     TEST_FOR_EXCEPTION(invalid, get_out, "Instantiating with invalid parameters failed to throw exception.")
   }
-  catch (std::invalid_argument &ia) {
+  catch (const std::invalid_argument &ia) {
     TEST_FOR_EXCEPTION(!invalid, get_out, "Instantiating with valid parameters unexpectadly threw exception.");
     // caught expected exception
     return;
@@ -194,7 +194,7 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
     solver->initialize(initstate);
     TEST_FOR_EXCEPTION(invalidinit, get_out, "Initializing with invalid data failed to throw exception.")
   }
-  catch (std::invalid_argument &ia) {
+  catch (const std::invalid_argument &ia) {
     TEST_FOR_EXCEPTION(!invalidinit, get_out, "Initializing with valid data unexpectadly threw exception.");
     // caught expected exception
     return;
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
         = rcp( new BlockDavidson<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
-    catch (std::invalid_argument &ia) {
+    catch (const std::invalid_argument &ia) {
       // caught expected exception
     }
 
@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
-    catch (std::invalid_argument &ia) {
+    catch (const std::invalid_argument &ia) {
       // caught expected exception
     }
 
@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
-    catch (std::invalid_argument &ia) {
+    catch (const std::invalid_argument &ia) {
       // caught expected exception
     }
 
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
-    catch (std::invalid_argument &ia) {
+    catch (const std::invalid_argument &ia) {
       // caught expected exception
     }
 
@@ -505,16 +505,16 @@ int main(int argc, char *argv[])
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
-    catch (std::invalid_argument &ia) {
+    catch (const std::invalid_argument &ia) {
       // caught expected exception
     }
 
   }
-  catch (get_out &go) {
+  catch (const get_out &go) {
     printer->stream(Errors) << "Test failed: " << go.what() << endl;
     testFailed = true;
   }
-  catch (std::exception &e) {
+  catch (const std::exception &e) {
     printer->stream(Errors) << "Caught unexpected exception: " << e.what() << endl;
     testFailed = true;
   }

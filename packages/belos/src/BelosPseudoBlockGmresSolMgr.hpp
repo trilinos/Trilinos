@@ -1091,7 +1091,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::PseudoBlockGmresSolMgr::solve(): Invalid return from PseudoBlockGmresIter::iterate().");
 	  }
 	}
-        catch (PseudoBlockGmresIterOrthoFailure e) {
+        catch (const PseudoBlockGmresIterOrthoFailure &e) {
      
 	  // Try to recover the most recent least-squares solution
 	  block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
@@ -1102,7 +1102,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    isConverged = false;
 	  break;
         }
-	catch (std::exception e) {
+	catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockGmresIter::iterate() at iteration " 
 				  << block_gmres_iter->getNumIters() << std::endl 
 				  << e.what() << std::endl;

@@ -568,7 +568,7 @@ int main(int argc, char **argv)
 	}
       }
     }
-    catch(std::string errormsg)
+    catch(const std::string &errormsg)
       {
 	if ( summary ) { summary_file << errormsg ; } 
 	if ( log ) SparseDirectTimingVars::log_file << errormsg ; 

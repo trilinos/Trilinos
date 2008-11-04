@@ -665,7 +665,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid return from bks_solver::iterate().");
         }
       }
-      catch (AnasaziError err) {
+      catch (const AnasaziError &err) {
         printer->stream(Errors) 
           << "Anasazi::BlockKrylovSchurSolMgr::solve() caught unexpected exception from Anasazi::BlockKrylovSchur::iterate() at iteration " << bks_solver->getNumIters() << std::endl
           << err.what() << std::endl

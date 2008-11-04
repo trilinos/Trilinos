@@ -839,7 +839,7 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       // finish
 
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         projectAndNormalizeGen() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -1133,7 +1133,7 @@ int testProjectGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       }
 
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         projectGen() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;

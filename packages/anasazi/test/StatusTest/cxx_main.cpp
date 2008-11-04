@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
         stoutput.checkStatus(&lobpcg);
         threw_expected_exception = false;
       }
-      catch (StatusTestError ste) {
+      catch (const StatusTestError &ste) {
         threw_expected_exception = true;
       }
       TEST_FOR_EXCEPTION( threw_expected_exception == false, get_out, "StatusTestOutput::checkStatus() should have thrown exception."); 
@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
     }
 
   } // end of try
-  catch (get_out go) {
+  catch (const get_out &go) {
     printer->stream(Warnings) << go.what() << std::endl;
     testFailed = true;
   }

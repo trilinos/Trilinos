@@ -802,7 +802,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::BlockCGSolMgr::solve(): Invalid return from CGIteration::iterate().");
 	  }
 	}
-	catch (std::exception e) {
+	catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught std::exception in CGIteration::iterate() at iteration " 
 				   << block_cg_iter->getNumIters() << std::endl 
 				   << e.what() << std::endl;

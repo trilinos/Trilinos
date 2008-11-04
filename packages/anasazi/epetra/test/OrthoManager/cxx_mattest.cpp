@@ -666,7 +666,7 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
         }
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         projectAndNormalizeMat() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -807,7 +807,7 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
         sout << "  " << t << "|| S_in - S_out*B || : " << err << endl;
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         normalizeMat() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -1073,7 +1073,7 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
       }
 
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         projectMat() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;

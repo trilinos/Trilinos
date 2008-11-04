@@ -587,7 +587,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         }
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         projectAndNormalize() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -694,7 +694,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
         sout << "  " << t << "|| S_in - S_out*B || : " << err << endl;
       }
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         normalize() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;
@@ -906,7 +906,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       }
 
     }
-    catch (OrthoError e) {
+    catch (const OrthoError &e) {
       sout << "   -------------------------------------------         project() threw exception" << endl;
       sout << "   Error: " << e.what() << endl;
       numerr++;

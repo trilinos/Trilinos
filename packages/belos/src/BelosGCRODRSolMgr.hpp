@@ -938,7 +938,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    primeConverged = true;
 	  }
 	}
-	catch (GmresIterationOrthoFailure e) {
+	catch (const GmresIterationOrthoFailure &e) {
 	  // Try to recover the most recent least-squares solution
 	  gmres_iter->updateLSQR( gmres_iter->getCurSubspaceDim() );
 	  
@@ -947,7 +947,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  if (convTest_->getStatus() == Passed)
 	    primeConverged = true;
 	}
-	catch (std::exception e) {
+	catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration " 
 				   << gmres_iter->getNumIters() << endl 
 				   << e.what() << endl;
@@ -1319,7 +1319,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
 	  }
 	}
-        catch (GCRODRIterOrthoFailure e) {
+        catch (const GCRODRIterOrthoFailure &e) {
 	  // Try to recover the most recent least-squares solution
 	  gcrodr_iter->updateLSQR( gcrodr_iter->getCurSubspaceDim() );
 	  
@@ -1329,7 +1329,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    isConverged = false;
 	  break;
         }
-        catch (std::exception e) {
+        catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration " 
 	                           << gcrodr_iter->getNumIters() << endl 
 				   << e.what() << endl;

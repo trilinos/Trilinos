@@ -1164,7 +1164,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
         }
       }
-      catch (AnasaziError err) {
+      catch (const AnasaziError &err) {
         printer_->stream(Errors) 
           << "Anasazi::BlockDavidsonSolMgr::solve() caught unexpected exception from Anasazi::BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << std::endl
           << err.what() << std::endl

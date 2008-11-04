@@ -987,7 +987,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::GmresPolySolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
           }
         }
-        catch (GmresIterationOrthoFailure e) {
+        catch (const GmresIterationOrthoFailure &e) {
           // If the block size is not one, it's not considered a lucky breakdown.
           if (blockSize_ != 1) {
             printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration " 
@@ -1008,7 +1008,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
             break;
           }
         }
-        catch (std::exception e) {
+        catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration " 
                                    << block_gmres_iter->getNumIters() << std::endl 
                                    << e.what() << std::endl;

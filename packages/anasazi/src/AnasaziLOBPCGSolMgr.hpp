@@ -699,7 +699,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // check Ritz Failure
       //
       ////////////////////////////////////////////////////////////////////////////////////
-      catch (LOBPCGRitzFailure re) {
+      catch (const LOBPCGRitzFailure &re) {
         if (fullOrtho_==true || recover_==false) {
           // if we are already using full orthogonalization, there isn't much we can do here. 
           // the most recent information in the status tests is still valid, and can be used to extract/return the 
@@ -858,7 +858,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // initialize
         lobpcg_solver->initialize(newstate);
       }
-      catch (AnasaziError err) {
+      catch (const AnasaziError &err) {
         printer->stream(Errors) 
           << "Anasazi::LOBPCGSolMgr::solve() caught unexpected exception from Anasazi::LOBPCG::iterate() at iteration " << lobpcg_solver->getNumIters() << std::endl
           << err.what() << std::endl

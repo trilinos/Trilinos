@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
         BasicSort<MT> sorter("??");
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort accepted invalid sort string without throwing exception.");
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
         BasicSort<MT> sorter(pl);
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort accepted invalid sort string without throwing exception.");
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
         sorter.sort(vals);
         caught_expected_exception = false;
       }
-      catch (SortManagerError &sme) {
+      catch (const SortManagerError &sme) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted sort string \"LI\" without throwing exception.");
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
         sorter.sort(vals);
         caught_expected_exception = false;
       }
-      catch (SortManagerError &sme) {
+      catch (const SortManagerError &sme) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted sort string \"SI\" without throwing exception.");
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
         sorter.sort(vals,Teuchos::null,6);
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small value vector without throwing exception.");
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
         sorter.sort(vals,Teuchos::rcp(&perm,false),5);
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small perm vector without throwing exception.");
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
         sorter.sort(rvals,ivals,Teuchos::null,6);
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small rvalue vector without throwing exception.");
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
         sorter.sort(rvals,ivals,Teuchos::null,6);
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small ivalue vector without throwing exception.");
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
         sorter.sort(rvals,ivals,Teuchos::rcp(&perm,false),6);
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small perm vector without throwing exception.");
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
         sorter.sort(rvals,ivals,Teuchos::rcp(&perm,false));
         caught_expected_exception = false;
       }
-      catch (std::invalid_argument &ia) {
+      catch (const std::invalid_argument &ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small perm vector without throwing exception.");
@@ -721,7 +721,7 @@ int main(int argc, char *argv[])
     }
 
   } // end of try
-  catch (get_out &go) {
+  catch (const get_out &go) {
     printer->stream(Warnings) << go.what() << endl;
     testFailed = true;
   }

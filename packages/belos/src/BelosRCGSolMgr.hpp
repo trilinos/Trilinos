@@ -1842,7 +1842,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
 	  }
 	}
-	catch (std::exception e) {
+	catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught std::exception in RCGIter::iterate() at iteration " 
 				   << rcg_iter->getNumIters() << std::endl 
 				   << e.what() << std::endl;

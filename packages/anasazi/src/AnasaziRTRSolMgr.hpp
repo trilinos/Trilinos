@@ -370,7 +370,7 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
     rtr_solver->iterate();
     numIters_ = rtr_solver->getNumIters();
   }
-  catch (std::exception e) {
+  catch (const std::exception &e) {
     // we are a simple solver manager. we don't catch exceptions. set solution empty, then rethrow.
     printer_->stream(Anasazi::Errors) << "Exception: " << e.what() << endl;
     Eigensolution<ScalarType,MV> sol;
