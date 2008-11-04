@@ -96,7 +96,7 @@ def main(command, destdir):
     mkdir      = makeMacros["mkdir_p"]
     libDir     = makeMacros["libdir"]
     if destdir:
-        installDir = os.path.join(destdir,libDir.split(os.sep))
+        installDir = os.path.join(destdir,*libDir.split(os.sep))
     else:
         installDir = libDir
 
