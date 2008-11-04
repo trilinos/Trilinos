@@ -1653,7 +1653,7 @@ namespace Anasazi {
     os <<"The block size is         " << blockSize_<<endl;
     os <<"The number of blocks is   " << numBlocks_<<endl;
     os <<"The current basis size is " << curDim_<<endl;
-    os <<"The number of auxiliary vectors is    " << numAuxVecs_ << endl;
+    os <<"The number of auxiliary vectors is " << numAuxVecs_ << endl;
     os <<"The number of operations Op*x   is "<<count_ApplyOp_<<endl;
 
     os.setf(std::ios_base::right, std::ios_base::adjustfield);

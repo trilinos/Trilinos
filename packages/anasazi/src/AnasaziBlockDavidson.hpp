@@ -1677,7 +1677,7 @@ namespace Anasazi {
     os <<"The block size is         " << blockSize_<<endl;
     os <<"The number of blocks is   " << numBlocks_<<endl;
     os <<"The current basis size is " << curDim_<<endl;
-    os <<"The number of auxiliary vectors is    " << numAuxVecs_ << endl;
+    os <<"The number of auxiliary vectors is "<< numAuxVecs_ << endl;
     os <<"The number of operations Op*x   is "<<count_ApplyOp_<<endl;
     os <<"The number of operations M*x    is "<<count_ApplyM_<<endl;
     os <<"The number of operations Prec*x is "<<count_ApplyPrec_<<endl;
