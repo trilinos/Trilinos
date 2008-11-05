@@ -160,6 +160,8 @@ public:
                          rank, iperm);
   }
 
+/*   int Order    (int * rank, int * iperm); */
+
   int Order_Get_Num_Blocks() {
     return Zoltan_Order_Get_Num_Blocks(ZZ_Ptr);
   }
@@ -198,6 +200,9 @@ public:
     return Zoltan_Color(ZZ_Ptr, &num_gid_entries, &num_lid_entries,
       num_objs, global_ids, local_ids, color_exp);
   }
+  /* Simpler method to do coloring */
+/*   int Color (int *color_exp); */
+
   int Color_Test (int &num_gid_entries,
              int &num_lid_entries,
              const int &num_objs,

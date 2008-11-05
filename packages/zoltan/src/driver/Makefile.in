@@ -43,6 +43,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = zdrive$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_GZIP_TRUE@am__append_1 = $(srcdir)/dr_compress.c
 subdir = src/driver
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -69,7 +70,26 @@ CONFIG_HEADER = $(top_builddir)/src/include/Zoltan_config.h
 CONFIG_CLEAN_FILES =
 @HAVE_ZOLTAN_CPPDRIVER_TRUE@am__EXEEXT_1 = zCPPdrive$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 = zCPPdrive-dr_err.$(OBJEXT) \
+am__zCPPdrive_SOURCES_DIST = $(srcdir)/dr_err.c $(srcdir)/dr_input.c \
+	$(srcdir)/dr_par_util.c $(srcdir)/dr_util.c \
+	$(srcdir)/dr_elem.c $(srcdir)/dr_setfixed.c \
+	$(srcdir)/dr_output.c $(srcdir)/dr_chaco_io.c \
+	$(srcdir)/dr_random_io.c $(srcdir)/dr_elem_util.c \
+	$(srcdir)/dr_eval.c $(srcdir)/dr_gnuplot.c \
+	$(srcdir)/dr_hg_io.c $(srcdir)/dr_hg_readfile.c \
+	$(srcdir)/dr_mm_readfile.c $(srcdir)/dr_mmio.c \
+	$(top_srcdir)/src/ch/ch_dist_graph.c \
+	$(top_srcdir)/src/ch/ch_input_assign.c \
+	$(top_srcdir)/src/ch/ch_input_graph.c \
+	$(top_srcdir)/src/ch/ch_init_dist.c \
+	$(top_srcdir)/src/ch/ch_input_geom.c \
+	$(top_srcdir)/src/ch/ch_input_read.c $(srcdir)/dr_compress.c \
+	$(srcdir)/dr_mainCPP.cpp $(srcdir)/dr_exoII_ioCPP.cpp \
+	$(srcdir)/dr_loadbalCPP.cpp $(srcdir)/dr_migrateCPP.cpp \
+	$(srcdir)/dr_mapsCPP.cpp $(srcdir)/dr_ddCPP.cpp \
+	$(srcdir)/dr_param_fileCPP.cpp
+@BUILD_GZIP_TRUE@am__objects_1 = zCPPdrive-dr_compress.$(OBJEXT)
+am__objects_2 = zCPPdrive-dr_err.$(OBJEXT) \
 	zCPPdrive-dr_input.$(OBJEXT) zCPPdrive-dr_par_util.$(OBJEXT) \
 	zCPPdrive-dr_util.$(OBJEXT) zCPPdrive-dr_elem.$(OBJEXT) \
 	zCPPdrive-dr_setfixed.$(OBJEXT) zCPPdrive-dr_output.$(OBJEXT) \
@@ -84,8 +104,8 @@ am__objects_1 = zCPPdrive-dr_err.$(OBJEXT) \
 	zCPPdrive-ch_input_graph.$(OBJEXT) \
 	zCPPdrive-ch_init_dist.$(OBJEXT) \
 	zCPPdrive-ch_input_geom.$(OBJEXT) \
-	zCPPdrive-ch_input_read.$(OBJEXT)
-am_zCPPdrive_OBJECTS = $(am__objects_1) zCPPdrive-dr_mainCPP.$(OBJEXT) \
+	zCPPdrive-ch_input_read.$(OBJEXT) $(am__objects_1)
+am_zCPPdrive_OBJECTS = $(am__objects_2) zCPPdrive-dr_mainCPP.$(OBJEXT) \
 	zCPPdrive-dr_exoII_ioCPP.$(OBJEXT) \
 	zCPPdrive-dr_loadbalCPP.$(OBJEXT) \
 	zCPPdrive-dr_migrateCPP.$(OBJEXT) \
@@ -96,7 +116,26 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ZOLTAN_LIBS))
-am__objects_2 = zdrive-dr_err.$(OBJEXT) zdrive-dr_input.$(OBJEXT) \
+am__zdrive_SOURCES_DIST = $(srcdir)/dr_err.c $(srcdir)/dr_input.c \
+	$(srcdir)/dr_par_util.c $(srcdir)/dr_util.c \
+	$(srcdir)/dr_elem.c $(srcdir)/dr_setfixed.c \
+	$(srcdir)/dr_output.c $(srcdir)/dr_chaco_io.c \
+	$(srcdir)/dr_random_io.c $(srcdir)/dr_elem_util.c \
+	$(srcdir)/dr_eval.c $(srcdir)/dr_gnuplot.c \
+	$(srcdir)/dr_hg_io.c $(srcdir)/dr_hg_readfile.c \
+	$(srcdir)/dr_mm_readfile.c $(srcdir)/dr_mmio.c \
+	$(top_srcdir)/src/ch/ch_dist_graph.c \
+	$(top_srcdir)/src/ch/ch_input_assign.c \
+	$(top_srcdir)/src/ch/ch_input_graph.c \
+	$(top_srcdir)/src/ch/ch_init_dist.c \
+	$(top_srcdir)/src/ch/ch_input_geom.c \
+	$(top_srcdir)/src/ch/ch_input_read.c $(srcdir)/dr_compress.c \
+	$(srcdir)/dr_main.c $(srcdir)/dr_exoII_io.c \
+	$(srcdir)/dr_loadbal.c $(srcdir)/dr_migrate.c \
+	$(srcdir)/dr_maps.c $(srcdir)/dr_dd.c \
+	$(srcdir)/dr_param_file.c $(srcdir)/order_test.c
+@BUILD_GZIP_TRUE@am__objects_3 = zdrive-dr_compress.$(OBJEXT)
+am__objects_4 = zdrive-dr_err.$(OBJEXT) zdrive-dr_input.$(OBJEXT) \
 	zdrive-dr_par_util.$(OBJEXT) zdrive-dr_util.$(OBJEXT) \
 	zdrive-dr_elem.$(OBJEXT) zdrive-dr_setfixed.$(OBJEXT) \
 	zdrive-dr_output.$(OBJEXT) zdrive-dr_chaco_io.$(OBJEXT) \
@@ -107,8 +146,9 @@ am__objects_2 = zdrive-dr_err.$(OBJEXT) zdrive-dr_input.$(OBJEXT) \
 	zdrive-ch_dist_graph.$(OBJEXT) \
 	zdrive-ch_input_assign.$(OBJEXT) \
 	zdrive-ch_input_graph.$(OBJEXT) zdrive-ch_init_dist.$(OBJEXT) \
-	zdrive-ch_input_geom.$(OBJEXT) zdrive-ch_input_read.$(OBJEXT)
-am_zdrive_OBJECTS = $(am__objects_2) zdrive-dr_main.$(OBJEXT) \
+	zdrive-ch_input_geom.$(OBJEXT) zdrive-ch_input_read.$(OBJEXT) \
+	$(am__objects_3)
+am_zdrive_OBJECTS = $(am__objects_4) zdrive-dr_main.$(OBJEXT) \
 	zdrive-dr_exoII_io.$(OBJEXT) zdrive-dr_loadbal.$(OBJEXT) \
 	zdrive-dr_migrate.$(OBJEXT) zdrive-dr_maps.$(OBJEXT) \
 	zdrive-dr_dd.$(OBJEXT) zdrive-dr_param_file.$(OBJEXT) \
@@ -127,7 +167,8 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(zCPPdrive_SOURCES) $(zdrive_SOURCES)
-DIST_SOURCES = $(zCPPdrive_SOURCES) $(zdrive_SOURCES)
+DIST_SOURCES = $(am__zCPPdrive_SOURCES_DIST) \
+	$(am__zdrive_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -257,21 +298,20 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 #ZOLTAN_C_TEST_DRIVER = zdrive 
 @HAVE_ZOLTAN_CPPDRIVER_TRUE@ZOLTAN_CPP_TEST_DRIVER = zCPPdrive 
-COMMON_DRIVER_SRC = \
-	$(srcdir)/dr_err.c $(srcdir)/dr_input.c $(srcdir)/dr_par_util.c \
-	$(srcdir)/dr_util.c $(srcdir)/dr_elem.c $(srcdir)/dr_setfixed.c \
+COMMON_DRIVER_SRC = $(srcdir)/dr_err.c $(srcdir)/dr_input.c \
+	$(srcdir)/dr_par_util.c $(srcdir)/dr_util.c \
+	$(srcdir)/dr_elem.c $(srcdir)/dr_setfixed.c \
 	$(srcdir)/dr_output.c $(srcdir)/dr_chaco_io.c \
-	$(srcdir)/dr_random_io.c $(srcdir)/dr_elem_util.c $(srcdir)/dr_eval.c \
-	$(srcdir)/dr_gnuplot.c $(srcdir)/dr_hg_io.c \
-	$(srcdir)/dr_hg_readfile.c $(srcdir)/dr_mm_readfile.c \
-	$(srcdir)/dr_mmio.c \
+	$(srcdir)/dr_random_io.c $(srcdir)/dr_elem_util.c \
+	$(srcdir)/dr_eval.c $(srcdir)/dr_gnuplot.c \
+	$(srcdir)/dr_hg_io.c $(srcdir)/dr_hg_readfile.c \
+	$(srcdir)/dr_mm_readfile.c $(srcdir)/dr_mmio.c \
 	$(top_srcdir)/src/ch/ch_dist_graph.c \
-	$(top_srcdir)/src/ch/ch_input_assign.c  \
+	$(top_srcdir)/src/ch/ch_input_assign.c \
 	$(top_srcdir)/src/ch/ch_input_graph.c \
 	$(top_srcdir)/src/ch/ch_init_dist.c \
 	$(top_srcdir)/src/ch/ch_input_geom.c \
-	$(top_srcdir)/src/ch/ch_input_read.c
-
+	$(top_srcdir)/src/ch/ch_input_read.c $(am__append_1)
 
 # List headers here that are used for both the C and C++ drivers.
 COMMON_DRIVER_HDRS = \
@@ -376,6 +416,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPdrive-ch_input_graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPdrive-ch_input_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPdrive-dr_chaco_io.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPdrive-dr_compress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPdrive-dr_ddCPP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPdrive-dr_elem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zCPPdrive-dr_elem_util.Po@am__quote@
@@ -405,6 +446,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-ch_input_graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-ch_input_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_chaco_io.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_compress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_dd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_elem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zdrive-dr_elem_util.Po@am__quote@
@@ -751,6 +793,20 @@ zCPPdrive-ch_input_read.obj: $(top_srcdir)/src/ch/ch_input_read.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zCPPdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zCPPdrive-ch_input_read.obj `if test -f '$(top_srcdir)/src/ch/ch_input_read.c'; then $(CYGPATH_W) '$(top_srcdir)/src/ch/ch_input_read.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/ch/ch_input_read.c'; fi`
 
+zCPPdrive-dr_compress.o: $(srcdir)/dr_compress.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zCPPdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zCPPdrive-dr_compress.o -MD -MP -MF $(DEPDIR)/zCPPdrive-dr_compress.Tpo -c -o zCPPdrive-dr_compress.o `test -f '$(srcdir)/dr_compress.c' || echo '$(srcdir)/'`$(srcdir)/dr_compress.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zCPPdrive-dr_compress.Tpo $(DEPDIR)/zCPPdrive-dr_compress.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/dr_compress.c' object='zCPPdrive-dr_compress.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zCPPdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zCPPdrive-dr_compress.o `test -f '$(srcdir)/dr_compress.c' || echo '$(srcdir)/'`$(srcdir)/dr_compress.c
+
+zCPPdrive-dr_compress.obj: $(srcdir)/dr_compress.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zCPPdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zCPPdrive-dr_compress.obj -MD -MP -MF $(DEPDIR)/zCPPdrive-dr_compress.Tpo -c -o zCPPdrive-dr_compress.obj `if test -f '$(srcdir)/dr_compress.c'; then $(CYGPATH_W) '$(srcdir)/dr_compress.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dr_compress.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zCPPdrive-dr_compress.Tpo $(DEPDIR)/zCPPdrive-dr_compress.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/dr_compress.c' object='zCPPdrive-dr_compress.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zCPPdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zCPPdrive-dr_compress.obj `if test -f '$(srcdir)/dr_compress.c'; then $(CYGPATH_W) '$(srcdir)/dr_compress.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dr_compress.c'; fi`
+
 zdrive-dr_err.o: $(srcdir)/dr_err.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zdrive-dr_err.o -MD -MP -MF $(DEPDIR)/zdrive-dr_err.Tpo -c -o zdrive-dr_err.o `test -f '$(srcdir)/dr_err.c' || echo '$(srcdir)/'`$(srcdir)/dr_err.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zdrive-dr_err.Tpo $(DEPDIR)/zdrive-dr_err.Po
@@ -1058,6 +1114,20 @@ zdrive-ch_input_read.obj: $(top_srcdir)/src/ch/ch_input_read.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/ch/ch_input_read.c' object='zdrive-ch_input_read.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zdrive-ch_input_read.obj `if test -f '$(top_srcdir)/src/ch/ch_input_read.c'; then $(CYGPATH_W) '$(top_srcdir)/src/ch/ch_input_read.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/ch/ch_input_read.c'; fi`
+
+zdrive-dr_compress.o: $(srcdir)/dr_compress.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zdrive-dr_compress.o -MD -MP -MF $(DEPDIR)/zdrive-dr_compress.Tpo -c -o zdrive-dr_compress.o `test -f '$(srcdir)/dr_compress.c' || echo '$(srcdir)/'`$(srcdir)/dr_compress.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zdrive-dr_compress.Tpo $(DEPDIR)/zdrive-dr_compress.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/dr_compress.c' object='zdrive-dr_compress.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zdrive-dr_compress.o `test -f '$(srcdir)/dr_compress.c' || echo '$(srcdir)/'`$(srcdir)/dr_compress.c
+
+zdrive-dr_compress.obj: $(srcdir)/dr_compress.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zdrive-dr_compress.obj -MD -MP -MF $(DEPDIR)/zdrive-dr_compress.Tpo -c -o zdrive-dr_compress.obj `if test -f '$(srcdir)/dr_compress.c'; then $(CYGPATH_W) '$(srcdir)/dr_compress.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dr_compress.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zdrive-dr_compress.Tpo $(DEPDIR)/zdrive-dr_compress.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/dr_compress.c' object='zdrive-dr_compress.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zdrive-dr_compress.obj `if test -f '$(srcdir)/dr_compress.c'; then $(CYGPATH_W) '$(srcdir)/dr_compress.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dr_compress.c'; fi`
 
 zdrive-dr_main.o: $(srcdir)/dr_main.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(zdrive_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zdrive-dr_main.o -MD -MP -MF $(DEPDIR)/zdrive-dr_main.Tpo -c -o zdrive-dr_main.o `test -f '$(srcdir)/dr_main.c' || echo '$(srcdir)/'`$(srcdir)/dr_main.c

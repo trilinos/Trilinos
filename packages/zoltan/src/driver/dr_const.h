@@ -74,6 +74,10 @@ extern "C" {
 #define ZOLTAN_SCOTCH
 #endif
 
+#ifdef HAVE_GZIP
+#define ZOLTAN_GZIP
+#endif
+
 #ifdef HAVE_PATOH
 #define ZOLTAN_PATOH
 #endif

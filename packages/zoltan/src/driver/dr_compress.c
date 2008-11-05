@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "dr_const.h"
 #include "dr_compress_const.h"
 #include "dr_util_const.h"
 

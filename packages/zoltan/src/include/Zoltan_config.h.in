@@ -15,6 +15,9 @@
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
+/* Define if want to build with gzip enabled */
+#undef HAVE_GZIP
+
 /* define if we want to use MPI */
 #undef HAVE_MPI
 

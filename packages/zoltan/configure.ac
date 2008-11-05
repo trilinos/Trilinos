@@ -172,6 +172,12 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
 AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_octreepartitioning" != "Xno"])
 
+TAC_ARG_ENABLE_OPTION(gzip, [enable zlib support for driver], GZIP, no)
+if test "X$ac_cv_use_gzip" != "Xno"; then
+   LIBS="-lz ${LIBS}"
+fi
+AM_CONDITIONAL(BUILD_GZIP, [test "X$ac_cv_use_gzip" != "Xno"])
+
 TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, no)
 AM_CONDITIONAL(BUILD_PARMETIS, [test "X$ac_cv_use_parmetis" != "Xno"])
 TAC_ARG_WITH_3PL_SUB(parmetis, libdir, [Specify where the Parmetis library is located.  Ex. /path/to/library])
