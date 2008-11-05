@@ -29,7 +29,7 @@
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
 }
 (FRAMEWORK, INSTALL) {
-    TESTS= run_test_script_41.exe, run_test_script_42.exe, run_test_script_43.exe;
+    TESTS= run_test_script_41.exe, run_test_script_42.exe, run_test_script_43.exe, run_test_script_44.exe;
     ARGS = -v;
     COMM = SERIAL;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);

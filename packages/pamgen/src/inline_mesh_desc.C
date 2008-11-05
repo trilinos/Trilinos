@@ -926,6 +926,9 @@ LoopLimits Inline_Mesh_Desc::getLimits( Topo_Loc the_set_location,
   int kend = nz;
 
   switch(the_set_location) {
+  case ALL_NODES:{
+    break;
+  }
   case MINUS_I:{
     iend = istart + 1;
     break;

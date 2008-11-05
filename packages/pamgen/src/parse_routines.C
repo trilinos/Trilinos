@@ -619,6 +619,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       Topo_Loc the_loc = NUM_TOPO_CONNECTIONS;
       // case insensitive string compare
       if(!strncasecmp(type_token,"ihi",3))the_loc = PLUS_I;
+      else if(!strncasecmp(type_token,"all",3))the_loc = ALL_NODES;
       else if(!strncasecmp(type_token,"xhi",3))the_loc = PLUS_I;
       else if(!strncasecmp(type_token,"rhi",3))the_loc = PLUS_I;
       else if(!strncasecmp(type_token,"jhi",3))the_loc = PLUS_J;

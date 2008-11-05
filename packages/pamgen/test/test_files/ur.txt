@@ -13,8 +13,10 @@
      "
      field = 1.0+3.*exp(-1.*(coord));
      field = 1.0+sin(coord*6.0);
+     "
     end
    set assign
+        nodeset,all,100
         nodeset,ihi,1
         nodeset,jhi,2
         nodeset,ilo,3
