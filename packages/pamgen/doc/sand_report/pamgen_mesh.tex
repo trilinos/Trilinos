@@ -789,7 +789,7 @@ end
 {\ttfamily \small \begin{verbatim}
 SET ASSIGN 
    [{NODESET | SIDESET},{IHI | JHI | ... | V00 | V01 | ... | E00 | 
-   E01 | ... }, int]
+   E01 | ALL| ... }, int]
    [{BLOCK SIDESET | BLOCK NODESET},{IHI | JHI | ... | V00 | V01 | 
    ... | E00 | E01 | ... }, int, int]
    ...
@@ -816,6 +816,10 @@ coordinate directions r, $\theta$, and $\phi$. For CYLINDRICAL meshes \textsc
 {I,J,} and \textsc {K} correspond to the coordinate directions r,
 $\theta$, and z.  The \textsc {KHI, KLO} options do not exist in two
 dimension simulations.
+
+The \textsc{ALL} option for nodesets places all the nodes of the mesh in a 
+nodeset with the requested id. The \textsc{ALL} option is not available for 
+sidesets.
 
 Specifying a nodeset on the \textsc{ILO} face of a \texttt{RADIAL TRISECTION} mesh 
 refers to the edge aligned with the Z axis (see Figure~\ref{fig:block_ss}). 
