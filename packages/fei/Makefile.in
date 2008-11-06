@@ -46,6 +46,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 @SUB_TEST_TRUE@TESTS = test utest_cases utest test/elemDOF_Aztec \
 @SUB_TEST_TRUE@	test/remEssBCs test/cr_lagrange_20quad \
+@SUB_TEST_TRUE@	test/cr_slave_20quad \
 @SUB_TEST_TRUE@	test/cr_lagrange_20quad_AZLSC \
 @SUB_TEST_TRUE@	test/cr_lagrange_20quad_old \
 @SUB_TEST_TRUE@	test/cr_multifield_slave
@@ -101,8 +102,9 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = base support-Trilinos support-PETSc test_utils test \
 	utest_cases utest test/elemDOF_Aztec test/remEssBCs \
-	test/cr_lagrange_20quad test/cr_lagrange_20quad_AZLSC \
-	test/cr_lagrange_20quad_old test/cr_multifield_slave example
+	test/cr_lagrange_20quad test/cr_slave_20quad \
+	test/cr_lagrange_20quad_AZLSC test/cr_lagrange_20quad_old \
+	test/cr_multifield_slave example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -785,6 +787,7 @@ uninstall-am: uninstall-includeHEADERS
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE)
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test/remEssBCs && $(MAKE)
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_slave_20quad && $(MAKE)
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE)
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE)
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE)
@@ -818,6 +821,7 @@ clean-tests:
 	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE) clean
 	cd $(top_builddir)/test/remEssBCs && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE) clean
+	cd $(top_builddir)/test/cr_slave_20quad && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE) clean
 	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE) clean

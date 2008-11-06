@@ -439,6 +439,7 @@ AC_CONFIG_FILES([
                 support-PETSc/Makefile
                 test/Makefile
                 test/cr_lagrange_20quad/Makefile
+                test/cr_slave_20quad/Makefile
                 test/cr_lagrange_20quad_AZLSC/Makefile
                 test/cr_lagrange_20quad_old/Makefile
                 test/cr_multifield_slave/Makefile

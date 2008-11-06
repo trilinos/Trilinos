@@ -496,4 +496,8 @@ July 7 2005: version 2.14.00
     better mechanism for filling an array to return to the caller.
     There are still occurrences of the cumbersome three-argument pattern in
     various fei API's, but all of them will eventually be replaced.
+  - Removed more occurences of feiArray, using std::vector instead. This
+    effects the API in places where an array is a return value. Specifically
+    in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
+
 

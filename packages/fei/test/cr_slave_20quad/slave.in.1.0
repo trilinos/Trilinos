@@ -329,108 +329,129 @@ elemID
 1.0  1.0  1.0  1.0
 
 
-numCRMultSets
+numSlaveVariables
 7
 
-# numMultCRs
+# slave node ID
+21
+# slave field ID
+0
+# offset into slave field ID
+0
+#number of master nodes
 1
-# number of nodes
+#master node IDs
+10
+#field ID for each master node
+0
+#weights - 1 row per master node, each row has 1 entry per field component
+1.0
+#rhs value
+0.0
+
+# slave node ID
+22
+# slave field ID
+0
+# offset into slave field
+0
+#number of master nodes
+2
+# master node IDs
+10 11
+# fieldID for each master node
+0 0
+#weights, 1 row per master node, each row has 1 entry per field-component
+0.5
+0.5
+#rhs value
+0.0
+
+#slave node ID
+23
+# slave field ID
+0
+# offset into slave field
+0
+#number of master nodes
+2
+# master node IDs
+11 12
+# fieldID for each master node
+0 0
+# weights, 1 row per master node, each row has 1 entry per field-component
+0.5
+0.5
+#rhs value
+0.0
+
+# slave node ID
+24
+# slave field ID
+0
+# offset into slave field
+0
+#number of master nodes
+1
+# master node IDs
+12
+# fieldID for each master node
+0
+#weights, 1 row per master node, each row has 1 entry per field-component
+1.0
+#rhs value
+0.0
+
+# slave node ID
+28
+# slave field ID
+0
+# offset into slave field
+0
+#number of master nodes
+2
+# master node IDs -- 1 row for each CR, each row has 1 entry for each node
+12 15
+# fieldID for each master node
+0 0
+#weights, 1 row per master node, each row has 1 entry per field-component
+0.5
+0.5
+#rhs value
+0.0
+
+# slave node ID
+32
+# slave field ID
+0
+# offset into slave field
+0
+#number of master nodes
 2
 # node IDs -- 1 row for each CR, each row has 1 entry for each node
-21 10
-# fieldID for each node
+15 18
+# fieldID for each master node
 0 0
-#weights, 1 row per node, each row has 1 entry per field-component
--1.0
+#weights, 1 row per master node, each row has 1 entry per field-component
+0.5
+0.5
+#rhs value
+0.0
+
+# slave node ID
+36
+# slave field ID
+0
+# offset into slave field
+0
+#number of master nodes
+1
+# master node IDs
+18
+# fieldID for each master node
+0
+#weights, 1 row per master node, each row has 1 entry per field-component
 1.0
-#rhs values, 1 value per CR
-0.0
-
-# numMultCRs
-1
-# number of nodes
-3
-# node IDs -- 1 row for each CR, each row has 1 entry for each node
-22 10 11
-# fieldID for each node
-0 0 0
-#weights, 1 row per node, each row has 1 entry per field-component
--1.0
-0.5
-0.5
-#rhs values, 1 value per CR
-0.0
-
-# numMultCRs
-1
-# number of nodes
-3
-# node IDs -- 1 row for each CR, each row has 1 entry for each node
-23 11 12
-# fieldID for each node
-0 0 0
-# weights, 1 row per node, each row has 1 entry per field-component
--1.0
-0.5
-0.5
-#rhs values, 1 value per CR
-0.0
-
-# numMultCRs
-1
-# number of nodes
-2
-# node IDs -- 1 row for each CR, each row has 1 entry for each node
-24 12
-# fieldID for each node
-0 0
-#weights, 1 row per node, each row has 1 entry per field-component
--1.0
-1.0
-#rhs values, 1 value per CR
-0.0
-
-# numMultCRs
-1
-# number of nodes
-3
-# node IDs -- 1 row for each CR, each row has 1 entry for each node
-28 12 15
-# fieldID for each node
-0 0 0
-#weights, 1 row per node, each row has 1 entry per field-component
--1.0
-0.5
-0.5
-#rhs values, 1 value per CR
-0.0
-
-# numMultCRs
-1
-# number of nodes
-3
-# node IDs -- 1 row for each CR, each row has 1 entry for each node
-32 15 18
-# fieldID for each node
-0 0 0
-#weights, 1 row per node, each row has 1 entry per field-component
--1.0
-0.5
-0.5
-#rhs values, 1 value per CR
-0.0
-
-# numMultCRs
-1
-# number of nodes
-2
-# node IDs -- 1 row for each CR, each row has 1 entry for each node
-36 18
-# fieldID for each node
-0 0
-#weights, 1 row per node, each row has 1 entry per field-component
--1.0
-1.0
-#rhs values, 1 value per CR
+#rhs value
 0.0
 

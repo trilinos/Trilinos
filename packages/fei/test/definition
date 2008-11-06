@@ -32,6 +32,12 @@
 
 (FRAMEWORK, FeiTests) {
   TESTS = fei_test.exe;
+  ARGS = -d ./cr_slave_20quad -i slave.i;
+  COMM = SERIAL, MPI(1,2,4);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
   ARGS = -d ./cr_lagrange_20quad_AZLSC -i lagrange.i;
   COMM = SERIAL, MPI(1,2,4);
 }
