@@ -11,9 +11,29 @@ TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
 # B) Define the header and source files (and directories)
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+SET(HEADERS "")
+SET(SOURCES "")
+
+#
+# src
+#
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_Config.h
+  )
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(HEADERS ${HEADERS}
+  ${PACKAGE_NAME}_ConfigDefs.hpp
+   RTOpPack_version.hpp
+  )
+
+SET(SOURCES ${SOURCES}
+  RTOpPack_version.cpp
+  )
 
 #
 # src/interfaces
@@ -21,14 +41,14 @@ LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces)
 
-SET(RTOP_INTERFACES_H
+SET(HEADERS ${HEADERS}
   interfaces/RTOpPack_RTOpT.hpp
   interfaces/RTOpPack_RTOpT_decl.hpp
   interfaces/RTOpPack_RTOpT_def.hpp
   interfaces/RTOpPack_Types.hpp
   )
 
-SET(RTOP_INTERFACES
+SET(SOURCES ${SOURCES}
   interfaces/RTOpPack_RTOpT.cpp
   )
 
@@ -38,7 +58,7 @@ SET(RTOP_INTERFACES
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support)
 
-SET(RTOP_SUPPORT_H
+SET(HEADERS ${HEADERS}
   support/RTOpPack_RTOpServer.hpp
   support/RTOpPack_RTOpServerDecl.hpp
   support/RTOpPack_RTOpTHelpers.hpp
@@ -52,16 +72,16 @@ SET(RTOP_SUPPORT_H
   support/RTOpPack_TOpUnaryFuncPtrDecl.hpp
   )
 
-SET(RTOP_SUPPORT
+SET(SOURCES ${SOURCES}
   support/RTOpPack_RTOpTHelpers.cpp
   support/RTOpPack_SPMD_apply_op.cpp
   )
 
-SET(RTOP_SUPPORT_C_H
+SET(HEADERS ${HEADERS}
   support/RTOp_parallel_helpers.h
   )
 
-SET(RTOP_SUPPORT_C
+SET(SOURCES ${SOURCES}
   support/RTOp_parallel_helpers.c
   )
 
@@ -71,7 +91,7 @@ SET(RTOP_SUPPORT_C
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ops_lib)
 
-SET(RTOP_OPS_LIB_H
+SET(HEADERS ${HEADERS}
   ops_lib/RTOpPack_ROpCountNanInf.hpp
   ops_lib/RTOpPack_ROpDotProd.hpp
   ops_lib/RTOpPack_ROpGetSubVector.hpp
@@ -106,7 +126,7 @@ SET(RTOP_OPS_LIB_H
   ops_lib/RTOpPack_TOpSetSubVector_def.hpp
   )
 
-SET(RTOP_OPS_LIB
+SET(SOURCES ${SOURCES}
   ops_lib/RTOpPack_ROpGetSubVector.cpp
   ops_lib/RTOpPack_TOpLinearCombination.cpp
   ops_lib/RTOpPack_TOpSetSubVector.cpp
@@ -118,11 +138,11 @@ SET(RTOP_OPS_LIB
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/lapack)
 
-SET(RTOP_LAPACK_H
+SET(HEADERS ${HEADERS}
   lapack/RTOpPack_LapackWrappers.hpp
   )
 
-SET(RTOP_LAPACK
+SET(SOURCES ${SOURCES}
   lapack/RTOpPack_LapackWrappers.cpp
   )
 
@@ -132,20 +152,8 @@ SET(RTOP_LAPACK
 
 TRILINOS_PACKAGE_ADD_LIBRARY(
   rtop
-  HEADERS
-   RTOp_ConfigDefs.hpp RTOpPack_version.hpp
-    ${RTOP_INTERFACES_H}
-    ${RTOP_SUPPORT_H}
-    ${RTOP_SUPPORT_C_H}
-    ${RTOP_OPS_LIB_H}
-    ${RTOP_LAPACK_H}
-  SOURCES
-    RTOpPack_version.cpp
-    ${RTOP_INTERFACES}
-    ${RTOP_SUPPORT_C}
-    ${RTOP_SUPPORT}
-    ${RTOP_OPS_LIB}
-    ${RTOP_LAPACK}
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
   )
 
 #

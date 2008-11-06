@@ -1,0 +1,318 @@
+--------------------------------------------
+How to CMakeify an Existing Trilinos Package
+--------------------------------------------
+
+Last updated: 2008/11/05
+------------------------
+
+Here, we describe how to add full CMake/CTest support to an existing
+Trilinos package.  The process of providing CMake/CTest support for a
+Trilinos package will be refereed to as "CMakeifying" a package.  For
+this howto, we will draw on examples from existing CMakeified packages
+like Thyra (thyra), Epetra (epetra), and EpetraExt (epetraext).
+
+Let PACKAGE_NAME and PACKAGE_DIR represent the package name and the
+directory name for the Trilinos package that you are CMakeifying.  For
+example, for AztecOO, this would be:
+
+  PACKAGE_NAME = AztecOO
+  PACKAGE_DIR = aztecoo
+
+Note that in general for any directory where you have a Makefile.am
+file you will need to create the equivalent CMakeLists.txt file.
+Note, however, there is no such thing as a configure.ac file with
+CMake so once you create the CMakeLists.txt files and tie them
+together with ADD_SUBDIRECTORY(...) calls, you are finished!
+
+Here are the steps for CMakeifying a Trilinos package:
+
+
+1) Add the package name to base-level CMakeLists.txt
+
+Add the package name PACKAGE_NAME to the list of supported Trilinos
+packages in the base-level CMakeLists.txt file in the variable
+Trilinos_PACKAGES.
+
+NOTE: You have to list the packages in strictly increasing order of
+dependencies.  Don't worry, if you get the order wrong, you will find
+this out at configure time automatically with a nice error message.
+
+
+2) Create the package's base-level PACKAGE_DIR/CMakeLists.txt file
+
+Copy the top-level CMakeLists.txt for:
+
+  Trilinos/packages/epetraext/CMakeLists.txt
+
+(or any other Trilinos package) to:
+
+  Trilinos/packages/PACKAGE_DIR/CMakeLists.txt
+
+In the new PACKAGE_DIR/CMakeLists.txt file, change the name of the
+package in the TRILINOS_PACKAGE(...) macro to the name of the Trilinos
+package PACKAGE_NAME.
+
+NOTE: If the name you pass into TRILINOS_PACKAGE(...) is not the same
+as you specified in the Trilinos_PACKAGES variable in the base-level
+CMakeLists.txt file, then you will get an error message telling you
+this.
+
+Modify this CMakeLists.txt file to pull in ADD_SUBDIRECTORY(...) calls
+to include other CMakeLists.txt files for the libraries and the
+tests/examples for the package.
+
+NOTE: You must include the ADD_SUBDIRETORY(...) calls in the order of
+the build dependencies.  For example, you have to add the subdirectory
+for the library(s) in 'src' before the subdirectories in 'test' or
+'example'.
+
+
+3) Create the directory PACKAGE_DIR/cmake
+
+  $ cd Trilinos/packages/PACKAGE_DIR
+  $ mkdir cmake
+  $ cvs add cmake
+
+
+4) Create the PACKAGE_DIR/cmake/Dependencies.cmake file
+
+Copy the dependencies list file for:
+
+  Trilinos/packages/epetraext/cmake/Dependencies.cmake
+
+(or any other Trilinos package) to:
+
+  Trilinos/packages/PACKAGE_DIR/cmake/Dependencies.cmake
+
+and modify PACKAGE_DIR/cmake/Dependencies.cmake for this package's
+various dependencies.
+
+To get the list of package dependencies, look at the file
+
+  Trilinos/packages/PACKAGE_DIR/Makefile.export.PACKAGE_DIR
+
+for hints as to what packages to list here.
+
+NOTE: If a package is included in a 'REQUIRED' list, then it does not
+need to be included in the corresponding 'OPTIONAL' list.
+
+NOTE: Once you list out these package dependencies, you will never
+directly refer to these packages again.  All of the dependency
+handling is performed automatically by the provided macros.  You can
+only overstate the dependencies, you can never understate them.
+
+
+5) Copy and modify the PACKAGE_config.h.in file
+
+Copy the package's autotools-generated PACKAGE_config.h.in file from:
+
+  Trilinos/packages/PACKAGE_DIR/src/PACKAGE_config.h.in
+
+to
+
+  Trilinos/packages/PACKAGE_DIR/cmake/PACKAGE_config.h.in
+
+You will then to need to manually modify the file
+PACKAGE_DIR/cmake/PACKAGE_config.h.in to replace '#undef' with
+'#cmakedefine'.  Also use this opportunity to strip out the mess of
+extra macro defines that the package does not need.  Compare the
+files:
+
+  Trilinos/packages/epetraext/cmake/EpetraExt_config.h.in
+
+with 
+
+  Trilinos/packages/epetraext/src/EpetraExt_config.h.in
+
+to see the significant reduction in the amount of junk you can clean
+out.
+
+
+6) Create the package's library PACKAGE_DIR/src/CMakeLists.txt file
+
+Most Trilinos packages just create a single library from a single
+Makefile.am file with autotools.  This is the case that is described
+here.
+
+Start by copying over an existing library CMakelists file from another
+package.  For example, copy the file:
+
+  Trilinos/packages/teuchos/src/CMakeLists.txt
+
+(or any other Trilinos package) to:
+
+  Trilinos/packages/PACKAGE_DIR/src/CMakeLists.txt
+
+Now, modify the file PACKAGE_DIR/src/CMakeLists.txt as follows:
+
+
+6.a) Specify the list of HEADERS and SOURCES:
+
+Copy the list of headers and sources from:
+
+  Trilinos/packages/PACKAGE_DIR/src/Makefile.am
+
+to
+
+  Trilinos/packages/PACKAGE_DIR/src/CMakeLists.txt
+
+and make the appropriate modifications.  If you compare the files
+
+  Trilinos/packages/teuchos/src/CMakeLists.txt
+
+to
+
+  Trilinos/packages/teuchos/src/Makefile.am
+
+you will see the nature of the changes to these lists that is needed.
+
+NOTE: We need to move to globing the source files instead of listing
+them out in order to make the SIERRA BJAM Jamfiles more maintainable.
+
+
+6.b) Specify the name of the library(s) being created
+
+Set the name of the library being created in the macro call
+TRILINOS_PACKAGE_ADD_LIBRARY(...).
+
+NOTE: The name of this library will never be manually listed again in
+any other build-system file.  The macros take care of everything
+automatically.
+
+
+6.c) Multiple libraries
+
+If the package has more than one library in the same CMakeList.txt
+file, see epetra/src/CMakeLists.txt for an example.  If the pacakge
+has more than one library spread out across several CMakeLists.txt
+file, see thyra/src/CMakeLists.txt,
+thyra/adapters/epetra/src/CMakeLists.txt, and
+thyra/adapters/epetraext/src/CMakeLists.txt for an example.
+
+
+7) Add the CMakeLists.txt files for the tests and examples
+
+Adding the CMakeLists.txt files for all of the tests and examples is
+perhaps the most time consuming part of CMakeifying a Trilinos
+package.  Note that with the CMake system, you list the executables
+and the tests in the same CMakeLists.txt file.  This helps keep things
+together and easier to maintain.
+
+If you compare the autotools Makefile.am files in epetraext/test for
+example, with the CMakeLists.txt files in those same directories, it
+should be pretty obvious how to write the CMakeLists.txt files.
+
+In general, most test/example executables and the accompanying test
+can be added in one shot with the
+TRILINOS_ADD_EXECUTABLE_AND_TEST(...) macro.  For cases where you need
+finer control, you can use the separate macros
+TRILINOS_ADD_EXECUTABLE(...) and TRILINOS_ADD_TEST(...).
+
+To see lots of examples of how to use the macros
+TRILINOS_ADD_EXECUTABLE(...) TRILINOS_ADD_TEST(...), and
+TRILINOS_ADD_EXECUTABLE_AND_TEST(...) look at examples in the packages
+teuchos, epetra, epetraext, and thyra.  Don't be lazy, look at working
+examples in other packages!  Look for usage examples, for instance,
+with:
+
+  $ find . -name CMakeLists.txt -exec grep -nH 'TRILINOS_ADD_EXECUTABLE' {} \;
+
+A few points are worth mentioning:
+
+7.a) You must name the CMake-build executables exactly the same as in
+the autotools system
+
+To see what the name is of the autotools-generated executables, look
+in the Makefile.am file in the same directory and in
+PACKAGE_DIR/test/definition.
+
+NOTE: We are going to need to append the name of the package to every
+executable that needs to be built because the CMake target names are
+global and must be unique.  We have already seen cases where there are
+conflicts in the names of the test/example executables (e.g. Teuchos
+has a Comm_test.exe and so does Epetra).
+
+7.b) You must add tests for every test case that is listed in
+PACKAGE_DIR/test/defintion
+
+The package thyra has some of the more varied examples of how to
+specify CTest tests for a variety of use cases.  It is worth your time
+to look through some of these examples.
+
+
+8) Configure, build, and test
+
+Once you have completed up through step 4 and have the files
+PACKAGE_DIR/CMakeLists.txt (at least a skeleton) and
+PACKAGE_DIR/Dependinces.cmake in place, you can start configuring with
+cmake to test that things are working correctly.  It is helpful to
+define -DTrilinos_VERBOSE_CONFIGURE:BOOL=ON when you configure so that
+you can see what libraries, executables, and tests are being added.
+You should always try to test your changes in small increments so that
+it is easy to debug problems.
+
+8.a) Run the CTest tests
+
+As you add test/example executables and CTest tests, you can run them
+for your package as:
+
+  $ ctest -R PACKAGE_NAME -W 100
+
+(where PACKAGE_NAME = Epetra, EpetraExt, etc.)
+
+8.b) Run the perl-based test harness
+
+You can also run the tests/examples through the perl-based system by
+using:
+
+  $ make runtests-serial-PACKAGE_DIR
+
+or 
+
+  $ make runtests-mpi-PACKAGE_DIR
+
+(where PACKAGE_DIR = epetra, epetraext, etc.)
+
+8.c) Verify that the CTest tests are the same as the perl-based tests
+
+One of the final steps in completing the CMakeification of a Trilinos
+package is to check to make sure that all of the same tests/examples
+that are built and run with the Autotools system are also being built
+and run as part of the CMake system.  To do this, you need to
+configure the package you are CMakeifying along with the rest of
+Trilinos the same way with the autotools system as with the CMake
+system (you will just have to figure out how to do that).
+
+Once that is done, you must run the autotools-built tests as:
+
+  $ cd AUTOTOOLS_BUILD_DIR/packages/PACAKGE_DIR
+  $ make runtests-serial
+
+The detailed output from the above 'make runtests-serial' command (or
+'make runtests-mpi' command with the rest of the arguments) is in the
+file:
+
+  AUTOTOOLS_BUILD_DIR/packages/PACAKGE_DIR/test/runtests-results
+
+This above output must be the same that you get by building with the
+CMake system and running the tests with:
+
+  $ CMAKE_BUILD_DIR
+  $ make runtests-serial-PACKAGE_DIR
+
+The detailed output from 'make runtests-serial-PACKAGE_DIR' (or 'make
+runtests-mpi-PACKAGE_DIR') is in the output file:
+
+  CMAKE_BUILD_DIR/Testing/Temporary/LastTest.log
+
+The output in:
+
+  AUTOTOOLS_BUILD_DIR/packages/PACAKGE_DIR/test/runtests-results
+
+must match the output in:
+
+  AUTOTOOLS_BUILD_DIR/packages/PACAKGE_DIR/test/runtests-results
+
+I don't think you can automate the comparison and I think the package
+developers themselves must be the ones to ultimately verify that the
+CMakeification of their package is complete.

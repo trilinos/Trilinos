@@ -17,13 +17,18 @@ TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 # B) Define the header and source files (and directories)
 #
 
-# Setup directories based on current directory
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+SET(HEADERS "")
+SET(SOURCES "")
 
-# Set headers
-SET(HEADERS
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(HEADERS ${HEADERS}
   Epetra_BLAS.h
   Epetra_BLAS_wrappers.h
   Epetra_BasicDirectory.h
@@ -92,7 +97,7 @@ SET(HEADERS
   )
 
 # Set sources
-SET(SOURCES
+SET(SOURCES ${SOURCES}
   Epetra_BLAS.cpp
   Epetra_BasicDirectory.cpp
   Epetra_BasicRowMatrix.cpp
@@ -157,15 +162,13 @@ SET(FORTRAN_SOURCES
 
 IF(Trilinos_ENABLE_MPI)
 
-  SET(HEADERS
-    ${HEADERS}
+  SET(HEADERS ${HEADERS}
     Epetra_MpiComm.h
     Epetra_MpiCommData.h
     Epetra_MpiDistributor.h
     )
 
-  SET(SOURCES
-    ${SOURCES}
+  SET(SOURCES ${SOURCES}
     Epetra_MpiComm.cpp
     Epetra_MpiCommData.cpp
     Epetra_MpiDistributor.cpp
@@ -175,18 +178,16 @@ ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_TESTS)
 
-  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/test/src)
+  INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/src)
 
-  SET(HEADERS
-    ${HEADERS}
-    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_test_functions.h
-    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_matrix_data.h
+  SET(HEADERS ${HEADERS}
+    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_test_functions.h
+    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_matrix_data.h
   )
 
-  SET(SOURCES
-    ${SOURCES}
-    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
-    ${${PACKAGE_NAME}_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
+  SET(SOURCES ${SOURCES}
+    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_test_functions.cpp
+    ${PACKAGE_SOURCE_DIR}/test/src/Epetra_matrix_data.cpp
   )
 
 ENDIF()
@@ -199,9 +200,7 @@ IF(Trilinos_ENABLE_FORTRAN)
   SET(EPETRA_FORTRAN_LIB epetra_fortran)  
   TRILINOS_PACKAGE_ADD_LIBRARY(
     ${EPETRA_FORTRAN_LIB}
-    HEADERS ""
     SOURCES ${FORTRAN_SOURCES}
-    DEPLIBS ""
     )
 ENDIF()
 

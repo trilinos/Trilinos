@@ -1,7 +1,7 @@
 INCLUDE(Trilinos_Add_Executable_And_Test)
 
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/test/support)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/support)
 
 
 TRILINOS_ADD_EXECUTABLE_AND_TEST(
@@ -36,7 +36,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
     TOpReciprocal_UnitTests.cpp
     TOpScaleVector_UnitTests.cpp
     ../support/supportUnitTestsHelpers.cpp
-    ${PROJECT_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS "--error-tol-slack=1e+2"
   COMM serial mpi
   NUM_MPI_PROCS 1

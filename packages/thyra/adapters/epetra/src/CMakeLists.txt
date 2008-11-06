@@ -2,7 +2,6 @@
 INCLUDE(TrilinosPackageLibraryHelpers)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS
   Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp

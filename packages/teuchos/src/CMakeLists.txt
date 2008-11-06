@@ -19,7 +19,7 @@ SET(SOURCES "")
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS ${HEADERS}
-  ${CMAKE_CURRENT_BINARY_DIR}/Teuchos_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
 # NOTE: Above, we add the XXX_config.h file so tht MS Visual Studio

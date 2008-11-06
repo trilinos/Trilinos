@@ -6,7 +6,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     validate_apply_op_UnitTests.cpp
     supportUnitTestsHelpers.cpp
-    ${PROJECT_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS " "
   COMM serial mpi
   NUM_MPI_PROCS 1

@@ -2,7 +2,6 @@
 INCLUDE(TrilinosPackageLibraryHelpers)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/model_evaluator)
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS
   model_evaluator/Thyra_EpetraModelEvaluator.hpp

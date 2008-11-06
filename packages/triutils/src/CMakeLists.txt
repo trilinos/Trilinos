@@ -5,18 +5,24 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_config.h)
+TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+SET(HEADERS "")
+SET(SOURCES "")
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
 
-SET(CORE_H
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(HEADERS ${HEADERS}
   Trilinos_Util.h
   Trilinos_Util_ReadMatrixMarket2Epetra.h
   Trilinos_Util_CountMatrixMarket.h
@@ -25,7 +31,7 @@ SET(CORE_H
   Trilinos_Util_CommandLineParser.h
   )
 
-SET(CORE
+SET(SOURCES ${SOURCES}
   Trilinos_Util_duscr_vbr.cpp
   Trilinos_Util_dusds_vbr.cpp
   Trilinos_Util_distrib_vbr_matrix.cpp
@@ -58,12 +64,12 @@ SET(CORE
   Trilinos_Util_CrsMatrixGallery.cpp
   )
 
-SET(UTIL_H
+SET(HEADERS ${HEADERS}
   iohb.h
   Trilinos_Util_Version.h
   )
 
-SET(UTIL
+SET(SOURCES ${SOURCES}
   iohb.cpp
   )
 
@@ -73,12 +79,8 @@ SET(UTIL
 
 TRILINOS_PACKAGE_ADD_LIBRARY(
   triutils
-  HEADERS
-    ${CORE_H}
-    ${UTIL_H}
-  SOURCES
-    ${CORE}
-    ${UTIL}
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
   )
 
 #

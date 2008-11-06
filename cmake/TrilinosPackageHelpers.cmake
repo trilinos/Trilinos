@@ -9,33 +9,21 @@ INCLUDE(Parse_Variable_Arguments)
 
 MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
 
-  # Assert that the global and local package names are the same!
+  # A) Assert that the global and local package names are the same!
+
   IF (DEFINED PACKAGE_NAME_GLOBAL)
     IF (NOT ${PACKAGE_NAME_IN} STREQUAL ${PACKAGE_NAME_GLOBAL})
       MESSAGE(FATAL_ERROR "Error, the pacakge-defined package name '${PACKAGE_NAME_IN}' is not the same as the package name defined at the global level '${PACKAGE_NAME_GLOBAL}'")
     ENDIF()
   ENDIF()
-   
-  #
-  # A) Parse the input arguments
-  #
-
-  PARSE_ARGUMENTS( PARSE "LANGUAGES" "" ${ARGN} )
 
   #
-  # B) Set up the CMake "project" for this Trilinos package and define some
+  # B) Set up the CMake support for this Trilinos package and define some
   # top-level varaibles.
   #
 
   SET(PACKAGE_NAME "${PACKAGE_NAME_IN}")
   MESSAGE(STATUS "Processing enabled Trilinos package: ${PACKAGE_NAME}")
-
-  # Set up a new CMake "project" for this Trilinos "package"
-  IF (PARSE_LANGUAGES)
-    PROJECT(${PACKAGE_NAME} ${PARSE_LANGUAGES})
-  ELSE()
-    PROJECT(${PACKAGE_NAME})
-  ENDIF()
 
   # Write PACKAGE versions of common variables
   SET(PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -161,15 +149,15 @@ ENDMACRO()
 
 MACRO(TRILINOS_PACKAGE_POSTPROCESS)
 
-  LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)
-  LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARY_DIRS)
-  LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+  LIST(REMOVE_DUPLICATES ${PACKAGE_NAME}_INCLUDE_DIRS)
+  LIST(REMOVE_DUPLICATES ${PACKAGE_NAME}_LIBRARY_DIRS)
+  LIST(REMOVE_DUPLICATES ${PACKAGE_NAME}_LIBRARIES)
 
   IF (Trilinos_VERBOSE_CONFIGURE)
     MESSAGE("\nTRILINOS_PACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
-    PRINT_VAR(${PROJECT_NAME}_INCLUDE_DIRS)
-    PRINT_VAR(${PROJECT_NAME}_LIBRARY_DIRS)
-    PRINT_VAR( ${PROJECT_NAME}_LIBRARIES)
+    PRINT_VAR(${PACKAGE_NAME}_INCLUDE_DIRS)
+    PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
+    PRINT_VAR( ${PACKAGE_NAME}_LIBRARIES)
   ENDIF()
 
 ENDMACRO()

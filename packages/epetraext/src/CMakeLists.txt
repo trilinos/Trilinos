@@ -5,7 +5,7 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_config.h)
+TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -15,11 +15,18 @@ TRILINOS_PACKAGE_CONFIGURE_FILE(${PROJECT_NAME}_config.h)
 # src
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+SET(HEADERS "")
+SET(SOURCES "")
 
-SET(HEADERS
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(HEADERS ${HEADERS}
   EpetraExt_ConfigDefs.h
   EpetraExt_MMHelpers.h
   EpetraExt_MatrixMatrix.h
@@ -27,7 +34,7 @@ SET(HEADERS
   EpetraExt_Version.h
   )
 
-SET(SOURCES
+SET(SOURCES ${SOURCES}
   EpetraExt_ProductOperator.cpp
   EpetraExt_MMHelpers.cpp
   EpetraExt_MatrixMatrix.cpp
