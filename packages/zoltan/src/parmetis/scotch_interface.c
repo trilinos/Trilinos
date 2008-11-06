@@ -500,22 +500,20 @@ int Zoltan_Scotch(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
+  gr.graph_type = - GLOBAL_GRAPH;
+  /* Fix type of graph, negative because we impose them */
+  if (strcmp (graph_type, "GLOBAL") != 0) {
+    gr.graph_type = - LOCAL_GRAPH;
+    if (zz->Num_Proc > 1) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, __func__, "Distributed graph: cannot call serial Scotch, switching to PT-Scotch");
+      gr.graph_type = - GLOBAL_GRAPH;
+      retval = ZOLTAN_WARN;
+    }
+  }
+
   /* TODO : take care about multidimensional weights */
   ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
 
-  /* Fix type of graph, negative because we impose them */
-  if (strcmp (graph_type, "GLOBAL") == 0) {
-    gr.graph_type = - GLOBAL_GRAPH;
-  }
-  else {
-    gr.graph_type = - LOCAL_GRAPH;
-  }
-
-  if ((gr.graph_type != GLOBAL_GRAPH)&&(zz->Num_Proc > 1)) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, __func__, "Distributed graph: cannot call serial Scotch, switching to PT-Scotch");
-    gr.graph_type = GLOBAL_GRAPH;
-    retval = ZOLTAN_WARN;
-  }
 
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
