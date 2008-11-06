@@ -39,13 +39,24 @@ EXPORT_LIBS = $(ANASAZI_TEST_LIBS)
 EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 endif
 
+if BUILD_AMESOS
+if BUILD_EPETRAEXT
+QEVPTEST = BlockKrylovSchurQEVP_test
+endif
+endif
+
 AM_CPPFLAGS = \
 	$(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
 #np# List all executable names here
-noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test BlockKrylovSchur_nh_test
+noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test BlockKrylovSchur_nh_test $(QEVPTEST) Dummy
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/linearized_qevp_A.hb linearized_qevp_A.hb
+	cp  $(srcdir)/linearized_qevp_B.hb linearized_qevp_B.hb
+Dummy_SOURCES = Dummy
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
@@ -53,6 +64,7 @@ noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test BlockKrylovS
 BlockKrylovSchur_test_SOURCES = $(srcdir)/cxx_main.cpp
 BlockKrylovSchur_nh_test_SOURCES = $(srcdir)/cxx_main_nh.cpp
 BlockKrylovSchur_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
+BlockKrylovSchurQEVP_test_SOURCES = $(srcdir)/cxx_qevp.cpp
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
@@ -74,6 +86,13 @@ BlockKrylovSchur_solvertest_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
+BlockKrylovSchurQEVP_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../amesos/src/libamesos.a \
+	$(top_builddir)/../epetraext/src/libepetraext.a
+
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
 BlockKrylovSchur_test_CXXFLAGS = -I$(top_srcdir)/src
@@ -81,6 +100,8 @@ BlockKrylovSchur_test_CXXFLAGS = -I$(top_srcdir)/src
 BlockKrylovSchur_nh_test_CXXFLAGS = -I$(top_srcdir)/src
 
 BlockKrylovSchur_solvertest_CXXFLAGS = -I$(top_srcdir)/src
+
+BlockKrylovSchurQEVP_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
@@ -91,6 +112,9 @@ BlockKrylovSchur_nh_test_LDADD = \
 	$(EXPORT_LIBS)
 
 BlockKrylovSchur_solvertest_LDADD = \
+	$(EXPORT_LIBS)
+
+BlockKrylovSchurQEVP_test_LDADD = \
 	$(EXPORT_LIBS)
 
 # Dummy for new export makefiles

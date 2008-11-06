@@ -115,6 +115,14 @@
     COMM = SERIAL, MPI;
 }
 
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
+    TESTS = ../epetra/test/BlockKrylovSchur/BlockKrylovSchurQEVP_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --A-filename=../epetra/test/BlockKrylovSchur/linearized_qevp_A.hb
+           --B-filename=../epetra/test/BlockKrylovSchur/linearized_qevp_B.hb;
+    COMM = SERIAL;
+}
+
 # COVERAGE (using Epetra)
 (COVERAGE) {
     TESTS = ../epetra/test/LOBPCG/LOBPCG_test.exe,
