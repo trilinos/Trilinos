@@ -1372,9 +1372,6 @@ Optional Features:
                           examples' (default is yes if --disable-examples is
                           not specified)
   --enable-intrepid-debug Enable intrepid debug mode (default is no)
-  --enable-intrepid-fiatvho
-                          Enable intrepid FIAT very high order bases (default
-                          is no)
   --enable-sacado         Build examples which use Sacado. Can be overridden
                           with --disable-intrepid-sacado.
   --enable-intrepid-sacado
@@ -8062,31 +8059,11 @@ fi
 # ------------------------------------------------------------------------
 # Check to see if FIAT very high order bases have been enabled.
 # ------------------------------------------------------------------------
-
-# Check whether --enable-intrepid-fiatvho was given.
-if test "${enable_intrepid_fiatvho+set}" = set; then
-  enableval=$enable_intrepid_fiatvho; ac_cv_use_intrepid_fiatvho=$enableval
-else
-  ac_cv_use_intrepid_fiatvho=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use intrepid-fiatvho" >&5
-echo $ECHO_N "checking whether to use intrepid-fiatvho... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_intrepid_fiatvho" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_INTREPID_FIAT_VERY_HIGH_ORDER
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
+#
+# This is no longer necessary.
+#
+# TAC_ARG_ENABLE_FEATURE_SUB( intrepid, fiatvho, [Enable intrepid FIAT very high order bases],
+#                INTREPID_FIAT_VERY_HIGH_ORDER, no)
 
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
@@ -8418,7 +8395,7 @@ fi
 # List all necessary Makefiles here.
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/Basis/Makefile example/SparseConv/Makefile test/Basis/F0_TRI_C1_FEM_FIAT/Makefile test/Basis/F0_TRI_C2_FEM_FIAT/Makefile test/Basis/F0_TRI_C3_FEM_FIAT/Makefile test/Basis/F0_TRI_C4_FEM_FIAT/Makefile test/Basis/F0_TRI_C5_FEM_FIAT/Makefile test/Basis/F0_TRI_C6_FEM_FIAT/Makefile test/Basis/F0_TRI_C7_FEM_FIAT/Makefile test/Basis/F0_TRI_C8_FEM_FIAT/Makefile test/Basis/F0_TRI_C9_FEM_FIAT/Makefile test/Basis/F0_TRI_C10_FEM_FIAT/Makefile test/Basis/F0_TET_C1_FEM_FIAT/Makefile test/Basis/F0_TET_C2_FEM_FIAT/Makefile test/Basis/F0_TET_C3_FEM_FIAT/Makefile test/Basis/F0_TET_C4_FEM_FIAT/Makefile test/Basis/F0_TET_C5_FEM_FIAT/Makefile test/Basis/F0_TET_C6_FEM_FIAT/Makefile test/Basis/F0_TET_C7_FEM_FIAT/Makefile test/Basis/F0_TET_C8_FEM_FIAT/Makefile test/Basis/F0_TET_C9_FEM_FIAT/Makefile test/Basis/F0_TET_C10_FEM_FIAT/Makefile test/Basis/F2_TRI_I1_FEM_FIAT/Makefile test/Basis/F2_TRI_I2_FEM_FIAT/Makefile test/Basis/F2_TRI_I3_FEM_FIAT/Makefile test/Basis/F2_TRI_I4_FEM_FIAT/Makefile test/Basis/F2_TRI_I5_FEM_FIAT/Makefile test/Basis/F2_TRI_I6_FEM_FIAT/Makefile test/Basis/F2_TRI_I7_FEM_FIAT/Makefile test/Basis/F2_TRI_I8_FEM_FIAT/Makefile test/Basis/F2_TRI_I9_FEM_FIAT/Makefile test/Basis/F2_TRI_I10_FEM_FIAT/Makefile test/Basis/F2_TET_I1_FEM_FIAT/Makefile test/Basis/F2_TET_I2_FEM_FIAT/Makefile test/Basis/F2_TET_I3_FEM_FIAT/Makefile test/Basis/F2_TET_I4_FEM_FIAT/Makefile test/Basis/F2_TET_I5_FEM_FIAT/Makefile test/Basis/F2_TET_I6_FEM_FIAT/Makefile test/Basis/F2_TET_I7_FEM_FIAT/Makefile test/Basis/F2_TET_I8_FEM_FIAT/Makefile test/Basis/F2_TET_I9_FEM_FIAT/Makefile test/Basis/F2_TET_I10_FEM_FIAT/Makefile test/Basis/F1_TRI_I1_FEM_FIAT/Makefile test/Basis/F1_TRI_I2_FEM_FIAT/Makefile test/Basis/F1_TRI_I3_FEM_FIAT/Makefile test/Basis/F1_TRI_I4_FEM_FIAT/Makefile test/Basis/F1_TRI_I5_FEM_FIAT/Makefile test/Basis/F1_TRI_I6_FEM_FIAT/Makefile test/Basis/F1_TRI_I7_FEM_FIAT/Makefile test/Basis/F1_TRI_I8_FEM_FIAT/Makefile test/Basis/F1_TRI_I9_FEM_FIAT/Makefile test/Basis/F1_TRI_I10_FEM_FIAT/Makefile test/Basis/F1_TET_I1_FEM_FIAT/Makefile test/Basis/F1_TET_I2_FEM_FIAT/Makefile test/Basis/F1_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I4_FEM_FIAT/Makefile test/Basis/F1_TET_I5_FEM_FIAT/Makefile test/Basis/F1_TET_I6_FEM_FIAT/Makefile test/Basis/F1_TET_I7_FEM_FIAT/Makefile test/Basis/F1_TET_I8_FEM_FIAT/Makefile test/Basis/F1_TET_I9_FEM_FIAT/Makefile test/Basis/F1_TET_I10_FEM_FIAT/Makefile test/Basis/FIAT/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/Basis/Makefile example/SparseConv/Makefile test/Basis/F0_TRI_C1_FEM_FIAT/Makefile test/Basis/F0_TRI_C2_FEM_FIAT/Makefile test/Basis/F0_TRI_C3_FEM_FIAT/Makefile test/Basis/F0_TET_C1_FEM_FIAT/Makefile test/Basis/F0_TET_C2_FEM_FIAT/Makefile test/Basis/F0_TET_C3_FEM_FIAT/Makefile test/Basis/F2_TRI_I1_FEM_FIAT/Makefile test/Basis/F2_TRI_I2_FEM_FIAT/Makefile test/Basis/F2_TRI_I3_FEM_FIAT/Makefile test/Basis/F2_TET_I1_FEM_FIAT/Makefile test/Basis/F2_TET_I2_FEM_FIAT/Makefile test/Basis/F2_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TRI_I1_FEM_FIAT/Makefile test/Basis/F1_TRI_I2_FEM_FIAT/Makefile test/Basis/F1_TRI_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I1_FEM_FIAT/Makefile test/Basis/F1_TET_I2_FEM_FIAT/Makefile test/Basis/F1_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I10_FEM_FIAT/Makefile test/Basis/FIAT/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9141,62 +9118,21 @@ do
     "test/Basis/F0_TRI_C1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C1_FEM_FIAT/Makefile" ;;
     "test/Basis/F0_TRI_C2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C2_FEM_FIAT/Makefile" ;;
     "test/Basis/F0_TRI_C3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C4_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C4_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C5_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C5_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C6_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C6_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C7_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C7_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C8_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C8_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C9_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C9_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C10_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C10_FEM_FIAT/Makefile" ;;
     "test/Basis/F0_TET_C1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C1_FEM_FIAT/Makefile" ;;
     "test/Basis/F0_TET_C2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C2_FEM_FIAT/Makefile" ;;
     "test/Basis/F0_TET_C3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C4_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C4_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C5_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C5_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C6_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C6_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C7_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C7_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C8_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C8_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C9_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C9_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C10_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C10_FEM_FIAT/Makefile" ;;
     "test/Basis/F2_TRI_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I1_FEM_FIAT/Makefile" ;;
     "test/Basis/F2_TRI_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I2_FEM_FIAT/Makefile" ;;
     "test/Basis/F2_TRI_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I4_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I4_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I5_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I5_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I6_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I6_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I7_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I7_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I8_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I8_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I9_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I9_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I10_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I10_FEM_FIAT/Makefile" ;;
     "test/Basis/F2_TET_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I1_FEM_FIAT/Makefile" ;;
     "test/Basis/F2_TET_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I2_FEM_FIAT/Makefile" ;;
     "test/Basis/F2_TET_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I4_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I4_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I5_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I5_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I6_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I6_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I7_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I7_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I8_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I8_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I9_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I9_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I10_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I10_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TRI_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I1_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TRI_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I2_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TRI_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I4_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I4_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I5_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I5_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I6_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I6_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I7_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I7_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I8_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I8_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I9_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I9_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I10_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I10_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TET_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I1_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TET_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I2_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TET_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I4_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I4_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I5_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I5_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I6_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I6_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I7_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I7_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I8_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I8_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I9_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I9_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TET_I10_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I10_FEM_FIAT/Makefile" ;;
     "test/Basis/FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/FIAT/Makefile" ;;
 

@@ -323,8 +323,11 @@ TAC_ARG_ENABLE_FEATURE_SUB( intrepid, debug, [Enable intrepid debug mode],
 # ------------------------------------------------------------------------
 # Check to see if FIAT very high order bases have been enabled.
 # ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( intrepid, fiatvho, [Enable intrepid FIAT very high order bases],
-                INTREPID_FIAT_VERY_HIGH_ORDER, no)
+#
+# This is no longer necessary.
+#
+# TAC_ARG_ENABLE_FEATURE_SUB( intrepid, fiatvho, [Enable intrepid FIAT very high order bases],
+#                INTREPID_FIAT_VERY_HIGH_ORDER, no)
 
 # ------------------------------------------------------------------------
 # Trilinos Package Dependencies
@@ -388,62 +391,21 @@ AC_CONFIG_FILES([
   test/Basis/F0_TRI_C1_FEM_FIAT/Makefile
   test/Basis/F0_TRI_C2_FEM_FIAT/Makefile
   test/Basis/F0_TRI_C3_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C4_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C5_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C6_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C7_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C8_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C9_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C10_FEM_FIAT/Makefile
   test/Basis/F0_TET_C1_FEM_FIAT/Makefile
   test/Basis/F0_TET_C2_FEM_FIAT/Makefile
   test/Basis/F0_TET_C3_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C4_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C5_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C6_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C7_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C8_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C9_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C10_FEM_FIAT/Makefile
   test/Basis/F2_TRI_I1_FEM_FIAT/Makefile
   test/Basis/F2_TRI_I2_FEM_FIAT/Makefile
   test/Basis/F2_TRI_I3_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I4_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I5_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I6_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I7_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I8_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I9_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I10_FEM_FIAT/Makefile
   test/Basis/F2_TET_I1_FEM_FIAT/Makefile
   test/Basis/F2_TET_I2_FEM_FIAT/Makefile
   test/Basis/F2_TET_I3_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I4_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I5_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I6_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I7_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I8_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I9_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I10_FEM_FIAT/Makefile
   test/Basis/F1_TRI_I1_FEM_FIAT/Makefile
   test/Basis/F1_TRI_I2_FEM_FIAT/Makefile
   test/Basis/F1_TRI_I3_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I4_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I5_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I6_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I7_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I8_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I9_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I10_FEM_FIAT/Makefile
   test/Basis/F1_TET_I1_FEM_FIAT/Makefile
   test/Basis/F1_TET_I2_FEM_FIAT/Makefile
   test/Basis/F1_TET_I3_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I4_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I5_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I6_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I7_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I8_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I9_FEM_FIAT/Makefile
   test/Basis/F1_TET_I10_FEM_FIAT/Makefile
   test/Basis/FIAT/Makefile
 ])

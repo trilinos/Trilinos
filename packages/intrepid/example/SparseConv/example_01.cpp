@@ -287,7 +287,7 @@ void u_grad(double* grad, Point<double> point, RHSType rhstype, int deg) {
 
 int main(int argc, char *argv[]) {
   // Check number of arguments.
-  TEST_FOR_EXCEPTION( ( argc < 8 ),
+  TEST_FOR_EXCEPTION( ( argc < 9 ),
                       std::invalid_argument,
                       ">>> ERROR (example_01): Invalid number of arguments. See source for proper calling sequence.");
 
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 7)
+  if (iprint > 8)
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
@@ -327,18 +327,20 @@ int main(int argc, char *argv[]) {
     int cubType  = atoi(argv[1]); // cubature type
     int basisDeg = atoi(argv[2]); // basis degree
     int cubDeg   = atoi(argv[3]); // cubature degree
-    int dataDeg  = atoi(argv[4]); // polynomial degree of PDE solution
-    int xint     = atoi(argv[5]); // num intervals in x direction (assumed box domain)
-    int yint     = atoi(argv[6]); // num intervals in y direction (assumed box domain)
-    int zint     = atoi(argv[7]); // num intervals in z direction (assumed box domain)
+    int dataDeg  = atoi(argv[4]); // max complete polynomial degree of PDE solution
+    int polyType = atoi(argv[5]); // rhs type, see enum above, mapped to 1-n
+    int xint     = atoi(argv[6]); // num intervals in x direction (assumed box domain)
+    int yint     = atoi(argv[7]); // num intervals in y direction (assumed box domain)
+    int zint     = atoi(argv[8]); // num intervals in z direction (assumed box domain)
 
     std::cout << "Problem parameters:\n";
-    std::cout << "   CubType" << "   BasDeg" << "   CubDeg" << "   PolyDeg" << "    NX" << "   NY" << "   NZ\n";
+    std::cout << "   CubType" << "   BasDeg" << "   CubDeg" << "   PolyDeg" << "   pType" << "    NX" << "   NY" << "   NZ\n";
     std::cout << std::setw(7) << cubType <<
                  std::setw(9) << basisDeg <<
                  std::setw(10) << cubDeg <<
                  std::setw(9) << dataDeg <<
-                 std::setw(9) << xint <<
+                 std::setw(9) << polyType <<
+                 std::setw(8) << xint <<
                  std::setw(5) << yint <<
                  std::setw(5) << zint << "\n\n";
 	
@@ -391,7 +393,17 @@ int main(int argc, char *argv[]) {
     bool side5  = true; // z=rightZ, top
 
     // RHS function specification:
-    RHSType rhstype = SINSINSINEXP; 
+    RHSType rhstype;
+    switch (polyType) {
+      case 1: rhstype = SINSINSIN;    break;
+      case 2: rhstype = SINSINSINEXP; break;
+      case 3: rhstype = POLY_Q;       break;
+      case 4: rhstype = POLY_P;       break;
+      default:
+        TEST_FOR_EXCEPTION( ( 1 ),
+                            std::invalid_argument,
+                            ">>> ERROR (rhsFunc): Invalid type of RHS.");
+    } 
 
     /*** END SELECTION OF PROBLEM PARAMETERS ***/
 
@@ -723,7 +735,7 @@ int main(int argc, char *argv[]) {
     *outStream << *uh_red;
   }
   catch (std::logic_error err) {
-    *outStream << err.what() << "\n\n";
+    std::cerr << err.what() << "\n\n";
   };
 
   // reset format state of std::cout

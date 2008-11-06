@@ -42,9 +42,6 @@
 /* Define if want to build with intrepid enabled */
 #undef HAVE_INTREPID_EPETRAEXT
 
-/* Define if want to build intrepid-fiatvho */
-#undef HAVE_INTREPID_FIAT_VERY_HIGH_ORDER
-
 /* Define if want to build with intrepid enabled */
 #undef HAVE_INTREPID_SACADO
 
