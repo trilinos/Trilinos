@@ -7,7 +7,7 @@ Last updated: 2008/11/05
 
 Here, we describe how to add full CMake/CTest support to an existing
 Trilinos package.  The process of providing CMake/CTest support for a
-Trilinos package will be refereed to as "CMakeifying" a package.  For
+Trilinos package will be referred to as "CMakeifying" a package.  For
 this howto, we will draw on examples from existing CMakeified packages
 like Thyra (thyra), Epetra (epetra), and EpetraExt (epetraext).
 
@@ -198,12 +198,12 @@ package.  Note that with the CMake system, you list the executables
 and the tests in the same CMakeLists.txt file.  This helps keep things
 together and easier to maintain.
 
-If you compare the autotools Makefile.am files in epetraext/test for
-example, with the CMakeLists.txt files in those same directories, it
-should be pretty obvious how to write the CMakeLists.txt files.
+Comparing the autotools Makefile.am files in epetraext/test with the 
+CMakeLists.txt files in those same directories provides a good example of 
+how to write the CMakeLists.txt files.
 
 In general, most test/example executables and the accompanying test
-can be added in one shot with the
+harness test can be added in one shot with the
 TRILINOS_ADD_EXECUTABLE_AND_TEST(...) macro.  For cases where you need
 finer control, you can use the separate macros
 TRILINOS_ADD_EXECUTABLE(...) and TRILINOS_ADD_TEST(...).
@@ -294,7 +294,7 @@ file:
 
   AUTOTOOLS_BUILD_DIR/packages/PACAKGE_DIR/test/runtests-results
 
-This above output must be the same that you get by building with the
+The above output must be the same that you get by building with the
 CMake system and running the tests with:
 
   $ CMAKE_BUILD_DIR
