@@ -1,4 +1,3 @@
-# $Header$ 
 
 # Required modules
 INCLUDE(Trilinos_Add_Executable)

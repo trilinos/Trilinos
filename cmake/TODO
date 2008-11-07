@@ -3,9 +3,6 @@ TODOs for the Trilinos/CMake system
 
 Last updated: 2008/09/28
 
-(*) [Ross] Create python script to checkout, untar, build, and install CMake
-in one shot.
-
 (*) [Ross] Add automatic demangle checking
 
 (*) [Ross] Add unit testing infrastructure for
@@ -35,7 +32,7 @@ track of test results for different enables/disables.
 control what gets built.  This will make it easier to maintain the BJAM build
 system.
 
-(*) [Esteban] Set up our own CDash results for Trilinos serial and mpi
+(*) [???] Set up our own CDash results for Trilinos serial and mpi
 
 - Set up a MS Windows test machine feeding into Trilinos dashbaord
   + Get automated builds/tests with CTest/CDash running on Esteban
@@ -46,12 +43,9 @@ system.
 
 - Add 'serial' and 'mpi' categories to dashboard on trilinos.sandia.gov
 
-(*) [Esteban] Experiment with using CPack to create a MS Windows binary
-installer (NSIS)
-
-- Post a installer exe file on software.sandia.gov (hidden) and send
-out link in an email to Trilinos-Announce allowing others to get
-Trilinos.
+(*) [???] Put out binary Windows and Mac installers for an interm
+release of Trilinos up on website and send an email to
+Trilinos-Announce allowing others to use this.
 
 (*) [Everyone] Expand TrlinosCMakeQuickstart.txt
 - Configuring Trilinos to build
@@ -60,10 +54,7 @@ Trilinos.
 - Running tests (cmake and runtests-[serial,mpi])
 - Will lead into a rewriting of the Trilinos Developers Guide
 
-(*) [Esteban] Add the Trilinos LGPL license to the NSIS installer
-
-(*) [???] Write unit tests for all important Trilinos Cmake
-macros (like TRILINOS_ADD_[EXECUTABLE,TEST,EXECUTABLE_AND_TEST)(...) etc.)
+(*) [???] Add the Trilinos LGPL license to the NSIS installer
 
 (*) [???] Create separate dashboards for each Trilinos package.  For
 now, we could write an advanced ctest script that would loop through
@@ -79,11 +70,3 @@ for Trilinos.
 
 Completed:
 ----------
-
-
-(*) [Ross] Add automatic Fortran 77 name mangling [Done]
-
-
-(*) [Ross] Set up a linux machine to do nightly builds of serial debug
-and mpi optimized to send to dashboard.  These are done on new machine
-godel.sandia.gov.  See 

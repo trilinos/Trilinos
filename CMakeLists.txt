@@ -125,6 +125,9 @@ SET( Trilinos_ENABLE_TESTS "" CACHE STRING
 SET(Trilinos_ENABLE_EXAMPLES "" CACHE STRING
   "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if Trilinos_ENABLE_TESTS=ON" )
 
+SET(Trilinos_ENABLE_PERFORMANCE_TESTS "" CACHE BOOL
+  "Enable performance tests in all packages that support them" )
+
 IF (Trilinos_ENABLE_TESTS AND Trilinos_ENABLE_EXAMPLES STREQUAL "")
   MESSAGE(STATUS "Setting Trilinos_ENABLE_EXAMPLES=ON because Trilinos_ENABLE_TESTS=ON")
   SET(Trilinos_ENABLE_EXAMPLES ON)

@@ -56,6 +56,12 @@ TRILINOS_ADD_OPTION(
   OFF
   )
 
+OPTION(
+  ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
+  "Override enable Teuchos performance tests."
+  ${Trilinos_ENABLE_PERFORMANCE_TESTS}
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -65,6 +71,8 @@ ADD_SUBDIRECTORY(src)
 TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+
+TRILINOS_PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(performance)
 
 #
 # D) Do standard postprocessing

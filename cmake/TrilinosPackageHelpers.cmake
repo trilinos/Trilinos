@@ -116,6 +116,33 @@ ENDMACRO()
 
 
 #
+# Macro called to add a set of performance test directories for a package
+#
+# This macro only needs to be called from the top most CMakeList.txt file for
+# which all subdirectories area all "tests".
+#
+# This macro can be called several times within a package and it will have the
+# right effect.
+#
+# This macro defines hooks for inserting certain types of behavior in a
+# uniform way.
+#
+
+MACRO(TRILINOS_PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES)
+
+  IF(${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS OR ${PACKAGE_NAME}_ENABLE_TESTS)
+    FOREACH(TEST_DIR ${ARGN})
+      ADD_SUBDIRECTORY(${TEST_DIR})
+    ENDFOREACH()
+  ENDIF()
+
+  # 2008/10/07: rabartl: ToDo: Put in hooks for defining the make target
+  # 'tests'
+
+ENDMACRO()
+
+
+#
 # Macro called to add a set of example directories for a package
 #
 # This macro only needs to be called from the top most CMakeList.txt file for

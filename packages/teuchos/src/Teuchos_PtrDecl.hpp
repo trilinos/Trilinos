@@ -194,7 +194,8 @@ public: // Bad bad bad
 };
 
 
-/** \brief create a non-persisting output argument for a function call.
+/** \brief create a non-persisting (required or optional) output
+ * argument for a function call.
  *
  * \relates Ptr
  */
@@ -217,7 +218,8 @@ Ptr<const T> ptrInArg( T& arg )
 }
 
 
-/** \brief create a non-persisting const input argument for a function call.
+/** \brief create a non-persisting non-const optional input argument
+for a function call.
  *
  * \relates Ptr
  */
@@ -228,7 +230,8 @@ Ptr<T> optInArg( T& arg )
 }
 
 
-/** \brief create a non-persisting const input argument for a function call.
+/** \brief create a non-persisting const optional input argument for a
+function call.
  *
  * \relates Ptr
  */
@@ -244,7 +247,7 @@ Ptr<const T> constOptInArg( T& arg )
  * \relates Ptr
  */
 template<typename T> inline
-Ptr<T> ptrRef( T& arg )
+Ptr<T> ptrFromRef( T& arg )
 {
   return Ptr<T>(&arg);
 }

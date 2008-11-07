@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ) {
 
   using Teuchos::Ptr;
   using Teuchos::ptr;
-  using Teuchos::ptrRef;
+  using Teuchos::ptrFromRef;
   using Teuchos::constPtr;
   using Teuchos::outArg;
   using Teuchos::optInArg;
@@ -149,9 +149,9 @@ int main( int argc, char* argv[] ) {
     }
  
     {
-      // Test construction of Ptr from ptrRef()
+      // Test construction of Ptr from ptrFromRef()
       A a;
-      Ptr<A> a_ptr = ptrRef(a);
+      Ptr<A> a_ptr = ptrFromRef(a);
       TEUCHOS_ASSERT_EQUALITY( &a, &*a_ptr );
       TEUCHOS_ASSERT_EQUALITY( &a, a_ptr.get() );
     }

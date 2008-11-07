@@ -36,3 +36,11 @@ echo
 time /usr/local/bin/ctest -S $BASEDIR/scripts/ctest_linux_nightly_mpi_optimized_godel.cmake -VV
 
 /home/rabartl/mailmsg.py "Trilinos mpi opt on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
+
+echo
+echo "Doing serial performance build"
+echo
+
+time /usr/local/bin/ctest -S $BASEDIR/scripts/ctest_linux_nightly_serial_performance_godel.cmake -VV
+
+/home/rabartl/mailmsg.py "Trilinos serial performance on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
