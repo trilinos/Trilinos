@@ -161,16 +161,6 @@ public:
       return getTopology(subcell_dim,subcell_ord)->base ;
     }
 
-        
-   /** \brief  Key of a subcell of the given dimension and ordinal. */
-   unsigned getKey( const unsigned subcell_dim ,
-                    const unsigned subcell_ord ) const
-     {
-       return getTopology(subcell_dim,subcell_ord) -> key ;
-     }
-        
-        
-
   /** \brief  Key of a subcell of the given dimension and ordinal. */
   unsigned getKey( const unsigned subcell_dim ,
                    const unsigned subcell_ord ) const
@@ -224,15 +214,6 @@ public:
       return m_cell->subcell_homogeneity[subcell_dim] ;
     }
   
-  /** \brief  Node count of subcell of given dimension and ordinal.    */
-   unsigned getNodeCount( const unsigned  subcell_dim ,
-                          const unsigned  subcell_ord ) const
-          {
-            SHARDS_REQUIRE( requireCell() );
-            SHARDS_REQUIRE( requireSubcell(subcell_dim,subcell_ord) );
-            return m_cell -> subcell[subcell_dim][subcell_ord].topology -> node_count;
-          }
-        
   /** \brief  Mapping from a subcell's node ordinal to a
    *          node ordinal of this parent cell topology.
    */

@@ -26,6 +26,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <Shards_Array.hpp>
+#include <Shards_ArrayVector.hpp>
 
 template< class T1 , class T2 > struct AssertSameType ;
 template< class T > struct AssertSameType<T,T> {};
@@ -98,26 +99,26 @@ void myfortranABCD( const Array<double,FortranOrder,TagA,TagB,TagC,TagD> ) {}
 
 //----------------------------------------------------------------------
 
+typedef Array<double,FortranOrder,TagA> AF1 ;
+typedef Array<double,FortranOrder,TagA,TagB> AF2 ;
+typedef Array<double,FortranOrder,TagA,TagB,TagC> AF3 ;
+typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD> AF4 ;
+typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA> AF5 ;
+typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB> AF6 ;
+typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC> AF7 ;
+typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC,TagD> AF8 ;
+
+typedef Array<double,NaturalOrder,TagA> AN1 ;
+typedef Array<double,NaturalOrder,TagA,TagB> AN2 ;
+typedef Array<double,NaturalOrder,TagA,TagB,TagC> AN3 ;
+typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD> AN4 ;
+typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA> AN5 ;
+typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB> AN6 ;
+typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC> AN7 ;
+typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC,TagD> AN8 ;
+
 void local_test_array()
 {
-  typedef Array<double,FortranOrder,TagA> AF1 ;
-  typedef Array<double,FortranOrder,TagA,TagB> AF2 ;
-  typedef Array<double,FortranOrder,TagA,TagB,TagC> AF3 ;
-  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD> AF4 ;
-  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA> AF5 ;
-  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB> AF6 ;
-  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC> AF7 ;
-  typedef Array<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC,TagD> AF8 ;
-
-  typedef Array<double,NaturalOrder,TagA> AN1 ;
-  typedef Array<double,NaturalOrder,TagA,TagB> AN2 ;
-  typedef Array<double,NaturalOrder,TagA,TagB,TagC> AN3 ;
-  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD> AN4 ;
-  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA> AN5 ;
-  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB> AN6 ;
-  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC> AN7 ;
-  typedef Array<double,NaturalOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC,TagD> AN8 ;
-
   AssertSameType< AF2::TruncateType , AF1 >();
   AssertSameType< AF3::TruncateType , AF2 >();
   AssertSameType< AF4::TruncateType , AF3 >();
@@ -531,6 +532,40 @@ void local_test_array()
 
 }
 
+//----------------------------------------------------------------------
+
+void local_test_array_vector()
+{
+  typedef ArrayVector<double,FortranOrder,TagA> AVF1 ;
+  typedef ArrayVector<double,FortranOrder,TagA,TagB> AVF2 ;
+  typedef ArrayVector<double,FortranOrder,TagA,TagB,TagC> AVF3 ;
+  typedef ArrayVector<double,FortranOrder,TagA,TagB,TagC,TagD> AVF4 ;
+  typedef ArrayVector<double,FortranOrder,TagA,TagB,TagC,TagD,TagA> AVF5 ;
+  typedef ArrayVector<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB> AVF6 ;
+  typedef ArrayVector<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC> AVF7 ;
+  typedef ArrayVector<double,FortranOrder,TagA,TagB,TagC,TagD,TagA,TagB,TagC,TagD> AVF8 ;
+
+  AVF1 avf1( 2 );
+  AVF2 avf2( 2 , 3 );
+  AVF3 avf3( 2 , 3 , 4 );
+  AVF4 avf4( 2 , 3 , 4 , 5 );
+  AVF5 avf5( 2 , 3 , 4 , 5 , 6 );
+  AVF6 avf6( 2 , 3 , 4 , 5 , 6 , 7 );
+  AVF7 avf7( 2 , 3 , 4 , 5 , 6 , 7 , 8 );
+  AVF8 avf8( 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 );
+ 
+  std::cout << std::endl << "FORTRAN ARRAY-VECTORS:" << std::endl ;
+
+  myfortranfunc( avf1 );
+  myfortranfunc( avf2 );
+  myfortranfunc( avf3 );
+  myfortranfunc( avf4 );
+  myfortranfunc( avf5 );
+  myfortranfunc( avf6 );
+  myfortranfunc( avf7 );
+  myfortranfunc( avf8 );
+}
+
 }
 
 void test_shards_array()
@@ -539,6 +574,7 @@ void test_shards_array()
 
   try {
     local_test_array();
+    local_test_array_vector();
     std::cout << method << " PASSED" << std::endl ;
   }
   catch( const std::exception & x ) {

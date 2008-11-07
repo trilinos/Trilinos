@@ -45,6 +45,7 @@ SHARDS_H = \
 
 SHARDS_HPP = \
 	$(srcdir)/Shards_Array.hpp	\
+	$(srcdir)/Shards_ArrayVector.hpp	\
 	$(srcdir)/Shards_CellTopology.hpp	\
 	$(srcdir)/Shards_CellTopologyTraits.hpp	\
 	$(srcdir)/Shards_BasicTopologies.hpp	\

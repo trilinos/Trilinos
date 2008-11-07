@@ -30,7 +30,14 @@
 
 namespace {
 
-#define REQUIRE( S ) if ( ! ( S ) ) { throw std::runtime_error(std::string(#S)); }
+#define REQUIRE( S ) \
+  if ( ! ( S ) ) { throw std::runtime_error(std::string(#S)); }
+
+#define REQUIRE_EX( S ) \
+  { bool flag = true ; \
+    try { S ; } catch( const std::exception & ) { flag = false ; } \
+    if ( flag ) { throw std::runtime_error(std::string(#S)); } \
+  }
 
 template< class Traits , unsigned Dim , unsigned Ord >
 void test_subcell( const shards::CellTopology & parent )
@@ -108,6 +115,9 @@ void test_cell()
   REQUIRE( Subcell_1::count     == top.getSubcellCount(1) )
   REQUIRE( Subcell_2::count     == top.getSubcellCount(2) )
   REQUIRE( Subcell_3::count     == top.getSubcellCount(3) )
+
+  REQUIRE_EX( top.getSubcellCount(4) )
+  REQUIRE_EX( top.getSubcellCount(5) )
 
   test_all_subcell< Traits , 0 , Subcell_0::count > testd0( top );
   test_all_subcell< Traits , 1 , Subcell_1::count > testd1( top );
