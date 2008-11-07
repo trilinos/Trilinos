@@ -31,7 +31,7 @@ IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
     NUM_MPI_PROCS 1
     COMM serial mpi
     ARGS
-      "--show-test-details=ALL --max-array-size=16384 --rel-cpu-speed=1e+2 --max-rcp-create-destroy-ratio=1.40"
+      "--show-test-details=ALL --max-array-size=16384 --rel-cpu-speed=1e+2 --max-rcp-create-destroy-ratio=1.10"
     HOST godel.sandia.gov
     STANDARD_PASS_OUTPUT
     )

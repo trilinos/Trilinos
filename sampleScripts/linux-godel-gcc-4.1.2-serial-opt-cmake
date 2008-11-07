@@ -1,24 +1,20 @@
 EXTRA_ARGS=$@
 
 cmake \
--D CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC \
--D CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpicc \
+-D CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++ \
+-D CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc \
 -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran \
--D CMAKE_CXX_FLAGS:STRING="-O3 -ansi -Wall" \
--D CMAKE_C_FLAGS:STRING="-O3 -ansi -Wall" \
--D CMAKE_Fortran_FLAGS:STRING="-O5" \
 -D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
--D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
+-D CMAKE_CXX_FLAGS:STRING="-O3 -ansi -Wall -Wshadow -Wunused-variable -Wunused-function -Wno-system-headers -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage -fexceptions" \
+-D CMAKE_C_FLAGS:STRING="-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions" \
+-D CMAKE_Fortran_FLAGS:STRING="-O5" \
+-D CMAKE_EXE_LINKER_FLAGS:STRING="-fprofile-arcs -ftest-coverage" \
+-D MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
--D Trilinos_ENABLE_MPI:BOOL=ON \
--D MPIEXEC_MAX_NUMPROCS:STRING=4 \
--D MPI_EXTRA_LIBRARY:FILEPATH="" \
--D MPI_INCLUDE_PATH:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin \
--D MPI_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC \
--D MPI_EXECUTABLE:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiexec \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_PERFORMANCE_TESTS:BOOL=ON \
 -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
 -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
 -D Teuchos_ENABLE_BOOST:BOOL=ON \

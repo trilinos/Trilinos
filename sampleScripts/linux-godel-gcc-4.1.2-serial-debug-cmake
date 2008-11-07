@@ -20,7 +20,7 @@ cmake \
 -D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
 -D EpetraExt_BUILD_BDF:BOOL=ON \
 $EXTRA_ARGS \
-../../../Trilinos
+../../../../Trilinos
 
 # -D EpetraExt_BUILD_EXPERIMENTAL:BOOL=ON \
 # -D F77_FUNC_:STRING="(name,NAME) name ## __" \

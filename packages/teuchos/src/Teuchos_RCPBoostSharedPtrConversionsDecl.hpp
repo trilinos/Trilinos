@@ -61,7 +61,7 @@ public:
   /** \brief. */
 	typedef T ptr_t;
   /** \brief. */
-	void free( T* ptr ) const { sptr_.reset(); }
+	void free( T* ptr_in ) const { sptr_.reset(); }
   /** \brief. */
   const boost::shared_ptr<T>& ptr() const { return sptr_; }
 private:

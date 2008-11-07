@@ -3,25 +3,35 @@ TODOs for the Trilinos/CMake system
 
 Last updated: 2008/09/28
 
-(*) [Ross] Add automatic demangle checking
+(*) [???] Add Dependencies.cmake files for all Trilinos packages.  We
+need to see how the dependency tracking logic scales to all of
+Trilinos.
+
+(*) [???] Write a script that will output the dependency information
+for all of Trilinos and create a table that will give dependency
+information.  We can use this table to help determine the order to
+CMakeify packages in:
+
+(*) [???] Automatically add the right compiler options when on the
+primary development platform (i.e. lots of warnings)
 
 (*) [Ross] Add unit testing infrastructure for
 TRILINOS_ADD_EXECUTABLE(...), TRILINOS_ADD_TEST(...).  These unit
 tests will serve both as tests and as documentation.
 
-(*) [Ross] Add the package name as a prefix to all test and example
+(*) [???] Add the package name as a prefix to all test and example
 executables.  This will require changes to the
 TRILINOS_ADD_EXECUTABLE(..) and TRILINOS_ADD_TEST(...) functions.  It
 will also require changes to all of the existing Makefile.am files
 that create these tests in the autotools system and in the
 test/definition files.
 
-(*) [Ross] Clean up tests and examples:
+(*) [???] Clean up tests and examples:
 
 - Move (almost) all tests into subdirectories since that is the right thing to
 do.
 
-(*) [Ross] Add a 'libs' target to rebuild only libraries so that we can skip
+(*) [???] Add a 'libs' target to rebuild only libraries so that we can skip
 unecessary relinking when shared libraries are used
 
 (*) [Ross] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
@@ -55,6 +65,8 @@ Trilinos-Announce allowing others to use this.
 - Will lead into a rewriting of the Trilinos Developers Guide
 
 (*) [???] Add the Trilinos LGPL license to the NSIS installer
+
+(*) [???] Add automatic demangle checking with try_compile
 
 (*) [???] Create separate dashboards for each Trilinos package.  For
 now, we could write an advanced ctest script that would loop through

@@ -131,9 +131,13 @@
 
     (see output in Testing/Temporary/LastTest.log)
 
+    with verbose output to the console:
+
+    $ ctest -VV
+
   c) Only running tests for a single package
 
-    $ ctest -R PACKAGE_NAME
+    $ ctest -R '^PACKAGE_NAME_'
 
     (e.g. PACKAGE_NAME = Teuchos, Epetra, etc.)
     (see output in Testing/Temporary/LastTest.log)

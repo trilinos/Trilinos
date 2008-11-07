@@ -47,7 +47,7 @@ CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran
 HAVE_GCC_ABI_DEMANGLE:BOOL=ON
 CMAKE_CXX_FLAGS:STRING=-O3 -ansi -Wall -Wshadow -Wunused-variable -Wunused-function -Wno-system-headers -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage -fexceptions
 CMAKE_C_FLAGS:STRING=-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions
-CMAKE_Fotran_FLAGS:STRING=-O5
+CMAKE_Fortran_FLAGS:STRING=-O5
 CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
 MAKECOMMAND:STRING=gmake -j 8
 
