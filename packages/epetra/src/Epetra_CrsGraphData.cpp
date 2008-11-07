@@ -57,6 +57,8 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     NoDiagonal_(true),
     GlobalConstantsComputed_(false),
     StaticProfile_(StaticProfile),
+    SortGhostsAssociatedWithEachProcessor_(false),
+
     // ints
     IndexBase_(RowMap.IndexBase()),
     NumGlobalEntries_(0),
@@ -120,6 +122,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     NoDiagonal_(true),
     GlobalConstantsComputed_(false),
     StaticProfile_(StaticProfile),
+    SortGhostsAssociatedWithEachProcessor_(false),
     // ints
     IndexBase_(RowMap.IndexBase()),
     NumGlobalEntries_(0),
@@ -241,6 +244,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
     os.width(25); os << "Allocated_: "               << Allocated_;
     os.width(25); os << "Sorted_: "                  << Sorted_ << endl;
     os.width(26); os << "StorageOptimized_: "        << StorageOptimized_;
+    os.width(25); os << "SortGhostsAssociatedWithEachProcessor_: " << SortGhostsAssociatedWithEachProcessor_;
     os.width(25); os << "NoRedundancies_: "          << NoRedundancies_;
     os.width(25); os << "IndicesAreGlobal_: "        << IndicesAreGlobal_;
     os.width(25); os << "IndicesAreLocal_: "         << IndicesAreLocal_ << endl;

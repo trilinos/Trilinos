@@ -1099,6 +1099,18 @@ or if the number of entries in this row exceed the Length parameter.
 	  } 
 	  else { IndexOffset = 0; Indices = 0; Values_in  = 0; return (-1);} }
 	
+  //! Forces FillComplete() to locally order ghostnodes associated with each remote processor in ascending order.
+  /*! To be compliant with AztecOO, FillComplete() already locally orders ghostnodes such that
+      information received from processor k has a lower local numbering than information received
+      from processor j if k is less than j.  SortGhostsAssociatedWithEachProcessor(True) further
+      forces FillComplete() to locally number all ghostnodes received from processor k in ascending
+      order. That is, the local numbering of b is less than c if the global numbering of b is less
+      than c and if both b and c are owned by the same processor. This is done to be compliant with
+      some limited block features within ML. In particular, some ML features require that a block
+      structure of the matrix be maintained even within the ghost variables. Always returns 0.
+  */
+
+  int SortGhostsAssociatedWithEachProcessor(bool Flag)  {Graph_.SortGhostsAssociatedWithEachProcessor(Flag); return(0);}
   //@}
 	
   //! @name Deprecated methods:  These methods still work, but will be removed in a future version
