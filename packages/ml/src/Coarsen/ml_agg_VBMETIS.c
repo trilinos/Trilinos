@@ -785,8 +785,8 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
    }
    Amat->data         = temp;
    Amat->getrow       = amalg_getrow;
-   Amat->invec_leng  /= nblocks;
-   Amat->outvec_leng /= nblocks;
+   Amat->invec_leng   = nblocks;
+   Amat->outvec_leng  = nblocks;
    ML_free(tvalues); ML_free(tcolumns);
    return(status);
 }
