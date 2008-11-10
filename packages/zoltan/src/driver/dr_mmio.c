@@ -12,9 +12,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "dr_const.h"
 #include "dr_mmio.h"
 #include "dr_compress_const.h"
-#include "dr_const.h"
+
 
 int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 		double **val_, int **I_, int **J_)

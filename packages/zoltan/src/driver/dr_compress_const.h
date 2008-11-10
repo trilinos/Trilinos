@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "dr_const.h"
 
 #if (defined ZOLTAN_GZIP)||(defined ZOLTAN_BZ2)||(defined ZOLTAN_LZMA)
 #define ZOLTAN_COMPRESS

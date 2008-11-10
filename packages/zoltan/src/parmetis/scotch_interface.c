@@ -149,8 +149,8 @@ int Zoltan_Scotch_Order(
   }
 
   /* Do not use weights for ordering */
-  gr.obj_wgt_dim = -1;
-  gr.edge_wgt_dim = -1;
+/*   gr.obj_wgt_dim = -1; */
+/*   gr.edge_wgt_dim = -1; */
   gr.num_obj = num_obj;
 
   /* Check what ordering type is requested */
