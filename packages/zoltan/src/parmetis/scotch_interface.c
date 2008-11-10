@@ -115,6 +115,7 @@ int Zoltan_Scotch_Order(
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
 
   strcpy (alg, "NODEND");
+  strcpy (graph_type, "GLOBAL");
   ierr = Zoltan_Scotch_Bind_Param(zz, alg, graph_type, &strat);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
     ZOLTAN_TRACE_EXIT(zz, yo);
