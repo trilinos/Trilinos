@@ -94,6 +94,11 @@
 }
 
 (FRAMEWORK,INSTALL) {
+    TESTS = Polynomial/Polynomial_test.exe;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
     TESTS = ScalarTraits/ScalarTraits_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1),SERIAL;

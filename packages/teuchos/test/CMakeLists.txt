@@ -437,3 +437,17 @@ TRILINOS_ADD_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
 )
+
+TRILINOS_ADD_EXECUTABLE(
+  Polynomial_test 
+  COMM serial
+  SOURCES cxx_main.cpp 
+  DIRECTORY Polynomial
+  )
+TRILINOS_ADD_TEST(
+  Polynomial_test
+  DIRECTORY Polynomial
+  NAME Polynomial_test
+  COMM serial 
+  STANDARD_PASS_OUTPUT
+)

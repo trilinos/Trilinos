@@ -26,34 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
+noinst_PROGRAMS = Polynomial_test
 
-if HAVE_TEUCHOS_EXTENDED
-CONTAINERS_SUBDIR = Containers
-XML_SUBDIR = XML XMLParser
-FANCY_OUTPUTTING_SUBDIR = FancyOutputting
-endif
-STANDARD_SUBDIRS = \
-  BLAS \
-  Comm \
-  DenseMatrix \
-  Handle \
-  LAPACK \
-  MemoryManagement \
-  ParameterList \
-  Polling \
-	Polynomial \
-  ScalarTraits \
-  Time \
-  UnitTest \
-  Workspace \
-  dyn_cast \
-  exit \
-  scripts
+Polynomial_test_SOURCES = $(srcdir)/cxx_main.cpp\
+													$(srcdir)/Polynomial_UnitTest.cpp
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR) $(FANCY_OUTPUTTING_SUBDIR)
+Polynomial_test_DEPENDENCIES =   $(top_builddir)/src/libteuchos.a
 
-EXTRA_DIST = definition
+Polynomial_test_CXXFLAGS = -I$(top_srcdir)/src
+
+Polynomial_test_LDADD = $(top_builddir)/src/libteuchos.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+
 

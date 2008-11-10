@@ -741,6 +741,7 @@ AC_CONFIG_FILES([
 		test/MemoryManagement/Makefile
 		test/ParameterList/Makefile
 		test/Polling/Makefile
+		test/Polynomial/Makefile
 		test/ScalarTraits/Makefile
 		test/Time/Makefile
 		test/UnitTest/Makefile
