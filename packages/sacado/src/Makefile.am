@@ -162,9 +162,6 @@ SACADO_PARAMETER_H = \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp
 
-SACADO_PARAMETER = \
-	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
-
 endif
 
 endif
@@ -197,7 +194,16 @@ SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_integral_c.hpp \
-	$(srcdir)/mpl/Sacado_mpl_range_c.hpp 
+	$(srcdir)/mpl/Sacado_mpl_range_c.hpp \
+	$(srcdir)/mpl/Sacado_mpl_apply.hpp \
+	$(srcdir)/mpl/Sacado_mpl_apply_wrap.hpp \
+	$(srcdir)/mpl/Sacado_mpl_bind.hpp \
+	$(srcdir)/mpl/Sacado_mpl_has_type.hpp \
+	$(srcdir)/mpl/Sacado_mpl_lambda.hpp \
+	$(srcdir)/mpl/Sacado_mpl_placeholders.hpp \
+	$(srcdir)/mpl/Sacado_mpl_quote.hpp \
+	$(srcdir)/mpl/Sacado_mpl_type_wrap.hpp \
+	$(srcdir)/mpl/Sacado_mpl_is_placeholder.hpp
 
 SACADO_SFC_H = \
 	$(srcdir)/Sacado_ScalarFlopCounter.hpp \
@@ -228,7 +234,6 @@ SACADO_H = \
 
 SACADO = \
 	$(SACADO_RAD) \
-	$(SACADO_PARAMETER) \
 	$(SACADO_SFC)
 
 include $(top_builddir)/Makefile.export.sacado
