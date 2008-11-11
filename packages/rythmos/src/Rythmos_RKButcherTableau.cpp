@@ -60,6 +60,11 @@ namespace Rythmos {
     a.push_back(Implicit2Stage2ndOrderLobattoC_name);
     a.push_back(Implicit3Stage4thOrderLobattoC_name);
     a.push_back(Implicit4Stage6thOrderLobattoC_name);
+    a.push_back(Implicit2Stage4thOrderHammerHollingsworth_name);
+    a.push_back(Implicit3Stage6thOrderKuntzmannButcher_name);
+    //a.push_back(Implicit4Stage8thOrderKuntzmannButcher_name); // tscoffe 11/10/08 not passing convergence testing yet
+    a.push_back(DIRK2Stage3rdOrder_name);
+    a.push_back(SDIRK2Stage3rdOrder_name);
     a.push_back(SDIRK5Stage5thOrder_name);
     a.push_back(SDIRK5Stage4thOrder_name);
     a.push_back(SDIRK3Stage4thOrder_name);

@@ -111,7 +111,7 @@ public:
   void setStepper(
     const RCP<StepperBase<Scalar> > &stepper,
     const Scalar &finalTime,
-    const bool landOnFinalTime
+    const bool landOnFinalTime = true
     );
 
   /** \brief . */

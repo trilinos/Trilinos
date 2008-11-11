@@ -555,6 +555,138 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage4thOrder_RKBT )
   TEST_EQUALITY_CONST( rkbt.order(), 4 );
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK2Stage3rdOrder_RKBT ) {
+  RKButcherTableau<double> rkbt = createSDIRK2Stage3rdOrder_RKBT<double>();
+  validateSDIRKButcherTableau(rkbt);
+  TEST_EQUALITY_CONST( rkbt.numStages(), 2 );
+  const Teuchos::SerialDenseMatrix<int,double> A = rkbt.A();
+  const Teuchos::SerialDenseVector<int,double> b = rkbt.b();
+  const Teuchos::SerialDenseVector<int,double> c = rkbt.c();
+  double gamma = (3.0+sqrt(3.0))/6.0; // could also be (3-sqrt(3))/6
+  double tol=1.0e-10;
+  TEST_FLOATING_EQUALITY( A(0,0),  gamma, tol );
+  TEST_FLOATING_EQUALITY( A(0,1),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,0),  1.0-2.0*gamma, tol );
+  TEST_FLOATING_EQUALITY( A(1,1),  gamma, tol );
+  TEST_FLOATING_EQUALITY( b(0), 0.5, tol );
+  TEST_FLOATING_EQUALITY( b(1), 0.5, tol );
+  TEST_FLOATING_EQUALITY( c(0), gamma, tol );
+  TEST_FLOATING_EQUALITY( c(1), 1.0-gamma, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 3 );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createDIRK2Stage3rdOrder_RKBT ) {
+  RKButcherTableau<double> rkbt = createDIRK2Stage3rdOrder_RKBT<double>();
+  validateDIRKButcherTableau(rkbt);
+  TEST_EQUALITY_CONST( rkbt.numStages(), 2 );
+  const Teuchos::SerialDenseMatrix<int,double> A = rkbt.A();
+  const Teuchos::SerialDenseVector<int,double> b = rkbt.b();
+  const Teuchos::SerialDenseVector<int,double> c = rkbt.c();
+  double tol=1.0e-10;
+  TEST_FLOATING_EQUALITY( A(0,0),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(0,1),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,0),  1.0/3.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,1),  1.0/3.0, tol );
+  TEST_FLOATING_EQUALITY( b(0), 0.25, tol );
+  TEST_FLOATING_EQUALITY( b(1), 0.75, tol );
+  TEST_FLOATING_EQUALITY( c(0), 0.0, tol );
+  TEST_FLOATING_EQUALITY( c(1), 2.0/3.0, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 3 );
+}
+
+
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage4thOrderHammerHollingsworth_RKBT ) {
+  RKButcherTableau<double> rkbt = createImplicit2Stage4thOrderHammerHollingsworth_RKBT<double>();
+  validateIRKButcherTableau(rkbt);
+  TEST_EQUALITY_CONST( rkbt.numStages(), 2 );
+  const Teuchos::SerialDenseMatrix<int,double> A = rkbt.A();
+  const Teuchos::SerialDenseVector<int,double> b = rkbt.b();
+  const Teuchos::SerialDenseVector<int,double> c = rkbt.c();
+  double tol=1.0e-10;
+  TEST_FLOATING_EQUALITY( A(0,0),  0.25, tol );
+  TEST_FLOATING_EQUALITY( A(0,1),  0.25-sqrt(3.0)/6.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,0),  0.25+sqrt(3.0)/6.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,1),  0.25, tol );
+  TEST_FLOATING_EQUALITY( b(0), 0.5, tol );
+  TEST_FLOATING_EQUALITY( b(1), 0.5, tol );
+  TEST_FLOATING_EQUALITY( c(0), 0.5-sqrt(3.0)/6.0, tol );
+  TEST_FLOATING_EQUALITY( c(1), 0.5+sqrt(3.0)/6.0, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 4 );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderKuntzmannButcher_RKBT ) {
+  RKButcherTableau<double> rkbt = createImplicit3Stage6thOrderKuntzmannButcher_RKBT<double>();
+  double tol = 1.0e-10;
+  validateIRKButcherTableau(rkbt);
+  TEST_EQUALITY_CONST( rkbt.numStages(), 3 );
+  const Teuchos::SerialDenseMatrix<int,double> A = rkbt.A();
+  const Teuchos::SerialDenseVector<int,double> b = rkbt.b();
+  const Teuchos::SerialDenseVector<int,double> c = rkbt.c();
+  TEST_FLOATING_EQUALITY( A(0,0),  5.0/36.0, tol );
+  TEST_FLOATING_EQUALITY( A(0,1),  2.0/9.0-sqrt(15.0)/15.0, tol );
+  TEST_FLOATING_EQUALITY( A(0,2),  5.0/36.0-sqrt(15.0)/30.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,0),  5.0/36.0+sqrt(15.0)/24.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,1),  2.0/9.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,2),  5.0/36.0-sqrt(15.0)/24.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,0),  5.0/36.0+sqrt(15.0)/30.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,1),  2.0/9.0+sqrt(15.0)/15.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,2),  5.0/36.0, tol );
+  TEST_FLOATING_EQUALITY( b(0), 5.0/18.0, tol );
+  TEST_FLOATING_EQUALITY( b(1), 4.0/9.0, tol );
+  TEST_FLOATING_EQUALITY( b(2), 5.0/18.0, tol );
+  TEST_FLOATING_EQUALITY( c(0), 0.5-sqrt(15.0)/10.0, tol );
+  TEST_FLOATING_EQUALITY( c(1), 0.5, tol );
+  TEST_FLOATING_EQUALITY( c(2), 0.5+sqrt(15.0)/10.0, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 6 );
+}
+
+
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage8thOrderKuntzmannButcher_RKBT ) {
+  RKButcherTableau<double> rkbt = createImplicit4Stage8thOrderKuntzmannButcher_RKBT<double>();
+  double tol = 1.0e-10;
+  validateIRKButcherTableau(rkbt);
+  TEST_EQUALITY_CONST( rkbt.numStages(), 4 );
+  const Teuchos::SerialDenseMatrix<int,double> A = rkbt.A();
+  const Teuchos::SerialDenseVector<int,double> b = rkbt.b();
+  const Teuchos::SerialDenseVector<int,double> c = rkbt.c();
+  double w1 = 1.0/8.0-sqrt(30.0)/144.0;
+  double w2 = 0.5*sqrt((15.0+2.0*sqrt(30.0))/35.0);
+  double w3 = w2*(1.0/6.0+sqrt(30.0)/24.0);
+  double w4 = w2*(1.0/21.0+5.0*sqrt(30.0)/168.0);
+  double w5 = w2-2*w3;
+  double w1p = 1.0/8.0+sqrt(30.0)/144.0;
+  double w2p = 0.5*sqrt((15.0-2.0*sqrt(30.0))/35.0);
+  double w3p = w2p*(1.0/6.0-sqrt(30.0)/24.0);
+  double w4p = w2p*(1.0/21.0-5.0*sqrt(30.0)/168.0);
+  double w5p = w2p-2*w3p;
+  TEST_FLOATING_EQUALITY( A(0,0),  w1, tol );
+  TEST_FLOATING_EQUALITY( A(0,1),  w1p-w3+w4p, tol );
+  TEST_FLOATING_EQUALITY( A(0,2),  w1p-w3-w4p, tol );
+  TEST_FLOATING_EQUALITY( A(0,3),  w1-w5, tol );
+  TEST_FLOATING_EQUALITY( A(1,0),  w1-w3p+w4, tol );
+  TEST_FLOATING_EQUALITY( A(1,1),  w1p, tol );
+  TEST_FLOATING_EQUALITY( A(1,2),  w1p-w5p, tol );
+  TEST_FLOATING_EQUALITY( A(1,3),  w1-w3p-w4, tol );
+  TEST_FLOATING_EQUALITY( A(2,0),  w1+w3p+w4, tol );
+  TEST_FLOATING_EQUALITY( A(2,1),  w1p+w5p, tol );
+  TEST_FLOATING_EQUALITY( A(2,2),  w1p, tol );
+  TEST_FLOATING_EQUALITY( A(2,3),  w1+w3p-w4, tol );
+  TEST_FLOATING_EQUALITY( A(3,0),  w1+w5, tol );
+  TEST_FLOATING_EQUALITY( A(3,1),  w1p+w3+w4p, tol );
+  TEST_FLOATING_EQUALITY( A(3,2),  w1p+w3-w4p, tol );
+  TEST_FLOATING_EQUALITY( A(3,3),  w1, tol );
+  TEST_FLOATING_EQUALITY( b(0), 2.0*w1, tol );
+  TEST_FLOATING_EQUALITY( b(1), 2.0*w1p, tol );
+  TEST_FLOATING_EQUALITY( b(2), 2.0*w1p, tol );
+  TEST_FLOATING_EQUALITY( b(3), 2.0*w1, tol );
+  TEST_FLOATING_EQUALITY( c(0), 0.5-w2, tol );
+  TEST_FLOATING_EQUALITY( c(1), 0.5-w2p, tol );
+  TEST_FLOATING_EQUALITY( c(2), 0.5+w2p, tol );
+  TEST_FLOATING_EQUALITY( c(3), 0.5+w2, tol );
+  TEST_EQUALITY_CONST( rkbt.order(), 8 );
+}
+
+
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage2ndOrderGauss_RKBT ) {
   RKButcherTableau<double> rkbt = createImplicit1Stage2ndOrderGauss_RKBT<double>();
   validateIRKButcherTableau(rkbt);
@@ -960,7 +1092,6 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage5thOrder_RKBT ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage4thOrder_RKBT ) {
   RKButcherTableau<double> rkbt = createSDIRK5Stage4thOrder_RKBT<double>();
-  //TEST_THROW(validateSDIRKButcherTableau<double>(rkbt), std::logic_error );
   double tol = 1.0e-10;
   validateSDIRKButcherTableau(rkbt);
   TEST_EQUALITY_CONST( rkbt.numStages(), 5 );

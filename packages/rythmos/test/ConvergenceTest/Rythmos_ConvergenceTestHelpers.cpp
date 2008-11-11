@@ -79,8 +79,9 @@ double computeOrderByLocalErrorConvergenceStudy(
 //  Array<double> errorNorm;
   Array<double> logErrorNorm;
 
+  int numGlobalSteps = numCuts + 1;
   double h = 0.5;
-  for (int i=0 ; i<numCuts ; ++i) {
+  for (int i=0 ; i<numGlobalSteps ; ++i) {
     RCP<StepperBase<double> > stepper = stepperFactoryAndExactSolution.getStepper();
 
     double stepTaken = stepper->takeStep(h,STEP_TYPE_FIXED);
@@ -128,8 +129,9 @@ double computeOrderByGlobalErrorConvergenceStudy(
   double t_final = 1.0;
 
 
+  int numGlobalSteps = numCuts + 1;
   double h = 0.5;
-  for (int i=0 ; i<numCuts ; ++i) {
+  for (int i=0 ; i<numGlobalSteps ; ++i) {
     RCP<StepperBase<double> > stepper = stepperFactoryAndExactSolution.getStepper();
     int numSteps = int(round(t_final/h));
     for (int s=0 ; s<numSteps ; ++s) {

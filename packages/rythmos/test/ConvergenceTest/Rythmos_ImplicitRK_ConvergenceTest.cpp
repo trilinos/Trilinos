@@ -61,6 +61,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, GlobalErrorConvergenceStudy ) {
     int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
 
     int numCuts = 4;
+    if (order > 4) { numCuts = 3; }
     double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution,numCuts);
 
     double tol = 1.0e-1;
@@ -100,7 +101,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, LocalErrorConvergenceStudy ) {
 */
 
 
-TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, SDIRKGlobalErrorConvergenceStudy ) {
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, DIRKGlobalErrorConvergenceStudy ) {
 
   RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(true);
   RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
@@ -127,7 +128,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, SDIRKGlobalErrorConvergenceStudy )
 }
 
 /*
-TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, SDIRKLocalErrorConvergenceStudy ) {
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, DIRKLocalErrorConvergenceStudy ) {
   RCP<SinCosModelFactory> modelFactory = sinCosModelFactory(true);
   RCP<SinCosModelExactSolutionObject> exactSolution = sinCosModelExactSolutionObject(modelFactory);
   RCP<DiagonalImplicitRKStepperFactory<double> > stepperFactory = diagonalImplicitRKStepperFactory<double>(modelFactory);

@@ -77,9 +77,16 @@ namespace Rythmos {
   const std::string Implicit3Stage4thOrderLobattoC_name = "Implicit 3 Stage 4th order Lobatto C";
   const std::string Implicit4Stage6thOrderLobattoC_name = "Implicit 4 Stage 6th order Lobatto C";
 
-  const std::string SDIRK5Stage5thOrder_name = "Singly Diagonally IRK 5 Stage 5th order";
-  const std::string SDIRK5Stage4thOrder_name = "Singly Diagonally IRK 5 Stage 4th order";
-  const std::string SDIRK3Stage4thOrder_name = "Singly Diagonally IRK 3 Stage 4th order";
+  const std::string Implicit2Stage4thOrderHammerHollingsworth_name = "Implicit 2 Stage 4th Order Hammer & Hollingsworth";
+  const std::string Implicit3Stage6thOrderKuntzmannButcher_name = "Implicit 3 Stage 6th Order Kuntzmann & Butcher";
+  const std::string Implicit4Stage8thOrderKuntzmannButcher_name = "Implicit 4 Stage 8th Order Kuntzmann & Butcher";
+
+  const std::string DIRK2Stage3rdOrder_name = "Diagonal IRK 2 Stage 3rd order";
+
+  const std::string SDIRK2Stage3rdOrder_name = "Singly Diagonal IRK 2 Stage 3rd order";
+  const std::string SDIRK5Stage5thOrder_name = "Singly Diagonal IRK 5 Stage 5th order";
+  const std::string SDIRK5Stage4thOrder_name = "Singly Diagonal IRK 5 Stage 4th order";
+  const std::string SDIRK3Stage4thOrder_name = "Singly Diagonal IRK 3 Stage 4th order";
 
   // Add all of the above strings to the following function in the cpp file.
   Teuchos::Array<std::string> getS_RKButcherTableauMethodNames();
@@ -165,6 +172,11 @@ namespace {
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_2_ORDER_LOBATTO_C,
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_4_ORDER_LOBATTO_C,
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_4_STAGE_6_ORDER_LOBATTO_C,
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_4_ORDER_HAMMERHOLLINGSWORTH,
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_KUNTZMANNBUTCHER,
+    //RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_4_STAGE_8_ORDER_KUNTZMANNBUTCHER,
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_DIRK_2_STAGE_3_ORDER,
+    RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_2_STAGE_3_ORDER,
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_5_ORDER,
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_4_ORDER,
     RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_3_STAGE_4_ORDER
@@ -199,6 +211,11 @@ namespace {
     E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_2_ORDER_LOBATTO_C);
     E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_4_ORDER_LOBATTO_C);
     E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_4_STAGE_6_ORDER_LOBATTO_C);
+    E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_4_ORDER_HAMMERHOLLINGSWORTH);
+    E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_KUNTZMANNBUTCHER);
+    //E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_4_STAGE_8_ORDER_KUNTZMANNBUTCHER);
+    E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_DIRK_2_STAGE_3_ORDER);
+    E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_2_STAGE_3_ORDER);
     E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_5_ORDER);
     E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_4_ORDER);
     E_RKButcherTableauMethodNames.push_back(RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_3_STAGE_4_ORDER);
@@ -996,6 +1013,219 @@ RKButcherTableau<Scalar> createExplicit2Stage2ndOrderRunge_RKBT()
 }
 
 template<class Scalar>
+RKButcherTableau<Scalar> createSDIRK2Stage3rdOrder_RKBT()
+{
+  std::ostringstream description;
+  description << SDIRK2Stage3rdOrder_name << "\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+              << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+              << "Table 7.2, pg 207\n"
+              << "gamma = (3+sqrt(3))/6\n"
+              << "c = [  gamma     1-gamma  ]'\n"
+              << "A = [  gamma     0        ]\n"
+              << "    [ 1-2*gamma  gamma    ]\n"
+              << "b = [ 1/2        1/2      ]'" << std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 2;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  Scalar one = ST::one();
+  Scalar zero = ST::zero();
+  Scalar gamma = Scalar( (3*one + sqrt(3*one))/(6*one) );
+  A(0,0) = gamma;
+  A(0,1) = zero;
+  A(1,0) = Scalar( one - 2*gamma );
+  A(1,1) = gamma;
+  b(0) = Scalar( one/(2*one) );
+  b(1) = Scalar( one/(2*one) );
+  c(0) = gamma;
+  c(1) = Scalar( one - gamma );
+  RKButcherTableau<Scalar> rkbt(A,b,c,3);
+  rkbt.setDescription(description.str());
+  return rkbt;
+}
+
+
+template<class Scalar>
+RKButcherTableau<Scalar> createDIRK2Stage3rdOrder_RKBT()
+{
+  std::ostringstream description;
+  description << DIRK2Stage3rdOrder_name << "\n"
+              << "Hammer & Hollingsworth method\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+              << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+              << "Table 7.1, pg 205\n"
+              << "c = [  0    0  ]'\n"
+              << "A = [  0    0  ]\n"
+              << "    [ 1/3  1/3 ]\n"
+              << "b = [ 1/4  3/4 ]'" << std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 2;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  Scalar one = ST::one();
+  Scalar zero = ST::zero();
+  A(0,0) = zero;
+  A(0,1) = zero;
+  A(1,0) = Scalar( one/(3*one) );
+  A(1,1) = Scalar( one/(3*one) );
+  b(0) = Scalar( one/(4*one) );
+  b(1) = Scalar( 3*one/(4*one) );
+  c(0) = zero;
+  c(1) = Scalar( 2*one/(3*one) );
+  RKButcherTableau<Scalar> rkbt(A,b,c,3);
+  rkbt.setDescription(description.str());
+  return rkbt;
+}
+
+template<class Scalar>
+RKButcherTableau<Scalar> createImplicit3Stage6thOrderKuntzmannButcher_RKBT()
+{
+  std::ostringstream description;
+  description << Implicit3Stage6thOrderKuntzmannButcher_name << "\n"
+              << "Kuntzmann & Butcher method\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+              << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+              << "Table 7.4, pg 209\n"
+              << "c = [ 1/2-sqrt(15)/10   1/2              1/2-sqrt(15)/10  ]'\n"
+              << "A = [ 5/36              2/9-sqrt(15)/15  5/36-sqrt(15)/30 ]\n"
+              << "    [ 5/36+sqrt(15)/24  2/9              5/36-sqrt(15)/24 ]\n"
+              << "    [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]\n"
+              << "b = [ 5/18              4/9              5/18             ]'" << std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 3;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  Scalar one = ST::one();
+  A(0,0) = Scalar( 5*one/(36*one) );
+  A(0,1) = Scalar( 2*one/(9*one) - sqrt(15*one)/(15*one) );
+  A(0,2) = Scalar( 5*one/(36*one) - sqrt(15*one)/(30*one) );
+  A(1,0) = Scalar( 5*one/(36*one) + sqrt(15*one)/(24*one) );
+  A(1,1) = Scalar( 2*one/(9*one) );
+  A(1,2) = Scalar( 5*one/(36*one) - sqrt(15*one)/(24*one) );
+  A(2,0) = Scalar( 5*one/(36*one) + sqrt(15*one)/(30*one) );
+  A(2,1) = Scalar( 2*one/(9*one) + sqrt(15*one)/(15*one) );
+  A(2,2) = Scalar( 5*one/(36*one) );
+  b(0) = Scalar( 5*one/(18*one) );
+  b(1) = Scalar( 4*one/(9*one) );
+  b(2) = Scalar( 5*one/(18*one) );
+  c(0) = Scalar( one/(2*one)-sqrt(15*one)/(10*one) );
+  c(1) = Scalar( one/(2*one) );
+  c(2) = Scalar( one/(2*one)+sqrt(15*one)/(10*one) );
+  RKButcherTableau<Scalar> rkbt(A,b,c,6);
+  rkbt.setDescription(description.str());
+  return rkbt;
+}
+
+template<class Scalar>
+RKButcherTableau<Scalar> createImplicit4Stage8thOrderKuntzmannButcher_RKBT()
+{
+  std::ostringstream description;
+  description << Implicit4Stage8thOrderKuntzmannButcher_name << "\n"
+              << "Kuntzmann & Butcher method\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+              << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+              << "Table 7.5, pg 209\n"
+              << "c = [ 1/2-w2     1/2-w2p     1/2+w2p     1/2+w2    ]'\n"
+              << "A = [ w1         w1p-w3+w4p  w1p-w3-w4p  w1-w5     ]\n"
+              << "    [ w1-w3p+w4  w1p         w1p-w5p     w1-w3p-w4 ]\n"
+              << "    [ w1+w3p+w4  w1p+w5p     w1p         w1+w3p-w4 ]\n"
+              << "    [ w1+w5      w1p+w3+w4p  w1p+w3-w4p  w1        ]\n"
+              << "b = [ 2*w1       2*w1p       2*w1p       2*w1      ]'\n"
+              << "w1 = 1/8-sqrt(30)/144\n"
+              << "w2 = (1/2)*sqrt((15+2*sqrt(3))/35)\n"
+              << "w3 = w2*(1/6+sqrt(30)/24)\n"
+              << "w4 = w2*(1/21+5*sqrt(30)/168)\n"
+              << "w5 = w2-2*w3\n"
+              << "w1p = 1/8+sqrt(30)/144\n"
+              << "w2p = (1/2)*sqrt((15-2*sqrt(3))/35)\n"
+              << "w3p = w2*(1/6-sqrt(30)/24)\n"
+              << "w4p = w2*(1/21-5*sqrt(30)/168)\n"
+              << "w5p = w2p-2*w3p" << std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 4;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  Scalar one = ST::one();
+  Scalar onehalf = Scalar( one/(2*one) );
+  Scalar w1 = Scalar( one/(8*one) - sqrt(30*one)/(144*one) );
+  Scalar w2 = Scalar( (one/(2*one))*sqrt((15*one+2*one*sqrt(30*one))/(35*one)) );
+  Scalar w3 = Scalar( w2*(one/(6*one)+sqrt(30*one)/(24*one)) );
+  Scalar w4 = Scalar( w2*(one/(21*one)+5*one*sqrt(30*one)/(168*one)) );
+  Scalar w5 = Scalar( w2-2*w3 );
+  Scalar w1p = Scalar( one/(8*one) + sqrt(30*one)/(144*one) );
+  Scalar w2p = Scalar( (one/(2*one))*sqrt((15*one-2*one*sqrt(30*one))/(35*one)) );
+  Scalar w3p = Scalar( w2p*(one/(6*one)-sqrt(30*one)/(24*one)) );
+  Scalar w4p = Scalar( w2p*(one/(21*one)-5*one*sqrt(30*one)/(168*one)) );
+  Scalar w5p = Scalar( w2p-2*w3p );
+  A(0,0) = w1;
+  A(0,1) = w1p-w3+w4p;
+  A(0,2) = w1p-w3-w4p;
+  A(0,3) = w1-w5;
+  A(1,0) = w1-w3p+w4;
+  A(1,1) = w1p;
+  A(1,2) = w1p-w5p;
+  A(1,3) = w1-w3p-w4;
+  A(2,0) = w1+w3p+w4;
+  A(2,1) = w1p+w5p;
+  A(2,2) = w1p;
+  A(2,3) = w1+w3p-w4;
+  A(3,0) = w1+w5;
+  A(3,1) = w1p+w3+w4p;
+  A(3,2) = w1p+w3-w4p;
+  A(3,3) = w1;
+  b(0) = 2*w1;
+  b(1) = 2*w1p;
+  b(2) = 2*w1p;
+  b(3) = 2*w1; 
+  c(0) = onehalf - w2;
+  c(1) = onehalf - w2p;
+  c(2) = onehalf + w2p;
+  c(3) = onehalf + w2;
+  RKButcherTableau<Scalar> rkbt(A,b,c,8);
+  rkbt.setDescription(description.str());
+  return rkbt;
+}
+
+template<class Scalar>
+RKButcherTableau<Scalar> createImplicit2Stage4thOrderHammerHollingsworth_RKBT()
+{
+  std::ostringstream description;
+  description << Implicit2Stage4thOrderHammerHollingsworth_name << "\n"
+              << "Hammer & Hollingsworth method\n"
+              << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
+              << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+              << "Table 7.3, pg 207\n"
+              << "c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'\n"
+              << "A = [ 1/4            1/4-sqrt(3)/6 ]\n"
+              << "    [ 1/4+sqrt(3)/6  1/4           ]\n"
+              << "b = [ 1/2            1/2           ]'" << std::endl;
+  typedef ScalarTraits<Scalar> ST;
+  int numStages = 2;
+  Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
+  Teuchos::SerialDenseVector<int,Scalar> b(numStages);
+  Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+  Scalar one = ST::one();
+  Scalar onequarter = Scalar( one/(4*one) );
+  Scalar onehalf = Scalar( one/(2*one) );
+  A(0,0) = onequarter;
+  A(0,1) = Scalar( onequarter-sqrt(3*one)/(6*one) );
+  A(1,0) = Scalar( onequarter+sqrt(3*one)/(6*one) );
+  A(1,1) = onequarter;
+  b(0) = onehalf;
+  b(1) = onehalf;
+  c(0) = Scalar( onehalf - sqrt(3*one)/(6*one) );
+  c(1) = Scalar( onehalf + sqrt(3*one)/(6*one) );
+  RKButcherTableau<Scalar> rkbt(A,b,c,4);
+  rkbt.setDescription(description.str());
+  return rkbt;
+}
+
+template<class Scalar>
 RKButcherTableau<Scalar> createImplicit1Stage2ndOrderGauss_RKBT()
 {
   std::ostringstream description;
@@ -1004,6 +1234,10 @@ RKButcherTableau<Scalar> createImplicit1Stage2ndOrderGauss_RKBT()
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
               << "Table 5.2, pg 72\n"
+              << "Also:  Implicit midpoint rule\n"
+              << "Solving Ordinary Differential Equations I: Nonstiff Problems, 2nd Revised Edition\n"
+              << "E. Hairer, S. P. Norsett, and G. Wanner\n"
+              << "Table 7.1, pg 205\n"
               << "c = [ 1/2 ]'\n"
               << "A = [ 1/2 ]\n"
               << "b = [  1  ]'" << std::endl;
@@ -1683,6 +1917,7 @@ RKButcherTableau<Scalar> createImplicit4Stage6thOrderLobattoC_RKBT()
   return rkbt;
 }
 
+
 template<class Scalar>
 RKButcherTableau<Scalar> createSDIRK5Stage5thOrder_RKBT()
 {
@@ -1959,6 +2194,18 @@ RKButcherTableau<Scalar> DefaultRKButcherTableauFactory<Scalar>::create(Teuchos:
     } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_4_STAGE_6_ORDER_LOBATTO_C) {
       rkbt_out = createImplicit4Stage6thOrderLobattoC_RKBT<Scalar>();
 
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_2_STAGE_4_ORDER_HAMMERHOLLINGSWORTH) {
+      rkbt_out = createImplicit2Stage4thOrderHammerHollingsworth_RKBT<Scalar>();
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_3_STAGE_6_ORDER_KUNTZMANNBUTCHER) {
+      rkbt_out = createImplicit3Stage6thOrderKuntzmannButcher_RKBT<Scalar>();
+    //} else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_IMPLICIT_4_STAGE_8_ORDER_KUNTZMANNBUTCHER) {
+    //  rkbt_out = createImplicit4Stage8thOrderKuntzmannButcher_RKBT<Scalar>();
+
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_DIRK_2_STAGE_3_ORDER) {
+      rkbt_out = createDIRK2Stage3rdOrder_RKBT<Scalar>();
+
+    } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_2_STAGE_3_ORDER) {
+      rkbt_out = createSDIRK2Stage3rdOrder_RKBT<Scalar>();
     } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_5_ORDER) {
       rkbt_out = createSDIRK5Stage5thOrder_RKBT<Scalar>();
     } else if (selectionMethodEnum == RYTHMOS_RKBUTCHERTABLEAU_METHOD_NAME_SDIRK_5_STAGE_4_ORDER) {
