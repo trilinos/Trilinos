@@ -29,43 +29,31 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_MPL_FIND_HPP
-#define SACADO_MPL_FIND_HPP
-
-#include "Sacado_mpl_none.hpp"
-#include "Sacado_mpl_begin.hpp"
-#include "Sacado_mpl_end.hpp"
-#include "Sacado_mpl_deref.hpp"
-#include "Sacado_mpl_next.hpp"
-#include "Sacado_mpl_is_same.hpp"
-#include "Sacado_mpl_if.hpp"
+#ifndef SACADO_MPL_HAS_TYPE_HPP
+#define SACADO_MPL_HAS_TYPE_HPP
 
 namespace Sacado {
 
   namespace mpl {
 
-    template <class Seq, class T>
-    class TypeSequenceDoesNotContainType {};
+    // Uses SFINAE to determine if a type has a nested typedef called "type",
+    // i.e., whether the type is a metafunction
 
-    template <class Seq, 
-	      class T,
-	      class Iter1 = typename mpl::begin<Seq>::type, 
-	      class Iter2 = typename mpl::end<Seq>::type>
-    struct find {
-      static const int value = 
-        mpl::mpl_if< mpl::is_same<typename mpl::deref<Iter1>::type, T>, 
-                     Iter1,
-                     find<Seq, T, typename mpl::next<Iter1>::type, 
-                          Iter2> >::value;
+    typedef char NotFound;           // sizeof(NotFound) == 1
+    struct Found { char x[2]; };     // sizeof(Found) == 2
+
+    // Overload matches if and only if T::type exists
+    template <class T> Found testHasType(typename T::type*);
+
+    // Compiler prefers anything at all over ...
+    template <class T> NotFound testHasType(...);
+
+    template <class T> struct has_type {
+      static const bool value = (sizeof(testHasType<T>(0)) == sizeof(Found));
     };
 
-    template <class Seq, class T, class Iter1>
-    struct find<Seq, T, Iter1, Iter1> {
-      static const int value = TypeSequenceDoesNotContainType<Seq,T>::value;
-    };
+  } // namespace mpl
 
-  }
+} // namespace Sacado
 
-}
-
-#endif // SACADO_MPL_FIND_HPP
+#endif // SACADO_MPL_HAS_TYPE_HPP

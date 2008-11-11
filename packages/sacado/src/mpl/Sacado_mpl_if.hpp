@@ -36,9 +36,12 @@ namespace Sacado {
 
   namespace mpl {
 
-    template <bool cond, class T1, class T2> struct mpl_if {};
-    template <class T1, class T2> struct mpl_if<true,T1,T2> : T1 {};
-    template <class T1, class T2> struct mpl_if<false,T1,T2> : T2 {};
+    template <bool cond, class T1, class T2> struct mpl_if_c {};
+    template <class T1, class T2> struct mpl_if_c<true,T1,T2> : T1 {};
+    template <class T1, class T2> struct mpl_if_c<false,T1,T2> : T2 {};
+
+    template <class C, class T1, class T2> struct mpl_if : 
+      mpl_if_c<C::value,T1,T2> {};
 
   }
 
