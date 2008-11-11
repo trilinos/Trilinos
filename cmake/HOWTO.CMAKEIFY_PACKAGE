@@ -27,7 +27,7 @@ together with ADD_SUBDIRECTORY(...) calls, you are finished!
 Here are the steps for CMakeifying a Trilinos package:
 
 
-1) Add the package name to base-level CMakeLists.txt
+1) Add the package name to base-level Trilinos/CMakeLists.txt
 
 Add the package name PACKAGE_NAME to the list of supported Trilinos
 packages in the base-level CMakeLists.txt file in the variable

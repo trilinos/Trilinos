@@ -5,7 +5,6 @@
   This will result in cmake and related tools being installed in
   INSTALL_BASE_DIR/bin.
 
-
 (*) Getting CMake help
 
     http://www.cmake.org
@@ -14,7 +13,10 @@
 
   $ cd $BUILD_DIR
   $ rm CMakeCache.txt
-  $ cmake -LAH $TRILINOS_BASE_DIR
+  $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+      -D Trilinos_ENABLE_CXX:BOOL=OFF \
+      -D Trilinos_ENABLE_Fortran:BOOL=OFF \
+       $TRILINOS_BASE_DIR
 
   NOTE: You can also just look at the text file CMakeCache.txt which
   has all of the cache variables and documentation.

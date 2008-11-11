@@ -42,6 +42,7 @@ SET( Trilinos_PACKAGES
  Triutils
  EpetraExt
  Thyra
+ AztecOO
  #Anasazi
  RBGen
 )

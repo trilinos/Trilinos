@@ -1,0 +1,3 @@
+ADD_SUBDIRECTORY(simple_epetra_aztecoo)
+
+ADD_SUBDIRECTORY(AztecOO_UserOpUserMat)

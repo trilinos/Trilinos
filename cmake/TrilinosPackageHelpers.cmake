@@ -13,7 +13,7 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
 
   IF (DEFINED PACKAGE_NAME_GLOBAL)
     IF (NOT ${PACKAGE_NAME_IN} STREQUAL ${PACKAGE_NAME_GLOBAL})
-      MESSAGE(FATAL_ERROR "Error, the pacakge-defined package name '${PACKAGE_NAME_IN}' is not the same as the package name defined at the global level '${PACKAGE_NAME_GLOBAL}'")
+      MESSAGE(FATAL_ERROR "Error, the package-defined package name '${PACKAGE_NAME_IN}' is not the same as the package name defined at the global level '${PACKAGE_NAME_GLOBAL}'")
     ENDIF()
   ENDIF()
 

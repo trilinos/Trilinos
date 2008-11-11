@@ -26,6 +26,13 @@ will also require changes to all of the existing Makefile.am files
 that create these tests in the autotools system and in the
 test/definition files.
 
+(*) [???] Add NOINSTALL option to TRILINOS_PACKAGE_ADD_LIBRARY(...)
+for test libraries that you don't want to install
+
+(*) [???] Add NOINSTALLHEADERS argument to
+TRILINOS_PACKAGE_ADD_LIBRARY(...) for headers that you need to build
+the library (and include in the tarball) but don't want to install.
+
 (*) [???] Clean up tests and examples:
 
 - Move (almost) all tests into subdirectories since that is the right thing to
