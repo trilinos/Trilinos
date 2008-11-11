@@ -31,19 +31,19 @@
 
 #include "Teuchos_TestForException.hpp"
 
-template <typename FamilyType, template<typename> class EntryType>
+template <typename FamilyType, typename EntryType>
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 ParameterLibraryBase()
 {
 }
 
-template <typename FamilyType, template<typename> class EntryType>
+template <typename FamilyType, typename EntryType>
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 ~ParameterLibraryBase()
 {
 }
 
-template <typename FamilyType, template<typename> class EntryType>
+template <typename FamilyType, typename EntryType>
 bool
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 isParameter(const std::string& name) const
@@ -54,8 +54,8 @@ isParameter(const std::string& name) const
   return (it != library.end());
 }
 
-template <typename FamilyType, template<typename> class EntryType>
-template <class ValueType>
+template <typename FamilyType, typename EntryType>
+template <class EvalType>
 bool
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 isParameterForType(const std::string& name) const
@@ -68,15 +68,15 @@ isParameterForType(const std::string& name) const
     return false;
 
   // Determine if type is in the family
-  return (*it).second->template hasType<ValueType>();
+  return (*it).second->template hasType<EvalType>();
 }
 
-template <typename FamilyType, template<typename> class EntryType>
+template <typename FamilyType, typename EntryType>
 bool
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 addParameterFamily(const std::string& name, 
-		  bool supports_ad, 
-		  bool supports_analytic)
+                   bool supports_ad, 
+                   bool supports_analytic)
 {
   // Check that the parameter is not in the library
   if (isParameter(name))
@@ -85,35 +85,35 @@ addParameterFamily(const std::string& name,
   Teuchos::RCP<FamilyType> f = 
     Teuchos::rcp(new FamilyType(name, supports_ad, supports_analytic));
   library.insert(std::pair< std::string, 
-		            Teuchos::RCP<FamilyType> >(name, f));
+                 Teuchos::RCP<FamilyType> >(name, f));
 
   return true;
 }
 
-template <typename FamilyType, template<typename> class EntryType>
-template <class ValueType>
+template <typename FamilyType, typename EntryType>
+template <class EvalType>
 bool
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 addEntry(const std::string& name, 
-	 const Teuchos::RCP< EntryType<ValueType> >& entry)
+         const Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >& entry)
 {
   // Get family
   typename FamilyMap::iterator it = library.find(name);
   
   // First check parameter is in the library
   TEST_FOR_EXCEPTION(it == library.end(), 
-		     std::logic_error,
-		     std::string("Sacado::ParameterLibraryBase::addEntry():  ")
-		     + "Parameter family " + name
-		     + " is not in the library");
+                     std::logic_error,
+                     std::string("Sacado::ParameterLibraryBase::addEntry():  ")
+                     + "Parameter family " + name
+                     + " is not in the library");
 
   // Call family's addEntry method
-  return (*it).second->addEntry(entry);
+  return (*it).second->template addEntry<EvalType>(entry);
 }
 
-template <typename FamilyType, template<typename> class EntryType>
-template <class ValueType>
-Teuchos::RCP< EntryType<ValueType> >
+template <typename FamilyType, typename EntryType>
+template <class EvalType>
+Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 getEntry(const std::string& name)
 {
@@ -122,22 +122,42 @@ getEntry(const std::string& name)
   
   // First check parameter is in the library
   TEST_FOR_EXCEPTION(it == library.end(), 
-		     std::logic_error,
-		     std::string("Sacado::ParameterLibraryBase::getEntry():  ")
-		     + "Parameter family " + name
-		     + " is not in the library");
+                     std::logic_error,
+                     std::string("Sacado::ParameterLibraryBase::getEntry():  ")
+                     + "Parameter family " + name
+                     + " is not in the library");
 
   // Call family's getEntry method
-  return (*it).second->template getEntry<ValueType>();
+  return (*it).second->template getEntry<EvalType>();
 }
 
-template <typename FamilyType, template<typename> class EntryType>
+template <typename FamilyType, typename EntryType>
+template <class EvalType>
+Teuchos::RCP< const typename Sacado::mpl::apply<EntryType,EvalType>::type >
+Sacado::ParameterLibraryBase<FamilyType,EntryType>::
+getEntry(const std::string& name) const
+{
+  // Get family
+  typename FamilyMap::const_iterator it = library.find(name);
+  
+  // First check parameter is in the library
+  TEST_FOR_EXCEPTION(it == library.end(), 
+                     std::logic_error,
+                     std::string("Sacado::ParameterLibraryBase::getEntry():  ")
+                     + "Parameter family " + name
+                     + " is not in the library");
+
+  // Call family's getEntry method
+  return (*it).second->template getEntry<EvalType>();
+}
+
+template <typename FamilyType, typename EntryType>
 template <typename BaseValueType>
 void
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 fillVector(const Teuchos::Array<std::string>& names,
-	   const Teuchos::Array<BaseValueType>& values,
-	   ParameterVectorBase<FamilyType,BaseValueType>& pv)
+           const Teuchos::Array<BaseValueType>& values,
+           ParameterVectorBase<FamilyType,BaseValueType>& pv)
 {
   typename FamilyMap::iterator it;
 

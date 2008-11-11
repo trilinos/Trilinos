@@ -40,8 +40,9 @@ namespace Sacado {
   /*! 
    * \brief Specialization of Sacado::ParameterVectorBase for scalar parameters
    */
+  template <typename EvalTypeTraits = DefaultEvalTypeTraits>
   class ScalarParameterVector : 
-    public ParameterVectorBase<ScalarParameterFamily, double> {
+    public ParameterVectorBase<ScalarParameterFamily<EvalTypeTraits>, double> {
 
   public:
   
@@ -50,14 +51,14 @@ namespace Sacado {
 
     //! Copy constructor
     ScalarParameterVector(const ScalarParameterVector& source) :
-      ParameterVectorBase<ScalarParameterFamily, double>(source) {}
+      ParameterVectorBase<ScalarParameterFamily<EvalTypeTraits>, double>(source) {}
 
     //! Destructor
     virtual ~ScalarParameterVector() {}
 
     //! Assignment operator
     ScalarParameterVector& operator = (const ScalarParameterVector& source) {
-      ParameterVectorBase<ScalarParameterFamily, double>::operator=(source);
+      ParameterVectorBase<ScalarParameterFamily<EvalTypeTraits>, double>::operator=(source);
       return *this;
     }
 

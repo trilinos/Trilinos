@@ -36,6 +36,7 @@
 
 #include "Sacado_ParameterFamilyBase.hpp"
 #include "Sacado_ParameterVectorBase.hpp"
+#include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {
 
@@ -45,7 +46,7 @@ namespace Sacado {
    * \brief Class to provide a centralized library for setting/retrieving 
    * numerical parameter values.
    */
-  template <typename FamilyType, template<typename> class EntryType>
+  template <typename FamilyType, typename EntryType>
   class ParameterLibraryBase  {
 
   protected:
@@ -71,31 +72,36 @@ namespace Sacado {
     bool isParameter(const std::string& name) const;
 
     //! Determine if parameter of name \em name has type \em type
-    template <typename ValueType>
+    template <typename EvalType>
     bool isParameterForType(const std::string& name) const;
 
-    //! Create a new scalar parameter family
+    //! Create a new parameter family
     /*!
      * Returns true if successful in adding family to library, false 
      * otherwise.
      */
     bool addParameterFamily(const std::string& name, bool supports_ad, 
-			    bool supports_analytic);
+                            bool supports_analytic);
     
 
-    //! Add a new scalar parameter using custom entry
+    //! Add a new parameter using custom entry
     /*!
      * Returns true if successful in adding entry to library, false 
      * otherwise.
      */
-    template <typename ValueType>
+    template <typename EvalType>
     bool addEntry(const std::string& name, 
-		  const Teuchos::RCP< EntryType<ValueType> >& entry);
+                  const Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >& entry);
 
     //! Return parameter entry
-    template <typename ValueType>
-    Teuchos::RCP< EntryType<ValueType> >
+    template <typename EvalType>
+    Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >
     getEntry(const std::string& name);
+
+    //! Return parameter entry
+    template <typename EvalType>
+    Teuchos::RCP< const typename Sacado::mpl::apply<EntryType,EvalType>::type >
+    getEntry(const std::string& name) const;
 
     //! Return number of parameters in library
     unsigned int size() const { return library.size(); }
@@ -116,8 +122,8 @@ namespace Sacado {
     template <typename BaseValueType>
     void
     fillVector(const Teuchos::Array<std::string>& names,
-	       const Teuchos::Array<BaseValueType>& values,
-	       ParameterVectorBase<FamilyType,BaseValueType>& pv);
+               const Teuchos::Array<BaseValueType>& values,
+               ParameterVectorBase<FamilyType,BaseValueType>& pv);
 
   private:
 

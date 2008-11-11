@@ -36,6 +36,7 @@
 #include <string>
 
 #include "Teuchos_RCP.hpp"
+#include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {
   
@@ -43,7 +44,7 @@ namespace Sacado {
    * A class to store multiple template instantiations of a single templated
    * parameter.
    */
-  template <typename EntryBase, template<typename> class EntryType>
+  template <typename EntryBase, typename EntryType>
   class ParameterFamilyBase  {
 
   public:
@@ -65,8 +66,8 @@ namespace Sacado {
     //! Indicates whether parameter supports analytic derivatives
     bool supportsAnalytic() const;
 
-    //! Determine if family has an entry for the given type \c ValueType.
-    template <typename ValueType>
+    //! Determine if family has an entry for the given type \c EvalType.
+    template <typename EvalType>
     bool hasType() const;
 
     //! Add a new parameter using custom entry
@@ -74,16 +75,19 @@ namespace Sacado {
      * Returns true if successful in adding entry to library, false 
      * otherwise.
      */
-    template <typename ValueType>
-    bool addEntry(const Teuchos::RCP< EntryType<ValueType> >& entry);
+    template <typename EvalType>
+    bool 
+    addEntry(const Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >& entry);
 
-    //! Gets the entry corresponding to type \em ValueType
-    template <typename ValueType>
-    Teuchos::RCP< EntryType<ValueType> > getEntry();
+    //! Gets the entry corresponding to type \em EvalType
+    template <typename EvalType>
+    Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type > 
+    getEntry();
 
-    //! Gets the entry corresponding to type \em ValueType
-    template <typename ValueType>
-    Teuchos::RCP< const EntryType<ValueType> > getEntry() const;
+    //! Gets the entry corresponding to type \em EvalType
+    template <typename EvalType>
+    Teuchos::RCP< const typename Sacado::mpl::apply<EntryType,EvalType>::type >
+    getEntry() const;
 
     //! Print the family
     void printFamily(std::ostream& os) const;
@@ -91,16 +95,16 @@ namespace Sacado {
   protected: 
 
     //! Map of entries for a parameter name
-    typedef std::map<std::string, Teuchos::RCP<EntryBase> > ValueMap;
+    typedef std::map<std::string, Teuchos::RCP<EntryBase> > EvalMap;
 
-    //! Const iterator for ValueMap
-    typedef typename ValueMap::const_iterator const_iterator;
+    //! Const iterator for EvalMap
+    typedef typename EvalMap::const_iterator const_iterator;
 
-    //! Iterator for ValueMap
-    typedef typename ValueMap::iterator iterator;
+    //! Iterator for EvalMap
+    typedef typename EvalMap::iterator iterator;
     
-    //! Returns a string representation of type \em ValueType
-    template <class ValueType> std::string getTypeName() const;
+    //! Returns a string representation of type \em EntryType
+    template <class EvalType> std::string getTypeName() const;
 
   private:
 
@@ -113,7 +117,7 @@ namespace Sacado {
   protected:
 
     //! Family of parameter entries
-    ValueMap family;
+    EvalMap family;
 
     //! Family name
     const std::string name;

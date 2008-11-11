@@ -31,7 +31,7 @@
 
 #include "Teuchos_TestForException.hpp"
 
-template <typename EntryBase, template<typename> class EntryType>
+template <typename EntryBase, typename EntryType>
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 ParameterFamilyBase(const std::string& name_, 
 		    bool supports_ad_, 
@@ -43,13 +43,13 @@ ParameterFamilyBase(const std::string& name_,
 {
 }
 
-template <typename EntryBase, template<typename> class EntryType>
+template <typename EntryBase, typename EntryType>
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 ~ParameterFamilyBase() 
 {
 }
 
-template <typename EntryBase, template<typename> class EntryType>
+template <typename EntryBase, typename EntryType>
 std::string
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 getName() const 
@@ -57,7 +57,7 @@ getName() const
   return name;
 }
 
-template <typename EntryBase, template<typename> class EntryType>
+template <typename EntryBase, typename EntryType>
 bool
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 supportsAD() const
@@ -65,7 +65,7 @@ supportsAD() const
   return supports_ad;
 }
 
-template <typename EntryBase, template<typename> class EntryType>
+template <typename EntryBase, typename EntryType>
 bool
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 supportsAnalytic() const
@@ -73,40 +73,40 @@ supportsAnalytic() const
   return supports_analytic;
 }
 
-template <typename EntryBase, template<typename> class EntryType>
-template <class ValueType>
+template <typename EntryBase, typename EntryType>
+template <class EvalType>
 bool
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 hasType() const 
 {
 
-  // Convert typename ValueType to string
-  std::string valueTypeString = getTypeName<ValueType>();
+  // Convert typename EvalType to string
+  std::string evalTypeString = getTypeName<EvalType>();
 
-  // Find entry corresponding to this ValueType
-  const_iterator it = family.find(valueTypeString);
+  // Find entry corresponding to this EvalType
+  const_iterator it = family.find(evalTypeString);
   if (it == family.end()) 
     return false;
 
   return true;
 }
 
-template <typename EntryBase, template<typename> class EntryType>
-template <class ValueType>
+template <typename EntryBase, typename EntryType>
+template <class EvalType>
 bool
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
-addEntry(const Teuchos::RCP< EntryType<ValueType> >& entry)
+addEntry(const Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >& entry)
 {
-  // Get string representation of ValueType
-  std::string valueTypeString = getTypeName<ValueType>();
+  // Get string representation of EvalType
+  std::string evalTypeString = getTypeName<EvalType>();
     
   // Determine if entry already exists for parameter and type
-  iterator it = family.find(valueTypeString);
+  iterator it = family.find(evalTypeString);
 
   // If it does not, add it
   if (it == family.end()) {
     family.insert(std::pair<std::string, 
-		  Teuchos::RCP<EntryBase> >(valueTypeString, entry));
+		  Teuchos::RCP<EntryBase> >(evalTypeString, entry));
   }
 
   else {
@@ -116,69 +116,67 @@ addEntry(const Teuchos::RCP< EntryType<ValueType> >& entry)
   return true;
 }
 
-template <typename EntryBase, template<typename> class EntryType>
-template <class ValueType>
-Teuchos::RCP< EntryType<ValueType> >
+template <typename EntryBase, typename EntryType>
+template <class EvalType>
+Teuchos::RCP< typename Sacado::mpl::apply<EntryType,EvalType>::type >
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 getEntry() {
 
-  // Convert typename ValueType to string
-  std::string valueTypeString = getTypeName<ValueType>();
+  // Convert typename EvalType to string
+  std::string evalTypeString = getTypeName<EvalType>();
 
-  // Find entry corresponding to this ValueType
-  iterator it = family.find(valueTypeString);
+  // Find entry corresponding to this EvalType
+  iterator it = family.find(evalTypeString);
   TEST_FOR_EXCEPTION(it == family.end(), 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name
 		     + " does not have a parameter of type" 
-		     + valueTypeString);
+		     + evalTypeString);
 
-  // Cast entry to LOCA::Parameter::Entry<ValueType>
-  Teuchos::RCP< EntryType<ValueType> > entry = 
-    Teuchos::rcp_dynamic_cast< EntryType<ValueType> >((*it).second);
+  // Cast entry to LOCA::Parameter::Entry<EvalType>
+  Teuchos::RCP<  typename Sacado::mpl::apply<EntryType,EvalType>::type > entry = Teuchos::rcp_dynamic_cast< typename Sacado::mpl::apply<EntryType,EvalType>::type >((*it).second);
   TEST_FOR_EXCEPTION(entry == Teuchos::null, 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name
-		     + " of type" + valueTypeString
+		     + " of type" + evalTypeString
 		     + " has incorrect entry type");
   
   return entry;
 }
 
-template <typename EntryBase, template<typename> class EntryType>
-template <class ValueType>
-Teuchos::RCP< const EntryType<ValueType> >
+template <typename EntryBase, typename EntryType>
+template <class EvalType>
+Teuchos::RCP< const typename Sacado::mpl::apply<EntryType,EvalType>::type >
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 getEntry() const {
 
-  // Convert typename ValueType to string
-  std::string valueTypeString = getTypeName<ValueType>();
+  // Convert typename EvalType to string
+  std::string evalTypeString = getTypeName<EvalType>();
 
-  // Find entry corresponding to this ValueType
-  const_iterator it = family.find(valueTypeString);
+  // Find entry corresponding to this EvalType
+  const_iterator it = family.find(evalTypeString);
   TEST_FOR_EXCEPTION(it == family.end(), 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name
 		     + " does not have a parameter of type" 
-		     + valueTypeString);
+		     + evalTypeString);
 
-  // Cast entry to LOCA::Parameter::Entry<ValueType>
-  Teuchos::RCP< const EntryType<ValueType> > entry =
-    Teuchos::rcp_dynamic_cast< const EntryType<ValueType> >((*it).second);
+  // Cast entry to LOCA::Parameter::Entry<EvalType>
+  Teuchos::RCP< const typename Sacado::mpl::apply<EntryType,EvalType>::type > entry = Teuchos::rcp_dynamic_cast< const typename Sacado::mpl::apply<EntryType,EvalType>::type >((*it).second);
   TEST_FOR_EXCEPTION(entry == Teuchos::null, 
 		     std::logic_error,
 		     std::string("Sacado::ParameterFamilyBase::getEntry():  ")
 		     + "Parameter entry " + name
-		     + " of type" + valueTypeString
+		     + " of type" + evalTypeString
 		     + " has incorrect entry type");
 
   return entry;
 }
 
-template <typename EntryBase, template<typename> class EntryType>
+template <typename EntryBase, typename EntryType>
 void
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 printFamily(std::ostream& os) const
@@ -192,10 +190,10 @@ printFamily(std::ostream& os) const
 
 }
 
-template <typename EntryBase, template<typename> class EntryType>
-template <class ValueType>
+template <typename EntryBase, typename EntryType>
+template <class EvalType>
 std::string
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 getTypeName() const {
-  return typeid(ValueType).name();
+  return typeid(EvalType).name();
 }

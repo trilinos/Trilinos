@@ -44,10 +44,17 @@ namespace Sacado {
    * \brief Specialization of Sacado::ParameterLibraryBase for scalar 
    * parameters
    */
+  template <typename EvalTypeTraits = DefaultEvalTypeTraits>
   class ScalarParameterLibrary : 
-    public ParameterLibraryBase<ScalarParameterFamily, ScalarParameterEntry> {
+    public ParameterLibraryBase<ScalarParameterFamily<EvalTypeTraits>, 
+                                ScalarParameterEntry<_,EvalTypeTraits> > {
 
   public:
+
+    //! Typename synonym of base class
+    typedef ParameterLibraryBase<ScalarParameterFamily<EvalTypeTraits>, 
+                                 ScalarParameterEntry<_,EvalTypeTraits> > 
+    BaseT;
   
     //! Default constructor
     ScalarParameterLibrary() {}
@@ -58,25 +65,26 @@ namespace Sacado {
     //! Set paramter value using a real number
     void setRealValueForAllTypes(const std::string& name, double value);
 
-    //! Set parameter to value \em value
-    /*!
-     * Treat the set parameter as a constant for derivative computations.
-     */
-    template <class ValueType>
-    void setValueAsConstant(const std::string& name, 
-			    const ValueType& value);
+    //! Set real parameter to value \em value
+    template <class EvalType>
+    void 
+    setRealValue(const std::string& name, double value);
 
     //! Set parameter to value \em value
-    /*!
-     * Treat the set parameter as an independent for derivative computations.
-     */
-    template <class ValueType>
-    void setValueAsIndependent(const std::string& name, 
-			       const ValueType& value);
+    template <class EvalType>
+    void 
+    setValue(const std::string& name, 
+             const typename EvalTypeTraits::template apply<EvalType>::type& value);
 
     //! Get parameter value
-    template <class ValueType>
-    const ValueType& getValue(const std::string& name) const;
+    template <class EvalType>
+    double
+    getRealValue(const std::string& name) const;
+
+    //! Get parameter value
+    template <class EvalType>
+    const typename EvalTypeTraits::template apply<EvalType>::type& 
+    getValue(const std::string& name) const;
 
     //! Returns a parameter library (singleton object).
     static ScalarParameterLibrary& getInstance() {
@@ -86,11 +94,13 @@ namespace Sacado {
 
     //! Fill a vector with the supplied parameter names
     /*!
-     * baseValue will be computed from each individual parameter
+     * baseValue will be computed from each individual parameter using the
+     * corresponding evaluation type EvalType
      */
+    template <class EvalType>
     void
     fillVector(const Teuchos::Array<std::string>& names,
-	       ScalarParameterVector& pv);
+               ScalarParameterVector<EvalTypeTraits>& pv);
 
   private:
 
@@ -104,46 +114,103 @@ namespace Sacado {
   
 }
 
-template <class ValueType>
+template <typename EvalTypeTraits>
 void
-Sacado::ScalarParameterLibrary::
-setValueAsConstant(const std::string& name, const ValueType& value)
+Sacado::ScalarParameterLibrary<EvalTypeTraits>::
+setRealValueForAllTypes(const std::string& name, double value)
 {
-  FamilyMap::iterator it = library.find(name);
+  typename BaseT::FamilyMap::iterator it = this->library.find(name);
   TEST_FOR_EXCEPTION(
-	 it == library.end(), 
-	 std::logic_error,
-	 std::string("Sacado::ScalarParameterLibrary::setValueAsConstant():  ")
-	 + "Invalid parameter family " + name);
-  (*it).second->setValueAsConstant(value);
+     it == this->library.end(), 
+     std::logic_error,
+     std::string("Sacado::ScalararameterLibrary::setRealValueForAllTypes():  ")
+     + "Invalid parameter family " + name);
+  (*it).second->setRealValueForAllTypes(value);
 }
 
-template <class ValueType>
+template <typename EvalTypeTraits>
+template <class EvalType>
 void
-Sacado::ScalarParameterLibrary::
-setValueAsIndependent(const std::string& name, const ValueType& value)
+Sacado::ScalarParameterLibrary<EvalTypeTraits>::
+setRealValue(const std::string& name, double value)
 {
-  FamilyMap::iterator it = library.find(name);
+  typename BaseT::FamilyMap::iterator it = this->library.find(name);
   TEST_FOR_EXCEPTION(
-      it == library.end(), 
+     it == this->library.end(), 
+     std::logic_error,
+     std::string("Sacado::ScalarParameterLibrary::setValueAsConstant():  ")
+     + "Invalid parameter family " + name);
+  (*it).second->setRealValue<EvalType>(value);
+}
+
+template <typename EvalTypeTraits>
+template <class EvalType>
+void
+Sacado::ScalarParameterLibrary<EvalTypeTraits>::
+setValue(
+      const std::string& name, 
+      const typename EvalTypeTraits::template apply<EvalType>::type& value)
+{
+  typename BaseT::FamilyMap::iterator it = this->library.find(name);
+  TEST_FOR_EXCEPTION(
+      it == this->library.end(), 
       std::logic_error,
       std::string("Sacado::ScalarParameterLibrary::setValueAsIndependent():  ")
       + "Invalid parameter family " + name);
-  (*it).second->setValueAsIndependent(value);
+  (*it).second->setValue<EvalType>(value);
 }
 
-template <class ValueType>
-const ValueType&
-Sacado::ScalarParameterLibrary::
-getValue(const std::string& name) const
+template <typename EvalTypeTraits>
+template <class EvalType>
+double
+Sacado::ScalarParameterLibrary<EvalTypeTraits>::
+getRealValue(const std::string& name) const
 {
-  FamilyMap::const_iterator it = library.find(name);
+  typename BaseT::FamilyMap::const_iterator it = this->library.find(name);
   TEST_FOR_EXCEPTION(
-		 it == library.end(), 
+		 it == this->library.end(), 
 		 std::logic_error,
 		 std::string("Sacado::ScalarParameterLibrary::getValue():  ")
 		 + "Invalid parameter family " + name);
-  return (*it).second->getValue<ValueType>();
+  return (*it).second->getRealValue<EvalType>();
 }
+
+template <typename EvalTypeTraits>
+template <class EvalType>
+const typename EvalTypeTraits::template apply<EvalType>::type&
+Sacado::ScalarParameterLibrary<EvalTypeTraits>::
+getValue(const std::string& name) const
+{
+  typename BaseT::FamilyMap::const_iterator it = this->library.find(name);
+  TEST_FOR_EXCEPTION(
+		 it == this->library.end(), 
+		 std::logic_error,
+		 std::string("Sacado::ScalarParameterLibrary::getValue():  ")
+		 + "Invalid parameter family " + name);
+  return (*it).second->getValue<EvalType>();
+}
+
+template <typename EvalTypeTraits>
+template <class EvalType>
+void
+Sacado::ScalarParameterLibrary<EvalTypeTraits>::
+fillVector(const Teuchos::Array<std::string>& names,
+           Sacado::ScalarParameterVector<EvalTypeTraits>& pv)
+{
+  typename BaseT::FamilyMap::iterator it;
+
+  // Fill in parameters
+  for (unsigned int i=0; i<names.size(); i++) {
+    it = this->library.find(names[i]);
+    TEST_FOR_EXCEPTION(
+		   it == this->library.end(), 
+		   std::logic_error,
+		   std::string("Sacado::ParameterLibraryBase::fillVector():  ")
+		   + "Invalid parameter family " + names[i]);
+    pv.addParam((*it).second, 0.0);
+    pv[i].baseValue = (*it).second->getRealValue<EvalType>();
+  }
+}
+
 
 #endif

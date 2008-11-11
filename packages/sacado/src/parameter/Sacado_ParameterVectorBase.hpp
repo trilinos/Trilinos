@@ -61,7 +61,7 @@ namespace Sacado {
 
       //! Constructor
       Entry(const Teuchos::RCP<FamilyType>& f, BaseValueType bv) :
-	family(f), baseValue(bv) {}
+        family(f), baseValue(bv) {}
 
     };
 
@@ -94,7 +94,7 @@ namespace Sacado {
 
     //! Add entry
     void addParam(const Teuchos::RCP<FamilyType>& family,
-		  BaseValueType baseValue) { 
+                  BaseValueType baseValue) { 
       params.push_back(Entry(family, baseValue));
     }
 
@@ -122,11 +122,11 @@ namespace Sacado {
     //! Filter vector into types
     void
     filterParameters(ParameterVectorBase& ad,
-		     ParameterVectorBase& analytic,
-		     ParameterVectorBase& other,
-		     std::vector<int>& index_ad,
-		     std::vector<int>& index_analytic,
-		     std::vector<int>& index_other) {
+                     ParameterVectorBase& analytic,
+                     ParameterVectorBase& other,
+                     std::vector<int>& index_ad,
+                     std::vector<int>& index_analytic,
+                     std::vector<int>& index_other) {
       index_ad.resize(0);
       index_analytic.resize(0);
       index_other.resize(0);
@@ -134,18 +134,18 @@ namespace Sacado {
       typename EntryVector::iterator it;
       int i;
       for (it = params.begin(), i=0; it != params.end(); ++it, ++i) {
-	if ((*it).family->supportsAD()) {
-	  ad.params.push_back(*it);
-	  index_ad.push_back(i);
-	}
-	else if ((*it).family->supportsAnalytic()) {
-	  analytic.params.push_back(*it);
-	  index_analytic.push_back(i);
-	}
-	else {
-	  other.params.push_back(*it);
-	  index_other.push_back(i);
-	}
+        if ((*it).family->supportsAD()) {
+          ad.params.push_back(*it);
+          index_ad.push_back(i);
+        }
+        else if ((*it).family->supportsAnalytic()) {
+          analytic.params.push_back(*it);
+          index_analytic.push_back(i);
+        }
+        else {
+          other.params.push_back(*it);
+          index_other.push_back(i);
+        }
       }
     }
 

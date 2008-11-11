@@ -32,7 +32,35 @@
 #ifndef SACADO_SCALARPARAMETERENTRY_HPP
 #define SACADO_SCALARPARAMETERENTRY_HPP
 
+#include "Sacado_Traits.hpp"
+#include "Sacado_mpl_apply.hpp"
+
 namespace Sacado {
+
+  //! Base traits definition mapping evaluation types to value types
+  /*!
+   * Users should provide evaluation type tags for various evalutions (e.g.,
+   * Residual, Jacobian, Tangent, ...) and specialize SPE_ValueType on
+   * those tags.  Each specialization should have a public typedef called type
+   * specifying the ValueType for that evaluation type, e.g.,
+   * \code
+   *
+   * struct ResidualType {};
+   * template <> struct SPE_ValueType<ResidualType> { 
+   *  typedef double type; 
+   * };
+   *
+   * struct JacobianType {};
+   * template <> struct SPE_ValueType<JacobianType> { 
+   *  typedef Sacado::Fad::DFad<double> type; 
+   * };
+   *
+   * \endcode
+   */
+  struct DefaultEvalTypeTraits { 
+    template <class EvalType> struct apply {
+      typedef EvalType type; };
+  };
 
   //! Abstract interface for all entries in Sacado::ScalarParameterFamily
   class AbstractScalarParameterEntry {
@@ -46,15 +74,20 @@ namespace Sacado {
 
     //! Set real parameter value
     virtual void setRealValue(double value) = 0;
+
+    //! Get real parameter value
+    virtual double getRealValue() const = 0;
   };
 
   /*! 
    * \brief A base class for scalar parameter values
    */
-  template <typename ValueType>
+  template <typename EvalType, typename EvalTypeTraits = DefaultEvalTypeTraits>
   class ScalarParameterEntry : public AbstractScalarParameterEntry {
 
   public:
+
+    typedef typename EvalTypeTraits::template apply<EvalType>::type ScalarT;
   
     //! Default constructor
     ScalarParameterEntry() {}
@@ -64,18 +97,13 @@ namespace Sacado {
 
     //! Set parameter this object represents to \em value
     /*!
-     * Treat the set parameter as a constant for derivative computations.
+     * Treat the set parameter as an independent for derivative computations
+     * (use setRealValue() otherwise).
      */
-    virtual void setValueAsConstant(const ValueType& value) = 0;
-
-    //! Set parameter this object represents to \em value
-    /*!
-     * Treat the set parameter as an independent for derivative computations.
-     */
-    virtual void setValueAsIndependent(const ValueType& value) = 0;
+    virtual void setValue(const ScalarT& value) = 0;
 
     //! Get parameter value this object represents
-    virtual const ValueType& getValue() const = 0;
+    virtual const ScalarT& getValue() const = 0;
 
   };
 }

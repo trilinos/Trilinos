@@ -36,23 +36,26 @@
 #include "Sacado_ScalarParameterEntry.hpp"
 
 namespace Sacado {
+
+  using namespace mpl::placeholders;
   
   //! Specialization of Sacado::ParameterFamilyBase for scalar parameters
+  template <typename EvalTypeTraits = DefaultEvalTypeTraits>
   class ScalarParameterFamily : 
-    public Sacado::ParameterFamilyBase<Sacado::AbstractScalarParameterEntry,
-                                       Sacado::ScalarParameterEntry> 
+    public Sacado::ParameterFamilyBase<AbstractScalarParameterEntry,
+                                       ScalarParameterEntry<_,EvalTypeTraits> >
   {
 
     //! Typename synonym of base class
-    typedef Sacado::ParameterFamilyBase<Sacado::AbstractScalarParameterEntry,
-					Sacado::ScalarParameterEntry>  BaseT;
+    typedef Sacado::ParameterFamilyBase<AbstractScalarParameterEntry,
+                                        ScalarParameterEntry<_,EvalTypeTraits> >  BaseT;
 
   public:
   
     //! Constructor
     ScalarParameterFamily(const std::string& name, 
-			  bool supports_ad, 
-			  bool supports_analytic) : 
+                          bool supports_ad, 
+                          bool supports_analytic) : 
       BaseT(name, supports_ad, supports_analytic) {}
       
 
@@ -61,27 +64,48 @@ namespace Sacado {
 
     //! Set paramter value using a real number
     void setRealValueForAllTypes(double value) {
-      for (iterator it = family.begin(); it != family.end(); ++it)
-	(*it).second->setRealValue(value);
+      for (typename BaseT::iterator it = this->family.begin(); 
+           it != this->family.end(); ++it)
+        (*it).second->setRealValue(value);
+    }
+
+    //! Set real parameter value
+    template <class EvalType>
+    void 
+    setRealValue(double value)
+    {
+      this->template getEntry<EvalType>()->setRealValue(value);
     }
 
     //! Set parameter to value \em value treating parameter as a constant
-    template <class ValueType>
-    void setValueAsConstant(const ValueType& value) {
-      getEntry<ValueType>()->setValueAsConstant(value);
+    template <class EvalType>
+    void 
+    setValue(const typename EvalTypeTraits::template apply<EvalType>::type& value)
+    {
+      this->template getEntry<EvalType>()->setValue(value);
     }
 
-    //! Set parameter to value \em value treating parameter as an independent
-    template <class ValueType>
-    void setValueAsIndependent(const ValueType& value) {
-      getEntry<ValueType>()->setValueAsIndependent(value);
+    //! Get real parameter value
+    template <class EvalType>
+    double
+    getRealValue() const 
+    {
+      return this->template getEntry<EvalType>()->getRealValue();
     }
 
     //! Get parameter value
-    template <class ValueType>
-    const ValueType& getValue() const {
-      return getEntry<ValueType>()->getValue();
+    template <class EvalType>
+    const typename EvalTypeTraits::template apply<EvalType>::type& 
+    getValue() const 
+    {
+      return this->template getEntry<EvalType>()->getValue();
     }
+
+    //! Add a new parameter using custom entry
+    /*!
+     * Returns true if successful in adding entry to library, false 
+     * otherwise.
+     */
 
   private:
 
@@ -92,15 +116,16 @@ namespace Sacado {
     ScalarParameterFamily& operator = (const ScalarParameterFamily&);
 
   };
-
+    
   /** \brief Get the value. 
    *  
    * \relates ScalarParameterFamily
    */
-  template <class ValueType>
-  ValueType getValue(const ScalarParameterFamily& spf)
+  template <typename EvalType, typename EvalTypeTraits>
+  typename Sacado::ScalarParameterEntry<EvalType>::ScalarT
+  getValue(const ScalarParameterFamily<EvalTypeTraits>& spf)
   {
-    return spf.template getValue<ValueType>();
+    return spf.template getValue<EvalType>();
   }
 
 } // namespace Sacado
