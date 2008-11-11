@@ -286,6 +286,7 @@ CORE_H = \
   $(srcdir)/Rythmos_InterpolatorBase.hpp\
   $(srcdir)/Rythmos_LinearInterpolator.hpp\
   $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
+  $(srcdir)/Rythmos_QuadratureBase.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\

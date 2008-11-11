@@ -101,8 +101,10 @@ am_Rythmos_UnitTest_OBJECTS =  \
 	Rythmos_ImplicitRK_UnitTest.$(OBJEXT) \
 	Rythmos_InterpolationBuffer_UnitTest.$(OBJEXT) \
 	Rythmos_LinearInterpolator_UnitTest.$(OBJEXT) \
+	Rythmos_Quadrature_UnitTest.$(OBJEXT) \
 	Rythmos_RKButcherTableau_UnitTest.$(OBJEXT) \
-	SinCosModel.$(OBJEXT) Rythmos_SinCosModel_UnitTest.$(OBJEXT) \
+	SinCosModel.$(OBJEXT) PolynomialModel.$(OBJEXT) \
+	Rythmos_SinCosModel_UnitTest.$(OBJEXT) \
 	Rythmos_TimeRange_UnitTest.$(OBJEXT) \
 	Rythmos_UnitTest.$(OBJEXT) Rythmos_UnitTestHelpers.$(OBJEXT)
 Rythmos_UnitTest_OBJECTS = $(am_Rythmos_UnitTest_OBJECTS)
@@ -244,9 +246,10 @@ top_srcdir = @top_srcdir@
 # Actual programs
 #
 EXTRA_DIST = \
-  $(srcdir)/Rythmos_UnitTestHelpers.hpp\
+  $(srcdir)/Rythmos_UnitTestHelpers.hpp \
 	$(srcdir)/Rythmos_UnitTestModels.hpp \
-	$(srcdir)/../SinCos/SinCosModel.hpp
+	$(srcdir)/../SinCos/SinCosModel.hpp \
+	$(srcdir)/../PolynomialModel/PolynomialModel.hpp
 
 Rythmos_UnitTest_SOURCES = \
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
@@ -257,8 +260,10 @@ Rythmos_UnitTest_SOURCES = \
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
 	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
+	$(srcdir)/Rythmos_Quadrature_UnitTest.cpp\
   $(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp\
   $(srcdir)/../SinCos/SinCosModel.cpp\
+  $(srcdir)/../PolynomialModel/PolynomialModel.cpp\
   $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
@@ -348,6 +353,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_DiagonalTransientModel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PolynomialModel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ConvergenceTestHelpers_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DataStore_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ExplicitRK_UnitTest.Po@am__quote@
@@ -355,6 +361,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRK_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_LinearInterpolator_UnitTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Quadrature_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_RKButcherTableau_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_SinCosModel_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_TimeRange_UnitTest.Po@am__quote@
@@ -488,6 +495,20 @@ Rythmos_LinearInterpolator_UnitTest.obj: $(srcdir)/Rythmos_LinearInterpolator_Un
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_LinearInterpolator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp'; fi`
 
+Rythmos_Quadrature_UnitTest.o: $(srcdir)/Rythmos_Quadrature_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Quadrature_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_Quadrature_UnitTest.Tpo -c -o Rythmos_Quadrature_UnitTest.o `test -f '$(srcdir)/Rythmos_Quadrature_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Quadrature_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Quadrature_UnitTest.Tpo $(DEPDIR)/Rythmos_Quadrature_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Quadrature_UnitTest.cpp' object='Rythmos_Quadrature_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Quadrature_UnitTest.o `test -f '$(srcdir)/Rythmos_Quadrature_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Quadrature_UnitTest.cpp
+
+Rythmos_Quadrature_UnitTest.obj: $(srcdir)/Rythmos_Quadrature_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Quadrature_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_Quadrature_UnitTest.Tpo -c -o Rythmos_Quadrature_UnitTest.obj `if test -f '$(srcdir)/Rythmos_Quadrature_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Quadrature_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Quadrature_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Quadrature_UnitTest.Tpo $(DEPDIR)/Rythmos_Quadrature_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Quadrature_UnitTest.cpp' object='Rythmos_Quadrature_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Quadrature_UnitTest.obj `if test -f '$(srcdir)/Rythmos_Quadrature_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Quadrature_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Quadrature_UnitTest.cpp'; fi`
+
 Rythmos_RKButcherTableau_UnitTest.o: $(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_RKButcherTableau_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_RKButcherTableau_UnitTest.Tpo -c -o Rythmos_RKButcherTableau_UnitTest.o `test -f '$(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_RKButcherTableau_UnitTest.Tpo $(DEPDIR)/Rythmos_RKButcherTableau_UnitTest.Po
@@ -515,6 +536,20 @@ SinCosModel.obj: $(srcdir)/../SinCos/SinCosModel.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../SinCos/SinCosModel.cpp' object='SinCosModel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SinCosModel.obj `if test -f '$(srcdir)/../SinCos/SinCosModel.cpp'; then $(CYGPATH_W) '$(srcdir)/../SinCos/SinCosModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../SinCos/SinCosModel.cpp'; fi`
+
+PolynomialModel.o: $(srcdir)/../PolynomialModel/PolynomialModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PolynomialModel.o -MD -MP -MF $(DEPDIR)/PolynomialModel.Tpo -c -o PolynomialModel.o `test -f '$(srcdir)/../PolynomialModel/PolynomialModel.cpp' || echo '$(srcdir)/'`$(srcdir)/../PolynomialModel/PolynomialModel.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PolynomialModel.Tpo $(DEPDIR)/PolynomialModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../PolynomialModel/PolynomialModel.cpp' object='PolynomialModel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolynomialModel.o `test -f '$(srcdir)/../PolynomialModel/PolynomialModel.cpp' || echo '$(srcdir)/'`$(srcdir)/../PolynomialModel/PolynomialModel.cpp
+
+PolynomialModel.obj: $(srcdir)/../PolynomialModel/PolynomialModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PolynomialModel.obj -MD -MP -MF $(DEPDIR)/PolynomialModel.Tpo -c -o PolynomialModel.obj `if test -f '$(srcdir)/../PolynomialModel/PolynomialModel.cpp'; then $(CYGPATH_W) '$(srcdir)/../PolynomialModel/PolynomialModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../PolynomialModel/PolynomialModel.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PolynomialModel.Tpo $(DEPDIR)/PolynomialModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../PolynomialModel/PolynomialModel.cpp' object='PolynomialModel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolynomialModel.obj `if test -f '$(srcdir)/../PolynomialModel/PolynomialModel.cpp'; then $(CYGPATH_W) '$(srcdir)/../PolynomialModel/PolynomialModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../PolynomialModel/PolynomialModel.cpp'; fi`
 
 Rythmos_SinCosModel_UnitTest.o: $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_SinCosModel_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_SinCosModel_UnitTest.Tpo -c -o Rythmos_SinCosModel_UnitTest.o `test -f '$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_SinCosModel_UnitTest.cpp

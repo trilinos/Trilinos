@@ -36,9 +36,10 @@ bin_PROGRAMS = Rythmos_UnitTest
 #
 
 EXTRA_DIST =\
-  $(srcdir)/Rythmos_UnitTestHelpers.hpp\
+  $(srcdir)/Rythmos_UnitTestHelpers.hpp \
 	$(srcdir)/Rythmos_UnitTestModels.hpp \
-	$(srcdir)/../SinCos/SinCosModel.hpp
+	$(srcdir)/../SinCos/SinCosModel.hpp \
+	$(srcdir)/../PolynomialModel/PolynomialModel.hpp
 
 Rythmos_UnitTest_SOURCES =\
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
@@ -49,8 +50,10 @@ Rythmos_UnitTest_SOURCES =\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
 	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
+	$(srcdir)/Rythmos_Quadrature_UnitTest.cpp\
   $(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp\
   $(srcdir)/../SinCos/SinCosModel.cpp\
+  $(srcdir)/../PolynomialModel/PolynomialModel.cpp\
   $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
