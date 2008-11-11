@@ -53,7 +53,6 @@ static int compar_int (const void * a, const void * b)
 static int
 Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 			  MPI_Comm             comm,
-			  char *               strat,
 			  SCOTCH_Dgraph *      dgrafptr,
 			  SCOTCH_Graph *       cgrafptr,
 			  SCOTCH_Strat *       stratptr);
@@ -181,9 +180,19 @@ int Zoltan_Scotch_Order(
   ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
 
 
-  if (Zoltan_Scotch_Build_Graph(&gr, comm, strat, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
+  if (Zoltan_Scotch_Build_Graph(&gr, comm, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch Graph");
+  }
+
+  if (strat != NULL) {
+    if (((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphOrder (&stradat, strat)) != 0) ||
+	(SCOTCH_stratGraphOrder (&stradat, strat) != 0)) {
+      if (gr.graph_type == GLOBAL_GRAPH) SCOTCH_dgraphExit(&grafdat);
+      else SCOTCH_graphExit(&cgrafdat);
+      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+      return (ZOLTAN_FATAL);
+    }
   }
 
   /* Allocate space for rank array */
@@ -515,7 +524,6 @@ int Zoltan_Scotch(
   /* TODO : take care about multidimensional weights */
   ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
 
-
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
@@ -524,7 +532,7 @@ int Zoltan_Scotch(
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Scotch cannot deal with more than 1 weight.");
   }
 
-  if (Zoltan_Scotch_Build_Graph(&gr, comm, strat, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
+  if (Zoltan_Scotch_Build_Graph(&gr, comm, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
   }
@@ -537,6 +545,17 @@ int Zoltan_Scotch(
   if ((goal_sizes = (weighttype *) ZOLTAN_MALLOC(num_part * sizeof(weighttype))) == NULL) {
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,"Part_sizes cannot be allocated.");
+  }
+
+
+  if (strat != NULL) {
+    if (((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphMap (&stradat, strat)) != 0) ||
+	(SCOTCH_stratGraphMap (&stradat, strat) != 0)) {
+      if (gr.graph_type == GLOBAL_GRAPH) SCOTCH_dgraphExit(&grafdat);
+      else SCOTCH_graphExit(&cgrafdat);
+      Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
+      return (ZOLTAN_FATAL);
+    }
   }
 
 
@@ -723,7 +742,6 @@ char *val)                      /* value of variable */
 static int
 Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 			  MPI_Comm             comm,
-			  char *               strat,
 			  SCOTCH_Dgraph *      dgrafptr,
 			  SCOTCH_Graph *       cgrafptr,
 			  SCOTCH_Strat *       stratptr)
@@ -755,13 +773,6 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
   }
 
   SCOTCH_stratInit (stratptr);
-  if (strat != NULL) {
-    if (((gr->graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphOrder (stratptr, strat)) != 0) ||
-	(SCOTCH_stratGraphOrder (stratptr, strat) != 0)) {
-      SCOTCH_graphExit(cgrafptr);
-      return (ZOLTAN_FATAL);
-    }
-  }
 
   return (ZOLTAN_OK);
 }
@@ -775,7 +786,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 /*     FILE * graphfile; */
 /*     char name[80]; */
 
-/*     sprintf(name, "cage10.%d.src", zz->Proc); */
+/*     sprintf(name, "hammond.%d.src", zz->Proc); */
 /*     graphfile = fopen(name, "w+"); */
 /*     SCOTCH_dgraphSave(&grafdat, graphfile); */
 /*     fclose(graphfile); */
