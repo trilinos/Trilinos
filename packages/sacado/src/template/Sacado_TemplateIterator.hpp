@@ -47,9 +47,9 @@ namespace Sacado {
    * This class implements a standard forward iterator for the 
    * TemplateManager.
    */
-  template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+  template <typename TypeSeq, typename BaseT, typename ObjectT>
   class TemplateIterator : public std::iterator<std::input_iterator_tag,
-						BaseT> {
+                                                BaseT> {
   public:
 
     //! Constructor
@@ -119,9 +119,9 @@ namespace Sacado {
    * This class implements a standard forward iterator for the 
    * TemplateManager.
    */
-  template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+  template <typename TypeSeq, typename BaseT, typename ObjectT>
   class ConstTemplateIterator : public std::iterator<std::input_iterator_tag,
-						     BaseT> {
+                                                     BaseT> {
   public:
 
     //! Constructor

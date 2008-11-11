@@ -40,13 +40,14 @@
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
 #include "Sacado_mpl_for_each.hpp"
+#include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {
 
   // Forward declaration
-  template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+  template <typename TypeSeq, typename BaseT, typename ObjectT>
   class TemplateIterator;
-  template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+  template <typename TypeSeq, typename BaseT, typename ObjectT>
   class ConstTemplateIterator;
 
   //! Container class to manager template instantiations of a template class
@@ -70,13 +71,13 @@ namespace Sacado {
    * instantiated on those types.  In most cases, a builder class will also
    * need to be created to instantiate the objects for each scalar type.
    */
-  template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+  template <typename TypeSeq, typename BaseT, typename ObjectT>
   class TemplateManager {
 
     //! Implementation of < for type_info objects
     struct type_info_less {
       bool operator() (const std::type_info* a, const std::type_info* b) {
-	return a->before(*b);
+        return a->before(*b);
       }
     };
 
@@ -85,11 +86,11 @@ namespace Sacado {
       mutable std::vector< Teuchos::RCP<BaseT> >& objects;
       const BuilderOpT& builder;
       BuildObject(std::vector< Teuchos::RCP<BaseT> >& objects_,
-		  const BuilderOpT& builder_) :
-	objects(objects_), builder(builder_) {}
+                  const BuilderOpT& builder_) :
+        objects(objects_), builder(builder_) {}
       template <typename T> void operator()(T) const {
-	int idx = mpl::find<TypeSeq,T>::value;
-	objects[idx] = builder.template build<T>();
+        int idx = mpl::find<TypeSeq,T>::value;
+        objects[idx] = builder.template build<T>();
       }
     };
 
@@ -110,7 +111,8 @@ namespace Sacado {
       //! Returns a new rcp for an object of type ObjectT<ScalarT>
       template<class ScalarT>
       Teuchos::RCP<BaseT> build() const {
-	return Teuchos::rcp( dynamic_cast<BaseT*>( new ObjectT<ScalarT> ) );
+        typedef typename Sacado::mpl::apply<ObjectT,ScalarT>::type type;
+        return Teuchos::rcp( dynamic_cast<BaseT*>( new type ) );
       }
 
     };
@@ -138,11 +140,11 @@ namespace Sacado {
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    Teuchos::RCP< ObjectT<ScalarT> > getAsObject();
+    Teuchos::RCP< typename Sacado::mpl::apply<ObjectT,ScalarT>::type > getAsObject();
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    Teuchos::RCP< const ObjectT<ScalarT> > getAsObject() const;
+    Teuchos::RCP< const typename Sacado::mpl::apply<ObjectT,ScalarT>::type > getAsObject() const;
 
     //! Return an iterator that points to the first type object
     typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator begin();
