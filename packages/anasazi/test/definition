@@ -122,6 +122,13 @@
     COMM = SERIAL;
 }
 
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,AnasaziBugs,COVERAGE) {
+    TESTS = ../epetra/test/BlockKrylovSchur/BlockKrylovSchurQEVP_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --A-filename=$ABS_TOP_SRCDIR/packages/anasazi/epetra/test/BlockKrylovSchur/linearized_qevp_A.hb --B-filename=$ABS_TOP_SRCDIR/packages/anasazi/epetra/test/BlockKrylovSchur/linearized_qevp_B.hb --nev=42 --block-size=1 --num-blocks=84 --step-size=85 --num-restarts=10;
+    COMM = SERIAL;
+}
+
 # COVERAGE (using Epetra)
 (COVERAGE) {
     TESTS = ../epetra/test/LOBPCG/LOBPCG_test.exe,

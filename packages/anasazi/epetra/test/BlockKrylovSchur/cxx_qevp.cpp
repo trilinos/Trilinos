@@ -194,7 +194,8 @@ int main(int argc, char *argv[]) {
       // Create an Epetra_MultiVector for an initial vector to start the solver.
       // Note:  This needs to have the same number of columns as the blocksize.
       RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(A->Map(), blockSize) );
-      MVT::MvRandom( *ivec );
+      // MVT::MvRandom( *ivec ); // FINISH: put this back in
+      MVT::MvInit(*ivec,1.0);
 
       // Create the Epetra_Operator for the spectral transformation using the Amesos direct solver.
       RCP<AmesosGenOp> Aop = rcp( new AmesosGenOp(AmesosProblem, AmesosSolver, B) );
