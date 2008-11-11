@@ -105,6 +105,14 @@ namespace Sacado {
     //! Get parameter value this object represents
     virtual const ScalarT& getValue() const = 0;
 
+    //! Get real parameter value
+    /*!
+     * Default implementation should work in most cases.
+     */
+    virtual double getRealValue() const {
+      return Sacado::Value<ScalarT>::eval(this->getValue()); 
+    }
+
   };
 }
 
