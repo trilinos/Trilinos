@@ -33,6 +33,7 @@ USA
 #include <Epetra_Map.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Comm.h>
 
 namespace Isorropia{
 namespace Epetra{
@@ -77,18 +78,24 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix){
   int N=out_matrix.NumMyRows();
 
   if(Ncolors==0) return -1;
-  
+
   /* Allocs */
   Epetra_MultiVector temp1(out_matrix.DomainMap(),Ncolors,true);
   Epetra_MultiVector temp2(out_matrix.RangeMap(),Ncolors,false);
 
-  /* Probing */
+  /* Grab the color data */
+  Epetra_MapColoring * col;
   Teuchos::RCP<Epetra_MapColoring> col_=colorer_->generateMapColoring();
-  Epetra_MapColoring* col=&(*col_);
-
+  if(out_matrix.Comm().NumProc() == 1)
+    col=&(*col_);
+  else {
+    col= new Epetra_MapColoring(input_graph_->ColMap());
+    col->Import(*col_,*input_graph_->Importer(),Insert);
+  }
+   
+  /* Probing */
   for(int i=0;i<N;i++)
     temp1[(*col)[i]-1][i]=1.0;
-    
   op.Apply(temp1,temp2);
   
   /* Matrix Fill*/
@@ -99,8 +106,12 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix){
     out_matrix.ExtractMyRowView(i,entries,values,indices);
     for(int j=0;j<entries;j++)
       values[j]=temp2[(*col)[indices[j]]-1][i];
-  }
-  
+  }  
+
+  /* Cleanup */
+  if(out_matrix.Comm().NumProc() != 1)
+    delete col;
+      
   return 0;
 }
 
