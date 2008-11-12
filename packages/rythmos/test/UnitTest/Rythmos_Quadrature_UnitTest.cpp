@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST( Rythmos_Quadrature, computeLegendreArea) {
     { // scope to delete CosntDetachedVectorView
       Thyra::ConstDetachedVectorView<double> area_view(*area);
       double tol = 1.0e-13;
-      TEST_COMPARE( fabs(area_view[0]-exact_area)/exact_area, >, tol );
+      TEST_COMPARE( fabs((area_view[0]-exact_area)/exact_area), >, tol );
     }
   }
 }
@@ -150,7 +150,7 @@ TEUCHOS_UNIT_TEST( Rythmos_Quadrature, computeLobattoArea) {
     { // scope to delete CosntDetachedVectorView
       Thyra::ConstDetachedVectorView<double> area_view(*area);
       double tol = 1.0e-13;
-      TEST_COMPARE( fabs(area_view[0]-exact_area)/exact_area, >, tol );
+      TEST_COMPARE( fabs((area_view[0]-exact_area)/exact_area), >, tol );
     }
   }
 }
