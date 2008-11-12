@@ -155,7 +155,7 @@ void LinearInterpolator<Scalar>::interpolate(
 
   data_out->clear();
 
-  // Return immediatly if not time points are requested ...
+  // Return immediatly if no time points are requested ...
   if (t_values.size() == 0) {
     return;
   }
@@ -170,7 +170,7 @@ void LinearInterpolator<Scalar>::interpolate(
     int n = 0; // index into t_values
     // Loop through all of the time interpolation points in the buffer and
     // satisfiy all of the requested time points that you find.  NOTE: The
-    // loop will be existed once all of the time points are satisified (see
+    // loop will be exited once all of the time points are satisified (see
     // return below).
     for (int i=0 ; i < as<int>(data_in.size())-1; ++i) {
       const Scalar& ti = data_in[i].time;

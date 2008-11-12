@@ -30,24 +30,25 @@
 #define Rythmos_HERMITE_INTERPOLATOR_H
 
 #include "Rythmos_InterpolatorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Rythmos {
 /** 
   This class implements piecewise Hermite interpolation on each interval where the data is:
-  (x0,f(x0)), (x1,f(x1)), (x0,f'(x0)), (x1,f'(x1))
+  (t0,x(t0)), (t1,x(t1)), (t0,x'(t0)), (t1,x'(t1))
   The Hermite Interpolation polynomial is:
-  H_3(x) = f[z0] + f[z0,z1](x-x0) + f[z0,z1,z2](x-x0)^2 + f[z0,z1,z2,z3](x-x0)^2(x-x1)
-  where z0 = z1 = x0 and z2 = z3 = x1 and
-  f[z0,z1] = f'(x0) and f[z2,z3] = f'(x1)
+  H_3(t) = x[z0] + x[z0,z1](t-t0) + x[z0,z1,z2](t-t0)^2 + x[z0,z1,z2,z3](t-t0)^2(t-t1)
+  where z0 = z1 = t0 and z2 = z3 = t1 and
+  x[z0,z1] = x'(t0) and x[z2,z3] = x'(t1)
   This reduces to:
-  H_3(x) = f(x0) + f'(x0)(x-x0) + ((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)^2/(x1-x0)
-           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))(x-x0)^2(x-x1)/(x1-x0)^2
+  H_3(t) = x(t0) + x'(t0)(t-t0) + ((x(t1)-x(t0))/(t1-t0) - x'(t0))(t-t0)^2/(t1-t0)
+           +(x'(t1) - 2(x(t1)-x(t0))/(t1-t0) + x'(t0))(t-t0)^2(t-t1)/(t1-t0)^2
   With derivative:
-  H_3'(x) =        f'(x0) + 2*((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)/(x1-x0)
-           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))[2*(x-x0)(x-x1) + (x-x0)^2]/(x1-x0)^2
+  H_3'(t) =        x'(t0) + 2*((x(t1)-x(t0))/(t1-t0) - x'(t0))(t-t0)/(t1-t0)
+           +(x'(t1) - 2(x(t1)-x(t0))/(t1-t0) + x'(t0))[2*(t-t0)(t-t1) + (t-t0)^2]/(t1-t0)^2
   With the error expression:
-  f(x) - H_3(x) = (f^{(3)}(\xi(x))/(4!))(x-x0)^2(x-x1)^2
-  Which is 2nd order in f(x) and 1st order in f'(x)
+  x(t) - H_3(t) = (x^{(3)}(\xi(t))/(4!))(t-t0)^2(t-t1)^2
+  The Hermite Interpolant will match 3rd degree polynomials exactly with both function values and derivatives.
   **/
 template<class Scalar>
 class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
@@ -121,7 +122,7 @@ void HermiteInterpolator<Scalar>::interpolate(
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
 
-  TEST_FOR_EXCEPT_MSG(true, "Error, ths function is not tested!" );
+  //TEST_FOR_EXCEPT_MSG(true, "Error, ths function is not tested!" );
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
@@ -158,62 +159,62 @@ void HermiteInterpolator<Scalar>::interpolate(
     // data_in.size() >= 2
     int n = 0;
     for (int i=0 ; i<Teuchos::as<int>(data_in.size())-1 ; ++i) {
-      const Scalar& ti = data_in[i].time;
-      const Scalar& tip1 = data_in[i+1].time;
-      while ((ti <= t_values[n]) && (t_values[n] <= tip1)) {
+      const Scalar& t0 = data_in[i].time;
+      const Scalar& t1 = data_in[i+1].time;
+      while ((t0 <= t_values[n]) && (t_values[n] <= t1)) {
         const Scalar& t = t_values[n];
         // First we check for exact node matches:
-        if (t == ti) {
+        if (t == t0) {
           DataStore<Scalar> DS(data_in[i]);
           data_out->push_back(DS);
-        } else if (t == tip1) {
+        } else if (t == t1) {
           DataStore<Scalar> DS(data_in[i+1]);
           data_out->push_back(DS);
         } else {
-          RCP<const Thyra::VectorBase<Scalar> > xi =      data_in[i  ].x;
-          RCP<const Thyra::VectorBase<Scalar> > xip1 =    data_in[i+1].x;
-          RCP<const Thyra::VectorBase<Scalar> > xdoti =   data_in[i  ].xdot;
-          RCP<const Thyra::VectorBase<Scalar> > xdotip1 = data_in[i+1].xdot;
+          RCP<const Thyra::VectorBase<Scalar> > x0    = data_in[i  ].x;
+          RCP<const Thyra::VectorBase<Scalar> > x1    = data_in[i+1].x;
+          RCP<const Thyra::VectorBase<Scalar> > xdot0 = data_in[i  ].xdot;
+          RCP<const Thyra::VectorBase<Scalar> > xdot1 = data_in[i+1].xdot;
           
           // 10/10/06 tscoffe:  this could be expensive:
-          RCP<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
-          RCP<Thyra::VectorBase<Scalar> > xdot_temp = xip1->clone_v(); 
-          Scalar dt = tip1-ti;
+          RCP<Thyra::VectorBase<Scalar> > tmp_vec = x0->clone_v(); 
+          RCP<Thyra::VectorBase<Scalar> > xdot_temp = x1->clone_v(); 
+          Scalar dt = t1-t0;
           Scalar dt2 = dt*dt;
-          Scalar t_t0 = t - ti;
-          Scalar t_t1 = t - tip1;
+          Scalar t_t0 = t - t0;
+          Scalar t_t1 = t - t1;
           Scalar tmp_t;
 
           // Compute numerical divided difference:
           Thyra::Vt_S(&*xdot_temp,Scalar(ST::one()/dt));
-          Thyra::Vp_StV(&*xdot_temp,Scalar(-ST::one()/dt),*xi);
+          Thyra::Vp_StV(&*xdot_temp,Scalar(-ST::one()/dt),*x0);
 
           // interpolate this point
           DataStore<Scalar> DS;
           DS.time = t;
 
-          //  H_3(x) = f(x0) + f'(x0)(x-x0) + ((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)^2/(x1-x0)
-          //           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))(x-x0)^2(x-x1)/(x1-x0)^2
-          RCP<Thyra::VectorBase<Scalar> > x_vec = xi->clone_v(); 
-          Thyra::Vp_StV(&*x_vec,t_t0,*xdoti);
+          //  H_3(t) = x(t0) + xdot(t0)(t-t0) + ((x(t1)-x(t0))/(t1-t0) - xdot(t0))(t-t0)^2/(t1-t0)
+          //           +(xdot(t1) - 2(x(t1)-x(t0))/(t1-t0) + xdot(t0))(t-t0)^2(t-t1)/(t1-t0)^2
+          RCP<Thyra::VectorBase<Scalar> > x_vec = x0->clone_v(); 
+          Thyra::Vp_StV(&*x_vec,t_t0,*xdot0);
           tmp_t = t_t0*t_t0/dt;
-          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot_temp,Scalar(-ST::one()*tmp_t),*xdoti);
+          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot_temp,Scalar(-ST::one()*tmp_t),*xdot0);
           Thyra::Vp_V(&*x_vec,*tmp_vec);
           tmp_t = t_t0*t_t0*t_t1/dt2;
-          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdotip1,Scalar(-2*tmp_t),*xdot_temp);
-          Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdoti);
+          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot1,Scalar(-2*tmp_t),*xdot_temp);
+          Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdot0);
           Thyra::Vp_V(&*x_vec,*tmp_vec);
           DS.x = x_vec;
 
-          //  H_3'(x) =        f'(x0) + 2*((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)/(x1-x0)
-          //           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))[2*(x-x0)(x-x1) + (x-x0)^2]/(x1-x0)^2
-          RCP<Thyra::VectorBase<Scalar> > xdot_vec = xdoti->clone_v(); 
+          //  H_3'(t) =        xdot(t0) + 2*((x(t1)-x(t0))/(t1-t0) - xdot(t0))(t-t0)/(t1-t0)
+          //           +(xdot(t1) - 2(x(t1)-x(t0))/(t1-t0) + xdot(t0))[2*(t-t0)(t-t1) + (t-t0)^2]/(t1-t0)^2
+          RCP<Thyra::VectorBase<Scalar> > xdot_vec = xdot0->clone_v(); 
           tmp_t = t_t0/dt;
           Thyra::Vp_StV(&*xdot_vec,Scalar(2*tmp_t),*xdot_temp);
-          Thyra::Vp_StV(&*xdot_vec,Scalar(-ST::one()*tmp_t),*xdoti);
+          Thyra::Vp_StV(&*xdot_vec,Scalar(-2*tmp_t),*xdot0);
           tmp_t = Scalar((2*t_t0*t_t1+t_t0*t_t0)/dt2);
-          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdotip1,Scalar(-2*tmp_t),*xdot_temp);
-          Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdoti);
+          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot1,Scalar(-2*tmp_t),*xdot_temp);
+          Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdot0);
           Thyra::Vp_V(&*xdot_vec,*tmp_vec);
           DS.xdot = xdot_vec;
           
@@ -233,10 +234,19 @@ void HermiteInterpolator<Scalar>::interpolate(
   } // data_in.size() == 1
 }
 
+// non-member constructor
+template<class Scalar>
+RCP<HermiteInterpolator<Scalar> > hermiteInterpolator()
+{
+  RCP<HermiteInterpolator<Scalar> > hi = rcp(new HermiteInterpolator<Scalar>() );
+  return hi;
+}
+
 template<class Scalar>
 int HermiteInterpolator<Scalar>::order() const
 {
-  return(2);
+  return(3);
+  // tscoffe 11/12/08:  What does it mean for this method to be 3rd order in x and 2nd order in xdot?
 }
 
 template<class Scalar>

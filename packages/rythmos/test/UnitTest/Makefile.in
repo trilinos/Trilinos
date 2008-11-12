@@ -97,6 +97,7 @@ am_Rythmos_UnitTest_OBJECTS =  \
 	Rythmos_ConvergenceTestHelpers_UnitTest.$(OBJEXT) \
 	Rythmos_DataStore_UnitTest.$(OBJEXT) \
 	Rythmos_ExplicitRK_UnitTest.$(OBJEXT) \
+	Rythmos_HermiteInterpolator_UnitTest.$(OBJEXT) \
 	Rythmos_ImplicitBDF_UnitTest.$(OBJEXT) \
 	Rythmos_ImplicitRK_UnitTest.$(OBJEXT) \
 	Rythmos_InterpolationBuffer_UnitTest.$(OBJEXT) \
@@ -256,6 +257,7 @@ Rythmos_UnitTest_SOURCES = \
 	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
   $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp\
+	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
@@ -357,6 +359,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ConvergenceTestHelpers_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DataStore_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ExplicitRK_UnitTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitBDF_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRK_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer_UnitTest.Po@am__quote@
@@ -438,6 +441,20 @@ Rythmos_ExplicitRK_UnitTest.obj: $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp' object='Rythmos_ExplicitRK_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ExplicitRK_UnitTest.obj `if test -f '$(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp'; fi`
+
+Rythmos_HermiteInterpolator_UnitTest.o: $(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_HermiteInterpolator_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Tpo -c -o Rythmos_HermiteInterpolator_UnitTest.o `test -f '$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Tpo $(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp' object='Rythmos_HermiteInterpolator_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_HermiteInterpolator_UnitTest.o `test -f '$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp
+
+Rythmos_HermiteInterpolator_UnitTest.obj: $(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_HermiteInterpolator_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Tpo -c -o Rythmos_HermiteInterpolator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Tpo $(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp' object='Rythmos_HermiteInterpolator_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_HermiteInterpolator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp'; fi`
 
 Rythmos_ImplicitBDF_UnitTest.o: $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ImplicitBDF_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_ImplicitBDF_UnitTest.Tpo -c -o Rythmos_ImplicitBDF_UnitTest.o `test -f '$(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp
