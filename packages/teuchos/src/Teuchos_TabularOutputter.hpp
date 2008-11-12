@@ -35,6 +35,7 @@
 #include "Teuchos_Tuple.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_Exceptions.hpp"
 
 
 namespace Teuchos {
@@ -62,22 +63,40 @@ public:
   enum EFloatingOutputType { SCIENTIFIC, GENERAL };
   enum { numFloatingOutputTypes = 2 };
 
+  /** \brief .  */
+  class MissingFieldsError : public ExceptionBase
+  {public:MissingFieldsError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
+
+  /** \brief .  */
+  class InvalidFieldSpecError : public ExceptionBase
+  {public:InvalidFieldSpecError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
+
+  /** \brief .  */
+  class MissingHeaderError : public ExceptionBase
+  {public:MissingHeaderError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
+
+  /** \brief .  */
+  class InvalidFieldOutputError : public ExceptionBase
+  {public:InvalidFieldOutputError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
+
   //@}
 
   /** \brief . */
-  TabularOutputter();
+  TabularOutputter(std::ostream &out);
 
   /** \brief . */
-  TabularOutputter(std::ostream &out);
+  TabularOutputter(const RCP<std::ostream> &out);
 
   /** \brief Set the ostream that all output will be sent to. */
   void setOStream( const RCP<std::ostream> &out );
 
   /** \brief Add a new field to be output. */
-  void pushField( const std::string &fieldName,
+  void pushFieldSpec( const std::string &fieldName,
     const EFieldType fieldType = DOUBLE,
     const EFieldJustification fieldJustification = RIGHT,
-    const EFloatingOutputType floatingOutputType = SCIENTIFIC );
+    const EFloatingOutputType floatingOutputType = SCIENTIFIC,
+    const int width = -1
+    );
 
   /** \brief Set the precision of output for a field.
    *
@@ -102,13 +121,14 @@ private:
   struct FieldSpec {
     FieldSpec(std::string fieldName_in, EFieldType fieldType_in,
       EFieldJustification fieldJustification_in,
-      EFloatingOutputType floatingOutputType_in
+      EFloatingOutputType floatingOutputType_in,
+      const int outputWidth_in
       )
       :fieldName(fieldName_in), fieldType(fieldType_in),
        fieldJustification(fieldJustification_in),
        floatingOutputType(floatingOutputType_in),
-       outputWidth(-1),
-       precision(-1)
+       outputWidth(outputWidth_in),
+       precision(-1) // Gets set later
       {}
     std::string fieldName;
     EFieldType fieldType;
@@ -161,6 +181,11 @@ public: // Should be hidden
       return relTime;
     }
 
+private:
+  
+  // Not defined and not to be called!
+  TabularOutputter();
+
 };
 
 
@@ -190,7 +215,19 @@ void TabularOutputter::outputField( const T& t )
   using std::setw;
 
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT(currFieldIdx_ < as<int>(fieldSpecs_.size())); 
+  TEST_FOR_EXCEPTION(
+    currFieldIdx_ == -1,
+    MissingHeaderError,
+    "Error, you can not output a field until you print the header with"
+    " outputHeader()."
+    );
+  TEST_FOR_EXCEPTION(
+    !(currFieldIdx_ < as<int>(fieldSpecs_.size())),
+    InvalidFieldOutputError,
+    "Error, you have already output all of the "
+    << fieldSpecs_.size() << " fields for this tabular output."
+    "  You must call nextRow() before outputting to the next row."
+    );
 #endif
 
   FieldSpec &fieldSpec = fieldSpecs_[currFieldIdx_];

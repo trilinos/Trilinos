@@ -1,10 +1,9 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Time.hpp"
 #include "Teuchos_TabularOutputter.hpp"
 
 #ifdef HAVE_TEUCHOS_BOOST
-#  include "Teuchos_RCPBoostSharedPtrConversions.hpp"
+#  include "boost/shared_ptr.hpp"
 #endif
 
 
@@ -20,13 +19,6 @@ using Teuchos::TabularOutputter;
 double relCpuSpeed = 1e-2;
 int maxArraySize = 10000;
 double maxRcpCreateDestroyRatio = 10.0;
-
-
-inline
-double adjustTime( const double &time_in )
-{
-  return ( time_in > 0.0 ? time_in : -1.0 );
-}
 
 
 TEUCHOS_STATIC_SETUP()
@@ -54,10 +46,6 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
 {
 
-  using std::setw;
-  using std::left;
-  using std::right;
-
   typedef Teuchos::TabularOutputter TO;
 
   const int maxLoopIters = 1000;
@@ -78,17 +66,17 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
   outputter.setFieldTypePrecision(TO::DOUBLE, 8);
   outputter.setFieldTypePrecision(TO::INT, 8);
 
-  outputter.pushField("obj size", TO::INT);
-  outputter.pushField("num loops", TO::INT);
-  outputter.pushField("raw", TO::DOUBLE);
+  outputter.pushFieldSpec("obj size", TO::INT);
+  outputter.pushFieldSpec("num loops", TO::INT);
+  outputter.pushFieldSpec("raw", TO::DOUBLE);
 #ifdef HAVE_TEUCHOS_BOOST
-  outputter.pushField("shared_ptr", TO::DOUBLE);
+  outputter.pushFieldSpec("shared_ptr", TO::DOUBLE);
 #endif
-  outputter.pushField("RCP", TO::DOUBLE);
+  outputter.pushFieldSpec("RCP", TO::DOUBLE);
 #ifdef HAVE_TEUCHOS_BOOST
-  outputter.pushField("shared_ptr/raw", TO::DOUBLE);
+  outputter.pushFieldSpec("shared_ptr/raw", TO::DOUBLE);
 #endif
-  outputter.pushField("RCP/raw", TO::DOUBLE);
+  outputter.pushFieldSpec("RCP/raw", TO::DOUBLE);
 
   outputter.outputHeader();
 

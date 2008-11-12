@@ -28,6 +28,7 @@
 
 
 #include "Teuchos_TabularOutputter.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace {
@@ -67,13 +68,6 @@ namespace Teuchos {
 const std::string TabularOutputter::fieldSpacer_("  ");
 
 
-TabularOutputter::TabularOutputter()
-  :timer_("")
-{
-  initialize();
-}
-
-
 TabularOutputter::TabularOutputter(std::ostream &out)
   :timer_("")
 {
@@ -82,20 +76,45 @@ TabularOutputter::TabularOutputter(std::ostream &out)
 }
 
 
+TabularOutputter::TabularOutputter(const RCP<std::ostream> &out)
+  :timer_("")
+{
+  initialize();
+  setOStream(out);
+}
+
+
 void TabularOutputter::setOStream( const RCP<std::ostream> &out )
 {
+#ifdef TEUCHOS_DEBUG
+  out.assert_not_null();
+#endif
   out_ = fancyOStream(out);
 }
 
 
-void TabularOutputter::pushField(
+void TabularOutputter::pushFieldSpec(
   const std::string &fieldName, const EFieldType fieldType,
   const EFieldJustification fieldJustification,
-  const EFloatingOutputType floatingOutputType
+  const EFloatingOutputType floatingOutputType,
+  const int width
   )
 {
+#ifdef TEUCHOS_DEBUG
+  if (width > 0) {
+    TEST_FOR_EXCEPTION(
+      !(as<int>(fieldName.size()) <= width),
+      InvalidFieldSpecError,
+      "Error, the length of the field name \""<<fieldName<<"\"\n"
+      "is "<<fieldName.size()<<" which is larger than the\n"
+      "specifically set field width "<<width<<"!"
+      );
+  }
+#endif
   fieldSpecs_.push_back(
-    FieldSpec(fieldName, fieldType, fieldJustification, floatingOutputType)
+    FieldSpec(fieldName, fieldType, fieldJustification, floatingOutputType,
+      TEUCHOS_MAX(as<int>(fieldName.size()), width)
+      )
     );
 }
 
@@ -115,12 +134,24 @@ void TabularOutputter::outputHeader()
 
   const int numFields = fieldSpecs_.size();
 
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    numFields==0, MissingFieldsError,
+    "Error, you must add at least one field spec using pushFieldSpec(...)!"
+    );
+#endif
+
+
   for (int i = 0; i < numFields; ++i) {
     FieldSpec &fieldSpec = fieldSpecs_[i];
     const EFieldType fieldType = fieldSpec.fieldType;
     const int fieldTypePrecision = fieldTypePrecision_[fieldType];
     fieldSpec.precision = fieldTypePrecision;
-    fieldSpec.outputWidth = getFieldWidth(fieldType, fieldTypePrecision);
+    const int fieldPrecisionWidth =
+      getFieldWidth(fieldType, fieldTypePrecision);
+    if (fieldSpec.outputWidth < fieldPrecisionWidth) {
+      fieldSpec.outputWidth = fieldPrecisionWidth;
+    }
     *out_ << fieldSpacer_ << left << setw(fieldSpec.outputWidth) << fieldSpec.fieldName;
   }
   *out_ << "\n";
@@ -151,7 +182,7 @@ void TabularOutputter::nextRow()
 
 void TabularOutputter::initialize()
 {
-  std::fill( fieldTypePrecision_.begin(), fieldTypePrecision_.end(), -1 );
+  std::fill( fieldTypePrecision_.begin(), fieldTypePrecision_.end(), 4 );
   currFieldIdx_ = -1;
 }
 

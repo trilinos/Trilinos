@@ -3,6 +3,8 @@
 INCLUDE(Trilinos_Add_Executable)
 INCLUDE(Trilinos_Add_Test)
 
+ADD_SUBDIRECTORY(TabularOutputter)
+
 # Test definitions
 
 TRILINOS_ADD_EXECUTABLE(
