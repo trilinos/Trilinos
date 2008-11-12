@@ -115,6 +115,7 @@ SET(HEADERS ${HEADERS}
   Teuchos_TableColumn.hpp
   Teuchos_TableEntry.hpp
   Teuchos_TableFormat.hpp
+  Teuchos_TabularOutputter.hpp
   Teuchos_TestForException.hpp
   Teuchos_TestingHelpers.hpp
   Teuchos_Time.hpp
@@ -172,6 +173,7 @@ SET(SOURCES ${SOURCES}
   Teuchos_TableColumn.cpp
   Teuchos_TableEntry.cpp
   Teuchos_TableFormat.cpp
+  Teuchos_TabularOutputter.cpp
   Teuchos_TestForException.cpp
   Teuchos_Time.cpp
   Teuchos_TimeMonitor.cpp

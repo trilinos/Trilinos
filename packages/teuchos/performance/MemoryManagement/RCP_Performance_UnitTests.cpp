@@ -1,6 +1,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_TabularOutputter.hpp"
 
 #ifdef HAVE_TEUCHOS_BOOST
 #  include "Teuchos_RCPBoostSharedPtrConversions.hpp"
@@ -13,6 +14,7 @@ namespace {
 using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::TabularOutputter;
 
 
 double relCpuSpeed = 1e-2;
@@ -51,9 +53,12 @@ TEUCHOS_STATIC_SETUP()
 
 TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
 {
+
   using std::setw;
   using std::left;
   using std::right;
+
+  typedef Teuchos::TabularOutputter TO;
 
   const int maxLoopIters = 1000;
 
@@ -61,45 +66,31 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
 
   const double numInnerLoops = relCpuSpeed / relTestCost;
 
-  Teuchos::Time timer("");
-
-  const int dbl_w = 15;
-  const std::string dbl_line = "---------------";
-
-  const int int_w = 10;
-  const std::string int_line = "----------";
-
   out << "\n"
-      << "Messuring the overhead of createing and destorying objects of different sizes\n"
-      << "using raw C++ pointers and using RCP.\n"
+      << "Messuring the overhead of creating and destorying objects of different sizes\n"
+      << "using raw C++ pointers, shared_ptr, and using RCP.\n"
       << "\n"
       << "Number of loops = relCpuSpeed/relTestCost = "
       << relCpuSpeed << "/" << relTestCost << " = " << numInnerLoops << "\n"
-      << "\n"
-      << "  " << setw(int_w) << left << "obj size"
-      << "  " << setw(int_w) << left << "num loops"
-      << "  " << setw(dbl_w) << left << "raw"
-#ifdef HAVE_TEUCHOS_BOOST
-      << "  " << setw(dbl_w) << left << "shared_ptr"
-#endif
-      << "  " << setw(dbl_w) << left << "RCP"
-#ifdef HAVE_TEUCHOS_BOOST
-      << "  " << setw(dbl_w) << left << "shared_ptr/raw"
-#endif
-      << "  " << setw(dbl_w) << left << "RCP/raw"
-      << "\n"
-      << "  " << setw(int_w) << right << int_line // obj size
-      << "  " << setw(int_w) << right << int_line // num loops
-      << "  " << setw(dbl_w) << right << dbl_line // raw
-#ifdef HAVE_TEUCHOS_BOOST
-      << "  " << setw(dbl_w) << right << dbl_line // shared_ptr
-#endif
-      << "  " << setw(dbl_w) << right << dbl_line // RCP
-#ifdef HAVE_TEUCHOS_BOOST
-      << "  " << setw(dbl_w) << right << dbl_line // shared_ptr/raw
-#endif
-      << "  " << setw(dbl_w) << right << dbl_line // RCP/raw
       << "\n";
+
+  TabularOutputter outputter(out);
+  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
+  outputter.setFieldTypePrecision(TO::INT, 8);
+
+  outputter.pushField("obj size", TO::INT);
+  outputter.pushField("num loops", TO::INT);
+  outputter.pushField("raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOS_BOOST
+  outputter.pushField("shared_ptr", TO::DOUBLE);
+#endif
+  outputter.pushField("RCP", TO::DOUBLE);
+#ifdef HAVE_TEUCHOS_BOOST
+  outputter.pushField("shared_ptr/raw", TO::DOUBLE);
+#endif
+  outputter.pushField("RCP/raw", TO::DOUBLE);
+
+  outputter.outputHeader();
 
   double finalRcpRatio = -1.0;
 
@@ -111,7 +102,7 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
   {
 
     // obj size
-    out << "  " << setw(int_w) << right << arraySize;
+    outputter.outputField(arraySize);
 
     // num loops
     const int numActualLoops =
@@ -120,63 +111,56 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
           (numInnerLoops / arraySize)
           * std::log(static_cast<double>(arraySize+1))
           ),
-        1);
-    out << "  " << setw(int_w) << right << numActualLoops;
+        1
+        );
+    outputter.outputField(numActualLoops);
 
     // raw
-    timer.reset();
-    timer.start();
-    for ( int k = 0; k < numActualLoops; ++k ) {
+    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    {
       std::vector<char> *p = new std::vector<char>(arraySize, 1);
       delete p;
     }
-    timer.stop();
-    const double rawPtrTime = adjustTime(timer.totalElapsedTime()) / numActualLoops;
-    out << "  " << setw(dbl_w) << right << rawPtrTime;
-
+    TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
+    
 #ifdef HAVE_TEUCHOS_BOOST
     // shared_ptr
-    timer.reset();
-    timer.start();
     {
       typedef boost::shared_ptr<std::vector<char> > shared_ptr_t;
       shared_ptr_t p;
-      for ( int k = 0; k < numActualLoops; ++k ) {
+      TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+      {
         p = shared_ptr_t(new std::vector<char>(arraySize, 1));
       }
     }
-    timer.stop();
-    const double spTime = adjustTime(timer.totalElapsedTime()) / numActualLoops;
-    out << "  " << setw(dbl_w) << right << spTime;
+    TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
 #endif
 
     // RCP
-    timer.reset();
-    timer.start();
     {
       RCP<std::vector<char> > p;
-      for ( int k = 0; k < numActualLoops; ++k ) {
+      TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+      {
         p = rcp(new std::vector<char>(arraySize, 1));
       }
     }
-    timer.stop();
-    const double rcpTime = adjustTime(timer.totalElapsedTime()) / numActualLoops;
-    out << "  " << setw(dbl_w) << right << rcpTime;
+    TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rcpTime);
 
 #ifdef HAVE_TEUCHOS_BOOST
     // shared_ptr/rawPtr
     const double spRatio = spTime / rawPtrTime;
-    out << "  " << setw(dbl_w) << right << spRatio;
+    outputter.outputField(spRatio);
 #endif
 
     // RCP/rawPtr
     const double rcpRatio = rcpTime / rawPtrTime;
-    out << "  " << setw(dbl_w) << right << rcpRatio;
+    outputter.outputField(rcpRatio);
 
-    out << "\n";
-
+    outputter.nextRow();
+    
     arraySize *= 4;
     finalRcpRatio = rcpRatio;
+
   }
 
   out << "\n";
