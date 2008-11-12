@@ -32,6 +32,7 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_StepperHelpers.hpp"
@@ -830,7 +831,7 @@ void BackwardEulerStepper<Scalar>::getPoints(
     ds_temp.accuracy = ScalarMag(ST::zero());
     ds_nodes.push_back(ds_temp);
   }
-  interpolator_->interpolate(ds_nodes,time_vec,&ds_out);
+  interpolate<Scalar>(*interpolator_,rcp(&ds_nodes,false),time_vec,&ds_out);
   Array<Scalar> time_out;
   dataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
