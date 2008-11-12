@@ -28,6 +28,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
 
@@ -45,12 +46,12 @@ TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, nonMemberConstructor ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, interpolate ) {
-  RCP<LinearInterpolator<double> > li = linearInterpolator<double>();
+  RCP<InterpolatorBase<double> > li = linearInterpolator<double>();
   double maxOrder = li->order();
   for (int order = 0 ; order <= maxOrder+1 ; ++order) {
     TEST_EQUALITY( order, order );
     Polynomial<double> p(order,1.0); 
-    DataStore<double>::DataStoreVector_t data_in;
+    RCP<DataStore<double>::DataStoreVector_t> data_in = rcp( new DataStore<double>::DataStoreVector_t );;
     double T0 = 0.0;
     double T1 = 1.0;
     int N = 5;
@@ -61,7 +62,7 @@ TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, interpolate ) {
       RCP<Thyra::VectorBase<double> > xv, xvdot;
       double accuracy = 0.0;
       xv = createDefaultVector<double>(1,x);
-      data_in.push_back(DataStore<double>(t,xv,xvdot,accuracy));
+      data_in->push_back(DataStore<double>(t,xv,xvdot,accuracy));
     }
     Array<double> t_values;
     DataStore<double>::DataStoreVector_t data_out;
@@ -70,7 +71,7 @@ TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, interpolate ) {
       double t = ((T1-T0)/(N-1.0))*i+T0;
       t_values.push_back(t);
     }
-    li->interpolate(data_in, t_values, &data_out);
+    interpolate<double>(*li, data_in, t_values, &data_out);
     // Verify that the interpolated values are exactly the same as the polynomial values
     // unless the order of polynomial is greater than the order of the interpolator
     unsigned int N_out = data_out.size();

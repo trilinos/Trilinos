@@ -61,19 +61,22 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
     /// Constructor
     HermiteInterpolator();
 
+    void setNodes(
+      const RCP<const typename DataStore<Scalar>::DataStoreVector_t> & nodes
+      );
+
     /// Interpolation:
     /** \brief Hermite interpolation function.
      *
      * <b>Preconditions:</b><ul>
      * <li>Preconditions of InterpolatorBase<Scalar> apply 
-     * <li><tt>data_in[i].xdot != Teuchos::null</tt> for all <tt>i=0..data_in.size()-1</tt>
+     * <li><tt>(*nodes_)[i].xdot != Teuchos::null</tt> for all <tt>i=0..(*nodes_).size()-1</tt>
      * </ul>
      */
     void interpolate(
-      const typename DataStore<Scalar>::DataStoreVector_t &data_in,
       const Array<Scalar> &t_values,
       typename DataStore<Scalar>::DataStoreVector_t *data_out
-      ) const;
+      );
 
     /// Order of interpolation:
     int order() const; 
@@ -106,6 +109,8 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
 
   private:
 
+    RCP<const typename DataStore<Scalar>::DataStoreVector_t> nodes_;
+
     RCP<ParameterList> parameterList;
 
 };
@@ -116,25 +121,32 @@ HermiteInterpolator<Scalar>::HermiteInterpolator()
 }
 
 template<class Scalar>
+void HermiteInterpolator<Scalar>::setNodes(
+  const RCP<const typename DataStore<Scalar>::DataStoreVector_t> & nodes
+  )
+{
+  nodes_ = nodes;
+}
+
+template<class Scalar>
 void HermiteInterpolator<Scalar>::interpolate(
-    const typename DataStore<Scalar>::DataStoreVector_t &data_in
-    ,const Array<Scalar> &t_values
-    ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
+    const Array<Scalar> &t_values
+    ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) 
 {
 
   //TEST_FOR_EXCEPT_MSG(true, "Error, ths function is not tested!" );
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
-  assertInterpolatePreconditions(data_in,t_values,data_out);
+  assertInterpolatePreconditions((*nodes_),t_values,data_out);
 #endif // TEUCHOS_DEBUG
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"HI::interpolator");
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "data_in:" << std::endl;
-    for (unsigned int i=0 ; i<data_in.size() ; ++i) {
-      *out << "data_in[" << i << "] = " << std::endl;
-      data_in[i].describe(*out,Teuchos::VERB_EXTREME);
+    *out << "(*nodes_):" << std::endl;
+    for (unsigned int i=0 ; i<(*nodes_).size() ; ++i) {
+      *out << "(*nodes_)[" << i << "] = " << std::endl;
+      (*nodes_)[i].describe(*out,Teuchos::VERB_EXTREME);
     }
     *out << "t_values = " << std::endl;
     for (unsigned int i=0 ; i<t_values.size() ; ++i) {
@@ -150,31 +162,31 @@ void HermiteInterpolator<Scalar>::interpolate(
     return;
   }
   
-  if (data_in.size() == 1) {
+  if ((*nodes_).size() == 1) {
     // trivial case of one node
-    // preconditions assert that t_values[0] == data_in[0].time so we can just pass it out
-    DataStore<Scalar> DS(data_in[0]);
+    // preconditions assert that t_values[0] == (*nodes_)[0].time so we can just pass it out
+    DataStore<Scalar> DS((*nodes_)[0]);
     data_out->push_back(DS);
   } else {
-    // data_in.size() >= 2
+    // (*nodes_).size() >= 2
     int n = 0;
-    for (int i=0 ; i<Teuchos::as<int>(data_in.size())-1 ; ++i) {
-      const Scalar& t0 = data_in[i].time;
-      const Scalar& t1 = data_in[i+1].time;
+    for (int i=0 ; i<Teuchos::as<int>((*nodes_).size())-1 ; ++i) {
+      const Scalar& t0 = (*nodes_)[i].time;
+      const Scalar& t1 = (*nodes_)[i+1].time;
       while ((t0 <= t_values[n]) && (t_values[n] <= t1)) {
         const Scalar& t = t_values[n];
         // First we check for exact node matches:
         if (t == t0) {
-          DataStore<Scalar> DS(data_in[i]);
+          DataStore<Scalar> DS((*nodes_)[i]);
           data_out->push_back(DS);
         } else if (t == t1) {
-          DataStore<Scalar> DS(data_in[i+1]);
+          DataStore<Scalar> DS((*nodes_)[i+1]);
           data_out->push_back(DS);
         } else {
-          RCP<const Thyra::VectorBase<Scalar> > x0    = data_in[i  ].x;
-          RCP<const Thyra::VectorBase<Scalar> > x1    = data_in[i+1].x;
-          RCP<const Thyra::VectorBase<Scalar> > xdot0 = data_in[i  ].xdot;
-          RCP<const Thyra::VectorBase<Scalar> > xdot1 = data_in[i+1].xdot;
+          RCP<const Thyra::VectorBase<Scalar> > x0    = (*nodes_)[i  ].x;
+          RCP<const Thyra::VectorBase<Scalar> > x1    = (*nodes_)[i+1].x;
+          RCP<const Thyra::VectorBase<Scalar> > xdot0 = (*nodes_)[i  ].xdot;
+          RCP<const Thyra::VectorBase<Scalar> > xdot1 = (*nodes_)[i+1].xdot;
           
           // 10/10/06 tscoffe:  this could be expensive:
           RCP<Thyra::VectorBase<Scalar> > tmp_vec = x0->clone_v(); 
@@ -231,7 +243,7 @@ void HermiteInterpolator<Scalar>::interpolate(
         }
       }
     }
-  } // data_in.size() == 1
+  } // (*nodes_).size() == 1
 }
 
 // non-member constructor

@@ -29,6 +29,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_HermiteInterpolator.hpp"
+#include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
 
 #include "Teuchos_Polynomial.hpp"
@@ -45,12 +46,12 @@ TEUCHOS_UNIT_TEST( Rythmos_HermiteInterpolator, nonMemberConstructor ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_HermiteInterpolator, interpolate ) {
-  RCP<HermiteInterpolator<double> > hi = hermiteInterpolator<double>();
+  RCP<InterpolatorBase<double> > hi = hermiteInterpolator<double>();
   double maxOrder = hi->order();
   for (int order = 0 ; order <= maxOrder+1 ; ++order) {
     TEST_EQUALITY( order, order );
     Polynomial<double> p(order,1.0); 
-    DataStore<double>::DataStoreVector_t data_in;
+    RCP<DataStore<double>::DataStoreVector_t> data_in = rcp( new DataStore<double>::DataStoreVector_t );
     double T0 = 0.0;
     double T1 = 1.0;
     int N = 5;
@@ -63,7 +64,7 @@ TEUCHOS_UNIT_TEST( Rythmos_HermiteInterpolator, interpolate ) {
       double accuracy = 0.0;
       xv = createDefaultVector<double>(1,x);
       xvdot = createDefaultVector<double>(1,xdot);
-      data_in.push_back(DataStore<double>(t,xv,xvdot,accuracy));
+      data_in->push_back(DataStore<double>(t,xv,xvdot,accuracy));
     }
     Array<double> t_values;
     DataStore<double>::DataStoreVector_t data_out;
@@ -72,7 +73,7 @@ TEUCHOS_UNIT_TEST( Rythmos_HermiteInterpolator, interpolate ) {
       double t = ((T1-T0)/(N-1.0))*i+T0;
       t_values.push_back(t);
     }
-    hi->interpolate(data_in, t_values, &data_out);
+    interpolate<double>(*hi, data_in, t_values, &data_out);
     // Verify that the interpolated values are exactly the same as the polynomial values
     // unless the order of polynomial is greater than the order of the interpolator
     unsigned int N_out = data_out.size();

@@ -71,36 +71,53 @@ public:
    */
   virtual Teuchos::RCP<InterpolatorBase<Scalar> > cloneInterpolator() const;
 
+  /** \brief Store pointer to interpolation nodes
+   * 
+   * This function represent a persisting relationship between the
+   * interpolation nodes and the interpolator.  For simple interpolators like
+   * linear and Hermite, this is not needed, but for interpolators like cubic
+   * splines where there is some computational work in assembling the
+   * interpolant, this is important.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>nodes</tt> must have unique time values and be sorted in ascending time order
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li>If this function is called twice and <tt>nodes</tt> is a different
+   * pointer than was previously called, then it is possible that the
+   * interpolant will be recomputed when <tt>interpolate</tt> is next called.
+   * </ul>
+   */
+  virtual void setNodes(
+    const RCP<const typename DataStore<Scalar>::DataStoreVector_t> & nodes
+    ) =0;
+
   /** \brief Perform an interpolation.
    *
    * This function must support passing node values back out directly,
    * handling when only one node value is passed in, and dealing with
-   * <tt>xdot==Teuchos::null</tt>.  There is no guarantee at this time that
-   * <tt>data_out</tt> will be in the same order as <tt>t_values</tt>.
+   * <tt>xdot==Teuchos::null</tt>.  
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>data_in</tt> must have unique time values and be sorted in ascending
-   *      time order
-   * <li><tt>data_in.size()>=1</tt>
-   * <li>if <tt>data_in.size()==1</tt> then <tt>t_values[0] == data_in[0].time</tt>
+   * <li>if <tt>nodes->size()==1</tt> then <tt>t_values[0] == (*nodes)[0].time</tt>
    * <li><tt>t_values</tt> must have unique and sorted values in ascending order
-   * <li><tt>data_in.front().time <= t_values[i] <= data_in.back().time</tt> for
+   * <li><tt>nodes->front().time <= t_values[i] <= nodes->back().time</tt> for
    *     all <tt>t=0..time_values.size()-1</tt>
-   * <li><tt>data_in[i].x != Teuchos::null</tt> for all <tt>i=0..data_in.size()-1</tt>
+   * <li><tt>(*nodes)[i].x != Teuchos::null</tt> for all <tt>i=0..nodes->size()-1</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li><tt>data_out</tt> will come out sorted in ascending time order
-   * <li>if <tt>data_in[i].xdot == Teuchos::null</tt> then all t_values in the
-   *    interval <tt>data_in[i-1]..data_in[i+1]</tt> will have <tt>xdot =
+   * <li>if <tt>(*nodes)[i].xdot == Teuchos::null</tt> then all t_values in the
+   *    interval <tt>(*nodes)[i-1]..(*nodes)[i+1]</tt> will have <tt>xdot =
    *    Tuechos::null</tt>.
    * </ul>
   */
   virtual void interpolate(
-    const typename DataStore<Scalar>::DataStoreVector_t &data_in,
     const Array<Scalar> &t_values,
     typename DataStore<Scalar>::DataStoreVector_t *data_out
-    ) const =0;
+    ) =0;
 
   /** \brief Return the order of the interpolation.
    *
@@ -110,14 +127,6 @@ public:
 
 };
 
-
-/** \relates InterplatorBase . */
-template<class Scalar>
-void assertBaseInterpolatePreconditions(
-  const typename DataStore<Scalar>::DataStoreVector_t &data_in,
-  const Array<Scalar> &t_values,
-  typename DataStore<Scalar>::DataStoreVector_t *data_out
-  );
 
 
 // ///////////////////////////////
@@ -140,56 +149,6 @@ InterpolatorBase<Scalar>::cloneInterpolator() const
 
 
 } // namespace Rythmos
-
-
-template<class Scalar>
-void Rythmos::assertBaseInterpolatePreconditions(
-  const typename DataStore<Scalar>::DataStoreVector_t &data_in,
-  const Array<Scalar> &t_values,
-  typename DataStore<Scalar>::DataStoreVector_t *data_out
-  )
-{
-  TEST_FOR_EXCEPTION(
-      data_in.size()==0, std::logic_error,
-      "Error, data_in.size() == 0!\n"
-      );
-  Array<Scalar> time_vec;
-  dataStoreVectorToVector<Scalar>(data_in, &time_vec, 0, 0, 0);
-  assertTimePointsAreSorted<Scalar>(time_vec);
-  assertTimePointsAreSorted<Scalar>(t_values);
-  if (data_in.size() == 1) {
-    TEST_FOR_EXCEPTION(
-      t_values.size()>1, std::logic_error,
-      "Error, data_in.size() == 1, but t_values.size() > 1!\n"
-      );
-    TEST_FOR_EXCEPTION(
-      t_values[0]!=data_in[0].time, std::logic_error,
-      "Error, data_in.size) == 1, but t_values[0] = " << 
-      t_values[0] << " != " << data_in[0].time << " = data_in[0].time!\n"
-      );
-  }
-  TimeRange<Scalar> range(data_in.front().time,data_in.back().time);
-  for (int i=0; i<Teuchos::as<int>(t_values.size()) ; ++i) {
-    TEST_FOR_EXCEPTION(
-      !range.isInRange(t_values[i]), std::logic_error,
-      "Error, t_values[" << i << "] = " << t_values[i] << 
-      " is not in range of data_in = " << range << "!\n"
-      );
-  }
-  TEST_FOR_EXCEPTION(
-    data_out == 0, std::logic_error,
-    "Error, data_out = NULL!\n"
-    );
-  for (int i=0; i<Teuchos::as<int>(data_in.size()) ; ++i) {
-    TEST_FOR_EXCEPTION(
-      data_in[i].x == Teuchos::null, std::logic_error,
-      "Error, data_in[" << i << "].x == Teuchos::null.\n"
-      );
-  }
-}
-
-// 2007/9/16: rabartl: ToDo: Move the above function to a new file
-// Rythmos_InterpolatorBaseHelpers.hpp.
 
 
 #endif //Rythmos_INTERPOLATOR_BASE_H

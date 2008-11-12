@@ -110,8 +110,9 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, copyVectors ) {
 
   TEST_EQUALITY_CONST( get_ele(*(v_vec_out[0]),0), 2.0 );
   TEST_EQUALITY_CONST( get_ele(*(v_dot_vec_out[0]),0), 3.0 );
-  
 }
+
+// TODO Test the storage limit and the buffer policies
 
 } // namespace Rythmos
 
