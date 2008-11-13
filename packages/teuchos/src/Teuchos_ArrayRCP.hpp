@@ -956,8 +956,9 @@ Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 void Teuchos::set_extra_data(
-  const T1 &extra_data, const std::string& name, Teuchos::ArrayRCP<T2> *p,
-  EPrePostDestruction destroy_when, bool force_unique
+  const T1 &extra_data, const std::string& name,
+  const Ptr<ArrayRCP<T2> > &p, EPrePostDestruction destroy_when,
+  bool force_unique
   )
 {
   p->assert_not_null();

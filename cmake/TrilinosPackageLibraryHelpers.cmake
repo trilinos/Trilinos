@@ -61,7 +61,7 @@ MACRO(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
 
   INCLUDE_DIRECTORIES(AFTER ${${PACKAGE_NAME}_INCLUDE_DIRS})
 
-  # Add dependent libraries in dependent Trilinos pacakges
+  # Add dependent libraries in dependent Trilinos packages
 
   IF (PARSE_DEPLIBS AND Trilinos_VERBOSE_CONFIGURE)
     MESSAGE(STATUS "DEPLIBS = ${PARSE_DEPLIBS}")

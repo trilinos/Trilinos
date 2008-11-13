@@ -274,7 +274,8 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl( const ArrayView<co
         cols,&*localValuesView,localSubDim,&*localValues_,leadingDim_
         )
       );
-  Teuchos::set_extra_data(copyBackView,"copyBackView",&view,Teuchos::PRE_DESTROY);
+  Teuchos::set_extra_data(copyBackView, "copyBackView",
+    Teuchos::outArg(view), Teuchos::PRE_DESTROY);
   return view;
 }
 

@@ -242,7 +242,8 @@ void MLPreconditionerFactory::initializePrec(
   //
   // Attach the epetraFwdOp to the ml_precOp to guarantee that it will not go away
   //
-  set_extra_data(epetraFwdOp,"IFPF::epetraFwdOp",&ml_precOp,Teuchos::POST_DESTROY,false);
+  set_extra_data(epetraFwdOp, "IFPF::epetraFwdOp", Teuchos::inOutArg(ml_precOp),
+    Teuchos::POST_DESTROY, false);
   //
   // Update the factorization
   //
@@ -262,7 +263,8 @@ void MLPreconditionerFactory::initializePrec(
   //
   // Attach fwdOp to the ml_precOp
   //
-  set_extra_data(fwdOp,"IFPF::fwdOp",&ml_precOp,Teuchos::POST_DESTROY,false);
+  set_extra_data(fwdOp, "IFPF::fwdOp", Teuchos::inOutArg(ml_precOp),
+    Teuchos::POST_DESTROY, false);
   //
   // Initialize the output EpetraLinearOp
   //

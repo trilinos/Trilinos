@@ -98,7 +98,9 @@ OPTION(Trilinos_DUMP_PACKAGE_DEPENDENCIES "Dump the package dependency informati
 
 IF (Trilinos_VERBOSE_CONFIGURE OR Trilinos_DUMP_PACKAGE_DEPENDENCIES)
   MESSAGE("")
-  MESSAGE("Printing package dependenies ...")
+  MESSAGE("Printing package dependencies ...")
+  MESSAGE("")
+  PRINT_VAR(Trilinos_PACKAGES)
   MESSAGE("")
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
     TRILINOS_PRINT_PACKAGE_DEPENDENCIES(${PACKAGE})
@@ -110,6 +112,10 @@ ENDIF()
 #
 # D) Set up user options and global variables that will be used throughout
 #
+
+MESSAGE("")
+MESSAGE("Setting up major user options ...")
+MESSAGE("")
 
 SET( Trilinos_ENABLE_ALL_PACKAGES OFF CACHE BOOL
   "Enable all packages (set to ON, OFF, or leave empty)." )

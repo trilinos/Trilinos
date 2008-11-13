@@ -835,7 +835,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       const_cast<Epetra_Operator*>(&*aztec_epetra_epetraFwdOp));
     set_extra_data(
       aztec_epetra_epetraFwdOp, AOOLOWSF_aztec_epetra_epetraFwdOp_str,
-      &aztecFwdSolver, Teuchos::POST_DESTROY, false
+      Teuchos::inOutArg(aztecFwdSolver), Teuchos::POST_DESTROY, false
       );
   }
   // Adjoint solve
@@ -861,7 +861,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       const_cast<Epetra_Operator*>(&*aztec_epetra_epetraAdjOp));
     set_extra_data(
       aztec_epetra_epetraAdjOp, AOOLOWSF_aztec_epetra_epetraAdjOp_str,
-      &aztecAdjSolver, Teuchos::POST_DESTROY, false
+      Teuchos::inOutArg(aztecAdjSolver), Teuchos::POST_DESTROY, false
       );
   }
   
@@ -905,7 +905,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraFwdOp));
         set_extra_data(
           rowmatrix_epetraFwdOp, AOOLOWSF_rowmatrix_epetraFwdOp_str,
-          &aztecFwdSolver, Teuchos::POST_DESTROY, false
+          Teuchos::inOutArg(aztecFwdSolver), Teuchos::POST_DESTROY, false
           );
       }
       setAztecPreconditioner = true;
@@ -935,7 +935,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           const_cast<Epetra_RowMatrix*>(&*rowmatrix_epetraPrecOp));
         set_extra_data(
           rowmatrix_epetraPrecOp, AOOLOWSF_rowmatrix_epetraPrecOp_str,
-          &aztecFwdSolver, Teuchos::POST_DESTROY, false
+          Teuchos::inOutArg(aztecFwdSolver), Teuchos::POST_DESTROY, false
           );
       }
       setAztecPreconditioner = true;
@@ -976,7 +976,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         const_cast<Epetra_Operator*>(&*aztec_fwd_epetra_epetraPrecOp));
       set_extra_data(
         aztec_fwd_epetra_epetraPrecOp, AOOLOWSF_aztec_fwd_epetra_epetraPrecOp_str,
-        &aztecFwdSolver, Teuchos::POST_DESTROY, false
+        Teuchos::inOutArg(aztecFwdSolver), Teuchos::POST_DESTROY, false
         );
       // Adjoint solve
       if(
@@ -1006,11 +1006,11 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
           const_cast<Epetra_Operator*>(&*aztec_adj_epetra_epetraPrecOp));
         set_extra_data(
           aztec_adj_epetra_epetraPrecOp, AOOLOWSF_aztec_adj_epetra_epetraPrecOp_str,
-          &aztecAdjSolver, Teuchos::POST_DESTROY, false
+          Teuchos::inOutArg(aztecAdjSolver), Teuchos::POST_DESTROY, false
           );
         set_extra_data<bool>(
           true, AOOLOWSF_setPrecondtionerOperator_str,
-          &aztecFwdSolver, Teuchos::POST_DESTROY, false
+          Teuchos::inOutArg(aztecFwdSolver), Teuchos::POST_DESTROY, false
           );
       }
       break;
@@ -1029,7 +1029,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       //aztecFwdSolver->SetAztecOption(AZ_pre_calc, AZ_calc);
       set_extra_data<bool>(
         true, AOOLOWSF_constructedAztecPreconditoner_str,
-        &aztecFwdSolver, Teuchos::POST_DESTROY, false
+        Teuchos::inOutArg(aztecFwdSolver), Teuchos::POST_DESTROY, false
         );
     }
     else {

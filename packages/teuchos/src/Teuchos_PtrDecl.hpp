@@ -206,6 +206,18 @@ Ptr<T> outArg( T& arg )
 }
 
 
+/** \brief create a non-persisting (required or optional) input/output
+ * argument for a function call.
+ *
+ * \relates Ptr
+ */
+template<typename T> inline
+Ptr<T> inOutArg( T& arg )
+{
+  return Ptr<T>(&arg);
+}
+
+
 /** \brief create a general <tt>Ptr</tt> input argument for a function call
  * from a reference.
  *

@@ -219,7 +219,9 @@ bool test_ArrayRCP(
 
   using Teuchos::ArrayView;
   using Teuchos::ArrayRCP;
+  using Teuchos::arcp;
   using Teuchos::arcp_const_cast;
+  using Teuchos::as;
 
   bool success = true, result;
  
@@ -322,6 +324,12 @@ bool test_ArrayRCP(
     out << "\nTest clone of ArrayPtr<const T> to ArrayRCP<T> ...\n";
     const ArrayRCP<T> ptr2 = Teuchos::arcpClone<T>(ptr.getConst());
     TEST_COMPARE_ARRAYS( ptr2, ptr );
+  }
+  {
+    out << "\nTest extra data ...\n";
+    ArrayRCP<T> ptr2 = arcp<T>(n);
+    Teuchos::set_extra_data( as<int>(1), "int", Teuchos::inOutArg(ptr2) );
+    TEST_EQUALITY_CONST( Teuchos::get_extra_data<int>(ptr2, "int"), 1);
   }
 
   return success;

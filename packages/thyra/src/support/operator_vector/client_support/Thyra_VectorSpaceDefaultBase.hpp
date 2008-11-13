@@ -100,10 +100,10 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorView<
   v->commitDetachedView(&sv);
   // Setup smart pointer to vector to copy view back out just before vector is destroyed
   Teuchos::set_extra_data(
-    Teuchos::rcp(new CopyVectorViewBack<Scalar>(&*v,raw_v))
-    ,"CopyVectorViewBack"
-    ,&v
-    ,Teuchos::PRE_DESTROY
+    Teuchos::rcp(new CopyVectorViewBack<Scalar>(&*v,raw_v)),
+    "CopyVectorViewBack",
+    Teuchos::outArg(v),
+    Teuchos::PRE_DESTROY
     );
   return v;
 }
@@ -141,10 +141,10 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVecto
   mv->commitDetachedView(&smv);
   // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destroyed
   Teuchos::set_extra_data(
-    Teuchos::rcp(new CopyMultiVectorViewBack<Scalar>(&*mv,raw_mv))
-    ,"CopyMultiVectorViewBack"
-    ,&mv
-    ,Teuchos::PRE_DESTROY
+    Teuchos::rcp(new CopyMultiVectorViewBack<Scalar>(&*mv,raw_mv)),
+    "CopyMultiVectorViewBack",
+    Teuchos::outArg(mv),
+    Teuchos::PRE_DESTROY
     );
   return mv;
 }

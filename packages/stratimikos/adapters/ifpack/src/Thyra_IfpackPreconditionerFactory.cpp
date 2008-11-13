@@ -226,7 +226,8 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Attach the epetraFwdOp to the ifpack_precOp to guarantee that it will not go away
   //
-  set_extra_data(epetraFwdOp,"IFPF::epetraFwdOp",&ifpack_precOp,Teuchos::POST_DESTROY,false);
+  set_extra_data(epetraFwdOp, "IFPF::epetraFwdOp", Teuchos::inOutArg(ifpack_precOp),
+    Teuchos::POST_DESTROY, false);
   //
   // Update the factorization
   //
@@ -249,7 +250,8 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Attach fwdOp to the ifpack_precOp
   //
-  set_extra_data(fwdOpSrc,"IFPF::fwdOpSrc",&ifpack_precOp,Teuchos::POST_DESTROY,false);
+  set_extra_data(fwdOpSrc, "IFPF::fwdOpSrc", Teuchos::inOutArg(ifpack_precOp),
+    Teuchos::POST_DESTROY, false);
   //
   // Initialize the output EpetraLinearOp
   //

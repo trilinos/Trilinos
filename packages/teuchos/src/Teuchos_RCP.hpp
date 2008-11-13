@@ -541,7 +541,7 @@ Teuchos::rcp_dynamic_cast(const RCP<T1>& p1, bool throw_on_fail)
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name,
-  Teuchos::RCP<T2> *p, EPrePostDestruction destroy_when, bool force_unique )
+  const Ptr<RCP<T2> > &p, EPrePostDestruction destroy_when, bool force_unique )
 {
   p->assert_not_null();
   p->nonconst_access_private_node().set_extra_data(

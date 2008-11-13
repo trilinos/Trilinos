@@ -1259,7 +1259,7 @@ Teuchos::isend(
     charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr());
   RCP<CommRequest> commRequest = comm.isend(
     charSendBuffer.getCharBufferView(), destRank );
-  set_extra_data( sendBuffer, "buffer", &commRequest );
+  set_extra_data( sendBuffer, "buffer", inOutArg(commRequest) );
   return commRequest;
 }
 
@@ -1298,7 +1298,7 @@ Teuchos::ireceive(
     charRecvBuffer(recvBuffer.size(), recvBuffer.getRawPtr());
   RCP<CommRequest> commRequest = comm.ireceive(
     charRecvBuffer.getCharBufferView(), sourceRank );
-  set_extra_data( recvBuffer, "buffer", &commRequest );
+  set_extra_data( recvBuffer, "buffer", inOutArg(commRequest) );
   return commRequest;
 }
 

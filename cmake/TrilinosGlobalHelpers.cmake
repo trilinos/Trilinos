@@ -544,7 +544,7 @@ ENDMACRO()
 MACRO(TRILNOS_ADJUST_PACKAGE_ENABLES)
 
   MESSAGE("")
-  MESSAGE("Disabling forward pacakges that have a required dependancy on explicitly disabled packages ...")
+  MESSAGE("Disabling forward packages that have a required dependancy on explicitly disabled packages ...")
   MESSAGE("")
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
     TRILINOS_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${PACKAGE})
@@ -590,7 +590,7 @@ MACRO(TRILNOS_ADJUST_PACKAGE_ENABLES)
     ENDFOREACH()
   ENDIF()
   # NOTE: Above, we have to loop through the packages backward to enable all the
-  # pacakges that feed into these packages.
+  # packages that feed into these packages.
   # NOTE Above, we don't have to enable the required packages because that will
   # come next
   

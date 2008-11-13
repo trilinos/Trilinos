@@ -652,12 +652,12 @@ tab(
     return Teuchos::null;
   RCP<basic_FancyOStream<CharT,Traits> >
     fancyOut = rcp(&*out,false);
-  set_extra_data( out, "out", &fancyOut );
+  set_extra_data( out, "out", inOutArg(fancyOut) );
   set_extra_data(
-    rcp(new basic_OSTab<CharT,Traits>(out,tabs,linePrefix))
-    ,"OSTab"
-    ,&fancyOut
-    ,PRE_DESTROY
+    rcp(new basic_OSTab<CharT,Traits>(out,tabs,linePrefix)),
+    "OSTab",
+    inOutArg(fancyOut),
+    PRE_DESTROY
     );
   return fancyOut;
 }

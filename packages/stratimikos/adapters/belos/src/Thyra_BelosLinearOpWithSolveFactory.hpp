@@ -472,11 +472,11 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   }
   if(myPrec.get()) {
     set_extra_data<RCP<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",
-							      &lp, Teuchos::POST_DESTROY, false);
+      Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
   }
   else if(prec.get()) {
     set_extra_data<RCP<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",
-								    &lp, Teuchos::POST_DESTROY, false);
+      Teuchos::inOutArg(lp), Teuchos::POST_DESTROY, false);
   }
   //
   // Generate the parameter list.

@@ -103,8 +103,9 @@ Thyra::createMember(
     (RTOpPack::ReductTarget*)NULL
     );
 #endif  
-  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
-  if(label.length()) v->setObjectLabel(label);
+  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase",
+    Teuchos::outArg(v) );
+  if (label.length()) v->setObjectLabel(label);
   return v;
 }
   
@@ -133,7 +134,8 @@ Thyra::createMembers(
     Teuchos::null
     );
 #endif  
-  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
+  Teuchos::set_extra_data(makeHaveOwnership(vs), "VectorSpaceBase",
+    Teuchos::outArg(mv));
   if(label.length()) mv->setObjectLabel(label);
   return mv;
 }
@@ -158,8 +160,9 @@ Thyra::createMemberView(
 {
   RCP<VectorBase<Scalar> >
     v = vs->createMemberView(raw_v);
-  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
-  if(label.length()) v->setObjectLabel(label);
+  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase",
+    Teuchos::outArg(v) );
+  if (label.length()) v->setObjectLabel(label);
   return v;
 }
 
@@ -184,8 +187,9 @@ Thyra::createMemberView(
 {
   RCP<const VectorBase<Scalar> >
     v = vs->createMemberView(raw_v);
-  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
-  if(label.length())
+  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase",
+    Teuchos::outArg(v) );
+  if (label.length())
     Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(v)->setObjectLabel(label);
   return v;
 }
@@ -211,8 +215,9 @@ Thyra::createMembersView(
 {
   RCP<MultiVectorBase<Scalar> >
     mv = vs->createMembersView(raw_mv);
-  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
-  if(label.length()) mv->setObjectLabel(label);
+  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase",
+    Teuchos::outArg(mv) );
+  if (label.length()) mv->setObjectLabel(label);
   return mv;
 }
 
@@ -237,8 +242,9 @@ Thyra::createMembersView(
 {
   RCP<const MultiVectorBase<Scalar> >
     mv = vs->createMembersView(raw_mv);
-  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
-  if(label.length())
+  Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase",
+    Teuchos::outArg(mv) );
+  if (label.length())
     Teuchos::rcp_const_cast<MultiVectorBase<Scalar> >(mv)->setObjectLabel(label);
   return mv;
 }

@@ -21,7 +21,7 @@ public:
         object* boostobj = new object(handle<>( o ) );
         obj *counted = extract<obj*>( *boostobj );
         rcpobj *counter = new rcpobj( counted , false );
-        Teuchos::set_extra_data( *boostobj, "boostpyobj", counter);
+        Teuchos::set_extra_data( *boostobj, "boostpyobj", Teuchos::inOutArg(counter));
         return counter;
     }
     static void from_python()
@@ -38,7 +38,8 @@ public:
             if ( myObj == NULL)
             {
         	    myObj = new object( x.get() );
-        	    Teuchos::set_extra_data( *myObj, "boostpyobj", &const_cast< rcpobj& >(x) );
+        	    Teuchos::set_extra_data( *myObj, "boostpyobj",
+                      Teuchos::inOutArg(const_cast< rcpobj& >(x)) );
         	}
         	else
         	{

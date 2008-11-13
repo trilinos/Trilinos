@@ -199,7 +199,8 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     Teuchos::RCP<Epetra_LinearProblem>
       epetraLP = Teuchos::rcp(new Epetra_LinearProblem());
     epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetraFwdOp));
-    Teuchos::set_extra_data< Teuchos::RCP<const Epetra_Operator> >( epetraFwdOp, epetraFwdOp_str, &epetraLP );
+    Teuchos::set_extra_data< Teuchos::RCP<const Epetra_Operator> >( epetraFwdOp,
+      epetraFwdOp_str, Teuchos::inOutArg(epetraLP) );
     // Create the concrete solver
     Teuchos::RCP<Amesos_BaseSolver>
       amesosSolver;

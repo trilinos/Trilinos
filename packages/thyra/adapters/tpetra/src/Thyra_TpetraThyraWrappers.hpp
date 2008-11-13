@@ -290,7 +290,7 @@ Thyra::create_Comm(
   if( serialTpetraComm.get() ) {
     RCP<const Teuchos::SerialComm<Index> >
       serialComm = rcp(new Teuchos::SerialComm<Index>());
-    set_extra_data( serialTpetraComm, "serialTpetraComm", &serialComm );
+    set_extra_data( serialTpetraComm, "serialTpetraComm", Teuchos::outArg(serialComm) );
     return serialComm;
   }
 
@@ -301,7 +301,7 @@ Thyra::create_Comm(
   if( mpiTpetraComm.get() ) {
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
       rawMpiComm = Teuchos::opaqueWrapper(mpiTpetraComm->getMpiComm());
-    set_extra_data( mpiTpetraComm, "mpiTpetraComm", &rawMpiComm );
+    set_extra_data( mpiTpetraComm, "mpiTpetraComm", Teuchos::outArg(rawMpiComm) );
     RCP<const Teuchos::MpiComm<Index> >
       mpiComm = rcp(new Teuchos::MpiComm<Index>(rawMpiComm));
     return mpiComm;
@@ -325,7 +325,7 @@ Thyra::create_VectorSpace(
 #endif // TEUCHOS_DEBUG
   RCP<const Teuchos::Comm<Index> >
     comm = create_Comm(Teuchos::rcp(&tpetra_vs->comm(),false)).assert_not_null();
-  Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", &comm );
+  Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", Teuchos::outArg(comm) );
   const Index localSubDim = tpetra_vs->getNumMyEntries();
   RCP<DefaultSpmdVectorSpace<Scalar> >
     vs = Teuchos::rcp(
@@ -342,7 +342,7 @@ Thyra::create_VectorSpace(
         "tpetra_vs->getNumGlobalEntries() = "<<tpetra_vs->getNumGlobalEntries()<<"!"
         );
 #endif		
-  Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", &vs );
+  Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", Teuchos::outArg(vs) );
   return vs;
 }
 
@@ -373,7 +373,7 @@ Thyra::create_Vector(
         1
         )
       );
-  Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
+  Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", Teuchos::outArg(v) );
   return v;
 }
 
@@ -404,7 +404,7 @@ Thyra::create_Vector(
         1
         )
       );
-  Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
+  Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", Teuchos::outArg(v) );
   return v;
 }
 
@@ -470,10 +470,10 @@ Thyra::get_Tpetra_Vector(
   // Tpetra::Vector into the Thyra vector when this temp Tpetra::Vector is
   // destroyed
   Teuchos::set_extra_data(
-    Teuchos::rcp(new TpetraUtils::CopyFromTpetraToThyraVector<Ordinal,Scalar>(*tpetra_v,detachedView))
-    ,"CopyFromTpetraToThyraVector"
-    ,&tpetra_v
-    ,Teuchos::PRE_DESTROY
+    Teuchos::rcp(new TpetraUtils::CopyFromTpetraToThyraVector<Ordinal,Scalar>(*tpetra_v,detachedView)),
+    "CopyFromTpetraToThyraVector",
+    Teuchos::outArg(tpetra_v),
+    Teuchos::PRE_DESTROY
     );
   // Note that when the last RCP to tpetra_v is destroyed, just before the
   // Tpetra::Vector object itself is destroyed, the

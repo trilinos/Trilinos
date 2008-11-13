@@ -95,7 +95,8 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   Teuchos::RCP< const VectorBase<double> >
     diag = create_Vector(e_diag,space);
   Teuchos::set_extra_data<Teuchos::RCP<const LinearOpSourceBase<double> > >(
-    fwdOpSrc, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOpSrc", &diag
+    fwdOpSrc, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOpSrc",
+    Teuchos::inOutArg(diag)
     );
   Teuchos::dyn_cast< DefaultDiagonalLinearOpWithSolve<double> >(*Op).initialize(
     Teuchos::rcp_implicit_cast<const VectorBase<double> >(diag)

@@ -1042,10 +1042,9 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  */
 template<class T1, class T2>
 void set_extra_data(
-  const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p,
-  EPrePostDestruction destroy_when = POST_DESTROY,
-  bool force_unique = true
-	);
+  const T1 &extra_data, const std::string& name,
+  const Ptr<ArrayRCP<T2> > &p, EPrePostDestruction destroy_when = POST_DESTROY,
+  bool force_unique = true );
 
 
 /** \brief Get a non-const reference to extra data associated with a <tt>ArrayRCP</tt> object.

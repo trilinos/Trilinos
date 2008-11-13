@@ -96,13 +96,13 @@ int Belos::createEpetraProblem(
   }
   //
   RCP<Epetra_Map> epetraMap = rcp(new Epetra_Map(NumGlobalElements, NumMyElements, update, 0, *epetraComm));
-  Teuchos::set_extra_data( epetraComm, "Map::Comm", &epetraMap );
+  Teuchos::set_extra_data( epetraComm, "Map::Comm", Teuchos::inOutArg(epetraMap) );
   if(rowMap) *rowMap = epetraMap;
   //
   // Create a Epetra_Matrix
   //
   *A = rcp(new Epetra_CrsMatrix(Copy, *epetraMap, NumNz));
-  Teuchos::set_extra_data( epetraMap, "Operator::Map", A );
+  Teuchos::set_extra_data( epetraMap, "Operator::Map", Teuchos::ptr(A) );
   //
   // Add rows one-at-a-time
   //
@@ -129,11 +129,11 @@ int Belos::createEpetraProblem(
   //
   if(B) {
     *B = rcp(new Epetra_MultiVector(::Copy, *epetraMap, b, NumMyElements, 1 ));
-    Teuchos::set_extra_data( epetraMap, "B::Map", B );
+    Teuchos::set_extra_data( epetraMap, "B::Map", Teuchos::ptr(B) );
   }
   if(X) {
     *X = rcp(new Epetra_MultiVector(*epetraMap, 1 ));
-    Teuchos::set_extra_data( epetraMap, "X::Map", X );
+    Teuchos::set_extra_data( epetraMap, "X::Map", Teuchos::ptr(X) );
   }
   //
   // Create workspace

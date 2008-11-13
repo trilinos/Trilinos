@@ -1266,15 +1266,9 @@ RCP<T2> rcp_dynamic_cast(
  * \relates RCP
  */
 template<class T1, class T2>
-void set_extra_data(
-  const T1 &extra_data,
-  const std::string& name, RCP<T2> *p,
-  EPrePostDestruction destroy_when = POST_DESTROY,
-  bool force_unique = true
-  );
-// 2007/12/01: rabartl: Above, replace const RCP<T2> *p with const Ptr<RCP<T2>
-// > &p but leave the old deprecated version for backward compatibility!
-
+void set_extra_data( const T1 &extra_data, const std::string& name,
+  const Ptr<RCP<T2> > &p, EPrePostDestruction destroy_when = POST_DESTROY,
+  bool force_unique = true);
 
 /** \brief Get a const reference to extra data associated with a <tt>RCP</tt> object.
  *

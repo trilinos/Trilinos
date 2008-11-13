@@ -62,7 +62,7 @@ Thyra::create_Comm( const RCP<const Epetra_Comm> &epetraComm )
   if( serialEpetraComm.get() ) {
     RCP<const Teuchos::SerialComm<Index> >
       serialComm = rcp(new Teuchos::SerialComm<Index>());
-    set_extra_data( serialEpetraComm, "serialEpetraComm", &serialComm );
+    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
     return serialComm;
   }
 
@@ -73,7 +73,7 @@ Thyra::create_Comm( const RCP<const Epetra_Comm> &epetraComm )
   if( mpiEpetraComm.get() ) {
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
       rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
-    set_extra_data( mpiEpetraComm, "mpiEpetraComm", &rawMpiComm );
+    set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
     RCP<const Teuchos::MpiComm<Index> >
       mpiComm = rcp(new Teuchos::MpiComm<Index>(rawMpiComm));
     return mpiComm;
@@ -99,7 +99,7 @@ Thyra::create_VectorSpace(
 #endif // TEUCHOS_DEBUG
   RCP<const Teuchos::Comm<Index> >
     comm = create_Comm(Teuchos::rcp(&epetra_map->Comm(),false)).assert_not_null();
-  Teuchos::set_extra_data( epetra_map, "epetra_map", &comm );
+  Teuchos::set_extra_data( epetra_map, "epetra_map", Teuchos::inOutArg(comm) );
   const Index localSubDim = epetra_map->NumMyElements();
   RCP<DefaultSpmdVectorSpace<double> >
     vs = Teuchos::rcp(
@@ -116,7 +116,7 @@ Thyra::create_VectorSpace(
     "epetra_map->NumGlobalElements() = "<<epetra_map->NumGlobalElements()<<"!"
     );
 #endif		
-  Teuchos::set_extra_data( epetra_map, "epetra_map", &vs );
+  Teuchos::set_extra_data( epetra_map, "epetra_map", Teuchos::inOutArg(vs) );
   return vs;
 }
 
@@ -163,7 +163,8 @@ Thyra::create_Vector(
         1
         )
       );
-  Teuchos::set_extra_data<RCP<Epetra_Vector> >( epetra_v, "Epetra_Vector", &v );
+  Teuchos::set_extra_data<RCP<Epetra_Vector> >( epetra_v, "Epetra_Vector",
+    Teuchos::inOutArg(v) );
   return v;
 }
 
@@ -194,7 +195,8 @@ Thyra::create_Vector(
         1
         )
       );
-  Teuchos::set_extra_data<RCP<const Epetra_Vector> >( epetra_v, "Epetra_Vector", &v );
+  Teuchos::set_extra_data<RCP<const Epetra_Vector> >( epetra_v, "Epetra_Vector",
+    Teuchos::inOutArg(v) );
   return v;
 }
 
@@ -242,7 +244,7 @@ Thyra::create_MultiVector(
         )
       );
   Teuchos::set_extra_data<RCP<Epetra_MultiVector> >(
-    epetra_mv, "Epetra_MultiVector", &mv );
+    epetra_mv, "Epetra_MultiVector", Teuchos::inOutArg(mv) );
   return mv;
 }
 
@@ -290,7 +292,7 @@ Thyra::create_MultiVector(
         )
       );
   Teuchos::set_extra_data<RCP<const Epetra_MultiVector> >(
-    epetra_mv, "Epetra_MultiVector", &mv );
+    epetra_mv, "Epetra_MultiVector", Teuchos::inOutArg(mv) );
   return mv;
 }
 
@@ -365,7 +367,8 @@ Thyra::get_Epetra_Vector(
   // view the destructor from the object in emvv will automatically commit the
   // changes to the elements in the input v VectorBase object (reguardless of
   // its implementation).  This is truly an elegant result!
-  Teuchos::set_extra_data( emvv, "emvv", &epetra_v, Teuchos::PRE_DESTROY );
+  Teuchos::set_extra_data( emvv, "emvv", Teuchos::inOutArg(epetra_v),
+    Teuchos::PRE_DESTROY );
   // We are done!
   return epetra_v;
 }
@@ -431,7 +434,8 @@ Thyra::get_Epetra_Vector(
   // only a releaseDetachedView(...) and not a commit will be called.
   // This is the whole reason there is a seperate implementation for
   // the const and non-const cases.
-  Teuchos::set_extra_data( evv, "evv", &epetra_v, Teuchos::PRE_DESTROY );
+  Teuchos::set_extra_data( evv, "evv", Teuchos::inOutArg(epetra_v),
+    Teuchos::PRE_DESTROY );
   // We are done!
   return epetra_v;
 }
@@ -506,9 +510,10 @@ Thyra::get_Epetra_MultiVector(
   // in emmvv will automatically commit the changes to the elements in
   // the input mv MultiVectorBase object (reguardless of its
   // implementation).  This is truly an elegant result!
-  Teuchos::set_extra_data( emmvv, "emmvv", &epetra_mv, Teuchos::PRE_DESTROY );
+  Teuchos::set_extra_data( emmvv, "emmvv", Teuchos::inOutArg(epetra_mv),
+    Teuchos::PRE_DESTROY );
   // Also set the mv itself as extra data just to be safe
-  Teuchos::set_extra_data( mv, "mv", &epetra_mv );
+  Teuchos::set_extra_data( mv, "mv", Teuchos::inOutArg(epetra_mv) );
   // We are done!
   return epetra_mv;
 }
@@ -573,9 +578,10 @@ Thyra::get_Epetra_MultiVector(
   // only a releaseDetachedView(...) and not a commit will be called.
   // This is the whole reason there is a seperate implementation for
   // the const and non-const cases.
-  Teuchos::set_extra_data( emvv, "emvv", &epetra_mv, Teuchos::PRE_DESTROY );
+  Teuchos::set_extra_data( emvv, "emvv", Teuchos::inOutArg(epetra_mv),
+    Teuchos::PRE_DESTROY );
   // Also set the mv itself as extra data just to be safe
-  Teuchos::set_extra_data( mv, "mv", &epetra_mv );
+  Teuchos::set_extra_data( mv, "mv", Teuchos::inOutArg(epetra_mv) );
   // We are done!
   return epetra_mv;
 }
