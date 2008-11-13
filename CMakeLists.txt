@@ -43,6 +43,7 @@ SET( Trilinos_PACKAGES
  EpetraExt
  Thyra
  AztecOO
+ Galeri
  #Anasazi
  RBGen
 )
