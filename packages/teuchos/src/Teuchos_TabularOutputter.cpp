@@ -170,7 +170,12 @@ void TabularOutputter::outputHeader()
 void TabularOutputter::nextRow()
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(currFieldIdx_, as<int>(fieldSpecs_.size()));
+  TEST_FOR_EXCEPTION(
+    !(currFieldIdx_ == as<int>(fieldSpecs_.size())),
+    InvalidFieldOutputError,
+    "Error, you must call outputField(...) for every field in the row before you call\n"
+    "nextRow()!"
+    );
 #endif
   *out_ << "\n";
   currFieldIdx_ = 0;

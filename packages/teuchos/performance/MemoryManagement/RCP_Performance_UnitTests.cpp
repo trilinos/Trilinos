@@ -19,6 +19,7 @@ using Teuchos::TabularOutputter;
 double relCpuSpeed = 1e-2;
 int maxArraySize = 10000;
 double maxRcpCreateDestroyRatio = 10.0;
+double maxRcpAjustRefCountRatio = 10.0;
 
 
 TEUCHOS_STATIC_SETUP()
@@ -38,6 +39,11 @@ TEUCHOS_STATIC_SETUP()
     "The ratio of the final CPU time ratio of creating and destroying"
     "std::vector<char>(size) objects wrapped in an RCP object verses"
     "using just raw new and delete."
+    );
+  clp.setOption(
+    "max-rcp-adjust-ref-count-ratio", &maxRcpAjustRefCountRatio,
+    "The ratio of the final CPU time ratio for adjusting the reference"
+    "count of RCP objects verses boost::shared_ptr objects."
     );
 
 }
@@ -80,7 +86,7 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
 
   outputter.outputHeader();
 
-  double finalRcpRatio = -1.0;
+  double finalRcpRatio = 100000.0;
 
   int arraySize = 1;
   for (int test_case_k = 0;
@@ -147,7 +153,7 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
     outputter.nextRow();
     
     arraySize *= 4;
-    finalRcpRatio = rcpRatio;
+    finalRcpRatio = TEUCHOS_MIN(rcpRatio, finalRcpRatio);
 
   }
 
@@ -156,6 +162,90 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
   out << "\n";
 
 }
+
+
+#ifdef HAVE_TEUCHOS_BOOST
+
+
+TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
+{
+
+  typedef Teuchos::TabularOutputter TO;
+
+  const double relTestCost = 1e-5;
+
+  const double numInnerLoops = relCpuSpeed / relTestCost;
+
+  out << "\n"
+      << "Messuring the overhead of manipuliating the reference count by\n"
+      << "comparing shared_ptr and using RCP.\n"
+      << "\n"
+      << "Number of loops = relCpuSpeed/relTestCost = "
+      << relCpuSpeed << "/" << relTestCost << " = " << numInnerLoops << "\n"
+      << "\n";
+
+  TabularOutputter outputter(out);
+  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
+  outputter.setFieldTypePrecision(TO::INT, 8);
+
+  outputter.pushFieldSpec("num loops", TO::INT);
+  outputter.pushFieldSpec("shared_ptr", TO::DOUBLE);
+  outputter.pushFieldSpec("RCP", TO::DOUBLE);
+  outputter.pushFieldSpec("RCP/shared_ptr", TO::DOUBLE);
+
+  outputter.outputHeader();
+
+  double finalRcpRatio = -1.0;
+
+  const int arraySize = 1;
+  
+  // num loops
+  const int numActualLoops = static_cast<int>(numInnerLoops);
+  outputter.outputField(numActualLoops);
+  
+  // shared_ptr
+  {
+    typedef boost::shared_ptr<std::vector<char> > shared_ptr_t;
+    shared_ptr_t p
+      = shared_ptr_t(new std::vector<char>(arraySize, 1));
+    shared_ptr_t p2;
+    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    {
+      p2 = p;
+      p2 = shared_ptr_t();
+    }
+  }
+  TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
+  
+  // RCP
+  {
+    RCP<std::vector<char> > p
+      = rcp(new std::vector<char>(arraySize, 1));
+    RCP<std::vector<char> > p2;
+    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    {
+      p2 = p;
+      p2 = null;
+    }
+  }
+  TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rcpTime);
+  
+  // RCP/shared_ptr
+  const double rcpRatio = rcpTime / spTime;
+  outputter.outputField(rcpRatio);
+  
+  outputter.nextRow();
+
+  finalRcpRatio = rcpRatio;
+
+  out << "\n";
+  TEST_COMPARE( finalRcpRatio, <=, maxRcpAjustRefCountRatio );
+  out << "\n";
+  
+}
+
+
+#endif // HAVE_TEUCHOS_BOOST
 
 
 } // namespace
