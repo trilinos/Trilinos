@@ -202,6 +202,15 @@ bool compareFloatingArrays(
     if (!l_result) (success) = false; \
   }
 
+/** \brief Assert that a give object is true.
+ *
+ * This macro is not complicated so take a look for yourself!
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_TEST_ASSERT( v1, out, success ) \
+  TEUCHOS_TEST_EQUALITY_CONST( v1, true, out, success )
+
 
 /** \brief Test that two values are equal.
  *

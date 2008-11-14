@@ -49,6 +49,11 @@
 
 
 /** \brief . */
+#define TEST_ASSERT( v1 ) \
+  TEUCHOS_TEST_ASSERT( v1, out, success )
+
+
+/** \brief . */
 #define TEST_EQUALITY_CONST( v1, v2 ) \
   TEUCHOS_TEST_EQUALITY_CONST( v1, v2, out, success )
 

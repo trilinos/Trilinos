@@ -30,7 +30,6 @@ FLIBS="-lg2c" \
 --enable-ifpack \
 --enable-ml \
 --enable-anasazi \
---enable-intrepid \
 --enable-meros \
 --enable-nox --enable-nox-epetra --enable-nox-epetraext \
 --enable-stratimikos \
@@ -40,5 +39,5 @@ FLIBS="-lg2c" \
 --with-trilinosdatadir=/home/rabartl/PROJECTS/Trilinos.base/TrilinosData \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/dev/mpi/opt
 
-# 2008/07/03: Copying intrepid data files is taking too long
-# --enable-intrepid \
+# 2008/11/13: Intrepid is not even configuring
+#--enable-intrepid \

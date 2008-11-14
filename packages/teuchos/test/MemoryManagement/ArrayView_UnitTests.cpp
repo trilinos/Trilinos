@@ -39,6 +39,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, assignmentOperator, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, iterators, T )
+{
+  typedef typename ArrayView<T>::iterator iter_t;
+  typedef Teuchos::ScalarTraits<T> ST;
+  ECHO(Array<T> a = generateArray<T>(n));
+  ECHO(ArrayView<T> av = a);
+  ECHO(const iter_t av_begin = av.begin());
+  ECHO(const iter_t av_end = av.end());
+#ifdef TEUCHOS_DEBUG
+  TEST_ASSERT(av_begin.shares_resource(av_end));
+#endif
+  ECHO(std::fill(av_begin, av_end, ST::random()));
+  ECHO(Array<T> a2 = generateArray<T>(n));
+  ECHO(ArrayView<T> av2 = a2);
+  ECHO(std::copy(av.begin(), av.end(), av2.begin()));
+  TEST_COMPARE_ARRAYS(a, a2);
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_std_vector, T )
 {
   ArrayView<T> av;
@@ -96,6 +115,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
 
 #define UNIT_TEST_GROUP( T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, assignmentOperator, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, iterators, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_std_vector, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_rcp_std_vector, T ) \
   DEBUG_UNIT_TEST_GROUP( T )
