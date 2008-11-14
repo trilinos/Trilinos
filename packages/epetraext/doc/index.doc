@@ -192,8 +192,8 @@ all:
 \section epetraext_petsc_example Example: Solving a PETSc linear system with PETSc's CG preconditioned by Trilinos' algebraic multigrid
 
 We now dissect the example Trilinos/packages/epetraext/examples/petsc/\ref epetraext_petsc_cpp.
-In this example,
-a 2D Poisson matrix and right-hand side corresponding to the solution of all ones are constructed.
+In this example, a PETSc aij matrix corresponding to the 2D Laplacian and right-hand side corresponding to the solution
+of all ones are constructed.
 The resulting linear system is solved twice, the first time with CG from AztecOO, the second time with
 CG from PETSc.  In both cases, the preconditioner is algebraic multigrid (AMG) from the Trilinos package ML.
 
@@ -206,7 +206,7 @@ wrap the PETSc matrix and create the ML preconditioner.
 \skipline ml_config.h
 \until Epetra_LinearProblem.h
 
-After the PETSc matrix is constructed, it is wrapped as an Epetra_PETScAIJMatrix:
+Here, we have omitted the details of the aij matrix construction.  After the PETSc matrix is constructed, it is wrapped as an Epetra_PETScAIJMatrix:
 
 \skipline Epetra_PETScAIJMatrix epA
 
