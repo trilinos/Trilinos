@@ -8,6 +8,15 @@ from GeneralScriptSupport import *
 
 
 #
+# Default file locations
+#
+
+defaultTrilinosDepsXmlInFile = getScriptsDir()+"/data/TrilinosPackageDependencies.xml"
+
+defaultTrilinosDepsHtmlOutFile = getScriptsDir()+"/data/TrilinosPackageDependenciesTable.html"
+
+
+#
 # Store and manipulate the dependencies
 #
 
@@ -135,7 +144,7 @@ class TrilinosDependencies:
   def createRawTable(self, libsOnly):
 
     numPackages = self.numPackages()
-    print "\nnumPackages =", numPackages
+    #print "\nnumPackages =", numPackages
 
     trilinosDepsTable = []
 
@@ -157,6 +166,112 @@ class TrilinosDependencies:
     return trilinosDepsTable
 
 
+  def createHtmlFromTable(self, rawTable):
+
+    numPackages = self.numPackages()
+
+    htmlText = \
+      "<TABLE BORDER="+str(numPackages)+">\n"+\
+      "\n"
+
+    for i in range(numPackages+1):
+      htmlText += "<COL ALIGN=LEFT>\n"
+
+    topRow = rawTable[0]
+    htmlText += "\n<TR>\n"
+    for j in range(numPackages+1):
+      htmlText += " <TD><b>"+topRow[j]+"</b><TD>\n"
+    htmlText += "</TR>\n"
+      
+    for package_i in range(numPackages):
+      row = rawTable[package_i+1]
+      htmlText += "\n<TR>\n"
+      htmlText += " <TD><b>"+row[0]+"</b><TD>\n"
+      for j in range(numPackages):
+        entry = row[j+1]
+        if not entry: entry = "."
+        htmlText += " <TD>"+entry+"<TD>\n"
+      htmlText += "</TR>\n"
+
+    htmlText += "</TABLE>\n"
+    
+    return htmlText
+
+
+  def createHtmlTableLegend(self, libsOnly):
+
+    htmlText =\
+      "\n"+\
+      "<ul>\n"+\
+      "\n"+\
+      "<li> <b>X</b>: Diagonal entry for the package itself\n"+\
+      "<li> <b>LR</b>: Direct library required dependency\n"+\
+      "<li> <b>ILR</b>: Indirect library required dependency\n"+\
+      "<li> <b>LO</b>: Dirrect library optional dependency\n"+\
+      "<li> <b>ILO</b>: Indirect library optional dependency\n"
+
+    if not libsOnly:
+      htmlText +=\
+        "<li> <b>TR</b>: Direct test/example required dependency\n"+\
+        "<li> <b>ITR</b>: Indirect test/example required dependency\n"+\
+        "<li> <b>TO</b>: Dirrect test/example optional dependency\n"+\
+        "<li> <b>ITO</b>: Indirect test/example optional dependency\n"
+
+    htmlText +=\
+      "\n"+\
+      "</ul>\n"
+
+    return htmlText
+
+
+  def createFullHtmlForTables(self):
+
+    htmlText = \
+      "<p><b>Trilinos Libary Package Dependencies</b></p>\n"+\
+      "\n"+\
+      self.createHtmlFromTable(self.createRawTable(True))+\
+      "\n"+\
+      "<p>Legend</p>\n"+\
+      "\n"+\
+      self.createHtmlTableLegend(True)+\
+      "\n"+\
+      "<p><b>Trilinos Test/Example Package Dependencies</b></p>\n"+\
+      "\n"+\
+      self.createHtmlFromTable(self.createRawTable(False))+\
+      "\n"+\
+      "<p>Legend</p>\n"+\
+      "\n"+\
+      self.createHtmlTableLegend(False)
+
+    return htmlText
+
+  def createFullHtmlPage(self):
+
+    htmlText = \
+      "<html>\n"+\
+      "<head>\n"+\
+      "<title>Trilinos Package Dependencies</title>\n"+\
+      "</head>\n"+\
+      "\n"+\
+      "<body>\n"+\
+      "\n"+\
+      "<p><center><b><huge>Trilinos Package Dependencies</huge></b></center></p>\n"\
+      "\n"+\
+      self.createFullHtmlForTables()+\
+      "\n"+\
+      "</body>\n"+\
+      "\n"+\
+      "</html>\n"
+
+    return htmlText
+
+
+  def writeFullHtmlPage(self, htmlFileName=defaultTrilinosDepsHtmlOutFile):
+    htmlFile = open(htmlFileName, 'w')
+    htmlFile.write(self.createFullHtmlPage())
+    htmlFile.close()
+
+
 #
 # Read in the dependencies from XML
 #
@@ -169,10 +284,7 @@ def getDependenciesByType(packageEle, typeName):
   return packageDepsStr.split(',')
 
 
-defaultXmlFile = getScriptsDir()+"/data/TrilinosPackageDependencies.xml"
-
-
-def getTrilinosDependenciesFromXmlFile(xmlFile=defaultXmlFile):
+def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
   #print "xmlFile =", xmlFile
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
   trilinosDependencies = TrilinosDependencies()

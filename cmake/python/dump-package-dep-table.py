@@ -1,16 +1,61 @@
 #!/bin/env python
 
 
+#
+# Read in the commandline arguments
+#
+
+usageHelp = r"""dump-package-deps-table.py [OPTIONS]
+
+Tool that creates an HTML page giving the Trilinos dependencies given an
+XML input file that specifies the Trilinos package dependencies.
+
+By default, if you just run:
+
+   $ SOME_DIR/dump-package-deps-table.py
+
+then the table will get written into the main Trilinos source directory where
+it can be checked in on the next checkin.
+
+You can also change what XML input file is used and what HTML file is written.
+This is maining to facilitate unit testing of this code.
+
+Have fun looking through all of the Trilinos dependencies!!
+
+"""
+
+
+from TrilinosDependencies import defaultTrilinosDepsXmlInFile, \
+  defaultTrilinosDepsHtmlOutFile
+
+from optparse import OptionParser
+
+clp = OptionParser(usage=usageHelp)
+
+clp.add_option(
+  "--input-xml-deps-file", dest="inputXmlDepsFile", type="string",
+  default=defaultTrilinosDepsXmlInFile,
+  help="Input XML file giving the Trilinos dependencies "+\
+    "(default = "+defaultTrilinosDepsXmlInFile+")." )
+
+clp.add_option(
+  "--output-html-deps-file", dest="outputHtmlDepsFile", type="string",
+  default=defaultTrilinosDepsHtmlOutFile,
+  help="Input HTML file showing the Trilinos dependencies"+\
+    "(default = "+defaultTrilinosDepsHtmlOutFile+")." )
+
+(options, args) = clp.parse_args()
+
+
+#
+# Execute the commands
+#
+
+
 from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
 
-trilinosDependencies = getTrilinosDependenciesFromXmlFile()
+trilinosDependencies = getTrilinosDependenciesFromXmlFile(
+  options.inputXmlDepsFile)
 
-#print "\ntrilinosDependencies:\n", trilinosDependencies
-
-trilinosLibDependenciesTable = trilinosDependencies.createRawTable(True)
-
-print "\ntrilinosLibDependenciesTable:\n", trilinosLibDependenciesTable
-
-trilinosDependenciesTable = trilinosDependencies.createRawTable(False)
-
-print "\ntrilinosDependenciesTable:\n", trilinosDependenciesTable
+trilinosDependencies.writeFullHtmlPage(
+  options.outputHtmlDepsFile)
