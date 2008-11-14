@@ -51,6 +51,61 @@ class PackageDependencies:
       "}\n"
 
 
+# {dep1}{dep2} => newDep
+#
+# (*) Required dependencies trump optional dependencies
+# (*) Direct dependencies trump indirect dependencies
+# (*) Library dependicnes trump test dependencies
+depUpdateRules = {
+  "LR" : {
+    "LR" : "LR",
+    "LO" : "LR",
+    "TR" : "LR",
+    "TO" : "LR",
+    "ILR" : "LR",
+    "ILO" : "LR",
+    "ITR" : "LR",
+    "ITO" : "LR"
+    },
+  "LO" : {
+    "LR" : "LR",
+    "ILR" : "ILR",
+    "LO" : "LO",
+    "ILO" : "LO",
+    "TR" : "TR",
+    "ITR" : "ITR",
+    "TO" : "LO",
+    "ITO" : "LO"
+    },
+  "ILR" : {
+    "LR" : "LR",
+    "LO" : "ILR",
+    "TR" : "TR",
+    "TO" : "ILR",
+    "ILR" : "ILR",
+    "ILO" : "ILR",
+    "ITR" : "ILR",
+    "ITO" : "ILR"
+    },
+  "ILO" : {
+    "LR" : "LR",
+    "LO" : "LO",
+    "TR" : "TR",
+    "TO" : "TO",
+    "ILR" : "ILR",
+    "ILO" : "ILO",
+    "ITR" : "ITR",
+    "ITO" : "ILO"
+    }
+  }
+
+
+def updatePackageDep(dep1, dep2):
+  if dep1[0] == 'T' or dep1[0:2] == 'IT':
+    return depUpdateRules[dep2][dep1]
+  return depUpdateRules[dep1][dep2]
+
+
 class TrilinosDependencies:
 
 
@@ -89,19 +144,16 @@ class TrilinosDependencies:
 
     currentDepName = packageRow[packageID+1]
 
-    if currentDepName and currentDepName[-1] == 'R':
-
-      newDepName = currentDepName
-
+    if isDirect:
+      newDepName = depCategoryName
     else:
-  
-      if isDirect:
-        newDepName = depCategoryName
-      else:
-        newDepName = "I"+depCategoryName
-  
-      if not isRequired:
-        newDepName = newDepName[0:-1]+"O"
+      newDepName = "I"+depCategoryName
+
+    if not isRequired:
+      newDepName = newDepName[0:-1]+"O"
+
+    if currentDepName:
+      newDepName = updatePackageDep(currentDepName, newDepName)
 
     packageRow[packageID+1] = newDepName
 
@@ -227,19 +279,19 @@ class TrilinosDependencies:
   def createFullHtmlForTables(self):
 
     htmlText = \
-      "<p><b>Trilinos Libary Package Dependencies</b></p>\n"+\
+      "<p><b><huge>Trilinos Libary Package Dependencies</huge></b></p>\n"+\
       "\n"+\
       self.createHtmlFromTable(self.createRawTable(True))+\
       "\n"+\
-      "<p>Legend</p>\n"+\
+      "<p><b>Legend</b></p>\n"+\
       "\n"+\
       self.createHtmlTableLegend(True)+\
       "\n"+\
-      "<p><b>Trilinos Test/Example Package Dependencies</b></p>\n"+\
+      "<p><huge><b>Trilinos Test/Example Package Dependencies</b></huge></p>\n"+\
       "\n"+\
       self.createHtmlFromTable(self.createRawTable(False))+\
       "\n"+\
-      "<p>Legend</p>\n"+\
+      "<p><b>Legend</b></p>\n"+\
       "\n"+\
       self.createHtmlTableLegend(False)
 
@@ -254,8 +306,6 @@ class TrilinosDependencies:
       "</head>\n"+\
       "\n"+\
       "<body>\n"+\
-      "\n"+\
-      "<p><center><b><huge>Trilinos Package Dependencies</huge></b></center></p>\n"\
       "\n"+\
       self.createFullHtmlForTables()+\
       "\n"+\
