@@ -35,6 +35,11 @@ platformStr = rePlatformName.findall(sys.platform)[0]
 #
 
 
+def getScriptsDir():
+  """Get the base directory where a file exists"""
+  return os.path.abspath(os.path.dirname(sys.argv[0]))
+
+
 def createDir( dirName ):
   """Create a directory if it does not exist"""
   if os.path.exists(dirName):

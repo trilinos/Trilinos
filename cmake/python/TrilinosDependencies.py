@@ -4,6 +4,9 @@
 import xml.dom.minidom
 
 
+from GeneralScriptSupport import *
+
+
 class PackageDependencies:
     
   packageName = None
@@ -61,7 +64,11 @@ def getDependenciesByType(packageEle, typeName):
   return packageDepsStr.split(',')
 
 
-def getTrilinosDependenciesFromXmlFile(xmlFile):
+defaultXmlFile = getScriptsDir()+"/data/TrilinosPackageDependencies.xml"
+
+
+def getTrilinosDependenciesFromXmlFile(xmlFile=defaultXmlFile):
+  #print "xmlFile =", xmlFile
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
   trilinosDependencies = TrilinosDependencies()
   for ele in packageDepXmlDom.childNodes[0].childNodes:

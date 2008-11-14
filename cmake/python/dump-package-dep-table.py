@@ -3,7 +3,6 @@
 
 from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
 
-trilinosDependencies = getTrilinosDependenciesFromXmlFile(
-  'data/TrilinosPackageDependencies.xml')
+trilinosDependencies = getTrilinosDependenciesFromXmlFile()
 
 print "\ntrilinosDependencies:\n", trilinosDependencies
