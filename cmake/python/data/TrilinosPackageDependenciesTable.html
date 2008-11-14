@@ -1,0 +1,111 @@
+<html>
+<head>
+<title>Trilinos Package Dependencies</title>
+</head>
+
+<body>
+
+<p><b><big>Trilinos Package Dependencies</big></b></p>
+
+<TABLE BORDER=7>
+
+<COL ALIGN=LEFT>
+<COL ALIGN=LEFT>
+<COL ALIGN=LEFT>
+<COL ALIGN=LEFT>
+<COL ALIGN=LEFT>
+<COL ALIGN=LEFT>
+<COL ALIGN=LEFT>
+
+<TR>
+  <TD><b>Packages</b></TD>
+  <TD><b>P1</b></TD>
+  <TD><b>P2</b></TD>
+  <TD><b>P3</b></TD>
+  <TD><b>P4</b></TD>
+  <TD><b>P5</b></TD>
+  <TD><b>P6</b></TD>
+</TR>
+
+<TR>
+  <TD><b>P1</b>) Teuchos</TD>
+  <TD>X</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+</TR>
+
+<TR>
+  <TD><b>P2</b>) Epetra</TD>
+  <TD></TD>
+  <TD>X</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+</TR>
+
+<TR>
+  <TD><b>P3</b>) RTOp</TD>
+  <TD>LR</TD>
+  <TD>.</TD>
+  <TD>X</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+</TR>
+
+<TR>
+  <TD><b>P4</b>) Triutils</TD>
+  <TD>.</TD>
+  <TD>LR</TD>
+  <TD>.</TD>
+  <TD>X</TD>
+  <TD>.</TD>
+  <TD>.</TD>
+</TR>
+
+<TR>
+  <TD><b>P5</b>) EpetraExt</TD>
+  <TD>LR</TD>
+  <TD>LR</TD>
+  <TD>.</TD>
+  <TD>LO</TD>
+  <TD>X</TD>
+  <TD>.</TD>
+</TR>
+
+<TR>
+  <TD><b>P6</b>) Thyra</TD>
+  <TD>LR</TD>
+  <TD>LO</TD>
+  <TD>LR</TD>
+  <TD>ILO</TD>
+  <TD>LO</TD>
+  <TD>X</TD>
+</TR>
+
+</TABLE>
+
+
+<p><b><big>Legend</big></b></p>
+
+<ul>
+
+<li> <b>X</b>: Diagonal entry for the package itself
+<li> <b>LR</b>: Direct library required dependency
+<li> <b>ILR</b>: Indirect library required dependency
+<li> <b>LO</b>: Dirrect library optional dependency
+<li> <b>ILO</b>: Indirect library optional dependency
+<li> <b>TR</b>: Direct test/example required dependency
+<li> <b>ITR</b>: Indirect test/example required dependency
+<li> <b>TO</b>: Dirrect test/example optional dependency
+<li> <b>ITO</b>: Indirect test/example optional dependency
+
+</ul>
+
+</body>
+
+</html>
