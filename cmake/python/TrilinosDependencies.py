@@ -51,59 +51,75 @@ class PackageDependencies:
       "}\n"
 
 
-# {dep1}{dep2} => newDep
+def isRequiredDep(dep):
+  return (dep[-1] == 'R')
+
+
+def isDirectDep(dep):
+  return (dep[0] != 'I')
+
+
+def isLibDep(dep):
+  return (dep[0] == 'L' or dep[1] == 'L')
+
+
+#
+# (dep1, dep2) => newDep
 #
 # (*) Required dependencies trump optional dependencies
 # (*) Direct dependencies trump indirect dependencies
 # (*) Library dependicnes trump test dependencies
-depUpdateRules = {
-  "LR" : {
-    "LR" : "LR",
-    "LO" : "LR",
-    "TR" : "LR",
-    "TO" : "LR",
-    "ILR" : "LR",
-    "ILO" : "LR",
-    "ITR" : "LR",
-    "ITO" : "LR"
-    },
-  "LO" : {
-    "LR" : "LR",
-    "ILR" : "ILR",
-    "LO" : "LO",
-    "ILO" : "LO",
-    "TR" : "TR",
-    "ITR" : "ITR",
-    "TO" : "LO",
-    "ITO" : "LO"
-    },
-  "ILR" : {
-    "LR" : "LR",
-    "LO" : "ILR",
-    "TR" : "TR",
-    "TO" : "ILR",
-    "ILR" : "ILR",
-    "ILO" : "ILR",
-    "ITR" : "ILR",
-    "ITO" : "ILR"
-    },
-  "ILO" : {
-    "LR" : "LR",
-    "LO" : "LO",
-    "TR" : "TR",
-    "TO" : "TO",
-    "ILR" : "ILR",
-    "ILO" : "ILO",
-    "ITR" : "ITR",
-    "ITO" : "ILO"
-    }
-  }
-
-
+#
 def updatePackageDep(dep1, dep2):
-  if dep1[0] == 'T' or dep1[0:2] == 'IT':
-    return depUpdateRules[dep2][dep1]
-  return depUpdateRules[dep1][dep2]
+
+  #print "\n    updatePackageDep("+dep1+", "+dep2+") ..."
+
+  dep1_required = isRequiredDep(dep1)
+  dep1_direct = isDirectDep(dep1)
+  dep1_lib = isLibDep(dep1)
+
+  dep2_required = isRequiredDep(dep2)
+  dep2_direct = isDirectDep(dep2)
+  dep2_lib = isLibDep(dep2)
+
+  selectedDep = False
+
+  if dep1 == dep2:
+    newDep = dep1
+    selectedDep = True
+
+  # Required trumps optional
+  if not selectedDep:
+    if dep1_required and not dep2_required:
+      newDep = dep1
+      selectedDep = True
+    elif not dep1_required and dep2_required:
+      newDep = dep2
+      selectedDep = True
+
+  # Direct trumps indirect
+  if not selectedDep:
+    if dep1_direct and not dep2_direct:
+      newDep = dep1
+      selectedDep = True
+    elif not dep1_direct and dep2_direct:
+      newDep = dep2
+      selectedDep = True
+
+  # Library trumps test
+  if not selectedDep:
+    if dep1_lib and not dep2_lib:
+      newDep = dep1
+      selectedDep = True
+    elif not dep1_lib and dep2_lib:
+      newDep = dep2
+      selectedDep = True
+
+  assert(selectedDep)
+
+  #print "\n      newDep =", newDep
+
+  return newDep
 
 
 class TrilinosDependencies:
@@ -153,6 +169,7 @@ class TrilinosDependencies:
       newDepName = newDepName[0:-1]+"O"
 
     if currentDepName:
+      #print "\n    updateDepCell: isDirect="+str(isDirect)+", isRequired="+str(isRequired)+", depCategoryName="+depCategoryName
       newDepName = updatePackageDep(currentDepName, newDepName)
 
     packageRow[packageID+1] = newDepName
@@ -161,20 +178,29 @@ class TrilinosDependencies:
   def updatePackageDepsCategory(self, libsOnly, packageRowID, packageID, depCategory,
     depCategoryName, isDirect, isRequired, trilinosDepsTable
     ):
+
     packageRow = trilinosDepsTable[packageRowID+1]
     #print "\npackageRow =", packageRow
+
     depList = getattr(self.__packagesList[packageID], depCategory)
     #print "\ndepList =", depList
+
     for dep in depList:
+
       depPackage = self.getPackageByName(dep)
-      #print "\ndepPackage =", depPackage
+      #print "\n  depPackageName =", depPackage.packageName
+
       dep_i = depPackage.packageID
+
       self.updateDepCell(packageRow, dep_i, isDirect, isRequired, depCategoryName)
-      #packageRow[dep_i+1] = depCategoryName # ToDo: Use a function to do this!
-      if depCategoryName[-1]=="R":
+      
+      if not isRequired:
+        isRequiredDep = False
+      elif depCategoryName[-1]=="R":
         isRequiredDep = True
       else:
         isRequiredDep = False
+
       self.updatePackageDeps(libsOnly, packageRowID, dep_i, False, isRequiredDep,
          trilinosDepsTable)
 
@@ -211,6 +237,7 @@ class TrilinosDependencies:
       trilinosDepsTable.append(row)
 
     for packageDeps in self.__packagesList:
+      #print "\npackageName =", packageDeps.packageName
       i = packageDeps.packageID
       trilinosDepsTable[i+1][i+1] = "X"
       self.updatePackageDeps(libsOnly, i, i, True, True, trilinosDepsTable)
@@ -255,7 +282,6 @@ class TrilinosDependencies:
     htmlText =\
       "\n"+\
       "<ul>\n"+\
-      "\n"+\
       "<li> <b>X</b>: Diagonal entry for the package itself\n"+\
       "<li> <b>LR</b>: Direct library required dependency\n"+\
       "<li> <b>ILR</b>: Indirect library required dependency\n"+\
@@ -270,7 +296,14 @@ class TrilinosDependencies:
         "<li> <b>ITO</b>: Indirect test/example optional dependency\n"
 
     htmlText +=\
+      "</ul>\n"+\
       "\n"+\
+      "NOTE: When more than type of dependency is present for any cell"+\
+      " the selection determined by:\n"+\
+      "<ul>\n"+\
+      "<li> A required dependency trumps an optional dependency\n"+\
+      "<li> A direct dependency trumps an indirect dependency\n"+\
+      "<li> A library dependency trumps a test/example dependency\n"+\
       "</ul>\n"
 
     return htmlText
