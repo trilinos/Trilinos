@@ -12,6 +12,11 @@
    This example demonstrates how to apply a Trilinos preconditioner to a PETSc
    linear system.
 
+   For information on configuring and building Trilinos with the PETSc aij
+   interface enabled, please see EpetraExt's doxygen documentation at
+   http://trilinos.sandia.gov/packages/epetraext, development version
+   or release 9.0 or later.
+
    The PETSc matrix is a 2D 5-point Laplace operator stored in AIJ format.
    This matrix is wrapped as an Epetra_PETScAIJMatrix, and an ML AMG
    preconditioner is created for it.  The associated linear system is solved twice,
@@ -19,7 +24,7 @@
 
    To invoke this example, use something like:
 
-       mpirun -np 5 ./ex2 -m 150 -n 150 -petsc_smoother -ksp_monitor_true_residual
+       mpirun -np 5 ./petsc.exe -m 150 -n 150 -petsc_smoother -ksp_monitor_true_residual
 */
 
 static char help[] = "Demonstrates how to solve a PETSc linear system with KSP\
