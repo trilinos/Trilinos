@@ -135,33 +135,60 @@ are callbacks.
 This class is available in Trilinos release 9.0.  It has been tested in serial and parallel with PETSc version 2.3.3,
 built in static library mode.
 
-\section epetraext_petsc_building Configuring and Building
+\section epetraext_petsc_building Configuring and building the Trilinos libraries
+
+We assume that you have already built PETSc in your home area.
 
 In order to use this feature, you must specify PETSC_DIR, PETSC_ARCH, and "--with-petsc"
 when configuring Trilinos.  You may optionally supply PETSC_LIB, which contains
 all link-time dependencies for PETSc.
 
 Here are two ways of doing this.  We'll assume that the Trilinos source directory is ~/Trilinos,
-and that the Trilinos build directory is ~/TrilinosBuild.
+the Trilinos build directory is ~/TrilinosBuild, and that your mpi compilers are in
+/usr/local/mpich-1.2.7p1.
 
 \verbatim
 setenv PETSC_DIR /home/joeblow/petsc-2.3.3-p12
 setenv PETSC_ARCH linux-gnu-c-debug
 cd ~/TrilinosBuild
-../Trilinos/configure --with-petsc
+../Trilinos/configure --with-mpi-compilers=/usr/local/mpich-1.2.7p1/bin --with-petsc \
+                      --disable-default-packages --enable-amesos --enable-aztecoo --enable-epetra \
+                      --enable-epetraext --enable-ifpack --enable-ml --enable-teuchos
 \endverbatim
 
 or
 
 \verbatim
 cd ~/TrilinosBuild
-../Trilinos/configure PETSC_DIR=/home/joeblow/petsc-2.3.3-p12 PETSC_ARCH=linux-gnu-c-debug --with-petsc
+../Trilinos/configure PETSC_DIR=/home/joeblow/petsc-2.3.3-p12 PETSC_ARCH=linux-gnu-c-debug \
+                      --with-mpi-compilers=/usr/local/mpich-1.2.7p1/bin --with-petsc \
+                      --disable-default-packages --enable-amesos --enable-aztecoo --enable-epetra \
+                      --enable-epetraext --enable-ifpack --enable-ml --enable-teuchos
 \endverbatim
 
-The following Trilinos packages must be enabled: Epetra, EpetraExt, and Teuchos.  We also
-suggest that you enable ML, Ifpack, and Amesos.
+The following Trilinos packages must be enabled: Epetra (basic linear algebra), EpetraExt (contains the PETSc interface), and Teuchos (parameter lists, smart pointers, and other useful utility classes).  We also strongly
+suggest enabling ML (algebraic multigrid), Ifpack (SOR, incomplete factorizations, and domain decomposition methods), and Amesos (sparse direct solvers) for a richer preconditioner set.
 
-\section epetraext_petsc_example Example
+\section EpetraExt_Linking Linking a PETSc application to the Trilinos libraries
+
+We would expect most applications to be linking to Trilinos as a set of third party libraries.  Towards this end,
+in the build directory of each Trilinos package, there is a stub file called "Makefile.export.XX", where
+XX is the package name.  The stub defines variables that contain all of the include and link dependencies
+for that particular package.  For example, "Makefile.export.epetraext" defines EPETRAEXT_INCLUDES and EPETRAEXT_LIBS,
+which contain EpetraExt's include and link dependencies, respectively.  An application developer simply includes this stub
+in her Makefile, and uses the variables in the appropriate compile and link lines.
+
+The example in the following section can be built as an "external" application with this simple Makefile, assuming that Trilinos
+was build with ML enabled:
+
+\verbatim
+include /home/joeblow/TrilinosBuild/packages/ml/Makefile.export.ml
+all:
+    mpicxx -c -DHAVE_CONFIG_H ${ML_INCLUDES} petsc.cpp
+    mpicxx -o petsc.exe petsc.o ${ML_LIBS}
+\endverbatim
+
+\section epetraext_petsc_example Example: Solving a PETSc linear system with PETSc's CG preconditioned by Trilinos' algebraic multigrid
 
 We now dissect the example Trilinos/packages/epetraext/examples/petsc/\ref epetraext_petsc_cpp.
 In this example,
@@ -205,6 +232,8 @@ and <tt>kspSmoother</tt> is placed in the parameter list.
 
 Note that trying to set a PETSc smoother on any other level will generate an error.
 Also note that ML has many other smoothers available, e.g., polynomial and incomplete factorizations.
+Please see the ML User's guide, available from the ML homepage or in Trilinos/packages/ml/doc/mlguide.pdf,
+for more information.
 
 \skipline smoother: petsc
 
@@ -229,24 +258,6 @@ where the apply method is given by
 \until *ShellApplyML*
 
 Other preconditioners, such as those provided by Ifpack or AztecOO, can be wrapped in a similar fashion.
-
-\section EpetraExt_Linking Linking
-
-We would expect most applications to be linking to Trilinos as a third party library.  Towards this end,
-in the build directory of each Trilinos package, there is a stub file called "Makefile.export.XX", where
-XX is the package name.  The stub defines variables that contain all of the include and link dependencies
-for that particular package.  For example, "Makefile.export.epetraext" defines EPETRAEXT_INCLUDES and EPETRAEXT_LIBS,
-which contain EpetraExt's include and link dependencies, respectively.  An application developer simply includes this stub
-in her Makefile, and uses the variables in the appropriate compile and link lines.
-
-The example in the previous section could be built as an "external" application with this simple Makefile:
-
-\verbatim
-include /home/joeblow/TrilinosBuild/packages/ml/Makefile.export.ml
-all:
-    mpicxx -c -DHAVE_CONFIG_H ${ML_INCLUDES} petsc.cpp
-    mpicxx -o petsc.exe petsc.o ${ML_LIBS}
-\endverbatim
 
 */
 
