@@ -122,6 +122,16 @@ def updatePackageDep(dep1, dep2):
   return newDep
 
 
+class DepStats:
+  isDirect = None
+  isRequired = None
+  isTestDepChain = None
+  def __init__(self, isDirect, isRequired, isTestDepChain):
+    self.isDirect = isDirect
+    self.isRequired = isRequired
+    self.isTestDepChain = isTestDepChain
+
+
 class TrilinosDependencies:
 
 
@@ -156,27 +166,34 @@ class TrilinosDependencies:
     return strRep
 
 
-  def updateDepCell(self, packageRow, packageID, isDirect, isRequired, depCategoryName):
+  def updateDepCell(self, packageRow, packageID, depStats, depCategoryName):
 
     currentDepName = packageRow[packageID+1]
 
-    if isDirect:
-      newDepName = depCategoryName
-    else:
-      newDepName = "I"+depCategoryName
+    newDepName = depCategoryName
 
-    if not isRequired:
+    # If we are in a test dependency chain, we must change library
+    # dependencies to test dependencies.
+    if depStats.isTestDepChain:
+      newDepName = 'T'+newDepName[1:]
+
+    if depStats.isDirect:
+      newDepName = newDepName
+    else:
+      newDepName = "I"+newDepName
+
+    if not depStats.isRequired:
       newDepName = newDepName[0:-1]+"O"
 
     if currentDepName:
-      #print "\n    updateDepCell: isDirect="+str(isDirect)+", isRequired="+str(isRequired)+", depCategoryName="+depCategoryName
+      #print "\n    updateDepCell: depStats.isDirect="+str(depStats.isDirect)+", depStats.isRequired="+str(depStats.isRequired)+", depCategoryName="+depCategoryName
       newDepName = updatePackageDep(currentDepName, newDepName)
 
     packageRow[packageID+1] = newDepName
 
 
   def updatePackageDepsCategory(self, libsOnly, packageRowID, packageID, depCategory,
-    depCategoryName, isDirect, isRequired, trilinosDepsTable
+    depCategoryName, depStats, trilinosDepsTable
     ):
 
     packageRow = trilinosDepsTable[packageRowID+1]
@@ -192,31 +209,42 @@ class TrilinosDependencies:
 
       dep_i = depPackage.packageID
 
-      self.updateDepCell(packageRow, dep_i, isDirect, isRequired, depCategoryName)
+      self.updateDepCell(packageRow, dep_i, depStats, depCategoryName)
       
-      if not isRequired:
+      if not depStats.isRequired:
         isRequiredDep = False
       elif depCategoryName[-1]=="R":
         isRequiredDep = True
       else:
         isRequiredDep = False
 
-      self.updatePackageDeps(libsOnly, packageRowID, dep_i, False, isRequiredDep,
+      childDepStats = DepStats(False, isRequiredDep, depStats.isTestDepChain)
+
+      self.updatePackageDeps(libsOnly, packageRowID, dep_i, childDepStats,
          trilinosDepsTable)
 
 
-  def updatePackageDeps(self, libsOnly, packageRowID, packageID, isDirect, isRequired,
+  def updatePackageDeps(self, libsOnly, packageRowID, packageID, depStats,
     trilinosDepsTable
     ):
+
     self.updatePackageDepsCategory(libsOnly, packageRowID, packageID,
-      "libRequiredDepPackages", "LR", isDirect, isRequired, trilinosDepsTable)
+      "libRequiredDepPackages", "LR", depStats, trilinosDepsTable)
     self.updatePackageDepsCategory(libsOnly, packageRowID, packageID,
-      "libOptionalDepPackages", "LO", isDirect, isRequired, trilinosDepsTable)
-    if not libsOnly:
+      "libOptionalDepPackages", "LO", depStats, trilinosDepsTable)
+
+    # Only process the test dependencies if we are asked to do so
+    # (i.e. libsOnly=True) or if this is the top-level package.  The tests for
+    # dependent packages are not any kind of dependency for tests for the
+    # top-level package.  However, we need to record that these are test
+    # dependencies so that any package libraries that get recursed are
+    # recorded as 'ITR' or 'ITO' and not as library dependencies.
+    if not libsOnly and depStats.isDirect:
+      libDepStats = DepStats(True, depStats.isRequired, True)
       self.updatePackageDepsCategory(False, packageRowID, packageID,
-        "testRequiredDepPackages", "TR", isDirect, isRequired, trilinosDepsTable)
+        "testRequiredDepPackages", "TR", libDepStats, trilinosDepsTable)
       self.updatePackageDepsCategory(False, packageRowID, packageID,
-        "testOptionalDepPackages", "TO", isDirect, isRequired, trilinosDepsTable)
+        "testOptionalDepPackages", "TO", libDepStats, trilinosDepsTable)
 
   
   def createRawTable(self, libsOnly):
@@ -240,7 +268,7 @@ class TrilinosDependencies:
       #print "\npackageName =", packageDeps.packageName
       i = packageDeps.packageID
       trilinosDepsTable[i+1][i+1] = "X"
-      self.updatePackageDeps(libsOnly, i, i, True, True, trilinosDepsTable)
+      self.updatePackageDeps(libsOnly, i, i, DepStats(True, True, False), trilinosDepsTable)
 
     return trilinosDepsTable
 
@@ -298,7 +326,7 @@ class TrilinosDependencies:
     htmlText +=\
       "</ul>\n"+\
       "\n"+\
-      "NOTE: When more than type of dependency is present for any cell"+\
+      "NOTE: When more than one type of dependency is present for any cell"+\
       " the selection determined by:\n"+\
       "<ul>\n"+\
       "<li> A required dependency trumps an optional dependency\n"+\
@@ -312,21 +340,21 @@ class TrilinosDependencies:
   def createFullHtmlForTables(self):
 
     htmlText = \
-      "<p><b><huge>Trilinos Libary Package Dependencies</huge></b></p>\n"+\
-      "\n"+\
-      self.createHtmlFromTable(self.createRawTable(True))+\
-      "\n"+\
-      "<p><b>Legend</b></p>\n"+\
-      "\n"+\
-      self.createHtmlTableLegend(True)+\
-      "\n"+\
-      "<p><huge><b>Trilinos Test/Example Package Dependencies</b></huge></p>\n"+\
+      "<p><huge><b>Trilinos Test/Example and Library Package Dependencies</b></huge></p>\n"+\
       "\n"+\
       self.createHtmlFromTable(self.createRawTable(False))+\
       "\n"+\
       "<p><b>Legend</b></p>\n"+\
       "\n"+\
-      self.createHtmlTableLegend(False)
+      self.createHtmlTableLegend(False)+\
+      "\n"+\
+      "<p><b><huge>Trilinos Libary-Only Package Dependencies</huge></b></p>\n"+\
+      "\n"+\
+      self.createHtmlFromTable(self.createRawTable(True))+\
+      "\n"+\
+      "<p><b>Legend</b></p>\n"+\
+      "\n"+\
+      self.createHtmlTableLegend(True)
 
     return htmlText
 

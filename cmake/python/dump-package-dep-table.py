@@ -40,9 +40,9 @@ clp.add_option(
 
 clp.add_option(
   "--output-html-deps-file", dest="outputHtmlDepsFile", type="string",
-  default=defaultTrilinosDepsHtmlOutFile,
+  default="TrilinosPackageDependenciesTable.html",
   help="Input HTML file showing the Trilinos dependencies"+\
-    "(default = "+defaultTrilinosDepsHtmlOutFile+")." )
+    "(default = TrilinosPackageDependenciesTable.html)." )
 
 (options, args) = clp.parse_args()
 

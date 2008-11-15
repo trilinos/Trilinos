@@ -537,11 +537,84 @@ ENDMACRO()
 
 
 #
+# Private helper stuff
+#
+
+
+FUNCTION(TRILINOS_WRITE_DEPS_TO_XML_FILE PACKAGE_NAME LIST_TYPE)
+
+  SET(DEPS_VAR ${PACKAGE_NAME}_${LIST_TYPE})
+  ASSERT_DEFINED(DEPS_VAR)
+  SET(DEPS ${${DEPS_VAR}})
+
+  #PRINT_VAR(PACKAGE_NAME)
+  #PRINT_VAR(DEPS)
+
+  IF (NOT DEPS)
+
+    FILE(APPEND ${Trilinos_DEPS_XML_OUTPUT_FILE}
+      "    <${LIST_TYPE}/>\n")
+    
+  ELSE()
+
+    SET(VALUE_STR "")
+
+    FOREACH(DEP ${DEPS})
+
+      IF(VALUE_STR)
+        SET(VALUE_STR "${VALUE_STR},")
+      ENDIF()
+
+      SET(VALUE_STR "${VALUE_STR}${DEP}")
+
+    ENDFOREACH()
+
+    FILE(APPEND ${Trilinos_DEPS_XML_OUTPUT_FILE}
+      "    <${LIST_TYPE} value=\"${VALUE_STR}\"/>\n")
+
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
+# Function that writes the dependency information for Trilinos into
+# an XML file for other tools to use.
+#
+
+FUNCTION(TRILINOS_DUMP_DEPS_XML_FILE)
+
+  FILE(WRITE ${Trilinos_DEPS_XML_OUTPUT_FILE}
+    "<PackageDependencies>\n" )
+
+  FOREACH(PACKAGE ${Trilinos_PACKAGES})
+    
+    FILE(APPEND ${Trilinos_DEPS_XML_OUTPUT_FILE}
+      "  <Package name=\"${PACKAGE}\">\n")
+
+    TRILINOS_WRITE_DEPS_TO_XML_FILE(${PACKAGE} LIB_REQUIRED_DEP_PACKAGES)
+    TRILINOS_WRITE_DEPS_TO_XML_FILE(${PACKAGE} LIB_OPTIONAL_DEP_PACKAGES)
+    TRILINOS_WRITE_DEPS_TO_XML_FILE(${PACKAGE} TEST_REQUIRED_DEP_PACKAGES)
+    TRILINOS_WRITE_DEPS_TO_XML_FILE(${PACKAGE} TEST_OPTIONAL_DEP_PACKAGES)
+
+    FILE(APPEND ${Trilinos_DEPS_XML_OUTPUT_FILE}
+      "  </Package>\n")
+
+  ENDFOREACH()
+
+  FILE(APPEND ${Trilinos_DEPS_XML_OUTPUT_FILE}
+    "</PackageDependencies>\n" )
+  
+
+ENDFUNCTION()
+
+
+#
 # Macro that adjusts all of the package enables from what the user input
 # to the final set that will be used to enable packages
 #
 
-MACRO(TRILNOS_ADJUST_PACKAGE_ENABLES)
+MACRO(TRILINOS_ADJUST_PACKAGE_ENABLES)
 
   MESSAGE("")
   MESSAGE("Disabling forward packages that have a required dependancy on explicitly disabled packages ...")

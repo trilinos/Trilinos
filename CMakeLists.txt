@@ -31,9 +31,6 @@ OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose."
 # B) Define the list of all Trilinos packages
 #
 
-OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING "" OFF)
-MARK_AS_ADVANCED(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
-
 # Define the Trilinos packages
 SET( Trilinos_PACKAGES
  Teuchos
@@ -50,7 +47,9 @@ SET( Trilinos_PACKAGES
 
 # Hack to allow me to set the exact list of packages so that I can have stable
 # unit tests as packages are added and dependencies change
-IF (DEFINED Trilinos_PACKAGES_OVERRIDE)
+OPTION(Trilinos_PACKAGES_UNITTEST_OVERRIDE "" OFF)
+MARK_AS_ADVANCED(Trilinos_PACKAGES_UNITTEST_OVERRIDE)
+IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE)
   SET( Trilinos_PACKAGES
    Teuchos
    Epetra
@@ -146,10 +145,34 @@ FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_ADD_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
 ENDFOREACH()
 
+OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
+  "Shortcircut after dependency handling is complete"
+  OFF)
+MARK_AS_ADVANCED(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
+
+SET(Trilinos_DEPS_XML_OUTPUT_FILE
+  ${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml
+  CACHE STRING
+  "XML file that Trilinos dependenices used by tools are written to (if not empty)." )
+MARK_AS_ADVANCED(Trilinos_DEPS_XML_OUTPUT_FILE)
+
+IF(WIN32 AND NOT CYGWIN)
+  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
+ELSE()
+  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT
+    "${TRILINOS_BUILD_DIR}/TrilinosPackageDependenciesTable.html" )
+ENDIF()
+
+SET(Trilinos_DEPS_HTML_OUTPUT_FILE
+  ${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}
+  CACHE STRING
+  "HTML Trilinos dependenices file that will be written to (if not empty)." )
+MARK_AS_ADVANCED(Trilinos_DEPS_HTML_OUTPUT_FILE)
+
 OPTION(Trilinos_ENABLE_CXX
   "Enable the C++ compiler and related code"
-  ON
-  )
+  ON )
+MARK_AS_ADVANCED(Trilinos_ENABLE_CXX)
 
 IF(WIN32 AND NOT CYGWIN)
   SET(Trilinos_ENABLE_FORTRAN_DEFAULT OFF)
@@ -159,16 +182,16 @@ ENDIF()
 
 OPTION(Trilinos_ENABLE_FORTRAN
   "Enable the Fortran compiler and related code"
-  ${Trilinos_ENABLE_FORTRAN_DEFAULT}
-  )
+  ${Trilinos_ENABLE_FORTRAN_DEFAULT} )
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
+MARK_AS_ADVANCED(BUILD_SHARED_LIBS)
+
 OPTION(Trilinos_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 
 SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${Trilinos_VERSION}")
 SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${Trilinos_VERSION}/include")
 
-MARK_AS_ADVANCED(BUILD_SHARED_LIBS)
 MARK_AS_ADVANCED(BUILD_TESTING)
 MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
 MARK_AS_ADVANCED(CMAKE_BUILD_TYPE)
@@ -188,7 +211,24 @@ MARK_AS_ADVANCED(Trilinos_LAPACK_LIBRARY)
 
 TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nExplicitly enabled packages on input")
 
-TRILNOS_ADJUST_PACKAGE_ENABLES()
+IF (Trilinos_DEPS_XML_OUTPUT_FILE)
+  MESSAGE("" )
+  MESSAGE("Dumping the XML dependencies file ..." )
+  MESSAGE("")
+  TRILINOS_DUMP_DEPS_XML_FILE()
+ENDIF()
+
+IF (Trilinos_DEPS_HTML_OUTPUT_FILE)
+  MESSAGE("" )
+  MESSAGE("Dumping the HTML dependencies webpage file ..." )
+  MESSAGE("" )
+  EXECUTE_PROCESS(
+    COMMAND ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
+      --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
+      --output-html-deps-file=${Trilinos_DEPS_HTML_OUTPUT_FILE} )
+ENDIF()
+
+TRILINOS_ADJUST_PACKAGE_ENABLES()
 
 TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nFinal set of enabled packages")
 
@@ -273,6 +313,7 @@ OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS
 
 IF (Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS)
   ADD_SUBDIRECTORY(cmake/DependencyUnitTests)
+  ADD_SUBDIRECTORY(cmake/python/UnitTests)
 ENDIF()
 
 

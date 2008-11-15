@@ -15,9 +15,9 @@ CMakeify packages in:
 (*) [???] Automatically add the right compiler options when on the
 primary development platform (i.e. lots of warnings)
 
-(*) [Ross] Add unit testing infrastructure for
-TRILINOS_ADD_EXECUTABLE(...), TRILINOS_ADD_TEST(...).  These unit
-tests will serve both as tests and as documentation.
+(*) [???] Add unit testing infrastructure for TRILINOS_ADD_EXECUTABLE(...),
+TRILINOS_ADD_TEST(...).  These unit tests will serve both as tests and as
+documentation.
 
 (*) [???] Add the package name as a prefix to all test and example
 executables.  This will require changes to the
@@ -41,7 +41,10 @@ do.
 (*) [???] Add a 'libs' target to rebuild only libraries so that we can skip
 unecessary relinking when shared libraries are used
 
-(*) [Ross] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
+(*) [???] Add PACKAGE-libs and PACAKGE targets to build the library or all
+targets for a given package.  This can be hidden inside of the various macros.
+
+(*) [???] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
 track of test results for different enables/disables.
 
