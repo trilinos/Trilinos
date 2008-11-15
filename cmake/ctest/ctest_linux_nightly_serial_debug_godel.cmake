@@ -13,15 +13,14 @@ SET(CTEST_DASHBOARD_ROOT /home/rabartl/PROJECTS/dashboards/Trilinos/SERIAL_DEBUG
 SET(CTEST_CMAKE_COMMAND /usr/local/bin/cmake)
 
 # Options for Nightly builds
-#SET(CTEST_BACKUP_AND_RESTORE TRUE)
+
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
 #SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY FALSE)
+
 SET(CTEST_CVS_CHECKOUT
-  "cvs -Q -d :ext:@software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
-)
+  "cvs -q -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}" )
 SET (CTEST_CVS_COMMAND
-  "cvs -Q -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
-)
+  "cvs -q -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}" )
 
 SET(CTEST_SOURCE_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}")
 SET(CTEST_BINARY_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_BINARY_NAME}")
