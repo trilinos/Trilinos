@@ -7,10 +7,11 @@ Last updated: 2008/09/28
 need to see how the dependency tracking logic scales to all of
 Trilinos.
 
-(*) [???] Write a script that will output the dependency information
-for all of Trilinos and create a table that will give dependency
-information.  We can use this table to help determine the order to
-CMakeify packages in:
+(*) [???] Add file CTestCustom.cmake.in in Trilinos/cmake and do a
+CONFIGURE_FILE(...) command to put it in the base build tree.  In this file,
+set CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE and
+CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE and any other options given at
+http://www.vtk.org/Wiki/CMake_Testing_With_CTest.
 
 (*) [???] Automatically add the right compiler options when on the
 primary development platform (i.e. lots of warnings)
@@ -26,23 +27,20 @@ will also require changes to all of the existing Makefile.am files
 that create these tests in the autotools system and in the
 test/definition files.
 
-(*) [???] Add NOINSTALL option to TRILINOS_PACKAGE_ADD_LIBRARY(...)
-for test libraries that you don't want to install
+(*) [???] Improvements for TRILINOS_PACKAGE_ADD_LIBRARY(...):
 
-(*) [???] Add NOINSTALLHEADERS argument to
-TRILINOS_PACKAGE_ADD_LIBRARY(...) for headers that you need to build
-the library (and include in the tarball) but don't want to install.
+- Add NOINSTALL option for test libraries that you don't want to install.
 
-(*) [???] Clean up tests and examples:
-
-- Move (almost) all tests into subdirectories since that is the right thing to
-do.
+- Add NOINSTALLHEADERS argument headers that you need to build the library
+(and include in the tarball) but don't want to install.
 
 (*) [???] Add a 'libs' target to rebuild only libraries so that we can skip
-unecessary relinking when shared libraries are used
+unecessary relinking when shared libraries are used.
 
-(*) [???] Add PACKAGE-libs and PACAKGE targets to build the library or all
-targets for a given package.  This can be hidden inside of the various macros.
+(*) [???] Add the aggregate targets 'PACKAGE-libs' and 'PACAKGE' to build the
+library or all targets for a given package.  This can be hidden inside of the
+various macros.  This will make it faster to rebuild specific packages from
+the top level and allow shortcuts for retesting when using shared libraries.x
 
 (*) [???] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
@@ -51,6 +49,21 @@ track of test results for different enables/disables.
 (*) [???] Change all source files to be globbed and use internal ifdefs to
 control what gets built.  This will make it easier to maintain the BJAM build
 system.
+
+(*) [???] Change how XXX_config.h.in files get created so that they get
+created automatically.  We can do this by changing the scripts
+TRILINOS_ADD_OPTION(...) and TRILINOS_PACKAGE_CONFIGURE_FILE(...) and adding a
+few new scripts.
+
+(*) [???] Add installation testing.  Here, we will build and install
+libraries, and then configure a new project against this.  It would be good to
+install a PACKAGEConfig.cmake file for each package that could then be used to
+specify what to build against.
+
+(*) [???] Clean up tests and examples:
+
+- Move (almost) all tests into subdirectories since that is the right thing to
+do.
 
 (*) [???] Set up our own CDash results for Trilinos serial and mpi
 
@@ -76,7 +89,7 @@ Trilinos-Announce allowing others to use this.
 
 (*) [???] Add the Trilinos LGPL license to the NSIS installer
 
-(*) [???] Add automatic demangle checking with try_compile
+(*) [???] Add automatic demangle checking with try_compile(...)
 
 (*) [???] Create separate dashboards for each Trilinos package.  For
 now, we could write an advanced ctest script that would loop through

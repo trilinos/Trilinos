@@ -31,18 +31,18 @@ OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose."
 # B) Define the list of all Trilinos packages
 #
 
-# Define the Trilinos packages
-SET( Trilinos_PACKAGES
- Teuchos
- RTOp
- Epetra
- Triutils
- EpetraExt
- Thyra
- AztecOO
- Galeri
- #Anasazi
- RBGen
+# Define the Trilinos package names and directories
+SET( Trilinos_PACKAGES_AND_DIRS
+ Teuchos        teuchos
+ RTOp           rtop
+ Epetra         epetra
+ Triutils       triutils
+ EpetraExt      epetraext
+ Thyra          thyra
+ AztecOO        aztecoo
+ Galeri         galeri
+ #Anasazi        anasazi
+ RBGen          rbgen
 )
 
 # Hack to allow me to set the exact list of packages so that I can have stable
@@ -50,47 +50,62 @@ SET( Trilinos_PACKAGES
 OPTION(Trilinos_PACKAGES_UNITTEST_OVERRIDE "" OFF)
 MARK_AS_ADVANCED(Trilinos_PACKAGES_UNITTEST_OVERRIDE)
 IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE)
-  SET( Trilinos_PACKAGES
-   Teuchos
-   Epetra
-   Zoltan
-   RTOp
-   Triutils
-   EpetraExt
-   Isorropia
-   Thyra
-   AztecOO
-   Galeri
-   Amesos
-   Ifpack
-   ML
-   Belos
-   RBGen
-   Stratimikos
-  )
+  SET( Trilinos_PACKAGES_AND_DIRS
+    Teuchos          teuchos         
+    Epetra           epetra     
+    Zoltan           zoltan     
+    RTOp             rtop       
+    Triutils         triutils   
+    EpetraExt        epetraext  
+    Isorropia        isorropia  
+    Thyra            thyra      
+    AztecOO          aztecoo    
+    Galeri           galeri     
+    Amesos           amesos     
+    Ifpack           ifpack     
+    ML               ml         
+    Belos            belos      
+    RBGen            rbgen      
+    Stratimikos      stratimikos
+    )
 ENDIF()
 
-# Create a reverse list for later use
-SET(Trilinos_REVERSE_PACKAGES ${Trilinos_PACKAGES})
-LIST(REVERSE Trilinos_REVERSE_PACKAGES)
+# Temporary hack to allow me to state more package dependencies that we have
+# full CMake support for.  This will go away once all of Trilinos is
+# CMakeified.
+OPTION(Trilinos_PACKAGES_HACK_OVERRIDE "" OFF)
+MARK_AS_ADVANCED(Trilinos_PACKAGES_HACK_OVERRIDE)
+IF (Trilinos_PACKAGES_HACK_OVERRIDE)
+  SET( Trilinos_PACKAGES_AND_DIRS
+    Teuchos          teuchos         
+    Epetra           epetra     
+    Zoltan           zoltan     
+    RTOp             rtop       
+    Triutils         triutils   
+    EpetraExt        epetraext  
+    Isorropia        isorropia  
+    Thyra            thyra      
+    AztecOO          aztecoo    
+    Galeri           galeri     
+    Amesos           amesos     
+    Ifpack           ifpack     
+    ML               ml         
+    Belos            belos      
+    RBGen            rbgen      
+    Stratimikos      stratimikos
+    )
+ENDIF()
 
-SET( Trilinos_PACKAGE_DIRS "")
-FOREACH( PACKAGE ${Trilinos_PACKAGES})
-  STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
-  LIST(APPEND Trilinos_PACKAGE_DIRS ${PACKAGE_DIR})
-ENDFOREACH()
-#MESSAGE("Trilinos_PACKAGE_DIRS = ${Trilinos_PACKAGE_DIRS}")
-
-LIST(LENGTH Trilinos_PACKAGES Trilinos_NUM_PACKAGES)
-#MESSAGE("Trilinos_NUM_PACKAGES = ${Trilinos_NUM_PACKAGES}")
+TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
 
 
 #
 # C) Read in the package dependancies
 #
 
-FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
+FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
+  LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
+  LIST(GET Trilinos_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
   TRILINOS_READ_PACKAGE_DEPENDENCIES(${PACKAGE} ${PACKAGE_DIR})
 ENDFOREACH()
 
@@ -150,8 +165,15 @@ OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   OFF)
 MARK_AS_ADVANCED(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
 
+IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE OR Trilinos_PACKAGES_HACK_OVERRIDE)
+  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
+    "${TRILINOS_BUILD_DIR}/cmake/TrilinosPackageDependencies.xml" )
+ELSE()
+  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
+    "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml" )
+ENDIF()
 SET(Trilinos_DEPS_XML_OUTPUT_FILE
-  ${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml
+  ${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}
   CACHE STRING
   "XML file that Trilinos dependenices used by tools are written to (if not empty)." )
 MARK_AS_ADVANCED(Trilinos_DEPS_XML_OUTPUT_FILE)
@@ -162,7 +184,6 @@ ELSE()
   SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT
     "${TRILINOS_BUILD_DIR}/TrilinosPackageDependenciesTable.html" )
 ENDIF()
-
 SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   ${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}
   CACHE STRING
@@ -211,26 +232,26 @@ MARK_AS_ADVANCED(Trilinos_LAPACK_LIBRARY)
 
 TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nExplicitly enabled packages on input")
 
+TRILINOS_ADJUST_PACKAGE_ENABLES()
+
+TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nFinal set of enabled packages")
+
 IF (Trilinos_DEPS_XML_OUTPUT_FILE)
   MESSAGE("" )
-  MESSAGE("Dumping the XML dependencies file ..." )
+  MESSAGE("Dumping the XML dependencies file ${Trilinos_DEPS_XML_OUTPUT_FILE} ..." )
   MESSAGE("")
   TRILINOS_DUMP_DEPS_XML_FILE()
 ENDIF()
 
 IF (Trilinos_DEPS_HTML_OUTPUT_FILE)
   MESSAGE("" )
-  MESSAGE("Dumping the HTML dependencies webpage file ..." )
+  MESSAGE("Dumping the HTML dependencies webpage file ${Trilinos_DEPS_HTML_OUTPUT_FILE} ..." )
   MESSAGE("" )
   EXECUTE_PROCESS(
     COMMAND ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
       --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
       --output-html-deps-file=${Trilinos_DEPS_HTML_OUTPUT_FILE} )
 ENDIF()
-
-TRILINOS_ADJUST_PACKAGE_ENABLES()
-
-TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nFinal set of enabled packages")
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   MESSAGE("")
@@ -351,12 +372,10 @@ SET(Trilinos_INCLUDE_DIRS "" CACHE INTERNAL "")
 SET(Trilinos_LIBRARY_DIRS "" CACHE INTERNAL "")
 SET(Trilinos_LIBRARIES "" CACHE INTERNAL "")
 
-FOREACH(PACKAGE ${Trilinos_PACKAGES})
+FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
+  LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
+  LIST(GET Trilinos_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
   IF(Trilinos_ENABLE_${PACKAGE})
-    STRING(TOLOWER ${PACKAGE} PACKAGE_DIR)
-    # 2008/06/09: rabartl: Above, you can not assume that all package names are lower
-    #   case.  This will not work for PyTrilinos, ForTrilinos, ThreadPool, etc.  You should
-    #   just name the packages with their directory names!
     SET(PACKAGE_NAME_GLOBAL ${PACKAGE}) # For checking
     ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
     LIST(APPEND Trilinos_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})

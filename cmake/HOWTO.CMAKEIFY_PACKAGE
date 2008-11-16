@@ -2,7 +2,7 @@
 How to CMakeify an Existing Trilinos Package
 --------------------------------------------
 
-Last updated: 2008/11/05
+Last updated: 2008/11/15
 ------------------------
 
 Here, we describe how to add full CMake/CTest support to an existing
@@ -29,13 +29,15 @@ Here are the steps for CMakeifying a Trilinos package:
 
 1) Add the package name to base-level Trilinos/CMakeLists.txt
 
-Add the package name PACKAGE_NAME to the list of supported Trilinos
-packages in the base-level CMakeLists.txt file in the variable
-Trilinos_PACKAGES.
+Add the package name PACKAGE_NAME and the package directory name PACKAGE_DIR
+to the list of supported Trilinos packages in the base-level
+Trilinos/CMakeLists.txt file in the variable Trilinos_PACKAGES_AND_DIRS.
 
 NOTE: You have to list the packages in strictly increasing order of
-dependencies.  Don't worry, if you get the order wrong, you will find
-this out at configure time automatically with a nice error message.
+dependencies.  Don't worry, if you get the order wrong, you will find this out
+at configure time automatically with a nice error message.  You can just the
+list of packages in Trilinos/packages/Makefile.am to see what a valid ordering
+of packages should be.
 
 
 2) Create the package's base-level PACKAGE_DIR/CMakeLists.txt file
@@ -91,7 +93,25 @@ To get the list of package dependencies, look at the file
 
   Trilinos/packages/PACKAGE_DIR/Makefile.export.PACKAGE_DIR
 
-for hints as to what packages to list here.
+for hints as to what packages to list here.  This file does not always list
+all of the test dependencies so you will need to look in other places also.
+Another place to look for test dependencies is look for the M4 macro
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(...) used in:
+
+  Trilinos/packages/PACKAGE_DIR/configure.ac
+
+You should be able to find all of the optional dependencies in the above two
+files.  However, you may not find all of the required test dependencies.  The
+last of those will have to be discovered in the Makefile.am files in the
+various test directories.
+
+NOTE: Don't worry if you don't find all of the package dependencies right
+away.  If you leave any out, the compile/link cycle will tell you which ones
+you need to add.  It is better to initially understate the package
+dependencies than to overstate them because you can catch the former mistake
+but not the later.  The danger in overstating package dependencies is that it
+will take longer to test code before you check in because you will have to
+build more libraries and test executables than you really need to.
 
 NOTE: If a package is included in a 'REQUIRED' list, then it does not
 need to be included in the corresponding 'OPTIONAL' list.

@@ -24,6 +24,46 @@ INCLUDE(TrilinosHelpers)
 # away the cache
 # 
 
+
+#
+# Macro that processes Trilinos_PACKAGES_AND_DIRS into Trilinos_PACKAGES,
+# Trilinos_PACKAGE_DIRS, Trilinos_NUM_PACKAGES, Trilinos_LAST_PACKAGE_IDX, and
+# Trilinos_REVERSE_PACKAGES.
+#
+
+MACRO(TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS)
+
+  # Separate out separate lists of package names and directoires
+  
+  LIST(LENGTH Trilinos_PACKAGES_AND_DIRS Trilinos_NUM_PACKAGES_2)
+  MATH(EXPR Trilinos_NUM_PACKAGES "${Trilinos_NUM_PACKAGES_2}/2")
+  PRINT_VAR(Trilinos_NUM_PACKAGES)
+  MATH(EXPR Trilinos_LAST_PACKAGE_IDX "${Trilinos_NUM_PACKAGES}-1")
+  
+  SET(Trilinos_PACKAGES)
+  SET(Trilinos_PACKAGE_DIRS)
+  FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
+    MATH(EXPR PACKAGE_NAME_IDX "${PACKAGE_IDX}*2")
+    MATH(EXPR PACKAGE_DIR_IDX "${PACKAGE_IDX}*2+1")
+    LIST(GET Trilinos_PACKAGES_AND_DIRS ${PACKAGE_NAME_IDX} PACKAGE)
+    LIST(GET Trilinos_PACKAGES_AND_DIRS ${PACKAGE_DIR_IDX} PACKAGE_DIR)
+    LIST(APPEND Trilinos_PACKAGES ${PACKAGE})
+    LIST(APPEND Trilinos_PACKAGE_DIRS ${PACKAGE_DIR})
+  ENDFOREACH()
+  
+  IF (Trilinos_VERBOSE_CONFIGURE)
+    PRINT_VAR(Trilinos_PACKAGES)
+    PRINT_VAR(Trilinos_PACKAGE_DIRS)
+  ENDIF()
+  
+  # Create a reverse list for later use
+  
+  SET(Trilinos_REVERSE_PACKAGES ${Trilinos_PACKAGES})
+  LIST(REVERSE Trilinos_REVERSE_PACKAGES)
+
+ENDMACRO()
+
+
 #
 # Macro that gets the current list of enables packages
 #
