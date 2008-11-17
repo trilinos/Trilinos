@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
   try {
     tol = My_List.INVALID_TEMPLATE_QUALIFIER get<float>("Tolerance");
   }
-  catch ( std::exception& e) {
+  catch ( const std::exception& e) {
     tol = 1e-6;
   }
 
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
   try {
     tol = Teuchos::getParameter<float>(My_List, "Tolerance");
   }
-  catch ( std::exception& e) {
+  catch ( const std::exception& e) {
     tol = 1e-6;
   }
 

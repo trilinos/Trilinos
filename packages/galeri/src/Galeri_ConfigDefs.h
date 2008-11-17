@@ -75,66 +75,27 @@
 #endif
 #endif
 
-#ifdef HAVE_CSTDLIB
 #include <cstdlib>
-#else
-#include <stdlib.h>
-#endif
-
-#ifdef HAVE_CSTDIO
 #include <cstdio>
-#else
-#include <stdio.h>
-#endif
-
-#ifdef HAVE_CASSERT
 #include <cassert>
-#else
-#include <assert.h>
-#endif
-
-#ifdef HAVE_STRING
 #include <string>
-#else
-#include <string.h>
-#endif
-
-#ifdef HAVE_IOSTREAM
 #include <iostream>
-#else
-#include <iostream.h>
-#endif
 
 /* Every line that begins with 'using' should eventually be dependent
    on some check within the configure script */
 
-
-#ifndef TFLOP
-#ifdef HAVE_CMATH
 #include <cmath>
-#else
-#include <math.h>
-#endif
+
 using namespace std;
-#else /* TFLOP defined */
-#ifdef HAVE_IOMANIP
+/* 2008/11/16: rabartl; ToDo: Above: Get rid of usning std namespace! */
+
 #include <iomanip>
-#else
-#include <iomanip.h>
-#endif
-#ifdef HAVE_STRING
+
 using std::string;
-#endif
-#ifdef HAVE_IOSTREAM
 using std::istream;
 using std::ostream;
 using std::cerr;
 using std::cout;
 using std::endl;
-#endif
-#endif
-
-// Define DefultTracebackMode (HAVE_WARNING_MESSAGES and HAVE_FATAL_MESSAGES can be defined
-// via the configure script command line)
 
 #endif /* GALERI_CONFIGDEFS_H */

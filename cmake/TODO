@@ -1,11 +1,25 @@
 
-TODOs for the Trilinos/CMake system
+-----------------------------------
+TODOs for the Trilinos/CMake System
+-----------------------------------
 
-Last updated: 2008/09/28
+Last updated: 2008/11/17
 
-(*) [???] Add Dependencies.cmake files for all Trilinos packages.  We
+
+Active items:
+-------------
+
+(*) [Ross] Add Dependencies.cmake files for all Trilinos packages.  We
 need to see how the dependency tracking logic scales to all of
 Trilinos.
+
+(*) [Ross, Brent, Esteban] Add basic CMake support for every Trilinos
+package: Initially, only support basic libaries, minimal TPL
+dependencies, and only a subset of tests/examples.
+
+
+Backlog:
+--------
 
 (*) [???] Add file CTestCustom.cmake.in in Trilinos/cmake and do a
 CONFIGURE_FILE(...) command to put it in the base build tree.  In this file,
@@ -25,14 +39,18 @@ executables.  This will require changes to the
 TRILINOS_ADD_EXECUTABLE(..) and TRILINOS_ADD_TEST(...) functions.  It
 will also require changes to all of the existing Makefile.am files
 that create these tests in the autotools system and in the
-test/definition files.
+test/definition files.  We could also just modify the perl scripts to
+look for executables with the package name prefix (which would could
+specify at the top of the test/definition file).  That way, we would
+not have to change any of the autotools Makefile.am files.
 
 (*) [???] Improvements for TRILINOS_PACKAGE_ADD_LIBRARY(...):
 
-- Add NOINSTALL option for test libraries that you don't want to install.
+- [???] Add NOINSTALL option for test libraries that you don't want to
+install.
 
-- Add NOINSTALLHEADERS argument headers that you need to build the library
-(and include in the tarball) but don't want to install.
+- [???] Add NOINSTALLHEADERS argument headers that you need to build
+the library (and include in the tarball) but don't want to install.
 
 (*) [???] Add a 'libs' target to rebuild only libraries so that we can skip
 unecessary relinking when shared libraries are used.
@@ -55,10 +73,15 @@ created automatically.  We can do this by changing the scripts
 TRILINOS_ADD_OPTION(...) and TRILINOS_PACKAGE_CONFIGURE_FILE(...) and adding a
 few new scripts.
 
-(*) [???] Add installation testing.  Here, we will build and install
-libraries, and then configure a new project against this.  It would be good to
-install a PACKAGEConfig.cmake file for each package that could then be used to
-specify what to build against.
+(*) [???] Upgrade Trilinos/CMakeLists.txt and
+dump-package-dep-table.py add an option to only show dependencies for
+enabled packages.
+
+(*) [???] Add installation testing for CMake build sytem.  Here, we
+will build and install libraries, and then configure a new project
+against this.  It would be good to install a PACKAGEConfig.cmake file
+for each package that could then be used to specify what to build
+against.
 
 (*) [???] Clean up tests and examples:
 
@@ -103,5 +126,8 @@ but at least we would get the information that we need.  We can also
 run a full rebuild and retest in the end to give a an overall package
 for Trilinos.
 
+
 Completed:
 ----------
+
+???

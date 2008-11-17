@@ -92,18 +92,18 @@ class Ptr {
 public:
 
   /** \brief Default construct to NULL.
-	 *
-	 * <b>Postconditons:</b><ul>
-	 * <li> <tt>this->get() == NULL</tt>
-	 * </ul>
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == NULL</tt>
+   * </ul>
    */
   inline Ptr( ENull null_in = null );
 
   /** \brief Construct given a raw pointer.
-	 *
-	 * <b>Postconditons:</b><ul>
-	 * <li> <tt>this->get() == ptr</tt>
-	 * </ul>
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == ptr</tt>
+   * </ul>
    *
    * Note: This constructor is declared <tt>explicit</tt> so there is no
    * implicit conversion from a raw C++ pointer to a <tt>Ptr</tt> object.
@@ -113,57 +113,57 @@ public:
   inline explicit Ptr( T *ptr );
 
   /** \brief Copy construct from same type.
-	 *
-	 * <b>Postconditons:</b><ul>
-	 * <li> <tt>this->get() == ptr.get()</tt>
-	 * </ul>
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == ptr.get()</tt>
+   * </ul>
    */
-	inline Ptr(const Ptr<T>& ptr);
+  inline Ptr(const Ptr<T>& ptr);
 
   /** \brief Copy construct from another type.
-	 *
-	 * <b>Postconditons:</b><ul>
-	 * <li> <tt>this->get() == ptr.get()</tt> (unless virtual base classes
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == ptr.get()</tt> (unless virtual base classes
    *      are involved)
-	 * </ul>
+   * </ul>
    */
-	template<class T2>
-	inline Ptr(const Ptr<T2>& ptr);
+  template<class T2>
+  inline Ptr(const Ptr<T2>& ptr);
 
-	/** \brief Shallow copy of the underlying pointer.
-	 *
-	 * <b>Postconditons:</b><ul>
-	 * <li> <tt>this->get() == ptr.get()</tt>
-	 * </ul>
-	 */
-	Ptr<T>& operator=(const Ptr<T>& ptr);
+  /** \brief Shallow copy of the underlying pointer.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == ptr.get()</tt>
+   * </ul>
+   */
+  Ptr<T>& operator=(const Ptr<T>& ptr);
 
-	/** \brief Pointer (<tt>-></tt>) access to members of underlying object.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
-	 * </ul>
-	 */
-	inline T* operator->() const;
+  /** \brief Pointer (<tt>-></tt>) access to members of underlying object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+   * </ul>
+   */
+  inline T* operator->() const;
 
-	/** \brief Dereference the underlying object.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
-	 * </ul>
-	 */
-	inline T& operator*() const;
-
-  /** \brief Get the raw C++ pointer to the underlying object. */
-	inline T* get() const;
+  /** \brief Dereference the underlying object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+   * </ul>
+   */
+  inline T& operator*() const;
 
   /** \brief Get the raw C++ pointer to the underlying object. */
-	inline T* getRawPtr() const;
+  inline T* get() const;
 
-	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>,
+  /** \brief Get the raw C++ pointer to the underlying object. */
+  inline T* getRawPtr() const;
+
+  /** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */
-	inline const Ptr<T>& assert_not_null() const;
+  inline const Ptr<T>& assert_not_null() const;
 
 private:
 
@@ -279,7 +279,7 @@ Ptr<T> ptr( T* p )
 /** \brief Create a pointer from a const object given a non-const object
  * reference.
  *
- * <b>Warning!</b> Do not call this function of <tt>T</tt> is already const or
+ * <b>Warning!</b> Do not call this function if <tt>T</tt> is already const or
  * a compilation error will occur!
  *
  * \relates Ptr

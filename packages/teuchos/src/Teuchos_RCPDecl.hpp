@@ -95,8 +95,8 @@ Teuchos::...</tt> declarations.  This removes the need to explicitly use
 <tt>Teuchos::</tt> to qualify classes, functions and other declarations from
 the <tt>Teuchos</tt> namespace.  Note that some of the runtime checks are
 denoted as "debug runtime checked" which means that checking will only be
-performed in a debug build (that is one where the macro
-TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL, or TEUCHOS_DEBUG is defined at compile time).
+performed in a debug build (that is one where the macro <tt>TEUCHOS_DEBUG</tt>
+is defined at compile time).
 
 <ol>
 
@@ -110,10 +110,10 @@ TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL, or TEUCHOS_DEBUG is defined at compile time)
 RCP<C> c_ptr = rcp(new C);
 \endcode
 
-<li> <b>Creating a <tt>RCP<></tt> object equipped with a specialized deallocator function</b> : <tt>Teuchos::DeallocFunctorDelete</tt>
+<li> <b>Creating a <tt>RCP<></tt> object equipped with a specialized
+deallocator function</b> : <tt>Teuchos::DeallocFunctorDelete</tt>
 
 \code
-
 void someDeallocFunction(C* c_ptr);
 
 RCP<C> c_ptr = rcp(new deallocFunctorDelete<C>(someDeallocFunction),true);
@@ -135,7 +135,7 @@ RCP<C> c_ptr = null;
        \underline{not} allocated with <tt>new</tt></b>
 
 \code
-C              c;
+C c;
 RCP<C> c_ptr = rcpFromRef(c);
 \endcode
 
@@ -175,7 +175,8 @@ const RCP<const C> c_ptr;
 
 </ol>
 
-<li> <b>Reinitialization of <tt>RCP<></tt> objects (using assignment operator)</b>
+<li> <b>Reinitialization of <tt>RCP<></tt> objects (using assignment
+operator)</b>
 
 <ol>
 
@@ -207,13 +208,15 @@ a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same C object
 
 <ol>
 
-<li> <b>Access to object reference (debug runtime checked)</b> : <tt>Teuchos::RCP::operator*()</tt> 
+<li> <b>Access to object reference (debug runtime checked)</b> :
+<tt>Teuchos::RCP::operator*()</tt>
 
 \code
 C &c_ref = *c_ptr;
 \endcode
 
-<li> <b>Access to object pointer (unchecked, may return <tt>NULL</tt>)</b> : <tt>Teuchos::RCP::get()</tt>
+<li> <b>Access to object pointer (unchecked, may return <tt>NULL</tt>)</b> :
+<tt>Teuchos::RCP::get()</tt>
 
 \code
 C *c_rptr = c_ptr.get();
@@ -225,28 +228,35 @@ or
 C *c_rptr = c_ptr.getRawPtr();
 \endcode
 
-<li> <b>Access to object pointer (debug runtime checked, will not return <tt>NULL</tt>)</b> : <tt>Teuchos::RCP::operator*()</tt>
+<b>WARNING:</b>: Avoid exposing raw C++ pointers!
+
+<li> <b>Access to object pointer (debug runtime checked, will not return
+<tt>NULL</tt>)</b> : <tt>Teuchos::RCP::operator*()</tt>
 
 \code
 C *c_rptr = &*c_ptr;
 \endcode
 
-<li> <b>Access of object's member (debug runtime checked)</b> : <tt>Teuchos::RCP::operator->()</tt>
+<b>WARNING:</b>: Avoid exposing raw C++ pointers!
+
+<li> <b>Access of object's member (debug runtime checked)</b> :
+<tt>Teuchos::RCP::operator->()</tt>
 
 \code
 c_ptr->f();
 \endcode
 
-<li> <b>Testing for non-null</b> : <tt>Teuchos::RCP::get()</tt>, <tt>Teuchos::operator==()</tt>, <tt>Teuchos::operator!=()</tt>
+<li> <b>Testing for non-null</b> : <tt>Teuchos::RCP::get()</tt>,
+<tt>Teuchos::operator==()</tt>, <tt>Teuchos::operator!=()</tt>
 
 \code
-if( a_ptr.is_null ) std::cout << "a_ptr is not null!\n";
+if (a_ptr.is_null) std::cout << "a_ptr is not null!\n";
 \endcode
 
 or
 
 \code
-if( a_ptr != null ) std::cout << "a_ptr is not null!\n";
+if (a_ptr != null) std::cout << "a_ptr is not null!\n";
 \endcode
 
 or
@@ -254,19 +264,19 @@ or
 <li> <b>Testing for null</b>
 
 \code
-if( !a_ptr.is_null() ) std::cout << "a_ptr is null!\n";
+if (!a_ptr.is_null()) std::cout << "a_ptr is null!\n";
 \endcode
 
 or
 
 \code
-if( a_ptr == null ) std::cout << "a_ptr is null!\n";
+if (a_ptr == null) std::cout << "a_ptr is null!\n";
 \endcode
 
 or
 
 \code
-if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
+if (is_null(a_ptr)) std::cout << "a_ptr is null!\n";
 \endcode
 
 </ol>
@@ -319,8 +329,8 @@ RCP<C>     c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
 \code
 RCP<A>     a_ptr1  = rcp(new C);
 RCP<A>     a_ptr2  = rcp(new A);
-RCP<B1>    b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr1,true);  // Success!
-RCP<B1>    b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true);  // Throw std::bad_cast!
+RCP<B1>    b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr1, true);  // Success!
+RCP<B1>    b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2, true);  // Throw std::bad_cast!
 \endcode
 
 </ol>
@@ -332,9 +342,7 @@ RCP<B1>    b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true);  // Throw std::bad_cast!
 
 <li> <b>Creating a <tt>RCP<></tt> object with a custom deallocator</b> : <tt>rcp()</tt>
 
-\code
-RCP<C> c_ptr = rcp(new C[N],MyCustomDealloc<C>(),true);
-\endcode
+TODO: Update this example!
 
 <li> <b>Access customized deallocator (runtime checked, throws on failure)</b> : <tt>Teuchos::get_dealloc()</tt>
 
@@ -346,9 +354,10 @@ const MyCustomDealloc<C>
 <li> <b>Access optional customized deallocator</b> : <tt>Teuchos::get_optional_dealloc()</tt>
 
 \code
-const MyCustomDealloc<C>
-  *dealloc = get_optional_dealloc<MyCustomDealloc<C> >(c_ptr);
-if(dealloc) std::cout << "This deallocator exits!\n";
+const Ptr<const MyCustomDealloc<C> > dealloc =
+  get_optional_dealloc<MyCustomDealloc<C> >(c_ptr);
+if (!is_null(dealloc))
+  std::cout << "This deallocator exits!\n";
 \endcode
 
 </ol>
@@ -360,33 +369,34 @@ if(dealloc) std::cout << "This deallocator exits!\n";
 <li> <b>Adding extra data (post destruction of extra data)</b> : <tt>Teuchos::set_extra_data()</tt>
 
 \code
-set_extra_data(rcp(new B1),"A:B1",&a_ptr);
+set_extra_data(rcp(new B1), "A:B1", inOutArg(a_ptr));
 \endcode
 
 <li> <b>Adding extra data (pre destruction of extra data)</b> : <tt>Teuchos::get_extra_data()</tt>
 
 \code
-set_extra_data(rcp(new B1),"A:B1",&a_ptr,PRE_DESTORY);
+set_extra_data(rcp(new B1),"A:B1", inOutArg(a_ptr), PRE_DESTORY);
 \endcode
 
 <li> <b>Retrieving extra data</b> : <tt>Teuchos::get_extra_data()</tt>
 
 \code
-get_extra_data<RCP<B1> >(a_ptr,"A:B1")->f();
+get_extra_data<RCP<B1> >(a_ptr, "A:B1")->f();
 \endcode
 
 <li> <b>Resetting extra data</b> : <tt>Teuchos::get_extra_data()</tt>
 
 \code
-get_extra_data<RCP<B1> >(a_ptr,"A:B1") = rcp(new C);
+get_extra_data<RCP<B1> >(a_ptr, "A:B1") = rcp(new C);
 \endcode
 
 <li> <b>Retrieving optional extra data</b> : <tt>Teuchos::get_optional_extra_data()</tt>
 
 \code
-const RCP<B1>
-  *b1 = get_optional_extra_data<RCP<B1> >(a_ptr,"A:B1");
-if(b1) (*b1)->f();
+const Ptr<const RCP<B1> > b1 =
+  get_optional_extra_data<RCP<B1> >(a_ptr, "A:B1");
+if (!is_null(b1))
+  (*b1)->f();
 \endcode
 
 </ol>
