@@ -34,9 +34,9 @@ if [ "$SKIP_CHARON" != "skip_charon" ]; then
 
 fi
 
-# Trilinos specific tests
-/mnt/disk2/rabartl/Trilinos.nightly-tests/Trilinos/commonTools/test/harness/drivers/gabriel-nightly-tests.sh $TRILINOS_BUILD \
-  &> /mnt/disk2/rabartl/Trilinos.nightly-tests/gabriel-nightly-tests.out 
+## Trilinos specific tests
+#/mnt/disk2/rabartl/Trilinos.nightly-tests/Trilinos/commonTools/test/harness/drivers/gabriel-nightly-tests.sh $TRILINOS_BUILD \
+#  &> /mnt/disk2/rabartl/Trilinos.nightly-tests/gabriel-nightly-tests.out 
 
 # ToDo: Build doxygen documentation for Trilinos given what is in:
 #
