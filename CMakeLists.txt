@@ -33,16 +33,17 @@ OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose."
 
 # Define the Trilinos package names and directories
 SET( Trilinos_PACKAGES_AND_DIRS
- Teuchos        teuchos
- RTOp           rtop
- Epetra         epetra
- Triutils       triutils
- EpetraExt      epetraext
- Thyra          thyra
- AztecOO        aztecoo
- Galeri         galeri
- #Anasazi        anasazi
- RBGen          rbgen
+ Teuchos            teuchos
+ RTOp               rtop
+ Epetra             epetra
+ Tpetra             tpetra
+ Triutils           triutils
+ EpetraExt          epetraext
+ Thyra              thyra
+ AztecOO            aztecoo
+ Galeri             galeri
+ #Anasazi            anasazi
+ RBGen              rbgen
 )
 
 # Hack to allow me to set the exact list of packages so that I can have stable

@@ -1,14 +1,5 @@
 /* src/Thyra_Config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if you want to build export makefiles. */
-#cmakedefine HAVE_EXPORT_MAKEFILES
-
-/* Define if you are using gnumake - this will shorten your link lines. */
-#cmakedefine HAVE_GNUMAKE
-
-/* Define if want to build tests */
-#cmakedefine HAVE_TESTS
-
 /* Define if want to build with thyra enabled */
 #cmakedefine HAVE_THYRA_EPETRA
 
