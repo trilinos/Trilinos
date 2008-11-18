@@ -45,7 +45,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, GlobalErrorConvergenceStudy ) {
 
   double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution);
   int order = stepperFactoryAndExactSolution.getStepper()->getOrder();
-  double tol = 1.0e-2;
+  double tol = 2.0e-2;
   TEST_FLOATING_EQUALITY( slope, 1.0*order, tol );
 }
 

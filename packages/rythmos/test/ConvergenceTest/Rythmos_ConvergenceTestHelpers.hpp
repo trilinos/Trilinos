@@ -333,12 +333,12 @@ RCP<StepperFactoryAndExactSolutionObject<Scalar> > stepperFactoryAndExactSolutio
 
 double computeOrderByLocalErrorConvergenceStudy(
     const StepperFactoryAndExactSolutionObject<double>& stepperFactoryAndExactSolution,
-    int numCuts = 8
+    int numCuts = 4
     );
 
 double computeOrderByGlobalErrorConvergenceStudy(
     const StepperFactoryAndExactSolutionObject<double>& stepperFactoryAndExactSolution,
-    int numCuts = 8
+    int numCuts = 4
     );
 
 } // namespace Rythmos

@@ -58,7 +58,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, GlobalErrorConvergenceStudy ) {
     stepperFactory->setOrder(order);
     double slope = computeOrderByGlobalErrorConvergenceStudy(stepperFactoryAndExactSolution);
     double tol = 1.0e-1;
-    if (order == 1) { tol = 1.0e-2; }
+    if (order == 1) { tol = 2.0e-2; }
     TEST_FLOATING_EQUALITY( slope, 1.0*order, tol );
   }
 }

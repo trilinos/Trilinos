@@ -29,38 +29,90 @@
 EXEEXT = .exe
 
 
-bin_PROGRAMS = Rythmos_ConvergenceTest
+bin_PROGRAMS = Rythmos_BackwardEuler_ConvergenceTest \
+							 Rythmos_ForwardEuler_ConvergenceTest \
+							 Rythmos_ImplicitBDF_ConvergenceTest \
+							 Rythmos_ExplicitRK_ConvergenceTest \
+							 Rythmos_ImplicitRK_ConvergenceTest 
 
 #
 # Actual programs
 #
 
 
-
-Rythmos_ConvergenceTest_INCLUDES =\
+# ------ Backward Euler ------
+Rythmos_BackwardEuler_ConvergenceTest_INCLUDES =\
   $(srcdir)/Rythmos_ConvergenceTestHelpers.hpp\
 	$(srcdir)/../UnitTest/Rythmos_UnitTestModels.hpp\
-  $(srcdir)/Rythmos_ExplicitTaylorPolynomial_ConvergenceTest.hpp\
-  $(srcdir)/Rythmos_ForwardEuler_ConvergenceTest.hpp\
-  $(srcdir)/Rythmos_BackwardEuler_ConvergenceTest.hpp\
-  $(srcdir)/Rythmos_ImplicitBDF_ConvergenceTest.hpp\
-  $(srcdir)/Rythmos_ImplicitRK_ConvergenceTest.hpp\
-  $(srcdir)/Rythmos_ExplicitRK_ConvergenceTest.hpp
-
-Rythmos_ConvergenceTest_SOURCES =\
+  $(srcdir)/Rythmos_BackwardEuler_ConvergenceTest.hpp
+Rythmos_BackwardEuler_ConvergenceTest_SOURCES =\
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
   $(srcdir)/../SinCos/SinCosModel.cpp\
 	$(srcdir)/Rythmos_ConvergenceTest.cpp\
   $(srcdir)/Rythmos_ConvergenceTestHelpers.cpp\
-	$(srcdir)/Rythmos_ExplicitTaylorPolynomial_ConvergenceTest.cpp\
-	$(srcdir)/Rythmos_ForwardEuler_ConvergenceTest.cpp\
-	$(srcdir)/Rythmos_BackwardEuler_ConvergenceTest.cpp\
-	$(srcdir)/Rythmos_ImplicitBDF_ConvergenceTest.cpp\
-	$(srcdir)/Rythmos_ImplicitRK_ConvergenceTest.cpp\
-	$(srcdir)/Rythmos_ExplicitRK_ConvergenceTest.cpp
+	$(srcdir)/Rythmos_BackwardEuler_ConvergenceTest.cpp
+Rythmos_BackwardEuler_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_BackwardEuler_ConvergenceTest_LDADD = $(common_ldadd)
 
-Rythmos_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
-Rythmos_ConvergenceTest_LDADD = $(common_ldadd)
+
+# ------ Forward Euler ------
+Rythmos_ForwardEuler_ConvergenceTest_INCLUDES =\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.hpp\
+	$(srcdir)/../UnitTest/Rythmos_UnitTestModels.hpp\
+  $(srcdir)/Rythmos_ForwardEuler_ConvergenceTest.hpp
+Rythmos_ForwardEuler_ConvergenceTest_SOURCES =\
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
+  $(srcdir)/../SinCos/SinCosModel.cpp\
+	$(srcdir)/Rythmos_ConvergenceTest.cpp\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.cpp\
+	$(srcdir)/Rythmos_ForwardEuler_ConvergenceTest.cpp
+Rythmos_ForwardEuler_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_ForwardEuler_ConvergenceTest_LDADD = $(common_ldadd)
+
+
+# ------ Implicit BDF ------
+Rythmos_ImplicitBDF_ConvergenceTest_INCLUDES =\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.hpp\
+	$(srcdir)/../UnitTest/Rythmos_UnitTestModels.hpp\
+  $(srcdir)/Rythmos_ImplicitBDF_ConvergenceTest.hpp
+Rythmos_ImplicitBDF_ConvergenceTest_SOURCES =\
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
+  $(srcdir)/../SinCos/SinCosModel.cpp\
+	$(srcdir)/Rythmos_ConvergenceTest.cpp\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.cpp\
+	$(srcdir)/Rythmos_ImplicitBDF_ConvergenceTest.cpp
+Rythmos_ImplicitBDF_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_ImplicitBDF_ConvergenceTest_LDADD = $(common_ldadd)
+
+
+# ------ Explicit RK ------
+Rythmos_ExplicitRK_ConvergenceTest_INCLUDES =\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.hpp\
+	$(srcdir)/../UnitTest/Rythmos_UnitTestModels.hpp\
+  $(srcdir)/Rythmos_ExplicitRK_ConvergenceTest.hpp
+Rythmos_ExplicitRK_ConvergenceTest_SOURCES =\
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
+  $(srcdir)/../SinCos/SinCosModel.cpp\
+	$(srcdir)/Rythmos_ConvergenceTest.cpp\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.cpp\
+	$(srcdir)/Rythmos_ExplicitRK_ConvergenceTest.cpp
+Rythmos_ExplicitRK_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_ExplicitRK_ConvergenceTest_LDADD = $(common_ldadd)
+
+
+# ------ Implicit RK ------
+Rythmos_ImplicitRK_ConvergenceTest_INCLUDES =\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.hpp\
+	$(srcdir)/../UnitTest/Rythmos_UnitTestModels.hpp\
+  $(srcdir)/Rythmos_ImplicitRK_ConvergenceTest.hpp
+Rythmos_ImplicitRK_ConvergenceTest_SOURCES =\
+  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
+  $(srcdir)/../SinCos/SinCosModel.cpp\
+	$(srcdir)/Rythmos_ConvergenceTest.cpp\
+  $(srcdir)/Rythmos_ConvergenceTestHelpers.cpp\
+	$(srcdir)/Rythmos_ImplicitRK_ConvergenceTest.cpp
+Rythmos_ImplicitRK_ConvergenceTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_ImplicitRK_ConvergenceTest_LDADD = $(common_ldadd)
 
 
 #

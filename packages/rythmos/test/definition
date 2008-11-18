@@ -10,7 +10,23 @@
 
 # Convergence Tests
 (FRAMEWORK, INSTALL) {
-  TESTS = ConvergenceTest/Rythmos_ConvergenceTest.exe;
+TESTS = ConvergenceTest/Rythmos_BackwardEuler_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ForwardEuler_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ImplicitBDF_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ExplicitRK_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ImplicitRK_ConvergenceTest.exe;
   COMM = SERIAL;
 }
 
