@@ -272,33 +272,51 @@ class TrilinosDependencies:
 
     return trilinosDepsTable
 
+  def createTrilinosPackagesNumberedList(self):
+    numPackages = self.numPackages()
+    htmlText = "<p>" + \
+      ", ".join( \
+        [ "P"+str(i+1)+":"+self.__packagesList[i].packageName \
+           for i in range(self.numPackages())] \
+        ) + \
+        "</p>"
+    return htmlText
 
   def createHtmlFromTable(self, rawTable):
 
     numPackages = self.numPackages()
 
     htmlText = \
-      "<TABLE BORDER="+str(numPackages)+">\n"+\
+      "<TABLE BORDER="+str(numPackages+2)+">\n"+\
       "\n"
 
-    for i in range(numPackages+1):
+    for i in range(numPackages+2):
       htmlText += "<COL ALIGN=LEFT>\n"
 
     topRow = rawTable[0]
     htmlText += "\n<TR>\n"
     for j in range(numPackages+1):
-      htmlText += " <TD><b>"+topRow[j]+"</b><TD>\n"
+      htmlText += " <TD><b>"+topRow[j]+"</b></TD>\n"
+    htmlText += " <TD><b>Packages</b></TD>\n"
     htmlText += "</TR>\n"
       
     for package_i in range(numPackages):
       row = rawTable[package_i+1]
       htmlText += "\n<TR>\n"
-      htmlText += " <TD><b>"+row[0]+"</b><TD>\n"
+      htmlText += " <TD><b>"+row[0]+"</b></TD>\n"
       for j in range(numPackages):
         entry = row[j+1]
         if not entry: entry = "."
-        htmlText += " <TD>"+entry+"<TD>\n"
+        htmlText += " <TD>"+entry+"</TD>\n"
+      htmlText += " <TD><b>"+row[0]+"</b></TD>\n"
       htmlText += "</TR>\n"
+
+    htmlText += "\n<TR>\n"
+    htmlText += " <TD><b>Packages</b></TD>\n"
+    for j in range(numPackages):
+      htmlText += " <TD><b>P"+str(j+1)+"</b></TD>\n"
+    htmlText += " <TD><b>Packages</b></TD>\n"
+    htmlText += "</TR>\n"
 
     htmlText += "</TABLE>\n"
     
@@ -339,10 +357,16 @@ class TrilinosDependencies:
 
   def createFullHtmlForTables(self):
 
+    packagesListHtml = self.createTrilinosPackagesNumberedList()
+
     htmlText = \
       "<p><huge><b>Trilinos Test/Example and Library Package Dependencies</b></huge></p>\n"+\
       "\n"+\
+      packagesListHtml+"\n"+\
+      "\n"+\
       self.createHtmlFromTable(self.createRawTable(False))+\
+      "\n"+\
+      packagesListHtml+"\n"+\
       "\n"+\
       "<p><b>Legend</b></p>\n"+\
       "\n"+\
@@ -350,7 +374,11 @@ class TrilinosDependencies:
       "\n"+\
       "<p><b><huge>Trilinos Libary-Only Package Dependencies</huge></b></p>\n"+\
       "\n"+\
+      packagesListHtml+"\n"+\
+      "\n"+\
       self.createHtmlFromTable(self.createRawTable(True))+\
+      "\n"+\
+      packagesListHtml+"\n"+\
       "\n"+\
       "<p><b>Legend</b></p>\n"+\
       "\n"+\
