@@ -381,16 +381,19 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, interpolate ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
   RCP<InterpolatorBase<double> > csi = cubicSplineInterpolator<double>();
+  Array<double> t_values;
+  DataStore<double>::DataStoreVector_t data_out;
+  TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+
   RCP<DataStore<double>::DataStoreVector_t> data_in = rcp( new DataStore<double>::DataStoreVector_t );
-  csi->setNodes(data_in);
+
   double t0 = 0.0;
   RCP<Thyra::VectorBase<double> > x0 = createDefaultVector<double>(1,0.0);
   RCP<Thyra::VectorBase<double> > xdot0;
   double accuracy0 = 0.0;
   data_in->push_back(DataStore<double>(t0,x0,xdot0,accuracy0));
+  csi->setNodes(data_in);
 
-  Array<double> t_values;
-  DataStore<double>::DataStoreVector_t data_out;
   t_values.push_back(0.5);
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
 
@@ -399,6 +402,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
   RCP<Thyra::VectorBase<double> > xdot1;
   double accuracy1 = 0.0;
   data_in->push_back(DataStore<double>(t1,x1,xdot1,accuracy1));
+  csi->setNodes(data_in);
 
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   double tol = 1.0e-15;
@@ -418,6 +422,91 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
     Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
     TEST_FLOATING_EQUALITY( x_view[0], 1.0, tol );
   }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
+  // Create three points of data and call setNodes & interpolate on csi
+  // Delete the 3rd point and add a different value and call interpolate again
+  // Delete the 3rd point and add a different time point and call interpolate again
+  // Add a fourth point and call interpolate again
+  // Delete the 1st point and call interpolate again
+  RCP<InterpolatorBase<double> > csi = cubicSplineInterpolator<double>();
+  RCP<DataStore<double>::DataStoreVector_t> data_in = rcp( new DataStore<double>::DataStoreVector_t );
+
+  double t0 = 0.0;
+  RCP<Thyra::VectorBase<double> > x0 = createDefaultVector<double>(1,0.0);
+  RCP<Thyra::VectorBase<double> > xdot0;
+  double accuracy0 = 0.0;
+  data_in->push_back(DataStore<double>(t0,x0,xdot0,accuracy0));
+
+  double t1 = 1.0;
+  RCP<Thyra::VectorBase<double> > x1 = createDefaultVector<double>(1,1.0);
+  RCP<Thyra::VectorBase<double> > xdot1;
+  double accuracy1 = 0.0;
+  data_in->push_back(DataStore<double>(t1,x1,xdot1,accuracy1));
+
+  double t2 = 2.0;
+  RCP<Thyra::VectorBase<double> > x2 = createDefaultVector<double>(1,0.0);
+  RCP<Thyra::VectorBase<double> > xdot2;
+  double accuracy2 = 0.0;
+  data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
+  csi->setNodes(data_in);
+  //ECHO( "data_in = [(0,0), (1,1), (2,0)]" );
+
+  Array<double> t_values;
+  DataStore<double>::DataStoreVector_t data_out;
+  t_values.push_back(0.5);
+  //ECHO( "Calling interpolate at t=0.5" );
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  double tol = 1.0e-15;
+  double t05value = 0.6875;
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_FLOATING_EQUALITY( x_view[0], t05value, tol );
+  }
+
+  // Now we have computed the cubic spline coefficients.
+  // Delete the last node:
+  data_in->erase(data_in->end());
+  //ECHO( "data_in = [(0,0), (1,1)]" );
+  //ECHO( "Calling interpolate at t=0.5 after deleting last node, should throw" );
+  TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+
+  // Change the value of the third point
+  V_S(outArg(*x2),1.0);
+  data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
+  //ECHO( "data_in = [(0,0), (1,1), (2,1)]" );
+  //ECHO( "Calling interpolate at t=1.5 after adding different last node, should throw" );
+  TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+
+  // Change the time-point of the third point
+  data_in->erase(data_in->end());
+  //ECHO( "data_in = [(0,0), (1,1)]" );
+  t2 = 2.5;
+  data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
+  //ECHO( "data_in = [(0,0), (1,1), (2.5,1)]" );
+  //ECHO( "Calling interpolate at t=1.5 after changing last node to t=2.5, should throw" );
+  TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+
+  // Add a fourth point:
+  double t3 = 3.0;
+  RCP<Thyra::VectorBase<double> > x3 = createDefaultVector<double>(1,3.0);
+  RCP<Thyra::VectorBase<double> > xdot3;
+  double accuracy3 = 0.0;
+  data_in->push_back(DataStore<double>(t3,x3,xdot3,accuracy3));
+  //ECHO( "data_in = [(0,0), (1,1), (2.5,1), (3,3)]" );
+
+  t_values[0] = 2.7;
+  //ECHO( "Calling interpolate at t=2.7 after adding a fourth point, should throw" );
+  TEST_THROW(csi->interpolate(t_values,&data_out), std::logic_error);
+
+  // Delete the 1st point:
+  data_in->erase(data_in->begin());
+  //ECHO( "data_in = [(1,1), (2.5,1), (3,3)]" );
+  t_values[0] = 0.5;
+  //ECHO( "Calling interpolate at t=0.5 after deleting the first point, should throw" );
+  TEST_THROW(csi->interpolate(t_values,&data_out), std::logic_error);
+
 }
 
 } // namespace Rythmos

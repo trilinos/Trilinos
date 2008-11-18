@@ -201,8 +201,14 @@ template<class Scalar>
 RCP<DataStore<Scalar> > DataStore<Scalar>::clone() const
 {
   Scalar t_out = time;
-  RCP<VectorBase<Scalar> > x_out = x->clone_v();
-  RCP<VectorBase<Scalar> > xdot_out = xdot->clone_v();
+  RCP<VectorBase<Scalar> > x_out;
+  if (!Teuchos::is_null(x)) {
+    x_out = x->clone_v();
+  }
+  RCP<VectorBase<Scalar> > xdot_out;
+  if (!Teuchos::is_null(xdot)) {
+    xdot_out = xdot->clone_v();
+  }
   ScalarMag accuracy_out = accuracy;
   RCP<DataStore<Scalar> > ds_out = rcp(new DataStore<Scalar>(t_out,x_out,xdot_out,accuracy_out));
   return ds_out;

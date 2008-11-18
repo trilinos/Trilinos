@@ -76,7 +76,7 @@ void assertBaseInterpolatePreconditions(
   TimeRange<Scalar> range(data_in.front().time,data_in.back().time);
   for (int i=0; i<Teuchos::as<int>(t_values.size()) ; ++i) {
     TEST_FOR_EXCEPTION(
-      !range.isInRange(t_values[i]), std::logic_error,
+      !range.isInRange(t_values[i]), std::out_of_range,
       "Error, t_values[" << i << "] = " << t_values[i] << 
       " is not in range of data_in = " << range << "!\n"
       );
@@ -90,6 +90,44 @@ void assertBaseInterpolatePreconditions(
       data_in[i].x == Teuchos::null, std::logic_error,
       "Error, data_in[" << i << "].x == Teuchos::null.\n"
       );
+  }
+}
+
+template<class Scalar>
+void assertNodesUnChanged(
+    const typename DataStore<Scalar>::DataStoreVector_t & nodes, 
+    const typename DataStore<Scalar>::DataStoreVector_t & nodes_copy 
+    ) 
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  int N = nodes.size();
+  int Ncopy = nodes_copy.size();
+  TEST_FOR_EXCEPTION( N != Ncopy, std::logic_error, 
+      "Error!  The number of nodes passed in through setNodes has changed!"
+      );
+  if (N > 0) {
+    RCP<Thyra::VectorBase<Scalar> > xdiff = nodes[0].x->clone_v();
+    RCP<Thyra::VectorBase<Scalar> > xdotdiff = xdiff->clone_v();
+    V_S(outArg(*xdiff),ST::one());
+    V_S(outArg(*xdotdiff),ST::one());
+    for (int i=0 ; i<N ; ++i) {
+      V_StVpStV(outArg(*xdiff),ST::one(),*nodes[i].x,-ST::one(),*nodes_copy[i].x);
+      if ((!Teuchos::is_null(nodes[i].xdot)) && (!Teuchos::is_null(nodes_copy[i].xdot))) {
+        V_StVpStV(outArg(*xdotdiff),ST::one(),*nodes[i].xdot,-ST::one(),*nodes_copy[i].xdot);
+      } else if (Teuchos::is_null(nodes[i].xdot) && Teuchos::is_null(nodes_copy[i].xdot)) {
+        V_S(outArg(*xdotdiff),ST::zero());
+      }
+      Scalar xdiffnorm = norm_inf(*xdiff);
+      Scalar xdotdiffnorm = norm_inf(*xdotdiff);
+      TEST_FOR_EXCEPTION(
+          ( ( nodes[i].time != nodes_copy[i].time ) ||
+            ( xdiffnorm != ST::zero() ) ||
+            ( xdotdiffnorm != ST::zero() ) ||
+            ( nodes[i].accuracy != nodes_copy[i].accuracy ) ), 
+          std::logic_error,
+          "Error!  The data in the nodes passed through setNodes has changed!"
+          );
+    }
   }
 }
 

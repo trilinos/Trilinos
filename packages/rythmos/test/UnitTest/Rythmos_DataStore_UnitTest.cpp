@@ -222,19 +222,54 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, vectorToDataStoreListNoAccuracy ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
-  double t = 2.0;
-  RCP<VectorBase<double> > v = createDefaultVector(2,3.0);
-  RCP<VectorBase<double> > v_dot = createDefaultVector(2,4.0);
-  double accuracy = 0.5;
-  const DataStore<double> ds(t,v,v_dot,accuracy);
+  {
+    // Normal clone
+    double t = 2.0;
+    RCP<VectorBase<double> > v = createDefaultVector(2,3.0);
+    RCP<VectorBase<double> > v_dot = createDefaultVector(2,4.0);
+    double accuracy = 0.5;
+    const DataStore<double> ds(t,v,v_dot,accuracy);
 
-  RCP<DataStore<double> > ds_clone_ptr = ds.clone();
-  DataStore<double>& ds_clone = *ds_clone_ptr;
+    RCP<DataStore<double> > ds_clone_ptr = ds.clone();
+    DataStore<double>& ds_clone = *ds_clone_ptr;
 
-  Thyra::V_S(&*v,5.0);
-  Thyra::V_S(&*v_dot,6.0);
-  TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.x),0), 3.0);
-  TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.xdot),0), 4.0);
+    Thyra::V_S(&*v,5.0);
+    Thyra::V_S(&*v_dot,6.0);
+    TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.x),0), 3.0);
+    TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.xdot),0), 4.0);
+  }
+  {
+    // Clone with missing xdot
+    double t = 2.0;
+    RCP<VectorBase<double> > v = createDefaultVector(2,3.0);
+    RCP<VectorBase<double> > v_dot; 
+    double accuracy = 0.5;
+    const DataStore<double> ds(t,v,v_dot,accuracy);
+
+    RCP<DataStore<double> > ds_clone_ptr = ds.clone();
+    DataStore<double>& ds_clone = *ds_clone_ptr;
+
+    Thyra::V_S(&*v,5.0);
+    TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.x),0), 3.0);
+    TEST_EQUALITY_CONST( Teuchos::is_null(ds_clone.xdot), true );
+  }
+  {
+    // Clone with missing x
+    double t = 2.0;
+    RCP<VectorBase<double> > v;
+    RCP<VectorBase<double> > v_dot = createDefaultVector(2,4.0);
+    double accuracy = 0.5;
+    const DataStore<double> ds(t,v,v_dot,accuracy);
+
+    RCP<DataStore<double> > ds_clone_ptr = ds.clone();
+    DataStore<double>& ds_clone = *ds_clone_ptr;
+
+    Thyra::V_S(&*v_dot,6.0);
+    TEST_EQUALITY_CONST(Teuchos::is_null(ds_clone.x), true );
+    TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.xdot),0), 4.0);
+  }
+
+
 }
 
 

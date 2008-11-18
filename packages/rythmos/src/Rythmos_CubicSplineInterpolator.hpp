@@ -105,9 +105,13 @@ private:
 
 
   RCP<const typename DataStore<Scalar>::DataStoreVector_t> nodes_;
+#ifdef TEUCHOS_DEBUG
+  RCP<typename DataStore<Scalar>::DataStoreVector_t> nodes_copy_;
+#endif // TEUCHOS_DEBUG
 
   mutable CubicSplineCoeff<Scalar> splineCoeff_;
   mutable bool splineCoeffComputed_;
+  bool nodesSet_;
 
   RCP<ParameterList> parameterList_;
 
@@ -292,6 +296,7 @@ template<class Scalar>
 CubicSplineInterpolator<Scalar>::CubicSplineInterpolator()
 {
   splineCoeffComputed_ = false;
+  nodesSet_ = false;
 }
 
 
@@ -315,11 +320,21 @@ CubicSplineInterpolator<Scalar>::cloneInterpolator() const
 
 template<class Scalar>
 void CubicSplineInterpolator<Scalar>::setNodes(
-    const RCP<const typename DataStore<Scalar>::DataStoreVector_t> & nodes
+    const RCP<const typename DataStore<Scalar>::DataStoreVector_t> & nodesPtr
     )
 {
-  nodes_ = nodes;
+  nodes_ = nodesPtr;
+  nodesSet_ = true;
   splineCoeffComputed_ = false;
+#ifdef TEUCHOS_DEBUG
+  const typename DataStore<Scalar>::DataStoreVector_t & nodes = *nodesPtr;
+  // Copy nodes to internal data structure for verification upon calls to interpolate
+  nodes_copy_ = rcp(new typename DataStore<Scalar>::DataStoreVector_t);
+  nodes_copy_->reserve(nodes.size());
+  for (int i=0 ; i<Teuchos::as<int>(nodes.size()) ; ++i) {
+    nodes_copy_->push_back(*nodes[i].clone());
+  }
+#endif // TEUCHOS_DEBUG
 }
 
 template<class Scalar>
@@ -331,7 +346,13 @@ void CubicSplineInterpolator<Scalar>::interpolate(
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
+  TEST_FOR_EXCEPTION( nodesSet_ == false, std::logic_error,
+      "Error!, setNodes must be called before interpolate"
+      );
 #ifdef TEUCHOS_DEBUG
+  // Check that our nodes_ have not changed between the call to setNodes and interpolate
+  assertNodesUnChanged<Scalar>(*nodes_,*nodes_copy_);
+  // Assert that the base interpolator preconditions are satisfied
   assertBaseInterpolatePreconditions(*nodes_,t_values,data_out);
 #endif // TEUCHOS_DEBUG
   
@@ -374,7 +395,7 @@ void CubicSplineInterpolator<Scalar>::interpolate(
       const Scalar& ti = (*nodes_)[i].time;
       const Scalar& tip1 = (*nodes_)[i+1].time;
       const TimeRange<Scalar> range_i(ti,tip1);
-      // For the interploation range of [ti,tip1], satisify all of the
+      // For the interpolation range of [ti,tip1], satisify all of the
       // requested points in this range.
       while ( range_i.isInRange(t_values[n]) ) {
         // First we check for exact node matches:
@@ -391,9 +412,9 @@ void CubicSplineInterpolator<Scalar>::interpolate(
             splineCoeffComputed_ = true;
           }
           DataStore<Scalar> DS;
-          DS.time = t_values[n];
           RCP<Thyra::VectorBase<Scalar> > x = createMember((*nodes_)[i].x->space());
           evaluateCubicSpline<Scalar>( splineCoeff_, i, t_values[n], outArg(*x) );
+          DS.time = t_values[n];
           DS.x = x;
           DS.accuracy = ST::zero();
           data_out->push_back(DS);
