@@ -255,12 +255,12 @@ class TrilinosDependencies:
     trilinosDepsTable = []
 
     topRow = [ "Packages" ]
-    topRow.extend(["P"+str(i+1) for i in range(numPackages)] )
+    topRow.extend(["P%02d"%(i+1) for i in range(numPackages)] )
     trilinosDepsTable.append(topRow)
 
     for packageDeps in self.__packagesList:
       i = packageDeps.packageID
-      row = ["P"+str(i+1)+") "+packageDeps.packageName]
+      row = ["P%02d"%(i+1)+") "+packageDeps.packageName]
       row.extend(["" for i in range(numPackages)])
       trilinosDepsTable.append(row)
 
@@ -274,9 +274,9 @@ class TrilinosDependencies:
 
   def createTrilinosPackagesNumberedList(self):
     numPackages = self.numPackages()
-    htmlText = "<p>" + \
+    htmlText = "<p><b>Packages:</b> " + \
       ", ".join( \
-        [ "P"+str(i+1)+":"+self.__packagesList[i].packageName \
+        [ "P%02d"%(i+1)+") "+self.__packagesList[i].packageName \
            for i in range(self.numPackages())] \
         ) + \
         "</p>"
@@ -287,7 +287,7 @@ class TrilinosDependencies:
     numPackages = self.numPackages()
 
     htmlText = \
-      "<TABLE BORDER="+str(numPackages+2)+">\n"+\
+      "<TABLE BORDER=4>\n"+\
       "\n"
 
     for i in range(numPackages+2):
@@ -314,7 +314,7 @@ class TrilinosDependencies:
     htmlText += "\n<TR>\n"
     htmlText += " <TD><b>Packages</b></TD>\n"
     for j in range(numPackages):
-      htmlText += " <TD><b>P"+str(j+1)+"</b></TD>\n"
+      htmlText += " <TD><b>P%02d"%(j+1)+"</b></TD>\n"
     htmlText += " <TD><b>Packages</b></TD>\n"
     htmlText += "</TR>\n"
 
@@ -345,7 +345,7 @@ class TrilinosDependencies:
       "</ul>\n"+\
       "\n"+\
       "NOTE: When more than one type of dependency is present for any cell"+\
-      " the selection determined by:\n"+\
+      " the final selection is determined in the following order:\n"+\
       "<ul>\n"+\
       "<li> A required dependency trumps an optional dependency\n"+\
       "<li> A direct dependency trumps an indirect dependency\n"+\
@@ -362,8 +362,6 @@ class TrilinosDependencies:
     htmlText = \
       "<p><huge><b>Trilinos Test/Example and Library Package Dependencies</b></huge></p>\n"+\
       "\n"+\
-      packagesListHtml+"\n"+\
-      "\n"+\
       self.createHtmlFromTable(self.createRawTable(False))+\
       "\n"+\
       packagesListHtml+"\n"+\
@@ -373,8 +371,6 @@ class TrilinosDependencies:
       self.createHtmlTableLegend(False)+\
       "\n"+\
       "<p><b><huge>Trilinos Libary-Only Package Dependencies</huge></b></p>\n"+\
-      "\n"+\
-      packagesListHtml+"\n"+\
       "\n"+\
       self.createHtmlFromTable(self.createRawTable(True))+\
       "\n"+\

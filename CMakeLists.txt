@@ -51,21 +51,21 @@ OPTION(Trilinos_PACKAGES_UNITTEST_OVERRIDE "" OFF)
 MARK_AS_ADVANCED(Trilinos_PACKAGES_UNITTEST_OVERRIDE)
 IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE)
   SET( Trilinos_PACKAGES_AND_DIRS
-    Teuchos          teuchos         
-    Epetra           epetra     
-    Zoltan           zoltan     
-    RTOp             rtop       
-    Triutils         triutils   
-    EpetraExt        epetraext  
-    Isorropia        isorropia  
-    Thyra            thyra      
-    AztecOO          aztecoo    
-    Galeri           galeri     
-    Amesos           amesos     
-    Ifpack           ifpack     
-    ML               ml         
-    Belos            belos      
-    RBGen            rbgen      
+    Teuchos          teuchos
+    Epetra           epetra
+    Zoltan           zoltan
+    RTOp             rtop
+    Triutils         triutils
+    EpetraExt        epetraext
+    Isorropia        isorropia
+    Thyra            thyra
+    AztecOO          aztecoo
+    Galeri           galeri
+    Amesos           amesos
+    Ifpack           ifpack
+    ML               ml
+    Belos            belos
+    RBGen            rbgen
     Stratimikos      stratimikos
     )
 ENDIF()
@@ -77,22 +77,52 @@ OPTION(Trilinos_PACKAGES_HACK_OVERRIDE "" OFF)
 MARK_AS_ADVANCED(Trilinos_PACKAGES_HACK_OVERRIDE)
 IF (Trilinos_PACKAGES_HACK_OVERRIDE)
   SET( Trilinos_PACKAGES_AND_DIRS
-    Teuchos          teuchos         
-    Epetra           epetra     
-    Zoltan           zoltan     
-    RTOp             rtop       
-    Triutils         triutils   
-    EpetraExt        epetraext  
-    Isorropia        isorropia  
-    Thyra            thyra      
-    AztecOO          aztecoo    
-    Galeri           galeri     
-    Amesos           amesos     
-    Ifpack           ifpack     
-    ML               ml         
-    Belos            belos      
-    RBGen            rbgen      
-    Stratimikos      stratimikos
+    Teuchos               teuchos
+    RTOp                  rtop
+    Kokkos                kokkos
+    Epetra                epetra
+    Stokhos               stokhos
+    Sacado                sacado
+    Zoltan                zoltan
+    Shards                shards
+    Intrepid              intrepid
+    Tpetra                tpetra
+    Triutils              triutils
+    EpetraExt             epetraext
+    Thyra                 thyra
+    Isorropia             isorropia
+    Pliris                pliris
+    Claps                 claps
+    AztecOO               aztecoo
+    Galeri                galeri
+    Amesos                amesos
+    Ifpack                ifpack
+    Komplex               komplex
+    ML                    ml
+    Belos                 belos
+    Stratimikos           stratimikos
+    Meros                 meros
+    FEI                   fei
+    RBGen                 rbgen
+    Anasazi               anasazi
+    ThreadPool            ThreadPool
+    Phalanx               phalanx
+    Pamgen                pamgen
+    Phdmesh               phdmesh
+    NOX                   nox
+    Moertel               moertel
+    TrilinosCouplings     trilinoscouplings
+    Rythmos               rythmos
+    MOOCHO                moocho
+    Aristos               aristos
+    Sundance              Sundance
+    TriKota               TriKota
+    CTrilinos             CTrilinos
+    ForTrilinos           ForTrilinos
+    PyTrilinos            PyTrilinos
+    WebTrilinos           WebTrilinos
+    Didasko               didasko
+    NewPackage            new_package
     )
 ENDIF()
 

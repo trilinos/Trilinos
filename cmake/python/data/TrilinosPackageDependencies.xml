@@ -24,7 +24,7 @@
     <TEST_OPTIONAL_DEP_PACKAGES/>
   </Package>
   <Package name="EpetraExt">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Teuchos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Triutils"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
