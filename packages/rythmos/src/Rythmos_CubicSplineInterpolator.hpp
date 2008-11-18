@@ -135,8 +135,8 @@ void computeCubicSplineCoeff(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPTION( 
-      (data.size() < 3), std::logic_error,
-      "Error!  A minimum of three data points is required for a cubic spline."
+      (data.size() < 2), std::logic_error,
+      "Error!  A minimum of two data points is required for this cubic spline."
       );
   // time data in the DataStoreVector should be unique and sorted 
   Array<Scalar> t;
@@ -148,6 +148,25 @@ void computeCubicSplineCoeff(
   // 11/18/08 tscoffe:  Question:  Should I erase everything in coeffPtr or
   // re-use what I can?  For now, I'll erase and create new each time.
   CubicSplineCoeff<Scalar>& coeff = *coeffPtr;
+  // If there are only two points, then we do something special and just create
+  // a linear polynomial between the points and return.
+  if (t.size() == 2) {
+    coeff.t.clear(); 
+    coeff.a.clear(); coeff.b.clear(); coeff.c.clear(); coeff.d.clear();
+    coeff.t.reserve(2); 
+    coeff.a.reserve(1); coeff.b.reserve(1); coeff.c.reserve(1); coeff.d.reserve(1);
+    coeff.t.push_back(t[0]);
+    coeff.t.push_back(t[1]);
+    coeff.a.push_back(x_vec[0]->clone_v());
+    coeff.b.push_back(Thyra::createMember(x_vec[0]->space()));
+    coeff.c.push_back(Thyra::createMember(x_vec[0]->space()));
+    coeff.d.push_back(Thyra::createMember(x_vec[0]->space()));
+    Scalar h = coeff.t[1] - coeff.t[0];
+    V_StVpStV(outArg(*coeff.b[0]),ST::one()/h,*x_vec[1],-ST::one()/h,*x_vec[0]);
+    V_S(outArg(*coeff.c[0]),ST::zero());
+    V_S(outArg(*coeff.d[0]),ST::zero());
+    return;
+  }
   // Data objects we'll need:
   int n = t.length()-1; // Number of intervals
   coeff.t.clear(); coeff.t.reserve(n+1);
@@ -332,11 +351,6 @@ void CubicSplineInterpolator<Scalar>::interpolate(
     }
   }
 
-  if (!splineCoeffComputed_) {
-    //computeCubicSplineCoeff();
-    splineCoeffComputed_ = true;
-  }
-
   data_out->clear();
 
   // Return immediately if no time points are requested ...
@@ -359,7 +373,6 @@ void CubicSplineInterpolator<Scalar>::interpolate(
     for (int i=0 ; i < as<int>((*nodes_).size())-1; ++i) {
       const Scalar& ti = (*nodes_)[i].time;
       const Scalar& tip1 = (*nodes_)[i+1].time;
-      const Scalar  h = tip1-ti;
       const TimeRange<Scalar> range_i(ti,tip1);
       // For the interploation range of [ti,tip1], satisify all of the
       // requested points in this range.
@@ -372,45 +385,17 @@ void CubicSplineInterpolator<Scalar>::interpolate(
         else if (compareTimeValues(t_values[n],tip1)==0) {
           DataStore<Scalar> DS((*nodes_)[i+1]);
           data_out->push_back(DS);
-        }
-        else {
-          // interpolate this point
-          //
-          // x(t) = (t-ti)/(tip1-ti) * xip1 + (1-(t-ti)/(tip1-ti)) * xi
-          //
-          // Above, it is easy to see that:
-          //
-          //    x(ti) = xi
-          //    x(tip1) = xip1
-          //
-          DataStore<Scalar> DS;
-          const Scalar& t = t_values[n];
-          DS.time = t;
-          // Get the time and interpolation node points
-          RCP<const Thyra::VectorBase<Scalar> > xi = (*nodes_)[i].x;
-          RCP<const Thyra::VectorBase<Scalar> > xip1 = (*nodes_)[i+1].x;
-          RCP<const Thyra::VectorBase<Scalar> > xdoti = (*nodes_)[i].xdot;
-          RCP<const Thyra::VectorBase<Scalar> > xdotip1 = (*nodes_)[i+1].xdot;
-          // Get constants used in interplation
-          const Scalar dt = t-ti;
-          const Scalar dt_over_h = dt / h;
-          const Scalar one_minus_dt_over_h = ST::one() - dt_over_h;
-          // x = dt/h * xip1 + (1-dt/h) * xi
-          RCP<Thyra::VectorBase<Scalar> > x = createMember(xi->space());
-          Thyra::V_StVpStV(&*x,dt_over_h,*xip1,one_minus_dt_over_h,*xi);
-          DS.x = x;
-          // x = dt/h * xdotip1 + (1-dt/h) * xdoti
-          RCP<Thyra::VectorBase<Scalar> > xdot;
-          if ((xdoti != Teuchos::null) && (xdotip1 != Teuchos::null)) {
-            xdot = createMember(xdoti->space());
-            Thyra::V_StVpStV(&*xdot,dt_over_h,*xdotip1,one_minus_dt_over_h,*xdoti);
+        } else {
+          if (!splineCoeffComputed_) {
+            computeCubicSplineCoeff<Scalar>(*nodes_,outArg(splineCoeff_));
+            splineCoeffComputed_ = true;
           }
-          DS.xdot = xdot;
-          // Estimate our accuracy ???
-          DS.accuracy = h;
-          // 2007/12/06: rabartl: Above, should the be a relative value of
-          // some type.  What does this really mean?
-          // Store this interplation
+          DataStore<Scalar> DS;
+          DS.time = t_values[n];
+          RCP<Thyra::VectorBase<Scalar> > x = createMember((*nodes_)[i].x->space());
+          evaluateCubicSpline<Scalar>( splineCoeff_, i, t_values[n], outArg(*x) );
+          DS.x = x;
+          DS.accuracy = ST::zero();
           data_out->push_back(DS);
         }
         // Move to the next user time point to consider!
@@ -429,7 +414,7 @@ void CubicSplineInterpolator<Scalar>::interpolate(
 template<class Scalar>
 int CubicSplineInterpolator<Scalar>::order() const
 {
-  return(3);
+  return(1);
 }
 
 

@@ -42,8 +42,8 @@ using Teuchos::RCP;
 using Teuchos::outArg;
 
 TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, nonMemberConstructor ) {
-  RCP<CubicSplineInterpolator<double> > li = cubicSplineInterpolator<double>();
-  TEST_EQUALITY_CONST( li->order(), 3 );
+  RCP<CubicSplineInterpolator<double> > csi = cubicSplineInterpolator<double>();
+  TEST_EQUALITY_CONST( csi->order(), 1 );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, evaluateCubicSpline ) {
@@ -297,8 +297,8 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   RCP<Thyra::VectorBase<double> > xdot1;
   double accuracy1 = 0.0;
   data_in->push_back(DataStore<double>(t1,x1,xdot1,accuracy1));
-  // not enough points
-  TEST_THROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)), std::logic_error);
+  // enough points for linear special case
+  TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)));
   double t2 = 2.0;
   RCP<Thyra::VectorBase<double> > x2 = createDefaultVector<double>(1,0.0);
   RCP<Thyra::VectorBase<double> > xdot2;
@@ -329,10 +329,9 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
 
 }
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, interpolate ) {
-  RCP<InterpolatorBase<double> > li = cubicSplineInterpolator<double>();
-  double maxOrder = li->order();
+  RCP<InterpolatorBase<double> > csi = cubicSplineInterpolator<double>();
+  double maxOrder = csi->order();
   for (int order = 0 ; order <= maxOrder+1 ; ++order) {
     TEST_EQUALITY( order, order );
     Polynomial<double> p(order,1.0); 
@@ -356,7 +355,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, interpolate ) {
       double t = ((T1-T0)/(N-1.0))*i+T0;
       t_values.push_back(t);
     }
-    interpolate<double>(*li, data_in, t_values, &data_out);
+    interpolate<double>(*csi, data_in, t_values, &data_out);
     // Verify that the interpolated values are exactly the same as the polynomial values
     // unless the order of polynomial is greater than the order of the interpolator
     unsigned int N_out = data_out.size();
@@ -379,8 +378,47 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, interpolate ) {
     }
   }
 }
-*/
 
+TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
+  RCP<InterpolatorBase<double> > csi = cubicSplineInterpolator<double>();
+  RCP<DataStore<double>::DataStoreVector_t> data_in = rcp( new DataStore<double>::DataStoreVector_t );
+  csi->setNodes(data_in);
+  double t0 = 0.0;
+  RCP<Thyra::VectorBase<double> > x0 = createDefaultVector<double>(1,0.0);
+  RCP<Thyra::VectorBase<double> > xdot0;
+  double accuracy0 = 0.0;
+  data_in->push_back(DataStore<double>(t0,x0,xdot0,accuracy0));
+
+  Array<double> t_values;
+  DataStore<double>::DataStoreVector_t data_out;
+  t_values.push_back(0.5);
+  TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+
+  double t1 = 1.0;
+  RCP<Thyra::VectorBase<double> > x1 = createDefaultVector<double>(1,1.0);
+  RCP<Thyra::VectorBase<double> > xdot1;
+  double accuracy1 = 0.0;
+  data_in->push_back(DataStore<double>(t1,x1,xdot1,accuracy1));
+
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  double tol = 1.0e-15;
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_FLOATING_EQUALITY( x_view[0], 0.5, tol );
+  }
+  t_values[0] = 0.0;
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_FLOATING_EQUALITY( x_view[0]+1, 1.0, tol );
+  }
+  t_values[0] = 1.0;
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_FLOATING_EQUALITY( x_view[0], 1.0, tol );
+  }
+}
 
 } // namespace Rythmos
 
