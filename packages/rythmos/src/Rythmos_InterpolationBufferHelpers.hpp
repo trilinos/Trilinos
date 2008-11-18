@@ -187,7 +187,7 @@ void Rythmos::assertTimePointsAreSorted(const Array<Scalar>& time_vec)
     TEST_FOR_EXCEPTION(
       time_vec[i] >= time_vec[i+1], std::logic_error,
       "Error, the time vector points time_vec["<<i<<"] = " << time_vec[i]
-      << " >= time_vec["<<i+1<<"] = " << time_vec[i+1] << " are not sorted!"
+      << " >= time_vec["<<i+1<<"] = " << time_vec[i+1] << " are not [unique|sorted]!"
       );
   }
 }

@@ -46,6 +46,7 @@ CORE_H = \
   $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
   $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
   $(srcdir)/Rythmos_ConfigDefs.h\
+	$(srcdir)/Rythmos_CubicSplineInterpolator.hpp\
   $(srcdir)/Rythmos_DataStore.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator.hpp\
 	$(srcdir)/Rythmos_DiagonalImplicitRKModelEvaluator.hpp\

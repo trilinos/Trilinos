@@ -44,6 +44,7 @@ EXTRA_DIST =\
 Rythmos_UnitTest_SOURCES =\
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
 	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
+	$(srcdir)/Rythmos_CubicSplineInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
   $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp\
 	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\

@@ -117,7 +117,7 @@ public:
   virtual void interpolate(
     const Array<Scalar> &t_values,
     typename DataStore<Scalar>::DataStoreVector_t *data_out
-    ) =0;
+    ) const =0;
 
   /** \brief Return the order of the interpolation.
    *

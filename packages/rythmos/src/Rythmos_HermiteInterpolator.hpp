@@ -76,7 +76,7 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
     void interpolate(
       const Array<Scalar> &t_values,
       typename DataStore<Scalar>::DataStoreVector_t *data_out
-      );
+      ) const;
 
     /// Order of interpolation:
     int order() const; 
@@ -131,7 +131,7 @@ void HermiteInterpolator<Scalar>::setNodes(
 template<class Scalar>
 void HermiteInterpolator<Scalar>::interpolate(
     const Array<Scalar> &t_values
-    ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) 
+    ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
 
   //TEST_FOR_EXCEPT_MSG(true, "Error, ths function is not tested!" );
