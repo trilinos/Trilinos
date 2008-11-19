@@ -57,7 +57,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetra_DisableTeuchos_EnableAllForwardPackages
   "-D Trilinos_ENABLE_Epetra:BOOL=ON -D Trilinos_ENABLE_Teuchos:BOOL=OFF -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Epetra Triutils AztecOO ML 4"
+  "Final set of enabled packages:  Epetra Zoltan Triutils AztecOO ML 5"
   )
 
 

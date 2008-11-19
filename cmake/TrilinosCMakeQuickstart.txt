@@ -176,3 +176,12 @@
     $ make runtests-mpi-PACKAGE_DIR
 
     (NOTE: No need to specify MPIGO or anything else!)
+
+(*) Creating a tarball of the source tree:
+
+   $ make package_source
+
+   NOTE: TThe above command will tar up *everything* in the source tree
+   without exception so make sure that you start with a totally clean source
+   tree before you do this.  Or, you could build doxygen documentation first
+   and then tar up Trilinos.

@@ -331,14 +331,14 @@ class TrilinosDependencies:
       "<li> <b>X</b>: Diagonal entry for the package itself\n"+\
       "<li> <b>LR</b>: Direct library required dependency\n"+\
       "<li> <b>ILR</b>: Indirect library required dependency\n"+\
-      "<li> <b>LO</b>: Dirrect library optional dependency\n"+\
+      "<li> <b>LO</b>: Direct library optional dependency\n"+\
       "<li> <b>ILO</b>: Indirect library optional dependency\n"
 
     if not libsOnly:
       htmlText +=\
         "<li> <b>TR</b>: Direct test/example required dependency\n"+\
         "<li> <b>ITR</b>: Indirect test/example required dependency\n"+\
-        "<li> <b>TO</b>: Dirrect test/example optional dependency\n"+\
+        "<li> <b>TO</b>: Direct test/example optional dependency\n"+\
         "<li> <b>ITO</b>: Indirect test/example optional dependency\n"
 
     htmlText +=\
