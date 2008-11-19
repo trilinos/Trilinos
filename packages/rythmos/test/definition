@@ -76,7 +76,7 @@ TESTS = ConvergenceTest/Rythmos_ImplicitRK_ConvergenceTest.exe;
 
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel,RythmosAmesos1Loose) {
     TESTS = complicatedExample/complicatedExample_amesos.exe;
-    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3 --max-restep-error=1e-9  --verbose --echo-command-line;
+    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-3 --abstol=1e-3 --maxerror=1e-3 --max-restep-error=1e-9  --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
     HOST = gabriel.sandia.gov s858352.srn.sandia.gov;
 }
@@ -160,10 +160,10 @@ TESTS = ConvergenceTest/Rythmos_ImplicitRK_ConvergenceTest.exe;
     COMM = SERIAL,MPI(1);
 }
 
-# Vector Backward Euler with same accuracy as ERK
+# Vector Backward Euler with lower accuracy than ERK
 (FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos6) {
     TESTS = complicatedExample/complicatedExample_amesos.exe;
-    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose --echo-command-line --verb-level=VERB_MEDIUM;
+    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=500 --maxerror=1e-5 --verbose --echo-command-line --verb-level=VERB_MEDIUM;
     COMM = SERIAL, MPI(1);
 }
 
