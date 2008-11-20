@@ -1,3 +1,4 @@
+PACKAGE_NAME=FEI
 
 (FRAMEWORK, FeiTests) {
   TESTS = fei_test.exe;

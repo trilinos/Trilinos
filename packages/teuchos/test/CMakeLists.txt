@@ -46,13 +46,13 @@ TRILINOS_ADD_EXECUTABLE(
   )
 
 TRILINOS_ADD_EXECUTABLE(
-  TEUCHOS_Comm_test  
+  Comm_test  
   DIRECTORY Comm
   COMM serial mpi  
   SOURCES Comm_test.cpp
   )
 TRILINOS_ADD_TEST(
-  TEUCHOS_Comm_test
+  Comm_test
   DIRECTORY Comm
   NAME Comm_test
   NUM_MPI_PROCS 1-10
@@ -399,13 +399,13 @@ TRILINOS_ADD_TEST(
   )
 
 TRILINOS_ADD_EXECUTABLE(
-  Teuchos_exit_test  
+  exit_test  
   DIRECTORY exit
   COMM serial mpi  
   SOURCES cxx_main.cpp some_c_func.c 
   )
 TRILINOS_ADD_TEST(
-  Teuchos_exit_test  
+  exit_test  
   DIRECTORY exit
   NUM_MPI_PROCS 1
   COMM serial mpi

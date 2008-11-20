@@ -20,6 +20,7 @@ FLIBS="-lg2c" \
 --enable-thyra \
 --enable-epetra --enable-epetra-abc \
 --enable-triutils --disable-triutils-tests --disable-triutils-examples \
+--enable-tpetra \
 --enable-epetraext \
 --enable-amesos \
 --enable-aztecoo \
@@ -37,13 +38,15 @@ FLIBS="-lg2c" \
 --enable-new_package \
 --enable-galeri \
 --enable-moertel \
---enable-intrepid \
 --enable-anasazi \
 --enable-ctrilinos \
 --enable-sundance \
 --enable-didasko \
 --with-trilinosdatadir=/home/rabartl/PROJECTS/Trilinos.base/TrilinosData \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/trilinos/dev/serial/dbg
+
+# 2008/11/19: Intrepid is not even configuring!
+#--enable-intrepid \
 
 # 2008/08/07: Tpetra is not building today
 #--enable-tpetra \
@@ -53,9 +56,6 @@ FLIBS="-lg2c" \
 
 # 2008/07/29: Issoropia fails to build
 #--enable-isorropia \
-
-# 2008/07/03: Intrepid hangs when building tests?
-#--enable-intrepid \
 
 # These are the compiler options that I should be using!
 # CXXFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions -Wshadow -Woverloaded-virtual" \

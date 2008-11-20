@@ -1,3 +1,5 @@
+PACKAGE_NAME=Intrepid
+
 #
 # This group defines the standard set of Intrepid's tests.
 #

@@ -16,96 +16,13 @@ TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 #
 
 SET(HEADERS "")
+SET(NONINSTALLHEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
-  )
-
-#
-# src/all
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/all)
-
-SET(HEADERS ${HEADERS}
-  all/all_allo_const.h
-  )
-
-SET(SOURCES ${SOURCES}
-  all/all_allo.c
-  )
-
-#
-# src/coloring
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/coloring)
-
-SET(HEADERS ${HEADERS}
-  coloring/coloring_const.h
-  coloring/coloring.h
-  coloring/g2l_hash.h
-  )
-
-SET(SOURCES ${SOURCES}
-  coloring/coloring.c
-  coloring/color_test.c
-  coloring/g2l_hash.c
-  )
-
-#
-# src/ha
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ha)
-
-SET(HEADERS ${HEADERS}
-  ha/ha_const.h
-  ha/ha_drum.h
-  )
-
-SET(SOURCES ${SOURCES}
-  ha/build_machine_desc.c
-  ha/divide_machine.c
-  ha/get_processor_name.c
-  ha/ha_drum.c
-  )
-
-#
-# src/hier
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hier)
-
-SET(HEADERS ${HEADERS}
-  hier/hier.h
-  )
-
-SET(SOURCES ${SOURCES}
-  hier/hier.c
-  hier/hier_free_struct.c
-  )
-
-#
-# src/hsfc
-#
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hsfc)
-
-SET(HEADERS ${HEADERS}
-  hsfc/hsfc.h
-  hsfc/hsfc_const.h
-  hsfc/hsfc_hilbert_const.h
-  )
-
-SET(SOURCES ${SOURCES}
-  hsfc/hsfc_box_assign.c
-  hsfc/hsfc.c
-  hsfc/hsfc_hilbert.c
-  hsfc/hsfc_point_assign.c
   )
 
 #
@@ -130,12 +47,96 @@ SET(HEADERS ${HEADERS}
   )
 
 #
+# src/all
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/all)
+
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  all/all_allo_const.h
+  )
+
+SET(SOURCES ${SOURCES}
+  all/all_allo.c
+  )
+
+#
+# src/coloring
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/coloring)
+
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  coloring/coloring_const.h
+  coloring/coloring.h
+  coloring/g2l_hash.h
+  )
+
+SET(SOURCES ${SOURCES}
+  coloring/coloring.c
+  coloring/color_test.c
+  coloring/g2l_hash.c
+  )
+
+#
+# src/ha
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ha)
+
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  ha/ha_const.h
+  ha/ha_drum.h
+  )
+
+SET(SOURCES ${SOURCES}
+  ha/build_machine_desc.c
+  ha/divide_machine.c
+  ha/get_processor_name.c
+  ha/ha_drum.c
+  )
+
+#
+# src/hier
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hier)
+
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  hier/hier.h
+  )
+
+SET(SOURCES ${SOURCES}
+  hier/hier.c
+  hier/hier_free_struct.c
+  )
+
+#
+# src/hsfc
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hsfc)
+
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  hsfc/hsfc.h
+  hsfc/hsfc_const.h
+  hsfc/hsfc_hilbert_const.h
+  )
+
+SET(SOURCES ${SOURCES}
+  hsfc/hsfc_box_assign.c
+  hsfc/hsfc.c
+  hsfc/hsfc_hilbert.c
+  hsfc/hsfc_point_assign.c
+  )
+
+#
 # src/lb
 #
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/lb)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   lb/lb_const.h
   lb/lb_init_const.h
   )
@@ -165,7 +166,7 @@ IF (${PACKAGE_NAME}_ENABLE_OCT)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/oct)
   
-  SET(HEADERS ${HEADERS}
+  SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
     oct/costs_const.h
     oct/costs.h
     oct/dfs_const.h
@@ -208,7 +209,7 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/order)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   order/order_const.h
   )
 
@@ -225,7 +226,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/par)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   par/par_average_const.h
   par/par_bisect_const.h
   par/par_const.h
@@ -249,7 +250,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/params)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   params/key_params.h
   params/params_const.h
   )
@@ -272,7 +273,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/parmetis)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   parmetis/third_library_const.h
   parmetis/third_library.h
   parmetis/third_library_tools.h
@@ -289,7 +290,7 @@ SET(SOURCES ${SOURCES}
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 
-  SET(HEADERS ${HEADERS}
+  SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
     parmetis/parmetis_interface.h
     )
   
@@ -301,7 +302,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
 
-  SET(HEADERS ${HEADERS}
+  SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   parmetis/scotch_interface.h
     )
   
@@ -317,7 +318,7 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/phg)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   phg/phg_comm.h
   phg/phg_const.h
   phg/phg_distrib.h
@@ -354,7 +355,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/rcb)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   rcb/create_proc_list_const.h
   rcb/rcb_const.h
   rcb/rcb.h
@@ -384,7 +385,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/reftree)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   reftree/reftree_const.h
   reftree/reftree.h
   )
@@ -413,7 +414,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/timer)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   timer/timer_const.h
   )
 
@@ -430,7 +431,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Utilities/DDirectory)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Utilities/Timer)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Utilities/shared)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   Utilities/Communication/comm.h
   Utilities/DDirectory/DD.h
   Utilities/Timer/timer.h
@@ -474,7 +475,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zz)
 
-SET(HEADERS ${HEADERS}
+SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   zz/zz_const.h
   zz/zz_heap.h
   zz/zz_id_const.h
@@ -509,6 +510,7 @@ ENDIF()
 TRILINOS_PACKAGE_ADD_LIBRARY(
   zoltan
   HEADERS ${HEADERS}
+  NOINSTALLHEADERS ${NOINSTALLHEADERS}
   SOURCES ${SOURCES}
   DEPLIBS ${DEPLIBS}
   )

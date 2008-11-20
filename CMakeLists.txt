@@ -131,10 +131,6 @@ ENDIF()
 TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
 
 
-#
-# C) Read in the package dependancies
-#
-
 FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
   LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
   LIST(GET Trilinos_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
@@ -154,6 +150,22 @@ IF (Trilinos_VERBOSE_CONFIGURE OR Trilinos_DUMP_PACKAGE_DEPENDENCIES)
     MESSAGE("")
   ENDFOREACH()
 ENDIF()
+
+
+#
+# C) Define the list of offical Trilinos TPLs
+#
+
+#SET(Trilinos_TPLs
+#   Boost        3.4     OFF
+#   BLAS         X       ON
+#   LAPACK       X       ON
+#   MPI          X       OFF
+#   ParMETIS     1.5     OFF
+#   Scotch       2.1     OFF
+#   )
+
+# ToDo: Set up user cache varaibles
 
 
 #
@@ -259,7 +271,7 @@ MARK_AS_ADVANCED(Trilinos_LAPACK_LIBRARY)
 
 
 #
-# E) Apply logic to enable Trilinos pacakges and tests
+# E) Apply logic to enable Trilinos packages and tests
 #
 
 TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nExplicitly enabled packages on input")
@@ -290,6 +302,7 @@ IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   MESSAGE(SEND_ERROR "Shortcircuiting after dependency tracking ...")
   RETURN()
 ENDIF()
+
 
 
 #
@@ -393,7 +406,7 @@ INCLUDE(CPack)
 
 
 #
-# I) Configure individual pacakges
+# I) Configure individual packages
 # 
 
 MESSAGE("")

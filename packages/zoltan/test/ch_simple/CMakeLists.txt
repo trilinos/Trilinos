@@ -5,6 +5,7 @@ INCLUDE(Copy_Files_To_Binary_Dir)
 
 TRILINOS_ADD_TEST(
   ../../src/driver/zdrive
+  NOEXEPREFIX
   NAME zdrive_ch_simple
   ARGS zdrive.inp.rcb
   COMM serial mpi

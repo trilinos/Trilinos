@@ -1,3 +1,5 @@
+PACKAGE_NAME=ML
+
 # Note:  DESCEND_DIRS means that the test harness cd's to the directories
 #        before running.  This is useful if the examples need to read in data.
 (FRAMEWORK,ValidateParams, MLTests) {

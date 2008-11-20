@@ -1,3 +1,5 @@
+PACKAGE_NAME=RTOp
+
 
 (FRAMEWORK,INSTALL) {
     TESTS = base/RTOpPack_Types_test.exe;

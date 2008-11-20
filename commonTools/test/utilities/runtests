@@ -652,8 +652,9 @@ cleanUp();
             
             # Parse definition file into array of hashes of arrays.
             my @definitionAoHoA;
-            (my $failures, my @result) = parseDefinition();
-            
+            (my $failures, my $packageName, my @result) = parseDefinition();
+            #print "\npackageName = '$packageName'\n";
+
             if (!$failures) {
                 @definitionAoHoA = @result;            
             } else {
@@ -788,7 +789,30 @@ cleanUp();
                         # here to make sure tests specified with "TESTS = " are
                         # actually built too.
 
-                        if (-x "$buildDir/packages/$packageTestPath/$test") {
+                        # Here, we must also look at see if the
+                        # PACKAGE_${testName} version also exists or not.
+
+                        use File::Basename;
+                        my $testDir = dirname($test);
+                        my $testName = basename($test);
+
+                        #print "\npackage = '".$package."'\n";
+                        #print "\npackageName = '", $packageName, "'\n";
+                        #print "\ntestName = '".$testName."'\n";
+                        #print "\ntestDir = '".$testDir."'\n";
+
+                        my $testExists = 0;
+                        if (-x "$buildDir/packages/$packageTestPath/$testDir/$testName") {
+                          $testExists = 1;
+                        }
+                        else {
+                          $testName = "${packageName}_${testName}";
+                          if (-x "$buildDir/packages/$packageTestPath/$testDir/$testName") {
+                            $testExists = 1;
+                          }
+                        }
+
+                        if ($testExists) {
                         
                             # Each argument specified gets its own test run.
                             foreach my $argOrig (@{ $definitionAoHoA[$i]{'ARGS'} }) {
@@ -802,12 +826,8 @@ cleanUp();
                             
                                 # Prepare the hash entry for this test that will
                                 # end up in @testListAoH.
-                                my %testEntry = ();                            
+                                my %testEntry = ();
                                 $testEntry{'package'} = $package;
-                                
-                                use File::Basename;        
-                                my $testDir = dirname($test);
-                                my $testName = basename($test);
                                 
                                 $testEntry{'definitionDir'} = $File::Find::dir;
                                 $testEntry{'directory'} = $testDir;
@@ -1040,12 +1060,23 @@ cleanUp();
             $errorString .= "! Can't open definition file.\n";
         }
 
+        # Pull out the package name
+        my $packageNameValue = <DEFINITION>;
+        chomp($packageNameValue);
+        #print "\npackageNameValue = $packageNameValue\n";
+        my @packageNameArray = split(/=/,$packageNameValue);
+        my $packageName = $packageNameArray[1];
+        #$packageName =~ s/PACKAGE_NAME=\([a-zA-Z0-9]+\);/$1/g;
+        #print "\npackageName = $packageName\n";
+
         # Read definition file into one string.
         undef $/;               # undefine input record separator
         my $file=<DEFINITION>;  # copy entire file
         $/ = "\n";              # restore it to default newline
         close DEFINITION;
         
+
+
         # Clean up file.
         $file =~ s/#.*$//mg;        # remove everything after any #
         $file =~ s/\n\s*\n/\n/g;    # remove any blank lines
@@ -1060,6 +1091,8 @@ cleanUp();
         $file =~ s/\\\,/\[\[\[ESCAPED_COMMA\]\]\]/g;
         $file =~ s/\\\;/\[\[\[ESCAPED_SEMICOLON\]\]\]/g;
         
+        #print "\nfile:\n".$file."\n";
+
         # Split definition file into groups.
         # This gives us an array of strings of the essential form (.*){.*}.
         my @rawTestGroups = $file =~ m/(\(.*?\)\s*\{.*?\})/g;
@@ -1093,9 +1126,9 @@ cleanUp();
         printMessage($message, $v3);
         
         if (!$status) {         # Return properly parsed definition file.
-            return ($status, @definitionAoHoA);
+            return ($status, $packageName, @definitionAoHoA);
         } else {                # Return $errorString string.
-            return ($status, ($errorString));
+            return ($status, $packageName, ($errorString));
         }
     
     } # parseDefinition()
