@@ -335,31 +335,6 @@ void ArrayView<T>::setUpIterators()
 }
 
 
-template<class T> inline
-void* ArrayView<T>::operator new(size_t)
-{
-  // Should never be called!
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  TEST_FOR_EXCEPT(true);
-#endif
-  return 0;
-}
-
-
-#ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
-//template<class T> inline
-//void ArrayView<T>::operator delete(void*)
-//{
-//  // Should never be called!
-//#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-//  TEST_FOR_EXCEPT(true);
-//#endif
-//}
-// 2008/09/19: rabartl: Above: See the comment
-// in Teuchos_ArrayViewDecl.hpp (i.e. bug 4191).
-#endif // TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
-
-
 } // namespace Teuchos
 
 
