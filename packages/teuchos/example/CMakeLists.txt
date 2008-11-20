@@ -85,11 +85,12 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   SOURCES XmlToParameterList.cpp
   )
 
-COPY_FILES_TO_BINARY_DIR(TeuchosCopyExampleXmlFiles
+COPY_FILES_TO_BINARY_DIR(CopyExampleXmlFiles
   DEST_FILES Example1.xml Example2.xml
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/XML
   SOURCE_PREFIX "_"
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/XML
+  EXEDEPS XmlToParameterList
   )
 
 ADD_SUBDIRECTORY(ExplicitInstantiation/four_files)

@@ -1,5 +1,6 @@
 
 INCLUDE(Parse_Variable_Arguments)
+INCLUDE(Global_Set)
 
 
 #
@@ -37,9 +38,9 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   # C) Define package linkage varaibles
   #
 
-  SET(${PACKAGE_NAME}_INCLUDE_DIRS "" CACHE INTERNAL "")
-  SET(${PACKAGE_NAME}_LIBRARY_DIRS "" CACHE INTERNAL "")
-  SET(${PACKAGE_NAME}_LIBRARIES "" CACHE INTERNAL "")
+  GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS "")
+  GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS "")
+  GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES "")
 
   #
   # D) Set up package dependancy-related variables

@@ -23,6 +23,8 @@ SET(CMAKE_MODULE_PATH "${TRILINOS_HOME_DIR}/cmake")
 SET(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 INCLUDE(TrilinosGlobalHelpers)
+INCLUDE(Advanced_Set)
+INCLUDE(Advanced_Option)
 
 OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose." OFF)
 
@@ -49,8 +51,7 @@ SET( Trilinos_PACKAGES_AND_DIRS
 
 # Hack to allow me to set the exact list of packages so that I can have stable
 # unit tests as packages are added and dependencies change
-OPTION(Trilinos_PACKAGES_UNITTEST_OVERRIDE "" OFF)
-MARK_AS_ADVANCED(Trilinos_PACKAGES_UNITTEST_OVERRIDE)
+ADVANCED_OPTION(Trilinos_PACKAGES_UNITTEST_OVERRIDE "" OFF)
 IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE)
   SET( Trilinos_PACKAGES_AND_DIRS
     Teuchos          teuchos
@@ -75,8 +76,7 @@ ENDIF()
 # Temporary hack to allow me to state more package dependencies that we have
 # full CMake support for.  This will go away once all of Trilinos is
 # CMakeified.
-OPTION(Trilinos_PACKAGES_HACK_OVERRIDE "" OFF)
-MARK_AS_ADVANCED(Trilinos_PACKAGES_HACK_OVERRIDE)
+ADVANCED_OPTION(Trilinos_PACKAGES_HACK_OVERRIDE "" OFF)
 IF (Trilinos_PACKAGES_HACK_OVERRIDE)
   SET( Trilinos_PACKAGES_AND_DIRS
     Teuchos               teuchos
@@ -128,8 +128,9 @@ IF (Trilinos_PACKAGES_HACK_OVERRIDE)
     )
 ENDIF()
 
-TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
+# Process the packages lists and dependencies
 
+TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
 
 FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
   LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
@@ -137,7 +138,8 @@ FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
   TRILINOS_READ_PACKAGE_DEPENDENCIES(${PACKAGE} ${PACKAGE_DIR})
 ENDFOREACH()
 
-OPTION(Trilinos_DUMP_PACKAGE_DEPENDENCIES "Dump the package dependency information." OFF)
+ADVANCED_OPTION(Trilinos_DUMP_PACKAGE_DEPENDENCIES
+  "Dump the package dependency information." OFF)
 
 IF (Trilinos_VERBOSE_CONFIGURE OR Trilinos_DUMP_PACKAGE_DEPENDENCIES)
   MESSAGE("")
@@ -156,14 +158,15 @@ ENDIF()
 # C) Define the list of offical Trilinos TPLs
 #
 
-#SET(Trilinos_TPLs
-#   Boost        3.4     OFF
-#   BLAS         X       ON
-#   LAPACK       X       ON
-#   MPI          X       OFF
-#   ParMETIS     1.5     OFF
-#   Scotch       2.1     OFF
-#   )
+SET(Trilinos_TPLs
+   BLAS         ON
+   LAPACK       ON
+   MPI          OFF
+   Boost        OFF
+   ParMETIS     OFF
+   Scotch       OFF
+   PaToH        OFF
+   )
 
 # ToDo: Set up user cache varaibles
 
@@ -204,10 +207,9 @@ FOREACH(PACKAGE ${Trilinos_PACKAGES})
   TRILINOS_ADD_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
 ENDFOREACH()
 
-OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
+ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   "Shortcircut after dependency handling is complete"
   OFF)
-MARK_AS_ADVANCED(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
 
 IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE OR Trilinos_PACKAGES_HACK_OVERRIDE)
   SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
@@ -216,11 +218,10 @@ ELSE()
   SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
     "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml" )
 ENDIF()
-SET(Trilinos_DEPS_XML_OUTPUT_FILE
+ADVANCED_SET(Trilinos_DEPS_XML_OUTPUT_FILE
   ${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}
   CACHE STRING
   "XML file that Trilinos dependenices used by tools are written to (if not empty)." )
-MARK_AS_ADVANCED(Trilinos_DEPS_XML_OUTPUT_FILE)
 
 IF(WIN32 AND NOT CYGWIN)
   SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
@@ -228,16 +229,14 @@ ELSE()
   SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT
     "${TRILINOS_BUILD_DIR}/TrilinosPackageDependenciesTable.html" )
 ENDIF()
-SET(Trilinos_DEPS_HTML_OUTPUT_FILE
+ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   ${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
-MARK_AS_ADVANCED(Trilinos_DEPS_HTML_OUTPUT_FILE)
 
-OPTION(Trilinos_ENABLE_CXX
+ADVANCED_OPTION(Trilinos_ENABLE_CXX
   "Enable the C++ compiler and related code"
   ON )
-MARK_AS_ADVANCED(Trilinos_ENABLE_CXX)
 
 IF(WIN32 AND NOT CYGWIN)
   SET(Trilinos_ENABLE_FORTRAN_DEFAULT OFF)
@@ -249,8 +248,7 @@ OPTION(Trilinos_ENABLE_FORTRAN
   "Enable the Fortran compiler and related code"
   ${Trilinos_ENABLE_FORTRAN_DEFAULT} )
 
-OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
-MARK_AS_ADVANCED(BUILD_SHARED_LIBS)
+ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 
 OPTION(Trilinos_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
 
@@ -328,7 +326,7 @@ ELSE()
   SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT ON)
 ENDIF()
 
-OPTION(Trilinos_ENABLE_NATIVE_TEST_HARNESS
+ADVANCED_OPTION(Trilinos_ENABLE_NATIVE_TEST_HARNESS
   "Enable the native Trilinos perl-based test harness."
   ${Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT} )
 
@@ -372,7 +370,7 @@ ENDIF()
 # with cygwin because the custom script target is not working for some
 # reason.
 
-OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS
+ADVANCED_OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS
   "Enable dependency unit tests."
   ${Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT}
   )

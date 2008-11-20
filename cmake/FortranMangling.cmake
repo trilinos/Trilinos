@@ -1,3 +1,5 @@
+INCLUDE(Global_Set)
+
 # Function that defines variables describing the Fortran name mangling
 # convention
 #
@@ -65,10 +67,8 @@ FUNCTION(FORTRAN_MANGLING)
           IF (Trilinos_VERBOSE_CONFIGURE)
             MESSAGE("FORTRAN_MANGLING: Bingo!  ${cdef} ${udef} is the correct fortran name mangling!\n")
           ENDIF()
-          SET(FC_FN_CASE ${cdef} CACHE INTERNAL
-            "Case used by Fortran functions" FORCE)
-          SET(FC_FN_UNDERSCORE ${udef} CACHE INTERNAL
-            "Underscore convention used by Fortran functions" FORCE)
+          GLOBAL_SET(FC_FN_CASE ${cdef})
+          GLOBAL_SET(FC_FN_UNDERSCORE ${udef})
           BREAK()
         ENDIF()
 

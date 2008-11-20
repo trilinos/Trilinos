@@ -16,6 +16,13 @@ dependencies, and only a subset of tests/examples.
 Backlog:
 --------
 
+(*) [???] Add unit testing infrastructure for TRILINOS_ADD_EXECUTABLE(...),
+TRILINOS_ADD_TEST(...).  These unit tests will serve both as tests and as
+documentation.  I need to see if you can redefine ADD_EXECUTABLE(...),
+ADD_TEST(...), and other commands so that I can unit test that these things
+are being set correctly.  If not, then I can always wrap these with my own and
+then redefine them when unit testing.
+
 (*) [???] Fix TRILINOS_ADD_EXECUTABLE(...) to not add ./ to absolute paths
 
 (*) [???] Add file CTestCustom.cmake.in in Trilinos/cmake and do a
@@ -23,12 +30,6 @@ CONFIGURE_FILE(...) command to put it in the base build tree.  In this file,
 set CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE and
 CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE and any other options given at
 http://www.vtk.org/Wiki/CMake_Testing_With_CTest.
-
-(*) [???] Create the macro GLOBAL_SET(...) to call SET( ... INTERNAL CACHE
-...) to make global varibles easier and less error prone to use.
-
-(*) [???] Create the macro ADVANCED_SET(...) to automatically call SET(...) 
-and then MARK_AS_ADVANCED(...) on one shot.  This will reduce duplication.
 
 (*) [???] Set the variable CPACK_SOURCE_IGNORE_FILES to ignore groups of files
 (and hopefully directories) that you don't want to add to the source
@@ -38,50 +39,31 @@ an internal cache variables and then reset them at the package level.
 (*) [???] Automatically add the right compiler options when on the
 primary development platform (i.e. lots of warnings)
 
-(*) [???] Add unit testing infrastructure for TRILINOS_ADD_EXECUTABLE(...),
-TRILINOS_ADD_TEST(...).  These unit tests will serve both as tests and as
-documentation.  I need to see if you can redefine ADD_EXECUTABLE(...),
-ADD_TEST(...), and other commands so that I can unit test that these things
-are being set correctly.  If not, then I can always wrap these with my own and
-then redefine them when unit testing.
+(*) Improvements for TRILINOS_PACKAGE_ADD_LIBRARY(...):
 
-(*) [???] Add the package name as a prefix to all test and example
-executables.  This will require changes to the TRILINOS_ADD_EXECUTABLE(..) and
-TRILINOS_ADD_TEST(...) functions.  It will also require changes to all of the
-existing Makefile.am files that create these tests in the autotools system and
-in the test/definition files.  We could also just modify the perl scripts to
-look for executables with the package name prefix (which would could specify
-at the top of the test/definition file).  That way, we would not have to
-change any of the autotools Makefile.am files.
-
-(*) [???] Improvements for TRILINOS_PACKAGE_ADD_LIBRARY(...):
-
-- [???] Add NOINSTALL option for test libraries that you don't want to
-install.
-
-- [???] Add NOINSTALLHEADERS argument headers that you need to build
-the library (and include in the tarball) but don't want to install.
-
-(*) [???] Add a 'libs' target to rebuild only libraries so that we can skip
-unecessary relinking when shared libraries are used.
+- [???] Add NOINSTALLLIB argument for test libraries that you don't want to
+install.  This is needed for some NOX test librries.
 
 (*) [???] Add the aggregate targets 'PACKAGE-libs' and 'PACAKGE' to build the
 library or all targets for a given package.  This can be hidden inside of the
 various macros.  This will make it faster to rebuild specific packages from
 the top level and allow shortcuts for retesting when using shared libraries.x
 
+(*) [???] Add a global 'libs' target to rebuild only libraries so that we can
+skip unecessary relinking when shared libraries are used.
+
 (*) [???] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
 track of test results for different enables/disables.
-
-(*) [???] Change all source files to be globbed and use internal ifdefs to
-control what gets built.  This will make it easier to maintain the BJAM build
-system.
 
 (*) [???] Change how XXX_config.h.in files get created so that they get
 created automatically.  We can do this by changing the scripts
 TRILINOS_ADD_OPTION(...) and TRILINOS_PACKAGE_CONFIGURE_FILE(...) and adding a
 few new scripts.
+
+(*) [???] Change all source files to be globbed and use internal ifdefs to
+control what gets built.  This will make it easier to maintain the BJAM build
+system.
 
 (*) [???] Upgrade Trilinos/CMakeLists.txt and
 dump-package-dep-table.py add an option to only show dependencies for
@@ -116,7 +98,8 @@ Trilinos-Announce allowing others to use this.
 (*) [???] Create automated support for stripping out all "Experimental" code
 (both files and code inside of ifdefs) so that we don't put it out in releases
 of Trilinos.  This negates the need for the autotools way of creating
-tarballs.
+tarballs.  Or, you could add to the CPACK_SOURCE_IGNORE_FILES varaible
+automatically to exclude all such files.
 
 (*) [???] Add the Trilinos LGPL license to the NSIS installer
 
@@ -138,6 +121,28 @@ for Trilinos.
 Completed:
 ----------
 
-(*) [Ross] Add Dependencies.cmake files for all Trilinos packages.  We
-need to see how the dependency tracking logic scales to all of
-Trilinos.
+(*) [Ross] Add Dependencies.cmake files for all Trilinos packages.  We need to
+see how the dependency tracking logic scales to all of Trilinos. ... It scales
+just fine!
+
+(*) [Ross] Add the package name as a prefix to all test and example
+executables.  This will require changes to the TRILINOS_ADD_EXECUTABLE(..) and
+TRILINOS_ADD_TEST(...) functions.  It will also require changes to all of the
+existing Makefile.am files that create these tests in the autotools system and
+in the test/definition files.  We could also just modify the perl scripts to
+look for executables with the package name prefix (which would could specify
+at the top of the test/definition file).  That way, we would not have to
+change any of the autotools Makefile.am files.
+
+(*) Improvements for TRILINOS_PACKAGE_ADD_LIBRARY(...):
+- [Ross] Add NOINSTALLHEADERS argument headers that you need to build the
+library (and include in the tarball) but don't want to install.
+
+(*) [Ross] Add auto ${PACKAGE_NAME}_ prefix and TARGETDEP to macro
+COPY_FILES_TO_BINARY_DIR (...)
+
+(*) [Ross] Create the macro GLOBAL_SET(...) to call SET( ... INTERNAL CACHE
+...) to make global varibles easier and less error prone to use.
+
+(*) [Ross] Create the macro ADVANCED_SET(...) to automatically call SET(...) 
+and then MARK_AS_ADVANCED(...) on one shot.  This will reduce duplication.

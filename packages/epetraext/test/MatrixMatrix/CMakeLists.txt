@@ -9,7 +9,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-COPY_FILES_TO_BINARY_DIR(EpetraExtMatrixMatrixCopyFiles
+COPY_FILES_TO_BINARY_DIR(MatrixMatrixCopyFiles
   DEST_FILES
     infileAB infileATBT infileAB2 infiles infileABT infileAB3 infileATB infileATB2
     C.mtx C4x4.mtx C4x12x12x4.mtx C4x6.mtx C6x4.mtx C6x6.mtx mat6x4.mtx mat6x6.mtx
@@ -17,6 +17,7 @@ COPY_FILES_TO_BINARY_DIR(EpetraExtMatrixMatrixCopyFiles
     roman roman2 romancase romancase2 cdt cdt_case cdt_d.mtx cdt_m.mtx cdt_tce.mtx
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix
   SOURCE_PREFIX "src_"
+  EXEDEPS MatrixMatrix_test
   )
 
   

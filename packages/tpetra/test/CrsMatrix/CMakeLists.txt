@@ -18,4 +18,5 @@ SET(INPUT_FILES west0067.rua mhd1280b.cua)
 COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
   SOURCE_FILES ${INPUT_FILES}
   DEST_FILES ${INPUT_FILES}
+  EXEDEPS CrsMatrix_UnitTests
   )
