@@ -66,6 +66,9 @@
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_LOCA
 
+/* Define if want to build loca-epetra */
+#undef HAVE_PYTRILINOS_LOCA_EPETRA
+
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_MEROS
 

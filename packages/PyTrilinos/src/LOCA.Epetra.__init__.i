@@ -28,27 +28,46 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") MultiContinuation
+%define %loca_epetra_docstring
+"
+PyTrilinos.LOCA.Epetra is the python interface to namespace Epetra for
+the Trilinos package LOCA:
+
+    http://trilinos.sandia.gov/packages/nox
+
+The purpose of LOCA.Epetra is to provide a concrete interface beteen
+LOCA and Epetra.
+
+"
+%enddef
+%module(package      = "PyTrilinos.LOCA.Epetra",
+	directors    = "1",
+	autodoc      = "1",
+	implicitconv = "1",
+	docstring    = %loca_epetra_docstring) __init__
 
 %{
-// LOCA includes
-#include "LOCA_MultiContinuation_AbstractGroup.H"
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+// System includes
+#include <vector>
 
-// Extra includes due to importing LOCA.Continuation.i below
-//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
+// Teuchos includes
+#include "Teuchos_PythonParameter.h"
+
+#include "LOCA_Epetra_Group.H"
 
 // Local includes
 #include "NumPyImporter.h"
+#include "Epetra_NumPyIntVector.h"
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyFEVector.h"
+
 %}
 
-// Ignore/renames
-%ignore *::operator=;
+// LOCA::Epetra::Interface imports
+%import "LOCA.Epetra.Interface.i"
 
-// Import base class declarations
-%import "LOCA.Continuation.i"
-
-// LOCA interface includes
-%include "LOCA_MultiContinuation_AbstractGroup.H"
-%include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-
+//////////////////////////////
+// LOCA.Epetra.Group support //
+//////////////////////////////
+%include "LOCA_Epetra_Group.H"

@@ -124,6 +124,16 @@ TAC_ARG_ENABLE_FEATURE_SUB(nox, epetra,
        PYTRILINOS_NOX_EPETRA, no)
 AM_CONDITIONAL(HAVE_PYTRILINOS_NOX_EPETRA, test "X$ac_cv_use_nox_epetra" = "Xyes")
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, loca, PYTRILINOS_LOCA,
+       HAVE_PYTRILINOS_LOCA, yes,
+       [Build python interface and shared library for loca.],
+       [Build python interface shared library for loca.  Can be overridden with --disable-pytrilinos-loca.])
+
+TAC_ARG_ENABLE_FEATURE_SUB(loca, epetra,
+       [Build python interface and shared library for loca-epetra.], 
+       PYTRILINOS_LOCA_EPETRA, no)
+AM_CONDITIONAL(HAVE_PYTRILINOS_LOCA_EPETRA, test "X$ac_cv_use_loca_epetra" = "Xyes")
+
 # ------------------------------------------------------------------------
 # Check for enabled packages that do not have python wrappers, but
 # will have their libraries converted to shared
@@ -187,11 +197,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, sacado, PYTRILINOS_SACADO,
        HAVE_PYTRILINOS_SACADO, yes,
        [Build shared library for sacado.],
        [Build shared library for sacado.  Can be overridden with --disable-pytrilinos-sacado.])
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, loca, PYTRILINOS_LOCA,
-       HAVE_PYTRILINOS_LOCA, yes,
-       [Build shared library for loca.],
-       [Build shared library for loca.  Can be overridden with --disable-pytrilinos-loca.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, rythmos, PYTRILINOS_RYTHMOS,
        HAVE_PYTRILINOS_RYTHMOS, yes,
@@ -402,6 +407,7 @@ AC_CONFIG_FILES([
 		src/PyTrilinos/NOX/Epetra/.dummy
 		src/PyTrilinos/NOX/LAPACK/.dummy
 		src/PyTrilinos/LOCA/.dummy
+		src/PyTrilinos/LOCA/Epetra/.dummy
 		test/Makefile
 		example/Makefile
 		])

@@ -64,7 +64,8 @@ EXTRA_DIST = Amesos.i                             \
 	     LOCA.Bifurcation.i                   \
 	     LOCA.Chan.i                          \
 	     LOCA.Continuation.i                  \
-	     LOCA.Epetra.i                        \
+	     LOCA.Epetra.Interface.i               \
+	     LOCA.Epetra.__init__.i                \
 	     LOCA.Homotopy.i                      \
 	     LOCA.LAPACK.i                        \
 	     LOCA.MultiContinuation.i             \
@@ -152,7 +153,6 @@ ENABLE_KOMPLEX=
 
 @HAVE_PYTRILINOS_LOCA_TRUE@ENABLE_LOCA=true
 @HAVE_PYTRILINOS_LOCA_FALSE@ENABLE_LOCA=
-ENABLE_LOCA=
 
 # Default make target
 all-local: package
@@ -277,28 +277,28 @@ NOX_INTERFACES = $(NOX_BASE_INTERFACES) $(NOX_EPETRA_INTERFACES) $(NOX_LAPACK_IN
 NOX_PROXIES = $(NOX_BASE_PROXIES) $(NOX_EPETRA_PROXIES) $(NOX_LAPACK_PROXIES)
 endif
 
-# # LOCA
-# if HAVE_PYTRILINOS_NOX
-# if HAVE_PYTRILINOS_LOCA
-# LOCA_BASE_INTERFACES =  LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
-# 	                LOCA.Continuation.i LOCA.Homotopy.i LOCA.MultiContinuation.i \
-# 	                LOCA.TimeDependent.i
-# LOCA_BASE_PROXIES =  PyTrilinos/LOCA/__init__.py PyTrilinos/LOCA/Abstract.py \
-# 	             PyTrilinos/LOCA/Bifurcation.py PyTrilinos/LOCA/Continuation.py \
-# 	             PyTrilinos/LOCA/Homotopy.py PyTrilinos/LOCA/MultiContinuation.py \
-# 	             PyTrilinos/LOCA/TimeDependent.py
-# if HAVE_PYTRILINOS_NOX_EPETRA
-# LOCA_EPETRA_INTERFACES = LOCA.Epetra.i
-# LOCA_EPETRA_PROXIES = PyTrilinos/LOCA/Epetra.py
-# endif
-# #if HAVE_PYTRILINOS_NOX_LAPACK
-# #LOCA_LAPACK_INTERFACES = LOCA.LAPACK.i
-# #LOCA_LAPACK_PROXIES = PyTrilinos/LOCA/LAPACK.py
-# #endif
-# LOCA_INTERFACES = $(LOCA_BASE_INTERFACES) $(LOCA_EPETRA_INTERFACES) $(LOCA_LAPACK_INTERFACES)
-# LOCA_PROXIES = $(LOCA_BASE_PROXIES) $(LOCA_EPETRA_PROXIES) $(LOCA_LAPACK_PROXIES)
-# endif
-# endif
+# LOCA
+if HAVE_PYTRILINOS_NOX
+if HAVE_PYTRILINOS_LOCA
+LOCA_BASE_INTERFACES =  LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
+	                LOCA.Continuation.i LOCA.Homotopy.i LOCA.MultiContinuation.i \
+	                LOCA.TimeDependent.i
+LOCA_BASE_PROXIES =  PyTrilinos/LOCA/__init__.py PyTrilinos/LOCA/Abstract.py \
+	             PyTrilinos/LOCA/Bifurcation.py PyTrilinos/LOCA/Continuation.py \
+	             PyTrilinos/LOCA/Homotopy.py PyTrilinos/LOCA/MultiContinuation.py \
+	             PyTrilinos/LOCA/TimeDependent.py 
+if HAVE_PYTRILINOS_NOX_EPETRA
+LOCA_EPETRA_INTERFACES = LOCA.Epetra.__init__.i LOCA.Epetra.Interface.i
+LOCA_EPETRA_PROXIES = PyTrilinos/LOCA/Epetra/__init__.py PyTrilinos/LOCA/Epetra/Interface.py
+endif
+#if HAVE_PYTRILINOS_NOX_LAPACK
+#LOCA_LAPACK_INTERFACES = LOCA.LAPACK.i
+#LOCA_LAPACK_PROXIES = PyTrilinos/LOCA/LAPACK.py
+#endif
+LOCA_INTERFACES = $(LOCA_BASE_INTERFACES) $(LOCA_EPETRA_INTERFACES) $(LOCA_LAPACK_INTERFACES)
+LOCA_PROXIES = $(LOCA_BASE_PROXIES) $(LOCA_EPETRA_PROXIES) $(LOCA_LAPACK_PROXIES)
+endif
+endif
 
 # PyTrilinos
 INTERFACES = $(TEUCHOS_INTERFACES)  $(THYRA_INTERFACES)     $(EPETRA_INTERFACES)  \

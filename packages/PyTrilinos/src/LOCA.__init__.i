@@ -48,6 +48,9 @@ to reactivate it soon.
 // LOCA includes
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"
+
+// Local includes
+#include "NumPyImporter.h"
 %}
 
 // Ignore/renames

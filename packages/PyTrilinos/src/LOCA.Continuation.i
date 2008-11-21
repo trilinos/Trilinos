@@ -46,6 +46,9 @@
 #include "NOX_StatusTest_MaxIters.H"
 #include "NOX_StatusTest_Stagnation.H"
 #include "NOX_StatusTest_FiniteValue.H"
+
+// Local includes
+#include "NumPyImporter.h"
 %}
 
 // Ignore/renames

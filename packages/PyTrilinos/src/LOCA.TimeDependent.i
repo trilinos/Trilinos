@@ -35,7 +35,7 @@
 #include "LOCA_TimeDependent_AbstractGroup.H"
 
 // Extra includes due to importing Continuation.i below
-#include "LOCA_Continuation_FiniteDifferenceGroup.H"
+//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
 %}
 
 // Ignore/renames
