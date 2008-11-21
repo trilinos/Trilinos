@@ -5,6 +5,7 @@
 
 #include "Rythmos_StepperBase.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Thyra_AssertOp.hpp"
 
 
 namespace Rythmos {
