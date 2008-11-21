@@ -1,0 +1,13 @@
+/* src/Isorropia_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define unconditionally since Isorropia depends on Epetra */
+#cmakedefine HAVE_EPETRA
+
+/* Define if want to build with isorropia enabled */
+#cmakedefine HAVE_EPETRAEXT
+
+/* define unconditionally since Isorropia depends on Zoltan */
+#cmakedefine HAVE_ISORROPIA_ZOLTAN
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI

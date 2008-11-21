@@ -105,3 +105,4 @@ PACKAGE_NAME=Isorropria
    DIRS = mtx;
    ARGS = --v --f=mtx/simple_50X25.mtx;
    COMM = SERIAL, MPI;
+}

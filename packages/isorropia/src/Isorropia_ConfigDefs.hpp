@@ -67,35 +67,11 @@ USA
 
 #include <Isorropia_config.h>
 
-#ifdef HAVE_IOSTREAM
 #include <iostream>
-#else
-#error "Isorropia must have <iostream>"
-#endif
-
-#ifdef HAVE_FSTREAM
 #include <fstream>
-#else
-#error "Isorropia must have <fstream>"
-#endif
-
-#ifdef HAVE_EXCEPTION
 #include <exception>
-#else
-#error "Isorropia must have <exception>"
-#endif
-
-#ifdef HAVE_VECTOR
 #include <vector>
-#else
-#error "Isorropia must have <vector>"
-#endif
-
-#ifdef HAVE_SET
 #include <set>
-#else
-#error "Isorropia must have <set>"
-#endif
 
 #ifdef HAVE_TIME_H
 #include <time.h>

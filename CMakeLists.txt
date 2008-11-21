@@ -42,6 +42,7 @@ SET( Trilinos_PACKAGES_AND_DIRS
  Tpetra                tpetra
  Triutils              triutils
  EpetraExt             epetraext
+ Isorropia             isorropia
  Thyra                 thyra
  AztecOO               aztecoo
  Galeri                galeri

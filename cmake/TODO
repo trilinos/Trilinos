@@ -23,6 +23,12 @@ ADD_TEST(...), and other commands so that I can unit test that these things
 are being set correctly.  If not, then I can always wrap these with my own and
 then redefine them when unit testing.
 
+(*) [???] Upgrade TRILINOS_PACKAGE_ADD_LIBRARY(...) and
+TRILINOS_ADD_EXECUTABLE(...) to handle test libraries.  Add
+NOINSTALLLIB argument for test libraries that you don't want to
+install.  This is needed for some NOX test librries.  This effects
+Isorropia, NOX, ...
+
 (*) [???] Fix TRILINOS_ADD_EXECUTABLE(...) to not add ./ to absolute paths
 
 (*) [???] Add file CTestCustom.cmake.in in Trilinos/cmake and do a
@@ -39,15 +45,11 @@ an internal cache variables and then reset them at the package level.
 (*) [???] Automatically add the right compiler options when on the
 primary development platform (i.e. lots of warnings)
 
-(*) Improvements for TRILINOS_PACKAGE_ADD_LIBRARY(...):
-
-- [???] Add NOINSTALLLIB argument for test libraries that you don't want to
-install.  This is needed for some NOX test librries.
-
-(*) [???] Add the aggregate targets 'PACKAGE-libs' and 'PACAKGE' to build the
-library or all targets for a given package.  This can be hidden inside of the
-various macros.  This will make it faster to rebuild specific packages from
-the top level and allow shortcuts for retesting when using shared libraries.x
+(*) [???] Add the aggregate targets 'PACKAGE-libs' and 'PACAKGE' to
+build the library or all targets for a given package.  This can be
+hidden inside of the various macros.  This will make it faster to
+rebuild specific packages from the top level and allow shortcuts for
+retesting when using shared libraries.x
 
 (*) [???] Add a global 'libs' target to rebuild only libraries so that we can
 skip unecessary relinking when shared libraries are used.
