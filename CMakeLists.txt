@@ -46,6 +46,7 @@ SET( Trilinos_PACKAGES_AND_DIRS
  Thyra                 thyra
  AztecOO               aztecoo
  Galeri                galeri
+ Komplex               komplex
  #Anasazi               anasazi
  RBGen                 rbgen
 )

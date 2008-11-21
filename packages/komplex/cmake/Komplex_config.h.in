@@ -1,0 +1,74 @@
+/* src/Komplex_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define for use in Komplex if using MPI */
+#cmakedefine AZTEC_MPI
+
+/* Define if want to build examples */
+#cmakedefine HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#cmakedefine HAVE_EXPORT_MAKEFILES
+
+/* Define to 1 if you have the `floor' function. */
+#cmakedefine HAVE_FLOOR
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#cmakedefine HAVE_GNUMAKE
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* Define if want to build komplex-examples */
+#cmakedefine HAVE_KOMPLEX_EXAMPLES
+
+/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
+   to 0 otherwise. */
+#cmakedefine HAVE_MALLOC
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* define if the compiler supports the mutable keyword */
+#cmakedefine HAVE_MUTABLE
+
+/* define if the compiler accepts the new for scoping rules */
+#cmakedefine HAVE_NEW_FOR_SCOPING
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#cmakedefine HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the `uname' function. */
+#cmakedefine HAVE_UNAME
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
+
+/* Define to the address where bug reports for this package should be sent. */
+#cmakedefine PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#cmakedefine PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#cmakedefine PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#cmakedefine PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#cmakedefine PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#cmakedefine STDC_HEADERS
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#cmakedefine inline
+#endif
+
+/* Define to rpl_malloc if the replacement function should be used. */
+#cmakedefine malloc
