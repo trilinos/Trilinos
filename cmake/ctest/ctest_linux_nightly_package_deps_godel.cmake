@@ -31,7 +31,7 @@ SET(CTEST_COMMAND
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyBuild"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyTest"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_package_deps_godel.cmake\""
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_package_deps_godel.cmake\""
 )
 
 SET(CTEST_INITIAL_CACHE "

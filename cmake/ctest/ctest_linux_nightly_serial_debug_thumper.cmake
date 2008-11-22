@@ -37,7 +37,7 @@ SET (CTEST_COMMAND
   #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyCoverage"
   #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
   #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyMemCheck"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\""
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_serial_debug_thumper.cmake\""
 )
 
 SET (CTEST_INITIAL_CACHE "
@@ -70,6 +70,6 @@ CMAKE_C_FLAGS:STRING=-g -O0 -Wall -fprofile-arcs -ftest-coverage -fexceptions
 
 CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage -lg2c
 
-MAKECOMMAND:STRING=gmake -j 1 -i
+MAKECOMMAND:STRING=gmake -j1 -i
 
 ")
