@@ -69,7 +69,7 @@ CMAKE_CXX_FLAGS:STRING=-g -O0 -ansi -pedantic -Wall -Wshadow -Wunused-variable -
 
 CMAKE_C_FLAGS:STRING=-g -O0 -Wall -fprofile-arcs -ftest-coverage -fexceptions
 
-CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
+CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage -lm
 
 MAKECOMMAND:STRING=gmake -j 8
 
