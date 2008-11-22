@@ -44,7 +44,7 @@ void throw_null( const std::string &type_name );
 
 
 template<class T> inline
-Ptr<T>::Ptr( ENull null_in )
+Ptr<T>::Ptr( ENull /*null_in*/ )
   : ptr_(0)
 {}
 

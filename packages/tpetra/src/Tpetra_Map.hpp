@@ -56,9 +56,8 @@ namespace Tpetra {
     // - non-overlapping
     // - contiguous
     // - as evenly distributed as possible
-    const Ordinal one = Teuchos::OrdinalTraits<Ordinal>::one();
-    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-    const Ordinal negOne = zero - one;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
 
     std::string errPrefix;
     errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
@@ -76,40 +75,37 @@ namespace Tpetra {
       root_entries[0] = numGlobalEntries;
       root_entries[1] = indexBase;
       Teuchos::broadcast(*comm,(Ordinal)0,(Ordinal)2,&root_entries[0]);   // broadcast 2 ordinals from node 0
-      std::vector<Ordinal> localChecks(2);
-      localChecks[0] = negOne;  // fail or pass
-      localChecks[1] = zero;    // fail reason
+      int localChecks[2], globalChecks[2];
+      localChecks[0] = -1;  // fail or pass
+      localChecks[1] = 0;    // fail reason
       if (numGlobalEntries != root_entries[0]) {
         localChecks[0] = myImageID;
-        localChecks[1] = one;
+        localChecks[1] = 1;
       }
       else if (indexBase != root_entries[1]) {
         localChecks[0] = myImageID;
-        localChecks[1] = one + one;
+        localChecks[1] = 2;
       }
-      // if checkPassed == negOne, then it passed on this proc
-      // otherwise, checkPassed == myImageID signifies it did not pass
       // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass, as well as the reason
-      // this will be negOne and zero if all procs passed
-      Ordinal globalChecks[2];
-      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
-      if (globalChecks[0] != negOne) {
-        if (globalChecks[1] == one) {
+      // these will be -1 and 0 if all procs passed
+      Teuchos::reduceAll<Ordinal,int>(*comm,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
+      if (globalChecks[0] != -1) {
+        if (globalChecks[1] == 1) {
           TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "numGlobal must be the same on all nodes (examine node " << globalChecks[0] << ").");
         }
-        else if (globalChecks[1] == one+one) {
+        else if (globalChecks[1] == 2) {
           TEST_FOR_EXCEPTION(true,std::invalid_argument,
               errPrefix << "indexBase must be the same on all nodes (examine node " << globalChecks[0] << ").");
         }
         else {
           // logic error on my part
-          TEST_FOR_EXCEPTION(true,std::invalid_argument,
+          TEST_FOR_EXCEPTION(true,std::logic_error,
               errPrefix << "logic error. Please contact the Tpetra team.");
         }
       }
-      // numgGlobalEntries is coherent, but is it valid?
-      TEST_FOR_EXCEPTION(numGlobalEntries < zero, std::invalid_argument,
+      // numgGlobalEntries is coherent, but is it valid? this comparison looks funny, but it avoids compiler warnings on unsigned types.
+      TEST_FOR_EXCEPTION(numGlobalEntries < ONE && numGlobalEntries != ZERO, std::invalid_argument,
           errPrefix << "numGlobal == " << numGlobalEntries << ". Must be >= 0.");
 
       /* compute numLocalEntries
@@ -172,9 +168,9 @@ namespace Tpetra {
 
       // compute the min/max global IDs
       Ordinal minAllGID = indexBase;
-      Ordinal maxAllGID = indexBase + numGlobalEntries - one;
+      Ordinal maxAllGID = indexBase + numGlobalEntries - ONE;
       Ordinal minMyGID  = start_index + indexBase;
-      Ordinal maxMyGID  = minMyGID + numLocalEntries - one;
+      Ordinal maxMyGID  = minMyGID + numLocalEntries - ONE;
 
       Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
 
@@ -194,7 +190,7 @@ namespace Tpetra {
 
       // compute the min/max global IDs
       Ordinal minAllGID = indexBase;
-      Ordinal maxAllGID = indexBase + numGlobalEntries - one;
+      Ordinal maxAllGID = indexBase + numGlobalEntries - ONE;
       Ordinal minMyGID  = minAllGID;
       Ordinal maxMyGID  = maxAllGID;
 
@@ -220,9 +216,9 @@ namespace Tpetra {
     // This differs from Map(Ord,Ord,Plat) in that the user has specified the number of entries 
     // per node, so that they are not (necessarily) evenly distributed
 
-    const Ordinal one = Teuchos::OrdinalTraits<Ordinal>::one();
-    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-    const Ordinal negOne = zero - one;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
 
     std::string errPrefix;
     errPrefix = "Tpetra::Map<" + Teuchos::OrdinalTraits<Ordinal>::name() 
@@ -232,7 +228,7 @@ namespace Tpetra {
     Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = platform.createComm();
     Ordinal myImageID = comm->getRank();
     // for communicating failures 
-    std::vector<Ordinal> localChecks(2), globalChecks(2);
+    int localChecks[2], globalChecks[2];
 
     /* compute the global size 
        we are computing the number of global entries because exactly ONE of the following is true:
@@ -244,64 +240,65 @@ namespace Tpetra {
     Ordinal global_sum;
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,numLocalEntries,&global_sum);
     /* there are three errors we should be detecting:
-       - numGlobalEntries != -1 and it is incorrect/invalid
+       - numGlobalEntries != invalid() and it is incorrect/invalid
        - numLocalEntries invalid (<0)
     */
-    localChecks[0] = negOne;
-    if (numLocalEntries < zero) {
+    localChecks[0] = -1;
+    if (numLocalEntries < ONE && numLocalEntries != ZERO) {
+      // invalid
       localChecks[0] = myImageID;
-      localChecks[1] = one;
+      localChecks[1] = 1;
     }
-    else if (numGlobalEntries < negOne) {
+    else if (numGlobalEntries < ONE && numGlobalEntries != ZERO && numGlobalEntries != INVALID) {
+      // invalid
       localChecks[0] = myImageID;
-      localChecks[1] = one+one;
+      localChecks[1] = 2;
     }
-    else if (numGlobalEntries > negOne && numGlobalEntries != global_sum) {
+    else if (numGlobalEntries != INVALID && numGlobalEntries != global_sum) {
+      // incorrect
       localChecks[0] = myImageID;
-      localChecks[1] = one+one+one;
+      localChecks[1] = 3;
     }
     // now check that indexBase is equivalent across images
     Ordinal root_indexbase = indexBase;
     Teuchos::broadcast(*comm,0,&root_indexbase);   // broadcast one ordinal from node 0
     if (indexBase != root_indexbase) {
       localChecks[0] = myImageID;
-      localChecks[1] = one+one+one+one;
+      localChecks[1] = 4;
     }
-    // if checkPassed == negOne, then it passed on this proc
-    // otherwise, checkPassed == myImageID signifies it did not pass
     // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass
-    // this will be negOne if all procs passed
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
-    if (globalChecks[0] != negOne) {
-      if (globalChecks[1] == one) {
+    // this will be -1 if all procs passed
+    Teuchos::reduceAll<Ordinal,int>(*comm,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
+    if (globalChecks[0] != -1) {
+      if (globalChecks[1] == 1) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "numLocal is invalid (< 0) on at least one node (possibly node " 
+            errPrefix << "numLocal is not valid on at least one node (possibly node " 
             << globalChecks[0] << ").");
       }
-      else if (globalChecks[1] == one+one) {
+      else if (globalChecks[1] == 2) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "numGlobal is invalid (< -1) on at least one node (possibly node " 
+            errPrefix << "numGlobal is not valid on at least one node (possibly node " 
             << globalChecks[0] << ").");
       }
-      else if (globalChecks[1] == one+one+one) {
+      else if (globalChecks[1] == 3) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
             errPrefix << "numGlobal doesn't match sum of numLocal (== " 
             << global_sum << ") on at least one node (possibly node " 
             << globalChecks[0] << ").");
       }
-      else if (globalChecks[1] == one+one+one+one) {
+      else if (globalChecks[1] == 4) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
             errPrefix << "indexBase is not the same on all nodes (examine node " 
             << globalChecks[0] << ").");
       }
       else {
         // logic error on my part
-        TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        TEST_FOR_EXCEPTION(true,std::logic_error,
             errPrefix << "logic error. Please contact the Tpetra team.");
       }
     }
     // set numGlobalEntries
-    if (numGlobalEntries == negOne) {
+    if (numGlobalEntries == INVALID) {
       numGlobalEntries = global_sum;
     }
 
@@ -316,9 +313,9 @@ namespace Tpetra {
 
     // compute the min/max global IDs
     Ordinal minAllGID = indexBase;
-    Ordinal maxAllGID = indexBase + numGlobalEntries - one;
+    Ordinal maxAllGID = indexBase + numGlobalEntries - ONE;
     Ordinal minMyGID = start_index + indexBase;
-    Ordinal maxMyGID = minMyGID + numLocalEntries - one;
+    Ordinal maxMyGID = minMyGID + numLocalEntries - ONE;
 
     Teuchos::RCP< Platform<Ordinal> > platform_clone = platform.clone();
 
@@ -340,9 +337,9 @@ namespace Tpetra {
   {
     // Distribute the entries across the nodes in an arbitrary user-specified manner
     // They are not necessarily contiguous or evenly distributed
-    const Ordinal one = Teuchos::OrdinalTraits<Ordinal>::one();
-    const Ordinal zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-    const Ordinal negOne = zero - one;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
 
     Ordinal numLocalEntries = entryList.size();
 
@@ -354,7 +351,7 @@ namespace Tpetra {
     Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = platform.createComm();
     Ordinal myImageID = comm->getRank();
     // for communicating failures 
-    std::vector<Ordinal> localChecks(2), globalChecks(2);
+    int localChecks[2], globalChecks[2];
 
     /* compute the global size 
        we are computing the number of global entries because exactly ONE of the following is true:
@@ -365,52 +362,52 @@ namespace Tpetra {
      */
     Ordinal global_sum;
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,numLocalEntries,&global_sum);
-    localChecks[0] = negOne;
-    if (numGlobalEntries < negOne) {
+    localChecks[0] = -1;
+    if (numGlobalEntries < ONE && numGlobalEntries != ZERO && numGlobalEntries != INVALID) {
+      // invalid
       localChecks[0] = myImageID;
-      localChecks[1] = one;
+      localChecks[1] = 1;
     }
-    else if (numGlobalEntries > negOne && numGlobalEntries != global_sum) {
+    else if (numGlobalEntries != INVALID && numGlobalEntries != global_sum) {
+      // incorrect
       localChecks[0] = myImageID;
-      localChecks[1] = one + one;
+      localChecks[1] = 2;
     }
     // now check that indexBase is equivalent across images
     Ordinal root_indexbase = indexBase;
     Teuchos::broadcast(*comm,0,&root_indexbase);   // broadcast one ordinal from node 0
     if (indexBase != root_indexbase) {
       localChecks[0] = myImageID;
-      localChecks[1] = one + one + one;
+      localChecks[1] = 3;
     }
-    // if checkPassed == negOne, then it passed on this proc
-    // otherwise, checkPassed == myImageID signifies it did not pass
     // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass
-    // this will be negOne if all procs passed
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,(Ordinal)2,&localChecks[0],&globalChecks[0]);
-    if (globalChecks[0] != negOne) {
-      if (globalChecks[1] == one) {
+    // this will be -1 if all procs passed
+    Teuchos::reduceAll<Ordinal,int>(*comm,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
+    if (globalChecks[0] != INVALID) {
+      if (globalChecks[1] == 1) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
-            errPrefix << "numGlobal is invalid (< -1) on at least one node (possibly node "
+            errPrefix << "numGlobal is not valid on at least one node (possibly node "
             << globalChecks[0] << ").");
       }
-      else if (globalChecks[1] == one+one) {
+      else if (globalChecks[1] == 2) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
             errPrefix << "numGlobal doesn't match sum of numLocal (" 
             << global_sum << ") on at least one node (possibly node "
             << globalChecks[0] << ").");
       }
-      else if (globalChecks[1] == one+one+one) {
+      else if (globalChecks[1] == 3) {
         TEST_FOR_EXCEPTION(true,std::invalid_argument,
             errPrefix << "indexBase is not the same on all nodes (possibly node "
             << globalChecks[0] << ").");
       }
       else {
         // logic error on my part
-        TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        TEST_FOR_EXCEPTION(true,std::logic_error,
             errPrefix << "logic error. Please contact the Tpetra team.");
       }
     }
     // set numGlobalEntries
-    if (numGlobalEntries == negOne) {
+    if (numGlobalEntries == INVALID) {
       numGlobalEntries = global_sum;
     }
 
@@ -426,10 +423,10 @@ namespace Tpetra {
     // this is necessary so that LIDs are in [0,numLocal)
     // FINISH: make sure this is legal
     {
-      Ordinal numLIDs = zero;
-      if (numLocalEntries > zero) {
+      Ordinal numLIDs = ZERO;
+      if (numLocalEntries > ZERO) {
         lgMap = Teuchos::arcp<Ordinal>(numLocalEntries);
-        for(Ordinal i = zero; i < numLocalEntries; i++) {
+        for(Ordinal i = ZERO; i < numLocalEntries; i++) {
           if (glMap.find(entryList[i]) == glMap.end()) {
             lgMap[numLIDs] = entryList[i];   // lgMap: LID to GID
             glMap[entryList[i]] = numLIDs;   // glMap: GID to LID

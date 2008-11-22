@@ -100,6 +100,8 @@ struct ScalarTraits
   typedef T magnitudeType;
   //! Determines if scalar type is std::complex
   static const bool isComplex = false;
+  //! Determines if scalar type is an ordinal type
+  static const bool isOrdinal = false;
   //! Determines if scalar type supports relational operators such as <, >, <=, >=.
   static const bool isComparable = false;
   //! Determines if scalar type have machine-specific parameters (i.e. eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax() are supported)
@@ -171,6 +173,7 @@ struct ScalarTraits<char>
 {
   typedef char magnitudeType;
   static const bool isComplex = false;
+  static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -201,6 +204,7 @@ struct ScalarTraits<short int>
 {
   typedef short int magnitudeType;
   static const bool isComplex = false;
+  static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -230,6 +234,7 @@ struct ScalarTraits<int>
 {
   typedef int magnitudeType;
   static const bool isComplex = false;
+  static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -260,6 +265,7 @@ struct ScalarTraits<long int>
 {
   typedef long int magnitudeType;
   static const bool isComplex = false;
+  static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -293,6 +299,7 @@ struct ScalarTraits<float>
 {
   typedef float magnitudeType;
   static const bool isComplex = false;
+  static const bool isOrdinal = false;
   static const bool isComparable = true;
   static const bool hasMachineParameters = true;
   static inline float eps()   {
@@ -425,6 +432,7 @@ struct ScalarTraits<double>
 {
   typedef double magnitudeType;
   static const bool isComplex = false;
+  static const bool isOrdinal = false;
   static const bool isComparable = true;
   static const bool hasMachineParameters = true;
   static inline double eps()   {
@@ -557,7 +565,6 @@ struct ScalarTraits<mpf_class>
 {
   typedef mpf_class magnitudeType;
   static const bool isComplex = false;
-  static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
   static magnitudeType magnitude(mpf_class a) { return std::abs(a); }
@@ -631,6 +638,7 @@ std::complex<T>
 #endif
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
   static const bool isComplex = true;
+  static const bool isOrdinal = ScalarTraits<T>::isOrdinal;
   static const bool isComparable = false;
   static const bool hasMachineParameters = true;
   static inline magnitudeType eps()          { return ScalarTraits<magnitudeType>::eps(); }

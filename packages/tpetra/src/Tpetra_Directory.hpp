@@ -107,7 +107,7 @@ namespace Tpetra {
   {
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE  = Teuchos::OrdinalTraits<Ordinal>::one();
-    const Ordinal NEGONE = ZERO - ONE;
+    const Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
 
     bool invalidGIDs = false;
 
@@ -115,12 +115,12 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(images.size() != globalEntries.size(), std::runtime_error,
         "Tpetra::Directory<" << Teuchos::TypeNameTraits<Ordinal>::name() << 
         ">::getEntries(): Output buffers are not allocated properly.");
-    std::fill(images.begin(),images.end(),NEGONE);
+    std::fill(images.begin(),images.end(), INVALID);
     if (computeLIDs) {
       TEST_FOR_EXCEPTION(localEntries.size() != globalEntries.size(), std::runtime_error,
           "Tpetra::Directory<" << Teuchos::TypeNameTraits<Ordinal>::name() << 
           ">::getEntries(): Output buffers are not allocated properly.");
-      std::fill(localEntries.begin(),localEntries.end(),NEGONE);
+      std::fill(localEntries.begin(),localEntries.end(), INVALID);
     }
 
     const Ordinal numImages  = comm_->getSize();
@@ -153,8 +153,8 @@ namespace Tpetra {
       typename Teuchos::ArrayView<Ordinal>::iterator imgptr = images.begin(),    
                                                      lidptr = localEntries.begin();
       for (typename Teuchos::ArrayView<const Ordinal>::iterator gid = globalEntries.begin(); gid != globalEntries.end(); ++gid) {
-        Ordinal LID = NEGONE; // Assume not found
-        Ordinal image = NEGONE;
+        Ordinal LID = INVALID; // Assume not found
+        Ordinal image = INVALID;
         Ordinal GID = *gid;
         // Guess uniform distribution and start a little above it
         Ordinal image1 = TEUCHOS_MIN((GID / TEUCHOS_MAX(nOverP, ONE)) + Teuchos::as<Ordinal>(2), numImages - ONE);
@@ -203,10 +203,10 @@ namespace Tpetra {
       Ordinal numMissing = ZERO;
       if (invalidGIDs) {
         for (Ordinal i = ZERO; i < numEntries; ++i) {
-          if (dirImages[i] == NEGONE) {
-            images[i] = NEGONE;
+          if (dirImages[i] == INVALID) {
+            images[i] = INVALID;
             if (computeLIDs) {
-              localEntries[i] = NEGONE;
+              localEntries[i] = INVALID;
             }
             numMissing++;
           }
@@ -225,7 +225,7 @@ namespace Tpetra {
           Ordinal currGID = sendGIDs[i];
           *ptr++ = currGID;
           currLID = directoryMap_->getLocalIndex(currGID);
-          assert(currLID != NEGONE); // Internal error
+          assert(currLID != INVALID); // Internal error
           *ptr++ = imageIDs_[currLID];
           if(computeLIDs) {
             *ptr++ = LIDs_[currLID];
@@ -261,7 +261,7 @@ namespace Tpetra {
   {
     const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
-    const Ordinal NEGONE = ZERO - ONE;
+    const Ordinal INVALID = Teuchos::OrdinalTraits<Ordinal>::invalid();
           
     const Ordinal minAllGID = map_.getMinAllGlobalIndex();
     const Ordinal maxAllGID = map_.getMaxAllGlobalIndex();
@@ -281,8 +281,8 @@ namespace Tpetra {
     // Initialize values to -1 in case the user global element list does
     // fill all IDs from minAllGID to maxAllGID (e.g., allows global indices to be 
     // all even integers).
-    imageIDs_.resize(dir_numMyEntries, NEGONE);
-    LIDs_.resize(dir_numMyEntries, NEGONE);
+    imageIDs_.resize(dir_numMyEntries, INVALID);
+    LIDs_.resize(dir_numMyEntries, INVALID);
 
     // Get list of images owning the directory entries for the Map GIDs
     Ordinal myImageID = comm_->getRank();
@@ -295,7 +295,7 @@ namespace Tpetra {
         "Tpetra::Directory::generateDirectory(): logic error. Please contact Tpetra team.");
 
     // Create distributor & call createFromSends
-    Ordinal numReceives = ZERO;
+    Teuchos_Ordinal numReceives = 0;
     Distributor<Ordinal> distor(comm_);      
     distor.createFromSends(sendImageIDs, numReceives);
 
@@ -318,10 +318,10 @@ namespace Tpetra {
 
     {
       typename Teuchos::Array<Ordinal>::iterator ptr = importElements.begin();
-      for(Ordinal i = ZERO; i < numReceives; i++) {
+      for(Teuchos_Ordinal i = 0; i < numReceives; ++i) {
         Ordinal currLID = directoryMap_->getLocalIndex(*ptr++); // Convert incoming GID to Directory LID
-        assert(currLID != NEGONE); // Internal error
-        TEST_FOR_EXCEPTION(currLID == NEGONE, std::logic_error,
+        assert(currLID != INVALID); // Internal error
+        TEST_FOR_EXCEPTION(currLID == INVALID, std::logic_error,
             "Tpetra::Directory<" << Teuchos::OrdinalTraits<Ordinal>::name() << ">::generateDirectory(): logic error. Please notify the Tpetra team.");
         imageIDs_[currLID] = *ptr++;
         LIDs_[currLID] = *ptr++;

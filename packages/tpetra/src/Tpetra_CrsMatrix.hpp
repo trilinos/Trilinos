@@ -94,7 +94,7 @@ namespace Tpetra
       //@{ 
       
       //! Returns \c true if the matrix has already been fill completed.
-      inline bool isFillCompleted() const;
+      inline bool isFillComplete() const;
 
       //! Returns the communicator.
       Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const;
@@ -154,11 +154,8 @@ namespace Tpetra
 
       //@}
 
-      //! @name Construction Methods
+      //! @name Data Entry Methods
       //@{ 
-
-      //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
-      void fillComplete();
 
       //! Submits one local or nonlocal entry to the matrix using global IDs.
       void submitEntry(Ordinal globalRow, Ordinal globalCol,
@@ -175,6 +172,18 @@ namespace Tpetra
 
       //! Scale the current values of a matrix, this = alpha*this. 
       void scale(const Scalar &alpha);
+
+      /*! \brief Signal that data entry is complete, specifying domain and range maps. 
+       
+           Matrix data is converted into a more optimized form.
+       */ 
+      void fillComplete(const Map<Ordinal> &domainMap, const Map<Ordinal> &rangeMap);
+
+      /*! \brief Signal that data entry is complete. 
+
+          Matrix data is converted into a more optimized form. This method calls fillComplete( getRowMap(), getRowMap() ).
+       */
+      void fillComplete();
 
       // @}
 
@@ -217,9 +226,9 @@ namespace Tpetra
       void GeneralMV(const Teuchos::ArrayView<const Scalar> &X, const Teuchos::ArrayView<Scalar> &Y) const;
       void GeneralMM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const;
 
-      const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
-      const Map<Ordinal>& rowMap_;
-      Teuchos::RCP<const Map<Ordinal> > colMap_;
+      Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
+      Map<Ordinal> rowMap_, colMap_;
+      Map<Ordinal> rangeMap_, domainMap_;
 
       Ordinal numMyRows_, numGlobalRows_;
 
@@ -228,10 +237,9 @@ namespace Tpetra
       // values
       Teuchos::Array<Teuchos::Array<Scalar> > values_;
 
-      // TODO: consider using a contiguous storage
-      // costs are: insertions are more difficult
       mutable Teuchos::RCP<MultiVector<Ordinal,Scalar> > importMV_, exportMV_;
 
+      // these are RCPs because they are optional
       // importer is needed if DomainMap is not sameas ColumnMap
       // FINISH: currently, domain map == range map == row map which is typically != column map
       //         ergo, we will usually have an importer
@@ -244,7 +252,7 @@ namespace Tpetra
       // TODO: switch this to a hash-based map (instead of a sort-based map) as soon as one is available
       std::map<Ordinal, std::list<std::pair<Ordinal,Scalar> > > nonlocals_;
 
-      bool fillCompleted_;
+      bool fillComplete_;
 
       Ordinal globalNNZ_;
       Ordinal myNNZ_;
@@ -266,12 +274,15 @@ namespace Tpetra
   CrsMatrix<Ordinal,Scalar>::CrsMatrix(const Map<Ordinal> &rowMap) 
   : comm_(rowMap.getComm())
   , rowMap_(rowMap)
+  , colMap_(rowMap)     //
+  , rangeMap_(rowMap)   //  these have to be set to something; we'll set them appropriately later
+  , domainMap_(rowMap)  // 
   , numMyRows_(rowMap.getNumMyEntries())
   , numGlobalRows_(rowMap.getNumGlobalEntries())
   , colinds_(numMyRows_)
   ,  values_(numMyRows_)
   {
-    fillCompleted_       = false;
+    fillComplete_        = false;
     globalNNZ_           = OT::zero();
     myNNZ_               = OT::zero();
     numGlobalDiags_      = OT::zero();
@@ -287,8 +298,8 @@ namespace Tpetra
 
 
   template<class Ordinal, class Scalar>
-  bool CrsMatrix<Ordinal,Scalar>::isFillCompleted() const
-  { return fillCompleted_; }
+  bool CrsMatrix<Ordinal,Scalar>::isFillComplete() const
+  { return fillComplete_; }
 
 
   template<class Ordinal, class Scalar>
@@ -300,7 +311,7 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumGlobalNonzeros() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumGlobalNonzeros() until fillComplete() has been called.");
     return globalNNZ_;
   }
@@ -309,7 +320,7 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumMyNonzeros() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumMyNonzeros() until fillComplete() has been called.");
     return myNNZ_;
   }
@@ -323,9 +334,9 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumGlobalCols() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumGlobalCols() until fillComplete() has been called.");
-    return colMap_->getNumGlobalEntries();
+    return colMap_.getNumGlobalEntries();
   }
 
 
@@ -337,16 +348,16 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumMyCols() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumMyCols() until fillComplete() has been called.");
-    return colMap_->getNumMyEntries();
+    return colMap_.getNumMyEntries();
   }
 
 
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumGlobalDiagonals() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumGlobalDiagonals() until fillComplete() has been called.");
     return numGlobalDiags_;
   }
@@ -355,7 +366,7 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getNumMyDiagonals() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumMyDiagonals() until fillComplete() has been called.");
     return numMyDiags_;
   }
@@ -373,7 +384,7 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getGlobalMaxNumEntries() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getGlobalMaxNumEntries() until fillComplete() has been called.");
     return globalMaxNumEntries_;
   }
@@ -382,7 +393,7 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   Ordinal CrsMatrix<Ordinal,Scalar>::getMyMaxNumEntries() const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getMyMaxNumEntries() until fillComplete() has been called.");
     return myMaxNumEntries_;
   }
@@ -401,27 +412,27 @@ namespace Tpetra
   template<class Ordinal, class Scalar>
   const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getColMap() const 
   { 
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
         "Tpetra::CrsMatrix: cannot call getColMap() until fillComplete() has been called.");
-    return *colMap_; 
+    return colMap_; 
   }
 
   template<class Ordinal, class Scalar>
   const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getDomainMap() const
   {
-    return getColMap();
+    return domainMap_;
   }
 
   template<class Ordinal, class Scalar>
   const Map<Ordinal> & CrsMatrix<Ordinal,Scalar>::getRangeMap() const
   {
-    return getRowMap();
+    return rangeMap_;
   }
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::submitEntry(Ordinal globalRow, Ordinal globalCol, const Scalar &value)
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == true, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == true, std::runtime_error,
       "Tpetra::CrsMatrix::submitEntry(): fillComplete() has already been called.");
     if (rowMap_.isMyGlobalIndex(globalRow)) {
       Ordinal myRow = rowMap_.getLocalIndex(globalRow);
@@ -454,7 +465,7 @@ namespace Tpetra
   void CrsMatrix<Ordinal,Scalar>::setAllToScalar(const Scalar &alpha)
   { 
     using Teuchos::Array;
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
         "Tpetra::CrsMatrix: cannot call setAllToScalar() until fillComplete() has been called.");
     for (typename Array<Array<Scalar> >::const_iterator row = values_.begin(); row != values_.end(); ++row) 
     {
@@ -467,7 +478,7 @@ namespace Tpetra
   void CrsMatrix<Ordinal,Scalar>::scale(const Scalar &alpha)
   { 
     using Teuchos::Array;
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
         "Tpetra::CrsMatrix: cannot call scale() until fillComplete() has been called.");
     for (typename Array<Array<Scalar> >::const_iterator row = values_.begin(); row != values_.end(); ++row) 
     {
@@ -484,7 +495,7 @@ namespace Tpetra
                                                const Teuchos::ArrayView<Ordinal> &indices, 
                                                const Teuchos::ArrayView<Scalar>  &values) const
   {
-    TEST_FOR_EXCEPTION(isFillCompleted() == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
         "Tpetra::CrsMatrix: cannot call getMyRowCopy() until fillComplete() has been called.");
     TEST_FOR_EXCEPTION(indices.size() != colinds_[myRow].size() || values.size() != values_[myRow].size(), std::runtime_error, 
         "Tpetra::CrsMatrix::getMyRowCopy(indices,values): size of indices,values must be sufficient to store the values for the specified row.");
@@ -499,7 +510,7 @@ namespace Tpetra
                                                    const Teuchos::ArrayView<Scalar>  &values) const
   {
     // TODO: is it possible to even call this one? we can't preallocate for the output buffer without knowing the size, 
-    //       which (above) seems to require fillCompleted()
+    //       which (above) seems to require fillComplete()
     // 
     // Only locally owned rows can be queried, otherwise complain
     TEST_FOR_EXCEPTION(!rowMap_.isMyGlobalIndex(globalRow), std::runtime_error,
@@ -510,14 +521,14 @@ namespace Tpetra
           || Teuchos::as<typename Teuchos::Array<Scalar>::size_type>(values.size()) != values_[myRow].size(), std::runtime_error, 
         "Tpetra::CrsMatrix::getGlobalRowCopy(indices,values): size of indices,values must be sufficient to store the values for the specified row.");
     std::copy(values_[myRow].begin(),values_[myRow].end(),values.begin());
-    if (isFillCompleted())
+    if (isFillComplete())
     {
       // translate local IDs back to global IDs
       typename Teuchos::ArrayView<Ordinal>::iterator gind = indices.begin();
       for (typename Teuchos::Array<Ordinal>::const_iterator lind = colinds_[myRow].begin();
            lind != colinds_[myRow].end(); ++lind, ++gind) 
       {
-        (*gind) = colMap_->getGlobalIndex(*lind);
+        (*gind) = colMap_.getGlobalIndex(*lind);
       }
     }
     else
@@ -533,7 +544,7 @@ namespace Tpetra
     // TODO: add support for alpha,beta term coefficients: Y = alpha*A*X + beta*Y
     using Teuchos::null;
     using Teuchos::ArrayView;
-    TEST_FOR_EXCEPTION(!isFillCompleted(), std::runtime_error, 
+    TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error, 
         "Tpetra::CrsMatrix: cannot call apply() until fillComplete() has been called.");
     TEST_FOR_EXCEPTION(X.numVectors() != Y.numVectors(), std::runtime_error,
         "Tpetra::CrsMatrix::apply(X,Y): X and Y must have the same number of vectors.");
@@ -585,7 +596,7 @@ namespace Tpetra
     if (importer_ != null) {
       if (importMV_ != null && importMV_->numVectors() != numVectors) importMV_ = null;
       if (importMV_ == null) {
-        importMV_ = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(*colMap_,numVectors) );
+        importMV_ = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(colMap_,numVectors) );
       }
     }
     if (exporter_ != null) {
@@ -659,19 +670,19 @@ namespace Tpetra
     {
       os << "Tpetra::CrsMatrix, label = " << this->label() << endl;
       os << "Number of global rows    = " << getNumGlobalRows() << endl;
-      if (isFillCompleted())
+      if (isFillComplete())
       {
         os << "Number of global columns    = " << getNumGlobalCols() << endl;
-        os << "Status = fillCompleted" << endl;
+        os << "Status = fill complete" << endl;
         os << "Number of global nonzeros   = " << getNumGlobalNonzeros() << endl;
         os << "Global max nonzeros per row = " << getGlobalMaxNumEntries() << endl;
       }
       else
       {
-        os << "Status = not fillCompleted" << endl;
+        os << "Status = fill not complete" << endl;
       }
     }
-    if (isFillCompleted())
+    if (isFillComplete())
     {
       for (int pid=0; pid < Teuchos::size(*comm_); ++pid)
       {
@@ -704,13 +715,15 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::fillComplete()
+  void CrsMatrix<Ordinal,Scalar>::fillComplete(const Map<Ordinal> &domainMap, const Map<Ordinal> &rangeMap)
   {
     using Teuchos::Array;
-    TEST_FOR_EXCEPTION(isFillCompleted() == true, std::runtime_error,
+    TEST_FOR_EXCEPTION(isFillComplete() == true, std::runtime_error,
       "Tpetra::CrsMatrix::fillComplete(): fillComplete() has already been called.");
 
     Teuchos::ArrayView<const Ordinal> myGlobalEntries = rowMap_.getMyGlobalEntries();
+    domainMap_ = domainMap;
+    rangeMap_  = rangeMap;
 
     // =============================== //
     // Part 0: send off-image elements //
@@ -771,14 +784,27 @@ namespace Tpetra
         }
       }
     }
+    // The column map automatically owns the entries from the row map.
     Array<Ordinal> myPaddedGlobalEntries(myGlobalEntries.begin(),myGlobalEntries.end());
     for (typename std::set<Ordinal>::iterator iter = nnzcols.begin(); iter != nnzcols.end() ; ++iter)
     {
       myPaddedGlobalEntries.push_back(*iter);
     }
-    colMap_ = Teuchos::rcp(new Map<Ordinal>(Teuchos::as<Ordinal>(-1), myPaddedGlobalEntries(),
-                                            rowMap_.getIndexBase(), *rowMap_.getPlatform()) );
-    importer_ = Teuchos::rcp( new Import<Ordinal>(rowMap_,*colMap_) );
+    colMap_ = Map<Ordinal>(Teuchos::as<Ordinal>(-1), myPaddedGlobalEntries(), rowMap_.getIndexBase(), *rowMap_.getPlatform());
+
+    // create import, export
+    if (!domainMap_.isSameAs(colMap_)) {
+      importer_ = Teuchos::rcp( new Import<Ordinal>(domainMap_,colMap_) );
+    }
+    else {
+      importer_ = Teuchos::null;
+    }
+    if (!rangeMap_.isSameAs(rowMap_)) {
+      exporter_ = Teuchos::rcp( new Export<Ordinal>(rowMap_,rangeMap_) );
+    }
+    else {
+      exporter_ = Teuchos::null;
+    }
 
     // ============================== //
     // Part IV: move to local indices //
@@ -788,7 +814,7 @@ namespace Tpetra
       for (typename Array<Ordinal>::iterator cind = colinds_[r].begin();
            cind != colinds_[r].end(); ++cind) 
       {
-        (*cind) = colMap_->getLocalIndex(*cind);
+        (*cind) = colMap_.getLocalIndex(*cind);
       }
     }
 
@@ -811,7 +837,17 @@ namespace Tpetra
     Teuchos::reduceAll<Ordinal>(*comm_,Teuchos::REDUCE_MAX,myMaxNumEntries_,&globalMaxNumEntries_);
 
     // mark transformation as successfully completed
-    fillCompleted_ = true;
+    fillComplete_ = true;
+  }
+
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::fillComplete()
+  {
+    fillComplete(getRowMap(),getRowMap());
   }
 
 

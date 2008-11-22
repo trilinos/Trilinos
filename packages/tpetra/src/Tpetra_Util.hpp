@@ -166,7 +166,7 @@ namespace Tpetra {
   template<typename T1, typename T2, typename T3>
   void sortArrays(const Teuchos::ArrayView<T1> &sortVals, 
                   const Teuchos::ArrayView<T2> &otherVals1, 
-                  const Teuchos::ArrayView<T2> &otherVals2) 
+                  const Teuchos::ArrayView<T3> &otherVals2) 
   {
     // if sortVals and otherVals are not the same length, throw exception
     TEST_FOR_EXCEPTION((sortVals.size() != otherVals1.size()) || (sortVals.size() != otherVals2.size()), std::runtime_error,

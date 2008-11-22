@@ -644,6 +644,7 @@ private:
 
 	void debug_assert_in_range( Ordinal lowerOffset_in, Ordinal size_in ) const
     {
+      (void)lowerOffset_in; (void)size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
       assert_in_range(lowerOffset_in, size_in);
 #endif

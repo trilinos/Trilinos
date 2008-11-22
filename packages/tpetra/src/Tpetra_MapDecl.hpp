@@ -58,7 +58,7 @@ namespace Tpetra {
      *  The entries are distributed among the nodes so that the subsets of global entries
      *  are non-overlapping and contiguous 
      *  
-     *  If numGlobalEntries == -1, it will be computed via a global communication.
+     *  If numGlobalEntries == Teuchos::OrdinalTraits<Ordinal>::invalid(), it will be computed via a global communication.
      *  Otherwise, it must be equal to the sum of the local entries across all 
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
@@ -66,7 +66,13 @@ namespace Tpetra {
     Map(Ordinal numGlobalEntries, Ordinal numMyEntries, Ordinal indexBase, 
         const Platform<Ordinal> &platform);
 
-    //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
+    /*! \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
+     *  
+     *  If numGlobalEntries == Teuchos::OrdinalTraits<Ordinal>::invalid(), it will be computed via a global communication.
+     *  Otherwise, it must be equal to the sum of the local entries across all 
+     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
+     *  If this verification fails, a std::invalid_argument exception will be thrown.
+     */
     Map(Ordinal numGlobalEntries, const Teuchos::ArrayView<const Ordinal> &entryList, 
         Ordinal indexBase, const Platform<Ordinal> &platform);
 

@@ -39,11 +39,9 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_ImportExportData.hpp"
 
-// FINISH: this class is not finished yet
-
 namespace Tpetra {
 
-  //! Tpetra::Export: This class builds an export object for efficient exporting of off-processor entries.
+  //! Tpetra::Export: This class builds an export object for efficiently exporting entries off-processor.
 
   /*! Export is used to construct a communication plan that can be called repeatedly by computational
       classes such the Tpetra CisMatrix and Vector classes to efficiently export entries to other
@@ -80,10 +78,10 @@ namespace Tpetra {
     //@{ 
 
     //! Returns the number of entries that are identical between the source and target Maps, up to the first different ID.
-    Ordinal getNumSameIDs() const;
+    Teuchos_Ordinal getNumSameIDs() const;
 
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
-    Ordinal getNumPermuteIDs() const;
+    Teuchos_Ordinal getNumPermuteIDs() const;
 
     //! List of entries in the source Map that are permuted. (non-persisting view)
     Teuchos::ArrayView<const Ordinal> getPermuteFromLIDs() const;
@@ -92,13 +90,13 @@ namespace Tpetra {
     Teuchos::ArrayView<const Ordinal> getPermuteToLIDs() const;
 
     //! Returns the number of entries that are not on the calling image.
-    Ordinal getNumRemoteIDs() const;
+    Teuchos_Ordinal getNumRemoteIDs() const;
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
     Teuchos::ArrayView<const Ordinal> getRemoteLIDs() const;
 
     //! Returns the number of entries that must be sent by the calling image to other images.
-    Ordinal getNumExportIDs() const;
+    Teuchos_Ordinal getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view)
     Teuchos::ArrayView<const Ordinal> getExportLIDs() const;
@@ -145,7 +143,6 @@ namespace Tpetra {
     : Teuchos::Object("Tpetra::Export")
     , ExportData_()
   {
-    TEST_FOR_EXCEPT(true); // not yet supported
     ExportData_ = Teuchos::rcp(new ImportExportData<Ordinal>(source, target));
     // call subfunctions
     setupSamePermuteExport();
@@ -158,22 +155,20 @@ namespace Tpetra {
   Export<Ordinal>::Export(const Export<Ordinal> & rhs)
   : Teuchos::Object(rhs.label())
   , ExportData_(rhs.ExportData_)
-  {
-    TEST_FOR_EXCEPT(true); // not yet supported
-  }
+  {}
 
   template <typename Ordinal>
   Export<Ordinal>::~Export() 
   {}
 
   template <typename Ordinal>
-  Ordinal Export<Ordinal>::getNumSameIDs() const {
+  Teuchos_Ordinal Export<Ordinal>::getNumSameIDs() const {
     return ExportData_->numSameIDs_;
   }
 
   template <typename Ordinal>
-  Ordinal Export<Ordinal>::getNumPermuteIDs() const {
-    return ExportData_->numPermuteIDs_;
+  Teuchos_Ordinal Export<Ordinal>::getNumPermuteIDs() const {
+    return ExportData_->permuteFromLIDs_.size();
   }
 
   template <typename Ordinal>
@@ -189,8 +184,8 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  Ordinal Export<Ordinal>::getNumRemoteIDs() const {
-    return ExportData_->numRemoteIDs_;
+  Teuchos_Ordinal Export<Ordinal>::getNumRemoteIDs() const {
+    return ExportData_->remoteLIDs_.size();
   }
 
   template <typename Ordinal>
@@ -200,8 +195,8 @@ namespace Tpetra {
   }
 
   template <typename Ordinal>
-  Ordinal Export<Ordinal>::getNumExportIDs() const {
-    return ExportData_->numExportIDs_;
+  Teuchos_Ordinal Export<Ordinal>::getNumExportIDs() const {
+    return ExportData_->exportLIDs_.size();
   }
 
   template <typename Ordinal>
@@ -246,18 +241,39 @@ namespace Tpetra {
   void Export<Ordinal>::print(std::ostream& os) const 
   {
     using std::endl;
-    os << "Export Data Members:" << endl;
-    os << "permuteToLIDs:   {"; std::copy(getPermuteToLIDs().begin()  ,getPermuteToLIDs().end()  ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
-    os << "permuteFromLIDs: {"; std::copy(getPermuteFromLIDs().begin(),getPermuteFromLIDs().end(),std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
-    os << "remoteLIDs:      {"; std::copy(getRemoteLIDs().begin()     ,getRemoteLIDs().end()     ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
-    os << "exportLIDs:      {"; std::copy(getExportLIDs().begin()     ,getExportLIDs().end()     ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
-    os << "exportImageIDs:  {"; std::copy(getExportImageIDs().begin() ,getExportImageIDs().end() ,std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
-    os << "numSameIDs   : " << getNumSameIDs() << endl;
-    os << "numPermuteIDs: " << getNumPermuteIDs() << endl;
-    os << "numRemoteIDs : " << getNumRemoteIDs() << endl;
-    os << "numExportIDs : " << getNumExportIDs() << endl;
-    os << "\nsource: " << endl << getSourceMap();
-    os << "\ntarget: " << endl << getTargetMap();
+    Teuchos::ArrayView<const Ordinal> av;
+    int myImageID = getSourceMap().getComm()->getRank();
+    int numImages = getSourceMap().getComm()->getSize();
+    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+      if(myImageID == imageCtr) {
+        os << endl;
+        if(myImageID == 0) { // this is the root node (only output this info once)
+          os << "Export Data Members:" << endl;
+        }
+        os << "Image ID       : " << myImageID << endl;
+        os << "permuteFromLIDs: {"; av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+        os << "permuteToLIDs  : {"; av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+        os << "remoteLIDs     : {"; av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+        os << "exportLIDs     : {"; av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+        os << "exportImageIDs : {"; av = getExportImageIDs();  std::copy(av.begin(),av.end(),std::ostream_iterator<Ordinal>(os," ")); os << " }" << endl;
+        os << "numSameIDs     : " << getNumSameIDs() << endl;
+        os << "numPermuteIDs  : " << getNumPermuteIDs() << endl;
+        os << "numRemoteIDs   : " << getNumRemoteIDs() << endl;
+        os << "numExportIDs   : " << getNumExportIDs() << endl;
+      }
+      // Do a few global ops to give I/O a chance to complete
+      getSourceMap().getComm()->barrier();
+      getSourceMap().getComm()->barrier();
+      getSourceMap().getComm()->barrier();
+    }
+    if (myImageID == 0) {
+      os << "\nSource Map: " << endl; 
+    }
+    os << getSourceMap();
+    if (myImageID == 0) {
+      os << "\nTarget Map: " << endl; 
+    }
+    os << getTargetMap();
   }
 
 
@@ -268,6 +284,7 @@ namespace Tpetra {
     const Map<Ordinal> & target = getTargetMap();
     Teuchos::ArrayView<const Ordinal> sourceGIDs = source.getMyGlobalEntries();
     Teuchos::ArrayView<const Ordinal> targetGIDs = target.getMyGlobalEntries();
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
 
     // -- compute numSameIDs_ ---
     // go through GID lists of source and target. if the ith GID on both is the same, 
@@ -283,8 +300,8 @@ namespace Tpetra {
     }
     // sourceIter should now point to the GID of the first non-same entry or at the end of targetGIDs
 
-    // -- compute numPermuteIDs and numRemoteIDs --
-    // -- fill permuteToLIDs_, permuteFromLIDs_, remoteGIDs_, and remoteLIDs_ --
+    // -- compute numPermuteIDs --
+    // -- fill permuteToLIDs_, permuteFromLIDs_ --
     // go through remaining entries in sourceGIDs. if target owns that GID, 
     // increment numPermuteIDs_, and add entries to permuteToLIDs_ and permuteFromLIDs_.
     // otherwise increment numExportIDs_ and add entries to exportLIDs_ and exportGIDs_.
@@ -296,56 +313,62 @@ namespace Tpetra {
         ExportData_->permuteFromLIDs_.push_back(source.getLocalIndex(*sourceIter));
       }
       else {
-        ExportData_->exportLIDs_.push_back(source.getLocalIndex(*sourceIter));
         ExportData_->exportGIDs_.push_back(*sourceIter);
       }
     }
-    ExportData_->numPermuteIDs_ = Teuchos::as<Ordinal>(ExportData_->permuteToLIDs.size());
-    ExportData_->numExportIDs_  = Teuchos::as<Ordinal>(ExportData_->exportLIDs_.size());
 
-    /* FINISH
-    TEST_FOR_EXCEPTION( (ExportData_->numExportIDs_ > zero) && (!source.isDistributed()), std::runtime_error, 
+    TEST_FOR_EXCEPTION( (getNumExportIDs() > ZERO) && (!source.isDistributed()), std::runtime_error, 
         "Tpetra::Export<" << Teuchos::OrdinalTraits<Ordinal>::name() 
         << ">::setupSamePermuteExport(): Source has export LIDs but Source is not distributed globally.");
 
     // -- compute exportImageIDs_ --
     // get list of images that own the GIDs in exportGIDs_ (in the target Map)
-    // check exportImageIDs_ for any -1 entries (nobody owns that GID in the target Map)
-    target.getRemoteIDList(ExportData_->exportGIDs_, ExportData_->exportImageIDs_);
-    Ordinal count = std::count(ExportData_->exportImageIDs_.begin(), ExportData_->exportImageIDs_.end(), negOne);
-    if(count > zero) {
-      throw reportError("Source has GIDs not found in Target.", 2);
+    ExportData_->exportImageIDs_ = Teuchos::arcp<Ordinal>(ExportData_->exportGIDs_.size());
+    ExportData_->exportLIDs_     = Teuchos::arcp<Ordinal>(ExportData_->exportGIDs_.size());
+    {
+      typename Teuchos::ArrayRCP<Ordinal>::iterator liditer = ExportData_->exportLIDs_.begin();
+      typename Teuchos::Array<Ordinal>::iterator    giditer = ExportData_->exportGIDs_.begin();
+      for (; giditer != ExportData_->exportGIDs_.end(); ++liditer, ++giditer) {
+        *liditer = source.getLocalIndex(*giditer);
+      }
     }
-    */
+    TEST_FOR_EXCEPTION( target.getRemoteIndexList(ExportData_->exportGIDs_(), ExportData_->exportImageIDs_()) == true,
+        std::runtime_error, "Tpetra::Export::setupSamePermuteExport(): Source has GIDs not found in Target.");
   }
+
 
   template <typename Ordinal>
   void Export<Ordinal>::setupRemote() 
   {
-    Ordinal const zero = Teuchos::OrdinalTraits<Ordinal>::zero();
-    Ordinal const one = Teuchos::OrdinalTraits<Ordinal>::one();
-    Map<Ordinal> const& target = getTargetMap();
+    const Map<Ordinal> & target = getTargetMap();
+    const Ordinal ONE  = Teuchos::OrdinalTraits<Ordinal>::one();
 
     // make sure export IDs are ordered by image
     // sort exportImageIDs_ in ascending order,
     // and apply the same permutation to exportGIDs_ and exportLIDs_.
-    sortArrays(ExportData_->exportImageIDs_, ExportData_->exportGIDs_, ExportData_->exportLIDs_);
+    sortArrays(ExportData_->exportImageIDs_(), ExportData_->exportGIDs_(), ExportData_->exportLIDs_());
 
     // Construct list of entries that calling image needs to send as a result
     // of everyone asking for what it needs to receive.
-    ExportData_->distributor_.createFromSends(ExportData_->numExportIDs_, ExportData_->exportImageIDs_, true, ExportData_->numRemoteIDs_);
-    // -- numRemoteIDs_ is now defined --
+    Teuchos_Ordinal numRemoteIDs;
+    ExportData_->distributor_.createFromSends(ExportData_->exportImageIDs_(), numRemoteIDs);
 
     // Use comm plan with ExportGIDs to find out who is sending to us and
     // get proper ordering of GIDs for remote entries 
     // (that we will convert to LIDs when done).
-    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = ExportData_->platform_->createOrdinalComm();
-    comm->doPostsAndWaits(ExportData_->distributor_, ExportData_->exportGIDs_, one, ExportData_->remoteGIDs_);
-    // -- remoteGIDs_ is now defined --
+    Teuchos::RCP< Teuchos::Comm<Ordinal> > comm = ExportData_->platform_->createComm();
+    Teuchos::Array<Ordinal> remoteGIDs(numRemoteIDs);
+    ExportData_->distributor_.doPostsAndWaits(ExportData_->exportGIDs_().getConst(),ONE,remoteGIDs());
 
     // Remote IDs come in as GIDs, convert to LIDs
-    for(Ordinal i = zero; i < ExportData_->numRemoteIDs_; i++) {
-      ExportData_->remoteLIDs_.push_back(target.getLID(ExportData_->remoteGIDs_[i]));
+    ExportData_->remoteLIDs_.resize(numRemoteIDs);
+    {
+      typename Teuchos::Array<Ordinal>::const_iterator i = remoteGIDs.begin();
+      typename Teuchos::Array<Ordinal>::iterator       j = ExportData_->remoteLIDs_.begin();
+      while (i != remoteGIDs.end()) 
+      {
+        *j++ = target.getLocalIndex(*i++);
+      }
     }
   }
 

@@ -75,6 +75,9 @@ struct OrdinalTraits {
   //! Returns representation of one for this ordinal type.
   static inline T one()                      { return UndefinedOrdinalTraits<T>::notDefined(); }
 
+  //! Returns a value designating an invalid number. For signed types, this is typically negative one; for unsigned types, it is typically the largest value.
+  static inline T invalid()                  { return UndefinedOrdinalTraits<T>::notDefined(); }
+
   //! Returns name of this ordinal type.
   static inline std::string name()           { return UndefinedOrdinalTraits<T>::notDefined(); }
 };
@@ -86,7 +89,8 @@ struct OrdinalTraits<char> {
   static const bool hasMachineParameters = false;
   static inline char zero()                   {return(0);}
   static inline char one()                    {return(1);}
-  static inline std::string name()           {return("char");}
+  static inline char invalid()                {return(-1);}
+  static inline std::string name()            {return("char");}
 };
 
 template<>
@@ -94,6 +98,7 @@ struct OrdinalTraits<short int> {
   static const bool hasMachineParameters = false;
   static inline short int zero()                   {return(0);}
   static inline short int one()                    {return(1);}
+  static inline short int invalid()                {return(-1);}
   static inline std::string name()           {return("short int");}
 };
 
@@ -102,6 +107,7 @@ struct OrdinalTraits<int> {
   static const bool hasMachineParameters = false;
   static inline int zero()                   {return(0);}
   static inline int one()                    {return(1);}
+  static inline int invalid()                {return(-1);}
   static inline std::string name()           {return("int");}
 };
 
@@ -110,6 +116,7 @@ struct OrdinalTraits<long int> {
   static const bool hasMachineParameters = false;
   static inline long int zero()              {return(static_cast<long int>(0));}
   static inline long int one()               {return(static_cast<long int>(1));}
+  static inline long int invalid()           {return(static_cast<long int>(-1));}
   static inline std::string name()           {return("long int");}
 };
 
@@ -120,6 +127,7 @@ struct OrdinalTraits<long long int> {
   static const bool hasMachineParameters = false;
   static inline long long int zero() {return(static_cast<long long int>(0));}
   static inline long long int one() {return(static_cast<long long int>(1));}
+  static inline long long int invalid() {return(static_cast<long long int>(-1));}
   static inline std::string name() {return("long long int");}
 };
 

@@ -302,10 +302,10 @@ namespace {
          tmv2x2(lmap2,2*ONE),
          tmv3x3(lmap3,3*ONE);
       // setup serial dense matrices 
-      tmv3x2.extractView(tmvView,stride); SerialDenseMatrix<Ordinal,Scalar> sdm3x2(View,tmvView.getRawPtr(),stride,3*ONE,2*ONE);
-      tmv2x3.extractView(tmvView,stride); SerialDenseMatrix<Ordinal,Scalar> sdm2x3(View,tmvView.getRawPtr(),stride,2*ONE,3*ONE);
-      SerialDenseMatrix<Ordinal,Scalar> sdm2x2(2*ONE,2*ONE), sdm3x3(3*ONE,3*ONE);
-      // fill multivectors with ones (fills sdm3x3 and sdm2x3 as well, because of view semantics)
+      tmv3x2.extractView(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvView.getRawPtr(),stride,3*ONE,2*ONE);
+      tmv2x3.extractView(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm2x3(View,tmvView.getRawPtr(),stride,2*ONE,3*ONE);
+      SerialDenseMatrix<int,Scalar> sdm2x2(2*ONE,2*ONE), sdm3x3(3*ONE,3*ONE);
+      // fill multivectors with ones (fills sdm3x2 and sdm2x3 as well, because of view semantics)
       tmv3x2.random();
       tmv2x3.random();
       // test: perform MV multiply and SDM multiply, then check that answers are equivalent
@@ -396,6 +396,9 @@ namespace {
     TEST_THROW(MV mvec(map2,emptyArr()), std::runtime_error);
     // individual ArrayViews could be too small
     TEST_THROW(MV mvec(map3,arrOfarr()), std::runtime_error);
+#else
+    (void)success;
+    (void)out;
 #endif
   }
 
@@ -631,7 +634,7 @@ namespace {
     mv.norm2(norms());
     for (Ordinal j=ZERO; j<numVectors; ++j) {
       // get a view of column j, normalize it using update()
-      Array<Ordinal> ind(1,j);
+      Array<Teuchos_Ordinal> ind(1,j);
       RCP<MV> mvj = mv.subView(ind());
       switch (j){
       case 0:
@@ -1023,7 +1026,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic             , ORDINAL, SCALAR ) \
@@ -1041,14 +1044,14 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) 
 
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-         /*UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)*/
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
      UNIT_TEST_GROUP_ORDINAL(int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD

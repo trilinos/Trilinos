@@ -5,6 +5,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_FancyOStream.hpp>
+#include <Teuchos_Tuple.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -63,6 +64,7 @@ namespace {
   using Tpetra::INSERT;
   using Tpetra::Import;
   using std::string;
+  using Teuchos::tuple;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -111,13 +113,13 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal NEGONE = ZERO - OrdinalTraits<Ordinal>::one();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a Map
     const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
-    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform);
+    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
     // create a random multivector
     MV mv1(map,1), mv2(map,2), mv3(map,3);
     // create the zero matrix
@@ -139,7 +141,7 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal NEGONE = ZERO - OrdinalTraits<Ordinal>::one();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
@@ -150,7 +152,7 @@ namespace {
     const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
     const Ordinal numVecs  = 5;
-    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform);
+    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
     // create a random multivector
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.random();
@@ -186,6 +188,124 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, DomainRange, Ordinal, Scalar )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Ordinal,Scalar> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    if (numImages == 1) return;
+    // create Maps
+    // matrix is:
+    //  proc
+    //    0  [1 1               ]
+    //    0  [1 1 1             ]
+    //    1  [  1 1 1           ]
+    //    1  [    1 1           ]
+    //         ................
+    //   n-1 [             1 1 1]
+    //   n-1 [               1 1]
+    //                              proc
+    // input multivector will be      0  [0    2N   4N   6N    8N  ]
+    //                                0  [1    2N+1 4N+1 6N+1  8N+1]
+    //                                1  [2    2N+2 4N+2 6N+2  8N+2]
+    //                                1  [3    2N+3 4N+3 6N+3  8N+3]                  (i,j) = 2*N*j+i
+    //                                   [                         ]
+    //                               n-1 [2N-2 4N-2 6N-2 8N-2 10N-2]
+    //                               n-1 [2N-1 4N-1 6N-1 8N-1 10N-1]
+    //                
+    //                              proc                                                 
+    // output multivector will be     0  [1    4N+1  8N+1 12N+1 16N+1]                    i=0:         (i,j)+(i+1,j) = 2Nj+i+2Nj+i+1 = 4Nj+2i+1 = 4Nj+1
+    //                                1  [3    6N+3 12N+3 18N+3 24N+3]                 i=2n-1: (i-1,j)+(i,j)         = 2Nj+i-1+2Nj+i = 4Nj+2i-1 = 4Nj+2(2N-1)-1 = 4N(j+1)-3
+    //                                2  [6    6N+6 12N+6 18N+6 24N+6]                   else: (i-1,j)+(i,j)+(i+1,j) = 2Nj+i-1+2Nj+i+2Nj+i+1 = 6Nj+3i
+    //                                   [                           ]
+    //                               n-1 [                           ]
+    //                                0  [                           ]
+    //                                1  [                           ]
+    //                                   [                           ]
+    //                               n-1 [4N-3 8N-3 12N-3 16N-3 20N-3]
+    //
+    // row map is [0,1]   [2,3]     [4,5]     etc
+    // col map is [0,1,2] [1,2,3,4] [3,4,5,6] etc     (assembled by CrsMatrix, we construct one only for comparison)
+    // domain map will be equal to the row map
+    // range  map will be [0,np] [1,np+1] [2,np+2]
+    const Ordinal indexBase = ZERO;
+    const Ordinal numVecs  = 5;
+    Map<Ordinal> rowmap(INVALID,tuple<Ordinal>(2*myImageID,2*myImageID+1),indexBase,platform);
+    Map<Ordinal> rngmap(INVALID,tuple<Ordinal>(myImageID,numImages+myImageID),indexBase,platform);
+    // create the tridiagonal matrix
+    CrsMatrix<Ordinal,Scalar> tri(rowmap);
+    Array<Scalar>  vals(3,ST::one());
+    if (myImageID == 0) {
+      Array<Ordinal> cols( tuple<Ordinal>(2*myImageID,2*myImageID+1,2*myImageID+2) );
+      tri.submitEntries(2*myImageID  ,cols(0,2),vals(0,2));
+      tri.submitEntries(2*myImageID+1,cols(0,3),vals(0,3));
+    }
+    else if (myImageID == numImages-1) {        
+      Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1) );
+      tri.submitEntries(2*myImageID  ,cols(0,3),vals(0,3));
+      tri.submitEntries(2*myImageID+1,cols(1,2),vals(1,2));
+    }
+    else {
+      Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1,2*myImageID+2) );
+      tri.submitEntries(2*myImageID  ,cols(0,3),vals(0,3));
+      tri.submitEntries(2*myImageID+1,cols(1,3),vals(0,3));
+    }
+    // call fillComplete(), specifying domain and range maps and requiring custom importer and exporter
+    tri.fillComplete(rowmap,rngmap);
+    // test the properties
+    TEST_EQUALITY(tri.getNumGlobalNonzeros()  , 6*numImages-2);          
+    TEST_EQUALITY(tri.getNumMyNonzeros()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
+    TEST_EQUALITY(tri.getNumGlobalRows()      , 2*numImages);
+    TEST_EQUALITY(tri.getNumMyRows()          , 2);
+    TEST_EQUALITY(tri.getNumMyCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
+    TEST_EQUALITY(tri.getNumGlobalDiagonals() , 2*numImages);
+    TEST_EQUALITY(tri.getNumMyDiagonals()     , 2);
+    TEST_EQUALITY(tri.getGlobalMaxNumEntries(), 3);
+    TEST_EQUALITY(tri.getMyMaxNumEntries()    , 3);
+    TEST_EQUALITY(tri.getIndexBase()          , 0);
+    TEST_EQUALITY_CONST(tri.getRowMap().isSameAs(rowmap), true);
+    TEST_EQUALITY_CONST(tri.getRangeMap().isSameAs(rngmap), true);
+    TEST_EQUALITY_CONST(tri.getDomainMap().isSameAs(rowmap), true);
+    // build the input and corresponding output multivectors
+    MV mvin(rowmap,numVecs), mvout(rngmap,numVecs), mvexp(rngmap,numVecs);
+    for (int j=0; j<numVecs; ++j) {
+      mvin.replaceMyValue(0,j,as<Scalar>(j*2*numImages+2*myImageID  )); // entry (2*myImageID  ,j)
+      mvin.replaceMyValue(1,j,as<Scalar>(j*2*numImages+2*myImageID+1)); // entry (2*myImageID+1,j)
+      // entry (myImageID,j)
+      if (myImageID==0) {
+        mvexp.replaceMyValue(0,j,as<Scalar>(4*numImages*j+1));
+      }                                                                    
+      else {                                                               
+        mvexp.replaceMyValue(0,j,as<Scalar>(6*numImages*j+3*myImageID));
+      }                                                                    
+      // entry (numImages+myImageID,j)
+      if (myImageID==numImages-1) {                                        
+        mvexp.replaceMyValue(1,j,as<Scalar>(4*numImages*(j+1)-3));
+      }
+      else {
+        mvexp.replaceMyValue(1,j,as<Scalar>(6*numImages*j+3*(numImages+myImageID)));
+      }
+    }
+    // test the action
+    mvout.random();
+    tri.apply(mvin,mvout);
+    mvout.update(-ST::one(),mvexp,ST::one());
+    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    mvout.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, TheEyeOfTruthDistAlloc, Ordinal, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
@@ -193,7 +313,7 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal NEGONE = ZERO - OrdinalTraits<Ordinal>::one();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
@@ -204,7 +324,7 @@ namespace {
     const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
     const Ordinal numVecs  = 5;
-    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform);
+    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
     // create a random multivector
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.random();
@@ -249,7 +369,7 @@ namespace {
     typedef ScalarTraits<Mag> MT;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal  ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal NEGONE = ZERO - ONE;
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
@@ -259,7 +379,7 @@ namespace {
     if (numImages < 2) return;
     // create a Map
     const Ordinal indexBase = ZERO;
-    Map<Ordinal> map(NEGONE,ONE,indexBase,platform);
+    Map<Ordinal> map(INVALID,ONE,indexBase,platform);
     // create a multivector ones(n,1)
     MV ones(map,ONE,false), threes(map,ONE,false);
     ones.putScalar(ST::one());
@@ -307,7 +427,7 @@ namespace {
     TEST_EQUALITY(A.getMyMaxNumEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , ZERO);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), false);
+    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
     // test the action
     threes.random();
@@ -331,7 +451,7 @@ namespace {
     typedef ScalarTraits<Mag> MT;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal  ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal NEGONE = ZERO - ONE;
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
@@ -341,7 +461,7 @@ namespace {
     if (numImages < 3) return;
     // create a Map
     const Ordinal indexBase = ZERO;
-    Map<Ordinal> map(NEGONE,ONE,indexBase,platform);
+    Map<Ordinal> map(INVALID,ONE,indexBase,platform);
 
     // for debugging: Teuchos::VerboseObjectBase::setDefaultOStream(Teuchos::rcp(&out,false));
     
@@ -396,7 +516,7 @@ namespace {
     TEST_EQUALITY(A.getMyMaxNumEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , ZERO);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), false);
+    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
     // test the action
     A.apply(mveye,mvres);
@@ -417,8 +537,7 @@ namespace {
     typedef MultiVector<Ordinal,Scalar> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    // hack to quit for integral Scalar (like, maybe, complex<int>)
-    if (as<Scalar>(1) / as<Scalar>(3) == as<Scalar>(0)) return;
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
@@ -510,8 +629,7 @@ namespace {
     typedef MultiVector<Ordinal,Scalar> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    // hack to quit for integral Scalar (like, maybe, complex<int>)
-    if (as<Scalar>(1) / as<Scalar>(3) == as<Scalar>(0)) return;
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
@@ -594,8 +712,7 @@ namespace {
     typedef MultiVector<Ordinal,Scalar> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    // hack to quit for integral Scalar
-    if (as<Scalar>(1) / as<Scalar>(3) == as<Scalar>(0)) return;
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
@@ -686,7 +803,7 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal NEGONE = ZERO - OrdinalTraits<Ordinal>::one();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
@@ -696,7 +813,7 @@ namespace {
     // create a Map
     const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
-    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform);
+    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
     {
       // create the matrix
       CrsMatrix<Ordinal,Scalar> A(map);
@@ -726,14 +843,14 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal NEGONE = ZERO - OrdinalTraits<Ordinal>::one();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a Map
     const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
     const Ordinal numVecs  = 5;
-    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform);
+    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
     // create a random multivector
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.random();
@@ -793,6 +910,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, SimpleEigTest, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, BadGID       , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, FullMatrixTriDiag, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DomainRange, ORDINAL, SCALAR ) \
       TRIUTILS_USING_TESTS(ORDINAL, SCALAR)
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

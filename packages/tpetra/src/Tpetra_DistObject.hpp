@@ -241,62 +241,62 @@ namespace Tpetra {
   {}
 
   template <typename Ordinal, typename Scalar>
-  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source, 
+  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & A, 
                                             const Import<Ordinal> & importer, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( source.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION( A.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = importer.getNumSameIDs();
     const Teuchos::ArrayView<const Ordinal> exportLIDs      = importer.getExportLIDs();
     const Teuchos::ArrayView<const Ordinal> remoteLIDs      = importer.getRemoteLIDs();
     const Teuchos::ArrayView<const Ordinal> permuteToLIDs   = importer.getPermuteToLIDs();
     const Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteFromLIDs();
-    this->doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+    this->doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
                      importer.getDistributor(), false);
   }
 
   template <typename Ordinal, typename Scalar>
-  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & dest, 
+  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal,Scalar> & A, 
                                             const Export<Ordinal> & exporter, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( dest.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION( A.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = exporter.getNumSameIDs();
     Teuchos::ArrayView<const Ordinal> exportLIDs      = exporter.getExportLIDs();
     Teuchos::ArrayView<const Ordinal> remoteLIDs      = exporter.getRemoteLIDs();
     Teuchos::ArrayView<const Ordinal> permuteToLIDs   = exporter.getPermuteToLIDs();
     Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteFromLIDs();
-    doTransfer(dest, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+    doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
                exporter.getDistributor(), false);
   }
 
   template <typename Ordinal, typename Scalar>
-  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & source,
+  void DistObject<Ordinal,Scalar>::doImport(const DistObject<Ordinal,Scalar> & A,
                                             const Export<Ordinal> & exporter, CombineMode CM)
   {
-    TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( source.getMap() != exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION( getMap() != exporter.getSourceMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( A.getMap() != exporter.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = exporter.getNumSameIDs();
     Teuchos::ArrayView<const Ordinal> exportLIDs      = exporter.getRemoteLIDs();
     Teuchos::ArrayView<const Ordinal> remoteLIDs      = exporter.getExportLIDs();
     Teuchos::ArrayView<const Ordinal> permuteToLIDs   = exporter.getPermuteFromLIDs();
     Teuchos::ArrayView<const Ordinal> permuteFromLIDs = exporter.getPermuteToLIDs();
-    doTransfer(source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+    doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
                exporter.getDistributor(), true);
   }
 
   template <typename Ordinal, typename Scalar>
-  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & dest,
+  void DistObject<Ordinal,Scalar>::doExport(const DistObject<Ordinal, Scalar> & A,
                                             const Import<Ordinal> & importer, CombineMode CM)
   {
-    TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEST_FOR_EXCEPTION( dest.getMap() != importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEST_FOR_EXCEPTION( getMap() != importer.getSourceMap(), std::runtime_error, "Target Maps don't match.");
+    TEST_FOR_EXCEPTION( A.getMap() != importer.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     Ordinal numSameIDs = importer.getNumSameIDs();
     Teuchos::ArrayView<const Ordinal> exportLIDs      = importer.getRemoteLIDs();
     Teuchos::ArrayView<const Ordinal> remoteLIDs      = importer.getExportLIDs();
     Teuchos::ArrayView<const Ordinal> permuteToLIDs   = importer.getPermuteFromLIDs();
     Teuchos::ArrayView<const Ordinal> permuteFromLIDs = importer.getPermuteToLIDs();
-    doTransfer(dest, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
+    doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
                importer.getDistributor(), true);
   }
 

@@ -89,7 +89,7 @@ namespace {
 
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Ordinal numImports = ZERO;
+    Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with {0,0, 1,1, 2,2, ... numImages-1,numImages-1}
     // two sends to each image, contiguous, in order
     vector<Ordinal> exportImageIDs(0);
@@ -104,7 +104,7 @@ namespace {
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
-    TEST_EQUALITY(numImports, as<Ordinal>(2*numImages));
+    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
@@ -154,7 +154,7 @@ namespace {
     // two exports to each image, including myself
     // on even imageIDs, send data contig
     // on odd imageIDs, send data non-contig
-    Ordinal numImports = ZERO;
+    Teuchos_Ordinal numImports = 0;
     vector<Ordinal> exportImageIDs(0);
     exportImageIDs.reserve(numImages*2);
     if (even) {
@@ -179,7 +179,7 @@ namespace {
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
-    TEST_EQUALITY(numImports, as<Ordinal>(2*numImages));
+    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
@@ -234,7 +234,7 @@ namespace {
     bool black = ((myImageID % 2) == 0);
     Ordinal numInMyPartition = ZERO;
 
-    Ordinal numImports = ZERO;
+    Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with all images from partition
     vector<Ordinal> exportImageIDs(0);
     if (black) {
@@ -257,7 +257,7 @@ namespace {
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
-    TEST_EQUALITY(numImports, as<Ordinal>(numInMyPartition));
+    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(numInMyPartition));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), numInMyPartition-ONE);
     TEST_EQUALITY(distributor.getNumReceives(), numInMyPartition-ONE);
@@ -303,7 +303,7 @@ namespace {
 
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Ordinal numImports = ZERO;
+    Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with {0,1,...,myImageID-1,myImageID+1,...,numImages-1}
     // one send to each image, contiguous, in order, but not to myself
     vector<Ordinal> exportImageIDs(0);
@@ -320,7 +320,7 @@ namespace {
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
-    TEST_EQUALITY(numImports, as<Ordinal>(numImages-1));
+    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), false);
     TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
@@ -366,7 +366,7 @@ namespace {
 
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Ordinal numImports = ZERO;
+    Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with {0,0,0, 1,1,1, 2,2,2, ... numImages-1,numImages-1,numImages-1}
     // three sends to each image, out of order (even first, then odd)
     // only test if numImages > 2
@@ -390,7 +390,7 @@ namespace {
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
-    TEST_EQUALITY(numImports, as<Ordinal>(3*numImages));
+    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(3*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
@@ -435,7 +435,7 @@ namespace {
 
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Ordinal numImports = ZERO;
+    Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with {0, 1, 2, ... numImages-1,
     //                           0, 1, 2, ... numImages-1}
     vector<Ordinal> exportImageIDs(0);
@@ -452,7 +452,7 @@ namespace {
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
-    TEST_EQUALITY(numImports, as<Ordinal>(2*numImages));
+    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
@@ -497,7 +497,7 @@ namespace {
 
     // send data to each image, including myself
     const Ordinal numExportIDs = as<Ordinal>(numImages); 
-    Ordinal numRemoteIDs = ZERO;
+    Teuchos_Ordinal numRemoteIDs = 0;
     // fill exportImageIDs with {0, 1, 2, ... numImages-1}
     vector<Ordinal> exportImageIDs; 
     exportImageIDs.reserve(numExportIDs);

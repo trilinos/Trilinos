@@ -56,16 +56,13 @@ namespace Tpetra {
     Teuchos::Array<Ordinal> permuteToLIDs_;
     Teuchos::Array<Ordinal> permuteFromLIDs_;
     Teuchos::Array<Ordinal> remoteLIDs_;
-    Teuchos::Array<Ordinal> remoteGIDs_;
+    Teuchos::Array<Ordinal> exportGIDs_;
+    // These are ArrayRCP because in the construction of an Import object, they are allocated and returned by a call to 
     Teuchos::ArrayRCP<Ordinal> exportLIDs_;
-    Teuchos::ArrayRCP<Ordinal> exportGIDs_;
     Teuchos::ArrayRCP<Ordinal> exportImageIDs_;
 
     // OTs
-    Ordinal numSameIDs_;
-    Ordinal numPermuteIDs_;
-    Ordinal numRemoteIDs_;
-    Ordinal numExportIDs_;
+    Teuchos_Ordinal numSameIDs_;
 
     // Maps
     const Map<Ordinal> source_;
@@ -86,10 +83,7 @@ namespace Tpetra {
   template <typename Ordinal>
   ImportExportData<Ordinal>::ImportExportData(const Map<Ordinal> & source, const Map<Ordinal> & target)
   : Teuchos::Object("Tpetra::ImportExportData")
-  , numSameIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
-  , numPermuteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
-  , numRemoteIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
-  , numExportIDs_(Teuchos::OrdinalTraits<Ordinal>::zero())
+  , numSameIDs_(0)
   , source_(source)
   , target_(target)
   , platform_(source.getPlatform()->clone())

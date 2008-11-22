@@ -482,7 +482,7 @@ public:
   /** \brief . */
   RCPNodeHandle( ENull null_arg = null )
     : node_(0), strength_(RCP_STRENGTH_INVALID)
-    {}
+    {(void)null_arg;}
   /** \brief . */
   RCPNodeHandle( RCPNode* node, ERCPStrength strength_in = RCP_STRONG )
     : node_(node), strength_(strength_in)

@@ -349,7 +349,7 @@ namespace Anasazi {
     bool UseTranspose() const { return (false); };
 
     //! If set true, the transpose of this operator will be applied [not functional for this operator].
-    int SetUseTranspose(bool UseTranspose_in) { return 0; };
+    int SetUseTranspose(bool /*UseTranspose_in*/) { return 0; };
     
     //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
     bool HasNormInf() const { return (false); };
@@ -423,7 +423,7 @@ namespace Anasazi {
     bool UseTranspose() const { return (false); };
 
     //! If set true, the transpose of this operator will be applied [not functional for this operator].
-    int SetUseTranspose(bool UseTranspose_in) { return 0; };
+    int SetUseTranspose(bool /*UseTranspose_in*/) { return 0; };
     
     //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
     bool HasNormInf() const { return (false); };

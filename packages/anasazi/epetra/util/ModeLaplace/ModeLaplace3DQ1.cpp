@@ -612,7 +612,7 @@ double ModeLaplace3DQ1::getFirstMassEigenValue() const {
 
 
 int ModeLaplace3DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda, 
-                                double *normWeight, bool smallest) const {
+                                double *normWeight, bool /*smallest*/) const {
 
   using std::cout;
   using std::ios;

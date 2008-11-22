@@ -83,7 +83,7 @@ namespace Tpetra {
              Number of imports this image will be receiving.
     */
     void createFromSends(const Teuchos::ArrayView<const Ordinal> &exportImageIDs,
-                         Ordinal &numImports);
+                         Teuchos_Ordinal &numImports);
 
     //! Create Distributor object using list of Image IDs to receive from
     /*! Take a list of global IDs and construct a plan for efficiently scattering to these images.
@@ -337,7 +337,7 @@ namespace Tpetra {
   template <typename Ordinal>
   void Distributor<Ordinal>::createFromSends(
       const Teuchos::ArrayView<const Ordinal> &exportImageIDs,
-      Ordinal &numImports) 
+      Teuchos_Ordinal &numImports) 
   {
     const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE  = Teuchos::OrdinalTraits<Ordinal>::one();
@@ -601,7 +601,7 @@ namespace Tpetra {
             Teuchos::ArrayRCP<Ordinal> &exportImageIDs)
   {
     computeSends(remoteGIDs, remoteImageIDs, exportGIDs, exportImageIDs);
-    Ordinal testNumRemoteIDs; // dummy
+    Teuchos_Ordinal testNumRemoteIDs; // dummy
     createFromSends(exportImageIDs(), testNumRemoteIDs);
   }
 
@@ -1032,7 +1032,7 @@ namespace Tpetra {
       importObjs[2*i+1] = myImageID;
     }
 
-    Ordinal numExports;
+    Teuchos_Ordinal numExports;
     Distributor<Ordinal> tempPlan(comm_);
     tempPlan.createFromSends(importImageIDs, numExports);
     exportIDs = Teuchos::arcp<Ordinal>(numExports);
@@ -1041,7 +1041,7 @@ namespace Tpetra {
     Teuchos::Array<Ordinal> exportObjs(tempPlan.getTotalReceiveLength()*2);
     tempPlan.doPostsAndWaits(importObjs().getConst(),2,exportObjs());
 
-    for (int i = 0; i < numExports; ++i) {
+    for (Teuchos_Ordinal i = 0; i < numExports; ++i) {
       exportIDs[i]      = exportObjs[2*i];
       exportImageIDs[i] = exportObjs[2*i+1];
     }

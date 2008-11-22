@@ -5,7 +5,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Import.hpp"
-// #include "Tpetra_Export.hpp" NOT FINISHED
+#include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 namespace {
@@ -22,11 +22,12 @@ namespace {
   using Teuchos::OrdinalTraits;
   using Tpetra::Map;
   using Tpetra::Import;
-  // using Tpetra::Export;
+  using Tpetra::Export;
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
   using Teuchos::Array;
   using Tpetra::REPLACE;
+  using Tpetra::ADD;
   using std::ostream_iterator;
   using std::endl;
 
@@ -91,8 +92,10 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportExport, GetNeighbors, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportExport, GetNeighborsForward, Ordinal, Scalar )
   {
+    // import with the importer to duplicate
+    // export with the exporter to add and reduce
     typedef ScalarTraits<Scalar> ST;
     typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -116,60 +119,175 @@ namespace {
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    Map<Ordinal> map(NEGONE,numLocal,indexBase,platform), 
-                nmap(NEGONE,neighbors(),indexBase,platform);
-    // mv = [ 0    n     2n    3n    4n ]
-    //      [...  ....  ....  ....  ....]
-    //      [n-1  2n-1  3n-1  4n-1  5n-1]
-    MV mvMine(map,numVectors); 
+    Map<Ordinal> smap(NEGONE,numLocal,indexBase,platform), 
+                 tmap(NEGONE,neighbors(),indexBase,platform);
+    // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
+    MV mvMine(smap,numVectors); 
     for (int j=0; j<numVectors; ++j) {
       mvMine.replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
     }
-    Import<Ordinal> importer(map,nmap);
-    //Export<Ordinal> exporter(map,nmap);
+    // create Import from smap to tmap, Export from tmap to smap, test them
+    Import<Ordinal> importer(smap,tmap);
+    Export<Ordinal> exporter(tmap,smap);
     bool local_success = true;
-    for (int t=0; t<1; t++) {
-      // t=0 : use importer+doImport()
-      // t=1 : use importer+doExport()
-      // t=2 : use exporter+doImport()
-      // t=3 : use exporter+doExport()
-      MV mvWithNeighbors(nmap,numVectors);
-      switch (t) {
-        case 0:
-          mvWithNeighbors.doImport(mvMine,importer,REPLACE);
-          break;
-        //case 1:
-        //  mvMine.doExport(mvWithNeighbors,importer,REPLACE);
-        //  break;
-        //case 2:
-        //  mvWithNeighbors.doImport(mvMine,exporter,REPLACE);
-        //  break;
-        //case 3:
-        //  mvMine.doExport(mvWithNeighbors,exporter,REPLACE);
-        //  break;
-      }
-      // test the numbers
-      if (myImageID == 0) {
-        for (int j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(j*numImages));           // me 
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(j*numImages)+ST::one()); // neighbor
-        }
-      }
-      else if (myImageID == numImages-1) {
-        for (int j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
-        }
-      }
-      else {
-        for (int j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],2,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        }
+    // importer testing: FINISH
+    TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
+    TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
+    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+    TEST_EQUALITY( importer.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+    TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+    TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+    // exporter testing: FINISH
+    TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
+    TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
+    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+    TEST_EQUALITY( exporter.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+    // import neighbors, test their proper arrival
+    //                   [ 0    n     2n    3n    4n ]
+    // mvWithNeighbors = [...  ....  ....  ....  ....]
+    //                   [n-1  2n-1  3n-1  4n-1  5n-1]
+    MV mvWithNeighbors(tmap,numVectors);
+    mvWithNeighbors.doImport(mvMine,importer,REPLACE);
+    if (myImageID == 0) {
+      for (int j=0; j<numVectors; ++j) {
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)); // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(j*numImages)+ST::one()); // neighbor
       }
     }
+    else if (myImageID == numImages-1) {
+      for (int j=0; j<numVectors; ++j) {
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
+      }
+    }
+    else {
+      for (int j=0; j<numVectors; ++j) {
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+      }
+    }
+    // export values, test 
+    mvMine.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    mvMine.doExport(mvWithNeighbors,exporter,ADD);
+    if (myImageID == 0 || myImageID == numImages-1) {
+      for (int j=0; j<numVectors; ++j) {
+        // contribution from me and one neighbor: double original value
+        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+      }
+    }
+    else {
+      for (int j=0; j<numVectors; ++j) {
+        // contribution from me and two neighbors: triple original value
+        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+      }
+    }
+    // 
     success &= local_success;
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportExport, GetNeighborsBackward, Ordinal, Scalar )
+  {
+    // import with the exporter to duplicate
+    // export with the importer to add and reduce
+    typedef ScalarTraits<Scalar> ST;
+    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    const Ordinal NEGONE = ZERO - ONE;
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    if (numImages < 2) return;
+    // create a Map
+    const Ordinal indexBase = ZERO;
+    const Ordinal numLocal  = ONE;
+    const Ordinal numVectors = as<Ordinal>(5);
+    // my neighbors: myImageID-1, me, myImageID+1
+    Array<Ordinal> neighbors;
+    if (myImageID != ZERO       ) neighbors.push_back(myImageID-1);
+    neighbors.push_back(myImageID);
+    if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
+    // two maps: one has one entries per node, the other is the 1-D neighbors
+    Map<Ordinal> smap(NEGONE,numLocal,indexBase,platform), 
+                 tmap(NEGONE,neighbors(),indexBase,platform);
+    // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
+    MV mvMine(smap,numVectors); 
+    for (int j=0; j<numVectors; ++j) {
+      mvMine.replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
+    }
+    // create Import from smap to tmap, Export from tmap to smap, test them
+    Import<Ordinal> importer(smap,tmap);
+    Export<Ordinal> exporter(tmap,smap);
+    bool local_success = true;
+    // importer testing: FINISH
+    TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
+    TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
+    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+    TEST_EQUALITY( importer.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+    TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+    TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+    // exporter testing: FINISH
+    TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
+    TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
+    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+    TEST_EQUALITY( exporter.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+    // import neighbors, test their proper arrival
+    //                   [ 0    n     2n    3n    4n ]
+    // mvWithNeighbors = [...  ....  ....  ....  ....]
+    //                   [n-1  2n-1  3n-1  4n-1  5n-1]
+    MV mvWithNeighbors(tmap,numVectors);
+    mvWithNeighbors.doImport(mvMine,exporter,REPLACE);
+    if (myImageID == 0) {
+      for (int j=0; j<numVectors; ++j) {
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)); // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(j*numImages)+ST::one()); // neighbor
+      }
+    }
+    else if (myImageID == numImages-1) {
+      for (int j=0; j<numVectors; ++j) {
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
+      }
+    }
+    else {
+      for (int j=0; j<numVectors; ++j) {
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+      }
+    }
+    // export values, test 
+    mvMine.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    mvMine.doExport(mvWithNeighbors,importer,ADD);
+    if (myImageID == 0 || myImageID == numImages-1) {
+      for (int j=0; j<numVectors; ++j) {
+        // contribution from me and one neighbor: double original value
+        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+      }
+    }
+    else {
+      for (int j=0; j<numVectors; ++j) {
+        // contribution from me and two neighbors: triple original value
+        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+      }
+    }
+    // 
+    success &= local_success;
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -194,14 +312,15 @@ namespace {
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, GetNeighbors     , ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, GetNeighborsForward,  ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, GetNeighborsBackward, ORDINAL, SCALAR )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ImportExport, basic, ORDINAL ) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, double) \
-      UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
+      UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) 
 
     UNIT_TEST_GROUP_ORDINAL(int)
 

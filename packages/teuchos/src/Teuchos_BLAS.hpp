@@ -74,6 +74,7 @@ functions that include the macro:
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_BLAS_types.hpp"
+#include "Teuchos_TestForException.hpp"
 
 /*! \class Teuchos::BLAS
     \brief The Templated BLAS Wrapper Class.
@@ -178,7 +179,7 @@ namespace Teuchos
     void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, 
 	      const OrdinalType lda, ScalarType* x, const OrdinalType incx) const;
 
-    //! Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A.
+    //! \brief Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A. 
     void GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, 
 	     const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const;
     //@}
@@ -405,6 +406,9 @@ namespace Teuchos
     ScalarType one = ScalarTraits<ScalarType>::one();
     bool BadArgument = false;
 
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && trans == CONJ_TRANS, std::logic_error,
+        "Teuchos::BLAS::GEMV() does not currently support CONJ_TRANS for complex data types.");
+
     // Quick return if there is nothing to do!
     if( m == izero || n == izero || ( alpha == zero && beta == one ) ){ return; }
     
@@ -535,6 +539,9 @@ namespace Teuchos
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     bool BadArgument = false;
+
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && trans == CONJ_TRANS, std::logic_error,
+	    "Teuchos::BLAS::TRMV() does not currently support CONJ_TRANS for complex data types.");
 
     // Quick return if there is nothing to do!
     if( n == izero ){ return; }
@@ -692,6 +699,9 @@ namespace Teuchos
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     bool BadArgument = false;
 
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
+	    "Teuchos::BLAS::GER() does not currently support complex data types.");
+
     // Quick return if there is nothing to do!
     if( m == izero || n == izero || alpha == zero ){ return; }
     
@@ -767,6 +777,9 @@ namespace Teuchos
     OrdinalType NRowA = m, NRowB = k;
     ScalarType temp;
     bool BadArgument = false;
+
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && (transa == CONJ_TRANS || transb == CONJ_TRANS), std::logic_error,
+	    "Teuchos::BLAS::GEMM() does not currently support CONJ_TRANS for complex data types.");
 
     // Change dimensions of matrix if either matrix is transposed
     if( !(ETranspChar[transa]=='N') ) {
@@ -918,6 +931,9 @@ namespace Teuchos
     bool BadArgument = false;
     bool Upper = (EUploChar[uplo] == 'U');
     if (ESideChar[side] == 'R') { NRowA = n; }
+
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
+	    "Teuchos::BLAS::SYMM() does not currently support complex data types.");
     
     // Quick return.
     if ( (m==izero) || (n==izero) || ( (alpha==zero)&&(beta==one) ) ) { return; }
@@ -1046,6 +1062,9 @@ namespace Teuchos
     bool LSide = (ESideChar[side] == 'L');
     bool NoUnit = (EDiagChar[diag] == 'N');
     bool Upper = (EUploChar[uplo] == 'U');
+
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && transa == CONJ_TRANS, std::logic_error,
+	    "Teuchos::BLAS::TRMM() does not currently support CONJ_TRANS for complex data types.");
 
     if(!LSide) { NRowA = n; }
 
@@ -1244,6 +1263,9 @@ namespace Teuchos
     bool BadArgument = false;
     bool NoUnit = (EDiagChar[diag]=='N');
     
+    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && transa == CONJ_TRANS, std::logic_error,
+	    "Teuchos::BLAS::TRSM() does not currently support CONJ_TRANS for complex data types.");
+
     if (!(ESideChar[side] == 'L')) { NRowA = n; }
 
     // Quick return.
