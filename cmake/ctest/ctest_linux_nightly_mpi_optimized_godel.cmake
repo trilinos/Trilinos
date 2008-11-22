@@ -74,6 +74,6 @@ CMAKE_C_FLAGS:STRING=-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions
 
 CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
 
-MAKECOMMAND:STRING=gmake -j 8
+MAKECOMMAND:STRING=gmake -j8 -i
 
 ")

@@ -52,7 +52,7 @@ CMAKE_CXX_FLAGS:STRING=-O3 -ansi -Wall -Wshadow -Wunused-variable -Wunused-funct
 CMAKE_C_FLAGS:STRING=-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions
 CMAKE_Fortran_FLAGS:STRING=-O5
 CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage -lm
-MAKECOMMAND:STRING=gmake -j 8
+MAKECOMMAND:STRING=gmake -j8 -i
 
 DART_TESTING_TIMEOUT:STRING=600
 CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
