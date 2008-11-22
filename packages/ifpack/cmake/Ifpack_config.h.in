@@ -1,0 +1,22 @@
+/* src/Ifpack_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build with ifpack enabled */
+#cmakedefine HAVE_IFPACK_AMESOS
+
+/* Define if want to build with ifpack enabled */
+#cmakedefine HAVE_IFPACK_AZTECOO
+
+/* Define if want to build with ifpack enabled */
+#cmakedefine HAVE_IFPACK_EPETRAEXT
+
+/* Define if want to build with ifpack enabled */
+#cmakedefine HAVE_IFPACK_GALERI
+
+/* Define if you want to build Ifpack's ParameterList interface */
+#cmakedefine HAVE_IFPACK_METIS
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI

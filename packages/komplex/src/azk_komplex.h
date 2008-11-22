@@ -142,6 +142,8 @@ AZ_transform).
 #endif
 #endif
 
+#include "az_aztec.h"
+
 /* Define some constants for the user */
 #define AZK_True_Complex 	     1
 #define AZK_Komplex_Same_Structure   2

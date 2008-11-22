@@ -8,13 +8,17 @@ Last updated: 2008/11/18
 Active items:
 -------------
 
-(*) [Ross, Brent, Esteban] Add basic CMake support for every Trilinos
-package: Initially, only support basic libaries, minimal TPL
-dependencies, and only a subset of tests/examples.
+(*) [Ross, Brent] Add basic CMake support for every Trilinos package:
+Initially, only support basic libaries, minimal TPL dependencies, and
+only a subset of tests/examples.
 
 
 Backlog:
 --------
+
+(*) [???] Clean up the Trilinos/cmake directory: Create cmake/utils to
+hold simple generic utilities, cmake/package_arch to hold the Trilinos
+package architecture rountines.
 
 (*) [???] Add unit testing infrastructure for TRILINOS_ADD_EXECUTABLE(...),
 TRILINOS_ADD_TEST(...).  These unit tests will serve both as tests and as

@@ -30,8 +30,6 @@
 #ifndef _IFPACK_CONFIGDEFS_H_
 #define _IFPACK_CONFIGDEFS_H_
 
-#ifndef TRILINOS_NO_CONFIG_H
-
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
@@ -103,71 +101,19 @@
 
 #endif
 
-
-/******************************************************************************
- *   Choose header file flavor: either ANSI-style (no .h, e.g. <iostream>) or
- * old-style (with .h, e.g., <iostream.h>). 
- * KL 9/26/03
- *****************************************************************************/
-
-#if HAVE_CSTDIO
 #include <cstdio>
-#elif HAVE_STDIO_H
-#include <stdio.h>
-#else
-#error "Found neither cstdio nor stdio.h"
-#endif
-
-#if HAVE_STRING
 #include <string>
-#elif HAVE_STRING_H
-#include <string.h>
-#else
-#error "Found neither string nor string.h"
-#endif
-
-#if HAVE_IOSTREAM
 #include <iostream>
-#elif HAVE_IOSTREAM_H
-#include <iostream.h>
-#else
-#error "Found neither iostream nor iostream.h"
-#endif
-
-#ifdef HAVE_ALGORITHM
 #include <algorithm>
-#elif defined(HAVE_ALGO_H)
-#include <algo.h>
-#elif defined(HAVE_ALGORITHM_H)
-#include <algorithm.h>
-#else
-#error "Did not find algorithm, algo.h or algorithm.h"
-#endif
-
-#if HAVE_VECTOR
 #include <vector>
-#elif HAVE_IOSTREAM_H
-#include <vector.h>
-#else
-#error "Found neither vector nor vector.h"
-#endif
-
-#if defined(TFLOP)
-#ifdef HAVE_STRING
 using std::string;
-#endif
-#ifdef HAVE_IOSTREAM
 using std::istream;
 using std::ostream;
 using std::cerr;
 using std::cout;
 using std::endl;
-#endif
-#else /* NOT TFLOP */
 using namespace std;
-#endif /* defined(TFLOP) */
-
-#endif
+/* 2008/11/20: rabartl: ToDo: Above: Get rid of using namespace std! */
 
 // prints out an error message if variable is not zero,
 // and returns this value.

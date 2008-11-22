@@ -92,6 +92,8 @@
 #define MPI_AZComm    int
 #endif
 
+#include <stdio.h>
+
 
 /*structure definitions*/
 
@@ -705,7 +707,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
                                int nz_space, int blk_type);
 
   extern void   AZ_add_new_row(int therow, int *nz_ptr, int *current, double
-                               **val, int **bindx, char *input,FILE *dfp,
+                               **val, int **bindx, char *input, FILE *dfp,
                                int *msr_len, int *column0);
 
   extern int AZ_adjust_N_nz_to_fit_memory(int N, int , int);

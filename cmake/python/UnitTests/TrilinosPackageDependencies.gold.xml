@@ -69,7 +69,7 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Galeri"/>
   </Package>
   <Package name="ML">
     <LIB_REQUIRED_DEP_PACKAGES/>
