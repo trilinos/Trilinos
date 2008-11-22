@@ -27,11 +27,12 @@ SET(CTEST_BINARY_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_BINARY_NAME}")
 
 SET(CTEST_COMMAND 
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyStart"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyUpdate"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyConfigure"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyBuild"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyTest"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\""
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_serial_performance_godel.cmake\""
 )
 
 SET(CTEST_INITIAL_CACHE "

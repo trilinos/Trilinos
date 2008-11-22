@@ -11,13 +11,15 @@ SET (CTEST_DASHBOARD_ROOT /scratch/rabartl/dashboards)
 SET (CTEST_CMAKE_COMMAND "\"${CMAKE_EXECUTABLE_NAME}\"")
 
 # Options for Nightly builds
-SET (CTEST_BACKUP_AND_RESTORE TRUE)
+
 SET (CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
+
 SET (CTEST_CVS_CHECKOUT
-  "cvs -Q -d :ext:@software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
+  "cvs -q -d :ext:@software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
 )
+
 SET (CTEST_CVS_COMMAND
-  "cvs -Q -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
+  "cvs -q -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
 )
 
 SET (CTEST_BINARY_NAME ${CTEST_SOURCE_NAME}-Build)
@@ -26,6 +28,7 @@ SET (CTEST_BINARY_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_BINARY_NAME}")
 
 SET (CTEST_COMMAND 
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyStart"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyUpdate"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyConfigure"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyBuild"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"

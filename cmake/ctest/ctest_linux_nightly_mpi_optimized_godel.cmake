@@ -1,7 +1,3 @@
-#-------------------------------------------------------------------------------
-# Nightly testing on linux platform thumper.mp.sandia.gov
-# Debug with Coverage and MemoryCheck
-#-------------------------------------------------------------------------------
 
 SET(CTEST_SOURCE_NAME Trilinos)
 SET(CTEST_BINARY_NAME BUILD)
@@ -13,8 +9,6 @@ SET(CTEST_DASHBOARD_ROOT /home/rabartl/PROJECTS/dashboards/Trilinos/MPI_OPT)
 SET(CTEST_CMAKE_COMMAND /usr/local/bin/cmake)
 
 # Options for Nightly builds
-
-#SET(CTEST_BACKUP_AND_RESTORE TRUE)
 
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
 #SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY FALSE)
@@ -31,6 +25,7 @@ SET(CTEST_BINARY_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_BINARY_NAME}")
 
 SET(CTEST_COMMAND 
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyStart"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyUpdate"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyConfigure"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyBuild"
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
@@ -39,7 +34,7 @@ SET(CTEST_COMMAND
   "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyCoverage"
   #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
   #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyMemCheck"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\""
+  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_mpi_optimized_godel.cmake\""
 )
 
 SET(CTEST_INITIAL_CACHE "
