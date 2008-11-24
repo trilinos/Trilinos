@@ -8395,7 +8395,7 @@ fi
 # List all necessary Makefiles here.
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/Basis/Makefile example/SparseConv/Makefile test/Basis/F0_TRI_C1_FEM_FIAT/Makefile test/Basis/F0_TRI_C2_FEM_FIAT/Makefile test/Basis/F0_TRI_C3_FEM_FIAT/Makefile test/Basis/F0_TET_C1_FEM_FIAT/Makefile test/Basis/F0_TET_C2_FEM_FIAT/Makefile test/Basis/F0_TET_C3_FEM_FIAT/Makefile test/Basis/F2_TRI_I1_FEM_FIAT/Makefile test/Basis/F2_TRI_I2_FEM_FIAT/Makefile test/Basis/F2_TRI_I3_FEM_FIAT/Makefile test/Basis/F2_TET_I1_FEM_FIAT/Makefile test/Basis/F2_TET_I2_FEM_FIAT/Makefile test/Basis/F2_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TRI_I1_FEM_FIAT/Makefile test/Basis/F1_TRI_I2_FEM_FIAT/Makefile test/Basis/F1_TRI_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I1_FEM_FIAT/Makefile test/Basis/F1_TET_I2_FEM_FIAT/Makefile test/Basis/F1_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I10_FEM_FIAT/Makefile test/Basis/FIAT/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/Basis/Makefile example/SparseConv/Makefile test/Basis/F0_TRI_C1_FEM_FIAT/Makefile test/Basis/F0_TRI_C2_FEM_FIAT/Makefile test/Basis/F0_TRI_C3_FEM_FIAT/Makefile test/Basis/F0_TET_C1_FEM_FIAT/Makefile test/Basis/F0_TET_C2_FEM_FIAT/Makefile test/Basis/F0_TET_C3_FEM_FIAT/Makefile test/Basis/F2_TRI_I1_FEM_FIAT/Makefile test/Basis/F2_TRI_I2_FEM_FIAT/Makefile test/Basis/F2_TRI_I3_FEM_FIAT/Makefile test/Basis/F2_TET_I1_FEM_FIAT/Makefile test/Basis/F2_TET_I2_FEM_FIAT/Makefile test/Basis/F2_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TRI_I1_FEM_FIAT/Makefile test/Basis/F1_TRI_I2_FEM_FIAT/Makefile test/Basis/F1_TRI_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I1_FEM_FIAT/Makefile test/Basis/F1_TET_I2_FEM_FIAT/Makefile test/Basis/F1_TET_I3_FEM_FIAT/Makefile test/Basis/FIAT/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9133,7 +9133,6 @@ do
     "test/Basis/F1_TET_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I1_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TET_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I2_FEM_FIAT/Makefile" ;;
     "test/Basis/F1_TET_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I10_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I10_FEM_FIAT/Makefile" ;;
     "test/Basis/FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/FIAT/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

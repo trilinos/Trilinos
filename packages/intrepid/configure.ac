@@ -406,7 +406,6 @@ AC_CONFIG_FILES([
   test/Basis/F1_TET_I1_FEM_FIAT/Makefile
   test/Basis/F1_TET_I2_FEM_FIAT/Makefile
   test/Basis/F1_TET_I3_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I10_FEM_FIAT/Makefile
   test/Basis/FIAT/Makefile
 ])
 
