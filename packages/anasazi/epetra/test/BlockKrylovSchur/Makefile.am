@@ -120,4 +120,5 @@ BlockKrylovSchurQEVP_test_LDADD = \
 # Dummy for new export makefiles
 LIBS = 
 
+EXTRA_DIST = linearized_qevp_A.hb linearized_qevp_B.hb 
 

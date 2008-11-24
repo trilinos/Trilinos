@@ -337,6 +337,7 @@ BlockKrylovSchur_solvertest_LDADD = \
 BlockKrylovSchurQEVP_test_LDADD = \
 	$(EXPORT_LIBS)
 
+EXTRA_DIST = linearized_qevp_A.hb linearized_qevp_B.hb 
 all: all-am
 
 .SUFFIXES:
