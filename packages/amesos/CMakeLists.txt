@@ -1,0 +1,96 @@
+
+INCLUDE(TrilinosPackageHelpers)
+INCLUDE(Trilinos_Add_Option)
+
+#
+# A) Define the package
+#
+
+TRILINOS_PACKAGE(Amesos)
+
+#
+# B) Set up package-specific options
+#
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_SUPERLU
+  HAVE_AMESOS_SUPERLU
+  "Enable SuperLU functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_SUPERLUDIST
+  HAVE_AMESOS_SUPERLUDIST
+  "Enable SuperLU functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_DSCPACK
+  HAVE_AMESOS_DSCPACK
+  "Enable DSCPACK functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_UMFPACK
+  HAVE_AMESOS_UMFPACK
+  "Enable UMFPACK functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_MC64
+  HAVE_AMESOS_MC64
+  "Enable MC64 functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_KLU
+  HAVE_AMESOS_KLU
+  "Enable KLU (Tim Davis's Files)."
+  ON )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Mumps
+  HAVE_AMESOS_MUMPS
+  "Enable MUMPS functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_SCALAPACK
+  HAVE_AMESOS_SCALAPACK
+  "Enable SCALAPACK functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Pardiso
+  HAVE_AMESOS_PARDISO
+  "Enable PARDISO functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_TAUCS
+  HAVE_AMESOS_TAUCS
+  "Enable TAUCS functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_PARAKLETE
+  HAVE_AMESOS_PARAKLETE
+  "Enable PARAKLETE functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_LAPACK
+  HAVE_AMESOS_LAPACK
+  "Enable LAPACK functionality."
+  ON )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Galeri
+  HAVE_AMESOS_Galeri
+  "Enable Galeri functionality for tests."
+  ON )
+
+# ...
+
+#
+# C) Add the libraries, tests, and examples
+#
+
+ADD_SUBDIRECTORY(src)
+
+TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
+
+TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+
+#
+# D) Do standard postprocessing
+#
+
+TRILINOS_PACKAGE_POSTPROCESS()

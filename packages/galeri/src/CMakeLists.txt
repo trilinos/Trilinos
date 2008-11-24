@@ -27,11 +27,11 @@ SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 #
 # src
 #
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
   Galeri_Version.h
@@ -46,9 +46,21 @@ SET(HEADERS ${HEADERS}
   iohb.h
   )
 
+SET(SOURCES ${SOURCES}
+  Galeri_Maps.cpp
+  Galeri_CrsMatrices.cpp
+  Galeri_VbrMatrices.cpp
+  Galeri_Utils.cpp
+  Galeri_ReadHB.cpp
+  iohb.cpp
+  )
+
+
 #
 # src/Maps
 #
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Maps)
 
 SET(HEADERS ${HEADERS}
   Maps/Galeri_Linear.h
@@ -62,6 +74,8 @@ SET(HEADERS ${HEADERS}
 # src/CrsMatrices
 #
   
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/CRSMatrices)
+
 SET(HEADERS ${HEADERS}
   CrsMatrices/Galeri_BigCross2D.h
   CrsMatrices/Galeri_BigStar2D.h
@@ -94,6 +108,8 @@ SET(HEADERS ${HEADERS}
 # src/FiniteElements
 #
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/FiniteElements)
+
 SET(HEADERS ${HEADERS}
   FiniteElements/Galeri_AbstractGrid.h         
   FiniteElements/Galeri_AbstractProblem.h      
@@ -115,20 +131,6 @@ SET(HEADERS ${HEADERS}
   FiniteElements/Galeri_MEDITInterface.h       
   FiniteElements/Galeri_Workspace.h
   )
-
-#
-# src
-#
-
-SET(SOURCES ${SOURCES}
-  Galeri_Maps.cpp
-  Galeri_CrsMatrices.cpp
-  Galeri_VbrMatrices.cpp
-  Galeri_Utils.cpp
-  Galeri_ReadHB.cpp
-  iohb.cpp
-  )
-
 
 IF (Trilinos_ENABLE_MPI)
 
