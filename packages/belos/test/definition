@@ -78,6 +78,7 @@ PACKAGE_NAME=Belos
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75;
     COMM = SERIAL, MPI;
+    X-HOST = gabriel.sandia.gov;
 }
 
 (FRAMEWORK,INSTALL) {
@@ -85,6 +86,7 @@ PACKAGE_NAME=Belos
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-10 --num-rhs=2 --max-subspace=10 --recycle=2;
     COMM = SERIAL, MPI;
+    X-HOST = gabriel.sandia.gov;
 }
 
 (FRAMEWORK,INSTALL) {
