@@ -125,7 +125,7 @@ public:
 };
 
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 
 
 template<typename T>
@@ -138,7 +138,7 @@ public:
 };
 
 
-#endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#endif // HAVE_TEUCHOS_COMPLEX
  
 
 } // namespace Teuchos

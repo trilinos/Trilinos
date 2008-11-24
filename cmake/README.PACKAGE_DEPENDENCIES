@@ -49,7 +49,7 @@ and tests/examples get enabled:
   
     If set to 'ON', then all packages that depend the set of packages enabled by
     the cache varaibles Trilinos_ENABLE_${PACKAGE_NAME}=ON will also be enabled.
-    This option is used primarily to aid in testing all affects for changes in a
+    This option is used primarily to aid in testing the effects for changes in a
     given packages source code affecting the package's library(s).
   
   Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL
@@ -72,7 +72,8 @@ and tests/examples get enabled:
   Trilinos_ENABLE_EXAMPLES:BOOL
   
     Same as for Trilinos_ENABLE_TESTS except enables and disable examples
-    in all packages.
+    in all packages.  If Trilinos_ENABLE_TESTS=ON, then this will also be
+    set to 'ON'.
 
 The way that packages are enabled depending on the above user cache varaibles
 is now described.
@@ -86,33 +87,38 @@ ${FORWARD_PACKAGE_NANE}_ENBLE_${PACKAGE_NANE} are also set to 'OFF'.
 Tilinos_ENABLE_ALL_PACKAGES=ON.
 
 At this point, the set of packages is the set the user really wants to
-directly work with or has modified and wants to fully test changes for.
+directly work with or has modified and wants to fully test for change.
 
-3) If Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON, then the current set of
-enabled packages is augmented with the list of all packages that depend
-(either required or optional) on these user enabled packages.  This set of
-packages represents all of the packages that depend on the packages that the
-user has explicitly enabled.  This is the set of packages, for instance, that
-need to be tested before changes to the explicitly enabled packages are
-commited to the version control repository.
+3) If Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON, then the current
+set of enabled packages is augmented with the list of all packages
+that depend (either required or optional) on these user enabled
+packages.  This set of packages represents all of the packages that
+depend on the packages that the user has explicitly enabled.  This is
+the set of packages, for instance, that need to be tested before
+changes to the explicitly enabled packages are commited to the version
+control repository.
 
-4) The set of package test/example enables in ${PACKAGE_NAME}_ENABLE_TESTS and
-${PACKAGE_NAME}_ENABLE_EXAMPLES is then modified for the current set of
-enabled packages and also the values of Trilinos_ENABLE_TESTS and
-Trilinos_ENABLE_EXAMPLES.  The reason that test/examples enables/disables are
-defined at this point in the process is that this is the set of tests/examples
-that need to be turned on to throughly test the set of given packages.
+4) The set of package test/example enables in
+${PACKAGE_NAME}_ENABLE_TESTS and ${PACKAGE_NAME}_ENABLE_EXAMPLES is
+then modified for the current set of enabled packages and also the
+values of Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES.  The
+reason that test/examples enables/disables are defined at this point
+in the process is that this is the set of tests/examples that need to
+be turned on to throughly test the set of given packages.
 
-5) If Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON, then all of the packages that
-can be used that are currently enabled packages will be turned on.  NOTE: The
-tests and examples for these packages will not be enabled by
-Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES but only if they are
-explicitly turned on by the user.
+5) If Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON, then all of the
+packages that can be used that are currently enabled packages will be
+turned on.  NOTE: The tests and examples for these packages will not
+be enabled by Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES but
+only if they are explicitly turned on by the user.  This is because
+these these additionally enabled packages don't need to be tested
+because they are not being changed.
 
-6) Finally, all of the required packages for the current set of enabled
-packages are also enabled.  NOTE: The tests and examples for these packages
-will *not* be enabled by Trilinos_ENABLE_TESTS and Trilinos_ENABLE_EXAMPLES
-but only if they are explicitly turned on by the user.
+6) Finally, all of the required packages for the current set of
+enabled packages are also enabled.  NOTE: The tests and examples for
+these packages will *not* be enabled by Trilinos_ENABLE_TESTS and
+Trilinos_ENABLE_EXAMPLES but only if they are explicitly turned on by
+the user.
 
 
 --------------------------------------------------------------------------------
@@ -184,9 +190,9 @@ Given the above variables, the following derived variable is then set:
 C) Top-level internal cache varibles defining header and library dependencies
 --------------------------------------------------------------------------------
 
-The following top-level internal cache varibles are used to communicate the
-required header directory paths and libraries needed to build and link against
-a given package's capabilities.
+The following global internal cache varibles are used to communicate
+the required header directory paths and libraries needed to build and
+link against a given package's capabilities.
 
   ${PROJECT_NAME}_INCLUDE_DIRS
   
@@ -201,3 +207,12 @@ a given package's capabilities.
   ${PROJECT_NAME}_LIBRARIES
   
     Contains the list of unadorned libraries that are needed to link to.
+
+The following global internal cache varibles are used to store extra
+information about a package's test/example dependenices.
+
+  ${PROJECT_NAME}_TEST_INCLUDE_DIRS
+  
+  ${PROJECT_NAME}_TEST_LIBRARY_DIRS
+  
+  ${PROJECT_NAME}_TEST_LIBRARIES

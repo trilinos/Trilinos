@@ -292,7 +292,7 @@ int main( int argc, char *argv[] )
       n0, n1, n2, *out, verbLevel, 1e-12, true );
     if (!result) success = false;
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 
     // Run using std::complex<float>
     result = exampleImplicitlyComposedLinearOperators<std::complex<float> >(
@@ -309,7 +309,7 @@ int main( int argc, char *argv[] )
       n0, n1, n2, *out, verbLevel, 1e-12, true );
     if (!result) success = false;
 
-#endif
+#endif // HAVE_TEUCHOS_COMPLEX
 
 #ifdef HAVE_TEUCHOS_GNU_MP
 

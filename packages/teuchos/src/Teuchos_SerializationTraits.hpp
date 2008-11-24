@@ -221,7 +221,7 @@ class SerializationTraits<Ordinal,std::pair<Packet,Packet> >
   : public DirectSerializationTraits<Ordinal,std::pair<Packet,Packet> >
 {};
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 
 template<typename Ordinal>
 class SerializationTraits<Ordinal,std::complex<float> >
@@ -233,7 +233,7 @@ class SerializationTraits<Ordinal,std::complex<double> >
   : public DirectSerializationTraits<Ordinal,std::complex<double> >
 {};
 
-#endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#endif // HAVE_TEUCHOS_COMPLEX
 
 } // namespace Teuchos
 

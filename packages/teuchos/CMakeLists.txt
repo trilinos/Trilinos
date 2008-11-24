@@ -56,6 +56,13 @@ TRILINOS_ADD_OPTION(
   OFF
   )
 
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_BLASFLOAT
+  HAVE_TEUCHOS_BLASFLOAT
+  "Enable Teuchos BLAS float support."
+  ON
+  )
+
 OPTION(
   ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
   "Override enable Teuchos performance tests."

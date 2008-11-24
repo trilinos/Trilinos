@@ -1,7 +1,10 @@
 /* src/Tpetra_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* define if new form of std::count is supported */
-#undef HAVE_STD_NEW_COUNT_SYNTAX
+#cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
+
+/* Define if want to build with tpetra enabled */
+#cmakedefine HAVE_TPETRA_TRIUTILS
 
 /* Define if want to build tbb */
-#undef HAVE_TPETRA_TBB
+#cmakedefine HAVE_TPETRA_TBB

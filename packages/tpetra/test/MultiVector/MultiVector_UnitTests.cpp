@@ -1008,14 +1008,25 @@ namespace {
      void reciprocalMultiply (const Scalar &alpha, const MultiVector< Ordinal, Scalar > &A, const MultiVector< Ordinal, Scalar > &B, const Scalar &beta)
   */
 
-  // 
-  // INSTANTIATIONS
-  //
+// 
+// INSTANTIATIONS
+//
+
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT(ORDINAL)\
+     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT(ORDINAL)
+#endif
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)\
-     typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexFloat)
+#  ifdef HAVE_TEUCHOS_BLASFLOAT
+#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)\
+       typedef std::complex<float> ComplexFloat; \
+       UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexFloat)
+#  else
+#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
+#  endif
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)\
      typedef std::complex<double> ComplexDouble; \
      UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexDouble)
@@ -1048,15 +1059,15 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) 
 
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
      UNIT_TEST_GROUP_ORDINAL(int)
 
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)  \
+         UNIT_TEST_GROUP_ORDINAL_FLOAT(ORDINAL) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)  \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
@@ -1067,6 +1078,6 @@ namespace {
         typedef long long int LongLongInt; UNIT_TEST_GROUP_ORDINAL(LongLongInt)
 #    endif
 
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

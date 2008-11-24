@@ -454,7 +454,7 @@ bool masterTestComm(
   result = testComm<Ordinal,double>(*comm,out);
   if(!result) success = false;
   
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
   
   result = testComm<Ordinal,std::complex<float> >(*comm,out);
   if(!result) success = false;
@@ -462,7 +462,7 @@ bool masterTestComm(
   result = testComm<Ordinal,std::complex<double> >(*comm,out);
   if(!result) success = false;
   
-#endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#endif // HAVE_TEUCHOS_COMPLEX
   
   return success;
 

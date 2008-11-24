@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
     result = runCgSolveExample<double>(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 
     // Run using std::complex<float>
     result = runCgSolveExample<std::complex<float> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
     result = runCgSolveExample<std::complex<double> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
-#endif		
+#endif // HAVE_TEUCHOS_COMPLEX
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)

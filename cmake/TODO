@@ -8,9 +8,9 @@ Last updated: 2008/11/18
 Active items:
 -------------
 
-(*) [Ross, Brent] Add basic CMake support for every Trilinos package:
-Initially, only support basic libaries, minimal TPL dependencies, and
-only a subset of tests/examples.
+(*) [Ross, Brent] Add basic CMake support for every Trilinos package
+being used by SIERRA and needed to create a new NonlinearStrategies
+package.
 
 
 Backlog:
@@ -20,18 +20,27 @@ Backlog:
 hold simple generic utilities, cmake/package_arch to hold the Trilinos
 package architecture rountines.
 
-(*) [???] Add unit testing infrastructure for TRILINOS_ADD_EXECUTABLE(...),
-TRILINOS_ADD_TEST(...).  These unit tests will serve both as tests and as
-documentation.  I need to see if you can redefine ADD_EXECUTABLE(...),
-ADD_TEST(...), and other commands so that I can unit test that these things
-are being set correctly.  If not, then I can always wrap these with my own and
-then redefine them when unit testing.
+(*) [???] Add flexible uniform framework level support for TPLs.  Use
+this for, BLAS, LAPACK, MPI, Boost, ParMETIS and all of the other
+external TPLs needed by Trilinos.
 
 (*) [???] Upgrade TRILINOS_PACKAGE_ADD_LIBRARY(...) and
 TRILINOS_ADD_EXECUTABLE(...) to handle test libraries.  Add
 NOINSTALLLIB argument for test libraries that you don't want to
 install.  This is needed for some NOX test librries.  This effects
 Isorropia, NOX, ...
+
+(*) [???] Rename and reorganize the package architecture modules and
+macros/function to be as Trilinos-independent as possible.  This will
+allow them to be reused for projects like Dakota and others and take
+advantage of all that is being constructed.
+
+(*) [???] Add unit testing infrastructure for TRILINOS_ADD_EXECUTABLE(...),
+TRILINOS_ADD_TEST(...).  These unit tests will serve both as tests and as
+documentation.  I need to see if you can redefine ADD_EXECUTABLE(...),
+ADD_TEST(...), and other commands so that I can unit test that these things
+are being set correctly.  If not, then I can always wrap these with my own and
+then redefine them when unit testing.
 
 (*) [???] Fix TRILINOS_ADD_EXECUTABLE(...) to not add ./ to absolute paths
 
@@ -41,13 +50,21 @@ set CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE and
 CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE and any other options given at
 http://www.vtk.org/Wiki/CMake_Testing_With_CTest.
 
+(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG
+and MPI_OPT build directory and enable only "Primary Stable" code.
+This will need a minimal configuration script to pull in only the
+basic info needed in order to find compilers, MPI, BLAS, and LAPACK
+and nothing else.
+
 (*) [???] Set the variable CPACK_SOURCE_IGNORE_FILES to ignore groups of files
 (and hopefully directories) that you don't want to add to the source
 distribution tarball!  We need to be able to set these at the global level as
 an internal cache variables and then reset them at the package level.
 
 (*) [???] Automatically add the right compiler options when on the
-primary development platform (i.e. lots of warnings)
+primary development platform (i.e. lots of warnings).  We can do this
+automatically with the module CheckCXXSourceCompiles(....).  This will
+be used for pre-checkin script.
 
 (*) [???] Add the aggregate targets 'PACKAGE-libs' and 'PACAKGE' to
 build the library or all targets for a given package.  This can be

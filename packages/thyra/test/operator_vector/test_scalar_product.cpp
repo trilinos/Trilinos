@@ -234,7 +234,7 @@ int main( int argc, char* argv[] ) {
     if( !run_scalar_product_tests<float>(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_scalar_product_tests<double>(n,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_TEUCHOS_COMPLEX)
 #ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_scalar_product_tests<std::complex<float> >(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT

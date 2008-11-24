@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
     result = runCgSolveExample<double>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 
     // Run using std::complex<float>
     result = runCgSolveExample<std::complex<float> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
     result = runCgSolveExample<std::complex<double> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
-#endif
+#endif // HAVE_TEUCHOS_COMPLEX
 
 #ifdef HAVE_TEUCHOS_GNU_MP
 
@@ -233,16 +233,16 @@ int main(int argc, char *argv[])
     result = runCgSolveExample<mpf_class>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 
     // Run using std::complex<mpf_class>
     //result = runCgSolveExample<std::complex<mpf_class> >(dim,mpf_class(diagScale),symOp,showAllTests,verbose,mpf_class(tolerance),maxNumIters);
     //if(!result) success = false;
     //The above commented-out code throws a floating-point exception?
 
-#endif
+#endif // HAVE_TEUCHOS_COMPLEX
 
-#endif
+#endif // HAVE_TEUCHOS_GNU_MP
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)

@@ -47,7 +47,11 @@ ENDIF()
 
 FIND_PACKAGE(Perl)
 
-# Find the hostname used in selecting or deselecting tests by
+# Find Python
+
+FIND_PACKAGE(PythonInterp)
+
+# Find the hostname used in selecting or deselecting tests by the
 # TRILINOS_ADD_TEST(...) function.
 
 SITE_NAME(Trilinos_HOSTNAME)
@@ -61,14 +65,16 @@ MARK_AS_ADVANCED(Trilinos_HOSTNAME)
 
 # Look for BLAS and LAPACK
 
-FIND_LIBRARY(Trilinos_BLAS_LIBRARY NAMES blas blas_win32 DOC "Path to the BLAS implementation")
-FIND_LIBRARY(Trilinos_LAPACK_LIBRARY NAMES lapack lapack_win32 DOC "Path to the LAPACK implementation")
+FIND_LIBRARY(Trilinos_BLAS_LIBRARY NAMES blas blas_win32
+  DOC "Path to the BLAS implementation")
+FIND_LIBRARY(Trilinos_LAPACK_LIBRARY NAMES lapack lapack_win32
+  DOC "Path to the LAPACK implementation")
 
 # Find MPI
 
 IF(Trilinos_ENABLE_MPI)
   INCLUDE(ConfigureMPI)
-ENDIF(Trilinos_ENABLE_MPI)
+ENDIF()
 
 # Set some other options (NOTE: These should be handed in XXX_config.h files!
 

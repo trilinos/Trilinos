@@ -269,12 +269,12 @@ int main( int argc, char* argv[] ) {
     if( !Thyra::run_linear_op_with_solve_tests<double>(
           n, as<double>(epsScale*ScalarTraits<double>::eps()),showAllTests, dumpAll, *out)
       ) success = false;
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_THYRA_TEUCHOS_BLASFLOAT)
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_THYRA_TEUCHOS_BLASFLOAT)
     if( !Thyra::run_linear_op_with_solve_tests<std::complex<float> >(
           n, as<float>(epsScale*ScalarTraits<float>::eps()),showAllTests, dumpAll, *out)
       ) success = false;
 #endif
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_TEUCHOS_COMPLEX)
     if( !Thyra::run_linear_op_with_solve_tests<std::complex<double> >(
           n, as<double>(epsScale*ScalarTraits<double>::eps()),showAllTests, dumpAll, *out)
       ) success = false;

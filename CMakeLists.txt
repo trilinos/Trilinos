@@ -18,7 +18,7 @@ SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(TRILINOS_TEST_CATEGORY "FRAMEWORK")
 
-SET(CMAKE_MODULE_PATH "${TRILINOS_HOME_DIR}/cmake")
+SET(CMAKE_MODULE_PATH ${TRILINOS_HOME_DIR}/cmake ${TRILINOS_HOME_DIR}/cmake/utils)
 
 SET(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
@@ -39,8 +39,8 @@ SET( Trilinos_PACKAGES_AND_DIRS
  RTOp                  rtop
  Epetra                epetra
  Zoltan                zoltan
- Tpetra                tpetra
  Triutils              triutils
+ Tpetra                tpetra
  EpetraExt             epetraext
  Isorropia             isorropia
  Thyra                 thyra
@@ -91,8 +91,8 @@ IF (Trilinos_PACKAGES_HACK_OVERRIDE)
     Zoltan                zoltan
     Shards                shards
     Intrepid              intrepid
-    Tpetra                tpetra
     Triutils              triutils
+    Tpetra                tpetra
     EpetraExt             epetraext
     Thyra                 thyra
     Isorropia             isorropia

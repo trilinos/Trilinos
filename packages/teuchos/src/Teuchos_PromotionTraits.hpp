@@ -55,12 +55,12 @@ public: \
     typedef type3 promote; \
 };                                               
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 PT_SPEC(double,std::complex<float>,std::complex<double>)
 PT_SPEC(float,std::complex<double>,std::complex<double>)
 PT_SPEC(float,std::complex<float>,std::complex<float>)
 PT_SPEC(double,std::complex<double>,std::complex<double>)
-#endif
+#endif // HAVE_TEUCHOS_COMPLEX
 PT_SPEC(double,float,double)
 PT_SPEC(double,long,double)
 PT_SPEC(double,int,double)

@@ -239,12 +239,12 @@ int main( int argc, char* argv[] ) {
     if( !run_product_space_tests<float>(n,numBlocks,float(1e-5),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_product_space_tests<double>(n,numBlocks,double(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_TEUCHOS_COMPLEX)
 #ifdef THYRA_TEUCHOS_BLASFLOAT
     if( !run_product_space_tests<std::complex<float> >(n,numBlocks,float(1e-5),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_product_space_tests<std::complex<double> >(n,numBlocks,double(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
-#endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#endif // defined(HAVE_TEUCHOS_COMPLEX)
 #ifdef HAVE_TEUCHOS_GNU_MP
     //if( !run_product_space_tests<mpf_class>(n,numBlocks,mpf_class(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
     // Above commented out code will not compile because its ScalarTraits specialization does not support eps()

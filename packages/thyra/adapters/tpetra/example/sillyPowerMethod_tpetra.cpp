@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     result = runPowerMethodExample<int,double>(globalDim,maxNumIters,verbose,dumpAll);
     if(!result) success = false;
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
     
     // Run using std::complex<float>
     result = runPowerMethodExample<int,std::complex<float> >(globalDim,maxNumIters,verbose,dumpAll);
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
     //result = runPowerMethodExample<mpf_class >(globalDim,maxNumIters,verbose,dumpAll);
     //if(!result) success = false;
 
-#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
     
     // Run using std::complex<mpf_class>
     //result = runPowerMethodExample<std::complex<mpf_class> >(globalDim,maxNumIters,verbose,dumpAll);

@@ -46,10 +46,6 @@
  
 #include "Teuchos_ConfigDefs.hpp"
 
-#ifndef HAVE_NUMERIC_LIMITS
-#include "Teuchos_LAPACK.hpp"
-#endif
-
 #ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
 #endif
@@ -303,74 +299,34 @@ struct ScalarTraits<float>
   static const bool isComparable = true;
   static const bool hasMachineParameters = true;
   static inline float eps()   {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<float>::epsilon();
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('E');
-#endif
   }
   static inline float sfmin() {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<float>::min();
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('S');
-#endif
   }
   static inline float base()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return static_cast<float>(std::numeric_limits<float>::radix);
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('B');
-#endif
   }
   static inline float prec()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return eps()*base();
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('P');
-#endif
   }
   static inline float t()     {
-#ifdef HAVE_NUMERIC_LIMITS
     return static_cast<float>(std::numeric_limits<float>::digits);
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('N');
-#endif
   }
   static inline float rnd()   {
-#ifdef HAVE_NUMERIC_LIMITS
     return ( std::numeric_limits<float>::round_style == std::round_to_nearest ? float(1.0) : float(0.0) );
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('R');
-#endif
   }
   static inline float emin()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return static_cast<float>(std::numeric_limits<float>::min_exponent);
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('M');
-#endif
   }
   static inline float rmin()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<float>::min();
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('U');
-#endif
   }
   static inline float emax()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return static_cast<float>(std::numeric_limits<float>::max_exponent);
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('L');
-#endif
   }
   static inline float rmax()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<float>::max();
-#else
-    LAPACK<int, float> lp; return lp.LAMCH('O');
-#endif
   }
   static inline magnitudeType magnitude(float a)
     {
@@ -436,74 +392,34 @@ struct ScalarTraits<double>
   static const bool isComparable = true;
   static const bool hasMachineParameters = true;
   static inline double eps()   {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::epsilon();
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('E');
-#endif
   }
   static inline double sfmin() {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::min();
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('S');
-#endif
   }
   static inline double base()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::radix;
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('B');
-#endif
   }
   static inline double prec()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return eps()*base();
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('P');
-#endif
   }
   static inline double t()     {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::digits;
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('N');
-#endif
   }
   static inline double rnd()   {
-#ifdef HAVE_NUMERIC_LIMITS
     return ( std::numeric_limits<double>::round_style == std::round_to_nearest ? double(1.0) : double(0.0) );
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('R');
-#endif
   }
   static inline double emin()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::min_exponent;
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('M');
-#endif
   }
   static inline double rmin()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::min();
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('U');
-#endif
   }
   static inline double emax()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::max_exponent;
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('L');
-#endif
   }
   static inline double rmax()  {
-#ifdef HAVE_NUMERIC_LIMITS
     return std::numeric_limits<double>::max();
-#else
-    LAPACK<int, double> lp; return lp.LAMCH('O');
-#endif
   }
   static inline magnitudeType magnitude(double a)
     {
@@ -619,23 +535,15 @@ struct ScalarTraits<mp_real>
   
 #endif // HAVE_TEUCHOS_ARPREC
  
-#if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
+#ifdef HAVE_TEUCHOS_COMPLEX
 
 // Partial specialization for std::complex numbers templated on real type T
 template<class T> 
 struct ScalarTraits<
-#if defined(HAVE_COMPLEX)
   std::complex<T>
-#elif  defined(HAVE_COMPLEX_H)
-std::complex<T>
-#endif
 >
 {
-#if defined(HAVE_COMPLEX)
   typedef std::complex<T>  ComplexT;
-#elif  defined(HAVE_COMPLEX_H)
-  typedef std::complex<T>     ComplexT;
-#endif
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
   static const bool isComplex = true;
   static const bool isOrdinal = ScalarTraits<T>::isOrdinal;
@@ -691,7 +599,7 @@ std::complex<T>
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
 };
 
-#endif //  HAVE_COMPLEX || HAVE_COMPLEX_H
+#endif //  HAVE_TEUCHOS_COMPLEX
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

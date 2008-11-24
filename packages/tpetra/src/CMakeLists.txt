@@ -5,6 +5,8 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
+SET(HAVE_TPETRA_TRIUTILS ${PACKAGE_NAME}_ENABLE_Triutils)
+
 TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #

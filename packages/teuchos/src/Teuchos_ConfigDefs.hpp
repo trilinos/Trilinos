@@ -43,31 +43,31 @@
  */
 
 #ifdef PACKAGE
-#undef PACKAGE
+#  undef PACKAGE
 #endif
 
 #ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
+#  undef PACKAGE_NAME
 #endif
 
 #ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
+#  undef PACKAGE_BUGREPORT
 #endif
 
 #ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
+#  undef PACKAGE_STRING
 #endif
 
 #ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
+#  undef PACKAGE_TARNAME
 #endif
 
 #ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
+#  undef PACKAGE_VERSION
 #endif
 
 #ifdef VERSION
-#undef VERSION
+#  undef VERSION
 #endif
 
 #include "Teuchos_config.h"
@@ -85,6 +85,11 @@
 
 #ifdef _MSC_VER 
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
+#endif
+
+/* Deprecated */
+#ifndef HAVE_COMPLEX
+#  define HAVE_COMPLEX
 #endif
 
 #include <cstdio>
@@ -164,9 +169,9 @@ const int Teuchos_DefaultTracebackMode = 1; /* Default value for traceback behav
 #define TEUCHOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
 #ifndef HAVE_FORTRAN_SUPPORT
-#ifndef FORTRAN_DISABLED
-#define FORTRAN_DISABLED
-#endif
+#  ifndef FORTRAN_DISABLED
+#    define FORTRAN_DISABLED
+#  endif
 #endif
 
 #endif /* TEUCHOS_CONFIGDEFS_HPP */
