@@ -135,23 +135,6 @@ int TPI_Unlock( TPI_ThreadPool local , int i )
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
-/*  Run the work queue as long as the queue has work.
- *  Return how many work tasks were actually run.
- */
-static int local_thread_pool_run_work( ThreadWork * const work ,
-                                       const unsigned     number )
-{
-  int counter = 0 ;
-  unsigned i = 0 ;
-
-  for ( ; i < number ; ++i ) {
-    ThreadWork * const w = work + i ;
-    (*w->m_routine)( w->m_argument , w );
-  }
-  return number ;
-}
-
-/*--------------------------------------------------------------------*/
 /* The work queue shared by all threads */
 
 static ThreadPool * local_thread_pool()
@@ -171,7 +154,7 @@ int TPI_Run( TPI_parallel_subprogram routine ,
              void * routine_data ,
              int number )
 {
-  int i , nwork ;
+  int i ;
 
   int result = ! routine || ! routine_data ? TPI_ERROR_NULL : 0 ;
 
@@ -233,11 +216,9 @@ int TPI_Init( int n )
 {
   ThreadPool * const pool = local_thread_pool();
 
-  int result = ! pool || pool->m_number_threads ? TPI_ERROR_ACTIVE : 0 ;
+  int result = ! pool ? TPI_ERROR_ACTIVE : 0 ;
 
   if ( ! result && n <= 0 ) { result = TPI_ERROR_SIZE ; }
-
-  if ( ! result ) { pool->m_number_threads = n ; }
 
   return result ;
 }
@@ -250,8 +231,6 @@ int TPI_Finalize()
   ThreadPool * const pool = local_thread_pool();
 
   int result = ! pool ? TPI_ERROR_ACTIVE : 0 ;
-
-  if ( ! result ) { pool->m_number_threads = 0 ; }
 
   return result ;
 }
@@ -267,7 +246,7 @@ int TPI_Size( int * number_allocated )
     ThreadPool * const pool = local_thread_pool();
 
     if ( pool ) {
-      *number_allocated = pool->m_number_threads ;
+      *number_allocated = 1 ;
     }
     else {
       result = TPI_ERROR_ACTIVE ;
