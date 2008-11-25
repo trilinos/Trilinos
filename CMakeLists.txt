@@ -11,7 +11,7 @@ MESSAGE("")
 MESSAGE("Configuring Trilinos build directory")
 MESSAGE("")
 
-PROJECT(Trilinos C)
+PROJECT(Trilinos C) # Across all of Trilinos C++ and Fortran are actually optional!
 
 SET(Trilinos_VERSION "9.0d")
 SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -30,7 +30,7 @@ OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose."
 
 
 #
-# B) Define the list of all Trilinos packages
+# B) Define the list of all Trilinos packages and TPLs
 #
 
 # Define the Trilinos package names and directories
@@ -132,47 +132,27 @@ IF (Trilinos_PACKAGES_HACK_OVERRIDE)
     )
 ENDIF()
 
-# Process the packages lists and dependencies
-
 TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
 
-FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
-  LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
-  LIST(GET Trilinos_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
-  TRILINOS_READ_PACKAGE_DEPENDENCIES(${PACKAGE} ${PACKAGE_DIR})
-ENDFOREACH()
-
-ADVANCED_OPTION(Trilinos_DUMP_PACKAGE_DEPENDENCIES
-  "Dump the package dependency information." OFF)
-
-IF (Trilinos_VERBOSE_CONFIGURE OR Trilinos_DUMP_PACKAGE_DEPENDENCIES)
-  MESSAGE("")
-  MESSAGE("Printing package dependencies ...")
-  MESSAGE("")
-  PRINT_VAR(Trilinos_PACKAGES)
-  MESSAGE("")
-  FOREACH(PACKAGE ${Trilinos_PACKAGES})
-    TRILINOS_PRINT_PACKAGE_DEPENDENCIES(${PACKAGE})
-    MESSAGE("")
-  ENDFOREACH()
-ENDIF()
-
-
-#
-# C) Define the list of offical Trilinos TPLs
-#
-
-SET(Trilinos_TPLs
-   BLAS         ON
-   LAPACK       ON
-   MPI          OFF
-   Boost        OFF
-   ParMETIS     OFF
-   Scotch       OFF
-   PaToH        OFF
+SET(Trilinos_TPLS
+   BLAS
+   LAPACK
+   MPI
+   Boost
+   #METIS
+   #ParMETIS
+   #Scotch
+   #PaToH
    )
 
-# ToDo: Set up user cache varaibles
+TRILINOS_PROCESS_TPLS_DEFAULTS_LISTS()
+
+
+#
+# C) Process the package and TPL dependencies
+#
+
+TRILINOS_READ_ALL_PACKAGE_DEPENDENCIES()
 
 
 #
@@ -198,18 +178,13 @@ SET( Trilinos_ENABLE_TESTS "" CACHE STRING
 SET(Trilinos_ENABLE_EXAMPLES "" CACHE STRING
   "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if Trilinos_ENABLE_TESTS=ON" )
 
-SET(Trilinos_ENABLE_PERFORMANCE_TESTS "" CACHE BOOL
-  "Enable performance tests in all packages that support them" )
-
 IF (Trilinos_ENABLE_TESTS AND Trilinos_ENABLE_EXAMPLES STREQUAL "")
   MESSAGE(STATUS "Setting Trilinos_ENABLE_EXAMPLES=ON because Trilinos_ENABLE_TESTS=ON")
   SET(Trilinos_ENABLE_EXAMPLES ON)
 ENDIF()
 
-FOREACH(PACKAGE ${Trilinos_PACKAGES})
-  TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS(${PACKAGE})
-  TRILINOS_ADD_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
-ENDFOREACH()
+SET(Trilinos_ENABLE_PERFORMANCE_TESTS "" CACHE BOOL
+  "Enable performance tests in all packages that support them" )
 
 ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   "Shortcircut after dependency handling is complete"
@@ -319,125 +294,47 @@ INCLUDE(TrilinosProbeEnv)
 
 
 #
-# G) Set up for testing with CTest and Trilinos test harness
+# G) Go get the information for all enabled TPLS
 #
 
-INCLUDE(CTest)
+MESSAGE("")
+MESSAGE("Getting information for all enabled TPLs ...")
+MESSAGE("")
 
-IF (WIN32 AND NOT CYGWIN)
-  SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT OFF)
-ELSE()
-  SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT ON)
-ENDIF()
-
-ADVANCED_OPTION(Trilinos_ENABLE_NATIVE_TEST_HARNESS
-  "Enable the native Trilinos perl-based test harness."
-  ${Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT} )
-
-IF (Trilinos_ENABLE_NATIVE_TEST_HARNESS)
-
-  ADD_CUSTOM_TARGET(
-    runtests-serial
-     ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-    --trilinos-dir=${TRILINOS_HOME_DIR}
-    --comm=serial
-    --build-dir=${TRILINOS_BUILD_DIR}
-    --category=${TRILINOS_TEST_CATEGORY}
-    --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-    )
-
-  IF (Trilinos_ENABLE_MPI)
-  
-    ADD_CUSTOM_TARGET(
-      runtests-mpi
-       ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-      --trilinos-dir=${TRILINOS_HOME_DIR}
-      --comm=mpi
-      --mpi-go="${TRILINOS_MPI_GO}"
-      --max-proc=${MPIEXEC_MAX_NUMPROCS}
-      --build-dir=${TRILINOS_BUILD_DIR}
-      --category=${TRILINOS_TEST_CATEGORY}
-      --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-      )
-
-  ENDIF()
-
-ENDIF()
-
-IF (WIN32)
-  SET(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT OFF)
-ELSE()
-  SET(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT ON)
-ENDIF()
-
-# 2008/10/17: rabartl: Above, I can not turn these tests on by default
-# with cygwin because the custom script target is not working for some
-# reason.
-
-ADVANCED_OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS
-  "Enable dependency unit tests."
-  ${Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT}
-  )
-
-IF (Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS)
-  ADD_SUBDIRECTORY(cmake/DependencyUnitTests)
-  ADD_SUBDIRECTORY(cmake/python/UnitTests)
-ENDIF()
+# 2008/11/24: rabartl: ToDo: Implement this!
 
 
 #
-# H) Setup for packaging and distribution
+# H) Set up for testing with CTest and Trilinos test harness
 #
 
-SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
-SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${Trilinos_VERSION}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${Trilinos_VERSION}")
-SET(CPACK_PACKAGE_REGISTRY_KEY "Trilinos ${Trilinos_VERSION}")
-SET(CPACK_PACKAGE_NAME "trilinos")
-SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
-SET(CPACK_PACKAGE_VERSION "${Trilinos_VERSION}")
-SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
-SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${Trilinos_VERSION}")
+MESSAGE("")
+MESSAGE("Setting up testing support ...")
+MESSAGE("")
 
-IF(WIN32)
-  SET(CPACK_GENERATOR "NSIS")
-  SET(CPACK_NSIS_MODIFY_PATH ON)
-ENDIF()
-
-INCLUDE(CPack)
+TRILINOS_SETUP_TESTING_SUPPORT()
 
 
 #
-# I) Configure individual packages
+# I) Setup for packaging and distribution
+#
+
+TRILINOS_DEFINE_PACKAGING()
+
+
+#
+# J) Configure individual packages
 # 
 
 MESSAGE("")
-MESSAGE("Configuring individual Trilinos packages ...")
+MESSAGE("Configuring individual enabled Trilinos packages ...")
 MESSAGE("")
 
-SET(Trilinos_INCLUDE_DIRS "" CACHE INTERNAL "")
-SET(Trilinos_LIBRARY_DIRS "" CACHE INTERNAL "")
-SET(Trilinos_LIBRARIES "" CACHE INTERNAL "")
-
-FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
-  LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
-  LIST(GET Trilinos_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
-  IF(Trilinos_ENABLE_${PACKAGE})
-    SET(PACKAGE_NAME_GLOBAL ${PACKAGE}) # For checking
-    ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
-    LIST(APPEND Trilinos_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
-    LIST(APPEND Trilinos_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
-    LIST(APPEND Trilinos_LIBRARIES ${${PACKAGE}_LIBRARIES})
-  ENDIF()
-ENDFOREACH()
-
-LIST(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
-LIST(REMOVE_DUPLICATES Trilinos_LIBRARY_DIRS)
-LIST(REMOVE_DUPLICATES Trilinos_LIBRARIES)
+TRILINOS_CONFIGURE_ENABLED_PACKAGES()
 
 
 #
-# J) Install-related commands
+# K) Install-related commands
 #
 
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in

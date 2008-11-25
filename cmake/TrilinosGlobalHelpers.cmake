@@ -1,6 +1,9 @@
 
 INCLUDE(Trilinos_Add_Option)
 INCLUDE(TrilinosHelpers)
+INCLUDE(Multiline_Set)
+INCLUDE(Global_Null_Set)
+INCLUDE(Remove_Global_Duplicates)
 
 #
 # 2008/10/06: rabartl:
@@ -49,6 +52,7 @@ MACRO(TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS)
     LIST(GET Trilinos_PACKAGES_AND_DIRS ${PACKAGE_DIR_IDX} PACKAGE_DIR)
     LIST(APPEND Trilinos_PACKAGES ${PACKAGE})
     LIST(APPEND Trilinos_PACKAGE_DIRS ${PACKAGE_DIR})
+    TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS(${PACKAGE})
   ENDFOREACH()
   
   IF (Trilinos_VERBOSE_CONFIGURE)
@@ -60,6 +64,78 @@ MACRO(TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS)
   
   SET(Trilinos_REVERSE_PACKAGES ${Trilinos_PACKAGES})
   LIST(REVERSE Trilinos_REVERSE_PACKAGES)
+
+ENDMACRO()
+
+
+#
+# Macro that reads all the package dependencies
+#
+
+MACRO(TRILINOS_READ_ALL_PACKAGE_DEPENDENCIES)
+  
+  FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
+    LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
+    LIST(GET Trilinos_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
+    TRILINOS_READ_PACKAGE_DEPENDENCIES(${PACKAGE} ${PACKAGE_DIR})
+    TRILINOS_ADD_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
+  ENDFOREACH()
+  
+  ADVANCED_OPTION(Trilinos_DUMP_PACKAGE_DEPENDENCIES
+    "Dump the package dependency information." OFF)
+  
+  IF (Trilinos_VERBOSE_CONFIGURE OR Trilinos_DUMP_PACKAGE_DEPENDENCIES)
+    MESSAGE("")
+    MESSAGE("Printing package dependencies ...")
+    MESSAGE("")
+    PRINT_VAR(Trilinos_PACKAGES)
+    MESSAGE("")
+    FOREACH(PACKAGE ${Trilinos_PACKAGES})
+      TRILINOS_PRINT_PACKAGE_DEPENDENCIES(${PACKAGE})
+      MESSAGE("")
+    ENDFOREACH()
+  ENDIF()
+
+ENDMACRO()
+
+
+
+#
+# Macro that processes the list of TPLs
+#
+
+MACRO(TRILINOS_PROCESS_TPLS_DEFAULTS_LISTS)
+
+  # Separate out separate lists of package names and directoires
+  
+  LIST(LENGTH Trilinos_TPLS Trilinos_NUM_TPLS)
+  PRINT_VAR(Trilinos_NUM_TPLS)
+  MATH(EXPR Trilinos_LAST_TPL_IDX "${Trilinos_NUM_TPLS}-1")
+
+  FOREACH(TPL ${Trilinos_TPLS})
+    MULTILINE_SET(DOCSTR
+      "Enable support for the TPL ${TPL} in all supported Trilinos packages."
+      "  This can be set to 'ON', 'OFF', or left empty ''.  If Set to 'ON',"
+      " then support for the TPL ${TPL} will be turned on by default in all packages"
+      " that have optional support for this TPL.  However, the TPL will really"
+      " only be enabled if there is at least one package having a dependency on the"
+      " TPL.  If set to 'OFF', then all packages that have a required dependency on"
+      " the TPL ${TPL} will be disabled and optional support for the TPL in all"
+      " enabled packages will be turned off.  If left empty '', then other logic will"
+      " be used to determine if the TPL ${TPL} should be enabled or not.  For example,"
+      " if a package is enabled that has a required dependency on the TPL, then the"
+      " TPL will be enabled and will be searched for.  If the TPL is enabled after"
+      " all of this, then the user may need to set the location of the TPL in the"
+      " variables TPL_${TPL}_INCLUDE_DIRS, TPL_${TPL}_LIBRARY_DIRS, and/or"
+      " TPL_${TPL}_LIBRARIES.  For many of the TPLs, this information can be found"
+      " out automatically by looking in standard locations."
+      )
+    SET(TPL_ENABLE_${TPL} "" CACHE STRING ${DOCSTR})
+  ENDFOREACH()
+  
+  IF (Trilinos_VERBOSE_CONFIGURE)
+    PRINT_VAR(Trilinos_TPLS)
+  ENDIF()
 
 ENDMACRO()
 
@@ -148,6 +224,15 @@ MACRO(TRILINOS_READ_PACKAGE_DEPENDENCIES PACKAGE_NAME PACKAGE_DIR)
   DECLARE_UNDEFINED(TEST_REQUIRED_DEP_PACKAGES)
   DECLARE_UNDEFINED(TEST_OPTIONAL_DEP_PACKAGES)
 
+  SET(LIB_REQUIRED_DEP_TPLS "")
+  SET(LIB_OPTIONAL_DEP_TPLS "")
+  SET(TEST_REQUIRED_DEP_TPLS "")
+  SET(TEST_OPTIONAL_DEP_TPLS "")
+
+  # 2008/11/24: rabartl: ToDo: Above, hange SET(...) to
+  # DECLARE_UNDEFINED(...) and then below add
+  # ASSERT_DEFINED_PACKAGE_VAR(...) calls for the TPL variables!
+
   INCLUDE(packages/${PACKAGE_DIR}/cmake/Dependencies.cmake)
 
   ASSERT_DEFINED_PACKAGE_VAR(LIB_REQUIRED_DEP_PACKAGES ${PACKAGE_NAME})
@@ -160,14 +245,15 @@ MACRO(TRILINOS_READ_PACKAGE_DEPENDENCIES PACKAGE_NAME PACKAGE_DIR)
   SET(${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES ${TEST_REQUIRED_DEP_PACKAGES})
   SET(${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES ${TEST_OPTIONAL_DEP_PACKAGES})
 
+  SET(${PACKAGE_NAME}_LIB_REQUIRED_DEP_TPLS ${LIB_REQUIRED_DEP_TPLS})
+  SET(${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS ${LIB_OPTIONAL_DEP_TPLS})
+  SET(${PACKAGE_NAME}_TEST_REQUIRED_DEP_TPLS ${TEST_REQUIRED_DEP_TPLS})
+  SET(${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS ${TEST_OPTIONAL_DEP_TPLS})
+
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE_NAME} LIB_REQUIRED_DEP_PACKAGES)
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE_NAME} LIB_OPTIONAL_DEP_PACKAGES)
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE_NAME} TEST_REQUIRED_DEP_PACKAGES)
   TRILINOS_APPEND_FORWARD_DEP_PACKAGES(${PACKAGE_NAME} TEST_OPTIONAL_DEP_PACKAGES)
-
-  # 2008/10/10: rabartl: ToDo: Above, we must put in special logic to make sure
-  # that a package defines its linkage varibles correctly in their Dependencies.cmake
-  # file!
 
 ENDMACRO()
 
@@ -190,6 +276,11 @@ MACRO(TRILINOS_PRINT_PACKAGE_DEPENDENCIES PACKAGE_NAME)
   PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES)
   PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES)
 
+  PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_LIB_REQUIRED_DEP_TPLS)
+  PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS)
+  PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_TEST_REQUIRED_DEP_TPLS)
+  PRINT_NONEMPTY_VAR(${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS)
+
 ENDMACRO()
 
 
@@ -201,12 +292,32 @@ MACRO(TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS PACKAGE_NAME)
 
   #MESSAGE("TRILINOS_INSERT_STANDARD_PACKAGE_OPTIONS: ${PACKAGE_NAME}")
 
-  SET( Trilinos_ENABLE_${PACKAGE_NAME} "" CACHE STRING
-    "Enable the ${PACKAGE_NAME} package.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide.")
-  SET( ${PACKAGE_NAME}_ENABLE_TESTS "" CACHE STRING
-    "Build ${PACKAGE_NAME} tests.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide." )
-  SET( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" CACHE STRING
-    "Build ${PACKAGE} examples.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide." )
+  MULTILINE_SET(DOCSTR
+    "Enable the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave"
+    " empty to allow for other logic to decide.  If explicitly set to 'OFF'"
+    " then all packages that have a required dependency on this package will"
+    " be disabled and will override other explicit enables.   Look at the output"
+    " from configure to see what packages are disabled in this case.  If set to 'ON',"
+    " then the package ${PACKAGE_NAME} will be enabled if at all possible (i.e."
+    " unless some other required package was explicitly disabled).  If left empty ''"
+    " then other logic will be used to determine if the package will be enabled or"
+    " disabled."
+    )
+  SET( Trilinos_ENABLE_${PACKAGE_NAME} "" CACHE STRING ${DOCSTR})
+
+  MULTILINE_SET(DOCSTR
+    "Build tests for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
+     " to allow for other logic to decide.  This option only takes effect if the package"
+     " is enabled after all of the enable/disable package logic has been applied."
+     )
+  SET( ${PACKAGE_NAME}_ENABLE_TESTS "" CACHE STRING ${DOCSTR})
+
+  MULTILINE_SET(DOCSTR
+    "Build examples for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
+     " to allow for other logic to decide.  This option only takes effect if the package"
+     " is enabled after all of the enable/disable package logic has been applied."
+     )
+  SET( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" CACHE STRING ${DOCSTR})
 
 ENDMACRO()
 
@@ -236,13 +347,20 @@ ENDFUNCTION()
 
 
 #
-# Private helper macro
+# Private helper macros
 #
 
 MACRO(TRILINOS_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE PACKAGE_NAME OPTIONAL_DEP_PACKAGE)
 
   SET( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE} "" CACHE STRING
-    "Enable optional support for ${OPTIONAL_DEP_PACKAGE} in ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide" )
+    "Enable optional support for the package ${OPTIONAL_DEP_PACKAGE} in the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide" )
+
+ENDMACRO()
+
+MACRO(TRILINOS_PRIVATE_ADD_OPTIONAL_TPL_ENABLE PACKAGE_NAME OPTIONAL_DEP_TPL)
+
+  SET( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL} "" CACHE STRING
+    "Enable optional support for the TPL ${OPTIONAL_DEP_TPL} in the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty to allow for other logic to decide" )
 
 ENDMACRO()
 
@@ -263,6 +381,16 @@ MACRO(TRILINOS_ADD_OPTIONAL_PACKAGE_ENABLES PACKAGE_NAME)
   FOREACH(OPTIONAL_DEP_PACKAGE ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES})
     TRILINOS_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE(
       ${PACKAGE_NAME} ${OPTIONAL_DEP_PACKAGE} )
+  ENDFOREACH()
+
+  FOREACH(OPTIONAL_DEP_TPL ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS})
+    TRILINOS_PRIVATE_ADD_OPTIONAL_TPL_ENABLE(
+      ${PACKAGE_NAME} ${OPTIONAL_DEP_TPL} )
+  ENDFOREACH()
+
+  FOREACH(OPTIONAL_DEP_TPL ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS})
+    TRILINOS_PRIVATE_ADD_OPTIONAL_TPL_ENABLE(
+      ${PACKAGE_NAME} ${OPTIONAL_DEP_TPL} )
   ENDFOREACH()
 
 ENDMACRO()
@@ -656,6 +784,9 @@ ENDFUNCTION()
 
 MACRO(TRILINOS_ADJUST_PACKAGE_ENABLES)
 
+  # 2008/11/24: rabartl: ToDo: Disable forward packages that have a required
+  # dependency on an explicitly disabled TPL
+
   MESSAGE("")
   MESSAGE("Disabling forward packages that have a required dependancy on explicitly disabled packages ...")
   MESSAGE("")
@@ -713,6 +844,11 @@ MACRO(TRILINOS_ADJUST_PACKAGE_ENABLES)
   FOREACH(PACKAGE ${Trilinos_REVERSE_PACKAGES})
     TRILINOS_ENABLE_REQUIRED_PACKAGES(${PACKAGE})
   ENDFOREACH()
+
+  MESSAGE("")
+  MESSAGE("Enabling all remaining required TPLs for current set of enabled packages ...")
+  MESSAGE("")
+  # ToDo: Finish this!
   
   MESSAGE("")
   MESSAGE("Enabling all optional intra-package enables that can be if both sets of packages are enabled ...")
@@ -721,4 +857,133 @@ MACRO(TRILINOS_ADJUST_PACKAGE_ENABLES)
     TRILINOS_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
   ENDFOREACH()
 
+ENDMACRO()
+
+
+
+#
+# Macro that defines Trilinos testing support
+#
+
+MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
+
+  INCLUDE(CTest)
+  
+  IF (WIN32 AND NOT CYGWIN)
+    SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT OFF)
+  ELSE()
+    SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT ON)
+  ENDIF()
+  
+  ADVANCED_OPTION(Trilinos_ENABLE_NATIVE_TEST_HARNESS
+    "Enable the native Trilinos perl-based test harness."
+    ${Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT} )
+  
+  IF (Trilinos_ENABLE_NATIVE_TEST_HARNESS)
+  
+    ADD_CUSTOM_TARGET(
+      runtests-serial
+       ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
+      --trilinos-dir=${TRILINOS_HOME_DIR}
+      --comm=serial
+      --build-dir=${TRILINOS_BUILD_DIR}
+      --category=${TRILINOS_TEST_CATEGORY}
+      --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
+      )
+  
+    IF (Trilinos_ENABLE_MPI)
+    
+      ADD_CUSTOM_TARGET(
+        runtests-mpi
+         ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
+        --trilinos-dir=${TRILINOS_HOME_DIR}
+        --comm=mpi
+        --mpi-go="${TRILINOS_MPI_GO}"
+        --max-proc=${MPIEXEC_MAX_NUMPROCS}
+        --build-dir=${TRILINOS_BUILD_DIR}
+        --category=${TRILINOS_TEST_CATEGORY}
+        --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
+        )
+  
+    ENDIF()
+  
+  ENDIF()
+  
+  IF (WIN32)
+    SET(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT OFF)
+  ELSE()
+    SET(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT ON)
+  ENDIF()
+  
+  # 2008/10/17: rabartl: Above, I can not turn these tests on by default
+  # with cygwin because the custom script target is not working for some
+  # reason.
+  
+  ADVANCED_OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS
+    "Enable dependency unit tests."
+    ${Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT}
+    )
+  
+  IF (Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS)
+    ADD_SUBDIRECTORY(cmake/DependencyUnitTests)
+    ADD_SUBDIRECTORY(cmake/python/UnitTests)
+  ENDIF()
+
+ENDMACRO()
+
+
+
+#
+# Macro that defines Trilinos packaging options:
+#
+
+MACRO(TRILINOS_DEFINE_PACKAGING)
+
+  SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
+  SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${Trilinos_VERSION}")
+  SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${Trilinos_VERSION}")
+  SET(CPACK_PACKAGE_REGISTRY_KEY "Trilinos ${Trilinos_VERSION}")
+  SET(CPACK_PACKAGE_NAME "trilinos")
+  SET(CPACK_PACKAGE_VENDOR "Sandia National Laboratories")
+  SET(CPACK_PACKAGE_VERSION "${Trilinos_VERSION}")
+  SET(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
+  SET(CPACK_SOURCE_FILE_NAME "trilinos-source-${Trilinos_VERSION}")
+  
+  IF(WIN32)
+    SET(CPACK_GENERATOR "NSIS")
+    SET(CPACK_NSIS_MODIFY_PATH ON)
+  ENDIF()
+  
+  INCLUDE(CPack)
+
+ENDMACRO()
+
+
+
+#
+# Macro that does the final set of package configurations
+#
+
+MACRO(TRILINOS_CONFIGURE_ENABLED_PACKAGES)
+
+  GLOBAL_NULL_SET(Trilinos_INCLUDE_DIRS)
+  GLOBAL_NULL_SET(Trilinos_LIBRARY_DIRS)
+  GLOBAL_NULL_SET(Trilinos_LIBRARIES)
+  
+  FOREACH(PACKAGE_IDX RANGE ${Trilinos_LAST_PACKAGE_IDX})
+    LIST(GET Trilinos_PACKAGES ${PACKAGE_IDX} PACKAGE)
+    LIST(GET Trilinos_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
+    IF(Trilinos_ENABLE_${PACKAGE})
+      SET(PACKAGE_NAME_GLOBAL ${PACKAGE}) # For consistency checking
+      ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
+      LIST(APPEND Trilinos_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
+      LIST(APPEND Trilinos_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
+      LIST(APPEND Trilinos_LIBRARIES ${${PACKAGE}_LIBRARIES})
+    ENDIF()
+  ENDFOREACH()
+  
+  REMOVE_GLOBAL_DUPLICATES(Trilinos_INCLUDE_DIRS)
+  REMOVE_GLOBAL_DUPLICATES(Trilinos_LIBRARY_DIRS)
+  REMOVE_GLOBAL_DUPLICATES(Trilinos_LIBRARIES)
+  
 ENDMACRO()
