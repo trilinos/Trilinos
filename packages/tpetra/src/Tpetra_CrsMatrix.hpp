@@ -778,14 +778,18 @@ namespace Tpetra
       for (typename Array<Ordinal>::const_iterator cind = colinds_[r].begin();
            cind != colinds_[r].end(); ++cind)
       {
-        if (!rowMap_.isMyGlobalIndex(*cind))
-        {
+        // FINISH: if we don't assume these go in (below), then we must explicitly put them in
+        //if (!rowMap_.isMyGlobalIndex(*cind))
+        //{
           nnzcols.insert(*cind);
-        }
+        //}
       }
     }
-    // The column map automatically owns the entries from the row map.
-    Array<Ordinal> myPaddedGlobalEntries(myGlobalEntries.begin(),myGlobalEntries.end());
+    // The column map automatically owns the entries from the row map. 
+    // FINISH: Why? In the case that these entries fall outside of the range of domainMap_, this is incorrect.
+    //         Otherwise, I don't see why it is even necessary.
+    // Array<Ordinal> myPaddedGlobalEntries(myGlobalEntries.begin(),myGlobalEntries.end());
+    Array<Ordinal> myPaddedGlobalEntries;
     for (typename std::set<Ordinal>::iterator iter = nnzcols.begin(); iter != nnzcols.end() ; ++iter)
     {
       myPaddedGlobalEntries.push_back(*iter);
