@@ -151,6 +151,11 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     AmesosList.set("MaxProcs",MaxProcs);
     AmesosList.set("AddToDiag", AddToDiag);
 
+    if( ML_Get_PrintLevel() > 10 ) {
+      AmesosList.set("PrintTiming",true);
+      AmesosList.set("OutputLevel",1);
+    }
+
     // don't use iterative refinement for Superludist only
     Teuchos::ParameterList & SuperludistList = AmesosList.sublist("Superludist");
     SuperludistList.set("IterRefine","NO");
