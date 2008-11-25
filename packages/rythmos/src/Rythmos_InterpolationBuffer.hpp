@@ -40,6 +40,11 @@
 
 namespace Rythmos {
 
+enum IBPolicy {
+  BUFFER_POLICY_INVALID = 0,
+  BUFFER_POLICY_STATIC = 1,
+  BUFFER_POLICY_KEEP_NEWEST = 2
+};
 
 /** \brief concrete class for interpolation buffer functionality. */
 template<class Scalar> 
@@ -55,16 +60,15 @@ public:
     
   /** \brief. */
   InterpolationBuffer();
-  InterpolationBuffer( const RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
 
   /// Initialize the buffer:
-  void initialize( const RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
+  void initialize( const RCP<InterpolatorBase<Scalar> >& interpolator, int storage );
 
   /// Set the interpolator for this buffer
-  void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator_);
+  void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
     
   /// Unset the interpolator for this buffer
-  RCP<InterpolatorBase<Scalar> >& unSetInterpolator();
+  RCP<InterpolatorBase<Scalar> > unSetInterpolator();
 
   /// Set the maximum storage of this buffer
   void setStorage( int storage );
@@ -121,10 +125,9 @@ public:
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
 
-  enum IBPolicy {
-    BUFFER_STATIC = 0
-    ,BUFFER_KEEP_NEWEST = 1
-  };
+  /** \brief . */
+  IBPolicy getIBPolicy();
+
     
 private:
 
@@ -140,9 +143,13 @@ private:
 
 // Nonmember constructor
 template<class Scalar>
-RCP<InterpolationBuffer<Scalar> > interpolationBuffer() 
+RCP<InterpolationBuffer<Scalar> > interpolationBuffer( 
+  const RCP<InterpolatorBase<Scalar> >& interpolator = Teuchos::null,
+  int storage = 0 
+  )
 {
   RCP<InterpolationBuffer<Scalar> > ib = rcp(new InterpolationBuffer<Scalar>());
+  ib->initialize(interpolator, storage);
   return ib;
 }
 
@@ -154,16 +161,6 @@ template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer()
 {
   initialize(Teuchos::null,0);
-}
-
-
-template<class Scalar>
-InterpolationBuffer<Scalar>::InterpolationBuffer( 
-  const RCP<InterpolatorBase<Scalar> >& interpolator_
-  ,int storage_ 
-  )
-{
-  initialize(interpolator_,storage_);
 }
 
 
@@ -182,8 +179,8 @@ InterpolationBuffer<Scalar>::get_x_space() const
 
 template<class Scalar>
 void InterpolationBuffer<Scalar>::initialize( 
-  const RCP<InterpolatorBase<Scalar> >& interpolator_
-  ,int storage_
+  const RCP<InterpolatorBase<Scalar> >& interpolator
+  ,int storage
   )
 {
   RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -193,12 +190,12 @@ void InterpolationBuffer<Scalar>::initialize(
     *out << "Calling setInterpolator..." << std::endl;
   }
   data_vec_ = rcp(new typename DataStore<Scalar>::DataStoreVector_t);
-  setInterpolator(interpolator_);
+  setInterpolator(interpolator);
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << "Calling setStorage..." << std::endl;
   }
-  setStorage(storage_);
-  policy_ = BUFFER_KEEP_NEWEST;
+  setStorage(storage);
+  policy_ = BUFFER_POLICY_KEEP_NEWEST;
 }
 
 template<class Scalar>
@@ -232,8 +229,8 @@ void InterpolationBuffer<Scalar>::setInterpolator(
   const RCP<InterpolatorBase<Scalar> >& interpolator
   )
 {
-  if (interpolator_ == Teuchos::null) {
-    interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar>);
+  if (interpolator == Teuchos::null) {
+    interpolator_ = linearInterpolator<Scalar>();
   } else {
     interpolator_ = interpolator;
   }
@@ -242,6 +239,14 @@ void InterpolationBuffer<Scalar>::setInterpolator(
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << "interpolator = " << interpolator_->description() << std::endl;
   }
+}
+
+template<class Scalar>
+RCP<InterpolatorBase<Scalar> > InterpolationBuffer<Scalar>::unSetInterpolator()
+{
+  RCP<InterpolatorBase<Scalar> > old_interpolator = interpolator_;
+  interpolator_ = linearInterpolator<Scalar>();
+  return old_interpolator;
 }
 
 
@@ -301,17 +306,22 @@ void InterpolationBuffer<Scalar>::addPoints(
   typename DataStore<Scalar>::DataStoreList_t input_data_list;
   vectorToDataStoreList<Scalar>(time_vec,x_vec,xdot_vec,&input_data_list);
   // Check that we're not going to exceed our storage limit:
-  if ((data_vec_->size()+input_data_list.size()) > Teuchos::as<unsigned int>(storage_limit_)) { 
-    if (policy_ == BUFFER_STATIC) {
+  if (Teuchos::as<int>(data_vec_->size()+input_data_list.size()) > storage_limit_) { 
+    if (policy_ == BUFFER_POLICY_STATIC) {
       TEST_FOR_EXCEPTION(
         true, std::logic_error,
-        "Error, buffer is full and buffer policy is BUFFER_STATIC, no points can be added\n"
+        "Error, buffer would be over-full and buffer policy is BUFFER_POLICY_STATIC, these points can not be added\n"
         );
-    } else if (policy_ == BUFFER_KEEP_NEWEST) {
+    } else if (policy_ == BUFFER_POLICY_KEEP_NEWEST) {
       if (input_data_list.front() > data_vec_->back()) {
         // Case:  all of new points are past end of existing points
         // Remove points from the beginning of data_vec, then add new points
-        int num_extra_points = input_data_list.size();
+        int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
+#ifdef TEUCHOS_DEBUG
+        TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
+            "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
+            );
+#endif // TEUCHOS_DEBUG
         typename DataStore<Scalar>::DataStoreVector_t::iterator 
           data_it = data_vec_->begin();
         for (int i=0 ; i < num_extra_points ; ++i) {
@@ -325,7 +335,12 @@ void InterpolationBuffer<Scalar>::addPoints(
       } else if (input_data_list.back() < data_vec_->front()) {
         // Case:  all of new points are before beginning of existing points
         // Remove points from end of data_vec, then add new points
-        int num_extra_points = input_data_list.size();
+        int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
+#ifdef TEUCHOS_DEBUG
+        TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
+            "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
+            );
+#endif // TEUCHOS_DEBUG
         typename DataStore<Scalar>::DataStoreVector_t::iterator 
           data_it = data_vec_->end();
         for (int i=0 ; i < num_extra_points ; ++i) {
@@ -340,7 +355,7 @@ void InterpolationBuffer<Scalar>::addPoints(
         // Case:  Some points are before beginning of data_vec and some points are after end of data_vec
         TEST_FOR_EXCEPTION(
           true, std::logic_error,
-          "Error, incoming points are on both sides of TimeRange, this feature not implemented yet.\n"
+          "Error, incoming points are on both sides of TimeRange, I don't know which points are newest in this case.\n"
           );
       }
     } else {
@@ -509,9 +524,10 @@ void InterpolationBuffer<Scalar>::setParameterList(RCP<Teuchos::ParameterList> c
   int outputLevel = parameterList_->get( "outputLevel", int(-1) );
   outputLevel = std::min(std::max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
-  int policyLevel = parameterList_->get( "InterpolationBufferPolicy", int(1) );
-  policyLevel = std::min(std::max(policyLevel,0),1);
-  policy_ = static_cast<IBPolicy>(policyLevel);
+  IBPolicy policyLevel = parameterList_->get( "InterpolationBufferPolicy", policy_ );
+  if (policyLevel != BUFFER_POLICY_INVALID) {
+    policy_ = policyLevel;
+  }
   int storage_limit = parameterList_->get( "StorageLimit", storage_limit_ );
   if (storage_limit != storage_limit_) {
     this->setStorage(storage_limit);
@@ -535,6 +551,11 @@ RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::unsetParameterList()
   return(temp_param_list);
 }
 
+template <class Scalar>
+IBPolicy InterpolationBuffer<Scalar>::getIBPolicy()
+{
+  return policy_;
+}
 
 } // namespace Rythmos
 

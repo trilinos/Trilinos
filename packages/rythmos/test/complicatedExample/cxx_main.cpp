@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
     RCP<Rythmos::StepperBase<double> > stepperSlave_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Rythmos::explicitRKStepper<double>(model);
-      RCP<Teuchos::ParameterList> ERKparams = rcp(new Teuchos::ParameterList);
+      RCP<Teuchos::ParameterList> ERKparams = Teuchos::parameterList();
       ERKparams->set( "outputLevel", as<int>(verbLevel) );
       stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
     }
     else if (method_val == METHOD_FE) {
       stepper_ptr = rcp(new Rythmos::ForwardEulerStepper<double>(model));
-      RCP<Teuchos::ParameterList> FEparams = rcp(new Teuchos::ParameterList);
+      RCP<Teuchos::ParameterList> FEparams = Teuchos::parameterList();
       FEparams->set( "outputLevel", as<int>(verbLevel));
       stepper_ptr->setParameterList(FEparams);
       method = "Forward Euler";
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
         stepper_ptr = rcp(
           new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
         RCP<Teuchos::ParameterList>
-          BEparams = rcp(new Teuchos::ParameterList);
+          BEparams = Teuchos::parameterList();
         BEparams->sublist("VerboseObject").set(
           "Verbosity Level",
           Teuchos::getVerbosityLevelParameterValueName(verbLevel)
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
       } 
       else {
         RCP<Teuchos::ParameterList>
-          BDFparams = rcp(new Teuchos::ParameterList);
+          BDFparams = Teuchos::parameterList();
         RCP<Teuchos::ParameterList> BDFStepControlPL =
           Teuchos::sublist(BDFparams,RythmosStepControlSettings_name);
 
@@ -326,9 +326,9 @@ int main(int argc, char *argv[])
       {
         // Create integrator using stepper and linear interpolation buffer:
         RCP<Rythmos::InterpolatorBase<double> > 
-          linearInterpolator = rcp(new Rythmos::LinearInterpolator<double>());
+          linearInterpolator = Rythmos::linearInterpolator<double>();
         RCP<Rythmos::InterpolationBuffer<double> > 
-          IB = rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
+          IB = Rythmos::interpolationBuffer<double>(linearInterpolator,buffersize);
         RCP<Teuchos::ParameterList> 
           IBParams = Teuchos::parameterList();
         IBParams->sublist("VerboseObject").set(
@@ -392,13 +392,13 @@ int main(int argc, char *argv[])
         // Set up fixed-step-size integration:
         // Create integrator using stepper and interpolation buffer:
         //RCP<Rythmos::InterpolatorBase<double> > 
-        //  linearInterpolator = rcp(new Rythmos::LinearInterpolator<double>());
+        //  linearInterpolator = Rythmos::linearInterpolator<double>();
         //RCP<Rythmos::InterpolationBuffer<double> > 
-        //  IB = rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
+        //  IB = Rythmos::interpolationBuffer<double>(linearInterpolator,buffersize);
         RCP<Rythmos::InterpolatorBase<double> > 
-          hermiteInterpolator = rcp(new Rythmos::HermiteInterpolator<double>());
+          hermiteInterpolator = Rythmos::hermiteInterpolator<double>();
         RCP<Rythmos::InterpolationBuffer<double> > 
-          IB = rcp(new Rythmos::InterpolationBuffer<double>(hermiteInterpolator,buffersize));
+          IB = Rythmos::interpolationBuffer<double>(hermiteInterpolator,buffersize);
         RCP<Teuchos::ParameterList> 
           IBParams = Teuchos::parameterList();
         IBParams->sublist("VerboseObject").set(

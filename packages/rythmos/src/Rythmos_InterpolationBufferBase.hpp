@@ -122,6 +122,14 @@ public:
    * <li><tt>getTimeRange().lower()</tt> may increase after the call.
    * </ul>
    */
+  /* 11/24/08 tscoffe:  Proposed new interface for addPoints
+   * virtual void addPoints(
+   *   const ArrayView<const Scalar>& time_vec,
+   *   const ArrayView<const Ptr<const Thyra::VectorBase<Scalar> > >& x_vec,
+   *   const ArrayView<const Ptr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ) = 0;
+   */
+
   virtual void addPoints(
     const Array<Scalar>& time_vec,
     const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
@@ -165,6 +173,14 @@ public:
    * </ul>
    *
    */
+  /* 11/24/08 tscoffe:  Proposed new interface for getPoints
+   * virtual void getPoints(
+   *   const ArrayView<const Scalar>& time_vec,
+   *   const ArrayView<const Ptr<Thyra::VectorBase<Scalar> > >& x_vec,
+   *   const ArrayView<const Ptr<Thyra::VectorBase<Scalar> > >& xdot_vec,
+   *   const ArrayView<ScalarMag>& accuracy_vec
+   *   ) const = 0;
+   */
   virtual void getPoints(
     const Array<Scalar>& time_vec,
     Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
@@ -181,6 +197,7 @@ public:
    * This function may return no nodes at all, and yet still have a valid
    * timeRange.
    */
+  // 11/24/08 tscoffe:  Proposal:  get rid of "getNodes" in abstract base interface
   virtual void getNodes(Array<Scalar>* time_vec) const = 0;
   
   /** \brief Remove nodes from the interpolation buffer.
@@ -192,7 +209,11 @@ public:
    * <li>Each <tt>time_vec[i]</tt> must equal a node in the interpolation buffer.
    * </ul>
    *
+   * <b>Postconditions:</b><ul>
+   * <li>Each time_vec[i] is no longer a node in the interpolation buffer.
+   * </ul>
    */
+  // 11/24/08 tscoffe:  Proposal:  get rid of "removeNodes" in abstract base interface
   virtual void removeNodes(Array<Scalar>& time_vec) =0;
 
 
@@ -223,6 +244,12 @@ get_x( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t )
   return x_vec[0];
 }
 
+/* 11/24/08 tscoffe:  Proposed new get_x function:
+ * template<class Scalar>
+ * void get_x( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t, const Ptr<Thyra::VectorBase<Scalar> >& x_out )
+ * This will copy data into your vector and it won't be responsible for allocating new memory
+ */ 
+
 
 /** \brief Get a single point <tt>xdot(t)</tt> from an interpolation buffer.
  *
@@ -241,6 +268,11 @@ get_xdot( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t )
   return xdot_vec[0];
 }
 
+/* 11/24/08 tscoffe:  Proposed new get_xdot function
+ * template<class Scalar>
+ * void get_xdot( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t, const Ptr<Thyra::VectorBase<Scalar> >& xdot_out )
+ * This will copy data into your vector and it won't be responsible for allocating new memory
+ */ 
 
 /** \brief Nonmember helper function to get x and x_dot at t.
  *
@@ -268,6 +300,14 @@ void get_x_and_x_dot(
   if (x_dot) *x_dot = x_dot_vec[0];
 }
 
+/* 11/24/08 tscoffe:  Proposed new get_x_and_xdot function:
+ * template<class Scalar>
+ * void get_x_and_xdot( const InterpolationBufferBase<Scalar> &interpBuffer, 
+ *   const Scalar &t, 
+ *   const Ptr<Thyra::VectorBase<Scalar> >& x_out, 
+ *   const Ptr<Thyra::VectorBase<Scalar> >& xdot_out )
+ * This will copy data into your vector and it won't be responsible for allocating new memory
+ */ 
 
 } // namespace Rythmos
 

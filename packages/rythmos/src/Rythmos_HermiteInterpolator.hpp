@@ -258,7 +258,6 @@ template<class Scalar>
 int HermiteInterpolator<Scalar>::order() const
 {
   return(3);
-  // tscoffe 11/12/08:  What does it mean for this method to be 3rd order in x and 2nd order in xdot?
 }
 
 template<class Scalar>
