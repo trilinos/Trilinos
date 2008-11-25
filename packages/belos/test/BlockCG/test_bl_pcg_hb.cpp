@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
   std::string PrecType = "ICT"; // incomplete Cholesky 
-  int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
+  int OverlapLevel = 0; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
   RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
