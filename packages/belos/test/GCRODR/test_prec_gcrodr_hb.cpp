@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  std::string PrecType = "ILUT"; // incomplete LU
+  std::string PrecType = "ILU"; // incomplete LU
   int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
