@@ -567,7 +567,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, comm_timers, [Enable timers for Teuchos::Co
 # --enable-teuchos-debug
 #
 
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, debug, [Enable optional extra debugging checkes], 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, debug, [Enable optional extra debugging checks], 
 		TEUCHOS_DEBUG, no )
 
 #
@@ -643,6 +643,17 @@ else
   fi
 
 fi
+
+# check whether C/C++ has problems calling cdotc and zdotc and whether we know how to fix it
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, dotcheck, [Enable checking on complex BLAS dot routines], 
+		TEUCHOS_DOTCHECK, no )
+if test "X$ac_cv_use_teuchos_dotcheck" != "Xno"; then
+        AC_CXX_COMPLEX_BLAS_PROBLEM
+        if test "X$ac_cv_cxx_complex_blas_problem" == "Xyes"; then
+                AC_CXX_COMPLEX_BLAS_PROBLEM_CAN_BE_FIXED
+        fi
+fi
+
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 

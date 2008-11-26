@@ -71,6 +71,8 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_abi_demangle.m4 \
 	$(top_srcdir)/config/ac_cxx_bool.m4 \
+	$(top_srcdir)/config/ac_cxx_complex_blas_problem.m4 \
+	$(top_srcdir)/config/ac_cxx_complex_blas_problem_can_be_fixed.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_mutable.m4 \

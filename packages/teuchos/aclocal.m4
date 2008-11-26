@@ -920,6 +920,8 @@ AC_SUBST([am__untar])
 
 m4_include([config/ac_cxx_abi_demangle.m4])
 m4_include([config/ac_cxx_bool.m4])
+m4_include([config/ac_cxx_complex_blas_problem.m4])
+m4_include([config/ac_cxx_complex_blas_problem_can_be_fixed.m4])
 m4_include([config/ac_cxx_have_stl.m4])
 m4_include([config/ac_cxx_invalid_template_qualifier.m4])
 m4_include([config/ac_cxx_mutable.m4])

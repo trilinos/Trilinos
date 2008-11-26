@@ -41,6 +41,10 @@
 /* Define to 1 if you have the <complex> header file. */
 #undef HAVE_COMPLEX
 
+/* define if there is a problem calling BLAS routines CDOTC and ZDOTC from C
+   */
+#undef HAVE_COMPLEX_BLAS_PROBLEM
+
 /* Define to 1 if you have the <cstdarg> header file. */
 #undef HAVE_CSTDARG
 
@@ -55,6 +59,10 @@
 
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
+
+/* define if the problem calling BLAS routines CDOTC and ZDOTC from C can be
+   fixed */
+#undef HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
 
 /* Define if want to build with fortran enabled */
 #undef HAVE_FORTRAN_SUPPORT
@@ -197,6 +205,9 @@
 
 /* Define if want to build teuchos-demangle */
 #undef HAVE_TEUCHOS_DEMANGLE
+
+/* Define if want to build teuchos-dotcheck */
+#undef HAVE_TEUCHOS_DOTCHECK
 
 /* Define if want to build teuchos-examples */
 #undef HAVE_TEUCHOS_EXAMPLES

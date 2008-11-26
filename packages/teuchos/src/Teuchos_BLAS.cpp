@@ -180,9 +180,13 @@ namespace Teuchos {
   
   std::complex<float> BLAS<int, std::complex<float> >::DOT(const int n, const std::complex<float>* x, const int incx, const std::complex<float>* y, const int incy) const
   { 
-#ifdef TEUCHOS_BLAS_APPLE_VECLIB_ERROR
+#if defined(TEUCHOS_BLAS_APPLE_VECLIB_ERROR)
     std::complex<float> z;
     cblas_cdotc_sub(n,x,incx,y,incy,&z);
+    return z;
+#elif defined(HAVE_COMPLEX_BLAS_PROBLEM) && defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
+    std::complex<float> z;
+    CDOT_F77(&z, &n, x, &incx, y, &incy); 
     return z;
 #else
     return CDOT_F77(&n, x, &incx, y, &incy); 
@@ -240,9 +244,13 @@ namespace Teuchos {
   
   std::complex<double> BLAS<int, std::complex<double> >::DOT(const int n, const std::complex<double>* x, const int incx, const std::complex<double>* y, const int incy) const
   { 
-#ifdef TEUCHOS_BLAS_APPLE_VECLIB_ERROR
+#if defined(TEUCHOS_BLAS_APPLE_VECLIB_ERROR)
     std::complex<double> z;
     cblas_zdotc_sub(n,x,incx,y,incy,&z);
+    return z;
+#elif defined(HAVE_COMPLEX_BLAS_PROBLEM) && defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
+    std::complex<double> z;
+    ZDOT_F77(&z, &n, x, &incx, y, &incy); 
     return z;
 #else
     return ZDOT_F77(&n, x, &incx, y, &incy); 
