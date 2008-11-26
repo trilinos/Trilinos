@@ -770,6 +770,10 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
   {
+
+    typedef TypeNameTraits<OrdinalType> OTNT;
+    typedef TypeNameTraits<ScalarType> STNT;
+
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
@@ -778,8 +782,13 @@ namespace Teuchos
     ScalarType temp;
     bool BadArgument = false;
 
-    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && (transa == CONJ_TRANS || transb == CONJ_TRANS), std::logic_error,
-	    "Teuchos::BLAS::GEMM() does not currently support CONJ_TRANS for complex data types.");
+    TEST_FOR_EXCEPTION(
+      Teuchos::ScalarTraits<ScalarType>::isComplex
+      && (transa == CONJ_TRANS || transb == CONJ_TRANS),
+      std::logic_error,
+	    "Teuchos::BLAS<"<<OTNT::name()<<","<<STNT::name()<<">::GEMM()"
+      " does not currently support CONJ_TRANS for complex data types."
+      );
 
     // Change dimensions of matrix if either matrix is transposed
     if( !(ETranspChar[transa]=='N') ) {
@@ -1509,8 +1518,6 @@ namespace Teuchos
 
   // Explicit instantiation for template<int,float>
 
-#ifdef HAVE_TEUCHOS_BLASFLOAT
-
   template <>
   class BLAS<int, float>
   {    
@@ -1535,8 +1542,6 @@ namespace Teuchos
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const float alpha, const float* A, const int lda, float* B, const int ldb) const;
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const float alpha, const float* A, const int lda, float* B, const int ldb) const;
   };
-
-#endif // HAVE_TEUCHOS_BLASFLOAT
 
   // Explicit instantiation for template<int,double>
 
@@ -1565,8 +1570,6 @@ namespace Teuchos
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const double alpha, const double* A, const int lda, double* B, const int ldb) const;
   };
 
-#ifdef HAVE_TEUCHOS_BLASFLOAT
-
   // Explicit instantiation for template<int,complex<float> >
 
   template<>
@@ -1593,8 +1596,6 @@ namespace Teuchos
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb) const;
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb) const;
   };
-
-#endif // HAVE_TEUCHOS_BLASFLOAT
 
   // Explicit instantiation for template<int,complex<double> >
 

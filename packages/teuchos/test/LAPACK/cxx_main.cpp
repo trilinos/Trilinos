@@ -40,9 +40,7 @@ int main(int argc, char* argv[])
     std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   Teuchos::LAPACK<int,double> L;
-#ifdef HAVE_TEUCHOS_BLASFLOAT
   Teuchos::LAPACK<int,float> M;
-#endif
 
   double Ad[16];
   double xd[4];
@@ -77,17 +75,10 @@ int main(int argc, char* argv[])
 
   if (verbose) std::cout << "GESV test ... ";
   L.GESV(4, 1, Ad, 4, IPIV, bd, 4, &info);
-#ifdef HAVE_TEUCHOS_BLASFLOAT
   M.GESV(4, 1, Af, 4, IPIV, bf, 4, &info);
-#endif
   for(i = 0; i < 4; i++)
     {
-#ifdef HAVE_TEUCHOS_BLASFLOAT
       if (bd[i] == bf[i]) {
-#else
-      if (bd[i] == bd[i]) {
-        // 2007/06/22: rabartl: These tests fail on my machine!
-#endif
         if (verbose && i==3) std::cout << "passed!" << std::endl;
       } else {
         if (verbose) std::cout << "FAILED" << std::endl;
@@ -98,18 +89,10 @@ int main(int argc, char* argv[])
 
   if (verbose) std::cout << "LAPY2 test ... ";
   float fx = 3, fy = 4;
-#ifdef HAVE_TEUCHOS_BLASFLOAT
   float flapy = M.LAPY2(fx, fy);
-#endif
   double dx = 3, dy = 4;
   double dlapy = L.LAPY2(dx, dy);
-#ifdef HAVE_TEUCHOS_BLASFLOAT
   if ( dlapy == flapy ) {
-#else
-  if ( dlapy == dlapy ) {
-    // 2007/06/22: rabartl: This is a terrible test in the first place and it
-    // fails on my 64 bit linux machine.
-#endif
     if (verbose) std::cout << "passed!" << std::endl;
   } else {
     if (verbose) std::cout << "FAILED" << std::endl;

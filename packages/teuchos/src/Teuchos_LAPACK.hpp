@@ -719,8 +719,6 @@ namespace Teuchos
 
   // BEGIN FLOAT PARTIAL SPECIALIZATION DECLARATION //
 
-#ifdef HAVE_TEUCHOS_BLASFLOAT
-
   template<typename OrdinalType>
   class LAPACK<OrdinalType, float>
   {    
@@ -1148,12 +1146,23 @@ namespace Teuchos
   template<typename OrdinalType>
   float LAPACK<OrdinalType, float>::LAPY2(const float x, const float y) const
   {
+#ifdef HAVE_TEUCHOS_BLASFLOAT
     return SLAPY2_F77(&x, &y);
+#else
+    typedef ScalarTraits<float> ST;
+    const float xabs = ST::magnitude(x);
+    const float yabs = ST::magnitude(y);
+    const float w = TEUCHOS_MAX(xabs, yabs);
+    const float z = TEUCHOS_MIN(xabs, yabs);
+    if ( z == 0.0 ) {
+      return w;
+    }
+    const float z_over_w = z/w;
+    return w*ST::squareroot( 1.0+(z_over_w*z_over_w));
+#endif
   }
 
   // END FLOAT PARTIAL SPECIALIZATION IMPLEMENTATION //
-
-#endif // HAVE_TEUCHOS_BLASFLOAT
 
   // BEGIN DOUBLE PARTIAL SPECIALIZATION DECLARATION //
 
@@ -1596,8 +1605,6 @@ namespace Teuchos
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-#ifdef HAVE_TEUCHOS_BLASFLOAT
-
   // BEGIN COMPLEX<FLOAT> PARTIAL SPECIALIZATION DECLARATION //
 
   template<typename OrdinalType>
@@ -1956,8 +1963,6 @@ namespace Teuchos
   }
 
   // END COMPLEX<FLOAT> PARTIAL SPECIALIZATION IMPLEMENTATION //
-
-#endif // HAVE_TEUCHOS_BLASFLOAT
 
   // BEGIN COMPLEX<DOUBLE> PARTIAL SPECIALIZATION DECLARATION //
 

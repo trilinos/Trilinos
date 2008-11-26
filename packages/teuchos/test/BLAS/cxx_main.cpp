@@ -278,6 +278,7 @@ int main(int argc, char *argv[])
   // Begin ASUM Tests
   //--------------------------------------------------------------------------------
   GoodTestSubcount = 0;
+  ScalarTraits<int>::seedrandom(0);
   for(i = 0; i < ASUMTESTS; i++)
     {
       incx = GetRandom(1, SCALARMAX);
@@ -322,8 +323,8 @@ int main(int argc, char *argv[])
   GoodTestSubcount = 0;
   for(i = 0; i < AXPYTESTS; i++)
     {
-      incx = GetRandom(-SCALARMAX, SCALARMAX);
-      incy = GetRandom(-SCALARMAX, SCALARMAX);
+      incx = GetRandom(1, MVMAX);
+      incy = GetRandom(1, MVMAX);
       M = GetRandom(MVMIN, MVMAX);
       Mx = M*std::abs(incx);
       My = M*std::abs(incy);
@@ -382,8 +383,8 @@ int main(int argc, char *argv[])
   GoodTestSubcount = 0;
   for(i = 0; i < COPYTESTS; i++)
     {
-      incx = GetRandom(-SCALARMAX, SCALARMAX);
-      incy = GetRandom(-SCALARMAX, SCALARMAX);
+      incx = GetRandom(1, MVMAX);
+      incy = GetRandom(1, MVMAX);
       M = GetRandom(MVMIN, MVMAX);
       Mx = M*std::abs(incx);
       My = M*std::abs(incy);
@@ -437,8 +438,8 @@ int main(int argc, char *argv[])
   GoodTestSubcount = 0;
   for(i = 0; i < DOTTESTS; i++)
     {
-      incx = GetRandom(-SCALARMAX, SCALARMAX);
-      incy = GetRandom(-SCALARMAX, SCALARMAX);
+      incx = GetRandom(1, MVMAX);
+      incy = GetRandom(1, MVMAX);
       M = GetRandom(MVMIN, MVMAX);
       Mx = M*std::abs(incx);
       My = M*std::abs(incy);
@@ -626,13 +627,13 @@ int main(int argc, char *argv[])
     {
       // The parameters used to construct the test problem are chosen to be
       // valid parameters, so the GEMV routine won't bomb out.
-      incx = GetRandom(-SCALARMAX, SCALARMAX);
+      incx = GetRandom(1, MVMAX);
       while (incx == 0) {
-      	  incx = GetRandom(-SCALARMAX, SCALARMAX);
-      }   
-      incy = GetRandom(-SCALARMAX, SCALARMAX);
+      	  incx = GetRandom(1, MVMAX);
+      }
+      incy = GetRandom(1, MVMAX);
       while (incy == 0) {
-      	  incy = GetRandom(-SCALARMAX, SCALARMAX);
+      	  incy = GetRandom(1, MVMAX);
       }   
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
@@ -729,9 +730,9 @@ int main(int argc, char *argv[])
       DIAG = Teuchos::NON_UNIT_DIAG;
 
       N = GetRandom(MVMIN, MVMAX);
-      incx = GetRandom(-SCALARMAX, SCALARMAX);
+      incx = GetRandom(1, MVMAX);
       while (incx == 0) {
-      	  incx = GetRandom(-SCALARMAX, SCALARMAX);
+      	  incx = GetRandom(1, MVMAX);
       }
       N2 = N*std::abs(incx);
       SType1x = new SType1[N2];
@@ -838,13 +839,13 @@ int main(int argc, char *argv[])
   GoodTestSubcount = 0;
   for(i = 0; i < GERTESTS; i++)
     {
-      incx = GetRandom(-SCALARMAX, SCALARMAX);
+      incx = GetRandom(1, MVMAX);
       while (incx == 0) {
-      	  incx = GetRandom(-SCALARMAX, SCALARMAX);
+      	  incx = GetRandom(1, MVMAX);
       }   
-      incy = GetRandom(-SCALARMAX, SCALARMAX);
+      incy = GetRandom(1, MVMAX);
       while (incy == 0) {
-      	  incy = GetRandom(-SCALARMAX, SCALARMAX);
+      	  incy = GetRandom(1, MVMAX);
       }   
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);

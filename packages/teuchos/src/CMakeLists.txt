@@ -27,7 +27,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   Teuchos_AbstractFactory.hpp
   Teuchos_AbstractFactoryStd.hpp
   Teuchos_Array.hpp
@@ -145,7 +145,7 @@ SET(HEADERS ${HEADERS}
 
 # Set sources
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   Teuchos_BLAS.cpp
   Teuchos_CTimeMonitor.cpp
   Teuchos_CommandLineProcessor.cpp
@@ -195,8 +195,7 @@ SET(SOURCES ${SOURCES}
 
 IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
 
-  SET(HEADERS
-    ${HEADERS}
+  APPEND_SET(HEADERS
     Teuchos_ExpatHandlerAdapter.hpp
     Teuchos_FileInputSource.hpp
     Teuchos_FileInputStream.hpp
@@ -219,8 +218,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_XMLParser.hpp
     )
 
-  SET(SOURCES
-    ${SOURCES}
+  APPEND_SET(SOURCES
     Teuchos_ExpatHandlerAdapter.cpp
     Teuchos_FileInputSource.cpp
     Teuchos_FileInputStream.cpp
@@ -243,16 +241,14 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
 
 ENDIF(${PACKAGE_NAME}_ENABLE_EXTENDED)
 
-IF(Trilinos_ENABLE_MPI)
+IF (Trilinos_ENABLE_MPI)
 
-  SET(HEADERS
-    ${HEADERS}
+  APPEND_SET(HEADERS
     Teuchos_DefaultMpiComm.hpp
     Teuchos_MpiReductionOpSetter.hpp
     )
 
-  SET(SOURCES
-    ${SOURCES}
+  APPEND_SET(SOURCES
     Teuchos_MpiReductionOpSetter.cpp
     )
 

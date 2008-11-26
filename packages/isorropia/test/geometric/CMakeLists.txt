@@ -14,10 +14,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-SET(INPUT_FILES brack_3D.coords  hammond_2D.coords simple.coords)
-
 COPY_FILES_TO_BINARY_DIR(TestGeometrixCopyFiles
-  SOURCE_FILES ${INPUT_FILES}
-  DEST_FILES ${INPUT_FILES}
+  SOURCE_FILES brack_3D.coords hammond_2D.coords simple.coords
   EXEDEPS test_geometric
   )

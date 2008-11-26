@@ -10,10 +10,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-SET(INPUT_FILES simple.coords)
-
 COPY_FILES_TO_BINARY_DIR(ExampleGeometrixCopyFiles
-  SOURCE_FILES ${INPUT_FILES}
-  DEST_FILES ${INPUT_FILES}
+  SOURCE_FILES simple.coords
   EXEDEPS example_rcb
   )

@@ -47,9 +47,35 @@ const char Teuchos::EDiagChar[] = {'U' , 'N' };
 //const char Teuchos::ECMachChar[] = {'E', 'S', 'B', 'P', 'N', 'R', 'M', 'U', 'L', 'O' };
 //const char Teuchos::ESortChar[] = {'N', 'S'};
 
-namespace Teuchos {
 
-#ifdef HAVE_TEUCHOS_BLASFLOAT
+namespace {
+
+
+template<typename Scalar>
+Scalar generic_dot(const int n, const Scalar* x, const int incx,
+  const Scalar* y, const int incy)
+{
+  Scalar dot = 0.0;
+  if (incx==1 && incy==1) {
+    for (int i = 0; i < n; ++i)
+      dot += (*x++)*(*y++);
+  }
+  else {
+    if (incx < 0)
+      x = x - incx*(n-1);
+    if (incy < 0)
+      y = y - incy*(n-1);
+    for (int i = 0; i < n; ++i, x+=incx, y+=incy)
+      dot += (*x)*(*y);
+  }
+  return dot;
+}  
+
+
+} // namespace
+
+
+namespace Teuchos {
 
   // *************************** BLAS<int,float> DEFINITIONS ******************************  
 
@@ -62,8 +88,22 @@ namespace Teuchos {
   
   float BLAS<int, float>::ASUM(const int n, const float* x, const int incx) const
   {
+    typedef ScalarTraits<float> ST;
+#ifdef HAVE_TEUCHOS_BLASFLOAT
     float tmp = SASUM_F77(&n, x, &incx);
     return tmp;
+#else
+    float sum = 0.0;
+    if (incx == 1) {
+      for (int i = 0; i < n; ++i)
+        sum += ST::magnitude(*x++);
+    }
+    else {
+      for (int i = 0; i < n; ++i, x+=incx)
+        sum += ST::magnitude(*x);
+    }
+    return sum;
+#endif
   }
     
   void BLAS<int, float>::AXPY(const int n, const float alpha, const float* x, const int incx, float* y, const int incy) const
@@ -73,13 +113,25 @@ namespace Teuchos {
   { SCOPY_F77(&n, x, &incx, y, &incy); }
   
   float BLAS<int, float>::DOT(const int n, const float* x, const int incx, const float* y, const int incy) const
-  { return SDOT_F77(&n, x, &incx, y, &incy); }
+  {
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+    return SDOT_F77(&n, x, &incx, y, &incy);
+#else
+    return generic_dot(n, x, incx, y, incy);
+#endif
+  }
   
   int BLAS<int, float>::IAMAX(const int n, const float* x, const int incx) const
   { return ISAMAX_F77(&n, x, &incx); }
 
   float BLAS<int, float>::NRM2(const int n, const float* x, const int incx) const
-  { return SNRM2_F77(&n, x, &incx); }
+  {
+#if defined(HAVE_TEUCHOS_BLASFLOAT)
+    return SNRM2_F77(&n, x, &incx);
+#else
+    return ScalarTraits<float>::squareroot(generic_dot(n, x, incx, x, incx));
+#endif
+  }
   
   void BLAS<int, float>::SCAL(const int n, const float alpha, float* x, const int incx) const
   { SSCAL_F77(&n, &alpha, x, &incx); }
@@ -105,8 +157,6 @@ namespace Teuchos {
   void BLAS<int, float>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const float alpha, const float* A, const int lda, float* B, const int ldb) const
   { STRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
 
-#endif // HAVE_TEUCHOS_BLASFLOAT
-
   // *************************** BLAS<int,double> DEFINITIONS ******************************  
   
   void BLAS<int, double>::ROTG(double* da, double* db, double* c, double* s) const
@@ -125,7 +175,9 @@ namespace Teuchos {
   { DCOPY_F77(&n, x, &incx, y, &incy); }
   
   double BLAS<int, double>::DOT(const int n, const double* x, const int incx, const double* y, const int incy) const
-  { return DDOT_F77(&n, x, &incx, y, &incy); }
+  {
+    return DDOT_F77(&n, x, &incx, y, &incy);
+  }
   
   int BLAS<int, double>::IAMAX(const int n, const double* x, const int incx) const
   { return IDAMAX_F77(&n, x, &incx); }
@@ -158,8 +210,6 @@ namespace Teuchos {
   { DTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
   
 #ifdef HAVE_TEUCHOS_COMPLEX
-
-#ifdef HAVE_TEUCHOS_BLASFLOAT
 
   // *************************** BLAS<int,std::complex<float> > DEFINITIONS ******************************  
 
@@ -222,8 +272,6 @@ namespace Teuchos {
   
   void BLAS<int, std::complex<float> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb) const
   { CTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
-
-#endif // HAVE_TEUCHOS_BLASFLOAT
 
   // *************************** BLAS<int,std::complex<double> > DEFINITIONS ******************************  
 

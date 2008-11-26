@@ -8,15 +8,13 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     CrsMatrix_UnitTests
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  ARGS "--filedir=${CURRENT_BINARY_DIR}"
+  ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/"
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
 
 
-SET(INPUT_FILES west0067.rua mhd1280b.cua)
 COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
-  SOURCE_FILES ${INPUT_FILES}
-  DEST_FILES ${INPUT_FILES}
+  SOURCE_FILES west0067.rua mhd1280b.cua
   EXEDEPS CrsMatrix_UnitTests
   )

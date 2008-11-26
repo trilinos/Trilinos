@@ -32,6 +32,10 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
+#cmakedefine HAVE_COMPLEX_BLAS_PROBLEM
+
+#cmakedefine HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
+
 /* define if the compiler supports access of protected templated nested
    classes in derived classes */
 #cmakedefine HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS

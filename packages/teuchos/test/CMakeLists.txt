@@ -1,22 +1,16 @@
 
 # Required modules
-INCLUDE(Trilinos_Add_Executable)
-INCLUDE(Trilinos_Add_Test)
+INCLUDE(Trilinos_Add_Executable_And_Test)
 
 ADD_SUBDIRECTORY(TabularOutputter)
 
 # Test definitions
 
-TRILINOS_ADD_EXECUTABLE(
+TRILINOS_ADD_EXECUTABLE_AND_TEST(
   BLAS_test  
-  COMM serial mpi  
+  DIRECTORY BLAS
   SOURCES cxx_main.cpp
-  DIRECTORY BLAS
-  )
-TRILINOS_ADD_TEST(
-  BLAS_test
-  DIRECTORY BLAS
-  NAME BLAS_test
+  ARGS -v
   NUM_MPI_PROCS 1
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -206,18 +200,13 @@ TRILINOS_ADD_TEST(
 #  COMM serial mpi
 #  )
 
-TRILINOS_ADD_EXECUTABLE(
+TRILINOS_ADD_EXECUTABLE_AND_TEST(
   LAPACK_test  
-  COMM serial mpi  
+  DIRECTORY LAPACK
   SOURCES cxx_main.cpp
-  DIRECTORY LAPACK
-  )
-TRILINOS_ADD_TEST(
-  LAPACK_test
-  DIRECTORY LAPACK
-  NAME LAPACK_test
   NUM_MPI_PROCS 1
   COMM serial mpi
+  ARGS -v
   STANDARD_PASS_OUTPUT
   )
 
