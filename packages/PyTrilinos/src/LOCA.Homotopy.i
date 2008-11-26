@@ -35,7 +35,7 @@
 #include "LOCA_Homotopy_AbstractGroup.H"
 
 // Extra includes due to importing Continuation.i below
-//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
+#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 %}
 
 // Ignore/renames
@@ -43,6 +43,7 @@
 
 // Import base class declarations
 %import "LOCA.Continuation.i"
+%import "LOCA.MultiContinuation.i"
 
 // LOCA interface includes
 %include "LOCA_Homotopy_AbstractGroup.H"

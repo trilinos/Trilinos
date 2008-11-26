@@ -682,8 +682,6 @@ HAVE_PYTRILINOS_NOX_EPETRA_TRUE
 HAVE_PYTRILINOS_NOX_EPETRA_FALSE
 HAVE_PYTRILINOS_LOCA_TRUE
 HAVE_PYTRILINOS_LOCA_FALSE
-HAVE_PYTRILINOS_LOCA_EPETRA_TRUE
-HAVE_PYTRILINOS_LOCA_EPETRA_FALSE
 HAVE_PYTRILINOS_RTOP_TRUE
 HAVE_PYTRILINOS_RTOP_FALSE
 HAVE_PYTRILINOS_KOKKOS_TRUE
@@ -1471,8 +1469,6 @@ Optional Features:
                           be overridden with --disable-pytrilinos-loca.
   --enable-pytrilinos-loca
                           Build python interface and shared library for loca.
-  --enable-loca-epetra    Build python interface and shared library for
-                          loca-epetra. (default is no)
   --enable-rtop           Build shared library for rtop. Can be overridden
                           with --disable-pytrilinos-rtop.
   --enable-pytrilinos-rtop
@@ -2804,40 +2800,6 @@ else
 fi
 
 
-
-
-
-# Check whether --enable-loca-epetra was given.
-if test "${enable_loca_epetra+set}" = set; then
-  enableval=$enable_loca_epetra; ac_cv_use_loca_epetra=$enableval
-else
-  ac_cv_use_loca_epetra=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use loca-epetra" >&5
-echo $ECHO_N "checking whether to use loca-epetra... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_loca_epetra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PYTRILINOS_LOCA_EPETRA
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_loca_epetra" = "Xyes"; then
-  HAVE_PYTRILINOS_LOCA_EPETRA_TRUE=
-  HAVE_PYTRILINOS_LOCA_EPETRA_FALSE='#'
-else
-  HAVE_PYTRILINOS_LOCA_EPETRA_TRUE='#'
-  HAVE_PYTRILINOS_LOCA_EPETRA_FALSE=
-fi
 
 
 # ------------------------------------------------------------------------
@@ -7606,13 +7568,6 @@ echo "$as_me: error: conditional \"HAVE_PYTRILINOS_LOCA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_PYTRILINOS_LOCA_EPETRA_TRUE}" && test -z "${HAVE_PYTRILINOS_LOCA_EPETRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_LOCA_EPETRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_PYTRILINOS_LOCA_EPETRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${HAVE_PYTRILINOS_RTOP_TRUE}" && test -z "${HAVE_PYTRILINOS_RTOP_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_RTOP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -8459,8 +8414,6 @@ HAVE_PYTRILINOS_NOX_EPETRA_TRUE!$HAVE_PYTRILINOS_NOX_EPETRA_TRUE$ac_delim
 HAVE_PYTRILINOS_NOX_EPETRA_FALSE!$HAVE_PYTRILINOS_NOX_EPETRA_FALSE$ac_delim
 HAVE_PYTRILINOS_LOCA_TRUE!$HAVE_PYTRILINOS_LOCA_TRUE$ac_delim
 HAVE_PYTRILINOS_LOCA_FALSE!$HAVE_PYTRILINOS_LOCA_FALSE$ac_delim
-HAVE_PYTRILINOS_LOCA_EPETRA_TRUE!$HAVE_PYTRILINOS_LOCA_EPETRA_TRUE$ac_delim
-HAVE_PYTRILINOS_LOCA_EPETRA_FALSE!$HAVE_PYTRILINOS_LOCA_EPETRA_FALSE$ac_delim
 HAVE_PYTRILINOS_RTOP_TRUE!$HAVE_PYTRILINOS_RTOP_TRUE$ac_delim
 HAVE_PYTRILINOS_RTOP_FALSE!$HAVE_PYTRILINOS_RTOP_FALSE$ac_delim
 HAVE_PYTRILINOS_KOKKOS_TRUE!$HAVE_PYTRILINOS_KOKKOS_TRUE$ac_delim
@@ -8489,6 +8442,8 @@ HAVE_PYTRILINOS_RYTHMOS_TRUE!$HAVE_PYTRILINOS_RYTHMOS_TRUE$ac_delim
 HAVE_PYTRILINOS_RYTHMOS_FALSE!$HAVE_PYTRILINOS_RYTHMOS_FALSE$ac_delim
 HAVE_PYTRILINOS_MOOCHO_TRUE!$HAVE_PYTRILINOS_MOOCHO_TRUE$ac_delim
 HAVE_PYTRILINOS_MOOCHO_FALSE!$HAVE_PYTRILINOS_MOOCHO_FALSE$ac_delim
+MAINTAINER_MODE_TRUE!$MAINTAINER_MODE_TRUE$ac_delim
+MAINTAINER_MODE_FALSE!$MAINTAINER_MODE_FALSE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -8530,8 +8485,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-MAINTAINER_MODE_TRUE!$MAINTAINER_MODE_TRUE$ac_delim
-MAINTAINER_MODE_FALSE!$MAINTAINER_MODE_FALSE$ac_delim
 MAINT!$MAINT$ac_delim
 build!$build$ac_delim
 build_cpu!$build_cpu$ac_delim
@@ -8622,7 +8575,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 90; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

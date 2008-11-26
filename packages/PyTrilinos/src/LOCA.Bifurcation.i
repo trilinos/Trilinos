@@ -48,6 +48,8 @@
 #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 
+//#include "LOCA_MultiContinuation_AbstractGroup.H"
+
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_StatusTest_NormF.H"
@@ -79,6 +81,7 @@
 
 // Import base class declarations
 %import "LOCA.Continuation.i"
+%import "LOCA.MultiContinuation.i"
 %import "LOCA.TimeDependent.i"
 
 // LOCA interface includes

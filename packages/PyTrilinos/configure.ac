@@ -129,11 +129,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, loca, PYTRILINOS_LOCA,
        [Build python interface and shared library for loca.],
        [Build python interface shared library for loca.  Can be overridden with --disable-pytrilinos-loca.])
 
-TAC_ARG_ENABLE_FEATURE_SUB(loca, epetra,
-       [Build python interface and shared library for loca-epetra.], 
-       PYTRILINOS_LOCA_EPETRA, no)
-AM_CONDITIONAL(HAVE_PYTRILINOS_LOCA_EPETRA, test "X$ac_cv_use_loca_epetra" = "Xyes")
-
 # ------------------------------------------------------------------------
 # Check for enabled packages that do not have python wrappers, but
 # will have their libraries converted to shared

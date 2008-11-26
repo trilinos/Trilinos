@@ -46,7 +46,8 @@ EXTRA_DIST = setpath.src gre__115.mx \
 	     exEpetraExt_IO_XML.src exEpetraExt_MatrixMatrix.src exGaleri.src \
 	     exGaleri_ReadHB.src exIFPACK.src exMLAPI.src exMLAPI_Simple.src \
 	     exMLAPI_AztecOO.src exMLAPI_Iterate.src exMLAPI_PyMatrix.src \
-	     exMLAPI_Smoother.src exNOX_1Dfem.src exTeuchos.src exThyra.src
+	     exMLAPI_Smoother.src exNOX_1Dfem.src exTeuchos.src exThyra.src \
+	     exLOCA_Chan.src
 
 MAINTAINERCLEANFILES = Makefile.in
 
@@ -165,11 +166,21 @@ endif
 endif
 endif
 
+# LOCA examples
+if HAVE_PYTRILINOS_NOX
+if HAVE_PYTRILINOS_LOCA
+if HAVE_PYTRILINOS_NOX_EPETRA
+LOCA_EXAMPLES = exLOCA_Chan.py
+endif
+endif
+endif
+
 # Collect the package examples into a suite of examples
 EXAMPLE_SUITE = $(TEUCHOS_EXAMPLES)  $(THYRA_EXAMPLES)     $(EPETRA_EXAMPLES) \
 	        $(TRIUTILS_EXAMPLES) $(EPETRAEXT_EXAMPLES) $(AZTECOO_EXAMPLES) \
 	        $(GALERI_EXAMPLES)   $(AMESOS_EXAMPLES)    $(IFPACK_EXAMPLES) \
-	        $(ANASAZI_EXAMPLES)  $(ML_EXAMPLES)        $(NOX_EXAMPLES)
+	        $(ANASAZI_EXAMPLES)  $(ML_EXAMPLES)        $(NOX_EXAMPLES) \
+		$(LOCA_EXAMPLES)
 
 SETPATH  = setpath.py
 GRE__115 = gre__115.rua

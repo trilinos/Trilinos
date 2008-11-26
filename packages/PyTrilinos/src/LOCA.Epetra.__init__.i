@@ -53,7 +53,6 @@ LOCA and Epetra.
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"
 
-#include "LOCA_Epetra_Group.H"
 
 // Local includes
 #include "NumPyImporter.h"
@@ -62,12 +61,48 @@ LOCA and Epetra.
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
 
+#include "NOX_Abstract_Group.H"
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
+#include "NOX_Epetra_FiniteDifference.H"
+#include "NOX_Epetra_FiniteDifferenceColoring.H"
+#include "NOX_Epetra_LinearSystem_AztecOO.H"
+#include "NOX_Epetra_MatrixFree.H"
+#include "LOCA_MultiContinuation_AbstractGroup.H"
+#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+#include "LOCA_Homotopy_AbstractGroup.H"
+#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_TimeDependent_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+#include "LOCA_Abstract_Group.H"
+#include "LOCA_Abstract_TransposeSolveGroup.H"
+#include "LOCA_Epetra.H"
+#include "LOCA_Epetra_Group.H"
 %}
 
-// LOCA::Epetra::Interface imports
+// SWIG library includes
+%include "stl.i"
+
+// Trilinos interface support
+%import "Teuchos.i"
+
+%import "NOX.Epetra.__init__.i"
 %import "LOCA.Epetra.Interface.i"
+%import "LOCA.Abstract.i"
 
 //////////////////////////////
 // LOCA.Epetra.Group support //
 //////////////////////////////
+
+// temporarily ignore conflict-causing constructor
+%ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
+%include "LOCA_Epetra.H"
 %include "LOCA_Epetra_Group.H"

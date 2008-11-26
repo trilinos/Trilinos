@@ -1,0 +1,212 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+# System imports
+from   numpy    import *
+from   optparse import *
+import sys
+
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+# PyTrilinos imports.  If the -t or --testharness option is given, then only
+# import the PyTrilinos modules from the current build directory structure.  If
+# not, first try to load from the current build directories, but if that fails,
+# try to import from a system-installed PyTrilinos.
+if options.testharness:
+    import setpath
+    if options.boost: setpath.setpath("src-boost")
+    else:             setpath.setpath()
+    import Teuchos
+    import Epetra
+    import EpetraExt
+    import NOX
+    import LOCA
+else:
+    try:
+        import setpath
+        if options.boost: setpath.setpath("src-boost")
+        else:             setpath.setpath()
+        import Teuchos
+        import Epetra
+        import EpetraExt
+        import NOX
+	import LOCA
+    except ImportError:
+        from PyTrilinos import Teuchos
+        from PyTrilinos import Epetra
+        from PyTrilinos import EpetraExt
+        from PyTrilinos import NOX
+        from PyTrilinos import LOCA
+        print >>sys.stderr, "Using system-installed Teuchos, Epetra, EpetraExt, NOX, LOCA"
+
+# ######################################################################
+
+class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
+                           LOCA.Epetra.Interface.Required):
+  def __init__(self, numGlobalElements, comm, globalData, N, a, b, s):
+    LOCA.Epentra.Interface.Required.__init__(self)
+    self.stdMap = Epetra.Map(numGlobalElements, 0, comm)
+    self.globalData = globalData
+    self.initialGuess = Epetra.Vector(stdMap)
+    self.alpha = a
+    self.beta = b
+    self.scale = s
+    self.n = N
+
+    for i in range(0,n):
+      initialGuess[i] = i*(n-1-i)*self.source_param()/((n-1)*(n-1)) + 0.001
+
+#  for (int i=0; i<n; i++) 
+#    initialGuess(i) = 
+#      i*(n-1-i)*source_param(alpha, scale)/((n-1)*(n-1)) + 0.001;
+
+  def computeF(self, x, F, fillFlag): # we ignore the fillFlag argument and always perform all computation
+    n = self.n
+    F[0] = x[0] - beta
+    F[n-1] = x[n-1] - beta
+    for i in range(1,n-1):
+      F[i] = (x[i-1] - 2*x(i) + x[i+1])*(n-1)*(n-1) + self.source_param()*self.source_term(x[i])
+    return True
+
+#bool
+#ChanProblemInterface::computeF(NOX::LAPACK::Vector& f, 
+#			       const NOX::LAPACK::Vector &x)
+#{
+#  f(0) = x(0) - beta;
+#  f(n-1) = x(n-1) - beta;
+#  for (int i=1; i<n-1; i++)
+#    f(i) = (x(i-1) - 2*x(i) + x(i+1))*(n-1)*(n-1) 
+#      + source_param(alpha, scale)*source_term(x(i));
+#  
+#  return true;
+#}
+  def computeJacobian(self, x, Jac):
+    n = self.n
+    Jac[0,0] = 1.0
+    Jac[n-1, n-1] = 1.0
+    for i in range(1, n-1):
+      J[i,i-1] = (n-1)*(n-1)
+      J[i,i+1] = J[i,i-1]
+      J[i,i] = -2.0 * J[i,i+1] + \
+               self.source_param() * source_deriv(x[i])
+
+    return True
+
+  def source_param(self):
+    return self.alpha * self.scale
+
+  def source_term(self, x):
+    return 1. + (x + 0.5*x*x)/(1. + 0.01*x*x)
+
+  def source_deriv(self, x):
+    y = 1.0 + 0.01*x*x
+    return (1.0 + x - 0.01*x*x)/(y*y)
+
+  def setParams(self, p):
+    self.alpha = p["alpha"]
+    self.beta = p["beta"]
+    self.scale = p["scale"]
+
+
+######################################################################
+
+# Main routine
+def main():
+
+  # Communicator
+  comm    = Epetra.PyComm()
+  myPID   = comm.MyPID()
+  numProc = comm.NumProc()
+
+  # Suppress 'Aztec status AZ_loss: loss of precision' messages
+  comm.SetTracebackMode(0)
+
+  # Get the number of elements from the command line
+  numGlobalElements = options.numelem + 1
+  if numGlobalElements < numProc:
+    msg = "numGlobalBlocks = %d cannot be < number of processors = %d" % \
+	  (numGlobalElements,numProc)
+    msg += "\nTest failed!"
+    raise RuntimeError, msg
+
+  locaParams = {"Stepper" : {"Continuation Parameter" : "alpha",
+			     "Initial Value" : alpha,
+			     "Max Value" : 5.0/scale,
+			     "Min Value" : 0.0/scale,
+			     "Max Steps" : 50,
+			     "Max Nonlinear Iterations": maxNewtonIters  },
+		"Step Size" : {"Initial Step Size": 0.1/scale,
+			       "Min Step Size": 1.0e-3/scale,
+			       "Max Step Size": 10.0/scale}}
+
+  outputInfo = NOX.Utils.Error + \
+	       NOX.Utils.TestDetails
+  if options.verbosity: outputInfo += NOX.Utils.Debug      + \
+				      NOX.Utils.Warning    + \
+				      NOX.Utils.Details    + \
+				      NOX.Utils.Parameters + \
+				      NOX.Utils.LinearSolverDetails
+  if options.verbosity > 1: outputInfo += NOX.Utils.InnerIteration           + \
+					  NOX.Utils.OuterIterationStatusTest + \
+					  NOX.Utils.OuterIteration
+
+  noxParams = {"Printing" : {"Output Information": outputInfo}}
+
+  paramList = {"NOX":  noxParams,
+	       "LOCA": locaParams}
+
+  globalData = LOCA.createGlobalData(paramList)
+
+
+  p = {"alpha": alpha,  # serving as LOCA:ParameterVector
+       "beta": beta,
+       "scale": scale}
+
+  interface = ChanProblemInterface(numGlobalElements, comm, globalData, N, a, b, s)
+
+  # Get the solution vector from the problem
+  soln    = interface.getSolution()
+  noxSoln = LOCA.Epetra.Vector(soln,LOCA.Epetra.Vector.CreateView)
+
+  # Define the Jacobian linear system
+  mf     = NOX.Epetra.MatrixFree(printParams,interface,noxSoln)
+  fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
+					       soln, interface.getGraph(),
+					       True)
+  linSys = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
+					  fdc, soln)
+
+  # Create the Group
+  initialGuess = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  group = LOCA.Epetra.Group(globalData, printingParams, interface, initialGuess, linSys, p)
+
+  # Create the convergence tests
+  normF = NOX.StatusTest.NormF(1.0e-8)
+  maxIters = NOX.StatusTest.MaxIters(maxNewtonIters)
+  converged = NOX.StatusTest.Combo(Nox.StatusTest.Combo.AND, normF, maxIters)
+
+  # Create the stepper
+  stepper = LOCA.Stepper(globalData, group, converged, paramList)
+
+  # Perform continuation run
+  status = stepper.run()
+
+  # TODO print if failure to converge
+  return 1
+
+# ######################################################################
+
+if __name__ == "__main__":
+
+    status = main()
+
+    sys.exit(status)
