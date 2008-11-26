@@ -339,7 +339,7 @@ float PREFIX SASUM_F77(const int* n, const float x[], const int* incx);
 void PREFIX SAXPY_F77(const int* n, const float* alpha, const float x[], const int* incx, float y[], const int* incy);
 void PREFIX SCOPY_F77(const int* n, const float *x, const int* incx, float *y, const int* incy);
 float PREFIX SDOT_F77(const int* n, const float x[], const int* incx, const float y[], const int* incy);
-void PREFIX SNRM2_F77(const int* n, const float x[], const int* incx); 
+float PREFIX SNRM2_F77(const int* n, const float x[], const int* incx); 
 void PREFIX SSCAL_F77(const int* n, const float* alpha, float *x, const int* incx);
 int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 
