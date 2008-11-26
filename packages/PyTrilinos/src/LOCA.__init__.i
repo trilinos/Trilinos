@@ -45,6 +45,12 @@ to reactivate it soon.
 	docstring = %loca_docstring) __init__
 
 %{
+// System includes
+#include <sstream>
+
+// Teuchos include
+#include "Teuchos_PythonParameter.h"
+
 // LOCA includes
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"
@@ -61,6 +67,20 @@ to reactivate it soon.
 
 // SWIG library includes
 %include "stl.i"
+
+// Trilinos interface file imports.
+// The Teuchos.py file that this %import will try to import in python
+// will be one directory up from this python module.  So we need to
+// add the parent directory to the search path.
+%pythoncode
+{
+import os.path, sys
+currentDir,dummy = os.path.split(__file__)
+sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
+}
+%import "Teuchos.i"
+// Note: Teuchos.i turns off warnings for nested classes, so we do not
+// have to do it again.
 
 // LOCA interface includes
 %include "LOCA_Abstract_Iterator.H"

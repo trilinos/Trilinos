@@ -62,5 +62,5 @@
 // LOCA interface includes
 //%include "LOCA_Continuation_AbstractGroup.H"
 //%include "LOCA_Continuation_FiniteDifferenceGroup.H"
-%include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-%include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+//%include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
+//%include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
