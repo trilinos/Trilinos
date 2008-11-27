@@ -27,6 +27,8 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
+
 #ifdef EPETRA_MPI
 #include <mpi.h>
 #endif
@@ -43,11 +45,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_C_wrappers.h"
 #ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#endif
-
-#ifdef __cplusplus
-extern "C" {
+#  include "Epetra_MpiComm.h"
 #endif
 
   /////////////////////////////////////////////////////
@@ -602,7 +600,3 @@ void MANGLE(epetra_localblockmap_destroy)(EPETRA_LOCALBLOCKMAP localblockmap)
 
 
 #endif /* 0 */
-
-#ifdef __cplusplus
-}
-#endif

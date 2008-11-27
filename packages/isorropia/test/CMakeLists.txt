@@ -6,7 +6,7 @@ ADD_SUBDIRECTORIES(
   rebalance_1d_default
   )
 
-IF (Trilinos_ENABLE_MPI)
+IF (TPL_ENABLE_MPI)
   #ADD_SUBDIRECTORY(zoltan)
 ENDIF()
 

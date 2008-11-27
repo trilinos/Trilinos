@@ -57,29 +57,16 @@ FIND_PACKAGE(PythonInterp)
 SITE_NAME(Trilinos_HOSTNAME)
 MARK_AS_ADVANCED(Trilinos_HOSTNAME)
 
-#EXECUTE_PROCESS(
-#  COMMAND uname -n
-#  OUTPUT_VARIABLE Trilinos_HOSTNAME
-#  OUTPUT_STRIP_TRAILING_WHITESPACE
-#  )
+# Set up MPI
 
-# Look for BLAS and LAPACK
-
-FIND_LIBRARY(Trilinos_BLAS_LIBRARY NAMES blas blas_win32
-  DOC "Path to the BLAS implementation")
-FIND_LIBRARY(Trilinos_LAPACK_LIBRARY NAMES lapack lapack_win32
-  DOC "Path to the LAPACK implementation")
-
-# Find MPI
-
-IF(Trilinos_ENABLE_MPI)
+IF(TPL_ENABLE_MPI)
   INCLUDE(ConfigureMPI)
 ENDIF()
 
 # Set some other options (NOTE: These should be handed in XXX_config.h files!
 
 IF(CMAKE_SIZEOF_VOID_P GREATER 4)
-  ADD_DEFINITIONS(-DEPETRA_ADDRESS64BIT)
+  SET(EPETRA_ADDRESS64BIT ON)
 ENDIF()
 
 IF(WIN32)

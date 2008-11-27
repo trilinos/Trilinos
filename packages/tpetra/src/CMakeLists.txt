@@ -63,7 +63,7 @@ SET(SOURCES ${SOURCES}
   Tpetra_Version.cpp
   )
 
-IF (Trilinos_ENABLE_MPI)
+IF (TPL_ENABLE_MPI)
   SET(HEADERS ${HEADERS}
     Tpetra_MpiPlatform.hpp
    )

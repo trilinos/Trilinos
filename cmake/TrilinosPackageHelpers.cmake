@@ -1,4 +1,3 @@
-
 INCLUDE(Parse_Variable_Arguments)
 INCLUDE(Global_Null_Set)
 INCLUDE(Append_Global_Set)
@@ -31,7 +30,7 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   #
 
   SET(PACKAGE_NAME ${PACKAGE_NAME_IN})
-  MESSAGE(STATUS "Processing enabled Trilinos package: ${PACKAGE_NAME}")
+  MESSAGE(STATUS "Processing enabled package: ${PACKAGE_NAME}")
 
   # Write PACKAGE versions of common variables
   SET(PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -52,12 +51,11 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   GLOBAL_NULL_SET(${PACKAGE_NAME}_TEST_LIBRARY_DIRS)
   GLOBAL_NULL_SET(${PACKAGE_NAME}_TEST_LIBRARIES)
 
-  # 2008/11/21: rabartl: Above: For some reason, when I invoke the above
-  # commands, they seem to be creating a local variable instead of a global
-  # (i.e. CACHE INTERNAL) variable.
+  GLOBAL_NULL_SET(${PACKAGE_NAME}_LIB_TARGETS)
+  GLOBAL_NULL_SET(${PACKAGE_NAME}_ALL_TARGETS)
 
   #
-  # D) Set up package dependancy-related variables
+  # D) Set up package dependency-related variables
   #
 
   TRILINOS_PRIVATE_ADD_DEP_PACKAGES_INCLUDES_AND_LIBS(${PACKAGE_NAME} ""
@@ -94,7 +92,7 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   IF (Trilinos_ENABLE_NATIVE_TEST_HARNESS)
   
     ADD_CUSTOM_TARGET(
-      runtests-serial-${PACKAGE_DIR_NAME}
+      ${PACKAGE_NAME}-runtests-serial
        ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
       --trilinos-dir=${TRILINOS_HOME_DIR}
       --comm=serial
@@ -105,10 +103,10 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
       --packages=${PACKAGE_DIR_NAME}
       )
 
-    IF (Trilinos_ENABLE_MPI)
+    IF (TPL_ENABLE_MPI)
     
       ADD_CUSTOM_TARGET(
-        runtests-mpi-${PACKAGE_DIR_NAME}
+        ${PACKAGE_NAME}-runtests-mpi
          ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
         --trilinos-dir=${TRILINOS_HOME_DIR}
         --comm=mpi
@@ -149,9 +147,6 @@ MACRO(TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES)
     ENDFOREACH()
   ENDIF()
 
-  # 2008/10/07: rabartl: ToDo: Put in hooks for defining the make target
-  # 'tests'
-
 ENDMACRO()
 
 
@@ -175,9 +170,6 @@ MACRO(TRILINOS_PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES)
       ADD_SUBDIRECTORY(${TEST_DIR})
     ENDFOREACH()
   ENDIF()
-
-  # 2008/10/07: rabartl: ToDo: Put in hooks for defining the make target
-  # 'tests'
 
 ENDMACRO()
 
@@ -203,9 +195,6 @@ MACRO(TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES)
     ENDFOREACH()
   ENDIF()
 
-  # 2008/10/07: rabartl: ToDo: Put in hooks for defining the make target
-  # 'examples'
-
 ENDMACRO()
 
 
@@ -215,6 +204,9 @@ ENDMACRO()
 #
 
 MACRO(TRILINOS_PACKAGE_POSTPROCESS)
+
+  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
+  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
 
   IF (Trilinos_VERBOSE_CONFIGURE)
     MESSAGE("\nTRILINOS_PACKAGE_POSTPROCESS: ${PACKAGE_NAME}")

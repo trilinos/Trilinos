@@ -132,7 +132,7 @@ SET(HEADERS ${HEADERS}
   FiniteElements/Galeri_Workspace.h
   )
 
-IF (Trilinos_ENABLE_MPI)
+IF (TPL_ENABLE_MPI)
 
   SET(SOURCES ${SOURCES}
 

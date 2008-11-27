@@ -110,7 +110,7 @@ FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
 
   #
   # E) Determine if we will add the serial or MPI tests based on input COMM
-  # and Trilinos_ENABLE_MPI
+  # and TPL_ENABLE_MPI
   #
 
   IF (PARSE_COMM)
@@ -130,7 +130,7 @@ FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
     SET(ADD_SERIAL_TEST ON)
   ENDIF()
 
-  IF (Trilinos_ENABLE_MPI)
+  IF (TPL_ENABLE_MPI)
     SET(ADD_SERIAL_TEST OFF)
   ELSE()
     SET(ADD_MPI_TEST OFF)
@@ -140,7 +140,7 @@ FUNCTION(TRILINOS_ADD_TEST EXE_NAME)
   # F) Get teh MPI options
   #
     
-  IF(Trilinos_ENABLE_MPI)
+  IF(TPL_ENABLE_MPI)
 
     SET(NP)
     SET(NUM_PROCS_USED ${MPIEXEC_MAX_NUMPROCS})

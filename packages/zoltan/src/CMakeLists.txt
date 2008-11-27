@@ -503,7 +503,7 @@ SET(SOURCES ${SOURCES}
 # C) Define the targets for package's library(s)
 #
 
-IF (NOT Trilinos_ENABLE_MPI)
+IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 

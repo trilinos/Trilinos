@@ -134,18 +134,23 @@ ENDIF()
 
 TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
 
-SET(Trilinos_TPLS
-   BLAS
-   LAPACK
-   MPI
-   Boost
-   #METIS
-   #ParMETIS
-   #Scotch
-   #PaToH
-   )
+SET(Trilinos_TPLS_ENABLED
+  BLAS           ""
+  LAPACK         ""
+  MPI            ""
+  Boost          OFF
+  #METIS          OFF
+  #ParMETIS       OFF
+  #Scotch         OFF
+  #PaToH          OFF
+  )
+  # Above, the TPLs that are not required for "Primary Stable" code areexplicitly
+  # turned off by default.  That will result in all packages that have required
+  # dependencies on these to be disabled by default.  We want the default configure
+  # to enable only "Primary Stable" code.  You have explicitly enable code that is
+  # not "Primary Stable" code.
 
-TRILINOS_PROCESS_TPLS_DEFAULTS_LISTS()
+TRILINOS_PROCESS_TPLS_LISTS()
 
 
 #
@@ -229,8 +234,6 @@ OPTION(Trilinos_ENABLE_FORTRAN
 
 ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 
-OPTION(Trilinos_ENABLE_MPI "Build packages using MPI for parallel codes." OFF)
-
 SET(TRILINOS_INSTALL_INCLUDE_DIR "include/trilinos-${Trilinos_VERSION}")
 SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "lib/trilinos-${Trilinos_VERSION}/include")
 
@@ -243,19 +246,24 @@ MARK_AS_ADVANCED(EXECUTABLE_OUTPUT_PATH)
 MARK_AS_ADVANCED(LIBRARY_OUTPUT_PATH)
 MARK_AS_ADVANCED(CMAKE_OSX_ARCHITECTURES)
 MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
-MARK_AS_ADVANCED(Trilinos_BLAS_LIBRARY)
-MARK_AS_ADVANCED(Trilinos_LAPACK_LIBRARY)
 
 
 #
 # E) Apply logic to enable Trilinos packages and tests
 #
 
-TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nExplicitly enabled packages on input")
+TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+  "\nExplicitly enabled packages on input" ON)
+TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+  "\nExplicitly disabled packages on input" OFF)
 
 TRILINOS_ADJUST_PACKAGE_ENABLES()
 
-TRILINOS_PRINT_ENABLED_PACKAGE_LIST("\nFinal set of enabled packages")
+TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+  "\nFinal set of enabled packages" ON)
+
+TRILINOS_PRINT_ENABLED_TPL_LIST(
+  "\nFinal set of enabled TPLs" ON)
 
 IF (Trilinos_DEPS_XML_OUTPUT_FILE)
   MESSAGE("" )
@@ -301,7 +309,7 @@ MESSAGE("")
 MESSAGE("Getting information for all enabled TPLs ...")
 MESSAGE("")
 
-# 2008/11/24: rabartl: ToDo: Implement this!
+TRILINOS_PROCESS_ENABLED_TPLS()
 
 
 #

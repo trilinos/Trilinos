@@ -3,7 +3,12 @@ INCLUDE(Global_Set)
 INCLUDE(Append_Set)
 INCLUDE(Append_Global_Set)
 INCLUDE(Remove_Global_Duplicates)
+INCLUDE(TrilinosTPLHelpers)
 
+
+#
+# Macro that configures the package's main config.h file
+#
 
 MACRO(TRILINOS_PACKAGE_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
 
@@ -24,6 +29,10 @@ MACRO(TRILINOS_PACKAGE_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
 
 ENDMACRO()
 
+
+#
+# Macro used to add a package library
+#
 
 MACRO(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
 
@@ -56,7 +65,7 @@ MACRO(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
   LINK_DIRECTORIES(${${PACKAGE_NAME}_LIBRARY_DIRS})
   LINK_DIRECTORIES(${${PACKAGE_NAME}_TEST_LIBRARY_DIRS})
 
-  # Add dependent libraries in dependent
+  # Add dependent libraries passed directly in
 
   IF (PARSE_DEPLIBS AND Trilinos_VERBOSE_CONFIGURE)
     MESSAGE(STATUS "DEPLIBS = ${PARSE_DEPLIBS}")
@@ -66,6 +75,24 @@ MACRO(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
 
   ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_HEADERS} ${PARSE_NOINSTALLHEADERS}
     ${PARSE_SOURCES})
+
+  APPEND_GLOBAL_SET(${PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
+  APPEND_GLOBAL_SET(${PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
+
+
+
+
+  # ToDo: Redo all of this package and TPL library handling.
+
+  # We only want to link to the dependent package and TPL libraries when we need
+  # to.  We only need to link to these dependent libraries when this is the first
+  # library being created for the package or if this library does not depend
+  # on other libraries created for this package.
+
+  
+
+
+
 
   # Add whatever link libraries there are
 
@@ -78,14 +105,20 @@ MACRO(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     APPEND_SET(EXTRA_DEP_LIBS ${PARSE_DEPLIBS})
   ENDIF()
 
-  IF (Trilinos_ENABLE_MPI)
-    APPEND_SET(EXTRA_DEP_LIBS ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
-    INCLUDE_DIRECTORIES(AFTER ${MPI_INCLUDE_DIRS})
-    # 2008/11/21: rabartl: ToDo: Above: We need to replace this with a
-    # general TPL capability.
-  ENDIF()
+  # Add the dependent package libraries (if we have not done so yet for this package)
+
+  # ToDo: Implement!
+
+  # Add the TPL libraries (if we have not done so yet for this package)
+
+  TRILINOS_PACKAGE_TARGET_SETUP_TPL_PATHS_LIBS(${PACKAGE_NAME} EXTRA_DEP_LIBS)
 
   TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${EXTRA_DEP_LIBS})
+
+
+
+
+
   
   # Add to the install target
 
@@ -130,5 +163,55 @@ ENDMACRO()
 
 
 MACRO(TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES)
-  # 2008/11/21: rabartl: ToDo: Get rid if this!
+  # 2008/11/21: rabartl: ToDo: Get rid if this macro all together!
+ENDMACRO()
+
+
+#
+# Private macros
+#
+
+
+MACRO(TRILINOS_PRIVATE_ADD_DEP_PACKAGES_INCLUDES_AND_LIBS PACKAGE_NAME
+  DEP_LIST_TYPE EXTRA_DEP_LIBS
+  )
+  FOREACH(DEP_PKG ${${PACKAGE_NAME}_${DEP_LIST_TYPE}})
+    TRILINOS_PRIVATE_ADD_DEP_PACKAGE_INCLUDES_AND_LIBS(
+      ${PACKAGE_NAME} ${DEP_PKG} ${EXTRA_DEP_LIBS})
+  ENDFOREACH()
+ENDMACRO()
+
+
+MACRO(TRILINOS_PRIVATE_ADD_DEP_PACKAGE_INCLUDES_AND_LIBS PACKAGE_NAME
+  DEP_PKG EXTRA_DEP_LIBS
+  )
+  INCLUDE_DIRECTORIES(${${DEP_PKG}_INCLUDE_DIRS})
+  LINK_DIRECTOIRES(${${DEP_PKG}_LIBRARY_DIRS})
+  APPEND_SET(${EXTRA_DEP_LIBS} ${${DEP_PKG}_LIBRARIES})
+ENDMACRO()
+
+
+MACRO(TRILINOS_PACKAGE_TARGET_SETUP_TPL_PATHS_LIBS PACKAGE_NAME EXTRA_DEP_LIBS)
+
+  SET(ALL_TPLS)
+
+  FOREACH(TPL ${${PACKAGE_NAME}_LIB_REQUIRED_DEP_TPLS})
+    APPEND_SET(ALL_TPLS ${TPL})
+  ENDFOREACH()
+
+  FOREACH(TPL ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS})
+    ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_${TPL})
+    IF (${PACKAGE_NAME}_ENABLE_${TPL})
+      APPEND_SET(ALL_TPLS ${TPL})
+    ENDIF()
+  ENDFOREACH()
+
+  TPL_SORT_TPLS(ALL_TPLS)
+
+  FOREACH(TPL ${ALL_TPLS})
+    APPEND_SET(${EXTRA_DEP_LIBS} ${TPL_${TPL}_LIBRARIES})
+    INCLUDE_DIRECTORIES(${TPL_${TPL}_INCLUDE_DIRS})
+    LINK_DIRECTORIES(${TPL_${TPL}_LIBRARY_DIRS})
+  ENDFOREACH()
+
 ENDMACRO()

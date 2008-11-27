@@ -1,0 +1,3 @@
+INCLUDE(TPLDeclareNonHeaderLibraries)
+
+TPL_DECLARE_NONHEADER_LIBRARIES(LAPACK COMMON_NAMES lapack lapack_win32)

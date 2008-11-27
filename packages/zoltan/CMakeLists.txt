@@ -35,7 +35,7 @@ OPTION(${PACKAGE_NAME}_ENABLE_CPPDRIVER
 # C) Add the libraries, tests, and examples
 #
 
-IF (NOT Trilinos_ENABLE_MPI)
+IF (NOT TPL_ENABLE_MPI)
   ADD_SUBDIRECTORY(siMPI)
 ENDIF()
 

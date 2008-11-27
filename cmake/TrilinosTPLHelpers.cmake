@@ -1,0 +1,29 @@
+INCLUDE(Append_Set)
+INCLUDE(Print_Var)
+
+#
+# Function that sorts a list of TPLs
+# into reverse order for link order
+# purposes
+#
+
+FUNCTION(TPL_SORT_TPLS TPL_LIST_VAR)
+
+  #PRINT_VAR(${TPL_LIST_VAR})
+
+  SET(SORTED_TPL_LIST)
+
+  FOREACH(TPL ${Trilinos_REVERSE_TPLS})
+    LIST(FIND ${TPL_LIST_VAR} ${TPL} TPL_IDX)
+    #PRINT_VAR(TPL)
+    #PRINT_VAR(TPL_IDX)
+    IF (NOT TPL_IDX EQUAL -1)
+      APPEND_SET(SORTED_TPL_LIST ${TPL})
+    ENDIF()
+  ENDFOREACH()
+
+  #PRINT_VAR(SORTED_TPL_LIST)
+
+  SET(${TPL_LIST_VAR} ${SORTED_TPL_LIST} PARENT_SCOPE)
+
+ENDFUNCTION()

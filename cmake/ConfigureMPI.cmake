@@ -1,70 +1,11 @@
-# $Header$
 
-# 2008/07/31: rabartl: TODO: There are a bunch of cache variables like
-# MPIEXEC, MPIEXEC_MAX_NUMPROCS, MPIEXEC_NUMPROC_FLAG, MPIEXEC_POSTFLAGS, and
-# MPIEXEC_PREFLAGS that are getting defined by in the file MPIConfig.cmake
-# (involed by FIND_PACKAGE(MPI)) that are not being used and are just sitting
-# in the cache.
-#
-# Options:
-#
-# 1) Just reuse the cache variables defined by MPIConfig.cmake as needed and
-# don't define new ones below.
-#
-# 2) Undefine all of the MPI cache variables being defined by MPIConfig.cmake
+IF (TPL_ENABLE_MPI)
 
-
-# Use CMake module to find MPI_LIBRARY and MPI_INCLUDE_PATH
-FIND_PACKAGE(MPI)
-
-# Check to see if MPI was found
-IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
-
-  # Found MPI, now set it up
   SET(HAVE_MPI TRUE)
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
   ADD_DEFINITIONS(-DMPICH_IGNORE_CXX_SEEK)
-  # The following should be set when HAVE_MPI is set
-  ADD_DEFINITIONS(-DEPETRA_MPI)
-  # 2008/06/09: rabartl: Above, EPETRA_MPI gets set up in Epetra_ConfigDefs.h.
-  # It should not be set here and this top-level file should not refer to
-  # a specific package like Epetra.
-
-  # Find MPI executable (mpiexec or mpirun)
-  FIND_PROGRAM(MPI_EXECUTABLE
-    NAMES mpiexec mpirun
-    PATHS /usr/bin /usr/local/bin /usr/local/mpi/bin 
-    ${MPI_LIBRARY}/../bin
-    "$ENV{ProgramFiles}/MPICH/SDK/Bin"
-    "$ENV{ProgramFiles}/MPICH2/Bin"
-    "C:/Program Files/MPICH/SDK/Bin"
-    "${MPI_LIBRARY}/../Bin"
-  )
-  IF(MPI_EXECUTABLE)
-    IF(${MPI_EXECUTABLE} MATCHES mpiexec)
-      SET(MPI_NUMPROCS_FLAG 
-  	    -n
-	    CACHE STRING
-        "Flag setting the number of processors to use."
-      )
-    ELSE()
-      SET(MPI_NUMPROCS_FLAG 
-  	    -np
-	    CACHE STRING
-        "Flag setting the number of processors to use."
-      )
-    ENDIF()
-
-    SET(TRILINOS_MPI_GO ${MPI_EXECUTABLE} ${MPI_NUMPROCS_FLAG} " ")
-
-  ENDIF(MPI_EXECUTABLE)
-
-  MARK_AS_ADVANCED(MPI_EXECUTABLE)
 
 ELSE()
 
-  # Did not find MPI
-  MESSAGE( SEND_ERROR "MPI_LIBRARY and MPI_INCLUDE_PATH must be specified")
   SET(HAVE_MPI FALSE)
 
 ENDIF()

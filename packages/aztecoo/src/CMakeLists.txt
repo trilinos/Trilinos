@@ -108,7 +108,7 @@ SET(HEADERS ${HEADERS}
   md_wrap_scalar_c.c 
   )
 
-IF (Trilinos_ENABLE_MPI)
+IF (TPL_ENABLE_MPI)
 
   SET(SOURCES ${SOURCES}
     md_timer_mpi.c
