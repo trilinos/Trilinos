@@ -214,6 +214,7 @@ Tuple<T,15> tuple(const T& a, const T& b, const T& c, const T& d, const T& e,
 
 template<typename T, int N> inline
 Tuple<T,N>::Tuple()
+:ArrayView<T>() // To get rid of warnings!
 {
   ArrayView<T>::operator=(ArrayView<T>(&array_[0],N));
 }
@@ -221,6 +222,7 @@ Tuple<T,N>::Tuple()
 
 template<typename T, int N>
 Tuple<T,N>::Tuple( const Tuple<T,N> &t )
+:ArrayView<T>() // To get rid of warnings!
 {
   for( int i = 0; i < N; ++i )
     array_[i] = t[i];

@@ -225,6 +225,8 @@ namespace Tpetra
       // multiplication routines
       void GeneralMV(const Teuchos::ArrayView<const Scalar> &X, const Teuchos::ArrayView<Scalar> &Y) const;
       void GeneralMM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const;
+      void GeneralMtV(const Teuchos::ArrayView<const Scalar> &X, const Teuchos::ArrayView<Scalar> &Y) const;
+      void GeneralMtM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const;
 
       Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
       Map<Ordinal> rowMap_, colMap_;
@@ -549,9 +551,6 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(X.numVectors() != Y.numVectors(), std::runtime_error,
         "Tpetra::CrsMatrix::apply(X,Y): X and Y must have the same number of vectors.");
 
-    // FINISH: in debug mode, we need to establish that X and Y are compatible with (sameas?) DomainMap and RangeMap (respectively)
-    // FINISH: or maybe not; I guess this should happen below in the calls to import(), export()
-
 #   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
     int myImageID = Teuchos::rank(*comm_);
     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -605,9 +604,6 @@ namespace Tpetra
         exportMV_ = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(rowMap_,numVectors) );
       }
     }
-    // only support NO_TRANS currently
-    TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::logic_error,
-        "Tpetra::CrsMatrix::apply() does not currently support transposed multiplications.");
     if (mode == Teuchos::NO_TRANS) {
       // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
       if (importer_ != null) {
@@ -615,7 +611,7 @@ namespace Tpetra
         Xdata = importMV_->extractConstView();
 #   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
         if (myImageID == 0) {
-          *out << "Performed import of X..." << std::endl;
+          *out << "Performed import of X using importer..." << std::endl;
         }
         importMV_->print(*out); importMV_->printValues(*out);
 #   endif
@@ -645,7 +641,59 @@ namespace Tpetra
         Y.putScalar(0.0);  // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
         Y.doExport(*exportMV_, *exporter_, ADD); // Fill Y with Values from export vector
 #   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "Output vector after export()..." << std::endl;
+        if (myImageID == 0) *out << "Output vector after export() using exporter..." << std::endl;
+        Y.print(*out); Y.printValues(*out);
+#   endif
+      }
+      // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
+      if (Y.isDistributed() == false) {
+        Y.reduce();
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+        if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
+        Y.print(*out); Y.printValues(*out);
+#   endif
+      }
+    }
+    else {
+      // mode == CONJ_TRANS or TRANS
+      TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<Scalar>::isComplex && mode == Teuchos::TRANS, std::logic_error,
+          "Tpetra::CrsMatrix::apply() does not currently support transposed multiplications for complex scalar types.");
+      // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
+      if (exporter_ != null) {
+        exportMV_->doImport(X,*exporter_,INSERT);
+        Xdata = exportMV_->extractConstView();
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+        if (myImageID == 0) {
+          *out << "Performed import of X using exporter..." << std::endl;
+        }
+        exportMV_->print(*out); exportMV_->printValues(*out);
+#   endif
+      }
+      // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
+      // We will compute colutioni into the to-be-exported MV; get a view
+      if (importer_ != null) {
+        Ydata = importMV_->extractView();
+      }
+      // Do the actual transposed multiplication
+      if (numVectors==Teuchos::OrdinalTraits<Ordinal>::one()) {
+        GeneralMtV(Xdata[0],Ydata[0]);
+      }
+      else {
+        GeneralMtM(Xdata,Ydata);
+      }
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+      if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
+      if (importMV_ != null) {
+        importMV_->print(*out); importMV_->printValues(*out);
+      } else {
+        Y.print(*out); Y.printValues(*out);
+      }
+#   endif
+      if (importer_ != null) {
+        Y.putScalar(0.0); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
+        Y.doExport(*importMV_,*importer_,ADD);
+#   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+        if (myImageID == 0) *out << "Output vector after export() using importer..." << std::endl;
         Y.print(*out); Y.printValues(*out);
 #   endif
       }
@@ -1115,6 +1163,22 @@ namespace Tpetra
         Y[j][r] = sum;
       }
     }
+  }
+
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::GeneralMtV(const Teuchos::ArrayView<const Scalar> &x, const Teuchos::ArrayView<Scalar> &y) const
+  { 
+    (void)x; (void)y;
+    TEST_FOR_EXCEPT("Tpetra::CrsMatrix::GeneralMtV() not yet implemented");
+  }
+
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::GeneralMtM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const
+  {
+    (void)X; (void)Y;
+    TEST_FOR_EXCEPT("Tpetra::CrsMatrix::GeneralMtM() not yet implemented");
   }
 
 
