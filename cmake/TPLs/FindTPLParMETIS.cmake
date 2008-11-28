@@ -1,0 +1,6 @@
+INCLUDE(TPLDeclareWithHeaderLibraries)
+
+TPL_DECLARE_WITH_HEADER_LIBRARIES( ParMETIS
+  HEADER_NAMES parmetis.h
+  COMMON_LIB_NAMES parmetis
+  )

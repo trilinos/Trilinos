@@ -5,6 +5,9 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ParMETIS)
+SET(HAVE_PARMETIS ${${PACKAGE_NAME}_ENABLE_ParMETIS})
+
 TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
