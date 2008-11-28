@@ -17,8 +17,8 @@ FUNCTION(CREATE_DEPENCENCY_OUTPUT_TEST_CASE TEST_NAME TEST_PASS_COMMAND)
     "${CMAKE_COMMAND}"
     "  -C ${TRILINOS_BUILD_DIR}/CMakeCache.txt"
     "  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON"
+    "  -D Trilinos_PACKAGES_FILE:STRING=DependencyUnitTests/TrilinosPackagesForUnitTests"
     "  -D Trilinos_ENABLE_TESTS:BOOL=ON"
-    "  -D Trilinos_PACKAGES_UNITTEST_OVERRIDE:BOOL=ON"
     "  -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON"
     "  -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING=$PWD/TrilinosPackageDependencies.xml"
     "  ${TRILINOS_HOME_DIR}\n"
@@ -40,8 +40,8 @@ ENDFUNCTION()
 
 
 CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_XmlOutputTest
-  "diff ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.gold.xml TrilinosPackageDependencies.xml" )
+  "diff -s ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.gold.xml TrilinosPackageDependencies.xml" )
 
 
 CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_HtmlOutputTest
-  "diff ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependenciesTable.gold.html TrilinosPackageDependenciesTable.html" )
+  "diff -s ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependenciesTable.gold.html TrilinosPackageDependenciesTable.html" )

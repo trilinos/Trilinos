@@ -12,41 +12,19 @@ Active items:
 being used by SIERRA and needed to create a new NonlinearStrategies
 package.
 
-(*) [Ross] Add flexible uniform framework level support for TPLs.  Use
-this for, BLAS, LAPACK, MPI, Boost, ParMETIS and all of the other
-external TPLs needed by Trilinos.
-
 
 Backlog:
 --------
-
-(*) [???] Clean up the Trilinos/cmake directory: Create cmake/utils to
-hold simple generic utilities, cmake/package_arch to hold the Trilinos
-package architecture rountines.
-
-(*) [???] Separate out the list of packages into a
-TrilinosPackages.cmake file (for the offical list) and into
-cmake/DependencyUnitTests/TrilinosPackagesUnitTesting.cmake and supply
-a cache variable to select the packages list.  Also, merge the full
-list of packages into TrilinosPackages.cmake and supply a third column
-to specify what the default package on/off status is.  This will be
-used to turn off experimental packages by default and also to
-facilitate CMakeifying more packages.  Also, add a user option to
-ignore default OFF packages.  This will allow for easy generation of
-the full package dependency table.
-
-(*) [???] Break the list of TPLs out into a TrilinosTPLs.cmake file.
-Then, add a cache variable for including it.  I will also need a
-stable version in cmake/DependencyUnitTests/ that will be used for
-unit testing.
-
-(*) [???] Add unit testing cases for TPL enables and disables.
 
 (*) [???] Upgrade TRILINOS_PACKAGE_ADD_LIBRARY(...) and
 TRILINOS_ADD_EXECUTABLE(...) to handle test libraries.  Add
 NOINSTALLLIB argument for test libraries that you don't want to
 install.  This is needed for some NOX test librries.  This effects
 Isorropia, NOX, ...
+
+(*) [???] Clean up the Trilinos/cmake directory: Create cmake/utils to
+hold simple generic utilities, cmake/package_arch to hold the Trilinos
+package architecture rountines.
 
 (*) [???] Rename and reorganize the package architecture modules and
 macros/function to be as Trilinos-independent as possible.  This will
@@ -87,6 +65,10 @@ be used for pre-checkin script.
 (*) [???] Add a global 'libs' target to rebuild only libraries so that we can
 skip unecessary relinking when shared libraries are used.
 
+(*) [???] Change all source files to be globbed and use internal ifdefs to
+control what gets built.  This will make it easier to maintain the BJAM build
+system.
+
 (*) [???] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
 track of test results for different enables/disables.
@@ -96,15 +78,11 @@ created automatically.  We can do this by changing the scripts
 TRILINOS_ADD_OPTION(...) and TRILINOS_PACKAGE_CONFIGURE_FILE(...) and adding a
 few new scripts.
 
-(*) [???] Change all source files to be globbed and use internal ifdefs to
-control what gets built.  This will make it easier to maintain the BJAM build
-system.
-
 (*) [???] Upgrade Trilinos/CMakeLists.txt and
 dump-package-dep-table.py add an option to only show dependencies for
 enabled packages.
 
-(*) [???] Add installation testing for CMake build sytem.  Here, we
+(*) [???] Add installation testing for CMake build system.  Here, we
 will build and install libraries, and then configure a new project
 against this.  It would be good to install a PACKAGEConfig.cmake file
 for each package that could then be used to specify what to build
@@ -155,6 +133,28 @@ for Trilinos.
 
 Completed:
 ----------
+
+(*) [Ross] Add flexible uniform framework level support for TPLs.  Use
+this for, BLAS, LAPACK, MPI, Boost, ParMETIS and all of the other
+external TPLs needed by Trilinos.
+
+(*) [Ross] Separate out the list of packages into a
+cmake/TrilinosPackages.cmake file (for the offical list) and into
+cmake/DependencyUnitTests/TrilinosPackagesUnitTesting.cmake and supply
+a cache variable to select the packages list.  Also, merge the full
+list of packages into TrilinosPackages.cmake and supply a third column
+to specify what the default package on/off status is.  This will be
+used to turn off experimental packages by default and also to
+facilitate CMakeifying more packages.  Also, add a user option to
+ignore default OFF packages.  This will allow for easy generation of
+the full package dependency table.
+
+(*) [Ross] Break the list of TPLs out into a TrilinosTPLs.cmake file.
+Then, add a cache variable for including it.  I will also need a
+stable version in cmake/DependencyUnitTests/ that will be used for
+unit testing.
+
+(*) [Ross] Add unit testing cases for TPL enables and disables.
 
 (*) [Ross] Add the aggregate targets 'PACKAGE-libs' and 'PACAKGE-all'
 to build the library or all targets for a given package.  This can be

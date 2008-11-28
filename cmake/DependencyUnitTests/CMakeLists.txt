@@ -15,7 +15,7 @@ FUNCTION(CREATE_DEPENCENCY_HANDLING_TEST_CASE TEST_NAME TEST_ARGUMENTS TEST_PASS
     "fi\n"
     "${CMAKE_COMMAND}"
     "  -C ${TRILINOS_BUILD_DIR}/CMakeCache.txt"
-    "  -D Trilinos_PACKAGES_UNITTEST_OVERRIDE:BOOL=ON"
+    "  -D Trilinos_PACKAGES_FILE:STRING=DependencyUnitTests/TrilinosPackagesForUnitTests"
     "  -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON"
     "  -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING="
     "  -D Trilinos_DEPS_HTML_OUTPUT_FILE:STRING="
@@ -114,4 +114,25 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetra_DisableThyra_EnableAllForwardPackages
   "-D Trilinos_ENABLE_Epetra:BOOL=ON -D Trilinos_ENABLE_Thyra:BOOL=OFF -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
   "Final set of enabled packages:  Teuchos Epetra Zoltan Triutils EpetraExt Isorropia AztecOO Galeri Amesos Ifpack ML Belos RBGen 13"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  TrilinosDep_EnableAllPackages_DefaultTPLs
+  "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON"
+  "Final set of enabled TPLs:  BLAS LAPACK 2"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  TrilinosDep_EnableAllPackages_EnableBoost
+  "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON -D TPL_ENABLE_Boost:BOOL=ON"
+  "Final set of enabled TPLs:  BLAS LAPACK Boost 3"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  TrilinosDep_EnableAllPackages_EnableBoostMPI
+  "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON -D TPL_ENABLE_Boost:BOOL=ON  -D TPL_ENABLE_MPI:BOOL=ON"
+  "Final set of enabled TPLs:  BLAS LAPACK MPI Boost 4"
   )

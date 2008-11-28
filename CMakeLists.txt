@@ -20,8 +20,6 @@ SET(TRILINOS_TEST_CATEGORY "FRAMEWORK")
 
 SET(CMAKE_MODULE_PATH ${TRILINOS_HOME_DIR}/cmake ${TRILINOS_HOME_DIR}/cmake/utils)
 
-SET(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
-
 INCLUDE(TrilinosGlobalHelpers)
 INCLUDE(Advanced_Set)
 INCLUDE(Advanced_Option)
@@ -33,122 +31,35 @@ OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose."
 # B) Define the list of all Trilinos packages and TPLs
 #
 
-# Define the Trilinos package names and directories
-SET( Trilinos_PACKAGES_AND_DIRS
- Teuchos               teuchos
- RTOp                  rtop
- Epetra                epetra
- Zoltan                zoltan
- Triutils              triutils
- Tpetra                tpetra
- EpetraExt             epetraext
- Isorropia             isorropia
- Thyra                 thyra
- AztecOO               aztecoo
- Galeri                galeri
- Amesos                amesos
- Ifpack                ifpack
- Komplex               komplex
- #Anasazi               anasazi
- RBGen                 rbgen
-)
+# B.1) Packages
 
-# Hack to allow me to set the exact list of packages so that I can have stable
-# unit tests as packages are added and dependencies change
-ADVANCED_OPTION(Trilinos_PACKAGES_UNITTEST_OVERRIDE "" OFF)
-IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE)
-  SET( Trilinos_PACKAGES_AND_DIRS
-    Teuchos          teuchos
-    Epetra           epetra
-    Zoltan           zoltan
-    RTOp             rtop
-    Triutils         triutils
-    EpetraExt        epetraext
-    Isorropia        isorropia
-    Thyra            thyra
-    AztecOO          aztecoo
-    Galeri           galeri
-    Amesos           amesos
-    Ifpack           ifpack
-    ML               ml
-    Belos            belos
-    RBGen            rbgen
-    Stratimikos      stratimikos
-    )
+IF (NOT Trilinos_PACKAGES_FILE)
+  SET(Trilinos_PACKAGES_FILE "TrilinosPackages")
 ENDIF()
+# NOTE: Above, I am not using a cache variable because I don't want
+# the general user to even see this option!
 
-# Temporary hack to allow me to state more package dependencies that we have
-# full CMake support for.  This will go away once all of Trilinos is
-# CMakeified.
-ADVANCED_OPTION(Trilinos_PACKAGES_HACK_OVERRIDE "" OFF)
-IF (Trilinos_PACKAGES_HACK_OVERRIDE)
-  SET( Trilinos_PACKAGES_AND_DIRS
-    Teuchos               teuchos
-    RTOp                  rtop
-    Kokkos                kokkos
-    Epetra                epetra
-    Stokhos               stokhos
-    Sacado                sacado
-    Zoltan                zoltan
-    Shards                shards
-    Intrepid              intrepid
-    Triutils              triutils
-    Tpetra                tpetra
-    EpetraExt             epetraext
-    Thyra                 thyra
-    Isorropia             isorropia
-    Pliris                pliris
-    Claps                 claps
-    AztecOO               aztecoo
-    Galeri                galeri
-    Amesos                amesos
-    Ifpack                ifpack
-    Komplex               komplex
-    ML                    ml
-    Belos                 belos
-    Stratimikos           stratimikos
-    Meros                 meros
-    FEI                   fei
-    RBGen                 rbgen
-    Anasazi               anasazi
-    ThreadPool            ThreadPool
-    Phalanx               phalanx
-    Pamgen                pamgen
-    Phdmesh               phdmesh
-    NOX                   nox
-    Moertel               moertel
-    TrilinosCouplings     trilinoscouplings
-    Rythmos               rythmos
-    MOOCHO                moocho
-    Aristos               aristos
-    Sundance              Sundance
-    TriKota               TriKota
-    CTrilinos             CTrilinos
-    ForTrilinos           ForTrilinos
-    PyTrilinos            PyTrilinos
-    WebTrilinos           WebTrilinos
-    Didasko               didasko
-    NewPackage            new_package
-    )
-ENDIF()
+MESSAGE("")
+MESSAGE("Reading the list of packages from ${Trilinos_PACKAGES_FILE}.cmake ... ")
+MESSAGE("")
+
+INCLUDE(${Trilinos_PACKAGES_FILE})
 
 TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
 
-SET(Trilinos_TPLS_ENABLED
-  BLAS           ""
-  LAPACK         ""
-  MPI            ""
-  Boost          OFF
-  #METIS          OFF
-  #ParMETIS       OFF
-  #Scotch         OFF
-  #PaToH          OFF
-  )
-  # Above, the TPLs that are not required for "Primary Stable" code areexplicitly
-  # turned off by default.  That will result in all packages that have required
-  # dependencies on these to be disabled by default.  We want the default configure
-  # to enable only "Primary Stable" code.  You have explicitly enable code that is
-  # not "Primary Stable" code.
+# B.2) TPLs
+
+IF (NOT Trilinos_TPLS_FILE)
+  SET(Trilinos_TPLS_FILE "TrilinosTPLs")
+ENDIF()
+# NOTE: Above, I am not using a cache variable because I don't want
+# the general user to even see this option!
+
+MESSAGE("")
+MESSAGE("Reading the list of TPLs from ${Trilinos_TPLS_FILE}.cmake ... ")
+MESSAGE("")
+
+INCLUDE(${Trilinos_TPLS_FILE})
 
 TRILINOS_PROCESS_TPLS_LISTS()
 
@@ -256,14 +167,21 @@ TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
   "\nExplicitly enabled packages on input" ON)
 TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
   "\nExplicitly disabled packages on input" OFF)
+TRILINOS_PRINT_ENABLED_TPL_LIST(
+  "\nExplicitly enabled TPLs on input" ON)
+TRILINOS_PRINT_ENABLED_TPL_LIST(
+  "\nExplicitly disabled TPLs on input" OFF)
 
 TRILINOS_ADJUST_PACKAGE_ENABLES()
 
 TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
   "\nFinal set of enabled packages" ON)
-
+TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+  "\nFinal set of disabled packages" OFF)
 TRILINOS_PRINT_ENABLED_TPL_LIST(
   "\nFinal set of enabled TPLs" ON)
+TRILINOS_PRINT_ENABLED_TPL_LIST(
+  "\nFinal set of disabled TPLs" OFF)
 
 IF (Trilinos_DEPS_XML_OUTPUT_FILE)
   MESSAGE("" )
@@ -287,7 +205,6 @@ IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   MESSAGE(SEND_ERROR "Shortcircuiting after dependency tracking ...")
   RETURN()
 ENDIF()
-
 
 
 #

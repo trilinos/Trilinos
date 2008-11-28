@@ -1,17 +1,14 @@
 #!/bin/bash
 
-# This script just writes the Trilinos dependencies to the current directory
-# This makes it easy to debug dependency tracking without having to 
-# distrub the main dependency files.
+# This script creates the full dependencies table for all Trilinos packages
 
 EXTRA_ARGS=$@
 
 cmake \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+-D Trilinos_REMOVE_DEFAULT_PACKAGE_DISABLES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_PACKAGES_HACK_OVERRIDE:BOOL=ON \
 -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON \
 $EXTRA_ARGS \
 ../../../Trilinos
-
-#-D Trilinos_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON \
