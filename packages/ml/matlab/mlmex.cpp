@@ -526,6 +526,7 @@ int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, dou
   double Tol      = tmp.get("krylov: tolerance", 1e-9);
   string type     = tmp.get("krylov: type", "gmres");
   int    output   = tmp.get("krylov: output level",10);
+  int    kspace   = tmp.get("krylov: kspace",30);
   string conv     = tmp.get("krylov: conv", "r0");  
 
   /* Set solver options - Solver type*/
@@ -546,6 +547,7 @@ int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, dou
 
   /* Set solver options - other */
   solver.SetAztecOption(AZ_output, output);
+  solver.SetAztecOption(AZ_kspace, kspace);
 
   /* Do the solve */
   solver.Iterate(NumIters, Tol);
