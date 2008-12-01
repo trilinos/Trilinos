@@ -291,10 +291,10 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
 int fevec2(Epetra_Comm& Comm, bool verbose)
 {
   int ierr = 0;
-  int NumGlobalRows = 12;
+  int NumGlobalElems = 4;
   int elemSize = 3;
   int indexBase = 0;
-  Epetra_BlockMap Map(NumGlobalRows, elemSize, indexBase, Comm);
+  Epetra_BlockMap Map(NumGlobalElems, elemSize, indexBase, Comm);
 
   int Numprocs = Comm.NumProc();
   int MyPID   = Comm.MyPID();
@@ -374,3 +374,86 @@ int fevec2(Epetra_Comm& Comm, bool verbose)
 
   return(0);
 }
+
+int fevec3(Epetra_Comm& Comm, bool verbose)
+{
+  int ierr = 0;
+  int NumGlobalElems = 4;
+  int elemSize = 40;
+  int indexBase = 0;
+  Epetra_BlockMap Map(NumGlobalElems, elemSize, indexBase, Comm);
+
+  int Numprocs = Comm.NumProc();
+  int MyPID   = Comm.MyPID();
+
+  if (Numprocs != 2) return(0);
+
+  int NumCols = 3;
+  int* Indices = new int[NumCols];
+  int* numValuesPerID = new int[NumCols];
+  for(int i=0; i<NumCols; ++i) {
+    numValuesPerID[i] = elemSize;
+  }
+ 
+  double* Values = new double[NumCols*elemSize];
+ 
+// Create vectors
+
+  Epetra_FEVector b(Map, 1);
+  Epetra_FEVector x0(Map, 1);
+ 
+// source terms
+  NumCols = 2;
+ 
+  if(MyPID==0)  // indices corresponding to element 0 on processor 0
+  {
+    Indices[0] = 0;
+    Indices[1] = 3;
+ 
+    for(int ii=0; ii<NumCols*elemSize; ++ii) {
+      Values[ii] = 1./2.;
+    }
+
+  }
+  else
+  {
+    Indices[0] = 1;
+    Indices[1] = 2;
+ 
+    for(int ii=0; ii<NumCols*elemSize; ++ii) {
+      Values[ii] = 0.;
+    }
+
+  }
+
+  EPETRA_TEST_ERR( b.SumIntoGlobalValues(NumCols, Indices,
+					 numValuesPerID, Values),
+		   ierr);
+
+  EPETRA_TEST_ERR( b.GlobalAssemble(), ierr);
+
+  if (verbose&&MyPID==0) {
+    cout << "b:"<<endl;
+  }
+
+  if (verbose) {
+  b.Print(cout);
+  }
+
+  x0 = b;
+
+  if (verbose&&MyPID==0) {
+    cout << "x:"<<endl;
+  }
+
+  if (verbose) {
+  x0.Print(cout);
+  }
+
+  delete [] Values;
+  delete [] Indices;
+  delete [] numValuesPerID;
+
+  return(0);
+}
+
