@@ -202,7 +202,9 @@ int Zoltan_Scotch_Order(
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
-  if (gr.graph_type!=GLOBAL_GRAPH){
+
+  ord.iperm = NULL;
+  if ((gr.graph_type!=GLOBAL_GRAPH) && (iperm != NULL)) {
   /* Allocate space for inverse perm */
     ord.iperm = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
     if (!ord.iperm){
@@ -211,8 +213,6 @@ int Zoltan_Scotch_Order(
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
   }
-  else
-    ord.iperm = NULL;
 
   if (gr.graph_type != GLOBAL_GRAPH) { /* Allocate separators tree */
     if (Zoltan_Order_Init_Tree (&zz->Order, gr.num_obj + 1, gr.num_obj) != ZOLTAN_OK) {
@@ -236,7 +236,7 @@ int Zoltan_Scotch_Order(
   }
   else {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the Scotch library");
-    ierr = SCOTCH_graphOrder (&cgrafdat,  &stradat, ord.rank, NULL,
+    ierr = SCOTCH_graphOrder (&cgrafdat,  &stradat, ord.rank, ord.iperm,
 				     &zz->Order.nbr_blocks, zz->Order.start, zz->Order.ancestor);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the Scotch library");
   }
