@@ -126,6 +126,9 @@ MPI_LIBPATH	=
 PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/lam/ParMETIS3 
 PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
+SCOTCH_LIBPATH           = -L/Net/local/proj/zoltan/arch/linux64/lib/lam/Scotch5
+SCOTCH_INCPATH           = -I/Net/local/proj/zoltan/arch/all/src/Scotch5
+
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
