@@ -748,6 +748,8 @@ BUILD_COLORING_TRUE
 BUILD_COLORING_FALSE
 BUILD_ZOLTAN_TRUE
 BUILD_ZOLTAN_FALSE
+BUILD_NATIVE_ZOLTAN_TRUE
+BUILD_NATIVE_ZOLTAN_FALSE
 BUILD_BTF_TRUE
 BUILD_BTF_FALSE
 BUILD_MATLAB_TRUE
@@ -1413,6 +1415,8 @@ Optional Features:
   --enable-epetraext-zoltan
                           Enable EpetraExt interface support for Zoltan
                           (default is no)
+  --enable-zoltan         Build EpetraExt interface support for Zoltan using
+                          native library.
   --enable-epetraext-btf  Enable EpetraExt BTF subpkg (default is no)
   --enable-epetraext-matlab
                           Enable EpetraExt Matlab subpkg (default is no)
@@ -1499,6 +1503,8 @@ Optional Packages:
                           --with-perl=<perl executable>. Configure will check
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
+  --with-parmetis         Enable Parmetis support for Zoltan. (default is
+                          no)
   --with-petsc            Enable EpetraExt interface support for PETSc.
                           (default is no)
   --with-petsc-libdir     specify location of petsc library
@@ -8817,6 +8823,55 @@ else
 fi
 
 
+if test "X$ac_cv_use_epetraext_zoltan" = "Xyes"; then
+    # Check whether --enable-zoltan was given.
+if test "${enable_zoltan+set}" = set; then
+  enableval=$enable_zoltan; ac_cv_use_native_zoltan=yes
+else
+  ac_cv_use_native_zoltan=no
+fi
+
+
+
+
+# Check whether --with-parmetis was given.
+if test "${with_parmetis+set}" = set; then
+  withval=$with_parmetis; ac_cv_use_parmetis=$withval
+else
+  ac_cv_use_parmetis=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use parmetis" >&5
+echo $ECHO_N "checking whether to use parmetis... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_parmetis" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PARMETIS
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+  if test "X$ac_cv_use_parmetis" = "Xno"; then
+    ac_cv_use_native_zoltan=no
+  fi
+
+     if test "X$ac_cv_use_native_zoltan" != "Xno" -a "X$ac_cv_use_parmetis" != "Xno"; then
+  BUILD_NATIVE_ZOLTAN_TRUE=
+  BUILD_NATIVE_ZOLTAN_FALSE='#'
+else
+  BUILD_NATIVE_ZOLTAN_TRUE='#'
+  BUILD_NATIVE_ZOLTAN_FALSE=
+fi
+
+fi
+
 
 # Check whether --enable-epetraext-btf was given.
 if test "${enable_epetraext_btf+set}" = set; then
@@ -10684,7 +10739,7 @@ fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 
-if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
+if test "X$ac_cv_use_epetraext_zoltan" != "Xno" -a "X$ac_cv_use_native_zoltan" != "Xyes"; then
 
 { echo "$as_me:$LINENO: checking for METIS_PartGraphKway in -lmetis" >&5
 echo $ECHO_N "checking for METIS_PartGraphKway in -lmetis... $ECHO_C" >&6; }
@@ -10763,8 +10818,8 @@ _ACEOF
   LIBS="-lmetis $LIBS"
 
 else
-  { { echo "$as_me:$LINENO: error: Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&5
-echo "$as_me: error: Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>" >&5
+echo "$as_me: error: Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -10846,8 +10901,8 @@ _ACEOF
   LIBS="-lparmetis $LIBS"
 
 else
-  { { echo "$as_me:$LINENO: error: Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&5
-echo "$as_me: error: Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>" >&5
+echo "$as_me: error: Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -10929,8 +10984,8 @@ _ACEOF
   LIBS="-lzoltan $LIBS"
 
 else
-  { { echo "$as_me:$LINENO: error: Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&5
-echo "$as_me: error: Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>" >&5
+echo "$as_me: error: Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -11860,6 +11915,13 @@ echo "$as_me: error: conditional \"BUILD_ZOLTAN\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_NATIVE_ZOLTAN_TRUE}" && test -z "${BUILD_NATIVE_ZOLTAN_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NATIVE_ZOLTAN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_NATIVE_ZOLTAN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_BTF_TRUE}" && test -z "${BUILD_BTF_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_BTF\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -12700,6 +12762,8 @@ BUILD_COLORING_TRUE!$BUILD_COLORING_TRUE$ac_delim
 BUILD_COLORING_FALSE!$BUILD_COLORING_FALSE$ac_delim
 BUILD_ZOLTAN_TRUE!$BUILD_ZOLTAN_TRUE$ac_delim
 BUILD_ZOLTAN_FALSE!$BUILD_ZOLTAN_FALSE$ac_delim
+BUILD_NATIVE_ZOLTAN_TRUE!$BUILD_NATIVE_ZOLTAN_TRUE$ac_delim
+BUILD_NATIVE_ZOLTAN_FALSE!$BUILD_NATIVE_ZOLTAN_FALSE$ac_delim
 BUILD_BTF_TRUE!$BUILD_BTF_TRUE$ac_delim
 BUILD_BTF_FALSE!$BUILD_BTF_FALSE$ac_delim
 BUILD_MATLAB_TRUE!$BUILD_MATLAB_TRUE$ac_delim
@@ -12740,7 +12804,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 74; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 76; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

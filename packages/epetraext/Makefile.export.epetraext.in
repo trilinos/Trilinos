@@ -7,6 +7,9 @@ include @abs_top_builddir@/../epetra/Makefile.export.epetra
 ## Optional dependency on triutils
 @BUILD_EPETRAEXT_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
+## Optional dependency on zoltan
+@BUILD_NATIVE_ZOLTAN_TRUE@include @abs_top_builddir@/../zoltan/Makefile.export.zoltan
+
 ## Optional dependency on PETSc
 @EPETRAEXT_USING_PETSC_TRUE@PETSC_DIR = @EPETRAEXT_PETSC_DIR@
 @EPETRAEXT_USING_PETSC_TRUE@PETSC_ARCH = @EPETRAEXT_PETSC_ARCH@
@@ -29,11 +32,12 @@ _EPETRAEXT_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
                      $(EPETRA_INCLUDES) \
                      $(TRIUTILS_INCLUDES) \
                      $(TEUCHOS_INCLUDES) \
+                     $(ZOLTAN_INCLUDES) \
                      @EPETRAEXT_PETSC_INCLUDES@
 
 _EPETRAEXT_LIBS = \
   @LDFLAGS@ -L@abs_top_builddir@/src -lepetraext \
-  $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@ $(EPETRAEXT_PETSC_LIBS) @FLIBS@
+  $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) $(ZOLTAN_LIBS) @LIBS@ $(EPETRAEXT_PETSC_LIBS) @FLIBS@
 
 @USING_GNUMAKE_TRUE@EPETRAEXT_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_EPETRAEXT_INCLUDES))
 @USING_GNUMAKE_TRUE@EPETRAEXT_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_EPETRAEXT_LIBS))
