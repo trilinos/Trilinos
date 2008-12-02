@@ -2511,7 +2511,7 @@ void ML_print_align(int int2match, char *space, int pad)
   int jj;
   double dtemp;
   if (int2match < 0) pad++;
-  dtemp=fabs(int2match);
+  dtemp=fabs((double)int2match);
   for (jj=0; jj<pad; jj++) space[jj]=' ';
   jj=pad;
   while (dtemp>=1) {space[jj++]=' '; dtemp /= 10;}
