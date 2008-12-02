@@ -103,14 +103,14 @@ namespace Stokhos {
     T& 
     term(const BasisT& basis, 
 	 int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
-	 int i5 = -1, int i6 = -1, int i7 = -1, int i9 = -1, int i9 = -1);
+	 int i5 = -1, int i6 = -1, int i7 = -1, int i8 = -1, int i9 = -1);
 
     //! Get term
     template <typename BasisT>
     const T& 
     term(const BasisT& basis, 
 	 int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
-	 int i5 = -1, int i6 = -1, int i7 = -1, int i9 = -1, int i9 = -1) const;
+	 int i5 = -1, int i6 = -1, int i7 = -1, int i8 = -1, int i9 = -1) const;
 
     //! Write polynomial approximation in standard basis
     template <typename BasisT>
