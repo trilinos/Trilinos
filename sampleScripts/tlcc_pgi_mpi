@@ -1,0 +1,32 @@
+#!/bin/sh
+TPLS="/home/jhu/usr/tlcc"
+# I have only tested this with the following mpi and blas modules:
+#module load mpi/mvapich-1.0.1_ofed_pgi-7.2-3    # defines MPI_BIN
+#module load libraries/acml-4.1.0-pgi            # defines BLASLIB
+../Trilinos/configure \
+CXXFLAGS="-O3 -g" \
+CFLAGS="-O3 -g" \
+FFLAGS="-O3 -g" \
+--with-mpi-compilers=${MPI_BIN} \
+--prefix=${PWD} \
+--cache-file=config.cache \
+--with-gnumake \
+--disable-default-packages \
+--enable-amesos \
+--enable-amesos-klu \
+--enable-aztecoo \
+--enable-didasko \
+--enable-epetra \
+--enable-epetraext \
+--enable-galeri \
+--enable-ifpack \
+--enable-ml \
+--enable-teuchos \
+--enable-ifpack-ml \
+--enable-ml_timing \
+--with-ml_parmetis3x \
+--with-incdirs="-I${TPLS}/parmetis-3.1/METISLib -I${TPLS}/parmetis-3.1/ParMETISLib -I${TPLS}/parmetis-3.1" \
+--with-ldflags="-L${TPLS}/parmetis-3.1" \
+--enable-ml_multiple_rhs=4 \
+--with-blas="${BLASLIB}" \
+--with-lapack="${BLASLIB}"
