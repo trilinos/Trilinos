@@ -1,0 +1,13 @@
+/* src/Stokhos_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
+/* Define if want to build stokhos-examples */
+#cmakedefine HAVE_STOKHOS_EXAMPLES
+
+/* Define if want to build stokhos-tests */
+#cmakedefine HAVE_STOKHOS_TESTS
+
+/* Define to enable extra debugging checks */
+#cmakedefine STOKHOS_DEBUG
