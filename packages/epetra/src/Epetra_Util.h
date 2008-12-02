@@ -214,9 +214,14 @@ int Epetra_Util_insert_empty_positions(T*& array, int& usedLength,
     return(0);
   }
 
-  T* newlist = new T[allocatedLength+allocChunkSize];
-
   allocatedLength += allocChunkSize;
+  //what if allocatedLength is still not large enough?
+  //loop until it is large enough:
+  while(allocatedLength < usedLength+numPositions) {
+    allocatedLength += allocChunkSize;
+  }
+
+  T* newlist = new T[allocatedLength];
 
   for(int i=0; i<insertOffset; ++i) {
     newlist[i] = array[i];
