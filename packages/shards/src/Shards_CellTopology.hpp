@@ -43,7 +43,7 @@ namespace shards {
  *  \{
  */
 
-/*------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/         
 
 class CellTopology ;
 class CellTopologyPrivate ;
@@ -68,15 +68,39 @@ std::ostream & operator << ( std::ostream & , const CellTopology & );
  */
 class CellTopology {
 private:
+  
+  /** \brief Deletes m_owned data member if
+  */
   void deleteOwned();
+  
+  
+  /** \brief Throws runtime_error if CellTopology object is null or hase null 
+             base topology   
+   */
   void requireCell() const ;
+  
+  
+  /** \brief Throws invalid_argument if cell dimension exceedes the maximal 
+            admissible space dimension 3.
+   */
   void requireDimension( const unsigned subcell_dim ) const ;
+  
+  
+  /** \brief Throws invalid_argument if subcell_ord exceeds the actual number
+             of subcells with specified dimension.
+    */
   void requireSubcell( const unsigned subcell_dim ,
                        const unsigned subcell_ord ) const ;
+  
+  
+  /** \brief Throws invalid_argument if node_ord exceeds the actual number 
+             of nodes in the subcell with specified dimension and ordinal.
+    */
   void requireNodeMap( const unsigned subcell_dim ,
                        const unsigned subcell_ord ,
                        const unsigned node_ord ) const ;
 
+  
   const CellTopologyData    * m_cell ;
         CellTopologyPrivate * m_owned ;
 
@@ -249,10 +273,12 @@ public:
     : m_cell( cell ), m_owned( NULL )
     { SHARDS_REQUIRE( requireCell() ); }
   
+        
   /** \brief Constructs custom 1-cell (line) with base topology Line<>. */
   CellTopology( const std::string & name,
                 const unsigned      nodeCount);
   
+        
   /** \brief  Construct custom 2-cell (polygon) from a list of edges.
    *          The default base topology is the specified custom cell topology.
    */
@@ -263,6 +289,7 @@ public:
                 const std::vector< unsigned >                 & edge_node_map ,
                 const CellTopologyData                        * base = NULL );
 
+  
   /** \brief  Construct custom 3-cell (polyhedron) from a list of
    *          edges and sides.
    *          The default base topology is the specified custom cell topology.
@@ -275,6 +302,7 @@ public:
                 const std::vector< const CellTopologyData * > & faces ,
                 const std::vector< unsigned >                 & face_node_map ,
                 const CellTopologyData                        * base = NULL );
+  
   
   /** \brief Destructor */
   ~CellTopology() { if ( m_owned ) { deleteOwned(); } }
@@ -289,6 +317,7 @@ void badCellTopologyKey( const unsigned dimension ,
                          const unsigned vertex_count ,
                          const unsigned node_count );
   
+
 /** \brief  Generate integer key from topological dimensions
  *  \param  dimension    maximum value = 7
  *  \param  face_count   maximum value = 63
@@ -322,6 +351,13 @@ unsigned cellTopologyKey( const unsigned dimension ,
 
   return key ;
 }
+
+
+std::ostream & operator << ( std::ostream & os, const CellTopology & cell) {
+  os << *cell.getTopology();
+  return os;
+}
+
 
 /** \} */
 

@@ -673,5 +673,16 @@ const CellTopologyData * getCellTopologyData<Wedge<18> >()
 
 //----------------------------------------------------------------------
 
+
+template<>
+const CellTopologyData * getCellTopologyData<Pentagon<5> >()
+{
+  static const char name[] = "Pentagon_5" ;
+  static const Descriptor< Pentagon<5>::Traits > self( NULL , name );
+  return & self.top ;
+}
+
+
+
 }//namespace shards
 

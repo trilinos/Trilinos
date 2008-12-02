@@ -860,6 +860,42 @@ template<> struct Hexahedron<27> : public
   typedef Hexahedron<8> base ;
 };
 
+//----------------------------------------------------------------------
+
+
+template< unsigned NodeCount = 5 > struct Pentagon {};
+
+
+/** \brief  Return CellTopologyData singleton for pentagon with five nodes.  */
+template<> const CellTopologyData * getCellTopologyData< Pentagon<5> >();
+
+
+typedef
+MakeTypeList< IndexList< 0 , 1 > ,
+              IndexList< 1 , 2 > ,
+              IndexList< 2 , 3 > ,
+              IndexList< 3 , 4 > ,
+              IndexList< 4 , 0 > >::type
+PentagonEdgeNodeMap ;
+
+template<> struct Pentagon<5> : public
+CellTopologyTraits< 2 , 5 , 5 ,
+                    MakeTypeList< Line<2>  ,
+                                  Line<2>  ,
+                                  Line<2>  ,
+                                  Line<2>  ,
+                                  Line<2>  >::type ,
+                    PentagonEdgeNodeMap >
+{ 
+  typedef Pentagon<5> base ; 
+};
+
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Pentagon<5>::Traits >()
+{ return getCellTopologyData< Pentagon<5> >(); }
+
+
 //------------------------------------------------------------------------
 
 template<> inline
