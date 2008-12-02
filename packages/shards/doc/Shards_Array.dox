@@ -12,7 +12,7 @@
  *  Given the user-defined array dimension tags
  *  <b> Cartesian3D </b> and <b> Points </b>
  *  define a function to find the centroid of an array of points.
- *  <PRE>
+ *  \code
  *  void centroid( const Array<double,FortranOrder,Cartesian3D,Points> points ,
  *                 const Array<double,FortranOrder,Cartesian3D> x )
  *  {
@@ -31,10 +31,10 @@
  *      x(id) /= npoints ;
  *    }
  *  }
- *  </PRE>
+ *  \endcode
  *
  *  <b> Example of User-defined \ref ArrayDimTag "Array Dimension Tags" </b>
- *  <PRE>
+ *  \code
  *  struct Cartesian3D : public ArrayDimTag {
  *    enum { Size = 3 };                // Default size for this dimension.
  *    const char * name() const ;       // Supply the pure-virtual function.
@@ -46,16 +46,16 @@
  *
  *  // And then in a source file:
  *  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Points )
- *  </PRE>
+ *  \endcode
  *
  *  <b> Example of Creating an Array </b> <br>
  *  Given a block of memory for the collection of points, wrap it in an Array.
- *  <PRE>
+ *  \code
  *  double * chunk   = ... ; // Chunk of memory from somewhere
  *  unsigned npoints = ... ; // containing a number of points
  *
  *  Array<double,FortranOrder,Cartesian3D,Points> points( chunk , npoints );
- *  </PRE>
+ *  \endcode
  *  The <b> points </b> array has dimension<0> set to Cartesian3D::Size 
  *  and dimension<1> set to npoints.  If the npoints argument
  *  where omitted then a compilation error would be generated due to

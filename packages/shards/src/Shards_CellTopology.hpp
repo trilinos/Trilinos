@@ -56,9 +56,14 @@ std::ostream & operator << ( std::ostream & , const CellTopology & );
 
 /*------------------------------------------------------------------------*/
 /** \class shards::CellTopology
- *  \brief Provide safe access (in debug mode) to cell topology data
- *         and procedure to create custom cell topologies. 
+ *  \brief Provide input checked access (in debug mode) to
+ *         \ref shards::CellTopologyData "cell topology data"
+ *         and a procedure to create custom cell topologies. 
+ *
+ *  Input checking is compiled in when the HAVE_SHARDS_DEBUG macro is defined.
+ *
  *  \author Created by P. Bochev, H. C. Edwards and D. Ridzal.
+ *
  *  \nosubgrouping
  */
 class CellTopology {

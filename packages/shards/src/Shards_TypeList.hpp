@@ -26,7 +26,15 @@
 
 namespace shards {
 
-/** \addtogroup shards_package_typelist
+/** \ingroup shards_package
+ *  \defgroup shards_package_typelist  Linked List of Types
+ *  \brief     Compile-time linked-list of types and operations.
+ *
+ *  This type list capability was inspired by the type list
+ *  described in Alexandrescu's "Modern C++ Design" book.
+ *
+ *  \author H. Carter Edwards  <hcedwar@sandia.gov>
+ *
  *  \{
  */
 

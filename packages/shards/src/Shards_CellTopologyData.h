@@ -46,7 +46,7 @@ extern "C" {
  */
 struct CellTopologyData {
   /** \brief  Base, a.k.a. not-extended, version of this topology
-   *          where vertex_count == edge_count.
+   *          where vertex_count == node_count.
    */
   const struct CellTopologyData * base ;
 
@@ -62,16 +62,16 @@ struct CellTopologyData {
   /** \brief Number of vertices. */
   unsigned vertex_count ;
 
-  /** \brief Number of nodes (a.k.a. Cell^0 subcells).
+  /** \brief Number of nodes (a.k.a. \f$ {Cell}^{0} \f$ subcells).
    *
    *  A topology is <em> extended </em> if node_count > vertex_count
    */
   unsigned node_count ;
 
-  /** \brief Number of edges (a.k.a. Cell^1 boundary subcells). */
+  /** \brief Number of edges (a.k.a. \f$ {Cell}^{1} \f$ boundary subcells). */
   unsigned edge_count ;
 
-  /** \brief Number of sides (a.k.a. Cell^(D-1) boundary subcells). */
+  /** \brief Number of sides (a.k.a. \f$ {Cell}^{D-1} \f$ boundary subcells). */
   unsigned side_count ;
 
   /** \brief Flag if the subcells of a given dimension are homogeneous */
@@ -81,6 +81,8 @@ struct CellTopologyData {
   unsigned subcell_count[4] ;
 
   /** \brief Subcell information.
+   *
+   *  - required: 0 <= Dim <= 3
    *  - required: 0 <= Ord <= subcell_count[Dim]
    *  - required: 0 <= J   <  subcell[Dim][Ord]->subcell_count[0]
    *  - subcell[Dim][Ord].topology
@@ -90,7 +92,7 @@ struct CellTopologyData {
     /** \brief Subcell topology */
     const struct CellTopologyData * topology ;
   
-    /** \brief Subcell indexing of Cell^0 with respect to parent cell. */
+    /** \brief Subcell indexing of \f$ {Cell}^{0} \f$ with respect to parent cell. */
     const unsigned * node ;
   };
 

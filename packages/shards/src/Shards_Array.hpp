@@ -2504,7 +2504,7 @@ public:
     }
 
   /** \brief  Dimensions of all ordinates. */
-  void dimensions( std::vector<unsigned> & n )
+  void dimensions( std::vector<unsigned> & n ) const
     {
       n.resize( Rank );
       for ( unsigned i = 0 ; i < Rank ; ++i ) { n[i] = dimension(i); }

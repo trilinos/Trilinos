@@ -24,12 +24,15 @@
 #ifndef Shards_SimpleArrayOps_hpp
 #define Shards_SimpleArrayOps_hpp
 
-/** \addtogroup  shards_package
- *  \{
- */
 namespace shards {
 
-/** \addtogroup  shards_package_simple_array_ops
+/** \ingroup shards_package
+ *  \defgroup  shards_package_simple_array_ops Simple Compile-time Sized Array Operations
+ *
+ *  \brief  Simple operations such as Copy<N>, Sum<N>, Max<N>, etc.
+ *
+ *  \author H. Carter Edwards  <hcedwar@sandia.gov>
+ *
  *  \{
  */
 
@@ -309,8 +312,6 @@ struct Compare<0,i> {
 #endif /* DOXYGEN_COMPILE */
 
 } // namespace shards
-
-/** \} */
 
 #endif
 

@@ -467,6 +467,15 @@ const CellTopologyData * getCellTopologyData<Triangle<3> >()
 }
 
 template<>
+const CellTopologyData * getCellTopologyData<Triangle<4> >()
+{
+  static const char name[] = "Triangle_4" ;
+  static const Descriptor< Triangle<4>::Traits >
+    self( getCellTopologyData< Triangle<3> >() , name );
+  return & self.top ;
+}
+
+template<>
 const CellTopologyData * getCellTopologyData<Triangle<6> >()
 {
   static const char name[] = "Triangle_6" ;
@@ -593,6 +602,15 @@ const CellTopologyData * getCellTopologyData<Tetrahedron<10> >()
 {
   static const char name[] = "Tetrahedron_10" ;
   static const Descriptor< Tetrahedron<10>::Traits >
+    self( getCellTopologyData<Tetrahedron<4> >() , name );
+  return & self.top ;
+}
+
+template<>
+const CellTopologyData * getCellTopologyData<Tetrahedron<8> >()
+{
+  static const char name[] = "Tetrahedron_8" ;
+  static const Descriptor< Tetrahedron<8>::Traits >
     self( getCellTopologyData<Tetrahedron<4> >() , name );
   return & self.top ;
 }

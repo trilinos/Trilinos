@@ -64,7 +64,7 @@ template<> const CellTopologyData * getCellTopologyData< Particle >();
  *  A line has local node ordinals as follows: <br>
  *  [0]--------[2]--------[1]  ---> Positive direction
  */
-template< unsigned Nodes = 2 > struct Line {};
+template< unsigned NodeCount = 2 > struct Line {};
 
 /** \brief  Singleton for line topology with two nodes.  */
 template<> const CellTopologyData * getCellTopologyData< Line<2> >();
@@ -79,7 +79,7 @@ template<> const CellTopologyData * getCellTopologyData< Line<3> >();
  *
  *  \see shards::Line
  */
-template< unsigned Nodes = 2 > struct Beam {};
+template< unsigned NodeCount = 2 > struct Beam {};
 
 /** \brief  Singleton for beam topology with two nodes.  */
 template<> const CellTopologyData * getCellTopologyData< Beam<2> >();
@@ -94,7 +94,7 @@ template<> const CellTopologyData * getCellTopologyData< Beam<3> >();
  *
  *  \see shards::Line
  */
-template< unsigned Nodes = 2 > struct ShellLine {};
+template< unsigned NodeCount = 2 > struct ShellLine {};
 
 /** \brief  Singleton for shell-line topology with two nodes.  */
 template<> const CellTopologyData * getCellTopologyData< ShellLine<2> >();
@@ -133,6 +133,9 @@ template<> const CellTopologyData * getCellTopologyData< Triangle<3> >();
 
 /**  \brief  Return CellTopologyData singleton for the Triangle<6> */
 template<> const CellTopologyData * getCellTopologyData< Triangle<6> >();
+
+/**  \brief  Return CellTopologyData singleton for the Triangle<4> (Face of Tet8) */
+template<> const CellTopologyData * getCellTopologyData< Triangle<4> >();
 
 //----------------------------------------------------------------------
 
@@ -213,6 +216,9 @@ template<> const CellTopologyData * getCellTopologyData< Tetrahedron<4> >();
 
 /** \brief  Return CellTopologyData singleton for the Tetrahedron<10> */
 template<> const CellTopologyData * getCellTopologyData< Tetrahedron<10> >();
+
+/** \brief  Return CellTopologyData singleton for the Tetrahedron<8> */
+template<> const CellTopologyData * getCellTopologyData< Tetrahedron<8> >();
 
 //----------------------------------------------------------------------
 
@@ -408,6 +414,14 @@ template<> struct Triangle<6> : public
                             TriangleEdgeNodeMap >
 { typedef Triangle<3> base ; };
 
+template<> struct Triangle<4> : public
+  CellTopologyTraits< 2 , 3 , 4 ,
+                            MakeTypeList< Line<2>  ,
+                                          Line<2>  ,
+                                          Line<2>  >::type ,
+                            TriangleEdgeNodeMap >
+{ typedef Triangle<3> base ; };
+
 //------------------------------------------------------------------------
 
 typedef
@@ -521,7 +535,7 @@ template<> struct ShellQuadrilateral<9> : public
 typedef
   MakeTypeList< IndexList< 0 , 1 , 4 > ,
                 IndexList< 1 , 2 , 5 > ,
-                IndexList< 2 , 3 , 6 > ,
+                IndexList< 2 , 0 , 6 > ,
                 IndexList< 0 , 3 , 7 > ,
                 IndexList< 1 , 3 , 8 > ,
                 IndexList< 2 , 3 , 9 > >::type TetrahedronEdgeNodeMap ;
@@ -565,13 +579,29 @@ template<> struct Tetrahedron<10> : public
                       TetrahedronSideNodeMap >
 { typedef Tetrahedron<4> base ; };
 
+template<> struct Tetrahedron<8> : public
+  CellTopologyTraits< 3 , 4 , 8 ,
+                      MakeTypeList< Line<2>  ,
+                                    Line<2>  ,
+                                    Line<2>  ,
+                                    Line<2>  ,
+                                    Line<2>  ,
+                                    Line<2>  >::type ,
+                      TetrahedronEdgeNodeMap ,
+                      MakeTypeList< Triangle<4>  ,
+                                    Triangle<4>  ,
+                                    Triangle<4>  ,
+                                    Triangle<4>  >::type ,
+                      TetrahedronSideNodeMap >
+{ typedef Tetrahedron<4> base ; };
+
 //------------------------------------------------------------------------
 
 typedef
   MakeTypeList< IndexList< 0 , 1 ,   5 > ,
                 IndexList< 1 , 2 ,   6 > ,
-                IndexList< 2 , 0 ,   7 > ,
-                IndexList< 0 , 3 ,   8 > ,
+                IndexList< 2 , 3 ,   7 > ,
+                IndexList< 3 , 0 ,   8 > ,
                 IndexList< 0 , 4 ,   9 > ,
                 IndexList< 1 , 4 ,  10 > ,
                 IndexList< 2 , 4 ,  11 > ,
@@ -869,6 +899,10 @@ const CellTopologyData * getCellTopologyData< Triangle<3>::Traits >()
 { return getCellTopologyData< Triangle<3> >(); }
 
 template<> inline
+const CellTopologyData * getCellTopologyData< Triangle<4>::Traits >()
+{ return getCellTopologyData< Triangle<4> >(); }
+
+template<> inline
 const CellTopologyData * getCellTopologyData< Triangle<6>::Traits >()
 { return getCellTopologyData< Triangle<6> >(); }
 
@@ -907,6 +941,10 @@ const CellTopologyData * getCellTopologyData< ShellQuadrilateral<9>::Traits >()
 template<> inline
 const CellTopologyData * getCellTopologyData< Tetrahedron<4>::Traits >()
 { return getCellTopologyData< Tetrahedron<4> >(); }
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Tetrahedron<8>::Traits >()
+{ return getCellTopologyData< Tetrahedron<8> >(); }
 
 template<> inline
 const CellTopologyData * getCellTopologyData< Tetrahedron<10>::Traits >()

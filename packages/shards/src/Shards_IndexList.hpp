@@ -26,7 +26,14 @@
 
 namespace shards {
 
-/** \addtogroup  shards_package_index_list
+/** \ingroup shards_package
+ *  \defgroup  shards_package_index_list  Compile-time List of Indices
+ *  \brief  Compile-time list of indices and access templates.
+ *
+ *  Compile-time list of indices and access operations.
+ *
+ *  \author H. Carter Edwards  <hcedwar@sandia.gov>
+ *
  *  \{
  */
 

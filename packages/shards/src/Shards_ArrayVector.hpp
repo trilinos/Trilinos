@@ -64,14 +64,19 @@ private:
       BaseType::m_ptr = n ? & m_storage[0] : NULL ;
     }
 
-  ArrayVector();
   ArrayVector( const ArrayVector & );
   ArrayVector & operator = ( const ArrayVector & );
 
 public:
+  ArrayVector()
+    : m_storage()
+  {}
 
   ~ArrayVector() {}
 
+  void resize( const unsigned * const dims )
+    { help_type::assign( BaseType::m_stride , dims ); assign(); }
+  
   void resize( const unsigned n1 , const unsigned n2 ,
                const unsigned n3 , const unsigned n4 ,
                const unsigned n5 , const unsigned n6 ,
@@ -108,6 +113,9 @@ public:
   void resize( const unsigned n1 )
     { help_type::assign(BaseType::m_stride,n1); assign(); }
 
+
+  ArrayVector( const unsigned * const dims )
+    : BaseType(), m_storage() { resize( dims ); }
 
   ArrayVector( const unsigned n1 , const unsigned n2 ,
                const unsigned n3 , const unsigned n4 ,

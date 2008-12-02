@@ -335,11 +335,11 @@ private:
 
   enum { OK_edge  = AssertEqual< edge_count , nedge_map >::OK };
   enum { OK_face  = AssertEqual< face_count , nface_map >::OK };
-  enum { OK_dimen = AssertEqual< 0 , dimension    >>  3 >::OK };
-  enum { OK_faceN = AssertEqual< 0 , face_count   >>  6 >::OK };
-  enum { OK_edgeN = AssertEqual< 0 , edge_count   >>  6 >::OK };
-  enum { OK_vertN = AssertEqual< 0 , vertex_count >>  6 >::OK };
-  enum { OK_nodeN = AssertEqual< 0 , node_count   >> 10 >::OK };
+  enum { OK_dimen = AssertEqual< 0 , (dimension    >>  3) >::OK };
+  enum { OK_faceN = AssertEqual< 0 , (face_count   >>  6) >::OK };
+  enum { OK_edgeN = AssertEqual< 0 , (edge_count   >>  6) >::OK };
+  enum { OK_vertN = AssertEqual< 0 , (vertex_count >>  6) >::OK };
+  enum { OK_nodeN = AssertEqual< 0 , (node_count   >> 10) >::OK };
 
 #endif
 
