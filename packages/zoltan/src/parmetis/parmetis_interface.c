@@ -33,7 +33,6 @@ static PARAM_VARS Parmetis_params[] = {
   { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
   { "PARMETIS_SEED", NULL, "INT", 0 },
   { "PARMETIS_ITR", NULL, "DOUBLE", 0 },
-  { "PARMETIS_USE_OBJ_SIZE", NULL, "INT", 0 },
   { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
   { "PARMETIS_FOLD", NULL, "INT", 0 },
   { NULL, NULL, NULL, 0 } };
@@ -473,8 +472,6 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
                       (void *) &seed);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_ITR",
                       (void *) pmv3_itr);
-    Zoltan_Bind_Param(Parmetis_params, "PARMETIS_USE_OBJ_SIZE",
-                      (void *) &use_obj_size);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG",
                       (void *) &coarse_alg);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_FOLD",
