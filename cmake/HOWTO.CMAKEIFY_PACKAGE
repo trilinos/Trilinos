@@ -70,6 +70,12 @@ the build dependencies.  For example, you have to add the subdirectory
 for the library(s) in 'src' before the subdirectories in 'test' or
 'example'.
 
+Special cases:
+
+2.a) Overridding an optional intra-package enable
+
+See turning off Zoltan support without ML in packages/ml/CMakeLists.txt
+
 
 3) Create the directory PACKAGE_DIR/cmake
 

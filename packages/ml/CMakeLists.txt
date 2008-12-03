@@ -1,6 +1,7 @@
 
 INCLUDE(TrilinosPackageHelpers)
 INCLUDE(Trilinos_Add_Option)
+INCLUDE(DualScopeSet)
 
 #
 # A) Define the package
@@ -12,25 +13,11 @@ TRILINOS_PACKAGE(ML)
 # B) Set up package-specific options
 #
 
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Epetra
-  HAVE_ML_EPETRA
-  "Enable the Epetra functionality."
-  OFF )
-
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_EpetraExt
-  HAVE_ML_EPETRAEXT
-  "Enable the EpetraExt functionality."
-  OFF )
-
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Ifpack
-  HAVE_ML_IFPACK
-  "Enable the Ifpack functionality."
-  OFF )
-
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Teuchos
-  HAVE_ML_TEUCHOS
-  "Enable the Teuchos functionality."
-  OFF )
+IF (${PACKAGE_NAME}_ENABLE_Zoltan AND NOT ${PACKAGE_NAME}_ENABLE_MPI)
+  MESSAGE(STATUS "  WARNING:  Setting ${PACKAGE_NAME}_ENABLE_Zoltan=OFF since ${PACKAGE_NAME}_ENABLE_MPI=OFF!")
+  DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_Zoltan "")
+  DUAL_SCOPE_SET(HAVE_ML_ZOLTAN OFF)
+ENDIF()
 
 TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Aztec
   HAVE_ML_AZTEC
@@ -45,21 +32,6 @@ TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Aztec2_1
 TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_AztecOO
   HAVE_ML_AZTECOO
   "Enable the AztecOO functionality."
-  OFF )
-
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Amesos
-  HAVE_ML_AMESOS
-  "Enable the Amesos functionality."
-  OFF )
-
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Anasazi
-  HAVE_ML_ANASAZI
-  "Enable the Anasazi functionality."
-  OFF )
-
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Anasaxi
-  HAVE_ML_ANASAxI
-  "Enable the Anasaxi functionality."
   OFF )
 
 TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_SUPERLU

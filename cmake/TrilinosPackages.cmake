@@ -37,7 +37,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Amesos                amesos                         ""
   Ifpack                ifpack                         ""
   Komplex               komplex                        ""
-  ML                    ml                             OFF
+  ML                    ml                             ""
   Belos                 belos                          OFF
   Stratimikos           stratimikos                    OFF
   Meros                 meros                          OFF

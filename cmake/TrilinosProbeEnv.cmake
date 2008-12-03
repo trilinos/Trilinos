@@ -80,3 +80,21 @@ INCLUDE(TrilinosFortranMangling)
 # Get BLAS name mangling
  
 INCLUDE(TrilinosBLASMangling)
+
+# Determine compiler version
+
+INCLUDE(CheckCXXSourceCompiles)
+
+CHECK_CXX_SOURCE_COMPILES(
+"
+int main() {
+#ifdef __sun
+  // This is the SUN!
+#else
+  THIS IS NOT THE SUN
+#endif
+  return 0;
+}
+"
+Trilinos_USING_SUN_COMPILER
+)

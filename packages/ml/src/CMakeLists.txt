@@ -5,9 +5,6 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-#SET(HAVE_BOOL ON)
-#SET(HAVE_STL ON)
-
 TRILINOS_PACKAGE_CONFIGURE_FILE(ml_config.h)
 
 #
@@ -40,7 +37,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Smoother)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Krylov)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Operator)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   Include/ml_defs.h
   Comm/ml_comm.h
   Include/ml_include.h
@@ -94,7 +91,7 @@ SET(HEADERS ${HEADERS}
   Operator/ml_rap.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   Coarsen/ml_agg_uncoupled.c
   Coarsen/ml_amg.c
   Coarsen/ml_agg_coupled.c
@@ -152,11 +149,6 @@ SET(SOURCES ${SOURCES}
   Operator/ml_rap_utils.c
   )
 
-
-
-
-
-
 #
 # util files
 #
@@ -166,7 +158,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/RefMaxwell)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MatrixFree)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MLAPI)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   Utils/ml_aztec_utils.h
   Utils/ml_epetra_utils.h
   Utils/ml_utils.h
@@ -244,11 +236,7 @@ SET(HEADERS ${HEADERS}
   MLAPI/MLAPI_BaseLinearCombination.h
   )
 
-SET(SOURCES ${SOURCES}
-  )
-
-
-  SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   Utils/ml_rbm.c
   Utils/ml_aztec_utils.c
   Utils/ml_read_utils.c
@@ -306,10 +294,6 @@ SET(SOURCES ${SOURCES}
   MLAPI/MLAPI_SAMIS.cpp
   MLAPI/MLAPI_LinearCombinations.cpp
   )
-
-IF (Trilinos_ENABLE_MPI)
-
-ENDIF()
 
 #
 # C) Define the targets for package's library(s)

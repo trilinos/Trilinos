@@ -34,6 +34,6 @@ COPY_FILES_TO_BINARY_DIR(ZDriveChSimpleCopyFiles
     zdrive.inp.partkway-v3
     simple.graph
     zdrive.inp.rcb
+  EXEDEPS zdrive
+  NOEXEPREFIX
   )
-# 2008/11/18: rabartl: Above, we most likely do not need all of these files
-# :-)  We should get Zoltan developers to work this out.

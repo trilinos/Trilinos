@@ -2,6 +2,7 @@ INCLUDE(Multiline_Set)
 INCLUDE(Global_Set)
 INCLUDE(Append_Set)
 INCLUDE(Assert_Defined)
+INCLUDE(SetNotFound)
 INCLUDE(Parse_Variable_Arguments)
 
 
@@ -23,10 +24,8 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
   IF (Trilinos_VERBOSE_CONFIGURE)
     MESSAGE("TPL_DECLARE_LIBRARIES: ${TPL_NAME}")
     PRINT_VAR(PARSE_REQUIRED_HEADERS)
-    PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+   PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
   ENDIF()
-
-
 
   #
   # User options
@@ -37,7 +36,7 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
   MULTILINE_SET(DOCSTR
     "List of semi-colon separated paths to look for the TPL ${TPL_NAME}"
     " libraries.  This list of paths will be passed into a FIND_LIBRARY(...)"
-    " command to find the libraries listed in ${TPL_NAME}_LIBRARIES."
+    " command to find the libraries listed in ${TPL_NAME}_LIBRARY_NAMES."
     "  Note that this set of paths is also the default value used for"
     " ${TPL_NAME}_LIBRARY_DIRS.  Therefore, if the headers exist in the"
     " same directories as the library, you do not need to set"
@@ -54,7 +53,7 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
     " ${TPL_NAME}_LIBRARY_DIRS.  NOTE: This is not the final list of libraries"
     " used for linking.  That is specified by TPL_${TPL_NAME}_LIBRARIES!"
     )
-  ADVANCED_SET(${TPL_NAME}_LIBRARIES ${PARSE_REQUIRED_LIBS_NAMES} 
+  ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES} 
     CACHE STRING ${DOCSTR})
 
   # Include directories
@@ -71,7 +70,7 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
   
     IF (Trilinos_VERBOSE_CONFIGURE)
       PRINT_VAR(${TPL_NAME}_LIBRARY_DIRS)
-      PRINT_VAR(${TPL_NAME}_LIBRARIES)
+      PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
       PRINT_VAR(${TPL_NAME}_INCLUDE_DIRS)
     ENDIF()
 
@@ -87,7 +86,7 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
 
     SET(LIBRARIES_FOUND)
 
-    FOREACH(LIBNAME_SET ${${TPL_NAME}_LIBRARIES})
+    FOREACH(LIBNAME_SET ${${TPL_NAME}_LIBRARY_NAMES})
 
       IF (Trilinos_VERBOSE_CONFIGURE)
         PRINT_VAR(LIBNAME_SET)
@@ -110,6 +109,7 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
           SET(PATHS_ARG PATHS)
         ENDIF()
   
+        SET_NOTFOUND(_${TPL_NAME}_${LIBNAME}_LIBRARY)
         FIND_LIBRARY( _${TPL_NAME}_${LIBNAME}_LIBRARY
           NAMES ${LIBNAME}
           ${PATHS_ARG}
@@ -132,7 +132,7 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
         MULTILINE_SET(ERRMSG
           "Warning: Could not find a library in the set \"${LIBNAME_SET}\" for"
           " the TPL ${TPL_NAME}!  Please manually set"
-          " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARIES or just"
+          " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
           " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
         MESSAGE(STATUS ${ERRMSG})
       ENDIF()
@@ -150,11 +150,15 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
       )
     ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
       CACHE PATH ${DOCSTR} )
+
+    IF (Trilinos_VERBOSE_CONFIGURE)
+      PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
+    ENDIF()
   
     IF (NOT TPL_${TPL_NAME}_LIBRARIES)
       MULTILINE_SET(ERRMSG
         "Error, could not find the ${TPL_NAME} Library!  Please manually set"
-        " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARIES or just"
+        " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
         " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
       MESSAGE(FATAL_ERROR ${ERRMSG})
     ENDIF()
@@ -173,11 +177,16 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
       " This varible, however, is the final value and will not be touched."
       )
 
+    SET_NOTFOUND(TPL_${TPL_NAME}_INCLUDE_DIRS)
     FIND_PATH( TPL_${TPL_NAME}_INCLUDE_DIRS NAMES
       NAMES ${PARSE_REQUIRED_HEADERS}
       PATHS ${${TPL_NAME}_INCLUDE_DIRS}
       DOC ${DOCSTR} )
     MARK_AS_ADVANCED(TPL_${TPL_NAME}_LIBRARIES)
+
+    IF (Trilinos_VERBOSE_CONFIGURE)
+      PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
+    ENDIF()
   
     IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
       MULTILINE_SET(ERRMSG
@@ -201,11 +210,9 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
   # Library directories?
 
   GLOBAL_NULL_SET(TPL_${TPL_NAME}_LIBRARY_DIRS)
-  # Not used for anything, just for consistency!
+  # Above: Not used for anything, just for consistency!
 
   IF (Trilinos_VERBOSE_CONFIGURE)
-    PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
-    PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
     PRINT_VAR(TPL_${TPL_NAME}_LIBRARY_DIRS)
   ENDIF()
 
