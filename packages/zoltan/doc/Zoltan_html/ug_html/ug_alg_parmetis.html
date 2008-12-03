@@ -166,8 +166,7 @@ assumes only small changes
 
     <tr>
       <td valign="top"><i>&nbsp;&nbsp;&nbsp; PARMETIS_METHOD</i></td>
-      <td>The ParMETIS method to be used; currently nine are
-available.&nbsp;&nbsp;
+      <td>The specific ParMETIS method to be used (see below).
 Note: See also <a href="ug_param.html#LB_APPROACH">LB_APPROACH</a>,
 which is a simpler way to specify the overall load balance approach.
 Only use <i>PARMETIS_METHOD</i> if you really need a specific
@@ -183,18 +182,6 @@ PartGeom
       <i>AdaptiveRepart - </i>adaptive repartitioning (only in
 ParMETIS 3.0
 and higher)
-      <br>
-      <i>RepartLDiffusion</i> - diffusion algorithm (local)&nbsp;
-      <br>
-      <i>RepartGDiffusion</i> - diffusion algorithm (global)&nbsp;
-      <br>
-      <i>RepartRemap</i> - multilevel partioning with remap seeking to
-minimize
-migration cost&nbsp;
-      <br>
-      <i>RepartMLRemap</i> - similar to RepartRemap but with additional
-multilevel
-refinement&nbsp;
       <br>
       <i>RefineKway</i> - refine the current partition (balance)</td>
     </tr>
