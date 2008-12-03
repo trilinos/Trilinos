@@ -1,0 +1,139 @@
+
+INCLUDE(TrilinosPackageHelpers)
+INCLUDE(Trilinos_Add_Option)
+
+#
+# A) Define the package
+#
+
+TRILINOS_PACKAGE(ML)
+
+#
+# B) Set up package-specific options
+#
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Epetra
+  HAVE_ML_EPETRA
+  "Enable the Epetra functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_EpetraExt
+  HAVE_ML_EPETRAEXT
+  "Enable the EpetraExt functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Ifpack
+  HAVE_ML_IFPACK
+  "Enable the Ifpack functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Teuchos
+  HAVE_ML_TEUCHOS
+  "Enable the Teuchos functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Aztec
+  HAVE_ML_AZTEC
+  "Enable the Aztec functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Aztec2_1
+  HAVE_ML_AZTEC2_1
+  "Enable the Aztec 2.1 functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_AztecOO
+  HAVE_ML_AZTECOO
+  "Enable the AztecOO functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Amesos
+  HAVE_ML_AMESOS
+  "Enable the Amesos functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Anasazi
+  HAVE_ML_ANASAZI
+  "Enable the Anasazi functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Anasaxi
+  HAVE_ML_ANASAxI
+  "Enable the Anasaxi functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_SUPERLU
+  HAVE_ML_SUPERLU
+  "Enable the SUPERLU functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_SUPERLU2_0
+  HAVE_ML_SUPERLU2_0
+  "Enable the SUPERLU 2.0 functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_SUPERLUDIST
+  HAVE_ML_SUPERLUDIST
+  "Enable the SUPERLUDIST functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Enrich
+  HAVE_ML_ENRICH
+  "Enable the Enrich functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Memory_Check
+  HAVE_ML_MEMORY_CHECK
+  "Enable the memory checking functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_New_T_PE
+  HAVE_ML_NEW_T_PE
+  "Enable the new T PE functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Complex_Maxwell
+  HAVE_ML_COMPLEX_MAXWELL
+  "Enable the complex Maxwell functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Timing
+  HAVE_ML_TIMING
+  "Enable the timing functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Flops
+  HAVE_ML_FLOPS
+  "Enable the flops functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Flops
+  HAVE_ML_FLOPS
+  "Enable the flops functionality."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_MLapi
+  HAVE_ML_MLAPI
+  "Enable the ML api."
+  OFF )
+
+TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Cfunc
+  HAVE_ML_CFUNC
+  "Enable the Cfunc functionality."
+  OFF )
+
+#
+# C) Add the libraries, tests, and examples
+#
+
+ADD_SUBDIRECTORY(src)
+
+TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
+
+TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
+
+#
+# D) Do standard postprocessing
+#
+
+TRILINOS_PACKAGE_POSTPROCESS()
