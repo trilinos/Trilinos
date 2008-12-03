@@ -12,6 +12,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+        @echo ""
+        @echo "Trilinos package fei subdirectory support-PETSc built successfully."
+        @echo ""
+
 PETSC_INCLUDE=@PETSC_INCLUDE@
 PETSC_LIBRARY=@PETSC_LIBRARY@
 

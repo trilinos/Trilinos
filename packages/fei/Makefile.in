@@ -777,7 +777,7 @@ uninstall-am: uninstall-includeHEADERS
 
 @BUILD_TESTS_TRUE@tests:
 @BUILD_TESTS_TRUE@	@echo ""
-@BUILD_TESTS_TRUE@	@echo "Building fei tests."
+@BUILD_TESTS_TRUE@	@echo "Now building fei tests."
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/utest_cases && $(MAKE)
@@ -796,7 +796,7 @@ uninstall-am: uninstall-includeHEADERS
 
 @BUILD_EXAMPLES_TRUE@examples:
 @BUILD_EXAMPLES_TRUE@	@echo ""
-@BUILD_EXAMPLES_TRUE@	@echo "Building fei examples."
+@BUILD_EXAMPLES_TRUE@	@echo "Now building fei examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
 @BUILD_EXAMPLES_TRUE@	@echo ""
