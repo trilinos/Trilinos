@@ -19,8 +19,7 @@ cmake \
 -D TPL_ENABLE_Boost:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D TPL_ENABLE_ParMETIS:BOOL=ON \
--D TPL_ParMETIS_INCLUDE_DIRS:PATH=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1 \
--D TPL_ParMETIS_LIBRARIES:PATH="/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1/libparmetis.a;/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1/libmetis.a"  \
+-D ParMETIS_LIBRARY_DIRS:PATH=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1 \
 -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
 -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
 -D Teuchos_ENABLE_BOOST:BOOL=ON \
@@ -32,5 +31,15 @@ $EXTRA_ARGS \
 ../../../../Trilinos
 
 
+#-D TPL_ParMETIS_INCLUDE_DIRS:PATH=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1 \
+#-D TPL_ParMETIS_LIBRARIES:PATH="/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1/libparmetis.a;/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1/libmetis.a"  \
+
+
+
+#-D TPL_ENABLE_Scotch:BOOL=ON \
+#-D TPL_Scotch_INCLUDE_DIRS:PATH=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/SCOTCH-5.1.2/scotch_5.1/src/libscotch \
+#-D TPL_Scotch_LIBRARIES:PATH="/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/SCOTCH-5.1.2/scotch_5.1/src/libscotch/libscotch.a" \
+
+
+
 # -D EpetraExt_BUILD_EXPERIMENTAL:BOOL=ON \
-# -D F77_FUNC_:STRING="(name,NAME) name ## __" \

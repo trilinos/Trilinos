@@ -22,7 +22,8 @@ ELSE()
   # Otherwise, we need to look for the Boost headers and libraries
 
   # This is the CMake built-in FindBoost module
-  FIND_PACKAGE(Boost COMPONENTS iostreams)
+  #FIND_PACKAGE(Boost COMPONENTS iostreams)
+  FIND_PACKAGE(Boost)
 
   IF (Boost_FOUND)
 

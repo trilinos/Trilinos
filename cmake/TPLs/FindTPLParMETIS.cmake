@@ -1,6 +1,6 @@
-INCLUDE(TPLDeclareWithHeaderLibraries)
+INCLUDE(TPLDeclareLibraries)
 
-TPL_DECLARE_WITH_HEADER_LIBRARIES( ParMETIS
-  HEADER_NAMES parmetis.h
-  COMMON_LIB_NAMES parmetis
+TPL_DECLARE_LIBRARIES( ParMETIS
+  REQUIRED_HEADERS parmetis.h
+  REQUIRED_LIBS_NAMES "parmetis;metis"
   )

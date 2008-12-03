@@ -26,6 +26,13 @@ Isorropia, NOX, ...
 hold simple generic utilities, cmake/package_arch to hold the Trilinos
 package architecture rountines.
 
+(*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that
+all pased in header files are found (This was requested by Roger P.).
+
+(*) [???] Add new TPL_DEFAULT_[INCLUDE_DIRS,LIBRARY_DIRS] user
+varibles that will be the default for all
+TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_DIRS] user variables.
+
 (*) [???] Rename and reorganize the package architecture modules and
 macros/function to be as Trilinos-independent as possible.  This will
 allow them to be reused for projects like Dakota and others and take
