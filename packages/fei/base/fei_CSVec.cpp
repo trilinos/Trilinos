@@ -7,6 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_CSVec.hpp"
+#include <algorithm>
 
 namespace fei {
 

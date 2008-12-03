@@ -44,6 +44,9 @@
 
 #include "fei_Aztec_LinSysCore.hpp"
 
+#include <vector>
+#include <snl_fei_ArrayUtils.hpp>
+
 static int azlsc_solveCounter_ = 0;
 static int azlsc_debugFileCounter_ = 0;
 
@@ -1211,11 +1214,20 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
 
   if (len == 0) return(0);
 
+  std::vector<int> bcEqns(len);
+  std::vector<int> indirect(len);
+  for(int i=0; i<len; ++i) {
+    bcEqns[i] = globalEqn[i];
+    indirect[i] = i;
+  }
+
+  snl_fei::insertion_sort_with_companions<int>(len, &bcEqns[0], &indirect[0]);
+  
   if (debugOutput_) {
     fprintf(debugFile_,"numEssBCs: %d\n", len);
     for(int ii=0; ii<len; ++ii) {
       fprintf(debugFile_, "   EssBC eqn %d, alpha %e gamma %e\n",
-              globalEqn[ii], alpha[ii], gamma[ii]); 
+              bcEqns[ii], alpha[indirect[ii]], gamma[indirect[ii]]); 
     }
     fflush(debugFile_);
   }
@@ -1258,7 +1270,7 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
 
   for(int i=0; i<len; i++) {
 
-    int globalEqn_i = globalEqn[i];
+    int globalEqn_i = bcEqns[i];
 
     //if globalEqn[i] isn't local, then the processor that owns it
     //should be running this code too. Otherwise there's trouble...
@@ -1288,51 +1300,53 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
       tmp_b_[currentRHS_][globalEqn_i -localOffset_] = rhs_term;
       tmp_bc_[globalEqn_i -localOffset_] = bc_term;
     }
-
-    for(int jj=localOffset_; jj<=localEnd; jj++) {
-
-      int col_row = jj;
-
-      int* offDiagIndices2 = NULL;
-      double* offDiagCoefs2 = NULL;
-      int offDiagLength2 = 0;
-      A_ptr_->getOffDiagRowPointers(col_row, offDiagIndices2,
-				    offDiagCoefs2, offDiagLength2);
-
-      //look through this row to find the non-zero in position
-      //globalEqn[i] and make the appropriate modification.
-
-      for(int j=0; j<offDiagLength2; j++) {
-
-	if (A_ptr_->getTransformedEqn(offDiagIndices2[j]) != globalEqn_i) {
-	  continue;
-	}
-
-	bc_term = gamma[i]/alpha[i];
-
-	double value = offDiagCoefs2[j]*bc_term;
-
-	if (rhsLoaded_) {
-	  (*b_ptr_)[col_row] -= value;
-	  (*bc_)[col_row] -= value;
-	}
-	else {
-	  tmp_b_[currentRHS_][col_row-localOffset_] -= value;
-	  tmp_bc_[col_row-localOffset_] -= value;
-	}
-
-	if (debugOutput_) {
-	  fprintf(debugFile_,"BC mod, rhs %d  -= %e\n", col_row, value);
-	  fprintf(debugFile_,"BC, set A(%d,%d)==%e, to 0.0\n",
-		  col_row, globalEqn_i, offDiagCoefs2[j]);
-	}
-
-	offDiagCoefs2[j] = 0.0;
-
-      }//for offDiagLength2
- 
-    }//for offDiagLength
   }
+
+  for(int jj=localOffset_; jj<=localEnd; jj++) {
+
+    int col_row = jj;
+
+    int* offDiagIndices2 = NULL;
+    double* offDiagCoefs2 = NULL;
+    int offDiagLength2 = 0;
+    A_ptr_->getOffDiagRowPointers(col_row, offDiagIndices2,
+                                  offDiagCoefs2, offDiagLength2);
+
+    //look through this row to find the non-zero in position
+    //globalEqn[i] and make the appropriate modification.
+
+    for(int j=0; j<offDiagLength2; j++) {
+
+      int col_index = A_ptr_->getTransformedEqn(offDiagIndices2[j]);
+
+      int insertPoint = -1;
+      int idx = snl_fei::binarySearch(col_index, &bcEqns[0], len, insertPoint);
+      if (idx < 0) continue;
+
+      double bc_term = gamma[indirect[idx]]/alpha[indirect[idx]];
+
+      double value = offDiagCoefs2[j]*bc_term;
+
+      if (rhsLoaded_) {
+        (*b_ptr_)[col_row] -= value;
+        (*bc_)[col_row] -= value;
+      }
+      else {
+        tmp_b_[currentRHS_][col_row-localOffset_] -= value;
+        tmp_bc_[col_row-localOffset_] -= value;
+      }
+
+      if (debugOutput_) {
+        fprintf(debugFile_,"BC mod, rhs %d  -= %e\n", col_row, value);
+        fprintf(debugFile_,"BC, set A(%d,%d)==%e, to 0.0\n",
+                col_row, bcEqns[idx], offDiagCoefs2[j]);
+      }
+
+      offDiagCoefs2[j] = 0.0;
+
+    }//for offDiagLength2
+ 
+  }//for offDiagLength
 
   return(0);
 }

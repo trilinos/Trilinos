@@ -499,5 +499,7 @@ July 7 2005: version 2.14.00
   - Removed more occurences of feiArray, using std::vector instead. This
     effects the API in places where an array is a return value. Specifically
     in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
-
+  - Optimized to remove hot-spot in fei_Aztec_LinSysCore.cpp in dirichlet
+    boundary condition enforcement.
+  - Fixed bug in fei_Reducer.cpp where matrix symmetry was wrongly assumed.
 
