@@ -33,12 +33,12 @@
 For more information about graph partitioning, see <a href="ug_alg_parmetis.html">ParMetis</a>.
 </p>
 <p>
-Scotch is a library for ordering and partitioning, developed at LaBRI in Bordeaux, France. PT-Scotch is the parallel module in Scotch. (We use the names Scotch and PT-Scotch interchangeably.) Scotch is a third-party library in Zoltan and should be obtained separately from the <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch web site</a>. Currently, Zoltan supports version 5.1 of Scotch, compiled with the support of PT-Scotch and <i>int</i> coding for vertices, not <i>long</i> (on architectures where <i>sizeof(int) != sizeof(long)</i>).
+Scotch is a library for ordering and partitioning, developed at LaBRI in Bordeaux, France. PT-Scotch is the parallel module in Scotch. (We use the name PT-Scotch when it applies only to parallel version, Scotch when it concerns at least the serial version.) Scotch is a third-party library in Zoltan and should be obtained separately from the <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch web site</a>. Currently, Zoltan supports version 5.1 of Scotch, compiled with the support of PT-Scotch and <i>int</i> coding for vertices, not <i>long</i> (on architectures where <i>sizeof(int) != sizeof(long)</i>).
 <p>
-If the parameter <a href="#SCOTCH_TYPE">SCOTCH_TYPE</a> is set to LOCAL and the number of processor is 1, it's the sequential version of Scotch which is called, not the parallel.
+If the parameter <a href="#SCOTCH_TYPE">SCOTCH_TYPE</a> is set to LOCAL and the number of processor is 1, it's the sequential version of Scotch which is called, not the parallel (thus the PT-Scotch specific function).
 </p>
 <p>
-Both the serial (Scotch) and the parallel (PT-Scotch) compute k-way partitioning by doing recursive bisection. 
+Both the serial (Scotch) and the parallel (PT-Scotch) compute k-way partitioning by doing recursive bisection.
 </p>
 <p>
 Scotch must be used in the context LB_APPROACH=partition, to balance poorly distributed data. Unlike ParMetis, Scotch doesn't support the multiconstraint partitioning feature. However, for single constraint partitioning it seems to produce better results than ParMetis although it requires less memory.
