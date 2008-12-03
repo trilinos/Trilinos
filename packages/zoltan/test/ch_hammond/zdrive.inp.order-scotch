@@ -1,9 +1,0 @@
-Decomposition Method 	= none
-Zoltan Parameters	= order_method=scotch
-Zoltan Parameters	= order_type=local
-Zoltan Parameters	= DEBUG_MEMORY=1
-Zoltan Parameters	= ADD_OBJ_WEIGHT=NONZEROS
-File Type		= Chaco
-File Name		= hammond
-Parallel Disk Info	= number=0
-zdrive action = 2
