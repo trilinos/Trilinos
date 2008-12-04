@@ -16,11 +16,21 @@ package.
 Backlog:
 --------
 
+(*) [???] Add to the HOWTO.CMAKEIFY_PACKAGE file a list of all common
+scenarios that we need to cmakify a package so that users that want to
+do something can just go down the list to learn how to implement that
+funcitonality.
+
+(*) [???] Sacado tradop tests use shell scripts to generate files.
+Need to find a simpler way to do this.
+
+(*) [???] Change TPL_LIBRARIES to TPL_LIBRARY_NAMES
+
 (*) [???] Upgrade TRILINOS_PACKAGE_ADD_LIBRARY(...) and
 TRILINOS_ADD_EXECUTABLE(...) to handle test libraries.  Add
 NOINSTALLLIB argument for test libraries that you don't want to
 install.  This is needed for some NOX test librries.  This effects
-Isorropia, NOX, ...
+Isorropia, NOX, Sacado...
 
 (*) [???] Clean up the Trilinos/cmake directory: Create cmake/utils to
 hold simple generic utilities, cmake/package_arch to hold the Trilinos

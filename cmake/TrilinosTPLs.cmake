@@ -21,4 +21,6 @@ SET(Trilinos_TPLS_ENABLED
   ParMETIS       OFF
   Scotch         OFF
   PaToH          OFF
+  CppUnit        OFF
+  ADOLC          OFF
   )
