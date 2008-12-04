@@ -81,20 +81,9 @@ INCLUDE(TrilinosFortranMangling)
  
 INCLUDE(TrilinosBLASMangling)
 
-# Determine compiler version
+# Determine compiler type
 
-INCLUDE(CheckCXXSourceCompiles)
-
-CHECK_CXX_SOURCE_COMPILES(
-"
-int main() {
-#ifdef __sun
-  // This is the SUN!
-#else
-  THIS IS NOT THE SUN
-#endif
-  return 0;
-}
-"
-Trilinos_USING_SUN_COMPILER
-)
+INCLUDE(CMakeDetermineCXXCompiler)
+PRINT_VAR(CMAKE_CXX_COMPILER_ID)
+# See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
+# directory for a listing of know compiler types.
