@@ -23,6 +23,7 @@ SET(Trilinos_TPLS_ENABLED
   PaToH          OFF
   CppUnit        OFF
   ADOLC          OFF
+  TVMET          OFF
   )
 
 # NOTES:
