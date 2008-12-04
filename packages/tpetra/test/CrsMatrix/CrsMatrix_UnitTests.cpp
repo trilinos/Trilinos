@@ -347,7 +347,7 @@ namespace {
     MV X(rowmap,numVecs);
     for (int i=myImageID*M; i<myImageID*M+M; ++i) {
       for (int j=0; j<numVecs; ++j) {
-        X.replaceGlobalValue(i,j,as<Scalar>( M*myImageID+i * j*M*N ) );
+        X.replaceGlobalValue(i,j,as<Scalar>( i + j*M*N ) );
       }
     }
     // build the expected output multivector B
@@ -360,6 +360,7 @@ namespace {
     // test the action
     Bout.random();
     A.apply(X,Bout,CONJ_TRANS);
+
     Bout.update(-ST::one(),Bexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     Bout.norm2(norms());
@@ -664,7 +665,6 @@ namespace {
     }
     // divine myNNZ and build multivector with matrix
     mveye.replaceMyValue(0,myImageID,ST::one());
-    out << "mveye: " << endl; mveye.printValues(out);
     if (myImageID == 0) {
       myNNZ = 2;
       mvans.replaceMyValue(0,0,as<Scalar>(2));
@@ -682,8 +682,6 @@ namespace {
       mvans.replaceMyValue(0,myImageID+1,as<Scalar>(1));
     }
     A.fillComplete();
-    out << A << endl;
-    out << "ColMap: " << A.getColMap() << endl;
     // test the properties
     TEST_EQUALITY(A.getNumGlobalNonzeros()   , 3*numImages-2);
     TEST_EQUALITY(A.getNumMyNonzeros()       , myNNZ);
@@ -700,7 +698,6 @@ namespace {
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
     // test the action
     A.apply(mveye,mvres);
-    out << "mvres: " << endl; mvres.printValues(out);
     mvres.update(-ST::one(),mvans,ST::one());
     Array<Mag> norms(numImages), zeros(numImages,MT::zero());
     mvres.norm2(norms());
@@ -771,7 +768,6 @@ namespace {
     // fillComplete() will distribute matrix entries from Root to all other procs
     A_crs.fillComplete();
     // doExport() will distribute MV entries from Root to all other procs
-    out << A_crs << endl;
     A_mv.doImport(A_mv_AllOnRoot,AllFromRoot,INSERT);
 
     if (myImageID == 0) {
@@ -858,30 +854,38 @@ namespace {
     }
     // fillComplete() will distribute matrix entries from Root to all other procs
     A_crs.fillComplete();
-    // doExport() will distribute MV entries from Root to all other procs
-
     if (myImageID == 0) {
       // Clean up allocated memory.
       free( dvals );
       free( colptr );
       free( rowind );
     }
+
     // simple power method
     RCP<MV> x = rcp(new MV(map_shared,1)), 
             r = rcp(new MV(map_shared,1));
-    Scalar lam;
-    Mag nrm;
-    x->random(); x->norm2(arrayView<Mag>(&nrm,1)); x->scale(MT::one()/nrm);
+    Scalar lam, lam_left;
+    Mag nrm, nrm_left;
+    x->putScalar(Scalar(1.0f,1.0f)); x->norm2(arrayView<Mag>(&nrm,1)); x->scale(MT::one()/nrm);
     for (int i=0; i<20; ++i) {
       A_crs.apply(*x,*r);                                         // r = A*x
-      x->dot(*r,arrayView<Scalar>(&lam,1));                       // lambda = x'*A*x = x'*r
-      x->update(ST::one(),*r,-lam);                               // x = A*x - x*lam
-      r->norm2(arrayView<Mag>(&nrm,1)); r->scale(MT::one()/nrm);  // r = |A*x|/|A*x|
-      swap(x,r);                                                  // x = |A*x|/|A*x| = newx   r = A*oldx - oldx*lam
-      r->norm2(arrayView<Mag>(&nrm,1));                           // nrm = |r| = |A*oldx - oldx*lam|
+      x->dot(*r,arrayView<Scalar>(&lam,1));                       // lambda = x'*r = x'*A*x
+      x->update(ST::one(),*r,-lam);                               // x = r - x*lam = A*x - x*lam \doteq oldres
+      r->norm2(arrayView<Mag>(&nrm,1)); r->scale(MT::one()/nrm);  // r = A*x / |A*x| \doteq newx
+      swap(x,r);                                                  // x = newx; r = oldres
+      r->norm2(arrayView<Mag>(&nrm,1));                           // nrm = |r| = |oldres|
       out << "i: " << i << "\t\tlambda: " << lam << "\t\t|r|: " << nrm << endl;
     }
-    TEST_FLOATING_EQUALITY(lam, Scalar(70.322f,0.0f), as<Mag>(0.01f));
+    // check that the computed right eigenpair is also a left eigenpair (the matrix is Hermitian)
+    A_crs.apply(*x,*r,CONJ_TRANS);
+    x->dot(*r,arrayView<Scalar>(&lam_left,1));
+    x->update(ST::one(),*r,-lam_left);  // x = A'*x - x*lam_left
+    x->norm2(arrayView<Mag>(&nrm_left,1));
+    out << "lam_left: " << lam_left << "\t\tnrm_left: " << nrm_left << endl;
+    TEST_FLOATING_EQUALITY(lam, Scalar(70.322f,0.0f), as<Mag>(0.000001f));
+    TEST_FLOATING_EQUALITY(lam_left, lam, as<Mag>(0.000001f));
+    TEST_EQUALITY_CONST(nrm      < 0.0001f, true);
+    TEST_EQUALITY_CONST(nrm_left < 0.0001f, true);
   }
 #endif
 
@@ -1083,7 +1087,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, TheEyeOfTruth, ORDINAL, SCALAR ) \
@@ -1095,12 +1099,12 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, FullMatrixTriDiag, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DomainRange, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, NonSquare, ORDINAL, SCALAR ) \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, Transpose, ORDINAL, SCALAR )*/ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, Transpose, ORDINAL, SCALAR ) \
       TRIUTILS_USING_TESTS(ORDINAL, SCALAR)
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         /*UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)*/ \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
      UNIT_TEST_GROUP_ORDINAL(int)
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD

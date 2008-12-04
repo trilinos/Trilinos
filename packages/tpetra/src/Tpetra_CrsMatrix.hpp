@@ -225,8 +225,8 @@ namespace Tpetra
       // multiplication routines
       void GeneralMV(const Teuchos::ArrayView<const Scalar> &X, const Teuchos::ArrayView<Scalar> &Y) const;
       void GeneralMM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const;
-      void GeneralMtV(const Teuchos::ArrayView<const Scalar> &X, const Teuchos::ArrayView<Scalar> &Y) const;
-      void GeneralMtM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const;
+      void GeneralMhV(const Teuchos::ArrayView<const Scalar> &X, const Teuchos::ArrayView<Scalar> &Y) const;
+      void GeneralMhM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const;
 
       Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
       Map<Ordinal> rowMap_, colMap_;
@@ -243,11 +243,8 @@ namespace Tpetra
 
       // these are RCPs because they are optional
       // importer is needed if DomainMap is not sameas ColumnMap
-      // FINISH: currently, domain map == range map == row map which is typically != column map
-      //         ergo, we will usually have an importer
       Teuchos::RCP<Import<Ordinal> > importer_;
-      // exporter is needed if RowMap is not sameas DomainMap
-      // FINISH: currently, domain map == range map == row map, so that we never have an exporter
+      // exporter is needed if RowMap is not sameas RangeMap
       Teuchos::RCP<Export<Ordinal> > exporter_;
 
       // a map between a (non-local) row and a list of (col,val)
@@ -676,10 +673,10 @@ namespace Tpetra
       }
       // Do the actual transposed multiplication
       if (numVectors==Teuchos::OrdinalTraits<Ordinal>::one()) {
-        GeneralMtV(Xdata[0],Ydata[0]);
+        GeneralMhV(Xdata[0],Ydata[0]);
       }
       else {
-        GeneralMtM(Xdata,Ydata);
+        GeneralMhM(Xdata,Ydata);
       }
 #   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
@@ -824,19 +821,10 @@ namespace Tpetra
     for (Ordinal r=OT::zero(); r < numMyRows_ ; ++r)
     {
       for (typename Array<Ordinal>::const_iterator cind = colinds_[r].begin();
-           cind != colinds_[r].end(); ++cind)
-      {
-        // FINISH: if we don't assume these go in (below), then we must explicitly put them in
-        //if (!rowMap_.isMyGlobalIndex(*cind))
-        //{
-          nnzcols.insert(*cind);
-        //}
+           cind != colinds_[r].end(); ++cind) {
+        nnzcols.insert(*cind);
       }
     }
-    // The column map automatically owns the entries from the row map. 
-    // FINISH: Why? In the case that these entries fall outside of the range of domainMap_, this is incorrect.
-    //         Otherwise, I don't see why it is even necessary.
-    // Array<Ordinal> myPaddedGlobalEntries(myGlobalEntries.begin(),myGlobalEntries.end());
     Array<Ordinal> myPaddedGlobalEntries;
     for (typename std::set<Ordinal>::iterator iter = nnzcols.begin(); iter != nnzcols.end() ; ++iter)
     {
@@ -1130,14 +1118,14 @@ namespace Tpetra
   void CrsMatrix<Ordinal,Scalar>::GeneralMV(const Teuchos::ArrayView<const Scalar> &x, const Teuchos::ArrayView<Scalar> &y) const
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    typename Teuchos::Array<Ordinal>::const_iterator col;
-    typename Teuchos::Array<Scalar >::const_iterator val;
+    typename Teuchos::Array<Ordinal>::const_iterator cind;
+    typename Teuchos::Array<Scalar >::const_iterator aval;
     for (Ordinal r=0; r < numMyRows_; ++r) {
-      col = colinds_[r].begin(); 
-      val =  values_[r].begin(); 
+      cind = colinds_[r].begin(); 
+      aval =  values_[r].begin(); 
       Scalar sum = ST::zero();
-      for (; col != colinds_[r].end(); ++col, ++val) {
-        sum += (*val) * x[*col];
+      for (; cind != colinds_[r].end(); ++cind, ++aval) {
+        sum += (*aval) * x[*cind];
       }
       y[r] = sum;
     }
@@ -1148,37 +1136,72 @@ namespace Tpetra
   void CrsMatrix<Ordinal,Scalar>::GeneralMM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    Ordinal numVectors = X.size();
-    typename Teuchos::Array<Ordinal>::const_iterator col;
-    typename Teuchos::Array<Scalar >::const_iterator val;
+    Teuchos_Ordinal numVectors = X.size();
+    typename Teuchos::Array<Ordinal>::const_iterator cind;
+    typename Teuchos::Array<Scalar >::const_iterator aval;
     for (Ordinal r=0; r < numMyRows_; ++r) {
-      for (int j=0; j<numVectors; ++j) {
+      for (Teuchos_Ordinal j=0; j<numVectors; ++j) {
+        const Teuchos::ArrayView<      Scalar> &yvals = Y[j];
         const Teuchos::ArrayView<const Scalar> &xvals = X[j]; 
-        col = colinds_[r].begin(); 
-        val = values_[r].begin(); 
+        cind = colinds_[r].begin(); 
+        aval =  values_[r].begin(); 
         Scalar sum = ST::zero();
-        for (; col != colinds_[r].end(); ++col, ++val) {
-          sum += (*val) * xvals[*col];
+        for (; cind != colinds_[r].end(); ++cind, ++aval) {
+          sum += (*aval) * xvals[*cind];
         }
-        Y[j][r] = sum;
+        yvals[r] = sum;
       }
     }
   }
 
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::GeneralMtV(const Teuchos::ArrayView<const Scalar> &x, const Teuchos::ArrayView<Scalar> &y) const
+  void CrsMatrix<Ordinal,Scalar>::GeneralMhV(const Teuchos::ArrayView<const Scalar> &x, const Teuchos::ArrayView<Scalar> &y) const
   { 
-    (void)x; (void)y;
-    TEST_FOR_EXCEPT("Tpetra::CrsMatrix::GeneralMtV() not yet implemented");
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    // Initialize y for transpose multiply
+    std::fill( y.begin(), y.end(), ST::zero() );
+    // apply conjugate transpose of matrix to x
+    // use column triad formulation, accumulating into y each column of A^H (each row of A) times each entry in x
+    typename Teuchos::Array<Ordinal>::const_iterator cind;
+    typename Teuchos::Array<Scalar >::const_iterator aval;
+    for (Ordinal r=0; r < numMyRows_; ++r) {
+      // loop over entries in this column of A^H (this row of A)
+      cind = colinds_[r].begin();
+      aval =  values_[r].begin();
+      for (; cind != colinds_[r].end(); ++cind, ++aval) {
+        y[*cind] += ST::conjugate(*aval) * x[r];
+      }
+    }
   }
 
 
   template<class Ordinal, class Scalar>
-  void CrsMatrix<Ordinal,Scalar>::GeneralMtM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const
+  void CrsMatrix<Ordinal,Scalar>::GeneralMhM(const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &X, const Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > &Y) const
   {
-    (void)X; (void)Y;
-    TEST_FOR_EXCEPT("Tpetra::CrsMatrix::GeneralMtM() not yet implemented");
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    Teuchos_Ordinal numVectors = X.size();
+    // Initialize Y for transpose multiply
+    for (typename Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> >::iterator yit=Y.begin(); yit != Y.end(); ++yit) {
+      std::fill( yit->begin(), yit->end(), ST::zero() );
+    }
+    // apply conjugate transpose of matrix to X
+    // use outer-product formulation, hitting Y with a rank-1 update comprised of each column of A^H (each row of A) and each row of X
+    typename Teuchos::Array<Ordinal>::const_iterator cind;
+    typename Teuchos::Array<Scalar >::const_iterator aval;
+    for (Ordinal r=0; r < numMyRows_; ++r) {
+      // loop over numvectors
+      for (Teuchos_Ordinal j=0; j<numVectors; ++j) {
+        const Teuchos::ArrayView<      Scalar> &yvals = Y[j];
+        const Teuchos::ArrayView<const Scalar> &xvals = X[j]; 
+        // loop over entries in this column of A^H (this row of A)
+        cind = colinds_[r].begin();
+        aval =  values_[r].begin();
+        for (; cind != colinds_[r].end(); ++cind, ++aval) {
+          yvals[*cind] += ST::conjugate(*aval) * xvals[r];
+        }
+      }
+    }
   }
 
 
