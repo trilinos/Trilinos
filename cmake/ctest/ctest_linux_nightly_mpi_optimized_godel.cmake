@@ -44,36 +44,51 @@ Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF
 CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC
 CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpicc
 CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran
+
+CMAKE_CXX_FLAGS:STRING=-O3 -ansi -Wall -Wshadow -Wunused-variable -Wunused-function -Wno-system-headers -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage -fexceptions
+CMAKE_C_FLAGS:STRING=-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions
+CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
+
+MAKECOMMAND:STRING=gmake -j8 -i
+
 HAVE_GCC_ABI_DEMANGLE:BOOL=ON
+
 MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind
+
 DART_TESTING_TIMEOUT:STRING=600
+
 CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+
+TPL_ENABLE_Boost:BOOL=ON
+
 TPL_ENABLE_MPI:BOOL=ON
 MPIEXEC_MAX_NUMPROCS:STRING=4
 MPI_EXTRA_LIBRARY:FILEPATH=""
 MPI_INCLUDE_PATH:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin
 MPI_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC
 MPI_EXECUTABLE:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiexec
+
+TPL_ENABLE_ParMETIS:BOOL=ON
+ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1
+
+TPL_ENABLE_Scotch:BOOL=ON
+Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include
+Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib
+
 Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
 Trilinos_ENABLE_TESTS:BOOL=ON
+
 Teuchos_ENABLE_COMPLEX:BOOL=ON
 Teuchos_ENABLE_EXTENDED:BOOL=ON
 Teuchos_ENABLE_BOOST:BOOL=ON
 Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON
 Teuchos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+
 EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON
 EpetraExt_BUILD_BDF:BOOL=ON
 
 BUILDNAME:STRING=${HOSTTYPE}-${TEST_TYPE}-${EXTRA_BUILD_TYPE}-${BUILD_TYPE}
 
 CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}
-
-CMAKE_CXX_FLAGS:STRING=-O3 -ansi -Wall -Wshadow -Wunused-variable -Wunused-function -Wno-system-headers -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage -fexceptions
-
-CMAKE_C_FLAGS:STRING=-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions
-
-CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
-
-MAKECOMMAND:STRING=gmake -j8 -i
 
 ")
