@@ -349,6 +349,7 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
 	vwgt_new[i*(gr->obj_wgt_dim+1)+gr->obj_wgt_dim] = 1;
       else if (add_type==2)
 	/* weight is vertex degree (EBEB should we add +1?) */
+	//	vwgt_new[i*(gr->obj_wgt_dim+1)+gr->obj_wgt_dim] = 10*(gr->xadj[i+1] -gr->xadj[i]) + 1;
 	vwgt_new[i*(gr->obj_wgt_dim+1)+gr->obj_wgt_dim] = gr->xadj[i+1] -gr->xadj[i];
     }
 	/* Use new vwgt array */
