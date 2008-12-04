@@ -59,8 +59,8 @@
 #ifdef VERSION
 #undef VERSION
 #endif
-#include "adouble.h"
-#include "interfaces.h"
+#include "adolc/adouble.h"
+#include "adolc/interfaces.h"
 #endif
 
 using std::cout;

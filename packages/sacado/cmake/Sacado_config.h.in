@@ -1,0 +1,24 @@
+/* Define if ADOL-C is enabled */
+#cmakedefine HAVE_ADOLC
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* Define if want to build sacado-examples */
+#cmakedefine HAVE_SACADO_EXAMPLES
+
+/* Define if want to build sacado-tests */
+#cmakedefine HAVE_SACADO_TESTS
+
+/* Define if want to build with sacado enabled */
+#cmakedefine HAVE_SACADO_STOKHOS
+
+/* Define if want to build with sacado enabled */
+#cmakedefine HAVE_SACADO_TEUCHOS
+
+/* define if the compiler is confused by std::sin, etc., within namespace
+   Sacado::Rad */
+#cmakedefine RAD_NO_USING_STDCC
+
+/* Define to enable extra debugging checks */
+#cmakedefine SACADO_DEBUG

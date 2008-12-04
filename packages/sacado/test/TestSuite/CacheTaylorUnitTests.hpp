@@ -33,8 +33,8 @@
 #define CACHETAYLORUNITTESTS_HPP
 
 // ADOL-C includes
-#include "adouble.h"
-#include "interfaces.h"
+#include "adolc/adouble.h"
+#include "adolc/interfaces.h"
 
 // Sacado includes
 #include "Sacado.hpp"
