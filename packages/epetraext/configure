@@ -8861,7 +8861,7 @@ if test "X$ac_cv_use_parmetis" = "Xno"; then
   ac_cv_use_native_zoltan=no
 fi
 
- if test "X$ac_cv_use_native_zoltan" != "Xno" -a "X$ac_cv_use_parmetis" != "Xno"; then
+ if test "X$ac_cv_use_native_zoltan" != "Xno"; then
   BUILD_NATIVE_ZOLTAN_TRUE=
   BUILD_NATIVE_ZOLTAN_FALSE='#'
 else

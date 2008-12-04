@@ -342,7 +342,7 @@ if test "X$ac_cv_use_parmetis" = "Xno"; then
 fi
 
 dnl If both Zoltan and the ParMETIS interface are enabled, use the native Zoltan
-AM_CONDITIONAL(BUILD_NATIVE_ZOLTAN, [test "X$ac_cv_use_native_zoltan" != "Xno" -a "X$ac_cv_use_parmetis" != "Xno"])
+AM_CONDITIONAL(BUILD_NATIVE_ZOLTAN, [test "X$ac_cv_use_native_zoltan" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, btf, [Enable EpetraExt BTF subpkg], BTF, no)
 AM_CONDITIONAL(BUILD_BTF, [test "X$ac_cv_use_epetraext_btf" != "Xno"])
