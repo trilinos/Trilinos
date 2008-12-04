@@ -290,8 +290,8 @@ public:
                 const CellTopologyData                        * base = NULL );
 
   
-  /** \brief  Construct custom 3-cell (polyhedron) from a list of
-   *          edges and sides.
+  /** \brief  Construct custom 3-cell (polyhedron) from a list of 
+   *          edges and sides. 
    *          The default base topology is the specified custom cell topology.
    */
   CellTopology( const std::string                             & name,

@@ -861,22 +861,26 @@ template<> struct Hexahedron<27> : public
 };
 
 //----------------------------------------------------------------------
+//  Polygons
+//----------------------------------------------------------------------
 
+/** \brief Topological traits: Dimension = 2, Sides = 5, Edges = 5,
+*          Vertices = 5, and Nodes = 5.
+*/
 
 template< unsigned NodeCount = 5 > struct Pentagon {};
 
-
-/** \brief  Return CellTopologyData singleton for pentagon with five nodes.  */
+/** \brief  Return CellTopologyData singleton for pentagon with five nodes.  
+*/
 template<> const CellTopologyData * getCellTopologyData< Pentagon<5> >();
 
-
+// Describe vertex to edge connectivity
 typedef
 MakeTypeList< IndexList< 0 , 1 > ,
               IndexList< 1 , 2 > ,
               IndexList< 2 , 3 > ,
               IndexList< 3 , 4 > ,
-              IndexList< 4 , 0 > >::type
-PentagonEdgeNodeMap ;
+              IndexList< 4 , 0 > >::type  PentagonEdgeNodeMap ;
 
 template<> struct Pentagon<5> : public
 CellTopologyTraits< 2 , 5 , 5 ,
@@ -893,7 +897,51 @@ CellTopologyTraits< 2 , 5 , 5 ,
 
 template<> inline
 const CellTopologyData * getCellTopologyData< Pentagon<5>::Traits >()
-{ return getCellTopologyData< Pentagon<5> >(); }
+{ 
+  return getCellTopologyData< Pentagon<5> >(); 
+}
+
+//----------------------------------------------------------------------
+
+/** \brief Topological traits: Dimension = 2, Sides = 6, Edges = 6,
+*          Vertices = 6, and Nodes = 6.
+*/
+
+template< unsigned NodeCount = 6 > struct Hexagon {};
+
+/** \brief  Return CellTopologyData singleton for Hexagon with six nodes.  
+*/
+template<> const CellTopologyData * getCellTopologyData< Hexagon<6> >();
+
+// Describe vertex to edge connectivity
+typedef
+MakeTypeList< IndexList< 0 , 1 > ,
+              IndexList< 1 , 2 > ,
+              IndexList< 2 , 3 > ,
+              IndexList< 3 , 4 > ,
+              IndexList< 4 , 5 > ,
+              IndexList< 5 , 0> >::type  HexagonEdgeNodeMap ;
+
+template<> struct Hexagon<6> : public
+CellTopologyTraits< 2 , 6 , 6 ,
+                    MakeTypeList< Line<2>  ,
+                                  Line<2>  ,
+                                  Line<2>  ,
+                                  Line<2>  ,
+                                  Line<2>  ,
+                                  Line<2>  >::type ,
+                    HexagonEdgeNodeMap >
+{ 
+  typedef Hexagon<6> base ; 
+};
+
+
+template<> inline
+const CellTopologyData * getCellTopologyData< Hexagon<6>::Traits >()
+{ 
+  return getCellTopologyData< Hexagon<6> >(); 
+}
+
 
 
 //------------------------------------------------------------------------

@@ -673,7 +673,6 @@ const CellTopologyData * getCellTopologyData<Wedge<18> >()
 
 //----------------------------------------------------------------------
 
-
 template<>
 const CellTopologyData * getCellTopologyData<Pentagon<5> >()
 {
@@ -682,6 +681,15 @@ const CellTopologyData * getCellTopologyData<Pentagon<5> >()
   return & self.top ;
 }
 
+//----------------------------------------------------------------------
+
+template<>
+const CellTopologyData * getCellTopologyData<Hexagon<6> >()
+{
+  static const char name[] = "Hexagon_6" ;
+  static const Descriptor< Hexagon<6>::Traits > self( NULL , name );
+  return & self.top ;
+}
 
 
 }//namespace shards
