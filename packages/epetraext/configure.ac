@@ -329,22 +329,20 @@ AM_CONDITIONAL(BUILD_COLORING, [test "X$ac_cv_use_epetraext_coloring" != "Xno"])
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, zoltan, [Enable EpetraExt interface support for Zoltan], ZOLTAN, no)
 AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_epetraext_zoltan" != "Xno"])
 
-if test "X$ac_cv_use_epetraext_zoltan" = "Xyes"; then
-  dnl Check for enabling of zoltan
-  AC_ARG_ENABLE([zoltan],
-  AC_HELP_STRING([--enable-zoltan],[Build EpetraExt interface support for Zoltan using native library.]),
-  ac_cv_use_native_zoltan=yes,
-  ac_cv_use_native_zoltan=no)
+dnl Check for enabling of zoltan
+AC_ARG_ENABLE([zoltan],
+AC_HELP_STRING([--enable-zoltan],[Build EpetraExt interface support for Zoltan using native library.]),
+ac_cv_use_native_zoltan=yes,
+ac_cv_use_native_zoltan=no)
 
-  dnl Also check if the ParMETIS interface is enabled, if not disable using the native Zoltan library
-  TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support for Zoltan.], PARMETIS, no)
-  if test "X$ac_cv_use_parmetis" = "Xno"; then
-    ac_cv_use_native_zoltan=no
-  fi
-
-  dnl If both Zoltan and the ParMETIS interface are enabled, use the native Zoltan
-  AM_CONDITIONAL(BUILD_NATIVE_ZOLTAN, [test "X$ac_cv_use_native_zoltan" != "Xno" -a "X$ac_cv_use_parmetis" != "Xno"])
+dnl Also check if the ParMETIS interface is enabled, if not disable using the native Zoltan library
+TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support for Zoltan.], PARMETIS, no)
+if test "X$ac_cv_use_parmetis" = "Xno"; then
+  ac_cv_use_native_zoltan=no
 fi
+
+dnl If both Zoltan and the ParMETIS interface are enabled, use the native Zoltan
+AM_CONDITIONAL(BUILD_NATIVE_ZOLTAN, [test "X$ac_cv_use_native_zoltan" != "Xno" -a "X$ac_cv_use_parmetis" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, btf, [Enable EpetraExt BTF subpkg], BTF, no)
 AM_CONDITIONAL(BUILD_BTF, [test "X$ac_cv_use_epetraext_btf" != "Xno"])
