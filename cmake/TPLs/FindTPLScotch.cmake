@@ -1,6 +1,6 @@
-INCLUDE(TPLDeclareWithHeaderLibraries)
+INCLUDE(TPLDeclareLibraries)
 
-TPL_DECLARE_WITH_HEADER_LIBRARIES( Scotch
-  REQUIRED_HEADERS scotch.h
-  REQUIRED_LIBS_NAMES scotch
+TPL_DECLARE_LIBRARIES( Scotch
+  REQUIRED_HEADERS scotch.h ptscotch.h
+  REQUIRED_LIBS_NAMES ptscotch ptscotcherr ptscotcherrexit
   )

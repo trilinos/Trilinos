@@ -125,6 +125,15 @@ do.
 release of Trilinos up on website and send an email to
 Trilinos-Announce allowing others to use this.
 
+(*) [???] Add an auto-documentation system so that each package and
+print detailed documentation on what options that it supports.  In
+this way, we could provide an option like Trilinos_PRINT_DOCUMENTATION
+who's main purpose was to print out a complete set of documentation at
+the top level and for all of the enabled packages.  I think that we
+could set this up so that it would automatically print out all of the
+cache variables with documentation inside of the detailed
+documentation.
+
 (*) [???] Create automated support for stripping out all "Experimental" code
 (both files and code inside of ifdefs) so that we don't put it out in releases
 of Trilinos.  This negates the need for the autotools way of creating

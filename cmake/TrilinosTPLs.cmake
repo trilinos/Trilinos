@@ -17,10 +17,16 @@ SET(Trilinos_TPLS_ENABLED
   LAPACK         ""
   MPI            ""
   Boost          OFF
+  Scotch         OFF
   METIS          OFF
   ParMETIS       OFF
-  Scotch         OFF
   PaToH          OFF
   CppUnit        OFF
   ADOLC          OFF
   )
+
+# NOTES:
+#
+# (*) ParMETIS must be listed after Scotch because the
+#     ParMETIS include directories must come before the
+#     Scotch include directories

@@ -462,15 +462,21 @@ MACRO(TRILINOS_PRIVATE_DISABLE_REQUIRED_PACKAGE_ENABLES FORWARD_DEP_PACKAGE_NAME
 
   ASSERT_DEFINED(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_TESTS)
   IF (${FORWARD_DEP_PACKAGE_NAME}_ENABLE_TESTS OR ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_TESTS STREQUAL "")
-    MESSAGE(STATUS
-      "Setting ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_TESTS=OFF because ${FORWARD_DEP_PACKAGE_NAME} has a required ${DEP_TYPE_STR} dependence on disabled package ${PACKAGE_NAME}")
+    # Always disable the option but don't print the message if the package is not enabled
+    IF (Trilinos_ENABLE_${FORWARD_DEP_PACKAGE_NAME})
+      MESSAGE(STATUS
+        "Setting ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_TESTS=OFF because ${FORWARD_DEP_PACKAGE_NAME} has a required ${DEP_TYPE_STR} dependence on disabled package ${PACKAGE_NAME}")
+    ENDIF()
     SET(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_TESTS OFF)
   ENDIF()
 
   ASSERT_DEFINED(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES)
   IF (${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES OR ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES STREQUAL "")
-    MESSAGE(STATUS
-      "Setting ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES=OFF because ${FORWARD_DEP_PACKAGE_NAME} has a required ${DEP_TYPE_STR} dependence on disabled package ${PACKAGE_NAME}")
+    # Always disable the option but don't print the message if the package is not enabled
+    IF (Trilinos_ENABLE_${FORWARD_DEP_PACKAGE_NAME})
+      MESSAGE(STATUS
+        "Setting ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES=OFF because ${FORWARD_DEP_PACKAGE_NAME} has a required ${DEP_TYPE_STR} dependence on disabled package ${PACKAGE_NAME}")
+    ENDIF()
     SET(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_EXAMPLES OFF)
   ENDIF()
 
@@ -487,8 +493,11 @@ MACRO(TRILINOS_PRIVATE_DISABLE_OPTIONAL_PACKAGE_ENABLES FORWARD_DEP_PACKAGE_NAME
 
   ASSERT_DEFINED(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_${PACKAGE_NAME})
   IF (${FORWARD_DEP_PACKAGE_NAME}_ENABLE_${PACKAGE_NAME} OR ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_${PACKAGE_NAME} STREQUAL "")
-    MESSAGE(STATUS
-      "Setting ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_${PACKAGE_NAME}=OFF because ${FORWARD_DEP_PACKAGE_NAME} has an optional library dependence on disabled package ${PACKAGE_NAME}")
+    # Always disable the conditional enable but only print the message if the package is enabled.
+    IF (Trilinos_ENABLE_${FORWARD_DEP_PACKAGE_NAME})
+      MESSAGE(STATUS
+        "Setting ${FORWARD_DEP_PACKAGE_NAME}_ENABLE_${PACKAGE_NAME}=OFF because ${FORWARD_DEP_PACKAGE_NAME} has an optional library dependence on disabled package ${PACKAGE_NAME}")
+    ENDIF()
     SET(${FORWARD_DEP_PACKAGE_NAME}_ENABLE_${PACKAGE_NAME} OFF)
   ENDIF()
 
@@ -922,7 +931,7 @@ MACRO(TRILINOS_ADJUST_PACKAGE_ENABLES)
   # ToDO: Implement This!
 
   MESSAGE("")
-  MESSAGE("Disabling forward packages that have a required dependancy on explicitly disabled packages ...")
+  MESSAGE("Disabling forward required packages and optional intra-package support that have a dependancy on explicitly disabled packages ...")
   MESSAGE("")
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
     TRILINOS_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${PACKAGE})
@@ -949,7 +958,7 @@ MACRO(TRILINOS_ADJUST_PACKAGE_ENABLES)
   
   IF (Trilinos_ENABLE_TESTS OR Trilinos_ENABLE_EXAMPLES)
     MESSAGE("")
-    MESSAGE("Enabling all tests and examples that can be enabled ...")
+    MESSAGE("Enabling all tests and examples that have not been explicitly disabled ...")
     MESSAGE("")
     FOREACH(PACKAGE ${Trilinos_PACKAGES})
       TRILINOS_APPLY_TEST_EXAMPLE_ENABLES(${PACKAGE})
@@ -980,7 +989,7 @@ MACRO(TRILINOS_ADJUST_PACKAGE_ENABLES)
   ENDFOREACH()
   
   MESSAGE("")
-  MESSAGE("Enabling all optional intra-package enables that can be if both sets of packages are enabled ...")
+  MESSAGE("Enabling all optional intra-package enables that are not explicitly disabled if both sets of packages are enabled ...")
   MESSAGE("")
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
     TRILINOS_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
