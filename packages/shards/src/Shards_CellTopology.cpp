@@ -438,6 +438,7 @@ m_node_map()
 
 //----------------------------------------------------------------------
 
+
 void badCellTopologyKey( const unsigned dimension ,
                          const unsigned face_count ,
                          const unsigned edge_count ,

@@ -69,7 +69,7 @@ std::ostream & operator << ( std::ostream & , const CellTopology & );
 class CellTopology {
 private:
   
-  /** \brief Deletes m_owned data member if
+  /** \brief Deletes m_owned data member
   */
   void deleteOwned();
   
@@ -80,22 +80,28 @@ private:
   void requireCell() const ;
   
   
-  /** \brief Throws invalid_argument if cell dimension exceedes the maximal 
-            admissible space dimension 3.
+  /** \brief  Throws invalid_argument if subcell dimension exceedes the maximal 
+   *          admissible space dimension 3.
+   *  \param  subcell_dim    [in]  - spatial dimension of a subcell
    */
   void requireDimension( const unsigned subcell_dim ) const ;
   
   
-  /** \brief Throws invalid_argument if subcell_ord exceeds the actual number
-             of subcells with specified dimension.
-    */
+  /** \brief  Throws invalid_argument if subcell_ord exceeds the actual number
+   *          of subcells with specified dimension.
+   *  \param  subcell_dim    [in]  - spatial dimension of a subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   */
   void requireSubcell( const unsigned subcell_dim ,
                        const unsigned subcell_ord ) const ;
   
   
-  /** \brief Throws invalid_argument if node_ord exceeds the actual number 
-             of nodes in the subcell with specified dimension and ordinal.
-    */
+  /** \brief  Throws invalid_argument if node_ord exceeds the actual number 
+   *          of nodes in the subcell with specified dimension and ordinal.
+   *  \param  subcell_dim    [in]  - spatial dimension of a subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   *  \param  node_ord       [in]  - node ordinal
+   */
   void requireNodeMap( const unsigned subcell_dim ,
                        const unsigned subcell_ord ,
                        const unsigned node_ord ) const ;
@@ -111,6 +117,7 @@ public:
    *  \{
    */
   
+          
   /** \brief  Dimension of this cell topology */
   unsigned getDimension() const
     {
@@ -118,6 +125,7 @@ public:
       return m_cell->dimension ;
     }
   
+        
   /** \brief  Unique key for this cell topology;
    *          under certain subcell uniformity conditions.
    */
@@ -127,6 +135,7 @@ public:
       return m_cell->key ;
     }
   
+        
   /** \brief  Node count of this cell topology */
   unsigned getNodeCount() const
     {
@@ -134,6 +143,7 @@ public:
       return m_cell->node_count ;
     }
   
+        
   /** \brief  Vertex count of this cell topology */
   unsigned getVertexCount() const
     {
@@ -141,6 +151,7 @@ public:
       return m_cell->vertex_count ;
     }
   
+        
   /** \brief  Edge boundary subcell count of this cell topology */
   unsigned getEdgeCount() const
     {
@@ -148,6 +159,7 @@ public:
       return m_cell->edge_count ;
     }
   
+        
   /** \brief  Side boundary subcell count of this cell topology */
   unsigned getSideCount() const
     {
@@ -155,6 +167,7 @@ public:
       return m_cell->side_count ;
     }
   
+        
   /** \brief  This cell's raw topology data */
   const CellTopologyData * getTopology() const
     {
@@ -162,6 +175,7 @@ public:
       return m_cell ;
     }
 
+        
   /** \brief  This cell's base cell topology's raw topology data */
   const CellTopologyData * getBaseTopology() const
     {
@@ -169,8 +183,11 @@ public:
       return m_cell->base ;
     }
 
+        
   /** \brief  Raw cell topology data for a subcell of the
    *          given dimension and ordinal.
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
    */
   const CellTopologyData * getTopology( const unsigned subcell_dim ,
                                         const unsigned subcell_ord ) const
@@ -181,8 +198,11 @@ public:
       return m_cell->subcell[subcell_dim][subcell_ord].topology ;
     }
 
+        
   /** \brief  Raw cell topology data for the base topology of a subcell of the
    *          given dimension and ordinal.
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
    */
   const CellTopologyData * getBaseTopology( const unsigned subcell_dim ,
                                             const unsigned subcell_ord ) const
@@ -190,42 +210,65 @@ public:
       return getTopology(subcell_dim,subcell_ord)->base ;
     }
 
-  /** \brief  Key of a subcell of the given dimension and ordinal. */
+        
+  /** \brief  Key of a subcell of the given dimension and ordinal. 
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   */
   unsigned getKey( const unsigned subcell_dim ,
                    const unsigned subcell_ord ) const
     {
       return getTopology(subcell_dim,subcell_ord)->key ;
     }
 
-  /** \brief  Node count of a subcell of the given dimension and ordinal. */
+        
+  /** \brief  Node count of a subcell of the given dimension and ordinal. 
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   */
   unsigned getNodeCount( const unsigned subcell_dim ,
                          const unsigned subcell_ord ) const
     {
       return getTopology(subcell_dim,subcell_ord)->node_count ;
     }
 
-  /** \brief  Vertex count of a subcell of the given dimension and ordinal. */
+        
+  /** \brief  Vertex count of a subcell of the given dimension and ordinal. 
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   */
   unsigned getVertexCount( const unsigned subcell_dim ,
                            const unsigned subcell_ord ) const
     {
       return getTopology(subcell_dim,subcell_ord)->vertex_count ;
     }
 
-  /** \brief  Edge count of a subcell of the given dimension and ordinal. */
+        
+  /** \brief  Edge count of a subcell of the given dimension and ordinal. 
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   */
   unsigned getEdgeCount( const unsigned subcell_dim ,
                          const unsigned subcell_ord ) const
     {
       return getTopology(subcell_dim,subcell_ord)->edge_count ;
     }
   
-  /** \brief  Side count of a subcell of the given dimension and ordinal. */
+        
+  /** \brief  Side count of a subcell of the given dimension and ordinal. 
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   */        
   unsigned getSideCount( const unsigned subcell_dim ,
                          const unsigned subcell_ord ) const
     {
       return getTopology(subcell_dim,subcell_ord)->side_count ;
     }
 
-  /** \brief  Subcell count of subcells of the given dimension. */
+        
+  /** \brief  Subcell count of subcells of the given dimension. 
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   */        
   unsigned getSubcellCount( const unsigned subcell_dim ) const
     {
       SHARDS_REQUIRE( requireCell() );
@@ -233,8 +276,10 @@ public:
       return m_cell->subcell_count[subcell_dim] ;
     }
   
+        
   /** \brief  Query if all subcells of the given dimension
    *          have the same cell topology.
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    */
   bool getSubcellHomogeneity( const unsigned subcell_dim ) const
     {
@@ -243,8 +288,12 @@ public:
       return m_cell->subcell_homogeneity[subcell_dim] ;
     }
   
+        
   /** \brief  Mapping from a subcell's node ordinal to a
    *          node ordinal of this parent cell topology.
+   *  \param  subcell_dim      [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord      [in]  - subcell ordinal
+   *  \param  subcell_node_ord [in]  - node ordinal relative to subcell
    */
   unsigned getNodeMap( const unsigned  subcell_dim ,
                        const unsigned  subcell_ord ,
@@ -268,19 +317,39 @@ public:
   CellTopology() : m_cell(NULL), m_owned(NULL) {}
   
   
-  /** \brief  Wrapper for safe access to a raw cell topology data. */
+  /** \brief  Wrapper for safe access to a raw cell topology data.
+   *  \param  cell             [in]  - pointer to raw cell topology
+   *          Example use: the statements
+   *          \code
+   *          CellTopology  myTri_3 ( getCellTopologyData< Triangle<3> >() )
+   *          CellTopology  myTet_10( getCellTopologyData< Tetrahedron<10>() );
+   *          \endcode
+   *          wraps Triangle<3> and Tetrahedron<10> (defined in Shards_BasicTopologies)
+   */
   CellTopology( const CellTopologyData * cell )
     : m_cell( cell ), m_owned( NULL )
     { SHARDS_REQUIRE( requireCell() ); }
   
         
-  /** \brief Constructs custom 1-cell (line) with base topology Line<>. */
+  /** \brief  Constructs custom 1-cell (line) with base topology Line<>. 
+   *          Example use: the statement
+   *          \code
+   *          CellTopology  customLine("customLine", 4);    
+   *          \endcode
+   *           defines custom line with 4 nodes.
+   */
   CellTopology( const std::string & name,
                 const unsigned      nodeCount);
   
         
   /** \brief  Construct custom 2-cell (polygon) from a list of edges.
    *          The default base topology is the specified custom cell topology.
+   *  \param  name             [in]  - descriptive name of the custom 2-cell
+   *  \param  vertex_count     [in]  - number of vertices in the custom 2-cell
+   *  \param  node_count       [in]  - number of nodes in the custom 2-cell
+   *  \param  edges            [in]  - raw CellTopologyData for each edge (can be different!)
+   *  \param  edge_node_map    [in]  - flat array with node maps for each edge 
+   *  \param  base             [in]  - CellTopologyData of the base topology
    */
   CellTopology( const std::string                             & name,
                 const unsigned                                  vertex_count,
@@ -290,9 +359,16 @@ public:
                 const CellTopologyData                        * base = NULL );
 
   
-  /** \brief  Construct custom 3-cell (polyhedron) from a list of 
-   *          edges and sides. 
+  /** \brief  Construct custom 3-cell (polyhedron) from a list of edges and sides.
    *          The default base topology is the specified custom cell topology.
+   *  \param  name             [in]  - descriptive name of the custom 3-cell
+   *  \param  vertex_count     [in]  - number of vertices in the custom 3-cell
+   *  \param  node_count       [in]  - number of nodes in the custom 3-cell
+   *  \param  edges            [in]  - raw CellTopologyData for each edge (can be different!)
+   *  \param  edge_node_map    [in]  - flat array with node maps for each edge 
+   *  \param  faces            [in]  - raw CellTopologyData for each face (can be different!)
+   *  \param  face_node_map    [in]  - flat array with node maps for each face 
+   *  \param  base             [in]  - CellTopologyData of the base topology
    */
   CellTopology( const std::string                             & name,
                 const unsigned                                  vertex_count,
@@ -311,6 +387,16 @@ public:
 
 }; // class CellTopology
 
+
+/** \brief  Generates detailed message if one or more input parameters are
+ *          out of their admissible bounds.
+ *  \param  dimension          [in]  - maximum value = 7
+ *  \param  face_count         [in]  - maximum value = 63
+ *  \param  edge_count         [in]  - maximum value = 63
+ *  \param  vertex_count       [in]  - maximum value = 63
+ *  \param  node_count         [in]  - maximum value = 1023
+ *
+ */
 void badCellTopologyKey( const unsigned dimension ,
                          const unsigned face_count ,
                          const unsigned edge_count ,
@@ -319,11 +405,12 @@ void badCellTopologyKey( const unsigned dimension ,
   
 
 /** \brief  Generate integer key from topological dimensions
- *  \param  dimension    maximum value = 7
- *  \param  face_count   maximum value = 63
- *  \param  edge_count   maximum value = 63
- *  \param  vertex_count maximum value = 63
- *  \param  node_count   maximum value = 1023
+ *  \param  dimension          [in]  - maximum value = 7    (3 bits)
+ *  \param  face_count         [in]  - maximum value = 63   (6 bits)
+ *  \param  edge_count         [in]  - maximum value = 63   (6 bits)
+ *  \param  vertex_count       [in]  - maximum value = 63   (6 bits)
+ *  \param  node_count         [in]  - maximum value = 1023 (10 bits)
+ *          The key uses all but the first bit in a 32 bit unsigned. 
  */
 inline
 unsigned cellTopologyKey( const unsigned dimension ,
@@ -339,8 +426,11 @@ unsigned cellTopologyKey( const unsigned dimension ,
                    ( node_count   >> 10 );
 
   if ( bad ) {
-    badCellTopologyKey( dimension , face_count ,
-                                    edge_count , vertex_count , node_count );
+    badCellTopologyKey( dimension , 
+                        face_count ,
+                        edge_count , 
+                        vertex_count , 
+                        node_count );
   }
 
   const unsigned key = ( dimension    << 28  ) |

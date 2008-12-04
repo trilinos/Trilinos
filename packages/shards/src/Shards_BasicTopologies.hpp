@@ -1072,8 +1072,20 @@ const CellTopologyData * getCellTopologyData< Hexahedron<27>::Traits >()
 
 //------------------------------------------------------------------------
 
+/** \brief Returns pointer to a static array of 256 ints filled with integers 
+           representing the allowable index range in cell templates: {0,1,...,255}
+*/
 const unsigned * index_identity_array();
 
+
+/** \brief Returns pointer to a static array of 256 CellTopologyData::Subcell 
+           structs filled with node topologies and numbered from 0 to 255. If 
+
+           const CellTopologyData::Subcell nodesList = subcell_nodes()   then        
+
+           nodesList[i].topology is CellTopologyData corresponding to a node
+           nodesList[i].node     is ptr to index_identity_array + i 
+*/
 const CellTopologyData::Subcell * subcell_nodes_array();
 
 #endif /* DOXYGEN_COMPILE */
