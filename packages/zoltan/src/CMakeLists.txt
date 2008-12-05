@@ -37,7 +37,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   include/lbi_const.h
   include/zoltan_align.h
   include/zoltan_cpp.h
@@ -58,11 +58,11 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/all)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   all/all_allo_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   all/all_allo.c
   )
 
@@ -72,13 +72,13 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/coloring)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   coloring/coloring_const.h
   coloring/coloring.h
   coloring/g2l_hash.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   coloring/coloring.c
   coloring/color_test.c
   coloring/g2l_hash.c
@@ -90,12 +90,12 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ha)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   ha/ha_const.h
   ha/ha_drum.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   ha/build_machine_desc.c
   ha/divide_machine.c
   ha/get_processor_name.c
@@ -108,11 +108,11 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hier)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   hier/hier.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   hier/hier.c
   hier/hier_free_struct.c
   )
@@ -123,13 +123,13 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hsfc)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   hsfc/hsfc.h
   hsfc/hsfc_const.h
   hsfc/hsfc_hilbert_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   hsfc/hsfc_box_assign.c
   hsfc/hsfc.c
   hsfc/hsfc_hilbert.c
@@ -142,12 +142,12 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/lb)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   lb/lb_const.h
   lb/lb_init_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   lb/lb_balance.c
   lb/lb_box_assign.c
   lb/lb_copy.c
@@ -172,7 +172,7 @@ IF (${PACKAGE_NAME}_ENABLE_OCT)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/oct)
   
-  SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  APPEND_SET(NOINSTALLHEADERS
     oct/costs_const.h
     oct/costs.h
     oct/dfs_const.h
@@ -191,7 +191,7 @@ IF (${PACKAGE_NAME}_ENABLE_OCT)
     oct/SFC.h
     )
   
-  SET(SOURCES ${SOURCES}
+  APPEND_SET(SOURCES
     oct/costs.c
     oct/dfs.c
     oct/migoct.c
@@ -215,11 +215,11 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/order)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   order/order_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   order/order.c
   order/order_struct.c
   order/order_tools.c
@@ -232,7 +232,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/par)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   par/par_average_const.h
   par/par_bisect_const.h
   par/par_const.h
@@ -240,7 +240,7 @@ SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   par/par_tflops_special_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   par/par_average.c
   par/par_bisect.c
   par/par_median.c
@@ -256,12 +256,12 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/params)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   params/key_params.h
   params/params_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   params/assign_param_vals.c
   params/bind_param.c
   params/check_param.c
@@ -279,13 +279,13 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/parmetis)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   parmetis/third_library_const.h
   parmetis/third_library.h
   parmetis/third_library_tools.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   parmetis/build_graph.c
   parmetis/postprocessing.c
   parmetis/preprocessing.c
@@ -296,11 +296,11 @@ SET(SOURCES ${SOURCES}
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 
-  SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  APPEND_SET(NOINSTALLHEADERS
     parmetis/parmetis_interface.h
     )
   
-  SET(SOURCES ${SOURCES}
+  APPEND_SET(SOURCES
     parmetis/parmetis_interface.c
     )
 
@@ -308,11 +308,11 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
 
-  SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+  APPEND_SET(NOINSTALLHEADERS
   parmetis/scotch_interface.h
     )
   
-  SET(SOURCES ${SOURCES}
+  APPEND_SET(SOURCES
   parmetis/scotch_interface.c
     )
 
@@ -324,7 +324,7 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/phg)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   phg/phg_comm.h
   phg/phg_const.h
   phg/phg_distrib.h
@@ -333,7 +333,7 @@ SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   phg/phg_util.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   phg/phg_build.c
   phg/phg_build_calls.c
   phg/phg.c
@@ -361,7 +361,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/rcb)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   rcb/create_proc_list_const.h
   rcb/rcb_const.h
   rcb/rcb.h
@@ -370,7 +370,7 @@ SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   rcb/shared.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   rcb/box_assign.c
   rcb/create_proc_list.c
   rcb/inertial1d.c
@@ -391,12 +391,12 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/reftree)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   reftree/reftree_const.h
   reftree/reftree.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   reftree/reftree_build.c
   reftree/reftree_coarse_path.c
   reftree/reftree_hash.c
@@ -409,7 +409,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simple)
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   simple/block.c
   simple/random.c
   )
@@ -420,11 +420,11 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/timer)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   timer/timer_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   timer/timer_params.c
   )
 
@@ -437,7 +437,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Utilities/DDirectory)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Utilities/Timer)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Utilities/shared)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   Utilities/Communication/comm.h
   Utilities/DDirectory/DD.h
   Utilities/Timer/timer.h
@@ -445,7 +445,7 @@ SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   Utilities/shared/zoltan_id.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   Utilities/Communication/comm_exchange_sizes.c
   Utilities/Communication/comm_invert_map.c
   Utilities/Communication/comm_do.c
@@ -481,7 +481,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zz)
 
-SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
+APPEND_SET(NOINSTALLHEADERS
   zz/zz_const.h
   zz/zz_heap.h
   zz/zz_id_const.h
@@ -490,7 +490,7 @@ SET(NOINSTALLHEADERS ${NOINSTALLHEADERS}
   zz/zz_util_const.h
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   zz/zz_coord.c
   zz/zz_gen_files.c
   zz/zz_hash.c

@@ -108,7 +108,7 @@ MACRO(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
       ENDIF()
     ENDFOREACH()
   ELSE()
-    # If there is not dependent libs passed in, then this library can not possiblly
+    # If there are no dependent libs passed in, then this library can not possiblly
     # depend on the package's other libraries so we must link to the dependent libraries
     # in dependent libraries and TPLs.
   ENDIF()
