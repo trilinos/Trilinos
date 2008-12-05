@@ -77,20 +77,20 @@ namespace Tpetra {
     //! @name Post-construction modification routines
     //@{ 
 
-    //! Replace current value at the specified (GlobalRow, VectorIndex) location with ScalarValue.
+    //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
     void replaceGlobalValue(Ordinal globalRow, Ordinal vectorIndex, const Scalar &value);
 
-    //! Adds ScalarValue to existing value at the specified (GlobalRow, VectorIndex) location.
+    //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
     void sumIntoGlobalValue(Ordinal globalRow, Ordinal vectorIndex, const Scalar &value);
 
-    //! Replace current value at the specified (MyRow, VectorIndex) location with ScalarValue.
-    void replaceMyValue(Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue);
+    //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
+    void replaceMyValue(Ordinal myRow, Ordinal vectorIndex, const Scalar &value);
 
-    //! Adds ScalarValue to existing value at the specified (MyRow, VectorIndex) location.
-    void sumIntoMyValue(Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue);
+    //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
+    void sumIntoMyValue(Ordinal myRow, Ordinal vectorIndex, const Scalar &value);
 
-    //! Initialize all values in a multi-vector with constant value.
-    void putScalar(const Scalar &ScalarConstant);
+    //! Initialize all values in a multi-vector with specified value.
+    void putScalar(const Scalar &value);
 
     //! Set multi-vector values to random numbers.
     void random();
@@ -102,10 +102,10 @@ namespace Tpetra {
     void reduce();
 
 
-    //@} 
+    //@}
 
     //! @name Extraction methods
-    //@{ 
+    //@{
 
     /*
     //! Returns a MultiVector with copies of selected columns.
@@ -150,7 +150,7 @@ namespace Tpetra {
     //! Return const non-persisting pointers to values. This is a non-persisting view.
     Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > extractConstView() const;
 
-    //@} 
+    //@}
 
     //! @name Mathematical methods
     //@{ 
@@ -160,7 +160,7 @@ namespace Tpetra {
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
     void dot(const MultiVector<Ordinal,Scalar> &A, const Teuchos::ArrayView<Scalar> &dots) const;
 
-    //! Puts element-wise absolute values of input Multi-vector in target, this = abs(A).
+    //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs(const MultiVector<Ordinal,Scalar> &A);
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).

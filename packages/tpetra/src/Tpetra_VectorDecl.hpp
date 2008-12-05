@@ -29,44 +29,14 @@
 #ifndef TPETRA_VECTOR_DECL_HPP
 #define TPETRA_VECTOR_DECL_HPP
 
-#include <Teuchos_Object.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVectorDecl.hpp"
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of VectorData, needed to prevent circular inclusions
-  template<typename Ordinal, typename Scalar> class VectorData;
-#endif
-
-  //! Tpetra::Vector: A class for constructing and using sparse vectors.
-
-  /*! Vector is templated on Scalar for the vector entries, and on Ordinal 
-      for the vector indices. A VectorSpace object is needed for all Vector objects.
-
-    Vector entries can only be accessed through their local index values. 
-    Global index values can be converted to local indices by using the 
-    VectorSpace::getLocalIndex method.
-
-    Note that for most of the mathematical methods that set \e this to the result of
-    an operation on vectors passed as parameters, the \e this vector can be used 
-    as one of the parameters (unless otherwise specified).
-    
-    Vector error codes (positive for non-fatal, negative for fatal):
-    <ol>
-    <li> +1  Specified vector index not found on this image.
-    <li> +2  Vector sizes do not match.
-    <li> +3  Cannot perform that operation on an empty vector.
-    <li> -1  Invalid number of entries passed to constructor.
-    <li> -99 Internal Vector error. Contact developer.
-    </ol>
-  */
+  //! Tpetra::Vector: A class for constructing and using distributed vectors.
 
   template<typename Ordinal, typename Scalar>
-  class Vector : public DistObject<Ordinal,Scalar> {
+  class Vector : public MultiVector<Ordinal,Scalar> {
 
   public:
   
@@ -74,118 +44,123 @@ namespace Tpetra {
     //@{ 
 
     //! Sets all vector entries to zero.
-    Vector(const Map<Ordinal> &map);
-  
-    //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
-    Vector(const Teuchos::ArrayView<const Scalar> &values, const Map<Ordinal> & map);
+    Vector(const Map<Ordinal> &map, bool zeroOut=true);
 
-    //! Copy constructor.
+    //! Vector copy constructor.
     Vector(const Vector<Ordinal,Scalar> &source);
 
+    //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
+    Vector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Scalar> &values);
+
     //! Destructor.  
-    ~Vector();
+    virtual ~Vector();
 
     //@}
 
-    //! @name Post-Construction Modification Routines
+    //! @name Post-construction modification routines
     //@{ 
 
-    //! Submit entries. Values submitted will be summed with existing values.
-    void submitEntries(const Teuchos::ArrayView<const Ordinal> &indices,
-                       const Teuchos::ArrayView<const Scalar>  &values);
+    //! Replace current value at the specified location with specified value.
+    void replaceGlobalValue(Ordinal globalRow, const Scalar &value);
 
-    //! Set all entries to scalarValue.
-    void setAllToScalar(const Scalar &value);
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoGlobalValue(Ordinal globalRow, const Scalar &value);
 
-    //! Set all entries to random values.
-    void setAllToRandom();
+    //! Replace current value at the specified location with specified values.
+    void replaceMyValue(Ordinal myRow, const Scalar &value);
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoMyValue(Ordinal myRow, const Scalar &value);
+
+    //! Initialize all values in a multi-vector with specified value.
+    void putScalar(const Scalar &value);
+
+    //! Set multi-vector values to random numbers.
+    void random();
+
+    //! Replace the underlying Map with a compatible one.
+    void replaceMap(const Map<Ordinal> &map);
+
+    //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
+    void reduce();
+
 
     //@}
 
+    //! @name Extraction methods
+    //@{
 
-    //! @name Extraction Methods
-    //@{ 
+    using MultiVector<Ordinal,Scalar>::extractCopy; // overloading, not hiding
+    //! Return multi-vector values in user-provided two-dimensional array.
+    void extractCopy(Teuchos::ArrayView<Scalar> A) const;
 
-    //! Put vector entries into user array (copy)
-    // void extractCopy(Scalar* userArray) const;
+    using MultiVector<Ordinal,Scalar>::extractView; // overloading, not hiding
+    //! Return non-const non-persisting view of values in a one-dimensional array.
+    void extractView(Teuchos::ArrayView<Scalar> &A);
 
-    //! Put pointers to vector entries into user array (view)
-    // void extractView(Scalar** userPointerArray) const;
+    using MultiVector<Ordinal,Scalar>::extractConstView; // overloading, not hiding
+    //! Return const non-persisting view of values in a one-dimensional array.
+    void extractConstView(Teuchos::ArrayView<const Scalar> &A) const;
 
     //@}
 
-
-    //! @name Mathematical Methods
+    //! @name Mathematical methods
     //@{ 
 
-    //! Returns result of dot product, \e result = this.x
-    Scalar dotProduct(const Vector<Ordinal, Scalar> &x) const;
+    // FINISH: expand documentation of these functions
 
-    //! Changes this vector to elementwise absolute values of x.
-    void absoluteValue(const Vector<Ordinal,Scalar> &x);
+    using MultiVector<Ordinal,Scalar>::dot; // overloading, not hiding
+    //! Computes dot product of this Vector against input Vector x.
+    Scalar dot(const Vector<Ordinal,Scalar> &a) const;
 
-    //! Changes this vector to element-wise reciprocal values of x.
-    void reciprocal(const Vector<Ordinal,Scalar> &x);
+    using MultiVector<Ordinal,Scalar>::abs; // overloading, not hiding
+    //! Puts element-wise absolute values of input Vector in this Vector: a = abs(this)
+    void abs(const Vector<Ordinal,Scalar> &a);
 
-    //! Scale the current values of a vector, \e this = scalarThis*\e this.
-    void scale(const Scalar &scalarThis);
+    using MultiVector<Ordinal,Scalar>::reciprocal; // overloading, not hiding
+    //! Puts element-wise reciprocal values of input Vector in this Vector: this(i) = 1/a(i).
+    void reciprocal(const Vector<Ordinal,Scalar> &a);
 
-    //! Replace vector values with scaled values of x, \e this = scalarX*x.
-    void scale(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x);
+    using MultiVector<Ordinal,Scalar>::scale; // overloading, not hiding
+    //! Replace this Vector with scaled Vector a, this = alpha*a.
+    void scale(const Scalar &alpha, const Vector<Ordinal,Scalar> &a);
 
-    //! Update vector values with scaled values of x, \e this = scalarThis*\e this + scalarX*x.
-    void update(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x, const Scalar &scalarThis);
+    using MultiVector<Ordinal,Scalar>::update; // overloading, not hiding
+    //! Update this Vector with scaled Vector a, this = beta*this + alpha*a.
+    void update(const Scalar &alpha, const Vector<Ordinal,Scalar> &a, const Scalar &beta);
 
-    //! Update vector with scaled values of x and y, \e this = scalarThis*\e this + scalarX*x + scalarY*y.
-    void update(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x, 
-                const Scalar &scalarY, const Vector<Ordinal,Scalar> &y, 
-                const Scalar &scalarThis);
+    //! Update this Vector with scaled Vectors a and b, this = gamma*this + alpha*a + beta*b.
+    void update(const Scalar &alpha, const Vector<Ordinal,Scalar> &a, const Scalar &beta, const Vector<Ordinal,Scalar> &b, const Scalar &gamma);
 
-    //! Compute 1-norm of vector.
-    Scalar norm1() const;
+    using MultiVector<Ordinal,Scalar>::norm1; // overloading, not hiding
+    //! Return 1-norm of this Vector.
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const;
 
-    //! Compute 2-norm of vector.
-    Scalar norm2() const;
+    using MultiVector<Ordinal,Scalar>::norm2; // overloading, not hiding
+    //! Compute 2-norm of this Vector.
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
 
-    //! Compute Infinity-norm of vector.
-    Scalar normInf() const;
+    using MultiVector<Ordinal,Scalar>::normInf; // overloading, not hiding
+    //! Compute Inf-norm of this Vector.
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const;
 
-    //! Compute Weighted 2-norm (RMS Norm) of vector.
-    Scalar normWeighted(const Vector<Ordinal,Scalar> &weights) const;
+    using MultiVector<Ordinal,Scalar>::normWeighted; // overloading, not hiding
+    //! Compute Weighted 2-norm (RMS Norm) of this Vector.
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const MultiVector<Ordinal,Scalar> &weights) const;
 
-    //! Compute minimum value of vector.
+    using MultiVector<Ordinal,Scalar>::minValue; // overloading, not hiding
+    //! Compute minimum value of this Vector.
     Scalar minValue() const;
 
-    //! Compute maximum value of vector.
+    using MultiVector<Ordinal,Scalar>::maxValue; // overloading, not hiding
+    //! Compute maximum value of this Vector.
     Scalar maxValue() const;
 
-    //! Compute mean (average) value of vector.
+    using MultiVector<Ordinal,Scalar>::meanValue; // overloading, not hiding
+    //! Compute mean (average) value of this Vector.
     Scalar meanValue() const;
 
-    //! Vector multiplication (elementwise) 
-    /*! \e this = scalarThis*\e this + scalarXY*x@y, where @ represents elementwise multiplication. */
-    void elementwiseMultiply(const Scalar &scalarXY, const Vector<Ordinal,Scalar> &x, const Vector<Ordinal,Scalar> &y, 
-                             const Scalar &scalarThis);
-
-    //! Reciprocal multiply (elementwise)
-    /*! \e this = scalarThis*\e this + scalarXY*y@x, where @ represents elementwise division. */
-    void elementwiseReciprocalMultiply(Scalar scalarXY, const Vector<Ordinal, Scalar> &x, const Vector<Ordinal, Scalar> &y, 
-                                       const Scalar &scalarThis);
-
-    //@}
-
-
-    //! @name Random number utilities
     //@{ 
-
-    //! Get seed
-    const Scalar & getSeed() const;
-
-    //! Set seed
-    void setSeed(const Scalar &seed);
-
-    //@}
-
 
     //! @name Element access methods
     //@{ 
