@@ -87,6 +87,15 @@
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif
 
+#ifdef _AIX
+#  ifndef TEMPLATE_FRIENDS_NOT_SUPPORTED
+#    define TEMPLATE_FRIENDS_NOT_SUPPORTED
+#  endif
+#  ifndef TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#    define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#  endif
+#endif
+
 /* Deprecated */
 #ifndef HAVE_COMPLEX
 #  define HAVE_COMPLEX

@@ -10,7 +10,17 @@ TRILINOS_PACKAGE(Teuchos)
 SET(${PACKAGE_NAME}_VERSION "1.5d")
 
 #
-# B) Set up package-specific options
+# B) Platform-specific checks
+#
+
+INCLUDE(CheckForAbiDemangle)
+CHECK_FOR_ABI_DEMANGLE(HAVE_GCC_ABI_DEMANGLE)
+
+INCLUDE(CheckBlasFloat)
+CHECK_BLAS_FLOAT(HAVE_TEUCHOS_BLASFLOAT)
+
+#
+# C) Set up package-specific options
 #
 
 TRILINOS_ADD_OPTION(
@@ -37,12 +47,9 @@ TRILINOS_ADD_OPTION(
 TRILINOS_ADD_OPTION(
   ${PACKAGE_NAME}_ENABLE_GCC_DEMANGLE
   HAVE_TEUCHOS_DEMANGLE
-  "Enable Teuchos calls to GCC demangle library function if it exists."
+  "Enable Teuchos calls to GCC demangle library function if it exists (see HAVE_TEUCHOS_BLASFLOAT)."
   ON
   )
-
-INCLUDE(CheckForAbiDemangle)
-CHECK_FOR_ABI_DEMANGLE(HAVE_GCC_ABI_DEMANGLE)
 
 TRILINOS_ADD_OPTION(
   ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
@@ -58,13 +65,6 @@ TRILINOS_ADD_OPTION(
   OFF
   )
 
-TRILINOS_ADD_OPTION(
-  ${PACKAGE_NAME}_ENABLE_BLASFLOAT
-  HAVE_TEUCHOS_BLASFLOAT
-  "Enable Teuchos BLAS float support."
-  ON
-  )
-
 OPTION(
   ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
   "Override enable Teuchos performance tests."
@@ -72,7 +72,7 @@ OPTION(
   )
 
 #
-# C) Add the libraries, tests, and examples
+# D) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
@@ -84,7 +84,7 @@ TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 TRILINOS_PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(performance)
 
 #
-# D) Do standard postprocessing
+# E) Do standard postprocessing
 #
 
 TRILINOS_PACKAGE_POSTPROCESS()

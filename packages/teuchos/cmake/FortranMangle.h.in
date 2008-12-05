@@ -1,0 +1,5 @@
+#define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+
+#define F77_FUNC@F77_FUNC@
+
+#define F77_FUNC_@F77_FUNC_@
