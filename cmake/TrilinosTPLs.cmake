@@ -9,7 +9,8 @@
 # that have required dependencies on these to be disabled by default.
 # We want the default configure to enable only "Primary Stable" code.
 # You have to explicitly enable code that is not "Primary Stable"
-# code.
+# code and therefore, you have to explicitly enabled these extra
+# TPLs.
 #
 
 SET(Trilinos_TPLS_ENABLED
@@ -30,4 +31,4 @@ SET(Trilinos_TPLS_ENABLED
 #
 # (*) ParMETIS must be listed after Scotch because the
 #     ParMETIS include directories must come before the
-#     Scotch include directories
+#     Scotch include directories.

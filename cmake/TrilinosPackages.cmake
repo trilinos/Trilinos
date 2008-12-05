@@ -21,7 +21,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Kokkos                kokkos                         OFF
   Epetra                epetra                         ""
   Stokhos               stokhos                        OFF
-  Sacado                sacado                         OFF
+  Sacado                sacado                         ""
   Zoltan                zoltan                         ""
   Shards                shards                         OFF
   Intrepid              intrepid                       OFF
