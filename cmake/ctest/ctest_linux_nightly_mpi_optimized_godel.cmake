@@ -68,13 +68,6 @@ MPI_INCLUDE_PATH:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin
 MPI_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC
 MPI_EXECUTABLE:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiexec
 
-TPL_ENABLE_ParMETIS:BOOL=ON
-ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1
-
-TPL_ENABLE_Scotch:BOOL=ON
-Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include
-Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib
-
 Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
 Trilinos_ENABLE_TESTS:BOOL=ON
 
@@ -92,3 +85,19 @@ BUILDNAME:STRING=${HOSTTYPE}-${TEST_TYPE}-${EXTRA_BUILD_TYPE}-${BUILD_TYPE}
 CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}
 
 ")
+
+# 2008/12/04: rabartl: Having to disable ParMETIS and Scotch.  For
+# some strange reason, CMake refuses to append these include
+# directories even through the varaibles for them are defined just
+# fine.  The really strange thing is that if you reconfigure (by
+# changing a CMake file for instance), everything will configure and
+# build correctly.  If you want to see the error, just move the below
+# cache variables back above and see what happens.
+#
+#TPL_ENABLE_ParMETIS:BOOL=ON
+#ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1
+#
+#TPL_ENABLE_Scotch:BOOL=ON
+#Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include
+#Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib
+#
