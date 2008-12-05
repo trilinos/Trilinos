@@ -33,7 +33,7 @@
 #define EXAMPLE_FACTORY_TRAITS_HPP
 
 // mpl (Meta Programming Library) templates
-#include "Sacado_mpl_vector.hpp"
+#include "boost/mpl/vector.hpp"
 
 // User Defined Evaluator Types
 #include "Evaluator_Constant.hpp"
@@ -49,7 +49,7 @@ using namespace boost::mpl::placeholders;
 /*! \brief Struct to define Evaluator objects for the EvaluatorFactory.
     
     Preconditions:
-    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects that you wish the factory to build.  Do not confuse evaluator types (concrete instances of evaluator objects) with evaluation types (types of evaluations to perform, i.e., Residual, Jacobian). 
+    - You must provide a boost::mpl::vector named EvaluatorTypes that contain all Evaluator objects that you wish the factory to build.  Do not confuse evaluator types (concrete instances of evaluator objects) with evaluation types (types of evaluations to perform, i.e., Residual, Jacobian). 
 
 */
 template<typename Traits>
@@ -61,11 +61,11 @@ struct MyFactoryTraits {
   static const int id_equations = 3;
   static const int id_scatter_residual = 4;
 
-  typedef Sacado::mpl::vector< Constant<_,Traits>,             // 0
- 			       GatherSolution<_,Traits>,       // 1
- 			       FEInterpolation<_,Traits>,      // 2
- 			       Equations<_,Traits>,            // 3
- 			       ScatterResidual<_,Traits>       // 4
+  typedef boost::mpl::vector< Constant<_,Traits>,             // 0
+			      GatherSolution<_,Traits>,       // 1
+			      FEInterpolation<_,Traits>,      // 2
+			      Equations<_,Traits>,            // 3
+			      ScatterResidual<_,Traits>       // 4
   > EvaluatorTypes;
   
 };

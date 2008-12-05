@@ -34,7 +34,7 @@
 
 #include <map>
 #include <vector>
-#include "Sacado_mpl_at.hpp"
+#include "boost/mpl/at.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Phalanx_Evaluator_TemplateManager.hpp"
@@ -59,7 +59,7 @@ namespace PHX {
     template<typename T> void operator()(T t)
     {
       if (object_type == t) {
-	typedef typename Sacado::mpl::at<typename FactoryTraits::EvaluatorTypes, T::value >::type type;
+ 	typedef typename boost::mpl::at<typename FactoryTraits::EvaluatorTypes, T>::type type;
 	PHX::Evaluator_TemplateBuilder<Traits, type> builder(params);
 	tm->buildObjects(builder);
 	found_object = true;
