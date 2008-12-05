@@ -31,30 +31,38 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
   # User options
   #
 
-  # Library directories
+  IF (PARSE_REQUIRED_LIBS_NAMES)
+
+    # Library directories
   
-  MULTILINE_SET(DOCSTR
-    "List of semi-colon separated paths to look for the TPL ${TPL_NAME}"
-    " libraries.  This list of paths will be passed into a FIND_LIBRARY(...)"
-    " command to find the libraries listed in ${TPL_NAME}_LIBRARY_NAMES."
-    "  Note that this set of paths is also the default value used for"
-    " ${TPL_NAME}_LIBRARY_DIRS.  Therefore, if the headers exist in the"
-    " same directories as the library, you do not need to set"
-    " ${TPL_NAME}_LIBRARY_DIRS."
-    )
-  ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE STRING ${DOCSTR})
+    MULTILINE_SET(DOCSTR
+      "List of semi-colon separated paths to look for the TPL ${TPL_NAME}"
+      " libraries.  This list of paths will be passed into a FIND_LIBRARY(...)"
+      " command to find the libraries listed in ${TPL_NAME}_LIBRARY_NAMES."
+      "  Note that this set of paths is also the default value used for"
+      " ${TPL_NAME}_LIBRARY_DIRS.  Therefore, if the headers exist in the"
+      " same directories as the library, you do not need to set"
+      " ${TPL_NAME}_LIBRARY_DIRS."
+      )
+    ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE STRING ${DOCSTR})
 
-  # Libraries
+    # Libraries
+  
+    MULTILINE_SET(DOCSTR
+      "List of semi-colon separated names of libraries needed to link to for"
+      " the TPL ${TPL_NAME}.  This list of libraries will be search for in"
+      " FIND_LIBRARY(...) calls along with the directories specified with"
+      " ${TPL_NAME}_LIBRARY_DIRS.  NOTE: This is not the final list of libraries"
+      " used for linking.  That is specified by TPL_${TPL_NAME}_LIBRARIES!"
+      )
+    ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES} 
+      CACHE STRING ${DOCSTR})
 
-  MULTILINE_SET(DOCSTR
-    "List of semi-colon separated names of libraries needed to link to for"
-    " the TPL ${TPL_NAME}.  This list of libraries will be search for in"
-    " FIND_LIBRARY(...) calls along with the directories specified with"
-    " ${TPL_NAME}_LIBRARY_DIRS.  NOTE: This is not the final list of libraries"
-    " used for linking.  That is specified by TPL_${TPL_NAME}_LIBRARIES!"
-    )
-  ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES} 
-    CACHE STRING ${DOCSTR})
+  ELSE()
+
+    SET(${TPL_NAME}_LIBRARY_DIRS) # Just to ignore below!
+  
+  ENDIF()
 
   # Include directories
 
@@ -80,90 +88,94 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
   # Direct build options
   #
 
-  # Libraries
+  IF (PARSE_REQUIRED_LIBS_NAMES)
 
-  IF (NOT TPL_${TPL_NAME}_LIBRARIES)
-
-    SET(LIBRARIES_FOUND)
-
-    FOREACH(LIBNAME_SET ${${TPL_NAME}_LIBRARY_NAMES})
-
-      IF (Trilinos_VERBOSE_CONFIGURE)
-        PRINT_VAR(LIBNAME_SET)
-      ENDIF()
-
-      SET(LIBNAME_LIST ${LIBNAME_SET})
-      SEPARATE_ARGUMENTS(LIBNAME_LIST)
-
-      SET(LIBNAME_SET_LIB)
-
-      FOREACH(LIBNAME ${LIBNAME_LIST})
-
-        IF (Trilinos_VERBOSE_CONFIGURE)
-          PRINT_VAR(LIBNAME)
-        ENDIF()
-  
-        IF (${TPL_NAME}_LIBRARY_DIRS)
-          SET(PATHS_ARG PATHS ${${TPL_NAME}_LIBRARY_DIRS})
-        ELSE()
-          SET(PATHS_ARG PATHS)
-        ENDIF()
-  
-        SET_NOTFOUND(_${TPL_NAME}_${LIBNAME}_LIBRARY)
-        FIND_LIBRARY( _${TPL_NAME}_${LIBNAME}_LIBRARY
-          NAMES ${LIBNAME}
-          ${PATHS_ARG}
-          )
-        MARK_AS_ADVANCED(_${TPL_NAME}_${LIBNAME}_LIBRARY)
-
-        IF (Trilinos_VERBOSE_CONFIGURE)
-          PRINT_VAR(_${TPL_NAME}_${LIBNAME}_LIBRARY)
-        ENDIF()
-  
-        IF (_${TPL_NAME}_${LIBNAME}_LIBRARY)
-          MESSAGE(STATUS "  Found ${TPL_NAME} TPL library: ${_${TPL_NAME}_${LIBNAME}_LIBRARY}")
-          SET(LIBNAME_SET_LIB ${_${TPL_NAME}_${LIBNAME}_LIBRARY})
-          BREAK()
-        ENDIF()
-  
-      ENDFOREACH()
-
-      IF (NOT LIBNAME_SET_LIB)
-        MULTILINE_SET(ERRMSG
-          "Warning: Could not find a library in the set \"${LIBNAME_SET}\" for"
-          " the TPL ${TPL_NAME}!  Please manually set"
-          " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
-          " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
-        MESSAGE(STATUS ${ERRMSG})
-      ENDIF()
-
-      APPEND_SET(LIBRARIES_FOUND ${LIBNAME_SET_LIB})
-
-    ENDFOREACH()
-
-    MULTILINE_SET(DOCSTR
-      "List of semi-colon separated full paths to the libraries for the TPL"
-      " ${TPL_NAME}.  This is the final variable that is used in the link"
-      " commands.  The user variable ${TPL_NAME}_LIBRARY_DIRS is used to look"
-      " for the know library names but but is just a suggestion."
-      " This varible, however, is the final value and will not be touched."
-      )
-    ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
-      CACHE PATH ${DOCSTR} )
-
+    # Libraries
   
     IF (NOT TPL_${TPL_NAME}_LIBRARIES)
-      MULTILINE_SET(ERRMSG
-        "Error, could not find the ${TPL_NAME} Library!  Please manually set"
-        " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
-        " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
-      MESSAGE(FATAL_ERROR ${ERRMSG})
+  
+      SET(LIBRARIES_FOUND)
+  
+      FOREACH(LIBNAME_SET ${${TPL_NAME}_LIBRARY_NAMES})
+  
+        IF (Trilinos_VERBOSE_CONFIGURE)
+          PRINT_VAR(LIBNAME_SET)
+        ENDIF()
+  
+        SET(LIBNAME_LIST ${LIBNAME_SET})
+        SEPARATE_ARGUMENTS(LIBNAME_LIST)
+  
+        SET(LIBNAME_SET_LIB)
+  
+        FOREACH(LIBNAME ${LIBNAME_LIST})
+  
+          IF (Trilinos_VERBOSE_CONFIGURE)
+            PRINT_VAR(LIBNAME)
+          ENDIF()
+    
+          IF (${TPL_NAME}_LIBRARY_DIRS)
+            SET(PATHS_ARG PATHS ${${TPL_NAME}_LIBRARY_DIRS})
+          ELSE()
+            SET(PATHS_ARG PATHS)
+          ENDIF()
+    
+          SET_NOTFOUND(_${TPL_NAME}_${LIBNAME}_LIBRARY)
+          FIND_LIBRARY( _${TPL_NAME}_${LIBNAME}_LIBRARY
+            NAMES ${LIBNAME}
+            ${PATHS_ARG}
+            )
+          MARK_AS_ADVANCED(_${TPL_NAME}_${LIBNAME}_LIBRARY)
+  
+          IF (Trilinos_VERBOSE_CONFIGURE)
+            PRINT_VAR(_${TPL_NAME}_${LIBNAME}_LIBRARY)
+          ENDIF()
+    
+          IF (_${TPL_NAME}_${LIBNAME}_LIBRARY)
+            MESSAGE(STATUS "  Found ${TPL_NAME} TPL library: ${_${TPL_NAME}_${LIBNAME}_LIBRARY}")
+            SET(LIBNAME_SET_LIB ${_${TPL_NAME}_${LIBNAME}_LIBRARY})
+            BREAK()
+          ENDIF()
+    
+        ENDFOREACH()
+  
+        IF (NOT LIBNAME_SET_LIB)
+          MULTILINE_SET(ERRMSG
+            "Warning: Could not find a library in the set \"${LIBNAME_SET}\" for"
+            " the TPL ${TPL_NAME}!  Please manually set"
+            " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
+            " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
+          MESSAGE(STATUS ${ERRMSG})
+        ENDIF()
+  
+        APPEND_SET(LIBRARIES_FOUND ${LIBNAME_SET_LIB})
+  
+      ENDFOREACH()
+  
+      MULTILINE_SET(DOCSTR
+        "List of semi-colon separated full paths to the libraries for the TPL"
+        " ${TPL_NAME}.  This is the final variable that is used in the link"
+        " commands.  The user variable ${TPL_NAME}_LIBRARY_DIRS is used to look"
+        " for the know library names but but is just a suggestion."
+        " This varible, however, is the final value and will not be touched."
+        )
+      ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
+        CACHE PATH ${DOCSTR} )
+  
+    
+      IF (NOT TPL_${TPL_NAME}_LIBRARIES)
+        MULTILINE_SET(ERRMSG
+          "Error, could not find the ${TPL_NAME} Library!  Please manually set"
+          " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
+          " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
+        MESSAGE(FATAL_ERROR ${ERRMSG})
+      ENDIF()
+  
+    ENDIF()
+  
+    IF (Trilinos_VERBOSE_CONFIGURE)
+      PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
     ENDIF()
 
-  ENDIF()
-
-  IF (Trilinos_VERBOSE_CONFIGURE)
-    PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
   ENDIF()
 
   # Include directories
