@@ -1,5 +1,8 @@
 EXTRA_ARGS=$@
 
+# Have to set this to get TRY_RUN(...) commands to work
+export LD_LIBRARY_PATH=/usr/lib64/openmpi/1.2.5-gcc/lib:$LD_LIBRARY_PATH
+
 cmake \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpicc \
@@ -7,7 +10,6 @@ cmake \
 -D CMAKE_CXX_FLAGS:STRING="-O3 -ansi -Wall" \
 -D CMAKE_C_FLAGS:STRING="-O3 -ansi -Wall" \
 -D CMAKE_Fortran_FLAGS:STRING="-O5" \
--D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
@@ -27,7 +29,6 @@ cmake \
 -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
 -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
 -D Teuchos_ENABLE_BOOST:BOOL=ON \
--D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
 -D Teuchos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
 -D EpetraExt_BUILD_BDF:BOOL=ON \
@@ -35,15 +36,7 @@ $EXTRA_ARGS \
 ../../../../Trilinos
 
 
-#-D TPL_ParMETIS_INCLUDE_DIRS:PATH=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1 \
-#-D TPL_ParMETIS_LIBRARIES:PATH="/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1/libparmetis.a;/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/PARMETIS3_1/ParMETIS3_1/libmetis.a"  \
-
-
-
-#-D TPL_ENABLE_Scotch:BOOL=ON \
-#-D TPL_Scotch_INCLUDE_DIRS:PATH=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/SCOTCH-5.1.2/scotch_5.1/src/libscotch \
-#-D TPL_Scotch_LIBRARIES:PATH="/home/rabartl/PROJECTS/Trilinos.base/BUILDS/TPLS/SCOTCH-5.1.2/scotch_5.1/src/libscotch/libscotch.a" \
-
+#-D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
 
 
 # -D EpetraExt_BUILD_EXPERIMENTAL:BOOL=ON \

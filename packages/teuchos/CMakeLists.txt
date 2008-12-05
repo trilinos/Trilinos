@@ -1,4 +1,3 @@
-
 INCLUDE(TrilinosPackageHelpers)
 INCLUDE(Trilinos_Add_Option)
 
@@ -38,9 +37,12 @@ TRILINOS_ADD_OPTION(
 TRILINOS_ADD_OPTION(
   ${PACKAGE_NAME}_ENABLE_GCC_DEMANGLE
   HAVE_TEUCHOS_DEMANGLE
-  "Enable Teuchos calls to GCC demangle library function."
-  OFF
+  "Enable Teuchos calls to GCC demangle library function if it exists."
+  ON
   )
+
+INCLUDE(CheckForAbiDemangle)
+CHECK_FOR_ABI_DEMANGLE(HAVE_GCC_ABI_DEMANGLE)
 
 TRILINOS_ADD_OPTION(
   ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION

@@ -136,6 +136,12 @@ C) Configuring
   $ rm CMakeCache ; ./do-configure
 
 
+(*) Seeing configure errors
+
+  Configure try_compile(...) and try_run(...) errors are shown in the
+  file CMakeFiles/CMakeError.log.
+
+
 D) Building
 ---------------
 
