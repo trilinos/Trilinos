@@ -77,7 +77,7 @@ TRILINOS_ADD_OPTION(
 
 OPTION(
   ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
-  "Override enable Teuchos performance tests."
+  "Override enable ${PACKAGE_NAME} performance tests."
   ${Trilinos_ENABLE_PERFORMANCE_TESTS}
   )
 

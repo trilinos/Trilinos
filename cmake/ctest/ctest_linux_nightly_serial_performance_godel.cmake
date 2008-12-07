@@ -44,10 +44,11 @@ Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF
 
 Trilinos_VERBOSE_CONFIGURE:BOOL=ON
 
+Trilinos_ENABLE_PERFORMANCE_TESTS:BOOL=ON
+
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++
 CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc
 CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran
-HAVE_GCC_ABI_DEMANGLE:BOOL=ON
 CMAKE_CXX_FLAGS:STRING=-O3 -ansi -Wall -Wshadow -Wunused-variable -Wunused-function -Wno-system-headers -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage -fexceptions
 CMAKE_C_FLAGS:STRING=-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions
 CMAKE_Fortran_FLAGS:STRING=-O5
@@ -64,9 +65,7 @@ Trilinos_ENABLE_Teuchos:BOOL=ON
 Teuchos_ENABLE_COMPLEX:BOOL=ON
 Teuchos_ENABLE_EXTENDED:BOOL=ON
 Teuchos_ENABLE_BOOST:BOOL=ON
-Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON
 Teuchos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
-Teuchos_ENABLE_PERFORMANCE_TESTS:BOOL=ON
 
 EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON
 EpetraExt_BUILD_BDF:BOOL=ON

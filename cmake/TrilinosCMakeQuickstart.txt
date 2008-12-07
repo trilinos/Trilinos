@@ -10,7 +10,7 @@ A) Getting Set up
 
   $ $TRILINOS_HOME/cmake/python/install-cmake.phy --install-dir=INSTALL_BASE_DIR
 
-  This will result in cmake and related tools being installed in
+  This will result in cmake and related CMake tools being installed in
   INSTALL_BASE_DIR/bin.
 
 
@@ -35,13 +35,14 @@ C) Configuring
        $TRILINOS_BASE_DIR
 
   NOTE: You can also just look at the text file CMakeCache.txt which
-  has all of the cache variables and documentation.
+  has all of the cache variables and documentation after you finish
+  any configure.
 
 (*) Viewing available configure-time options without documentation
 
   $ cd $BUILD_DIR
   $ rm CMakeCache.txt
-  $ cmake -LA $TRILINOS_BASE_DIR
+  $ cmake -LA SAME_AS_ABOVE $TRILINOS_BASE_DIR
 
 (*) Configuring Trilinos to build
 
@@ -134,7 +135,6 @@ C) Configuring
 (*) Reconfiguring from scratch
 
   $ rm CMakeCache ; ./do-configure
-
 
 (*) Seeing configure errors
 

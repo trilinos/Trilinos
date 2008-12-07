@@ -8,21 +8,18 @@ Last updated: 2008/11/18
 Active items:
 -------------
 
-(*) [Ross, Brent, Roger] (Ongoing) Add basic CMake support for every
-Trilinos package being used by SIERRA and needed to create a new
-NonlinearStrategies package.
+(*) [Ross, Brent, Roger] (Ongoing): Add basic CMake support for every Trilinos
+package being used by SIERRA and needed to create a new NonlinearStrategies
+package.
 
-(*) [Evehyone] (Ongoing) Add to the HOWTO.CMAKEIFY_PACKAGE file a list
-of all common scenarios that we need to cmakify a package so that
-users that want to do something can just go down the list to learn how
-to implement that funcitonality.
+(*) [Everyone] (Ongoing): Add to the HOWTO.CMAKEIFY_PACKAGE file a list of all
+common scenarios that we need to cmakify a package so that users that want to
+do something can just go down the list to learn how to implement that
+funcitonality.
 
 
 Backlog:
 --------
-
-(*) [???] Modify TPL_DELCARE_LIBRARIES(...) to allow header-only
-libraries.
 
 (*) [???] Add 'Test' or 'Library' to the help message to
 TRILINOS_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE(...) and
@@ -42,6 +39,10 @@ TRILINOS_ADD_EXECUTABLE(...) to handle test libraries.  Add
 NOINSTALLLIB argument for test libraries that you don't want to
 install.  This is needed for some NOX test librries.  This effects
 Isorropia, NOX, Sacado...
+
+(*) [???] Add option SKIPMEMCHECK to TRILINOS_ADD_[EXECUTABLE_AND_]TEST(...) 
+to add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
+CTestCustomer.ctest.
 
 (*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that
 all pased in header files are found (This was requested by Roger P.).

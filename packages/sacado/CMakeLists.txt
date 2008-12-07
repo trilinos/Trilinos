@@ -34,6 +34,11 @@ TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
   "Enable if the compiler is confused by std::sin, etc., within namespace"
   OFF )
 
+OPTION(${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
+  "Override enable ${PACKAGE_NAME} performance tests."
+  ${Trilinos_ENABLE_PERFORMANCE_TESTS}
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -41,6 +46,8 @@ TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
 ADD_SUBDIRECTORY(src)
 
 TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
+
+TRILINOS_PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(test/performance)
 
 TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
