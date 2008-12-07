@@ -1,5 +1,5 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(Trilinos_Add_Test)
 INCLUDE(Copy_Files_To_Binary_Dir)
 
 

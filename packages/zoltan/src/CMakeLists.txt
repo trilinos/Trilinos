@@ -520,11 +520,3 @@ TRILINOS_PACKAGE_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEPLIBS ${DEPLIBS}
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()
-
-ADD_SUBDIRECTORY(driver)

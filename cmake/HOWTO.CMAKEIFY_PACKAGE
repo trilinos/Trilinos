@@ -74,7 +74,7 @@ Special cases:
 
 2.a) Overridding an optional intra-package enable
 
-See turning off Zoltan support without ML in packages/ml/CMakeLists.txt
+See turning off Zoltan support without MPI in packages/ml/CMakeLists.txt
 
 
 3) Create the directory PACKAGE_DIR/cmake
@@ -87,7 +87,7 @@ a new package, then it can be created with:
   $ cvs add cmake
 
 
-4) Create/modify the PACKAGE_DIR/cmake/Dependencies.cmake file
+4) Create or modify the PACKAGE_DIR/cmake/Dependencies.cmake file
 
 The dependencies file:
 
@@ -130,6 +130,18 @@ NOTE: Once you list out these package dependencies, you will never
 directly refer to these packages again.  All of the dependency
 handling is performed automatically by the provided macros.  You can
 only overstate the dependencies, you can never understate them.
+
+NOTE: The top-level CMake support code will automatically create user
+cache variables for packages and TPLs that exist in the lists
+[LIB,TEST]_OPTIONAL_DEP_PACKAGES and [LIB,TEST]_OPTIONAL_DEP_TPLS.
+For [LIB,TEST]_OPTIONAL_DEP_PACKAGES, user cache variables with the
+name PACKAGE_ENABLE_DEPPACKAGE will be created where PACKAGE is the
+name of this package (i.e. ML, NOX, EpetraExt, etc.) and DEPPACKAGE is
+the name of the listed dependent package.  Also, regular variables
+will be created with the name HAVE_UCPACKAGE_UCDEPPACKAGES where
+UCPACKAGE and UCDEPPACKAGES are the respective upper-case names of
+PACKAGE and DEPPACKAGE.  The same applies to the optional TPLs listed
+in [LIB,TEST]_OPTIONAL_DEP_TPLS.
 
 
 5) Copy and modify the PACKAGE_config.h.in file
