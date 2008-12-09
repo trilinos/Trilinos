@@ -4,7 +4,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-PROJECT(CMakeVaraibleExample C)
+PROJECT(CMakeVaraibleExample NONE)
 
 # Create a regular local varible that exists in the current (base)
 # scope

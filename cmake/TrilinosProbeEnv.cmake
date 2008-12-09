@@ -35,6 +35,10 @@ SET(HAVE_VECTOR TRUE)
 
 # Enable compilers
 
+IF(Trilinos_ENABLE_C)
+  ENABLE_LANGUAGE(C)
+ENDIF()
+
 IF(Trilinos_ENABLE_CXX)
   ENABLE_LANGUAGE(CXX)
 ENDIF()

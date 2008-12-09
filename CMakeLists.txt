@@ -11,7 +11,7 @@ MESSAGE("")
 MESSAGE("Configuring Trilinos build directory")
 MESSAGE("")
 
-PROJECT(Trilinos C) # Across all of Trilinos C++ and Fortran are actually optional!
+PROJECT(Trilinos NONE)
 
 SET(Trilinos_VERSION "9.0d")
 SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -128,6 +128,10 @@ ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   ${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
+
+ADVANCED_OPTION(Trilinos_ENABLE_C
+  "Enable the C compiler and related code"
+  ON )
 
 ADVANCED_OPTION(Trilinos_ENABLE_CXX
   "Enable the C++ compiler and related code"

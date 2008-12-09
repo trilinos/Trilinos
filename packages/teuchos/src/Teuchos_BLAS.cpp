@@ -55,10 +55,11 @@ template<typename Scalar>
 Scalar generic_dot(const int n, const Scalar* x, const int incx,
   const Scalar* y, const int incy)
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   Scalar dot = 0.0;
   if (incx==1 && incy==1) {
     for (int i = 0; i < n; ++i)
-      dot += (*x++)*(*y++);
+      dot += (*x++)*ST::conjugate(*y++);
   }
   else {
     if (incx < 0)
@@ -66,7 +67,7 @@ Scalar generic_dot(const int n, const Scalar* x, const int incx,
     if (incy < 0)
       y = y - incy*(n-1);
     for (int i = 0; i < n; ++i, x+=incx, y+=incy)
-      dot += (*x)*(*y);
+      dot += (*x)*ST::conjugate(*y);
   }
   return dot;
 }  

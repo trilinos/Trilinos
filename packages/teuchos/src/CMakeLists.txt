@@ -88,8 +88,6 @@ APPEND_SET(HEADERS
   Teuchos_Ptr.hpp
   Teuchos_PtrDecl.hpp
   Teuchos_RCP.hpp
-  Teuchos_RCPBoostSharedPtrConversions.hpp
-  Teuchos_RCPBoostSharedPtrConversionsDecl.hpp
   Teuchos_RCPDecl.hpp
   Teuchos_RCPNode.hpp
   Teuchos_Range1D.hpp
@@ -239,9 +237,9 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_XMLParser.cpp
     )
 
-ENDIF(${PACKAGE_NAME}_ENABLE_EXTENDED)
+ENDIF()
 
-IF (TPL_ENABLE_MPI)
+IF (${PACKAGE_NAME}_ENABLE_MPI)
 
   APPEND_SET(HEADERS
     Teuchos_DefaultMpiComm.hpp
@@ -250,6 +248,15 @@ IF (TPL_ENABLE_MPI)
 
   APPEND_SET(SOURCES
     Teuchos_MpiReductionOpSetter.cpp
+    )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Boost)
+
+  APPEND_SET(HEADERS
+    Teuchos_RCPBoostSharedPtrConversions.hpp
+    Teuchos_RCPBoostSharedPtrConversionsDecl.hpp
     )
 
 ENDIF()

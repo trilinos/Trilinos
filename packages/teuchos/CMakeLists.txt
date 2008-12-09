@@ -68,13 +68,6 @@ TRILINOS_ADD_OPTION(
   OFF
   )
 
-TRILINOS_ADD_OPTION(
-  ${PACKAGE_NAME}_ENABLE_BOOST
-  HAVE_TEUCHOS_BOOST
-  "Enable Teuchos boost support."
-  OFF
-  )
-
 OPTION(
   ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
   "Override enable ${PACKAGE_NAME} performance tests."
