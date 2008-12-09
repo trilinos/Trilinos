@@ -52,15 +52,15 @@ public:
   /** Destructor */
   virtual ~Orderer() {}
 
-  /** Method which does the work of computing a new ordering.
+  /** Method which computes a new ordering.
 
      \param forceOrdering Optional argument defaults to false.
-        Depending on the implementation, compute_partitioning() should
-        only perform a repartitioning the first time it is called, and
+        Depending on the implementation, order() should
+        only perform a reordering the first time it is called, and
         subsequent repeated calls are no-ops. If the user's intent is
-        to re-compute the partitioning (e.g., if parameters or other
+        to re-compute the ordering (e.g., if parameters or other
         inputs have been changed), then setting this flag to true
-        will force a new partitioning to be computed.
+        will force a new ordering to be computed.
    */
   virtual void order(bool forceOrdering=false) = 0;
 
