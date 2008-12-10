@@ -1096,6 +1096,11 @@ MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
     ADD_SUBDIRECTORY(cmake/python/UnitTests)
   ENDIF()
 
+  CONFIGURE_FILE(
+    ${Trilinos_SOURCE_DIR}/cmake/ctest/CTestCustom.ctest.in
+    ${Trilinos_BINARY_DIR}/CTestCustom.ctest
+    )
+
 ENDMACRO()
 
 
