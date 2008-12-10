@@ -95,14 +95,21 @@ LOCA and Epetra.
 %import "Teuchos.i"
 
 %import "NOX.Epetra.__init__.i"
-%import "LOCA.Epetra.Interface.i"
 %import "LOCA.Abstract.i"
+//%import "LOCA.MultiContinuation.i"
+//%import "LOCA.Epetra.Interface.i"
 
 //////////////////////////////
 // LOCA.Epetra.Group support //
 //////////////////////////////
 
-// temporarily ignore conflict-causing constructor
+// temporarily ignore conflict-causing constructor TODO: fix this issue
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
 %include "LOCA_Epetra.H"
+%pythoncode
+%{
+import LOCA
+import LOCA.Abstract
+from NOX.Epetra import Group
+%}
 %include "LOCA_Epetra_Group.H"

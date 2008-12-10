@@ -52,11 +52,30 @@ to reactivate it soon.
 #include "Teuchos_PythonParameter.h"
 
 // LOCA includes
+//#include "LOCA.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"
 
+#include "LOCA_TimeDependent_AbstractGroup.H"
+#include "LOCA_Homotopy_AbstractGroup.H"
+#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+
+
 // Local includes
 #include "NumPyImporter.h"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
 
 // Ignore/renames
@@ -82,7 +101,40 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 // Note: Teuchos.i turns off warnings for nested classes, so we do not
 // have to do it again.
 
+%import "LOCA.MultiContinuation.i"
+
+%rename(TimeDependent_AbstractGroup) LOCA::TimeDependent::AbstractGroup;
+%include "LOCA_TimeDependent_AbstractGroup.H"
+%rename(Homotopy_AbstractGroup) LOCA::Homotopy::AbstractGroup;
+%include "LOCA_Homotopy_AbstractGroup.H"
+%rename(TurningPoint_MooreSpence_AbstractGroup) LOCA::TurningPoint::MooreSpence::AbstractGroup;
+%include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+%rename(TurningPoint_MinimallyAugmented_AbstractGroup) LOCA::TurningPoint::MinimallyAugmented::AbstractGroup;
+%include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+%rename(TurningPoint_MooreSpence_FiniteDifferenceGroup) LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup;
+%include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+%rename(TurningPoint_MinimallyAugmented_FiniteDifferenceGroup) LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
+%include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+%rename(Pitchfork_MooreSpence_AbstractGroup) LOCA::Pitchfork::MooreSpence::AbstractGroup;
+%include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+%rename(Pitchfork_MinimallyAugmented_AbstractGroup) LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
+%include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+%rename(Hopf_MooreSpence_AbstractGroup) LOCA::Hopf::MooreSpence::AbstractGroup;
+%include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+%rename(Hopf_MinimallyAugmented_AbstractGroup) LOCA::Hopf::MinimallyAugmented::AbstractGroup;
+%include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+%rename(Hopf_MooreSpence_FiniteDifferenceGroup) LOCA::Hopf::MooreSpence::FiniteDifferenceGroup;
+%include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+%rename(Hopf_MinimallyAugmented_FiniteDifferenceGroup) LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup;
+%include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+
+%import "LOCA_Abstract_Iterator.H"
+
 // LOCA interface includes
-%include "LOCA_Abstract_Iterator.H"
+//%include "LOCA_Abstract_Iterator.H"
+//%include "LOCA.H"
+%teuchos_rcp_typemaps(LOCA::GlobalData)
+%include "LOCA_GlobalData.H"
 %include "LOCA_Stepper.H"
 %include "LOCA_Parameter_Vector.H"
+

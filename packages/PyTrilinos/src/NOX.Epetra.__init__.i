@@ -220,7 +220,7 @@ using namespace NOX::Epetra;
   NOX::Epetra::Vector * nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL)
   {
-    // If we can't upcast, then return the NOX::Abstract::Vector
+    // If we cannot upcast, then return the NOX::Abstract::Vector
     $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
   }
   else

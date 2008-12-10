@@ -119,7 +119,10 @@ the Trilinos package LOCA:
 ")
 LOCA::Epetra::Interface::Required::computeF;
 %feature("director") LOCA::Epetra::Interface::Required;
-%rename(NOX_Epetra_Interface_Required) NOX::Epetra::Interface::Required;
+%pythoncode
+%{
+from NOX.Epetra.Interface import Required
+%}
 %include "LOCA_Epetra_Interface_Required.H"
 
 %feature("director") LOCA::Epetra::Interface::MassMatrix;

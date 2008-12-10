@@ -70,32 +70,11 @@ of the Trilinos package LOCA:
 // Trilinos module imports
 %import "Teuchos.i"
 
-// Import LOCA interfaces
-//%import "LOCA.Continuation.i"
-%import "LOCA.MultiContinuation.i"
-//%import "LOCA.Homotopy.i"
-//%import "LOCA.TimeDependent.i"
-//%import "LOCA.Bifurcation.i"
-
-%rename(TimeDependent_AbstractGroup) LOCA::TimeDependent::AbstractGroup;
-%rename(Homotopy_AbstractGroup) LOCA::Homotopy::AbstractGroup;
-%include "LOCA_TimeDependent_AbstractGroup.H"
-%include "LOCA_Homotopy_AbstractGroup.H"
-
-%import "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-%import "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-%import "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-%import "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-%import "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-%import "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-%import "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-%import "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-%import "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-%import "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-
 // Teuchos::RCPs typemaps
 %teuchos_rcp_typemaps(LOCA::GlobalData)
 %teuchos_rcp_typemaps(LOCA::DerivUtils)
+
+%import "LOCA.__init__.i"
 
 %include "LOCA_Abstract_Group.H"
 %include "LOCA_Abstract_Iterator.H"
