@@ -15,26 +15,29 @@ SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
 
 SET(CTEST_CVS_CHECKOUT
   "cvs -q -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
-)
+  )
 SET (CTEST_CVS_COMMAND
-  "cvs -q -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}"
-)
+  "cvs -q"
+  )
 
 SET(CTEST_SOURCE_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}")
 SET(CTEST_BINARY_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_BINARY_NAME}")
 
+SET(TEST_TYPE $ENV{CTEST_TEST_TYPE})
+IF (NOT TEST_TYPE)
+  SET(TEST_TYPE Nightly)
+ENDIF()
+
 SET(CTEST_COMMAND 
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyStart"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyUpdate"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyConfigure"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyBuild"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyTest"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlyCoverage"
-  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit"
-  #"\"${CTEST_EXECUTABLE_NAME}\" -D NightlyMemCheck"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D NightlySubmit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_mpi_optimized_godel.cmake\""
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Start"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Update"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Configure"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Build"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Submit"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Test"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Submit"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Coverage"
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Submit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_mpi_optimized_godel.cmake\""
 )
 
 SET(CTEST_INITIAL_CACHE "
