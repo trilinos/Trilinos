@@ -91,8 +91,6 @@ adding dependencies on ${PACKAGE}_libs.
 control what gets built.  This will make it easier to maintain the BJAM build
 system.
 
-(*) [???] 
-
 (*) [???] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
 track of test results for different enables/disables.
@@ -114,6 +112,12 @@ will build and install libraries, and then configure a new project
 against this.  It would be good to install a PACKAGEConfig.cmake file
 for each package that could then be used to specify what to build
 against.
+
+(*) [???] Revive system for generating sample output.  I would like to
+have a top-level target called something like
+Trilinos_generate_sample_output and this target should dependend on
+package-level targets ${PACKAGE_NAME}_generate_sample_output.  Some
+type of macro should be created to automate this process.
 
 (*) [???] Clean up tests and examples:
 

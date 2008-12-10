@@ -39,7 +39,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Komplex               komplex                        ""
   ML                    ml                             ""
   Belos                 belos                          OFF
-  Stratimikos           stratimikos                    OFF
+  Stratimikos           stratimikos                    ""
   Meros                 meros                          OFF
   FEI                   fei                            OFF
   RBGen                 rbgen                          ""

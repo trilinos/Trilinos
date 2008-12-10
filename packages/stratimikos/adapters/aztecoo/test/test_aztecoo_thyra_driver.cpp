@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     // Read options from command-line
     //
     
-    std::string    matrixDir              = "";
+    std::string    matrixDir              = ".";
     int            numRandomVectors       = 1;
     bool           showAllTests           = false;
     bool           showAllTestsDetails    = false;

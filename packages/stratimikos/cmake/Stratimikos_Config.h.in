@@ -1,0 +1,22 @@
+/* src/Stratimikos_Config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* Define if want to build with stratimikos enabled */
+#cmakedefine HAVE_STRATIMIKOS_AMESOS
+
+/* Define if want to build with stratimikos enabled */
+#cmakedefine HAVE_STRATIMIKOS_AZTECOO
+
+/* Define if want to build with stratimikos enabled */
+#cmakedefine HAVE_STRATIMIKOS_BELOS
+
+/* Define if want to build with stratimikos enabled */
+#cmakedefine HAVE_STRATIMIKOS_IFPACK
+
+/* Define if want to build with stratimikos enabled */
+#cmakedefine HAVE_STRATIMIKOS_ML
+
+/* Define if want to build teuchos-complex */
+#cmakedefine HAVE_TEUCHOS_COMPLEX

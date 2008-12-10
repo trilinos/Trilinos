@@ -12,15 +12,6 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
-/* Define if want to build rtop-examples */
-#cmakedefine HAVE_RTOP_EXAMPLES
-
-/* Define if want to build rtop-tests */
-#cmakedefine HAVE_RTOP_TESTS
-
-/* Define if want to build tests */
-#cmakedefine HAVE_TESTS
-
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
