@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 #include <Shards_CellTopologyData.h>
+#include <Shards_BasicTopologies.hpp>
 
 namespace shards {
 
@@ -49,7 +50,7 @@ class CellTopology ;
 class CellTopologyPrivate ;
 
 /** \brief Overloaded << operator for CellTopologyData objects. */
-std::ostream & operator << ( std::ostream & , const CellTopologyData & );
+//std::ostream & operator << ( std::ostream & , const CellTopologyData & );
 
 /** \brief Overloaded << operator for CellTopology objects.  */
 std::ostream & operator << ( std::ostream & , const CellTopology & );
@@ -442,11 +443,6 @@ unsigned cellTopologyKey( const unsigned dimension ,
   return key ;
 }
 
-
-std::ostream & operator << ( std::ostream & os, const CellTopology & cell) {
-  os << *cell.getTopology();
-  return os;
-}
 
 
 /** \} */

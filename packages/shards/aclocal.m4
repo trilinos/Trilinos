@@ -920,6 +920,7 @@ AC_SUBST([am__untar])
 
 m4_include([config/tac_arg_check_mpi.m4])
 m4_include([config/tac_arg_config_mpi.m4])
+m4_include([config/tac_arg_enable_can_use_package.m4])
 m4_include([config/tac_arg_enable_export-makefiles.m4])
 m4_include([config/tac_arg_enable_feature.m4])
 m4_include([config/tac_arg_enable_feature_sub_check.m4])

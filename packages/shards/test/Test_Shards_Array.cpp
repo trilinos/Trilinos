@@ -575,13 +575,13 @@ void test_shards_array()
   try {
     local_test_array();
     local_test_array_vector();
-    std::cout << method << " PASSED" << std::endl ;
+    std::cout << method << "\n" << "End Result: TEST PASSED" << std::endl ;
   }
   catch( const std::exception & x ) {
-    std::cout << method << " FAILED: " << x.what() << std::endl ;
+    std::cout << method << "\n" << "End Result: TEST FAILED: " << x.what() << std::endl ;
   }
   catch( ... ) {
-    std::cout << method << " FAILED: <unknown>" << std::endl ;
+    std::cout << method << "\n" << "End Result: TEST FAILED: <unknown>" << std::endl ;
   }
 }
 

@@ -1088,6 +1088,10 @@ const unsigned * index_identity_array();
 */
 const CellTopologyData::Subcell * subcell_nodes_array();
 
+/** \brief Outputs raw cell topology data.
+*/
+std::ostream & operator << ( std::ostream &, const CellTopologyData &);
+
 #endif /* DOXYGEN_COMPILE */
 
 /** \} */

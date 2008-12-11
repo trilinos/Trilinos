@@ -173,13 +173,13 @@ void test_shards_cell_topology()
 
   try {
     local_test_cell_topology();
-    std::cout << method << " PASSED" << std::endl ;
+    std::cout << method << "\n" << "End Result: TEST PASSED" << std::endl ;
   }
   catch( const std::exception & x ) {
-    std::cout << method << " FAILED: " << x.what() << std::endl ;
+    std::cout << method << "\n" << "End Result: TEST FAILED: " << x.what() << std::endl ;
   }
   catch( ... ) {
-    std::cout << method << " FAILED: <unknown>" << std::endl ;
+    std::cout << method << "\n" << "End Result: TEST FAILED: <unknown>" << std::endl ;
   }
 }
 

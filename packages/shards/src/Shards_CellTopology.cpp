@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <Shards_CellTopology.hpp>
-#include <Shards_BasicTopologies.hpp>
+//#include <Shards_BasicTopologies.hpp>
 #include <iostream>
 
 namespace shards {
@@ -471,6 +471,11 @@ void badCellTopologyKey( const unsigned dimension ,
   msg << " )" ;
 
   throw std::invalid_argument( msg.str() );
+}
+
+std::ostream & operator << ( std::ostream & os, const CellTopology & cell) {
+  os << *cell.getTopology();
+  return os;
 }
 
 } // namespace shards

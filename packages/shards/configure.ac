@@ -245,6 +245,15 @@ TAC_ARG_WITH_INCDIRS
 ## AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: none
+# Optional: Teuchos
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(shards, teuchos, SHARDS_TEUCHOS, BUILD_TEUCHOS, yes, [Build examples which use Teuchos.], [Build examples which use Teuchos. Can be overridden with --disable-shards-teuchos.])
+
+
+# ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
 
@@ -255,18 +264,17 @@ TAC_ARG_WITH_INCDIRS
 # If a package does not have tests or examples, the corresponding check(s)
 # should be pulled out of the "if" statement below.
 #if test "X$ac_cv_use_new_package_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-if test "X$ac_cv_use_shards_tests" != "Xno" || test "X$ac_cv_use_shards_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+#if test "X$ac_cv_use_shards_tests" != "Xno" || test "X$ac_cv_use_shards_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
 # with the name of an entry point in that library.
-# checks for libraries now
-dnl Replace `main' with a function in -lm:
+# checks for libraries now dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.
 ## AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 ## AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-fi
+#fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 
