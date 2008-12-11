@@ -578,7 +578,7 @@ static int coarse_part_linear (
     static char *yo = "coarse_part_linear";
 
     if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
-        ZOLTAN_FREE ((void**) &order);
+        ZOLTAN_FREE (&order);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
@@ -601,7 +601,7 @@ static int coarse_part_linear (
     /* Call sequence partitioning with order array. */
     err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
 
-    ZOLTAN_FREE ((void**) &order);
+    ZOLTAN_FREE (&order);
     return err;
 }
 
@@ -622,7 +622,7 @@ static int coarse_part_random (
     char *yo = "coarse_part_random";
 
     if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
-        ZOLTAN_FREE ((void**) &order);
+        ZOLTAN_FREE (&order);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
@@ -636,7 +636,7 @@ static int coarse_part_random (
     /* Call sequence partitioning with random order array. */
     err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
 
-    ZOLTAN_FREE ((void**) &order);
+    ZOLTAN_FREE (&order);
     return err;
 }
 

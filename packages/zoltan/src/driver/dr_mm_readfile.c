@@ -473,7 +473,7 @@ int error = 0;  /* flag to indicate status */
             cnt[inptr[0]]++;
           }
       }
-      safe_free((void **) &cnt);
+      safe_free((void **)(void *) &cnt);
       *ch_start = start;
       *ch_adj = adj;
       *ch_ewgts = ewgts;
@@ -500,11 +500,11 @@ End:
       /* Set hypergraph to be empty. */
       *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
       *global_nPins = 0;
-      safe_free((void **) &index);
-      safe_free((void **) &vertex);
+      safe_free((void **)(void *) &index);
+      safe_free((void **)(void *) &vertex);
     }
-    safe_free((void **) &myIJV);
-    safe_free((void **) &myVals);
+    safe_free((void **)(void *) &myIJV);
+    safe_free((void **)(void *) &myVals);
     return error;
 }
 

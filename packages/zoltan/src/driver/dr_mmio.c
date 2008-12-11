@@ -273,7 +273,7 @@ int mm_read_mtx_crd_data(ZOLTAN_FILE* f, int M, int N, int nz, int I[], int J[],
 	double val[], MM_typecode matcode)
 {
     int i;
-    int dummy;
+    int dummy = 0;
 
     if (mm_is_complex(matcode))
     {

@@ -108,7 +108,7 @@ Zoltan_Postprocess_UnScatter_Graph (ZZ *zz,
 				    ZOLTAN_Third_Part *prt,
 				    indextype **rank)
 {
-  int ierr;
+  int ierr = ZOLTAN_FATAL;
   indextype *src;
   indextype *dst;
 

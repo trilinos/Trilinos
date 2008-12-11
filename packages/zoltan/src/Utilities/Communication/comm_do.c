@@ -99,10 +99,10 @@ char *recv_data)		/* array of data I'll own after comm */
 {
     char     *send_buff;	/* space to buffer outgoing data */
     int       my_proc;		/* processor ID */
-    unsigned int self_recv_address;/* where in recv_data self info starts */
-    int       self_num;		/* where in send list my_proc appears */
+    unsigned int self_recv_address = 0;/* where in recv_data self info starts */
+    int       self_num=0;       /* where in send list my_proc appears */
     int       offset;		/* offset into array I'm copying into */
-    int       self_index;	/* send offset for data I'm keeping */
+    int       self_index = 0;	/* send offset for data I'm keeping */
     int       out_of_mem;	/* am I out of memory? */
     int       nblocks;		/* number of procs who need my data */
     int       proc_index;	/* loop counter over procs to send to */

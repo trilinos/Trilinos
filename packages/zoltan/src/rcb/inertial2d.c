@@ -63,7 +63,7 @@ int Zoltan_RIB_inertial2d(
      int    i, j;               /* loop counter */
      double xcmt, ycmt, wgtt;   /* temp for center of mass */
      double xxt, yyt, xyt;      /* temp for tensor */
-     int    rank;               /* rank in partition (Tflops_Special) */
+     int    rank = 0;           /* rank in partition (Tflops_Special) */
 
      /* Compute center of mass and total mass. */
 

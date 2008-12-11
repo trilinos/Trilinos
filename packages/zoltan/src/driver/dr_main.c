@@ -38,6 +38,9 @@
 #include "dr_dd.h"
 #include "dr_compress_const.h"
 
+/* #define IGNORE_FIRST_ITERATION_STATS */
+/* #define RANDOM_DIST */
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -359,6 +362,27 @@ if (iteration == 1) {
   Zoltan_Destroy(&zzcopy);
 }
 #endif /* IGNORE_FIRST_ITERATION_STATS */
+#ifdef RANDOM_DIST
+ if (iteration % 2 == 0) {
+   char LB_METHOD[1024];
+
+  if (Proc == 0) printf("%d CCCC Randomizing the input\n", Proc);
+   strcpy(LB_METHOD, prob.method);
+   strcpy(prob.method, "RANDOM");
+   Zoltan_Set_Param(zz, "LB_METHOD", "RANDOM");
+   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+    if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
+      Gen_Error(0, "fatal: Error returned from run_zoltan\n");
+      error_report(Proc);
+      print_output = 0;
+      goto End;
+    }
+   Zoltan_Set_Param(zz, "RETURN_LISTS", "NONE");
+   Zoltan_Set_Param(zz, "LB_METHOD", LB_METHOD);
+   strcpy(prob.method, LB_METHOD);
+  if (Proc == 0) printf("%d CCCC Randomizing the input -- END\n", Proc);
+ }
+#endif /* RANDOM_DIST */
     if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
@@ -659,10 +683,10 @@ int i, j, total_vertices, blankmine = (mesh->proc % 2) == (iteration % 2);
 ELEM_INFO *elem;
 
   for (i=0; i < mesh->num_elems; i++){
-    safe_free((void **)&(mesh->elements[i].adj_blank));
+    safe_free((void **)(void *)&(mesh->elements[i].adj_blank));
   }
 
-  safe_free((void **)&mesh->blank);
+  safe_free((void **)(void *)&mesh->blank);
   mesh->blank_count = 0;
   mesh->global_blank_count = 0;
 

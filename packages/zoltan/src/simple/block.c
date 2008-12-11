@@ -53,7 +53,7 @@ int Zoltan_Block(
 {
   int ierr = ZOLTAN_OK;
   int i, count, num_obj;
-  int wtflag;
+  int wtflag = 0;
   ZOLTAN_ID_PTR global_ids = NULL;
   ZOLTAN_ID_PTR local_ids = NULL; 
   int *parts = NULL;

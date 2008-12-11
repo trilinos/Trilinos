@@ -91,17 +91,17 @@ int Zoltan_HSFC(
    int     pcount;                /* number of partitions in grand partition */
    int     new_map;               /* flag indicating whether parts were
                                      remapped */
-   double  start_time, end_time;  /* used to time execution */
-   double  start_stat_time, total_stat_time;
+   double  start_time=0.0L, end_time=0.0L;  /* used to time execution */
+   double  start_stat_time=0.0L, total_stat_time=0.0L;
    double  total_weight = 0.0;
 
    /* temporary variables, loop counters, etc. */
    int        tmp;
    int        i, j, k;            /* loop counters */
    double     sum;
-   int        done, out_of_tolerance;    /* binary flags */
+   int        done, out_of_tolerance=0;    /* binary flags */
    Partition *p = NULL;
-   int        loop;
+   int        loop = 0;
    double     actual, desired, correction;
    double     temp, in[6], out[6];
    int        err;

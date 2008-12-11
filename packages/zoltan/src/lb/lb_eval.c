@@ -89,9 +89,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   char *yo = "Zoltan_LB_Eval";
   int i, j, k, max_edges, num_edges;
   int cuts, comm_vol;
-  int num_obj = 0, num_adj, num_boundary, ierr, compute_part;
+  int num_obj = 0, num_adj, num_boundary, ierr, compute_part = 0;
   int nproc = zz->Num_Proc; 
-  int nparts, nonempty_nparts, max_nparts, req_nparts, obj_wgt_dim;
+  int nparts, nonempty_nparts= 0 , max_nparts, req_nparts, obj_wgt_dim;
   int stats[4*NUM_STATS];
   int imin, imax, isum, iimbal;
   int *proc_count=NULL, *nbors_proc=NULL, *nbors_part = NULL, *part_arr=NULL;
@@ -108,7 +108,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int num_lid_entries = zz->Num_LID;
   int gid_off, lid_off;
   int have_graph_callbacks;
-  int have_pin_callbacks;
+  int have_pin_callbacks = 0;
   int sum;
   char msg[256];
   /* Arrays for partition data. */

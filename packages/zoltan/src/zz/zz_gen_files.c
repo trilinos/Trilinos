@@ -81,9 +81,9 @@ int gen_geom, int gen_graph, int gen_hg)
   float *float_vwgt, *ewgts, *eWgts, *wptr;
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges, reduce;
-  int glob_nvtxs, glob_edges=0, glob_hedges, glob_pins, glob_ewgts;
+  int glob_nvtxs, glob_edges=0, glob_hedges=0, glob_pins, glob_ewgts;
   int minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
-  int numPins, edgeOffset, vtxOffset;
+  int numPins, edgeOffset=0, vtxOffset=0;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   int have_pin_callbacks=0;
   int nEdges, nEwgts;

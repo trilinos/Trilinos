@@ -816,7 +816,7 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
   char  err_buff[300];
 
   int nnodes, i, j, num;
-  int dup, location;
+  int dup, location = 0;
 
   /* check if this is a degenerate face */
   dup = 0;

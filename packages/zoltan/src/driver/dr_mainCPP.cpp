@@ -29,6 +29,7 @@ using namespace std;
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
 #include "dr_dd.h"
+#include "dr_compress_const.h"
 
 #include "zoltan_cpp.h"
 
@@ -158,6 +159,7 @@ int main(int argc, char *argv[])
   pio_info.pdsk_root[0]		= '\0';
   pio_info.pdsk_subdir[0]	= '\0';
   pio_info.pexo_fname[0]	= '\0';
+  pio_info.file_comp            = STANDARD;
 
   PROB_INFO  prob;
   prob.method[0]		= '\0';

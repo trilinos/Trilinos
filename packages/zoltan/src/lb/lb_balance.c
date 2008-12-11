@@ -155,10 +155,10 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 End:
   /* Not returning import/export partition information; free it if allocated. */
   if (import_to_part != NULL) 
-    Zoltan_Special_Free(zz, (void **) &import_to_part, 
+    Zoltan_Special_Free(zz, (void **)(void*) &import_to_part, 
                         ZOLTAN_SPECIAL_MALLOC_INT);
   if (export_to_part != NULL) 
-    Zoltan_Special_Free(zz, (void **) &export_to_part, 
+    Zoltan_Special_Free(zz, (void **)(void*) &export_to_part, 
                         ZOLTAN_SPECIAL_MALLOC_INT);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return(ierr);
@@ -604,9 +604,9 @@ ZOLTAN_ID_PTR gid;
 
         if ((error == ZOLTAN_OK) || (error == ZOLTAN_WARN)){
           ZOLTAN_FREE(&fdummy);
-          if ((Zoltan_Special_Malloc(zz, (void **)&export_all_procs, 
+          if ((Zoltan_Special_Malloc(zz, (void **)(void*)&export_all_procs, 
                  all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT)==0) ||
-              (Zoltan_Special_Malloc(zz, (void **)&export_all_to_part, 
+              (Zoltan_Special_Malloc(zz, (void **)(void*)&export_all_to_part, 
                  all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT)==0)){
 
             error = ZOLTAN_MEMERR;
@@ -641,7 +641,7 @@ ZOLTAN_ID_PTR gid;
 
         Zoltan_LB_Special_Free_Part(zz, export_global_ids, export_local_ids, 
                             export_procs, export_to_part);
-        Zoltan_Special_Free(zz, (void **)&parts, 
+        Zoltan_Special_Free(zz, (void **)(void*)&parts, 
                             ZOLTAN_SPECIAL_MALLOC_INT);
   
         *export_global_ids = all_global_ids;

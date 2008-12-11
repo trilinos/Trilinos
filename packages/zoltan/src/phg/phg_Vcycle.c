@@ -300,7 +300,7 @@ int Zoltan_PHG_Partition (
       /* Calculate matching (packing or grouping) */
       err = Zoltan_PHG_Matching (zz, hg, match, hgp);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
-        ZOLTAN_FREE ((void**) &match);
+        ZOLTAN_FREE (&match);
         goto End;
       }
       if (vcycle_timing)
@@ -323,7 +323,7 @@ int Zoltan_PHG_Partition (
       }
             
       if (!(coarser = newVCycle(zz, NULL, NULL, vcycle, vcycle_timing))) {
-        ZOLTAN_FREE ((void**) &match);
+        ZOLTAN_FREE (&match);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "coarser is NULL.");
         goto End;
       }
@@ -344,7 +344,7 @@ int Zoltan_PHG_Partition (
         ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
       }
 
-      ZOLTAN_FREE ((void**) &match);
+      ZOLTAN_FREE (&match);
 
       if ((err=allocVCycle(coarser))!= ZOLTAN_OK)
         goto End;

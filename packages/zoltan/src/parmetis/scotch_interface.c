@@ -777,6 +777,8 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
   return (ZOLTAN_OK);
 }
 
+
+
 /*   { */
 /*     if (SCOTCH_dgraphCheck(&grafdat) != 0) { */
 /*       Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL); */

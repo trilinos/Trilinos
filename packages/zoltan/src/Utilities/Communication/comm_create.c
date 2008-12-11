@@ -47,12 +47,12 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     int      *starts_from=NULL;	/* pointers for where to put recv data */
     int       my_proc;		/* my processor tag in communicator */
     int       nprocs;		/* number of  processors in communicator */
-    int       max_send_size;	/* size of longest message I send */
-    int       total_recv_size;/* total size of messages I recv */
+    int       max_send_size =0;	/* size of longest message I send */
+    int       total_recv_size;  /* total size of messages I recv */
     int       no_send_buff;	/* is data nicely grouped by processor? */
-    int       nactive;		/* number of values to remap */
-    int       self_msg;		/* do I have data for myself? */
-    int       nsends;		/* # procs I'll send to (including self) */
+    int       nactive = 0;	/* number of values to remap */
+    int       self_msg = 0;	/* do I have data for myself? */
+    int       nsends=0;		/* # procs I'll send to (including self) */
     int       nrecvs=0;		/* # procs I'll recv from (including self) */
     int       proc;		/* processor I communicate with */
     int       prev_proc;	/* processor on previous loop pass */

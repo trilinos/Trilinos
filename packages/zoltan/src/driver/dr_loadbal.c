@@ -275,8 +275,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     int nparts=100;
     /* Variable partition sizes. Assume at most 100 global partitions. */
     /* Realloc arrays. */
-    safe_free((void **) &psize);
-    safe_free((void **) &partid);
+    safe_free((void **)(void *) &psize);
+    safe_free((void **)(void *) &partid);
     psize = (float *) malloc(nparts*sizeof(float));
     partid = (int *) malloc(nparts*sizeof(int));
     for (i=0; i<nparts; i++){
@@ -288,8 +288,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   /* Free temporary arrays for partition sizes. */
-  safe_free((void **) &psize);
-  safe_free((void **) &partid);
+  safe_free((void **)(void *) &psize);
+  safe_free((void **)(void *) &partid);
 
   /*
    * Set the callback functions
@@ -743,9 +743,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
       if (!order || !order_gids || !order_lids) {
           /* Free order data */
-          safe_free((void **) &order);
-          safe_free((void **) &order_gids);
-          safe_free((void **) &order_lids);
+          safe_free((void **)(void *) &order);
+          safe_free((void **)(void *) &order_gids);
+          safe_free((void **)(void *) &order_lids);
           Gen_Error(0, "memory alloc failed for Zoltan_Order\n");
           return 0;
       }
@@ -776,9 +776,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 			    mesh->num_elems, order_gids, order_lids,
 			    order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
 	Gen_Error(0, "fatal:  error returned from Zoltan_Order_Test()\n");
-	safe_free((void **) &order);
-	safe_free((void **) &order_gids);
-	safe_free((void **) &order_lids);
+	safe_free((void **)(void *) &order);
+	safe_free((void **)(void *) &order_gids);
+	safe_free((void **)(void *) &order_lids);
 	return (0);
       }
     }
@@ -790,9 +790,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
 
     /* Free order data */
-    safe_free((void **) &order);
-    safe_free((void **) &order_gids);
-    safe_free((void **) &order_lids);
+    safe_free((void **)(void *) &order);
+    safe_free((void **)(void *) &order_gids);
+    safe_free((void **)(void *) &order_lids);
   }
 
 
@@ -811,9 +811,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
 
       if (!color || !gids || !lids) {
-          safe_free((void **) &color);
-          safe_free((void **) &gids);
-          safe_free((void **) &lids); 
+          safe_free((void **)(void *) &color);
+          safe_free((void **)(void *) &gids);
+          safe_free((void **)(void *) &lids); 
           Gen_Error(0, "memory alloc failed for Zoltan_Color\n");
           return 0;
       }
@@ -823,9 +823,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       if (Zoltan_Color(zz, &num_gid_entries, &num_lid_entries,
                        mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
           Gen_Error(0, "fatal:  error returned from Zoltan_Color()\n");
-          safe_free((void **) &color);
-          safe_free((void **) &gids);
-          safe_free((void **) &lids);
+          safe_free((void **)(void *) &color);
+          safe_free((void **)(void *) &gids);
+          safe_free((void **)(void *) &lids);
           return 0;
       }
 
@@ -836,9 +836,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
           if (Zoltan_Color_Test(zz, &num_gid_entries, &num_lid_entries,
                                 mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
               Gen_Error(0, "fatal:  error returned from Zoltan_Color_Test()\n");
-              safe_free((void **) &color);
-              safe_free((void **) &gids);
-              safe_free((void **) &lids);
+              safe_free((void **)(void *) &color);
+              safe_free((void **)(void *) &gids);
+              safe_free((void **)(void *) &lids);
               return 0;
           }
       }
@@ -850,9 +850,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
       
       /* Free color data */
-      safe_free((void **) &color);
-      safe_free((void **) &gids);
-      safe_free((void **) &lids);
+      safe_free((void **)(void *) &color);
+      safe_free((void **)(void *) &gids);
+      safe_free((void **)(void *) &lids);
   }
 
   

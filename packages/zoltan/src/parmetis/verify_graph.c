@@ -67,7 +67,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
        int graph_type, int check_graph, int output_level)
 {
   int i, j, ii, k, num_obj, nedges, ierr;
-  int flag, cross_edges, mesg_size, sum, global_sum;
+  int flag, cross_edges = 0, mesg_size, sum, global_sum;
   int nprocs, proc, *proclist, errors, global_errors;
   int num_zeros, num_selfs, num_duplicates, num_singletons;
   indextype global_i, global_j;

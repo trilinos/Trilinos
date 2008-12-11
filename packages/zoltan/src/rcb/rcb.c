@@ -360,7 +360,7 @@ static int rcb_fn(
   double  valuehalf;                /* median cut position */
   int     first_guess;              /* flag if first guess for median search */
   int     allocflag;                /* have to re-allocate space */
-  double  time1,time2,time3,time4;  /* timers */
+  double  time1=0,time2=0,time3=0,time4=0;  /* timers */
   double  timestart=0,timestop=0;   /* timers */
   double  timers[4]={0.,0.,0.,0.};  /* diagnostic timers 
 			              0 = start-up time before recursion
@@ -425,7 +425,7 @@ static int rcb_fn(
   int breakflag;                    /* flag for exiting loop */
   int *dotmark0 = NULL;             /* temp dotmark array */
   int *dotmark_best = NULL;         /* temp dotmark array */
-  double valuehalf_best;            /* temp valuehalf */
+  double valuehalf_best= 0.0L;      /* temp valuehalf */
   int dim_best;                     /* best cut dimension  */
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */
@@ -1328,7 +1328,7 @@ int tmp_nparts;
 int level;
 int i, j;
 int ierr = ZOLTAN_OK;
-int dim;
+int dim = 0;
 
   if (preset_dir < 0 || preset_dir > 6) {
     ZOLTAN_PRINT_WARN(proc, yo, 
@@ -1479,7 +1479,7 @@ static int serial_rcb(
   struct rcb_box tmpbox;
   int *dotmark0 = NULL;             /* temp dotmark array */
   int *dotmark_best = NULL;         /* temp dotmark array */
-  double valuehalf_best;            /* temp valuehalf */
+  double valuehalf_best = 0.0L;     /* temp valuehalf */
   int dim_best;                     /* best cut dimension  */
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */

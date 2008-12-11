@@ -28,7 +28,6 @@ extern "C" {
 #endif
 
 #define BUFF_SIZE 3*1024*1024
-#define MIN(a,b) ((a)<(b)?(a):(b))
 
 #ifndef __USE_ISOC99
 int vfscanf(FILE * stream, const char * format,
@@ -83,14 +82,14 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
   }
 
   if (error) {
-    safe_free((void **) &file);
+    safe_free((void **)(void *) &file);
     return (NULL);
   }
 
   if (type != STANDARD) {
     file->buffer = (char*) malloc(BUFF_SIZE);
     if (file->buffer == NULL) {
-      safe_free((void **) &file);
+      safe_free((void **)(void *) &file);
       return (NULL);
     }
   }
@@ -267,9 +266,9 @@ int ZOLTAN_FILE_close(ZOLTAN_FILE* file)
       retval = 1;
       break;
     }
-    safe_free((void **) (&file->buffer));
+    safe_free((void **)(void *) (&file->buffer));
   }
-  safe_free((void **) &file);
+  safe_free((void **)(void *) &file);
   return (retval);
 }
 

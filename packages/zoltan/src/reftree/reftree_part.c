@@ -87,7 +87,7 @@ int Zoltan_Reftree_Part(
 char *yo = "Zoltan_Reftree_Part";
 int ierr;       /* error code returned by called routines */
 int final_ierr; /* error code returned by this routine */
-double time0, time1, time2, time3, time4;
+double time0 = 0, time1= 0, time2 = 0, time3 =0, time4 =0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 

@@ -127,7 +127,7 @@ int Zoltan_RB_find_median_randomized(
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank=0;                    /* rank in partition (Tflops_Special) */
   int     found_median;
-  int     left, right, middle;
+  int     left = 0, right = 0, middle;
   int     loopCount;
   int     return_fail = 0;
   int     return_ok   = 1;

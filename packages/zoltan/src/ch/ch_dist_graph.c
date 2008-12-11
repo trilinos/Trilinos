@@ -278,11 +278,11 @@ int chaco_dist_graph(
         }
       }
     }
-    safe_free((void **) &send_xadj);
-    safe_free((void **) &send_vwgts);
-    safe_free((void **) &send_x);
-    safe_free((void **) &send_y);
-    safe_free((void **) &send_z);
+    safe_free((void **)(void *) &send_xadj);
+    safe_free((void **)(void *) &send_vwgts);
+    safe_free((void **)(void *) &send_x);
+    safe_free((void **)(void *) &send_y);
+    safe_free((void **)(void *) &send_z);
   }
   else {
     /* host_proc != myproc; receive vertex data from host_proc */
@@ -402,8 +402,8 @@ int chaco_dist_graph(
           MPI_Send(send_adjncy, size[p], MPI_INT, p, 6, comm);
           if (*ewgt_dim)
             MPI_Send(send_ewgts, size[p]*(*ewgt_dim), MPI_FLOAT, p, 7, comm);
-          safe_free((void **) &send_adjncy);
-          safe_free((void **) &send_ewgts);
+          safe_free((void **)(void *) &send_adjncy);
+          safe_free((void **)(void *) &send_ewgts);
         }
       }
     }
@@ -419,17 +419,17 @@ int chaco_dist_graph(
 
   /* Free space on host proc */
   if (myproc == host_proc){
-    safe_free((void **) &old_xadj);
-    safe_free((void **) &old_adjncy);
-    safe_free((void **) &old_vwgts);
-    safe_free((void **) &old_ewgts);
+    safe_free((void **)(void *) &old_xadj);
+    safe_free((void **)(void *) &old_adjncy);
+    safe_free((void **)(void *) &old_vwgts);
+    safe_free((void **)(void *) &old_ewgts);
 
-    safe_free((void **) &old_x);
-    safe_free((void **) &old_y);
-    safe_free((void **) &old_z);
-    safe_free((void **) &vtx_list);
+    safe_free((void **)(void *) &old_x);
+    safe_free((void **)(void *) &old_y);
+    safe_free((void **)(void *) &old_z);
+    safe_free((void **)(void *) &vtx_list);
   }
-  if (size != NULL) safe_free((void ** ) &size);
+  if (size != NULL) safe_free((void **)(void *) &size);
    
   DEBUG_TRACE_END(myproc, yo);
   return 1;

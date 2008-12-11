@@ -48,7 +48,7 @@ int Zoltan_DD_Update (
    int              nrec;           /* number of receives to expect    */
    int              i;
    int              err;
-   int              errcount;       /* count of GIDs not found, added  */
+   int              errcount = 0;   /* count of GIDs not found, added  */
    char             str[100];       /* build error message string      */
    char            *yo = "Zoltan_DD_Update";
 

@@ -69,8 +69,8 @@ int i, j;
     return 0;
   }
 
-  safe_free((void **) &gids);
-  safe_free((void **) &parts);
+  safe_free((void **)(void *) &gids);
+  safe_free((void **)(void *) &parts);
   return 1;
 }
 
