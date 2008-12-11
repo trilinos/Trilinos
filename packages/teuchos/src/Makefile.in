@@ -242,7 +242,9 @@ DIST_SOURCES = $(am__libteuchos_a_SOURCES_DIST) \
 	$(EXTRA_libteuchos_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
-	$(srcdir)/Teuchos_Array.hpp $(srcdir)/Teuchos_ArrayRCP.hpp \
+	$(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_ArrayConversions.hpp \
+	$(srcdir)/Teuchos_ArrayRCP.hpp \
 	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
 	$(srcdir)/Teuchos_ArrayView.hpp \
 	$(srcdir)/Teuchos_ArrayViewDecl.hpp \
@@ -519,6 +521,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_ArrayConversions.hpp \
 	$(srcdir)/Teuchos_ArrayRCP.hpp \
 	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
 	$(srcdir)/Teuchos_ArrayView.hpp \

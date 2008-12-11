@@ -68,6 +68,7 @@ MemoryManagement_UnitTests_SOURCES = \
   $(srcdir)/Array_UnitTest_helpers.cpp \
   $(srcdir)/Array_UnitTests.cpp \
   $(srcdir)/ArrayView_UnitTests.cpp \
+	$(srcdir)/Array_Conversions_UnitTests.cpp \
   $(unit_test_common_sources) \
   $(common_sources)
 MemoryManagement_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a

@@ -53,6 +53,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_ArrayConversions.hpp \
 	$(srcdir)/Teuchos_ArrayRCP.hpp \
 	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
 	$(srcdir)/Teuchos_ArrayView.hpp \

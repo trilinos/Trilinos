@@ -107,7 +107,7 @@ public:
    *
    * Note: This constructor is declared <tt>explicit</tt> so there is no
    * implicit conversion from a raw C++ pointer to a <tt>Ptr</tt> object.
-   * This is ment to avoid cases where an uninitialized pointer is used to
+   * This is meant to avoid cases where an uninitialized pointer is used to
    * implicitly initialize one of these objects.
    */
   inline explicit Ptr( T *ptr );
