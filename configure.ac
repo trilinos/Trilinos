@@ -109,6 +109,8 @@ TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos, a transient integration package]
 
 TAC_ARG_ENABLE_FEATURE(sacado, [Build sacado, an automatic differentation package], SACADO, no)
 
+TAC_ARG_ENABLE_FEATURE(shards, [Build shards, a package of shared discretization tools], SHARDS, no)
+
 TAC_ARG_ENABLE_FEATURE(stokhos, [Build stokhos, an intrusive stochastic Galerkin package], STOKHOS, no)
 
 TAC_ARG_ENABLE_FEATURE(sundance, [Build Sundance, a system for development of parallel finite-element solutions of PDEs], SUNDANCE, no)
@@ -477,6 +479,17 @@ else
   BUILD_INTREPID=no
 fi
 AM_CONDITIONAL(BUILD_INTREPID, test "X$BUILD_INTREPID" != "Xno")
+
+if test "X$ac_cv_use_shards" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/shards])
+  BUILD_SHARDS=yes
+  if test "X$ac_cv_use_shards_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-shards"
+  fi
+else
+  BUILD_SHARDS=no
+fi
+AM_CONDITIONAL(BUILD_SHARDS, test "X$BUILD_SHARDS" != "Xno")
 
 if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])

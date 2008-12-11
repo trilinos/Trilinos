@@ -688,6 +688,8 @@ BUILD_ARISTOS_TRUE
 BUILD_ARISTOS_FALSE
 BUILD_INTREPID_TRUE
 BUILD_INTREPID_FALSE
+BUILD_SHARDS_TRUE
+BUILD_SHARDS_FALSE
 BUILD_MEROS_TRUE
 BUILD_MEROS_FALSE
 BUILD_ML_TRUE
@@ -763,6 +765,7 @@ packages/anasazi
 packages/rbgen
 packages/aristos
 packages/intrepid
+packages/shards
 packages/meros
 packages/ml
 packages/stokhos
@@ -1438,6 +1441,8 @@ Optional Features:
                           (default is no)
   --enable-sacado         Build sacado, an automatic differentation package
                           (default is no)
+  --enable-shards         Build shards, a package of shared discretization
+                          tools (default is no)
   --enable-stokhos        Build stokhos, an intrusive stochastic Galerkin
                           package (default is no)
   --enable-sundance       Build Sundance, a system for development of parallel
@@ -3432,6 +3437,34 @@ fi
 
 
 
+# Check whether --enable-shards was given.
+if test "${enable_shards+set}" = set; then
+  enableval=$enable_shards; ac_cv_use_shards=$enableval
+ac_cv_use_shards_explicit=$enableval
+else
+  ac_cv_use_shards=no
+ac_cv_use_shards_explicit=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use shards" >&5
+echo $ECHO_N "checking whether to use shards... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_shards" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SHARDS
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
 # Check whether --enable-stokhos was given.
 if test "${enable_stokhos+set}" = set; then
   enableval=$enable_stokhos; ac_cv_use_stokhos=$enableval
@@ -4430,6 +4463,25 @@ else
 fi
 
 
+if test "X$ac_cv_use_shards" != "Xno"; then
+  subdirs="$subdirs packages/shards"
+
+  BUILD_SHARDS=yes
+  if test "X$ac_cv_use_shards_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-shards"
+  fi
+else
+  BUILD_SHARDS=no
+fi
+ if test "X$BUILD_SHARDS" != "Xno"; then
+  BUILD_SHARDS_TRUE=
+  BUILD_SHARDS_FALSE='#'
+else
+  BUILD_SHARDS_TRUE='#'
+  BUILD_SHARDS_FALSE=
+fi
+
+
 if test "X$ac_cv_use_meros" != "Xno"; then
   subdirs="$subdirs packages/meros"
 
@@ -5155,6 +5207,13 @@ if test -z "${BUILD_INTREPID_TRUE}" && test -z "${BUILD_INTREPID_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_INTREPID\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_INTREPID\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_SHARDS_TRUE}" && test -z "${BUILD_SHARDS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_SHARDS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_SHARDS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -5992,6 +6051,8 @@ BUILD_ARISTOS_TRUE!$BUILD_ARISTOS_TRUE$ac_delim
 BUILD_ARISTOS_FALSE!$BUILD_ARISTOS_FALSE$ac_delim
 BUILD_INTREPID_TRUE!$BUILD_INTREPID_TRUE$ac_delim
 BUILD_INTREPID_FALSE!$BUILD_INTREPID_FALSE$ac_delim
+BUILD_SHARDS_TRUE!$BUILD_SHARDS_TRUE$ac_delim
+BUILD_SHARDS_FALSE!$BUILD_SHARDS_FALSE$ac_delim
 BUILD_MEROS_TRUE!$BUILD_MEROS_TRUE$ac_delim
 BUILD_MEROS_FALSE!$BUILD_MEROS_FALSE$ac_delim
 BUILD_ML_TRUE!$BUILD_ML_TRUE$ac_delim
@@ -6042,7 +6103,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 60; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 62; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -90,10 +90,10 @@ CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop kokkos zoltan epetra triutils tpetra \
 	epetraext thyra isorropia aztecoo galeri amesos ifpack komplex \
 	claps belos anasazi rbgen pliris ml aristos intrepid moertel \
-	stratimikos meros fei stokhos sacado nox phalanx rythmos \
-	trilinoscouplings new_package moocho pamgen ThreadPool phdmesh \
-	Sundance PyTrilinos CTrilinos ForTrilinos TriKota didasko \
-	WebTrilinos external
+	stratimikos meros fei stokhos sacado shards nox phalanx \
+	rythmos trilinoscouplings new_package moocho pamgen ThreadPool \
+	phdmesh Sundance PyTrilinos CTrilinos ForTrilinos TriKota \
+	didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -215,6 +215,7 @@ common/styles.css common/tag_files/keepme.txt CMakeLists.txt
 @BUILD_RBGEN_TRUE@RBGEN_SUBDIR = rbgen
 @BUILD_RYTHMOS_TRUE@RYTHMOS_SUBDIR = rythmos
 @BUILD_SACADO_TRUE@SACADO_SUBDIR = sacado
+@BUILD_SHARDS_TRUE@SHARDS_SUBDIR = shards
 @BUILD_STOKHOS_TRUE@STOKHOS_SUBDIR = stokhos
 @BUILD_TEUCHOS_TRUE@TEUCHOS_SUBDIR = teuchos
 @BUILD_RTOP_TRUE@RTOP_SUBDIR = rtop
@@ -269,6 +270,7 @@ PACKAGE_NAMES = \
 	$(FEI_SUBDIR)        \
 	$(STOKHOS_SUBDIR)       \
 	$(SACADO_SUBDIR)       \
+	$(SHARDS_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(PHALANX_SUBDIR)      \
 	$(RYTHMOS_SUBDIR)      \

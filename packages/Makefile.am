@@ -198,6 +198,10 @@ if BUILD_SACADO
 SACADO_SUBDIR = sacado
 endif
 
+if BUILD_SHARDS
+SHARDS_SUBDIR = shards
+endif
+
 if BUILD_STOKHOS
 STOKHOS_SUBDIR = stokhos
 endif
@@ -295,6 +299,7 @@ PACKAGE_NAMES = \
 	$(FEI_SUBDIR)        \
 	$(STOKHOS_SUBDIR)       \
 	$(SACADO_SUBDIR)       \
+	$(SHARDS_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(PHALANX_SUBDIR)      \
 	$(RYTHMOS_SUBDIR)      \

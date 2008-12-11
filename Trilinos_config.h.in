@@ -108,6 +108,9 @@
 /* Define if want to build sacado */
 #undef HAVE_SACADO
 
+/* Define if want to build shards */
+#undef HAVE_SHARDS
+
 /* Define if want to build shared */
 #undef HAVE_SHARED
 
