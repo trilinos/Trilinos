@@ -38,7 +38,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Ifpack                ifpack                         ""
   Komplex               komplex                        ""
   ML                    ml                             ""
-  Belos                 belos                          OFF
+  Belos                 belos                          ""
   Stratimikos           stratimikos                    ""
   Meros                 meros                          OFF
   FEI                   fei                            OFF
