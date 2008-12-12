@@ -23,7 +23,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Stokhos               stokhos                        OFF
   Sacado                sacado                         ""
   Zoltan                zoltan                         ""
-  Shards                shards                         OFF
+  Shards                shards                         ""
   Intrepid              intrepid                       OFF
   Triutils              triutils                       ""
   Tpetra                tpetra                         ""
