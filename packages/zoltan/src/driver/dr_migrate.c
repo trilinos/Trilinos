@@ -349,7 +349,7 @@ char msg[256];
 
   for (i=0; i < mesh->num_elems; i++){
     /* don't migrate a pointer created on this process */
-    safe_free((void **)&(elements[i].adj_blank));
+    safe_free((void **)(void *)&(elements[i].adj_blank));
   }
 
   /*
@@ -516,7 +516,7 @@ char msg[256];
       }
     }
   }
-  safe_free((void **) &change);
+  safe_free((void **)(void *) &change);
 
   /*
    * Update off-processor information 
@@ -540,7 +540,7 @@ char msg[256];
       send_vec[i] = proc_ids[mesh->ecmap_elemids[i]];
   }
 
-  safe_free((void **) &proc_ids);
+  safe_free((void **)(void *) &proc_ids);
 
   if (maxlen > 0)
     recv_vec = (int *) malloc(maxlen * sizeof(int));
@@ -590,8 +590,8 @@ char msg[256];
     }
   }
 
-  safe_free((void **) &recv_vec);
-  safe_free((void **) &send_vec);
+  safe_free((void **)(void *) &recv_vec);
+  safe_free((void **)(void *) &send_vec);
 
   /*
    * Allocate space (if needed) for the new element data.
@@ -710,9 +710,9 @@ int adj_elem;
     elements[last].edge_wgt = NULL;
   }
 
-  if (New_Elem_Index != NULL) safe_free((void **) &New_Elem_Index);
-  if (New_Elem_Hash_Table != NULL) safe_free((void **) &New_Elem_Hash_Table);
-  if (New_Elem_Hash_Nodes != NULL) safe_free((void **) &New_Elem_Hash_Nodes);
+  if (New_Elem_Index != NULL) safe_free((void **)(void *) &New_Elem_Index);
+  if (New_Elem_Hash_Table != NULL) safe_free((void **)(void *) &New_Elem_Hash_Table);
+  if (New_Elem_Hash_Nodes != NULL) safe_free((void **)(void *) &New_Elem_Hash_Nodes);
   New_Elem_Index_Size = 0;
 
   if (!build_elem_comm_maps(proc, mesh)) {

@@ -29,6 +29,7 @@ extern "C" {
 /**********  parameters structure used by PHG, ParMetis and Jostle **********/
 static PARAM_VARS Graph_Package_params[] = {
         { "GRAPH_PACKAGE", NULL, "STRING", 0 },
+        { "ORDER_TYPE", NULL, "STRING", 0 },
         { NULL, NULL, NULL, 0 } };
 
 

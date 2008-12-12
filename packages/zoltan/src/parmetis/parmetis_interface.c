@@ -27,13 +27,20 @@ extern "C" {
 #include "third_library.h"
 #include "parmetis_interface.h"
 
+#ifndef PARMETIS_SUBMINOR_VERSION
+#define PARMETIS_SUBMINOR_VERSION 0
+#endif
+
+#if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 1) && (PARMETIS_SUBMINOR_VERSION == 0)
+#define  PARMETIS31_ALWAYS_FREES_VSIZE
+#endif
+
   /**********  parameters structure for parmetis methods **********/
 static PARAM_VARS Parmetis_params[] = {
   { "PARMETIS_METHOD", NULL, "STRING", 0 },
   { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
   { "PARMETIS_SEED", NULL, "INT", 0 },
   { "PARMETIS_ITR", NULL, "DOUBLE", 0 },
-  { "PARMETIS_USE_OBJ_SIZE", NULL, "INT", 0 },
   { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
   { "PARMETIS_FOLD", NULL, "INT", 0 },
   { NULL, NULL, NULL, 0 } };
@@ -162,8 +169,6 @@ int Zoltan_ParMetis(
     MPI_Barrier(zz->Communicator);
     times[0] = Zoltan_Time(zz->Timer);
   }
-
-#define  PARMETIS31_ALWAYS_FREES_VSIZE
 
   vsp.vsize_malloc = 0;
 #ifdef PARMETIS31_ALWAYS_FREES_VSIZE
@@ -473,8 +478,6 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
                       (void *) &seed);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_ITR",
                       (void *) pmv3_itr);
-    Zoltan_Bind_Param(Parmetis_params, "PARMETIS_USE_OBJ_SIZE",
-                      (void *) &use_obj_size);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_COARSE_ALG",
                       (void *) &coarse_alg);
     Zoltan_Bind_Param(Parmetis_params, "PARMETIS_FOLD",

@@ -43,6 +43,10 @@ COMMON_DRIVER_SRC = \
 	$(top_srcdir)/src/ch/ch_input_geom.c \
 	$(top_srcdir)/src/ch/ch_input_read.c
 
+if BUILD_GZIP
+COMMON_DRIVER_SRC += $(srcdir)/dr_compress.c
+endif
+
 # List headers here that are used for both the C and C++ drivers.
 COMMON_DRIVER_HDRS = \
 	$(srcdir)/dr_compress_const.h $(srcdir)/dr_hg_readfile.h \

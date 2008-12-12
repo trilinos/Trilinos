@@ -331,11 +331,13 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
     add_type = 0;
   }
   if (add_type){
-	/* update part_sizes array */
-    ierr = Zoltan_LB_Add_Part_Sizes_Weight(zz,
-					   (gr->obj_wgt_dim ? gr->obj_wgt_dim : 1),
-					   gr->obj_wgt_dim+1,
-					   prt->input_part_sizes, &prt->part_sizes);
+    if (prt != NULL) {
+      /* update part_sizes array */
+      ierr = Zoltan_LB_Add_Part_Sizes_Weight(zz,
+					     (gr->obj_wgt_dim ? gr->obj_wgt_dim : 1),
+					     gr->obj_wgt_dim+1,
+					     prt->input_part_sizes, &prt->part_sizes);
+    }
 	/* Add implicit weights in new array */
     for (i=0; i<gr->num_obj; i++){
       /* First copy old weights */
@@ -347,6 +349,7 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
 	vwgt_new[i*(gr->obj_wgt_dim+1)+gr->obj_wgt_dim] = 1;
       else if (add_type==2)
 	/* weight is vertex degree (EBEB should we add +1?) */
+	//	vwgt_new[i*(gr->obj_wgt_dim+1)+gr->obj_wgt_dim] = 10*(gr->xadj[i+1] -gr->xadj[i]) + 1;
 	vwgt_new[i*(gr->obj_wgt_dim+1)+gr->obj_wgt_dim] = gr->xadj[i+1] -gr->xadj[i];
     }
 	/* Use new vwgt array */

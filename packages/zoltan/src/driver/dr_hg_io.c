@@ -493,15 +493,15 @@ int read_hypergraph_file(
   debug_elements(Proc, Num_Proc, mesh->num_elems,mesh->elements);
 #endif
 
-  safe_free((void **) &vwgts);
-  safe_free((void **) &ch_ewgts);
-  safe_free((void **) &ch_vwgts);
-  safe_free((void **) &ch_x);
-  safe_free((void **) &ch_y);
-  safe_free((void **) &ch_z);
-  safe_free((void **) &ch_start);
-  safe_free((void **) &ch_adj);
-  safe_free((void **) &ch_assignments);
+  safe_free((void **)(void *) &vwgts);
+  safe_free((void **)(void *) &ch_ewgts);
+  safe_free((void **)(void *) &ch_vwgts);
+  safe_free((void **)(void *) &ch_x);
+  safe_free((void **)(void *) &ch_y);
+  safe_free((void **)(void *) &ch_z);
+  safe_free((void **)(void *) &ch_start);
+  safe_free((void **)(void *) &ch_adj);
+  safe_free((void **)(void *) &ch_assignments);
 
  if (Debug_Driver > 3)
    print_distributed_mesh(Proc, Num_Proc, mesh);
@@ -539,7 +539,7 @@ static int dist_hyperedges(
  */
 
 const char *yo = "dist_hyperedges";
-int nprocs, myproc, i, h, p;
+int nprocs, myproc, i, h, p = 0;
 int *old_hindex = NULL, *old_hvertex = NULL, *old_hvertex_proc = NULL;
 int *size = NULL, *num_send = NULL;
 int **send = NULL;
@@ -698,11 +698,11 @@ int hedge_init_dist_type;
 	MPI_Send(send_hewgts, hecnt*(*hewgt_dim), MPI_FLOAT, p, 6, comm);
     }
 
-    safe_free((void **) &send_hgid);
-    safe_free((void **) &send_hindex);
-    safe_free((void **) &send_hvertex);
-    safe_free((void **) &send_hvertex_proc);
-    safe_free((void **) &send_hewgts);
+    safe_free((void **)(void *) &send_hgid);
+    safe_free((void **)(void *) &send_hindex);
+    safe_free((void **)(void *) &send_hvertex);
+    safe_free((void **)(void *) &send_hvertex_proc);
+    safe_free((void **)(void *) &send_hewgts);
 
     /* Copy data owned by myproc into new local storage */
     *nhedges = num_send[myproc];
@@ -739,13 +739,13 @@ int hedge_init_dist_type;
       }
     }
 
-    for (p = 0; p < nprocs; p++) safe_free((void **) &(send[p]));
-    safe_free((void **) &send);
-    safe_free((void **) &size);
-    safe_free((void **) &old_hindex);
-    safe_free((void **) &old_hvertex);
-    safe_free((void **) &old_hvertex_proc);
-    safe_free((void **) &old_hewgts);
+    for (p = 0; p < nprocs; p++) safe_free((void **)(void *) &(send[p]));
+    safe_free((void **)(void *) &send);
+    safe_free((void **)(void *) &size);
+    safe_free((void **)(void *) &old_hindex);
+    safe_free((void **)(void *) &old_hvertex);
+    safe_free((void **)(void *) &old_hvertex_proc);
+    safe_free((void **)(void *) &old_hewgts);
   }
   else {
     /* host_proc != myproc; receive hedge data from host_proc */
@@ -926,8 +926,8 @@ int read_mtxplus_file(
     return 0;
   }
 
-  safe_free((void **)&myPinI);
-  safe_free((void **)&myPinJ);
+  safe_free((void **)(void *)&myPinI);
+  safe_free((void **)(void *)&myPinJ);
 
   /* Initialize mesh structure for Hypergraph. */
   mesh->data_type = HYPERGRAPH;
@@ -1002,8 +1002,8 @@ int read_mtxplus_file(
     }
   }
 
-  safe_free((void **) &myVtxWgts);
-  safe_free((void **) &myVtxNum);
+  safe_free((void **)(void *) &myVtxWgts);
+  safe_free((void **)(void *) &myVtxNum);
 
  if (Debug_Driver > 3)
    print_distributed_mesh(Proc, Num_Proc, mesh);
@@ -1042,7 +1042,7 @@ int nedges, nvtxs, npins, vdim, edim, numew, nFileProcs;
 int countMyVtxs, countMyEdges, countMyPins;
 int proc, mine, nextpin, rc;
 int eid, vid, i, j;
-int mineid, minvid, maxeid, maxvid, numeids, numvids;
+int mineid = -1, minvid = 0, maxeid = -1, maxvid = -1, numeids, numvids;
 int nexte, nextv, nDistProcs;
 int myminPin, mymaxPin, myminVtx, mymaxVtx, myshare, share;
 float pinVal;
@@ -1421,7 +1421,7 @@ done:
 static int my_vtx(int proc, int vtx, int mymin, int mymax,
        int myrank, int nprocs, PARIO_INFO_PTR pio_info)
 {
-  int mine;
+  int mine = -1;
 
   if (myrank >= nprocs) return 0;
   if (nprocs == 1) return 1;
@@ -1445,7 +1445,7 @@ static int my_pin(int eid, int vid, int proc,
        int pin, int npins, int mymin, int mymax,
        int myrank, int nprocs, PARIO_INFO_PTR pio_info)
 {
-  int mine;
+  int mine = -1;
 
   if (nprocs == 1) return 1;
 
@@ -1517,9 +1517,9 @@ int *pins, *count, *start, *eidList, *match, *idx;
   pins = (int *)malloc(sizeof(int) * nMyPins);
 
   if (!eidList || !idx || !pins){
-    safe_free((void**)&eidList);
-    safe_free((void**)&idx);
-    safe_free((void**)&pins);
+    safe_free((void **)(void *)&eidList);
+    safe_free((void **)(void *)&idx);
+    safe_free((void **)(void *)&pins);
     Gen_Error(0, "memory allocation");
     return 0;
   }
@@ -1544,9 +1544,9 @@ int *pins, *count, *start, *eidList, *match, *idx;
   count = (int *)calloc(sizeof(int), nedges);
 
   if (!count){
-    safe_free((void**)&eidList);
-    safe_free((void**)&idx);
-    safe_free((void**)&pins);
+    safe_free((void **)(void *)&eidList);
+    safe_free((void **)(void *)&idx);
+    safe_free((void **)(void *)&pins);
     Gen_Error(0, "memory allocation");
     return 0;
   }
@@ -1556,10 +1556,10 @@ int *pins, *count, *start, *eidList, *match, *idx;
 		    nedges, sizeof(int), _zoltan_sortFunc);
 
     if (!match){
-      safe_free((void**)&eidList);
-      safe_free((void**)&idx);
-      safe_free((void**)&pins);
-      safe_free((void**)&count);
+      safe_free((void **)(void *)&eidList);
+      safe_free((void **)(void *)&idx);
+      safe_free((void **)(void *)&pins);
+      safe_free((void **)(void *)&count);
       Gen_Error(0, "bsearch failure");
       return 0;
     }
@@ -1573,10 +1573,10 @@ int *pins, *count, *start, *eidList, *match, *idx;
 
   start = (int *)malloc(sizeof(int) * (nedges+1));
   if (!start){
-    safe_free((void**)&eidList);
-    safe_free((void**)&idx);
-    safe_free((void**)&pins);
-    safe_free((void**)&count);
+    safe_free((void **)(void *)&eidList);
+    safe_free((void **)(void *)&idx);
+    safe_free((void **)(void *)&pins);
+    safe_free((void **)(void *)&count);
     Gen_Error(0, "memory allocation");
     return 0;
   }

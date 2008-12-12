@@ -71,14 +71,14 @@ int j;
 
   if (elem->coord != NULL) {
     for (j = 0; j < mesh->eb_nnodes[elem->elem_blk]; j++)
-      safe_free((void **) &(elem->coord[j]));
-    safe_free((void **) &(elem->coord));
+      safe_free((void **)(void *) &(elem->coord[j]));
+    safe_free((void **)(void *) &(elem->coord));
   }
-  safe_free((void **) &(elem->connect));
-  safe_free((void **) &(elem->adj));
-  safe_free((void **) &(elem->adj_proc));
-  safe_free((void **) &(elem->adj_blank));
-  safe_free((void **) &(elem->edge_wgt));
+  safe_free((void **)(void *) &(elem->connect));
+  safe_free((void **)(void *) &(elem->adj));
+  safe_free((void **)(void *) &(elem->adj_proc));
+  safe_free((void **)(void *) &(elem->adj_blank));
+  safe_free((void **)(void *) &(elem->edge_wgt));
   elem->avg_coord[0] = elem->avg_coord[1] = elem->avg_coord[2] = 0.;
   elem->globalID = -1;
   elem->border = 0;
@@ -104,25 +104,25 @@ int i;
 
   for (i = 0; i < mesh->elem_array_len; i++) 
     free_element_arrays(&(mesh->elements[i]), mesh);
-  safe_free((void **) &(mesh->elements));
-  safe_free((void **) &(mesh->blank));
+  safe_free((void **)(void *) &(mesh->elements));
+  safe_free((void **)(void *) &(mesh->blank));
 
   for (i = 0; i < mesh->num_el_blks; i++) 
-    safe_free((void **) &(mesh->eb_names[i]));
+    safe_free((void **)(void *) &(mesh->eb_names[i]));
 
-  safe_free((void **) &(mesh->eb_names));
-  safe_free((void **) &(mesh->eb_etypes));
-  safe_free((void **) &(mesh->ecmap_id));
-  safe_free((void **) &(mesh->ecmap_cnt));
-  safe_free((void **) &(mesh->ecmap_elemids));
-  safe_free((void **) &(mesh->ecmap_sideids));
-  safe_free((void **) &(mesh->ecmap_neighids));
-  safe_free((void **) &(mesh->hgid));
-  safe_free((void **) &(mesh->hindex));
-  safe_free((void **) &(mesh->hvertex));
-  safe_free((void **) &(mesh->hvertex_proc));
-  safe_free((void **) &(mesh->heWgtId));
-  safe_free((void **) &(mesh->hewgts));
+  safe_free((void **)(void *) &(mesh->eb_names));
+  safe_free((void **)(void *) &(mesh->eb_etypes));
+  safe_free((void **)(void *) &(mesh->ecmap_id));
+  safe_free((void **)(void *) &(mesh->ecmap_cnt));
+  safe_free((void **)(void *) &(mesh->ecmap_elemids));
+  safe_free((void **)(void *) &(mesh->ecmap_sideids));
+  safe_free((void **)(void *) &(mesh->ecmap_neighids));
+  safe_free((void **)(void *) &(mesh->hgid));
+  safe_free((void **)(void *) &(mesh->hindex));
+  safe_free((void **)(void *) &(mesh->hvertex));
+  safe_free((void **)(void *) &(mesh->hvertex_proc));
+  safe_free((void **)(void *) &(mesh->heWgtId));
+  safe_free((void **)(void *) &(mesh->hewgts));
 }
 
 #ifdef __cplusplus

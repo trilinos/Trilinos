@@ -1017,7 +1017,7 @@ char *str = "Proc";
     }
   }
 
-  safe_free((void **) &vars);
+  safe_free((void **)(void *) &vars);
   /* Close the parallel file */
   if(ex_close (pexoid) < 0) {
     Gen_Error(0, "fatal: Error returned from ex_close");

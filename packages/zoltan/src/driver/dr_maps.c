@@ -88,11 +88,11 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
    */
 
   if (mesh->ecmap_id != NULL) {
-    safe_free((void **) &(mesh->ecmap_id));
-    safe_free((void **) &(mesh->ecmap_cnt));
-    safe_free((void **) &(mesh->ecmap_elemids));
-    safe_free((void **) &(mesh->ecmap_sideids));
-    safe_free((void **) &(mesh->ecmap_neighids));
+    safe_free((void **)(void *) &(mesh->ecmap_id));
+    safe_free((void **)(void *) &(mesh->ecmap_cnt));
+    safe_free((void **)(void *) &(mesh->ecmap_elemids));
+    safe_free((void **)(void *) &(mesh->ecmap_sideids));
+    safe_free((void **)(void *) &(mesh->ecmap_neighids));
     mesh->necmap = 0;
   }
 
@@ -258,13 +258,13 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
 
   /* Free temporary data structure. */
   for (i = 0; i < mesh->necmap; i++) {
-    safe_free((void **) &(tmp_maps[i].glob_id));
-    safe_free((void **) &(tmp_maps[i].elem_id));
-    safe_free((void **) &(tmp_maps[i].side_id));
-    safe_free((void **) &(tmp_maps[i].neigh_id));
+    safe_free((void **)(void *) &(tmp_maps[i].glob_id));
+    safe_free((void **)(void *) &(tmp_maps[i].elem_id));
+    safe_free((void **)(void *) &(tmp_maps[i].side_id));
+    safe_free((void **)(void *) &(tmp_maps[i].neigh_id));
   }
-  safe_free((void **) &tmp_maps);
-  safe_free((void **) &sindex);
+  safe_free((void **)(void *) &tmp_maps);
+  safe_free((void **)(void *) &sindex);
 
   if (Test.DDirectory) 
     compare_maps_with_ddirectory_results(proc, mesh);

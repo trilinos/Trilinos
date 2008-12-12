@@ -402,7 +402,7 @@ int Zoltan_HG_Check (
         ZOLTAN_PRINT_WARN(zz->Proc, yo,"Found multiple vertex for same hedge.");
         err =  ZOLTAN_WARN;
       }
-  ZOLTAN_FREE ((void**) &check);
+  ZOLTAN_FREE (&check);
   }
 
   for (i = 0; i < hg->VtxWeightDim * hg->nVtx; i++)

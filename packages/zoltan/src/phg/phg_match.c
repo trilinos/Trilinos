@@ -152,7 +152,7 @@ End:
   if (hgp->edge_scaling)
       hg->ewgt = old_ewgt;
 
-  ZOLTAN_FREE ((void**) &new_ewgt);
+  ZOLTAN_FREE (&new_ewgt);
   ZOLTAN_TRACE_EXIT (zz, yo);
   return ierr;
 }
@@ -624,10 +624,10 @@ static int pmatching_ipm (ZZ *zz,
   Matching match,
   PHGPartParams *hgp)
 {
-  int i, j, k, n, m, round, vindex;                        /* loop counters  */
-  int *r, *s;                                /* pointers to send/rec buffers */
-  int lno, count, kstart, old_kstart;                      /* temp variables */
-  int candidate_gno;                             /* gno of current candidate */
+  int i, j = 0, k, n, m, round, vindex;                    /* loop counters  */
+  int *r = NULL, *s;                         /* pointers to send/rec buffers */
+  int lno, count = 0, kstart, old_kstart;                  /* temp variables */
+  int candidate_gno = 0;                         /* gno of current candidate */
   int sendcnt, sendsize, reccnt, recsize, msgsize;         /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
                               /* identical on all procs in hgc->Communicator.*/
@@ -658,8 +658,8 @@ static int pmatching_ipm (ZZ *zz,
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
-  int candidate_index, first_candidate_index;
-  int pref, num_matches_considered = 0;
+  int candidate_index = 0, first_candidate_index = 0;
+  int pref = 0, num_matches_considered = 0;
   double ipsum = 0.;
   struct phg_timer_indices *timer = zz->LB.Data_Structure;
   char *yo = "pmatching_ipm";
@@ -1292,13 +1292,13 @@ static int pmatching_agg_ipm (ZZ *zz,
   int i, j, k, n, m, round, vindex;                        /* loop counters  */
   int *r, *s;                                /* pointers to send/rec buffers */
   int lno, count, kstart, old_kstart;                      /* temp variables */
-  int candidate_gno;                             /* gno of current candidate */
+  int candidate_gno = 0;                         /* gno of current candidate */
   int sendcnt, sendsize, reccnt=0, recsize, msgsize;       /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
   /* identical on all procs in hgc->Communicator.*/
   int nCandidates;            /* # of candidates on this proc; identical     */
   /* on all procs in hgc->col_comm.              */
-  int total_nCandidates;      /* Sum of nCandidates across row. */
+  int total_nCandidates = 0;      /* Sum of nCandidates across row. */
   int *send = NULL,    nSend,             /* working buffers and their sizes */
     *dest = NULL,    nDest,  
     *size = NULL,    nSize,
@@ -1325,9 +1325,9 @@ static int pmatching_agg_ipm (ZZ *zz,
   int *master_procs = NULL;
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
-  int candidate_index, *candIdx;
+  int candidate_index = 0, *candIdx;
   int VtxDim = (hg->VtxWeightDim>0) ? hg->VtxWeightDim : 1;
-  int pref;
+  int pref = 0;
   int replycnt;
   struct phg_timer_indices *timer = zz->LB.Data_Structure;
   char *yo = "pmatching_agg_ipm";
@@ -1952,7 +1952,7 @@ static int pmatching_agg_ipm (ZZ *zz,
       for (s = send; s < send + recsize; ) {
         int lno     = *s++;
         int lheadno = *s++;
-        int partner = *s++, pref;
+        int partner = *s++, pref = 0;
         
         if (hgp->UsePrefPart)
             pref = *s++;

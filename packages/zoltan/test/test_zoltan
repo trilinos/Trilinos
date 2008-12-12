@@ -56,6 +56,7 @@ set no_rib = $?ZOLTAN_NO_RIB
 set no_hsfc = $?ZOLTAN_NO_HSFC
 set no_oct = $?ZOLTAN_NO_OCT
 set no_parmetis = $?ZOLTAN_NO_PARMETIS
+set no_scotch = $?ZOLTAN_NO_SCOTCH
 set no_order = $?ZOLTAN_NO_ORDER
 set no_color = $?ZOLTAN_NO_COLOR
 set no_reftree = $?ZOLTAN_NO_REFTREE
@@ -88,6 +89,8 @@ while ( $#argv )
      @ no_oct = 1
   else if ( "$1" == "-no_parmetis" ) then
      @ no_parmetis = 1
+  else if ( "$1" == "-no_scotch" ) then
+     @ no_scotch = 1
   else if ( "$1" == "-no_reftree" ) then
      @ no_reftree = 1
   else if ( "$1" == "-no_hg" ) then
@@ -611,6 +614,12 @@ else
             order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
         endif
       endif
+    endif
+  endif
+  if (! $no_scotch) then
+    set ch_methods = ( $ch_methods graph-ptscotch)
+    if (! $no_order) then
+      set ch_methods = ( $ch_methods order-scotch order-ptscotch)
     endif
   endif
   if (! $no_color) then
@@ -1166,6 +1175,7 @@ usage:
   echo "   -no_hsfc"
   echo "   -no_oct"
   echo "   -no_parmetis"
+  echo "   -no_scotch"
   echo "   -no_reftree"
   echo "   -no_order"
   echo "   -no_color" 

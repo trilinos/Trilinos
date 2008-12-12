@@ -70,7 +70,7 @@ int output_gnu(const char *cmd_file,
   char   par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
   ELEM_INFO *current_elem, *nbor_elem;
   int    nbor, num_nodes;
-  const char  *datastyle;
+  const char  *datastyle = NULL;
   int    i, j, nelems;
   int    prev_part = -1;
   int    max_part = -1;
@@ -85,8 +85,8 @@ int output_gnu(const char *cmd_file,
   int    gmax_part = Num_Proc-1;
   int    gnum_part = Num_Proc;
   int   *parts = NULL;
-  int   *index;
-  int   *elem_index;
+  int   *index = NULL;
+  int   *elem_index = NULL;
   FILE  *fp = NULL;
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -273,7 +273,7 @@ int output_gnu(const char *cmd_file,
   }
     
   if (fp != NULL) fclose(fp);
-  safe_free((void **) &parts);
+  safe_free((void **)(void *) &parts);
 
   if (Proc == 0) {
     /* Write gnu master file with gnu commands for plotting */

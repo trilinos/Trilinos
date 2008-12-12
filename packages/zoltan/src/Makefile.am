@@ -741,7 +741,6 @@ EXTRA_DIST = $(ZOLTAN_H) \
     $(srcdir)/Utilities/README \
     $(NATIVE_ZOLTAN_BUILD) \
     $(FORTRAN_INTERFACE) $(FORTRAN_DRIVER) \
-    $(srcdir)/util/build_trilinos_runtests \
     $(srcdir)/fdriver_old/README \
     $(srcdir)/fdriver_old/makefile \
     $(ZOLTAN_MATLAB) $(ZOLTAN_POSTPROCESS)

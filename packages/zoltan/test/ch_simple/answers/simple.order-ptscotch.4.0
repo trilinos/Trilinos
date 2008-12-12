@@ -1,0 +1,14 @@
+Decomposition Method 	= none
+Zoltan Parameters	= order_method=scotch
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+zdrive action = 2
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1	0	20	21
+2	0	15	22
+3	0	16	23
+4	0	17	17
+5	0	19	5
+6	0	4	10

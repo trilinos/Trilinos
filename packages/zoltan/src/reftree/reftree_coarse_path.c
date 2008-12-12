@@ -533,7 +533,7 @@ static int add_neigh_pair(int v,int e1,int e2, ZZ *zz)
  */
 
 char *yo = "add_neigh_pair";
-int nshare, index, i, j, k;
+int nshare, index = 0, i, j, k;
 
 /* 
  * see if they are already listed as neighbors
@@ -808,7 +808,7 @@ static int add_around_vertex(int vert, ZZ *zz)
  * notion of going around a vertex is not well defined.
  */
 
-int elementA, elementB, elementC, elementD, elementE;
+int elementA, elementB, elementC, elementD = 0, elementE;
 int vertexc, vertexd;
 int i, j, k, l, num_share, pass, success, ierr;
 
@@ -1713,7 +1713,7 @@ static int broken_link(int *ierr, ZZ *zz)
 
 int success;
 int elementB, elementC, elementD;
-int vertb, verte, vertf, vert1;
+int vertb, verte, vertf = 0, vert1;
 int j, k;
 int success1, j1, k1, l1;
 

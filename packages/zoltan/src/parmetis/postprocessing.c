@@ -108,7 +108,7 @@ Zoltan_Postprocess_UnScatter_Graph (ZZ *zz,
 				    ZOLTAN_Third_Part *prt,
 				    indextype **rank)
 {
-  int ierr;
+  int ierr = ZOLTAN_FATAL;
   indextype *src;
   indextype *dst;
 
@@ -174,8 +174,11 @@ Zoltan_Postprocess_Order (ZZ *zz,
 
   /* If we did local ordering via METIS, then we also have the inv. perm. */
   if ((gr->graph_type == LOCAL_GRAPH) && (ord->iperm != NULL)){
+      int start_index;
+
+      start_index = ord->order_opt->start_index;
       for (i=0; i<gr->num_obj; i++){
-	ord->iperm[i] = ord->iperm[i] + ord->start_index;
+	ord->iperm[i] += start_index;
       }
       /* EBEB: Return parameter that says we have computed both return args? */
   }

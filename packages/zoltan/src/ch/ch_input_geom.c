@@ -40,13 +40,13 @@ float   **z
 )
 {
     const char     *yo = "chaco_input_geom";
-    float     xc, yc, zc;	/* first x, y, z coordinate */
+    float     xc, yc, zc =0;	/* first x, y, z coordinate */
     int       nread;		/* number of lines of coordinates read */
     int       flag;		/* any bad data at end of file? */
     int       line_num;		/* counts input lines in file */
     int       end_flag;		/* return conditional */
     int       ndims;		/* number of values in an input line */
-    int       i;		/* loop counter */
+    int       i=0;		/* loop counter */
 
     DEBUG_TRACE_START(0, yo);
 

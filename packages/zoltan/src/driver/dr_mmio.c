@@ -12,9 +12,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "dr_const.h"
 #include "dr_mmio.h"
 #include "dr_compress_const.h"
-#include "dr_const.h"
+
 
 int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 		double **val_, int **I_, int **J_)
@@ -272,7 +273,7 @@ int mm_read_mtx_crd_data(ZOLTAN_FILE* f, int M, int N, int nz, int I[], int J[],
 	double val[], MM_typecode matcode)
 {
     int i;
-    int dummy;
+    int dummy = 0;
 
     if (mm_is_complex(matcode))
     {

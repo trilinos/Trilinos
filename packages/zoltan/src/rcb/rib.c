@@ -231,9 +231,9 @@ static int rib_fn(
   double  evec[3];            /* Eigenvector defining direction */
   int     first_guess = 0;    /* flag if first guess for median search */
   int     allocflag;          /* have to re-allocate space */
-  double  time1,time2;        /* timers */
-  double  time3,time4;        /* timers */
-  double  timestart,timestop; /* timers */
+  double  time1=0,time2=0;    /* timers */
+  double  time3=0,time4=0;    /* timers */
+  double  timestart=0,timestop=0; /* timers */
   double  timers[4]={0.,0.,0.,0.}; 
                               /* diagnostic timers
                                  0 = start-up time before recursion
@@ -908,7 +908,7 @@ static int compute_rib_direction(
                                  Tflops_Special */
 )
 {
-int i, ierr;
+int i, ierr = 0;
 double tmp;
 RIB_STRUCT *rib;
 

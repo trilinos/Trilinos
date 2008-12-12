@@ -2961,11 +2961,11 @@ int myProc_x = hgc->myProc_x;
 int myProc_y = hgc->myProc_y;
 int nProc_x = hgc->nProc_x;
 int nProc_y = hgc->nProc_y;
-int nRepartVtx, nRepartEdge;         /* # of repartition vertices & edges 
+int nRepartVtx = 0, nRepartEdge;         /* # of repartition vertices & edges 
                                         to add to this processor. */
 int nRepartPin = 0;                  /* # of repartition pins to add to this
                                         processor. */
-int firstRepartVtx, firstRepartEdge; /* global no. of the first repartition
+int firstRepartVtx = 0, firstRepartEdge = 0; /* global no. of the first repartition
                                         vertex & edge to add to this processor.
                                         Repartition vertices and repartition
                                         edges are ordered and distributed

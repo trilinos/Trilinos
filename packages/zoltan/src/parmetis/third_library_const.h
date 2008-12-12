@@ -27,18 +27,13 @@ extern "C" {
  * Zoltan configuration file.
  */
 #ifdef ZOLTAN_PARMETIS
-#include "parmetis.h"
-/* We use one METIS function that is not in parmetis.h */
-extern void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+#include <parmetis.h>
 #define indextype idxtype
 #define weighttype idxtype
 #endif /* ZOLTAN_PARMETIS */
 
 #ifdef ZOLTAN_SCOTCH
-/* #undef MAX */
-/* #undef MIN */
-/* #include "common.h" */
-#include "ptscotch.h"
+#include <ptscotch.h>
 #ifndef indextype
 #define indextype SCOTCH_Num
 #define weighttype SCOTCH_Num

@@ -215,14 +215,14 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
     return 0;
   }
 
-  safe_free((void **) &adj);
-  safe_free((void **) &vwgts);
-  safe_free((void **) &ewgts);
-  safe_free((void **) &start);
-  safe_free((void **) &x);
-  safe_free((void **) &y);
-  safe_free((void **) &z);
-  safe_free((void **) &assignments);
+  safe_free((void **)(void *) &adj);
+  safe_free((void **)(void *) &vwgts);
+  safe_free((void **)(void *) &ewgts);
+  safe_free((void **)(void *) &start);
+  safe_free((void **)(void *) &x);
+  safe_free((void **)(void *) &y);
+  safe_free((void **)(void *) &z);
+  safe_free((void **)(void *) &assignments);
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;
@@ -468,8 +468,8 @@ int chaco_fill_elements(
     } /* End: "if (mesh->elements[i].nadj > 0)" */
   } /* End: "for (i = 0; i < mesh->num_elems; i++)" */
 
-  safe_free((void **) &vtx_list);
-  safe_free((void **) &local_ids);
+  safe_free((void **)(void *) &vtx_list);
+  safe_free((void **)(void *) &local_ids);
 
   if (!build_elem_comm_maps(Proc, mesh)) {
     Gen_Error(0, "Fatal: error building initial elem comm maps");
