@@ -36,20 +36,60 @@
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Teuchos {
 
 
+/** \brief Utility function to convert from an an input
+ * Array[View,RCP]<[const] PTR<T_in> > object to an output
+ * ArrayView<Ptr<T_out> > object.
+ */
+template<class ArrayPtrT_in, class T_out>
+void arrayViewPtrConv( const ArrayPtrT_in &a_in,
+  const ArrayView<Ptr<T_out> > &a_out )
+{
+  using Teuchos::as;
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(as<Teuchos_Ordinal>(a_in.size()),
+    as<Teuchos_Ordinal>(a_out.size()));
+#endif
+  for (Teuchos_Ordinal i = 0; i < as<Teuchos_Ordinal>(a_in.size()); ++i) {
+    a_out[i] = a_in[i].ptr();
+  }
+}
+
+
+/** \brief Utility function to convert from an input Array[View,RCP]<[const]
+ * RCP<T_in> > object to an output ArrayView<RCP<T_out> > object.
+ */
+template<class ArrayPtrT_in, class T_out>
+void arrayViewRcpConv( const ArrayPtrT_in &a_in,
+  const ArrayView<RCP<T_out> > &a_out )
+{
+  using Teuchos::as;
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(as<Teuchos_Ordinal>(a_in.size()),
+    as<Teuchos_Ordinal>(a_out.size()));
+#endif
+  for (Teuchos_Ordinal i = 0; i < as<Teuchos_Ordinal>(a_in.size()); ++i) {
+    a_out[i] = a_in[i];
+  }
+}
+
+
 /** \brief Utility function to convert an Array[View,RCP]<[const] PTR<T_in> >
  * object to an Array<Ptr<T_out> > object.
  *
- * Note that the input array type can be any valid array object that supports
- * size(), operator[](const int), and who's elemnets support the member
- * function ptr() that returns an object that is implicitly convertible into a
- * Ptr<T_out> object.  Comparable input array classes include Array,
- * ArrayView, ArrayRCP, std::vector, and any other type that support the basic
- * operations.
+ * The input array type can be Array, ArrayView, ArrayRCP, or any other array
+ * object that supports size() and operator[](const int).
+ *
+ * The reason that the while array input type is a template argument instead
+ * of just passing in ArrayView templated on the pointer type is that implicit
+ * conversions of the array input type will not take place unless you specify
+ * the type of the input.  That is painful and verbose and we can avoid this
+ * by just templating the entire array type as is done here.
  *
  * NOTE: This function will convert from base type to derived types as well.
  *
@@ -64,9 +104,7 @@ Array<Ptr<T_out> > arrayPtrConv(const ArrayPtrT_in &a_in)
 {
   using Teuchos::as;
   Array<Ptr<T_out> > a_out(a_in.size());
-  for (Teuchos_Ordinal i = 0; i < as<Teuchos_Ordinal>(a_in.size()); ++i) {
-    a_out[i] = a_in[i].ptr();
-  }
+  arrayViewPtrConv(a_in, a_out());
   return a_out;
 }
 
@@ -82,9 +120,7 @@ Array<RCP<T_out> > arrayRcpConv(const ArrayPtrT_in &a_in)
 {
   using Teuchos::as;
   Array<RCP<T_out> > a_out(a_in.size());
-  for (Teuchos_Ordinal i = 0; i < as<Teuchos_Ordinal>(a_in.size()); ++i) {
-    a_out[i] = a_in[i];
-  }
+  arrayViewRcpConv(a_in, a_out());
   return a_out;
 }
 

@@ -144,7 +144,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
     Array_UnitTests.cpp
     ArrayView_UnitTests.cpp
     ArrayRCP_UnitTests.cpp
-    Array_Conversions_UnitTests.cpp
+    ArrayConversions_UnitTests.cpp
     TestClasses.cpp
     ../UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi  

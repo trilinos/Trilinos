@@ -2,7 +2,7 @@
 #include "Teuchos_ArrayConversions.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Array_UnitTest_helpers.hpp"
-#include "Array_Conversions_UnitTest_helpers.hpp"
+#include "ArrayConversions_UnitTest_helpers.hpp"
 #include "TestClasses.hpp"
 
 namespace {
@@ -15,6 +15,8 @@ using ArrayConversionsUnitTestHelpers::testArrayViewInput;
 using ArrayConversionsUnitTestHelpers::testArrayViewOutput;
 using Teuchos::arrayPtrConv;
 using Teuchos::arrayRcpConv;
+using Teuchos::arrayViewPtrConv;
+using Teuchos::arrayViewRcpConv;
 using Teuchos::Array;
 using Teuchos::Ptr;
 using Teuchos::RCP;
@@ -236,13 +238,12 @@ TEUCHOS_UNIT_TEST( ArrayConversions, arrayPtrConv_RcpConstDerived_to_PtrConstBas
 {
   const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
   const Array<RCP<const C> > a1_out = arrayRcpConv<const C>(a_in);
-  const Array<Ptr<const A> > a2_out = arrayPtrConv<const A>(a_in);
+  const Array<Ptr<const A> > a2_out = arrayPtrConv<const A>(a1_out);
   TEST_EQUALITY( a2_out.size(), a_in.size() );
   for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
     TEST_EQUALITY( &*a2_out[i], implicit_ptr_cast<const A>(&*a_in[i]) );
   }
 }
-
 
 
 TEUCHOS_UNIT_TEST( ArrayConversions, arrayRcpConv_RcpNonconstDerived_to_RcpNonconstBase) 
@@ -256,7 +257,6 @@ TEUCHOS_UNIT_TEST( ArrayConversions, arrayRcpConv_RcpNonconstDerived_to_RcpNonco
 }
 
 
-
 TEUCHOS_UNIT_TEST( ArrayConversions, arrayRcpConv_RcpNonconstDerived_to_RcpConstBase) 
 {
   const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
@@ -268,12 +268,87 @@ TEUCHOS_UNIT_TEST( ArrayConversions, arrayRcpConv_RcpNonconstDerived_to_RcpConst
 }
 
 
-
 TEUCHOS_UNIT_TEST( ArrayConversions, arrayRcpConv_RcpConstDerived_to_RcpConstBase) 
 {
   const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
   const Array<RCP<const C> > a1_out = arrayRcpConv<const C>(a_in);
   const Array<RCP<const A> > a2_out = arrayRcpConv<const A>(a1_out);
+  TEST_EQUALITY( a2_out.size(), a_in.size() );
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    TEST_EQUALITY( &*a2_out[i], implicit_ptr_cast<A>(&*a_in[i]) );
+  }
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayConversions, arrayViewPtrConv_RcpNonconstDerived_to_PtrNonconstBase) 
+{
+  const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
+  Array<Ptr<A> > a_out(n);
+  arrayViewPtrConv(a_in, a_out());
+  TEST_EQUALITY( a_out.size(), a_in.size() );
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    TEST_EQUALITY( &*a_out[i], implicit_ptr_cast<A>(&*a_in[i]) );
+  }
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayConversions, arrayViewPtrConv_RcpNonconstDerived_to_PtrConstBase) 
+{
+  const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
+  Array<Ptr<const A> > a_out(n);
+  arrayViewPtrConv(a_in, a_out());
+  TEST_EQUALITY( a_out.size(), a_in.size() );
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    TEST_EQUALITY( &*a_out[i], implicit_ptr_cast<const A>(&*a_in[i]) );
+  }
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayConversions, arrayViewPtrConv_RcpConstDerived_to_PtrConstBase) 
+{
+  const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
+  Array<RCP<const C> > a1_out(n);
+  arrayViewRcpConv(a_in, a1_out());
+  Array<Ptr<const A> > a2_out(n);
+  arrayViewPtrConv(a1_out, a2_out());
+  TEST_EQUALITY( a2_out.size(), a_in.size() );
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    TEST_EQUALITY( &*a2_out[i], implicit_ptr_cast<const A>(&*a_in[i]) );
+  }
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayConversions, arrayViewRcpConv_RcpNonconstDerived_to_RcpNonconstBase) 
+{
+  const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
+  Array<RCP<A> > a_out(n);
+  arrayViewRcpConv(a_in, a_out());
+  TEST_EQUALITY( a_out.size(), a_in.size() );
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    TEST_EQUALITY( &*a_out[i], implicit_ptr_cast<A>(&*a_in[i]) );
+  }
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayConversions, arrayViewRcpConv_RcpNonconstDerived_to_RcpConstBase) 
+{
+  const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
+  Array<RCP<const A> > a_out(n);
+  arrayViewRcpConv(a_in, a_out());
+  TEST_EQUALITY( a_out.size(), a_in.size() );
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    TEST_EQUALITY( &*a_out[i], implicit_ptr_cast<A>(&*a_in[i]) );
+  }
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayConversions, arrayViewRcpConv_RcpConstDerived_to_RcpConstBase) 
+{
+  const Array<RCP<C> > a_in = generateArrayRcpGen<C>(n);
+  Array<RCP<const C> > a1_out(n);
+  arrayViewRcpConv(a_in, a1_out());
+  Array<RCP<const A> > a2_out(n);
+  arrayViewRcpConv(a1_out, a2_out());
   TEST_EQUALITY( a2_out.size(), a_in.size() );
   for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
     TEST_EQUALITY( &*a2_out[i], implicit_ptr_cast<A>(&*a_in[i]) );

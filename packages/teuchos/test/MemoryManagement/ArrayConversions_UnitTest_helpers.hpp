@@ -1,4 +1,8 @@
 
+#ifndef ARRAY_CONVERSIONS_UNIT_TEST_HELPERS
+#define ARRAY_CONVERSIONS_UNIT_TEST_HELPERS
+
+
 namespace ArrayConversionsUnitTestHelpers {
 
 
@@ -59,3 +63,5 @@ void testArrayViewOutput(const ArrayView<const Ptr<T> >& a_out)
 
 } // namespace ArrayConversionsUnitTestHelpers 
 
+
+#endif // ARRAY_CONVERSIONS_UNIT_TEST_HELPERS
