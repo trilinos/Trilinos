@@ -1,6 +1,7 @@
 
 namespace ArrayConversionsUnitTestHelpers {
 
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Ptr;
@@ -10,20 +11,32 @@ using Teuchos::as;
 
 extern Teuchos_Ordinal n;
 
-// Declarations:
-template<class T>
-T TestArrayViewInput(const ArrayView<const Ptr<const T> >& a_in);
 
 template<class T>
-void TestArrayViewOutput(const ArrayView<const Ptr<T> >& a_out);
+Array<RCP<T> > generateArrayRcp(const Teuchos_Ordinal n)
+{
+  Array<RCP<T> > a(n);
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    RCP<T> data = rcp(new T(as<T>(i)));
+    a[i] = data;
+  }
+  return a;
+}
+
 
 template<class T>
-Array<RCP<T> > generateArray(const Teuchos_Ordinal n);
+Array<RCP<T> > generateArrayRcpGen(const Teuchos_Ordinal n)
+{
+  Array<RCP<T> > a;
+  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+    a.push_back(rcp(new T));
+  }
+  return a;
+}
 
 
-// Definitions:
 template<class T>
-T TestArrayViewInput(const ArrayView<const Ptr<const T> >& a_in)
+T testArrayViewInput(const ArrayView<const Ptr<const T> >& a_in)
 {
   typedef Teuchos::ScalarTraits<T> ST;
   T a = ST::zero();
@@ -33,24 +46,14 @@ T TestArrayViewInput(const ArrayView<const Ptr<const T> >& a_in)
   return a;
 }
 
+
 template<class T>
-void TestArrayViewOutput(const ArrayView<const Ptr<T> >& a_out)
+void testArrayViewOutput(const ArrayView<const Ptr<T> >& a_out)
 {
   typedef Teuchos::ScalarTraits<T> ST;
   for (Teuchos_Ordinal i=0 ; i<a_out.size() ; ++i) {
     *a_out[i] = as<T>(i);
   }
-}
-
-template<class T>
-Array<RCP<T> > generateArray(const Teuchos_Ordinal n)
-{
-  Array<RCP<T> > a(n);
-  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
-    RCP<T> data = rcp(new T(as<T>(i)));
-    a[i] = data;
-  }
-  return a;
 }
 
 

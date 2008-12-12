@@ -165,6 +165,9 @@ public:
    */
   inline const Ptr<T>& assert_not_null() const;
 
+  /** \brief Return a copy of *this. */
+  inline const Ptr<T> ptr() const;
+
 private:
 
   T *ptr_;

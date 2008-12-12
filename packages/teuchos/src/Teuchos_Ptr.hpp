@@ -119,6 +119,13 @@ const Ptr<T>& Ptr<T>::assert_not_null() const
 
 
 template<class T> inline
+const Ptr<T> Ptr<T>::ptr() const
+{
+  return *this;
+}
+
+
+template<class T> inline
 void Ptr<T>::debug_assert_valid_ptr() const
 {
 #ifdef TEUCHOS_DEBUG

@@ -11,8 +11,9 @@ IF(Trilinos_ENABLE_Triutils AND Trilinos_ENABLE_EpetraExt AND Trilinos_ENABLE_If
   
   TRILINOS_ADD_EXECUTABLE_AND_TEST(
     BlockPrecGmresEpetraExFile
-    COMM serial mpi
     SOURCES BlockPrecGmresEpetraExFile.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
     )
 
   COPY_FILES_TO_BINARY_DIR(CopyExampleBlockGmresBelosFiles

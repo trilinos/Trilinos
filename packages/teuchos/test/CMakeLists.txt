@@ -134,10 +134,9 @@ TRILINOS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "[FAILED]"
   )
 
-TRILINOS_ADD_EXECUTABLE(
+TRILINOS_ADD_EXECUTABLE_AND_TEST(
   MemoryManagement_UnitTests
   DIRECTORY MemoryManagement
-  COMM serial mpi  
   SOURCES
     RCPNodeHandle_UnitTests.cpp
     RCP_UnitTests.cpp
@@ -145,13 +144,10 @@ TRILINOS_ADD_EXECUTABLE(
     Array_UnitTests.cpp
     ArrayView_UnitTests.cpp
     ArrayRCP_UnitTests.cpp
+    Array_Conversions_UnitTests.cpp
     TestClasses.cpp
     ../UnitTest/Teuchos_StandardUnitTestMain.cpp
-  )
-TRILINOS_ADD_TEST(
-  MemoryManagement_UnitTests
-  DIRECTORY MemoryManagement
-  NUM_MPI_PROCS 1
+  COMM serial mpi  
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
