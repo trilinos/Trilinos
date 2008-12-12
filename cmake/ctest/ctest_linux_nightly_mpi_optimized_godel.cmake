@@ -32,13 +32,19 @@ SET(CTEST_COMMAND
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Start"
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Update"
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Configure"
+  "\"${CTEST_CMAKE_COMMAND}\" ../Trilinos"
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Build"
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Submit"
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Test"
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Submit"
   "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Coverage"
-  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Submit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\;${CTEST_DASHBOARD_ROOT}/../scripts/ctest_linux_nightly_mpi_optimized_godel.cmake\""
+  "\"${CTEST_EXECUTABLE_NAME}\" -D ${TEST_TYPE}Submit -A \"${CTEST_BINARY_DIRECTORY}/CMakeCache.txt\;${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}\""
 )
+# 2008/12/12: rabartl: Above, I am doing a second configure with raw
+# CMake in order to get around a problem that I have been seeing where
+# after the first pass through configuration the ParMETIS and Scotch
+# paths are not added correctly.  I have tried to debug this but it is
+# very painful to do so and I would rather just avoid this for now.
 
 SET(CTEST_INITIAL_CACHE "
 
@@ -68,6 +74,13 @@ MPI_EXTRA_LIBRARY:FILEPATH=""
 MPI_INCLUDE_PATH:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin
 MPI_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC
 MPI_EXECUTABLE:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiexec
+
+TPL_ENABLE_ParMETIS:BOOL=ON
+ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1
+
+TPL_ENABLE_Scotch:BOOL=ON
+Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include
+Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib
 
 Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
 Trilinos_ENABLE_TESTS:BOOL=ON
