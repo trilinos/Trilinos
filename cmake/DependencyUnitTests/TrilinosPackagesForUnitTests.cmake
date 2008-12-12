@@ -9,6 +9,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Zoltan           zoltan                 ""
   RTOp             rtop                   ""
   Triutils         triutils               ""
+  Tpetra           tpetra                 ""
   EpetraExt        epetraext              ""
   Isorropia        isorropia              ""
   Thyra            thyra                  ""

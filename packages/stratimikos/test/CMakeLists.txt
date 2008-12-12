@@ -100,4 +100,48 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
 
 ENDIF()
 
-# ToDo: Add Belos tests!
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+
+
+  TRILINOS_ADD_TEST(
+    test_single_stratimikos_solver_driver
+    NAME test_single_stratimikos_solver_driver_belos_np
+    ARGS "--input-file=FourByFour.belos.np.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+  IF (${PACKAGE_NAME}_ENABLE_Ifpack)
+
+    TRILINOS_ADD_TEST(
+      test_single_stratimikos_solver_driver
+      NAME test_single_stratimikos_solver_driver_belos_ifpack
+      ARGS
+        "--input-file=FourByFour.belos.ifpack.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+
+  ENDIF()
+
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
+  IF (${PACKAGE_NAME}_ENABLE_ML)
+
+    TRILINOS_ADD_TEST(
+      test_single_stratimikos_solver_driver
+      NAME test_single_stratimikos_solver_driver_belos_ml
+      ARGS
+        "--input-file=FourByFour.belos.ml.xml"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+
+  ENDIF()
+
+
+ENDIF()

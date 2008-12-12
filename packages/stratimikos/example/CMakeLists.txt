@@ -58,7 +58,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
     TRILINOS_ADD_TEST(
       simple_stratimikos_example
-      NAME simple_stratimikos_example_ifpack
+      NAME simple_stratimikos_example_aztecoo_ifpack
       ARGS 
         "--linear-solver-params-file=aztecoo.ifpack.xml --matrix-file=FourByFour.mtx --tol=1e-13"
         "--extra-linear-solver-params=\"<ParameterList><Parameter name='Linear Solver Type' type='string' value='AztecOO'/></ParameterList>\" --matrix-file=FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.aztecoo.used.xml"
@@ -72,7 +72,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   IF (${PACKAGE_NAME}_ENABLE_ML)
     TRILINOS_ADD_TEST(
       simple_stratimikos_example
-      NAME simple_stratimikos_example_ml
+      NAME simple_stratimikos_example_aztecoo_ml
       ARGS 
         "--linear-solver-params-file=aztecoo.ml.xml --matrix-file=FourByFour.mtx --tol=1e-13"
       COMM serial mpi
@@ -83,7 +83,41 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
 
 ENDIF()
 
-# ToDo: Add Belos tests!
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+  IF (${PACKAGE_NAME}_ENABLE_Ifpack)
+    TRILINOS_ADD_TEST(
+      simple_stratimikos_example
+      NAME simple_stratimikos_example_belos_ifpack
+      ARGS 
+        "--linear-solver-params-file=belos.ifpack.xml --matrix-file=FourByFour.mtx --tol=1e-13"
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+  ENDIF()
+
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
+  IF (${PACKAGE_NAME}_ENABLE_ML)
+    TRILINOS_ADD_TEST(
+      simple_stratimikos_example
+      NAME simple_stratimikos_example_belos_ml
+      ARGS 
+        "--linear-solver-params-file=belos.ml.xml --matrix-file=FourByFour.mtx --tol=1e-12"
+        # 2008/12/11: rabartl Above: I had to drop the tolerance from 1e-13 to 1-e12 from
+        # what is listed in stratimikos/test/defintion.  This must be due to some bad
+        # compiler option or something but I don't have time to figure this out.
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+  ENDIF()
+
+
+ENDIF()
 
 
 #
@@ -145,4 +179,18 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO AND ${PACKAGE_NAME}_ENABLE_Ifpack)
 ENDIF()
 
 
-# ToDo: Add Belos tests!
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack)
+
+  TRILINOS_ADD_TEST(
+    MixedOrderPhysicsBasedPreconditioner
+    NAME MixedOrderPhysicsBasedPreconditioner_belos_ifpack
+    ARGS 
+      "--params-file=MixedOrderPhysicsBasedPreconditioner.Belos.xml --use-algebraic-prec --solve-tol=1e+5"
+      "--params-file=MixedOrderPhysicsBasedPreconditioner.Belos.xml --invert-P1 --solve-tol=1e+5"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()

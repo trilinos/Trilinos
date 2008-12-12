@@ -3,8 +3,10 @@ EXTRA_ARGS=$@
 cmake \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++ \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc \
--D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran \
+-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77 \
 -D CMAKE_CXX_FLAGS:STRING="-g -O0 -ansi -pedantic -Wall" \
+-D CMAKE_C_FLAGS:STRING="-g -O0 -ansi -pedantic -Wall -fexceptions" \
+-D CMAKE_Fortran_FLAGS:STRING="-g -O0 " \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D CMAKE_EXE_LINKER_FLAGS:STRING=-lm \

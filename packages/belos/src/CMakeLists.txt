@@ -23,7 +23,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # CORE
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   BelosBlockCGSolMgr.hpp
   BelosBlockCGIter.hpp
   BelosBlockGmresIter.hpp
@@ -71,18 +71,18 @@ SET(HEADERS ${HEADERS}
   ) 
 
 # CORE
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   BelosEpetraAdapter.cpp
   BelosEpetraOperator.cpp
   )
 
 # UTIL
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   BelosVersion.cpp
   )
 
 # COMP_H
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   BelosBlockCGSolMgr.hpp
   BelosBlockGmresSolMgr.hpp
   BelosPseudoBlockGmresSolMgr.hpp
@@ -101,9 +101,3 @@ TRILINOS_PACKAGE_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

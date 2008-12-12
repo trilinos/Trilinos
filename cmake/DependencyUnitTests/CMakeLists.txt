@@ -43,14 +43,14 @@ ENDFUNCTION()
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableAllPackages
   "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos RBGen Stratimikos 16"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos RBGen Stratimikos 17"
   )
 
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_DisableEpetra_EnableAllPackages
   "-D Trilinos_ENABLE_Epetra:BOOL=OFF -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Zoltan RTOp Thyra ML RBGen Stratimikos 7"
+  "Final set of enabled packages:  Teuchos Zoltan RTOp Tpetra Thyra ML RBGen Stratimikos 8"
   )
 
 
@@ -71,14 +71,14 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableTeuchos_EnableAllForwardPackages
   "-D Trilinos_ENABLE_Teuchos:BOOL=ON -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos RBGen Stratimikos 16"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos RBGen Stratimikos 17"
   )
 
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetraExt_EnableAllForwardPackages
   "-D Trilinos_ENABLE_EpetraExt:BOOL=ON -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos Stratimikos 15"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos Stratimikos 16"
   )
 
 
@@ -99,21 +99,22 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetraExt_DisableAztecOO_EnableAllForwardPackages
   "-D Trilinos_ENABLE_EpetraExt:BOOL=ON -D Trilinos_ENABLE_AztecOO:BOOL=OFF -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils EpetraExt Isorropia Thyra Galeri Amesos Ifpack ML Belos Stratimikos 14"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra Galeri Amesos Ifpack ML Belos Stratimikos 15"
+
   )
 
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableAmesos_DisableZoltan_EnableAllForwardPackages
   "-D Trilinos_ENABLE_Amesos:BOOL=ON -D Trilinos_ENABLE_Zoltan:BOOL=OFF -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra RTOp Triutils EpetraExt Thyra AztecOO Galeri Amesos Ifpack ML Belos Stratimikos 13"
+  "Final set of enabled packages:  Teuchos Epetra RTOp Triutils Tpetra EpetraExt Thyra AztecOO Galeri Amesos Ifpack ML Belos Stratimikos 14"
   )
 
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetra_DisableThyra_EnableAllForwardPackages
   "-D Trilinos_ENABLE_Epetra:BOOL=ON -D Trilinos_ENABLE_Thyra:BOOL=OFF -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Zoltan Triutils EpetraExt Isorropia AztecOO Galeri Amesos Ifpack ML Belos RBGen 13"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan Triutils Tpetra EpetraExt Isorropia AztecOO Galeri Amesos Ifpack ML Belos RBGen 14"
   )
 
 

@@ -382,7 +382,13 @@ FUNCTION(TRILINOS_APPEND_FORWARD_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
     SET(FWD_DEP_PKG_LIST_NAME "${DEP_PKG}_FORWARD_${LIST_TYPE}")
     #MESSAGE("FWD_DEP_PKG_LIST_NAME = ${FWD_DEP_PKG_LIST_NAME}")
     IF (NOT DEFINED ${FWD_DEP_PKG_LIST_NAME})
-      MESSAGE(FATAL_ERROR "Error, the package '${DEP_PKG}' is listed as a dependency of the package '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package '${DEP_PKG}' is either not defined or is listed later in the package order.  Check the spelling of '${DEP_PKG}' or see how it is listed in Trilinos_PACKAGES_AND_DIRS in relationship to '${PACKAGE_NAME}'.")
+      MULTILINE_SET(ERRMSG
+        "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
+        " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
+        " '${DEP_PKG}' is either not defined or is listed later in the package order."
+        "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
+        " Trilinos_PACKAGES_AND_DIRS_AND_ENABLES in relationship to '${PACKAGE_NAME}'.")
+      MESSAGE(FATAL_ERROR ${ERRMSG})
     ENDIF()
     SET(${FWD_DEP_PKG_LIST_NAME} ${${FWD_DEP_PKG_LIST_NAME}} ${PACKAGE_NAME} PARENT_SCOPE)
   ENDFOREACH()
