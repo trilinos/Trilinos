@@ -52,5 +52,13 @@ time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_serial_debug_godel.cma
 /home/rabartl/mailmsg.py "Trilinos serial debug finished on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
 
 echo
+echo "Doing mpi optimized shared library build"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
+
+/home/rabartl/mailmsg.py "Trilinos mpi opt shared finished on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
+
+echo
 echo "Ending time: `date`"
 echo
