@@ -235,6 +235,15 @@ class SerializationTraits<Ordinal,std::complex<double> >
 
 #endif // HAVE_TEUCHOS_COMPLEX
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal, long long int>
+  : public DirectSerializationTraits<Ordinal, long long int>
+{};
+
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+
 } // namespace Teuchos
 
 #endif // TEUCHOS_SERIALIZATION_TRAITS_HPP
