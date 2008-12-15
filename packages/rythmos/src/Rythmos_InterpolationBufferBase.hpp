@@ -136,6 +136,14 @@ public:
     const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     ) = 0;
 
+  /*
+  virtual void addPoints(
+    const ArrayView<const Scalar>& time_vec,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x_vec,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& xdot_vec
+    ) =0;
+  */
+
 
   /** \brief Return the range of time values where interpolation calls can be
    * performed.
@@ -187,6 +195,15 @@ public:
     Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     Array<ScalarMag>* accuracy_vec
     ) const = 0;
+
+  /*
+  virtual void getPoints(
+    const ArrayView<const Scalar>& time_vec,
+    const ArrayView<const Ptr<VectorBase<Scalar> > >& x_vec,
+    const ArrayView<const Ptr<VectorBase<Scalar> > >& xdot_vec,
+    const ArrayView<ScalarMag>& accuracy_vec
+    ) const = 0;
+  */
 
   /** \brief Get interpolation nodes.
    *

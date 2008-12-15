@@ -260,11 +260,9 @@ void evaluateCubicSpline(
     )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef TEUCHOS_DEBUG
   // Assert preconditions:
   validateCubicSplineCoeff<Scalar>(coeff);
   TEST_FOR_EXCEPTION( ((j < 0) || (j >= coeff.a.size())), std::out_of_range, "Error!, j is out of range" );
-#endif // TEUCHOS_DEBUG
 
   Scalar dt = t-coeff.t[j];
   const Thyra::VectorBase<Scalar>& a = *(coeff.a[j]);

@@ -38,7 +38,7 @@
 
 #ifdef SINCOSMODEL_DEBUG
 #include <iostream>
-#endif
+#endif // SINCOSMODEL_DEBUG
 
 namespace Rythmos {
 

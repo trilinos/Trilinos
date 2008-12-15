@@ -297,6 +297,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   RCP<Thyra::VectorBase<double> > xdot1;
   double accuracy1 = 0.0;
   data_in->push_back(DataStore<double>(t1,x1,xdot1,accuracy1));
+  coeff = rcp(new CubicSplineCoeff<double>);
   // enough points for linear special case
   TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)));
   double t2 = 2.0;
@@ -304,7 +305,8 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   RCP<Thyra::VectorBase<double> > xdot2;
   double accuracy2 = 0.0;
   data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
-  // enough points
+  coeff = rcp(new CubicSplineCoeff<double>);
+  // enough points for cubic spline
   TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)) );
 
   double t3 = 2.0;
@@ -312,10 +314,27 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   RCP<Thyra::VectorBase<double> > xdot3;
   double accuracy3 = 0.0;
   data_in->push_back(DataStore<double>(t3,x3,xdot3,accuracy3));
+  coeff = rcp(new CubicSplineCoeff<double>);
   // non unique time values
+#ifdef TEUCHOS_DEBUG
   TEST_THROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)), std::logic_error);
+#else 
+  TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)) );
+  TEST_EQUALITY_CONST( coeff->t.size(), 4 );
+  for (int i=0; i<3 ; ++i) {
+    Thyra::ConstDetachedVectorView<double> b_view(*(coeff->b[i]));
+    Thyra::ConstDetachedVectorView<double> c_view(*(coeff->c[i]));
+    Thyra::ConstDetachedVectorView<double> d_view(*(coeff->d[i]));
+    typedef Teuchos::ScalarTraits<double> ST;
+    TEST_EQUALITY_CONST( ST::isnaninf(b_view[0]), true );
+    TEST_EQUALITY_CONST( ST::isnaninf(c_view[0]), true );
+    TEST_EQUALITY_CONST( ST::isnaninf(d_view[0]), true );
+  }
+#endif // TEUCHOS_DEBUG
+
   data_in->erase(data_in->end());
 
+  coeff = rcp(new CubicSplineCoeff<double>);
   // back to normal
   TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)) );
 
@@ -324,8 +343,22 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   RCP<Thyra::VectorBase<double> > xdot4;
   double accuracy4 = 0.0;
   data_in->push_back(DataStore<double>(t4,x4,xdot4,accuracy4));
+  coeff = rcp(new CubicSplineCoeff<double>);
   // non sorted time values
+#ifdef TEUCHOS_DEBUG
   TEST_THROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)), std::logic_error);
+#else
+  TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)) );
+  TEST_EQUALITY_CONST( coeff->t.size(), 4 );
+  {
+    Thyra::ConstDetachedVectorView<double> b_view(*(coeff->b[2]));
+    Thyra::ConstDetachedVectorView<double> c_view(*(coeff->c[2]));
+    Thyra::ConstDetachedVectorView<double> d_view(*(coeff->d[2]));
+    TEST_EQUALITY_CONST( b_view[0],  2.0 );
+    TEST_EQUALITY_CONST( c_view[0],  6.0 );
+    TEST_EQUALITY_CONST( d_view[0],  4.0 );
+  }
+#endif // TEUCHOS_DEBUG
 
 }
 
@@ -383,6 +416,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
   RCP<InterpolatorBase<double> > csi = cubicSplineInterpolator<double>();
   Array<double> t_values;
   DataStore<double>::DataStoreVector_t data_out;
+  // must call setNodes before interpolate
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
 
   RCP<DataStore<double>::DataStoreVector_t> data_in = rcp( new DataStore<double>::DataStoreVector_t );
@@ -395,7 +429,17 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
   csi->setNodes(data_in);
 
   t_values.push_back(0.5);
+  // Not enough nodes to evaluate t=0.5
+#ifdef TEUCHOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+#else // TEUCHOS_DEBUG
+  // In this case, we're not checking the preconditions, so we assume the point you asked for is the only point we have
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_EQUALITY_CONST( x_view[0], 0.0 );
+  }
+#endif // TEUCHOS_DEBUG
 
   double t1 = 1.0;
   RCP<Thyra::VectorBase<double> > x1 = createDefaultVector<double>(1,1.0);
@@ -404,6 +448,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
   data_in->push_back(DataStore<double>(t1,x1,xdot1,accuracy1));
   csi->setNodes(data_in);
 
+  // Linear interpolation used with only two points
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   double tol = 1.0e-15;
   {
@@ -457,6 +502,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
   DataStore<double>::DataStoreVector_t data_out;
   t_values.push_back(0.5);
   //ECHO( "Calling interpolate at t=0.5" );
+  // This is a valid interpolate call
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   double tol = 1.0e-15;
   double t05value = 0.6875;
@@ -470,14 +516,33 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
   data_in->erase(data_in->end());
   //ECHO( "data_in = [(0,0), (1,1)]" );
   //ECHO( "Calling interpolate at t=0.5 after deleting last node, should throw" );
+#ifdef TEUCHOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+#else // TEUCHOS_DEBUG
+  // spline coefficients did not change, so you get the same output
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_FLOATING_EQUALITY( x_view[0], t05value, tol );
+  }
+#endif // TEUCHOS_DEBUG
 
   // Change the value of the third point
   V_S(outArg(*x2),1.0);
   data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
   //ECHO( "data_in = [(0,0), (1,1), (2,1)]" );
   //ECHO( "Calling interpolate at t=1.5 after adding different last node, should throw" );
+#ifdef TEUCHOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+#else // TEUCHOS_DEBUG
+  // spline coefficients did not change, so you get the same output
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_FLOATING_EQUALITY( x_view[0], t05value, tol );
+  }
+#endif // TEUCHOS_DEBUG
+
 
   // Change the time-point of the third point
   data_in->erase(data_in->end());
@@ -486,7 +551,16 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
   data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
   //ECHO( "data_in = [(0,0), (1,1), (2.5,1)]" );
   //ECHO( "Calling interpolate at t=1.5 after changing last node to t=2.5, should throw" );
+#ifdef TEUCHOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
+#else // TEUCHOS_DEBUG
+  // spline coefficients did not change, so you get the same output
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  {
+    Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
+    TEST_FLOATING_EQUALITY( x_view[0], t05value, tol );
+  }
+#endif // TEUCHOS_DEBUG
 
   // Add a fourth point:
   double t3 = 3.0;
@@ -498,14 +572,28 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
 
   t_values[0] = 2.7;
   //ECHO( "Calling interpolate at t=2.7 after adding a fourth point, should throw" );
+#ifdef TEUCHOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out), std::logic_error);
+#else // TEUCHOS_DEBUG
+  // In this case, t_values[0]=2.7 is out of range for the original [0,2] range
+  // that the spline coefficients were computed for.  So we should get an
+  // out_of_range exception from the cubic spline interpolator.
+  TEST_THROW(csi->interpolate(t_values,&data_out), std::out_of_range);
+#endif // TEUCHOS_DEBUG
 
   // Delete the 1st point:
   data_in->erase(data_in->begin());
   //ECHO( "data_in = [(1,1), (2.5,1), (3,3)]" );
   t_values[0] = 0.5;
   //ECHO( "Calling interpolate at t=0.5 after deleting the first point, should throw" );
+#ifdef TEUCHOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out), std::logic_error);
+#else // TEUCHOS_DEBUG
+  // In this case, the InterpolationBuffer searches for an interval containing
+  // this point and can't find any, so it returns no points.
+  TEST_NOTHROW(csi->interpolate(t_values,&data_out));
+  TEST_EQUALITY_CONST( data_out.size(), 0 );
+#endif // TEUCHOS_DEBUG
 
 }
 
