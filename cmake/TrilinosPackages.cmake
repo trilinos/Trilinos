@@ -43,7 +43,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Meros                 meros                          OFF
   FEI                   fei                            OFF
   RBGen                 rbgen                          ""
-  Anasazi               anasazi                        OFF
+  Anasazi               anasazi                        ""
   ThreadPool            ThreadPool                     OFF
   Phalanx               phalanx                        OFF
   Pamgen                pamgen                         OFF

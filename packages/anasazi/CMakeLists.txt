@@ -1,39 +1,45 @@
-# $Header$
 
-PROJECT(Anasazi)
+INCLUDE(TrilinosPackageHelpers)
+INCLUDE(Trilinos_Add_Option)
 
-SET(${PROJECT_NAME}_VERSION "2.1d")
+#
+# A) Define the package
+#
 
-ADD_DEFINITIONS(-D_SCL_SECURE=0)
+TRILINOS_PACKAGE(Anasazi)
 
-OPTION(${PROJECT_NAME}_ENABLE_TESTS
-  "Build ${PROJECT_NAME} tests."
-  OFF
-  )
+#
+# B) Set up package-specific options
+#
 
-OPTION(${PROJECT_NAME}_ENABLE_EXAMPLES
-  "Build ${PROJECT_NAME} examples."
-  OFF
-  )
+# ...
+
+#
+# C) Add the libraries, tests, and examples
+#
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(util)
 
-IF(${PROJECT_NAME}_ENABLE_TESTS)
-  ADD_SUBDIRECTORY(test)
-ENDIF(${PROJECT_NAME}_ENABLE_TESTS)
 
-IF(${PROJECT_NAME}_ENABLE_EXAMPLES)
-  ADD_SUBDIRECTORY(example)
-ENDIF(${PROJECT_NAME}_ENABLE_EXAMPLES)
+IF (Anasazi_ENABLE_Epetra)
+  ADD_SUBDIRECTORY(epetra)
+ENDIF()
 
-LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)
-LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARY_DIRS)
-LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-##############################################################################
-# Configure <PACKAGE>Config.cmake for the build tree.
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
-##############################################################################
+#TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
+IF (Anasazi_ENABLE_Thyra)
+  ADD_SUBDIRECTORY(thyra)
+ENDIF()
+
+
+IF (Anasazi_ENABLE_Tpetra)
+  ADD_SUBDIRECTORY(tpetra)
+ENDIF()
+
+#
+# D) Do standard postprocessing
+#
+
+TRILINOS_PACKAGE_POSTPROCESS()

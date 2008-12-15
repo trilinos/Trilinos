@@ -25,29 +25,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  BlockPCGSolver.h
-  CheckingTools.h
-  ModeLaplace1DQ1.h
-  ModeLaplace1DQ2.h
-  ModeLaplace2DQ1.h
-  ModeLaplace2DQ2.h
-  ModeLaplace3DQ1.h
-  ModeLaplace3DQ2.h
-  ModalProblem.h
-  ModeLaplace.h
-  SortingTools.h
+  AnasaziEpetraAdapter.hpp 
   )
 
 APPEND_SET(SOURCES
-  BlockPCGSolver.cpp
-  CheckingTools.cpp
-  ModeLaplace1DQ1.cpp
-  ModeLaplace1DQ2.cpp
-  ModeLaplace2DQ1.cpp
-  ModeLaplace2DQ2.cpp
-  ModeLaplace3DQ1.cpp
-  ModeLaplace3DQ2.cpp
-  SortingTools.cpp
+  AnasaziEpetraAdapter.cpp
   )
 
 #
@@ -55,7 +37,7 @@ APPEND_SET(SOURCES
 #
 
 TRILINOS_PACKAGE_ADD_LIBRARY(
-  ModeLaplace
+  anasaziepetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS anasazi

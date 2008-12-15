@@ -1,30 +1,4 @@
-/* $Header$ */
-
-/* Copy of the following file, edited to be used with CMake */
 /* src/Anasazi_config.h.in.  Generated from configure.ac by autoheader.  */
-
-/* Define to dummy `main' function (if any) required to link to the Fortran
-   libraries. */
-#cmakedefine F77_DUMMY_MAIN
-
-/* Define to a macro mangling the given C identifier (in lower and upper
-   case), which must not contain underscores, for linking with Fortran. */
-#define F77_FUNC@F77_FUNC@
-
-/* As F77_FUNC, but for C identifiers containing underscores. */
-#define F77_FUNC_@F77_FUNC_@
-
-/* Define if F77 and FC dummy `main' functions are identical. */
-#cmakedefine FC_DUMMY_MAIN_EQ_F77
-
-/* Define to 1 if you have the <algorithm> header file. */
-#cmakedefine HAVE_ALGORITHM
-
-/* Define to 1 if you have the <algorithm.h> header file. */
-#cmakedefine HAVE_ALGORITHM_H
-
-/* Define to 1 if you have the <algo.h> header file. */
-#cmakedefine HAVE_ALGO_H
 
 /* Define if want to build with anasazi enabled */
 #cmakedefine HAVE_ANASAZI_AMESOS
@@ -34,6 +8,9 @@
 
 /* Define if want to build with anasazi enabled */
 #cmakedefine HAVE_ANASAZI_BELOS
+
+/* Define if want to build with anasazi enabled */
+#cmakedefine HAVE_ANASAZI_EPETRA
 
 /* Define if want to build with anasazi enabled */
 #cmakedefine HAVE_ANASAZI_EPETRAEXT
@@ -59,161 +36,21 @@
 /* Define if want to build with anasazi enabled */
 #cmakedefine HAVE_ANASAZI_TRIUTILS
 
-/* Define if you have a BLAS library. */
-#cmakedefine HAVE_BLAS
-
-/* define if bool is a built-in type */
-#cmakedefine HAVE_BOOL
-
-/* Define to 1 if you have the <cctype> header file. */
-#cmakedefine HAVE_CCTYPE
-
-/* Define to 1 if you have the <cctype.h> header file. */
-#cmakedefine HAVE_CCTYPE_H
-
-/* Define to 1 if you have the <cmath> header file. */
-#cmakedefine HAVE_CMATH
-
-/* Define to 1 if you have the <complex> header file. */
-#cmakedefine HAVE_COMPLEX
-
-/* Define to 1 if you have the <complex.h> header file. */
-#cmakedefine HAVE_COMPLEX_H
-
-/* Define to 1 if you have the <cstdio> header file. */
-#cmakedefine HAVE_CSTDIO
-
-/* Define to 1 if you have the <cstdlib> header file. */
-#cmakedefine HAVE_CSTDLIB
-
 /* Define if want to build with epetra enabled */
-#cmakedefine HAVE_EPETRA_THYRA
+#cmakedefine HAVE_EPETRA_THYRA @HAVE_EPETRA_THYRA@
 
 /* Define if want to build examples */
 #cmakedefine HAVE_EXAMPLES
 
 /* Define if you want to build export makefiles. */
-#cmakedefine HAVE_EXPORT_MAKEFILES
-
-/* Define if you are using gnumake - this will shorten your link lines. */
-#cmakedefine HAVE_GNUMAKE
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
-
-/* Define to 1 if you have the <iomanip> header file. */
-#cmakedefine HAVE_IOMANIP
-
-/* Define to 1 if you have the <iomanip.h> header file. */
-#cmakedefine HAVE_IOMANIP_H
-
-/* Define to 1 if you have the <iostream> header file. */
-#cmakedefine HAVE_IOSTREAM
-
-/* Define to 1 if you have the <iostream.h> header file. */
-#cmakedefine HAVE_IOSTREAM_H
-
-/* Define to 1 if you have the <iterator> header file. */
-#cmakedefine HAVE_ITERATOR
-
-/* Define to 1 if you have the <iterator.h> header file. */
-#cmakedefine HAVE_ITERATOR_H
-
-/* Define if you have LAPACK library. */
-#cmakedefine HAVE_LAPACK
-
-/* Define if want to build libcheck */
-#cmakedefine HAVE_LIBCHECK
-
-/* Define to 1 if you have the <math.h> header file. */
-#cmakedefine HAVE_MATH_H
-
-/* Define to 1 if you have the <memory.h> header file. */
-#cmakedefine HAVE_MEMORY_H
-
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
-
-/* define if the compiler supports the mutable keyword */
-#cmakedefine HAVE_MUTABLE
-
-/* define if the compiler implements namespaces */
-#cmakedefine HAVE_NAMESPACES
-
-/* define if the compiler accepts the new for scoping rules */
-#cmakedefine HAVE_NEW_FOR_SCOPING
-
-/* Define to 1 if you have the <numeric> header file. */
-#cmakedefine HAVE_NUMERIC
-
-/* Define to 1 if you have the <stdexcept> header file. */
-#cmakedefine HAVE_STDEXCEPT
-
-/* Define to 1 if you have the <stdexcept.h> header file. */
-#cmakedefine HAVE_STDEXCEPT_H
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#cmakedefine HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdio.h> header file. */
-#cmakedefine HAVE_STDIO_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#cmakedefine HAVE_STDLIB_H
-
-/* define if std::sprintf is supported */
-#cmakedefine HAVE_STD_SPRINTF
-
-/* define if the compiler supports Standard Template Library */
-#cmakedefine HAVE_STL
-
-/* Define to 1 if you have the <string> header file. */
-#cmakedefine HAVE_STRING
-
-/* Define to 1 if you have the <strings.h> header file. */
-#cmakedefine HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#cmakedefine HAVE_STRING_H
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#cmakedefine HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#cmakedefine HAVE_SYS_TYPES_H
 
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H
-
-/* Define to 1 if you have the <vector> header file. */
-#cmakedefine HAVE_VECTOR
-
-/* Define to 1 if you have the <vector.h> header file. */
-#cmakedefine HAVE_VECTOR_H
-
-/* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#cmakedefine PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME
-
-/* Define to the version of this package. */
-#cmakedefine PACKAGE_VERSION
-
-/* Define to 1 if you have the ANSI C header files. */
-#cmakedefine STDC_HEADERS
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

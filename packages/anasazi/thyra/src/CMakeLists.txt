@@ -5,12 +5,6 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-# Enabling a define if the Thyra Epetra adapter is defined.
-ASSERT_DEFINED(Thyra_ENABLE_Epetra)
-IF(Thyra_ENABLE_Epetra)
-  SET(HAVE_EPETRA_THYRA 1)
-ENDIF()
-
 TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
@@ -80,7 +74,7 @@ APPEND_SET(HEADERS
   AnasaziTypes.hpp
   )
 
-APPEND_SET(SOURCES
+APPEND_SET(SOURCES ${SOURCES}
   AnasaziVersion.cpp
   )
 
@@ -88,7 +82,7 @@ APPEND_SET(SOURCES
 # Util Files
 #
 
-APPEND_SET(HEADERS
+APPEND_SET(HEADERS ${HEADERS}
   AnasaziMVOPTester.hpp
   )
 
@@ -97,7 +91,7 @@ APPEND_SET(HEADERS
 # Comp Files
 #
 
-APPEND_SET(HEADERS
+APPEND_SET(HEADERS ${HEADERS}
   AnasaziBlockDavidson.hpp
   AnasaziBlockKrylovSchur.hpp
   AnasaziLOBPCG.hpp
@@ -110,20 +104,6 @@ APPEND_SET(HEADERS
   AnasaziSimpleLOBPCGSolMgr.hpp
   AnasaziRTRSolMgr.hpp
   )
-
-IF (Anasazi_ENABLE_Thyra)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../thrya/src)
-  APPEND_SET(HEADERS
-    ../thyra/src/AnasaziThyraAdapter.hpp
-    )
-ENDIF()
-
-IF (Anasazi_ENABLE_Tpetra)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../tpetra/src)
-  APPEND_SET(HEADERS
-    ../tpetra/src/AnasaziTpetraAdapter.hpp
-    )
-ENDIF()
 
 IF (TPL_ENABLE_MPI)
 
