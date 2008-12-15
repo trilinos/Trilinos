@@ -577,9 +577,9 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 
 
 all-local:
-        @echo ""
-        @echo "Trilinos package fei subdirectory support-PETSc built successfully."
-        @echo ""
+	@echo ""
+	@echo "Trilinos package fei subdirectory support-PETSc built successfully."
+	@echo ""
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
