@@ -966,6 +966,23 @@ namespace Tpetra {
     return mv;
   }
 
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<Vector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::operator()(Ordinal i)
+  {
+    using Teuchos::as;
+    Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > mvdata = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    Ordinal MVLDA = this->stride(),  
+            MVlen = this->myLength();
+    mvdata->constantStride_ = true;
+    mvdata->stride_ = MVlen;
+    mvdata->values_ = MVData_->values_.persistingView(i*MVLDA,MVlen);
+    mvdata->ptrs_.resize(1,Teuchos::null);
+    mvdata->ptrs_[0] = MVData_->ptrs_[i]; // if TEUCHOS_DEBUG, Teuchos will check this.
+    mvdata->updateConstPointers();
+    Teuchos::RCP<Vector<Ordinal,Scalar> > v = Teuchos::rcp( new Vector<Ordinal,Scalar>(this->getMap(),mvdata) );
+    return v;
+  }
+
   /*
   template<typename Ordinal, typename Scalar>
   Teuchos::RCP<const MultiVector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::subViewConst(const Teuchos::Range1D &colRng) const 
@@ -993,6 +1010,23 @@ namespace Tpetra {
     }
     mvdata->updateConstPointers();
     Teuchos::RCP<MultiVector<Ordinal,Scalar> > mv = Teuchos::rcp( new MultiVector<Ordinal,Scalar>(this->getMap(),mvdata) );
+    return mv;
+  }
+
+  template<typename Ordinal, typename Scalar>
+  Teuchos::RCP<const Vector<Ordinal,Scalar> > MultiVector<Ordinal,Scalar>::operator() (Ordinal i) const
+  {
+    using Teuchos::as;
+    Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > mvdata = Teuchos::rcp( new MultiVectorData<Ordinal,Scalar>() );
+    Ordinal MVLDA = this->stride(),  
+            MVlen = this->myLength();
+    mvdata->constantStride_ = true;
+    mvdata->stride_ = MVlen;
+    mvdata->values_ = MVData_->values_.persistingView(i*MVLDA,MVlen);
+    mvdata->ptrs_.resize(1,Teuchos::null);
+    mvdata->ptrs_[0] = MVData_->ptrs_[i]; // if TEUCHOS_DEBUG, Teuchos will check this.
+    mvdata->updateConstPointers();
+    Teuchos::RCP<Vector<Ordinal,Scalar> > mv = Teuchos::rcp( new Vector<Ordinal,Scalar>(this->getMap(),mvdata) );
     return mv;
   }
 
@@ -1335,6 +1369,46 @@ namespace Tpetra {
 #endif
     Ordinal MyRow = this->getMap().getLocalIndex(GlobalRow);
     MVData_->ptrs_[VectorIndex][MyRow] += ScalarValue;
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void MultiVector<Ordinal,Scalar>::meanValue(const Teuchos::ArrayView<Scalar> &means) const
+  {
+    using Teuchos::ScalarTraits;
+    using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+    using Teuchos::Array;
+    using Teuchos::as;
+    typedef ScalarTraits<Scalar> SCT;
+    const Ordinal ZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
+    const Ordinal ONE  = Teuchos::OrdinalTraits<Ordinal>::one();
+    const Ordinal numImages = this->getMap().getComm()->getSize();
+    const Ordinal numVecs = this->numVectors();
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(means.size() != numVecs, std::runtime_error,
+        "Tpetra::MultiVector::meanValue(): means.size() must be as large as the number of vectors in *this.");
+#endif
+    // compute local components of the means
+    // sum these across all nodes
+    Array<Scalar> lmeans(numVecs,ScalarTraits<Scalar>::zero());
+    for (Ordinal j=ZERO; j<numVecs; ++j) {
+      typename ArrayView<const Scalar>::iterator cpos = MVData_->cPtrs_[j].begin(),
+                                                 cend = MVData_->cPtrs_[j].end();
+      for (; cpos != cend; ++cpos) {
+        lmeans[j] += *cpos;
+      }
+    }
+    if (this->isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lmeans.getRawPtr(),means.getRawPtr());
+    }
+    else {
+      std::copy(lmeans.begin(),lmeans.end(),means.begin());
+    }
+    Scalar N = as<Scalar>(numImages);
+    for (typename ArrayView<Scalar>::iterator n = means.begin(); n != means.begin()+numVecs; ++n) {
+      *n = *n/N;
+    }
   }
 
 } // namespace Tpetra

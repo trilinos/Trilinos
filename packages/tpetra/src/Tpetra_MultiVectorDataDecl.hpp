@@ -38,6 +38,7 @@ namespace Tpetra {
   class MultiVectorData : public Teuchos::Object {
 
   friend class MultiVector<Ordinal, Scalar>;
+  friend class Vector<Ordinal, Scalar>;
 
   public:
     MultiVectorData();

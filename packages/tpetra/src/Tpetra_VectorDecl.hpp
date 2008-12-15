@@ -38,6 +38,9 @@ namespace Tpetra {
   template<typename Ordinal, typename Scalar>
   class Vector : public MultiVector<Ordinal,Scalar> {
 
+    // need this so that MultiVector::operator() can call Vector's private constructor
+    friend class MultiVector<Ordinal,Scalar>;
+
   public:
   
     //! @name Constructor/Destructor Methods
@@ -72,19 +75,6 @@ namespace Tpetra {
     //! Adds specified value to existing value at the specified location.
     void sumIntoMyValue(Ordinal myRow, const Scalar &value);
 
-    //! Initialize all values in a multi-vector with specified value.
-    void putScalar(const Scalar &value);
-
-    //! Set multi-vector values to random numbers.
-    void random();
-
-    //! Replace the underlying Map with a compatible one.
-    void replaceMap(const Map<Ordinal> &map);
-
-    //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
-    void reduce();
-
-
     //@}
 
     //! @name Extraction methods
@@ -107,8 +97,6 @@ namespace Tpetra {
     //! @name Mathematical methods
     //@{ 
 
-    // FINISH: expand documentation of these functions
-
     using MultiVector<Ordinal,Scalar>::dot; // overloading, not hiding
     //! Computes dot product of this Vector against input Vector x.
     Scalar dot(const Vector<Ordinal,Scalar> &a) const;
@@ -128,7 +116,6 @@ namespace Tpetra {
     using MultiVector<Ordinal,Scalar>::update; // overloading, not hiding
     //! Update this Vector with scaled Vector a, this = beta*this + alpha*a.
     void update(const Scalar &alpha, const Vector<Ordinal,Scalar> &a, const Scalar &beta);
-
     //! Update this Vector with scaled Vectors a and b, this = gamma*this + alpha*a + beta*b.
     void update(const Scalar &alpha, const Vector<Ordinal,Scalar> &a, const Scalar &beta, const Vector<Ordinal,Scalar> &b, const Scalar &gamma);
 
@@ -146,23 +133,15 @@ namespace Tpetra {
 
     using MultiVector<Ordinal,Scalar>::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const MultiVector<Ordinal,Scalar> &weights) const;
-
-    using MultiVector<Ordinal,Scalar>::minValue; // overloading, not hiding
-    //! Compute minimum value of this Vector.
-    Scalar minValue() const;
-
-    using MultiVector<Ordinal,Scalar>::maxValue; // overloading, not hiding
-    //! Compute maximum value of this Vector.
-    Scalar maxValue() const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Ordinal,Scalar> &weights) const;
 
     using MultiVector<Ordinal,Scalar>::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
     Scalar meanValue() const;
 
-    //@{ 
+    //@} 
 
-    //! @name Element access methods
+    //! @name Entry access methods
     //@{ 
 
     //! [] operator, nonconst version
@@ -170,18 +149,6 @@ namespace Tpetra {
 
     //! [] operator, const version
     const Scalar & operator[](Ordinal index) const;
-
-    //@}
-
-
-    //! @name Attribute access methods
-    //@{ 
-
-    //! Returns number of vector entries owned by this image.
-    Ordinal getNumMyEntries() const;
-
-    //! Returns number of vector entries across all images.
-    Ordinal getNumGlobalEntries() const;
 
     //@}
 
@@ -195,52 +162,11 @@ namespace Tpetra {
 
     //@}
 
-    //! @name Misc. 
-    //@{ 
+    protected:
 
-    //! Returns a const reference to the VectorSpace this Vector belongs to.
-    const Map<Ordinal> & getMap() const;
+    // Advanced Vector constuctor for creating views.
+    Vector(const Map<Ordinal> &map, const Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata);
 
-    //! Assignment Operator
-    Vector<Ordinal,Scalar> & operator=(const Vector<Ordinal,Scalar> &source);
-
-    //@}
-
-    //! @name Expert/Developer Use Only.
-    //@{ 
-
-    // Returns pointer to Scalar array inside of scalarArray
-    Teuchos::ArrayView<Scalar> scalarPointer();
-
-    Teuchos::ArrayView<const Scalar> scalarPointer() const;
-
-    //@}
-
-  private:
-
-    Teuchos::RCP<VectorData<Ordinal,Scalar> > VectorData_;
-
-    // four functions needed for DistObject derivation
-    bool checkSizes(const DistObject<Ordinal,Scalar> & sourceObj);
-
-    void copyAndPermute(const DistObject<Ordinal,Scalar> & sourceObj,
-               Ordinal numSameIDs,
-               Ordinal numPermuteIDs,
-               const Teuchos::ArrayView<const Ordinal> & permuteToLIDs,
-               const Teuchos::ArrayView<const Ordinal> & permuteFromLIDs);
-
-    void packAndPrepare(const DistObject<Ordinal,Scalar> & sourceObj,
-               Ordinal numExportIDs,
-               const Teuchos::ArrayView<const Ordinal> & exportLIDs,
-               const Teuchos::ArrayView<Scalar> & exports,
-               Ordinal &packetSize,
-               Distributor<Ordinal> &distor);
-  
-    void unpackAndCombine(Ordinal numImportIDs,
-               const Teuchos::ArrayView<const Ordinal> & importLIDs,
-               const Teuchos::ArrayView<const Scalar> & imports,
-               Distributor<Ordinal> &distor,
-               CombineMode CM);
 
   }; // class Vector
 

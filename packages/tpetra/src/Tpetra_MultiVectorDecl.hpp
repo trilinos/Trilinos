@@ -26,8 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// FINISH: some of these arrayview objects should be something else, like Ptr
-
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
@@ -46,6 +44,8 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of MultiVectorData, needed to prevent circular inclusions
   template<typename Ordinal, typename Scalar> class MultiVectorData;
+  // forward declaration of Vector, needed to prevent circular inclusions
+  template<typename Ordinal, typename Scalar> class Vector;
 #endif
 
   /*! multivector */
@@ -193,12 +193,6 @@ namespace Tpetra {
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     void normWeighted(const MultiVector<Ordinal,Scalar> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
-    //! Compute minimum value of each vector in multi-vector.
-    void minValue(const Teuchos::ArrayView<Scalar> &mins) const;
-
-    //! Compute maximum value of each vector in multi-vector.
-    void maxValue(const Teuchos::ArrayView<Scalar> &maxs) const;
-
     //! Compute mean (average) value of each vector in multi-vector.
     void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
 
@@ -223,24 +217,20 @@ namespace Tpetra {
     MultiVector<Ordinal,Scalar>& operator=(const MultiVector<Ordinal,Scalar> &source);
 
     //! Local vector access function.
-    /*! ArrayRCP to the local values in the ith vector of this multi-vector.
+    /*! ArrayView to the local values in the ith vector of this multi-vector.
      */
     Teuchos::ArrayView<Scalar> operator[](Ordinal i);
 
     //! Local vector access function.
-    /** ArrayRCP to the local values in the ith vector of this multi-vector.
+    /** ArrayView to the local values in the ith vector of this multi-vector.
      */
     Teuchos::ArrayView<const Scalar> operator[](Ordinal i) const;
 
-    /*
     //! Vector access function.
-    Vector<Ordinal,Scalar> & operator()(Ordinal i);
-    */
+    Teuchos::RCP<Vector<Ordinal,Scalar> > operator()(Ordinal i);
 
-    /*
     //! Vector access function.
-    const Vector<Ordinal,Scalar> & operator() (Ordinal i) const;
-    */
+    Teuchos::RCP<const Vector<Ordinal,Scalar> > operator() (Ordinal i) const;
 
     //@} 
 
@@ -268,8 +258,8 @@ namespace Tpetra {
     //@{ 
 
     //! Print method.
-    void print(std::ostream &os) const;
-    void printValues(std::ostream &os) const;
+    virtual void print(std::ostream &os) const;
+    virtual void printValues(std::ostream &os) const;
 
     //@} 
 
@@ -319,7 +309,6 @@ namespace Tpetra {
                           const Teuchos::ArrayView<const Scalar> &imports,
                           Distributor<Ordinal> &distor,
                           CombineMode CM);
-
 
   }; // class MultiVector
 

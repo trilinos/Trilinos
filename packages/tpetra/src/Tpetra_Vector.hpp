@@ -35,417 +35,477 @@
 #include <Teuchos_BLAS.hpp>
 
 #include "Tpetra_VectorDecl.hpp"
-#include "Tpetra_VectorData.hpp"
 
 namespace Tpetra {
 
   template<typename Ordinal,typename Scalar>
-  Vector<Ordinal,Scalar>::Vector(const Map<Ordinal> &map) 
-    : DistObject<Ordinal,Scalar>(map, map.getPlatform()->createComm(), "Tpetra::Vector")
-    , VectorData_()
-  {
-    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-    VectorData_ = Teuchos::rcp(new VectorData<Ordinal,Scalar>(map, ZERO));
-  }
-
-  template<typename Ordinal,typename Scalar>
-  Vector<Ordinal,Scalar>::Vector(const Teuchos::ArrayView<const Scalar> &values, const Map<Ordinal> &map)
-  : DistObject<Ordinal,Scalar>(map,map.getPlatform()->createComm(), "Tpetra::Vector")
-  , VectorData_()
-  {
-    const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-    const Ordinal OZERO = Teuchos::OrdinalTraits<Ordinal>::zero();
-    const Ordinal length = map.getNumMyEntries();
-
-    VectorData_ = Teuchos::rcp(new VectorData<Ordinal,Scalar>(map, ZERO));
-
-    TEST_FOR_EXCEPTION(values.size() != length, std::invalid_argument,
-      "Tpetra::Vector::constructor(values,map): number of values does not match size of map.");
-    std::copy(values.begin(),values.end(), VectorData_->values_().begin());
+  Vector<Ordinal,Scalar>::Vector(const Map<Ordinal> &map, bool zeroOut) 
+    : MultiVector<Ordinal,Scalar>(map,1,zeroOut)
+  { 
+    this->setLabel("Tpetra::Vector");
   }
 
   template<typename Ordinal, typename Scalar>
   Vector<Ordinal,Scalar>::Vector(const Vector<Ordinal,Scalar> &source)
-  : DistObject<Ordinal,Scalar>(source)
-  , VectorData_(source.VectorData_)
-  {}
+  : MultiVector<Ordinal,Scalar>(source)
+  {
+    this->setLabel("Tpetra::Vector");
+  }
+
+  template<typename Ordinal,typename Scalar>
+  Vector<Ordinal,Scalar>::Vector(const Map<Ordinal> &map, const Teuchos::ArrayView<const Scalar> &values)
+  : MultiVector<Ordinal,Scalar>(map,values,values.size(),1)
+  {
+    this->setLabel("Tpetra::Vector");
+  }
+
+  template <typename Ordinal, typename Scalar> 
+  Vector<Ordinal,Scalar>::Vector(const Map<Ordinal> &map, const Teuchos::RCP<MultiVectorData<Ordinal,Scalar> > &mvdata) 
+    : MultiVector<Ordinal,Scalar>(map,mvdata)
+  {
+    this->setLabel("Tpetra::Vector");
+  }
 
   template<typename Ordinal, typename Scalar>
   Vector<Ordinal,Scalar>::~Vector() {}
 
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::submitEntries(const Teuchos::ArrayView<const Ordinal> &indices,
-                                             const Teuchos::ArrayView<const Scalar>  &values)
+  template<typename Ordinal,typename Scalar>
+  void Vector<Ordinal,Scalar>::replaceGlobalValue(Ordinal globalRow, const Scalar &value) 
   {
-    TEST_FOR_EXCEPTION(indices.size() != values.size(), std::invalid_argument,
-        "Tpetra::Vector::submitEntries(indices,values): finish.");
-    const Ordinal ordinalZero = Teuchos::OrdinalTraits<Ordinal>::zero();
-    typename Teuchos::ArrayView<const Ordinal>::const_iterator ind = indices.begin();
-    typename Teuchos::ArrayView<const Scalar>::const_iterator  val = values.begin();
-    for (; ind != indices.end(); ++ind, ++val) {
-      // if TEUCHOS_DEBUG, this is bounds checked
-      VectorData_->values_[*ind] += *val;
+    this->replaceGlobalValue(globalRow,0,value);
+  }
+
+  template<typename Ordinal,typename Scalar>
+  void Vector<Ordinal,Scalar>::sumIntoGlobalValue(Ordinal globalRow, const Scalar &value) 
+  {
+    this->sumIntoGlobalValue(globalRow,0,value);
+  }
+
+  template<typename Ordinal,typename Scalar>
+  void Vector<Ordinal,Scalar>::replaceMyValue(Ordinal myRow, const Scalar &value) 
+  {
+    this->replaceMyValue(myRow,0,value);
+  }
+
+  template<typename Ordinal,typename Scalar>
+  void Vector<Ordinal,Scalar>::sumIntoMyValue(Ordinal myRow, const Scalar &value) 
+  {
+    this->sumIntoMyValue(myRow,0,value);
+  }
+
+
+  template<typename Ordinal,typename Scalar>
+  void Vector<Ordinal,Scalar>::extractCopy(Teuchos::ArrayView<Scalar> A) const 
+  {
+    Ordinal dummy;
+    this->extractCopy(A,dummy);
+  }
+
+  template<typename Ordinal,typename Scalar>
+  void Vector<Ordinal,Scalar>::extractView(Teuchos::ArrayView<Scalar> &A) 
+  {
+    Ordinal dummy;
+    this->extractView(A,dummy);
+  }
+
+  template<typename Ordinal,typename Scalar>
+  void Vector<Ordinal,Scalar>::extractConstView(Teuchos::ArrayView<const Scalar> &A) const 
+  {
+    Ordinal dummy;
+    this->extractConstView(A,dummy);
+  }
+
+  template<typename Ordinal,typename Scalar>
+  Scalar Vector<Ordinal,Scalar>::dot(const Vector<Ordinal,Scalar> &a) const 
+  {
+    Teuchos::BLAS<int,Scalar> blas;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    // compute local dot products of *this and a
+    // sum these across all nodes
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()), std::runtime_error,
+        "Tpetra::Vector::dots(): Vectors must have compatible Maps.");
+    Scalar ldot, gdot;
+    ldot = blas.DOT(this->MVData_->cPtrs_[0].size(),this->MVData_->cPtrs_[0].getRawPtr(),ONE,&a[0],ONE);
+    if (this->isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,ldot,&gdot);
     }
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::setAllToScalar(const Scalar &value) {
-    TEST_FOR_EXCEPT(true); // finish
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::setAllToRandom() {
-    TEST_FOR_EXCEPT(true); // finish
-  }
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::dotProduct(const Vector<Ordinal,Scalar> &x) const 
-  {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::dotProduct(): Vectors must have compatible Maps.");
-    Teuchos::BLAS<Ordinal,Scalar> blas;
-    // call BLAS routine to calculate local dot product
-    // use Comm call to sum all local dot products
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-    return Teuchos::ScalarTraits<Scalar>::zero();
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::absoluteValue(const Vector<Ordinal,Scalar> &x) 
-  {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::absoluteValue(): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::reciprocal(const Vector<Ordinal,Scalar> &x) 
-  {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::reciprocal(): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::scale(const Scalar &scalarThis) 
-  {
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::scale(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x) 
-  {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::scale(): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::update(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x, 
-                                      const Scalar &scalarThis) 
-  {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::update(): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::update(const Scalar &scalarX, const Vector<Ordinal,Scalar> &x, 
-                                      const Scalar &scalarY, const Vector<Ordinal,Scalar> &y, 
-                                      const Scalar &scalarThis) 
-  {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::update(x,y): Vectors must have compatible Maps.");
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(y.getMap()), 
-        std::runtime_error, "Tpetra::Vector::update(x,y): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::norm1() const {
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::norm2() const {
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::normInf() const {
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::normWeighted(const Vector<Ordinal,Scalar> &weights) const 
-  {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(weights.getMap()), 
-        std::runtime_error, "Tpetra::Vector::normWeighted(): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  // finish: move these somewhere?
-  /*
-  template<typename Ordinal, typename Scalar>
-  struct vector_less_mag : public binary_function<Scalar,Scalar,bool> {
-    bool operator()(Scalar x, Scalar y) { 
-      return Teuchos::ScalarTraits<Scalar>::magnitude(x) < 
-        Teuchos::ScalarTraits<Scalar>::magnitude(y); 
+    else {
+      gdot = ldot;
     }
-  };
+    return gdot;
+  }
 
-  template<typename Ordinal, typename Scalar>
-  struct vector_greater_mag : public binary_function<Scalar, Scalar, bool> {
-    bool operator()(Scalar x, Scalar y) { 
-      return Teuchos::ScalarTraits<Scalar>::magnitude(x) > 
-        Teuchos::ScalarTraits<Scalar>::magnitude(y); 
+  template<typename Ordinal,typename Scalar>
+  Scalar Vector<Ordinal,Scalar>::meanValue() const 
+  {
+    using Teuchos::ScalarTraits;
+    using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+    using Teuchos::Array;
+    using Teuchos::as;
+    typedef ScalarTraits<Scalar> SCT;
+    const Ordinal numImages = this->getMap().getComm()->getSize();
+    // compute local components of the means
+    // sum these across all nodes
+    Array<Scalar> lmean = ScalarTraits<Scalar>::zero(),
+                  gmean;
+    typename ArrayView<const Scalar>::iterator cpos = this->MVData_->cPtrs_[0].begin(),
+                                               cend = this->MVData_->cPtrs_[0].end();
+    for (; cpos != cend; ++cpos) {
+      lmean += *cpos;
     }
-  };
-  */
-
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::minValue() const {
-    TEST_FOR_EXCEPT(true);
-    return Teuchos::ScalarTraits<Scalar>::zero();
+    if (this->isDistributed()) {
+      // only combine if we are a distributed MV
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lmean,&gmean);
+    }
+    else {
+      gmean = lmean;
+    }
+    return gmean/as<Scalar>(numImages);
   }
 
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::maxValue() const {
-    TEST_FOR_EXCEPT(true);
-    return Teuchos::ScalarTraits<Scalar>::zero();
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Scalar Vector<Ordinal,Scalar>::meanValue() const {
-    TEST_FOR_EXCEPT(true);
-    // update flops
-    return Teuchos::ScalarTraits<Scalar>::zero();
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::elementwiseMultiply(const Scalar &scalarXY, const Vector<Ordinal,Scalar> &x, const Vector<Ordinal,Scalar> &y, 
-                                                   const Scalar &scalarThis)
+  template<typename Ordinal,typename Scalar>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Ordinal,Scalar>::norm1() const
   {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::elementwiseMultiply(x,y): Vectors must have compatible Maps.");
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(y.getMap()), 
-        std::runtime_error, "Tpetra::Vector::elementwiseMultiply(x,y): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
+    Teuchos::BLAS<int,Scalar> blas;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    Mag lnorm, gnorm;
+    lnorm = blas.ASUM(this->MVData_->cPtrs_[0].size(),this->MVData_->cPtrs_[0].getRawPtr(),ONE);
+    if (this->isDistributed()) {
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lnorm,&gnorm);
+    }
+    else {
+      gnorm = lnorm;
+    }
+    return gnorm;
   }
 
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::elementwiseReciprocalMultiply(
-      Scalar scalarXY, const Vector<Ordinal, Scalar> &x, const Vector<Ordinal, Scalar> &y, 
-      const Scalar &scalarThis) 
+  template<typename Ordinal,typename Scalar>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Ordinal,Scalar>::norm2() const
   {
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(x.getMap()), 
-        std::runtime_error, "Tpetra::Vector::elementwiseReciprocalMultiply(x,y): Vectors must have compatible Maps.");
-    TEST_FOR_EXCEPTION( !getMap().isCompatible(y.getMap()), 
-        std::runtime_error, "Tpetra::Vector::elementwiseReciprocalMultiply(x,y): Vectors must have compatible Maps.");
-    // do work
-    // update flops counter
-    TEST_FOR_EXCEPT(true);
+    using Teuchos::ScalarTraits;
+    using Teuchos::ArrayView;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    Mag lnorm = ScalarTraits<Mag>::zero(),
+        gnorm;
+    typename Teuchos::ArrayView<const Scalar>::iterator cpos = this->MVData_->cPtrs_[0].begin(),
+                                                        cend = this->MVData_->cPtrs_[0].end();
+    for (; cpos != cend; ++cpos) {
+      lnorm += ScalarTraits<Scalar>::magnitude( 
+          (*cpos) * ScalarTraits<Scalar>::conjugate(*cpos)
+        );
+    }
+    if (this->isDistributed()) {
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lnorm,&gnorm);
+    }
+    else {
+      gnorm = lnorm;
+    }
+    return ScalarTraits<Mag>::squareroot(gnorm);
   }
 
-
-  template<typename Ordinal, typename Scalar>
-  const Scalar & Vector<Ordinal,Scalar>::getSeed() const {
-    return(VectorData_->seed_);
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::setSeed(const Scalar &seed) {
-    VectorData_->seed_ = seed;
-  }
-
-
-
-  template<typename Ordinal, typename Scalar>
-  Scalar& Vector<Ordinal,Scalar>::operator[](Ordinal index) {
-    return VectorData_->scalarArray_[index];
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  const Scalar & Vector<Ordinal,Scalar>::operator[](Ordinal index) const {
-    return VectorData_->scalarArray_[index];
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Ordinal Vector<Ordinal,Scalar>::getNumMyEntries() const {
-    return VectorData_->map_.getNumMyEntries();
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Ordinal Vector<Ordinal,Scalar>::getNumGlobalEntries() const {
-    return VectorData_->map_.getNumGlobalEntries();
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::print(std::ostream& os) const {
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::printValues(std::ostream& os) const {
-    TEST_FOR_EXCEPT(true);
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  const Map<Ordinal> & Vector<Ordinal,Scalar>::getMap() const {
-    return VectorData_->map_;
-  }
-
-
-  template<typename Ordinal, typename Scalar>
-  Vector<Ordinal,Scalar> & Vector<Ordinal,Scalar>::operator=(const Vector<Ordinal,Scalar> &source) 
+  template<typename Ordinal,typename Scalar>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Ordinal,Scalar>::normInf() const
   {
-    VectorData_ = source.VectorData_;
-    return *this;
+    Teuchos::BLAS<int,Scalar> blas;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    Mag lnorm, gnorm;
+    // careful!!! IAMAX returns FORTRAN-style (i.e., one-based) index. subtract ind by one
+    Ordinal ind = blas.IAMAX(this->MVData_->cPtrs_[0].size(),this->MVData_->cPtrs_[0].getRawPtr(),ONE) - ONE;
+    lnorm = Teuchos::ScalarTraits<Scalar>::magnitude( this->MVData_->cPtrs_[0][ind] );
+    if (this->isDistributed()) {
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_MAX,lnorm,&gnorm);
+    }
+    else {
+      gnorm = lnorm;
+    }
+    return gnorm;
   }
 
-
-  template<typename Ordinal, typename Scalar>
-  Teuchos::ArrayView<Scalar> Vector<Ordinal,Scalar>::scalarPointer() 
+  template<typename Ordinal,typename Scalar>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Ordinal,Scalar>::normWeighted(const Vector<Ordinal,Scalar> &weights) const
   {
-    return VectorData_->values_;
+    using Teuchos::ScalarTraits;
+    using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+    using Teuchos::Array;
+    using Teuchos::as;
+    typedef ScalarTraits<Scalar> SCT;
+    typedef typename SCT::magnitudeType Mag;
+    const Ordinal numImages = this->getMap().getComm()->getSize();
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(weights.getMap()), std::runtime_error,
+        "Tpetra::Vector::normWeighted(): Vectors must have compatible Maps.");
+    // compute local components of the norms
+    // sum these across all nodes
+    Mag lnorm = ScalarTraits<Mag>::zero(),
+        gnorm;
+    typename ArrayView<const Scalar>::iterator 
+      wpos = weights.MVData_->cPtrs_[0].begin(),
+      cpos =   this->MVData_->cPtrs_[0].begin(),
+      cend =   this->MVData_->cPtrs_[0].end();
+    for (; cpos != cend; ++cpos, ++wpos) {
+      Scalar tmp = *cpos / *wpos;
+      lnorm += SCT::magnitude( tmp * SCT::conjugate(tmp) );
+    }
+    if (this->isDistributed()) {
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lnorm,&gnorm);
+    }
+    else {
+      gnorm = lnorm;
+    }
+    return ScalarTraits<Mag>::squareroot(gnorm/as<Mag>(numImages));
   }
 
-  template<typename Ordinal, typename Scalar>
-  Teuchos::ArrayView<const Scalar> Vector<Ordinal,Scalar>::scalarPointer() const
+  template <typename Ordinal, typename Scalar> 
+  void Vector<Ordinal,Scalar>::print(std::ostream &os) const
   {
-    return VectorData_->values_;
-  }
-
-  template<typename Ordinal, typename Scalar>
-  bool Vector<Ordinal,Scalar>::checkSizes(const DistObject<Ordinal,Scalar> &sourceObj) {
-    // first check that sourceObj is actually a Vector, and not some other kind of DistObject
-    /*try {
-      Vector<Ordinal, Scalar> const& sourceVector = dynamic_cast<Vector<Ordinal, Scalar> const&>(sourceObj);
+    using std::endl;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm = this->getMap().getComm();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+      if (myImageID == imageCtr) {
+        if (myImageID == 0) {
+          os << "Global length: " << this->globalLength() << endl;
+        }
+        os << "Local length: " << this->myLength() << endl;
       }
-      catch(std::bad_cast bc) {
-      return(false);
-      }*/
-
-    // ???
-    TEST_FOR_EXCEPT(true);
-    return true;
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::copyAndPermute(
-      const DistObject<Ordinal,Scalar> &sourceObj,
-      Ordinal numSameIDs, Ordinal numPermuteIDs,
-      const Teuchos::ArrayView<const Ordinal> &permuteToLIDs, 
-      const Teuchos::ArrayView<const Ordinal> &permuteFromLIDs) 
-  {
-    // cast sourceObj to a Tpetra::Vector so we can actually do something with it
-    // const Vector<Ordinal,Scalar> &sourceVector = dynamic_cast<const Vector<Ordinal,Scalar> &>(sourceObj);
-
-    /*
-    const std::vector<Scalar> &sourceArray = sourceVector.scalarArray();
-    std::vector<Scalar> &destArray = scalarArray();
-
-    // the first numImportIDs GIDs are the same between source and target,
-    // we can just copy them
-    for(Ordinal i = Teuchos::OrdinalTraits<Ordinal>::zero(); i < numSameIDs; i++)
-      destArray[i] = sourceArray[i];
-
-    // next, do permutations
-    for(Ordinal i = Teuchos::OrdinalTraits<Ordinal>::zero(); i < numPermuteIDs; i++)
-      destArray[permuteToLIDs[i]] = sourceArray[permuteFromLIDs[i]];
-
-     */
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::packAndPrepare(
-      const DistObject<Ordinal,Scalar> &sourceObj,
-      Ordinal numExportIDs,
-      const Teuchos::ArrayView<const Ordinal> &exportLIDs, 
-      const Teuchos::ArrayView<Scalar> &exports,
-      Ordinal &packetSize,
-      Distributor<Ordinal> &distor) 
-  {
-    /*
-    // cast sourceObj to a Tpetra::Vector so we can actually do something with it
-    Vector<Ordinal, Scalar> const& sourceVector = dynamic_cast<Vector<Ordinal, Scalar> const&>(sourceObj);
-
-    // For a vector, we only need to send the value
-    exports.clear();
-    for(Ordinal i = Teuchos::OrdinalTraits<Ordinal>::zero(); i < numExportIDs; i++)
-      exports.push_back(sourceVector[exportLIDs[i]]);
-
-    // packetSize = 1
-    packetSize = Teuchos::OrdinalTraits<Ordinal>::one();
-    */
-    TEST_FOR_EXCEPT(true);
-  }
-
-  template<typename Ordinal, typename Scalar>
-  void Vector<Ordinal,Scalar>::unpackAndCombine(
-      Ordinal numImportIDs,
-      const Teuchos::ArrayView<const Ordinal> &importLIDs,
-      const Teuchos::ArrayView<const Scalar> &imports,
-      Distributor<Ordinal> &distor,
-      CombineMode CM) 
-  {
-    /*
-    if(CM == Insert || CM == Replace) {
-      // copy values from scalarExports
-      for(Ordinal i = Teuchos::OrdinalTraits<Ordinal>::zero(); i < numImportIDs; i++)
-        scalarArray().at(importLIDs[i]) = imports[i];
+      // Do a few global ops to give I/O a chance to complete
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
     }
-    else if(CM == Add) {
-      // sum values from scalarExports
-      submitEntries(numImportIDs, &importLIDs.front(), &imports.front());
-    }
-    else
-      throw Teuchos::Object::reportError("Unknown CombineMode", -99);
-      */
-
-    TEST_FOR_EXCEPT(true);
   }
+
+
+  template <typename Ordinal, typename Scalar> 
+  void Vector<Ordinal,Scalar>::printValues(std::ostream &os) const
+  {
+    using std::endl;
+    using std::setw;
+    Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm = this->getMap().getComm();
+    const Map<Ordinal> &map = this->getMap();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+      if (myImageID == imageCtr) {
+        for (int i=0; i<this->myLength(); ++i) {
+          os << setw(4) << map.getGlobalIndex(i) << "\t";
+          os << setw(20) << this->MVData_->ptrs_[0][i] << " ";
+          os << endl;
+        }
+      }
+      // Do a few global ops to give I/O a chance to complete
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
+    }
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void Vector<Ordinal,Scalar>::abs(const Vector<Ordinal,Scalar> &a) 
+  {
+    Teuchos::BLAS<int,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayView;
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()), std::runtime_error,
+        "Tpetra::Vector::abs(): Vectors must have compatible Maps.");
+    typename ArrayView<Scalar>::iterator curpos = this->MVData_->ptrs_[0].begin(),
+                                           apos =     a.MVData_->ptrs_[0].begin();
+    for (; curpos != this->MVData_->ptrs_[0].end(); ++curpos, ++apos) {
+      *curpos = Teuchos::ScalarTraits<Scalar>::magnitude(*apos);
+    }
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void Vector<Ordinal,Scalar>::reciprocal(const Vector<Ordinal,Scalar> &a) 
+  {
+    Teuchos::BLAS<int,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ScalarTraits;
+    using Teuchos::ArrayView;
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()), std::runtime_error,
+        "Tpetra::Vector::reciprocal(): Vectors must have compatible Maps.");
+    typename Teuchos::ArrayView<Scalar>::iterator curpos = this->MVData_->ptrs_[0].begin(),
+                                                    apos =     a.MVData_->ptrs_[0].begin();
+    for (; curpos != this->MVData_->ptrs_[0].end(); ++curpos, ++apos) {
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPTION( ScalarTraits<Scalar>::magnitude(*apos) <= ScalarTraits<Scalar>::sfmin() ||
+          *apos == ScalarTraits<Scalar>::sfmin(), std::runtime_error,
+          "Tpetra::Vector::reciprocal(): element of a was zero or too small to invert: " << *apos );
+#endif
+      *curpos = ScalarTraits<Scalar>::one()/(*apos);
+    }
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void Vector<Ordinal,Scalar>::scale(const Scalar &alpha, const Vector<Ordinal,Scalar> &a) 
+  {
+    Teuchos::BLAS<int,Scalar> blas;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayView;
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()), std::runtime_error,
+        "Tpetra::Vector::scale(): Vectors must have compatible Maps.");
+    const Ordinal ONE = Teuchos::OrdinalTraits<Ordinal>::one();
+    if (alpha == Teuchos::ScalarTraits<Scalar>::zero()) {
+      putScalar(alpha); // set me = 0.0
+    }
+    else if (alpha == Teuchos::ScalarTraits<Scalar>::one()) {
+      *this = a;        // set me = a
+    }
+    else {
+      // set me == alpha*a
+      ArrayView<Scalar> &curpos = this->MVData_->ptrs_[0],
+                        &apos   =     a.MVData_->ptrs_[0];
+      // copy a to *this
+      blas.COPY(curpos.size(),apos.getRawPtr(),ONE,curpos.getRawPtr(),ONE);
+      // then scale *this in-situ
+      blas.SCAL(curpos.size(),alpha,curpos.getRawPtr(),ONE);
+    }
+  }
+
+  template<typename Ordinal, typename Scalar>
+  void Vector<Ordinal,Scalar>::update(const Scalar &alpha, const Vector<Ordinal,Scalar> &a, const Scalar &beta) 
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef typename Teuchos::ArrayView<Scalar>::iterator avi;
+    typedef typename Teuchos::ArrayView<const Scalar>::iterator avci;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayView;
+    if (alpha == ST::zero()) {
+      scale(beta);
+      return;
+    }
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()), std::runtime_error,
+        "Tpetra::Vector::update(): MultiVectors must have compatible Maps.");
+
+    if (beta == ST::zero()) { // this = alpha*a
+      scale(alpha,a);
+      return;
+    }
+    else if (beta == ST::one()) { // this = this + alpha*a
+      if (alpha == ST::one()) {   // this = this + a
+        avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = a.MVData_->cPtrs_[0].begin();
+        for (; curpos != cend; ++curpos, ++Apos) { *curpos = (*curpos) + (*Apos); }
+      }
+      else {                      // this = this + alpha*a
+        avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = a.MVData_->cPtrs_[0].begin();
+        for (; curpos != cend; ++curpos, ++Apos) { *curpos = (*curpos) + alpha*(*Apos); }
+      }
+    }
+    else {                        // this = beta*this + alpha*a
+      if (alpha == ST::one()) {   // this = beta*this + a
+        avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = a.MVData_->cPtrs_[0].begin();
+        for (; curpos != cend; ++curpos, ++Apos) { *curpos = beta*(*curpos) + (*Apos); }
+      }
+      else {                      // this = beta*this + alpha*a
+        avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = a.MVData_->cPtrs_[0].begin();
+        for (; curpos != cend; ++curpos, ++Apos) { *curpos = beta*(*curpos) + alpha*(*Apos); }
+      }
+    }
+  }
+
+
+  template<typename Ordinal, typename Scalar>
+  void Vector<Ordinal,Scalar>::update(const Scalar &alpha, const Vector<Ordinal,Scalar> &a, const Scalar &beta, const Vector<Ordinal,Scalar> &b, const Scalar &gamma)
+  {
+    typedef typename Teuchos::ArrayView<Scalar>::iterator avi;
+    typedef typename Teuchos::ArrayView<const Scalar>::iterator avci;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::ArrayRCP;
+    if (alpha == ST::zero()) {
+      update(beta,b,gamma);
+      return;
+    }
+    else if (beta == ST::zero()) {
+      update(alpha,a,gamma);
+      return;
+    }
+    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()) || !this->getMap().isCompatible(b.getMap()),
+        std::runtime_error, "Tpetra::Vector::update(): MultiVectors must have compatible Maps.");
+    // determine if alpha==1 xor beta==1
+    // if only one of these is 1.0, rename it alpha
+    Teuchos::Ptr<const Vector<Ordinal,Scalar> > Aptr = Teuchos::ptr(&a), Bptr = Teuchos::ptr(&b);
+    Teuchos::Ptr<const Scalar> lalpha = Teuchos::ptr(&alpha),
+                               lbeta  = Teuchos::ptr(&beta);
+    if (alpha!=ST::one() && beta==ST::one()) {
+      // switch them
+      Aptr = Teuchos::ptr(&b);
+      Bptr = Teuchos::ptr(&a);
+      lalpha = Teuchos::ptr(&beta);
+      lbeta  = Teuchos::ptr(&alpha);
+    }
+
+    if (gamma == ST::zero()) { // this = lalpha*a + lbeta*b
+      if (*lalpha == ST::one()) {
+        if (*lbeta == ST::one()) { // this = gamma*this + a + b
+          avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*Apos) + (*Bpos); }
+        }
+        else { // this = a + lbeta*b
+          avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*Apos) + (*lbeta)*(*Bpos); }
+        }
+      }
+      else { // this = lalpha*a + lbeta*b
+        avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+        for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
+      }
+    }
+    else if (gamma == ST::one()) { // this = this + lalpha*a + lbeta*b
+      if ((*lalpha) == ST::one()) {
+        if ((*lbeta) == ST::one()) { // this = this + a + b
+          avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*Apos) + (*Bpos); }
+        }
+        else { // this = this + a + lbeta*b
+          avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*Apos) + (*lbeta)*(*Bpos); }
+        }
+      }
+      else { // this = this + lalpha*a + lbeta*b
+        avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+        for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
+      }
+    }
+    else { // this = gamma*this + lalpha*a + lbeta*b
+      if ((*lalpha) == ST::one()) {
+        if ((*lbeta) == ST::one()) { // this = gamma*this + a + b
+          avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*Apos) + (*Bpos); }
+        }
+        else { // this = gamma*this + a + lbeta*b
+          avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*Apos) + (*lbeta)*(*Bpos); }
+        }
+      }
+      else { // this = gamma*this + lalpha*a + lbeta*b
+        avi curpos = this->MVData_->ptrs_[0].begin(), cend = this->MVData_->ptrs_[0].end(); avci Apos = Aptr->MVData_->cPtrs_[0].begin(), Bpos = Bptr->MVData_->cPtrs_[0].begin();
+        for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
+      }
+    }
+  }
+
+
+  template<typename Ordinal,typename Scalar>
+  Scalar& Vector<Ordinal,Scalar>::operator[](Ordinal index)
+  {
+    // teuchos does the bounds checking here, if TEUCHOS_DEBUG
+    return this->MVData_->ptrs_[0][index];
+  }
+
+
+  template<typename Ordinal,typename Scalar>
+  const Scalar& Vector<Ordinal,Scalar>::operator[](Ordinal index) const
+  {
+    // teuchos does the bounds checking here, if TEUCHOS_DEBUG
+    return this->MVData_->cPtrs_[0][index];
+  }
+
 
 } // namespace Tpetra
 
