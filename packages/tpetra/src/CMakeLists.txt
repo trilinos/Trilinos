@@ -53,8 +53,6 @@ SET(HEADERS ${HEADERS}
   Tpetra_SerialPlatform.hpp
   Tpetra_Util.hpp
   Tpetra_Vector.hpp
-  Tpetra_VectorData.hpp
-  Tpetra_VectorDataDecl.hpp
   Tpetra_VectorDecl.hpp
   Tpetra_Version.hpp
   )
