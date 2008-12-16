@@ -52,6 +52,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-pytrilinos \
 --enable-rbgen \
 --enable-rythmos \
+--enable-shards \
 --enable-sundance \
 --enable-teuchos \
 --enable-teuchos-abc \

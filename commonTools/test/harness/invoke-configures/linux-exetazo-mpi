@@ -67,6 +67,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-rbgen \
 --enable-rtop \
 --enable-rythmos \
+--enable-shards \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \

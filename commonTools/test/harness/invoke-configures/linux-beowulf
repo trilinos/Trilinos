@@ -54,6 +54,7 @@ FFLAGS=-O3 \
 --enable-pytrilinos \
 --enable-rbgen \
 --enable-rythmos \
+--enable-shards \
 --enable-stokhos \
 --enable-teuchos \
 --enable-teuchos-abc \
