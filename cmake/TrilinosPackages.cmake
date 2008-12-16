@@ -18,7 +18,7 @@
 SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Teuchos               teuchos                        ""
   RTOp                  rtop                           ""
-  Kokkos                kokkos                         OFF
+  Kokkos                kokkos                         ""
   Epetra                epetra                         ""
   Stokhos               stokhos                        OFF
   Sacado                sacado                         ""
