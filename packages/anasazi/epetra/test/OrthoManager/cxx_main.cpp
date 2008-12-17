@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
           "normalize(X1) returned rank " << dummy << " from " 
           << sizeX1 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEST_FOR_EXCEPTION(err > TOL || ScalarTraits<MT>::isnaninf(err),std::runtime_error,
           "normalize(X1) did meet tolerance: orthonormError(X1) == " << err);
       MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
       // X2
@@ -201,11 +201,11 @@ int main(int argc, char *argv[])
           "projectAndNormalize(X2,X1) returned rank " << dummy << " from " 
           << sizeX2 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEST_FOR_EXCEPTION(err > TOL || ScalarTraits<MT>::isnaninf(err),std::runtime_error,
           "projectAndNormalize(X2,X1) did not meet tolerance: orthonormError(X2) == " << err);
       err = OM->orthogError(*X2,*X1);
       MyOM->stream(Warnings) << "   || <X2,X2> - I || : " << err << endl;
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
+      TEST_FOR_EXCEPTION(err > TOL || ScalarTraits<MT>::isnaninf(err),std::runtime_error,
           "projectAndNormalize(X2,X1) did not meet tolerance: orthogError(X2,X1) == " << err);
       MyOM->stream(Warnings) << "   || <X2,X1> ||     : " << err << endl;
     }
@@ -266,6 +266,15 @@ int main(int argc, char *argv[])
       }
       
       MyOM->stream(Errors) << " normalize(): testing on rank-1 multivector " << endl;
+      numFailed += testNormalize(OM,S);
+    }
+
+
+    {
+      // a zero multivector
+      MVT::MvInit(*S,SCT::zero());
+      
+      MyOM->stream(Errors) << " normalize(): testing on zero multivector " << endl;
       numFailed += testNormalize(OM,S);
     }
 
@@ -546,7 +555,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         // S^T M S == I
         {
           MT err = OM->orthonormError(*S_outs[o]);
-          if (err > TOL) {
+          if (err > TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }
@@ -563,7 +572,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
             }
           }
           MT err = MVDiff(*tmp,*S);
-          if (err > ATOL*TOL) {
+          if (err > ATOL*TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }
@@ -572,7 +581,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
           MT err = OM->orthogError(*theX[0],*S_outs[o]);
-          if (err > TOL) {
+          if (err > TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }
@@ -581,7 +590,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         // <X2,S> == 0
         if (theX.size() > 1 && theX[1] != null) {
           MT err = OM->orthogError(*theX[1],*S_outs[o]);
-          if (err > TOL) {
+          if (err > TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }
@@ -680,7 +689,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
       // S^T M S == I
       {
         MT err = OM->orthonormError(*Scopy);
-        if (err > TOL) {
+        if (err > TOL || ScalarTraits<MT>::isnaninf(err)) {
           sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
           numerr++;
         }
@@ -691,7 +700,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
         RCP<MV> tmp = MVT::Clone(*S,sizeS);
         MVT::MvTimesMatAddMv(ONE,*Scopy,*B,ZERO,*tmp);
         MT err = MVDiff(*tmp,*S);
-        if (err > ATOL*TOL) {
+        if (err > ATOL*TOL || ScalarTraits<MT>::isnaninf(err)) {
           sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
           numerr++;
         }
@@ -864,7 +873,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
             }
           }
           MT err = MVDiff(*tmp,*S);
-          if (err > ATOL*TOL) {
+          if (err > ATOL*TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }
@@ -873,7 +882,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
           MT err = OM->orthogError(*theX[0],*S_outs[o]);
-          if (err > TOL) {
+          if (err > TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }
@@ -882,7 +891,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         // <X2,S> == 0
         if (theX.size() > 1 && theX[1] != null) {
           MT err = OM->orthogError(*theX[1],*S_outs[o]);
-          if (err > TOL) {
+          if (err > TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }
@@ -903,7 +912,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
           //   
           // check that S_outs[o1] == S_outs[o2]
           MT err = MVDiff(*S_outs[o1],*S_outs[o2]);
-          if (err > TOL) {
+          if (err > TOL || ScalarTraits<MT>::isnaninf(err)) {
             sout << "    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
           }

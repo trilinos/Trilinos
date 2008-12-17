@@ -712,7 +712,7 @@ namespace Anasazi {
                         minLambda = lambda[0];
           int iZeroMax = -1;
           for (int i=0; i<xc; i++) {
-            if (lambda[i] < 10*eps_*maxLambda) {      // finish: this was eps_*eps_*maxLambda
+            if (lambda[i] <= 10*eps_*maxLambda) {      // finish: this was eps_*eps_*maxLambda
               iZeroMax = i;
               lambda[i]  = ZERO;
               lambdahi[i] = ZERO;
