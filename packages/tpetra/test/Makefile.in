@@ -218,7 +218,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 #if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector CrsMatrix # BasicPerfTest 
+STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector CrsMatrix BasicPerfTest 
 #endif
 SUBDIRS = $(STANDARD_SUBDIRS)
 EXTRA_DIST = 

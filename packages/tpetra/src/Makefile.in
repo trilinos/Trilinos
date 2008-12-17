@@ -140,8 +140,7 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_DefaultPlatform.hpp \
 	$(srcdir)/Tpetra_ImportExportData.hpp \
 	$(srcdir)/Tpetra_Import.hpp $(srcdir)/Tpetra_Export.hpp \
 	$(srcdir)/Tpetra_VectorDecl.hpp $(srcdir)/Tpetra_Vector.hpp \
-	$(srcdir)/Tpetra_VectorDataDecl.hpp \
-	$(srcdir)/Tpetra_VectorData.hpp $(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_CrsMatrix.hpp \
 	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
 	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
@@ -325,8 +324,6 @@ DIST =
 COMP_H = \
 	$(srcdir)/Tpetra_VectorDecl.hpp \
 	$(srcdir)/Tpetra_Vector.hpp \
-	$(srcdir)/Tpetra_VectorDataDecl.hpp \
-	$(srcdir)/Tpetra_VectorData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
 	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \

@@ -336,14 +336,11 @@ AC_CONFIG_FILES([
         test/ImportExport/Makefile
         test/MultiVector/Makefile
         test/CrsMatrix/Makefile
+        test/BasicPerfTest/Makefile
         ])
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile
 # example/TpetraOPs/Makefile
-# test/BasicPerfTest/Makefile
-# test/DistObject/Makefile
-# test/CrsMatrix/Makefile
-# test/Vector/Makefile
 
 AC_OUTPUT()
 
