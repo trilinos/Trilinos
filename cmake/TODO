@@ -31,6 +31,11 @@ This will need a minimal configuration script to pull in only the
 basic info needed in order to find compilers, MPI, BLAS, and LAPACK
 and nothing else.
 
+(*) [???] Experiment with using cmake -P <script_file> as a
+platform-independent scripting language.  We can use this for creating
+platform-independent scripts that will allow us to run on any
+platform.
+
 (*) [???] Sacado tradop tests use shell scripts to generate files.
 Need to find a simpler way to do this.
 

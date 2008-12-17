@@ -34,6 +34,26 @@ ENDIF()
 #
 
 TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_DEBUG
+  HAVE_TEUCHOS_DEBUG
+  "Enable a host of runtime debug checking."
+  ${Trilinos_ENABLE_DEBUG}
+  )
+
+TRILINOS_ADD_OPTION(
+  ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
+  HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+  "Turn on explicit instantiation in Teuchos."
+  ${Trilinos_ENABLE_EXPLICIT_INSTANTIATION}
+  )
+
+OPTION(
+  ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
+  "Override enable ${PACKAGE_NAME} performance tests."
+  ${Trilinos_ENABLE_PERFORMANCE_TESTS}
+  )
+
+TRILINOS_ADD_OPTION(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
   HAVE_TEUCHOS_COMPLEX
   "Enable Teuchos features for complex arithmetic."
@@ -48,30 +68,10 @@ TRILINOS_ADD_OPTION(
   )
 
 TRILINOS_ADD_OPTION(
-  ${PACKAGE_NAME}_ENABLE_DEBUG
-  HAVE_TEUCHOS_DEBUG
-  "Enable a host of runtime debug checking."
-  OFF
-  )
-
-TRILINOS_ADD_OPTION(
   ${PACKAGE_NAME}_ENABLE_GCC_DEMANGLE
   HAVE_TEUCHOS_DEMANGLE
   "Enable Teuchos calls to GCC demangle library function if it exists (see HAVE_TEUCHOS_BLASFLOAT)."
   ON
-  )
-
-TRILINOS_ADD_OPTION(
-  ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
-  HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
-  "Turn on explicit instantiation in Teuchos."
-  OFF
-  )
-
-OPTION(
-  ${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
-  "Override enable ${PACKAGE_NAME} performance tests."
-  ${Trilinos_ENABLE_PERFORMANCE_TESTS}
   )
 
 #

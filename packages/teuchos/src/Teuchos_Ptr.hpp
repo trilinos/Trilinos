@@ -50,28 +50,28 @@ Ptr<T>::Ptr( ENull /*null_in*/ )
 
 
 template<class T> inline
-Ptr<T>::Ptr( T *ptr )
-  : ptr_(ptr)
+Ptr<T>::Ptr( T *ptr_in )
+  : ptr_(ptr_in)
 {}
 
 
 template<class T> inline
-Ptr<T>::Ptr(const Ptr<T>& ptr)
-  :ptr_(ptr.ptr_)
+Ptr<T>::Ptr(const Ptr<T>& ptr_in)
+  :ptr_(ptr_in.ptr_)
 {}
 
 
 template<class T>
 template<class T2> inline
-Ptr<T>::Ptr(const Ptr<T2>& ptr)
-  :ptr_(ptr.get())
+Ptr<T>::Ptr(const Ptr<T2>& ptr_in)
+  :ptr_(ptr_in.get())
 {}
 
 
 template<class T> inline
-Ptr<T>& Ptr<T>::operator=(const Ptr<T>& ptr)
+Ptr<T>& Ptr<T>::operator=(const Ptr<T>& ptr_in)
 {
-  ptr_ = ptr.get();
+  ptr_ = ptr_in.get();
   return *this;
 }
 

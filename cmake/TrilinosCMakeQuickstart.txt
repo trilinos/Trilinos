@@ -17,9 +17,16 @@ A) Getting Set up
 B) Getting Help
 -----------------
 
-(*) Getting CMake help
+(*) Finding CMake help at the website
 
     http://www.cmake.org
+
+(*) Building CMake help locally
+
+  $ cmake --help-full cmake.help.html
+
+  (Open your web browser to the file cmake.help.html)
+
 
 
 C) Configuring
@@ -57,12 +64,11 @@ C) Configuring
         cmake \
         -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
         -D Trilinos_ENABLE_TESTS:BOOL=ON \
+        -D Trilinos_ENABLE_DEBUG:BOOL=ON \
         -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
         -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
-        -D Teuchos_ENABLE_GCC_DEMANGLE:BOOL=ON \
         -D Epetra_ENABLE_FORTRAN:BOOL=ON \
-        -D CMAKE_CXX_FLAGS:STRING="-DTEUCHOS_DEBUG -g -O0 -ansi -pedantic -Wall" \
-        -D F77_FUNC_:STRING="(name,NAME) name ## __" \
+        -D CMAKE_CXX_FLAGS:STRING="-g -O0 -ansi -pedantic -Wall" \
         -D DART_TESTING_TIMEOUT:STRING=600 \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         $EXTRA_ARGS \
@@ -114,9 +120,12 @@ C) Configuring
 
 (*) Adding support for optional Third-Party Libraries (TPLs)
 
-  -D TPL_ENABLE_TPLNAME:BOOL=ON
+  -D TPL_ENABLE_<TPLNAME>:BOOL=ON
 
-  where TPLNAME = Boost, MPI, ...
+  where TPLNAME = Boost, MPI, etc.  The headers, libraries, and
+  library directories can then be specified with
+  <TPLNAME>_INCLUDE_DIRS, <TPLNAME>_LIBRARY_NAMES, and
+  <TPLNAME>_LIBRARY_DIRS.
 
 (*) Getting verbose output from configure
 
@@ -130,7 +139,7 @@ C) Configuring
 
   $ cmake -LA $TRILINOS_BASE_DIR
 
-  or just examine and grep the file CMakeCache.txt
+  or just examine and grep the file CMakeCache.txt (e.g. using grep).
 
 (*) Reconfiguring from scratch
 
@@ -138,8 +147,8 @@ C) Configuring
 
 (*) Seeing configure errors
 
-  Configure try_compile(...) and try_run(...) errors are shown in the
-  file CMakeFiles/CMakeError.log.
+  Configure time errors are shown in the file
+  CMakeFiles/CMakeError.log.
 
 
 D) Building

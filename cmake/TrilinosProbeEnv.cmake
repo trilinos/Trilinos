@@ -47,13 +47,14 @@ IF(Trilinos_ENABLE_FORTRAN)
   ENABLE_LANGUAGE(Fortran)
 ENDIF()
 
+# Check if strong compiler checking options are supported
+
+INCLUDE(TrilinosSetupStrongCompileWarnings)
+TRILINOS_SETUP_STRONG_COMPILE_WARNINGS()
+
 # Find Perl
 
 FIND_PACKAGE(Perl)
-
-# Find Python
-
-FIND_PACKAGE(PythonInterp)
 
 # Find the hostname used in selecting or deselecting tests by the
 # TRILINOS_ADD_TEST(...) function.

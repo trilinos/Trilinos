@@ -99,12 +99,25 @@ IF (Trilinos_ENABLE_TESTS AND Trilinos_ENABLE_EXAMPLES STREQUAL "")
   SET(Trilinos_ENABLE_EXAMPLES ON)
 ENDIF()
 
-SET(Trilinos_ENABLE_PERFORMANCE_TESTS "" CACHE BOOL
-  "Enable performance tests in all packages that support them" )
+IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+  SET(Trilinos_ENABLE_DEBUG_DEFAULT ON)
+ELSE()
+  SET(Trilinos_ENABLE_DEBUG_DEFAULT OFF)
+ENDIF()
+SET(Trilinos_ENABLE_DEBUG ${Trilinos_ENABLE_DEBUG_DEFAULT} CACHE BOOL
+  "Enable debug checking for Trilinos packages.  Off by default unless CMAKE_BUILD_TYPE=\"DEBUG\"." )
+
+ADVANCED_OPTION(Trilinos_ENABLE_EXPLICIT_INSTANTIATION
+  "Enable explicit template instantiation in all package where it is supported."
+  OFF )
+
+ADVANCED_OPTION(Trilinos_ENABLE_PERFORMANCE_TESTS
+  "Enable performance tests in all packages that support them"
+  OFF )
 
 ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   "Shortcircut after dependency handling is complete"
-  OFF)
+  OFF )
 
 IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE OR Trilinos_PACKAGES_HACK_OVERRIDE)
   SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
