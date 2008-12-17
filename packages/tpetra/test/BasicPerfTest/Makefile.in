@@ -61,7 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = BasicPerfTest_test$(EXEEXT)
+noinst_PROGRAMS = BasicPerfTest$(EXEEXT)
 subdir = test/BasicPerfTest
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -91,10 +91,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Tpetra_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_BasicPerfTest_test_OBJECTS = BasicPerfTest_test-cxx_main.$(OBJEXT)
-BasicPerfTest_test_OBJECTS = $(am_BasicPerfTest_test_OBJECTS)
-BasicPerfTest_test_LINK = $(CXXLD) $(BasicPerfTest_test_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_BasicPerfTest_OBJECTS = BasicPerfTest.$(OBJEXT) \
+	Teuchos_StandardUnitTestMain.$(OBJEXT)
+BasicPerfTest_OBJECTS = $(am_BasicPerfTest_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -103,8 +102,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(BasicPerfTest_test_SOURCES)
-DIST_SOURCES = $(BasicPerfTest_test_SOURCES)
+SOURCES = $(BasicPerfTest_SOURCES)
+DIST_SOURCES = $(BasicPerfTest_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -219,12 +218,16 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-BasicPerfTest_test_SOURCES = $(srcdir)/cxx_main.cpp
-BasicPerfTest_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+BasicPerfTest_SOURCES = \
+  $(srcdir)/BasicPerfTest.cpp \
+  $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+
+BasicPerfTest_DEPENDENCIES = \
+	$(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BasicPerfTest_test_CXXFLAGS = $(TPETRA_INCLUDES)
-BasicPerfTest_test_LDADD = $(TPETRA_LIBS)
+BasicPerfTest_LDADD = $(TPETRA_LIBS)
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)
 all: all-am
 
 .SUFFIXES:
@@ -261,9 +264,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-BasicPerfTest_test$(EXEEXT): $(BasicPerfTest_test_OBJECTS) $(BasicPerfTest_test_DEPENDENCIES) 
-	@rm -f BasicPerfTest_test$(EXEEXT)
-	$(BasicPerfTest_test_LINK) $(BasicPerfTest_test_OBJECTS) $(BasicPerfTest_test_LDADD) $(LIBS)
+BasicPerfTest$(EXEEXT): $(BasicPerfTest_OBJECTS) $(BasicPerfTest_DEPENDENCIES) 
+	@rm -f BasicPerfTest$(EXEEXT)
+	$(CXXLINK) $(BasicPerfTest_OBJECTS) $(BasicPerfTest_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -271,7 +274,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BasicPerfTest_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BasicPerfTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -287,19 +291,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-BasicPerfTest_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -MT BasicPerfTest_test-cxx_main.o -MD -MP -MF $(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo -c -o BasicPerfTest_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo $(DEPDIR)/BasicPerfTest_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='BasicPerfTest_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+BasicPerfTest.o: $(srcdir)/BasicPerfTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BasicPerfTest.o -MD -MP -MF $(DEPDIR)/BasicPerfTest.Tpo -c -o BasicPerfTest.o `test -f '$(srcdir)/BasicPerfTest.cpp' || echo '$(srcdir)/'`$(srcdir)/BasicPerfTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BasicPerfTest.Tpo $(DEPDIR)/BasicPerfTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BasicPerfTest.cpp' object='BasicPerfTest.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -c -o BasicPerfTest_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BasicPerfTest.o `test -f '$(srcdir)/BasicPerfTest.cpp' || echo '$(srcdir)/'`$(srcdir)/BasicPerfTest.cpp
 
-BasicPerfTest_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -MT BasicPerfTest_test-cxx_main.obj -MD -MP -MF $(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo -c -o BasicPerfTest_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo $(DEPDIR)/BasicPerfTest_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='BasicPerfTest_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+BasicPerfTest.obj: $(srcdir)/BasicPerfTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BasicPerfTest.obj -MD -MP -MF $(DEPDIR)/BasicPerfTest.Tpo -c -o BasicPerfTest.obj `if test -f '$(srcdir)/BasicPerfTest.cpp'; then $(CYGPATH_W) '$(srcdir)/BasicPerfTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BasicPerfTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BasicPerfTest.Tpo $(DEPDIR)/BasicPerfTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BasicPerfTest.cpp' object='BasicPerfTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -c -o BasicPerfTest_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BasicPerfTest.obj `if test -f '$(srcdir)/BasicPerfTest.cpp'; then $(CYGPATH_W) '$(srcdir)/BasicPerfTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BasicPerfTest.cpp'; fi`
+
+Teuchos_StandardUnitTestMain.o: $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardUnitTestMain.o -MD -MP -MF $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo -c -o Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo $(DEPDIR)/Teuchos_StandardUnitTestMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' object='Teuchos_StandardUnitTestMain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StandardUnitTestMain.o `test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' || echo '$(srcdir)/'`$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+
+Teuchos_StandardUnitTestMain.obj: $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardUnitTestMain.obj -MD -MP -MF $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo -c -o Teuchos_StandardUnitTestMain.obj `if test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_StandardUnitTestMain.Tpo $(DEPDIR)/Teuchos_StandardUnitTestMain.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp' object='Teuchos_StandardUnitTestMain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StandardUnitTestMain.obj `if test -f '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -477,6 +495,7 @@ uninstall-am:
 
 
 include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

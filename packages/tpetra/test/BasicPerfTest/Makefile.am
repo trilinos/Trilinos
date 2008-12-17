@@ -27,17 +27,17 @@
 #@HEADER
 
 include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = BasicPerfTest_test
+noinst_PROGRAMS = BasicPerfTest
 
-BasicPerfTest_test_SOURCES = $(srcdir)/cxx_main.cpp
-
-BasicPerfTest_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+BasicPerfTest_SOURCES = \
+  $(srcdir)/BasicPerfTest.cpp \
+  $(top_srcdir)/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+BasicPerfTest_DEPENDENCIES = \
+	$(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
-
-BasicPerfTest_test_CXXFLAGS = $(TPETRA_INCLUDES)
-
-BasicPerfTest_test_LDADD = $(TPETRA_LIBS)
-
+BasicPerfTest_LDADD = $(TPETRA_LIBS)
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES) $(TPETRA_INCLUDES)
