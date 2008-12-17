@@ -1,12 +1,14 @@
 EXTRA_ARGS=$@
 
+export MPI_BASE_DIR=/usr/lib64/openmpi/1.2.5-gcc
+
 # Have to set this to get TRY_RUN(...) commands to work
-export LD_LIBRARY_PATH=/usr/lib64/openmpi/1.2.5-gcc/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
 
 cmake \
 -D CMAKE_BUILD_TYPE:STRING=RELEASE \
--D CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC \
--D CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpicc \
+-D CMAKE_CXX_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
+-D CMAKE_C_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpicc \
 -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran \
 -D CMAKE_CXX_FLAGS_RELEASE:STRING="-O3" \
 -D CMAKE_C_FLAGS_RELEASE:STRING="-O3" \
@@ -19,10 +21,8 @@ cmake \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D TPL_ENABLE_Boost:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR:PATH="$MPI_BASE_DIR" \
   -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
-  -D MPI_INCLUDE_PATH:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin \
-  -D MPI_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC \
-  -D MPI_EXECUTABLE:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiexec \
 -D TPL_ENABLE_ParMETIS:BOOL=ON \
   -D ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1 \
 -D TPL_ENABLE_Scotch:BOOL=ON \
@@ -33,4 +33,11 @@ cmake \
 $EXTRA_ARGS \
 ../../../../Trilinos
 
-# -D EpetraExt_BUILD_EXPERIMENTAL:BOOL=ON \
+# 2008/12/17: rabartl: Above, I have to manually set the C++ and C
+# compilers because the default found by the built-in CMake module
+# FindMPI.cmake does not seem to work.  I also have to set the
+# LD_LIBRARY_PATH because the compiler will not work without these in
+# the compiler checks.  I added the option MPI_BASE_DIR that seems to
+# be able to successfully find the MPI libraries, include files, and
+# MPI executable.  The whole MPI handling needs to be gutted and
+# rewritten from scratch because it is not working well at all.

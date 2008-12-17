@@ -20,9 +20,39 @@ IF (TPL_MPI_INCLUDE_DIRS)
 
 ELSE()
 
+  #
   # Otherwise, we need to look for the MPI headers and libraries
+  #
+
+  #
+  # A) Use the CMake module to look for MPI
+  #
+
+  # Set up some default paths that FIND_[PROGRAM,LIBRARY,PATH] will look in.
+  
+  ADVANCED_SET(MPI_BASE_DIR "" CACHE PATH
+    "Base directory for MPI implementation under which ./bin, ./include, and ./lib are found")
+
+  SET(TMP_CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH})
+  SET(TMP_CMAKE_PROGRAM_PATH ${CMAKE_PROGRAM_PATH})
+  SET(TMP_CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH})
+
+  IF (MPI_BASE_DIR)
+    SET(ENV{CMAKE_INCLUDE_PATH} # Used by FIND_PATH(...)
+      "${MPI_BASE_DIR}/include:${MPI_BASE_DIR}/bin:$ENV{CMAKE_INCLUDE_PATH}" )
+    SET(ENV{CMAKE_PROGRAM_PATH} # Used by FIND_PROGRAM(...)
+      "${MPI_BASE_DIR}/include:${MPI_BASE_DIR}/bin:$ENV{CMAKE_PROGRAM_PATH}" )
+    SET(ENV{CMAKE_LIBRARY_PATH} # Used by FIND_LIBRARY(...)
+      "${MPI_BASE_DIR}/include:${MPI_BASE_DIR}/bin:$ENV{CMAKE_LIBRARY_PATH}" )
+  ENDIF()
+
+  # Use the CMake module for finding MPI
 
   FIND_PACKAGE(MPI)
+ 
+  #
+  # B) Put together TPL_MPI_LIBRARIES, TPL_MPI_INCLUDE_DIRS
+  #
 
   IF(DEFINED MPI_LIBRARY AND DEFINED MPI_INCLUDE_PATH)
 
@@ -76,5 +106,11 @@ ELSE()
 
   # Just needs to be set for consistency
   GLOBAL_NULL_SET(TPL_MPI_LIBRARY_DIRS)
+
+  # Set back the path environment variables
+
+  SET(ENV{CMAKE_INCLUDE_PATH} "${TMP_CMAKE_INCLUDE_PATH}")
+  SET(ENV{CMAKE_PROGRAM_PATH} "${TMP_CMAKE_PROGRAM_PATH}")
+  SET(ENV{CMAKE_LIBRARY_PATH} "${TMP_CMAKE_LIBRARY_PATH}")
 
 ENDIF()
