@@ -475,3 +475,13 @@ July 7 2005: version 2.14.00
   - Fixed a bug in fei_Reducer.cpp where submatrix contributions were
     assumed to be symmetric.
 
+ Dec 18 2008 minor version 2.23.02
+  - Fixed a performance problem in fei_Aztec_LinSysCore.cpp in the method
+    enforceEssentialBCs. It now executes much faster in performing the
+    column modification.
+  - Fixed a bug in base/fei_Reducer.cpp that was erroneously assuming
+    matrix symmetry.
+  - Fixed a bug in base/fei_Reducer.cpp that was erroneously using the
+    projection reduction for solution-vector operations. It should only
+    use the projection for right-hand-side and matrix assembly ops.
+

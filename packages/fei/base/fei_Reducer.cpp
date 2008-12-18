@@ -7,6 +7,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <stdexcept>
 #include <fei_Reducer.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_Matrix.hpp>
@@ -133,7 +134,7 @@ Reducer::initialize()
   }
 
   if (numGlobalSlaves_ < 1) {
-    throw fei::Exception("ERROR: don't use fei::Reducer when numGlobalSlaves==0. Report to Alan Williams.");
+    throw std::runtime_error("ERROR: don't use fei::Reducer when numGlobalSlaves==0. Report to Alan Williams.");
   }
 }
 
@@ -465,12 +466,12 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
 
   //form tmpMat1_ = Kid*D
   if ( Kid_.matMat(*D_, tmpMat1_) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedGraph ERROR 1.");
+    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 1.");
   }
 
   //form tmpMat2_ = D^T*Kdi
   if ( D_->matTransMat(Kdi_, tmpMat2_) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedGraph ERROR 2.");
+    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 2.");
   }
 
   translateSSMatToReducedEqns(tmpMat1_);
@@ -481,12 +482,12 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
 
   //form tmpMat1_ = D^T*Kdd
   if ( D_->matTransMat(Kdd_, tmpMat1_) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedGraph ERROR 3.");
+    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 3.");
   }
 
   //form tmpMat2_ = tpmMat1_*D = D^T*Kdd*D
   if ( tmpMat1_.matMat(*D_, tmpMat2_) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedGraph ERROR 4.");
+    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 4.");
   }
 
   translateSSMatToReducedEqns(tmpMat2_);
@@ -517,10 +518,8 @@ Reducer::assembleReducedGraph(fei::SparseRowGraph* srgraph)
     os << dbgprefix_<<"assembleReducedGraph(fei::SparseRowGraph)"<<FEI_ENDL;
   }
 
-  fei::SharedPtr<snl_fei::CommUtils<int> > commUtils;
-  commUtils.reset(new snl_fei::CommUtils<int>(comm_));
-  fei::Graph_Impl graph(commUtils, firstLocalReducedEqn_,
-                       lastLocalReducedEqn_);
+  fei::SharedPtr<snl_fei::CommUtils<int> > commutils(new snl_fei::CommUtils<int>(comm_));
+  fei::Graph_Impl graph(commutils, firstLocalReducedEqn_, lastLocalReducedEqn_);
   assembleReducedGraph(&graph);
   fei::copyToSparseRowGraph(*(graph.getLocalGraph()), *srgraph);
 }
@@ -539,12 +538,12 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
 
   //form tmpMat1_ = Kid_*D
   if ( Kid_.matMat(*D_, tmpMat1_, false) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedMatrix ERROR 1.");
+    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 1.");
   }
 
   //form tmpMat2_ = D^T*Kdi_
   if ( D_->matTransMat(Kdi_, tmpMat2_, false) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedMatrix ERROR 2.");
+    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 2.");
   }
 
   //accumulate the above two results into the global system matrix.
@@ -555,18 +554,18 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
 
   //form tmpMat1_ = D^T*Kdd_
   if ( D_->matTransMat(Kdd_, tmpMat1_, false) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedMatrix ERROR 3.");
+    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 3.");
   }
 
   //form tmpMat2_ = tmpMat1_*D = D^T*Kdd_*D
   if ( tmpMat1_.matMat(*D_, tmpMat2_, false) != 0) {
-    throw fei::Exception("fei::Reducer::assembleReducedMatrix ERROR 4.");
+    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 4.");
   }
 
   if (g_nonzero_) {
     //form tmpVec1_ = Kid_*g_
     if (Kid_.matVec(*g_, tmpVec1_) != 0) {
-      throw fei::Exception("fei::Reducer::assembleReducedMatrix ERROR 4g1.");
+      throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 4g1.");
     }
 
     //add tmpVec1_ to fi_
@@ -577,7 +576,7 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
     //to form tmpVec1_ = D^T*Kdd*g_.
     //So we can simply form tmpVec1_ = tmpMat1_*g_.
     if (tmpMat1_.matVec(*g_, tmpVec1_) != 0) {
-      throw fei::Exception("fei::Reducer::assembleReducedMatrix ERROR 4g2.");
+      throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 4g2.");
     }
 
     //now add tmpVec1_ to the right-hand-side fi_
@@ -657,7 +656,7 @@ Reducer::translateToReducedEqn(int eqn)
                                           index);
 
   if (foundOffset >= 0) {
-    throw fei::Exception("Reducer::translateToReducedEqn ERROR, input is slave eqn.");
+    throw std::runtime_error("Reducer::translateToReducedEqn ERROR, input is slave eqn.");
   }
 
   return(eqn - index);
@@ -735,7 +734,7 @@ Reducer::addSSMatToGraph(SSMat& mat, fei::Graph* graph)
     int* indicesRow = rows[i]->indices().dataPtr();
 
     if ( graph->addIndices(rowNumbers[i], rowLen, indicesRow) != 0) {
-      throw fei::Exception("fei::Reducer::addSSMatToGraph ERROR in graph->addIndices.");
+      throw std::runtime_error("fei::Reducer::addSSMatToGraph ERROR in graph->addIndices.");
     }
   }
 }
@@ -759,14 +758,14 @@ Reducer::addSSMatToMatrix(SSMat& mat, bool sum_into,
       if ( matrix.sumIn(1, &rowNumbers[i],
                          rowLen, indicesRow,
                          &coefPtr, FEI_DENSE_ROW) != 0) {
-        throw fei::Exception("fei::Reducer::addSSMatToMatrix ERROR in matrix->sumIn.");
+        throw std::runtime_error("fei::Reducer::addSSMatToMatrix ERROR in matrix->sumIn.");
       }
     }
     else {
       if ( matrix.copyIn(1, &rowNumbers[i],
                           rowLen, indicesRow,
                           &coefPtr, FEI_DENSE_ROW) != 0) {
-        throw fei::Exception("fei::Reducer::addSSMatToMatrix ERROR in matrix->copyIn.");
+        throw std::runtime_error("fei::Reducer::addSSMatToMatrix ERROR in matrix->copyIn.");
       }
     }
   }
@@ -843,7 +842,7 @@ Reducer::addMatrixValues(int numRows, const int* rows,
   const double** myvalues = const_cast<const double**>(values);
   if (format != FEI_DENSE_ROW) {
     if (format != FEI_DENSE_COL) {
-      throw fei::Exception("fei::Reducer::addMatrixValues ERROR, submatrix format must be either FEI_DENSE_ROW or FEI_DENSE_COL. Other formats not supported with slave constraints.");
+      throw std::runtime_error("fei::Reducer::addMatrixValues ERROR, submatrix format must be either FEI_DENSE_ROW or FEI_DENSE_COL. Other formats not supported with slave constraints.");
     }
 
     fei::Matrix_core::copyTransposeToWorkArrays(numRows, numCols, values,
@@ -1052,7 +1051,7 @@ Reducer::assembleReducedVector(bool soln_vector,
   if (vec.length() > 0) {
     //form tmpVec1 = D^T*vec.
     if ( D_->matTransVec(vec, tmpVec1_) != 0) {
-      throw fei::Exception("fei::Reducer::assembleReducedVec ERROR.");
+      throw std::runtime_error("fei::Reducer::assembleReducedVec ERROR.");
     }
 
     vec.logicalClear();
