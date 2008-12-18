@@ -1,0 +1,73 @@
+
+#
+# Invocation specific options needed by standard support code
+#
+
+SET(BUILD_DIR_NAME "SERIAL_DEBUG")
+
+SET(CMAKE_BUILD_TYPE DEBUG)
+
+SET(CTEST_INITIAL_CACHE
+"
+
+CMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+
+Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF
+
+CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++
+CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc
+CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran
+
+MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind
+
+DART_TESTING_TIMEOUT:STRING=600
+CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+
+CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}:STRING=-g -O0 -fprofile-arcs -ftest-coverage
+CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}:STRING=-g -O0 -fprofile-arcs -ftest-coverage
+CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}:STRING=-g -O0 -fprofile-arcs -ftest-coverage
+
+CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
+
+MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind
+
+DART_TESTING_TIMEOUT:STRING=600
+CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+
+Trilinos_ENABLE_Teuchos:BOOL=ON
+Trilinos_ENABLE_TESTS:BOOL=ON
+Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+Trilinos_ENABLE_DEBUG:BOOL=ON
+
+TPL_ENABLE_Boost:BOOL=ON
+
+EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON
+EpetraExt_BUILD_BDF:BOOL=ON
+
+"
+)
+
+# ToDo: Put this back!
+#Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+
+
+#
+# Include the standard support code
+#
+
+INCLUDE(${CTEST_SCRIPT_DIRECTORY}/ctest_base.cmake)
+
+
+#
+# Set/override options and run the build
+#
+
+SET(CTEST_BUILD_NAME "Linux-gcc-serial-debug-new")
+SET(CTEST_CMAKE_COMMAND /usr/local/bin/cmake)
+SET(CTEST_BUILD_COMMAND "make -j8 -i")
+SET(CTEST_MEMORYCHECK_COMMAND "/usr/local/bin/valgrind")
+
+SET(CTEST_ENABLE_COVERAGE ON)
+SET(CTEST_ENABLE_MEMCHECK ON)
+
+DO_TRILINOS_CTEST()

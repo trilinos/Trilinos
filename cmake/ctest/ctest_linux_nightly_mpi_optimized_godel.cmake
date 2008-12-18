@@ -46,16 +46,21 @@ SET(CTEST_COMMAND
 # paths are not added correctly.  I have tried to debug this but it is
 # very painful to do so and I would rather just avoid this for now.
 
-SET(CTEST_INITIAL_CACHE "
+SET(MPI_BASE_DIR "/usr/lib64/openmpi/1.2.5-gcc")
+
+SET(CTEST_INITIAL_CACHE
+"
 
 Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF
 
-CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC
-CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpicc
+CTEST_BUILD_TYPE:STRING=RELEASE
+
+CMAKE_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpiCC
+CMAKE_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc
 CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran
 
-CMAKE_CXX_FLAGS:STRING=-O3 -ansi -Wall -Wshadow -Wunused-variable -Wunused-function -Wno-system-headers -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage -fexceptions
-CMAKE_C_FLAGS:STRING=-O3 -Wall -fprofile-arcs -ftest-coverage -fexceptions
+CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -fprofile-arcs -ftest-coverage
+CMAKE_C_FLAGS:STRING=-O3 -fprofile-arcs -ftest-coverage
 CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
 
 MAKECOMMAND:STRING=gmake -j8 -i
@@ -70,10 +75,7 @@ TPL_ENABLE_Boost:BOOL=ON
 
 TPL_ENABLE_MPI:BOOL=ON
 MPIEXEC_MAX_NUMPROCS:STRING=4
-MPI_EXTRA_LIBRARY:FILEPATH=""
-MPI_INCLUDE_PATH:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin
-MPI_COMPILER:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiCC
-MPI_EXECUTABLE:FILEPATH=/usr/lib64/openmpi/1.2.5-gcc/bin/mpiexec
+MPI_BASE_DIR:PATH=${MPI_BASE_DIR}
 
 TPL_ENABLE_ParMETIS:BOOL=ON
 ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1
@@ -97,20 +99,5 @@ BUILDNAME:STRING=${HOSTTYPE}-${TEST_TYPE}-${EXTRA_BUILD_TYPE}-${BUILD_TYPE}
 
 CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}
 
-")
-
-# 2008/12/04: rabartl: Having to disable ParMETIS and Scotch.  For
-# some strange reason, CMake refuses to append these include
-# directories even through the varaibles for them are defined just
-# fine.  The really strange thing is that if you reconfigure (by
-# changing a CMake file for instance), everything will configure and
-# build correctly.  If you want to see the error, just move the below
-# cache variables back above and see what happens.
-#
-#TPL_ENABLE_ParMETIS:BOOL=ON
-#ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1
-#
-#TPL_ENABLE_Scotch:BOOL=ON
-#Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include
-#Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib
-#
+"
+)
