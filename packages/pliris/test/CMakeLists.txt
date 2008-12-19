@@ -1,0 +1,3 @@
+IF(Pliris_ENABLE_DREAL)
+  ADD_SUBDIRECTORY(vector_random)
+ENDIF()

@@ -30,7 +30,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   EpetraExt             epetraext                      ""
   Thyra                 thyra                          ""
   Isorropia             isorropia                      ""
-  Pliris                pliris                         OFF
+  Pliris                pliris                         ""
   Claps                 claps                          ""
   AztecOO               aztecoo                        ""
   Galeri                galeri                         ""
