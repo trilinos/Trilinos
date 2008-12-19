@@ -48,5 +48,5 @@ PATOH_INCPATH		= -I../../PaToH
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-#NEMESIS_LIBPATH	= -L/Net/local/proj/zoltan/arch/solaris/lib
-#NEMESIS_INCPATH	= -I/Net/local/proj/zoltan/arch/solaris/include
+NEMESIS_LIBPATH	= -L/Users/kddevin/code/lib-m64/lib
+NEMESIS_INCPATH	= -I/Users/kddevin/code/lib-m64/include
