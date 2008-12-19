@@ -286,6 +286,38 @@ struct ScalarTraits<long int>
   static inline long int pow(long int x, long int y) { return (long int) std::pow((double)x,(double)y); }
 };
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template<>
+struct ScalarTraits<long long int>
+{
+  typedef long long int magnitudeType;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(long long int a) { return static_cast<long long int>(std::fabs(static_cast<double>(a))); }
+  static inline long long int zero()  { return 0; }
+  static inline long long int one()   { return 1; }
+  static inline long long int conjugate(long long int x) { return x; }
+  static inline long long int real(long long int x) { return x; }
+  static inline long long int imag(long long int) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline long long int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "long long int"; }
+  static inline long long int squareroot(long long int x) { return (long long int) std::sqrt((double) x); }
+  static inline long long int pow(long long int x, long long int y) { return (long long int) std::pow((double)x,(double)y); }
+};
+#endif
+
 #ifndef __sun
 extern const float flt_nan;
 #endif
