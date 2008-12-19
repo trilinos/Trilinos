@@ -7,11 +7,11 @@ source .bash_profile
 CTEST_EXE=/usr/local/bin/ctest
 
 echo
-echo "Starting time: `date`"
+echo "Starting nightly Trilinos testing on godel: `date`"
 echo
 
 echo
-echo "A) Checking out just the drivers"
+echo "A) Checking out just the drivers: `date`"
 echo
 
 BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos
@@ -20,45 +20,37 @@ cd $BASEDIR
 cvs -q -d :ext:@software.sandia.gov:/space/CVS co -d scripts Trilinos/cmake/ctest
 
 echo
-echo "Doing dependency checking-only build"
+echo "Doing dependency checking-only build: `date`"
 echo
 
 time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_package_deps_godel.cmake -VV
 
-/home/rabartl/mailmsg.py "Trilinos dependency checking finished on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
-
 echo
-echo "Doing serial performance build"
+echo "Doing serial performance build: `date`"
 echo
 
 time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_serial_performance_godel.cmake -VV
 
-/home/rabartl/mailmsg.py "Trilinos serial performance finished on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
-
 echo
-echo "Doing mpi optimized build"
+echo "Doing mpi optimized build: `date`"
 echo
 
 time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_mpi_optimized_godel.cmake -VV
 
-/home/rabartl/mailmsg.py "Trilinos mpi opt finished on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
-
 echo
-echo "Doing serial debug build"
+echo "Doing serial debug build: `date`"
 echo
 
 time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_serial_debug_godel.cmake -VV
 
-/home/rabartl/mailmsg.py "Trilinos serial debug finished on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
-
 echo
-echo "Doing mpi optimized shared library build"
+echo "Doing mpi optimized shared library build: `date`"
 echo
 
 time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
 
-/home/rabartl/mailmsg.py "Trilinos mpi opt shared finished on godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
+echo
+echo "Ending nightly Trilinos testing on godel: `date`"
+echo
 
-echo
-echo "Ending time: `date`"
-echo
+/home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
