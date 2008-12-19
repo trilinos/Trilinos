@@ -34,7 +34,7 @@
     name of a type in a portable and readable way.
 */
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_ConstTypeTraits.hpp"
 
 
 namespace  Teuchos {
@@ -50,17 +50,6 @@ namespace  Teuchos {
 std::string demangleName( const std::string &mangledName );
 
 
-/** \brief Template function for returning the demangled name of an object.
- *
- * \ingroup teuchos_language_support_grp
- */
-template<typename T>
-std::string typeName( const T &t )
-{
-  return demangleName(typeid(t).name());
-}
-
-
 /** \brief Default traits class that just returns <tt>typeid(T).name()</tt>.
  *
  * \ingroup teuchos_language_support_grp
@@ -74,11 +63,43 @@ public:
       return demangleName(typeid(T).name());
     }
   /** \brief . */
-  static std::string concreteName( T& t )
+  static std::string concreteName( const T& t )
     {
       return demangleName(typeid(t).name());
     }
 };
+
+
+/** \brief Template function for returning the type name of a passed-in
+ * object.
+ *
+ * Uses the traits class TypeNameTraits so the behavior of this function can
+ * be specialized in every possible way.
+ *
+ * \ingroup teuchos_language_support_grp
+ */
+template<typename T>
+std::string typeName( const T &t )
+{
+  typedef typename ConstTypeTraits<T>::NonConstType ncT;
+  return TypeNameTraits<ncT>::name();
+}
+
+
+/** \brief Template function for returning the type name of the actual
+ * concrete name of a passed-in object.
+ *
+ * Uses the traits class TypeNameTraits so the behavior of this function can
+ * be specialized in every possible way.
+ *
+ * \ingroup teuchos_language_support_grp
+ */
+template<typename T>
+std::string concreteTypeName( const T &t )
+{
+  typedef typename ConstTypeTraits<T>::NonConstType ncT;
+  return TypeNameTraits<ncT>::concreteName(t);
+}
 
 
 #define TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(TYPE) \
@@ -86,7 +107,7 @@ template<> \
 class TypeNameTraits<TYPE> { \
 public: \
   static std::string name() { return (#TYPE); } \
-  static std::string concreteName( const TYPE& t2 ) { (void)t2; return name(); } \
+  static std::string concreteName(const TYPE&) { return name(); } \
 } \
 
 TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(bool);
@@ -103,7 +124,7 @@ class TypeNameTraits<T*> {
 public:
   typedef T* T_ptr;
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
-  static std::string concreteName( T_ptr& /*t2*/ ) { return name(); }
+  static std::string concreteName(const T_ptr&) { return name(); }
 };
 
 
@@ -111,7 +132,7 @@ template<>
 class TypeNameTraits<std::string> {
 public:
   static std::string name() { return "string"; }
-  static std::string concreteName( const std::string& /*t2*/ )
+  static std::string concreteName(const std::string&)
     { return name(); }
 };
 
@@ -120,8 +141,7 @@ template<>
 class TypeNameTraits<void*> {
 public:
   static std::string name() { return "void*"; }
-  static std::string concreteName( const std::string& t2 )
-    { (void)t2; return name(); }
+  static std::string concreteName(const std::string&) { return name(); }
 };
 
 
@@ -133,7 +153,7 @@ class TypeNameTraits<std::complex<T> > {
 public:
   static std::string name()
     { return "complex<"+TypeNameTraits<T>::name()+">"; }
-  static std::string concreteName( const std::complex<T>& /*t2*/ )
+  static std::string concreteName(const std::complex<T>&)
     { return name(); }
 };
 

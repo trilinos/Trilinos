@@ -76,7 +76,7 @@ RCP<T>::RCP( T* p, bool has_ownership_in )
   if (p) {
     node_ = RCPNodeHandle(
       RCP_createNewRCPNodeRawPtr(p, has_ownership_in),
-      p, TypeNameTraits<T>::name(), TypeNameTraits<T>::concreteName(*p),
+      p, typeName(*p), concreteTypeName(*p),
       has_ownership_in
       );
   }
@@ -97,7 +97,7 @@ RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership_in )
   if (p) {
     node_ = RCPNodeHandle(
       RCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
-      p, TypeNameTraits<T>::name(), TypeNameTraits<T>::concreteName(*p),
+      p, typeName(*p), concreteTypeName(*p),
       has_ownership_in
       );
   }
@@ -557,7 +557,7 @@ const T1& Teuchos::get_extra_data( const RCP<T2>& p, const std::string& name )
   p.assert_not_null();
   return any_cast<T1>(
     p.access_private_node().get_extra_data(
-      TypeNameTraits<T1>::name(),name
+      TypeNameTraits<T1>::name(), name
       )
     );
 }
@@ -597,7 +597,7 @@ Teuchos::get_optional_nonconst_extra_data( RCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
   any *extra_data = p.nonconst_access_private_node().get_optional_extra_data(
-    TypeNameTraits<T1>::name(),name);
+    TypeNameTraits<T1>::name(), name);
   if (extra_data)
     return Ptr<T1>(&any_cast<T1>(*extra_data));
   return null;
@@ -702,7 +702,7 @@ template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const RCP<T>& p )
 {
   out
-    << TypeNameTraits<RCP<T> >::name() << "{"
+    << typeName(p) << "{"
     << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
     <<",node="<<p.access_private_node()
     <<",count="<<p.count()

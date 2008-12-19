@@ -569,7 +569,7 @@ ArrayRCP<T>::ArrayRCP(
   if (p) {
     node_ = RCPNodeHandle(
       ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in),
-      p, TypeNameTraits<T>::name(), TypeNameTraits<T>::concreteName(*p),
+      p, typeName(*p), concreteTypeName(*p),
       has_ownership_in
       );
   }
@@ -608,7 +608,7 @@ ArrayRCP<T>::ArrayRCP(
   if (p) {
     node_ = RCPNodeHandle(
       ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
-      p, TypeNameTraits<T>::name(), TypeNameTraits<T>::concreteName(*p),
+      p, typeName(*p), concreteTypeName(*p),
       has_ownership_in
       );
   }
@@ -973,7 +973,10 @@ T1& Teuchos::get_extra_data( ArrayRCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
   return any_cast<T1>(
-    p.nonconst_access_private_node().get_extra_data(TypeNameTraits<T1>::name(),name));
+    p.nonconst_access_private_node().get_extra_data(
+      TypeNameTraits<T1>::name(), name
+      )
+    );
 }
 
 
@@ -983,7 +986,10 @@ const T1& Teuchos::get_extra_data( const ArrayRCP<T2>& p, const std::string& nam
 {
   p.assert_not_null();
   return any_cast<T1>(
-    p.access_private_node().get_extra_data(TypeNameTraits<T1>::name(),name));
+    p.access_private_node().get_extra_data(
+      TypeNameTraits<T1>::name() ,name
+      )
+    );
 }
 
 

@@ -36,7 +36,7 @@
 namespace Teuchos {
 
 
-/** \brief Traits class that strips of 'const'.
+/** \brief Traits class that strips 'const' off of a type.
  *
  * See "Modern C++ Design", 2001, by Andrei Alexandrescu.
  *

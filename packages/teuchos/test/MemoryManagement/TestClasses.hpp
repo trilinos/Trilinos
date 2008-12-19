@@ -253,7 +253,7 @@ template<>
 class TypeNameTraits<UndefinedType2> {
 public:
   static std::string name() { return "UndefinedType2"; }
-  static std::string concreteName( const UndefinedType2& /*t*/ )
+  static std::string concreteName(const UndefinedType2&)
     { return name(); }
 };
 
@@ -288,7 +288,7 @@ template<>
 class TypeNameTraits<Opaque3_handle> {
 public:
   static std::string name() { return "Opaque3_handle"; }
-  static std::string concreteName( Opaque3_handle /*t*/ )
+  static std::string concreteName(Opaque3_handle)
     { return name(); }
 };
 

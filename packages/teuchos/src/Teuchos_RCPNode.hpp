@@ -664,7 +664,7 @@ public:
       if (!node_)
         return; // Null is a valid pointer!
       if (!is_valid_ptr()) {
-        node_->throw_invalid_obj_exception( TypeNameTraits<RCPType>::name(),
+        node_->throw_invalid_obj_exception( typeName(rcp_obj),
           this, node_, rcp_obj.access_private_ptr() );
       }
     }
