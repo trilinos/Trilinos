@@ -176,6 +176,10 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
       PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
     ENDIF()
 
+  ELSE()
+    
+    GLOBAL_NULL_SET(TPL_${TPL_NAME}_LIBRARIES)
+        
   ENDIF()
 
   # Include directories
