@@ -40,7 +40,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   ML                    ml                             ""
   Belos                 belos                          ""
   Stratimikos           stratimikos                    ""
-  Meros                 meros                          OFF
+  Meros                 meros                          ""
   FEI                   fei                            OFF
   RBGen                 rbgen                          ""
   Anasazi               anasazi                        ""
