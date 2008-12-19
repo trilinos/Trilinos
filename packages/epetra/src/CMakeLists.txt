@@ -5,7 +5,7 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 # A) Package-specific configuration options
 #
 
-SET(HAVE_FORTRAN_SUPPORT ${Trilinos_ENABLE_FORTRAN})
+SET(HAVE_FORTRAN_SUPPORT ${Trilinos_ENABLE_Fortran})
 SET(EPETRA_MPI ${TPL_ENABLE_MPI})
 
 TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
@@ -193,7 +193,7 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-IF(Trilinos_ENABLE_FORTRAN)  
+IF(Trilinos_ENABLE_Fortran)  
   SET(EPETRA_FORTRAN_LIB epetra_fortran)  
   TRILINOS_PACKAGE_ADD_LIBRARY(
     ${EPETRA_FORTRAN_LIB}

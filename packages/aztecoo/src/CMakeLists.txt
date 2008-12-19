@@ -8,7 +8,7 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 SET(HAVE_BOOL ON)
 SET(HAVE_STL ON)
 
-IF (Trilinos_ENABLE_FORTRAN)
+IF (Trilinos_ENABLE_Fortran)
   SET(HAVE_FORTRAN_SUPPORT ON)
 ENDIF()
 
@@ -153,7 +153,7 @@ SET(SOURCES ${SOURCES}
   az_sort.c 
   )
 
-IF (Trilinos_ENABLE_FORTRAN)
+IF (Trilinos_ENABLE_Fortran)
 
   SET(SOURCES ${SOURCES}
     az_reorder.f

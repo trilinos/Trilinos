@@ -1,7 +1,7 @@
 # This file gets included in the base-level CMakeLists.txt file to define
 # Fortran name mangling.
 
-IF (Trilinos_ENABLE_FORTRAN)
+IF (Trilinos_ENABLE_Fortran)
   INCLUDE(FortranMangling)
   FORTRAN_MANGLING()
 ENDIF()

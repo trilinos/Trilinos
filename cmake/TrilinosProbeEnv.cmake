@@ -42,7 +42,7 @@ IF(Trilinos_ENABLE_CXX)
   ENABLE_LANGUAGE(CXX)
 ENDIF()
 
-IF(Trilinos_ENABLE_FORTRAN)
+IF(Trilinos_ENABLE_Fortran)
   ENABLE_LANGUAGE(Fortran)
 ENDIF()
 

@@ -151,14 +151,14 @@ ADVANCED_OPTION(Trilinos_ENABLE_CXX
   ON )
 
 IF(WIN32 AND NOT CYGWIN)
-  SET(Trilinos_ENABLE_FORTRAN_DEFAULT OFF)
+  SET(Trilinos_ENABLE_Fortran_DEFAULT OFF)
 ELSE()
-  SET(Trilinos_ENABLE_FORTRAN_DEFAULT ON)
+  SET(Trilinos_ENABLE_Fortran_DEFAULT ON)
 ENDIF()
 
-OPTION(Trilinos_ENABLE_FORTRAN
+OPTION(Trilinos_ENABLE_Fortran
   "Enable the Fortran compiler and related code"
-  ${Trilinos_ENABLE_FORTRAN_DEFAULT} )
+  ${Trilinos_ENABLE_Fortran_DEFAULT} )
 
 ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 
