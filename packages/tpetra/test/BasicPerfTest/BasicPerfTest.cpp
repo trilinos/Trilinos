@@ -31,7 +31,7 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_Time.hpp>
-#include <Teuchos_As.hpp>
+#include <Teuchos_as.hpp>
 
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsMatrix.hpp"
