@@ -3,10 +3,29 @@ INCLUDE(Global_Set)
 INCLUDE(Append_Set)
 INCLUDE(Assert_Defined)
 INCLUDE(SetNotFound)
+INCLUDE(DualScopeSet)
 INCLUDE(Parse_Variable_Arguments)
 
 
-MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
+#
+# Function that sets up cache variables for users to specify where to
+# find a TPL's headers and libraries.
+#
+# This function must be called from the top-level scope so that it can
+# set non-global variables that will affect all of the packages.
+#
+# This function can set up a with header files and/or libraries.
+#
+# The following cache variables defined that are intended for the user
+# to set:
+#
+#   ${TPL_NAME}_INCLUDE_DIRS:  A list of common-separated directory paths
+#       that will be searched ...
+#
+# ToDO: Finish this documentation.
+#
+
+FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
 
   # Make sure the right name is used
   ASSERT_DEFINED(TPL_ENABLE_${TPL_NAME})
@@ -177,46 +196,58 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
     ENDIF()
 
   ELSE()
-    
+  
+    # There are no libraries so set the libraries to null but don't
+    # change the cache which should not even have this varaible in it.
+    # This set command is only to follow the standards for the package
+    # support CMake code.
     GLOBAL_NULL_SET(TPL_${TPL_NAME}_LIBRARIES)
         
   ENDIF()
 
   # Include directories
 
-  IF (PARSE_REQUIRED_HEADERS AND NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
+  IF (PARSE_REQUIRED_HEADERS)
 
-    MULTILINE_SET(DOCSTR
-      "List of semi-colon separated paths to append to the compile invocations"
-      " to find the headers for the TPL ${TPL_NAME}.  This is the final variable"
-      " that is used in the build commands.  The user variable ${TPL_NAME}_INCLUDE_DIRS"
-      " is used to look for the given headers first but is just a suggestion."
-      " This varible, however, is the final value and will not be touched."
-      )
-
-    SET_NOTFOUND(TPL_${TPL_NAME}_INCLUDE_DIRS)
-    FIND_PATH( TPL_${TPL_NAME}_INCLUDE_DIRS NAMES
-      NAMES ${PARSE_REQUIRED_HEADERS}
-      PATHS ${${TPL_NAME}_INCLUDE_DIRS}
-      DOC ${DOCSTR} )
-    MARK_AS_ADVANCED(TPL_${TPL_NAME}_LIBRARIES)
- 
     IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
-      MULTILINE_SET(ERRMSG
-        "Error, could not find the ${TPL_NAME} headers include directory!"
-        " Please manually set ${TPL_NAME}_INCUDE_DIRS and/or"
-        " ${TPL_NAME}_LIBRARY_DIRS or TPL_${TPL_NAME}_INCLUDE_DIRS to point"
-        " to the ${TPL_NAME} headers!")
-      MESSAGE(FATAL_ERROR ${ERRMSG})
-    ENDIF()
 
-    # 2008/12/02: rabartl: ToDo: Above: Put in a check to see that all of the
-    # headers that have been specified have indeed been found!
+      MULTILINE_SET(DOCSTR
+        "List of semi-colon separated paths to append to the compile invocations"
+        " to find the headers for the TPL ${TPL_NAME}.  This is the final variable"
+        " that is used in the build commands.  The user variable ${TPL_NAME}_INCLUDE_DIRS"
+        " is used to look for the given headers first but is just a suggestion."
+        " This varible, however, is the final value and will not be touched."
+        )
+  
+      SET_NOTFOUND(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      FIND_PATH( TPL_${TPL_NAME}_INCLUDE_DIRS NAMES
+        NAMES ${PARSE_REQUIRED_HEADERS}
+        PATHS ${${TPL_NAME}_INCLUDE_DIRS}
+        DOC ${DOCSTR} )
+      MARK_AS_ADVANCED(TPL_${TPL_NAME}_LIBRARIES)
+   
+      IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
+        MULTILINE_SET(ERRMSG
+          "Error, could not find the ${TPL_NAME} headers include directory!"
+          " Please manually set ${TPL_NAME}_INCUDE_DIRS and/or"
+          " ${TPL_NAME}_LIBRARY_DIRS or TPL_${TPL_NAME}_INCLUDE_DIRS to point"
+          " to the ${TPL_NAME} headers!")
+        MESSAGE(FATAL_ERROR ${ERRMSG})
+      ENDIF()
+  
+      # 2008/12/02: rabartl: ToDo: Above: Put in a check to see that all of the
+      # headers that have been specified have indeed been found!
+  
+    ELSE()
+
+      # TPL_${TPL_NAME}_INCLUDE_DIRS is already in the cache so leave it alone!
+
+    ENDIF()
 
   ELSE()
 
-   # Library has no header files
-   GLOBAL_NULL_SET(TPL_${TPL_NAME}_INCLUDE_DIRS)
+    # Library has no header files so just set them to null
+    GLOBAL_NULL_SET(TPL_${TPL_NAME}_INCLUDE_DIRS)
 
   ENDIF()
 
@@ -224,13 +255,14 @@ MACRO(TPL_DECLARE_LIBRARIES TPL_NAME)
     PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
   ENDIF()
 
-  # Library directories?
-
+  # Set library directories to null always.  We do this because
+  # the package support code expects this variable and it is used
+  # for package dependencies.  Therefore, we need it to allow
+  # TPLs and internal packages to be treated in the same way.
   GLOBAL_NULL_SET(TPL_${TPL_NAME}_LIBRARY_DIRS)
-  # Above: Not used for anything, just for consistency!
 
   IF (Trilinos_VERBOSE_CONFIGURE)
     PRINT_VAR(TPL_${TPL_NAME}_LIBRARY_DIRS)
   ENDIF()
 
-ENDMACRO()
+ENDFUNCTION()
