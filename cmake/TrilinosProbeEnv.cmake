@@ -3,22 +3,24 @@ INCLUDE(CheckIncludeFileCXX)
 
 # Enable compilers
 
-IF(Trilinos_ENABLE_C)
+IF (Trilinos_ENABLE_C)
   ENABLE_LANGUAGE(C)
 ENDIF()
 
-IF(Trilinos_ENABLE_CXX)
+IF (Trilinos_ENABLE_CXX)
   ENABLE_LANGUAGE(CXX)
 ENDIF()
 
-IF(Trilinos_ENABLE_Fortran)
+IF (Trilinos_ENABLE_Fortran)
   ENABLE_LANGUAGE(Fortran)
 ENDIF()
 
 # Probe for non-standard headers
 
-CHECK_INCLUDE_FILE_CXX(sys/time.h HAVE_SYS_TIME_H)
-CHECK_INCLUDE_FILE_CXX(time.h HAVE_TIME_H)
+IF (Trilinos_ENABLE_CXX)
+  CHECK_INCLUDE_FILE_CXX(sys/time.h HAVE_SYS_TIME_H)
+  CHECK_INCLUDE_FILE_CXX(time.h HAVE_TIME_H)
+ENDIF()
 
 SET(HAVE_ALGORITHM TRUE)
 SET(HAVE_CASSERT TRUE)
