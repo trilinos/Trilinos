@@ -26,8 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_MPISession.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_MPIComm.hpp"
 #include "Teuchos_ErrorPolling.hpp"
 #include "Teuchos_Version.hpp"
@@ -37,16 +36,17 @@ using std::string;
 
 /* \example Test of polling for exceptions on other processors */
 
-int main(int argc, char** argv)
+int main( int argc, char* argv[] )
 {
   /* return value */
   int state=0;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   try
     {
-      MPISession::init(&argc, (void***) &argv);
 
       MPIComm comm = MPIComm::world();
 
@@ -193,6 +193,7 @@ int main(int argc, char** argv)
       std::cerr << e.what() << std::endl;
       state = 1;
     }
-  MPISession::finalize();
+
   return state;
+
 }

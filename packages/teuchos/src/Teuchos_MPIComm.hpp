@@ -35,9 +35,11 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
-#include "Teuchos_MPISession.hpp"
 #include "Teuchos_RCP.hpp"
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 
 namespace Teuchos

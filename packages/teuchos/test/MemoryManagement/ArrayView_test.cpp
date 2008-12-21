@@ -260,8 +260,8 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
     out << "\nTest const forward iterator access ... ";
     bool local_success = true;
     typedef typename ArrayView<const T>::iterator iter_t;
-    const ArrayView<const T> cav = av.getConst();
-    iter_t iter = cav.begin();
+    const ArrayView<const T> cav2 = av.getConst();
+    iter_t iter = cav2.begin();
     for ( int i = 0; i < n; ++i, ++iter ) {
       TEST_ARRAY_ELE_EQUALITY( av, i, *iter );
 

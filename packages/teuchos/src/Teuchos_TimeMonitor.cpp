@@ -30,7 +30,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TableColumn.hpp"
 #include "Teuchos_TableFormat.hpp"
-#include "Teuchos_MPISession.hpp"
 #include "Teuchos_MPIContainerComm.hpp"
 
 

@@ -1,5 +1,7 @@
 INCLUDE(CheckCSourceCompiles)
 INCLUDE(CheckCXXSourceCompiles)
+
+INCLUDE(Advanced_Set)
 INCLUDE(Assert_Defined)
 INCLUDE(Multiline_Set)
 
@@ -49,6 +51,9 @@ FUNCTION(TRILINOS_SETUP_STRONG_COMPILE_WARNINGS)
     " -Wshadow" # Warn about general shadowing
     " -Woverloaded-virtual" # Warn about hiding virtual functions
     )
+
+  ADVANCED_SET( Trilinos_WARNINGS_AS_ERRORS_FLAGS "-Werror"
+    CACHE STRING "Flags for treating warnings as errors.  To turn off set to ''")
 
   #
   # C compiler options

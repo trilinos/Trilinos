@@ -1,6 +1,24 @@
-# Note: we should really be probing for these values, but will hard-code them
-# in the short-term.  Most of these should be fine for all but ridiculously
-# out-of-date C++ compilers, but you never know.
+INCLUDE(CheckIncludeFileCXX)
+
+
+# Enable compilers
+
+IF(Trilinos_ENABLE_C)
+  ENABLE_LANGUAGE(C)
+ENDIF()
+
+IF(Trilinos_ENABLE_CXX)
+  ENABLE_LANGUAGE(CXX)
+ENDIF()
+
+IF(Trilinos_ENABLE_Fortran)
+  ENABLE_LANGUAGE(Fortran)
+ENDIF()
+
+# Probe for non-standard headers
+
+CHECK_INCLUDE_FILE_CXX(sys/time.h HAVE_SYS_TIME_H)
+CHECK_INCLUDE_FILE_CXX(time.h HAVE_TIME_H)
 
 SET(HAVE_ALGORITHM TRUE)
 SET(HAVE_CASSERT TRUE)
@@ -32,19 +50,10 @@ SET(HAVE_STDEXCEPT TRUE)
 SET(HAVE_STRING TRUE)
 SET(HAVE_VECTOR TRUE)
 
-# Enable compilers
-
-IF(Trilinos_ENABLE_C)
-  ENABLE_LANGUAGE(C)
-ENDIF()
-
-IF(Trilinos_ENABLE_CXX)
-  ENABLE_LANGUAGE(CXX)
-ENDIF()
-
-IF(Trilinos_ENABLE_Fortran)
-  ENABLE_LANGUAGE(Fortran)
-ENDIF()
+# 2008/12/20: All of these defines should be removed because we
+# decided that we were going to assume that all compilers have these
+# C++98 standard features.  We will deal with cases where this is not
+# true but we should not assume the worst right from the beginning.
 
 # Check if strong compiler checking options are supported
 

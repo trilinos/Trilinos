@@ -27,7 +27,6 @@
 // @HEADER
 
 #include "Teuchos_PerformanceMonitorUtils.hpp"
-#include "Teuchos_MPISession.hpp"
 #include "Teuchos_MPIContainerComm.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 using namespace Teuchos;

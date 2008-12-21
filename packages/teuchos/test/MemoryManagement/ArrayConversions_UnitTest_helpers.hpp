@@ -17,10 +17,10 @@ extern Teuchos_Ordinal n;
 
 
 template<class T>
-Array<RCP<T> > generateArrayRcp(const Teuchos_Ordinal n)
+Array<RCP<T> > generateArrayRcp(const Teuchos_Ordinal n_in)
 {
-  Array<RCP<T> > a(n);
-  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+  Array<RCP<T> > a(n_in);
+  for (Teuchos_Ordinal i=0 ; i<n_in ; ++i) {
     RCP<T> data = rcp(new T(as<T>(i)));
     a[i] = data;
   }
@@ -29,10 +29,10 @@ Array<RCP<T> > generateArrayRcp(const Teuchos_Ordinal n)
 
 
 template<class T>
-Array<RCP<T> > generateArrayRcpGen(const Teuchos_Ordinal n)
+Array<RCP<T> > generateArrayRcpGen(const Teuchos_Ordinal n_in)
 {
   Array<RCP<T> > a;
-  for (Teuchos_Ordinal i=0 ; i<n ; ++i) {
+  for (Teuchos_Ordinal i=0 ; i<n_in ; ++i) {
     a.push_back(rcp(new T));
   }
   return a;

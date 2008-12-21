@@ -26,9 +26,9 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Hashtable.hpp"
 #include "Teuchos_HashSet.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_MPIContainerComm.hpp"
 #include "Teuchos_ErrorPolling.hpp"
 #include "Teuchos_StrUtils.hpp"
@@ -39,14 +39,14 @@ using std::string;
 
 /* Test of Teuchos container classes */
 
-int main(int argc, char** argv)
+int main( int argc, char* argv[] )
 {
   std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
   try
     {
-      MPISession::init(&argc, (void***) &argv);
-
 
       if (MPIComm::world().getRank() == 0)
         {
@@ -84,6 +84,7 @@ int main(int argc, char** argv)
               try
                 {
                   double z = y[10];
+                  (void)z;
                 }
               catch(std::exception& eb)
                 {
@@ -314,5 +315,5 @@ int main(int argc, char** argv)
     {
       std::cerr << e.what() << std::endl;
     }
-  MPISession::finalize();
+
 }

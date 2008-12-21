@@ -580,8 +580,8 @@ namespace Teuchos
 
     void* sendBuf = (void*) &(packedLocalArray[0]);
     void* inBuf = (void*) &(recvBuf[0]);
-    int* inCounts = inCounts = &(recvCounts[0]);
-    int* inDisps = inDisps = &(recvDisplacements[0]);
+    int* inCounts = &(recvCounts[0]);
+    int* inDisps = &(recvDisplacements[0]);
 
     /* gather the packed data */
     comm.gatherv( sendBuf, sendCount, MPIComm::CHAR,

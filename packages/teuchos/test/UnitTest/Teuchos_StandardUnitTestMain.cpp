@@ -45,7 +45,8 @@ specific unit test suites.
 #include "Teuchos_GlobalMPISession.hpp"
 
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char* argv[] )
+{
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }

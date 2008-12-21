@@ -16,8 +16,24 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   IF (Trilinos_VERBOSE_CONFIGURE)
     MESSAGE("\nTRILINOS_PACKAGE: ${PACKAGE_NAME_IN}")
   ENDIF()
+   
+  #
+  # A) Parse the input arguments
+  #
 
-  # A) Assert that the global and local package names are the same!
+  PARSE_ARGUMENTS(
+    #prefix
+    PARSE
+    #lists
+    ""
+    #options
+    "CLEANED"
+    ${ARGN}
+    )
+
+  #
+  # B) Assert that the global and local package names are the same!
+  #
 
   IF (DEFINED PACKAGE_NAME_GLOBAL)
     IF (NOT ${PACKAGE_NAME_IN} STREQUAL ${PACKAGE_NAME_GLOBAL})
@@ -26,7 +42,7 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   ENDIF()
 
   #
-  # B) Set up the CMake support for this Trilinos package and define some
+  # C) Set up the CMake support for this Trilinos package and define some
   # top-level varaibles.
   #
 
@@ -41,8 +57,34 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   FILE(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR} STANDARD_PACKAGE_SOURCE_DIR)
   STRING(REGEX REPLACE "/.+/(.+)" "\\1" PACKAGE_DIR_NAME "${STANDARD_PACKAGE_SOURCE_DIR}")
 
+  # Set up for warnings as errors if requested
+
+  ASSERT_DEFINED(PARSE_CLEANED)
+	
+
+  ASSERT_DEFINED(Trilinos_ENABLE_C Trilinos_ENABLE_C_DEBUG_COMPILE_FLAGS)
+  IF (PARSE_CLEANED AND Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS AND CMAKE_BUILD_TYPE)
+    SET(CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}
+      " ${Trilinos_WARNINGS_AS_ERRORS_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}") 
+    IF (Trilinos_VERBOSE_CONFIGURE)
+      MESSAGE(STATUS "Setting up for C warnings as errors just in this package ...")
+      PRINT_VAR(CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
+      DD_DEFINITIONS(${Trilinos_WARNINGS_AS_ERRORS_FLAGS})
+    ENDIF()
+  ENDIF()
+
+  ASSERT_DEFINED(Trilinos_ENABLE_CXX Trilinos_ENABLE_CXX_DEBUG_COMPILE_FLAGS)
+  IF (PARSE_CLEANED AND Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS AND CMAKE_BUILD_TYPE)
+    SET(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}
+      " ${Trilinos_WARNINGS_AS_ERRORS_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}") 
+    IF (Trilinos_VERBOSE_CONFIGURE)
+      MESSAGE(STATUS "Setting up for C++ warnings as errors just in this package ...")
+      PRINT_VAR(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE})
+    ENDIF()
+  ENDIF()
+
   #
-  # C) Define package linkage varaibles
+  # D) Define package linkage varaibles
   #
 
   GLOBAL_NULL_SET(${PACKAGE_NAME}_INCLUDE_DIRS)
@@ -56,7 +98,7 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
   GLOBAL_NULL_SET(${PACKAGE_NAME}_ALL_TARGETS)
 
   #
-  # D) Define standard runtests targets for home-grown perl-based test harness
+  # E) Define standard runtests targets for home-grown perl-based test harness
   #
 
   IF (Trilinos_ENABLE_NATIVE_TEST_HARNESS)

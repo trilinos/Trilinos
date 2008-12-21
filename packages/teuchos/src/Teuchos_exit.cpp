@@ -30,10 +30,10 @@
 #include "Teuchos_TestForException.hpp"
 
 void Teuchos_exit_helper(
-  char       file[]
-  ,int       line
-  ,char      msg[]
-  ,int       error_code
+  const char file[],
+  int line,
+  const char msg[],
+  int error_code
   )
 {
   std::ostringstream omsg;

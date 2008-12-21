@@ -58,10 +58,16 @@ extern "C" {
  * using the macro <tt>TEUCHOS_EXIT()</tt> or <tt>TEUCHOS_MSG_EXIT()</tt>
  */
 void Teuchos_exit_helper(
-  char       file[]
-  ,int       line
-  ,char      msg[]
-  ,int       error_code
+#ifdef __cplusplus
+  const
+#endif
+  char file[],
+  int line,
+#ifdef __cplusplus
+  const
+#endif
+  char msg[],
+  int error_code
   );
 
 #ifdef __cplusplus
@@ -74,7 +80,8 @@ void Teuchos_exit_helper(
  * name and line number where this macro is used and results in a C++
  * exception to be thrown with a good error message.
  */
-#define TEUCHOS_EXIT(ERROR_CODE) Teuchos_exit_helper( __FILE__, __LINE__, 0, ERROR_CODE )
+#define TEUCHOS_EXIT(ERROR_CODE) \
+  Teuchos_exit_helper( (char*)__FILE__, __LINE__, 0, ERROR_CODE )
 
 /** \brief Macro to replace call to <tt>exit(...)</tt> and add a message string.
  *
@@ -82,7 +89,8 @@ void Teuchos_exit_helper(
  * name and line number where this macro is used and results in a C++
  * exception to be thrown with a good error message.
  */
-#define TEUCHOS_MSG_EXIT(MSG,ERROR_CODE) Teuchos_exit_helper(  __FILE__, __LINE__, MSG, ERROR_CODE )
+#define TEUCHOS_MSG_EXIT(MSG,ERROR_CODE) \
+  Teuchos_exit_helper(  (char*)__FILE__, __LINE__, MSG, ERROR_CODE )
 
 /* @} */
 

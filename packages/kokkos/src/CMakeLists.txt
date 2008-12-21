@@ -1,13 +1,9 @@
 
 INCLUDE(TrilinosPackageLibraryHelpers)
-INCLUDE(CheckIncludeFileCXX)
 
 #
 # A) Package-specific configuration options
 #
-
-CHECK_INCLUDE_FILE_CXX(sys/time.h HAVE_SYS_TIME_H)
-CHECK_INCLUDE_FILE_CXX(time.h HAVE_TIME_H)
 
 TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 

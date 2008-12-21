@@ -101,8 +101,8 @@
 /** \brief . */
 #define TEST_COMPARE_ARRAYS( a1, a2 ) \
   { \
-    const bool result = compareArrays(a1,#a1,a2,#a2,out); \
-    if (!result) success = false; \
+    const bool l_result = compareArrays(a1,#a1,a2,#a2,out); \
+    if (!l_result) success = false; \
   }
 
 

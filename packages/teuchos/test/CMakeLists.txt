@@ -54,17 +54,12 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+TRILINOS_ADD_EXECUTABLE_AND_TEST(
   Containers_test  
   DIRECTORY Containers
-  COMM serial mpi  
   SOURCES cxx_main.cpp
-  )
-TRILINOS_ADD_TEST(
-  Containers_test  
-  DIRECTORY Containers
+  COMM serial mpi  
   NUM_MPI_PROCS 1
-  COMM serial mpi
   )
 
 TRILINOS_ADD_EXECUTABLE(
@@ -397,19 +392,15 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+TRILINOS_ADD_EXECUTABLE_AND_TEST(
   Polling_test  
-  COMM mpi  
+  DIRECTORY Polling
   SOURCES cxx_main.cpp 
-  DIRECTORY Polling
-)
-TRILINOS_ADD_TEST(
-  Polling_test
-  DIRECTORY Polling
-  NAME Polling_test
+  COMM mpi  
   NUM_MPI_PROCS 2
-  COMM mpi
 )
+# 2008/12/20: rabartl: Above is commented out for the same reason that
+# Containers_test is commented out as described above
 
 TRILINOS_ADD_EXECUTABLE(
   ParameterList_test 

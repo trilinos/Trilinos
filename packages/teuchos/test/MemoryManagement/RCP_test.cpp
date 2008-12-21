@@ -447,9 +447,9 @@ int main( int argc, char* argv[] ) {
     {
       Teuchos::setTracingActiveRCPNodes(true);
       RCP<A> a = rcp(new A());
-      RCP<C> c = rcp(new C());
-      a->set_C(c);
-      c->set_A(a);
+      RCP<C> c2 = rcp(new C());
+      a->set_C(c2);
+      c2->set_A(a);
     }
 
 #endif // TEUCHOS_DEBUG

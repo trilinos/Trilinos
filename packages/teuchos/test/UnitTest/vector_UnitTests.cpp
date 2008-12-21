@@ -18,11 +18,11 @@ TEUCHOS_STATIC_SETUP()
 
 
 template<class T>
-std::vector<T> generatevector(const int n)
+std::vector<T> generatevector(const int n_in)
 {
   using Teuchos::as;
-  std::vector<T> a(n);
-  for( int i = 0; i < n; ++i )
+  std::vector<T> a(n_in);
+  for( int i = 0; i < n_in; ++i )
     a[i] = as<T>(i); // tests non-const operator[](i)
   return a;
 }

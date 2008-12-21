@@ -37,7 +37,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 
 
-namespace {
+namespace Teuchos {
 
 
 struct UnitTestData {
@@ -134,7 +134,7 @@ bool strMatch( const std::string &fullMatchStr, const std::string &str )
 }
 
 
-} // namespace
+} // namespace Teuchos
 
 
 

@@ -391,7 +391,7 @@ bool compareFloatingArrays(
     out << "passed\n"; \
     out << "\nException message for expected exception:\n\n"; \
     { \
-      Teuchos::OSTab tab(out); \
+      Teuchos::OSTab l_tab(out); \
       out << except.what() << "\n\n"; \
     } \
   }

@@ -189,6 +189,13 @@ void MPIComm::allToAll(void* sendBuf, int sendCount, int sendType,
       }
 	}
 	//mutex_.unlock();
+#else
+  (void)sendBuf;
+  (void)sendCount;
+  (void)sendType;
+  (void)recvBuf;
+  (void)recvCount;
+  (void)recvType;
 #endif
 }
 
@@ -216,6 +223,15 @@ void MPIComm::allToAllv(void* sendBuf, int* sendCount,
       }
 	}
 	//mutex_.unlock();
+#else
+  (void)sendBuf;
+  (void)sendCount;
+  (void)sendDisplacements;
+  (void)sendType;
+  (void)recvBuf;
+  (void)recvCount;
+  (void)recvDisplacements;
+  (void)recvType;
 #endif
 }
 

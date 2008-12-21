@@ -5,7 +5,7 @@ INCLUDE(Trilinos_Add_Option)
 # A) Define the package
 #
 
-TRILINOS_PACKAGE(Teuchos)
+TRILINOS_PACKAGE(Teuchos CLEANED)
 
 SET(${PACKAGE_NAME}_VERSION "1.5d")
 
