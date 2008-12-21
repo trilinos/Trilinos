@@ -20,6 +20,7 @@ DART_TESTING_TIMEOUT:STRING=600
 CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
 
 Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+Trilinos_ENABLE_AztecOO:BOOL=OFF
 
 Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF
 
@@ -33,6 +34,9 @@ EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON
 EpetraExt_BUILD_BDF:BOOL=ON
 
 ")
+
+# 2008/12/19: rabartl: AztecOO is disabled above because does not
+# currently work in shared library mode (see bug 4288).
 
 
 #
