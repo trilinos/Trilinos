@@ -44,7 +44,7 @@ FUNCTION(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
   PARSE_ARGUMENTS(
     PARSE #prefix
     "HEADERS;NOINSTALLHEADERS;SOURCES;DEPLIBS" # Lists
-    "OPTIONAL" #Options
+    "TESTONLY" #Options
     ${ARGN} # Remaining arguments passed in
     )
 
@@ -135,26 +135,36 @@ FUNCTION(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
 
   # Add to the install target
 
-  INSTALL(
-    TARGETS ${LIBRARY_NAME}
-      RUNTIME DESTINATION bin
-      LIBRARY DESTINATION lib
-      ARCHIVE DESTINATION lib
-    COMPONENT ${PACKAGE_NAME}
-    )
-  
-  INSTALL(
-    FILES ${PARSE_HEADERS}
-    DESTINATION ${TRILINOS_INSTALL_INCLUDE_DIR}
-    COMPONENT ${PACKAGE_NAME}
-    )
+  IF (NOT PARSE_TESTONLY)
+
+    INSTALL(
+      TARGETS ${LIBRARY_NAME}
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+      COMPONENT ${PACKAGE_NAME}
+      )
+    
+    INSTALL(
+      FILES ${PARSE_HEADERS}
+      DESTINATION ${TRILINOS_INSTALL_INCLUDE_DIR}
+      COMPONENT ${PACKAGE_NAME}
+      )
+
+  ELSE()
+
+    IF (Trilinos_VERBOSE_CONFIGURE)
+      MESSAGE(STATUS "Skipping installation hooks for this library because 'TESTONLY' was passed in ...")
+    ENDIF()
+
+  ENDIF()
 
   # Append the new include dirs, library dirs, and libraries to this package's lists
 
   GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT INCLUDE_DIRECTORIES)
   GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT LINK_DIRECTORIES)
 
-  IF (NOT PARSE_OPTIONAL)
+  IF (NOT PARSE_TESTONLY)
 
     PREPEND_GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})
     PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS ${LIBRARY_DIRS_CURRENT})
@@ -167,7 +177,7 @@ FUNCTION(TRILINOS_PACKAGE_ADD_LIBRARY LIBRARY_NAME)
   ELSE()
 
     IF (Trilinos_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "Skipping augmentation of package's lists of include directories and libraries because 'OPTIONAL' was passed in ...")
+      MESSAGE(STATUS "Skipping augmentation of package's lists of include directories and libraries because 'TESTONLY' was passed in ...")
     ENDIF()
 
     GLOBAL_SET(${LIBRARY_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})

@@ -18,6 +18,7 @@ cmake \
 -D TPL_ENABLE_Boost:BOOL=ON \
 -D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
 -D EpetraExt_BUILD_BDF:BOOL=ON \
+-D CMAKE_INSTALL_PREFIX:PATH=/home/rabartl/PROJECTS/install-dir/gcc-4.1.2/trilinos/dev/debug \
 $EXTRA_ARGS \
 ../../../../Trilinos
 

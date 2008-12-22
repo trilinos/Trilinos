@@ -36,7 +36,7 @@ TRILINOS_PACKAGE_ADD_LIBRARY(
   isorropia_test_utils
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  OPTIONAL
+  TESTONLY
   DEPLIBS isorropia
   )
 # 2008/11/20: rabartl: ToDo: Above: Add an option like TESTLIB to the
