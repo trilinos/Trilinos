@@ -45,7 +45,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   RBGen                 rbgen                          ""
   Anasazi               anasazi                        ""
   ThreadPool            ThreadPool                     OFF
-  Phalanx               phalanx                        OFF
+  Phalanx               phalanx                        ""
   Pamgen                pamgen                         OFF
   Phdmesh               phdmesh                        OFF
   NOX                   nox                            OFF
