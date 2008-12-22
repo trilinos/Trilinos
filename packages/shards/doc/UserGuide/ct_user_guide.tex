@@ -13,6 +13,10 @@
 \usepackage{verbatim}
 \usepackage{pgf}
 \usepackage{pgfpages}
+\usepackage{pgfpages}
+\usepackage{tikz}
+%\usetikzlibrary{arrows,backgrounds}
+\usepgflibrary{shapes}
 \usepackage[bf]{caption} % caption v1.x
 \usepackage{url}
 \usepackage{hyperref}
@@ -136,11 +140,7 @@ The domain model is implemented in a Trilinos package,  called \emph{Shards},  w
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The use of grids to partition the computational domain into a union of smaller subdomains is a hallmark of a large number of methods for the approximate numerical solution of PDEs; see \cite{ciarlet,mishaBook,bh:2006}. Depending on the particular method used these subdomains are commonly referred to as \emph{elements}, \emph{cells} or \emph{zones}.  In this document we adopt the term \emph{cell} as a generic name for subdomains arising in mesh-based methods for the numerical solution of PDEs. 
-
-Historically different mesh-based methods have placed different requirements on the requisite subdomain partitions which has resulted in somewhat different terminologies and descriptions of the cells. The main purpose of this document is to develop a rigorous domain model for cell topology data that is sufficiently broad to address the needs of finite element, finite volume and finite difference discretization methods. In doing so we provide standardized definitions for cell topologies that can be shared across a wide range of application codes, thereby promoting code reusability and interoperability between software modules.  
-
-This report is organized as follows. Section \ref{sec:model} describes the domain model for cell topology data. Its implementation in the Trilinos \cite{trilinos} package Shards is discussed in Section \ref{sec:implementation}. This section also contains a summary of the canonical cell topologies provided in Shards. The report concludes with several use cases presented in Section \ref{sec:using}. Among other things these examples cover instantiation of custom user-defined cell topologies.
+The use of grids to partition the computational domain into a union of smaller subdomains is a hallmark of a large number of methods for the approximate numerical solution of PDEs; see \cite{trilinos} package Shards is discussed in Section \ref{sec:implementation}. This section also contains a summary of the canonical cell topologies provided in Shards. The report concludes with several use cases presented in Section \ref{sec:using}. Among other things these examples cover instantiation of custom user-defined cell topologies.
 
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -313,7 +313,7 @@ The notion of a polytope is defined for any dimension $n$. Because computational
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     \subsubsection{Shell cells}
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    The case of a $d$-cell embedded in $\mathbf{R}^{d+1}$ desrves a special attention because of the possibility to endow such cells by an alternative \emph{shell} topology. We first define the notion of a shell cell.
+    The case of a $d$-cell embedded in $\mathbf{R}^{d+1}$ deserves special attention because of the possibility to endow such cells by an alternative \emph{shell} topology. We first define the notion of a shell cell.
     
     \begin{defin}\label{def:shell-cell}
     Let $P_d$ denote a standard $d$-cell embedded in $\mathbf{R}^{d+1}$, $0<d<3$. The shell extension of $P_d$, denoted by $[P_d]$, is defined to be the set
@@ -500,6 +500,998 @@ M.~Shashkov.
 \end{thebibliography}
 
 
+
+
+% Note that 3-d figures in this document were generated with sketch.
+\appendix
+\section{Cell Topology in Shards}
+
+This appendix describes the topology of the cell types provided in Shards. Many of the cell types have a base topology that includes a minimum number of nodes and one or more extended topologies with an increasing number of nodes. 
+
+\subsection{Line Topology}
+
+ A line is an object of dimension 1 with two vertices. Both base and extended topologies exist for a line in Shards as shown in Figure \ref{fig:line}.
+
+ \begin{figure}[ht]
+   \begin{center}
+     \begin{tikzpicture}[] % Line
+         \draw[thick](0,0) -- (4,0);
+             \filldraw(0,0) circle (2pt);
+             \filldraw(4,0) circle (2pt);
+         \node[above] at (0,0){0};
+         \node[above] at (4,0){1};
+      \end{tikzpicture}
+     \hspace{1cm}
+     \begin{tikzpicture}[] % Line
+         \draw[thick](0,0) -- (4,0);
+             \filldraw(0,0) circle (2pt);
+             \filldraw(4,0) circle (2pt);
+             \filldraw(2,0) circle (2pt);
+         \node[above] at (0,0){0};
+         \node[above] at (4,0){1};
+         \node[above] at (2,0){2};
+      \end{tikzpicture}
+     \end{center}
+  \begin{center}  (a) \hspace{5cm} (b) \end{center}
+  \caption{(a) Base line {\tt (line<2>)} and (b) extended line {\tt (line<3>)} topology in Shards.}
+  \label{fig:line}
+ \end{figure}
+
+\subsection{Triangle}
+
+A triangle is an object of dimension two with three vertices and three edges. The base and extended topologies available in Shards are shown in Figure \ref{fig:tri1}. The edge numbering is shown in Figure \ref{fig:tri2}.
+
+% Triangle Node Numbering
+\begin{figure}[ht]
+  \begin{center}
+   \begin{tikzpicture} % 3 nodes
+      \node[name=p3, regular polygon,regular polygon sides=3, minimum size=4cm, draw, fill=black!10]{};
+      \filldraw(p3.corner 1) circle (2pt);
+      \filldraw(p3.corner 2) circle (2pt);
+      \filldraw(p3.corner 3) circle (2pt);
+      \node[above] at (p3.corner 1){2};
+      \node[left] at (p3.corner 2){0};
+      \node[right] at (p3.corner 3){1};
+   \end{tikzpicture}
+   \hspace{1cm}
+   \begin{tikzpicture} % 4 nodes
+      \node[name=p3, regular polygon,regular polygon sides=3, minimum size=4cm, draw,  fill=black!10]{};
+      \filldraw(p3.corner 1) circle (2pt);
+      \filldraw(p3.corner 2) circle (2pt);
+      \filldraw(p3.corner 3) circle (2pt);
+      \filldraw(p3.center) circle (2pt);
+      \node[above] at (p3.corner 1){2};
+      \node[left] at (p3.corner 2){0};
+      \node[right] at (p3.corner 3){1};
+      \node[above] at (p3.center){3};
+   \end{tikzpicture}
+  \end{center}
+  \begin{center}  (a) \hspace{5cm} (b) \end{center}
+  \begin{center}
+   \begin{tikzpicture} % 6 nodes
+      \node[name=p3, regular polygon,regular polygon sides=3, minimum size=4cm, draw,  fill=black!10]{};
+      \filldraw(p3.corner 1) circle (2pt);
+      \filldraw(p3.corner 2) circle (2pt);
+      \filldraw(p3.corner 3) circle (2pt);
+      \filldraw(p3.side 1) circle (2pt);
+      \filldraw(p3.side 2) circle (2pt);
+      \filldraw(p3.side 3) circle (2pt);
+      \node[above] at (p3.corner 1){2};
+      \node[left] at (p3.corner 2){0};
+      \node[right] at (p3.corner 3){1};
+      \node[left] at (p3.side 1){5};
+      \node[below] at (p3.side 2){3};
+      \node[right] at (p3.side 3){4};
+   \end{tikzpicture}
+  \end{center}
+  \begin{center} (c) \end{center}
+  \caption{(a) Base triangle {\tt (Triangle<>)}, (b) four-node extended triangle {\tt (Triangle<4>)},  and (c) six-node extended triangle {\tt (Triangle<6>)} topology in Shards.} 
+ \label{fig:tri1}
+\end{figure}
+
+% Triangle Edge Numbering
+\begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}
+      \node[name=p3, regular polygon,regular polygon sides=3, minimum size=4cm, draw, thick, fill=black!10]{};
+      \node[left] at (p3.side 1){2};
+      \node[below] at (p3.side 2){0};
+      \node[right] at (p3.side 3){1};
+      \filldraw(p3.corner 1) circle (2pt);
+      \filldraw(p3.corner 2) circle (2pt);
+      \filldraw(p3.corner 3) circle (2pt);
+    \end{tikzpicture}
+  \end{center}
+ \caption{Triangle edge (1-cell) numbering in Shards.}
+\label{fig:tri2}
+\end{figure}
+
+
+\subsection{Quadrilateral}
+A quadrilateral is an object of dimension two with four vertices and four edges. The base and extended topologies available in Shards are shown in Figure \ref{fig:quad1}. The edge numbering is shown in Figure \ref{fig:quad2}.
+% Quadrilateral Node Numbering
+\begin{figure}[ht]
+ \begin{center}
+   \begin{tikzpicture}
+      \node[name=p4, regular polygon,regular polygon sides=4, minimum size=4cm, draw, fill=black!10]{};
+      \filldraw(p4.corner 1) circle (2pt);
+      \filldraw(p4.corner 2) circle (2pt);
+      \filldraw(p4.corner 3) circle (2pt);
+      \filldraw(p4.corner 4) circle (2pt);
+      \node[above] at (p4.corner 1){2};
+      \node[above] at (p4.corner 2){3};
+      \node[below] at (p4.corner 3){0};
+      \node[below] at (p4.corner 4){1};
+   \end{tikzpicture}
+   \hspace{1cm}
+   \begin{tikzpicture}
+      \node[name=p4, regular polygon,regular polygon sides=4, minimum size=4cm, draw, fill=black!10]{};
+      \filldraw(p4.corner 1) circle (2pt);
+      \filldraw(p4.corner 2) circle (2pt);
+      \filldraw(p4.corner 3) circle (2pt);
+      \filldraw(p4.corner 4) circle (2pt);
+      \filldraw(p4.side 1) circle (2pt);
+      \filldraw(p4.side 2) circle (2pt);
+      \filldraw(p4.side 3) circle (2pt);
+      \filldraw(p4.side 4) circle (2pt);
+      \node[above] at (p4.corner 1){2};
+      \node[above] at (p4.corner 2){3};
+      \node[below] at (p4.corner 3){0};
+      \node[below] at (p4.corner 4){1};
+      \node[above] at (p4.side 1){6};
+      \node[left] at (p4.side 2){7};
+      \node[below] at (p4.side 3){4};
+      \node[right] at (p4.side 4){5};
+   \end{tikzpicture}
+   \hspace{1cm}
+   \begin{tikzpicture}
+      \node[name=p4, regular polygon,regular polygon sides=4, minimum size=4cm, draw, fill=black!10]{};
+      \filldraw(p4.corner 1) circle (2pt);
+      \filldraw(p4.corner 2) circle (2pt);
+      \filldraw(p4.corner 3) circle (2pt);
+      \filldraw(p4.corner 4) circle (2pt);
+      \filldraw(p4.side 1) circle (2pt);
+      \filldraw(p4.side 2) circle (2pt);
+      \filldraw(p4.side 3) circle (2pt);
+      \filldraw(p4.side 4) circle (2pt);
+      \filldraw(p4.center) circle (2pt);
+      \node[above] at (p4.corner 1){2};
+      \node[above] at (p4.corner 2){3};
+      \node[below] at (p4.corner 3){0};
+      \node[below] at (p4.corner 4){1};
+      \node[above] at (p4.side 1){6};
+      \node[left] at (p4.side 2){7};
+      \node[below] at (p4.side 3){4};
+      \node[right] at (p4.side 4){5};
+      \node[above] at (p4.center){8};
+   \end{tikzpicture}
+ \end{center}
+  \begin{center} (a) \hspace{4cm} (b) \hspace{4cm} (c) \end{center}
+ \caption{(a) Base quadrilateral {\tt (Quadrilateral<4>)}, (b) eight-node extended quadrilateral {\tt (Quadrilateral<8>)}, and (c) nine-node extended quadrilateral {\tt (Quadrilateral<9>)} topology in Shards.}
+\label{fig:quad1}
+\end{figure}
+
+% Quadrilateral Edge
+\begin{figure}[ht]
+ \begin{center}
+  \begin{tikzpicture}
+     \node[name=p4, regular polygon,regular polygon sides=4, minimum size=4cm, draw, thick, fill=black!10]{};
+      \filldraw(p4.corner 1) circle (2pt);
+      \filldraw(p4.corner 2) circle (2pt);
+      \filldraw(p4.corner 3) circle (2pt);
+      \filldraw(p4.corner 4) circle (2pt);
+     \node[above] at (p4.side 1){2};
+     \node[left] at (p4.side 2){3};
+     \node[below] at (p4.side 3){0};
+     \node[right] at (p4.side 4){1};
+  \end{tikzpicture}
+ \end{center}
+ \caption{Quadrilateral edge (1-cell) numbering in Shards.}
+\label{fig:quad2}
+\end{figure}
+
+\subsection{Pentagon}
+ 
+A pentagon is an object of dimension two with five vertices and five edges. Only a base topology is provided for a pentagon in Shards, which is shown in Figure \ref{fig:pent} along with the edge numbering.
+\begin{figure}[ht]
+ \begin{center}
+   \begin{tikzpicture}
+      \node[name=p5, regular polygon,regular polygon sides=5, minimum size=4cm, draw, fill=black!10]{};
+      \filldraw(p5.corner 1) circle (2pt);
+      \filldraw(p5.corner 2) circle (2pt);
+      \filldraw(p5.corner 3) circle (2pt);
+      \filldraw(p5.corner 4) circle (2pt);
+      \filldraw(p5.corner 5) circle (2pt);
+      \node[below] at (p5.corner 3){0};
+      \node[below] at (p5.corner 4){1};
+      \node[above] at (p5.corner 5){2};
+      \node[above] at (p5.corner 1){3};
+      \node[above] at (p5.corner 2){4};
+   \end{tikzpicture}
+   \hspace{2cm}
+   \begin{tikzpicture}
+      \node[name=p5, regular polygon,regular polygon sides=5, minimum size=4cm, draw, thick, fill=black!10]{};
+      \filldraw(p5.corner 1) circle (2pt);
+      \filldraw(p5.corner 2) circle (2pt);
+      \filldraw(p5.corner 3) circle (2pt);
+      \filldraw(p5.corner 4) circle (2pt);
+      \filldraw(p5.corner 5) circle (2pt);
+      \node[below] at (p5.side 3){0};
+      \node[right] at (p5.side 4){1};
+      \node[above] at (p5.side 5){2};
+      \node[above] at (p5.side 1){3};
+      \node[left] at (p5.side 2){4};
+   \end{tikzpicture}  
+  \end{center}
+  \begin{center} (a) \hspace{5cm} (b) \end{center}
+  \caption{ (a) Base pentagon ({\tt Pentagon<>}) topology and (b) edge (1-cell) numbering in Shards.}
+ \label{fig:pent}
+ \end{figure}
+   
+\subsection{Hexagon}
+A hexagon is an object of dimension two with six vertices and six edges. Only a base topology is provided for a hexagon in Shards, which is shown in Figure \ref{fig:hex} along with the edge numbering.
+\begin{figure}[ht]
+  \begin{center}
+   \begin{tikzpicture}
+      \node[name=p6, regular polygon,regular polygon sides=6, minimum size=4cm, draw, fill=black!10]{};
+      \filldraw(p6.corner 1) circle (2pt);
+      \filldraw(p6.corner 2) circle (2pt);
+      \filldraw(p6.corner 3) circle (2pt);
+      \filldraw(p6.corner 4) circle (2pt);
+      \filldraw(p6.corner 5) circle (2pt);
+      \filldraw(p6.corner 6) circle (2pt);
+      \node[left] at (p6.corner 3){5};
+      \node[below] at (p6.corner 4){0};
+      \node[below] at (p6.corner 5){1};
+      \node[above] at (p6.corner 1){3};
+      \node[above] at (p6.corner 2){4};
+      \node[right] at (p6.corner 6){2};
+    \end{tikzpicture}
+    \hspace{2cm}
+    \begin{tikzpicture}
+      \node[name=p6, regular polygon,regular polygon sides=6, minimum size=4cm, draw, thick, fill=black!10]{};
+      \filldraw(p6.corner 1) circle (2pt);
+      \filldraw(p6.corner 2) circle (2pt);
+      \filldraw(p6.corner 3) circle (2pt);
+      \filldraw(p6.corner 4) circle (2pt);
+      \filldraw(p6.corner 5) circle (2pt);
+      \filldraw(p6.corner 6) circle (2pt);
+      \node[left] at (p6.side 3){5};
+      \node[below] at (p6.side 4){0};
+      \node[right] at (p6.side 5){1};
+      \node[above] at (p6.side 1){3};
+      \node[left] at (p6.side 2){4};
+      \node[right] at (p6.side 6){2};
+    \end{tikzpicture}
+  \end{center}
+ \begin{center} 
+     \hspace{1cm} (a) \hspace{5cm} (b)  \\
+   \caption{ (a) Base hexagon ({\tt Hexagon<>}) topology and (b) edge (1-cell) numbering in Shards.}
+ \end{center}
+\label{fig:hex}
+\end{figure}
+
+% Tetrahedron Node Numbering
+\subsection{Tetrahedron}
+A tetrahedron is an object of dimension three with four vertices, six edges, and four sides. The base and extended topologies available in Shards are shown in Figure \ref{fig:tet1}. The edge numbering is shown in Figure \ref{fig:tet2} and the face numbering in Figure \ref{fig:tet3}.
+ \begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}[join=round] % tet with 4 nodes
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.205,.272)--(1.748,.561)--(0,2.6)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(1.748,.561)--(.456,-.833)--(0,2.6)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.205,.272)--(0,2.6)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(0,2.6) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \fill[black]
+                (-2.205,.272) node [left] {0}
+                (.456,-.833) node [below] {1}
+                (1.748,.561) node [right] {2}
+                (0,2.6) node [above] {3};
+    \end{tikzpicture}
+     \hspace{1cm}
+    \begin{tikzpicture}[join=round] % tet with 8 nodes
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.205,.272)--(1.748,.561)--(0,2.6)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(1.748,.561)--(.456,-.833)--(0,2.6)--cycle;
+        \filldraw(-.228,.417) circle (2pt);
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(0,.65) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.205,.272)--(0,2.6)--cycle;
+        \filldraw(1.102,-.136) circle (2pt);
+        \filldraw(-.874,-.281) circle (2pt);
+        \filldraw(0,2.6) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \fill[black,font=\footnotesize]
+                (-2.205,.272) node [left] {0}
+                (.456,-.833) node [below] {1}
+                (1.748,.561) node [right] {2}
+                (0,2.6) node [above] {3}
+                (-.874,-.281) node [below] {4}
+                (1.102,-.136) node [below] {5}
+                (-.228,.417) node [above] {6}
+                (0,.65) node [above] {7};
+     \end{tikzpicture}
+   \end{center}
+   \begin{center} {(a) \hspace{5cm} (b)}  \end{center}
+   \begin{center}
+    \begin{tikzpicture}[join=round]% tet with 10 nodes
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.205,.272)--(1.748,.561)--(0,2.6)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(1.748,.561)--(.456,-.833)--(0,2.6)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.205,.272)--(0,2.6)--cycle;
+        \filldraw(-.228,.417) circle (2pt);
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(.874,1.581) circle (2pt);
+        \filldraw(-1.102,1.436) circle (2pt);
+        \filldraw(1.102,-.136) circle (2pt);
+        \filldraw(-.874,-.281) circle (2pt);
+        \filldraw(0,2.6) circle (2pt);
+        \filldraw(.228,.883) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \fill[black,font=\footnotesize]
+                (-2.205,.272) node [left] {0}
+                (.456,-.833) node [below] {1}
+                (1.748,.561) node [right] {2}
+                (0,2.6) node [above] {3}
+                (-.874,-.281) node [below] {4}
+                (1.102,-.136) node [below] {5}
+                (-.228,.417) node [above] {6}
+                (-1.102,1.436) node [left] {7}
+                (.228,.883) node [left] {8}
+                (.874,1.581) node [right] {9};
+     \end{tikzpicture}
+    \end{center}
+  \begin{center}(c)\end{center}
+   \caption{(a) Base tetrahedron {\tt (Tetrahedron<>)}, (b) eight-node extended tetrahedron {\tt (Tetrahedron<8>)}, and (e) ten-node extended tetrahedron {\tt (Tetrahedron<10>)} topology in Shards.}
+ \label{fig:tet1}
+\end{figure}
+
+\begin{figure}[ht]
+ \begin{center}
+   \begin{tikzpicture}[join=round] % Tetrahedron edges
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.205,.272)--(1.748,.561)--(0,2.6)--cycle;
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(1.748,.561)--(.456,-.833)--(0,2.6)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.205,.272)--(0,2.6)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(0,2.6) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \fill[black]
+                (-.874,-.281) node [below] {0}
+                (1.102,-.136) node [below] {1}
+                (-.228,.417) node [below] {2}
+                (-1.102,1.436) node [left] {3}
+                (.228,.883) node [right] {4}
+                (.874,1.581) node [right] {5};
+   \end{tikzpicture}
+  \end{center}
+ \caption{Tetrahedron edge (1-cell) numbering in Shards.}
+ \label{fig:tet2}
+\end{figure}
+
+\begin{figure}[ht]
+ \begin{center}
+  \begin{tikzpicture}[join=round] % Tetrahedron faces
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.205,.272)--(1.748,.561)--(0,2.6)--cycle;
+       \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.9](0,2.6)--(1.748,.561)--(.456,-.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.9](0,2.6)--(.456,-.833)--(-2.205,.272)--(0,2.6)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(0,2.6) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+       \fill[black]
+                (-.583,.68) node [yslant=-.5,xslant=.2] {0}
+                (.735,.776) node [yslant=.7,xslant=-.2] {1};
+   \end{tikzpicture}
+  \hspace{1cm}
+  \begin{tikzpicture}[join=round] % Tetrahedron faces
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.205,.272)--(1.748,.561)--(0,2.6)--cycle;
+       \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(1.748,.561)--(.456,-.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.205,.272)--(0,2.6)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(0,2.6) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+       \fill[black]
+                (-.152,1.144) node [] {2}
+                (0,0) node [xslant=.5,yslant=0.0] {3};
+   \end{tikzpicture}
+ \end{center}
+ \caption{Tetrahedron face (2-cell) numbering in Shards.}
+ \label{fig:tet3}
+\end{figure}
+
+
+\subsection{Pyramid}
+A pyramid is an object of dimension three with five vertices, eight edges, and five sides. The base and extended topologies available in Shards are shown in Figure \ref{fig:pyr1}. The edge numbering is shown in Figure \ref{fig:pyr2} and the face numbering in Figure \ref{fig:pyr3}.
+
+\begin{figure}[ht]
+ \begin{center}
+    \begin{tikzpicture}[join=round] % pyramid with 5 nodes
+       \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.282,-.167)--(-.456,.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-.456,.833)--(2.282,.167)--(0,2.6)--cycle;
+       \filldraw(-.456,.833) circle (2pt);
+       \filldraw(2.282,.167) circle (2pt);
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(2.282,.167)--(.456,-.833)--(0,2.6)--cycle;
+       \filldraw(-2.282,-.167) circle (2pt);
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.282,-.167)--(0,2.6)--cycle;
+       \filldraw(0,2.6) circle (2pt);
+       \filldraw(.456,-.833) circle (2pt);
+       \fill[black]
+                (-2.282,-.167) node [left] {0}
+                (.456,-.833) node [below] {1}
+                (2.282,.167) node [right] {2}
+                (-.456,.833) node [below] {3}
+                (0,2.6) node [above] {4};
+   \end{tikzpicture}
+   \hspace{1cm}
+   \begin{tikzpicture}[join=round] % pyramid with 13 nodes
+        \filldraw(-.456,.833) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-.456,.833)--(2.282,.167)--(0,2.6)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.282,-.167)--(-.456,.833)--(0,2.6)--cycle;
+        \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+        \filldraw(.913,.5) circle (2pt);
+        \filldraw(-1.369,.333) circle (2pt);
+        \filldraw(-.228,1.717) circle (2pt);
+        \filldraw(2.282,.167) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(2.282,.167)--(.456,-.833)--(0,2.6)--cycle;
+        \filldraw(1.141,1.383) circle (2pt);
+        \filldraw(-2.282,-.167) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.282,-.167)--(0,2.6)--cycle;
+        \filldraw(-1.141,1.217) circle (2pt);
+        \filldraw(1.369,-.333) circle (2pt);
+        \filldraw(0,2.6) circle (2pt);
+        \filldraw(-.913,-.5) circle (2pt);
+        \filldraw(.228,.883) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \fill[black,font=\footnotesize]
+                (-2.282,-.167) node [left] {0}
+                (.456,-.833) node [below] {1}
+                (2.282,.167) node [right] {2}
+                (-.456,.833) node [below] {3}
+                (0,2.6) node [above] {4}
+                (-.913,-.5) node [above] {5}
+                (1.369,-.333) node [above] {6}
+                (.913,.5) node [above] {7}
+                (-1.369,.333) node [above] {8}
+                (-1.141,1.217) node [above] {9}
+                (.228,.883) node [above] {10}
+                (1.141,1.383) node [above] {11}
+                (-.228,1.717) node [above] {12};
+   \end{tikzpicture}
+ \end{center}
+ \begin{center}{(a) \hspace{5cm} (b)} \end{center}
+ \begin{center}
+    \begin{tikzpicture}[join=round] %pyramid with 14 nodes
+         \filldraw(-.456,.833) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-.456,.833)--(2.282,.167)--(0,2.6)--cycle;
+         \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.282,-.167)--(-.456,.833)--(0,2.6)--cycle;
+         \filldraw[fill=black!10](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+         \filldraw(.913,.5) circle (2pt);
+         \filldraw(-1.369,.333) circle (2pt);
+         \filldraw(-.228,1.717) circle (2pt);
+         \filldraw(2.282,.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(2.282,.167)--(.456,-.833)--(0,2.6)--cycle;
+         \filldraw(0,0) circle (2pt);
+         \filldraw(1.141,1.383) circle (2pt);
+         \filldraw(-2.282,-.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.282,-.167)--(0,2.6)--cycle;
+         \filldraw(-1.141,1.217) circle (2pt);
+         \filldraw(1.369,-.333) circle (2pt);
+         \filldraw(0,2.6) circle (2pt);
+         \filldraw(-.913,-.5) circle (2pt);
+         \filldraw(.228,.883) circle (2pt);
+         \filldraw(.456,-.833) circle (2pt);
+         \fill[black,font=\footnotesize]
+                (-2.282,-.167) node [left] {0}
+                (.456,-.833) node [below] {1}
+                (2.282,.167) node [right] {2}
+                (-.456,.833) node [above] {3}
+                (0,2.6) node [above] {4}
+                (-.913,-.5) node [above] {5}
+                (1.369,-.333) node [above] {6}
+                (.913,.5) node [above] {7}
+                (-1.369,.333) node [above] {8}
+                (-1.141,1.217) node [above] {9}
+                (.228,.883) node [above] {10}
+                (1.141,1.383) node [above] {11}
+                (-.228,1.717) node [above] {12}
+                (0,0) node [above] {13};
+    \end{tikzpicture}
+ \end{center}
+ \begin{center}(c)\end{center}
+  \caption{(a) Base pyramid {\tt (Pyramid<>)}, (b) thirteen-node extended pyramid {\tt (Pyramid<13>)}, and (c) fourteen-node extended pyramid {\tt (Pyramid<14>)} topology in Shards.}
+ \label{fig:pyr1}
+\end{figure}
+
+\begin{figure}[ht]
+ \begin{center}
+   \begin{tikzpicture}[join=round] % Pyramid edges
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.282,-.167)--(-.456,.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-.456,.833)--(2.282,.167)--(0,2.6)--cycle;
+       \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(2.282,.167)--(.456,-.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.282,-.167)--(0,2.6)--cycle;
+       \filldraw(-.456,.833) circle (2pt);
+       \filldraw(2.282,.167) circle (2pt);
+       \filldraw(-2.282,-.167) circle (2pt);
+       \filldraw(0,2.6) circle (2pt);
+       \filldraw(.456,-.833) circle (2pt);
+       \fill[black]
+                (-.913,-.5) node [below] {0}
+                (1.369,-.333) node [below] {1}
+                (.913,.5) node [below] {2}
+                (-1.369,.333) node [below] {3}
+                (-1.141,1.217) node [left] {4}
+                (.228,.883) node [right] {5}
+                (1.141,1.383) node [right] {6}
+                (-.228,1.717) node [left] {7};
+   \end{tikzpicture}
+  \end{center}
+  \caption{Pyramid edge (1-cell) numbering in Shards.}
+ \label{fig:pyr2}
+\end{figure}
+  
+\begin{figure}[ht]
+ \begin{center}
+   \begin{tikzpicture}[join=round] % Pyramid Faces
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.282,-.167)--(-.456,.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-.456,.833)--(2.282,.167)--(0,2.6)--cycle;
+       \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+       \filldraw(-.456,.833) circle (2pt);
+       \filldraw[fill=blue!10,fill opacity=0.9](0,2.6)--(2.282,.167)--(.456,-.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.9](0,2.6)--(.456,-.833)--(-2.282,-.167)--(0,2.6)--cycle;
+       \filldraw(2.282,.167) circle (2pt);
+       \filldraw(-2.282,-.167) circle (2pt);
+       \filldraw(0,2.6) circle (2pt);
+       \filldraw(.456,-.833) circle (2pt);
+       \fill[black]
+                (-.609,.533) node [xslant=.4,yslant=-0.2] {0}
+                (.913,.644) node [xslant=-.3,yslant=.5] {1};
+   \end{tikzpicture}
+  \hspace{1cm}
+   \begin{tikzpicture}[join=round] % Pyramid Faces
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-2.282,-.167)--(-.456,.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(-.456,.833)--(2.282,.167)--(0,2.6)--cycle;
+       \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(2.282,.167)--(.456,-.833)--(0,2.6)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](0,2.6)--(.456,-.833)--(-2.282,-.167)--(0,2.6)--cycle;
+       \filldraw(-.456,.833) circle (2pt);
+       \filldraw(2.282,.167) circle (2pt);
+       \filldraw(-2.282,-.167) circle (2pt);
+       \filldraw(0,2.6) circle (2pt);
+       \filldraw(.456,-.833) circle (2pt);
+       \fill[black]
+                (.609,1.2) node [xslant=-0.4,yslant=-.1] {2}
+                (-.913,1.089) node [xslant=.1,yslant=.4] {3}
+                (0,0) node [xslant=.5] {4};
+   \end{tikzpicture}
+ \end{center}
+ \caption{Pyramid face (2-cell) numbering in Shards.}
+ \label{fig:pyr3}
+\end{figure}
+
+
+% Wedge Node Numbering
+\subsection{Wedge}
+A wedge is an object of dimension three with six vertices, nine edges, and five sides. The base and extended topologies available in Shards are shown in Figure \ref{fig:wed1}. The edge numbering is shown in Figure \ref{fig:wed2} and the face numbering in Figure \ref{fig:wed3}.
+ \begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}[join=round] %Wedge with 6 nodes
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](-2.205,2.872)--(-2.205,.272)--(1.748,.561)--(1.748,3.161)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](1.748,3.161)--(1.748,.561)--(.456,-.833)--(.456,1.767)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.205,.272)--(-2.205,2.872)--cycle;
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(1.748,3.161) circle (2pt);
+        \filldraw(-2.205,2.872) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+        \fill[black]
+                (-2.205,.272) node [below] {0}
+                (.456,-.833) node [below] {1}
+                (1.748,.561) node [below] {2}
+                (-2.205,2.872) node [above] {3}
+                (.456,1.767) node [above] {4}
+                (1.748,3.161) node [above] {5};
+    \end{tikzpicture}
+     \hspace{1cm}
+     \begin{tikzpicture}[join=round]
+         \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+         \filldraw(1.748,.561) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](-2.205,2.872)--(-2.205,.272)--(1.748,.561)--(1.748,3.161)--cycle;
+         \filldraw[fill=blue!10,fill opacity=0.4](1.748,3.161)--(1.748,.561)--(.456,-.833)--(.456,1.767)--cycle;
+         \filldraw(-.228,.417) circle (2pt);
+         \filldraw(1.748,1.861) circle (2pt);
+         \filldraw(-2.205,.272) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.205,.272)--(-2.205,2.872)--cycle;
+         \filldraw(1.748,3.161) circle (2pt);
+         \filldraw(-2.205,1.572) circle (2pt);
+         \filldraw(-.228,3.017) circle (2pt);
+         \filldraw(-2.205,2.872) circle (2pt);
+         \filldraw(1.102,-.136) circle (2pt);
+         \filldraw(-.874,-.281) circle (2pt);
+         \filldraw(1.102,2.464) circle (2pt);
+         \filldraw(-.874,2.319) circle (2pt);
+         \filldraw(.456,-.833) circle (2pt);
+         \filldraw(.456,.467) circle (2pt);
+         \filldraw(.456,1.767) circle (2pt);
+         \fill[black,font=\footnotesize]
+                (-2.205,.272) node [below] {0}
+                (.456,-.833) node [below] {1}
+                (1.748,.561) node [below] {2}
+                (-2.205,2.872) node [above] {3}
+                (.456,1.767) node [above] {4}
+                (1.748,3.161) node [above] {5}
+                (-.874,-.281) node [below] {6}
+                (1.102,-.136) node [below] {7}
+                (-.228,.417) node [above] {8}
+                (-2.205,1.572) node [left] {9}
+                (.456,.467) node [right] {10}
+                (1.748,1.861) node [right] {11}
+                (-.874,2.319) node [above] {12}
+                (1.102,2.464) node [above] {13}
+                (-.228,3.017) node [above] {14};
+    \end{tikzpicture}
+  \end{center}
+  \begin{center} {(a) \hspace{5cm} (b)} \end{center}
+  \begin{center}
+    \begin{tikzpicture}[join=round]
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw(-.228,1.717) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](-2.205,2.872)--(-2.205,.272)--(1.748,.561)--(1.748,3.161)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](1.748,3.161)--(1.748,.561)--(.456,-.833)--(.456,1.767)--cycle;
+        \filldraw(-.228,.417) circle (2pt);
+        \filldraw(1.748,1.861) circle (2pt);
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.205,.272)--(-2.205,2.872)--cycle;
+        \filldraw(1.748,3.161) circle (2pt);
+        \filldraw(-2.205,1.572) circle (2pt);
+        \filldraw(-.228,3.017) circle (2pt);
+        \filldraw(-2.205,2.872) circle (2pt);
+        \filldraw(1.102,-.136) circle (2pt);
+        \filldraw(-.874,-.281) circle (2pt);
+        \filldraw(1.102,1.164) circle (2pt);
+        \filldraw(-.874,1.019) circle (2pt);
+        \filldraw(1.102,2.464) circle (2pt);
+        \filldraw(-.874,2.319) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(.456,.467) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+        \fill[black,font=\footnotesize]
+                (-2.205,.272) node [below] {0}
+                (.456,-.833) node [below] {1}
+                (1.748,.561) node [below] {2}
+                (-2.205,2.872) node [above] {3}
+                (.456,1.767) node [above] {4}
+                (1.748,3.161) node [above] {5}
+                (-.874,-.281) node [below] {6}
+                (1.102,-.136) node [below] {7}
+                (-.228,.417) node [above] {8}
+                (-2.205,1.572) node [left] {9}
+                (.456,.467) node [right] {10}
+                (1.748,1.861) node [right] {11}
+                (-.874,2.319) node [above] {12}
+                (1.102,2.464) node [above] {13}
+                (-.228,3.017) node [above] {14}
+                (-.874,1.019) node [above] {15}
+                (1.102,1.164) node [above] {16}
+                (-.228,1.717) node [below] {17};
+    \end{tikzpicture}
+  \end{center}
+  \begin{center}(c)\end{center}
+  \caption{(a) Base wedge {\tt (Wedge<>)}, (b) fifteen-node extended wedge {\tt (Wedge<15>)}, and (c) eighteen-node extended wedge {\tt (Wedge<18>)} topology in Shards.}
+ \label{fig:wed1}
+\end{figure}
+
+\begin{figure}[ht]
+  \begin{center}
+   \begin{tikzpicture}[join=round] % Wedge edge numbering
+       \filldraw[fill=blue!10,fill opacity=0.4](-2.205,2.872)--(-2.205,.272)--(1.748,.561)--(1.748,3.161)--cycle;
+       \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+       \filldraw[fill=blue!10,fill opacity=0.4](1.748,3.161)--(1.748,.561)--(.456,-.833)--(.456,1.767)--cycle;
+       \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.205,.272)--(-2.205,2.872)--cycle;
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(1.748,3.161) circle (2pt);
+        \filldraw(-2.205,2.872) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+       \fill[black]
+                (-.874,-.281) node [below] {0}
+                (1.102,-.136) node [below] {1}
+                (-.228,.417) node [below] {2}
+                (-.874,2.319) node [above] {3}
+                (1.102,2.464) node [above] {4}
+                (-.228,3.017) node [above] {5}
+                (-2.205,1.572) node [left] {6}
+                (.456,.467) node [right] {7}
+                (1.748,1.861) node [right] {8};
+    \end{tikzpicture}
+ \end{center}
+ \caption{Wedge edge (1-cell) numbering in Shards.}
+ \label{fig:wed2}
+\end{figure}
+
+\begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}[join=round] % Wedge face numbering
+        \filldraw[fill=blue!10,fill opacity=0.4](-2.205,2.872)--(-2.205,.272)--(1.748,.561)--(1.748,3.161)--cycle;
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.9](1.748,3.161)--(1.748,.561)--(.456,-.833)--(.456,1.767)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.9](.456,1.767)--(.456,-.833)--(-2.205,.272)--(-2.205,2.872)--cycle;
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(1.748,3.161) circle (2pt);
+        \filldraw(-2.205,2.872) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+        \fill[black]
+                (-.874,1.019) node [yslant=-.4] {0}
+                (1.102,1.164) node [yslant=.5,xslant=.0] {1}
+                (0,2.6) node [xslant=.5,yslant=.0] {4};
+     \end{tikzpicture}
+   \hspace{1cm}
+    \begin{tikzpicture}[join=round] % Wedge face numbering
+        \filldraw[fill=blue!10,fill opacity=0.4](-2.205,2.872)--(-2.205,.272)--(1.748,.561)--(1.748,3.161)--cycle;
+        \filldraw[fill=black!20](1.748,.561)--(-2.205,.272)--(.456,-.833)--cycle;
+        \filldraw(1.748,.561) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](1.748,3.161)--(1.748,.561)--(.456,-.833)--(.456,1.767)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.205,.272)--(-2.205,2.872)--cycle;
+        \filldraw(-2.205,.272) circle (2pt);
+        \filldraw(1.748,3.161) circle (2pt);
+        \filldraw(-2.205,2.872) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+        \fill[black]
+                (-.228,1.717) node [] {2}
+                (0,0) node[xslant=.5] {3};
+     \end{tikzpicture}
+ \end{center}
+  \caption{Wedge face (2-cell) numbering in Shards.}
+ \label{fig:wed3}
+\end{figure}
+
+
+\subsection{Hexahedron}
+A hexahedron is an object of dimension three with eight vertices, twelve edges, and six sides. The base and extended topologies available in Shards are shown in Figure \ref{fig:hex1}. The edge numbering is shown in Figure \ref{fig:hex2} and the face numbering in Figure \ref{fig:hex3}.
+
+ % Hexahedron node numbering
+\begin{figure}[ht]
+  \begin{center}
+    \begin{tikzpicture}[join=round] % Hex with 8 nodes
+        \filldraw(-.456,.833) circle (2pt);
+        \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](-2.282,2.433)--(-2.282,-.167)--(-.456,.833)--(-.456,3.433)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](-.456,3.433)--(-.456,.833)--(2.282,.167)--(2.282,2.767)--cycle;
+        \filldraw(-.456,3.433) circle (2pt);
+        \filldraw(2.282,.167) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](2.282,2.767)--(2.282,.167)--(.456,-.833)--(.456,1.767)--cycle;
+        \filldraw(-2.282,-.167) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.282,-.167)--(-2.282,2.433)--cycle;
+        \filldraw(2.282,2.767) circle (2pt);
+        \filldraw(-2.282,2.433) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+        \fill[black,font=\footnotesize]
+                (-2.282,-.167) node [below] {0}
+                (.456,-.833) node [below] {1}
+                (2.282,.167) node [below] {2}
+                (-.456,.833) node [below] {3}
+                (-2.282,2.433) node [above] {4}
+                (.456,1.767) node [above] {5}
+                (2.282,2.767) node [above] {6}
+                (-.456,3.433) node [above] {7};
+     \end{tikzpicture}
+     \hspace{1cm}
+    \begin{tikzpicture}[join=round] % Hex with 20 nodes
+        \filldraw(-.456,.833) circle (2pt);
+        \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](-2.282,2.433)--(-2.282,-.167)--(-.456,.833)--(-.456,3.433)--cycle;
+        \filldraw[fill=blue!10,fill opacity=0.4](-.456,3.433)--(-.456,.833)--(2.282,.167)--(2.282,2.767)--cycle;
+        \filldraw(-.456,2.133) circle (2pt);
+        \filldraw(.913,.5) circle (2pt);
+        \filldraw(-.456,3.433) circle (2pt);
+        \filldraw(-1.369,.333) circle (2pt);
+        \filldraw(2.282,.167) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](2.282,2.767)--(2.282,.167)--(.456,-.833)--(.456,1.767)--cycle;
+        \filldraw(.913,3.1) circle (2pt);
+        \filldraw(2.282,1.467) circle (2pt);
+        \filldraw(-1.369,2.933) circle (2pt);
+        \filldraw(-2.282,-.167) circle (2pt);
+        \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.282,-.167)--(-2.282,2.433)--cycle;
+        \filldraw(2.282,2.767) circle (2pt);
+        \filldraw(1.369,-.333) circle (2pt);
+        \filldraw(-2.282,1.133) circle (2pt);
+        \filldraw(-.913,-.5) circle (2pt);
+        \filldraw(-2.282,2.433) circle (2pt);
+        \filldraw(1.369,2.267) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(-.913,2.1) circle (2pt);
+        \filldraw(.456,.467) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+        \fill[black,font=\footnotesize]
+                (-2.282,-.167) node [below] {0}
+                (.456,-.833) node [below] {1}
+                (2.282,.167) node [below] {2}
+                (-.456,.833) node [below] {3}
+                (-2.282,2.433) node [above] {4}
+                (.456,1.767) node [above] {5}
+                (2.282,2.767) node [above] {6}
+                (-.456,3.433) node [above] {7}
+                (-.913,-.5) node [below] {8}
+                (1.369,-.333) node [below] {9}
+                (.913,.5) node [above] {10}
+                (-1.369,.333) node [above] {11}
+                (-2.282,1.133) node [left] {12}
+                (.456,.467) node [left] {13}
+                (2.282,1.467) node [right] {14}
+                (-.456,2.133) node [right] {15}
+                (-.913,2.1) node [above] {16}
+                (1.369,2.267) node [above] {17}
+                (.913,3.1) node [above] {18}
+                (-1.369,2.933) node [above] {19};
+    \end{tikzpicture}
+  \end{center}
+  \begin{center} {(a) \hspace{5cm} (b)} \end{center}
+   \begin{center}
+      \begin{tikzpicture}[join=round]
+          \filldraw(-.456,.833) circle (2pt);
+          \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+          \filldraw[fill=blue!10,fill opacity=0.4](-2.282,2.433)--(-2.282,-.167)--(-.456,.833)--(-.456,3.433)--cycle;
+          \filldraw[fill=blue!10,fill opacity=0.4](-.456,3.433)--(-.456,.833)--(2.282,.167)--(2.282,2.767)--cycle;
+          \filldraw(-.456,2.133) circle (2pt);
+          \filldraw(.913,.5) circle (2pt);
+          \filldraw(-.456,3.433) circle (2pt);
+          \filldraw(-1.369,.333) circle (2pt);
+          \filldraw(.913,1.8) circle (2pt);
+          \filldraw(2.282,.167) circle (2pt);
+          \filldraw[fill=blue!10,fill opacity=0.4](2.282,2.767)--(2.282,.167)--(.456,-.833)--(.456,1.767)--cycle;
+          \filldraw(-1.369,1.633) circle (2pt);
+          \filldraw(.913,3.1) circle (2pt);
+          \filldraw(0,0) circle (2pt);
+          \filldraw(2.282,1.467) circle (2pt);
+          \filldraw(-1.369,2.933) circle (2pt);
+          \filldraw(-2.282,-.167) circle (2pt);
+          \filldraw(0,1.3) circle (2pt);
+          \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.282,-.167)--(-2.282,2.433)--cycle;
+          \filldraw(2.282,2.767) circle (2pt);
+          \filldraw(1.369,-.333) circle (2pt);
+          \filldraw(-2.282,1.133) circle (2pt);
+          \filldraw(0,2.6) circle (2pt);
+          \filldraw(-.913,-.5) circle (2pt);
+          \filldraw(1.369,.967) circle (2pt);
+          \filldraw(-2.282,2.433) circle (2pt);
+          \filldraw(-.913,.8) circle (2pt);
+          \filldraw(1.369,2.267) circle (2pt);
+          \filldraw(.456,-.833) circle (2pt);
+          \filldraw(-.913,2.1) circle (2pt);
+          \filldraw(.456,.467) circle (2pt);
+          \filldraw(.456,1.767) circle (2pt);
+          \fill[black,font=\footnotesize]
+                (-2.282,-.167) node [below] {0}
+                (.456,-.833) node [below] {1}
+                (2.282,.167) node [below] {2}
+                (-.456,.833) node [below] {3}
+                (-2.282,2.433) node [above] {4}
+                (.456,1.767) node [above] {5}
+                (2.282,2.767) node [above] {6}
+                (-.456,3.433) node [above] {7}
+                (-.913,-.5) node [below] {8}
+                (1.369,-.333) node [below] {9}
+                (.913,.5) node [above] {10}
+                (-1.369,.333) node [above] {11}
+                (-2.282,1.133) node [left] {12}
+                (.456,.467) node [left] {13}
+                (2.282,1.467) node [right] {14}
+                (-.456,2.133) node [right] {15}
+                (-.913,2.1) node [above] {16}
+                (1.369,2.267) node [above] {17}
+                (.913,3.1) node [above] {18}
+                (-1.369,2.933) node [above] {19}
+                (0,1.3) node [above] {20}
+                (0,0) node [above] {21}
+                (0,2.6) node [above] {22}
+                (-1.369,1.633) node [above] {23}
+                (1.369,.967) node [above] {24}
+                (-.913,.8) node [above] {25}
+                (.913,1.8) node [above] {26};
+    \end{tikzpicture}
+  \end{center}
+  \begin{center}(c)\end{center} 
+ \caption{(a) Base hexahedron{\tt (Hexahedron<>)}, (b) fifteen-node extended hexahedron {\tt (Hexahedron<15>)}, and (c) eighteen-node extended hexahedron {\tt (Hexahedron<18>)} topology in Shards.}
+ \label{fig:hex1}
+\end{figure}
+
+\begin{figure}[ht]
+   \begin{center}
+     \begin{tikzpicture}[join=round] % Hexahedron Edges
+         \filldraw[fill=blue!10,fill opacity=0.4](-2.282,2.433)--(-2.282,-.167)--(-.456,.833)--(-.456,3.433)--cycle;
+         \filldraw[fill=blue!10,fill opacity=0.4](-.456,3.433)--(-.456,.833)--(2.282,.167)--(2.282,2.767)--cycle;
+         \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+        \filldraw(-.456,3.433) circle (2pt);
+        \filldraw(2.282,.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](2.282,2.767)--(2.282,.167)--(.456,-.833)--(.456,1.767)--cycle;
+        \filldraw(-2.282,-.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.282,-.167)--(-2.282,2.433)--cycle;
+        \filldraw(2.282,2.767) circle (2pt);
+        \filldraw(-2.282,2.433) circle (2pt);
+        \filldraw(.456,-.833) circle (2pt);
+        \filldraw(.456,1.767) circle (2pt);
+         \fill[black]
+                (-.913,-.5) node [below] {0}
+                (1.369,-.333) node [below] {1}
+                (.913,.5) node [above] {2}
+                (-1.369,.333) node [above] {3}
+                (-2.282,1.133) node [left] {8}
+                (.456,.467) node [left] {9}
+                (2.282,1.467) node [right] {10}
+                (-.456,2.133) node [right] {11}
+                (-.913,2.1) node [above] {4}
+                (1.369,2.267) node [above] {5}
+                (.913,3.1) node [above] {6}
+                (-1.369,2.933) node [above] {7};
+     \end{tikzpicture}
+  \end{center}
+ \caption{Hexahedron edge (1-cell) numbering in Shards.}
+ \label{fig:hex2}
+\end{figure}
+
+\begin{figure}[ht]
+  \begin{center}
+     \begin{tikzpicture}[join=round] % Hexahedron Faces
+         \filldraw[fill=blue!10,fill opacity=0.4](-2.282,2.433)--(-2.282,-.167)--(-.456,.833)--(-.456,3.433)--cycle;
+         \filldraw[fill=blue!10,fill opacity=0.4](-.456,3.433)--(-.456,.833)--(2.282,.167)--(2.282,2.767)--cycle;
+         \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+         \filldraw(-.456,3.433) circle (2pt);
+         \filldraw(2.282,.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.9](2.282,2.767)--(2.282,.167)--(.456,-.833)--(.456,1.767)--cycle;
+         \filldraw(-2.282,-.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.9](.456,1.767)--(.456,-.833)--(-2.282,-.167)--(-2.282,2.433)--cycle;
+         \filldraw(2.282,2.767) circle (2pt);
+         \filldraw(-2.282,2.433) circle (2pt);
+         \filldraw(.456,-.833) circle (2pt);
+         \filldraw(.456,1.767) circle (2pt);
+         \fill[black]
+                (0,2.6) node [xslant=.8,yslant=-.2] {5}
+                (1.369,.967) node [yslant=0.5] {1}
+                (-.913,.8) node [yslant=-.2] {0};
+      \end{tikzpicture}
+     \hspace{1cm}
+     \begin{tikzpicture}[join=round] % Hexahedron Faces
+         \filldraw[fill=blue!10,fill opacity=0.4](-2.282,2.433)--(-2.282,-.167)--(-.456,.833)--(-.456,3.433)--cycle;
+         \filldraw[fill=blue!10,fill opacity=0.4](-.456,3.433)--(-.456,.833)--(2.282,.167)--(2.282,2.767)--cycle;
+         \filldraw[fill=black!20](2.282,.167)--(-.456,.833)--(-2.282,-.167)--(.456,-.833)--cycle;
+         \filldraw(-.456,3.433) circle (2pt);
+         \filldraw(2.282,.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](2.282,2.767)--(2.282,.167)--(.456,-.833)--(.456,1.767)--cycle;
+         \filldraw(-2.282,-.167) circle (2pt);
+         \filldraw[fill=blue!10,fill opacity=0.4](.456,1.767)--(.456,-.833)--(-2.282,-.167)--(-2.282,2.433)--cycle;
+         \filldraw(2.282,2.767) circle (2pt);
+         \filldraw(-2.282,2.433) circle (2pt);
+         \filldraw(.456,-.833) circle (2pt);
+         \filldraw(.456,1.767) circle (2pt);
+         \fill[black]
+                (0,0) node [xslant=0.8,yslant=-.2] {4}
+                (-1.369,1.633) node [yslant=0.5] {3}
+                (.913,1.8) node [yslant=-.2] {2};
+      \end{tikzpicture}
+  \end{center}
+ \caption{Hexahedron face (2-cell) numbering in Shards.}
+ \label{fig:hex3}
+\end{figure}
+
     % \printindex
 
     \begin{SANDdistribution}[NM]% or [CA]
@@ -540,5 +1532,4 @@ M.~Shashkov.
     %    \SANDdistInternal{}{}{}{}
     %    \SANDdistInternalM{}{}{}{}
     %\end{SANDreDistribution}
-
 \end{document}
