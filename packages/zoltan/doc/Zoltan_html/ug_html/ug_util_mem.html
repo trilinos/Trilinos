@@ -95,6 +95,9 @@ leak information.
 <br><b><a href="#Zoltan_Memory_Usage">Zoltan_Memory_Usage</a></b>:&nbsp; Returns
 user-specified information about memory usage (i.e. maximum memory used, total
 memory currently allocated).
+<br><b><a href="#Zoltan_Memory_Reset">Zoltan_Memory_Reset</a></b>:&nbsp; Sets
+the memory usage total specified by the user (i.e. maximum memory used, total
+memory currently allocated) back to zero.
 </blockquote>
 </td>
 </tr>
@@ -575,7 +578,8 @@ warning occurs, or when <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b
 We have found values of one and two to
 be very helpful in our development efforts.&nbsp;  The routine <a href="#Zoltan_Memory_Usage">
 <b>Zoltan_Memory_Usage</b></a> can be called to return user-specified information about memory
-utilization to the user's program.
+utilization to the user's program, and <a href="#Zoltan_Memory_Reset">
+<b>Zoltan_Memory_Reset</b></a> can be called to set totals back to zero.
 <p>
 
 
@@ -719,6 +723,56 @@ allocated via Zoltan's memory allocation routines up to this point.
 <tr>
 <td VALIGN=TOP></td>
 <td> total = <b>Zoltan_Memory_Usage</b> (<i>ZOLTAN_MEM_STAT_TOTAL</i>);</td></tr>
+</table>
+<p>
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Memory_Reset"></a>
+<hr>
+void <b>Zoltan_Memory_Reset</b>(int <i>type</i>);
+<hr>
+The <b>Zoltan_Memory_Reset</b> function sets the specified count to zero.
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
+
+<td>Integer to specify the type of information to be reset .&nbsp These integers
+are defined in <i>zoltan_mem.h</i>.  Valid options include:
+<blockquote>
+ZOLTAN_MEM_STAT_TOTAL -- The function will set the count of total memory
+allocated via Zoltan's memory allocation routines to zero.
+<br>
+ZOLTAN_MEM_STAT_MAXIMUM -- The function will set the count of maximum total memory
+allocated via Zoltan's memory allocation routines back to zero.
+</blockquote>
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td><i>type</i> = <i>ZOLTAN_MEM_STAT_MAXIMUM</i></td>
+</tr>
+
+<tr>
+<td VALIGN=top><b>Example:</b></td>
+<td></td>
+</tr>
+<tr>
+<td VALIGN=TOP></td>
+<td> <b>Zoltan_Memory_Reset</b> (<i>ZOLTAN_MEM_STAT_TOTAL</i>);</td></tr>
 </table>
 <p>
 
