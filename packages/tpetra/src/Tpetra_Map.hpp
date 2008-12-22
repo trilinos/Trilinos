@@ -244,6 +244,7 @@ namespace Tpetra {
        - numLocalEntries invalid (<0)
     */
     localChecks[0] = -1;
+    localChecks[1] = 0;
     if (numLocalEntries < ONE && numLocalEntries != ZERO) {
       // invalid
       localChecks[0] = myImageID;
@@ -363,6 +364,7 @@ namespace Tpetra {
     Ordinal global_sum;
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,numLocalEntries,&global_sum);
     localChecks[0] = -1;
+    localChecks[1] = 0;
     if (numGlobalEntries < ONE && numGlobalEntries != ZERO && numGlobalEntries != INVALID) {
       // invalid
       localChecks[0] = myImageID;

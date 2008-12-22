@@ -17,11 +17,3 @@ PACKAGE_NAME=Tpetra
     ARGS = --filedir="$ABS_TOP_SRCDIR/packages/tpetra/test/CrsMatrix/";
     COMM = SERIAL, MPI;
 }
-
-
-(TpetraInProgress) {
-    DIRS = Vector;
-    EXIT-STATUS = STRING-COMPARISON;
-    #ARGS = ;
-    COMM = SERIAL, MPI;
-}
