@@ -32,6 +32,9 @@
 #ifndef PHX_EVALUATOR_WITHBASEIMPL_DEF_H
 #define PHX_EVALUATOR_WITHBASEIMPL_DEF_H
 
+#include <string>
+#include <vector>
+#include <algorithm>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 

@@ -32,9 +32,10 @@
 #ifndef PHALANX_VERSION_HPP
 #define PHALANX_VERSION_HPP
 
-#include "Phalanx_ConfigDefs.h"
+#include <string>
+#include "Phalanx_ConfigDefs.hpp"
 
-string Phalanx_Version() { 
+std::string Phalanx_Version() { 
   return("Phalanx Version: development"); 
 }
 

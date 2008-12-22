@@ -34,6 +34,8 @@
 #ifndef PHX_TEMPLATEITERATOR_HPP
 #define PHX_TEMPLATEITERATOR_HPP
 
+#include <iterator>
+#include <vector>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_TemplateManager.hpp"
 

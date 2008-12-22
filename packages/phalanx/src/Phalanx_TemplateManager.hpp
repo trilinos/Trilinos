@@ -34,7 +34,8 @@
 #ifndef PHX_TEMPLATEMANAGER_HPP
 #define PHX_TEMPLATEMANAGER_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include <typeinfo>
+#include <vector>
 
 #include "Teuchos_RCP.hpp"
 
@@ -43,6 +44,8 @@
 #include "Sacado_mpl_for_each.hpp"
 
 #include "boost/mpl/apply.hpp"
+
+#include "Phalanx_ConfigDefs.hpp"
 
 namespace PHX {
 

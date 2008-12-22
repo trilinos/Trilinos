@@ -32,8 +32,11 @@
 #ifndef PHX_FIELDTAG_HPP
 #define PHX_FIELDTAG_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include <string>
+#include <typeinfo>
+#include <iostream>
 #include "Teuchos_RCP.hpp"
+#include "Phalanx_ConfigDefs.hpp"
 
 namespace PHX {
 

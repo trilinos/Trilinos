@@ -32,6 +32,7 @@
 #ifndef PHX_ALLOCATOR_NEW_HPP
 #define PHX_ALLOCATOR_NEW_HPP
 
+#include <cstddef>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 

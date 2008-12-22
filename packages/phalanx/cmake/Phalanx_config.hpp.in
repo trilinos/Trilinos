@@ -1,0 +1,8 @@
+
+#cmakedefine HAVE_MPI
+
+#cmakedefine PHX_DEBUG
+
+#cmakedefine PHX_ETI
+
+#cmakedefine HAVE_PHALANX_TVMET

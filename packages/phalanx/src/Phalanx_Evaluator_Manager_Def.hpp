@@ -32,8 +32,14 @@
 #ifndef PHX_FIELD_EVALUATOR_MANAGER_DEF_HPP
 #define PHX_FIELD_EVALUATOR_MANAGER_DEF_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include <cstddef>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
 #include "Teuchos_TestForException.hpp"
+#include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 

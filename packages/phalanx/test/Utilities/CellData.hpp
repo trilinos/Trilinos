@@ -32,6 +32,7 @@
 #ifndef PHX_EXAMPLE_CELL_DATA_HPP
 #define PHX_EXAMPLE_CELL_DATA_HPP
 
+#include <vector>
 #include "Phalanx_ConfigDefs.hpp" // for std::vector
 #include "AlgebraicTypes.hpp"
 

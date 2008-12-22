@@ -32,6 +32,9 @@
 #ifndef PHX_ALLOCATOR_CONTIGUOUS_HPP
 #define PHX_ALLOCATOR_CONTIGUOUS_HPP
 
+#include <cstddef>
+#include <string>
+#include <exception>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"

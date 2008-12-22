@@ -32,6 +32,9 @@
 #ifndef PHX_FIELDTAG_TAG_HPP
 #define PHX_FIELDTAG_TAG_HPP
 
+#include <string>
+#include <typeinfo>
+#include <iostream>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_DataLayout.hpp"
