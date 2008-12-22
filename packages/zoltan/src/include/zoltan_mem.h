@@ -64,6 +64,7 @@ extern double *Zoltan_Malloc(size_t, char *, int);
 extern double *Zoltan_Realloc(void *, size_t, char *, int);
 extern void    Zoltan_Memory_Stats(void);
 extern size_t  Zoltan_Memory_Usage(int);
+extern void    Zoltan_Memory_Reset(int);
 
 #ifdef __STDC__
 extern void Zoltan_Multifree(char *, int, int n, ...);

@@ -552,6 +552,18 @@ size_t Zoltan_Memory_Usage (int type)
    return bytes_max ;
 }
 
+void Zoltan_Memory_Reset (int type)
+{
+/* Reset total bytes used currently or maximum bytes used at any point 
+   to zero. */
+
+   if (type == ZOLTAN_MEM_STAT_TOTAL)
+      bytes_used = 0;
+   else
+      bytes_max = 0;
+}
+
+
 /*****************************************************************************/
 /*                      END of mem.c                                         */
 /*****************************************************************************/
