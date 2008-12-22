@@ -18,7 +18,7 @@ FUNCTION(TRILINOS_ADD_EXECUTABLE EXE_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCES;DIRECTORY;COMM"
+    "SOURCES;DIRECTORY;DEPLIBS;COMM"
     #options
     "NOEXEPREFIX"
     ${ARGN}
@@ -84,6 +84,14 @@ FUNCTION(TRILINOS_ADD_EXECUTABLE EXE_NAME)
       MESSAGE("TRILINOS_ADD_EXECUTABLE: ${EXE_BINARY_NAME}")
     ENDIF()
 
+    IF (PARSE_DEPLIBS)
+      FOREACH(DEPLIB ${PARSE_DEPLIBS})
+        IF (${DEPLIB}_INCLUDE_DIRS})
+          INCLUDE_DIRECTORIES(${DEPLIB}_INCLUDE_DIRS})
+        ENDIF()
+      ENDFOREACH()
+    ENDIF()
+
     ADD_EXECUTABLE(${EXE_BINARY_NAME} ${EXE_SOURCES})
     APPEND_GLOBAL_SET(${PACKAGE_NAME}_ALL_TARGETS ${EXE_BINARY_NAME})
 
@@ -92,13 +100,18 @@ FUNCTION(TRILINOS_ADD_EXECUTABLE EXE_NAME)
     # First, add the package's own test libraries
     APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_TEST_LIBRARIES})
 
-    # Second,add the package's own regular libraries
+    # Second ,add the package's own regular libraries
     APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_LIBRARIES})
 
     # Third, add test dependent package libraries
     PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} TEST PACKAGES ALL_DEP_PACKAGES)
     PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${Trilinos_REVERSE_PACKAGES}" "${ALL_DEP_PACKAGES}"
       "" LINK_LIBS)
+
+    # Fourth, add in the passed in libraries
+    IF (PARSE_DEPLIBS)
+      APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
+    ENDIF()
     
     # Last, add dependnet test TPL libraries
     PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} TEST TPLS ALL_TPLS)

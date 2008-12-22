@@ -69,7 +69,6 @@ MACRO(TRILINOS_PACKAGE PACKAGE_NAME_IN)
     IF (Trilinos_VERBOSE_CONFIGURE)
       MESSAGE(STATUS "Setting up for C warnings as errors just in this package ...")
       PRINT_VAR(CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
-      DD_DEFINITIONS(${Trilinos_WARNINGS_AS_ERRORS_FLAGS})
     ENDIF()
   ENDIF()
 
