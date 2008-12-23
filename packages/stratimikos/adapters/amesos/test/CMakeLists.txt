@@ -1,5 +1,5 @@
-INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 
 INCLUDE_DIRECTORIES("${PACKAGE_SOURCE_DIR}/../thyra/example/operator_solve")
@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES("${PACKAGE_SOURCE_DIR}/../thyra/example/operator_solve")
 SET(COMMON_SOURCES test_single_amesos_thyra_solver.cpp)
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   test_amesos_thyra_driver
   SOURCES
     test_amesos_thyra_driver.cpp
@@ -20,7 +20,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-COPY_FILES_TO_BINARY_DIR(CopyAmesosTestFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyAmesosTestFiles
   DEST_FILES
     bcsstk01.mtx                              
     bcsstk02.mtx                              

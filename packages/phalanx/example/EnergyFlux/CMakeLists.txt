@@ -1,5 +1,5 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -26,7 +26,7 @@ SET(example_SOURCES
   evaluators/Evaluator_NonlinearSource_Def.hpp
   )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   example
   SOURCES ${example_SOURCES}
   COMM serial mpi
@@ -36,7 +36,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/auxiliary_tests)
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   example_debug_names
   SOURCES auxiliary_tests/Example_DebugNames.cpp 
           AlgebraicTypes.hpp 
@@ -47,7 +47,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "Run has completed successfully!"
   )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   example_algebraic_types
   SOURCES auxiliary_tests/Example_AlgebraicTypes.cpp
           AlgebraicTypes.hpp

@@ -1,5 +1,5 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -7,8 +7,11 @@ INCLUDE(TrilinosPackageLibraryHelpers)
 
 SET(HAVE_FORTRAN_SUPPORT ${Trilinos_ENABLE_Fortran})
 SET(EPETRA_MPI ${TPL_ENABLE_MPI})
+IF(CMAKE_SIZEOF_VOID_P GREATER 4)
+  SET(EPETRA_ADDRESS64BIT ON)
+ENDIF()
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -195,21 +198,15 @@ ENDIF()
 
 IF(Trilinos_ENABLE_Fortran)  
   SET(EPETRA_FORTRAN_LIB epetra_fortran)  
-  TRILINOS_PACKAGE_ADD_LIBRARY(
+  PACKAGE_ADD_LIBRARY(
     ${EPETRA_FORTRAN_LIB}
     SOURCES ${FORTRAN_SOURCES}
     )
 ENDIF()
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   epetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS ${EPETRA_FORTRAN_LIB}
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

@@ -1,9 +1,9 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   example_rcb
   SOURCES example_rcb.cpp
   DEPLIBS isorropia_test_utils
@@ -11,7 +11,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-COPY_FILES_TO_BINARY_DIR(ExampleGeometrixCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ExampleGeometrixCopyFiles
   SOURCE_FILES simple.coords
   EXEDEPS example_rcb
   )

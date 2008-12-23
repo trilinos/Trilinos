@@ -1,7 +1,7 @@
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   RTOpPack_Types_test
   SOURCES RTOpPack_Types_test.cpp
   ARGS
@@ -22,7 +22,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   baseUnitTests
   SOURCES
     PrimitiveTypeTraits_UnitTests.cpp

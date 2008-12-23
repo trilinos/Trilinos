@@ -1,9 +1,9 @@
 INCLUDE(CheckCSourceCompiles)
 INCLUDE(CheckCXXSourceCompiles)
 
-INCLUDE(Advanced_Set)
-INCLUDE(Assert_Defined)
-INCLUDE(Multiline_Set)
+INCLUDE(AdvancedSet)
+INCLUDE(AssertDefined)
+INCLUDE(MultilineSet)
 
 
 FUNCTION(CHECK_C_COMPILER_FLAGS FLAGS VAR)

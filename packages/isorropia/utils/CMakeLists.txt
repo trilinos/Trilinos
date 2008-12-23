@@ -1,5 +1,5 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # B) Define the header and source files (and directories)
@@ -32,7 +32,7 @@ SET(SOURCES ${SOURCES}
 # C) Define the targets for package's library(s)
 #
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   isorropia_test_utils
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
@@ -42,9 +42,3 @@ TRILINOS_PACKAGE_ADD_LIBRARY(
 # 2008/11/20: rabartl: ToDo: Above: Add an option like TESTLIB to the
 # above macro call to in order to result in the library not being added
 # to the main libraries and so that it will not be installed!
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

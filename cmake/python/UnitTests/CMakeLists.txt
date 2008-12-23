@@ -1,6 +1,6 @@
 
-INCLUDE(Multiline_Set)
-INCLUDE(Generate_Script_File_Target)
+INCLUDE(MultilineSet)
+INCLUDE(GenerateScriptFileTarget)
 
 FUNCTION(CREATE_DEPENCENCY_OUTPUT_TEST_CASE TEST_NAME TEST_PASS_COMMAND)
 

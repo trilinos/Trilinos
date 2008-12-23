@@ -1,11 +1,11 @@
-INCLUDE(TrilinosPackageHelpers)
-INCLUDE(Trilinos_Add_Option)
+INCLUDE(PackageMacros)
+INCLUDE(AddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-TRILINOS_PACKAGE(Sacado)
+PACKAGE(Sacado)
 
 #
 # B) Set up package-specific options
@@ -19,17 +19,17 @@ OPTION(${PACKAGE_NAME}_ENABLE_NESTEDFAD
   "Enable parameter library support"
   ON )
 
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_DEBUG
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   SACADO_DEBUG
   "Enable debug code in sacado"
   ${Trilinos_ENABLE_DEBUG} )
 
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_ADOLC
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ADOLC
   HAVE_ADOLC
   "Enable ADOLC support for optional sacado tests"
   OFF )
 
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
   RAD_NO_USING_STDCC
   "Enable if the compiler is confused by std::sin, etc., within namespace"
   OFF )
@@ -45,18 +45,18 @@ OPTION(${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
 
 ADD_SUBDIRECTORY(src)
 
-TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
+PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-TRILINOS_PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(
+PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(
   test/utils test/performance)
 
-TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # D) Do standard postprocessing
 #
 
-TRILINOS_PACKAGE_POSTPROCESS()
+PACKAGE_POSTPROCESS()
 
 
 # ToDo: Add tradop tests use shell scripts in autotools to generate

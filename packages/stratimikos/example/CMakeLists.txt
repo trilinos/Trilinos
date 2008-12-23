@@ -1,6 +1,6 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 
 #
@@ -8,7 +8,7 @@ INCLUDE(Copy_Files_To_Binary_Dir)
 #
 
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   simple_stratimikos_example
   SOURCES
     simple_stratimikos_example.cpp
@@ -16,7 +16,7 @@ TRILINOS_ADD_EXECUTABLE(
   )
 
 
-COPY_FILES_TO_BINARY_DIR(CopyExampleFourByFourMtx
+PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleFourByFourMtx
   DEST_FILES FourByFour.mtx
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../amesos/test/Test_Basic
   SOURCE_PREFIX "In_"
@@ -24,7 +24,7 @@ COPY_FILES_TO_BINARY_DIR(CopyExampleFourByFourMtx
   )
 
 
-COPY_FILES_TO_BINARY_DIR(CopyExampleXMLFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleXMLFiles
   DEST_FILES
     amesos.klu.xml
     aztecoo.ifpack.xml
@@ -38,7 +38,7 @@ COPY_FILES_TO_BINARY_DIR(CopyExampleXMLFiles
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
-  TRILINOS_ADD_TEST(
+  PACKAGE_ADD_TEST(
     simple_stratimikos_example
     NAME simple_stratimikos_example_amesos
     ARGS 
@@ -56,7 +56,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
-    TRILINOS_ADD_TEST(
+    PACKAGE_ADD_TEST(
       simple_stratimikos_example
       NAME simple_stratimikos_example_aztecoo_ifpack
       ARGS 
@@ -70,7 +70,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
   IF (${PACKAGE_NAME}_ENABLE_ML)
-    TRILINOS_ADD_TEST(
+    PACKAGE_ADD_TEST(
       simple_stratimikos_example
       NAME simple_stratimikos_example_aztecoo_ml
       ARGS 
@@ -90,7 +90,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
-    TRILINOS_ADD_TEST(
+    PACKAGE_ADD_TEST(
       simple_stratimikos_example
       NAME simple_stratimikos_example_belos_ifpack
       ARGS 
@@ -103,7 +103,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
   IF (${PACKAGE_NAME}_ENABLE_ML)
-    TRILINOS_ADD_TEST(
+    PACKAGE_ADD_TEST(
       simple_stratimikos_example
       NAME simple_stratimikos_example_belos_ml
       ARGS 
@@ -133,7 +133,7 @@ ENDIF()
 #
 
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   MixedOrderPhysicsBasedPreconditioner
   SOURCES
     MixedOrderPhysicsBasedPreconditioner.cpp
@@ -141,7 +141,7 @@ TRILINOS_ADD_EXECUTABLE(
   )
 
 
-COPY_FILES_TO_BINARY_DIR(CopyExampleMOPBPFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleMOPBPFiles
   DEST_FILES
     MixedOrderPhysicsBasedPreconditioner.Base.xml
     MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml
@@ -163,7 +163,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AztecOO)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
 IF (${PACKAGE_NAME}_ENABLE_AztecOO AND ${PACKAGE_NAME}_ENABLE_Ifpack)
 
-  TRILINOS_ADD_TEST(
+  PACKAGE_ADD_TEST(
     MixedOrderPhysicsBasedPreconditioner
     NAME MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack
     ARGS 
@@ -183,7 +183,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
 IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack)
 
-  TRILINOS_ADD_TEST(
+  PACKAGE_ADD_TEST(
     MixedOrderPhysicsBasedPreconditioner
     NAME MixedOrderPhysicsBasedPreconditioner_belos_ifpack
     ARGS 

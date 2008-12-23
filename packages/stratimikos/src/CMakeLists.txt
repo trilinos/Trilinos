@@ -1,11 +1,11 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -55,7 +55,7 @@ ENDIF()
 
 # ToDo: Add other solvers and preconditioners
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   stratimikos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}

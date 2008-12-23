@@ -1,5 +1,5 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -11,7 +11,7 @@ SET(HAVE_PARMETIS ${${PACKAGE_NAME}_ENABLE_ParMETIS})
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
 SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -513,7 +513,7 @@ IF (NOT TPL_ENABLE_MPI)
   SET(DEPLIBS simpi)
 ENDIF()
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   zoltan
   HEADERS ${HEADERS}
   NOINSTALLHEADERS ${NOINSTALLHEADERS}

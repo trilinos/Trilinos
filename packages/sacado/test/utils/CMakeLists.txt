@@ -1,11 +1,11 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -34,15 +34,9 @@ SET(SOURCES ${SOURCES}
 # C) Define the targets for package's library(s)
 #
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   sacadoutils
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS sacado
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

@@ -1,9 +1,9 @@
 
-INCLUDE(Trilinos_Add_Executable)
-INCLUDE(Trilinos_Add_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddExecutable)
+INCLUDE(PackageAddTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   bl_gmres_diag
   SOURCES test_bl_gmres_diag.cpp createEpetraProblem.cpp
   COMM serial mpi
@@ -13,7 +13,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
-  TRILINOS_ADD_EXECUTABLE_AND_TEST(
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     bl_gmres_hb
     SOURCES test_bl_gmres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -23,7 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-  TRILINOS_ADD_EXECUTABLE_AND_TEST(
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     resolve_gmres_hb
     SOURCES test_resolve_gmres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -33,7 +33,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-  TRILINOS_ADD_EXECUTABLE_AND_TEST(
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     pseudo_gmres_hb
     SOURCES test_pseudo_gmres_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
@@ -41,7 +41,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-  COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresFiles
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/example/BlockGmres
     SOURCE_FILES orsirr1.hb fidap036.hb
     EXEDEPS bl_gmres_diag
@@ -50,7 +50,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   ASSERT_DEFINED(Trilinos_ENABLE_Ifpack)
   IF(Trilinos_ENABLE_Ifpack)
 
-    TRILINOS_ADD_EXECUTABLE_AND_TEST(
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
       bl_pgmres_hb
       SOURCES test_bl_pgmres_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
@@ -60,7 +60,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT 
       )
 
-    TRILINOS_ADD_EXECUTABLE_AND_TEST(
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
       pseudo_pgmres_hb
       SOURCES test_pseudo_pgmres_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
@@ -68,7 +68,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT 
       )
 
-    TRILINOS_ADD_EXECUTABLE_AND_TEST(
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
       bl_fgmres_hb
       SOURCES test_bl_fgmres_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
@@ -83,7 +83,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     INCLUDE_DIRECTORIES(../MVOPTester)
 
-    TRILINOS_ADD_EXECUTABLE_AND_TEST(
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
       bl_gmres_complex_hb
       SOURCES test_bl_gmres_complex_hb.cpp createEpetraProblem.cpp
       ARGS
@@ -92,7 +92,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
         "--verbose --filename=mhd1280a.cua --subspace-length=200 --tol=1e-4"
       )
 
-    COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
+    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
       SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/test/MVOPTester
       SOURCE_FILES mhd1280b.cua mhd1280a.cua
       EXEDEPS bl_gmres_diag

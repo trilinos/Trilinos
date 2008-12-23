@@ -1,7 +1,7 @@
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   sillyCgSolve_serial
   SOURCES sillyCgSolve_serial.cpp
   ARGS
@@ -12,21 +12,21 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   sillyCgSolve_mpi
   SOURCES sillyCgSolve_mpi.cpp
   COMM serial mpi
   )
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   sillyPowerMethod_serial
   SOURCES sillyPowerMethod_serial.cpp
   COMM serial
   )
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   exampleImplicitlyComposedLinearOperators
   SOURCES exampleImplicitlyComposedLinearOperators.cpp
   ARGS

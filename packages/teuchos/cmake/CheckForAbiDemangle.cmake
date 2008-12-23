@@ -1,5 +1,5 @@
 INCLUDE(CheckCXXSourceRuns)
-INCLUDE(Multiline_Set)
+INCLUDE(MultilineSet)
 
 FUNCTION(CHECK_FOR_ABI_DEMANGLE VARNAME)
 

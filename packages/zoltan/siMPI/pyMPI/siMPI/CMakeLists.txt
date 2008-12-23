@@ -1,5 +1,5 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # B) Define the header and source files (and directories)
@@ -465,14 +465,8 @@ SET(SOURCES ${SOURCES}
 # C) Define the targets for package's library(s)
 #
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   simpi
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

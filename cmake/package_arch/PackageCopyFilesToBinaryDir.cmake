@@ -1,5 +1,5 @@
 
-INCLUDE(Parse_Variable_Arguments)
+INCLUDE(ParseVariableArguments)
 
 
 #
@@ -10,7 +10,7 @@ INCLUDE(Parse_Variable_Arguments)
 #
 # 1) Source files and destination files have the same name:
 #
-#   COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
+#   PACKAGE_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
 #     SOURCE_FILES file1 file2 ...
 #     [SOURCE_DIR sourceDir]
 #     [DEST_DIR destDir]
@@ -23,7 +23,7 @@ INCLUDE(Parse_Variable_Arguments)
 #
 # 2) Source files have a prefix different from the destination files:
 #
-#   COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
+#   PACKAGE_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
 #     DEST_FILES file1 file2 ...
 #     SOURCE_PREFIX srcPrefix
 #     [SOURCE_DIR sourceDir]
@@ -38,7 +38,7 @@ INCLUDE(Parse_Variable_Arguments)
 #
 # 3) Source files and destination files have completely different names:
 #
-#   COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
+#   PACKAGE_COPY_FILES_TO_BINARY_DIR(<TARGET_NAME>
 #     SOURCE_FILES sfile1 sfile2 ...
 #     [SOURCE_DIR sourceDir]
 #     DEST_FILES dfile1 dfile2 ...
@@ -85,7 +85,7 @@ INCLUDE(Parse_Variable_Arguments)
 #     to the arguments in the EXEDEPS list. 
 #
 
-FUNCTION(COPY_FILES_TO_BINARY_DIR TARGET_NAME)
+FUNCTION(PACKAGE_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
 
   #
   # A) Parse input arguments

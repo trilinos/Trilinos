@@ -1,9 +1,9 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 IF(Shards_ENABLE_Teuchos)
 
-  TRILINOS_ADD_EXECUTABLE_AND_TEST(
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     example_01
     SOURCES example_01.cpp
     COMM serial mpi

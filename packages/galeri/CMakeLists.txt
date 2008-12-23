@@ -1,12 +1,12 @@
 
-INCLUDE(TrilinosPackageHelpers)
-INCLUDE(Trilinos_Add_Option)
+INCLUDE(PackageMacros)
+INCLUDE(AddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-TRILINOS_PACKAGE(Galeri)
+PACKAGE(Galeri)
 
 #
 # B) Set up package-specific options
@@ -23,12 +23,12 @@ ADD_SUBDIRECTORY(src)
 #this dir only had "EXTRA_DIST" files in it
 #ADD_SUBDIRECTORY(src-fem)  
 
-TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
+PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # D) Do standard postprocessing
 #
 
-TRILINOS_PACKAGE_POSTPROCESS()
+PACKAGE_POSTPROCESS()

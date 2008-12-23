@@ -1,4 +1,4 @@
-INCLUDE(Global_Set)
+INCLUDE(GlobalSet)
 
 # Function that defines variables describing the Fortran name mangling
 # convention
@@ -36,7 +36,7 @@ FUNCTION(FORTRAN_MANGLING)
 
     FIND_FILE(_fcmakelists fmangle/ ${CMAKE_MODULE_PATH})
     IF (NOT _fcmakelists)
-      MESSAGE(STATUS "Error, the file fmangle could not be found so we can not determine Fortran name mangling!")
+      MESSAGE(STATUS "Error, the directory fmangle could not be found so we can not determine Fortran name mangling!")
       RETURN()
     ENDIF()
 

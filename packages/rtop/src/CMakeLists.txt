@@ -1,11 +1,11 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -150,14 +150,8 @@ SET(SOURCES ${SOURCES}
 # C) Define the targets for package's library(s)
 #
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   rtop
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

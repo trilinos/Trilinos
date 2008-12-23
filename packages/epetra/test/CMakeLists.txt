@@ -1,20 +1,20 @@
 
-#INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Trilinos_Add_Executable)
-INCLUDE(Trilinos_Add_Test)
+#INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageAddExecutable)
+INCLUDE(PackageAddTest)
 
 
 
 # Test definitions
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(BlockMap ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(BlockMap ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   BlockMap_test 
   COMM mpi serial  
   SOURCES cxx_main.cpp checkmap.cpp
   DIRECTORY BlockMap
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   BlockMap_test
   DIRECTORY BlockMap
   NAME BlockMap_test
@@ -25,15 +25,15 @@ TRILINOS_ADD_TEST(
   )
 
 # Problem setting up MPI version of following test due to argument requirements
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(BasicPerfTest TEST INSTALL SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v)
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(BasicPerfTest TEST INSTALL SOURCES cxx_main.cpp ARGS 16 12 1 1 25 -v)
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   BasicPerfTest_test 
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY BasicPerfTest
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   BasicPerfTest_test
   DIRECTORY BasicPerfTest
   NAME BasicPerfTest_test
@@ -45,14 +45,14 @@ TRILINOS_ADD_TEST(
   )
 
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Comm ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(Comm ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   Comm_test 
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY Comm
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Comm_test
   DIRECTORY Comm
   NAME Comm_test
@@ -64,14 +64,14 @@ TRILINOS_ADD_TEST(
   )
 
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(CrsGraph ${TEST_ARGUMENTS}  SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(CrsGraph ${TEST_ARGUMENTS}  SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   CrsGraph_test 
   COMM mpi serial  
   SOURCES cxx_main.cpp 
   DIRECTORY CrsGraph
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   CrsGraph_test
   DIRECTORY CrsGraph
   KEYWORDS unit
@@ -83,14 +83,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(CrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   CrsMatrix_test 
   COMM serial mpi
   SOURCES cxx_main.cpp 
   DIRECTORY CrsMatrix
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   CrsMatrix_test
   DIRECTORY CrsMatrix
   COMM serial mpi
@@ -100,14 +100,14 @@ TRILINOS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "tests PASSED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(RowMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(RowMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   RowMatrix_test 
   COMM mpi serial   
   SOURCES cxx_main.cpp
   DIRECTORY RowMatrix
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   RowMatrix_test
   DIRECTORY RowMatrix
   NAME RowMatrix_test
@@ -118,14 +118,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(CrsRectMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(CrsRectMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   CrsRectMatrix_test 
   COMM mpi serial   
   SOURCES cxx_main.cpp
   DIRECTORY CrsRectMatrix
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   CrsRectMatrix_test
   DIRECTORY CrsRectMatrix
   NAME CrsRectMatrix_test
@@ -136,14 +136,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Directory ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(Directory ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   Directory_test 
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY Directory
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Directory_test
   DIRECTORY Directory
   NAME Directory_test
@@ -154,14 +154,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(FECrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(FECrsGraph ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   FECrsGraph_test 
   COMM mpi serial   
   SOURCES cxx_main.cpp ExecuteTestProblems.cpp
   DIRECTORY FECrsGraph
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   FECrsGraph_test
   DIRECTORY FECrsGraph
   NAME FECrsGraph_test
@@ -173,15 +173,15 @@ TRILINOS_ADD_TEST(
   )
 
 # Following test is not building on Windows
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(FECrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(FEVbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(FECrsMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(FEVbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   FEVbrMatrix_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp ExecuteTestProblems.cpp
   DIRECTORY FEVbrMatrix
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   FEVbrMatrix_test
   DIRECTORY FEVbrMatrix
   NAME FEVbrMatrix_test
@@ -192,16 +192,16 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 # Following test is not building on Windows
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(FEVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(FEVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ExecuteTestProblems.cpp ARGS -v)
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(ImportExport ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(ImportExport ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   ImportExport_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY ImportExport
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   ImportExport_test
   DIRECTORY ImportExport
   NAME ImportExport_test
@@ -212,14 +212,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(IntSerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(IntSerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   IntSerialDense_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY IntSerialDense
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   IntSerialDense_test
   DIRECTORY IntSerialDense
   NAME IntSerialDense_test
@@ -230,14 +230,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Map ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(Map ${TEST_ARGUMENTS} SOURCES cxx_main.cpp checkmap.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   Map_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp checkmap.cpp
   DIRECTORY Map
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Map_test
   DIRECTORY Map
   NAME Map_test
@@ -249,14 +249,14 @@ TRILINOS_ADD_TEST(
   )
 
 # This test was commented out in the AUTOTOOLS configuration:
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MapColoring ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(MapColoring ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   MapColoring_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY MapColoring
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   MapColoring_test
   DIRECTORY MapColoring
   NAME MapColoring_test
@@ -267,14 +267,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(MultiVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(MultiVector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   MultiVector_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp
   DIRECTORY MultiVector
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   MultiVector_test
   DIRECTORY MultiVector
   NAME MultiVector_test
@@ -285,14 +285,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Object ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(Object ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   Object_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY Object
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Object_test
   DIRECTORY Object
   NAME Object_test
@@ -303,14 +303,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
     
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(RowMatrixTransposer ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(RowMatrixTransposer ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   RowMatrixTransposer_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY RowMatrixTransposer
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   RowMatrixTransposer_test
   DIRECTORY RowMatrixTransposer
   NAME RowMatrixTransposer_test
@@ -321,14 +321,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(SerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(SerialDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   SerialDense_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY SerialDense
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   SerialDense_test
   DIRECTORY SerialDense
   NAME SerialDense_test
@@ -339,14 +339,14 @@ TRILINOS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "tests FAILED"
   )
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(SerialSpdDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(SerialSpdDense ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   SerialSpdDense_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp
   DIRECTORY SerialSpdDense
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   SerialSpdDense_test
   DIRECTORY SerialSpdDense
   NAME SerialSpdDense_test
@@ -358,16 +358,16 @@ TRILINOS_ADD_TEST(
   )
 
 # Following test is not building on Windows
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(VbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(VbrMatrix ${TEST_ARGUMENTS} SOURCES cxx_main.cpp ARGS -v)
 
-#TRILINOS_ADD_EXECUTABLE_AND_TEST(Vector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
-TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(Vector ${TEST_ARGUMENTS} SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp ARGS -v)
+PACKAGE_ADD_EXECUTABLE(
   Vector_test  
   COMM mpi serial  
   SOURCES cxx_main.cpp BuildTestProblems.cpp ExecuteTestProblems.cpp
   DIRECTORY Vector
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Vector_test
   DIRECTORY Vector
   NAME Vector_test

@@ -1,4 +1,4 @@
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 
 INCLUDE_DIRECTORIES(
@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(
   )
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ForwardSolveEpetraModelEval2DSim
   SOURCES
     ForwardSolveEpetraModelEval2DSimMain.cpp

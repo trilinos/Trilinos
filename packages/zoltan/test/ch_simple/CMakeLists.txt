@@ -1,9 +1,9 @@
 
-INCLUDE(Trilinos_Add_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   ../../src/driver/zdrive
   NOEXEPREFIX
   NAME zdrive_ch_simple_rcb
@@ -17,7 +17,7 @@ TRILINOS_ADD_TEST(
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ParMETIS)
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
-  TRILINOS_ADD_TEST(
+  PACKAGE_ADD_TEST(
     ../../src/driver/zdrive
     NOEXEPREFIX
     NAME zdrive_ch_simple_partkway-v3
@@ -29,7 +29,7 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 ENDIF()
 
 
-COPY_FILES_TO_BINARY_DIR(ZDriveChSimpleCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChSimpleCopyFiles
   SOURCE_FILES
     zdrive.inp.partkway-v3
     simple.graph

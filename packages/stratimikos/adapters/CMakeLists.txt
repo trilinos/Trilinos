@@ -1,4 +1,4 @@
-INCLUDE(Assert_Defined)
+INCLUDE(AssertDefined)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
 IF (${PACKAGE_NAME}_ENABLE_Ifpack)

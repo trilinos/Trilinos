@@ -1,8 +1,8 @@
-INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   test_single_belos_thyra_solver_driver
   SOURCES
     test_single_belos_thyra_solver_driver.cpp
@@ -11,7 +11,7 @@ TRILINOS_ADD_EXECUTABLE(
   )
 
 
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   test_single_belos_thyra_solver_driver
   ARGS
     "--max-iters=4 --no-use-preconditioner --show-all-tests  --matrix-file=FourByFour.mtx"
@@ -24,7 +24,7 @@ TRILINOS_ADD_TEST(
   )
 
 
-COPY_FILES_TO_BINARY_DIR(CopyBelosTestFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyBelosTestFiles
   DEST_FILES
     bcsstk01.mtx                              
     bcsstk02.mtx                              

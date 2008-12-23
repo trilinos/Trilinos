@@ -1,0 +1,51 @@
+----------------------------------------------------
+Directory layout for the Trilinos/cmake subdiretory
+----------------------------------------------------
+
+Last updated: 2008/12/23
+
+The directories are layed out as follows:
+
+cmake
+  |
+  |-- utils: Generic CMake utilties
+  |
+  |-- doc: Generic documentation stuff for CMake 
+  |
+  |-- config_tests: Generic configure-time tests
+  |
+  |-- package_arch: Contains macros for a package archetecture
+  |       system that Trilinos is based on but is independent
+  |       of Trilinos.
+  |
+  |-- TPLs: Contains a collection of FindTPL${TPLNAME}.cmake
+  |      files for specific TPLs.  These are indirectly called
+  |      by the package archetecture CMake code in package_arch.
+  |      While these TPL defines are really independent of Trilinos,
+  |      they are maintained in such a way that Trilinos gets what
+  |      it needs and nothing more.
+  |
+  |-- python: Contains Trilinos-specific Python tools support code and
+  |       testing support.  Most of this basic python code is really
+  |       only dependent on the package architecture code so it could
+  |       be refactored out and put into pacakge_arch/python.
+  |
+  |-- ctest: Contains Trilinos-specific CTest dashboard driver scripts
+  |       that drive nightly and other automated testing an a number
+  |       of platforms.
+  |
+  |-- DependencyUnitTests: Contains Trilinos-specific dependency analysis
+  |       unit tests.  These tests are critical tests for the generic
+  |       package architecture CMake code.
+  |
+  |-- refactoring: Mostly trilinos-specific auto text-replacement
+  |       refactoring scripts that can be used to refactor non-refactored
+  |       CMake code.  
+
+
+
+
+
+
+
+

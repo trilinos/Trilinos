@@ -1,18 +1,18 @@
 
-INCLUDE(TrilinosPackageHelpers)
-INCLUDE(Trilinos_Add_Option)
+INCLUDE(PackageMacros)
+INCLUDE(AddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-TRILINOS_PACKAGE(Zoltan)
+PACKAGE(Zoltan)
 
 #
 # B) Set up package-specific options
 #
 
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_OCT
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_OCT
   HAVE_ZOLTAN_OCT
   "Enable support for OCT in ${PACKAGE_NAME}."
   OFF )
@@ -31,12 +31,12 @@ ENDIF()
 
 ADD_SUBDIRECTORY(src)
 
-TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(src/driver)
+PACKAGE_ADD_TEST_DIRECTORIES(src/driver)
 
-TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
+PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 #
 # D) Do standard postprocessing
 #
 
-TRILINOS_PACKAGE_POSTPROCESS()
+PACKAGE_POSTPROCESS()

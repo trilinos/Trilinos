@@ -1,9 +1,9 @@
 
 # Required modules
-INCLUDE(Trilinos_Add_Executable)
-INCLUDE(Trilinos_Add_Test)
+INCLUDE(PackageAddExecutable)
+INCLUDE(PackageAddTest)
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   MemoryManagementPerformanceTests
   COMM serial mpi  
   SOURCES
@@ -13,7 +13,7 @@ TRILINOS_ADD_EXECUTABLE(
 
 # This form of the test just makes sure that it runs without crashing
 # basically
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   MemoryManagementPerformanceTests
   NAME MemoryManagementPerformanceTests_base
   NUM_MPI_PROCS 1
@@ -25,7 +25,7 @@ TRILINOS_ADD_TEST(
 
 IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
 
-  TRILINOS_ADD_TEST(
+  PACKAGE_ADD_TEST(
     MemoryManagementPerformanceTests
     NAME MemoryManagementPerformanceTests_performance
     NUM_MPI_PROCS 1

@@ -1,5 +1,5 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # A) Package-specific configuration options
@@ -54,15 +54,9 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   ModeLaplace
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS anasazi
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

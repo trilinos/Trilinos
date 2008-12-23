@@ -18,11 +18,17 @@ SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(TRILINOS_TEST_CATEGORY "FRAMEWORK")
 
-SET(CMAKE_MODULE_PATH ${TRILINOS_HOME_DIR}/cmake ${TRILINOS_HOME_DIR}/cmake/utils)
+SET( CMAKE_MODULE_PATH
+   ${TRILINOS_HOME_DIR}/cmake
+   ${TRILINOS_HOME_DIR}/cmake/utils
+   ${TRILINOS_HOME_DIR}/cmake/package_arch
+   ${TRILINOS_HOME_DIR}/cmake/config_tests
+   )
 
-INCLUDE(TrilinosGlobalHelpers)
-INCLUDE(Advanced_Set)
-INCLUDE(Advanced_Option)
+INCLUDE(PackageArchGlobalMacros)
+INCLUDE(TrilinosGlobalMacros)
+INCLUDE(AdvancedSet)
+INCLUDE(AdvancedOption)
 
 OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose." OFF)
 
@@ -45,7 +51,7 @@ MESSAGE("")
 
 INCLUDE(${Trilinos_PACKAGES_FILE})
 
-TRILINOS_PROCESS_PACKAGES_AND_DIRS_LISTS()
+PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
 
 # B.2) TPLs
 
@@ -61,14 +67,14 @@ MESSAGE("")
 
 INCLUDE(${Trilinos_TPLS_FILE})
 
-TRILINOS_PROCESS_TPLS_LISTS()
+PACKAGE_ARCH_PROCESS_TPLS_LISTS()
 
 
 #
 # C) Process the package and TPL dependencies
 #
 
-TRILINOS_READ_ALL_PACKAGE_DEPENDENCIES()
+PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
 
 
 #
@@ -79,25 +85,7 @@ MESSAGE("")
 MESSAGE("Setting up major user options ...")
 MESSAGE("")
 
-SET( Trilinos_ENABLE_ALL_PACKAGES OFF CACHE BOOL
-  "Enable all packages (set to ON, OFF, or leave empty)." )
-
-SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
-  "Recursively enable all packages that have required or optional dependencies for set of enabled packages." )
-
-SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL
-  "Recursively enable all optional packages for set of enabled packages." )
-
-SET( Trilinos_ENABLE_TESTS "" CACHE STRING
-  "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
-
-SET(Trilinos_ENABLE_EXAMPLES "" CACHE STRING
-  "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if Trilinos_ENABLE_TESTS=ON" )
-
-IF (Trilinos_ENABLE_TESTS AND Trilinos_ENABLE_EXAMPLES STREQUAL "")
-  MESSAGE(STATUS "Setting Trilinos_ENABLE_EXAMPLES=ON because Trilinos_ENABLE_TESTS=ON")
-  SET(Trilinos_ENABLE_EXAMPLES ON)
-ENDIF()
+PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS()
 
 IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
   SET(Trilinos_ENABLE_DEBUG_DEFAULT ON)
@@ -142,69 +130,38 @@ ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
 
-ADVANCED_OPTION(Trilinos_ENABLE_C
-  "Enable the C compiler and related code"
-  ON )
-
-ADVANCED_OPTION(Trilinos_ENABLE_CXX
-  "Enable the C++ compiler and related code"
-  ON )
-
-IF(WIN32 AND NOT CYGWIN)
-  SET(Trilinos_ENABLE_Fortran_DEFAULT OFF)
-ELSE()
-  SET(Trilinos_ENABLE_Fortran_DEFAULT ON)
-ENDIF()
-
-OPTION(Trilinos_ENABLE_Fortran
-  "Enable the Fortran compiler and related code"
-  ${Trilinos_ENABLE_Fortran_DEFAULT} )
-
-ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
-
-SET(TRILINOS_INSTALL_INCLUDE_DIR "include")
-SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "include")
-
-MARK_AS_ADVANCED(BUILD_TESTING)
-MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
-MARK_AS_ADVANCED(CMAKE_BUILD_TYPE)
-MARK_AS_ADVANCED(CMAKE_INSTALL_PREFIX)
-MARK_AS_ADVANCED(DART_TESTING_TIMEOUT)
-MARK_AS_ADVANCED(EXECUTABLE_OUTPUT_PATH)
-MARK_AS_ADVANCED(LIBRARY_OUTPUT_PATH)
-MARK_AS_ADVANCED(CMAKE_OSX_ARCHITECTURES)
-MARK_AS_ADVANCED(CMAKE_OSX_SYSROOT)
+#SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "include")
 
 
 #
 # E) Apply logic to enable Trilinos packages and tests
 #
 
-TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
   "\nExplicitly enabled packages on input" ON)
-TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
   "\nExplicitly disabled packages on input" OFF)
-TRILINOS_PRINT_ENABLED_TPL_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
   "\nExplicitly enabled TPLs on input" ON)
-TRILINOS_PRINT_ENABLED_TPL_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
   "\nExplicitly disabled TPLs on input" OFF)
 
-TRILINOS_ADJUST_PACKAGE_ENABLES()
+PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES()
 
-TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
   "\nFinal set of enabled packages" ON)
-TRILINOS_PRINT_ENABLED_PACKAGE_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
   "\nFinal set of disabled packages" OFF)
-TRILINOS_PRINT_ENABLED_TPL_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
   "\nFinal set of enabled TPLs" ON)
-TRILINOS_PRINT_ENABLED_TPL_LIST(
+PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
   "\nFinal set of disabled TPLs" OFF)
 
 IF (Trilinos_DEPS_XML_OUTPUT_FILE)
   MESSAGE("" )
   MESSAGE("Dumping the XML dependencies file ${Trilinos_DEPS_XML_OUTPUT_FILE} ..." )
   MESSAGE("")
-  TRILINOS_DUMP_DEPS_XML_FILE()
+  PACKAGE_ARCH_DUMP_DEPS_XML_FILE()
 ENDIF()
 
 IF (Trilinos_DEPS_HTML_OUTPUT_FILE)
@@ -232,6 +189,8 @@ MESSAGE("")
 MESSAGE("Probing the environment ...")
 MESSAGE("")
 
+PACKAGE_ARCH_SETUP_ENV()
+
 INCLUDE(TrilinosProbeEnv)
 
 
@@ -243,7 +202,7 @@ MESSAGE("")
 MESSAGE("Getting information for all enabled TPLs ...")
 MESSAGE("")
 
-TRILINOS_PROCESS_ENABLED_TPLS()
+PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
 
 
 #
@@ -253,6 +212,8 @@ TRILINOS_PROCESS_ENABLED_TPLS()
 MESSAGE("")
 MESSAGE("Setting up testing support ...")
 MESSAGE("")
+
+INCLUDE(CTest)
 
 TRILINOS_SETUP_TESTING_SUPPORT()
 
@@ -272,7 +233,7 @@ MESSAGE("")
 MESSAGE("Configuring individual enabled Trilinos packages ...")
 MESSAGE("")
 
-TRILINOS_CONFIGURE_ENABLED_PACKAGES()
+PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
 
 
 #

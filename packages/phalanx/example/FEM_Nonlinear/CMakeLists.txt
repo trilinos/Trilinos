@@ -1,5 +1,5 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 ASSERT_DEFINED(Phalanx_ENABLE_Belos)
 ASSERT_DEFINED(Phalanx_ENABLE_Epetra)
@@ -43,7 +43,7 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack)
     evaluators/Evaluator_ScatterResidual.cpp
     )
   
-  TRILINOS_ADD_EXECUTABLE_AND_TEST(
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     example_fem_nonlinear
     SOURCES ${example_fem_nonlinear_SOURCES}
     COMM serial mpi
@@ -60,7 +60,7 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack)
     MeshBuilder.cpp
     )
   
-  TRILINOS_ADD_EXECUTABLE_AND_TEST(
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     example_element_linear_2D
     SOURCES ${example_element_linear_2D_SOURCES}
     COMM serial mpi

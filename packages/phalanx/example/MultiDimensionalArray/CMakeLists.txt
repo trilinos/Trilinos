@@ -1,5 +1,5 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -27,7 +27,7 @@ SET(example_SOURCES
   evaluators/Evaluator_NonlinearSource_Def.hpp
   )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   example_multidimensional_array
   SOURCES ${example_SOURCES}
   COMM serial mpi

@@ -1,8 +1,8 @@
 
 # Required modules
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TabularOutputterUnitTests
   COMM serial mpi  
   SOURCES

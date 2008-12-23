@@ -1,18 +1,18 @@
 
-INCLUDE(TrilinosPackageHelpers)
-INCLUDE(Trilinos_Add_Option)
+INCLUDE(PackageMacros)
+INCLUDE(AddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
-TRILINOS_PACKAGE(Kokkos)
+PACKAGE(Kokkos)
 
 #
 # B) Set up package-specific options
 #
 
-TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Experimental
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_KOKKOS_EXPERIMENTAL
   "Enable experimental."
   OFF )
@@ -23,12 +23,12 @@ TRILINOS_ADD_OPTION(${PACKAGE_NAME}_ENABLE_Experimental
 
 ADD_SUBDIRECTORY(src)
 
-TRILINOS_PACKAGE_ADD_TEST_DIRECTORIES(test)
+PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-#TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # D) Do standard postprocessing
 #
 
-TRILINOS_PACKAGE_POSTPROCESS()
+PACKAGE_POSTPROCESS()

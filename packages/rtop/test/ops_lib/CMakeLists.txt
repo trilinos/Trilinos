@@ -1,10 +1,10 @@
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/support)
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   opsUnitTests
   SOURCES
     ROpCountNanInf_UnitTests.cpp

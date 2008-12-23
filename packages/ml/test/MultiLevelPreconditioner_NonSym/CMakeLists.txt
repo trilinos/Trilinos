@@ -1,8 +1,8 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   MultiLevelPreconditioner_NonSym
   SOURCES MultiLevelPreconditioner_NonSym.cpp
   NUM_MPI_PROCS 1-4

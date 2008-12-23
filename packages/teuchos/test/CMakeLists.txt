@@ -1,12 +1,12 @@
 
 # Required modules
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageAddExecutableAndTest)
 
 ADD_SUBDIRECTORY(TabularOutputter)
 
 # Test definitions
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   BLAS_test  
   DIRECTORY BLAS
   SOURCES cxx_main.cpp
@@ -16,7 +16,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   DefaultMpiComm_UnitTests  
   DIRECTORY Comm
   COMM serial mpi  
@@ -24,7 +24,7 @@ TRILINOS_ADD_EXECUTABLE(
     DefaultMpiComm_UnitTests.cpp
     ../UnitTest/Teuchos_StandardUnitTestMain.cpp
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   DefaultMpiComm_UnitTests
   DIRECTORY Comm
   NUM_MPI_PROCS 1
@@ -32,20 +32,20 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   ReduceAllAndScatter_test  
   DIRECTORY Comm
   COMM serial mpi  
   SOURCES ReduceAllAndScatter_test.cpp
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   Comm_test  
   DIRECTORY Comm
   COMM serial mpi  
   SOURCES Comm_test.cpp
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Comm_test
   DIRECTORY Comm
   NAME Comm_test
@@ -54,7 +54,7 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Containers_test  
   DIRECTORY Containers
   SOURCES cxx_main.cpp
@@ -62,7 +62,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   UnitTest_UnitTests
   DIRECTORY UnitTest
   COMM serial mpi  
@@ -72,7 +72,7 @@ TRILINOS_ADD_EXECUTABLE(
     vector_UnitTests.cpp
     Teuchos_StandardUnitTestMain.cpp
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   UnitTest_UnitTests
   DIRECTORY UnitTest
   NUM_MPI_PROCS 1
@@ -80,7 +80,7 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   UnitTest_BadUnitTest
   DIRECTORY UnitTest
   COMM serial mpi  
@@ -90,7 +90,7 @@ TRILINOS_ADD_EXECUTABLE(
     Failing_UnitTest.cpp
     Teuchos_StandardUnitTestMain.cpp
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   UnitTest_BadUnitTest
   NAME UnitTest_BadUnitTest_final_results
   DIRECTORY UnitTest
@@ -99,7 +99,7 @@ TRILINOS_ADD_TEST(
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Int_BadAssignment_UnitTest"
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   UnitTest_BadUnitTest
   NAME UnitTest_BadUnitTest_end_result_failed
   DIRECTORY UnitTest
@@ -108,7 +108,7 @@ TRILINOS_ADD_TEST(
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "End Result: TEST FAILED"
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   UnitTest_BadUnitTest
   NAME UnitTest_BadUnitTest_end_result_totals
   DIRECTORY UnitTest
@@ -117,7 +117,7 @@ TRILINOS_ADD_TEST(
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Summary: total = 8, run = 8, passed = 6, failed = 2"
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   UnitTest_BadUnitTest
   NAME UnitTest_BadUnitTest_Int_BadAssignment_failed
   DIRECTORY UnitTest
@@ -129,7 +129,7 @@ TRILINOS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "[FAILED]"
   )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   MemoryManagement_UnitTests
   DIRECTORY MemoryManagement
   SOURCES
@@ -147,13 +147,13 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   DenseMatrix_test  
   COMM serial mpi  
   SOURCES cxx_main.cpp
   DIRECTORY DenseMatrix
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   DenseMatrix_test
   DIRECTORY DenseMatrix
   NAME DenseMatrix_test
@@ -162,13 +162,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   FancyOutputting_test  
   COMM serial mpi  
   SOURCES FancyOutputting_test.cpp
   DIRECTORY FancyOutputting
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   FancyOutputting_test
   DIRECTORY FancyOutputting
   NAME FancyOutputting_test
@@ -177,13 +177,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-#TRILINOS_ADD_EXECUTABLE(
+#PACKAGE_ADD_EXECUTABLE(
 #  Handle_test  
 #  COMM serial mpi  
 #  SOURCES cxx_main.cpp
 #  DIRECTORY Handle
 #  )
-#TRILINOS_ADD_TEST(
+#PACKAGE_ADD_TEST(
 #  Handle_test
 #  DIRECTORY Handle
 #  NAME Handle_test
@@ -191,7 +191,7 @@ TRILINOS_ADD_TEST(
 #  COMM serial mpi
 #  )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   LAPACK_test  
   DIRECTORY LAPACK
   SOURCES cxx_main.cpp
@@ -201,13 +201,13 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   ArrayRCP_test  
   COMM serial mpi  
   SOURCES ArrayRCP_test.cpp
   DIRECTORY MemoryManagement
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   ArrayRCP_test
   DIRECTORY MemoryManagement
   NUM_MPI_PROCS 1
@@ -215,13 +215,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   ArrayView_test  
   COMM serial mpi  
   SOURCES ArrayView_test.cpp
   DIRECTORY MemoryManagement
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   ArrayView_test
   DIRECTORY MemoryManagement
   NAME ArrayView-test
@@ -230,13 +230,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   Array_test  
   COMM serial mpi  
   SOURCES Array_test.cpp
   DIRECTORY MemoryManagement
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Array_test
   DIRECTORY MemoryManagement
   NAME Array_test
@@ -245,13 +245,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   Ptr_test  
   COMM serial mpi  
   SOURCES Ptr_test.cpp TestClasses.cpp
   DIRECTORY MemoryManagement
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Ptr_test
   DIRECTORY MemoryManagement
   NAME Ptr_test
@@ -260,13 +260,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   RCP_test  
   COMM serial mpi  
   SOURCES RCP_test.cpp TestClasses.cpp
   DIRECTORY MemoryManagement
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   RCP_test
   DIRECTORY MemoryManagement
   NAME RCP_test
@@ -275,13 +275,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   Tuple_test  
   COMM serial mpi  
   SOURCES Tuple_test.cpp 
   DIRECTORY MemoryManagement
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Tuple_test
   DIRECTORY MemoryManagement
   NAME Tuple_test
@@ -290,13 +290,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
   
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   ScalarTraits_test  
   COMM serial mpi  
   SOURCES ScalarTraits_test.cpp 
   DIRECTORY ScalarTraits
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   ScalarTraits_test
   DIRECTORY ScalarTraits
   NAME ScalarTraits_test
@@ -305,13 +305,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   Time_test  
   COMM serial mpi  
   SOURCES cxx_main.cpp 
   DIRECTORY Time
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Time_test
   DIRECTORY Time
   NAME Time_test
@@ -320,13 +320,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   Workspace_test  
   COMM serial mpi  
   SOURCES cxx_main.cpp 
   DIRECTORY Workspace
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Workspace_test
   DIRECTORY Workspace
   NAME Workspace_test
@@ -334,13 +334,13 @@ TRILINOS_ADD_TEST(
   COMM serial mpi
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   XML_test  
   COMM serial mpi  
   SOURCES cxx_main.cpp 
   DIRECTORY XML
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   XML_test
   DIRECTORY XML
   NAME XML_test
@@ -349,13 +349,13 @@ TRILINOS_ADD_TEST(
   #STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   XMLParser_test  
   COMM serial mpi  
   SOURCES cxx_main.cpp 
   DIRECTORY XMLParser
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   XMLParser_test
   DIRECTORY XMLParser
   NAME XMLParser_test
@@ -364,13 +364,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   dyn_cast_test  
   COMM serial mpi  
   SOURCES cxx_main.cpp 
   DIRECTORY dyn_cast
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   dyn_cast_test
   DIRECTORY dyn_cast
   NAME dyn_cast_test
@@ -378,13 +378,13 @@ TRILINOS_ADD_TEST(
   COMM serial mpi
   )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   exit_test  
   DIRECTORY exit
   COMM serial mpi  
   SOURCES cxx_main.cpp some_c_func.c 
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   exit_test  
   DIRECTORY exit
   NUM_MPI_PROCS 1
@@ -392,7 +392,7 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Polling_test  
   DIRECTORY Polling
   SOURCES cxx_main.cpp 
@@ -402,13 +402,13 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
 # 2008/12/20: rabartl: Above is commented out for the same reason that
 # Containers_test is commented out as described above
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   ParameterList_test 
   COMM serial mpi  
   SOURCES cxx_main.cpp 
   DIRECTORY ParameterList
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   ParameterList_test
   DIRECTORY ParameterList
   NAME ParameterList_test
@@ -416,13 +416,13 @@ TRILINOS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-TRILINOS_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE(
   Polynomial_test 
   COMM serial
   SOURCES cxx_main.cpp 
   DIRECTORY Polynomial
   )
-TRILINOS_ADD_TEST(
+PACKAGE_ADD_TEST(
   Polynomial_test
   DIRECTORY Polynomial
   NAME Polynomial_test

@@ -1,11 +1,11 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
+INCLUDE(PackageLibraryMacros)
 
 #
 # A) Package-specific configuration options
 #
 
-TRILINOS_PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and include directories)
@@ -265,14 +265,8 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   teuchos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
-#
-# D) Export the dependancy variables of this package for other packages to use
-#
-
-TRILINOS_PACKAGE_EXPORT_DEPENDENCY_VARIABLES()

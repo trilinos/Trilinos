@@ -1,14 +1,14 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   read_test
   SOURCES TestTriutilReads.cpp
   COMM serial mpi
   )
 
-COPY_FILES_TO_BINARY_DIR(ReadTestCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ReadTestCopyFiles
   DEST_FILES
     bcsstk01.rsa bcsstk01.mtx bcsstk01.triS Diagonal.rua Diagonal.mtx
     Diagonal.TimD fs_183_4.rua fs_183_4.mtx fs_183_4.triU

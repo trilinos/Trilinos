@@ -1,9 +1,9 @@
 
-INCLUDE(Trilinos_Add_Executable_And_Test)
-INCLUDE(Copy_Files_To_Binary_Dir)
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
     CrsMatrix_UnitTests
@@ -14,7 +14,7 @@ TRILINOS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles
   SOURCE_FILES west0067.rua mhd1280b.cua
   EXEDEPS CrsMatrix_UnitTests
   )

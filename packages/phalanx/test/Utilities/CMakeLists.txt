@@ -1,6 +1,6 @@
 
-INCLUDE(TrilinosPackageLibraryHelpers)
-INCLUDE(Trilinos_Add_Executable_And_Test)
+INCLUDE(PackageLibraryMacros)
+INCLUDE(PackageAddExecutableAndTest)
 
 SET(HEADERS "")
 SET(SOURCES "")
@@ -31,14 +31,14 @@ APPEND_SET(SOURCES
   Traits_ContiguousAllocator.cpp
   )
 
-TRILINOS_PACKAGE_ADD_LIBRARY(
+PACKAGE_ADD_LIBRARY(
   phalanx_test_utilities
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   TESTONLY
   )
 
-TRILINOS_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   test_utilitites_algebraic_types
   SOURCES Test_Utilities_AlgebraicTypes.cpp
   DEPLIBS phalanx_test_utilities

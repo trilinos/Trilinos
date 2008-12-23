@@ -1,7 +1,7 @@
-INCLUDE(Assert_Defined)
-INCLUDE(Global_Null_Set)
-INCLUDE(Global_Set)
-INCLUDE(Advanced_Set)
+INCLUDE(AssertDefined)
+INCLUDE(GlobalNullSet)
+INCLUDE(GlobalSet)
+INCLUDE(AdvancedSet)
 
 
 IF (TPL_MPI_INCLUDE_DIRS)

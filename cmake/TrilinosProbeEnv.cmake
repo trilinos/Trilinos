@@ -1,20 +1,5 @@
 INCLUDE(CheckIncludeFileCXX)
 
-
-# Enable compilers
-
-IF (Trilinos_ENABLE_C)
-  ENABLE_LANGUAGE(C)
-ENDIF()
-
-IF (Trilinos_ENABLE_CXX)
-  ENABLE_LANGUAGE(CXX)
-ENDIF()
-
-IF (Trilinos_ENABLE_Fortran)
-  ENABLE_LANGUAGE(Fortran)
-ENDIF()
-
 # Probe for non-standard headers
 
 IF (Trilinos_ENABLE_CXX)
@@ -66,28 +51,6 @@ TRILINOS_SETUP_STRONG_COMPILE_WARNINGS()
 
 FIND_PACKAGE(Perl)
 
-# Find the hostname used in selecting or deselecting tests by the
-# TRILINOS_ADD_TEST(...) function.
-
-SITE_NAME(Trilinos_HOSTNAME)
-MARK_AS_ADVANCED(Trilinos_HOSTNAME)
-
-# Set up MPI
-
-IF(TPL_ENABLE_MPI)
-  INCLUDE(ConfigureMPI)
-ENDIF()
-
-# Set some other options (NOTE: These should be handed in XXX_config.h files!
-
-IF(CMAKE_SIZEOF_VOID_P GREATER 4)
-  SET(EPETRA_ADDRESS64BIT ON)
-ENDIF()
-
-IF(WIN32)
-  ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
-ENDIF()
-
 # Do Fortran stuff
 
 INCLUDE(TrilinosFortranMangling)
@@ -96,9 +59,11 @@ INCLUDE(TrilinosFortranMangling)
  
 INCLUDE(TrilinosBLASMangling)
 
-# Determine compiler type
+# Set up some MPI info
 
-INCLUDE(CMakeDetermineCXXCompiler)
-PRINT_VAR(CMAKE_CXX_COMPILER_ID)
-# See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
-# directory for a listing of know compiler types.
+IF (TPL_ENABLE_MPI)
+  SET(HAVE_MPI TRUE)
+  ADD_DEFINITIONS(-DMPICH_IGNORE_CXX_SEEK)
+ELSE()
+  SET(HAVE_MPI FALSE)
+ENDIF()
