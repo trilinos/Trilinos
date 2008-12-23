@@ -179,7 +179,6 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
         )
       ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
         CACHE PATH ${DOCSTR} )
-  
     
       IF (NOT TPL_${TPL_NAME}_LIBRARIES)
         MULTILINE_SET(ERRMSG
@@ -234,9 +233,14 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
           " to the ${TPL_NAME} headers!")
         MESSAGE(FATAL_ERROR ${ERRMSG})
       ENDIF()
+    
+      IF (TPL_${TPL_NAME}_INCLUDE_DIRS)
+        MESSAGE(STATUS "  Found ${TPL_NAME} TPL header path: ${TPL_${TPL_NAME}_INCLUDE_DIRS}")
+      ENDIF()
   
       # 2008/12/02: rabartl: ToDo: Above: Put in a check to see that all of the
-      # headers that have been specified have indeed been found!
+      # headers that have been specified have indeed been found!  This needs to support
+      # possible multiple directories.
   
     ELSE()
 

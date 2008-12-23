@@ -57,3 +57,8 @@ TRILINOS_PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 #
 
 TRILINOS_PACKAGE_POSTPROCESS()
+
+
+# ToDo: Add tradop tests use shell scripts in autotools to generate
+# files.  Need to find a simpler way to do this for the CMake build
+# system.

@@ -17,13 +17,18 @@ common scenarios that we need to cmakify a package so that users that want to
 do something can just go down the list to learn how to implement that
 funcitonality.
 
+(*) [Ross and Kitware] Create separate dashboards for each Trilinos
+package.  Kitware is going to actively work on this.
+
 
 Backlog:
 --------
 
-(*) [???] Experiment with extended CTest scripting to avoid the
-configure failure problems and create a centralized CTest script and
-specializations of that script.
+(*) [???] Rename and reorganize the package architecture modules and
+macros/function to be as Trilinos-independent as possible and put them
+in cmake/package_arch.  This will allow them to be reused for projects
+like Dakota, SIERRA, and others and take advantage of all that is
+being constructed.
 
 (*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG
 and MPI_OPT build directory and enable only "Primary Stable" code.
@@ -43,14 +48,19 @@ are going to have to take control over this and do it right.  You
 should be able to just set MPI_BASE_DIR and everything else should be
 figured out automatically.
 
-(*) [???] Sacado tradop tests use shell scripts to generate files.
-Need to find a simpler way to do this.
+(*) [???] Add installation testing for CMake build system.  Here, we
+will build and install libraries, and then configure a new project
+against this.  It would be good to install a PACKAGEConfig.cmake file
+for each package that could then be used to specify what to build
+against.
 
-(*) [???] Upgrade TRILINOS_PACKAGE_ADD_LIBRARY(...) and
-TRILINOS_ADD_EXECUTABLE(...) to handle test libraries.  Add
-NOINSTALLLIB argument for test libraries that you don't want to
-install.  This is needed for some NOX test librries.  This effects
-Isorropia, NOX, Sacado...
+(*) [???] Add unit testing infrastructure and documentation for
+TRILINOS_ADD_EXECUTABLE(...), TRILINOS_ADD_TEST(...).  These unit
+tests will serve both as tests and as extra documentation.  I need to
+see if you can redefine ADD_EXECUTABLE(...), ADD_TEST(...), and other
+commands so that I can unit test that these things are being set
+correctly.  If not, then I can always wrap these with my own and then
+redefine them when unit testing.
 
 (*) [???] Add option SKIPMEMCHECK to TRILINOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
@@ -59,49 +69,25 @@ CTestCustomer.ctest.
 (*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that
 all pased in header files are found (This was requested by Roger P.).
 
-(*) [???] Rename and reorganize the package architecture modules and
-macros/function to be as Trilinos-independent as possible and put them
-in cmake/package_arch.  This will allow them to be reused for projects
-like Dakota, SIERRA, and others and take advantage of all that is
-being constructed.
-
-(*) [???] Add unit testing infrastructure for TRILINOS_ADD_EXECUTABLE(...),
-TRILINOS_ADD_TEST(...).  These unit tests will serve both as tests and as
-documentation.  I need to see if you can redefine ADD_EXECUTABLE(...),
-ADD_TEST(...), and other commands so that I can unit test that these things
-are being set correctly.  If not, then I can always wrap these with my own and
-then redefine them when unit testing.
-
 (*) [???] Add new TPL_DEFAULT_[INCLUDE_DIRS,LIBRARY_DIRS] user
 varibles that will be the default for all
 TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_DIRS] user cache variables.
 
 (*) [???] Fix TRILINOS_ADD_EXECUTABLE(...) to not add ./ to absolute paths
 
-(*) [???] Add file CTestCustom.cmake.in in Trilinos/cmake and do a
-CONFIGURE_FILE(...) command to put it in the base build tree.  In this file,
-set CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE and
-CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE and any other options given at
-http://www.vtk.org/Wiki/CMake_Testing_With_CTest.
-
 (*) [???] Set the variable CPACK_SOURCE_IGNORE_FILES to ignore groups of files
 (and hopefully directories) that you don't want to add to the source
 distribution tarball!  We need to be able to set these at the global level as
 an internal cache variables and then reset them at the package level.
 
-(*) [???] Automatically add the right compiler options when on the
-primary development platform (i.e. lots of warnings).  We can do this
-automatically with the module CheckCXXSourceCompiles(....).  This will
-be used for pre-checkin script.
+(*) [???] Change all source files to be globbed and use internal ifdefs to
+control what gets built.  This will make it easier to maintain the BJAM build
+system.
 
 (*) [???] Add a global 'libs' target to rebuild only libraries so that
 we can skip unecessary relinking when shared libraries are used.  This
 target can be built by simply looping over all enabled packages and
 adding dependencies on ${PACKAGE}_libs.
-
-(*) [???] Change all source files to be globbed and use internal ifdefs to
-control what gets built.  This will make it easier to maintain the BJAM build
-system.
 
 (*) [???] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
 to replace the silly numeric numbering.  This will be important for keeping
@@ -114,19 +100,19 @@ few new scripts.
 
 (*) [???] Upgrade Trilinos/CMakeLists.txt and
 dump-package-dep-table.py add an option to only show dependencies for
-enabled packages.
+enabled packages.  Actually, this could be done from within the CMake
+code when generating the XML file to only add entries for enabled
+packages.  It would be good to have configure time option to control
+this.  By default, only show packages that are enabled.
 
 (*) [???] dump-package-dep-table.py to show tables for TPL
-dependencies
+dependencies.
 
-(*) [???] Add installation testing for CMake build system.  Here, we
-will build and install libraries, and then configure a new project
-against this.  It would be good to install a PACKAGEConfig.cmake file
-for each package that could then be used to specify what to build
-against.
+(*) [???] Update dump-package-dep-table.py to print a table of TPLs
+that packages depend on .
 
-(*) [???] Revive system for generating sample output.  I would like to
-have a top-level target called something like
+(*) [???] Revive system in CMake for generating sample output.  I
+would like to have a top-level target called something like
 Trilinos_generate_sample_output and this target should dependend on
 package-level targets ${PACKAGE_NAME}_generate_sample_output.  Some
 type of macro should be created to automate this process.
@@ -142,23 +128,21 @@ do.
   + Get automated builds/tests with CTest/CDash running on Esteban
   + Get CVS update working
 
-- Set up a MAC test machine feeding into Trilinos dashboard
-  + Look into 
-
-- Add 'serial' and 'mpi' categories to dashboard on trilinos.sandia.gov
+- Set up a MAC test machine feeding into Trilinos dashboard ...
 
 (*) [???] Put out binary Windows and Mac installers for an interm
 release of Trilinos up on website and send an email to
 Trilinos-Announce allowing others to use this.
 
-(*) [???] Add an auto-documentation system so that each package and
-print detailed documentation on what options that it supports.  In
-this way, we could provide an option like Trilinos_PRINT_DOCUMENTATION
+(*) [???] Add an auto-documentation print system so that each package
+has detailed documentation on what options that it supports.  In this
+way, we could provide an option like Trilinos_PRINT_DOCUMENTATION
 who's main purpose was to print out a complete set of documentation at
 the top level and for all of the enabled packages.  I think that we
 could set this up so that it would automatically print out all of the
 cache variables with documentation inside of the detailed
-documentation.
+documentation.  We may need to an external tool to do this that would
+read everything out of CMakeCache.txt.
 
 (*) [???] Create automated support for stripping out all "Experimental" code
 (both files and code inside of ifdefs) so that we don't put it out in releases
@@ -167,20 +151,6 @@ tarballs.  Or, you could add to the CPACK_SOURCE_IGNORE_FILES varaible
 automatically to exclude all such files.
 
 (*) [???] Add the Trilinos LGPL license to the NSIS installer
-
-(*) [???] Add automatic demangle checking with try_compile(...)
-
-(*) [???] Create separate dashboards for each Trilinos package.  For
-now, we could write an advanced ctest script that would loop through
-all of the enabled Trilinos packages and then build and run the tests
-just for that package.  We would therefore have each Trilinos package
-as a separate "project".  For the purpose of testing, we could do this
-by setting Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON for each
-package.  This would allow us to get around the more complex problems
-with CDash.  This would require some more disk space for the results
-but at least we would get the information that we need.  We can also
-run a full rebuild and retest in the end to give a an overall package
-for Trilinos.
 
 
 Completed:
