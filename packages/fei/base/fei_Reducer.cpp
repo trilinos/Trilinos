@@ -960,14 +960,15 @@ Reducer::addVectorValues(int numValues,
   for(int i=0; i<numValues; ++i) {
     if (isSlaveEqn(globalIndices[i])) {
       if (sum_into) {
-        if (!soln_vector) fd_.addEntry(globalIndices[i], values[i]);
-        //if soln_vector==true we discard values for slave eqns...
+        if (soln_vector) xd_.addEntry(globalIndices[i], values[i]);
+        else fd_.addEntry(globalIndices[i], values[i]);
       }
       else {
-        if (!soln_vector) fd_.putEntry(globalIndices[i], values[i]);
-        //if soln_vector==true we discard values for slave eqns...
+        if (soln_vector) xd_.putEntry(globalIndices[i], values[i]);
+        else fd_.putEntry(globalIndices[i], values[i]);
       }
-      if (!soln_vector) ++rhs_vec_counter_;
+      if (soln_vector) ++soln_vec_counter_;
+      else ++rhs_vec_counter_;
     }
     else {
       if (sum_into) {
@@ -1001,14 +1002,15 @@ Reducer::addVectorValues(int numValues,
   for(int i=0; i<numValues; ++i) {
     if (isSlaveEqn(globalIndices[i])) {
       if (sum_into) {
-        if (!soln_vector) fd_.addEntry(globalIndices[i], values[i]);
-        //if soln_vector==true we discard values for slave eqns...
+        if (soln_vector) xd_.addEntry(globalIndices[i], values[i]);
+        else fd_.addEntry(globalIndices[i], values[i]);
       }
       else {
-        if (!soln_vector) fd_.putEntry(globalIndices[i], values[i]);
-        //if soln_vector==true we discard values for slave eqns...
+        if (soln_vector) xd_.putEntry(globalIndices[i], values[i]);
+        else fd_.putEntry(globalIndices[i], values[i]);
       }
-      if (!soln_vector) ++rhs_vec_counter_;
+      if (soln_vector) ++soln_vec_counter_;
+      else ++rhs_vec_counter_;
     }
     else {
       int reduced_index = translateToReducedEqn(globalIndices[i]);
@@ -1044,7 +1046,7 @@ Reducer::assembleReducedVector(bool soln_vector,
 
   SSVec& vec = soln_vector ? xd_ : fd_;
 
-  if (!soln_vector && vec.length() > 0) {
+  if (vec.length() > 0) {
     //form tmpVec1 = D^T*vec.
     if ( D_->matTransVec(vec, tmpVec1_) != 0) {
       throw std::runtime_error("fei::Reducer::assembleReducedVec ERROR.");

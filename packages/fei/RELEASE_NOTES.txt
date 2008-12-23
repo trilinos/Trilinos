@@ -484,8 +484,17 @@ July 7 2005: version 2.14.00
   - Fixed a bug in fei_Reducer.cpp where submatrix contributions were
     assumed to be symmetric.
 
+ Dec 18 2008 minor version 2.23.02
+  - Fixed a performance problem in fei_Aztec_LinSysCore.cpp in the method
+    enforceEssentialBCs. It now executes much faster in performing the
+    column modification.
+  - Fixed a bug in base/fei_Reducer.cpp that was erroneously assuming
+    matrix symmetry.
+  - Fixed a bug in base/fei_Reducer.cpp that was erroneously using the
+    projection reduction for solution-vector operations. It should only
+    use the projection for right-hand-side and matrix assembly ops.
+
  ??? ?? ???? version 2.24.00
-  - 2.23.01 bug-fixes, plus:
   - Removed classes fei::CommCore, fei::CommUtilsBase, snl_fei::CommUtils. These
     are replaced by functions in fei_CommUtils.hpp. This is a simplification
     and cleanup of the communications-code infrastructure.
@@ -499,7 +508,4 @@ July 7 2005: version 2.14.00
   - Removed more occurences of feiArray, using std::vector instead. This
     effects the API in places where an array is a return value. Specifically
     in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
-  - Optimized to remove hot-spot in fei_Aztec_LinSysCore.cpp in dirichlet
-    boundary condition enforcement.
-  - Fixed bug in fei_Reducer.cpp where matrix symmetry was wrongly assumed.
 
