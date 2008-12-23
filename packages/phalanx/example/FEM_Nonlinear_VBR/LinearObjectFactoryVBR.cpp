@@ -29,6 +29,9 @@
 // ************************************************************************
 // @HEADER
 
+#include <list>
+#include <vector>
+#include <algorithm>
 #include "LinearObjectFactoryVBR.hpp"
 #include "Element_Linear2D.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -46,8 +49,8 @@ LinearObjectFactoryVBR::LinearObjectFactoryVBR(const MeshBuilder& mb,
   
   // Maps
   {
-    std::vector<int> owned_unknown_gids(0);
-    std::vector<int> overlapped_unknown_gids(0);
+    std::list<int> list_owned_unknown_gids(0);
+    std::list<int> list_overlapped_unknown_gids(0);
 
 
     // Map
@@ -56,23 +59,31 @@ LinearObjectFactoryVBR::LinearObjectFactoryVBR(const MeshBuilder& mb,
 	  
 	int index = cell->globalNodeId(node);
 
-	if (cell->ownsNode(node)) {
-	  if ( std::find(owned_unknown_gids.begin(),
-			 owned_unknown_gids.end(),
-			 index) 
-	       == owned_unknown_gids.end() ) {
-	    owned_unknown_gids.push_back(index);
-	  }
-	}
+	if (cell->ownsNode(node))
+	  list_owned_unknown_gids.push_back(index);
 
-	if ( std::find(overlapped_unknown_gids.begin(),
-		       overlapped_unknown_gids.end(),
-		       index) 
-	     == overlapped_unknown_gids.end() )
-	  overlapped_unknown_gids.push_back(index);
+	list_overlapped_unknown_gids.push_back(index);
 	
       }
     }
+
+    list_owned_unknown_gids.sort();
+    list_owned_unknown_gids.unique();
+    list_overlapped_unknown_gids.sort();
+    list_overlapped_unknown_gids.unique();
+
+    // Copy lists into vectors (need contiguous arrays)
+    std::vector<int> owned_unknown_gids(list_owned_unknown_gids.size());
+    std::vector<int> overlapped_unknown_gids(list_overlapped_unknown_gids.size());
+
+    std::size_t index = 0;
+    for (std::list<int>::iterator node = list_owned_unknown_gids.begin();
+	 node != list_owned_unknown_gids.end(); ++node, ++index)
+      owned_unknown_gids[index] = *node;
+    index = 0;
+    for (std::list<int>::iterator node = list_overlapped_unknown_gids.begin();
+	 node != list_overlapped_unknown_gids.end(); ++node, ++index)
+      overlapped_unknown_gids[index] = *node;
     
     m_owned_map = 
       Teuchos::rcp(new Epetra_BlockMap(-1, owned_unknown_gids.size(),
