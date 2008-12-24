@@ -1139,7 +1139,12 @@ MACRO(PACKAGE_ARCH_SETUP_ENV)
   PRINT_VAR(CMAKE_CXX_COMPILER_ID)
   # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
   # directory for a listing of known compiler types.
-  
+
+  # Set up for strong compiler warnings and warnings as errors
+ 
+  INCLUDE(PackageArchSetupStrongCompileWarnings)
+  PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS()
+
   # Find the hostname used in selecting or deselecting tests by the
   # PACKAGE_ADD_TEST(...) function.
   

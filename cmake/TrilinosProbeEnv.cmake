@@ -37,15 +37,11 @@ SET(HAVE_STDEXCEPT TRUE)
 SET(HAVE_STRING TRUE)
 SET(HAVE_VECTOR TRUE)
 
-# 2008/12/20: All of these defines should be removed because we
-# decided that we were going to assume that all compilers have these
-# C++98 standard features.  We will deal with cases where this is not
-# true but we should not assume the worst right from the beginning.
-
-# Check if strong compiler checking options are supported
-
-INCLUDE(TrilinosSetupStrongCompileWarnings)
-TRILINOS_SETUP_STRONG_COMPILE_WARNINGS()
+# 2008/12/20: rabartl: Above: All of these defines should be removed
+# because we decided that we were going to assume that all compilers
+# have these C++98 standard features.  We will deal with cases where
+# this is not true but we should not assume the worst right from the
+# beginning.
 
 # Find Perl
 
