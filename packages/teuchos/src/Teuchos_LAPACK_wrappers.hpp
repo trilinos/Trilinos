@@ -448,8 +448,10 @@
 #define DTRTRI_F77  F77_BLAS_MANGLE(dtrtri,DTRTRI)
 #define DLAMCH_F77  F77_BLAS_MANGLE(dlamch,DLAMCH)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGELSS_F77  F77_BLAS_MANGLE(dgelss,DGELSS)
+#define DGGLSE_F77  F77_BLAS_MANGLE(dgglse,DGGLSE)
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
-#define DGESVD_F77   F77_BLAS_MANGLE(dgesvd,DGESVD)
+#define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
 #define DGGEVX_F77  F77_BLAS_MANGLE(dggevx,DGGEVX)
 #define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_BLAS_MANGLE(dhseqr,DHSEQR)
@@ -504,6 +506,8 @@
 #define ZTRTRS_F77  F77_BLAS_MANGLE(ztrtrs,ZTRTRS)
 #define ZTRTRI_F77  F77_BLAS_MANGLE(ztrtri,ZTRTRI)
 #define ZGELS_F77   F77_BLAS_MANGLE(zgels,ZGELS)
+//#define ZGELSS_F77  F77_BLAS_MANGLE(zgelss,ZGELSS)
+//#define ZGGLSE_F77  F77_BLAS_MANGLE(zgglse,ZGGLSE)
 #define ZGEEV_F77   F77_BLAS_MANGLE(zgeev,ZGEEV)
 #define ZGESVD_F77   F77_BLAS_MANGLE(zgesvd,ZGESVD)
 //#define ZGGEVX_F77  F77_BLAS_MANGLE(zggevx,ZGGEVX)
@@ -557,6 +561,8 @@
 #define STRTRS_F77  F77_BLAS_MANGLE(strtrs,STRTRS)
 #define STRTRI_F77  F77_BLAS_MANGLE(strtri,STRTRI)
 #define SGELS_F77   F77_BLAS_MANGLE(sgels,SGELS)
+#define SGELSS_F77  F77_BLAS_MANGLE(sgelss,SGELSS)
+#define SGGLSE_F77  F77_BLAS_MANGLE(sgglse,SGGLSE)
 #define SGEEV_F77   F77_BLAS_MANGLE(sgeev,SGEEV)
 #define SGESVD_F77   F77_BLAS_MANGLE(sgesvd,SGESVD)
 #define SGGEVX_F77  F77_BLAS_MANGLE(sggevx,SGGEVX)
@@ -613,6 +619,8 @@
 #define CTRTRS_F77  F77_BLAS_MANGLE(ctrtrs,CTRTRS)
 #define CTRTRI_F77  F77_BLAS_MANGLE(ctrtri,CTRTRI)
 #define CGELS_F77   F77_BLAS_MANGLE(cgels,CGELS)
+//#define CGELSS_F77  F77_BLAS_MANGLE(cgelss,CGELSS)
+//#define CGGLSE_F77  F77_BLAS_MANGLE(cgglse,CGGLSE)
 #define CGEEV_F77   F77_BLAS_MANGLE(cgeev,CGEEV)
 #define CGESVD_F77   F77_BLAS_MANGLE(cgesvd,CGESVD)
 //#define CGGEVX_F77  F77_BLAS_MANGLE(cggevx,CGGEVX)
@@ -645,6 +653,8 @@ extern "C" {
 
 // Double precision LAPACK linear solvers
 void PREFIX DGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, double* work, const int* lwork, int* info);
+void PREFIX DGELSS_F77(const int* m, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, double* s, const double* rcond, int* rank, double* work, const int* lwork, int* info);
+void PREFIX DGGLSE_F77(const int* m, const int* n, const int* p, double* a, const int* lda, double* b, const int* ldb, double* c, double* d, double* x, double* work, const int* lwork, int* info);
 void PREFIX DGEQRF_F77(const int* m, const int* n, double* a, const int* lda, double* tau, double* work, const int* lwork, int* info);
 void PREFIX DGETRF_F77(const int* m, const int* n, double* a, const int* lda, int* ipiv, int* info); 
 void PREFIX DGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const double* a, const int* lda,const int* ipiv, double* x , const int* ldx, int* info);
@@ -674,6 +684,8 @@ void PREFIX DTRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const double* a, 
 // Single precision LAPACK linear solvers
 
 void PREFIX SGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, float* a, const int* lda, float* b, const int* ldb, float* work, const int* lwork, int* info);
+void PREFIX SGELSS_F77(const int* m, const int* n, const int* nrhs, float* a, const int* lda, float* b, const int* ldb, float* s, const float* rcond, int* rank, float* work, const int* lwork, int* info);
+void PREFIX SGGLSE_F77(const int* m, const int* n, const int* p, double* a, const int* lda, double* b, const int* ldb, double* c, double* d, double* x, double* work, const int* lwork, int* info);
 void PREFIX SGEQRF_F77(const int* m, const int* n, float* a, const int* lda, float* tau, float* work, const int* lwork, int* info);
 void PREFIX SGETRF_F77(const int* m, const int* n, float* a, const int* lda, int* ipiv, int* info);
 void PREFIX SGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const float* a, const int* lda,const int* ipiv, float* x , const int* ldx, int* info);

@@ -240,6 +240,12 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
 
   //! Set all values in the matrix to a constant value.
   /*!
+    \param value - Value to use;
+  */
+  SerialSymDenseMatrix<OrdinalType, ScalarType>& operator= (const ScalarType value) { putScalar(value); return(*this); }
+
+  //! Set all values in the matrix to a constant value.
+  /*!
     \param value - Value to use; zero if none specified.
     \param fullMatrix - set full matrix entries to \c value, not just active portion of symmetric matrix.
     \return Integer error code, set to 0 if successful.

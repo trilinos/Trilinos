@@ -188,6 +188,12 @@ public:
 
   //! Set all values in the matrix to a constant value.
   /*!
+    \param value - Value to use;
+  */
+  SerialDenseMatrix<OrdinalType, ScalarType>& operator= (const ScalarType value) { putScalar(value); return(*this); }
+
+  //! Set all values in the matrix to a constant value.
+  /*!
     \param value - Value to use; zero if none specified.
     \return Integer error code, set to 0 if successful.
   */

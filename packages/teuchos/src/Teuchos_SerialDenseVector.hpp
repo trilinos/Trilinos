@@ -109,6 +109,16 @@ namespace Teuchos {
       {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length_in, 1));}
   //@}
 
+  //! @name Set methods.
+  //@{
+
+    //! Set all values in the matrix to a constant value.
+    /*!
+      \param value - Value to use;
+    */
+    SerialDenseVector<OrdinalType, ScalarType>& operator= (const ScalarType value) { this->putScalar(value); return(*this); }
+  //@}
+
   //! @name Comparison methods.
   //@{ 
     //! Equality of two matrices.

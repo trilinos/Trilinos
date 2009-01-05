@@ -34,12 +34,13 @@ int main(int argc, char* argv[])
   // Filling matrices with numbers can be done in several ways:
   My_Matrix.random();             // random numbers
   My_Copy1.putScalar( 1.0 );      // every entry is 1.0
+  My_Copy1 = 1.0;                 // every entry is 1.0 (still)
   My_Copy2(1,1) = 10.0;           // individual element access
   Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix 
 
   // Basic matrix arithmetic can be performed:
   Teuchos::SerialDenseMatrix<int,double> My_Prod( 4, 3 ), My_GenMatrix( 4, 3 );
-  My_GenMatrix.putScalar(1.0);
+  My_GenMatrix = 1.0;
   // Matrix multiplication ( My_Prod = 1.0*My_GenMatrix*My_Matrix )
   My_Prod.multiply( Teuchos::RIGHT_SIDE, 1.0, My_Matrix, My_GenMatrix, 0.0 );
   My_Copy2 += My_Matrix;   // Matrix addition
@@ -70,9 +71,9 @@ int main(int argc, char* argv[])
   Teuchos::SerialSymDenseMatrix<int,double> My_Matrix2( 3 );
   My_Matrix2.random();
   Teuchos::SerialDenseMatrix<int,double> X(3,1), B(3,1);
-  X.putScalar(1.0);
+  X = 1.0;
   B.multiply( Teuchos::LEFT_SIDE, 1.0, My_Matrix2, X, 0.0 );
-  X.putScalar(0.0);  // Make sure the computed answer is correct.
+  X = 0.0;  // Make sure the computed answer is correct.
 
   int info = 0;
   My_Solver.setMatrix( Teuchos::rcp( &My_Matrix2, false ) );
@@ -90,7 +91,7 @@ int main(int argc, char* argv[])
   Teuchos::SerialSymDenseMatrix<int,double> A1(2), A2(3);
   A1(0,0) = 1.0, A1(1,1) = 2.0;
   A2(0,0) = 1.0, A2(1,1) = 2.0, A2(2,2) = 3.00;
-  W.putScalar( 1.0 );
+  W = 1.0;
 
   Teuchos::SerialSymDenseMatrix<int,double> C1(3), C2(2);
 

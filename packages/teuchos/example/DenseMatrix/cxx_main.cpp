@@ -34,11 +34,11 @@ int main(int argc, char* argv[])
 
   // Filling matrices with numbers can be done in several ways:
   My_Matrix.random();             // random numbers
-  My_Copy1.putScalar( 1.0 );      // every entry is 1.0
+  My_Copy1.putScalar( 1.0 );      // every entry is 1.0 
   My_Copy2(1,1) = 10.0;           // individual element access
   Empty_Matrix = My_Matrix;       // copy My_Matrix to Empty_Matrix 
-  x.putScalar( 1.0 );             // every entry of vector is 1.0
-  y.putScalar( 1.0 );
+  x = 1.0;                        // every entry of vector is 1.0
+  y = 1.0;
 
   // Basic matrix arithmetic can be performed:
   double d;

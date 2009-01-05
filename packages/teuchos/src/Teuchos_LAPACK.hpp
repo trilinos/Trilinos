@@ -168,6 +168,12 @@ namespace Teuchos
     //! Solves an over/underdetermined real \c m by \c n linear system \c A using QR or LQ factorization of A.
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
+    //! Computes the minimum norm solution to a real \c m by \c n linear least squares problem using the singular value decomposition (SVD) of \c A.
+    void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* S, const ScalarType rcond, OrdinalType* rank, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    //! Solves the linear equality-constrained least squares (LSE) problem where \c A is an \c m by \c n matrix,\c B is a \c p by \c n matrix \c C is a given \c m-vector, and D is a given \c p-vector.
+    void GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* C, ScalarType* D, ScalarType* X, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
     //! Computes a QR factorization of a general \c m by \c n matrix \c A.
     void GEQRF( const OrdinalType m, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
@@ -445,6 +451,18 @@ namespace Teuchos
 
   template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType,ScalarType>::GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* S, const ScalarType rcond, OrdinalType* rank, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* C, ScalarType* D, ScalarType* X, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -741,6 +759,8 @@ namespace Teuchos
 
     // General Linear System Routines
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* S, const float rcond, OrdinalType* rank, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* C, float* D, float* X, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GEQRF( const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const;
@@ -877,6 +897,18 @@ namespace Teuchos
     SGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
   }
   
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,float>::GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* S, const float rcond, OrdinalType* rank, float* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    SGELSS_F77(&m, &n, &nrhs, A, &lda, B, &ldb, S, &rcond, rank, WORK, &lwork, info);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,float>::GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* C, float* D, float* X, float* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    SGGLSE_F77(&m, &n, &p, A, &lda, B, &ldb, C, D, X, WORK, &lwork, info);
+  }
+
   template<typename OrdinalType>  
   void LAPACK<OrdinalType,float>::GEQRF( const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
@@ -1188,6 +1220,8 @@ namespace Teuchos
 
     // General linear system routines
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* S, const double rcond, OrdinalType* rank, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* C, double* D, double* X, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GEQRF( const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void GETRF(const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
     void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, const OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const;
@@ -1324,6 +1358,18 @@ namespace Teuchos
     DGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, &info);
   }
   
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,double>::GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* S, const double rcond, OrdinalType* rank, double* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    DGELSS_F77(&m, &n, &nrhs, A, &lda, B, &ldb, S, &rcond, rank, WORK, &lwork, info);
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType,double>::GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* C, double* D, double* X, double* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    DGGLSE_F77(&m, &n, &p, A, &lda, B, &ldb, C, D, X, WORK, &lwork, info);
+  }
+
   template<typename OrdinalType>  
   void LAPACK<OrdinalType,double>::GEQRF( const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {

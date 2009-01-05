@@ -31,15 +31,17 @@
 #include "Teuchos_Version.hpp"
 
 #define OTYPE int
-#define STYPE double
+#define STYPE std::complex<double>
 
 template<typename TYPE>
 int PrintTestResults(std::string, TYPE, TYPE, bool);
 
 int ReturnCodeCheck(std::string, int, int, bool);
 
-typedef Teuchos::SerialDenseMatrix<OTYPE, STYPE> DMatrix;
-typedef Teuchos::SerialDenseVector<OTYPE, STYPE> DVector;
+typedef double Real;
+typedef Teuchos::SerialDenseVector<int, std::complex<Real> > DVector;
+typedef Teuchos::SerialDenseMatrix<int, std::complex<Real> > DMatrix;
+//typedef Teuchos::SerialDenseVector<OTYPE, STYPE> DVector;
 
 int main(int argc, char* argv[]) 
 {
@@ -142,7 +144,7 @@ int main(int argc, char* argv[])
   DMatrix BBB;
   numberFailedTests += PrintTestResults("normOne of a 3x3", AAA.normOne(), 18.0, verbose);
   numberFailedTests += PrintTestResults("normInf of a 3x3", AAA.normInf(), 24.0, verbose);
-  AAA.putScalar( 1.0 );
+  AAA = Teuchos::ScalarTraits<STYPE>::one();
   numberFailedTests += PrintTestResults("normFrobenius of a 3x3", AAA.normFrobenius(), 3.0, verbose);
   numberFailedTests += PrintTestResults("normOne of a 0x0", BBB.normOne(), 0.0, verbose);
   numberFailedTests += PrintTestResults("normInf of a 0x0", BBB.normInf(), 0.0, verbose);
@@ -318,7 +320,7 @@ int main(int argc, char* argv[])
   //  Check scale methods.
   //
   DMatrix ScalTest( 8, 8 );
-  ScalTest.putScalar( 1.0 );
+  ScalTest = Teuchos::ScalarTraits<STYPE>::one();
   //  Scale the entries by 8, it should be 8.
   if (verbose) std::cout << "scale() -- scale matrix by some number ";
   returnCode = ScalTest.scale( 8.0 );
@@ -348,13 +350,13 @@ int main(int argc, char* argv[])
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
   //  Set the entries of CCC to 1.0.
   testName = "putScalar() -- set every entry of this matrix to 1.0";
-  returnCode = CCC.putScalar(1.0);
+  returnCode = CCC.putScalar(Teuchos::ScalarTraits<STYPE>::one());
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
   //  Check assignment operator.
   DMatrix CCC2( 5, 5 );
   CCC2.assign( CCC );
   if (verbose) std::cout <<  "assign() -- copy the values of an input matrix ";  
-  if ( CCC( 3, 4 ) == 1.0 ) {
+  if ( CCC( 3, 4 ) == Teuchos::ScalarTraits<STYPE>::one() ) {
     if (verbose) std::cout<< "successful" <<std::endl;
   } else {
     if (verbose) std::cout<< "unsuccessful" <<std::endl;
@@ -380,7 +382,7 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   }
   DMatrix CCCtest2( 2, 2 );
-  CCCtest2.putScalar( 3.0 );
+  CCCtest2 = 3.0;
   CCCtest1 = CCCtest2;
   if (verbose) std::cout << "operator= -- large(copy) = small(copy) ";
   if (CCCtest1.numRows()==2 ) {
@@ -482,7 +484,7 @@ int main(int argc, char* argv[])
 
   numberFailedTests += PrintTestResults("normOne of a 3x1 std::vector", Con2Test1V.normOne(), 6.0, verbose);
   numberFailedTests += PrintTestResults("normInf of a 3x1 std::vector", Con2Test1V.normInf(), 3.0, verbose);
-  Con2Test1V.putScalar( 1.0 );
+  Con2Test1V = Teuchos::ScalarTraits<STYPE>::one();
   numberFailedTests += PrintTestResults("normFrobenius of a 3x1 std::vector", Con2Test1V.normFrobenius(), 2.0, verbose);
 
   // check size/resize
@@ -496,7 +498,7 @@ int main(int argc, char* argv[])
   } else {
     if (verbose) std::cout << "successful."<<std::endl;
   }
-  SizeTestV1.putScalar( 2.0 );
+  SizeTestV1 = 2.0*Teuchos::ScalarTraits<STYPE>::one();
   SizeTestV1.resize( 10 );
   if(verbose) std::cout <<"resize() -- test small --> large ";
   if (SizeTestV1[ 4 ]!= 2.0 || SizeTestV1[ 8 ]!=0.0 ) {
@@ -514,7 +516,7 @@ int main(int argc, char* argv[])
     if (verbose) std::cout << "successful."<<std::endl;
   }  
   
-  DVector OpEqTestV1( 10 ); OpEqTestV1.putScalar( 3.0 );
+  DVector OpEqTestV1( 10 ); OpEqTestV1 = 3.0*Teuchos::ScalarTraits<STYPE>::one();
   DVector OpEqTestV2( Teuchos::View, OpEqTestV1.values(), 3 );   
   DVector OpEqTestV3( 2 );
   OpEqTestV3 = OpEqTestV2;
@@ -562,7 +564,7 @@ int main(int argc, char* argv[])
   }  
  
   DVector OpCompTestV1( 5 );
-  OpCompTestV1.putScalar( 2.0 );  
+  OpCompTestV1 = 2.0*Teuchos::ScalarTraits<STYPE>::one();  
   if(verbose) std::cout <<"operator== -- test large == small ";
   if (OpCompTestV1 == SizeTestV1) {
     if (verbose) std::cout << "unsuccessful."<<std::endl;
