@@ -62,7 +62,7 @@ int test_reducer_unit1()
   try {
     reducer.translateToReducedEqn(1);
   }
-  catch(fei::Exception& exc) {
+  catch(...) {
     exception_caught = true;
   }
 
