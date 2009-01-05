@@ -17,11 +17,12 @@
 extern "C" {
 #endif
 
-
 #include "zz_const.h"
 #include "phg_tree.h"
 #include "phg.h"
 #include <limits.h>
+
+  /* The tree is a list of couple (-min, max) but only declare as an array of int */
 
 /* Create tree structure */
 int
