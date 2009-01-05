@@ -330,6 +330,7 @@ APPEND_SET(NOINSTALLHEADERS
   phg/phg_distrib.h
   phg/phg.h
   phg/phg_hypergraph.h
+  phg/phg_tree.h
   phg/phg_util.h
   )
 
@@ -351,6 +352,7 @@ APPEND_SET(SOURCES
   phg/phg_refinement.c
   phg/phg_scale.c
   phg/phg_serialpartition.c
+  phg/phg_tree.c
   phg/phg_util.c
   phg/phg_Vcycle.c
   )

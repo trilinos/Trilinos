@@ -530,7 +530,7 @@ struct Zoltan_Struct {
 
   /***************************************************************************/
   struct Zoltan_LB_Struct LB;          /* Struct with info for load balancing */
-  struct Zoltan_Order_Struct  Order;  /* Struct with info for ordering       */
+  struct Zoltan_Order_Struct  Order;   /* Struct with info for ordering       */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */
 #ifdef ZOLTAN_DRUM
   struct Zoltan_Drum_Struct Drum;      /* Struct with info for DRUM interface */

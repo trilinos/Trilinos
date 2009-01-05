@@ -132,13 +132,14 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/phg/phg_plot.c $(srcdir)/phg/phg_rdivide.c \
 	$(srcdir)/phg/phg_refinement.c $(srcdir)/phg/phg_scale.c \
 	$(srcdir)/phg/phg_serialpartition.c $(srcdir)/phg/phg_util.c \
-	$(srcdir)/phg/phg_Vcycle.c $(srcdir)/rcb/box_assign.c \
-	$(srcdir)/rcb/create_proc_list.c $(srcdir)/rcb/inertial1d.c \
-	$(srcdir)/rcb/inertial2d.c $(srcdir)/rcb/inertial3d.c \
-	$(srcdir)/rcb/point_assign.c $(srcdir)/rcb/rcb_box.c \
-	$(srcdir)/rcb/rcb.c $(srcdir)/rcb/rcb_util.c \
-	$(srcdir)/rcb/rib.c $(srcdir)/rcb/rib_util.c \
-	$(srcdir)/rcb/shared.c $(srcdir)/reftree/reftree_build.c \
+	$(srcdir)/phg/phg_tree.c $(srcdir)/phg/phg_Vcycle.c \
+	$(srcdir)/rcb/box_assign.c $(srcdir)/rcb/create_proc_list.c \
+	$(srcdir)/rcb/inertial1d.c $(srcdir)/rcb/inertial2d.c \
+	$(srcdir)/rcb/inertial3d.c $(srcdir)/rcb/point_assign.c \
+	$(srcdir)/rcb/rcb_box.c $(srcdir)/rcb/rcb.c \
+	$(srcdir)/rcb/rcb_util.c $(srcdir)/rcb/rib.c \
+	$(srcdir)/rcb/rib_util.c $(srcdir)/rcb/shared.c \
+	$(srcdir)/reftree/reftree_build.c \
 	$(srcdir)/reftree/reftree_coarse_path.c \
 	$(srcdir)/reftree/reftree_hash.c \
 	$(srcdir)/reftree/reftree_part.c \
@@ -219,7 +220,7 @@ am__objects_15 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg_plot.$(OBJEXT) phg_rdivide.$(OBJEXT) \
 	phg_refinement.$(OBJEXT) phg_scale.$(OBJEXT) \
 	phg_serialpartition.$(OBJEXT) phg_util.$(OBJEXT) \
-	phg_Vcycle.$(OBJEXT)
+	phg_tree.$(OBJEXT) phg_Vcycle.$(OBJEXT)
 am__objects_16 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
 	inertial1d.$(OBJEXT) inertial2d.$(OBJEXT) inertial3d.$(OBJEXT) \
 	point_assign.$(OBJEXT) rcb_box.$(OBJEXT) rcb.$(OBJEXT) \
@@ -593,6 +594,7 @@ PHG_H = \
 	$(srcdir)/phg/phg_distrib.h \
 	$(srcdir)/phg/phg.h \
 	$(srcdir)/phg/phg_hypergraph.h \
+	$(srcdir)/phg/phg_tree.h \
 	$(srcdir)/phg/phg_util.h
 
 PHG = \
@@ -614,6 +616,7 @@ PHG = \
 	$(srcdir)/phg/phg_scale.c \
 	$(srcdir)/phg/phg_serialpartition.c \
 	$(srcdir)/phg/phg_util.c \
+	$(srcdir)/phg/phg_tree.c \
 	$(srcdir)/phg/phg_Vcycle.c
 
 RCB_H = \
@@ -1288,6 +1291,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_refinement.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_scale.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_serialpartition.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phg_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/point_assign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/postprocessing.Po@am__quote@
@@ -2516,6 +2520,20 @@ phg_util.obj: $(srcdir)/phg/phg_util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/phg/phg_util.c' object='phg_util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o phg_util.obj `if test -f '$(srcdir)/phg/phg_util.c'; then $(CYGPATH_W) '$(srcdir)/phg/phg_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phg/phg_util.c'; fi`
+
+phg_tree.o: $(srcdir)/phg/phg_tree.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_tree.o -MD -MP -MF $(DEPDIR)/phg_tree.Tpo -c -o phg_tree.o `test -f '$(srcdir)/phg/phg_tree.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_tree.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/phg_tree.Tpo $(DEPDIR)/phg_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/phg/phg_tree.c' object='phg_tree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o phg_tree.o `test -f '$(srcdir)/phg/phg_tree.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_tree.c
+
+phg_tree.obj: $(srcdir)/phg/phg_tree.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_tree.obj -MD -MP -MF $(DEPDIR)/phg_tree.Tpo -c -o phg_tree.obj `if test -f '$(srcdir)/phg/phg_tree.c'; then $(CYGPATH_W) '$(srcdir)/phg/phg_tree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phg/phg_tree.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/phg_tree.Tpo $(DEPDIR)/phg_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/phg/phg_tree.c' object='phg_tree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o phg_tree.obj `if test -f '$(srcdir)/phg/phg_tree.c'; then $(CYGPATH_W) '$(srcdir)/phg/phg_tree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phg/phg_tree.c'; fi`
 
 phg_Vcycle.o: $(srcdir)/phg/phg_Vcycle.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_Vcycle.o -MD -MP -MF $(DEPDIR)/phg_Vcycle.Tpo -c -o phg_Vcycle.o `test -f '$(srcdir)/phg/phg_Vcycle.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_Vcycle.c

@@ -238,6 +238,7 @@ PHG_H = \
 	$(srcdir)/phg/phg_distrib.h \
 	$(srcdir)/phg/phg.h \
 	$(srcdir)/phg/phg_hypergraph.h \
+	$(srcdir)/phg/phg_tree.h \
 	$(srcdir)/phg/phg_util.h
 
 PHG = \
@@ -259,6 +260,7 @@ PHG = \
 	$(srcdir)/phg/phg_scale.c \
 	$(srcdir)/phg/phg_serialpartition.c \
 	$(srcdir)/phg/phg_util.c \
+	$(srcdir)/phg/phg_tree.c \
 	$(srcdir)/phg/phg_Vcycle.c
 
 RCB_H = \

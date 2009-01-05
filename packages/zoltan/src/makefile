@@ -248,8 +248,8 @@ PHG_CSRC 	= phg.c phg_hypergraph.c phg_build.c phg_build_calls.c \
 		  phg_refinement.c phg_serialpartition.c \
 		  phg_Vcycle.c phg_rdivide.c phg_util.c \
 		  phg_scale.c phg_comm.c phg_order.c \
-                  phg_parkway.c phg_patoh.c
-PHG_INC 	= phg.h phg_util.h phg_hypergraph.h 
+                  phg_parkway.c phg_patoh.c phg_tree.c
+PHG_INC 	= phg.h phg_util.h phg_hypergraph.h phg_tree.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c

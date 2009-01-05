@@ -259,7 +259,7 @@ extern int Zoltan_PHG_Fill_Hypergraph(ZZ*, ZHG*, PHGPartParams *, Partition*);
 extern int Zoltan_PHG_Remove_Repart_Data(ZZ*, ZHG*, HGraph*, PHGPartParams*);
 
 extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, HGraph *,
-                               PHGPartParams *, int);
+                               PHGPartParams *, int, int);
     
 extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
 extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, float *, Partition, 

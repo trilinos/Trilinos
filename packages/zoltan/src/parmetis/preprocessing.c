@@ -174,7 +174,7 @@ int Zoltan_Preprocess_Graph(
     if (prt) {
       prt->input_part = input_part;
     }
-    else { /* Ordering, dont need part */
+    else if (input_part) { /* Ordering, dont need part */
       ZOLTAN_FREE(&input_part);
     }
     if (ierr){

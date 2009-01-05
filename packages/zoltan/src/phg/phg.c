@@ -19,6 +19,7 @@ extern "C" {
 
 #include <math.h>
 #include "phg.h"
+#include "phg_tree.h"
 #include "params_const.h"
 #include "all_allo_const.h"
 #include "zz_const.h"
@@ -427,6 +428,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
       }
       else {
         int i;
+	int tree_size = 0;
           
         if (do_timing) 
           ZOLTAN_TIMER_START(zz->ZTime, timer->setupvmap, zz->Communicator);
@@ -442,10 +444,12 @@ int **exp_to_part )         /* list of partitions to which exported objs
   
         if (do_timing) 
           ZOLTAN_TIMER_STOP(zz->ZTime, timer->setupvmap, zz->Communicator);
-  
-          
+
+        /* Create tree structure */
+        Zoltan_PHG_create_tree(&zz->LB.Tree, p, &tree_size);
+
         /* partition hypergraph */
-        err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
+        err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0, 1);
   
         if (hgp.output_level >= PHG_DEBUG_LIST)     
           uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s/%s p=%d "
@@ -462,7 +466,15 @@ int **exp_to_part )         /* list of partitions to which exported objs
           goto End;
         }
         ZOLTAN_FREE (&hg->vmap);
+
+	/* Build a centralized tree */
+	Zoltan_PHG_centralize_tree(zz, p, tree_size);
+
+	/* TODO: remove the free */
+	zz->LB.Tree += 2;
+	ZOLTAN_FREE(&(zz->LB.Tree));
       }
+
 #ifdef CHECK_LEFTALONE_VERTICES          
       findAndSaveLeftAloneVertices(zz, hg, p, parts, &hgp);
 #endif      

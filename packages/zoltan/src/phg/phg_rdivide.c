@@ -18,11 +18,9 @@ extern "C" {
 
 
 #include "phg.h"
+#include "phg_tree.h"
 #include "phg_distrib.h"
 #include "zz_const.h"
-
-
-
 
 /*
 #define _DEBUG1
@@ -41,7 +39,7 @@ static int split_hypergraph(int *pins[2], HGraph*, HGraph*, PHGPartParams*,
 
 static int rdivide_and_prepsend(int, int, Partition, ZZ *, HGraph *,
                                 PHGPartParams *, int, int *, int *, int *,
-                                int *, int *, int);
+                                int *, int *, int, int);
 static float balanceTol(PHGPartParams *hgp, int part_dim, int pno, float *ratios,
                         float tot, float pw);
 
@@ -55,7 +53,8 @@ int Zoltan_PHG_rdivide(
   ZZ *zz, 
   HGraph *hg,
   PHGPartParams *hgp, 
-  int level
+  int level,
+  int father
 )
 {
   char *yo = "Zoltan_PHG_rdivide";
@@ -74,6 +73,9 @@ int Zoltan_PHG_rdivide(
   struct phg_timer_indices *timer = zz->LB.Data_Structure;
   int do_timing = (hgp->use_timers > 1);
   int detail_timing = (hgp->use_timers > 3);
+
+  SET_MIN_NODE((int*)zz->LB.Tree, father, lo);
+  SET_MAX_NODE((int*)zz->LB.Tree, father, hi);
 
   if (!gnVtx) { /* UVC: no vertex; no need for recursion!? */
       if (level>0)
@@ -218,6 +220,9 @@ int Zoltan_PHG_rdivide(
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==0)
               final[hg->vmap[i]] = lo;
+      /* No recursion for the tree */
+      SET_MIN_NODE((int*)zz->LB.Tree, 2*father, lo);
+      SET_MAX_NODE((int*)zz->LB.Tree, 2*father, lo);
   }
 
   if (hi>mid+1) { /* only split if we need it */
@@ -236,6 +241,9 @@ int Zoltan_PHG_rdivide(
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==1)
               final[hg->vmap[i]] = hi;
+      /* No recursion for the tree */
+      SET_MIN_NODE((int*)zz->LB.Tree, 2*father+1, hi);
+      SET_MAX_NODE((int*)zz->LB.Tree, 2*father+1, hi);
   }
 
   
@@ -367,7 +375,8 @@ int Zoltan_PHG_rdivide(
           ierr = rdivide_and_prepsend (lo, mid, part, zz, &newleft, hgp, 
                                        level+1, proclist, sendbuf, 
                                        leftdest, leftvmap, &nsend,
-                                       (timer ? timer->rdrdivide : -1));
+                                       (timer ? timer->rdrdivide : -1),
+				       2*father);
 
           hgp->bal_tol = save_bal_tol;
           Zoltan_HG_HGraph_Free (&newright); /* free dist_x and dist_y
@@ -389,7 +398,8 @@ int Zoltan_PHG_rdivide(
           ierr |= rdivide_and_prepsend (mid+1, hi, part, zz, &newright, hgp, 
                                         level+1, proclist, sendbuf, 
                                         rightdest, rightvmap, &nsend,
-                                        (timer ? timer->rdrdivide : -1));
+                                        (timer ? timer->rdrdivide : -1),
+					2*father+1);
 
           hgp->bal_tol = save_bal_tol;          
           Zoltan_HG_HGraph_Free (&newleft); /* free dist_x and dist_y
@@ -463,7 +473,7 @@ int Zoltan_PHG_rdivide(
               ZOLTAN_TIMER_STOP(zz->ZTime, timer->rdrdivide,
                                 hgc->Communicator);
 
-          ierr = Zoltan_PHG_rdivide(lo, mid, final, zz, left, hgp, level+1);
+          ierr = Zoltan_PHG_rdivide(lo, mid, final, zz, left, hgp, level+1, 2*father);
           /* rdivide call will free "left" */
 
           if (do_timing)  /* Restart timer after recursion */
@@ -487,7 +497,7 @@ int Zoltan_PHG_rdivide(
               ZOLTAN_TIMER_STOP(zz->ZTime, timer->rdrdivide,
                                 hgc->Communicator);
           
-          ierr |= Zoltan_PHG_rdivide(mid+1, hi, final, zz, right, hgp, level+1);
+          ierr |= Zoltan_PHG_rdivide(mid+1, hi, final, zz, right, hgp, level+1, 2*father+1);
           /* rdivide call will free "right" */
           
           if (do_timing)  /* Restart timer after recursion */
@@ -518,7 +528,8 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
                                 HGraph *hg,
                                 PHGPartParams *hgp, int level,
                                 int *proclist, int *sendbuf, int *dest,
-                                int *vmap, int *nsend, int timer_rdivide)
+                                int *vmap, int *nsend, int timer_rdivide, 
+				int father)
 {
     int      ierr=ZOLTAN_OK, i, nVtx=hg->nVtx;
     PHGComm  *hgc=hg->comm;
@@ -530,7 +541,7 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
     if (do_timing)  /* Stop timer before recursion */
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hgc->Communicator);
 
-    ierr = Zoltan_PHG_rdivide (lo, hi, final, zz, hg, hgp, level);
+    ierr = Zoltan_PHG_rdivide (lo, hi, final, zz, hg, hgp, level, father);
     /* rdivide will free the content of "hg" */
     
     if (do_timing) /* Restart rdivide timer */
