@@ -30,6 +30,7 @@
 #define Rythmos_ExplicitRK_STEPPER_H
 
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_StepperHelpers.hpp"
 #include "Rythmos_RKButcherTableau.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Thyra_VectorBase.hpp"
@@ -73,6 +74,11 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     ~ExplicitRKStepper();
 
     /** \brief . */
+    void setInitialCondition(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+      );
+
+    /** \brief . */
     Scalar takeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
@@ -97,8 +103,8 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     /// Get values from buffer
     void getPoints(
       const Array<Scalar>& time_vec
-      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,Array<RCP<const VectorBase<Scalar> > >* x_vec
+      ,Array<RCP<const VectorBase<Scalar> > >* xdot_vec
       ,Array<ScalarMag>* accuracy_vec) const;
 
     /** \brief . */
@@ -131,14 +137,19 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
+
     RKButcherTableau<Scalar> erkButcherTableau_;
 
     Scalar t_;
     Scalar dt_;
+    int numSteps_;
 
     Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
     bool isInitialized_;
+
+    bool haveInitialCondition_;
 
     // Private member functions:
     void initialize_();
@@ -172,6 +183,8 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::Mod
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
 
+  numSteps_ = 0;
+  haveInitialCondition_ = false;
   this->setModel(model);
   this->setRKButcherTableau(rkbt);
   initialize_();
@@ -202,8 +215,8 @@ RKButcherTableau<Scalar> ExplicitRKStepper<Scalar>::getRKButcherTableau() const
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::initialize_()
 {
-  t_ = ST::zero();
-  solution_vector_ = model_->getNominalValues().get_x()->clone_v();
+  haveInitialCondition_ = setDefaultInitialConditionFromNominalValues<Scalar>(
+    *model_, Teuchos::ptr(this) );
   ktemp_vector_ = Thyra::createMember(model_->get_f_space());
 
   isInitialized_ = true;
@@ -261,6 +274,8 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   // update current time:
   t_ = t_ + dt;
 
+  numSteps_++;
+
   return(dt);
 }
 
@@ -269,10 +284,20 @@ const StepStatus<Scalar> ExplicitRKStepper<Scalar>::getStepStatus() const
 {
   StepStatus<Scalar> stepStatus;
 
-  stepStatus.stepSize = dt_;
-  stepStatus.order = -1;
-  stepStatus.time = t_;
-  stepStatus.solution = solution_vector_;
+  if (!haveInitialCondition_) {
+    stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
+  } else if (numSteps_ == 0) {
+    stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
+    stepStatus.order = erkButcherTableau_.order();
+    stepStatus.time = t_;
+    stepStatus.solution = solution_vector_;
+  } else {
+    stepStatus.stepStatus = STEP_STATUS_CONVERGED;
+    stepStatus.stepSize = dt_;
+    stepStatus.order = erkButcherTableau_.order();
+    stepStatus.time = t_;
+    stepStatus.solution = solution_vector_;
+  }
 
   return(stepStatus);
 }
@@ -324,19 +349,34 @@ void ExplicitRKStepper<Scalar>::addPoints(
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::getPoints(
-    const Array<Scalar>& time_vec
-    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,Array<ScalarMag>* accuracy_vec) const
+TimeRange<Scalar> ExplicitRKStepper<Scalar>::getTimeRange() const
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getPoints is not implemented for ExplicitRKStepper at this time.\n");
+  if (!haveInitialCondition_) {
+    return(invalidTimeRange<Scalar>());
+  } else {
+    return(TimeRange<Scalar>(t_,t_));
+  }
 }
 
 template<class Scalar>
-TimeRange<Scalar> ExplicitRKStepper<Scalar>::getTimeRange() const
+void ExplicitRKStepper<Scalar>::getPoints(
+  const Array<Scalar>& time_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+  Array<ScalarMag>* accuracy_vec
+  ) const
 {
-  return invalidTimeRange<Scalar>();
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if ((time_vec.size() == 1) && (time_vec[0] == t_)) {
+    x_vec->clear();
+    x_vec->push_back(solution_vector_->clone_v());
+    xdot_vec->clear();
+    xdot_vec->push_back(Teuchos::null);
+    accuracy_vec->clear();
+    accuracy_vec->push_back(ST::zero());
+  } else {
+    TEST_FOR_EXCEPTION(true,std::logic_error,"Error, ExplicitRKStepper::getPoints is only implemented for the last time point computed.\n");
+  }
 }
 
 template<class Scalar>
@@ -395,6 +435,45 @@ ExplicitRKStepper<Scalar>::getModel() const
   return model_;
 }
 
+template<class Scalar>
+void ExplicitRKStepper<Scalar>::setInitialCondition(
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+  )
+{
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  TEST_FOR_EXCEPT( is_null(model_) );
+
+  basePoint_ = initialCondition;
+
+  // x
+
+  RCP<const Thyra::VectorBase<Scalar> >
+    x_init = initialCondition.get_x();
+
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    is_null(x_init), std::logic_error,
+    "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
+    "then x can not be null!" );
+  THYRA_ASSERT_VEC_SPACES(
+    "Rythmos::BackwardEulerStepper::setInitialCondition(...)",
+    *x_init->space(), *model_->get_x_space() );
+#endif
+
+  solution_vector_ = x_init->clone_v();
+
+  // t
+  
+  t_ = initialCondition.get_t();
+
+  haveInitialCondition_ = true;
+
+}
+
 } // namespace Rythmos
 
 #endif //Rythmos_ExplicitRK_STEPPER_H
+

@@ -56,5 +56,18 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
   TEST_EQUALITY_CONST( rkbt == rkbt_out, true );
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, getTimeRange ) {
+  RCP<SinCosModel> model = sinCosModel(false);
+  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
+  TimeRange<double> tr = stepper->getTimeRange();
+  TEST_EQUALITY_CONST( tr.isValid(), true );
+  TEST_EQUALITY_CONST( tr.lower(), 0.0 );
+  TEST_EQUALITY_CONST( tr.upper(), 0.0 );
+} 
+
+// 12/17/08 tscoffe:  I need a model evaluator _without_ a nominal values to
+// test the initialization behavior of the ERK stepper (and the ImplicitBDF stepper).
+
+
 } // namespace Rythmos
 

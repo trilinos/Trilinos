@@ -71,16 +71,18 @@ bool setDefaultInitialConditionFromNominalValues(
     THYRA_ASSERT_VEC_SPACES( "setInitialConditionIfExists(...)", 
       *model.get_x_space(), *initCond.get_x()->space() );
 #endif
-    if (is_null(initCond.get_x_dot())) {
-      const RCP<Thyra::VectorBase<Scalar> > x_dot =
-        createMember(model.get_x_space());
-      assign(x_dot.ptr(), ST::zero());
-    }
-    else {
+    if (initCond.supports(MEB::IN_ARG_x_dot)) {
+      if (is_null(initCond.get_x_dot())) {
+        const RCP<Thyra::VectorBase<Scalar> > x_dot =
+          createMember(model.get_x_space());
+        assign(x_dot.ptr(), ST::zero());
+      }
+      else {
 #ifdef TEUCHOS_DEBUG
-      THYRA_ASSERT_VEC_SPACES( "setInitialConditionIfExists(...)", 
-        *model.get_x_space(), *initCond.get_x_dot()->space() );
+        THYRA_ASSERT_VEC_SPACES( "setInitialConditionIfExists(...)", 
+          *model.get_x_space(), *initCond.get_x_dot()->space() );
 #endif
+      }
     }
     stepper->setInitialCondition(initCond);
     return true;
