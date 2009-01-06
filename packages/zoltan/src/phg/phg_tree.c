@@ -43,7 +43,7 @@ Zoltan_PHG_create_tree(int **ptr, int part_number, int* tree_size)
   part2 |= part2 >> 4;
   part2 |= part2 >> 8;
   part2 |= part2 >> 16;
-  part2 |= part2 >> 32; /* On 64 bits */
+
   part2++;
 
   *tree_size = 2*part2-1;
@@ -67,7 +67,18 @@ int
 Zoltan_PHG_centralize_tree(ZZ *zz, int p, int tree_size)
 {
   /* TRICK: we store -low, thus we can use MPI_MAX for low and high */
+
+#ifdef MPI_IN_PLACE
   MPI_Allreduce(MPI_IN_PLACE, zz->LB.Tree + 2, 2*tree_size, MPI_INT, MPI_MAX, zz->Communicator);
+#else /* MPI_IN_PLACE */
+  int *tmp_tree;
+  tmp_tree = ZOLTAN_MALLOC(sizeof(int)*2*tree_size);
+  if (tmp_tree == NULL)
+    return ZOLTAN_MEMERR;
+  memcpy (tmp_tree, zz->LB.Tree + 2, 2*tree_size*sizeof(int));
+  MPI_Allreduce(zz->LB.Tree + 2, tmp_tree, 2*tree_size, MPI_INT, MPI_MAX, zz->Communicator);
+  ZOLTAN_FREE(&tmp_tree);
+#endif /* MPI_IN_PLACE */
   return ZOLTAN_OK;
 }
 
