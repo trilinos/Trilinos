@@ -30,12 +30,14 @@
 // 06.18.03 -- Minor formatting changes
 //          -- Changed calls to LAPACK objects to use new <OType, SType> templates
 // 07.08.03 -- Move into Teuchos package/namespace
-// 07.11.03 -- Added ScalarTraits for ARPREC::mp_real
+// 07.11.03 -- Added ScalarTraits for ARPREC mp_real
 // 07.14.03 -- Fixed int rand() function (was set up to return a floating-point style random number)
 // 07.17.03 -- Added squareroot() function
 
 // NOTE: Before adding specializations of ScalarTraits, make sure that they do not duplicate 
 // specializations already present in PyTrilinos (see packages/PyTrilinos/src/Teuchos_Traits.i)
+
+// NOTE: halfPrecision and doublePrecision are not currently implemented for ARPREC, GMP or the ordinal types (e.g., int, char)
 
 #ifndef _TEUCHOS_SCALARTRAITS_HPP_
 #define _TEUCHOS_SCALARTRAITS_HPP_
@@ -47,12 +49,18 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 #ifdef HAVE_TEUCHOS_ARPREC
-#include "mp/mpreal.h"
+// #include <mp/mpreal.h>       // CGB: this is not correct, circa ARPREC 2005. 
+#include <arprec/mp_real.h>
+#endif
+
+#ifdef HAVE_TEUCHOS_QD
+#include <qd/qd_real.h>
+#include <qd/dd_real.h>
 #endif
 
 #ifdef HAVE_TEUCHOS_GNU_MP
-#include "gmp.h"
-#include "gmpxx.h"
+#include <gmp.h>
+#include <gmpxx.h>
 #endif
 
 /*! \struct Teuchos::ScalarTraits
@@ -92,8 +100,12 @@ struct UndefinedScalarTraits
 template<class T>
 struct ScalarTraits
 {
-  //! Madatory typedef for result of magnitude
+  //! Mandatory typedef for result of magnitude
   typedef T magnitudeType;
+  //! Typedef for half precision
+  typedef T halfPrecision;
+  //! Typedef for double precision
+  typedef T doublePrecision;
   //! Determines if scalar type is std::complex
   static const bool isComplex = false;
   //! Determines if scalar type is an ordinal type
@@ -168,6 +180,8 @@ template<>
 struct ScalarTraits<char>
 {
   typedef char magnitudeType;
+  typedef char halfPrecision;
+  typedef char doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -199,6 +213,8 @@ template<>
 struct ScalarTraits<short int>
 {
   typedef short int magnitudeType;
+  typedef short int halfPrecision;
+  typedef short int doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -229,6 +245,8 @@ template<>
 struct ScalarTraits<int>
 {
   typedef int magnitudeType;
+  typedef int halfPrecision;
+  typedef int doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -260,6 +278,8 @@ template<>
 struct ScalarTraits<long int>
 {
   typedef long int magnitudeType;
+  typedef long int halfPrecision;
+  typedef long int doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -291,6 +311,8 @@ template<>
 struct ScalarTraits<long long int>
 {
   typedef long long int magnitudeType;
+  typedef long long int halfPrecision;
+  typedef long long int doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
@@ -316,7 +338,7 @@ struct ScalarTraits<long long int>
   static inline long long int squareroot(long long int x) { return (long long int) std::sqrt((double) x); }
   static inline long long int pow(long long int x, long long int y) { return (long long int) std::pow((double)x,(double)y); }
 };
-#endif
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #ifndef __sun
 extern const float flt_nan;
@@ -326,6 +348,8 @@ template<>
 struct ScalarTraits<float>
 {
   typedef float magnitudeType;
+  typedef float halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
+  typedef double doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -419,6 +443,21 @@ template<>
 struct ScalarTraits<double>
 {
   typedef double magnitudeType;
+  typedef float halfPrecision;
+  /* there are different options as to how to double "double"
+     - QD's DD (if available)
+     - ARPREC
+     - GNU MP
+     - a true hardware quad
+
+     in the shortterm, this should be specified at configure time. I have inserted a configure-time option (--enable-teuchos-double-to-dd) 
+     which uses QD's DD when available. This must be used alongside --enable-teuchos-qd.
+   */
+#ifdef HAVE_TEUCHOS_DOUBLE_TO_DD
+  typedef dd_real doublePrecision;
+#else
+  typedef double doublePrecision;     // don't double "double" in this case
+#endif
   static const bool isComplex = false;
   static const bool isOrdinal = false;
   static const bool isComparable = true;
@@ -504,14 +543,150 @@ struct ScalarTraits<double>
   static inline double pow(double x, double y) { return std::pow(x,y); }
 };
 
+#ifdef HAVE_TEUCHOS_QD
+template<>
+struct ScalarTraits<dd_real>
+{
+  typedef dd_real magnitudeType;
+  typedef double halfPrecision;
+  typedef qd_real doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+  static inline dd_real eps()   { return std::numeric_limits<dd_real>::epsilon(); }
+  static inline dd_real sfmin() { return std::numeric_limits<dd_real>::min(); }
+  static inline dd_real base()  { return std::numeric_limits<dd_real>::radix; }
+  static inline dd_real prec()  { return eps()*base(); }
+  static inline dd_real t()     { return std::numeric_limits<dd_real>::digits; }
+  static inline dd_real rnd()   { return ( std::numeric_limits<dd_real>::round_style == std::round_to_nearest ? dd_real(1.0) : dd_real(0.0) ); }
+  static inline dd_real emin()  { return std::numeric_limits<dd_real>::min_exponent; }
+  static inline dd_real rmin()  { return std::numeric_limits<dd_real>::min(); }
+  static inline dd_real emax()  { return std::numeric_limits<dd_real>::max_exponent; }
+  static inline dd_real rmax()  { return std::numeric_limits<dd_real>::max(); }
+  static inline magnitudeType magnitude(dd_real a)
+  {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif      
+      return abs(a);
+  }
+  static inline dd_real zero()  { return dd_real(0.0); }
+  static inline dd_real one()   { return dd_real(1.0); }
+  static inline dd_real conjugate(dd_real x)   { return(x); }    
+  static inline dd_real real(dd_real x) { return x ; }
+  static inline dd_real imag(dd_real) { return zero(); }
+  static inline dd_real nan() { return dd_real::_nan; }
+  static inline bool isnaninf(dd_real x) { return isnan(x) || isinf(x); }
+  static inline void seedrandom(unsigned int s) {
+    // ddrand() uses std::rand(), so the std::srand() is our seed
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  static inline dd_real random() { return ddrand(); }
+  static inline std::string name() { return "dd_real"; }
+  static inline dd_real squareroot(dd_real x)
+  {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif      
+      return sqrt(x);
+  }
+  static inline dd_real pow(dd_real x, dd_real y) { return pow(x,y); }
+};
+
+template<>
+struct ScalarTraits<qd_real>
+{
+  typedef qd_real magnitudeType;
+  typedef dd_real halfPrecision;
+  typedef qd_real doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+  static inline qd_real eps()   { return std::numeric_limits<qd_real>::epsilon(); }
+  static inline qd_real sfmin() { return std::numeric_limits<qd_real>::min(); }
+  static inline qd_real base()  { return std::numeric_limits<qd_real>::radix; }
+  static inline qd_real prec()  { return eps()*base(); }
+  static inline qd_real t()     { return std::numeric_limits<qd_real>::digits; }
+  static inline qd_real rnd()   { return ( std::numeric_limits<qd_real>::round_style == std::round_to_nearest ? qd_real(1.0) : qd_real(0.0) ); }
+  static inline qd_real emin()  { return std::numeric_limits<qd_real>::min_exponent; }
+  static inline qd_real rmin()  { return std::numeric_limits<qd_real>::min(); }
+  static inline qd_real emax()  { return std::numeric_limits<qd_real>::max_exponent; }
+  static inline qd_real rmax()  { return std::numeric_limits<qd_real>::max(); }
+  static inline magnitudeType magnitude(qd_real a)
+  {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif      
+      return abs(a);
+  }
+  static inline qd_real zero()  { return qd_real(0.0); }
+  static inline qd_real one()   { return qd_real(1.0); }
+  static inline qd_real conjugate(qd_real x)   { return(x); }    
+  static inline qd_real real(qd_real x) { return x ; }
+  static inline qd_real imag(qd_real) { return zero(); }
+  static inline qd_real nan() { return qd_real::_nan; }
+  static inline bool isnaninf(qd_real x) { return isnan(x) || isinf(x); }
+  static inline void seedrandom(unsigned int s) {
+    // qdrand() uses std::rand(), so the std::srand() is our seed
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  static inline qd_real random() { return qdrand(); }
+  static inline std::string name() { return "qd_real"; }
+  static inline qd_real squareroot(qd_real x)
+  {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif      
+      return sqrt(x);
+  }
+  static inline qd_real pow(qd_real x, qd_real y) { return pow(x,y); }
+};
+
+#endif  // HAVE_TEUCHOS_QD
+
 #ifdef HAVE_TEUCHOS_GNU_MP
 
 extern gmp_randclass gmp_rng; 
 
+
+/* Regarding halfPrecision, doublePrecision and mpf_class: 
+   Because the precision of an mpf_class float is not determined by the data type, 
+   there is no way to fill the typedefs for this object. 
+
+   Instead, we could create new data classes (e.g., Teuchos::MPF128, Teuchos::MPF256) for 
+   commonly used levels of precision, and fill out ScalarTraits for these. This would allow us
+   to typedef the promotions and demotions in the appropriate way. These classes would serve to 
+   wrap an mpf_class object, calling the constructor for the appropriate precision, exposing the 
+   arithmetic routines but hiding the precision-altering routines.
+   
+   Alternatively (perhaps, preferably), would could create a single class templated on the precision (e.g., Teuchos::MPF<N>). 
+   Then we have a single (partially-specialized) implementation of ScalarTraits. This class, as above, must expose all of the 
+   operations expected of a scalar type; however, most of these can be trivially stolen from the gmpcxx.h header file
+
+   CGB/RAB, 01/05/2009
+*/
 template<>
 struct ScalarTraits<mpf_class>
 {
   typedef mpf_class magnitudeType;
+  typedef mpf_class halfPrecision;
+  typedef mpf_class doublePrecision;
   static const bool isComplex = false;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
@@ -535,14 +710,18 @@ struct ScalarTraits<mpf_class>
   // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
 };
 
-#endif  
+#endif  // HAVE_TEUCHOS_GNU_MP
 
 #ifdef HAVE_TEUCHOS_ARPREC
 
+/* See discussion above for mpf_class, regarding halfPrecision and doublePrecision. Something similar will need to be done
+   for ARPREC. */
 template<>
 struct ScalarTraits<mp_real>
 {
   typedef mp_real magnitudeType;
+  typedef mp_real halfPrecision;
+  typedef mp_real doublePrecision;
   static const bool isComplex = false;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
@@ -576,6 +755,8 @@ struct ScalarTraits<
 >
 {
   typedef std::complex<T>  ComplexT;
+  typedef std::complex<typename ScalarTraits<T>::halfPrecision> halfPrecision;
+  typedef std::complex<typename ScalarTraits<T>::doublePrecision> doublePrecision;
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
   static const bool isComplex = true;
   static const bool isOrdinal = ScalarTraits<T>::isOrdinal;

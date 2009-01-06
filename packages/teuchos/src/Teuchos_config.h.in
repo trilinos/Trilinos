@@ -209,6 +209,9 @@
 /* Define if want to build teuchos-dotcheck */
 #undef HAVE_TEUCHOS_DOTCHECK
 
+/* Define if want to build teuchos-double-to-dd */
+#undef HAVE_TEUCHOS_DOUBLE_TO_DD
+
 /* Define if want to build teuchos-examples */
 #undef HAVE_TEUCHOS_EXAMPLES
 
@@ -229,6 +232,9 @@
 
 /* Define if want to build teuchos-long_long */
 #undef HAVE_TEUCHOS_LONG_LONG_INT
+
+/* Define if want to build teuchos-qd */
+#undef HAVE_TEUCHOS_QD
 
 /* Define if want to build teuchos-tests */
 #undef HAVE_TEUCHOS_TESTS

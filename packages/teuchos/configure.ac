@@ -397,7 +397,7 @@ if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 fi
 
 #
-#  --enable-teuchos-arprec 
+#  --enable-teuchos-gmp
 # 
  
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, gmp, [Enable Teuchos interface support for the GNU MP Library], 
@@ -438,6 +438,53 @@ if test "X$ac_cv_use_teuchos_gmp" != "Xno"; then
 	     	 echo "Use --with-libs to specify GNU MP library (-lgmp -lgmpxx)."
 	     	 echo "-----"
 	     	 AC_MSG_ERROR(GNU MP test cannot link)])
+     AC_LANG_RESTORE
+
+fi
+
+#
+#  --enable-teuchos-qd
+# 
+ 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, qd, [Enable Teuchos interface support for the QD library], 
+		TEUCHOS_QD, no)  
+
+if test "X$ac_cv_use_teuchos_qd" != "Xno"; then
+
+  TAC_ARG_ENABLE_FEATURE_SUB( teuchos, double-to-dd, [Instruct Teuchos ScalarTraits to promote double to dd_real], TEUCHOS_DOUBLE_TO_DD, no)
+
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+#
+#  Check for QD headers.
+#
+     AC_MSG_CHECKING(for QD headers (qd/qd_real.h) ) 
+     AC_TRY_CPP([#include "qd/qd_real.h"],
+	[AC_MSG_RESULT(yes)],  
+	[
+	 AC_MSG_RESULT(no)
+	 echo "-----"
+     	 echo "Cannot find QD headers."
+     	 echo "Use --with-incdirs to specify QD include directory."
+     	 echo "-----"
+     	 AC_MSG_ERROR(QD headers cannot be found)
+     	])
+#
+#  Check for QD library.
+#
+     AC_MSG_CHECKING(for QD library (libqd.a) )
+     AC_LANG_SAVE
+     AC_LANG_CPLUSPLUS
+     AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "qd/qd_real.h"]], 
+					[[qd_real one(1.0); sqrt(one);]]) ],
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)
+		 echo "-----"
+	     	 echo "Cannot find QD library."
+     		 echo "Use --with-ldflags to specify QD library directory."
+	     	 echo "Use --with-libs to specify QD library (-lqd)."
+	     	 echo "-----"
+	     	 AC_MSG_ERROR(QD test cannot link)])
      AC_LANG_RESTORE
 
 fi
