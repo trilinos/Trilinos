@@ -1,0 +1,48 @@
+#!
+# Sample script for building using CMAKE on Karen's Mac OS X system.
+# 64-bit, Zoltan only.
+# Run in Trilinos/Obj_cmake.
+
+# Clean up the mess from previous configurations.
+/bin/rm -r cmake* CMake* CPack* CTest* Dart* Trilinos* Testing packages Makefile
+
+# Configure for Zoltan-only build.
+cmake \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D CMAKE_CXX_COMPILER:FILEPATH="mpic++" \
+-D CMAKE_C_COMPILER:FILEPATH="mpicc" \
+-D CMAKE_C_FLAGS:STRING="-m64 -g" \
+-D CMAKE_CXX_FLAGS:STRING="-m64 -g" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D MPIEXEC_MAX_NUMPROCS:STRING=4 \
+-D MPI_EXTRA_LIBRARY:FILEPATH="" \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_Fortran:BOOL=OFF \
+-D Trilinos_ENABLE_CXX:BOOL=OFF \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Zoltan_ENABLE_EXAMPLES:BOOL=ON \
+-D Zoltan_ENABLE_TESTS:BOOL=ON \
+-D TPL_ENABLE_Scotch:BOOL=ON \
+-D Scotch_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/include" \
+-D Scotch_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/lib" \
+-D TPL_ENABLE_ParMETIS:BOOL=ON \
+-D ParMETIS_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+-D ParMETIS_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+-D TPL_ENABLE_PaToH:BOOL=ON \
+-D PaToH_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/PaToH/dist" \
+-D PaToH_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/PaToH/dist" \
+..
+
+# These don't do us any good, as they don't appropriately set TPL_ENABLE_*.
+#-D Zoltan_ENABLE_PaToH:BOOL=ON \
+#-D Zoltan_ENABLE_Patoh:BOOL=ON \
+#-D Zoltan_ENABLE_Parmetis:BOOL=ON \
+
+# NOTE:  I hacked my version of CMAKE, as it had errors trying to find
+# install_name_tool.  I changed the following file to check for 
+# CMAKE_INSTALL_NAME_TOOL before running FIND_PROGRAM to find it.
+# I don't know why it had problems only with install_name_tool, as the
+# linker, ranlib, etc., were found with no difficulty.
+# /Applications/CMake\ 2.6-2.app/Contents/share/cmake-2.6/Modules/CMakeFindBinUtils.cmake
+
