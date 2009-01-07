@@ -71,7 +71,7 @@ Zoltan_PHG_centralize_tree(ZZ *zz, int p, int tree_size)
   MPI_Allreduce(MPI_IN_PLACE, zz->LB.Tree + 2, 2*tree_size, MPI_INT, MPI_MAX, zz->Communicator);
 #else /* MPI_IN_PLACE */
   int *tmp_tree;
-  tmp_tree = ZOLTAN_MALLOC(sizeof(int)*2*tree_size);
+  tmp_tree = (int *) ZOLTAN_MALLOC(sizeof(int)*2*tree_size);
   if (tmp_tree == NULL)
     return ZOLTAN_MEMERR;
   memcpy (tmp_tree, zz->LB.Tree + 2, 2*tree_size*sizeof(int));
