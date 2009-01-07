@@ -41,7 +41,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Belos                 belos                          ""
   Stratimikos           stratimikos                    ""
   Meros                 meros                          ""
-  FEI                   fei                            OFF
+  FEI                   fei                            ""
   RBGen                 rbgen                          ""
   Anasazi               anasazi                        ""
   ThreadPool            ThreadPool                     OFF
