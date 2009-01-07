@@ -70,7 +70,7 @@ CTestCustomer.ctest.
 all pased in header files are found (This was requested by Roger P.).
 
 (*) [???] Add new TPL_DEFAULT_[INCLUDE_DIRS,LIBRARY_DIRS] user
-varibles that will be the default for all
+variables that will be the default for all
 TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_DIRS] user cache variables.
 
 (*) [???] Fix TRILINOS_ADD_EXECUTABLE(...) to not add ./ to absolute paths

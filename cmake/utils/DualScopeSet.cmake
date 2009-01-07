@@ -1,6 +1,6 @@
 
 #
-# Macro that sets a varible name both in the current scope and the
+# Macro that sets a variable name both in the current scope and the
 # parent scope.
 #
 # It turns out that when you call ADD_SUBDIRECTORY(someDir) that CMake
@@ -13,7 +13,7 @@
 # scope in one shot.
 #
 # Global variables are different.  When you move to a subordinate
-# CMakeLists.txt file, a local copy of the varible is *not* created.
+# CMakeLists.txt file, a local copy of the variable is *not* created.
 # If you set the value name locally, it will shadow the global
 # variable.  However, if you set the globlal value with SET(SOMEVAR
 # someValue CACHE INTERNAL ""), then the value will get changed in the

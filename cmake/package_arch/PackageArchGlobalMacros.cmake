@@ -13,7 +13,7 @@ INCLUDE(AdvancedOption)
 # ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}, ${PACKAGE_NAME}_ENABLE_TESTS, and
 # ${PACKAGE_NAME}_ENABLE_EXAMPLES by just setting them to regular variables
 # instead of putting them back on the cache.  That means that they are used as
-# global varibles but we don't want to disturb the cache since that would
+# global variables but we don't want to disturb the cache since that would
 # change the behavior for future invocations of cmake.  Because of this, these
 # macros must all be called from the top-level ${PROJECT_NAME} CMakeLists.txt file
 # and macros must call macros as not to change the variable scope.
@@ -317,7 +317,7 @@ ENDFUNCTION()
 # Macro that reads in package dependencies for a package and sets forward
 # dependencies for packages already read in.
 #
-# Modifies the global varibles:
+# Modifies the global variables:
 #
 #   ${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES
 #   ${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES

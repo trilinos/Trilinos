@@ -5,7 +5,7 @@
 
 FUNCTION(ASSERT_DEFINED VARIBLE_NAME)
   IF(NOT DEFINED ${VARIBLE_NAME})
-    MESSAGE(SEND_ERROR "Error, the varible ${VARIBLE_NAME} is not defined!")
+    MESSAGE(SEND_ERROR "Error, the variable ${VARIBLE_NAME} is not defined!")
   ENDIF()
 ENDFUNCTION()
 
@@ -177,7 +177,7 @@ SET(CTEST_COMMAND
 PRINT_VAR(CTEST_COMMAND)
 
 #
-# Add platform-independnet varibles to the initial cache
+# Add platform-independnet variables to the initial cache
 #
 
 SET(CTEST_INITIAL_CACHE

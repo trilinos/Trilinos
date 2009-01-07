@@ -175,7 +175,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
         " ${TPL_NAME}.  This is the final variable that is used in the link"
         " commands.  The user variable ${TPL_NAME}_LIBRARY_DIRS is used to look"
         " for the know library names but but is just a suggestion."
-        " This varible, however, is the final value and will not be touched."
+        " This variable, however, is the final value and will not be touched."
         )
       ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
         CACHE PATH ${DOCSTR} )
@@ -215,7 +215,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
         " to find the headers for the TPL ${TPL_NAME}.  This is the final variable"
         " that is used in the build commands.  The user variable ${TPL_NAME}_INCLUDE_DIRS"
         " is used to look for the given headers first but is just a suggestion."
-        " This varible, however, is the final value and will not be touched."
+        " This variable, however, is the final value and will not be touched."
         )
   
       SET_NOTFOUND(TPL_${TPL_NAME}_INCLUDE_DIRS)

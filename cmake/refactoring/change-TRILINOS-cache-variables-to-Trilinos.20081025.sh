@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 #
 # This script changes the names of some user cache varaibles from 'TRILINOS_' to
-# 'Trilinos_' to be more consistent with other varible names.
+# 'Trilinos_' to be more consistent with other variable names.
 #
 # This script should be safe to run on code multiple times with no side effects
 

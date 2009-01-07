@@ -5,13 +5,13 @@ with the CMake build system.
 
 
 ---------------------------------
-A) Top-level user cache varibles
+A) Top-level user cache variables
 ---------------------------------
 
 Let PACKAGE_NAME be a Trilinos package name such as Teuchos, Epetra, Thyra
 etc.
 
-The following public cache varibles are set by users to define what packages
+The following public cache variables are set by users to define what packages
 and tests/examples get enabled:
 
   Trilinos_ENABLE_${PACKAGE_NAME}:BOOL
@@ -122,7 +122,7 @@ the user.
 
 
 --------------------------------------------------------------------------------
-B) Top-level internal non-cache varibles defining direct package dependencies
+B) Top-level internal non-cache variables defining direct package dependencies
 --------------------------------------------------------------------------------
 
 The following top-level non-cache variables are defined by each package's
@@ -165,32 +165,32 @@ Given the above variables, the following derived variable is then set:
   
     For a given package ${PACKAGE_NAME}, gives the names of all of the forward
     packages that list this package in their
-    ${FORWARD_PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES varible.
+    ${FORWARD_PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES variables.
   
   ${PACKAGE_NAME}_FORWARD_LIB_OPTIONAL_DEP_PACKAGES
   
     For a given package ${PACKAGE_NAME}, gives the names of all of the forward
     packages that list this package in their
-    ${FORWARD_PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES varible.
+    ${FORWARD_PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES variables.
   
   ${PACKAGE_NAME}_FORWARD_TEST_REQUIRED_DEP_PACKAGES
   
     For a given package ${PACKAGE_NAME}, gives the names of all of the forward
     packages that list this package in their
-    ${FORWARD_PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES varible.
+    ${FORWARD_PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES variables.
   
   ${PACKAGE_NAME}_FORWARD_TEST_OPTIONAL_DEP_PACKAGES
   
     For a given package ${PACKAGE_NAME}, gives the names of all of the forward
     packages that list this package in their
-    ${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES varible.
+    ${FORWARD_PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES variables.
 
 
 --------------------------------------------------------------------------------
-C) Top-level internal cache varibles defining header and library dependencies
+C) Top-level internal cache variables defining header and library dependencies
 --------------------------------------------------------------------------------
 
-The following global internal cache varibles are used to communicate
+The following global internal cache variables are used to communicate
 the required header directory paths and libraries needed to build and
 link against a given package's capabilities.
 
@@ -208,7 +208,7 @@ link against a given package's capabilities.
   
     Contains the list of unadorned libraries that are needed to link to.
 
-The following global internal cache varibles are used to store extra
+The following global internal cache variables are used to store extra
 information about a package's test/example dependenices.
 
   ${PROJECT_NAME}_TEST_INCLUDE_DIRS
