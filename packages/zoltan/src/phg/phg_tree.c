@@ -67,7 +67,6 @@ int
 Zoltan_PHG_centralize_tree(ZZ *zz, int p, int tree_size)
 {
   /* TRICK: we store -low, thus we can use MPI_MAX for low and high */
-
 #ifdef MPI_IN_PLACE
   MPI_Allreduce(MPI_IN_PLACE, zz->LB.Tree + 2, 2*tree_size, MPI_INT, MPI_MAX, zz->Communicator);
 #else /* MPI_IN_PLACE */

@@ -410,6 +410,10 @@ int **exp_to_part )         /* list of partitions to which exported objs
       ZOLTAN_TIMER_STOP(zz->ZTime, timer->patoh, zz->Communicator);
   }      
   else { /* it must be PHG  */
+    int tree_size = 0;
+    /* Create tree structure */
+    Zoltan_PHG_create_tree(&zz->LB.Tree, p, &tree_size);
+
     /* UVC: if it is bisection anyways; no need to create vmap etc; 
        rdivide is going to call Zoltan_PHG_Partition anyways... */
     if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
@@ -428,7 +432,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
       }
       else {
         int i;
-	int tree_size = 0;
           
         if (do_timing) 
           ZOLTAN_TIMER_START(zz->ZTime, timer->setupvmap, zz->Communicator);
@@ -445,8 +448,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
         if (do_timing) 
           ZOLTAN_TIMER_STOP(zz->ZTime, timer->setupvmap, zz->Communicator);
 
-        /* Create tree structure */
-        Zoltan_PHG_create_tree(&zz->LB.Tree, p, &tree_size);
 
         /* partition hypergraph */
         err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0, 1);
@@ -467,18 +468,19 @@ int **exp_to_part )         /* list of partitions to which exported objs
         }
         ZOLTAN_FREE (&hg->vmap);
 
-	/* Build a centralized tree */
-	Zoltan_PHG_centralize_tree(zz, p, tree_size);
-
-	/* TODO: remove the free */
-	zz->LB.Tree += 2;
-	ZOLTAN_FREE(&(zz->LB.Tree));
       }
 
 #ifdef CHECK_LEFTALONE_VERTICES          
       findAndSaveLeftAloneVertices(zz, hg, p, parts, &hgp);
 #endif      
     }
+    /* Build a centralized tree */
+    Zoltan_PHG_centralize_tree(zz, p, tree_size);
+
+    /* TODO: remove the free */
+    zz->LB.Tree += 2;
+    ZOLTAN_FREE(&(zz->LB.Tree));
+
   }
 
   if (!strcasecmp(hgp.hgraph_method, "REPARTITION")) {
