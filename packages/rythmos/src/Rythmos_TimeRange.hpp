@@ -37,8 +37,9 @@ namespace Rythmos {
 
 /** \brief Compare two times taking into account floating point errors.
  *
- * \returns Return <tt>-1</tt> if <tt>v1 < v2</tt>, <tt>0</tt> if
- * <tt>v1==v2</tt> and <tt>+1</tt> if <tt>v1 > v2</tt>.
+ * \returns Return <tt> -1 </tt> if <tt> v1 < v2  </tt>, 
+ *                 <tt>  0 </tt> if <tt> v1 == v2 </tt> and 
+ *                 <tt> +1 </tt> if <tt> v1 > v2  </tt>.
  *
  * Note that this function compares t1 to t2 and not the other way around.
  *

@@ -104,24 +104,30 @@ void InterpolationBufferAppenderBase<Scalar>::assertAppendPreconditions(
   const InterpolationBufferBase<Scalar>& interpBuffSink
   ) const
 {
+  // If the time range of interpBuffSink is invalid, then its just empty
+  if (interpBuffSink.getTimeRange().isValid()) {
+    TEST_FOR_EXCEPTION(
+      ( compareTimeValues(range.lower(),interpBuffSink.getTimeRange().upper()) != 0 &&
+        compareTimeValues(range.upper(),interpBuffSink.getTimeRange().lower()) != 0    ),
+      std::logic_error, 
+      "Error, import range = [" << range.lower() << "," << range.upper() << "] is not an append nor a prepend "
+      "of the base range = [" << interpBuffSink.getTimeRange().lower() << "," << interpBuffSink.getTimeRange().upper() << "] "
+      "interpolation buffer.\n"
+      );
+  }
   TEST_FOR_EXCEPTION(
-    (range.lower() != interpBuffSink.getTimeRange().upper())
-    || (range.upper() != interpBuffSink.getTimeRange().lower()),
-    std::logic_error, 
-    "Error, import range is not an append nor a prepend of the base"
-    "interpolation buffer.\n"
+    compareTimeValues(range.lower(),interpBuffSource.getTimeRange().lower())<0,
+    std::logic_error,
+    "Error, append range's lower bound = " << range.lower() << " does not sit inside incoming"
+    " interpolation buffer's time range = "
+    "[" << interpBuffSource.getTimeRange().lower() << "," << interpBuffSource.getTimeRange().upper() << "].\n"
     );
   TEST_FOR_EXCEPTION(
-    range.lower() < interpBuffSource.getTimeRange().lower(),
+    compareTimeValues(interpBuffSource.getTimeRange().upper(),range.upper())<0,
     std::logic_error,
-    "Error, append range's lower bound does not sit inside incoming"
-    " interpolation buffer's time range.\n"
-    );
-  TEST_FOR_EXCEPTION(
-    interpBuffSource.getTimeRange().upper() < range.upper(),
-    std::logic_error,
-    "Error, append range's upper bound does not sit inside incoming"
-    "interpolation buffer's time range.\n"
+    "Error, append range's upper bound = " << range.upper() << "does not sit inside incoming"
+    " interpolation buffer's time range = "
+    "[" << interpBuffSource.getTimeRange().lower() << "," << interpBuffSource.getTimeRange().upper() << "].\n"
     );
 }
 
