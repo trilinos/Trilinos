@@ -4,6 +4,89 @@
 #                                                                             #
 ###############################################################################
 
+Release Update 9.0.2 January 8, 2009
+
+Change number.  Package(s) affected - description
+
+1. Claps - This addresses an issue where the buffer was overrun by increasing
+           the buffer size, and by adding a diagnostic message.
+
+2. Belos - Added Belos support for Tpetra (autoconf).  Added test (MVOPTester)
+           of Belos adaptor.  Added Belos adaptor, stubs only (throws
+           exceptions).
+
+3. Zoltan - Bug 4224.  Changing LB_Free_Part from a Zoltan class member method
+            to a static method.
+
+4. Zoltan - Adding support of sequential scotch ordering.
+
+5. Sacado - Bug 4230.  Conditionally turning off build of pce_example.
+
+6. PyTrilinos - Fixed (SystemError, ImportError) problem.
+
+7. ML - Bug 4232.  Fixing ML_Validate.exe nightly failure.
+
+8. Zoltan - Correct a small bug for serial scotch ordering.
+
+9. Zoltan - Bug 4179.  Adding support for PT-Scotch partitioning.
+
+10. PhdMesh - Bug fix in TPI_noop.c.
+
+11. PhdMesh - Fix parallel search if a processor has no work.
+
+12. Epetra - Added a new capability to sort ghost nodes in a very specific ways
+             when FillComplete() is called. By default, this capability is off.
+             One would need to something like
+             Matrix->SortGhostsAssociatedWithEachProcessor(1) to turn it on.
+
+13. ML - Put in 2 ifdefs so ML can be compiled with aztecoo.
+
+14. ML - Added some utilities to check whether the ghost numbering matches the
+         blocking structure when num_PDEs is greater than 1.
+
+15. Zoltan - Added the support of vertex weights for ordering with Scotch.
+             Also corrected the handling of compressed matrix market files in
+             zdrive when built with autotools.
+
+16. Anasazi - Bug 4247.  Fixed the logic BKS uses to return converged
+              eigenpairs.
+
+17. Zoltan - Bug 4179.  Fixed scotch interface for strategy string for
+             partitioning.
+
+18. Zoltan - Removed a duplicated declaration of METIS_NodeND.
+
+19. ThreadPool - Fixed compile error for TPI_noop.c.
+
+20. Belos - Bug 4260.  Changes to Ifpack preconditioners to circumvent test
+            failures/hangings.
+
+21. Epetra - Bug 4265.  Fixed bug in Epetra_Util.
+
+22. EpetraExt - Bug 4266.  Changing Epetraext-Zoltan interface to use native
+                Zoltan library.
+
+23. Zoltan - Bug 4279.  Removed obsolete parameter USE_OBJ_SIZE from the 
+             ParMetis interface.
+
+24. Zoltan - Bug 4281.  Adding support for ParMetis 3.1.1.
+
+25. Zoltan - Bug 4286.  Cleaning the code: deletion of compilation warnings.
+
+26. Zoltan - Fixed special case of zero objs on processor and
+             RETURN_LISTS=PARTITION_ASSIGNMENTS
+
+27. Zoltan - Updated version number to 3.101.
+
+28. Anasazi - User-submitted bug: SVQBOrthoManager normalize() failed for all-
+              zero multivector. Added test to document the bug, then fixed it.
+
+29. FEI - A performance optimization and other minor fixes for issues
+          encountered by Sierra applications.
+
+30. FEI - Fixed a failing unit-test.
+
+------------------------------------------------------------------------------
 Release Update 9.0.1 October 16, 2008
 
 Change number.  Package(s) affected - description
