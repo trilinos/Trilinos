@@ -46,6 +46,7 @@ Rythmos_UnitTest_SOURCES =\
 	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
 	$(srcdir)/Rythmos_CubicSplineInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
+  $(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp\
   $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp\
 	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\

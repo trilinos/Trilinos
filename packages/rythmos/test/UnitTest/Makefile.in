@@ -97,6 +97,7 @@ am_Rythmos_UnitTest_OBJECTS =  \
 	Rythmos_ConvergenceTestHelpers_UnitTest.$(OBJEXT) \
 	Rythmos_CubicSplineInterpolator_UnitTest.$(OBJEXT) \
 	Rythmos_DataStore_UnitTest.$(OBJEXT) \
+	Rythmos_DefaultIntegrator_UnitTest.$(OBJEXT) \
 	Rythmos_ExplicitRK_UnitTest.$(OBJEXT) \
 	Rythmos_HermiteInterpolator_UnitTest.$(OBJEXT) \
 	Rythmos_ImplicitBDF_UnitTest.$(OBJEXT) \
@@ -259,6 +260,7 @@ Rythmos_UnitTest_SOURCES = \
 	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
 	$(srcdir)/Rythmos_CubicSplineInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
+  $(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp\
   $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp\
 	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\
@@ -363,6 +365,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ConvergenceTestHelpers_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_CubicSplineInterpolator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DataStore_UnitTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DefaultIntegrator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ExplicitRK_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitBDF_UnitTest.Po@am__quote@
@@ -447,6 +450,20 @@ Rythmos_DataStore_UnitTest.obj: $(srcdir)/Rythmos_DataStore_UnitTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_DataStore_UnitTest.cpp' object='Rythmos_DataStore_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_DataStore_UnitTest.obj `if test -f '$(srcdir)/Rythmos_DataStore_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_DataStore_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_DataStore_UnitTest.cpp'; fi`
+
+Rythmos_DefaultIntegrator_UnitTest.o: $(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_DefaultIntegrator_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_DefaultIntegrator_UnitTest.Tpo -c -o Rythmos_DefaultIntegrator_UnitTest.o `test -f '$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_DefaultIntegrator_UnitTest.Tpo $(DEPDIR)/Rythmos_DefaultIntegrator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp' object='Rythmos_DefaultIntegrator_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_DefaultIntegrator_UnitTest.o `test -f '$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp
+
+Rythmos_DefaultIntegrator_UnitTest.obj: $(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_DefaultIntegrator_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_DefaultIntegrator_UnitTest.Tpo -c -o Rythmos_DefaultIntegrator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_DefaultIntegrator_UnitTest.Tpo $(DEPDIR)/Rythmos_DefaultIntegrator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp' object='Rythmos_DefaultIntegrator_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_DefaultIntegrator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp'; fi`
 
 Rythmos_ExplicitRK_UnitTest.o: $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ExplicitRK_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_ExplicitRK_UnitTest.Tpo -c -o Rythmos_ExplicitRK_UnitTest.o `test -f '$(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp
