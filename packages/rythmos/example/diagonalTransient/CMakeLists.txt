@@ -174,17 +174,44 @@ IF (Stratimikos_ENABLE_Amesos)
     ${STANDARD_TEST_CONFIG}
     )
 
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_Amesos_CopyFiles
+    DEST_FILES
+      diagonalTransient.amesos.fwd-sens-solve.n16.p4.xml
+      diagonalTransient.amesos.fwd-sens-solve.n1.p1.xml
+      diagonalTransient.amesos.fwd-sens-solve.n5.p1.xml
+      diagonalTransient.amesos.fwd-BDF-fixed.n1.xml
+      diagonalTransient.amesos.fwd-BDF-variable.n1.xml
+      diagonalTransient.amesos.fwd-sens-solve-BDF.n1.p1.xml
+    SOURCE_PREFIX "_"
+    EXEDEPS diagonalTransient
+    )
+
 ENDIF()
 
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_CopyFiles
-  DEST_FILES
-    diagonalTransient.amesos.fwd-sens-solve.n16.p4.xml
-    diagonalTransient.amesos.fwd-sens-solve.n1.p1.xml
-    diagonalTransient.amesos.fwd-sens-solve.n5.p1.xml
-    diagonalTransient.amesos.fwd-BDF-fixed.n1.xml
-    diagonalTransient.amesos.fwd-BDF-variable.n1.xml
-    diagonalTransient.amesos.fwd-sens-solve-BDF.n1.p1.xml
-  SOURCE_PREFIX "_"
-  EXEDEPS diagonalTransient
-  )
+ASSERT_DEFINED(Stratimikos_ENABLE_AztecOO)
+IF (Stratimikos_ENABLE_AztecOO)
+
+  MULTILINE_SET(ARGS
+    " --params-file=diagonalTransient_aztecoo.xml"
+    " --final-time=1e-4 --num-time-steps=-1 --verb-level=VERB_EXTREME"
+    " --echo-command-line"
+    " --max-state-error=5e-6"
+    " --dump-final-solutions"
+    " --use-BDF"
+    )
+  PACKAGE_ADD_TEST(
+    diagonalTransient
+    NAME diagonalTransient_aztecoo
+    ARGS ${ARGS}
+    ${STANDARD_TEST_CONFIG}
+    )
+
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_AztecOO_CopyFiles
+    DEST_FILES
+      diagonalTransient_aztecoo.xml
+    SOURCE_PREFIX "_"
+    EXEDEPS diagonalTransient
+    )
+
+ENDIF()
