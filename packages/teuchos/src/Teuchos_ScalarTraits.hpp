@@ -544,6 +544,13 @@ struct ScalarTraits<double>
 };
 
 #ifdef HAVE_TEUCHOS_QD
+bool operator&&(const dd_real &a, const dd_real &b) {
+  return !a.is_zero() && !b.is_zero();
+}
+bool operator&&(const qd_real &a, const qd_real &b) {
+  return !a.is_zero() && !b.is_zero();
+}
+
 template<>
 struct ScalarTraits<dd_real>
 {

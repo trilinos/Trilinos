@@ -36,6 +36,11 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
+#ifdef HAVE_TEUCHOS_QD
+#include <qd/dd_real.h>
+#include <qd/qd_real.h>
+#endif
+
 namespace Teuchos {
 
 
@@ -220,6 +225,18 @@ template<typename Ordinal, typename Packet>
 class SerializationTraits<Ordinal,std::pair<Packet,Packet> >
   : public DirectSerializationTraits<Ordinal,std::pair<Packet,Packet> >
 {};
+
+#ifdef HAVE_TEUCHOS_QD
+template<typename Ordinal>
+class SerializationTraits<Ordinal,dd_real>
+  : public DirectSerializationTraits<Ordinal,dd_real>
+{};
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal,qd_real>
+  : public DirectSerializationTraits<Ordinal,qd_real>
+{};
+#endif
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 

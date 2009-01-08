@@ -65,6 +65,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = Tpetra_bl_cg_hb$(EXEEXT) \
+@BUILD_TRIUTILS_TRUE@	Tpetra_bl_cg_hb_multiprec$(EXEEXT) \
 @BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = Tpetra_bl_cg_complex_hb$(EXEEXT) \
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	ComplexDummy$(EXEEXT)
@@ -90,6 +91,13 @@ am_Tpetra_bl_cg_hb_OBJECTS = Tpetra_bl_cg_hb-test_bl_cg_hb.$(OBJEXT)
 Tpetra_bl_cg_hb_OBJECTS = $(am_Tpetra_bl_cg_hb_OBJECTS)
 Tpetra_bl_cg_hb_LINK = $(CXXLD) $(Tpetra_bl_cg_hb_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_Tpetra_bl_cg_hb_multiprec_OBJECTS =  \
+	Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.$(OBJEXT)
+Tpetra_bl_cg_hb_multiprec_OBJECTS =  \
+	$(am_Tpetra_bl_cg_hb_multiprec_OBJECTS)
+Tpetra_bl_cg_hb_multiprec_LINK = $(CXXLD) \
+	$(Tpetra_bl_cg_hb_multiprec_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -103,9 +111,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
-	$(Tpetra_bl_cg_complex_hb_SOURCES) $(Tpetra_bl_cg_hb_SOURCES)
+	$(Tpetra_bl_cg_complex_hb_SOURCES) $(Tpetra_bl_cg_hb_SOURCES) \
+	$(Tpetra_bl_cg_hb_multiprec_SOURCES)
 DIST_SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
-	$(Tpetra_bl_cg_complex_hb_SOURCES) $(Tpetra_bl_cg_hb_SOURCES)
+	$(Tpetra_bl_cg_complex_hb_SOURCES) $(Tpetra_bl_cg_hb_SOURCES) \
+	$(Tpetra_bl_cg_hb_multiprec_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -227,15 +237,20 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = Tpetra_bl_cg_hb Dummy
+@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = Tpetra_bl_cg_hb Tpetra_bl_cg_hb_multiprec Dummy
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_COMPLEX_TEST = Tpetra_bl_cg_complex_hb ComplexDummy
 Dummy_SOURCES = Dummy
 ComplexDummy_SOURCES = Dummy
 Tpetra_bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp 
+Tpetra_bl_cg_hb_multiprec_SOURCES = $(srcdir)/test_bl_cg_hb_multiprec.cpp 
 
 #resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createTpetraProblem.cpp
 Tpetra_bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp 
 Tpetra_bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../tpetra/src/libtpetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+Tpetra_bl_cg_hb_multiprec_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../tpetra/src/libtpetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -249,10 +264,12 @@ Tpetra_bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 Tpetra_bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
+Tpetra_bl_cg_hb_multiprec_CXXFLAGS = -I$(top_srcdir)/src 
 
 #resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 Tpetra_bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 Tpetra_bl_cg_hb_LDADD = $(EXPORT_LIBS)
+Tpetra_bl_cg_hb_multiprec_LDADD = $(EXPORT_LIBS)
 
 #resolve_cg_hb_LDADD = $(EXPORT_LIBS)
 Tpetra_bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
@@ -299,6 +316,9 @@ Tpetra_bl_cg_complex_hb$(EXEEXT): $(Tpetra_bl_cg_complex_hb_OBJECTS) $(Tpetra_bl
 Tpetra_bl_cg_hb$(EXEEXT): $(Tpetra_bl_cg_hb_OBJECTS) $(Tpetra_bl_cg_hb_DEPENDENCIES) 
 	@rm -f Tpetra_bl_cg_hb$(EXEEXT)
 	$(Tpetra_bl_cg_hb_LINK) $(Tpetra_bl_cg_hb_OBJECTS) $(Tpetra_bl_cg_hb_LDADD) $(LIBS)
+Tpetra_bl_cg_hb_multiprec$(EXEEXT): $(Tpetra_bl_cg_hb_multiprec_OBJECTS) $(Tpetra_bl_cg_hb_multiprec_DEPENDENCIES) 
+	@rm -f Tpetra_bl_cg_hb_multiprec$(EXEEXT)
+	$(Tpetra_bl_cg_hb_multiprec_LINK) $(Tpetra_bl_cg_hb_multiprec_OBJECTS) $(Tpetra_bl_cg_hb_multiprec_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -308,6 +328,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_bl_cg_complex_hb-test_bl_cg_complex_hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_bl_cg_hb-test_bl_cg_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -350,6 +371,20 @@ Tpetra_bl_cg_hb-test_bl_cg_hb.obj: $(srcdir)/test_bl_cg_hb.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_hb.cpp' object='Tpetra_bl_cg_hb-test_bl_cg_hb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_bl_cg_hb-test_bl_cg_hb.obj `if test -f '$(srcdir)/test_bl_cg_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_hb.cpp'; fi`
+
+Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.o: $(srcdir)/test_bl_cg_hb_multiprec.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_multiprec_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.o -MD -MP -MF $(DEPDIR)/Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.Tpo -c -o Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.o `test -f '$(srcdir)/test_bl_cg_hb_multiprec.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_hb_multiprec.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.Tpo $(DEPDIR)/Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_hb_multiprec.cpp' object='Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_multiprec_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.o `test -f '$(srcdir)/test_bl_cg_hb_multiprec.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_hb_multiprec.cpp
+
+Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.obj: $(srcdir)/test_bl_cg_hb_multiprec.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_multiprec_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.obj -MD -MP -MF $(DEPDIR)/Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.Tpo -c -o Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.obj `if test -f '$(srcdir)/test_bl_cg_hb_multiprec.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_hb_multiprec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_hb_multiprec.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.Tpo $(DEPDIR)/Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_hb_multiprec.cpp' object='Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_bl_cg_hb_multiprec_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_bl_cg_hb_multiprec-test_bl_cg_hb_multiprec.obj `if test -f '$(srcdir)/test_bl_cg_hb_multiprec.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_hb_multiprec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_hb_multiprec.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

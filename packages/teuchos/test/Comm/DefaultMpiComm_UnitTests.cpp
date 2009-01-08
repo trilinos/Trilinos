@@ -8,6 +8,10 @@
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_as.hpp"
 
+#ifdef HAVE_TEUCHOS_QD
+#include <qd/dd_real.h>
+#endif
+
 namespace std { 
 
 
@@ -653,7 +657,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
 #endif
 
 
-
 #define UNIT_TEST_GROUP_ORDINAL_PACKET( ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_1, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_2, ORDINAL, PACKET ) \
@@ -662,7 +665,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PACKET )
 
-
+#ifdef HAVE_TEUCHOS_QD
+#  define UNIT_TEST_GROUP_ORDINAL_QD(ORDINAL) \
+     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, dd_real) \
+     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, qd_real)
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_QD(ORDINAL)
+#endif
 
 #define UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS( ORDINAL, PAIROFPACKETS ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive, ORDINAL, PAIROFPACKETS ) \
@@ -698,6 +707,7 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, int) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, float) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
+    UNIT_TEST_GROUP_ORDINAL_QD(ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \

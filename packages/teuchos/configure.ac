@@ -451,7 +451,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, qd, [Enable Teuchos interface support for t
 
 if test "X$ac_cv_use_teuchos_qd" != "Xno"; then
 
-  TAC_ARG_ENABLE_FEATURE_SUB( teuchos, double-to-dd, [Instruct Teuchos ScalarTraits to promote double to dd_real], TEUCHOS_DOUBLE_TO_DD, no)
+  TAC_ARG_ENABLE_FEATURE_SUB( teuchos, doubletodd, [Instruct Teuchos ScalarTraits to promote double to dd_real], TEUCHOS_DOUBLE_TO_DD, no)
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then

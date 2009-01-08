@@ -209,7 +209,7 @@
 /* Define if want to build teuchos-dotcheck */
 #undef HAVE_TEUCHOS_DOTCHECK
 
-/* Define if want to build teuchos-double-to-dd */
+/* Define if want to build teuchos-doubletodd */
 #undef HAVE_TEUCHOS_DOUBLE_TO_DD
 
 /* Define if want to build teuchos-examples */

@@ -1409,7 +1409,7 @@ Optional Features:
                           Library (default is no)
   --enable-teuchos-qd     Enable Teuchos interface support for the QD library
                           (default is no)
-  --enable-teuchos-double-to-dd
+  --enable-teuchos-doubletodd
                           Instruct Teuchos ScalarTraits to promote double to
                           dd_real (default is no)
   --enable-teuchos-expat  Enable Teuchos interface support for the Expat XML
@@ -8088,18 +8088,18 @@ fi
 if test "X$ac_cv_use_teuchos_qd" != "Xno"; then
 
 
-# Check whether --enable-teuchos-double-to-dd was given.
-if test "${enable_teuchos_double_to_dd+set}" = set; then
-  enableval=$enable_teuchos_double_to_dd; ac_cv_use_teuchos_double-to-dd=$enableval
+# Check whether --enable-teuchos-doubletodd was given.
+if test "${enable_teuchos_doubletodd+set}" = set; then
+  enableval=$enable_teuchos_doubletodd; ac_cv_use_teuchos_doubletodd=$enableval
 else
-  ac_cv_use_teuchos_double-to-dd=no
+  ac_cv_use_teuchos_doubletodd=no
 fi
 
 
-{ echo "$as_me:$LINENO: checking whether to use teuchos-double-to-dd" >&5
-echo $ECHO_N "checking whether to use teuchos-double-to-dd... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether to use teuchos-doubletodd" >&5
+echo $ECHO_N "checking whether to use teuchos-doubletodd... $ECHO_C" >&6; }
 
-if test "X$ac_cv_use_teuchos_double-to-dd" != "Xno"; then
+if test "X$ac_cv_use_teuchos_doubletodd" != "Xno"; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
 
