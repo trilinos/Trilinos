@@ -24,11 +24,9 @@ package.  Kitware is going to actively work on this.
 Backlog:
 --------
 
-(*) [???] Rename and reorganize the package architecture modules and
-macros/function to be as Trilinos-independent as possible and put them
-in cmake/package_arch.  This will allow them to be reused for projects
-like Dakota, SIERRA, and others and take advantage of all that is
-being constructed.
+(*) [???} Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable
+the TPL only for PACKAGE1 and not for any of the other packages (see
+bug 4298).
 
 (*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG
 and MPI_OPT build directory and enable only "Primary Stable" code.
@@ -55,14 +53,14 @@ for each package that could then be used to specify what to build
 against.
 
 (*) [???] Add unit testing infrastructure and documentation for
-TRILINOS_ADD_EXECUTABLE(...), TRILINOS_ADD_TEST(...).  These unit
+PACKAGE_ADD_EXECUTABLE(...), PACKAGE_ADD_TEST(...).  These unit
 tests will serve both as tests and as extra documentation.  I need to
 see if you can redefine ADD_EXECUTABLE(...), ADD_TEST(...), and other
 commands so that I can unit test that these things are being set
 correctly.  If not, then I can always wrap these with my own and then
 redefine them when unit testing.
 
-(*) [???] Add option SKIPMEMCHECK to TRILINOS_ADD_[EXECUTABLE_AND_]TEST(...) 
+(*) [???] Add option SKIPMEMCHECK to PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...) 
 to add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
 CTestCustomer.ctest.
 
@@ -73,7 +71,7 @@ all pased in header files are found (This was requested by Roger P.).
 variables that will be the default for all
 TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_DIRS] user cache variables.
 
-(*) [???] Fix TRILINOS_ADD_EXECUTABLE(...) to not add ./ to absolute paths
+(*) [???] Fix PACKAGE_ADD_EXECUTABLE(...) to not add ./ to absolute paths
 
 (*) [???] Set the variable CPACK_SOURCE_IGNORE_FILES to ignore groups of files
 (and hopefully directories) that you don't want to add to the source
@@ -89,13 +87,14 @@ we can skip unecessary relinking when shared libraries are used.  This
 target can be built by simply looping over all enabled packages and
 adding dependencies on ${PACKAGE}_libs.
 
-(*) [???] Add a POSTFIXES argument to TRILNOS_ADD_[EXECUTABLE_AND_]TEST(...) 
-to replace the silly numeric numbering.  This will be important for keeping
-track of test results for different enables/disables.
+(*) [???] Add a POSTFIXES argument to
+PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...)  to replace the silly numeric
+numbering.  This will be important for keeping track of test results
+for different enables/disables.
 
-(*) [???] Change how XXX_config.h.in files get created so that they get
-created automatically.  We can do this by changing the scripts
-TRILINOS_ADD_OPTION(...) and TRILINOS_PACKAGE_CONFIGURE_FILE(...) and adding a
+(*) [???] Change how XXX_config.h.in files get created so that they
+get created automatically.  We can do this by changing the scripts
+PACKAGE_ADD_OPTION(...) and PACKAGE_CONFIGURE_FILE(...) and adding a
 few new scripts.
 
 (*) [???] Upgrade Trilinos/CMakeLists.txt and

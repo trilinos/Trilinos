@@ -39,6 +39,3 @@ PACKAGE_ADD_LIBRARY(
   TESTONLY
   DEPLIBS isorropia
   )
-# 2008/11/20: rabartl: ToDo: Above: Add an option like TESTLIB to the
-# above macro call to in order to result in the library not being added
-# to the main libraries and so that it will not be installed!

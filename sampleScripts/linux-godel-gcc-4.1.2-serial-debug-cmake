@@ -25,3 +25,6 @@ $EXTRA_ARGS \
 
 # -D EpetraExt_BUILD_EXPERIMENTAL:BOOL=ON \
 # -D F77_FUNC_:STRING="(name,NAME) name ## __" \
+
+# -D Trilinos_ENABLE_Zoltan:BOOL=OFF \
+

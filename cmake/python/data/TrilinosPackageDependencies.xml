@@ -351,9 +351,9 @@
   </Package>
   <Package name="Rythmos" dir="rythmos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Thyra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Sacado,Stratimikos,NOX"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,Sacado,Stratimikos,NOX"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>

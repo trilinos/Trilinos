@@ -1,0 +1,13 @@
+/* src/Rythmos_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* Define if want to build rythmos-gaasp */
+#cmakedefine HAVE_RYTHMOS_GAASP
+
+/* Define if want to build rythmos-gaaspinternal */
+#cmakedefine HAVE_RYTHMOS_GAASP_INTERNAL
+
+/* Define if want to build with teuchos enabled */
+#cmakedefine HAVE_RYTHMOS_TEUCHOS_BOOST

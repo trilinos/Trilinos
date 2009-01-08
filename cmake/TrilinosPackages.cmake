@@ -51,7 +51,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   NOX                   nox                            OFF
   Moertel               moertel                        OFF
   TrilinosCouplings     trilinoscouplings              OFF
-  Rythmos               rythmos                        OFF
+  Rythmos               rythmos                        ""
   MOOCHO                moocho                         OFF
   Aristos               aristos                        OFF
   Sundance              Sundance                       OFF
