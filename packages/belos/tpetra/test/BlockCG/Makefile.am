@@ -29,6 +29,8 @@ noinst_PROGRAMS = $(BELOS_BCG_HB_EX) $(BELOS_BCG_COMPLEX_TEST)
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(top_srcdir)/example/BlockCG/bcsstk14.hb bcsstk14.hb
 	cp  $(top_srcdir)/example/BlockCG/bcsstk15.hb bcsstk15.hb
+	cp  $(top_srcdir)/tpetra/test/BlockCG/bcsstk17.rsa bcsstk17.rsa
+	cp  $(top_srcdir)/tpetra/test/BlockCG/bcsstk18.rsa bcsstk18.rsa
 
 Dummy_SOURCES = Dummy
 

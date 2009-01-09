@@ -65,8 +65,9 @@ using Tpetra::Map;
 using std::endl;
 using std::cout;
 using std::string;
+using std::setw;
 
-bool proc_verbose = false, reduce_tol;
+bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
 RCP<Map<int> > vmap;
 ParameterList pl; 
 int dim, numrhs; 
@@ -108,8 +109,26 @@ RCP<LinearProblem<Scalar,MultiVector<int,Scalar>,Operator<int,Scalar> > > buildP
   B = rcp( new MV(*vmap,numrhs) );
   OPT::Apply( *A, *X, *B );
   MVT::MvInit( *X, 0.0 );
-  // Construct an unpreconditioned linear problem instance with zero initial MV
+  // Construct a linear problem instance with zero initial MV
   RCP<LinearProblem<Scalar,MV,OP> > problem = rcp( new LinearProblem<Scalar,MV,OP>(A,X,B) );
+  // diagonal preconditioner
+  if (precond) {
+    Array<Scalar> diags(A->getNumMyDiagonals());
+    A->getMyDiagCopy(diags());
+    typename Array<Scalar>::iterator i;
+    for (i=diags.begin(); i != diags.end(); ++i) {
+      TEST_FOR_EXCEPTION(*i <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite.");
+      *i = SCT::one() / *i;
+    }
+    RCP<CrsMatrix<int,Scalar> > P = rcp(new CrsMatrix<int,Scalar>(*vmap));
+    int gid=vmap->getMinGlobalIndex();
+    for (i=diags.begin(); i!=diags.end(); ++i) {
+      P->submitEntry(gid,gid,*i);
+      ++gid;
+    }
+    P->fillComplete();
+    problem->setLeftPrec(P);
+  }
   TEST_FOR_EXCEPT(problem->setProblem() == false);
   return problem;
 }
@@ -149,7 +168,13 @@ bool runTest(double ltol, double times[], int &numIters)
   if (MyPID==0) cout << "Solving problem..." << endl;
   {
     TimeMonitor localtimer(stimer);
-    ret = solver->solve();
+    try {
+      ret = solver->solve();
+    }
+    catch (std::exception &e) {
+      cout << "Caught exception: " << endl << e.what() << endl;
+      ret = Unconverged;
+    }
   }
   numIters = solver->getNumIters();
   times[0] = btimer.totalElapsedTime();
@@ -215,6 +240,8 @@ int main(int argc, char *argv[])
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
   cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
   cmdp.setOption("reduce-tol","fixed-tol",&reduce_tol,"Require increased accuracy from higher precision scalar types.");
+  cmdp.setOption("use-precond","no-precond",&precond,"Use a diagonal preconditioner.");
+  cmdp.setOption("dump-data","no-dump-data",&dumpdata,"Dump raw data to data.dat.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -283,6 +310,7 @@ int main(int argc, char *argv[])
   //
   if (MyPID==0) {
     cout << "Dimension of matrix: " << dim << endl;
+    cout << "Number of nonzeros: " << nnz << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << blocksize << endl;
     cout << "Max number of CG iterations: " << maxiters << endl; 
@@ -314,12 +342,23 @@ int main(int argc, char *argv[])
   if (MyPID==0) {
     cout << "Scalar field     Build time     Init time     Solve time     Num Iters     Test Passsed" << endl;
     cout << "---------------------------------------------------------------------------------------" << endl;
-    cout << std::setw(12) << "float"   << "     " << std::setw(10) <<  ftime[0] << "     " << std::setw(9) <<  ftime[1] << "     " << std::setw(10) <<  ftime[2] << "     " << std::setw(9) <<  fiter << "     " << ( fpass ? "pass" : "fail") << endl;
-    cout << std::setw(12) << "double"  << "     " << std::setw(10) <<  dtime[0] << "     " << std::setw(9) <<  dtime[1] << "     " << std::setw(10) <<  dtime[2] << "     " << std::setw(9) <<  diter << "     " << ( dpass ? "pass" : "fail") << endl;
+    cout << setw(12) << "float"   << "     " << setw(10) <<  ftime[0] << "     " << setw(9) <<  ftime[1] << "     " << setw(10) <<  ftime[2] << "     " << setw(9) <<  fiter << "     " << ( fpass ? "pass" : "fail") << endl;
+    cout << setw(12) << "double"  << "     " << setw(10) <<  dtime[0] << "     " << setw(9) <<  dtime[1] << "     " << setw(10) <<  dtime[2] << "     " << setw(9) <<  diter << "     " << ( dpass ? "pass" : "fail") << endl;
 #ifdef HAVE_TEUCHOS_QD
-    cout << std::setw(12) << "dd_real" << "     " << std::setw(10) << ddtime[0] << "     " << std::setw(9) << ddtime[1] << "     " << std::setw(10) << ddtime[2] << "     " << std::setw(9) << dditer << "     " << (ddpass ? "pass" : "fail") << endl;
-    cout << std::setw(12) << "qd_real" << "     " << std::setw(10) << qdtime[0] << "     " << std::setw(9) << qdtime[1] << "     " << std::setw(10) << qdtime[2] << "     " << std::setw(9) << qditer << "     " << (qdpass ? "pass" : "fail") << endl;
+    cout << setw(12) << "dd_real" << "     " << setw(10) << ddtime[0] << "     " << setw(9) << ddtime[1] << "     " << setw(10) << ddtime[2] << "     " << setw(9) << dditer << "     " << (ddpass ? "pass" : "fail") << endl;
+    cout << setw(12) << "qd_real" << "     " << setw(10) << qdtime[0] << "     " << setw(9) << qdtime[1] << "     " << setw(10) << qdtime[2] << "     " << setw(9) << qditer << "     " << (qdpass ? "pass" : "fail") << endl;
 #endif
+  }
+
+  if (dumpdata) {
+    std::ofstream fout("data.dat",std::ios_base::app | std::ios_base::out);
+    fout << setw(14) << nnz << setw(8) << "float"   << setw(12) <<  ftime[0] << setw(12) <<  ftime[1] << setw(12) <<  ftime[2] << setw(12) <<  fiter << endl;
+    fout << setw(14) << nnz << setw(8) << "double"  << setw(12) <<  dtime[0] << setw(12) <<  dtime[1] << setw(12) <<  dtime[2] << setw(12) <<  diter << endl;
+#ifdef HAVE_TEUCHOS_QD
+    fout << setw(14) << nnz << setw(8) << "dd_real" << setw(12) << ddtime[0] << setw(12) << ddtime[1] << setw(12) << ddtime[2] << setw(12) << dditer << endl;
+    fout << setw(14) << nnz << setw(8) << "qd_real" << setw(12) << qdtime[0] << setw(12) << qdtime[1] << setw(12) << qdtime[2] << setw(12) << qditer << endl;
+#endif
+    fout.close();
   }
 
   bool allpass = fpass && dpass;

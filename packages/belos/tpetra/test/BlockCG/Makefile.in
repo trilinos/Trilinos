@@ -566,6 +566,8 @@ include $(top_builddir)/Makefile.export.belos
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(top_srcdir)/example/BlockCG/bcsstk14.hb bcsstk14.hb
 	cp  $(top_srcdir)/example/BlockCG/bcsstk15.hb bcsstk15.hb
+	cp  $(top_srcdir)/tpetra/test/BlockCG/bcsstk17.rsa bcsstk17.rsa
+	cp  $(top_srcdir)/tpetra/test/BlockCG/bcsstk18.rsa bcsstk18.rsa
 
 ComplexDummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua

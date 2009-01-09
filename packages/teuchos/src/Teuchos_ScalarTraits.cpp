@@ -60,6 +60,15 @@ void Teuchos::throwScalarTraitsNanInfError( const std::string &errMsg )
 gmp_randclass Teuchos::gmp_rng ( gmp_randinit_default );
 #endif
 
+#ifdef HAVE_TEUCHOS_QD
+bool Teuchos::operator&&(const dd_real &a, const dd_real &b) {
+  return !a.is_zero() && !b.is_zero();
+}
+bool Teuchos::operator&&(const qd_real &a, const qd_real &b) {
+  return !a.is_zero() && !b.is_zero();
+}
+#endif
+
 #ifndef __sun
 // This is an intentional computation of NaN.
 const float  Teuchos::flt_nan = +returnFloatZero()/returnFloatZero();

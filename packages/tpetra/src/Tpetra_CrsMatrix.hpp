@@ -193,6 +193,13 @@ namespace Tpetra
       //! Returns the current number of nonzero entries in specified global index on this image. 
       inline Ordinal getNumRowEntries(Ordinal globalRow) const;
 
+      //! Get a copy of the non-zero diagonal entries owned by this node.
+      void getMyDiagCopy(const Teuchos::ArrayView<Ordinal> &indices,
+                         const Teuchos::ArrayView<Scalar>  &values) const;
+
+      //! Get a copy of all diagonals for node, including zeros.
+      void getMyDiagCopy(const Teuchos::ArrayView<Scalar>  &values) const;
+
       //! Returns a copy of the specified local row, column indices are local.
       void getMyRowCopy(Ordinal myRow, const Teuchos::ArrayView<Ordinal> &indices, 
                                        const Teuchos::ArrayView<Scalar> &values) const;
@@ -502,6 +509,59 @@ namespace Tpetra
     std::copy(colinds_[myRow].begin(),colinds_[myRow].end(),indices.begin());
   }
 
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::getMyDiagCopy(const Teuchos::ArrayView<Ordinal> &indices,
+                                                const Teuchos::ArrayView<Scalar>  &values) const
+  {
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
+        "Tpetra::CrsMatrix: cannot call getMyDiagCopy() until fillComplete() has been called.");
+    TEST_FOR_EXCEPTION(indices.size() != numMyDiags_|| indices.size() != values.size(), std::runtime_error, 
+        "Tpetra::CrsMatrix::getMyDiagCopy(indices,values): size of indices,values must be sufficient to store the non-zero diagonals.");
+    typename Teuchos::Array<Scalar>::const_iterator v;
+    typename Teuchos::Array<Ordinal>::const_iterator i;
+    typename Teuchos::ArrayView<Scalar>::iterator ov;
+    typename Teuchos::ArrayView<Ordinal>::iterator oi;
+    ov = values.begin();
+    oi = indices.begin();
+    for (Ordinal r=0; r < numMyRows_; ++r) {
+      for (v = values_[r].begin(), i = colinds_[r].begin(); i != colinds_[r].end(); ++i, ++v) {
+        if (*i == r) {
+          *ov++ = *v;
+          *oi++ = *i;
+          break;
+        }
+      }
+    }
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(ov - values.begin() != numMyDiags_, std::logic_error, "CrsMatrix::getMyDiagCopy(): logic error. Please contact Tpetra team.");
+#endif
+  }
+
+  template<class Ordinal, class Scalar>
+  void CrsMatrix<Ordinal,Scalar>::getMyDiagCopy(const Teuchos::ArrayView<Scalar> &values) const
+  {
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
+        "Tpetra::CrsMatrix: cannot call getMyDiagCopy() until fillComplete() has been called.");
+    TEST_FOR_EXCEPTION(values.size() != getNumMyRows(), std::runtime_error, 
+        "Tpetra::CrsMatrix::getMyDiagCopy(values): size of values must be sufficient to store all diagonals.");
+    typename Teuchos::Array<Scalar>::const_iterator v;
+    typename Teuchos::Array<Ordinal>::const_iterator i;
+    typename Teuchos::ArrayView<Scalar>::iterator ov;
+    ov = values.begin();
+    for (Ordinal r=0; r < numMyRows_; ++r) {
+      *ov = Teuchos::ScalarTraits<Scalar>::zero();
+      for (v = values_[r].begin(), i = colinds_[r].begin(); i != colinds_[r].end(); ++i, ++v) {
+        if (*i == r) {
+          *ov = *v;
+          break;
+        }
+      }
+      ++ov;
+    }
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(ov - values.begin() != numMyDiags_, std::logic_error, "CrsMatrix::getMyDiagCopy(): logic error. Please contact Tpetra team.");
+#endif
+  }
 
   template<class Ordinal, class Scalar>
   void CrsMatrix<Ordinal,Scalar>::getGlobalRowCopy(Ordinal globalRow, 

@@ -370,7 +370,7 @@ struct ScalarTraits<float>
     return static_cast<float>(std::numeric_limits<float>::digits);
   }
   static inline float rnd()   {
-    return ( std::numeric_limits<float>::round_style == std::round_to_nearest ? float(1.0) : float(0.0) );
+    return ( std::numeric_limits<float>::round_style == std::round_to_nearest ? one() : zero() );
   }
   static inline float emin()  {
     return static_cast<float>(std::numeric_limits<float>::min_exponent);
@@ -392,14 +392,14 @@ struct ScalarTraits<float>
 #endif      
       return std::fabs(a);
     }    
-  static inline float zero()  { return(0.0); }
-  static inline float one()   { return(1.0); }    
+  static inline float zero()  { return(0.0f); }
+  static inline float one()   { return(1.0f); }    
   static inline float conjugate(float x)   { return(x); }    
   static inline float real(float x) { return x; }
-  static inline float imag(float) { return 0; }
+  static inline float imag(float) { return zero(); }
   static inline float nan() {
 #ifdef __sun
-    return 0.0/std::sin(0.0);
+    return 0.0f/std::sin(0.0f);
 #else
     return flt_nan;
 #endif
@@ -418,7 +418,7 @@ struct ScalarTraits<float>
     random();
 #endif
   }
-  static inline float random() { float rnd = (float) std::rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); }
+  static inline float random() { float rnd = (float) std::rand() / RAND_MAX; return (-1.0f + 2.0f * rnd); }
   static inline std::string name() { return "float"; }
   static inline float squareroot(float x)
     {
@@ -544,12 +544,8 @@ struct ScalarTraits<double>
 };
 
 #ifdef HAVE_TEUCHOS_QD
-bool operator&&(const dd_real &a, const dd_real &b) {
-  return !a.is_zero() && !b.is_zero();
-}
-bool operator&&(const qd_real &a, const qd_real &b) {
-  return !a.is_zero() && !b.is_zero();
-}
+bool operator&&(const dd_real &a, const dd_real &b);
+bool operator&&(const qd_real &a, const qd_real &b);
 
 template<>
 struct ScalarTraits<dd_real>
