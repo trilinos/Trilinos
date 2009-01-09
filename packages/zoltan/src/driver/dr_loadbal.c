@@ -620,8 +620,35 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
      */
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
-    if (new_decomp && (num_exported != -1 || num_imported != -1) &&
-         !Export_Lists_Special){
+    if (new_decomp && (num_exported != -1 || num_imported != -1)) {
+      if (Export_Lists_Special) {
+        /* Partition Assignments were returned; convert to export lists */
+        int num_send = 0;
+        int k;
+        for (i = 0; i < num_exported; i++) {
+          if (Num_LID)
+            current_elem = &(mesh->elements[export_lids[(i+1)*Num_LID-1]]);
+          else 
+            current_elem = search_by_global_id(mesh, 
+                                              export_gids[(i+1)*Num_GID-1], &k);
+          if ((export_to_part[i] != current_elem->my_part) || 
+              (export_procs[i] != Proc)) {
+            /* Element needs to be migrated; keep it in the exports arrays. */
+            for (k = 0; k < Num_GID; k++) 
+              export_gids[num_send*Num_GID+k] = export_gids[i*Num_GID+k];
+            for (k = 0; k < Num_LID; k++)
+              export_lids[num_send*Num_LID+k] = export_lids[i*Num_LID+k];
+            export_to_part[num_send] = export_to_part[i];
+            export_procs[num_send] = export_procs[i];
+            num_send++;
+          }
+        }
+        num_exported = num_send;
+        Zoltan_Invert_Lists(zz, num_exported, export_gids, export_lids,
+                            export_procs, export_to_part,
+                            &num_imported, &import_gids, &import_lids, 
+                            &import_procs, &import_to_part);
+      }
 
       /* Migrate if new decomposition and RETURN_LISTS != NONE and
          RETURN_LISTS != PARTITIONS */
