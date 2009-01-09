@@ -63,3 +63,10 @@ IF (TPL_ENABLE_MPI)
 ELSE()
   SET(HAVE_MPI FALSE)
 ENDIF()
+
+# Check for isnan and isinf support
+INCLUDE(FiniteValue)
+
+# Check for Doxygen/dot - We can use variables set in this check to
+# enable/disable the grapical dependency graphs in doxygen Doxyfiles.
+INCLUDE(FindDoxygen)
