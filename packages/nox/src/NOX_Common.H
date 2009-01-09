@@ -76,123 +76,19 @@
 #include "NOX_Config.h"
 #endif
 
-#ifdef HAVE_CSTDLIB
 #include <cstdlib>
-#elif defined(HAVE_STDLIB_H)
-#include <stdlib.h>
-#else
-// Try to include it anyway
-#include <stdlib.h>
-#endif
-
-#ifdef HAVE_CSTDIO
 #include <cstdio>
-#elif defined(HAVE_STDIO_H)
-#include <stdio.h>
-#else
-// Try to include it anyway
-#include <stdio.h>
-#endif
-
-#ifdef HAVE_CASSERT
 #include <cassert>
-#elif defined(HAVE_ASSERT_H)
-#include <assert.h>
-#else
-// Try to include it anyway
-#include <assert.h>
-#endif
-
-#ifdef HAVE_CMATH
 #include <cmath>
-#elif defined(HAVE_MATH_H)
-#include <math.h>
-#else
-// Try to include it anyway
-#include <math.h>
-#endif
-
-#ifdef HAVE_IOMANIP
 #include <iomanip>
-#elif defined(HAVE_IOMANIP_H)
-#include <iomanip.h>
-#else
-// Try to include it anyway
-#include <iomanip>
-#endif
-
-#ifdef HAVE_IOSTREAM
 #include <iostream>
-#elif defined(HAVE_IOSTREAM_H)
-#include <iostream.h>
-#else
-// Try to include it anyway
-#include <iostream>
-#endif
-
-#ifdef HAVE_STRING
 #include <string>
-#elif defined(HAVE_STRING_H)
-#include <string.h>
-#else
-// Try to include it anyway
-#include <string>
-#endif
-
-#ifdef HAVE_MAP
 #include <map>
-#elif defined(HAVE_MAP_H)
-#include <map.h>
-#else
-// Try to include it anyway
-#include <map>
-#endif
-
-// Having vector implies having deque
-#ifdef HAVE_VECTOR
 #include <vector>
 #include <deque>
-#elif defined(HAVE_VECTOR_H)
-#include <vector.h>
-#include <deque.h>
-#else
-// Try to include it anyway
-#include <vector>
-#include <deque>
-#endif
-
-#ifdef HAVE_ALGORITHM
 #include <algorithm>
-#elif defined(HAVE_ALGO_H)
-#include <algo.h>
-#elif defined(HAVE_ALGORITHM_H)
-#include <algorithm.h>
-#else
-// Try to include it anyway
-#include <algorithm>
-#endif
-
-#if HAVE_SSTREAM
 #include <sstream>
-#elif HAVE_SSTREAM_H
-#include <sstream.h>
-#elif HAVE_STRSTREAM
-#include <strstream>
-#elif HAVE_STRSTREAM_H
-#include <strstream.h>
-#else
-// Try to include it anyway
-#include <sstream>
-#endif
-
-#ifdef HAVE_FSTREAM
 #include <fstream>
-#elif defined(HAVE_FSTREAM_H)
-#include <fstream.h>
-#else
-// Try to include it anyway
-#include <fstream>
-#endif
 
 using namespace std;
 
