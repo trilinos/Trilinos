@@ -754,8 +754,8 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
       return (ZOLTAN_FATAL);
     }
 
-  if (SCOTCH_dgraphBuild (dgrafptr, 0, gr->num_obj, gr->num_obj, gr->xadj, gr->xadj + 1,
-			  gr->vwgt, NULL,edgelocnbr, edgelocnbr, gr->adjncy, NULL, gr->ewgts) != 0) {
+    if (SCOTCH_dgraphBuild (dgrafptr, 0, gr->num_obj, gr->num_obj, gr->xadj, gr->xadj + 1,
+		  	    gr->vwgt, NULL,edgelocnbr, edgelocnbr, gr->adjncy, NULL, gr->ewgts) != 0) {
       SCOTCH_dgraphExit(dgrafptr);
       return (ZOLTAN_FATAL);
     }
