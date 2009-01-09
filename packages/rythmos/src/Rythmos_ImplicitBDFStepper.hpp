@@ -41,6 +41,18 @@ namespace Rythmos {
 // ////////////////////////////
 // Defintions
 
+// Nonmember constructor
+
+template<class Scalar>
+RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
+    const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
+    RCP<Teuchos::ParameterList> &parameterList
+    )
+{
+  RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>(model,solver,parameterList));
+  return stepper;
+}
 
 // Constructors, intializers, Misc.
 
@@ -464,10 +476,10 @@ void ImplicitBDFStepper<Scalar>::addPoints(
 template<class Scalar>
 TimeRange<Scalar> ImplicitBDFStepper<Scalar>::getTimeRange() const
 {
-  if ( !isInitialized_ && haveInitialCondition_ )
-    return timeRange<Scalar>(time_,time_);
-  if ( !isInitialized_ && !haveInitialCondition_ )
-    return invalidTimeRange<Scalar>();
+  if (!haveInitialCondition_) {
+    ImplicitBDFStepper<Scalar>* nonConstThis = const_cast<ImplicitBDFStepper<Scalar>* >(this);
+    nonConstThis->getInitialCondition_();
+  }
   return timeRange<Scalar>(time_-usedStep_,time_);
 }
 
@@ -489,12 +501,31 @@ void ImplicitBDFStepper<Scalar>::getPoints(
     x_vec->clear();
   if (xdot_vec)
     xdot_vec->clear();
+  if (!haveInitialCondition_) {
+    ImplicitBDFStepper<Scalar>* nonConstThis = const_cast<ImplicitBDFStepper<Scalar>* >(this);
+    nonConstThis->getInitialCondition_();
+  }
+  if ( (time_vec.size() == 1) && (compareTimeValues<Scalar>(time_vec[0],time_)==0)) {
+    if (x_vec) {
+      x_vec->push_back(xn0_->clone_v());
+    }
+    if (xdot_vec) {
+      xdot_vec->push_back(xpn0_->clone_v());
+    }
+    if (accuracy_vec) {
+      accuracy_vec->push_back(ST::zero());
+    }
+    return;
+  }
+  TEST_FOR_EXCEPTION(!isInitialized_, std::logic_error,
+      "Error!, calling getPoints when uninitialized"
+      );
   for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
     RCP<Thyra::VectorBase<Scalar> >
       x_temp = createMember(xn0_->space());
     RCP<Thyra::VectorBase<Scalar> >
       xdot_temp = createMember(xn0_->space());
-    ScalarMag accuracy = -ST::zero();
+    ScalarMag accuracy = ST::zero();
     interpolateSolution_(
       time_vec[i], &*x_temp, &*xdot_temp,
       accuracy_vec ? &accuracy : 0

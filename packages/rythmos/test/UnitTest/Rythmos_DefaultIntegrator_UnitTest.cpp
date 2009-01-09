@@ -31,6 +31,7 @@
 #include "Rythmos_Types.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
 
+#include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 
 #include "../SinCos/SinCosModel.hpp"
@@ -40,10 +41,69 @@
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 namespace Rythmos {
 
 using Thyra::VectorBase;
+
+// Test the ImplicitBDF stepper through the integrator
+TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ImplicitBDFStepper ) {
+  // Integrator
+  RCP<DefaultIntegrator<double> > integrator = defaultIntegrator<double>();
+
+  // Stepper
+  double finalTime = 1.0;
+  RCP<SinCosModel> model = sinCosModel(true);
+  RCP<TimeStepNonlinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<ParameterList> bdfPL = Teuchos::parameterList();
+  ParameterList& scsPL = bdfPL->sublist("Step Control Settings");
+  scsPL.set("maxOrder",1);
+  ParameterList& voPL = bdfPL->sublist("VerboseObject");
+  voPL.set("Verbosity Level","none");
+  RCP<ImplicitBDFStepper<double> > stepper = implicitBDFStepper<double>(model,nlSolver,bdfPL);
+  integrator->setStepper(stepper, finalTime);
+
+  // Trailing Interpolation Buffer
+  // TODO
+  
+  // IntegrationControlStrategy to specify fixed steps for this stepper
+  double dt = 0.1;
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->set("Take Variable Steps",false);
+  pl->set("Fixed dt", dt);
+  RCP<SimpleIntegrationControlStrategy<double> > intCont = simpleIntegrationControlStrategy<double>(pl);
+  TimeRange<double> tr(0.0,finalTime);
+  intCont->resetIntegrationControlStrategy(tr); // I need to do this because I set the stepper before this.
+  integrator->setIntegrationControlStrategy(intCont);
+
+  // Ask integrator for points
+  Array<double> time_vec;
+  Array<RCP<const VectorBase<double> > > x_vec;
+  double N = 10;
+  for (int i=0 ; i<=N ; ++i) {
+    double t = 0.0 + i*finalTime/N;
+    time_vec.push_back(t);
+  }
+  integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+
+  // Verify that these points are accurate
+  // Since we're using Forward Euler, we can write down the exact numerical solution
+  double tol = 1.0e-10;
+  double exact_x0 = 0.0; // nominal values on SinCosModel
+  double exact_x1 = 1.0;
+  for (int i=0 ; i<=N ; ++i) {
+    {
+      Thyra::ConstDetachedVectorView<double> x_vec_view( *(x_vec[i]) );
+      TEST_FLOATING_EQUALITY( exact_x0, x_vec_view[0], tol );
+      TEST_FLOATING_EQUALITY( exact_x1, x_vec_view[1], tol );
+    }
+    double x0 = exact_x0;
+    double x1 = exact_x1;
+    exact_x1 = (x1-dt*x0)/(1+dt*dt);
+    exact_x0 = x0 + dt*exact_x1;
+  }
+}
 
 // Test the ERK stepper through the integrator
 TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ExplicitRKStepper ) {
@@ -70,7 +130,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ExplicitRKStepper ) {
   pl->set("Fixed dt", dt);
   RCP<SimpleIntegrationControlStrategy<double> > intCont = simpleIntegrationControlStrategy<double>(pl);
   TimeRange<double> tr(0.0,finalTime);
-  intCont->resetIntegrationControlStrategy(tr); // ??? Why do I need to do this?
+  intCont->resetIntegrationControlStrategy(tr); // I need to do this because I set the stepper before this.
   integrator->setIntegrationControlStrategy(intCont);
 
   // Ask integrator for points
