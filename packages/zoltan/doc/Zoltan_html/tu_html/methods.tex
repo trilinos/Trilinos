@@ -55,3 +55,14 @@ communication volume is exact, so hypergraph methods
 produce very high quality partitions. The main drawback of hypergraph
 methods is that they take longer to run than graph algorithms. 
 
+\section{Methods in Zoltan}
+Zoltan is a toolkit containing many load balancing methods. We explain how 
+to use Zoltan in the next chapter. The methods currently available
+in Zoltan (version 3.1) are:
+\begin{description}
+\item[Simple:] BLOCK, RANDOM. These are intended for testing, not real use.
+\item[Geometric:] RCB, RIB, HSFC.
+\item[Graph:] Zoltan has a native graph partitioner, and optionlly supports ParMetis and PT-Scotch.
+\item[Hypergraph:] Zoltan has a native parallel hypergraph partitioner.
+\end{description}
+
