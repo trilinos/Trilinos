@@ -7,12 +7,32 @@
 
 \section{Overview}
 
+Zoltan supports dynamic load balancing, but it is important 
+to understand what Zoltan is \emph{not}. Zoltan can suggest
+a better data distribution, but does not transparently move
+your data around. Zoltan does not know anything about application
+data structures. A typical use of Zoltan is 
+load balancing in dynamic applications. The application
+should periodically call Zoltan to get a suggested improved
+data decomposition, but it's up to the application to
+decide when to call Zoltan and whether to move (migrate) data or not.
+Zoltan is a toolkit that contains many different algorithms.
+No single algorithm is best in all situations, and it is
+up to the application to decide which algorithm to use.
+Zoltan makes it easy to try out and compare many different
+algorithms. Often, just changing a single parameter is sufficient.
+
+Now let's dive into the software issues. Zoltan is a big and complex 
+piece of software. It was designed for production use, not as an educational 
+tool, so it may take a while to get up to speed.
 The Zoltan library is a C library that you can link with your C,
 C++ or Fortran application.  Details of the C++ and Fortran bindings
 are provided in the User's Guide 
 (\url{http://www.cs.sandia.gov/Zoltan/ug_html/ug.html}).
 Because Zoltan uses MPI for communication, you must link your application
-with the Zoltan library and with MPI.
+with the Zoltan library and with MPI. (It is actually possible to build
+Zoltan without MPI, using the bundled serial MPI library, siMPI,
+but this is rarely useful.)
 
 The following points summarize the interface between your
 application and the Zoltan library:
@@ -32,6 +52,19 @@ Most Zoltan users will only use the partitioning functions of Zoltan.  But Zolta
 some other useful capabilities as well, such as functions to aid with data migration, and
 global data dictionaries to locate the partition holding a data object.  
 After discussing the partitioning interface, we will briefly introduce those capabilities.
+
+\section{Downloading and building Zoltan}
+
+Zoltan is available both as a stand-alone software package, or
+as a package within the Trilinos framework. The source code
+is the same, so it makes little difference which one you get.
+If you currently use Trilinos, you probably have Zoltan already.
+Zoltan currently supports two different build systems, one manual
+and one automatic (automake or soon, Cmake). Again, you can choose
+which system to use. For detailed instructions, see the Zoltan User's Guide.
+After you build Zoltan, you will have a library \textbf{libzoltan.a},
+to which you should link your application. 
+
 
 \section{Initializing and releasing Zoltan}
 

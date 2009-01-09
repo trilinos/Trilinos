@@ -6,41 +6,46 @@
 %
 \chapter{Introduction}
 
-This document provides an introduction to the Zoltan Toolkit,
-for Zoltan version 2.1.  Zoltan is a parallel load balancing library
-targeted to the high performance computing community.  The Zoltan
-library can be
-linked with C, C++ and Fortran applications and it requires MPI.  
+This document provides an introduction to data partitioning
+and load balancing using the Zoltan Toolkit (version 3.1).  
+Zoltan is a parallel toolkit for load balancing
+(and several other combinatorial scientific computing tasks) 
+targeted to the high performance computing community.  
+This tutorial only covers load balancing,
+and other capabilities in Zoltan are barely mentioned.
+The Zoltan library is written in C but can be
+linked with C, C++ and Fortran90 applications.  
+It requires MPI to run in parallel.
 Most of the examples in this tutorial are C language examples.
 
-The first chapter (\ref{cha:lb})
-will discuss the load balancing problem in general.
+In Chapter~\ref{cha:lb} we
+discuss the load balancing problem in general and describe
+common algorithms, which are also supported in Zoltan.
 Zoltan's role in addressing the load balancing problem is to 
 efficiently partition,
 or repartition, the problem data across mulitple processes while an
 application is running, when requested to do so by the application.
 
-The following chapter (\ref{cha:partitioning})
-will describe in more detail the partitioning
-methods available in Zoltan, and will provide a guide
-to choosing the method or methods best suited to your problem.
+% In Chapter~\ref{cha:partitioning} we
+% describe in more detail the partitioning
+% methods available in Zoltan, and try provide a guide
+% to choosing the method or methods best suited to your problem.
 
-In chapter ~\ref{cha:using} we briefly explain the interface
+In Chapter~\ref{cha:using} we briefly explain the interface
 through which your application employs Zoltan.  This topic is
 convered in more detail in the
 Zoltan User's Guide available at
 \url{http://www.cs.sandia.gov/Zoltan/ug_html/ug.html}.
-An example may be worth a thousand words, so you may wish to 
+An example can be worth a thousand words, so you may wish to 
 skip this chapter and look through the examples in the last section first.
 
 The final chapter of this document (~\ref{cha:ex}) provides
 source code examples for simple applications that use Zoltan.
 These examples may be found in the \textbf{examples} directory
-of the Zoltan source code.  You can obtain that source code,
-along with installation instructions, at
-\url{http://www.cs.sandia.gov/web1400/1400_download.html}.
+of the Zoltan source code.  Zoltan is open source and freely available.
 
 You will find additional documents and publications at the
 Zoltan web site at \url{http://www.cs.sandia.gov/Zoltan/}.
+The User's Guide is a very useful reference and provides
+many details we could not cover here.
 
-% Should we have a pointer to a list of publications as well.

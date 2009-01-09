@@ -48,11 +48,13 @@ This example is a C program which uses Zoltan to partition
 in parallel 36 objects, each of which has a weight.  The goal is
 to balance the weights across the parallel application.
 
-It uses the Zoltan method called BLOCK. 
+It uses the Zoltan method called BLOCK, which simply assignes 
+the first $n/p$ data objects to the first process and so on.
 This method really exists as an example for developers
-who want to learn how to write partitioning methods.  It was
-not intended to be a partitioning strategy for real applications.
-However it is a good choice for an example.  
+to learn how to write partitioning methods.  
+It can also be used for testing in applications, but was never
+intended to be a serious partitioning strategy for real applications.
+However, it is a good choice for our first example.  
 
 If you are a new user of Zoltan, you may want to initially get your
 application working with the BLOCK method.  Once you have

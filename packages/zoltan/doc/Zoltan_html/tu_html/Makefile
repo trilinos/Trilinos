@@ -1,6 +1,6 @@
 # $Id$
 #
-TEXFILES=contents.tex introduction.tex examples.tex methods.tex
+TEXFILES=contents.tex introduction.tex examples.tex methods.tex api.tex
 
 LATEX=latex
 PDFLATEX=pdflatex
