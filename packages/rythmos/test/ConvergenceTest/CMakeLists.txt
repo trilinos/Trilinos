@@ -24,8 +24,7 @@ FOREACH(TEST_NAME ${TEST_NAMES})
       ${COMMON_SOURCES}
       Rythmos_${TEST_NAME}_ConvergenceTest.cpp
     DEPLIBS rythmos_test_models
-    COMM serial mpi  
-    NUM_MPI_PROCS 1
+    COMM serial
     STANDARD_PASS_OUTPUT
     )
 

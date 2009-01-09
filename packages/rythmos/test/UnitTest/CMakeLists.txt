@@ -9,7 +9,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   UnitTest
   SOURCES ${SOURCES}
   DEPLIBS rythmos_test_models
-  COMM serial mpi  
-  NUM_MPI_PROCS 1
+  COMM serial
   STANDARD_PASS_OUTPUT
   )

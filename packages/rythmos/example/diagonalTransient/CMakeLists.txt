@@ -192,6 +192,12 @@ ENDIF()
 ASSERT_DEFINED(Stratimikos_ENABLE_AztecOO)
 IF (Stratimikos_ENABLE_AztecOO)
 
+  SET(STANDARD_TEST_CONFIG
+    COMM serial mpi  
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )
+
   MULTILINE_SET(ARGS
     " --params-file=diagonalTransient_aztecoo.xml"
     " --final-time=1e-4 --num-time-steps=-1 --verb-level=VERB_EXTREME"
@@ -210,6 +216,46 @@ IF (Stratimikos_ENABLE_AztecOO)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_AztecOO_CopyFiles
     DEST_FILES
       diagonalTransient_aztecoo.xml
+    SOURCE_PREFIX "_"
+    EXEDEPS diagonalTransient
+    )
+
+ENDIF()
+
+
+ASSERT_DEFINED(Stratimikos_ENABLE_Belos)
+IF (Stratimikos_ENABLE_Belos)
+
+  MULTILINE_SET(ARGS
+    " --params-file=diagonalTransient.belos.fwd-BE.n2.p2.xml"
+    " --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME"
+    )
+  PACKAGE_ADD_TEST(
+    diagonalTransient
+    NAME diagonalTransient_belos_BE
+    ARGS ${ARGS}
+    COMM serial mpi  
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )
+
+  MULTILINE_SET(ARGS
+    " --params-file=diagonalTransient.belos.fwd-IRK.n2.p2.xml"
+    " --use-IRK"
+    )
+  PACKAGE_ADD_TEST(
+    diagonalTransient
+    NAME diagonalTransient_belos_IRK
+    ARGS ${ARGS}
+    COMM serial mpi  
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_Belos_CopyFiles
+    DEST_FILES
+      diagonalTransient.belos.fwd-BE.n2.p2.xml
+      diagonalTransient.belos.fwd-IRK.n2.p2.xml
     SOURCE_PREFIX "_"
     EXEDEPS diagonalTransient
     )
