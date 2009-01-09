@@ -99,21 +99,22 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE EXE_NAME)
 
     SET(LINK_LIBS)
 
-    # First, add the package's own test libraries
-    APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_TEST_LIBRARIES})
+    # First, add in the passed in dependent libraries
+    IF (PARSE_DEPLIBS)
+      APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
+    ENDIF()
+    # 2009/01/09: rabartl: Above, I moved the list of dependent
+    # libraries first to get around a problem with test-only libraries
+    # creating multiple duplicate libraries on the link line with
+    # CMake.
 
-    # Second ,add the package's own regular libraries
+    # Second, add the package's own regular libraries
     APPEND_SET(LINK_LIBS ${${PACKAGE_NAME}_LIBRARIES})
 
     # Third, add test dependent package libraries
     PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} TEST PACKAGES ALL_DEP_PACKAGES)
     PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_PACKAGES}" "${ALL_DEP_PACKAGES}"
       "" LINK_LIBS)
-
-    # Fourth, add in the passed in libraries
-    IF (PARSE_DEPLIBS)
-      APPEND_SET(LINK_LIBS ${PARSE_DEPLIBS})
-    ENDIF()
     
     # Last, add dependnet test TPL libraries
     PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} TEST TPLS ALL_TPLS)
