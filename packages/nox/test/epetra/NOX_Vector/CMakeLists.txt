@@ -1,0 +1,28 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../utils)
+
+IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
+  
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Epetra_Vector
+    SOURCES test.C
+    DEPLIBS noxtestutils
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+  
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Epetra_VectorSpace
+    SOURCES vectorSpace.C
+    DEPLIBS noxtestutils
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+  
+ENDIF()
