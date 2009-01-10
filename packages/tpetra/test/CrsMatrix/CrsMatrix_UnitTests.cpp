@@ -17,6 +17,11 @@
 #include <iohb.h>
 #endif
 
+#ifdef HAVE_TEUCHOS_QD
+#include <qd/dd_real.h>
+#include <qd/qd_real.h>
+#endif
+
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -365,6 +370,92 @@ namespace {
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     Bout.norm2(norms());
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, DiagTest, Ordinal, Scalar )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    // create a platform  
+    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<Comm<Ordinal> > comm = platform.createComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // create Maps
+    // matrix is:
+    //  proc
+    //    0  [2 3               ]
+    //    0  [4   6             ]
+    //    0  [  7 8 9           ]
+    //    1  [    1 2 3         ]
+    //    1  [      4   6       ]
+    //    1  [        7 8 9     ]
+    //         ................
+    //   n-1 [           1 2 3  ]
+    //   n-1 [             4   6]
+    //   n-1 [               7 8]
+    const Ordinal indexBase = ZERO;
+    Map<Ordinal> rowmap(INVALID,3,indexBase,platform);
+    // create the tridiagonal matrix
+    CrsMatrix<Ordinal,Scalar> tri(rowmap);
+    Ordinal d1 = 3*myImageID,
+            d2 = 3*myImageID+1,
+            d3 = 3*myImageID+2;
+    int howshort = 0;
+    if (myImageID == 0) ++howshort;
+    if (myImageID == numImages-1) ++howshort;
+    if (myImageID == 0) {
+      tri.submitEntries(d1,tuple<Ordinal>(     d1,d1+1),tuple<Scalar>(  2,3));
+    }
+    else {
+      tri.submitEntries(d1,tuple<Ordinal>(d1-1,d1,d1+1),tuple<Scalar>(1,2,3));
+    }
+    tri.submitEntries(d2,tuple<Ordinal>(d2-1,d2+1),tuple<Scalar>(4,6));
+    if (myImageID != numImages-1) {
+      tri.submitEntries(d3,tuple<Ordinal>(d3-1,d3,d3+1),tuple<Scalar>(7,8,9));
+    }
+    else {
+      tri.submitEntries(d3,tuple<Ordinal>(d3-1,d3     ),tuple<Scalar>(7,8  ));
+    }
+    tri.fillComplete();
+    // test the properties
+    TEST_EQUALITY(tri.getNumGlobalNonzeros()  , 8*numImages - 2);
+    TEST_EQUALITY(tri.getNumMyNonzeros()      , 8-howshort);
+    TEST_EQUALITY(tri.getNumGlobalRows()      , 3*numImages);
+    TEST_EQUALITY(tri.getNumMyRows()          , 3);
+    TEST_EQUALITY(tri.getNumMyCols()          , 5-howshort);
+    TEST_EQUALITY(tri.getNumGlobalDiagonals() , 2*numImages);
+    TEST_EQUALITY(tri.getNumMyDiagonals()     , 2);
+    TEST_EQUALITY(tri.getGlobalMaxNumEntries(), numImages > 1 ? 3 : 2);
+    TEST_EQUALITY(tri.getMyMaxNumEntries()    , numImages > 1 ? 3 : 2);
+    TEST_EQUALITY(tri.getIndexBase()          , 0);
+    TEST_EQUALITY_CONST(tri.getRowMap().isSameAs(rowmap), true);
+    TEST_EQUALITY_CONST(tri.getRangeMap().isSameAs(rowmap), true);
+    TEST_EQUALITY_CONST(tri.getDomainMap().isSameAs(rowmap), true);
+    // specifically, test the diagonals: all and non-zero
+    Array<Ordinal> expNNZDiagInds( tuple<Ordinal>(0,2) );
+    Array<Scalar>  expNNZDiagVals( tuple<Scalar>(2,8) ),
+                   expAllDiagVals( tuple<Scalar>(2,0,8) );
+    Array<Ordinal> actNNZDiagInds( tri.getNumMyDiagonals() );
+    Array<Scalar>  actNNZDiagVals( tri.getNumMyDiagonals() ),
+                   actAllDiagVals( tri.getNumMyRows() );
+                    
+    tri.getMyDiagCopy(actNNZDiagInds(),actNNZDiagVals());
+    TEST_COMPARE_ARRAYS(expNNZDiagInds,actNNZDiagInds);
+    TEST_COMPARE_FLOATING_ARRAYS(expNNZDiagVals,actNNZDiagVals,MT::zero());
+    tri.getMyDiagCopy(actAllDiagVals());
+    TEST_COMPARE_FLOATING_ARRAYS(expAllDiagVals,actAllDiagVals,MT::zero());
+
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -1085,6 +1176,14 @@ namespace {
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
 #endif
 
+#ifdef HAVE_TEUCHOS_QD
+#  define UNIT_TEST_GROUP_ORDINAL_QD(ORDINAL) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DiagTest, ORDINAL, dd_real ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DiagTest, ORDINAL, qd_real )
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_QD(ORDINAL)
+#endif
+
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
@@ -1100,6 +1199,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DomainRange, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, NonSquare, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, Transpose, ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DiagTest, ORDINAL, SCALAR ) \
       TRIUTILS_USING_TESTS(ORDINAL, SCALAR)
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
@@ -1115,7 +1215,8 @@ namespace {
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)  \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)  \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL) \
+         UNIT_TEST_GROUP_ORDINAL_QD(ORDINAL)
      UNIT_TEST_GROUP_ORDINAL(int)
 
      typedef long int LongInt;

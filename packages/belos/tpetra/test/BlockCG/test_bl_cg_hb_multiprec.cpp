@@ -117,7 +117,7 @@ RCP<LinearProblem<Scalar,MultiVector<int,Scalar>,Operator<int,Scalar> > > buildP
     A->getMyDiagCopy(diags());
     typename Array<Scalar>::iterator i;
     for (i=diags.begin(); i != diags.end(); ++i) {
-      TEST_FOR_EXCEPTION(*i <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite.");
+      TEST_FOR_EXCEPTION(*i <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << *i);
       *i = SCT::one() / *i;
     }
     RCP<CrsMatrix<int,Scalar> > P = rcp(new CrsMatrix<int,Scalar>(*vmap));
@@ -309,6 +309,7 @@ int main(int argc, char *argv[])
   // **********Print out information about problem*******************
   //
   if (MyPID==0) {
+    cout << "Filename: " << filename << endl;
     cout << "Dimension of matrix: " << dim << endl;
     cout << "Number of nonzeros: " << nnz << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;

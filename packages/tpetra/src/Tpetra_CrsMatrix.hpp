@@ -193,7 +193,7 @@ namespace Tpetra
       //! Returns the current number of nonzero entries in specified global index on this image. 
       inline Ordinal getNumRowEntries(Ordinal globalRow) const;
 
-      //! Get a copy of the non-zero diagonal entries owned by this node.
+      //! Get a copy of the non-zero diagonal entries owned by this node, with local row idices.
       void getMyDiagCopy(const Teuchos::ArrayView<Ordinal> &indices,
                          const Teuchos::ArrayView<Scalar>  &values) const;
 
@@ -342,7 +342,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
       "Tpetra::CrsMatrix: cannot call getNumGlobalCols() until fillComplete() has been called.");
-    return colMap_.getNumGlobalEntries();
+    return domainMap_.getNumGlobalEntries();
   }
 
 
@@ -524,13 +524,20 @@ namespace Tpetra
     ov = values.begin();
     oi = indices.begin();
     for (Ordinal r=0; r < numMyRows_; ++r) {
-      for (v = values_[r].begin(), i = colinds_[r].begin(); i != colinds_[r].end(); ++i, ++v) {
-        if (*i == r) {
-          *ov++ = *v;
-          *oi++ = *i;
-          break;
+      Ordinal rgid = rowMap_.getGlobalIndex(r);
+      if (colMap_.isMyGlobalIndex(rgid)) {
+        Ordinal rlid = colMap_.getLocalIndex(rgid);
+        for (v = values_[r].begin(), i = colinds_[r].begin(); i != colinds_[r].end(); ++i, ++v) {
+          if (*i == rlid) {
+            *ov++ = *v;
+            *oi++ = r;
+            break;
+          }
         }
       }
+#ifndef TEUCHOS_DEBUG
+      if (ov - values.begin() == numMyDiags_) break;
+#endif
     }
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(ov - values.begin() != numMyDiags_, std::logic_error, "CrsMatrix::getMyDiagCopy(): logic error. Please contact Tpetra team.");
@@ -547,19 +554,29 @@ namespace Tpetra
     typename Teuchos::Array<Scalar>::const_iterator v;
     typename Teuchos::Array<Ordinal>::const_iterator i;
     typename Teuchos::ArrayView<Scalar>::iterator ov;
+#ifdef TEUCHOS_DEBUG
+    int numDiagFound = 0;
+#endif
     ov = values.begin();
     for (Ordinal r=0; r < numMyRows_; ++r) {
       *ov = Teuchos::ScalarTraits<Scalar>::zero();
-      for (v = values_[r].begin(), i = colinds_[r].begin(); i != colinds_[r].end(); ++i, ++v) {
-        if (*i == r) {
-          *ov = *v;
-          break;
+      Ordinal rgid = rowMap_.getGlobalIndex(r);
+      if (colMap_.isMyGlobalIndex(rgid)) {
+        Ordinal rlid = colMap_.getLocalIndex(rgid);
+        for (v = values_[r].begin(), i = colinds_[r].begin(); i != colinds_[r].end(); ++i, ++v) {
+          if (*i == rlid) {
+            *ov = *v;
+#ifdef TEUCHOS_DEBUG
+            ++numDiagFound;
+#endif
+            break;
+          }
         }
       }
       ++ov;
     }
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(ov - values.begin() != numMyDiags_, std::logic_error, "CrsMatrix::getMyDiagCopy(): logic error. Please contact Tpetra team.");
+    TEST_FOR_EXCEPTION(numDiagFound != numMyDiags_, std::logic_error, "CrsMatrix::getMyDiagCopy(): logic error. Please contact Tpetra team.");
 #endif
   }
 
@@ -857,7 +874,14 @@ namespace Tpetra
         typename  Array<Scalar>::const_iterator val  = values_[r].begin();
         for (; cind != colinds_[r].end(); ++cind, ++val)
         {
-          row[*cind] += *val;
+          typename std::map<Ordinal,Scalar>::iterator loc = row.find(*cind);
+          if (loc == row.end()) {
+            // insert as is; unfortunately, this is necessary for Scalar who don't initialize to zero (e.g., dd_real)
+            row[*cind] = *val;
+          }
+          else {
+            (*loc).second += *val;
+          }
         }
       }
       // get them out of the map, back to colinds_,values_
@@ -876,7 +900,7 @@ namespace Tpetra
     // =============================== //
     // Part II: build the column space //
     // =============================== //
-    // construct a list of columns for which we have a non-zero, but are not locally owned by our row map
+    // construct a list of columns for which we have a non-zero
     std::set<Ordinal> nnzcols;
     for (Ordinal r=OT::zero(); r < numMyRows_ ; ++r)
     {
@@ -923,11 +947,13 @@ namespace Tpetra
     // ================================================ //
     for (Ordinal r=OT::zero(); r < numMyRows_; ++r)
     {
+      Ordinal rgid = rowMap_.getGlobalIndex(r);
       Ordinal numEntries = colinds_[r].size();
       myNNZ_ += numEntries;
-      if ( std::find(colinds_[r].begin(),colinds_[r].end(),r) != colinds_[r].end() )
-      {
-        ++numMyDiags_;
+      if ( colMap_.isMyGlobalIndex(rgid) ) {
+        if ( std::find(colinds_[r].begin(),colinds_[r].end(),colMap_.getLocalIndex(rgid)) != colinds_[r].end() ) {
+          ++numMyDiags_;
+        }
       }
       myMaxNumEntries_ = std::max(myMaxNumEntries_,numEntries);
     }
