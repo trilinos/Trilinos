@@ -6,6 +6,7 @@ INCLUDE(PackageLibraryMacros)
 #
 
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_InternalConfig.h)
 
 #
 # B) Define the header and source files (and directories)

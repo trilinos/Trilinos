@@ -48,7 +48,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Phalanx               phalanx                        ""
   Pamgen                pamgen                         OFF
   Phdmesh               phdmesh                        OFF
-  NOX                   nox                            OFF
+  NOX                   nox                            ""
   Moertel               moertel                        OFF
   TrilinosCouplings     trilinoscouplings              OFF
   Rythmos               rythmos                        ""
