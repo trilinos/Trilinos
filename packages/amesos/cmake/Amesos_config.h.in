@@ -3,9 +3,6 @@
 /* Need set_default_options_dist() */
 #cmakedefine AMESOS_SUPERLUDIST_OLD
 
-/* Need to specify that we do infact have the vector class */
-#define HAVE_VECTOR
-
 /* Using pre July 2005 Superlu */
 #cmakedefine AMESOS_SUPERLU_PRE_JULY2005
 
@@ -14,9 +11,6 @@
 
 /* Define if you want to allow Amesos to use Epetraext to reindex matrices */
 #cmakedefine HAVE_AMESOS_EPETRAEXT
-
-/* Define if want to build amesos-examples */
-#cmakedefine HAVE_AMESOS_EXAMPLES
 
 /* Define if want to build with amesos enabled */
 #cmakedefine HAVE_AMESOS_GALERI
@@ -51,9 +45,6 @@
 /* Define if want to build amesos-scalapack */
 #cmakedefine HAVE_AMESOS_SCALAPACK
 
-/* Define if want to build with amesos enabled */
-#cmakedefine HAVE_AMESOS_STRATIMIKOS
-
 /* Define if want to build amesos-superlu */
 #cmakedefine HAVE_AMESOS_SUPERLU
 
@@ -63,9 +54,6 @@
 /* Define if want to build amesos-taucs */
 #cmakedefine HAVE_AMESOS_TAUCS
 
-/* Define if want to build amesos-tests */
-#cmakedefine HAVE_AMESOS_TESTS
-
 /* Define if you want to allow Amesos tests and examples to use Epetraext to
    build matrices */
 #cmakedefine HAVE_AMESOS_TRIUTILS
@@ -73,98 +61,14 @@
 /* Define if want to build amesos-umfpack */
 #cmakedefine HAVE_AMESOS_UMFPACK
 
-/* Define to 1 if you have the <assert.h> header file. */
-#cmakedefine HAVE_ASSERT_H
-
-/* Define if you have a BLAS library. */
-#cmakedefine HAVE_BLAS
-
-/* define if bool is a built-in type */
-#cmakedefine HAVE_BOOL
-
-/* Define to 1 if you have the <cassert> header file. */
-#cmakedefine HAVE_CASSERT
-
-/* Define if want to build coverage */
-#cmakedefine HAVE_COVERAGE
-
-/* Define if want to build examples */
-#cmakedefine HAVE_EXAMPLES
-
-/* Define if you want to build export makefiles. */
-#cmakedefine HAVE_EXPORT_MAKEFILES
-
-/* Define if want to build with fortran enabled */
-#cmakedefine HAVE_FORTRAN_SUPPORT
-
-/* Define if you are using gnumake - this will shorten your link lines. */
-#cmakedefine HAVE_GNUMAKE
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
-
-/* Define if you have LAPACK library. */
-#cmakedefine HAVE_LAPACK
-
-/* Define if want to build libcheck */
-#cmakedefine HAVE_LIBCHECK
-
-/* Define to 1 if you have the <map> header file. */
-#cmakedefine HAVE_MAP
-
-/* Define to 1 if you have the <memory.h> header file. */
-#cmakedefine HAVE_MEMORY_H
-
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
-
-/* define if the compiler supports the mutable keyword */
-#cmakedefine HAVE_MUTABLE
-
-/* define if the compiler implements namespaces */
-#cmakedefine HAVE_NAMESPACES
-
-/* define if the compiler accepts the new for scoping rules */
-#cmakedefine HAVE_NEW_FOR_SCOPING
-
-/* Define if want to build performance */
-#cmakedefine HAVE_PERFORMANCE
-
-/* define if the compiler supports Standard Template Library */
-#cmakedefine HAVE_STL
-
-/* Define to 1 if you have the <string> header file. */
-#cmakedefine HAVE_STRING
-
-/* Define to 1 if you have the <strings.h> header file. */
-#cmakedefine HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#cmakedefine HAVE_STRING_H
-
-/* Define to 1 if you have the <sys/resource.h> header file. */
-#cmakedefine HAVE_SYS_RESOURCE_H
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#cmakedefine HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/time.h> header file. */
-#cmakedefine HAVE_SYS_TIME_H
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#cmakedefine HAVE_SYS_TYPES_H
 
 /* Define to 1 if you have the <sys/utsname.h> header file. */
 #cmakedefine HAVE_SYS_UTSNAME_H
 
-/* Define if want to build tests */
-#cmakedefine HAVE_TESTS
-
 /* Define to 1 if you have the <time.h> header file. */
 #cmakedefine HAVE_TIME_H
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H
 
 /* Define if want to build valgrind */
 #cmakedefine HAVE_VALGRIND
@@ -174,27 +78,3 @@
 
 /* Define to 1 if you have the <valgrind/valgrind.h> header file. */
 #cmakedefine HAVE_VALGRIND_VALGRIND_H
-
-/* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#cmakedefine PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME
-
-/* Define to the version of this package. */
-#cmakedefine PACKAGE_VERSION
-
-/* Define to 1 if you have the ANSI C header files. */
-#cmakedefine STDC_HEADERS
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#cmakedefine inline
-#endif

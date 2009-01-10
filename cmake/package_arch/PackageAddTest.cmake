@@ -228,6 +228,10 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
           # so the test should not be run.
           RETURN()
         ENDIF()
+      ELSEIF(${PARSE_NUM_MPI_PROCS} MATCHES [0-9]+,[0-9]+)
+        MESSAGE(SEND_ERROR "The test ${TEST_NAME} can not be added yet"
+          " because it we do not yet support the form of"
+          " NUM_MPI_PROCS=${PARSE_NUM_MPI_PROCS}") 
       ELSE()
         IF(${PARSE_NUM_MPI_PROCS} LESS ${MPIEXEC_MAX_NUMPROCS})
           SET(NUM_PROCS_USED ${PARSE_NUM_MPI_PROCS})
