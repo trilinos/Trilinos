@@ -115,7 +115,7 @@ lib_LIBRARIES = $(STRATIMIKOS_LIB)
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-include_HEADERS = $(srcdir)/Stratimikos_ConfigDefs.hpp $(srcdir)/Stratimikos_InternalConfig.h $(STRATIMIKOS_H) 
+include_HEADERS = $(srcdir)/Stratimikos_ConfigDefs.hpp $(STRATIMIKOS_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -123,7 +123,7 @@ include_HEADERS = $(srcdir)/Stratimikos_ConfigDefs.hpp $(srcdir)/Stratimikos_Int
 
 execincludedir = $(includedir)
 
-nodist_execinclude_HEADERS = Stratimikos_Config.h
+nodist_execinclude_HEADERS = Stratimikos_Config.h Stratimikos_InternalConfig.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

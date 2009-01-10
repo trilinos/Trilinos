@@ -67,6 +67,7 @@ AC_CONFIG_AUX_DIR(config)
 # Configure should create src/Stratimikos_Config.h from src/Stratimikos_Config.h.in
 
 AM_CONFIG_HEADER(src/Stratimikos_Config.h:src/Stratimikos_Config.h.in)
+AM_CONFIG_HEADER(src/Stratimikos_InternalConfig.h:src/Stratimikos_InternalConfig.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.

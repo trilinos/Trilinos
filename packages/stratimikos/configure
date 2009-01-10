@@ -1931,6 +1931,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 ac_config_headers="$ac_config_headers src/Stratimikos_Config.h:src/Stratimikos_Config.h.in"
 
+ac_config_headers="$ac_config_headers src/Stratimikos_InternalConfig.h:src/Stratimikos_InternalConfig.h.in"
+
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.
@@ -7043,6 +7045,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "src/Stratimikos_Config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/Stratimikos_Config.h:src/Stratimikos_Config.h.in" ;;
+    "src/Stratimikos_InternalConfig.h") CONFIG_HEADERS="$CONFIG_HEADERS src/Stratimikos_InternalConfig.h:src/Stratimikos_InternalConfig.h.in" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "Makefile.export.stratimikos") CONFIG_FILES="$CONFIG_FILES Makefile.export.stratimikos" ;;

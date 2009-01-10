@@ -66,7 +66,8 @@ host_triplet = @host@
 target_triplet = @target@
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/Stratimikos_Config.h.in
+	$(srcdir)/Makefile.in $(srcdir)/Stratimikos_Config.h.in \
+	$(srcdir)/Stratimikos_InternalConfig.h.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
@@ -85,7 +86,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
-CONFIG_HEADER = Stratimikos_Config.h
+CONFIG_HEADER = Stratimikos_Config.h Stratimikos_InternalConfig.h
 CONFIG_CLEAN_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -294,19 +295,19 @@ lib_LIBRARIES = $(STRATIMIKOS_LIB)
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
-include_HEADERS = $(srcdir)/Stratimikos_ConfigDefs.hpp $(srcdir)/Stratimikos_InternalConfig.h $(STRATIMIKOS_H) 
+include_HEADERS = $(srcdir)/Stratimikos_ConfigDefs.hpp $(STRATIMIKOS_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 execincludedir = $(includedir)
-nodist_execinclude_HEADERS = Stratimikos_Config.h
+nodist_execinclude_HEADERS = Stratimikos_Config.h Stratimikos_InternalConfig.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-all: Stratimikos_Config.h
+all: Stratimikos_Config.h Stratimikos_InternalConfig.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
@@ -355,8 +356,18 @@ $(srcdir)/Stratimikos_Config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	rm -f stamp-h1
 	touch $@
 
+Stratimikos_InternalConfig.h: stamp-h2
+	@if test ! -f $@; then \
+	  rm -f stamp-h2; \
+	  $(MAKE) $(AM_MAKEFLAGS) stamp-h2; \
+	else :; fi
+
+stamp-h2: $(srcdir)/Stratimikos_InternalConfig.h.in $(top_builddir)/config.status
+	@rm -f stamp-h2
+	cd $(top_builddir) && $(SHELL) ./config.status src/Stratimikos_InternalConfig.h
+
 distclean-hdr:
-	-rm -f Stratimikos_Config.h stamp-h1
+	-rm -f Stratimikos_Config.h stamp-h1 Stratimikos_InternalConfig.h stamp-h2
 install-libLIBRARIES: $(lib_LIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
@@ -471,11 +482,11 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES) Stratimikos_Config.h.in $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES) Stratimikos_Config.h.in Stratimikos_InternalConfig.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) Stratimikos_Config.h.in $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS) Stratimikos_Config.h.in Stratimikos_InternalConfig.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -487,11 +498,11 @@ TAGS:  $(HEADERS) $(SOURCES) Stratimikos_Config.h.in $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES) Stratimikos_Config.h.in $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES) Stratimikos_Config.h.in Stratimikos_InternalConfig.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS) Stratimikos_Config.h.in $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS) Stratimikos_Config.h.in Stratimikos_InternalConfig.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -538,7 +549,7 @@ distdir: $(DISTFILES)
 check-am: all-am
 check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) Stratimikos_Config.h \
-		all-local
+		Stratimikos_InternalConfig.h all-local
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
