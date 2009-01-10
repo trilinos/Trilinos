@@ -52,7 +52,6 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
