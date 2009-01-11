@@ -78,7 +78,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 %}
 
 // General ignore directives
-%ignore *::operator=;
+// %ignore *::operator=;   // temp removal
 
 // Include NOX documentation
 %include "NOX_dox.i"

@@ -42,6 +42,9 @@ to reactivate it soon.
 %enddef
 
 %module(package   = "PyTrilinos.LOCA",
+        directors = "1",
+	autodoc      = "1",
+	implicitconv = "1",
 	docstring = %loca_docstring) __init__
 
 %{
@@ -51,11 +54,24 @@ to reactivate it soon.
 // Teuchos include
 #include "Teuchos_PythonParameter.h"
 
+// NOX includes
+#include "NOX_StatusTest_Generic.H"
+#include "NOX_StatusTest_NormWRMS.H"
+#include "NOX_Solver_LineSearchBased.H"
+#include "NOX_Solver_TrustRegionBased.H"
+#include "NOX_Solver_InexactTrustRegionBased.H"
+#include "NOX_Solver_TensorBased.H"
+
 // LOCA includes
-//#include "LOCA.H"
+#include "LOCA.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"
+
+//#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
+//#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+//#include "LOCA_MultiContinuation_AbstractGroup.H"
+//#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
 #include "LOCA_TimeDependent_AbstractGroup.H"
 #include "LOCA_Homotopy_AbstractGroup.H"
@@ -70,12 +86,15 @@ to reactivate it soon.
 #include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 
+#include "LOCA_Abstract_Group.H"
+#include "LOCA_Abstract_TransposeSolveGroup.H"
 
 // Local includes
 #include "NumPyImporter.h"
 
 // Namespace flattening
 using Teuchos::RCP;
+
 %}
 
 // Ignore/renames
@@ -102,6 +121,23 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 // have to do it again.
 
 %import "LOCA.MultiContinuation.i"
+// %import "LOCA.Continuation.i"
+
+//%import "NOX.StatusTest.i"
+//%include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
+//%include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+
+// NOX interface file imports.
+%pythoncode
+{
+import os.path, sys
+currentDir,dummy = os.path.split(__file__)
+sys.path.append(os.path.normpath(os.path.join(currentDir,"..","NOX")))
+}
+//%import "NOX.__init__.i"
+
+//%include "LOCA_MultiContinuation_AbstractGroup.H"
+//%include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
 %rename(TimeDependent_AbstractGroup) LOCA::TimeDependent::AbstractGroup;
 %include "LOCA_TimeDependent_AbstractGroup.H"
@@ -128,13 +164,27 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 %rename(Hopf_MinimallyAugmented_FiniteDifferenceGroup) LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup;
 %include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 
-%import "LOCA_Abstract_Iterator.H"
+
+//%rename(Abstract_Group) LOCA::Abstract::Group;
+//%include "LOCA_Abstract_Group.H"
+//%rename(Abstract_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
+//%include "LOCA_Abstract_TransposeSolveGroup.H"
+//%include "LOCA_Abstract_Iterator.H"
 
 // LOCA interface includes
-//%include "LOCA_Abstract_Iterator.H"
-//%include "LOCA.H"
-%teuchos_rcp_typemaps(LOCA::GlobalData)
+%include "LOCA.H"
 %include "LOCA_GlobalData.H"
+%teuchos_rcp_typemaps(LOCA::GlobalData)
+%teuchos_rcp_typemaps(LOCA::DerivUtils)
+
+%import "LOCA_Abstract_Iterator.H"
+%import "NOX.StatusTest.i"
+
 %include "LOCA_Stepper.H"
 %include "LOCA_Parameter_Vector.H"
 
+
+%pythoncode
+%{
+import Epetra
+%}

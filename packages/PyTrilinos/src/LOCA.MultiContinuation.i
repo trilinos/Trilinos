@@ -40,15 +40,22 @@
 
 // Local includes
 #include "NumPyImporter.h"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
 
 // Ignore/renames
 %ignore *::operator=;
+
+%import "Teuchos.i"
 
 // Import base class declarations
 %import "LOCA.Continuation.i"
 
 // LOCA interface includes
 %include "LOCA_MultiContinuation_AbstractGroup.H"
+%teuchos_rcp_typemaps(LOCA::MultiContinuation::AbstractGroup)
+
 %include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 

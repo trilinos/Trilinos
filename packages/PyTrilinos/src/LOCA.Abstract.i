@@ -48,10 +48,26 @@ of the Trilinos package LOCA:
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"
 
+// NOX includes
+#include "NOX_StatusTest_Generic.H"
+#include "NOX_StatusTest_NormWRMS.H"
+#include "NOX_StatusTest_Stagnation.H"
+#include "NOX_StatusTest_MaxIters.H"
+#include "NOX_StatusTest_Combo.H"
+#include "NOX_StatusTest_FiniteValue.H"
+#include "NOX_StatusTest_NormF.H"
+#include "NOX_StatusTest_NormUpdate.H"
+#include "NOX_Solver_Generic.H"
+#include "NOX_Solver_LineSearchBased.H"
+#include "NOX_Solver_TrustRegionBased.H"
+#include "NOX_Solver_InexactTrustRegionBased.H"
+#include "NOX_Solver_TensorBased.H"
+
 // LOCA includes
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Abstract_Iterator.H"
 #include "LOCA_Abstract_TransposeSolveGroup.H"
+#include "LOCA_Stepper.H"
 
 // Local includes
 #include "NumPyImporter.h"
@@ -67,15 +83,24 @@ of the Trilinos package LOCA:
 %ignore *::operator=;
 %ignore *::operator[];
 
+%pythoncode
+{
+import os.path, sys
+currentDir,dummy = os.path.split(__file__)
+sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
+}
+
 // Trilinos module imports
 %import "Teuchos.i"
 
 // Teuchos::RCPs typemaps
-%teuchos_rcp_typemaps(LOCA::GlobalData)
-%teuchos_rcp_typemaps(LOCA::DerivUtils)
+//%teuchos_rcp_typemaps(LOCA::GlobalData)
+//%teuchos_rcp_typemaps(LOCA::DerivUtils)
 
+//%include "LOCA_Abstract_Iterator.H"
+
+%import "LOCA.Homotopy.i"
 %import "LOCA.__init__.i"
 
 %include "LOCA_Abstract_Group.H"
-%include "LOCA_Abstract_Iterator.H"
 %include "LOCA_Abstract_TransposeSolveGroup.H"

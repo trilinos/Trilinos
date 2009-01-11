@@ -61,32 +61,46 @@ LOCA and Epetra.
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
 
-#include "NOX_Abstract_Group.H"
+// NOX includes
+#include "NOX_StatusTest_Generic.H"
+#include "NOX_StatusTest_NormWRMS.H"
+#include "NOX_Solver_LineSearchBased.H"
+#include "NOX_Solver_TrustRegionBased.H"
+#include "NOX_Solver_InexactTrustRegionBased.H"
+#include "NOX_Solver_TensorBased.H"
+
+//#include "NOX_Abstract_Group.H"
 #include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
-#include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Epetra_LinearSystem_AztecOO.H"
-#include "NOX_Epetra_MatrixFree.H"
-#include "LOCA_MultiContinuation_AbstractGroup.H"
-#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-#include "LOCA_Homotopy_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_TimeDependent_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Abstract_TransposeSolveGroup.H"
+//#include "NOX_Epetra_Interface_Preconditioner.H"
+//#include "NOX_Epetra_FiniteDifference.H"
+//#include "NOX_Epetra_FiniteDifferenceColoring.H"
+//#include "NOX_Epetra_LinearSystem_AztecOO.H"
+//#include "NOX_Epetra_MatrixFree.H"
+//#include "LOCA_MultiContinuation_AbstractGroup.H"
+//#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+//#include "LOCA_Homotopy_AbstractGroup.H"
+//#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+//#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+//#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+//#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+//#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+//#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+//#include "LOCA_TimeDependent_AbstractGroup.H"
+//#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+//#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+//#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+//#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+//#include "LOCA_Abstract_Group.H"
+//#include "LOCA_Abstract_TransposeSolveGroup.H"
 #include "LOCA_Epetra.H"
 #include "LOCA_Epetra_Group.H"
+
+// Namespace flattening
+using Teuchos::RCP;
+using Teuchos::rcp;
 %}
+
+%ignore *::operator=;
 
 // SWIG library includes
 %include "stl.i"
@@ -94,22 +108,34 @@ LOCA and Epetra.
 // Trilinos interface support
 %import "Teuchos.i"
 
+// add the parent directory to the search path.
+%pythoncode
+{
+import os.path, sys
+currentDir,dummy = os.path.split(__file__)
+sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
+}
+
+//%import "NOX.Abstract.i"
 %import "NOX.Epetra.__init__.i"
-%import "LOCA.Abstract.i"
+%import "LOCA.__init__.i"
+//%import "LOCA.Abstract.i"
+%import "LOCA_Abstract_Group.H"
+%import "LOCA_Abstract_TransposeSolveGroup.H"
+
+%pythoncode
+%{
+from NOX.Epetra import Group
+%}
 //%import "LOCA.MultiContinuation.i"
-//%import "LOCA.Epetra.Interface.i"
+%import "LOCA.Epetra.Interface.i"
 
 //////////////////////////////
 // LOCA.Epetra.Group support //
 //////////////////////////////
 
-// temporarily ignore conflict-causing constructor TODO: fix this issue
+// temporarily ignore conflict-causing constructor.  TODO: fix this issue
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
 %include "LOCA_Epetra.H"
-%pythoncode
-%{
-import LOCA
-import LOCA.Abstract
-from NOX.Epetra import Group
-%}
 %include "LOCA_Epetra_Group.H"
+%teuchos_rcp_typemaps(LOCA::Epetra::Group)

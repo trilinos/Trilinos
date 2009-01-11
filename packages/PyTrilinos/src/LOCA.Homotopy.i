@@ -36,6 +36,9 @@
 
 // Extra includes due to importing Continuation.i below
 #include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+
+// Local includes
+#include "NumPyImporter.h"
 %}
 
 // Ignore/renames

@@ -42,6 +42,7 @@ if options.testharness:
     import EpetraExt
     import NOX
     import LOCA
+#    import LOCA.Epetra    # TODO: figure out why we need this line
 else:
     try:
         import setpath
@@ -62,7 +63,6 @@ else:
 
 # ######################################################################
 
-import LOCA.Epetra    # TODO: figure out why we need this line
 
 class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
                            LOCA.Epetra.Interface.Required):
@@ -232,9 +232,13 @@ def main():
                  "Preconditioner"  : "Ifpack",
                  "Max Age Of Prec" : 5       }
 
-  p = {"alpha": alpha,  # serving as LOCA:ParameterVector
-       "beta": beta,
-       "scale": scale}
+  # p = {"alpha": alpha,  # serving as LOCA:ParameterVector
+  #     "beta": beta,
+  #     "scale": scale}
+  p = LOCA.ParameterVector()
+  p.addParameter("alpha", alpha)
+  p.addParameter("beta", beta)
+  p.addParameter("scale", scale)
 
   interface = ChanProblemInterface(numGlobalElements, comm, globalData, N, alpha, beta, scale)
 
@@ -252,7 +256,11 @@ def main():
 
   # Create the Group
   initialGuess = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  # print LOCA.foo_pl(printParams)
+  # print LOCA.foo_gd(globalData)
+  # print LOCA.foo_pv(p)
   group = LOCA.Epetra.Group(globalData, printParams, interface, initialGuess, linSys, p)
+  # print LOCA.Epetra.foo_g(group)
 
   # Create the convergence tests
   normF = NOX.StatusTest.NormF(1.0e-8)
@@ -260,10 +268,13 @@ def main():
   converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR, normF, maxIters)
 
   # Create the stepper
+  print("Making stepper")
   stepper = LOCA.Stepper(globalData, group, converged, paramList)
 
   # Perform continuation run
+  print("About to run stepper")
   status = stepper.run()
+  print("Completed stepper run")
 
   # TODO print if failure to converge
   return 1

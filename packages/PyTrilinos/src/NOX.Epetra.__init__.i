@@ -168,6 +168,7 @@ using namespace NOX::Epetra;
 
 // Support for Teuchos::RCPs
 %teuchos_rcp_typemaps(NOX::Epetra::LinearSystem)
+%teuchos_rcp_typemaps(NOX::Epetra::LinearSystemAztecOO)
 %teuchos_rcp_typemaps(NOX::Epetra::Scaling)
 %teuchos_rcp_typemaps(Epetra_CrsGraph)
 %teuchos_rcp_typemaps(Epetra_MapColoring)

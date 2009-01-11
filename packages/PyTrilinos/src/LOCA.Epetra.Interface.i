@@ -73,12 +73,6 @@ the Trilinos package LOCA:
 // Trilinos module imports
 %import "Teuchos.i"
 
-// Teuchos::RCPs typemaps
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::Required)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::MassMatrix)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependent)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependentMatrixFree)
-
 // Epetra_Vector directorin typemap
 %typemap(directorin) Epetra_Vector &
 %{
@@ -86,7 +80,6 @@ the Trilinos package LOCA:
   $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
 %}
 
-%import "NOX.Epetra.Interface.i"
 ///////////////////////
 // NOX_Utils support //
 ///////////////////////
@@ -118,11 +111,11 @@ the Trilinos package LOCA:
   By returning False, you tell NOX that computeF() was unsuccessful.
 ")
 LOCA::Epetra::Interface::Required::computeF;
+
+//%import "NOX.Epetra.Interface.i"
+%import "NOX_Epetra_Interface_Required.H"
+
 %feature("director") LOCA::Epetra::Interface::Required;
-%pythoncode
-%{
-from NOX.Epetra.Interface import Required
-%}
 %include "LOCA_Epetra_Interface_Required.H"
 
 %feature("director") LOCA::Epetra::Interface::MassMatrix;
@@ -136,4 +129,10 @@ from NOX.Epetra.Interface import Required
 // arguments that conflict with a SWIG director method argument
 #define result nox_result
 %include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
+
+// Teuchos::RCPs typemaps
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::Required)
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::MassMatrix)
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependent)
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependentMatrixFree)
 

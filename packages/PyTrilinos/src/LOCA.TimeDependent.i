@@ -31,11 +31,17 @@
 %module(package="PyTrilinos.LOCA") TimeDependent
 
 %{
+// Teuchos includes
+#include "Teuchos_PythonParameter.h"
+
 // LOCA includes
 #include "LOCA_TimeDependent_AbstractGroup.H"
 
 // Extra includes due to importing Continuation.i below
 #include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+
+// Local includes
+#include "NumPyImporter.h"
 %}
 
 // Ignore/renames

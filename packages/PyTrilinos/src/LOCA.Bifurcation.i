@@ -47,8 +47,12 @@
 //#include "LOCA_Continuation_FiniteDifferenceGroup.H"
 #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
 
-//#include "LOCA_MultiContinuation_AbstractGroup.H"
+#include "LOCA_TimeDependent_AbstractGroup.H"
+
+#include "LOCA_MultiContinuation_AbstractGroup.H"
+#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_Combo.H"

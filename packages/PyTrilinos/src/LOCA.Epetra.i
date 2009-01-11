@@ -42,7 +42,8 @@
 %ignore operator<<(ostream& stream, const NOX::Epetra::Vector& v);
 
 // Import LOCA interface
-%import "LOCA.Abstract.i"
+%import "LOCA.__init.i"
+//%import "LOCA.Abstract.i"
 
 // Import NOX_Epetra headers
 %import "NOX_Epetra_Interface_Required.H"
