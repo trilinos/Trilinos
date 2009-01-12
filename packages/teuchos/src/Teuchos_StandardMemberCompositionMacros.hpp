@@ -59,8 +59,8 @@
  * and the following methods to your class declaration:
  \verbatim
   public:
-  void my_attribute( const My_Class & my_attribute )
-    { my_attribute_ = my_attribute; }
+  void my_attribute( const My_Class & my_attribute_in )
+    { my_attribute_ = my_attribute_in; }
   const My_Class& my_attribute() const
     { return my_attribute_; }
  \endverbatim
@@ -69,7 +69,7 @@
  * operations you can just implement the member functions by hand.
  */
 #define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME )\
-  void NAME ( const TYPE & NAME ) { NAME ## _ = NAME ; }\
+  void NAME ( const TYPE & NAME ## _in ) { NAME ## _ = NAME ## _in ; }\
   const TYPE& NAME() const { return NAME ## _; }\
 private:\
   TYPE NAME ## _;\

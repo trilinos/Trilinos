@@ -1,5 +1,6 @@
 INCLUDE(CheckCSourceCompiles)
 INCLUDE(CheckCXXSourceCompiles)
+INCLUDE(CMakeBuildTypesList)
 
 INCLUDE(AdvancedSet)
 INCLUDE(AssertDefined)
@@ -37,9 +38,6 @@ FUNCTION(PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS)
   #
   # Setup and general flags
   #
-
-  SET(CMAKE_BUILD_TYPES_LIST
-    DEBUG MINSIZEREL RELEASE RELWITHDEBINFO)
 
   SET(GENERAL_DEBUG_FLAGS "-g -O0")
 

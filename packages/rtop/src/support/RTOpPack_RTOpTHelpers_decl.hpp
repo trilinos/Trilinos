@@ -303,11 +303,11 @@ public:
 
   /** \brief . */
   ROpScalarReductionWithOpBase(
-    const ConcreteReductObj &initReductObjValue = ScalarTraits<Scalar>::zero(),
-    ReductObjReduction reductObjReduction = ReductObjReduction()
+    const ConcreteReductObj &initReductObjValue_in = ScalarTraits<Scalar>::zero(),
+    ReductObjReduction reductObjReduction_in = ReductObjReduction()
     )
-    : initReductObjValue_(initReductObjValue),
-      reductObjReduction_(reductObjReduction)
+    : initReductObjValue_(initReductObjValue_in),
+      reductObjReduction_(reductObjReduction_in)
     {}
 
   /** \brief . */
@@ -433,12 +433,12 @@ public:
 
   /** \brief . */
   ROp_1_ScalarReduction(
-    const ConcreteReductObj &initReductObjValue = ConcreteReductObj(),
-    EleWiseReduction eleWiseReduction = EleWiseReduction(),
-    ReductObjReduction reductObjReduction = ReductObjReduction()
+    const ConcreteReductObj &initReductObjValue_in = ConcreteReductObj(),
+    EleWiseReduction eleWiseReduction_in = EleWiseReduction(),
+    ReductObjReduction reductObjReduction_in = ReductObjReduction()
     )
-    : base_t(initReductObjValue, reductObjReduction),
-      eleWiseReduction_(eleWiseReduction)
+    : base_t(initReductObjValue_in, reductObjReduction_in),
+      eleWiseReduction_(eleWiseReduction_in)
     {}
 
   /** @name Overridden from RTOpT */
@@ -567,17 +567,17 @@ public:
 
   /** \brief . */
   ROp_1_CoordVariantScalarReduction(
-    const ReductScalar &initReductObjValue = ReductScalar(),
-    EleWiseReduction eleWiseReduction = EleWiseReduction(),
-    ReductObjReduction reductObjReduction = ReductObjReduction()
+    const ReductScalar &initReductObjValue_in = ReductScalar(),
+    EleWiseReduction eleWiseReduction_in = EleWiseReduction(),
+    ReductObjReduction reductObjReduction_in = ReductObjReduction()
     )
-    : base_t(initReductObjValue, reductObjReduction),
-      eleWiseReduction_(eleWiseReduction)
+    : base_t(initReductObjValue_in, reductObjReduction_in),
+      eleWiseReduction_(eleWiseReduction_in)
     {}
 
   /** \brief . */
-  void setEleWiseReduction(EleWiseReduction eleWiseReduction)
-    { eleWiseReduction_ = eleWiseReduction; }
+  void setEleWiseReduction(EleWiseReduction eleWiseReduction_in)
+    { eleWiseReduction_ = eleWiseReduction_in; }
 
   /** @name Overridden from RTOpT */
   //@{
@@ -657,12 +657,12 @@ public:
 
   /** \brief . */
   ROp_2_ScalarReduction(
-    const ReductScalar &initReductObjValue = ReductScalar(),
-    EleWiseReduction eleWiseReduction = EleWiseReduction(),
-    ReductObjReduction reductObjReduction = ReductObjReduction()
+    const ReductScalar &initReductObjValue_in = ReductScalar(),
+    EleWiseReduction eleWiseReduction_in = EleWiseReduction(),
+    ReductObjReduction reductObjReduction_in = ReductObjReduction()
     )
-    : base_t(initReductObjValue, reductObjReduction),
-      eleWiseReduction_(eleWiseReduction)
+    : base_t(initReductObjValue_in, reductObjReduction_in),
+      eleWiseReduction_(eleWiseReduction_in)
     {}
 
   /** @name Overridden from RTOpT */

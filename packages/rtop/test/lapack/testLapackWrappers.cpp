@@ -148,7 +148,7 @@ bool testLapackWrappers(
 
     {
 
-      OSTab tab(out);
+      OSTab tab2(out);
     
       for ( int i = 0; i < n; ++i ) {
         B(i,0) = 0.0;
@@ -172,7 +172,7 @@ bool testLapackWrappers(
 
     {
 
-      OSTab tab(out);
+      OSTab tab2(out);
     
       for ( int i = 0; i < n; ++i ) {
         B(i,0) = 0.0;
@@ -196,7 +196,7 @@ bool testLapackWrappers(
 
     {
 
-      OSTab tab(out);
+      OSTab tab2(out);
     
       for ( int i = 0; i < n; ++i ) {
         B(i,0) = 0.0;

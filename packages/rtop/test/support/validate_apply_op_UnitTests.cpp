@@ -29,6 +29,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( validate_apply_op, wrongNumberOfSubVecs, Scal
   using Teuchos::null;
   using Teuchos::tuple;
   using Teuchos::as;
+  
   typedef ScalarTraits<Scalar> ST;
 
   RTOpPack::ROpSum<Scalar> sumOp;

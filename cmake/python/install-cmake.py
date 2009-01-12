@@ -22,9 +22,12 @@ By default, if you just type:
    $ SOME_DIR/install-cmake.py
 
 then the directory CMake.base will get created in the local working directory
-and it will contain the checked out sources for CMake and the build files.
+and it will contain the checked out sources for CMake and the build
+files. NOTE: This requires that you run this as root (or with an account that
+has root privileges).
 
-You can control various parts of the process with the options (see --help).
+You can control various parts of the process with the options (see below).
+
 The one option that you may need to change if you do not have root privileges
 is the --install-dir option which is set to /usr/local/bin by default.  For
 example, you might just type:
@@ -35,9 +38,18 @@ and then it would install cmake and the other executables in $HOME/bin.  NOTE:
 You will have to update your PATH variable to include whatever directory you
 choose to install CMake in.
 
+NOTE: If you need to use sudo to install in /usr/local/bin or some other place
+that needs root privileges, do:
+
+  $ install-cmake.py --skip-install [other options]
+  $ cd CMake.base/build
+  $ sudo make install
+
 After you have done a successful install, you might want to do:
 
   $ rm -r CMake.base
+
+in order to remove the source and build files.
 
 Good luck with CMake!
 

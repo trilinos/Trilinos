@@ -1,5 +1,21 @@
 INCLUDE(CheckIncludeFileCXX)
 
+INCLUDE(CMakeBuildTypesList)
+
+# Set to release build by default
+
+IF (CMAKE_BUILD_TYPE STREQUAL "")
+  MESSAGE(STATUS "Setting CMAKE_BUILD_TYPE=RELEASE since none was set")
+  SET(CMAKE_BUILD_TYPE RELEASE)
+ELSE()
+  LIST(FIND CMAKE_BUILD_TYPES_LIST ${CMAKE_BUILD_TYPE} BUILD_TYPE_IDX)
+  IF (BUILD_TYPE_IDX EQUAL -1)
+    MESSAGE(SEND_ERROR "Error, the given CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+      " is not in the list of valid values \"${CMAKE_BUILD_TYPES_LIST}\"!")
+  ENDIF()
+ENDIF()
+PRINT_VAR(CMAKE_BUILD_TYPE)
+
 # Probe for non-standard headers
 
 IF (Trilinos_ENABLE_CXX)

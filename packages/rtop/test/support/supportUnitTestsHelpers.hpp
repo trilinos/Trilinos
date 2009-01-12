@@ -7,20 +7,7 @@
 #include "Teuchos_as.hpp"
 
 
-// Size of the vectors
-extern int n;
-// Cushion for machine eps
-extern double errorTolSlack;
-// verbose
-extern bool verbose;
-
-// 2008/07/03: rabartl: Above, we are defining these in the global namespace
-// but that should be fine since these are just used for a unit test program
-// and should not collide with any well-written library (which would never do
-// something like this).
-
-
-namespace {
+namespace TestingSupportHelpers {
 
 
 using Teuchos::null;
@@ -42,9 +29,9 @@ typedef RTOpPack::index_type index_type;
 
 template<class Scalar>
 SubVectorView<Scalar>
-newStridedSubVectorView(const int n, const int stride, const Scalar &val)
+newStridedSubVectorView(const int m, const int stride, const Scalar &val)
 {
-  ArrayRCP<Scalar> vals = Teuchos::arcp<Scalar>(n*stride);
+  ArrayRCP<Scalar> vals = Teuchos::arcp<Scalar>(m*stride);
   std::fill(vals.begin(), vals.end(), Teuchos::ScalarTraits<Scalar>::nan());
   for (
     typename ArrayRCP<Scalar>::iterator itr = vals.begin();
@@ -55,16 +42,16 @@ newStridedSubVectorView(const int n, const int stride, const Scalar &val)
     *itr = val;
   }
   return SubVectorView<Scalar>(
-    0, n, vals, stride);
+    0, m, vals, stride);
 }
 
 
 template<class Scalar>
 SubVectorView<Scalar>
-newStridedRandomSubVectorView(const int n, const int stride)
+newStridedRandomSubVectorView(const int m, const int stride)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  ArrayRCP<Scalar> vals = Teuchos::arcp<Scalar>(n*stride);
+  ArrayRCP<Scalar> vals = Teuchos::arcp<Scalar>(m*stride);
   std::fill(vals.begin(), vals.end(), ST::nan());
   for (
     typename ArrayRCP<Scalar>::iterator itr = vals.begin();
@@ -75,15 +62,15 @@ newStridedRandomSubVectorView(const int n, const int stride)
     *itr = ST::random();
   }
   return SubVectorView<Scalar>(
-    0, n, vals, stride);
+    0, m, vals, stride);
 }
 
 
 template<class Scalar>
 SubVectorView<Scalar>
-newSubVectorView(const int n, const Scalar &val)
+newSubVectorView(const int m, const Scalar &val)
 {
-  return newStridedSubVectorView(n, 1, val);
+  return newStridedSubVectorView(m, 1, val);
 }
 
 
@@ -128,6 +115,50 @@ void dumpSubVectorView(
   }
   out << "}\n";
 }
+
+
+// Size of the vectors
+extern int n;
+
+// Cushion for machine eps
+extern double errorTolSlack;
+
+// verbose
+extern bool verbose;
+
+
+} // namespace TestingSupportHelpers 
+
+
+namespace {
+
+
+using TestingSupportHelpers::n;
+using TestingSupportHelpers::errorTolSlack;
+using TestingSupportHelpers::verbose;
+using TestingSupportHelpers::newStridedSubVectorView;
+using TestingSupportHelpers::newStridedRandomSubVectorView;
+using TestingSupportHelpers::newSubVectorView;
+using TestingSupportHelpers::ConstSubVectorViewAsArray;
+using TestingSupportHelpers::rtopt;
+using TestingSupportHelpers::constSubVectorViewAsArray;
+using TestingSupportHelpers::dumpSubVectorView;
+
+using Teuchos::null;
+using Teuchos::RCP;
+using Teuchos::as;
+using Teuchos::tuple;
+using Teuchos::outArg;
+using Teuchos::ArrayRCP;
+using Teuchos::ArrayView;
+using Teuchos::ScalarTraits;
+using Teuchos::FancyOStream;
+using RTOpPack::ScalarIndex;
+using RTOpPack::ReductTarget;
+using RTOpPack::DefaultReductTarget;
+using RTOpPack::SubVectorView;
+using RTOpPack::ConstSubVectorView;
+typedef RTOpPack::index_type index_type;
 
 
 } // namespace

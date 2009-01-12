@@ -3,8 +3,11 @@
 ------------------------------------------------------------------------------
 
 
-A) Getting Set up
------------------
+Last Updated: 2009/01/11
+
+
+A) Getting set up to use CMake
+------------------------------
 
 (*) Installing CMake
 
@@ -12,6 +15,12 @@ A) Getting Set up
 
   This will result in cmake and related CMake tools being installed in
   INSTALL_BASE_DIR/bin.
+
+  Getting help:
+
+  $ $TRILINOS_HOME/cmake/python/install-cmake.phy --help
+
+  NOTE:  
 
 
 B) Getting Help
@@ -37,13 +46,13 @@ C) Configuring
   $ cd $BUILD_DIR
   $ rm CMakeCache.txt
   $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+      -D Trilinos_ENABLE_C:BOOL=OFF \
       -D Trilinos_ENABLE_CXX:BOOL=OFF \
       -D Trilinos_ENABLE_Fortran:BOOL=OFF \
        $TRILINOS_BASE_DIR
 
-  NOTE: You can also just look at the text file CMakeCache.txt which
-  has all of the cache variables and documentation after you finish
-  any configure.
+  NOTE: You can also just look at the text file CMakeCache.txt after any
+  configure which has all of the cache variables and documentation.
 
 (*) Viewing available configure-time options without documentation
 
@@ -62,17 +71,14 @@ C) Configuring
         EXTRA_ARGS=$@
         
         cmake \
-        -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-        -D Trilinos_ENABLE_TESTS:BOOL=ON \
-        -D Trilinos_ENABLE_DEBUG:BOOL=ON \
-        -D Teuchos_ENABLE_COMPLEX:BOOL=ON \
-        -D Teuchos_ENABLE_EXTENDED:BOOL=ON \
-        -D Epetra_ENABLE_FORTRAN:BOOL=ON \
-        -D CMAKE_CXX_FLAGS:STRING="-g -O0 -ansi -pedantic -Wall" \
-        -D DART_TESTING_TIMEOUT:STRING=600 \
-        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
-        $EXTRA_ARGS \
-        ../../../Trilinos
+          -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+          -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+          -D Trilinos_ENABLE_TESTS:BOOL=ON \
+          -D Trilinos_ENABLE_DEBUG:BOOL=ON \
+          -D DART_TESTING_TIMEOUT:STRING=600 \
+          -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+          $EXTRA_ARGS \
+          ../../../Trilinos
 
       and then run it as:
 
@@ -102,7 +108,7 @@ C) Configuring
 
   NOTE: This set of arguments allows a user to turn on NOX as well as all
   packages that NOX can use.  However, tests and examples will only be turned
-  on for NOX.
+  on for NOX (or any other packages specifically enabled).
 
 (*) Configuring Trilinos to test all effects of changing a given package(s):
 
@@ -122,10 +128,33 @@ C) Configuring
 
   -D TPL_ENABLE_<TPLNAME>:BOOL=ON
 
-  where TPLNAME = Boost, MPI, etc.  The headers, libraries, and
-  library directories can then be specified with
-  <TPLNAME>_INCLUDE_DIRS, <TPLNAME>_LIBRARY_NAMES, and
-  <TPLNAME>_LIBRARY_DIRS.
+  where TPLNAME = Boost, MPI, etc.
+
+  The headers, libraries, and library directories can then be specified with:
+
+    <TPLNAME>_INCLUDE_DIRS: List of paths to the header include directories
+
+    <TPLNAME>_LIBRARY_NAMES: List of unadorned library names, in the order of
+    the link line.  The platform-specific prefixes (e.g.. 'lib') and postfixes
+    (e.g. '.a', '.lib', or '.dll') will be added automatically.
+
+    <TPLNAME>_LIBRARY_DIRS: The list of directories where the library files
+    can be found.
+
+  NOTE: The variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES
+  are directly used by the CMake build infrastructure.  These variables are
+  normally set by the varaibles <TPLNAME>_INCLUDE_DIRS,
+  <TPLNAME>_LIBRARY_NAMES, and <TPLNAME>_LIBRARY_DIRS through a set of find
+  commands but you can always override these and just directly set
+  TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives you
+  directly control to set exactly what is used in the build process.
+
+  Optional package-specific support for TPLs can be turned off by setting:
+
+    -D <PACKAGE>_ENABLE_<TPLNAME>:BOOL=OFF
+
+  where PACKAGE is Epetra, NOX etc.  This gives the user full control over
+  what TPLs are supported by which package independently.
 
 (*) Getting verbose output from configure
 
@@ -139,16 +168,20 @@ C) Configuring
 
   $ cmake -LA $TRILINOS_BASE_DIR
 
-  or just examine and grep the file CMakeCache.txt (e.g. using grep).
+  or just examine and grep the file CMakeCache.txt.
 
 (*) Reconfiguring from scratch
 
   $ rm CMakeCache ; ./do-configure
 
+  NOTE: Removing the CMakeCache.txt file is often needed when removing
+  variables from the configure line.
+
 (*) Seeing configure errors
 
-  Configure time errors are shown in the file
-  CMakeFiles/CMakeError.log.
+  Configure time errors are shown in the file:
+
+      $BUILD_BASE_DIR/CMakeFiles/CMakeError.log.
 
 
 D) Building
@@ -160,21 +193,21 @@ D) Building
 
 (*) See all of the targets to build for a package:
 
-  $ make help | grep PACKAGE_NAME_
+  $ make help | grep <PACKAGE>_
 
-  (where PACKAGE_NAME = Teuchos, Epetra, NOX, etc.)
+  (where PACKAGE = Teuchos, Epetra, NOX, etc.)
 
 (*) Building all of the targets for a package:
 
-  $ make PACKAGE_NAME_all
+  $ make <PACKAGE>_all
 
-  (where PACKAGE_NAME = Teuchos, Epetra, NOX, etc.)
+  (where PACKAGE = Teuchos, Epetra, NOX, etc.)
 
 (*) Building all of the libraries for a package:
 
-  $ make PACKAGE_NAME_libs
+  $ make <PACKAGE>_libs
 
-  (where PACKAGE_NAME = Teuchos, Epetra, NOX, etc.)
+  (where PACKAGE = Teuchos, Epetra, NOX, etc.)
 
 (*) Figuring out how to build a single object file:
 
@@ -211,9 +244,9 @@ E) Testing
 
     Running a single package test:
 
-    $ ctest -W 100 -R '^PACKAGE_NAME_'
+    $ ctest -W 100 -R '^<PACKAGE>_'
 
-    (e.g. PACKAGE_NAME = Teuchos, Epetra, etc.)
+    (e.g. PACKAGE = Teuchos, Epetra, etc.)
     (see output in Testing/Temporary/LastTest.log)
 
   d) Running a single test with full output to the console:
@@ -247,13 +280,13 @@ E) Testing
 
   a) Serial tests:
 
-    $ make PACKAGE_NAME-runtests-seial
+    $ make <PACKAGE>-runtests-seial
 
-    Where PACKAGE_NAME = Epetra, Thyra, NOX, etc.
+    Where PACKAGE = Epetra, Thyra, NOX, etc.
 
   b) MPI tests:
 
-    $ make PACKAGE_NAME-runtests-mpi
+    $ make <PACKAGE>-runtests-mpi
 
     (NOTE: No need to specify MPIGO or anything else!)
 
@@ -264,7 +297,7 @@ F) Installing
 
 (*) Setting the install prefix and installing
 
-  ???
+  -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt
 
 
 G) Packaging
@@ -275,6 +308,7 @@ G) Packaging
    $ make package_source
 
    NOTE: TThe above command will tar up *everything* in the source tree
-   without exception so make sure that you start with a totally clean source
-   tree before you do this.  Or, you could build doxygen documentation first
-   and then tar up Trilinos.
+   (except for files explicitly exluded in the CMakeLists.txt files) so make
+   sure that you start with a totally clean source tree before you do this.
+   Or, you could build doxygen documentation first and then tar up Trilinos
+   and that would give you the source with doxygen documentation.

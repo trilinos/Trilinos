@@ -129,33 +129,33 @@ public:
     {}
   /** \brief . */
   SparseSubVectorT(
-    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
-    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride,
-    const ArrayRCP<const Teuchos_Index> &indices, ptrdiff_t indicesStride,
-    ptrdiff_t localOffset, bool isSorted
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in,
+    const ArrayRCP<const Teuchos_Index> &indices_in, ptrdiff_t indicesStride_in,
+    ptrdiff_t localOffset_in, bool isSorted_in
     )
-    :globalOffset_(globalOffset), subDim_(subDim), subNz_(subNz),
-     values_(values), valuesStride_(valuesStride), indices_(indices),
-     indicesStride_(indicesStride), localOffset_(localOffset), isSorted_(isSorted)
+    :globalOffset_(globalOffset_in), subDim_(subDim_in), subNz_(subNz_in),
+     values_(values_in), valuesStride_(valuesStride_in), indices_(indices_in),
+     indicesStride_(indicesStride_in), localOffset_(localOffset_in), isSorted_(isSorted_in)
     {
 #ifdef TEUCHOS_DEBUG
       // Call initialize(...) just to check the preconditions
-      initialize(globalOffset, subDim, subNz, values, valuesStride,
-        indices, indicesStride, localOffset, isSorted);
+      initialize(globalOffset_in, subDim_in, subNz_in, values_in, valuesStride_in,
+        indices_in, indicesStride_in, localOffset_in, isSorted_in);
 #endif
     }
   /** \brief . */
   SparseSubVectorT(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in
     )
-    :globalOffset_(globalOffset), subDim_(subDim), subNz_(subDim),
-     values_(values), valuesStride_(valuesStride),
+    :globalOffset_(globalOffset_in), subDim_(subDim_in), subNz_(subDim_in),
+     values_(values_in), valuesStride_(valuesStride_in),
      indicesStride_(0), localOffset_(0), isSorted_(true)
     {
 #ifdef TEUCHOS_DEBUG
       // Call initialize(...) just to check the preconditions
-      initialize(globalOffset, subDim, values, valuesStride);
+      initialize(globalOffset_in, subDim_in, values_in, valuesStride_in);
 #endif
     }
   /** \brief . */
@@ -166,27 +166,27 @@ public:
     {}
   /** \brief . */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
-    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride,
-    const ArrayRCP<const Teuchos_Index> &indices, ptrdiff_t indicesStride,
-    ptrdiff_t localOffset, bool isSorted
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in,
+    const ArrayRCP<const Teuchos_Index> &indices_in, ptrdiff_t indicesStride_in,
+    ptrdiff_t localOffset_in, bool isSorted_in
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(globalOffset >= 0);
-      TEUCHOS_ASSERT(subDim > 0);
-      TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(subNz, 0, subDim+1);
-      TEUCHOS_ASSERT_EQUALITY(values.lowerOffset(), 0);
-      TEUCHOS_ASSERT(valuesStride != 0);
-      TEUCHOS_ASSERT_EQUALITY(values.size(), subNz*std::abs(valuesStride));
-      if (!is_null(indices)) {
-        TEUCHOS_ASSERT(indicesStride != 0);
-        TEUCHOS_ASSERT_EQUALITY(indices.size(), subNz*std::abs(indicesStride));
+      TEUCHOS_ASSERT(globalOffset_in >= 0);
+      TEUCHOS_ASSERT(subDim_in > 0);
+      TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(subNz_in, 0, subDim_in+1);
+      TEUCHOS_ASSERT_EQUALITY(values_in.lowerOffset(), 0);
+      TEUCHOS_ASSERT(valuesStride_in != 0);
+      TEUCHOS_ASSERT_EQUALITY(values_in.size(), subNz_in*std::abs(valuesStride_in));
+      if (!is_null(indices_in)) {
+        TEUCHOS_ASSERT(indicesStride_in != 0);
+        TEUCHOS_ASSERT_EQUALITY(indices_in.size(), subNz_in*std::abs(indicesStride_in));
         // Note: localOffset can be +, -, or 0 so there is nothing to assert!
-        if (isSorted) {
-          for (int k = 0; k < subNz-1; ++k) {
-            const Teuchos_Index idx_k = indices[k*indicesStride];
-            const Teuchos_Index idx_kp1 = indices[(k+1)*indicesStride];
+        if (isSorted_in) {
+          for (int k = 0; k < subNz_in-1; ++k) {
+            const Teuchos_Index idx_k = indices_in[k*indicesStride_in];
+            const Teuchos_Index idx_kp1 = indices_in[(k+1)*indicesStride_in];
             TEST_FOR_EXCEPTION( !(idx_k < idx_kp1), std::out_of_range,
               "Error indices["<<k<<"]="<<idx_k<<" >= indices["<<k+1<<"]="<<idx_kp1
               <<"!" );
@@ -194,18 +194,23 @@ public:
         }
       }
 #endif
-      globalOffset_ = globalOffset; subDim_ = subDim; subNz_ = subNz;
-      values_ = values; valuesStride_ = valuesStride; indices_ = indices;
-      indicesStride_ = indicesStride; localOffset_ = localOffset;
-      isSorted_ = isSorted;
+      globalOffset_ = globalOffset_in;
+      subDim_ = subDim_in;
+      subNz_ = subNz_in;
+      values_ = values_in;
+      valuesStride_ = valuesStride_in;
+      indices_ = indices_in;
+      indicesStride_ = indicesStride_in;
+      localOffset_ = localOffset_in;
+      isSorted_ = isSorted_in;
     }
   /** \brief . */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const ArrayRCP<const Scalar> &values, ptrdiff_t valuesStride
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const ArrayRCP<const Scalar> &values_in, ptrdiff_t valuesStride_in
     )
     {
-      initialize(globalOffset, subDim, subDim, values, valuesStride,
+      initialize(globalOffset_in, subDim_in, subDim_in, values_in, valuesStride_in,
         Teuchos::null, 0, 0, true);
     }
   /** \brief . */
@@ -216,7 +221,7 @@ public:
       indicesStride_ = 0; localOffset_ = 0; isSorted_ = false;
     }
   /** \brief . */
-  void setGlobalOffset(Teuchos_Index globalOffset) { globalOffset_ = globalOffset; } 
+  void setGlobalOffset(Teuchos_Index globalOffset_in) { globalOffset_ = globalOffset_in; } 
   /** \brief Offset for the sub-vector into the global vector. */
   Teuchos_Index globalOffset() const { return globalOffset_; } 
   /** \brief Dimension of the sub-vector. */
@@ -255,10 +260,10 @@ private:
 public:
   /** \brief Deprecated. */
   SparseSubVectorT(
-    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
-    const Scalar values[], ptrdiff_t valuesStride,
-    const Teuchos_Index indices[], ptrdiff_t indicesStride,
-    ptrdiff_t localOffset, int isSorted
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    const Scalar values_in[], ptrdiff_t valuesStride_in,
+    const Teuchos_Index indices_in[], ptrdiff_t indicesStride_in,
+    ptrdiff_t localOffset_in, int isSorted_in
     )
     {
       initialize(globalOffset, subDim, subNz, values, valuesStride,
@@ -266,34 +271,34 @@ public:
     }
   /** \brief Deprecated. */
   SparseSubVectorT(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const Scalar values[], ptrdiff_t valuesStride
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const Scalar values_in[], ptrdiff_t valuesStride_in
     )
     {
-      initialize(globalOffset, subDim, values, valuesStride);
+      initialize(globalOffset_in, subDim_in, values_in, valuesStride_in);
     }
   /** \brief Deprecated. */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim, Teuchos_Index subNz,
-    const Scalar values[], ptrdiff_t valuesStride,
-    const Teuchos_Index indices[], ptrdiff_t indicesStride,
-    ptrdiff_t localOffset, int isSorted
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
+    const Scalar values_in[], ptrdiff_t valuesStride_in,
+    const Teuchos_Index indices_in[], ptrdiff_t indicesStride_in,
+    ptrdiff_t localOffset_in, int isSorted_in
     )
     {
-      initialize(globalOffset, subDim, subNz,
-        Teuchos::arcp(values, 0, subNz*std::abs(valuesStride), false), valuesStride,
-        Teuchos::arcp(indices, 0, subNz*std::abs(indicesStride), false), indicesStride,
-        localOffset, isSorted);
+      initialize(globalOffset_in, subDim_in, subNz_in,
+        Teuchos::arcp(values_in, 0, subNz_in*std::abs(valuesStride_in), false), valuesStride_in,
+        Teuchos::arcp(indices_in, 0, subNz_in*std::abs(indicesStride_in), false), indicesStride_in,
+        localOffset_in, isSorted_in);
     }
   /** \brief Deprecated. */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const Scalar values[], ptrdiff_t valuesStride
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const Scalar values_in[], ptrdiff_t valuesStride_in
     )
     {
-      initialize(globalOffset, subDim,
-        Teuchos::arcp(values, 0, subDim*std::abs(valuesStride), false),
-        valuesStride);
+      initialize(globalOffset_in, subDim_in,
+        Teuchos::arcp(values_in, 0, subDim_in*std::abs(valuesStride_in), false),
+        valuesStride_in);
     }
   /** \brief Deprecated. */
   void set_uninitialized()

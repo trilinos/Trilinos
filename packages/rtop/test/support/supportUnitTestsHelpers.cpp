@@ -2,18 +2,25 @@
 #include "supportUnitTestsHelpers.hpp"
 
 
-int n = 4;
+int TestingSupportHelpers::n = 4;
 
-double errorTolSlack = 1e+1;
+double TestingSupportHelpers::errorTolSlack = 1e+1;
 
-bool verbose = false;
+bool TestingSupportHelpers::verbose = false;
 
 
 namespace {
 
 
+using TestingSupportHelpers::n;
+using TestingSupportHelpers::errorTolSlack;
+using TestingSupportHelpers::verbose;
+
+
 TEUCHOS_STATIC_SETUP()
 {
+
+
   Teuchos::CommandLineProcessor &clp =
     Teuchos::UnitTestRepository::getCLP();
   clp.setOption(

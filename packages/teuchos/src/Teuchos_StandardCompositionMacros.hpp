@@ -62,8 +62,8 @@
  * \ingroup StandardContainmentMacros_grp
  */
 #define STANDARD_COMPOSITION_MEMBERS( TYPE, NAME ) \
-	void set_ ## NAME (const Teuchos::RCP< TYPE >& NAME ) \
-	{	NAME ## _ = NAME ; } \
+	void set_ ## NAME (const Teuchos::RCP< TYPE >& NAME ## _in ) \
+	{	NAME ## _ = NAME ## _in ; } \
 	Teuchos::RCP< TYPE > get_ ## NAME() const \
 	{	return NAME ## _; } \
 	TYPE& NAME() \
@@ -102,8 +102,8 @@ public: \
  * \ingroup StandardContainmentMacros_grp
  */
 #define STANDARD_NONCONST_COMPOSITION_MEMBERS( TYPE, NAME ) \
-	void set_ ## NAME ( const Teuchos::RCP< TYPE >& NAME ) \
-	{	NAME ## _ = NAME ; } \
+	void set_ ## NAME ( const Teuchos::RCP< TYPE >& NAME ## _in ) \
+	{	NAME ## _ = NAME ## _in ; } \
 	Teuchos::RCP< TYPE > get_ ## NAME() const \
 	{	return NAME ## _; } \
 	TYPE& NAME() const \
@@ -142,8 +142,8 @@ public: \
  */
 #define STANDARD_CONST_COMPOSITION_MEMBERS( TYPE, NAME ) \
 public: \
-	void set_ ## NAME ( const Teuchos::RCP< const TYPE >& NAME ) \
-	{	NAME ## _ = NAME ; } \
+	void set_ ## NAME ( const Teuchos::RCP< const TYPE >& NAME ## _in ) \
+	{	NAME ## _ = NAME ## _in ; } \
 	Teuchos::RCP< const TYPE > get_ ## NAME() const \
 	{	return NAME ## _; } \
 	const TYPE& NAME() const \

@@ -127,52 +127,52 @@ public:
   /** \brief . */
   ConstSubVectorView() : globalOffset_(0), subDim_(0), stride_(0) {}
   /** \brief . */
-  ConstSubVectorView(const ArrayRCP<const Scalar> &values)
+  ConstSubVectorView(const ArrayRCP<const Scalar> &values_in)
     :globalOffset_(0), subDim_(0), stride_(0)
-    { initialize(0, values.size(), values, 1); }
+    { initialize(0, values_in.size(), values_in, 1); }
   /** \brief . */
-  ConstSubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const ArrayRCP<const Scalar> &values, ptrdiff_t stride)
+  ConstSubVectorView(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const ArrayRCP<const Scalar> &values_in, ptrdiff_t stride_in)
     :globalOffset_(0), subDim_(0), stride_(0)
-    { initialize(globalOffset, subDim, values, stride); }
+    { initialize(globalOffset_in, subDim_in, values_in, stride_in); }
   /** \brief . */
   ConstSubVectorView( const ConstSubVectorView<Scalar>& sv )
     :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()),
      values_(sv.values()), stride_(sv.stride()) 
     {}
   /** \brief . */
-  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const ArrayRCP<const Scalar> &values, ptrdiff_t stride)
+  void initialize(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const ArrayRCP<const Scalar> &values_in, ptrdiff_t stride_in)
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(globalOffset >= 0);
-      if (!is_null(values)) {
-        TEUCHOS_ASSERT(subDim >= 0);
-        TEUCHOS_ASSERT(stride != 0);
+      TEUCHOS_ASSERT(globalOffset_in >= 0);
+      if (!is_null(values_in)) {
+        TEUCHOS_ASSERT(subDim_in >= 0);
+        TEUCHOS_ASSERT(stride_in != 0);
         TEUCHOS_ASSERT(
-          subDim*std::abs(Teuchos::as<int>(stride)) - 1 <= values.upperOffset());
-        TEUCHOS_ASSERT(values.lowerOffset() <= 0);
+          subDim_in*std::abs(Teuchos::as<int>(stride_in)) - 1 <= values_in.upperOffset());
+        TEUCHOS_ASSERT(values_in.lowerOffset() <= 0);
       }
       else {
-        TEUCHOS_ASSERT(stride == 0);
-        TEUCHOS_ASSERT(subDim==0);
+        TEUCHOS_ASSERT(stride_in == 0);
+        TEUCHOS_ASSERT(subDim_in==0);
       }
 #endif
-      globalOffset_=globalOffset;
-      subDim_=subDim;
-      values_=values;
-      stride_=stride;
+      globalOffset_=globalOffset_in;
+      subDim_=subDim_in;
+      values_=values_in;
+      stride_=stride_in;
     }
   /** \brief . */
   void uninitialize()
     { globalOffset_ = 0; subDim_=0; values_ = Teuchos::null; stride_ = 0; }
   /** \brief . */
-  void setGlobalOffset(Teuchos_Index globalOffset)
+  void setGlobalOffset(Teuchos_Index globalOffset_in)
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(globalOffset >= 0);
+      TEUCHOS_ASSERT(globalOffset_in >= 0);
 #endif
-      globalOffset_ = globalOffset;
+      globalOffset_ = globalOffset_in;
     } 
   /** \brief . */
   Teuchos_Index globalOffset() const { return globalOffset_; }
@@ -207,19 +207,19 @@ private:
     } 
 public:
   /** \brief Deprecated. */
-  ConstSubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const Scalar values[], ptrdiff_t stride)
-    :globalOffset_(globalOffset), subDim_(subDim),
-     values_(values,0,subDim*stride,false), stride_(stride) 
+  ConstSubVectorView(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const Scalar values_in[], ptrdiff_t stride_in)
+    :globalOffset_(globalOffset_in), subDim_(subDim_in),
+     values_(values_in,0,subDim_in*stride_in,false), stride_(stride_in) 
     {}
   /** \brief Deprecated. */
-  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const Scalar values[], ptrdiff_t stride)
+  void initialize(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const Scalar values_in[], ptrdiff_t stride_in)
     {
-      globalOffset_=globalOffset; subDim_=subDim;
-      values_=Teuchos::arcp(values, 0,
-        subDim*std::abs(Teuchos::as<int>(stride)), false);
-      stride_=stride;
+      globalOffset_=globalOffset_in; subDim_=subDim_in;
+      values_=Teuchos::arcp(values_in, 0,
+        subDim_in*std::abs(Teuchos::as<int>(stride_in)), false);
+      stride_=stride_in;
     }
   /** \brief Deprecated. */
   void set_uninitialized()
@@ -249,26 +249,26 @@ public:
   /** \brief . */
   SubVectorView() {}
   /** \brief . */
-  SubVectorView(const ArrayRCP<Scalar> &values)
-    :ConstSubVectorView<Scalar>(values)
+  SubVectorView(const ArrayRCP<Scalar> &values_in)
+    :ConstSubVectorView<Scalar>(values_in)
     {}
   /** \brief . */
-  SubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const ArrayRCP<Scalar> &values, ptrdiff_t stride)
-    :ConstSubVectorView<Scalar>(globalOffset, subDim, values, stride)
+  SubVectorView(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const ArrayRCP<Scalar> &values_in, ptrdiff_t stride_in)
+    :ConstSubVectorView<Scalar>(globalOffset_in, subDim_in, values_in, stride_in)
     {}
   /** \brief . */
-  SubVectorView(Teuchos_Index subDim)
-    :ConstSubVectorView<Scalar>(0, subDim, Teuchos::arcp<Scalar>(subDim), 1)
+  SubVectorView(Teuchos_Index subDim_in)
+    :ConstSubVectorView<Scalar>(0, subDim_in, Teuchos::arcp<Scalar>(subDim_in), 1)
     {}
   /** \brief . */
   SubVectorView(const SubVectorView<Scalar> & sv)
     :ConstSubVectorView<Scalar>(sv)
     {}
   /** \brief . */
-  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    const ArrayRCP<Scalar> &values, ptrdiff_t stride)
-    { ConstSubVectorView<Scalar>::initialize(globalOffset, subDim, values, stride); }
+  void initialize(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    const ArrayRCP<Scalar> &values_in, ptrdiff_t stride_in)
+    { ConstSubVectorView<Scalar>::initialize(globalOffset_in, subDim_in, values_in, stride_in); }
   /** \brief . */
   const ArrayRCP<Scalar> values() const
     { return Teuchos::arcp_const_cast<Scalar>(ConstSubVectorView<Scalar>::values());  }
@@ -281,14 +281,14 @@ public:
   Scalar& operator()(Teuchos_Index i) const { return (*this)[i]; }
 public:
   /** \brief Deprecated. */
-  SubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Scalar values[], ptrdiff_t stride)
-    :ConstSubVectorView<Scalar>(globalOffset, subDim, values, stride)
+  SubVectorView(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Scalar values_in[], ptrdiff_t stride_in)
+    :ConstSubVectorView<Scalar>(globalOffset_in, subDim_in, values_in, stride_in)
     {}
   /** \brief Deprecated. */
-  void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Scalar values[], ptrdiff_t stride)
-    { ConstSubVectorView<Scalar>::initialize(globalOffset, subDim, values, stride); }
+  void initialize(Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Scalar values_in[], ptrdiff_t stride_in)
+    { ConstSubVectorView<Scalar>::initialize(globalOffset_in, subDim_in, values_in, stride_in); }
 };
 
 
@@ -360,15 +360,15 @@ public:
     {}
   /** \brief . */
   ConstSubMultiVectorView(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Teuchos_Index colOffset, Teuchos_Index numSubCols,
-    const ArrayRCP<const Scalar> &values, Teuchos_Index leadingDim
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+    const ArrayRCP<const Scalar> &values_in, Teuchos_Index leadingDim_in
     )
     :globalOffset_(0), subDim_(0), colOffset_(0), numSubCols_(0),
      leadingDim_(0)
     {
-      initialize(globalOffset, subDim, colOffset, numSubCols, values,
-        leadingDim);
+      initialize(globalOffset_in, subDim_in, colOffset_in, numSubCols_in, values_in,
+        leadingDim_in);
     }
   /** \brief . */
   ConstSubMultiVectorView( const ConstSubMultiVectorView<Scalar>& smv )
@@ -378,32 +378,32 @@ public:
     {}
   /** \brief . */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Teuchos_Index colOffset, Teuchos_Index numSubCols,
-    const ArrayRCP<const Scalar> &values, Teuchos_Index leadingDim
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+    const ArrayRCP<const Scalar> &values_in, Teuchos_Index leadingDim_in
     )
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(globalOffset >= 0);
-      TEUCHOS_ASSERT(colOffset >= 0);
-      if (!is_null(values)) {
-        TEUCHOS_ASSERT(subDim >= 0);
-        TEUCHOS_ASSERT(leadingDim >= subDim);
-        TEUCHOS_ASSERT(numSubCols*leadingDim - 1 <= values.upperOffset());
-        TEUCHOS_ASSERT(values.lowerOffset() <= 0);
+      TEUCHOS_ASSERT(globalOffset_in >= 0);
+      TEUCHOS_ASSERT(colOffset_in >= 0);
+      if (!is_null(values_in)) {
+        TEUCHOS_ASSERT(subDim_in >= 0);
+        TEUCHOS_ASSERT(leadingDim_in >= subDim_in);
+        TEUCHOS_ASSERT(numSubCols_in*leadingDim_in - 1 <= values_in.upperOffset());
+        TEUCHOS_ASSERT(values_in.lowerOffset() <= 0);
       }
       else {
-        TEUCHOS_ASSERT(subDim == 0);
-        TEUCHOS_ASSERT(leadingDim == 0);
-        TEUCHOS_ASSERT(numSubCols == 0);
+        TEUCHOS_ASSERT(subDim_in == 0);
+        TEUCHOS_ASSERT(leadingDim_in == 0);
+        TEUCHOS_ASSERT(numSubCols_in == 0);
       }
 #endif
-      globalOffset_=globalOffset;
-      subDim_=subDim;
-      colOffset_=colOffset;
-      numSubCols_=numSubCols;
-      values_=values;
-      leadingDim_=leadingDim;
+      globalOffset_=globalOffset_in;
+      subDim_=subDim_in;
+      colOffset_=colOffset_in;
+      numSubCols_=numSubCols_in;
+      values_=values_in;
+      leadingDim_=leadingDim_in;
     }
   /** \brief . */
   void uninitialize()
@@ -412,12 +412,12 @@ public:
       values_=Teuchos::null; leadingDim_=0;
     }
   /** \brief . */
-  void setGlobalOffset(Teuchos_Index globalOffset)
+  void setGlobalOffset(Teuchos_Index globalOffset_in)
     {
 #ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT(globalOffset >= 0);
+      TEUCHOS_ASSERT(globalOffset_in >= 0);
 #endif
-      globalOffset_ = globalOffset;
+      globalOffset_ = globalOffset_in;
     } 
   /** \brief . */
   Teuchos_Index globalOffset() const { return globalOffset_; }
@@ -463,26 +463,26 @@ private:
 public:
   /** \brief Deprecated. */
   ConstSubMultiVectorView(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Teuchos_Index colOffset, Teuchos_Index numSubCols,
-    const Scalar values[], Teuchos_Index leadingDim
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+    const Scalar values_in[], Teuchos_Index leadingDim_in
     )
-    :globalOffset_(globalOffset), subDim_(subDim),
-     colOffset_(colOffset), numSubCols_(numSubCols),
-     values_(values,0,numSubCols*leadingDim,false),
-     leadingDim_(leadingDim)
+    :globalOffset_(globalOffset_in), subDim_(subDim_in),
+     colOffset_(colOffset_in), numSubCols_(numSubCols_in),
+     values_(values_in,0,numSubCols_in*leadingDim_in,false),
+     leadingDim_(leadingDim_in)
     {}
   /** \brief Deprecated. */
   void initialize(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Teuchos_Index colOffset, Teuchos_Index numSubCols,
-    const Scalar values[], Teuchos_Index leadingDim
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+    const Scalar values_in[], Teuchos_Index leadingDim_in
     )
     {
-      globalOffset_=globalOffset; subDim_=subDim; colOffset_=colOffset;
-      numSubCols_=numSubCols;
-      values_=Teuchos::arcp(values,0,numSubCols*leadingDim,false);
-      leadingDim_=leadingDim;
+      globalOffset_=globalOffset_in; subDim_=subDim_in; colOffset_=colOffset_in;
+      numSubCols_=numSubCols_in;
+      values_=Teuchos::arcp(values_in,0,numSubCols_in*leadingDim_in,false);
+      leadingDim_=leadingDim_in;
     }
   /** \brief Deprecated. */
   void set_uninitialized()
@@ -513,19 +513,19 @@ public:
   SubMultiVectorView() {}
   /** \brief . */
   SubMultiVectorView(
-    Teuchos_Index numRows, Teuchos_Index numCols
+    Teuchos_Index numRows_in, Teuchos_Index numCols_in
     )
-    :ConstSubMultiVectorView<Scalar>(0, numRows, 0, numCols,
-      Teuchos::arcp<Scalar>(numRows*numCols), numRows)
+    :ConstSubMultiVectorView<Scalar>(0, numRows_in, 0, numCols_in,
+      Teuchos::arcp<Scalar>(numRows_in*numCols_in), numRows_in)
     {}
   /** \brief . */
   SubMultiVectorView(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Teuchos_Index colOffset, Teuchos_Index numSubCols,
-    const ArrayRCP<Scalar> &values, Teuchos_Index leadingDim
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+    const ArrayRCP<Scalar> &values_in, Teuchos_Index leadingDim_in
     )
-    :ConstSubMultiVectorView<Scalar>(globalOffset,subDim,colOffset,numSubCols,
-      values,leadingDim)
+    :ConstSubMultiVectorView<Scalar>(globalOffset_in, subDim_in,
+      colOffset_in, numSubCols_in, values_in, leadingDim_in)
     {}
   /** \brief . */
   SubMultiVectorView( const SubMultiVectorView<Scalar> & smv)
@@ -533,13 +533,13 @@ public:
     {}
   /** \brief . */
  void initialize(
-   Teuchos_Index globalOffset, Teuchos_Index subDim,
-   Teuchos_Index colOffset, Teuchos_Index numSubCols,
-   const ArrayRCP<Scalar> &values, Teuchos_Index leadingDim
+   Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+   Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+   const ArrayRCP<Scalar> &values_in, Teuchos_Index leadingDim_in
    )
    {
-     ConstSubMultiVectorView<Scalar>::initialize(globalOffset,subDim,
-       colOffset,numSubCols,values,leadingDim);
+     ConstSubMultiVectorView<Scalar>::initialize(globalOffset_in,
+       subDim_in, colOffset_in, numSubCols_in, values_in, leadingDim_in);
    }
   /** \brief . */
   const ArrayRCP<Scalar> values() const
@@ -566,22 +566,22 @@ public:
 public:
   /** \brief Deprecated. */
   SubMultiVectorView(
-    Teuchos_Index globalOffset, Teuchos_Index subDim,
-    Teuchos_Index colOffset, Teuchos_Index numSubCols,
-    Scalar values[], Teuchos_Index leadingDim
+    Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+    Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+    Scalar values_in[], Teuchos_Index leadingDim_in
     )
-    :ConstSubMultiVectorView<Scalar>(globalOffset,subDim,colOffset,numSubCols,
-      values,leadingDim)
+    :ConstSubMultiVectorView<Scalar>(globalOffset_in, subDim_in,
+       colOffset_in, numSubCols_in, values_in, leadingDim_in)
     {}
   /** \brief Deprecated. */
  void initialize(
-   Teuchos_Index globalOffset, Teuchos_Index subDim,
-   Teuchos_Index colOffset, Teuchos_Index numSubCols,
-   Scalar values[], Teuchos_Index leadingDim
+   Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
+   Teuchos_Index colOffset_in, Teuchos_Index numSubCols_in,
+   Scalar values_in[], Teuchos_Index leadingDim_in
    )
    {
-     ConstSubMultiVectorView<Scalar>::initialize(globalOffset,subDim,
-       colOffset,numSubCols,values,leadingDim);
+     ConstSubMultiVectorView<Scalar>::initialize(globalOffset_in,
+       subDim_in, colOffset_in, numSubCols_in, values_in, leadingDim_in);
    }
 };
 
