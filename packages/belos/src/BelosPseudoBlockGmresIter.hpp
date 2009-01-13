@@ -45,7 +45,6 @@
 #include "BelosMultiVecTraits.hpp"
 
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -809,7 +808,6 @@ namespace Belos {
     int i, j;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
-    Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
     
     for (i=0; i<numRHS_; ++i) {

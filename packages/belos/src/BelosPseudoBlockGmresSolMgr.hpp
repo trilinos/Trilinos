@@ -50,7 +50,6 @@
 #include "BelosStatusTestOutput.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 /** \example BlockGmres/PseudoBlockGmresEpetraEx.cpp
@@ -823,7 +822,6 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   if (!isSet_) { setParameters( params_ ); }
   
   Teuchos::BLAS<int,ScalarType> blas;
-  Teuchos::LAPACK<int,ScalarType> lapack;
   
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockGmresSolMgrLinearProblemFailure,
                      "Belos::PseudoBlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");

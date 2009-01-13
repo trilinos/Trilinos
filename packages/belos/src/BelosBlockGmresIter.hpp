@@ -45,7 +45,6 @@
 #include "BelosMultiVecTraits.hpp"
 
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -765,7 +764,6 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       curDim = dim;
     }
     
-    Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
     //
     // Apply previous transformations and compute new transformation to reduce upper-Hessenberg

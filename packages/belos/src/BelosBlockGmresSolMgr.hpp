@@ -52,7 +52,6 @@
 #include "BelosStatusTestOutput.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 /** \example BlockGmres/BlockGmresEpetraEx.cpp
@@ -856,7 +855,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   }
 
   Teuchos::BLAS<int,ScalarType> blas;
-  Teuchos::LAPACK<int,ScalarType> lapack;
   
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,BlockGmresSolMgrLinearProblemFailure,
     "Belos::BlockGmresSolMgr::solve(): Linear problem is not a valid object.");
